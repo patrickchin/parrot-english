@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Volume muted">
+  <defs>
+    <radialGradient id="mutedFace" cx="38%" cy="27%" r="76%">
+      <stop offset="0%" stop-color="#fff7eb" />
+      <stop offset="58%" stop-color="#f2eee8" />
+      <stop offset="100%" stop-color="#dfd9d0" />
+    </radialGradient>
+    <filter id="mutedShadow" x="-20%" y="-12%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="0" flood-color="#8b8174" flood-opacity="0.26" />
+      <feDropShadow dx="0" dy="13" stdDeviation="8" flood-color="#4f473e" flood-opacity="0.16" />
+    </filter>
+  </defs>
+  <g filter="url(#mutedShadow)">
+    <circle cx="128" cy="120" r="105" fill="#ffffff" />
+    <circle cx="128" cy="126" r="88" fill="url(#mutedFace)" />
+    <path d="M73 111h28l39-30v94l-39-30H73z" fill="#9c8b77" />
+    <path d="M158 105c16 16 16 30 0 46M177 88c31 30 31 50 0 80" fill="none" stroke="#9c8b77" stroke-linecap="round" stroke-width="13" opacity="0.25" />
+    <path d="M81 77 179 179" fill="none" stroke="#e83966" stroke-linecap="round" stroke-width="18" />
+  </g>
+</svg>

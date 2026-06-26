@@ -32,6 +32,7 @@ export default defineConfig([
     languageOptions: {
       globals: {
         console: "readonly",
+        Request: "readonly",
       },
     },
   },

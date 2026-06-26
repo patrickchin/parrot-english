@@ -71,6 +71,47 @@ describe("lesson state", () => {
     assert.equal(next.phase, LessonPhase.HostSpeaking);
   });
 
+  it("navigates directly to the next scene", () => {
+    const next = reduce(createInitialLessonState(), { type: "SCENE_NEXT" });
+
+    assert.equal(next.phase, LessonPhase.Idle);
+    assert.equal(next.stepIndex, 1);
+    assert.equal(next.retryCount, 0);
+    assert.equal(next.feedback, "");
+    assert.equal(next.transcript, "");
+  });
+
+  it("navigates directly to the previous scene", () => {
+    const current = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Feedback,
+      stepIndex: 2,
+      retryCount: 1,
+      feedback: "Try again.",
+      transcript: "can help",
+    };
+    const previous = reduce(current, { type: "SCENE_PREVIOUS" });
+
+    assert.equal(previous.phase, LessonPhase.Idle);
+    assert.equal(previous.stepIndex, 1);
+    assert.equal(previous.retryCount, 0);
+    assert.equal(previous.feedback, "");
+    assert.equal(previous.transcript, "");
+  });
+
+  it("keeps scene navigation inside the lesson bounds", () => {
+    const firstPrevious = reduce(createInitialLessonState(), {
+      type: "SCENE_PREVIOUS",
+    });
+    const finalNext = reduce(
+      { ...createInitialLessonState(), stepIndex: totalSteps - 1 },
+      { type: "SCENE_NEXT" }
+    );
+
+    assert.equal(firstPrevious.stepIndex, 0);
+    assert.equal(finalNext.stepIndex, totalSteps - 1);
+  });
+
   it("finishes after the final passed phrase", () => {
     const listening = {
       ...createInitialLessonState(),

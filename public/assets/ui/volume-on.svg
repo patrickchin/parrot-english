@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Volume on">
+  <defs>
+    <radialGradient id="volumeFace" cx="38%" cy="27%" r="76%">
+      <stop offset="0%" stop-color="#ffe972" />
+      <stop offset="58%" stop-color="#ffd434" />
+      <stop offset="100%" stop-color="#ffc61e" />
+    </radialGradient>
+    <linearGradient id="volumeGloss" x1="68" y1="42" x2="125" y2="104">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.46" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+    <filter id="volumeShadow" x="-20%" y="-12%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="0" flood-color="#c39017" flood-opacity="0.38" />
+      <feDropShadow dx="0" dy="13" stdDeviation="8" flood-color="#503c0c" flood-opacity="0.18" />
+    </filter>
+  </defs>
+  <g filter="url(#volumeShadow)">
+    <circle cx="128" cy="120" r="105" fill="#ffffff" />
+    <circle cx="128" cy="126" r="88" fill="url(#volumeFace)" />
+    <ellipse cx="101" cy="75" rx="48" ry="22" fill="url(#volumeGloss)" transform="rotate(-18 101 75)" />
+    <path d="M73 111h28l39-30v94l-39-30H73z" fill="#a8791d" />
+    <path d="M158 105c16 16 16 30 0 46M177 88c31 30 31 50 0 80" fill="none" stroke="#a8791d" stroke-linecap="round" stroke-width="13" />
+  </g>
+</svg>

@@ -6,7 +6,13 @@
 
 html,
 body {
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
 }
 
 body {
@@ -23,4 +29,481 @@ body {
 
 button {
   font: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.lesson-shell {
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #87d7f5;
+  color: #241d2b;
+}
+
+.lesson-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #9ddf7a;
+  isolation: isolate;
+}
+
+.scene-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.character-sprite {
+  position: absolute;
+  z-index: 5;
+  display: block;
+  filter: drop-shadow(0 18px 12px rgba(69, 74, 45, 0.2));
+  transform-origin: 50% 100%;
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
+  pointer-events: none;
+}
+
+.character-sprite img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.character-sprite.is-active {
+  filter: drop-shadow(0 22px 16px rgba(69, 74, 45, 0.28));
+  transform: translateY(-1.2%) scale(1.02);
+}
+
+.scene-nav-button:focus-visible,
+.volume-button:focus-visible,
+.start-lesson-button:focus-visible,
+.control-button:focus-visible,
+.tip-button:focus-visible {
+  outline: 5px solid #204c7f;
+  outline-offset: 5px;
+}
+
+.peppa-character {
+  left: 7.8%;
+  bottom: 5.2%;
+  width: clamp(260px, 29vw, 455px);
+  aspect-ratio: 583 / 775;
+}
+
+.polly-character {
+  right: 25.5%;
+  bottom: 4.8%;
+  width: clamp(190px, 20vw, 315px);
+  aspect-ratio: 527 / 783;
+}
+
+.speech-bubble {
+  position: absolute;
+  z-index: 8;
+  width: min(31vw, 430px);
+  min-height: 138px;
+  border: 0;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    inset 0 0 0 2px rgba(86, 156, 204, 0.12),
+    0 5px 0 rgba(70, 143, 190, 0.28),
+    0 14px 28px rgba(21, 104, 150, 0.16);
+  padding: 28px 36px 26px;
+  text-align: center;
+}
+
+.speech-bubble::after {
+  position: absolute;
+  bottom: -34px;
+  width: 68px;
+  height: 48px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 28% 100%);
+  content: "";
+  filter: drop-shadow(0 5px 0 rgba(70, 143, 190, 0.2));
+}
+
+.peppa-bubble {
+  top: 20.2%;
+  left: 28%;
+  transform: rotate(-1deg);
+}
+
+.peppa-bubble::after {
+  left: 21%;
+  transform: rotate(13deg);
+}
+
+.polly-bubble {
+  top: 24.5%;
+  right: 8.8%;
+  transform: rotate(1.4deg);
+}
+
+.polly-bubble::after {
+  left: 9%;
+  transform: scaleX(-1) rotate(9deg);
+}
+
+.speech-bubble.is-active {
+  box-shadow:
+    inset 0 0 0 2px rgba(214, 65, 124, 0.12),
+    0 5px 0 rgba(70, 143, 190, 0.28),
+    0 14px 28px rgba(21, 104, 150, 0.16),
+    0 0 0 7px rgba(255, 217, 68, 0.34);
+}
+
+.bubble-listen {
+  background: rgba(255, 247, 250, 0.96);
+}
+
+.bubble-finished {
+  background: rgba(255, 246, 197, 0.98);
+}
+
+.speech-bubble.has-error {
+  background: #ffe9e9;
+}
+
+.speech-bubble p {
+  margin: 0;
+  font-size: clamp(1.55rem, 2.45vw, 2.55rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.14;
+}
+
+.polly-bubble p {
+  color: #1f1d25;
+}
+
+.speech-highlight {
+  color: #d84383;
+}
+
+.scene-hud {
+  position: absolute;
+  z-index: 14;
+}
+
+.scene-title-card {
+  top: 2.2%;
+  left: 1.6%;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.scene-number {
+  display: grid;
+  width: clamp(44px, 4vw, 62px);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 4px solid rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  background: #ff467b;
+  color: #ffffff;
+  font-size: clamp(1.45rem, 2.4vw, 2.3rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  box-shadow: 0 5px 0 rgba(191, 45, 96, 0.4);
+}
+
+.scene-title {
+  min-width: clamp(190px, 18vw, 260px);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 24px 12px 18px;
+  font-size: clamp(1rem, 1.45vw, 1.42rem);
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(51, 123, 164, 0.16);
+}
+
+.scene-progress {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  padding-left: 2px;
+}
+
+.scene-progress span {
+  width: clamp(13px, 1.45vw, 22px);
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.scene-progress span.is-complete {
+  background: #ff467b;
+}
+
+.lesson-flow-banner {
+  position: absolute;
+  z-index: 18;
+  top: clamp(76px, 10vh, 106px);
+  left: 50%;
+  display: grid;
+  width: min(48vw, 440px);
+  min-height: 78px;
+  place-items: center;
+  transform: translateX(-50%);
+}
+
+.start-lesson-button {
+  width: min(100%, 380px);
+  min-height: 78px;
+  border: 6px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background: #ff467b;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+  box-shadow:
+    0 8px 0 rgba(178, 37, 86, 0.7),
+    0 18px 26px rgba(31, 94, 132, 0.22);
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.start-lesson-button:hover {
+  filter: brightness(1.04) saturate(1.05);
+  transform: translateY(-2px);
+}
+
+.flow-status {
+  display: inline-grid;
+  min-height: 62px;
+  place-items: center;
+  border: 5px solid rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  background: #204c7f;
+  color: #ffffff;
+  padding: 0 30px;
+  font-size: clamp(1.2rem, 2.3vw, 2rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-align: center;
+  box-shadow:
+    0 6px 0 rgba(18, 55, 92, 0.62),
+    0 14px 24px rgba(31, 94, 132, 0.18);
+}
+
+.volume-button {
+  position: absolute;
+  z-index: 14;
+  top: 2.1%;
+  right: 1.6%;
+  display: grid;
+  width: clamp(82px, 7.9vw, 122px);
+  aspect-ratio: 1;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.volume-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.volume-button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.scene-nav-button {
+  position: absolute;
+  z-index: 14;
+  bottom: 2.2%;
+  width: clamp(76px, 7.3vw, 112px);
+  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    filter 160ms ease,
+    transform 160ms ease;
+}
+
+.scene-nav-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene-back-button {
+  left: 1.5%;
+}
+
+.scene-next-button {
+  right: 1.5%;
+}
+
+.scene-nav-button:hover:not(:disabled) {
+  filter: brightness(1.04) saturate(1.04);
+  transform: translateY(-3px) scale(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .lesson-flow-banner {
+    top: 86px;
+    width: min(56vw, 350px);
+    min-height: 68px;
+  }
+
+  .start-lesson-button {
+    min-height: 68px;
+  }
+
+  .flow-status {
+    min-height: 56px;
+    padding: 0 22px;
+  }
+
+  .peppa-character {
+    left: 3%;
+    bottom: 12%;
+    width: 41%;
+  }
+
+  .polly-character {
+    right: 7%;
+    bottom: 12%;
+    width: 32%;
+  }
+
+  .speech-bubble {
+    width: 43%;
+    min-height: 132px;
+    padding: 14px 16px 12px;
+  }
+
+  .speech-bubble::after {
+    bottom: -24px;
+    width: 42px;
+    height: 30px;
+  }
+
+  .speech-bubble p {
+    font-size: 1.18rem;
+  }
+
+  .peppa-bubble {
+    top: max(160px, 20%);
+    left: 25%;
+  }
+
+  .polly-bubble {
+    top: max(292px, 35%);
+    right: 4%;
+  }
+}
+
+@media (max-width: 560px) {
+  .scene-title-card {
+    gap: 5px 8px;
+  }
+
+  .scene-title {
+    min-width: 168px;
+    padding: 10px 15px 10px 12px;
+  }
+
+  .lesson-flow-banner {
+    top: 88px;
+    width: min(70vw, 300px);
+  }
+
+  .start-lesson-button {
+    min-height: 62px;
+    border-width: 5px;
+  }
+
+  .flow-status {
+    min-height: 50px;
+    padding: 0 16px;
+    border-width: 4px;
+  }
+
+  .peppa-character {
+    left: -1%;
+    bottom: 15%;
+    width: 52%;
+  }
+
+  .polly-character {
+    right: 0;
+    bottom: 18%;
+    width: 43%;
+  }
+
+  .speech-bubble {
+    width: 62%;
+    min-height: 100px;
+    border-radius: 20px;
+  }
+
+  .peppa-bubble {
+    top: max(160px, 20%);
+    left: 7%;
+  }
+
+  .polly-bubble {
+    top: max(292px, 35%);
+    right: 5%;
+  }
+
+  .scene-nav-button {
+    bottom: 1.4%;
+  }
+
+  .volume-button {
+    width: 74px;
+  }
 }

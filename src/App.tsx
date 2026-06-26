@@ -1,14 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  getLessonAudioCompletionEvent,
+  getLessonAudioSequence,
+} from "../lib/lesson-audio";
 import { LESSON_STEPS } from "../lib/lesson-data";
+import { getLessonScenePresentation } from "../lib/lesson-scene";
 import {
   LessonPhase,
   createInitialLessonState,
   reduceLessonState,
 } from "../lib/lesson-state";
+import { isAbortError, playSpokenLine, type SpokenLine } from "./tts-playback";
 
 const RECORDING_MS = 4200;
+const PROGRESS_DOT_COUNT = 12;
 
 type EvaluationResult = {
   transcript: string;
@@ -26,7 +33,23 @@ type LessonEvent =
   | ({ type: "EVALUATED" } & EvaluationResult)
   | { type: "NEXT" }
   | { type: "RETRY" }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "SCENE_NEXT" }
+  | { type: "SCENE_PREVIOUS" };
+
+function renderSpeechText(text: string) {
+  const highlight = "Polly!";
+  if (!text.includes(highlight)) return text;
+
+  const [before, after] = text.split(highlight);
+  return (
+    <>
+      {before}
+      <span className="speech-highlight">{highlight}</span>
+      {after}
+    </>
+  );
+}
 
 async function fetchJsonError(response: Response) {
   try {
@@ -48,17 +71,22 @@ export function LessonPlayer() {
     createInitialLessonState
   );
   const [error, setError] = useState("");
+  const [muted, setMuted] = useState(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const currentStep = LESSON_STEPS[state.stepIndex];
+  const scene = useMemo(
+    () => getLessonScenePresentation(state, currentStep),
+    [currentStep, state]
+  );
 
   const progressLabel = useMemo(() => {
-    if (state.phase === LessonPhase.Idle) return "点击开始后会请求麦克风权限";
-    if (state.phase === LessonPhase.HostSpeaking) return "先听角色说";
-    if (state.phase === LessonPhase.ParrotSpeaking) return "听多莉鹦鹉示范";
-    if (state.phase === LessonPhase.Listening) return "正在听孩子开口";
-    if (state.phase === LessonPhase.Evaluating) return "正在判断说得像不像";
-    if (state.phase === LessonPhase.Finished) return "今日练习完成";
+    if (state.phase === LessonPhase.Idle) return "按开始";
+    if (state.phase === LessonPhase.HostSpeaking) return "先听佩奇说";
+    if (state.phase === LessonPhase.ParrotSpeaking) return "再听多莉说";
+    if (state.phase === LessonPhase.Listening) return "轮到你了，现在说";
+    if (state.phase === LessonPhase.Evaluating) return "正在检查发音";
+    if (state.phase === LessonPhase.Finished) return "今天练习完成";
     return state.feedback || "准备下一句";
   }, [state.feedback, state.phase]);
 
@@ -72,73 +100,66 @@ export function LessonPlayer() {
   }, []);
 
   useEffect(() => {
-    if (state.phase !== LessonPhase.HostSpeaking) return;
+    const audioSequence = getLessonAudioSequence(
+      state,
+      currentStep
+    ) as SpokenLine[];
+    if (audioSequence.length === 0) return;
+    const completionEvent = getLessonAudioCompletionEvent(state) as LessonEvent | null;
 
-    const timeout = window.setTimeout(() => {
-      dispatch({ type: "HOST_DONE" });
-    }, 1100);
+    if (muted) {
+      const timeout = window.setTimeout(() => {
+        if (completionEvent) dispatch(completionEvent);
+      }, Math.max(700, audioSequence.length * 800));
 
-    return () => window.clearTimeout(timeout);
-  }, [state.phase, state.stepIndex]);
-
-  useEffect(() => {
-    if (state.phase !== LessonPhase.ParrotSpeaking) return;
+      return () => window.clearTimeout(timeout);
+    }
 
     let cancelled = false;
+    const controller = new AbortController();
 
-    async function playParrotLine() {
+    async function playLessonSequence() {
       setError("");
       try {
-        const response = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            text: currentStep.parrotLine,
-            slow: state.retryCount > 0,
-          }),
-        });
+        let previousAudioUrl = audioUrlRef.current;
 
-        if (!response.ok) {
-          throw new Error(await fetchJsonError(response));
+        for (const line of audioSequence) {
+          const result = await playSpokenLine({
+            ...line,
+            previousAudioUrl,
+            signal: controller.signal,
+          });
+          previousAudioUrl = result.audioUrl;
+          audioUrlRef.current = result.audioUrl;
         }
 
-        const audioBlob = await response.blob();
-        if (audioUrlRef.current) {
-          URL.revokeObjectURL(audioUrlRef.current);
-        }
-
-        const audioUrl = URL.createObjectURL(audioBlob);
-        audioUrlRef.current = audioUrl;
-        const audio = new Audio(audioUrl);
-
-        await new Promise<void>((resolve, reject) => {
-          audio.onended = () => resolve();
-          audio.onerror = () => reject(new Error("Audio playback failed."));
-          audio.play().catch(reject);
-        });
-
-        if (!cancelled) {
-          dispatch({ type: "PARROT_DONE" });
+        if (!cancelled && completionEvent) {
+          dispatch(completionEvent);
         }
       } catch (caughtError) {
-        if (!cancelled) {
+        if (!cancelled && !isAbortError(caughtError)) {
           const message =
             caughtError instanceof Error ? caughtError.message : "TTS failed.";
-          setError(
-            message.includes("GROQ_API_KEY")
-              ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能播放多莉的声音。"
-              : `多莉的声音暂时不可用：${message}`
-          );
+          setError(`声音暂时不可用：${message}`);
         }
       }
     }
 
-    void playParrotLine();
+    void playLessonSequence();
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [currentStep.parrotLine, state.phase, state.retryCount]);
+  }, [
+    currentStep,
+    muted,
+    state.feedback,
+    state.lastOutcome,
+    state.phase,
+    state.retryCount,
+    state.stepIndex,
+  ]);
 
   useEffect(() => {
     if (state.phase !== LessonPhase.Listening) return;
@@ -210,83 +231,159 @@ export function LessonPlayer() {
     };
   }, [currentStep.childTarget, state.phase]);
 
-  useEffect(() => {
-    if (state.phase !== LessonPhase.Feedback) return;
-
-    const timeout = window.setTimeout(() => {
-      dispatch({ type: state.lastOutcome === "retry" ? "RETRY" : "NEXT" });
-    }, state.lastOutcome === "retry" ? 1600 : 1200);
-
-    return () => window.clearTimeout(timeout);
-  }, [state.lastOutcome, state.phase]);
-
   async function startLesson() {
     setError("");
 
     try {
-      mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      });
+      if (!mediaStreamRef.current) {
+        mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
+      }
       dispatch({ type: "START" });
     } catch {
       setError("无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
     }
   }
 
-  const isBusy =
-    state.phase === LessonPhase.HostSpeaking ||
-    state.phase === LessonPhase.ParrotSpeaking ||
-    state.phase === LessonPhase.Listening ||
-    state.phase === LessonPhase.Evaluating;
+  function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
+    setError("");
+    dispatch({ type });
+  }
+
+  const sceneNumber = state.stepIndex + 1;
+  const showStartButton =
+    state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished;
+  const startButtonLabel =
+    state.phase === LessonPhase.Finished ? "再来一次" : "开始";
 
   return (
-    <main className="h-screen min-h-[1024px] min-w-[1536px] overflow-hidden bg-sky-300 text-[#241d2b]">
+    <main className="lesson-shell">
       <section
         aria-label="Parrot English speaking lesson"
-        className="relative h-[1024px] w-[1536px] overflow-hidden"
+        className="lesson-stage"
       >
         <img
-          src="/assets/placeholders/local-lesson-reference.png"
-          alt="Temporary local lesson placeholder"
-          className="absolute inset-0 h-full w-full select-none object-cover"
+          src={scene.backgroundAsset.src}
+          alt={scene.backgroundAsset.alt}
+          className="scene-background"
+          draggable="false"
         />
 
-        <button
-          aria-label={state.phase === LessonPhase.Finished ? "Restart lesson" : "Start lesson"}
-          className="absolute right-[26px] top-[22px] z-20 h-[102px] w-[102px] rounded-full opacity-0"
-          disabled={isBusy}
-          onClick={startLesson}
-          type="button"
-        />
+        <div className="scene-hud scene-title-card" aria-label="Current scene">
+          <span className="scene-number">{sceneNumber}</span>
+          <span className="scene-title">
+            {currentStep.sceneTitleZh}（{currentStep.durationHintSeconds}秒）
+          </span>
+          <div className="scene-progress" aria-hidden="true">
+            {Array.from({ length: PROGRESS_DOT_COUNT }, (_, index) => (
+              <span
+                className={index <= state.stepIndex ? "is-complete" : ""}
+                key={index}
+              />
+            ))}
+          </div>
+        </div>
 
         <button
-          aria-label="Previous lesson step"
-          className="absolute bottom-[24px] left-[24px] z-20 h-[100px] w-[100px] rounded-full opacity-0"
-          onClick={() => dispatch({ type: "RESET" })}
+          aria-label={muted ? "Unmute lesson audio" : "Mute lesson audio"}
+          aria-pressed={muted}
+          className={`volume-button ${muted ? "is-muted" : ""}`}
+          onClick={() => setMuted((value) => !value)}
           type="button"
-        />
+        >
+          <img
+            src={muted ? "/assets/ui/volume-muted.svg" : "/assets/ui/volume-on.svg"}
+            alt=""
+            draggable="false"
+          />
+        </button>
+
+        <div className={`lesson-flow-banner ${showStartButton ? "has-action" : ""}`}>
+          {showStartButton ? (
+            <button
+              className="start-lesson-button"
+              onClick={() => void startLesson()}
+              type="button"
+            >
+              {startButtonLabel}
+            </button>
+          ) : (
+            <span className="flow-status">{progressLabel}</span>
+          )}
+        </div>
+
+        <div
+          className={`character-sprite peppa-character ${
+            scene.activeSpeaker === "peppa" ? "is-active" : ""
+          }`}
+        >
+          <img
+            src={scene.peppaAsset.src}
+            alt={scene.peppaAsset.alt}
+            draggable="false"
+          />
+        </div>
+
+        <div
+          className={`character-sprite polly-character ${
+            scene.activeSpeaker === "polly" ? "is-active" : ""
+          }`}
+        >
+          <img
+            src={scene.pollyAsset.src}
+            alt={scene.pollyAsset.alt}
+            draggable="false"
+          />
+        </div>
+
+        <div
+          aria-live="polite"
+          className={`speech-bubble peppa-bubble bubble-${scene.peppaBubble.tone} ${
+            scene.peppaBubble.isActive ? "is-active" : ""
+          }`}
+          role="status"
+        >
+          <p>{renderSpeechText(scene.peppaBubble.text)}</p>
+        </div>
+
+        <div
+          aria-live="polite"
+          className={`speech-bubble polly-bubble bubble-${scene.pollyBubble.tone} ${
+            scene.pollyBubble.isActive ? "is-active" : ""
+          } ${error ? "has-error" : ""}`}
+          role="status"
+        >
+          <p>{error || renderSpeechText(scene.pollyBubble.text)}</p>
+        </div>
 
         <button
-          aria-label="Next lesson step"
-          className="absolute bottom-[24px] right-[24px] z-20 h-[100px] w-[100px] rounded-full opacity-0"
-          onClick={() => dispatch({ type: "NEXT" })}
+          aria-label="Previous scene"
+          className="scene-nav-button scene-back-button"
+          onClick={() => navigateScene("SCENE_PREVIOUS")}
           type="button"
-        />
+        >
+          <img src="/assets/ui/scene-back.svg" alt="" draggable="false" />
+        </button>
+
+        <button
+          aria-label="Next scene"
+          className="scene-nav-button scene-next-button"
+          onClick={() => navigateScene("SCENE_NEXT")}
+          type="button"
+        >
+          <img src="/assets/ui/scene-next.svg" alt="" draggable="false" />
+        </button>
 
         <div className="sr-only" aria-live="polite">
           {progressLabel}. Target phrase: {currentStep.childTarget}.
+          Scene {sceneNumber} of {LESSON_STEPS.length}. {scene.statusText}.
           {state.transcript ? ` Heard: ${state.transcript}.` : ""}
           {error ? ` ${error}` : ""}
         </div>
-
-        {error ? (
-          <div className="absolute bottom-36 left-1/2 z-30 w-[560px] -translate-x-1/2 rounded-3xl border-4 border-white bg-red-100/95 px-6 py-4 text-center text-xl font-black text-red-700 shadow-xl">
-            {error}
-          </div>
-        ) : null}
       </section>
     </main>
   );

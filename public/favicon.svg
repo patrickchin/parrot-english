@@ -1,6 +1,52 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF"/>
-<path d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8"/>
-<path d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8"/>
-<path d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Parrot English</title>
+  <desc id="desc">A bright green parrot coach for an English speaking practice app.</desc>
+  <defs>
+    <linearGradient id="sky" x1="96" x2="416" y1="40" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8be3ff" />
+      <stop offset="0.54" stop-color="#62c7f6" />
+      <stop offset="1" stop-color="#2f8ee7" />
+    </linearGradient>
+    <radialGradient id="badgeGlow" cx="33%" cy="20%" r="76%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.82" />
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="body" x1="194" x2="356" y1="121" y2="395" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#95dc00" />
+      <stop offset="0.62" stop-color="#4fb718" />
+      <stop offset="1" stop-color="#219642" />
+    </linearGradient>
+    <linearGradient id="beak" x1="91" x2="230" y1="196" y2="286" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd44a" />
+      <stop offset="0.48" stop-color="#ffae1d" />
+      <stop offset="1" stop-color="#f57b12" />
+    </linearGradient>
+    <linearGradient id="crest" x1="286" x2="410" y1="72" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#36c7ff" />
+      <stop offset="1" stop-color="#138fe0" />
+    </linearGradient>
+    <filter id="shadow" x="-12%" y="-12%" width="124%" height="132%">
+      <feDropShadow dx="0" dy="16" stdDeviation="12" flood-color="#196070" flood-opacity="0.28" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)" />
+  <path d="M0 365c72-42 150-57 235-44 88 14 157 6 277-52v243H0z" fill="#a6df55" />
+  <path d="M0 396c82-35 156-41 247-18 86 22 172 12 265-33v167H0z" fill="#66bd45" />
+  <rect width="512" height="512" rx="112" fill="url(#badgeGlow)" />
+  <g filter="url(#shadow)">
+    <path d="M295 136c-2-54 29-93 74-105 22 44 8 91-42 130z" fill="url(#crest)" stroke="#086aad" stroke-width="12" stroke-linejoin="round" />
+    <path d="M334 164c28-45 74-58 118-39-3 48-37 81-96 82z" fill="url(#crest)" stroke="#086aad" stroke-width="12" stroke-linejoin="round" />
+    <path d="M189 392c-22-38-29-86-18-141 15-76 63-124 132-121 78 4 126 66 122 156-4 85-56 148-133 151-46 2-82-14-103-45z" fill="url(#body)" stroke="#147739" stroke-width="14" stroke-linejoin="round" />
+    <path d="M205 220C154 182 99 179 49 214c30 55 82 76 156 54z" fill="url(#beak)" stroke="#c56911" stroke-width="13" stroke-linejoin="round" />
+    <path d="M198 269c-47 0-79 19-96 59 40 22 84 11 120-28z" fill="url(#beak)" stroke="#c56911" stroke-width="13" stroke-linejoin="round" />
+    <path d="M126 275c23-9 51-7 74 10-18 9-46 8-74-10z" fill="#c9252d" opacity="0.88" />
+    <ellipse cx="289" cy="262" rx="49" ry="55" fill="#ffffff" />
+    <ellipse cx="304" cy="263" rx="18" ry="25" fill="#1b1a20" />
+    <circle cx="311" cy="252" r="6" fill="#ffffff" />
+    <path d="M260 200c17-14 45-10 57 8" fill="none" stroke="#18191b" stroke-width="13" stroke-linecap="round" />
+    <circle cx="359" cy="315" r="28" fill="#ff5f66" opacity="0.95" />
+    <path d="M292 432c46-6 76-36 86-88 10-54-8-94-51-119-16 66-28 132-35 207z" fill="#38a545" stroke="#147739" stroke-width="12" stroke-linejoin="round" />
+    <path d="M324 296c13 24 31 35 54 34M310 341c18 23 39 33 65 28M301 384c18 20 39 29 63 26" fill="none" stroke="#1e7e39" stroke-width="9" stroke-linecap="round" opacity="0.72" />
+  </g>
 </svg>
