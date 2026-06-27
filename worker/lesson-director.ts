@@ -7,6 +7,8 @@ type LessonDirectorProviderCall = (
   requestBody: unknown,
   env: LessonDirectorProviderEnv
 ) => Promise<unknown>;
+type MockDirectorLesson = Parameters<typeof getMockDirectorPacket>[0];
+type MockDirectorRuntimeState = Parameters<typeof getMockDirectorPacket>[1];
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
   return Response.json(payload, {
@@ -39,7 +41,10 @@ async function callLessonDirectorProvider(
 }
 
 function createDirectorFallbackPacket(lesson: unknown, runtimeState: unknown) {
-  const packet = getMockDirectorPacket(lesson, runtimeState);
+  const packet = getMockDirectorPacket(
+    lesson as MockDirectorLesson,
+    runtimeState as MockDirectorRuntimeState
+  );
   return {
     ...packet,
     lessonControl: {

@@ -164,7 +164,7 @@ describe("lesson director Worker handler", () => {
         headers: init?.headers,
         body: JSON.parse(init?.body),
       };
-      return Response.json({ packet: providerPacket });
+      return globalThis.Response.json({ packet: providerPacket });
     };
 
     const packet = await callLessonDirectorProvider(createBody(), {
@@ -188,7 +188,7 @@ describe("lesson director Worker handler", () => {
     const providerPacket = getMockDirectorPacket(AI_LESSON, runtimeState);
 
     globalThis.fetch = async () =>
-      Response.json({ outputText: JSON.stringify(providerPacket) });
+      globalThis.Response.json({ outputText: JSON.stringify(providerPacket) });
 
     const packet = await callLessonDirectorProvider(createBody(), {
       LESSON_DIRECTOR_API_KEY: "test-key",
@@ -214,7 +214,8 @@ describe("lesson director Worker handler", () => {
       /LESSON_DIRECTOR_BASE_URL is required/
     );
 
-    globalThis.fetch = async () => new Response("upstream error", { status: 503 });
+    globalThis.fetch = async () =>
+      new globalThis.Response("upstream error", { status: 503 });
 
     await assert.rejects(
       () =>
