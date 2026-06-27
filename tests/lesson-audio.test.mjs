@@ -8,30 +8,21 @@ import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 const step = {
   id: "hello",
-  hostLine: "Hi, Bella! How are you?",
-  parrotLine: "This is my parrot, Polly!",
-  childTarget: "This is my parrot, Polly!",
+  exampleLine: "Hi, Bella! How are you?",
+  parrotPromptZh: "轮到你了，跟着佩奇说。",
+  childTarget: "Hi, Bella! How are you?",
 };
 
 describe("lesson audio", () => {
-  it("speaks a Chinese instruction before Peppa's host line", () => {
+  it("plays Peppa's example line first", () => {
     const sequence = getLessonAudioSequence(
-      { ...createInitialLessonState(), phase: LessonPhase.HostSpeaking },
+      { ...createInitialLessonState(), phase: LessonPhase.ExampleSpeaking },
       step
     );
 
     assert.deepEqual(sequence, [
       {
-        audioId: "instruction-peppa",
-        audioSrc: "/assets/audio/instruction-peppa.wav",
-        character: "coach",
-        engine: "asset",
-        lang: "zh-CN",
-        slow: false,
-        text: "先听佩奇说。",
-      },
-      {
-        audioId: "host-hello",
+        audioId: "example-hello",
         audioSrc: "/assets/audio/host-hello.wav",
         character: "peppa",
         engine: "asset",
@@ -44,53 +35,51 @@ describe("lesson audio", () => {
     assert.deepEqual(
       getLessonAudioCompletionEvent({
         ...createInitialLessonState(),
-        phase: LessonPhase.HostSpeaking,
+        phase: LessonPhase.ExampleSpeaking,
       }),
-      { type: "HOST_DONE" }
+      { type: "EXAMPLE_DONE" }
     );
   });
 
-  it("speaks a Chinese turn prompt after Polly's demo line", () => {
+  it("has Polly tell the child what to do in Chinese", () => {
     const sequence = getLessonAudioSequence(
-      { ...createInitialLessonState(), phase: LessonPhase.ParrotSpeaking },
+      { ...createInitialLessonState(), phase: LessonPhase.ParrotCoaching },
       step
     );
 
     assert.deepEqual(sequence.map((line) => line.text), [
-      "再听多莉说一遍。",
-      "This is my parrot, Polly!",
-      "轮到你了，请说：This is my parrot, Polly!",
+      "轮到你了，跟着佩奇说。",
     ]);
     assert.equal(sequence[0].engine, "asset");
-    assert.equal(sequence[1].engine, "asset");
-    assert.equal(sequence[1].audioSrc, "/assets/audio/parrot-hello.wav");
-    assert.equal(sequence[1].style, "character");
-    assert.equal(sequence[2].engine, "asset");
+    assert.equal(sequence[0].audioSrc, "/assets/audio/turn-hello.wav");
+    assert.equal(sequence[0].character, "polly");
+    assert.equal(sequence[0].lang, "zh-CN");
     assert.deepEqual(
       getLessonAudioCompletionEvent({
         ...createInitialLessonState(),
-        phase: LessonPhase.ParrotSpeaking,
+        phase: LessonPhase.ParrotCoaching,
       }),
-      { type: "PARROT_DONE" }
+      { type: "COACH_DONE" }
     );
   });
 
-  it("slows Polly's retry line without replaying Peppa", () => {
+  it("does not make Polly model the English target on retry", () => {
     const sequence = getLessonAudioSequence(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.ParrotSpeaking,
+        phase: LessonPhase.ParrotCoaching,
         retryCount: 1,
       },
       step
     );
 
-    assert.equal(sequence[1].character, "polly");
-    assert.equal(sequence[1].slow, true);
-    assert.equal(sequence[1].text, "This is my parrot, Polly!");
+    assert.equal(sequence.length, 1);
+    assert.equal(sequence[0].character, "polly");
+    assert.equal(sequence[0].slow, false);
+    assert.equal(sequence[0].text, "轮到你了，跟着佩奇说。");
   });
 
-  it("speaks feedback before retrying or advancing", () => {
+  it("has Polly speak feedback before retrying or advancing", () => {
     const retryState = {
       ...createInitialLessonState(),
       phase: LessonPhase.Feedback,

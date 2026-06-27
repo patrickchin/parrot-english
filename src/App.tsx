@@ -27,8 +27,8 @@ type EvaluationResult = {
 
 type LessonEvent =
   | { type: "START" }
-  | { type: "HOST_DONE" }
-  | { type: "PARROT_DONE" }
+  | { type: "EXAMPLE_DONE" }
+  | { type: "COACH_DONE" }
   | { type: "RECORDING_DONE" }
   | ({ type: "EVALUATED" } & EvaluationResult)
   | { type: "NEXT" }
@@ -82,8 +82,8 @@ export function LessonPlayer() {
 
   const progressLabel = useMemo(() => {
     if (state.phase === LessonPhase.Idle) return "按开始";
-    if (state.phase === LessonPhase.HostSpeaking) return "先听佩奇说";
-    if (state.phase === LessonPhase.ParrotSpeaking) return "再听多莉说";
+    if (state.phase === LessonPhase.ExampleSpeaking) return "听佩奇说";
+    if (state.phase === LessonPhase.ParrotCoaching) return "多莉告诉你怎么说";
     if (state.phase === LessonPhase.Listening) return "轮到你了，现在说";
     if (state.phase === LessonPhase.Evaluating) return "正在检查发音";
     if (state.phase === LessonPhase.Finished) return "今天练习完成";

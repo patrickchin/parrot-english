@@ -24,6 +24,7 @@
     "generate:audio:groq": "node scripts/generate-static-audio.mjs --provider=groq",
     "start": "wrangler dev --local --port 3000",
     "preview": "vite preview --host 0.0.0.0",
+    "test:maestro": "node scripts/run-maestro-tests.mjs",
     "test": "node --test tests/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist"
   },

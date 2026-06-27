@@ -13,20 +13,20 @@ function reduce(state, event) {
 }
 
 describe("lesson state", () => {
-  it("starts at the first host line", () => {
+  it("starts at the first example line", () => {
     const state = reduce(createInitialLessonState(), { type: "START" });
 
-    assert.equal(state.phase, LessonPhase.HostSpeaking);
+    assert.equal(state.phase, LessonPhase.ExampleSpeaking);
     assert.equal(state.stepIndex, 0);
     assert.equal(state.retryCount, 0);
   });
 
-  it("moves from host to parrot to listening", () => {
+  it("moves from example to parrot coaching to listening", () => {
     const started = reduce(createInitialLessonState(), { type: "START" });
-    const parrot = reduce(started, { type: "HOST_DONE" });
-    const listening = reduce(parrot, { type: "PARROT_DONE" });
+    const parrot = reduce(started, { type: "EXAMPLE_DONE" });
+    const listening = reduce(parrot, { type: "COACH_DONE" });
 
-    assert.equal(parrot.phase, LessonPhase.ParrotSpeaking);
+    assert.equal(parrot.phase, LessonPhase.ParrotCoaching);
     assert.equal(listening.phase, LessonPhase.Listening);
   });
 
@@ -47,7 +47,7 @@ describe("lesson state", () => {
     assert.equal(evaluated.phase, LessonPhase.Feedback);
     assert.equal(evaluated.lastOutcome, "retry");
     assert.equal(evaluated.retryCount, 1);
-    assert.equal(retry.phase, LessonPhase.ParrotSpeaking);
+    assert.equal(retry.phase, LessonPhase.ExampleSpeaking);
     assert.equal(retry.stepIndex, 2);
   });
 
@@ -68,7 +68,7 @@ describe("lesson state", () => {
     assert.equal(evaluated.phase, LessonPhase.Feedback);
     assert.equal(evaluated.lastOutcome, "advance");
     assert.equal(evaluated.stepIndex, 2);
-    assert.equal(next.phase, LessonPhase.HostSpeaking);
+    assert.equal(next.phase, LessonPhase.ExampleSpeaking);
   });
 
   it("navigates directly to the next scene", () => {

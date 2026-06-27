@@ -2,7 +2,7 @@
 
 ## Context
 
-Parrot English is a one-page English speaking practice prototype for children. The current app already supports a basic lesson loop: host audio, parrot model audio, child recording, speech evaluation, feedback, retry, and advance.
+Parrot English is a one-page English speaking practice prototype for children. The intended experience should not have a separate speaking host after the opening setup. Peppa introduces the parrot, then the parrot acts as the lesson host: giving instructions, modeling the phrase, asking the child to repeat, listening, and giving feedback.
 
 This design focuses on making the learning flow clearer and more effective for a child. The main requirement is repetition: the child should hear the target phrase multiple times, repeat it out loud, and receive audible feedback after every attempt. The moment when the child needs to speak must be unmistakable.
 
@@ -22,48 +22,48 @@ Design priorities:
 
 The lesson should use this repeat-first sequence:
 
-1. Watch
-2. Listen
-3. Repeat with Polly
+1. Peppa introduces the parrot
+2. Parrot teaches
+3. Repeat with the parrot
 4. Child speaks
 5. Heard feedback
 6. Repeat once more
 7. Advance
 
-### 1. Watch
+### 1. Peppa Introduces the Parrot
 
-Peppa sets the scene briefly. This should be short so the child reaches the speaking task quickly.
+Peppa's role is a short opening introduction, not an ongoing host role. She introduces the parrot as the guide for the lesson, then the parrot takes over the teaching flow.
 
 Visual state:
 
 - Peppa is highlighted.
-- Polly is visible but secondary.
-- The lesson banner says `先听佩奇说`.
+- The parrot is visible beside Peppa.
+- The lesson banner says `佩奇介绍鹦鹉`.
 
 Audio:
 
-- Chinese coach prompt: `先听佩奇说。`
-- Peppa says the scene phrase.
+- Peppa introduces the parrot.
+- No separate host line is used for each lesson phrase.
 
-### 2. Listen
+### 2. Parrot Teaches
 
-Polly models the target phrase at normal speed.
+The parrot acts as the host and models the target phrase at normal speed.
 
 Visual state:
 
-- Polly is highlighted.
-- The phrase appears in Polly's speech bubble.
+- The parrot is highlighted.
+- The phrase appears in the parrot's speech bubble.
 - The child is not prompted to speak yet.
-- The banner says `听多莉说`.
+- The banner says `听鹦鹉说`.
 
 Audio:
 
-- Chinese coach prompt: `再听多莉说一遍。`
-- Polly says the target phrase.
+- The parrot gives the instruction.
+- The parrot says the target phrase.
 
-### 3. Repeat With Polly
+### 3. Repeat With the Parrot
 
-Polly says the phrase more slowly before the child speaks. This creates built-in repetition even before recording starts.
+The parrot says the phrase more slowly before the child speaks. This creates built-in repetition even before recording starts.
 
 Visual state:
 
@@ -73,7 +73,7 @@ Visual state:
 
 Audio:
 
-- Polly repeats the target phrase slowly.
+- The parrot repeats the target phrase slowly.
 
 ### 4. Child Speaks
 
@@ -84,13 +84,13 @@ Visual state:
 - A large center badge says `轮到你说`.
 - A big pulsing microphone ring appears.
 - The target phrase is isolated and large: `Say: Thank you!`
-- Peppa and Polly switch to listening poses.
+- Peppa and the parrot switch to listening poses.
 - The rest of the UI becomes visually quiet.
 - A short countdown can appear before recording starts.
 
 Audio:
 
-- Coach prompt: `轮到你了，请说：Thank you!`
+- Parrot prompt: `轮到你了，请说：Thank you!`
 - A short start chime or earcon plays just before recording starts.
 
 Accessibility state:
@@ -152,19 +152,16 @@ Recommended rule:
 
 ## Proposed State Model
 
-The current state machine can evolve from:
+The implementation should replace the current recurring pre-parrot speaking phase with a one-time Peppa introduction, then keep the parrot in control of the lesson:
 
-`HostSpeaking -> ParrotSpeaking -> Listening -> Evaluating -> Feedback -> Retry or Next`
-
-To:
-
-`HostSpeaking -> ParrotNormal -> ParrotSlow -> ChildPrompt -> Listening -> Evaluating -> Feedback -> SuccessRepeat or Retry -> Next`
+`PeppaIntro -> ParrotInstruction -> ParrotNormal -> ParrotSlow -> ChildPrompt -> Listening -> Evaluating -> Feedback -> SuccessRepeat or Retry -> Next`
 
 State responsibilities:
 
-- `HostSpeaking`: Peppa introduces the phrase in context.
-- `ParrotNormal`: Polly models at normal speed.
-- `ParrotSlow`: Polly models slowly for repetition.
+- `PeppaIntro`: Peppa introduces the parrot as the guide. This is an opening setup state, not a recurring phrase-host state.
+- `ParrotInstruction`: the parrot frames the next phrase and tells the child what will happen.
+- `ParrotNormal`: the parrot models at normal speed.
+- `ParrotSlow`: the parrot models slowly for repetition.
 - `ChildPrompt`: the UI and audio clearly ask the child to speak.
 - `Listening`: microphone is actively recording.
 - `Evaluating`: upload/transcription/scoring is in progress.
@@ -180,7 +177,7 @@ The speaking prompt should include all of these signals at once:
 - Large target phrase
 - Mic ring or waveform
 - Listening character poses
-- Coach audio prompt
+- Parrot audio prompt
 - Recording progress indicator
 
 The recording and evaluation states must not look frozen. Any wait longer than 300 ms needs a visible loading or progress state.
@@ -197,9 +194,8 @@ Audio should be treated as part of the UI, not as an enhancement.
 
 Required audio moments:
 
-- Instruction before host line.
-- Host line.
-- Instruction before parrot line.
+- Peppa's short opening introduction of the parrot.
+- Parrot instruction before the target phrase.
 - Parrot normal model.
 - Parrot slow model.
 - Clear child-turn prompt.
@@ -218,12 +214,12 @@ Do not play character speech while recording the child.
 
 | Situation | Child-Facing Text | Audio Behavior |
 | --- | --- | --- |
-| Child should speak | `轮到你说：Thank you!` | Coach prompt, then record |
+| Child should speak | `轮到你说：Thank you!` | Parrot prompt, then record |
 | Recording | `我在听...` | No spoken audio during recording |
 | Evaluating | `我来听一听...` | Optional short thinking cue |
 | Success first pass | `太棒了！再说一遍。` | Praise, then repeat prompt |
 | Success second pass | `太棒啦，我们继续。` | Celebrate, then next |
-| Close attempt | `差一点点，慢慢再来。` | Polly slow model, then retry |
+| Close attempt | `差一点点，慢慢再来。` | Parrot slow model, then retry |
 | No speech | `我没有听清楚，再试一次。` | Gentle retry prompt |
 | Technical error | `声音暂时不可用，请再试一次。` | Avoid child-blaming language |
 
@@ -231,8 +227,8 @@ Do not play character speech while recording the child.
 
 Likely app touch points:
 
-- `lib/lesson-state.js`: add explicit prompt, slow-repeat, and success-repeat states.
-- `lib/lesson-audio.js`: expand audio sequencing for normal model, slow model, child-turn prompt, and feedback.
+- `lib/lesson-state.js`: replace the recurring host-speaking concept with a one-time Peppa intro plus parrot-led prompt, slow-repeat, and success-repeat states.
+- `lib/lesson-audio.js`: expand audio sequencing so the parrot owns instruction, normal model, slow model, child-turn prompt, and feedback.
 - `lib/lesson-scene.js`: add stronger visual presentation for child prompt, listening, evaluation, success, and retry.
 - `src/App.tsx`: render mic/waveform/progress states and keep recording/evaluation feedback visible.
 - `src/styles.css`: add stable responsive dimensions, large prompt styling, recording animation, and reduced-motion behavior.

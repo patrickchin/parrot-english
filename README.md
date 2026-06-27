@@ -21,7 +21,7 @@ npm run dev
 npm run build
 npm run lint
 npm test
-npm run generate:audio:elevenlabs -- --only=instruction-peppa --output-dir=/tmp/parrot-audio --force
+npm run generate:audio:elevenlabs -- --only=turn-hello --output-dir=/tmp/parrot-audio --force
 ```
 
 `npm run dev` builds the Vite app and starts Wrangler on port 3000 so local

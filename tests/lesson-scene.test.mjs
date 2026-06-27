@@ -5,10 +5,10 @@ import { getLessonScenePresentation } from "../lib/lesson-scene.js";
 
 const step = {
   sceneTitleZh: "多莉打招呼",
-  hostLine: "Hi, Bella! How are you?",
-  parrotLine: "This is my parrot, Polly!",
-  childTarget: "This is my parrot, Polly!",
-  tipZh: "多莉最爱模仿佩奇，她学得有模有样，真有趣！",
+  exampleLine: "Hi, Bella! How are you?",
+  parrotPromptZh: "轮到你了，跟着佩奇说。",
+  childTarget: "Hi, Bella! How are you?",
+  tipZh: "先听佩奇打招呼，再跟着说。",
 };
 
 describe("lesson scene presentation", () => {
@@ -19,15 +19,15 @@ describe("lesson scene presentation", () => {
     );
 
     assert.equal(scene.peppaBubble.text, "Hi, Bella! How are you?");
-    assert.equal(scene.pollyBubble.text, "This is my parrot, Polly!");
-    assert.equal(scene.peppaBubble.tone, "host");
-    assert.equal(scene.pollyBubble.tone, "demo");
+    assert.equal(scene.pollyBubble.text, "轮到你了，跟着佩奇说。");
+    assert.equal(scene.peppaBubble.tone, "example");
+    assert.equal(scene.pollyBubble.tone, "coach");
     assert.equal(scene.activeSpeaker, null);
   });
 
-  it("marks Peppa active while the host is speaking", () => {
+  it("marks Peppa active while the example is speaking", () => {
     const scene = getLessonScenePresentation(
-      { ...createInitialLessonState(), phase: LessonPhase.HostSpeaking },
+      { ...createInitialLessonState(), phase: LessonPhase.ExampleSpeaking },
       step
     );
 
@@ -36,15 +36,16 @@ describe("lesson scene presentation", () => {
     assert.equal(scene.pollyBubble.isActive, false);
   });
 
-  it("marks Polly active while the parrot is demonstrating", () => {
+  it("marks Polly active while the parrot gives the Chinese prompt", () => {
     const scene = getLessonScenePresentation(
-      { ...createInitialLessonState(), phase: LessonPhase.ParrotSpeaking },
+      { ...createInitialLessonState(), phase: LessonPhase.ParrotCoaching },
       step
     );
 
     assert.equal(scene.activeSpeaker, "polly");
     assert.equal(scene.peppaBubble.isActive, false);
     assert.equal(scene.pollyBubble.isActive, true);
+    assert.equal(scene.pollyBubble.text, "轮到你了，跟着佩奇说。");
   });
 
   it("prompts the child in Chinese with the target phrase while listening", () => {
@@ -54,7 +55,7 @@ describe("lesson scene presentation", () => {
     );
 
     assert.equal(scene.activeSpeaker, "child");
-    assert.equal(scene.pollyBubble.text, "轮到你：This is my parrot, Polly!");
+    assert.equal(scene.pollyBubble.text, "轮到你：Hi, Bella! How are you?");
     assert.equal(scene.pollyBubble.tone, "listen");
     assert.equal(scene.pollyBubble.isActive, true);
   });

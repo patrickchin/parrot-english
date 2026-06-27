@@ -3,31 +3,34 @@ name: Child completes the first speaking turn with mocked evaluation
 tags:
   - e2e
   - mocked-api
-env:
-  MAESTRO_APP_URL: "http://localhost:5173"
 ---
 # The child starts from a recognizable lesson scene.
 - launchApp
-- assertVisible: "多莉打招呼"
-- assertVisible: "This is my parrot, Polly!"
+- assertVisible:
+    text: ".*多莉打招呼.*"
+- assertVisible:
+    text: ".*Hi, Bella.*"
+- assertVisible: "轮到你了，跟着佩奇说。"
 
 # Audio is muted so the test follows the visual learning states deterministically.
-- tapOn: "Mute lesson audio"
+- tapOn:
+    id: "Mute lesson audio"
 - tapOn: "开始"
 
-# Peppa sets context, then Polly models the exact phrase.
+# Peppa says the English example, then Polly explains the child turn.
 - extendedWaitUntil:
-    visible: "先听佩奇说"
+    visible: "听佩奇说"
     timeout: 5000
 - extendedWaitUntil:
-    visible: "再听多莉说"
+    visible: "多莉告诉你怎么说"
     timeout: 5000
 
 # The child's turn must be obvious before recording starts.
 - extendedWaitUntil:
     visible: "轮到你了，现在说"
     timeout: 8000
-- assertVisible: "轮到你：This is my parrot, Polly!"
+- assertVisible:
+    text: ".*轮到你：Hi, Bella.*"
 
 # The mocked evaluation should advance the lesson without making an LLM call.
 - extendedWaitUntil:
@@ -37,5 +40,5 @@ env:
     visible: "太棒了！我们继续下一句。"
     timeout: 8000
 - extendedWaitUntil:
-    visible: "佩奇需要帮助"
+    visible: ".*佩奇需要帮助.*"
     timeout: 5000

@@ -7,10 +7,9 @@ import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 describe("static audio assets", () => {
   it("covers every current lesson line", () => {
     for (const step of LESSON_STEPS) {
-      assert.ok(STATIC_AUDIO_LINES[`host-${step.id}`], `missing host-${step.id}`);
       assert.ok(
-        STATIC_AUDIO_LINES[`parrot-${step.id}`],
-        `missing parrot-${step.id}`
+        STATIC_AUDIO_LINES[`example-${step.id}`],
+        `missing example-${step.id}`
       );
       assert.ok(STATIC_AUDIO_LINES[`turn-${step.id}`], `missing turn-${step.id}`);
     }

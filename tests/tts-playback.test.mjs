@@ -8,14 +8,14 @@ describe("TTS playback", () => {
     const revokedUrls = [];
 
     const result = await playSpokenLine({
-      audioId: "instruction-peppa",
-      audioSrc: "/assets/audio/instruction-peppa.wav",
-      character: "coach",
+      audioId: "turn-hello",
+      audioSrc: "/assets/audio/turn-hello.wav",
+      character: "polly",
       engine: "asset",
       lang: "zh-CN",
       previousAudioUrl: "blob:old",
       slow: false,
-      text: "先听佩奇说。",
+      text: "轮到你了，跟着佩奇说。",
       env: {
         fetch() {
           throw new Error("static audio should not call Worker TTS");
@@ -38,7 +38,7 @@ describe("TTS playback", () => {
       },
     });
 
-    assert.deepEqual(playedUrls, ["/assets/audio/instruction-peppa.wav"]);
+    assert.deepEqual(playedUrls, ["/assets/audio/turn-hello.wav"]);
     assert.deepEqual(revokedUrls, ["blob:old"]);
     assert.deepEqual(result, { audioUrl: null, source: "asset" });
   });
