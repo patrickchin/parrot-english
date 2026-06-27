@@ -14,7 +14,7 @@ describe("lesson director request", () => {
       runtimeState,
       fetch: async (url, init) => {
         calls.push({ url, init });
-        return new Response(JSON.stringify(packet), {
+        return new globalThis.Response(JSON.stringify(packet), {
           status: 200,
           headers: { "content-type": "application/json" },
         });
@@ -34,7 +34,7 @@ describe("lesson director request", () => {
         lesson: { lessonId: "l1" },
         runtimeState: { currentSceneId: "greeting" },
         fetch: async () =>
-          new Response(JSON.stringify({ error: "invalid_request" }), {
+          new globalThis.Response(JSON.stringify({ error: "invalid_request" }), {
             status: 400,
             headers: { "content-type": "application/json" },
           }),
@@ -49,7 +49,7 @@ describe("lesson director request", () => {
         lesson: { lessonId: "l1" },
         runtimeState: { currentSceneId: "greeting" },
         fetch: async () =>
-          new Response(JSON.stringify({ error: "invalid_request", message: "Custom message" }), {
+          new globalThis.Response(JSON.stringify({ error: "invalid_request", message: "Custom message" }), {
             status: 400,
             headers: { "content-type": "application/json" },
           }),
@@ -68,7 +68,7 @@ describe("lesson director request", () => {
       signal: controller.signal,
       fetch: async (_url, init) => {
         forwardedSignal = init.signal;
-        return new Response(JSON.stringify({ packetId: "p1" }), {
+        return new globalThis.Response(JSON.stringify({ packetId: "p1" }), {
           status: 200,
           headers: { "content-type": "application/json" },
         });
