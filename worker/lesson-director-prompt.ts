@@ -61,11 +61,26 @@ Output rules:
 - childPrompt.targetText must exactly match the intended child answer.
 `;
 
+const REQUEST_SERIALIZATION_ERROR =
+  "Lesson director request body must be JSON-serializable.";
+
 export function createLessonDirectorUserPrompt(requestBody: unknown): string {
+  let requestJson: string | undefined;
+
+  try {
+    requestJson = JSON.stringify(requestBody);
+  } catch {
+    throw new TypeError(REQUEST_SERIALIZATION_ERROR);
+  }
+
+  if (requestJson === undefined) {
+    throw new TypeError(REQUEST_SERIALIZATION_ERROR);
+  }
+
   return `Use the following lesson JSON, runtime state, and response schema.
 
 REQUEST_JSON:
-${JSON.stringify(requestBody)}
+${requestJson}
 
 Return the next lesson-director response packet.`;
 }
