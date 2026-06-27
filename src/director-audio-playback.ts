@@ -20,6 +20,9 @@ type PlayDirectorTurnSpeechOptions = {
   ) => Promise<void>;
 };
 
+const DIRECTOR_TTS_AUDIO_SRC_PREFIX = "data:audio/mpeg;base64,";
+const BASE64_PAYLOAD_PATTERN =
+  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const dynamicAudioCache = new Map<string, string>();
 
 export function clearDirectorSpeechAudioCache() {
@@ -42,6 +45,18 @@ export function getDirectorTurnSilentDurationMs(speech: SpeechSegment[]) {
       total + getDirectorSpeechSegmentSilentDurationMs(segment.text),
     0
   );
+}
+
+function isPlayableDirectorTtsDataUrl(value: unknown): value is string {
+  if (
+    typeof value !== "string" ||
+    !value.startsWith(DIRECTOR_TTS_AUDIO_SRC_PREFIX)
+  ) {
+    return false;
+  }
+
+  const payload = value.slice(DIRECTOR_TTS_AUDIO_SRC_PREFIX.length);
+  return payload.length > 0 && BASE64_PAYLOAD_PATTERN.test(payload);
 }
 
 async function defaultWaitForSilentSegment(
@@ -94,8 +109,7 @@ async function requestDynamicSegmentAudio(
   };
 
   if (
-    typeof payload.audioSrc !== "string" ||
-    payload.audioSrc.length === 0 ||
+    !isPlayableDirectorTtsDataUrl(payload.audioSrc) ||
     typeof payload.key !== "string"
   ) {
     throw new Error("Director TTS response was invalid.");

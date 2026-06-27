@@ -30,6 +30,11 @@ const CHINESE_PATTERN = /[\u3400-\u9fff]/;
 const LATIN_PATTERN = /[A-Za-z]/;
 const ALLOWED_SPEAKERS = new Set(["peppa", "polly"]);
 const ALLOWED_LANGUAGES = new Set(["zh-CN", "en-US"]);
+const SUPPORTED_SPEAKER_LANGUAGE_PAIRS = new Set([
+  "peppa|en-US",
+  "polly|en-US",
+  "polly|zh-CN",
+]);
 const BASE64_CHUNK_SIZE = 0x8000;
 const MAX_DIRECTOR_TTS_REQUEST_BODY_BYTES = 16 * 1024;
 const MAX_DIRECTOR_TTS_TEXT_CHARS = 500;
@@ -285,7 +290,8 @@ function normalizeSegment(body: unknown): DirectorSpeechSegment | null {
 
   if (
     !ALLOWED_SPEAKERS.has(segment.speaker) ||
-    !ALLOWED_LANGUAGES.has(segment.lang)
+    !ALLOWED_LANGUAGES.has(segment.lang) ||
+    !SUPPORTED_SPEAKER_LANGUAGE_PAIRS.has(`${segment.speaker}|${segment.lang}`)
   ) {
     return null;
   }

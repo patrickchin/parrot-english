@@ -8,6 +8,7 @@ import {
 
 const originalFetch = globalThis.fetch;
 const originalAudio = globalThis.Audio;
+const DEFAULT_DYNAMIC_AUDIO_SRC = "data:audio/mpeg;base64,ZGlyZWN0b3ItMQ==";
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -20,7 +21,7 @@ afterEach(() => {
 });
 
 function mockDirectorTts({
-  audioSrcForRequest = (requestCount) => `/generated/director-${requestCount}.mp3`,
+  audioSrcForRequest = () => DEFAULT_DYNAMIC_AUDIO_SRC,
   keyForBody = createDirectorSpeechSegmentKey,
 } = {}) {
   const requests = [];
@@ -156,9 +157,10 @@ describe("director audio playback", () => {
   });
 
   it("does not cache generated audio when the response audio source is empty", async () => {
+    const validAudioSrc = "data:audio/mpeg;base64,ZGlyZWN0b3ItdmFsaWQ=";
     const requests = mockDirectorTts({
       audioSrcForRequest: (requestCount) =>
-        requestCount === 1 ? "" : "/generated/director-valid.mp3",
+        requestCount === 1 ? "" : validAudioSrc,
     });
     const speech = [{ lang: "zh-CN", text: "不要缓存空的动态音频。" }];
     const playedSources = [];
@@ -187,7 +189,62 @@ describe("director audio playback", () => {
 
     assert.equal(requests.length, 2);
     assert.equal(silentCount, 1);
-    assert.deepEqual(playedSources, ["/generated/director-valid.mp3"]);
+    assert.deepEqual(playedSources, [validAudioSrc]);
+  });
+
+  it("does not cache generated audio when the response audio source is not playable TTS data", async () => {
+    const invalidAudioSources = [
+      "/broken",
+      "https://bad.example/x",
+      "data:text/plain;base64,SGVsbG8=",
+      "data:audio/mpeg;base64,",
+    ];
+    const validAudioSrc = "data:audio/mpeg;base64,ZGlyZWN0b3ItdmFsaWQ=";
+    const requests = mockDirectorTts({
+      audioSrcForRequest: (requestCount) =>
+        invalidAudioSources[requestCount - 1] ?? validAudioSrc,
+    });
+    const speech = [{ lang: "zh-CN", text: "不要缓存无效的动态音频。" }];
+    const playedSources = [];
+    let silentCount = 0;
+
+    for (let index = 0; index < invalidAudioSources.length; index += 1) {
+      await playDirectorTurnSpeech({
+        speaker: "polly",
+        speech,
+        playResolvedSegment: async (segment) => {
+          playedSources.push(segment.audioSrc);
+        },
+        waitForSilentSegment: async () => {
+          silentCount += 1;
+        },
+      });
+    }
+
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech,
+      playResolvedSegment: async (segment) => {
+        playedSources.push(segment.audioSrc);
+      },
+      waitForSilentSegment: async () => {
+        silentCount += 1;
+      },
+    });
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech,
+      playResolvedSegment: async (segment) => {
+        playedSources.push(segment.audioSrc);
+      },
+      waitForSilentSegment: async () => {
+        silentCount += 1;
+      },
+    });
+
+    assert.equal(requests.length, invalidAudioSources.length + 1);
+    assert.equal(silentCount, invalidAudioSources.length);
+    assert.deepEqual(playedSources, [validAudioSrc, validAudioSrc]);
   });
 
   it("falls back to silent timing when generated audio returns a mismatched key", async () => {
@@ -234,8 +291,8 @@ describe("director audio playback", () => {
 
     assert.equal(requests.length, 1);
     assert.deepEqual(playedSources, [
-      "/generated/director-1.mp3",
-      "/generated/director-1.mp3",
+      DEFAULT_DYNAMIC_AUDIO_SRC,
+      DEFAULT_DYNAMIC_AUDIO_SRC,
     ]);
   });
 

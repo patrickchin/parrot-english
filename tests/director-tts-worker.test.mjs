@@ -201,6 +201,52 @@ describe("director TTS Worker route", () => {
     }
   });
 
+  it("rejects unsupported speaker and language pairs before provider or rate limit", async () => {
+    const env = {
+      DIRECTOR_TTS_RATE_LIMIT_MAX: "1",
+      DIRECTOR_TTS_RATE_LIMIT_WINDOW_MS: "60000",
+    };
+    const headers = {
+      "content-type": "application/json",
+      "CF-Connecting-IP": "203.0.113.212",
+    };
+    let providerCallCount = 0;
+    const generateAudio = async () => {
+      providerCallCount += 1;
+      return new Uint8Array([1, 2, 3]);
+    };
+
+    const invalid = await handleDirectorTts(
+      createRequest({
+        speaker: "peppa",
+        lang: "zh-CN",
+        text: "你好。",
+      }, { headers }),
+      env,
+      generateAudio
+    );
+    const invalidPayload = await readJson(invalid);
+
+    assert.equal(invalid.status, 400);
+    assert.equal(invalidPayload.error, "invalid_request");
+    assert.equal(providerCallCount, 0);
+
+    const valid = await handleDirectorTts(
+      createRequest({
+        speaker: "peppa",
+        lang: "en-US",
+        text: "Hello there!",
+      }, { headers }),
+      env,
+      generateAudio
+    );
+    const validPayload = await readJson(valid);
+
+    assert.equal(valid.status, 200);
+    assert.equal(validPayload.audioSrc, "data:audio/mpeg;base64,AQID");
+    assert.equal(providerCallCount, 1);
+  });
+
   it("returns a JSON 503 error when no provider is configured", async () => {
     const response = await handleDirectorTts(
       createRequest({
