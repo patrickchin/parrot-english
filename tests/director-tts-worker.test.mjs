@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { describe, it } from "node:test";
+import { afterEach, describe, it } from "node:test";
 import { createDirectorSpeechSegmentKey } from "../lib/director-speech-segments.js";
 import { handleDirectorTts } from "../worker/director-tts.ts";
+
+const originalFetch = globalThis.fetch;
+const POLLY_VOICE_ID = "4NQthjVhIGGVfL3Si000";
+const PEPPA_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
 
 function createRequest(body, init = {}) {
   return new Request("https://example.com/api/director-tts", {
@@ -18,7 +22,32 @@ async function readJson(response) {
   return response.json();
 }
 
+function mockElevenLabsFetch({ status = 200, bytes = new Uint8Array([4, 5, 6]) } = {}) {
+  const calls = [];
+
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({
+      url: String(url),
+      method: init.method,
+      headers: init.headers,
+      body: JSON.parse(String(init.body)),
+    });
+
+    if (status >= 200 && status < 300) {
+      return new globalThis.Response(bytes, { status });
+    }
+
+    return new globalThis.Response("upstream failed", { status });
+  };
+
+  return calls;
+}
+
 describe("director TTS Worker route", () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it("rejects mixed language segment text", async () => {
     const response = await handleDirectorTts(
       createRequest({
@@ -211,6 +240,94 @@ describe("director TTS Worker route", () => {
     assert.equal(payload.error, "tts_generation_failed");
   });
 
+  it("posts Polly director speech to ElevenLabs with the parrot voice by default", async () => {
+    const calls = mockElevenLabsFetch();
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "CF-Connecting-IP": "203.0.113.205",
+        },
+      }),
+      {
+        ELEVENLABS_API_KEY: "live-key",
+        ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+      }
+    );
+    const payload = await readJson(response);
+    const url = new URL(calls[0].url);
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.audioSrc, "data:audio/mpeg;base64,BAUG");
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].method, "POST");
+    assert.equal(calls[0].headers["xi-api-key"], "live-key");
+    assert.equal(calls[0].headers["Content-Type"], "application/json");
+    assert.equal(url.origin, "https://eleven.test");
+    assert.equal(url.pathname, `/v1/text-to-speech/${POLLY_VOICE_ID}`);
+    assert.equal(url.searchParams.get("output_format"), "mp3_44100_128");
+    assert.equal(calls[0].body.model_id, "eleven_v3");
+    assert.equal(calls[0].body.text, "[excited][brightly] 新的动态句子。");
+    assert.equal(typeof calls[0].body.voice_settings, "object");
+  });
+
+  it("posts Peppa director speech to ElevenLabs with the pig voice by default", async () => {
+    const calls = mockElevenLabsFetch();
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "peppa",
+        lang: "en-US",
+        text: "Hello there!",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "CF-Connecting-IP": "203.0.113.206",
+        },
+      }),
+      {
+        ELEVEN_LABS_API_KEY: "alt-key",
+        ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+      }
+    );
+    const payload = await readJson(response);
+    const url = new URL(calls[0].url);
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.audioSrc, "data:audio/mpeg;base64,BAUG");
+    assert.equal(calls[0].headers["xi-api-key"], "alt-key");
+    assert.equal(url.pathname, `/v1/text-to-speech/${PEPPA_VOICE_ID}`);
+    assert.equal(calls[0].body.model_id, "eleven_v3");
+    assert.equal(calls[0].body.text, "Hello there!");
+  });
+
+  it("returns a JSON 502 error when the ElevenLabs provider fails upstream", async () => {
+    mockElevenLabsFetch({ status: 503 });
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "CF-Connecting-IP": "203.0.113.207",
+        },
+      }),
+      {
+        ELEVENLABS_API_KEY: "live-key",
+        ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 502);
+    assert.equal(payload.error, "tts_generation_failed");
+  });
+
   it("rate limits valid generation requests before calling the provider again", async () => {
     const env = {
       DIRECTOR_TTS_RATE_LIMIT_MAX: "1",
@@ -324,6 +441,58 @@ describe("director TTS Worker route", () => {
         method: "POST",
         headers,
         body: "x".repeat(17 * 1024),
+      }),
+      env,
+      generateAudio
+    );
+    const payload = await readJson(oversized);
+
+    assert.equal(first.status, 200);
+    assert.equal(oversized.status, 413);
+    assert.equal(payload.error, "payload_too_large");
+    assert.equal(providerCallCount, 1);
+  });
+
+  it("returns a JSON 413 error for multibyte request bodies over the raw byte limit", async () => {
+    const env = {
+      DIRECTOR_TTS_RATE_LIMIT_MAX: "1",
+      DIRECTOR_TTS_RATE_LIMIT_WINDOW_MS: "60000",
+    };
+    const headers = {
+      "content-type": "application/json",
+      "CF-Connecting-IP": "203.0.113.208",
+    };
+    let providerCallCount = 0;
+    const generateAudio = async () => {
+      providerCallCount += 1;
+      return new Uint8Array([1, 2, 3]);
+    };
+    const first = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, { headers }),
+      env,
+      generateAudio
+    );
+    const multibyteBody = JSON.stringify({
+      speaker: "polly",
+      lang: "zh-CN",
+      text: "短句。",
+      padding: "界".repeat(6000),
+    });
+
+    assert.ok(multibyteBody.length < 16 * 1024);
+    assert.ok(
+      new globalThis.TextEncoder().encode(multibyteBody).byteLength > 16 * 1024
+    );
+
+    const oversized = await handleDirectorTts(
+      new Request("https://example.com/api/director-tts", {
+        method: "POST",
+        headers,
+        body: multibyteBody,
       }),
       env,
       generateAudio
