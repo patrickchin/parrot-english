@@ -26,3 +26,10 @@ prompt history from Codex sessions in this project.
   specifies the structured lesson JSON, single-director prompt, response packet,
   multilingual speech segmentation, validation rules, and migration path for an
   AI-adapted lesson flow.
+
+## Implementation Plans
+
+- [AI Lesson Director Roadmap](./superpowers/plans/2026-06-27-ai-lesson-director-roadmap.md)
+  links the phased implementation plans for director packet foundation, Worker
+  AI integration, speech/TTS runtime, and migration from the deterministic
+  lesson loop.
