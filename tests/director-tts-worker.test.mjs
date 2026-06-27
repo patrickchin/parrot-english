@@ -296,6 +296,86 @@ describe("director TTS Worker route", () => {
     assert.equal(nonPostPayload.error, "method_not_allowed");
   });
 
+  it("returns a JSON 413 error for oversized raw request bodies before provider or rate limit", async () => {
+    const env = {
+      DIRECTOR_TTS_RATE_LIMIT_MAX: "1",
+      DIRECTOR_TTS_RATE_LIMIT_WINDOW_MS: "60000",
+    };
+    const headers = {
+      "content-type": "application/json",
+      "CF-Connecting-IP": "203.0.113.203",
+    };
+    let providerCallCount = 0;
+    const generateAudio = async () => {
+      providerCallCount += 1;
+      return new Uint8Array([1, 2, 3]);
+    };
+    const first = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, { headers }),
+      env,
+      generateAudio
+    );
+    const oversized = await handleDirectorTts(
+      new Request("https://example.com/api/director-tts", {
+        method: "POST",
+        headers,
+        body: "x".repeat(17 * 1024),
+      }),
+      env,
+      generateAudio
+    );
+    const payload = await readJson(oversized);
+
+    assert.equal(first.status, 200);
+    assert.equal(oversized.status, 413);
+    assert.equal(payload.error, "payload_too_large");
+    assert.equal(providerCallCount, 1);
+  });
+
+  it("returns a JSON 400 error for overlong segment text before provider or rate limit", async () => {
+    const env = {
+      DIRECTOR_TTS_RATE_LIMIT_MAX: "1",
+      DIRECTOR_TTS_RATE_LIMIT_WINDOW_MS: "60000",
+    };
+    const headers = {
+      "content-type": "application/json",
+      "CF-Connecting-IP": "203.0.113.204",
+    };
+    let providerCallCount = 0;
+    const generateAudio = async () => {
+      providerCallCount += 1;
+      return new Uint8Array([1, 2, 3]);
+    };
+    const first = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, { headers }),
+      env,
+      generateAudio
+    );
+    const overlong = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "句".repeat(501),
+      }, { headers }),
+      env,
+      generateAudio
+    );
+    const payload = await readJson(overlong);
+
+    assert.equal(first.status, 200);
+    assert.equal(overlong.status, 400);
+    assert.equal(payload.error, "text_too_long");
+    assert.equal(providerCallCount, 1);
+  });
+
   it("routes /api/director-tts before static assets", () => {
     const workerIndex = readFileSync(
       new URL("../worker/index.ts", import.meta.url),

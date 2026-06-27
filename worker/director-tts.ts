@@ -25,6 +25,8 @@ const LATIN_PATTERN = /[A-Za-z]/;
 const ALLOWED_SPEAKERS = new Set(["peppa", "polly"]);
 const ALLOWED_LANGUAGES = new Set(["zh-CN", "en-US"]);
 const BASE64_CHUNK_SIZE = 0x8000;
+const MAX_DIRECTOR_TTS_REQUEST_BODY_CHARS = 16 * 1024;
+const MAX_DIRECTOR_TTS_TEXT_CHARS = 500;
 
 class DirectorTtsConfigurationError extends Error {
   constructor(message: string) {
@@ -108,9 +110,20 @@ export async function handleDirectorTts(
     return json({ error: "method_not_allowed" }, { status: 405 });
   }
 
+  let requestText: string;
+  try {
+    requestText = await request.text();
+  } catch {
+    return json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  if (requestText.length > MAX_DIRECTOR_TTS_REQUEST_BODY_CHARS) {
+    return json({ error: "payload_too_large" }, { status: 413 });
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(requestText);
   } catch {
     return json({ error: "invalid_json" }, { status: 400 });
   }
@@ -122,6 +135,10 @@ export async function handleDirectorTts(
 
   if (hasMixedChineseAndEnglish(segment.text)) {
     return json({ error: "mixed_language_segment" }, { status: 400 });
+  }
+
+  if (segment.text.length > MAX_DIRECTOR_TTS_TEXT_CHARS) {
+    return json({ error: "text_too_long" }, { status: 400 });
   }
 
   const rateLimited = checkDirectorTtsRateLimit(request, env);
