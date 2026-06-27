@@ -411,8 +411,7 @@ function reduceDirectorLessonPlayerState(
 ) {
   if (
     event.type === "START" &&
-    (currentState.phase === DirectorPacketPhase.Finished ||
-      currentState.phase === DirectorPacketPhase.Error)
+    currentState.phase === DirectorPacketPhase.Finished
   ) {
     return reduceDirectorPacketState(
       createInitialDirectorPacketState(AI_LESSON.scenes[0].id),
@@ -453,6 +452,7 @@ function DirectorLessonPlayer() {
   );
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
+  const [directorAudioBlob, setDirectorAudioBlob] = useState<Blob | null>(null);
   const scene = useMemo(
     () => getDirectorPacketScenePresentation(AI_LESSON, state),
     [state]
@@ -516,21 +516,15 @@ function DirectorLessonPlayer() {
     let cancelled = false;
     const controller = new AbortController();
 
-    async function recordAndEvaluateDirectorPrompt() {
+    async function recordDirectorPrompt() {
       setError("");
+      setDirectorAudioBlob(null);
       try {
         const audioBlob = await recordSpeechClip({ signal: controller.signal });
         if (cancelled) return;
 
+        setDirectorAudioBlob(audioBlob);
         dispatch({ type: "RECORDING_DONE" });
-
-        const result = await evaluateSpeech({
-          audio: audioBlob,
-          signal: controller.signal,
-          targetText: activePrompt?.targetText as string,
-        });
-
-        if (!cancelled) dispatch({ type: "EVALUATED", result });
       } catch (caughtError) {
         if (cancelled) return;
 
@@ -557,7 +551,7 @@ function DirectorLessonPlayer() {
       }
     }
 
-    void recordAndEvaluateDirectorPrompt();
+    void recordDirectorPrompt();
 
     return () => {
       cancelled = true;
@@ -565,8 +559,58 @@ function DirectorLessonPlayer() {
     };
   }, [activePrompt, state.phase]);
 
+  useEffect(() => {
+    if (
+      state.phase !== DirectorPacketPhase.Evaluating ||
+      !activePrompt ||
+      !directorAudioBlob
+    ) {
+      return;
+    }
+
+    const audioBlob = directorAudioBlob;
+    let cancelled = false;
+    const controller = new AbortController();
+
+    async function evaluateDirectorPrompt() {
+      setError("");
+      try {
+        const result = await evaluateSpeech({
+          audio: audioBlob,
+          signal: controller.signal,
+          targetText: activePrompt?.targetText as string,
+        });
+
+        if (!cancelled) {
+          setDirectorAudioBlob(null);
+          dispatch({ type: "EVALUATED", result });
+        }
+      } catch (caughtError) {
+        if (cancelled) return;
+
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
+        setDirectorAudioBlob(null);
+        setError(
+          message.includes("GROQ_API_KEY")
+            ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
+            : `判断语音时出错：${message}`
+        );
+        dispatch({ type: "PACKET_FAILED" });
+      }
+    }
+
+    void evaluateDirectorPrompt();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [activePrompt, directorAudioBlob, state.phase]);
+
   function startDirectorLesson() {
     setError("");
+    setDirectorAudioBlob(null);
     dispatch({ type: "START" });
   }
 
