@@ -70,6 +70,7 @@ describe("director packet state", () => {
     assert.equal(state.phase, DirectorPacketPhase.NeedsPacket);
     assert.equal(state.runtimeState.phase, "after_child_answer");
     assert.equal(state.runtimeState.lastChildResult.passed, true);
+    assert.equal(state.runtimeState.lastChildResult.reason, "matched_target");
     assert.equal(state.runtimeState.successfulRepeats, 1);
   });
 
