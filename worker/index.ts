@@ -2,6 +2,7 @@ import {
   checkEvaluateSpeechRateLimit,
   checkLessonDirectorRateLimit,
 } from "./api-security";
+import { handleDirectorTts, type DirectorTtsEnv } from "./director-tts";
 import { handleEvaluateSpeech, type ApiEnv } from "./groq";
 import { handleLessonDirector } from "./lesson-director";
 import type { RateLimitEnv } from "./api-security";
@@ -11,7 +12,11 @@ interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env extends ApiEnv, LessonDirectorProviderEnv, RateLimitEnv {
+interface Env
+  extends ApiEnv,
+    DirectorTtsEnv,
+    LessonDirectorProviderEnv,
+    RateLimitEnv {
   ASSETS: AssetFetcher;
 }
 
@@ -31,6 +36,10 @@ const worker = {
       if (rateLimited) return rateLimited;
 
       return handleLessonDirector(request, env);
+    }
+
+    if (url.pathname === "/api/director-tts") {
+      return handleDirectorTts(request, env);
     }
 
     return env.ASSETS.fetch(request);
