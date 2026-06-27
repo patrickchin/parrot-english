@@ -193,8 +193,20 @@ button:disabled {
   color: #1f1d25;
 }
 
-.speech-highlight {
+.speech-name {
+  font-weight: 950;
+}
+
+.speech-name-child {
+  color: #245fd4;
+}
+
+.speech-name-peppa {
   color: #d84383;
+}
+
+.speech-name-polly {
+  color: #008b72;
 }
 
 .scene-hud {

@@ -26,6 +26,15 @@ import {
 } from "./evaluation-request";
 
 const EVALUATION_FAILED_FEEDBACK = "我没有听清楚，我们慢一点再试一次。";
+const SPEECH_NAME_CLASSES = new Map([
+  ["Bella", "speech-name-child"],
+  ["Peppa", "speech-name-peppa"],
+  ["Polly", "speech-name-polly"],
+  ["Dolly", "speech-name-polly"],
+  ["佩奇", "speech-name-peppa"],
+  ["多莉", "speech-name-polly"],
+]);
+const SPEECH_NAME_PATTERN = /(Bella|Peppa|Polly|Dolly|佩奇|多莉)/g;
 
 type LessonEvent =
   | { type: "START" }
@@ -41,17 +50,17 @@ type LessonEvent =
   | { type: "SCENE_PREVIOUS" };
 
 function renderSpeechText(text: string) {
-  const highlight = "Polly!";
-  if (!text.includes(highlight)) return text;
+  return text.split(SPEECH_NAME_PATTERN).map((part, index) => {
+    const nameClass = SPEECH_NAME_CLASSES.get(part);
 
-  const [before, after] = text.split(highlight);
-  return (
-    <>
-      {before}
-      <span className="speech-highlight">{highlight}</span>
-      {after}
-    </>
-  );
+    if (!nameClass) return part;
+
+    return (
+      <span className={`speech-name ${nameClass}`} key={`${part}-${index}`}>
+        {part}
+      </span>
+    );
+  });
 }
 
 export function LessonPlayer() {
