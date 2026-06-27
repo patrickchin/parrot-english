@@ -17,6 +17,8 @@ type LessonDirectorRequestBody = {
   runtimeState: MockDirectorRuntimeState;
 };
 
+const MAX_LESSON_DIRECTOR_REQUEST_BODY_CHARS = 64 * 1024;
+
 function jsonResponse(payload: unknown, init?: ResponseInit) {
   return Response.json(payload, {
     ...init,
@@ -37,6 +39,11 @@ function getLessonScene(lesson: unknown, sceneId: string) {
   }
 
   return lesson.scenes.find((scene) => isObject(scene) && scene.id === sceneId);
+}
+
+function getNextSceneId(lesson: MockDirectorLesson, sceneId: string) {
+  const index = lesson.scenes.findIndex((scene) => scene.id === sceneId);
+  return lesson.scenes[index + 1]?.id ?? null;
 }
 
 function isSpeechSegment(value: unknown) {
@@ -111,14 +118,7 @@ function createDirectorFallbackPacket(
   lesson: MockDirectorLesson,
   runtimeState: MockDirectorRuntimeState
 ) {
-  const packet = getMockDirectorPacket(lesson, runtimeState);
-  return {
-    ...packet,
-    lessonControl: {
-      ...packet.lessonControl,
-      reason: "director_fallback",
-    },
-  };
+  return getMockDirectorPacket(lesson, runtimeState);
 }
 
 async function createFallbackResponse(
@@ -127,6 +127,36 @@ async function createFallbackResponse(
 ) {
   const packet = createDirectorFallbackPacket(lesson, runtimeState);
   return jsonResponse(packet);
+}
+
+function isRuntimeConsistentProviderPacket(
+  packet: unknown,
+  lesson: MockDirectorLesson,
+  runtimeState: MockDirectorRuntimeState
+) {
+  if (!isObject(packet) || !isObject(packet.lessonControl)) {
+    return false;
+  }
+
+  if (packet.sceneId !== runtimeState.currentSceneId) {
+    return false;
+  }
+
+  const nextSceneId = packet.lessonControl.nextSceneId;
+  if (typeof nextSceneId === "string" && !getLessonScene(lesson, nextSceneId)) {
+    return false;
+  }
+
+  const immediateNextSceneId = getNextSceneId(lesson, runtimeState.currentSceneId);
+  if (packet.lessonControl.status === "advance_scene") {
+    return nextSceneId === immediateNextSceneId && nextSceneId !== null;
+  }
+
+  if (packet.lessonControl.status === "finish_lesson") {
+    return immediateNextSceneId === null && nextSceneId === null;
+  }
+
+  return true;
 }
 
 export async function handleLessonDirector(
@@ -138,9 +168,20 @@ export async function handleLessonDirector(
     return jsonResponse({ error: "method_not_allowed" }, { status: 405 });
   }
 
+  let requestText: string;
+  try {
+    requestText = await request.text();
+  } catch {
+    return jsonResponse({ error: "invalid_json" }, { status: 400 });
+  }
+
+  if (requestText.length > MAX_LESSON_DIRECTOR_REQUEST_BODY_CHARS) {
+    return jsonResponse({ error: "payload_too_large" }, { status: 413 });
+  }
+
   let requestBody: unknown;
   try {
-    requestBody = await request.json();
+    requestBody = JSON.parse(requestText);
   } catch {
     return jsonResponse({ error: "invalid_json" }, { status: 400 });
   }
@@ -159,7 +200,10 @@ export async function handleLessonDirector(
   }
 
   const validation = validateLessonDirectorResponse(providerPacket, lesson);
-  if (!validation.ok) {
+  if (
+    !validation.ok ||
+    !isRuntimeConsistentProviderPacket(providerPacket, lesson, runtimeState)
+  ) {
     return createFallbackResponse(lesson, runtimeState);
   }
 

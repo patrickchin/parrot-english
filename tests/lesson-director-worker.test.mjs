@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, it } from "node:test";
 import { AI_LESSON } from "../lib/ai-lesson-data.js";
+import {
+  createInitialDirectorPacketState,
+  reduceDirectorPacketState,
+} from "../lib/director-packet-state.js";
 import { getMockDirectorPacket } from "../lib/mock-lesson-director.js";
 import { handleLessonDirector } from "../worker/lesson-director.ts";
 import { callLessonDirectorProvider } from "../worker/lesson-director-provider.ts";
@@ -37,16 +41,41 @@ function createRequest(body = createBody(), init = {}) {
   });
 }
 
-function expectedFallbackPacket() {
-  const packet = getMockDirectorPacket(AI_LESSON, runtimeState);
-  return {
-    ...packet,
-    lessonControl: {
-      ...packet.lessonControl,
-      reason: "director_fallback",
-    },
-  };
+function expectedFallbackPacket(state = runtimeState) {
+  return getMockDirectorPacket(AI_LESSON, state);
 }
+
+function advancePacketToListening(state, packet) {
+  let nextState = reduceDirectorPacketState(state, {
+    type: "PACKET_LOADED",
+    packet,
+  });
+  for (let index = 0; index < packet.turns.length; index += 1) {
+    nextState = reduceDirectorPacketState(nextState, { type: "TURN_DONE" });
+  }
+  return nextState;
+}
+
+const passedGreetingRuntimeState = {
+  currentSceneId: "greeting",
+  phase: "after_child_answer",
+  attemptNumber: 1,
+  successfulRepeats: 0,
+  previousTurnSummary: [],
+  lastChildResult: {
+    targetText: "Hello, Peppa!",
+    transcript: "hello peppa",
+    passed: true,
+    similarity: 0.92,
+    reason: "matched_target",
+  },
+};
+
+const repeatedGreetingRuntimeState = {
+  ...passedGreetingRuntimeState,
+  attemptNumber: 2,
+  successfulRepeats: 1,
+};
 
 async function readJson(response) {
   assert.match(response.headers.get("content-type") ?? "", /application\/json/);
@@ -92,7 +121,7 @@ describe("lesson director Worker handler", () => {
     assert.equal(response.status, 200);
     assert.deepEqual(payload, expectedFallbackPacket());
     assert.equal(payload.lessonControl.status, "prompt_child");
-    assert.equal(payload.lessonControl.reason, "director_fallback");
+    assert.equal(payload.lessonControl.reason, "waiting_for_first_attempt");
   });
 
   it("falls back to a deterministic packet when the provider throws", async () => {
@@ -103,7 +132,122 @@ describe("lesson director Worker handler", () => {
 
     assert.equal(response.status, 200);
     assert.deepEqual(payload, expectedFallbackPacket());
-    assert.equal(payload.lessonControl.reason, "director_fallback");
+    assert.equal(payload.lessonControl.reason, "waiting_for_first_attempt");
+  });
+
+  it("preserves success repeat control flow when provider fallback handles a first pass", async () => {
+    const response = await handleLessonDirector(
+      createRequest(createBody({ runtimeState: passedGreetingRuntimeState })),
+      {},
+      async () => {
+        throw new Error("provider unavailable");
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, expectedFallbackPacket(passedGreetingRuntimeState));
+    assert.equal(payload.lessonControl.reason, "success_repeat_required");
+    assert.equal(payload.childPrompt.shouldListen, true);
+
+    const listening = advancePacketToListening(
+      createInitialDirectorPacketState("greeting"),
+      payload
+    );
+    const recordingDone = reduceDirectorPacketState(listening, {
+      type: "RECORDING_DONE",
+    });
+    const evaluated = reduceDirectorPacketState(recordingDone, {
+      type: "EVALUATED",
+      result: {
+        transcript: "hello peppa",
+        similarity: 0.92,
+        passed: true,
+      },
+    });
+
+    assert.equal(evaluated.runtimeState.successfulRepeats, 1);
+  });
+
+  it("falls back when provider returns a packet for a different scene", async () => {
+    const providerPacket = getMockDirectorPacket(AI_LESSON, {
+      ...runtimeState,
+      currentSceneId: "thank-you",
+    });
+
+    const response = await handleLessonDirector(createRequest(), {}, async () => providerPacket);
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, expectedFallbackPacket());
+    assert.equal(payload.sceneId, "greeting");
+  });
+
+  it("falls back when provider returns an unknown next scene", async () => {
+    const providerPacket = {
+      ...getMockDirectorPacket(AI_LESSON, repeatedGreetingRuntimeState),
+      lessonControl: {
+        status: "advance_scene",
+        nextSceneId: "not-a-scene",
+        reason: "target_completed",
+      },
+    };
+
+    const response = await handleLessonDirector(
+      createRequest(createBody({ runtimeState: repeatedGreetingRuntimeState })),
+      {},
+      async () => providerPacket
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, expectedFallbackPacket(repeatedGreetingRuntimeState));
+    assert.equal(payload.lessonControl.nextSceneId, "cant-reach");
+  });
+
+  it("falls back when provider skips past the immediate next scene", async () => {
+    const providerPacket = {
+      ...getMockDirectorPacket(AI_LESSON, repeatedGreetingRuntimeState),
+      lessonControl: {
+        status: "advance_scene",
+        nextSceneId: "help-please",
+        reason: "target_completed",
+      },
+    };
+
+    const response = await handleLessonDirector(
+      createRequest(createBody({ runtimeState: repeatedGreetingRuntimeState })),
+      {},
+      async () => providerPacket
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, expectedFallbackPacket(repeatedGreetingRuntimeState));
+    assert.equal(payload.lessonControl.nextSceneId, "cant-reach");
+  });
+
+  it("falls back when provider finishes before the final scene", async () => {
+    const providerPacket = {
+      ...getMockDirectorPacket(AI_LESSON, repeatedGreetingRuntimeState),
+      lessonControl: {
+        status: "finish_lesson",
+        nextSceneId: null,
+        reason: "lesson_completed",
+      },
+    };
+
+    const response = await handleLessonDirector(
+      createRequest(createBody({ runtimeState: repeatedGreetingRuntimeState })),
+      {},
+      async () => providerPacket
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, expectedFallbackPacket(repeatedGreetingRuntimeState));
+    assert.equal(payload.lessonControl.status, "advance_scene");
+    assert.equal(payload.lessonControl.nextSceneId, "cant-reach");
   });
 
   it("returns a JSON 405 error for non-POST requests", async () => {
@@ -132,6 +276,24 @@ describe("lesson director Worker handler", () => {
 
     assert.equal(response.status, 400);
     assert.equal(payload.error, "invalid_json");
+  });
+
+  it("returns a JSON 413 error for oversized request bodies before calling provider", async () => {
+    let providerCalled = false;
+
+    const response = await handleLessonDirector(
+      createRequest(createBody({ padding: "x".repeat(70_000) })),
+      {},
+      async () => {
+        providerCalled = true;
+        return getMockDirectorPacket(AI_LESSON, runtimeState);
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 413);
+    assert.equal(payload.error, "payload_too_large");
+    assert.equal(providerCalled, false);
   });
 
   it("returns a JSON 400 error when lesson or runtimeState is missing", async () => {
