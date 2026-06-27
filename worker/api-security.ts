@@ -4,12 +4,17 @@ type RateLimitEntry = {
 };
 
 const evaluateRateLimitBuckets = new Map<string, RateLimitEntry>();
+const lessonDirectorRateLimitBuckets = new Map<string, RateLimitEntry>();
 const DEFAULT_EVALUATE_RATE_LIMIT_MAX = 8;
 const DEFAULT_EVALUATE_RATE_LIMIT_WINDOW_SECONDS = 60;
+const DEFAULT_LESSON_DIRECTOR_RATE_LIMIT_MAX = 6;
+const DEFAULT_LESSON_DIRECTOR_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 export interface RateLimitEnv {
   EVALUATE_RATE_LIMIT_MAX?: string;
   EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
+  LESSON_DIRECTOR_RATE_LIMIT_MAX?: string;
+  LESSON_DIRECTOR_RATE_LIMIT_WINDOW_SECONDS?: string;
 }
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
@@ -35,25 +40,20 @@ function getClientAddress(request: Request) {
   );
 }
 
-export function checkEvaluateSpeechRateLimit(
+function checkRateLimit(
+  bucket: Map<string, RateLimitEntry>,
   request: Request,
-  env: RateLimitEnv,
-  now = Date.now()
+  maxRequests: number,
+  windowSeconds: number,
+  message: string,
+  now: number
 ) {
-  const maxRequests = readPositiveInteger(
-    env.EVALUATE_RATE_LIMIT_MAX,
-    DEFAULT_EVALUATE_RATE_LIMIT_MAX
-  );
-  const windowSeconds = readPositiveInteger(
-    env.EVALUATE_RATE_LIMIT_WINDOW_SECONDS,
-    DEFAULT_EVALUATE_RATE_LIMIT_WINDOW_SECONDS
-  );
   const windowMs = windowSeconds * 1000;
   const key = getClientAddress(request);
-  const current = evaluateRateLimitBuckets.get(key);
+  const current = bucket.get(key);
 
   if (!current || current.resetAt <= now) {
-    evaluateRateLimitBuckets.set(key, {
+    bucket.set(key, {
       count: 1,
       resetAt: now + windowMs,
     });
@@ -65,7 +65,7 @@ export function checkEvaluateSpeechRateLimit(
     return jsonResponse(
       {
         error: "rate_limited",
-        message: "Too many speech evaluation requests. Please wait and try again.",
+        message,
       },
       {
         status: 429,
@@ -78,4 +78,43 @@ export function checkEvaluateSpeechRateLimit(
 
   current.count += 1;
   return null;
+}
+
+export function checkEvaluateSpeechRateLimit(
+  request: Request,
+  env: RateLimitEnv,
+  now = Date.now()
+) {
+  return checkRateLimit(
+    evaluateRateLimitBuckets,
+    request,
+    readPositiveInteger(env.EVALUATE_RATE_LIMIT_MAX, DEFAULT_EVALUATE_RATE_LIMIT_MAX),
+    readPositiveInteger(
+      env.EVALUATE_RATE_LIMIT_WINDOW_SECONDS,
+      DEFAULT_EVALUATE_RATE_LIMIT_WINDOW_SECONDS
+    ),
+    "Too many speech evaluation requests. Please wait and try again.",
+    now
+  );
+}
+
+export function checkLessonDirectorRateLimit(
+  request: Request,
+  env: RateLimitEnv,
+  now = Date.now()
+) {
+  return checkRateLimit(
+    lessonDirectorRateLimitBuckets,
+    request,
+    readPositiveInteger(
+      env.LESSON_DIRECTOR_RATE_LIMIT_MAX,
+      DEFAULT_LESSON_DIRECTOR_RATE_LIMIT_MAX
+    ),
+    readPositiveInteger(
+      env.LESSON_DIRECTOR_RATE_LIMIT_WINDOW_SECONDS,
+      DEFAULT_LESSON_DIRECTOR_RATE_LIMIT_WINDOW_SECONDS
+    ),
+    "Too many lesson director requests. Please wait and try again.",
+    now
+  );
 }

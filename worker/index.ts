@@ -1,16 +1,18 @@
-import { checkEvaluateSpeechRateLimit } from "./api-security";
-import { handleEvaluateSpeech } from "./groq";
+import {
+  checkEvaluateSpeechRateLimit,
+  checkLessonDirectorRateLimit,
+} from "./api-security";
+import { handleEvaluateSpeech, type ApiEnv } from "./groq";
+import { handleLessonDirector } from "./lesson-director";
+import type { RateLimitEnv } from "./api-security";
+import type { LessonDirectorProviderEnv } from "./lesson-director-provider";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env {
+interface Env extends ApiEnv, LessonDirectorProviderEnv, RateLimitEnv {
   ASSETS: AssetFetcher;
-  EVALUATE_RATE_LIMIT_MAX?: string;
-  EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
-  GROQ_API_KEY?: string;
-  GROQ_REQUEST_TIMEOUT_MS?: string;
 }
 
 const worker = {
@@ -22,6 +24,13 @@ const worker = {
       if (rateLimited) return rateLimited;
 
       return handleEvaluateSpeech(request, env);
+    }
+
+    if (url.pathname === "/api/lesson-director") {
+      const rateLimited = checkLessonDirectorRateLimit(request, env);
+      if (rateLimited) return rateLimited;
+
+      return handleLessonDirector(request, env);
     }
 
     return env.ASSETS.fetch(request);
