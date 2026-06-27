@@ -1,6 +1,5 @@
 import { resolveStaticDirectorSpeechSegment } from "../lib/director-speech-segments.js";
-
-type AudioPlaybackModule = typeof import("./audio-playback");
+import { isAbortError, playAudioLine } from "./audio-playback";
 
 type SpeechSegment = { lang: string; text: string };
 
@@ -22,24 +21,9 @@ type PlayDirectorTurnSpeechOptions = {
 };
 
 const dynamicAudioCache = new Map<string, string>();
-let audioPlaybackModulePromise: Promise<AudioPlaybackModule> | null = null;
 
-async function loadAudioPlaybackModule(): Promise<AudioPlaybackModule> {
-  try {
-    return await import("./audio-playback");
-  } catch {
-    return await import("./audio-playback" + ".ts");
-  }
-}
-
-async function getAudioPlaybackModule() {
-  audioPlaybackModulePromise ??= loadAudioPlaybackModule();
-  return audioPlaybackModulePromise;
-}
-
-async function isPlaybackAbortError(error: unknown) {
-  const { isAbortError } = await getAudioPlaybackModule();
-  return isAbortError(error);
+export function clearDirectorSpeechAudioCache() {
+  dynamicAudioCache.clear();
 }
 
 function createAbortError() {
@@ -86,6 +70,7 @@ async function defaultWaitForSilentSegment(
 
 async function requestDynamicSegmentAudio(
   segment: { speaker: string; lang: string; text: string },
+  expectedKey: string,
   signal?: AbortSignal
 ) {
   const response = await fetch("/api/director-tts", {
@@ -108,7 +93,11 @@ async function requestDynamicSegmentAudio(
     throw new Error("Director TTS response was invalid.");
   }
 
-  dynamicAudioCache.set(payload.key, payload.audioSrc);
+  if (payload.key !== expectedKey) {
+    throw new Error("Director TTS response key did not match the segment.");
+  }
+
+  dynamicAudioCache.set(expectedKey, payload.audioSrc);
   return payload.audioSrc;
 }
 
@@ -129,7 +118,11 @@ export async function playDirectorTurnSpeech({
         resolved.kind === "static"
           ? resolved.audioSrc
           : dynamicAudioCache.get(resolved.key) ??
-            (await requestDynamicSegmentAudio({ speaker, ...segment }, signal));
+            (await requestDynamicSegmentAudio(
+              { speaker, ...segment },
+              resolved.key,
+              signal
+            ));
 
       if (!audioSrc) {
         throw new Error("Director speech audio source is missing.");
@@ -144,7 +137,6 @@ export async function playDirectorTurnSpeech({
           text: segment.text,
         });
       } else {
-        const { playAudioLine } = await getAudioPlaybackModule();
         await playAudioLine({
           audioId: resolved.key,
           audioSrc,
@@ -154,12 +146,12 @@ export async function playDirectorTurnSpeech({
         });
       }
     } catch (error) {
-      if (signal?.aborted || (await isPlaybackAbortError(error))) return;
+      if (signal?.aborted || isAbortError(error)) return;
 
       try {
         await waitForSilentSegment(segment, signal);
       } catch (silentError) {
-        if (signal?.aborted || (await isPlaybackAbortError(silentError))) return;
+        if (signal?.aborted || isAbortError(silentError)) return;
         throw silentError;
       }
     }

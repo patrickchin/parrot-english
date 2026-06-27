@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { createDirectorSpeechSegmentKey } from "../lib/director-speech-segments.js";
-import { playDirectorTurnSpeech } from "../src/director-audio-playback.ts";
+import {
+  clearDirectorSpeechAudioCache,
+  playDirectorTurnSpeech,
+} from "../src/director-audio-playback.ts";
 
 const originalFetch = globalThis.fetch;
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  clearDirectorSpeechAudioCache();
 });
 
-function mockDirectorTts() {
+function mockDirectorTts({ keyForBody = createDirectorSpeechSegmentKey } = {}) {
   const requests = [];
 
   globalThis.fetch = async (url, init = {}) => {
@@ -23,7 +27,7 @@ function mockDirectorTts() {
     return new Response(
       JSON.stringify({
         audioSrc: `/generated/director-${requests.length}.mp3`,
-        key: createDirectorSpeechSegmentKey(body),
+        key: keyForBody(body),
       }),
       {
         headers: { "content-type": "application/json" },
@@ -36,6 +40,30 @@ function mockDirectorTts() {
 }
 
 describe("director audio playback", () => {
+  it("uses static audio without requesting generated audio", async () => {
+    globalThis.fetch = async () => {
+      throw new Error("Static audio should not request generated audio");
+    };
+    const played = [];
+
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech: [{ lang: "zh-CN", text: "轮到你了，跟着佩奇说。" }],
+      playResolvedSegment: async (segment) => {
+        played.push(segment);
+      },
+      waitForSilentSegment: async () => {},
+    });
+
+    assert.deepEqual(played, [
+      {
+        audioSrc: "/assets/audio/turn-hello.wav",
+        lang: "zh-CN",
+        text: "轮到你了，跟着佩奇说。",
+      },
+    ]);
+  });
+
   it("plays each speech segment in order", async () => {
     mockDirectorTts();
     const played = [];
@@ -88,6 +116,26 @@ describe("director audio playback", () => {
       },
     });
 
+    assert.equal(silentCount, 1);
+  });
+
+  it("falls back to silent timing when generated audio returns a mismatched key", async () => {
+    mockDirectorTts({ keyForBody: () => "wrong-key" });
+    let playedCount = 0;
+    let silentCount = 0;
+
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech: [{ lang: "zh-CN", text: "这句动态音频的 key 不匹配。" }],
+      playResolvedSegment: async () => {
+        playedCount += 1;
+      },
+      waitForSilentSegment: async () => {
+        silentCount += 1;
+      },
+    });
+
+    assert.equal(playedCount, 0);
     assert.equal(silentCount, 1);
   });
 
