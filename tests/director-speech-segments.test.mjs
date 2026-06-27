@@ -24,8 +24,48 @@ describe("director speech segments", () => {
       text: "Thank you!",
     });
 
-    assert.equal(result.kind, "static");
-    assert.equal(result.audioSrc, "/assets/audio/pig-thank-you.wav");
+    assert.deepEqual(result, {
+      kind: "static",
+      key: "peppa__en-US__fd18b61b",
+      audioId: "example-thank-you",
+      audioSrc: "/assets/audio/pig-thank-you.wav",
+      lang: "en-US",
+      text: "Thank you!",
+    });
+  });
+
+  it("does not match another speaker's static audio by text collision", () => {
+    const result = resolveStaticDirectorSpeechSegment({
+      speaker: "polly",
+      lang: "en-US",
+      text: "Thank you!",
+    });
+
+    assert.deepEqual(result, {
+      kind: "dynamic",
+      key: "polly__en-US__fd18b61b",
+      audioId: null,
+      audioSrc: null,
+      lang: "en-US",
+      text: "Thank you!",
+    });
+  });
+
+  it("matches duplicate Polly Chinese prompt text to the canonical saved asset", () => {
+    const result = resolveStaticDirectorSpeechSegment({
+      speaker: "polly",
+      lang: "zh-CN",
+      text: "轮到你了，跟着佩奇说。",
+    });
+
+    assert.deepEqual(result, {
+      kind: "static",
+      key: "polly__zh-CN__ea0dc272",
+      audioId: "turn-hello",
+      audioSrc: "/assets/audio/turn-hello.wav",
+      lang: "zh-CN",
+      text: "轮到你了，跟着佩奇说。",
+    });
   });
 
   it("marks unmatched dynamic text for generated audio", () => {
@@ -35,7 +75,13 @@ describe("director speech segments", () => {
       text: "太棒了！你回答了佩奇。",
     });
 
-    assert.equal(result.kind, "dynamic");
-    assert.equal(result.audioSrc, null);
+    assert.deepEqual(result, {
+      kind: "dynamic",
+      key: "polly__zh-CN__f9daafb6",
+      audioId: null,
+      audioSrc: null,
+      lang: "zh-CN",
+      text: "太棒了！你回答了佩奇。",
+    });
   });
 });

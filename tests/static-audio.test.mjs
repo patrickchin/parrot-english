@@ -31,6 +31,13 @@ describe("static audio assets", () => {
     }
   });
 
+  it("records the speaker for every static audio line", () => {
+    for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
+      const expectedSpeaker = id.startsWith("example-") ? "peppa" : "polly";
+      assert.equal(line.speaker, expectedSpeaker, `${id} speaker`);
+    }
+  });
+
   it("keeps energetic parrot prompts separate from visible Chinese text", () => {
     for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
       assert.ok(!line.text.includes("["), `${id} leaks TTS tags into lesson text`);
