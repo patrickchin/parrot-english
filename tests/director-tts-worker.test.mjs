@@ -453,6 +453,79 @@ describe("director TTS Worker route", () => {
     assert.equal(providerCallCount, 1);
   });
 
+  it("returns a JSON 413 error from oversized Content-Length before reading the body", async () => {
+    let providerCallCount = 0;
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "content-length": String(16 * 1024 + 1),
+        },
+      }),
+      {},
+      async () => {
+        providerCallCount += 1;
+        return new Uint8Array([1, 2, 3]);
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 413);
+    assert.equal(payload.error, "payload_too_large");
+    assert.equal(providerCallCount, 0);
+  });
+
+  it("returns a JSON 413 error as soon as streamed request bytes exceed the cap", async () => {
+    let providerCallCount = 0;
+    let pullCount = 0;
+    let cancelCount = 0;
+    const body = new globalThis.ReadableStream({
+      pull(controller) {
+        pullCount += 1;
+
+        if (pullCount === 1) {
+          controller.enqueue(new Uint8Array(8 * 1024));
+          return;
+        }
+
+        if (pullCount === 2) {
+          controller.enqueue(new Uint8Array(9 * 1024));
+          return;
+        }
+
+        throw new Error("stream read continued after size cap");
+      },
+      cancel() {
+        cancelCount += 1;
+      },
+    });
+
+    const response = await handleDirectorTts(
+      new Request("https://example.com/api/director-tts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        duplex: "half",
+      }),
+      {},
+      async () => {
+        providerCallCount += 1;
+        return new Uint8Array([1, 2, 3]);
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 413);
+    assert.equal(payload.error, "payload_too_large");
+    assert.equal(providerCallCount, 0);
+    assert.equal(pullCount, 2);
+    assert.equal(cancelCount, 1);
+  });
+
   it("returns a JSON 413 error for multibyte request bodies over the raw byte limit", async () => {
     const env = {
       DIRECTOR_TTS_RATE_LIMIT_MAX: "1",

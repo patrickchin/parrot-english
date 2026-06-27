@@ -45,6 +45,13 @@ class DirectorTtsConfigurationError extends Error {
   }
 }
 
+class DirectorTtsPayloadTooLargeError extends Error {
+  constructor() {
+    super("Director TTS request body is too large.");
+    this.name = "DirectorTtsPayloadTooLargeError";
+  }
+}
+
 function json(payload: unknown, init: ResponseInit = {}) {
   return Response.json(payload, {
     ...init,
@@ -77,6 +84,55 @@ function toDataUrl(bytes: Uint8Array) {
   }
 
   return `data:audio/mpeg;base64,${btoa(binary)}`;
+}
+
+async function readBoundedRequestBytes(request: Request) {
+  const contentLength = Number(request.headers.get("content-length"));
+  if (
+    Number.isFinite(contentLength) &&
+    contentLength > MAX_DIRECTOR_TTS_REQUEST_BODY_BYTES
+  ) {
+    throw new DirectorTtsPayloadTooLargeError();
+  }
+
+  if (!request.body) {
+    const fallbackBytes = new Uint8Array(await request.arrayBuffer());
+    if (fallbackBytes.byteLength > MAX_DIRECTOR_TTS_REQUEST_BODY_BYTES) {
+      throw new DirectorTtsPayloadTooLargeError();
+    }
+
+    return fallbackBytes;
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_DIRECTOR_TTS_REQUEST_BODY_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        throw new DirectorTtsPayloadTooLargeError();
+      }
+
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const requestBytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    requestBytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return requestBytes;
 }
 
 function readConfiguredValue(value: string | undefined, fallback: string) {
@@ -206,15 +262,15 @@ export async function handleDirectorTts(
     return json({ error: "method_not_allowed" }, { status: 405 });
   }
 
-  let requestBytes: ArrayBuffer;
+  let requestBytes: Uint8Array;
   try {
-    requestBytes = await request.arrayBuffer();
-  } catch {
-    return json({ error: "invalid_json" }, { status: 400 });
-  }
+    requestBytes = await readBoundedRequestBytes(request);
+  } catch (error) {
+    if (error instanceof DirectorTtsPayloadTooLargeError) {
+      return json({ error: "payload_too_large" }, { status: 413 });
+    }
 
-  if (requestBytes.byteLength > MAX_DIRECTOR_TTS_REQUEST_BODY_BYTES) {
-    return json({ error: "payload_too_large" }, { status: 413 });
+    return json({ error: "invalid_json" }, { status: 400 });
   }
 
   const requestText = new TextDecoder().decode(requestBytes);
