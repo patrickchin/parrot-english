@@ -42,3 +42,14 @@ EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 
 Set `ELEVENLABS_API_KEY` to regenerate saved lesson audio with ElevenLabs.
 Use `--only=<audio-id>` while testing to avoid spending credits on all lines.
+Do not use local or macOS system text-to-speech for Chinese lesson audio; use
+ElevenLabs for regenerated Chinese assets.
+
+Current generated voice direction:
+
+- Pig example audio: ElevenLabs `Summer - British, Confident & Posh`
+  (`Oqy85UMasXzUjUxF0ta5`) with `eleven_v3`.
+- Parrot coach/Chinese audio: ElevenLabs `Chen - Friendly Narration Mandarin`
+  (`4NQthjVhIGGVfL3Si000`) with `eleven_v3`.
+  Chinese parrot lines use separate `ttsText` performance tags for a brighter,
+  more energetic delivery while keeping the visible lesson text unchanged.

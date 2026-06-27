@@ -23,7 +23,7 @@ describe("lesson audio", () => {
     assert.deepEqual(sequence, [
       {
         audioId: "example-hello",
-        audioSrc: "/assets/audio/host-hello.wav",
+        audioSrc: "/assets/audio/pig-hello.wav",
         character: "peppa",
         engine: "asset",
         lang: "en-US",
@@ -79,7 +79,7 @@ describe("lesson audio", () => {
     assert.equal(sequence[0].text, "轮到你了，跟着佩奇说。");
   });
 
-  it("has Polly speak feedback before retrying or advancing", () => {
+  it("has Polly speak feedback before retrying or waiting for manual next", () => {
     const retryState = {
       ...createInitialLessonState(),
       phase: LessonPhase.Feedback,
@@ -107,9 +107,7 @@ describe("lesson audio", () => {
     assert.deepEqual(getLessonAudioCompletionEvent(retryState), {
       type: "RETRY",
     });
-    assert.deepEqual(getLessonAudioCompletionEvent(advanceState), {
-      type: "NEXT",
-    });
+    assert.equal(getLessonAudioCompletionEvent(advanceState), null);
   });
 
   it("stays silent while the child is speaking or the lesson is idle", () => {

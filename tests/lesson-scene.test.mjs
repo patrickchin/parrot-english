@@ -58,6 +58,7 @@ describe("lesson scene presentation", () => {
     assert.equal(scene.pollyBubble.text, "轮到你：Hi, Bella! How are you?");
     assert.equal(scene.pollyBubble.tone, "listen");
     assert.equal(scene.pollyBubble.isActive, true);
+    assert.equal(scene.statusText, "麦克风正在听，请开口说");
   });
 
   it("uses live feedback in Polly's bubble after evaluation", () => {

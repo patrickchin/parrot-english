@@ -21,4 +21,24 @@ describe("static audio assets", () => {
       assert.ok(existsSync(filePath), `${id} missing at ${line.src}`);
     }
   });
+
+  it("names pig example audio after the pig character", () => {
+    for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
+      assert.ok(!line.src.includes("/host-"), `${id} uses host-prefixed audio`);
+      if (id.startsWith("example-")) {
+        assert.match(line.src, /\/pig-[a-z-]+\.wav$/);
+      }
+    }
+  });
+
+  it("keeps energetic parrot prompts separate from visible Chinese text", () => {
+    for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
+      assert.ok(!line.text.includes("["), `${id} leaks TTS tags into lesson text`);
+      if (line.lang !== "zh-CN") continue;
+
+      assert.equal(line.voiceStyle, "energetic-character", `${id} voice style`);
+      assert.match(line.ttsText, /^\[[^\]]+\]/, `${id} missing TTS direction`);
+      assert.ok(line.ttsText.includes(line.text), `${id} TTS text omits lesson text`);
+    }
+  });
 });

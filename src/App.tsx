@@ -6,15 +6,20 @@ import {
   getLessonAudioSequence,
 } from "../lib/lesson-audio";
 import { LESSON_STEPS } from "../lib/lesson-data";
+import { getLessonProgressLabel } from "../lib/lesson-progress";
 import { getLessonScenePresentation } from "../lib/lesson-scene";
 import {
   LessonPhase,
   createInitialLessonState,
   reduceLessonState,
 } from "../lib/lesson-state";
+import {
+  MicrophoneAccessError,
+  RecordingUnsupportedError,
+  recordSpeechClip,
+} from "./speech-recorder";
 import { isAbortError, playSpokenLine, type SpokenLine } from "./tts-playback";
 
-const RECORDING_MS = 4200;
 const PROGRESS_DOT_COUNT = 12;
 
 type EvaluationResult = {
@@ -72,7 +77,6 @@ export function LessonPlayer() {
   );
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const currentStep = LESSON_STEPS[state.stepIndex];
   const scene = useMemo(
@@ -80,19 +84,10 @@ export function LessonPlayer() {
     [currentStep, state]
   );
 
-  const progressLabel = useMemo(() => {
-    if (state.phase === LessonPhase.Idle) return "按开始";
-    if (state.phase === LessonPhase.ExampleSpeaking) return "听佩奇说";
-    if (state.phase === LessonPhase.ParrotCoaching) return "多莉告诉你怎么说";
-    if (state.phase === LessonPhase.Listening) return "轮到你了，现在说";
-    if (state.phase === LessonPhase.Evaluating) return "正在检查发音";
-    if (state.phase === LessonPhase.Finished) return "今天练习完成";
-    return state.feedback || "准备下一句";
-  }, [state.feedback, state.phase]);
+  const progressLabel = useMemo(() => getLessonProgressLabel(state), [state]);
 
   useEffect(() => {
     return () => {
-      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       if (audioUrlRef.current) {
         URL.revokeObjectURL(audioUrlRef.current);
       }
@@ -164,93 +159,80 @@ export function LessonPlayer() {
   useEffect(() => {
     if (state.phase !== LessonPhase.Listening) return;
 
-    let recorder: MediaRecorder | null = null;
     let cancelled = false;
+    const controller = new AbortController();
 
     async function recordAndEvaluate() {
-      const stream = mediaStreamRef.current;
-      if (!stream) {
-        setError("麦克风还没有准备好，请重新点击开始练习。");
-        return;
-      }
-
-      if (!window.MediaRecorder) {
-        setError("这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。");
-        return;
-      }
-
       setError("");
-      const chunks: Blob[] = [];
-      recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      };
-
-      recorder.onstop = async () => {
+      try {
+        const audioBlob = await recordSpeechClip({ signal: controller.signal });
         if (cancelled) return;
+
         dispatch({ type: "RECORDING_DONE" });
 
-        try {
-          const audioBlob = new Blob(chunks, { type: "audio/webm" });
-          const formData = new FormData();
-          formData.set("targetText", currentStep.childTarget);
-          formData.set("audio", audioBlob, "child-response.webm");
+        const formData = new FormData();
+        formData.set("targetText", currentStep.childTarget);
+        formData.set("audio", audioBlob, "child-response.webm");
 
-          const response = await fetch("/api/evaluate-speech", {
-            method: "POST",
-            body: formData,
-          });
+        const response = await fetch("/api/evaluate-speech", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
 
-          if (!response.ok) {
-            throw new Error(await fetchJsonError(response));
-          }
-
-          const result = (await response.json()) as EvaluationResult;
-          dispatch({ type: "EVALUATED", ...result });
-        } catch (caughtError) {
-          const message =
-            caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
-          setError(
-            message.includes("GROQ_API_KEY")
-              ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
-              : `判断语音时出错：${message}`
-          );
+        if (!response.ok) {
+          throw new Error(await fetchJsonError(response));
         }
-      };
 
-      recorder.start();
-      window.setTimeout(() => recorder?.state === "recording" && recorder.stop(), RECORDING_MS);
+        const result = (await response.json()) as EvaluationResult;
+        if (!cancelled) dispatch({ type: "EVALUATED", ...result });
+      } catch (caughtError) {
+        if (cancelled || isAbortError(caughtError)) return;
+
+        if (caughtError instanceof RecordingUnsupportedError) {
+          setError("这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。");
+          return;
+        }
+
+        if (caughtError instanceof MicrophoneAccessError) {
+          setError("无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
+          return;
+        }
+
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
+        setError(
+          message.includes("GROQ_API_KEY")
+            ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
+            : `判断语音时出错：${message}`
+        );
+      }
     }
 
     void recordAndEvaluate();
 
     return () => {
       cancelled = true;
-      if (recorder?.state === "recording") recorder.stop();
+      controller.abort();
     };
   }, [currentStep.childTarget, state.phase]);
 
-  async function startLesson() {
+  function startLesson() {
     setError("");
-
-    try {
-      if (!mediaStreamRef.current) {
-        mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-          },
-        });
-      }
-      dispatch({ type: "START" });
-    } catch {
-      setError("无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
-    }
+    dispatch({ type: "START" });
   }
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
     setError("");
+    if (
+      type === "SCENE_NEXT" &&
+      state.phase === LessonPhase.Feedback &&
+      state.lastOutcome === "advance"
+    ) {
+      dispatch({ type: "NEXT" });
+      return;
+    }
+
     dispatch({ type });
   }
 
@@ -259,6 +241,14 @@ export function LessonPlayer() {
     state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished;
   const startButtonLabel =
     state.phase === LessonPhase.Finished ? "再来一次" : "开始";
+  const showMicPrompt =
+    state.phase === LessonPhase.Listening || state.phase === LessonPhase.Evaluating;
+  const isListening = state.phase === LessonPhase.Listening;
+  const micPanelTitle = isListening ? "轮到你说" : "我听到了";
+  const micPanelInstruction = isListening ? "麦克风正在听，请说：" : "正在检查发音";
+  const micPanelAriaLabel = isListening
+    ? `轮到你说。麦克风正在听。Target phrase: ${currentStep.childTarget}.`
+    : `我听到了。正在检查发音。Target phrase: ${currentStep.childTarget}.`;
 
   return (
     <main className="lesson-shell">
@@ -306,7 +296,7 @@ export function LessonPlayer() {
           {showStartButton ? (
             <button
               className="start-lesson-button"
-              onClick={() => void startLesson()}
+              onClick={startLesson}
               type="button"
             >
               {startButtonLabel}
@@ -315,6 +305,37 @@ export function LessonPlayer() {
             <span className="flow-status">{progressLabel}</span>
           )}
         </div>
+
+        {showMicPrompt ? (
+          <div
+            aria-label={micPanelAriaLabel}
+            aria-live="assertive"
+            className={`speak-now-panel ${
+              isListening ? "is-listening" : "is-evaluating"
+            }`}
+            role="status"
+          >
+            <span className="mic-symbol" aria-hidden="true">
+              <svg viewBox="0 0 64 64" focusable="false">
+                <path d="M32 8c-6.1 0-11 4.9-11 11v13c0 6.1 4.9 11 11 11s11-4.9 11-11V19c0-6.1-4.9-11-11-11Z" />
+                <path d="M15 30c0 9.4 7.6 17 17 17s17-7.6 17-17" />
+                <path d="M32 47v8" />
+                <path d="M23 56h18" />
+              </svg>
+            </span>
+            <span className="mic-panel-title">{micPanelTitle}</span>
+            <span className="mic-panel-instruction">{micPanelInstruction}</span>
+            <strong className="mic-target-phrase">{currentStep.childTarget}</strong>
+            <span className="mic-waveform" aria-hidden="true">
+              {Array.from({ length: 5 }, (_, index) => (
+                <span key={index} />
+              ))}
+            </span>
+            <span className="recording-progress" aria-hidden="true">
+              <span />
+            </span>
+          </div>
+        ) : null}
 
         <div
           className={`character-sprite peppa-character ${

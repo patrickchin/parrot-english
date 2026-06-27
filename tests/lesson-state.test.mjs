@@ -51,7 +51,7 @@ describe("lesson state", () => {
     assert.equal(retry.stepIndex, 2);
   });
 
-  it("advances after a passed phrase", () => {
+  it("waits on the completed phrase until Next is clicked", () => {
     const listening = {
       ...createInitialLessonState(),
       phase: LessonPhase.Evaluating,
@@ -67,8 +67,9 @@ describe("lesson state", () => {
 
     assert.equal(evaluated.phase, LessonPhase.Feedback);
     assert.equal(evaluated.lastOutcome, "advance");
-    assert.equal(evaluated.stepIndex, 2);
+    assert.equal(evaluated.stepIndex, 1);
     assert.equal(next.phase, LessonPhase.ExampleSpeaking);
+    assert.equal(next.stepIndex, 2);
   });
 
   it("navigates directly to the next scene", () => {

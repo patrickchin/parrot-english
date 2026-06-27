@@ -119,16 +119,30 @@ async function requestElevenLabsSpeech(apiKey, line) {
     },
     body: JSON.stringify({
       model_id: modelId,
-      text: line.text,
-      voice_settings: {
-        similarity_boost: 0.8,
-        speed: line.style === "character" ? 1.08 : 1,
-        stability: line.style === "character" ? 0.35 : 0.55,
-        style: line.style === "character" ? 0.45 : 0.15,
-        use_speaker_boost: true,
-      },
+      text: line.ttsText ?? line.text,
+      voice_settings: getElevenLabsVoiceSettings(line),
     }),
   });
+}
+
+function getElevenLabsVoiceSettings(line) {
+  if (line.voiceStyle === "energetic-character") {
+    return {
+      similarity_boost: 0.8,
+      speed: 1.1,
+      stability: 0.28,
+      style: 0.7,
+      use_speaker_boost: true,
+    };
+  }
+
+  return {
+    similarity_boost: 0.8,
+    speed: line.style === "character" ? 1.08 : 1,
+    stability: line.style === "character" ? 0.35 : 0.55,
+    style: line.style === "character" ? 0.45 : 0.15,
+    use_speaker_boost: true,
+  };
 }
 
 function getOutputPath(line) {

@@ -31,8 +31,11 @@ export default defineConfig([
     files: ["tests/**/*.mjs", "*.config.mjs"],
     languageOptions: {
       globals: {
+        AbortController: "readonly",
+        Blob: "readonly",
         console: "readonly",
         Request: "readonly",
+        URL: "readonly",
       },
     },
   },
