@@ -1,5 +1,5 @@
 import { resolveStaticDirectorSpeechSegment } from "../lib/director-speech-segments.js";
-import { isAbortError, playAudioLine } from "./audio-playback";
+import { isAbortError, playAudioLine } from "./audio-playback.ts";
 
 type SpeechSegment = { lang: string; text: string };
 
@@ -85,7 +85,11 @@ async function requestDynamicSegmentAudio(
     key?: unknown;
   };
 
-  if (typeof payload.audioSrc !== "string" || typeof payload.key !== "string") {
+  if (
+    typeof payload.audioSrc !== "string" ||
+    payload.audioSrc.length === 0 ||
+    typeof payload.key !== "string"
+  ) {
     throw new Error("Director TTS response was invalid.");
   }
 

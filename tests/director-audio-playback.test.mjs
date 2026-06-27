@@ -7,13 +7,22 @@ import {
 } from "../src/director-audio-playback.ts";
 
 const originalFetch = globalThis.fetch;
+const originalAudio = globalThis.Audio;
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  if (originalAudio === undefined) {
+    delete globalThis.Audio;
+  } else {
+    globalThis.Audio = originalAudio;
+  }
   clearDirectorSpeechAudioCache();
 });
 
-function mockDirectorTts({ keyForBody = createDirectorSpeechSegmentKey } = {}) {
+function mockDirectorTts({
+  audioSrcForRequest = (requestCount) => `/generated/director-${requestCount}.mp3`,
+  keyForBody = createDirectorSpeechSegmentKey,
+} = {}) {
   const requests = [];
 
   globalThis.fetch = async (url, init = {}) => {
@@ -26,7 +35,7 @@ function mockDirectorTts({ keyForBody = createDirectorSpeechSegmentKey } = {}) {
 
     return new globalThis.Response(
       JSON.stringify({
-        audioSrc: `/generated/director-${requests.length}.mp3`,
+        audioSrc: audioSrcForRequest(requests.length, body),
         key: keyForBody(body),
       }),
       {
@@ -62,6 +71,33 @@ describe("director audio playback", () => {
         text: "轮到你了，跟着佩奇说。",
       },
     ]);
+  });
+
+  it("plays static audio through the default audio playback path", async () => {
+    const playedUrls = [];
+
+    globalThis.Audio = class {
+      constructor(url) {
+        this.url = url;
+      }
+
+      play() {
+        playedUrls.push(this.url);
+        Promise.resolve().then(() => this.onended?.());
+        return Promise.resolve();
+      }
+    };
+    globalThis.fetch = async () => {
+      throw new Error("Static audio should not request generated audio");
+    };
+
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech: [{ lang: "zh-CN", text: "轮到你了，跟着佩奇说。" }],
+      waitForSilentSegment: async () => {},
+    });
+
+    assert.deepEqual(playedUrls, ["/assets/audio/turn-hello.wav"]);
   });
 
   it("plays each speech segment in order", async () => {
@@ -117,6 +153,41 @@ describe("director audio playback", () => {
     });
 
     assert.equal(silentCount, 1);
+  });
+
+  it("does not cache generated audio when the response audio source is empty", async () => {
+    const requests = mockDirectorTts({
+      audioSrcForRequest: (requestCount) =>
+        requestCount === 1 ? "" : "/generated/director-valid.mp3",
+    });
+    const speech = [{ lang: "zh-CN", text: "不要缓存空的动态音频。" }];
+    const playedSources = [];
+    let silentCount = 0;
+
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech,
+      playResolvedSegment: async (segment) => {
+        playedSources.push(segment.audioSrc);
+      },
+      waitForSilentSegment: async () => {
+        silentCount += 1;
+      },
+    });
+    await playDirectorTurnSpeech({
+      speaker: "polly",
+      speech,
+      playResolvedSegment: async (segment) => {
+        playedSources.push(segment.audioSrc);
+      },
+      waitForSilentSegment: async () => {
+        silentCount += 1;
+      },
+    });
+
+    assert.equal(requests.length, 2);
+    assert.equal(silentCount, 1);
+    assert.deepEqual(playedSources, ["/generated/director-valid.mp3"]);
   });
 
   it("falls back to silent timing when generated audio returns a mismatched key", async () => {
