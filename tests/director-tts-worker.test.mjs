@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { createDirectorSpeechSegmentKey } from "../lib/director-speech-segments.js";
 import { handleDirectorTts } from "../worker/director-tts.ts";
 
 function createRequest(body, init = {}) {
@@ -51,6 +52,7 @@ describe("director TTS Worker route", () => {
     const payload = await readJson(response);
 
     assert.equal(response.status, 200);
+    assert.equal(payload.audioSrc, "data:audio/mpeg;base64,AQID");
     assert.match(payload.audioSrc, /^data:audio\/mpeg;base64,/);
     assert.match(payload.key, /^polly__zh-CN__/);
     assert.deepEqual(calls, [
@@ -63,6 +65,35 @@ describe("director TTS Worker route", () => {
         env,
       ],
     ]);
+  });
+
+  it("preserves original text spacing for segment keys and provider input", async () => {
+    const originalText = "  新的动态句子。  ";
+    const calls = [];
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: originalText,
+      }),
+      {},
+      async (...args) => {
+        calls.push(args);
+        return new Uint8Array([1, 2, 3]);
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 200);
+    assert.equal(
+      payload.key,
+      createDirectorSpeechSegmentKey({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: originalText,
+      })
+    );
+    assert.equal(calls[0][0].text, originalText);
   });
 
   it("returns a JSON 405 error for non-POST requests", async () => {
@@ -164,17 +195,43 @@ describe("director TTS Worker route", () => {
     assert.equal(payload.error, "tts_generation_failed");
   });
 
+  it("returns a JSON 502 error when the provider returns empty audio", async () => {
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }),
+      {},
+      async () => new Uint8Array([])
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 502);
+    assert.equal(payload.error, "tts_generation_failed");
+  });
+
   it("routes /api/director-tts before static assets", () => {
     const workerIndex = readFileSync(
       new URL("../worker/index.ts", import.meta.url),
       "utf8"
     );
     const routeIndex = workerIndex.indexOf('url.pathname === "/api/director-tts"');
+    const limiterIndex = workerIndex.indexOf(
+      "checkDirectorTtsRateLimit(request, env)"
+    );
+    const handlerIndex = workerIndex.indexOf("handleDirectorTts(request, env)");
     const assetFallbackIndex = workerIndex.indexOf("return env.ASSETS.fetch(request)");
 
     assert.ok(routeIndex > -1);
+    assert.ok(limiterIndex > -1);
+    assert.ok(handlerIndex > -1);
     assert.ok(assetFallbackIndex > -1);
     assert.ok(routeIndex < assetFallbackIndex);
+    assert.ok(routeIndex < limiterIndex);
+    assert.ok(limiterIndex < handlerIndex);
+    assert.ok(handlerIndex < assetFallbackIndex);
+    assert.match(workerIndex, /checkDirectorTtsRateLimit\(request, env\)/);
     assert.match(workerIndex, /handleDirectorTts\(request, env\)/);
   });
 });

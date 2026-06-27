@@ -1,4 +1,5 @@
 import {
+  checkDirectorTtsRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLessonDirectorRateLimit,
 } from "./api-security";
@@ -39,6 +40,9 @@ const worker = {
     }
 
     if (url.pathname === "/api/director-tts") {
+      const rateLimited = checkDirectorTtsRateLimit(request, env);
+      if (rateLimited) return rateLimited;
+
       return handleDirectorTts(request, env);
     }
 

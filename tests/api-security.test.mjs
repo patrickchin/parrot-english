@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  checkDirectorTtsRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLessonDirectorRateLimit,
 } from "../worker/api-security.ts";
@@ -84,6 +85,75 @@ describe("API security", () => {
     assert.equal(checkLessonDirectorRateLimit(request(), env, 1000), null);
 
     const limited = checkLessonDirectorRateLimit(request(), env, 2500);
+    const payload = await limited.json();
+
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get("Retry-After"), "28");
+    assert.equal(payload.error, "rate_limited");
+  });
+
+  it("rate limits director TTS requests separately from other API buckets", async () => {
+    const env = {
+      EVALUATE_RATE_LIMIT_MAX: "1",
+      EVALUATE_RATE_LIMIT_WINDOW_SECONDS: "60",
+      LESSON_DIRECTOR_RATE_LIMIT_MAX: "1",
+      LESSON_DIRECTOR_RATE_LIMIT_WINDOW_SECONDS: "60",
+      DIRECTOR_TTS_RATE_LIMIT_MAX: "1",
+      DIRECTOR_TTS_RATE_LIMIT_WINDOW_MS: "60000",
+    };
+    const headers = {
+      "CF-Connecting-IP": "203.0.113.45",
+    };
+    const speechRequest = () =>
+      new Request("https://example.test/api/evaluate-speech", {
+        method: "POST",
+        headers,
+      });
+    const lessonDirectorRequest = () =>
+      new Request("https://example.test/api/lesson-director", {
+        method: "POST",
+        headers,
+      });
+    const directorTtsRequest = () =>
+      new Request("https://example.test/api/director-tts", {
+        method: "POST",
+        headers,
+      });
+
+    assert.equal(checkEvaluateSpeechRateLimit(speechRequest(), env, 0), null);
+    assert.equal(
+      checkLessonDirectorRateLimit(lessonDirectorRequest(), env, 1000),
+      null
+    );
+    assert.equal(checkDirectorTtsRateLimit(directorTtsRequest(), env, 2000), null);
+
+    const directorTtsLimited = checkDirectorTtsRateLimit(
+      directorTtsRequest(),
+      env,
+      3000
+    );
+
+    assert.equal(directorTtsLimited.status, 429);
+    assert.equal(directorTtsLimited.headers.get("Retry-After"), "59");
+  });
+
+  it("returns Retry-After when director TTS requests exceed the limit", async () => {
+    const env = {
+      DIRECTOR_TTS_RATE_LIMIT_MAX: "2",
+      DIRECTOR_TTS_RATE_LIMIT_WINDOW_MS: "30000",
+    };
+    const request = () =>
+      new Request("https://example.test/api/director-tts", {
+        method: "POST",
+        headers: {
+          "CF-Connecting-IP": "203.0.113.46",
+        },
+      });
+
+    assert.equal(checkDirectorTtsRateLimit(request(), env, 0), null);
+    assert.equal(checkDirectorTtsRateLimit(request(), env, 1000), null);
+
+    const limited = checkDirectorTtsRateLimit(request(), env, 2500);
     const payload = await limited.json();
 
     assert.equal(limited.status, 429);

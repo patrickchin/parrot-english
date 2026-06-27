@@ -82,7 +82,7 @@ function normalizeSegment(body: unknown): DirectorSpeechSegment | null {
   const segment = {
     speaker: body.speaker.trim(),
     lang: body.lang.trim(),
-    text: body.text.trim(),
+    text: body.text,
   };
 
   if (
@@ -145,7 +145,7 @@ export async function handleDirectorTts(
     );
   }
 
-  if (!(bytes instanceof Uint8Array)) {
+  if (!(bytes instanceof Uint8Array) || bytes.length === 0) {
     return json(
       {
         error: "tts_generation_failed",
