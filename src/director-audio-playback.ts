@@ -32,8 +32,16 @@ function createAbortError() {
   return error;
 }
 
-function getSilentDurationMs(text: string) {
+export function getDirectorSpeechSegmentSilentDurationMs(text: string) {
   return Math.max(600, Math.min(1800, text.length * 80));
+}
+
+export function getDirectorTurnSilentDurationMs(speech: SpeechSegment[]) {
+  return speech.reduce(
+    (total, segment) =>
+      total + getDirectorSpeechSegmentSilentDurationMs(segment.text),
+    0
+  );
 }
 
 async function defaultWaitForSilentSegment(
@@ -59,7 +67,7 @@ async function defaultWaitForSilentSegment(
     const timeoutId = window.setTimeout(() => {
       cleanup();
       resolve();
-    }, getSilentDurationMs(segment.text));
+    }, getDirectorSpeechSegmentSilentDurationMs(segment.text));
     signal?.addEventListener("abort", handleAbort, { once: true });
   });
 }

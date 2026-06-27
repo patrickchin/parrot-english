@@ -27,7 +27,7 @@ import {
   recordSpeechClip,
 } from "./speech-recorder";
 import { isAbortError, playAudioLine, type AssetAudioLine } from "./audio-playback";
-import { playDirectorTurnSpeech } from "./director-audio-playback";
+import { playDirectorTurnForUi } from "./director-turn-playback";
 import {
   evaluateSpeech,
   type EvaluationResult,
@@ -456,7 +456,6 @@ function DirectorLessonPlayer() {
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
   const [directorAudioBlob, setDirectorAudioBlob] = useState<Blob | null>(null);
-  const activeTurn = state.packet?.turns[state.activeTurnIndex] ?? null;
   const scene = useMemo(
     () => getDirectorPacketScenePresentation(AI_LESSON, state),
     [state]
@@ -513,53 +512,33 @@ function DirectorLessonPlayer() {
   }, [state.phase, state.runtimeState]);
 
   useEffect(() => {
-    if (state.phase !== DirectorPacketPhase.PlayingTurn || !activeTurn) return;
+    if (state.phase !== DirectorPacketPhase.PlayingTurn || !state.packet) return;
 
-    const turn = activeTurn;
+    const turn = state.packet.turns[state.activeTurnIndex];
+    if (!turn) return;
     let cancelled = false;
     const controller = new AbortController();
 
-    if (muted) {
-      const timeout = window.setTimeout(() => {
-        if (!cancelled) dispatch({ type: "TURN_DONE" });
-      }, Math.max(350, turn.speech.length * 250));
-
-      return () => {
-        cancelled = true;
-        window.clearTimeout(timeout);
-        controller.abort();
-      };
-    }
-
-    async function playDirectorTurn() {
-      setError("");
-      try {
-        await playDirectorTurnSpeech({
-          speaker: turn.speaker,
-          speech: turn.speech,
-          signal: controller.signal,
-        });
-
-        if (!cancelled) {
-          dispatch({ type: "TURN_DONE" });
-        }
-      } catch (caughtError) {
-        if (cancelled || isAbortError(caughtError)) return;
-
+    setError("");
+    void playDirectorTurnForUi({
+      muted,
+      speaker: turn.speaker,
+      speech: turn.speech,
+      signal: controller.signal,
+      isCancelled: () => cancelled,
+      onDone: () => dispatch({ type: "TURN_DONE" }),
+      onError: (caughtError) => {
         const message =
           caughtError instanceof Error ? caughtError.message : "Audio failed.";
         setError(`声音暂时不可用：${message}`);
-        dispatch({ type: "TURN_DONE" });
-      }
-    }
-
-    void playDirectorTurn();
+      },
+    });
 
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [activeTurn, muted, state.phase]);
+  }, [muted, state.activeTurnIndex, state.packet?.packetId, state.phase]);
 
   useEffect(() => {
     if (state.phase !== DirectorPacketPhase.Listening || !activePrompt) return;
