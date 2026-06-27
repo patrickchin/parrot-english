@@ -17,6 +17,29 @@ const packet = getMockDirectorPacket(AI_LESSON, {
   lastChildResult: null,
 });
 
+function advancePacketToListening(state, loadedPacket) {
+  let nextState = reduceDirectorPacketState(state, {
+    type: "PACKET_LOADED",
+    packet: loadedPacket,
+  });
+  for (let index = 0; index < loadedPacket.turns.length; index += 1) {
+    nextState = reduceDirectorPacketState(nextState, { type: "TURN_DONE" });
+  }
+  return nextState;
+}
+
+function evaluatePassedGreeting(state) {
+  const recordingDone = reduceDirectorPacketState(state, { type: "RECORDING_DONE" });
+  return reduceDirectorPacketState(recordingDone, {
+    type: "EVALUATED",
+    result: {
+      transcript: "hello peppa",
+      similarity: 0.92,
+      passed: true,
+    },
+  });
+}
+
 describe("director packet state", () => {
   it("starts idle on the first scene", () => {
     const state = createInitialDirectorPacketState("greeting");
@@ -71,7 +94,42 @@ describe("director packet state", () => {
     assert.equal(state.runtimeState.phase, "after_child_answer");
     assert.equal(state.runtimeState.lastChildResult.passed, true);
     assert.equal(state.runtimeState.lastChildResult.reason, "matched_target");
-    assert.equal(state.runtimeState.successfulRepeats, 1);
+    assert.equal(state.runtimeState.successfulRepeats, 0);
+  });
+
+  it("requests the required success repeat after the first passing answer", () => {
+    const listening = advancePacketToListening(
+      createInitialDirectorPacketState("greeting"),
+      packet
+    );
+
+    const evaluated = evaluatePassedGreeting(listening);
+    const nextPacket = getMockDirectorPacket(AI_LESSON, evaluated.runtimeState);
+
+    assert.equal(listening.phase, DirectorPacketPhase.Listening);
+    assert.equal(evaluated.runtimeState.successfulRepeats, 0);
+    assert.equal(nextPacket.lessonControl.reason, "success_repeat_required");
+    assert.equal(nextPacket.childPrompt.shouldListen, true);
+  });
+
+  it("advances after the success repeat prompt is answered successfully", () => {
+    const firstListening = advancePacketToListening(
+      createInitialDirectorPacketState("greeting"),
+      packet
+    );
+    const firstEvaluated = evaluatePassedGreeting(firstListening);
+    const repeatPacket = getMockDirectorPacket(AI_LESSON, firstEvaluated.runtimeState);
+    const repeatListening = advancePacketToListening(firstEvaluated, repeatPacket);
+
+    const repeatEvaluated = evaluatePassedGreeting(repeatListening);
+    const nextPacket = getMockDirectorPacket(AI_LESSON, repeatEvaluated.runtimeState);
+
+    assert.equal(repeatPacket.lessonControl.reason, "success_repeat_required");
+    assert.equal(repeatListening.phase, DirectorPacketPhase.Listening);
+    assert.equal(repeatEvaluated.runtimeState.successfulRepeats, 1);
+    assert.equal(nextPacket.lessonControl.status, "advance_scene");
+    assert.equal(nextPacket.lessonControl.nextSceneId, "cant-reach");
+    assert.equal(nextPacket.childPrompt.shouldListen, false);
   });
 
   it("marks blank child transcripts as no speech", () => {

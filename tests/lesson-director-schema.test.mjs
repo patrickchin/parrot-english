@@ -94,7 +94,12 @@ function createValidAdvancePacket() {
       polly: { pose: "talk" },
     },
     turns: [],
-    childPrompt: { shouldListen: false, targetText: "", displayText: "" },
+    childPrompt: {
+      shouldListen: false,
+      targetText: "",
+      displayText: "",
+      recordingSeconds: 0,
+    },
     lessonControl: {
       status: "advance_scene",
       nextSceneId: "greeting",
@@ -148,7 +153,12 @@ describe("lesson director schema", () => {
         polly: { pose: "talk" },
       },
       turns: [],
-      childPrompt: { shouldListen: false, targetText: "", displayText: "" },
+      childPrompt: {
+        shouldListen: false,
+        targetText: "",
+        displayText: "",
+        recordingSeconds: 0,
+      },
       lessonControl: {
         status: "advance_scene",
         nextSceneId: "greeting",
@@ -177,6 +187,7 @@ describe("lesson director schema", () => {
         shouldListen: true,
         targetText: "Hello, Peppa!",
         displayText: "轮到你说：Hello, Peppa!",
+        recordingSeconds: 4.2,
       },
       lessonControl: {
         status: "advance_scene",
@@ -192,6 +203,83 @@ describe("lesson director schema", () => {
       result.errors.join("\n"),
       /childPrompt.shouldListen requires prompt_child status/
     );
+  });
+
+  it("rejects missing or wrongly typed required director response fields", () => {
+    const cases = [
+      {
+        name: "missing childPrompt.displayText",
+        packet: {
+          ...createValidAdvancePacket(),
+          childPrompt: {
+            shouldListen: false,
+            targetText: "",
+            recordingSeconds: 0,
+          },
+        },
+        expectedError: /packet\.childPrompt\.displayText is required/,
+      },
+      {
+        name: "missing childPrompt.recordingSeconds",
+        packet: {
+          ...createValidAdvancePacket(),
+          childPrompt: {
+            shouldListen: false,
+            targetText: "",
+            displayText: "",
+          },
+        },
+        expectedError: /packet\.childPrompt\.recordingSeconds is required/,
+      },
+      {
+        name: "wrong childPrompt.recordingSeconds type",
+        packet: {
+          ...createValidAdvancePacket(),
+          childPrompt: {
+            shouldListen: false,
+            targetText: "",
+            displayText: "",
+            recordingSeconds: "4.2",
+          },
+        },
+        expectedError: /packet\.childPrompt\.recordingSeconds must be a number/,
+      },
+      {
+        name: "missing lessonControl.reason",
+        packet: {
+          ...createValidAdvancePacket(),
+          lessonControl: {
+            status: "advance_scene",
+            nextSceneId: "greeting",
+          },
+        },
+        expectedError: /packet\.lessonControl\.reason is required/,
+      },
+      {
+        name: "missing speech segment lang",
+        packet: {
+          ...createValidAdvancePacket(),
+          turns: [
+            {
+              turnId: "t1",
+              speaker: "polly",
+              purpose: "prompt_repeat",
+              visibleText: "轮到你说。",
+              speech: [{ text: "轮到你说。" }],
+              pose: "talk",
+            },
+          ],
+        },
+        expectedError: /turn t1 speech segment 0 lang is required/,
+      },
+    ];
+
+    for (const { name, packet, expectedError } of cases) {
+      const result = validateLessonDirectorResponse(packet, lesson);
+
+      assert.equal(result.ok, false, name);
+      assert.match(result.errors.join("\n"), expectedError, name);
+    }
   });
 
   it("returns validation errors for malformed packet shapes", () => {
@@ -297,6 +385,7 @@ describe("lesson director schema", () => {
         shouldListen: true,
         targetText: "Hello, Peppa!",
         displayText: "轮到你说：Hello, Peppa!",
+        recordingSeconds: 4.2,
       },
       lessonControl: {
         status: "prompt_child",
