@@ -216,4 +216,26 @@ describe("mock lesson director", () => {
     assert.equal(packet.childPrompt.shouldListen, false);
     assert.equal(validateLessonDirectorResponse(packet, AI_LESSON).ok, true);
   });
+
+  it("finishes without listening when the final scene reaches max retries", () => {
+    const packet = getMockDirectorPacket(AI_LESSON, {
+      currentSceneId: "thank-you",
+      phase: "after_child_answer",
+      attemptNumber: AI_LESSON.teachingPolicy.maxRetriesPerScene,
+      successfulRepeats: 0,
+      previousTurnSummary: [],
+      lastChildResult: {
+        targetText: "Thank you!",
+        transcript: "tank",
+        passed: false,
+        similarity: 0.2,
+        reason: "below_threshold",
+      },
+    });
+
+    assert.equal(packet.lessonControl.status, "finish_lesson");
+    assert.equal(packet.lessonControl.nextSceneId, null);
+    assert.equal(packet.childPrompt.shouldListen, false);
+    assert.equal(validateLessonDirectorResponse(packet, AI_LESSON).ok, true);
+  });
 });
