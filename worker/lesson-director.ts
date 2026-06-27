@@ -1,4 +1,7 @@
-import { validateLessonDirectorResponse } from "../lib/lesson-director-schema.js";
+import {
+  validateLessonDefinition,
+  validateLessonDirectorResponse,
+} from "../lib/lesson-director-schema.js";
 import { getMockDirectorPacket } from "../lib/mock-lesson-director.js";
 import type { LessonDirectorProviderEnv } from "./lesson-director-provider";
 
@@ -9,6 +12,10 @@ type LessonDirectorProviderCall = (
 ) => Promise<unknown>;
 type MockDirectorLesson = Parameters<typeof getMockDirectorPacket>[0];
 type MockDirectorRuntimeState = Parameters<typeof getMockDirectorPacket>[1];
+type LessonDirectorRequestBody = {
+  lesson: MockDirectorLesson;
+  runtimeState: MockDirectorRuntimeState;
+};
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
   return Response.json(payload, {
@@ -22,6 +29,40 @@ function jsonResponse(payload: unknown, init?: ResponseInit) {
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function lessonHasScene(lesson: unknown, sceneId: string) {
+  if (!isObject(lesson) || !Array.isArray(lesson.scenes)) {
+    return false;
+  }
+
+  return lesson.scenes.some((scene) => isObject(scene) && scene.id === sceneId);
+}
+
+function isLessonDirectorRequestBody(
+  requestBody: unknown
+): requestBody is LessonDirectorRequestBody {
+  if (
+    !isObject(requestBody) ||
+    requestBody.lesson == null ||
+    requestBody.runtimeState == null
+  ) {
+    return false;
+  }
+
+  if (!validateLessonDefinition(requestBody.lesson).ok) {
+    return false;
+  }
+
+  if (
+    !isObject(requestBody.runtimeState) ||
+    typeof requestBody.runtimeState.currentSceneId !== "string" ||
+    !lessonHasScene(requestBody.lesson, requestBody.runtimeState.currentSceneId)
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 async function loadProviderModule(): Promise<LessonDirectorProviderModule> {
@@ -40,11 +81,11 @@ async function callLessonDirectorProvider(
   return providerModule.callLessonDirectorProvider(requestBody, env);
 }
 
-function createDirectorFallbackPacket(lesson: unknown, runtimeState: unknown) {
-  const packet = getMockDirectorPacket(
-    lesson as MockDirectorLesson,
-    runtimeState as MockDirectorRuntimeState
-  );
+function createDirectorFallbackPacket(
+  lesson: MockDirectorLesson,
+  runtimeState: MockDirectorRuntimeState
+) {
+  const packet = getMockDirectorPacket(lesson, runtimeState);
   return {
     ...packet,
     lessonControl: {
@@ -54,7 +95,10 @@ function createDirectorFallbackPacket(lesson: unknown, runtimeState: unknown) {
   };
 }
 
-async function createFallbackResponse(lesson: unknown, runtimeState: unknown) {
+async function createFallbackResponse(
+  lesson: MockDirectorLesson,
+  runtimeState: MockDirectorRuntimeState
+) {
   const packet = createDirectorFallbackPacket(lesson, runtimeState);
   return jsonResponse(packet);
 }
@@ -75,11 +119,7 @@ export async function handleLessonDirector(
     return jsonResponse({ error: "invalid_json" }, { status: 400 });
   }
 
-  if (
-    !isObject(requestBody) ||
-    requestBody.lesson == null ||
-    requestBody.runtimeState == null
-  ) {
+  if (!isLessonDirectorRequestBody(requestBody)) {
     return jsonResponse({ error: "invalid_request" }, { status: 400 });
   }
 

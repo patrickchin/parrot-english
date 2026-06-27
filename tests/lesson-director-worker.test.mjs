@@ -153,6 +153,24 @@ describe("lesson director Worker handler", () => {
     }
   });
 
+  it("returns a JSON 400 error for unusable lesson and runtimeState shapes", async () => {
+    let providerCalled = false;
+
+    const response = await handleLessonDirector(
+      createRequest({ lesson: {}, runtimeState: {} }),
+      {},
+      async () => {
+        providerCalled = true;
+        throw new Error("provider should not be called");
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 400);
+    assert.equal(payload.error, "invalid_request");
+    assert.equal(providerCalled, false);
+  });
+
   it("posts prompts to the configured provider and returns an upstream packet", async () => {
     const providerPacket = getMockDirectorPacket(AI_LESSON, runtimeState);
     let providerRequest;
