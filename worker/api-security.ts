@@ -35,16 +35,6 @@ function getClientAddress(request: Request) {
   );
 }
 
-export function createTtsBlockedResponse() {
-  return jsonResponse(
-    {
-      error: "tts_endpoint_disabled",
-      message: "Runtime text-to-speech is disabled. Use saved audio assets.",
-    },
-    { status: 410 }
-  );
-}
-
 export function checkEvaluateSpeechRateLimit(
   request: Request,
   env: RateLimitEnv,

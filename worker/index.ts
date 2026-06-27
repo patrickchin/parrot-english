@@ -1,7 +1,4 @@
-import {
-  checkEvaluateSpeechRateLimit,
-  createTtsBlockedResponse,
-} from "./api-security";
+import { checkEvaluateSpeechRateLimit } from "./api-security";
 import { handleEvaluateSpeech } from "./groq";
 
 interface AssetFetcher {
@@ -13,15 +10,12 @@ interface Env {
   EVALUATE_RATE_LIMIT_MAX?: string;
   EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
   GROQ_API_KEY?: string;
+  GROQ_REQUEST_TIMEOUT_MS?: string;
 }
 
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-
-    if (url.pathname === "/api/tts") {
-      return createTtsBlockedResponse();
-    }
 
     if (url.pathname === "/api/evaluate-speech") {
       const rateLimited = checkEvaluateSpeechRateLimit(request, env);

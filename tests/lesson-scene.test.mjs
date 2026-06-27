@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { describe, it } from "node:test";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
-import { getLessonScenePresentation } from "../lib/lesson-scene.js";
+import {
+  LESSON_SCENE_ASSETS,
+  getLessonScenePresentation,
+} from "../lib/lesson-scene.js";
 
 const step = {
+  id: "hello",
   sceneTitleZh: "多莉打招呼",
   exampleLine: "Hi, Bella! How are you?",
   parrotPromptZh: "轮到你了，跟着佩奇说。",
@@ -77,5 +82,79 @@ describe("lesson scene presentation", () => {
     assert.equal(scene.pollyBubble.text, "Great try. Say it one more time.");
     assert.equal(scene.pollyBubble.tone, "feedback");
     assert.equal(scene.statusText, "我听到：this is parrot polly");
+  });
+
+  it("uses day, evening, and reward backgrounds across lesson states", () => {
+    const earlyScene = getLessonScenePresentation(
+      createInitialLessonState(),
+      step
+    );
+    const laterScene = getLessonScenePresentation(
+      { ...createInitialLessonState(), stepIndex: 4 },
+      { ...step, id: "thank-you" }
+    );
+    const finishedScene = getLessonScenePresentation(
+      { ...createInitialLessonState(), phase: LessonPhase.Finished },
+      step
+    );
+
+    assert.equal(earlyScene.backgroundAsset.id, "meadow_day");
+    assert.equal(laterScene.backgroundAsset.id, "meadow_evening");
+    assert.equal(finishedScene.backgroundAsset.id, "reward_bg");
+  });
+
+  it("uses optimized web-friendly scene image assets", () => {
+    const scenes = [
+      getLessonScenePresentation(createInitialLessonState(), step),
+      getLessonScenePresentation(
+        { ...createInitialLessonState(), phase: LessonPhase.ExampleSpeaking },
+        step
+      ),
+      getLessonScenePresentation(
+        { ...createInitialLessonState(), phase: LessonPhase.ParrotCoaching },
+        step
+      ),
+      getLessonScenePresentation(
+        { ...createInitialLessonState(), phase: LessonPhase.Listening },
+        step
+      ),
+      getLessonScenePresentation(
+        {
+          ...createInitialLessonState(),
+          phase: LessonPhase.Feedback,
+          lastOutcome: "advance",
+        },
+        step
+      ),
+      getLessonScenePresentation(
+        { ...createInitialLessonState(), phase: LessonPhase.Finished },
+        step
+      ),
+    ];
+
+    const registryAssets = [
+      ...Object.values(LESSON_SCENE_ASSETS.backgrounds),
+      ...Object.values(LESSON_SCENE_ASSETS.peppa),
+      ...Object.values(LESSON_SCENE_ASSETS.polly),
+    ];
+    const renderedAssets = scenes.flatMap((scene) => [
+      scene.backgroundAsset,
+      scene.peppaAsset,
+      scene.pollyAsset,
+    ]);
+
+    for (const asset of [...registryAssets, ...renderedAssets]) {
+      assert.match(asset.src, /^\/assets\/[a-z0-9/_-]+\.webp$/);
+      assert.ok(
+        asset.src.includes("/peppa/") ||
+          asset.src.includes("/dolly/") ||
+          asset.src.includes("/backgrounds/"),
+        `Expected ${asset.src} to live in a scene asset folder`
+      );
+      assert.ok(
+        existsSync(new URL(`../public${asset.src}`, import.meta.url)),
+        `Expected ${asset.src} to exist in public assets`
+      );
+    }
   });
 });

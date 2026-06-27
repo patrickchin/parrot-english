@@ -10,23 +10,17 @@ import { fileURLToPath } from "node:url";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
 const execFileAsync = promisify(execFile);
-const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-const GROQ_TTS_MODEL = "canopylabs/orpheus-v1-english";
-const GROQ_TTS_VOICE = "hannah";
 const ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1";
-const ELEVENLABS_DEFAULT_MODEL = "eleven_flash_v2_5";
+const ELEVENLABS_DEFAULT_MODEL = "eleven_v3";
 const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
-const ELEVENLABS_DEFAULT_VOICE_ID = "pNInz6obpgDQGcFmaJgB";
+const ELEVENLABS_PIG_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
+const ELEVENLABS_PARROT_VOICE_ID = "4NQthjVhIGGVfL3Si000";
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const audioDir = join(rootDir, "public", "assets", "audio");
 const args = process.argv.slice(2);
 const force = args.includes("--force");
-const provider =
-  readArg("provider") ??
-  (process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_LABS_API_KEY
-    ? "elevenlabs"
-    : "groq");
+const provider = readArg("provider") ?? "elevenlabs";
 const onlyIds = args
   .filter((arg) => arg.startsWith("--only="))
   .map((arg) => arg.replace("--only=", ""));
@@ -71,35 +65,8 @@ async function readLocalSecret(...keys) {
   return "";
 }
 
-function createGroqSpeechInput(line) {
-  if (line.style === "character") {
-    return `[cheerful] ${line.text}`;
-  }
-
-  return line.text;
-}
-
-async function requestGroqSpeech(apiKey, line) {
-  return globalThis.fetch(`${GROQ_BASE_URL}/audio/speech`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      input: createGroqSpeechInput(line),
-      model: GROQ_TTS_MODEL,
-      response_format: "wav",
-      voice: GROQ_TTS_VOICE,
-    }),
-  });
-}
-
 async function requestElevenLabsSpeech(apiKey, line) {
-  const voiceId =
-    process.env.ELEVENLABS_VOICE_ID ||
-    (await readLocalSecret("ELEVENLABS_VOICE_ID")) ||
-    ELEVENLABS_DEFAULT_VOICE_ID;
+  const voiceId = await getElevenLabsVoiceId(line);
   const modelId =
     process.env.ELEVENLABS_MODEL_ID ||
     (await readLocalSecret("ELEVENLABS_MODEL_ID")) ||
@@ -123,6 +90,15 @@ async function requestElevenLabsSpeech(apiKey, line) {
       voice_settings: getElevenLabsVoiceSettings(line),
     }),
   });
+}
+
+async function getElevenLabsVoiceId(line) {
+  const configuredVoice =
+    process.env.ELEVENLABS_VOICE_ID ||
+    (await readLocalSecret("ELEVENLABS_VOICE_ID"));
+
+  if (configuredVoice) return configuredVoice;
+  return line.lang === "zh-CN" ? ELEVENLABS_PARROT_VOICE_ID : ELEVENLABS_PIG_VOICE_ID;
 }
 
 function getElevenLabsVoiceSettings(line) {
@@ -153,7 +129,6 @@ function getOutputPath(line) {
 
 async function requestSpeech(apiKey, line) {
   if (provider === "elevenlabs") return requestElevenLabsSpeech(apiKey, line);
-  if (provider === "groq") return requestGroqSpeech(apiKey, line);
   throw new Error(`Unsupported TTS provider: ${provider}`);
 }
 
@@ -202,16 +177,13 @@ async function generateAudioFile(apiKey, id, line) {
   return "generated";
 }
 
-const apiKey =
-  provider === "elevenlabs"
-    ? await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY")
-    : await readLocalSecret("GROQ_API_KEY");
+if (provider !== "elevenlabs") {
+  throw new Error(`Unsupported TTS provider: ${provider}`);
+}
+
+const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
 if (!apiKey) {
-  throw new Error(
-    provider === "elevenlabs"
-      ? "ELEVENLABS_API_KEY is required in the environment or .dev.vars."
-      : "GROQ_API_KEY is required in the environment or .dev.vars."
-  );
+  throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
 }
 
 await mkdir(outputDir ?? audioDir, { recursive: true });

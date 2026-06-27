@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Mic, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import {
   getLessonAudioCompletionEvent,
   getLessonAudioSequence,
@@ -18,17 +19,13 @@ import {
   RecordingUnsupportedError,
   recordSpeechClip,
 } from "./speech-recorder";
-import { isAbortError, playSpokenLine, type SpokenLine } from "./tts-playback";
+import { isAbortError, playAudioLine, type AssetAudioLine } from "./audio-playback";
+import {
+  evaluateSpeech,
+  type EvaluationResult,
+} from "./evaluation-request";
 
-const PROGRESS_DOT_COUNT = 12;
-
-type EvaluationResult = {
-  transcript: string;
-  similarity: number;
-  passed: boolean;
-  feedbackText: string;
-  retryAllowed: boolean;
-};
+const EVALUATION_FAILED_FEEDBACK = "我没有听清楚，我们慢一点再试一次。";
 
 type LessonEvent =
   | { type: "START" }
@@ -36,6 +33,7 @@ type LessonEvent =
   | { type: "COACH_DONE" }
   | { type: "RECORDING_DONE" }
   | ({ type: "EVALUATED" } & EvaluationResult)
+  | { type: "EVALUATION_FAILED"; feedbackText: string }
   | { type: "NEXT" }
   | { type: "RETRY" }
   | { type: "RESET" }
@@ -56,15 +54,6 @@ function renderSpeechText(text: string) {
   );
 }
 
-async function fetchJsonError(response: Response) {
-  try {
-    const payload = (await response.json()) as { message?: string; error?: string };
-    return payload.message ?? payload.error ?? response.statusText;
-  } catch {
-    return response.statusText;
-  }
-}
-
 export function LessonPlayer() {
   const [state, dispatch] = useReducer(
     (
@@ -77,7 +66,6 @@ export function LessonPlayer() {
   );
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
-  const audioUrlRef = useRef<string | null>(null);
   const currentStep = LESSON_STEPS[state.stepIndex];
   const scene = useMemo(
     () => getLessonScenePresentation(state, currentStep),
@@ -87,18 +75,10 @@ export function LessonPlayer() {
   const progressLabel = useMemo(() => getLessonProgressLabel(state), [state]);
 
   useEffect(() => {
-    return () => {
-      if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     const audioSequence = getLessonAudioSequence(
       state,
       currentStep
-    ) as SpokenLine[];
+    ) as AssetAudioLine[];
     if (audioSequence.length === 0) return;
     const completionEvent = getLessonAudioCompletionEvent(state) as LessonEvent | null;
 
@@ -116,16 +96,11 @@ export function LessonPlayer() {
     async function playLessonSequence() {
       setError("");
       try {
-        let previousAudioUrl = audioUrlRef.current;
-
         for (const line of audioSequence) {
-          const result = await playSpokenLine({
+          await playAudioLine({
             ...line,
-            previousAudioUrl,
             signal: controller.signal,
           });
-          previousAudioUrl = result.audioUrl;
-          audioUrlRef.current = result.audioUrl;
         }
 
         if (!cancelled && completionEvent) {
@@ -134,7 +109,7 @@ export function LessonPlayer() {
       } catch (caughtError) {
         if (!cancelled && !isAbortError(caughtError)) {
           const message =
-            caughtError instanceof Error ? caughtError.message : "TTS failed.";
+            caughtError instanceof Error ? caughtError.message : "Audio failed.";
           setError(`声音暂时不可用：${message}`);
         }
       }
@@ -170,24 +145,15 @@ export function LessonPlayer() {
 
         dispatch({ type: "RECORDING_DONE" });
 
-        const formData = new FormData();
-        formData.set("targetText", currentStep.childTarget);
-        formData.set("audio", audioBlob, "child-response.webm");
-
-        const response = await fetch("/api/evaluate-speech", {
-          method: "POST",
-          body: formData,
+        const result = await evaluateSpeech({
+          audio: audioBlob,
           signal: controller.signal,
+          targetText: currentStep.childTarget,
         });
 
-        if (!response.ok) {
-          throw new Error(await fetchJsonError(response));
-        }
-
-        const result = (await response.json()) as EvaluationResult;
         if (!cancelled) dispatch({ type: "EVALUATED", ...result });
       } catch (caughtError) {
-        if (cancelled || isAbortError(caughtError)) return;
+        if (cancelled) return;
 
         if (caughtError instanceof RecordingUnsupportedError) {
           setError("这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。");
@@ -201,6 +167,10 @@ export function LessonPlayer() {
 
         const message =
           caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
+        dispatch({
+          type: "EVALUATION_FAILED",
+          feedbackText: EVALUATION_FAILED_FEEDBACK,
+        });
         setError(
           message.includes("GROQ_API_KEY")
             ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
@@ -269,7 +239,7 @@ export function LessonPlayer() {
             {currentStep.sceneTitleZh}（{currentStep.durationHintSeconds}秒）
           </span>
           <div className="scene-progress" aria-hidden="true">
-            {Array.from({ length: PROGRESS_DOT_COUNT }, (_, index) => (
+            {Array.from({ length: LESSON_STEPS.length }, (_, index) => (
               <span
                 className={index <= state.stepIndex ? "is-complete" : ""}
                 key={index}
@@ -285,11 +255,11 @@ export function LessonPlayer() {
           onClick={() => setMuted((value) => !value)}
           type="button"
         >
-          <img
-            src={muted ? "/assets/ui/volume-muted.svg" : "/assets/ui/volume-on.svg"}
-            alt=""
-            draggable="false"
-          />
+          {muted ? (
+            <VolumeX aria-hidden="true" strokeWidth={3.4} />
+          ) : (
+            <Volume2 aria-hidden="true" strokeWidth={3.4} />
+          )}
         </button>
 
         <div className={`lesson-flow-banner ${showStartButton ? "has-action" : ""}`}>
@@ -316,12 +286,7 @@ export function LessonPlayer() {
             role="status"
           >
             <span className="mic-symbol" aria-hidden="true">
-              <svg viewBox="0 0 64 64" focusable="false">
-                <path d="M32 8c-6.1 0-11 4.9-11 11v13c0 6.1 4.9 11 11 11s11-4.9 11-11V19c0-6.1-4.9-11-11-11Z" />
-                <path d="M15 30c0 9.4 7.6 17 17 17s17-7.6 17-17" />
-                <path d="M32 47v8" />
-                <path d="M23 56h18" />
-              </svg>
+              <Mic strokeWidth={3.6} />
             </span>
             <span className="mic-panel-title">{micPanelTitle}</span>
             <span className="mic-panel-instruction">{micPanelInstruction}</span>
@@ -387,7 +352,7 @@ export function LessonPlayer() {
           onClick={() => navigateScene("SCENE_PREVIOUS")}
           type="button"
         >
-          <img src="/assets/ui/scene-back.svg" alt="" draggable="false" />
+          <ChevronLeft aria-hidden="true" strokeWidth={4} />
         </button>
 
         <button
@@ -396,7 +361,7 @@ export function LessonPlayer() {
           onClick={() => navigateScene("SCENE_NEXT")}
           type="button"
         >
-          <img src="/assets/ui/scene-next.svg" alt="" draggable="false" />
+          <ChevronRight aria-hidden="true" strokeWidth={4} />
         </button>
 
         <div className="sr-only" aria-live="polite">

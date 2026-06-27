@@ -1,20 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  checkEvaluateSpeechRateLimit,
-  createTtsBlockedResponse,
-} from "../worker/api-security.ts";
+import { checkEvaluateSpeechRateLimit } from "../worker/api-security.ts";
 
 describe("API security", () => {
-  it("blocks the live TTS endpoint", async () => {
-    const response = createTtsBlockedResponse();
-    const payload = await response.json();
-
-    assert.equal(response.status, 410);
-    assert.equal(response.headers.get("Cache-Control"), "no-store");
-    assert.equal(payload.error, "tts_endpoint_disabled");
-  });
-
   it("rate limits speech evaluation by client address", async () => {
     const env = {
       EVALUATE_RATE_LIMIT_MAX: "2",

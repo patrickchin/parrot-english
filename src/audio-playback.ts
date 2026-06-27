@@ -5,43 +5,31 @@ type AudioLike = {
   play: () => Promise<void>;
 };
 
-export type TtsPlaybackEnvironment = {
+export type AudioPlaybackEnvironment = {
   createAudio: (url: string) => AudioLike;
-  revokeObjectURL: (url: string) => void;
 };
 
-export type TtsPlaybackResult = {
-  audioUrl: string | null;
-  source: "asset";
-};
-
-export type SpokenLine = {
+export type AssetAudioLine = {
   audioId?: string;
-  audioSrc?: string;
-  cache?: boolean;
-  character?: string;
-  engine?: "asset" | "worker";
+  audioSrc: string;
   lang?: string;
-  slow: boolean;
   style?: "character";
   text: string;
 };
 
-export type PlaySpokenLineOptions = SpokenLine & {
-  env?: TtsPlaybackEnvironment;
-  previousAudioUrl: string | null;
+export type PlayAudioLineOptions = AssetAudioLine & {
+  env?: AudioPlaybackEnvironment;
   signal?: AbortSignal;
 };
 
-function getBrowserEnvironment(): TtsPlaybackEnvironment {
+function getBrowserEnvironment(): AudioPlaybackEnvironment {
   return {
     createAudio: (url) => new Audio(url) as AudioLike,
-    revokeObjectURL: (url) => URL.revokeObjectURL(url),
   };
 }
 
 function createAbortError() {
-  const error = new Error("TTS playback was cancelled.");
+  const error = new Error("Audio playback was cancelled.");
   error.name = "AbortError";
   return error;
 }
@@ -51,7 +39,7 @@ export function isAbortError(error: unknown) {
 }
 
 async function playAudioUrl(
-  env: TtsPlaybackEnvironment,
+  env: AudioPlaybackEnvironment,
   audioUrl: string,
   signal?: AbortSignal
 ) {
@@ -92,32 +80,14 @@ async function playAudioUrl(
   });
 }
 
-async function playAssetLine({
+export async function playAudioLine({
   audioSrc,
-  env,
-  previousAudioUrl,
+  env = getBrowserEnvironment(),
   signal,
-}: PlaySpokenLineOptions & { env: TtsPlaybackEnvironment }) {
+}: PlayAudioLineOptions): Promise<void> {
   if (!audioSrc) {
     throw new Error("Static audio source is missing.");
   }
 
-  if (previousAudioUrl) {
-    env.revokeObjectURL(previousAudioUrl);
-  }
-
   await playAudioUrl(env, audioSrc, signal);
-}
-
-export async function playSpokenLine({
-  engine = "asset",
-  env = getBrowserEnvironment(),
-  ...line
-}: PlaySpokenLineOptions): Promise<TtsPlaybackResult> {
-  if (engine === "asset") {
-    await playAssetLine({ ...line, engine, env });
-    return { audioUrl: null, source: "asset" };
-  }
-
-  throw new Error("Static audio is required for live lesson playback.");
 }

@@ -30,8 +30,8 @@ browser requests use the same Worker REST API shape as deployment.
 ## Environment
 
 Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation calls. Keep real
-keys out of source control. Runtime TTS is disabled: `/api/tts` returns `410`,
-and the lesson plays saved audio files from `public/assets/audio`.
+keys out of source control. The lesson plays saved audio files from
+`public/assets/audio`; runtime text-to-speech is not part of the Worker API.
 
 Optional Worker rate-limit settings for `/api/evaluate-speech`:
 
@@ -53,3 +53,9 @@ Current generated voice direction:
   (`4NQthjVhIGGVfL3Si000`) with `eleven_v3`.
   Chinese parrot lines use separate `ttsText` performance tags for a brighter,
   more energetic delivery while keeping the visible lesson text unchanged.
+
+## Design Docs
+
+Project design and architecture notes live in [docs/README.md](docs/README.md).
+Start there for the product experience, technical architecture, audio pipeline,
+and Codex-session decision log.

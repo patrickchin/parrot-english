@@ -24,10 +24,7 @@ describe("lesson audio", () => {
       {
         audioId: "example-hello",
         audioSrc: "/assets/audio/pig-hello.wav",
-        character: "peppa",
-        engine: "asset",
         lang: "en-US",
-        slow: false,
         style: "character",
         text: "Hi, Bella! How are you?",
       },
@@ -50,9 +47,7 @@ describe("lesson audio", () => {
     assert.deepEqual(sequence.map((line) => line.text), [
       "轮到你了，跟着佩奇说。",
     ]);
-    assert.equal(sequence[0].engine, "asset");
     assert.equal(sequence[0].audioSrc, "/assets/audio/turn-hello.wav");
-    assert.equal(sequence[0].character, "polly");
     assert.equal(sequence[0].lang, "zh-CN");
     assert.deepEqual(
       getLessonAudioCompletionEvent({
@@ -63,7 +58,7 @@ describe("lesson audio", () => {
     );
   });
 
-  it("does not make Polly model the English target on retry", () => {
+  it("uses the saved Chinese prompt again on retry", () => {
     const sequence = getLessonAudioSequence(
       {
         ...createInitialLessonState(),
@@ -74,8 +69,6 @@ describe("lesson audio", () => {
     );
 
     assert.equal(sequence.length, 1);
-    assert.equal(sequence[0].character, "polly");
-    assert.equal(sequence[0].slow, false);
     assert.equal(sequence[0].text, "轮到你了，跟着佩奇说。");
   });
 
@@ -97,10 +90,7 @@ describe("lesson audio", () => {
       {
         audioId: "feedback-retry",
         audioSrc: "/assets/audio/feedback-retry.wav",
-        character: "polly",
-        engine: "asset",
         lang: "zh-CN",
-        slow: false,
         text: "差一点点，听多莉慢慢说，再试一次。",
       },
     ]);

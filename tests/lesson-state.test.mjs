@@ -51,6 +51,27 @@ describe("lesson state", () => {
     assert.equal(retry.stepIndex, 2);
   });
 
+  it("retries the current phrase after an evaluation request failure", () => {
+    const evaluating = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Evaluating,
+      stepIndex: 2,
+    };
+    const failed = reduce(evaluating, {
+      type: "EVALUATION_FAILED",
+      feedbackText: "我没有听清楚，我们慢一点再试一次。",
+    });
+    const retry = reduce(failed, { type: "RETRY" });
+
+    assert.equal(failed.phase, LessonPhase.Feedback);
+    assert.equal(failed.lastOutcome, "retry");
+    assert.equal(failed.retryCount, 1);
+    assert.equal(failed.feedback, "我没有听清楚，我们慢一点再试一次。");
+    assert.equal(failed.transcript, "");
+    assert.equal(retry.phase, LessonPhase.ExampleSpeaking);
+    assert.equal(retry.stepIndex, 2);
+  });
+
   it("waits on the completed phrase until Next is clicked", () => {
     const listening = {
       ...createInitialLessonState(),

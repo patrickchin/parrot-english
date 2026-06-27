@@ -33,9 +33,13 @@ export default defineConfig([
       globals: {
         AbortController: "readonly",
         Blob: "readonly",
+        clearTimeout: "readonly",
         console: "readonly",
+        File: "readonly",
+        FormData: "readonly",
         Request: "readonly",
         URL: "readonly",
+        setTimeout: "readonly",
       },
     },
   },
