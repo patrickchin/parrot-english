@@ -46,6 +46,15 @@ describe("director packet UI integration", () => {
     );
   });
 
+  it("can request director packets from the Worker route", () => {
+    const loadPacketSource = extractFunctionSource("loadDirectorPacket");
+
+    assert.match(appSource, /requestLessonDirectorPacket/);
+    assert.match(appSource, /VITE_PARROT_DIRECTOR_API/);
+    assert.match(loadPacketSource, /requestLessonDirectorPacket/);
+    assert.match(loadPacketSource, /signal: controller\.signal/);
+  });
+
   it("does not evaluate speech inside the director recording step", () => {
     const recordingSource = extractFunctionSource("recordDirectorPrompt");
     const evaluationSource = extractFunctionSource("evaluateDirectorPrompt");

@@ -31,11 +31,14 @@ import {
   evaluateSpeech,
   type EvaluationResult,
 } from "./evaluation-request";
+import { requestLessonDirectorPacket } from "./lesson-director-request";
 import { getMockDirectorPacket } from "../lib/mock-lesson-director";
 
 const EVALUATION_FAILED_FEEDBACK = "我没有听清楚，我们慢一点再试一次。";
 const USE_DIRECTOR_PACKET_FLOW =
   import.meta.env.VITE_PARROT_DIRECTOR_FLOW === "1";
+const USE_DIRECTOR_PACKET_API =
+  import.meta.env.VITE_PARROT_DIRECTOR_API === "1";
 const DIRECTOR_TURN_DELAY_MS = 900;
 
 type LessonEvent =
@@ -478,14 +481,21 @@ function DirectorLessonPlayer() {
     }
 
     let cancelled = false;
+    const controller = new AbortController();
 
     async function loadDirectorPacket() {
       setError("");
       try {
-        const packet = getMockDirectorPacket(AI_LESSON, state.runtimeState);
+        const packet = USE_DIRECTOR_PACKET_API
+          ? await requestLessonDirectorPacket({
+              lesson: AI_LESSON,
+              runtimeState: state.runtimeState,
+              signal: controller.signal,
+            })
+          : getMockDirectorPacket(AI_LESSON, state.runtimeState);
         if (!cancelled) dispatch({ type: "PACKET_LOADED", packet });
       } catch (caughtError) {
-        if (cancelled) return;
+        if (cancelled || isAbortError(caughtError)) return;
         const message =
           caughtError instanceof Error ? caughtError.message : "Packet failed.";
         setError(`导演包暂时不可用：${message}`);
@@ -497,6 +507,7 @@ function DirectorLessonPlayer() {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [state.phase, state.runtimeState]);
 
