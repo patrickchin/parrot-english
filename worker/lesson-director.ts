@@ -31,12 +31,32 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function lessonHasScene(lesson: unknown, sceneId: string) {
+function getLessonScene(lesson: unknown, sceneId: string) {
   if (!isObject(lesson) || !Array.isArray(lesson.scenes)) {
-    return false;
+    return undefined;
   }
 
-  return lesson.scenes.some((scene) => isObject(scene) && scene.id === sceneId);
+  return lesson.scenes.find((scene) => isObject(scene) && scene.id === sceneId);
+}
+
+function isSpeechSegment(value: unknown) {
+  return (
+    isObject(value) &&
+    typeof value.text === "string" &&
+    typeof value.lang === "string"
+  );
+}
+
+function isFallbackUsableScene(scene: unknown) {
+  return (
+    isObject(scene) &&
+    typeof scene.id === "string" &&
+    typeof scene.backgroundPreference === "string" &&
+    typeof scene.tutorCueZh === "string" &&
+    typeof scene.childTarget === "string" &&
+    isSpeechSegment(scene.sceneLine) &&
+    isSpeechSegment(scene.modelLine)
+  );
 }
 
 function isLessonDirectorRequestBody(
@@ -54,10 +74,16 @@ function isLessonDirectorRequestBody(
     return false;
   }
 
+  const currentScene =
+    isObject(requestBody.runtimeState) &&
+    typeof requestBody.runtimeState.currentSceneId === "string"
+      ? getLessonScene(requestBody.lesson, requestBody.runtimeState.currentSceneId)
+      : undefined;
+
   if (
     !isObject(requestBody.runtimeState) ||
     typeof requestBody.runtimeState.currentSceneId !== "string" ||
-    !lessonHasScene(requestBody.lesson, requestBody.runtimeState.currentSceneId)
+    !isFallbackUsableScene(currentScene)
   ) {
     return false;
   }

@@ -171,6 +171,37 @@ describe("lesson director Worker handler", () => {
     assert.equal(providerCalled, false);
   });
 
+  it("returns a JSON 400 error when the current scene cannot drive fallback", async () => {
+    let providerCalled = false;
+    const incompleteSceneBody = {
+      lesson: {
+        lessonId: "bad",
+        title: "Bad",
+        learner: {},
+        world: {},
+        characters: [],
+        availableAssets: {},
+        teachingPolicy: { successRequiresRepeat: true },
+        scenes: [{ id: "greeting", childTarget: "Hello!" }],
+      },
+      runtimeState: { currentSceneId: "greeting" },
+    };
+
+    const response = await handleLessonDirector(
+      createRequest(incompleteSceneBody),
+      {},
+      async () => {
+        providerCalled = true;
+        throw new Error("provider should not be called");
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 400);
+    assert.equal(payload.error, "invalid_request");
+    assert.equal(providerCalled, false);
+  });
+
   it("posts prompts to the configured provider and returns an upstream packet", async () => {
     const providerPacket = getMockDirectorPacket(AI_LESSON, runtimeState);
     let providerRequest;
