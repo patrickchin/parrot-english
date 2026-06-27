@@ -30,6 +30,7 @@ function mockElevenLabsFetch({ status = 200, bytes = new Uint8Array([4, 5, 6]) }
       url: String(url),
       method: init.method,
       headers: init.headers,
+      signal: init.signal,
       body: JSON.parse(String(init.body)),
     });
 
@@ -326,6 +327,101 @@ describe("director TTS Worker route", () => {
 
     assert.equal(response.status, 502);
     assert.equal(payload.error, "tts_generation_failed");
+  });
+
+  it("returns a JSON 502 error when the ElevenLabs provider times out", async () => {
+    let abortCount = 0;
+    globalThis.fetch = async (_url, init = {}) =>
+      new Promise((_resolve, reject) => {
+        init.signal.addEventListener("abort", () => {
+          abortCount += 1;
+          reject(new Error("aborted"));
+        });
+      });
+    const start = Date.now();
+
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "CF-Connecting-IP": "203.0.113.209",
+        },
+      }),
+      {
+        ELEVENLABS_API_KEY: "live-key",
+        ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+        ELEVENLABS_REQUEST_TIMEOUT_MS: "10",
+      }
+    );
+    const elapsedMs = Date.now() - start;
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 502);
+    assert.equal(payload.error, "tts_generation_failed");
+    assert.equal(abortCount, 1);
+    assert.ok(elapsedMs < 1000);
+  });
+
+  it("returns a JSON 503 error for non-MP3 ElevenLabs output formats before fetch", async () => {
+    let fetchCallCount = 0;
+    globalThis.fetch = async () => {
+      fetchCallCount += 1;
+      return new globalThis.Response(new Uint8Array([4, 5, 6]));
+    };
+
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "zh-CN",
+        text: "新的动态句子。",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "CF-Connecting-IP": "203.0.113.210",
+        },
+      }),
+      {
+        ELEVENLABS_API_KEY: "live-key",
+        ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+        ELEVENLABS_OUTPUT_FORMAT: "pcm_44100",
+      }
+    );
+    const payload = await readJson(response);
+
+    assert.equal(response.status, 503);
+    assert.equal(payload.error, "tts_provider_unconfigured");
+    assert.equal(fetchCallCount, 0);
+  });
+
+  it("sends configured MP3 ElevenLabs output formats and returns audio/mpeg", async () => {
+    const calls = mockElevenLabsFetch();
+    const response = await handleDirectorTts(
+      createRequest({
+        speaker: "polly",
+        lang: "en-US",
+        text: "Try it again.",
+      }, {
+        headers: {
+          "content-type": "application/json",
+          "CF-Connecting-IP": "203.0.113.211",
+        },
+      }),
+      {
+        ELEVENLABS_API_KEY: "live-key",
+        ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+        ELEVENLABS_OUTPUT_FORMAT: "mp3_22050_32",
+      }
+    );
+    const payload = await readJson(response);
+    const url = new URL(calls[0].url);
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.audioSrc, "data:audio/mpeg;base64,BAUG");
+    assert.equal(url.searchParams.get("output_format"), "mp3_22050_32");
   });
 
   it("rate limits valid generation requests before calling the provider again", async () => {

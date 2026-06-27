@@ -10,6 +10,7 @@ export type DirectorTtsEnv = RateLimitEnv & {
   ELEVENLABS_BASE_URL?: string;
   ELEVENLABS_MODEL_ID?: string;
   ELEVENLABS_OUTPUT_FORMAT?: string;
+  ELEVENLABS_REQUEST_TIMEOUT_MS?: string;
   ELEVENLABS_PIG_VOICE_ID?: string;
   ELEVENLABS_PARROT_VOICE_ID?: string;
 };
@@ -35,6 +36,8 @@ const MAX_DIRECTOR_TTS_TEXT_CHARS = 500;
 const ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1";
 const ELEVENLABS_DEFAULT_MODEL = "eleven_v3";
 const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
+const ELEVENLABS_DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
+const ELEVENLABS_MAX_REQUEST_TIMEOUT_MS = 60_000;
 const ELEVENLABS_PIG_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
 const ELEVENLABS_PARROT_VOICE_ID = "4NQthjVhIGGVfL3Si000";
 
@@ -139,6 +142,15 @@ function readConfiguredValue(value: string | undefined, fallback: string) {
   return value?.trim() || fallback;
 }
 
+function readConfiguredTimeoutMs(value: string | undefined) {
+  const timeoutMs = Number(value);
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return ELEVENLABS_DEFAULT_REQUEST_TIMEOUT_MS;
+  }
+
+  return Math.min(Math.trunc(timeoutMs), ELEVENLABS_MAX_REQUEST_TIMEOUT_MS);
+}
+
 function requireElevenLabsApiKey(env: DirectorTtsEnv) {
   const apiKey = env.ELEVENLABS_API_KEY?.trim() || env.ELEVEN_LABS_API_KEY?.trim();
   if (!apiKey) {
@@ -159,6 +171,20 @@ function getElevenLabsVoiceId(segment: DirectorSpeechSegment, env: DirectorTtsEn
   }
 
   return readConfiguredValue(env.ELEVENLABS_PIG_VOICE_ID, ELEVENLABS_PIG_VOICE_ID);
+}
+
+function getElevenLabsOutputFormat(env: DirectorTtsEnv) {
+  const outputFormat = readConfiguredValue(
+    env.ELEVENLABS_OUTPUT_FORMAT,
+    ELEVENLABS_DEFAULT_OUTPUT_FORMAT
+  );
+  if (!outputFormat.startsWith("mp3_")) {
+    throw new DirectorTtsConfigurationError(
+      "Director TTS provider must use an MP3 output format."
+    );
+  }
+
+  return outputFormat;
 }
 
 function getElevenLabsProviderText(segment: DirectorSpeechSegment) {
@@ -196,35 +222,44 @@ async function defaultGenerateAudio(
   const apiKey = requireElevenLabsApiKey(env);
   const baseUrl = readConfiguredValue(env.ELEVENLABS_BASE_URL, ELEVENLABS_BASE_URL);
   const voiceId = getElevenLabsVoiceId(segment, env);
+  const outputFormat = getElevenLabsOutputFormat(env);
+  const timeoutMs = readConfiguredTimeoutMs(env.ELEVENLABS_REQUEST_TIMEOUT_MS);
   const url = new URL(
     `${baseUrl.replace(/\/$/, "")}/text-to-speech/${voiceId}`
   );
-  url.searchParams.set(
-    "output_format",
-    readConfiguredValue(
-      env.ELEVENLABS_OUTPUT_FORMAT,
-      ELEVENLABS_DEFAULT_OUTPUT_FORMAT
-    )
-  );
+  url.searchParams.set("output_format", outputFormat);
 
-  const upstream = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "xi-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      model_id: readConfiguredValue(env.ELEVENLABS_MODEL_ID, ELEVENLABS_DEFAULT_MODEL),
-      text: getElevenLabsProviderText(segment),
-      voice_settings: getElevenLabsVoiceSettings(segment),
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
 
-  if (!upstream.ok) {
-    throw new Error(`Director TTS provider failed: ${upstream.status}`);
+  try {
+    const upstream = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "xi-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        model_id: readConfiguredValue(
+          env.ELEVENLABS_MODEL_ID,
+          ELEVENLABS_DEFAULT_MODEL
+        ),
+        text: getElevenLabsProviderText(segment),
+        voice_settings: getElevenLabsVoiceSettings(segment),
+      }),
+      signal: controller.signal,
+    });
+
+    if (!upstream.ok) {
+      throw new Error(`Director TTS provider failed: ${upstream.status}`);
+    }
+
+    return new Uint8Array(await upstream.arrayBuffer());
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return new Uint8Array(await upstream.arrayBuffer());
 }
 
 function normalizeSegment(body: unknown): DirectorSpeechSegment | null {
