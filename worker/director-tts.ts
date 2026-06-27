@@ -1,6 +1,10 @@
 import { createDirectorSpeechSegmentKey } from "../lib/director-speech-segments.js";
+import {
+  checkDirectorTtsRateLimit,
+  type RateLimitEnv,
+} from "./api-security.ts";
 
-export type DirectorTtsEnv = {
+export type DirectorTtsEnv = RateLimitEnv & {
   ELEVENLABS_API_KEY?: string;
   ELEVENLABS_MODEL_ID?: string;
 };
@@ -119,6 +123,9 @@ export async function handleDirectorTts(
   if (hasMixedChineseAndEnglish(segment.text)) {
     return json({ error: "mixed_language_segment" }, { status: 400 });
   }
+
+  const rateLimited = checkDirectorTtsRateLimit(request, env);
+  if (rateLimited) return rateLimited;
 
   const key = createDirectorSpeechSegmentKey(segment);
 
