@@ -250,6 +250,29 @@ describe("lesson director schema", () => {
     }
   });
 
+  it("returns validation errors for malformed lesson asset shapes", () => {
+    const malformedLesson = {
+      ...lesson,
+      availableAssets: {
+        ...lesson.availableAssets,
+        backgrounds: {},
+      },
+    };
+    let result;
+
+    assert.doesNotThrow(() => {
+      result = validateLessonDirectorResponse(
+        createValidAdvancePacket(),
+        malformedLesson
+      );
+    });
+    assert.equal(result.ok, false);
+    assert.match(
+      result.errors.join("\n"),
+      /lesson\.availableAssets\.backgrounds must be an array/
+    );
+  });
+
   it("rejects mixed-language speech in one segment", () => {
     const packet = {
       schemaVersion: "lesson-director.response.v1",
