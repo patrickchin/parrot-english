@@ -25,6 +25,11 @@ type SpeechRecorderOptions = {
   signal?: AbortSignal;
 };
 
+type MicrophoneAccessOptions = Pick<
+  SpeechRecorderOptions,
+  "MediaRecorder" | "getUserMedia" | "signal"
+>;
+
 export class RecordingUnsupportedError extends Error {
   constructor() {
     super("This browser does not support audio recording.");
@@ -48,6 +53,33 @@ function createAbortError() {
 
 function stopMediaStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop());
+}
+
+export async function requestMicrophoneAccess({
+  MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
+  getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(constraints),
+  signal,
+}: MicrophoneAccessOptions = {}) {
+  if (!MediaRecorderClass) {
+    throw new RecordingUnsupportedError();
+  }
+
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+
+  let stream: MediaStream;
+  try {
+    stream = await getUserMedia(MICROPHONE_CONSTRAINTS);
+  } catch (error) {
+    throw new MicrophoneAccessError(error);
+  }
+
+  stopMediaStream(stream);
+
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
 }
 
 export async function recordSpeechClip({
