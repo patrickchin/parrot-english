@@ -307,6 +307,12 @@ button:disabled {
   transform: translateY(-2px);
 }
 
+.start-lesson-button:disabled {
+  cursor: wait;
+  filter: saturate(0.9);
+  transform: none;
+}
+
 .flow-status {
   display: inline-grid;
   min-height: 62px;

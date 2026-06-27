@@ -17,6 +17,7 @@ import {
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
+  requestMicrophoneAccess,
   recordSpeechClip,
 } from "./speech-recorder";
 import { isAbortError, playAudioLine, type AssetAudioLine } from "./audio-playback";
@@ -26,6 +27,10 @@ import {
 } from "./evaluation-request";
 
 const EVALUATION_FAILED_FEEDBACK = "我没有听清楚，我们慢一点再试一次。";
+const RECORDING_UNSUPPORTED_MESSAGE =
+  "这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。";
+const MICROPHONE_ACCESS_MESSAGE =
+  "无法打开麦克风。请允许浏览器使用麦克风后再试一次。";
 const SPEECH_NAME_CLASSES = new Map([
   ["Bella", "speech-name-child"],
   ["Peppa", "speech-name-peppa"],
@@ -63,6 +68,18 @@ function renderSpeechText(text: string) {
   });
 }
 
+function getMicrophoneSetupErrorMessage(caughtError: unknown) {
+  if (caughtError instanceof RecordingUnsupportedError) {
+    return RECORDING_UNSUPPORTED_MESSAGE;
+  }
+
+  if (caughtError instanceof MicrophoneAccessError) {
+    return MICROPHONE_ACCESS_MESSAGE;
+  }
+
+  return "";
+}
+
 export function LessonPlayer() {
   const [state, dispatch] = useReducer(
     (
@@ -74,6 +91,7 @@ export function LessonPlayer() {
     createInitialLessonState
   );
   const [error, setError] = useState("");
+  const [isPreparingMicrophone, setIsPreparingMicrophone] = useState(false);
   const [muted, setMuted] = useState(false);
   const currentStep = LESSON_STEPS[state.stepIndex];
   const scene = useMemo(
@@ -165,12 +183,12 @@ export function LessonPlayer() {
         if (cancelled) return;
 
         if (caughtError instanceof RecordingUnsupportedError) {
-          setError("这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。");
+          setError(RECORDING_UNSUPPORTED_MESSAGE);
           return;
         }
 
         if (caughtError instanceof MicrophoneAccessError) {
-          setError("无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
+          setError(MICROPHONE_ACCESS_MESSAGE);
           return;
         }
 
@@ -196,9 +214,23 @@ export function LessonPlayer() {
     };
   }, [currentStep.childTarget, state.phase]);
 
-  function startLesson() {
+  async function startLesson() {
+    if (isPreparingMicrophone) return;
+
     setError("");
-    dispatch({ type: "START" });
+    setIsPreparingMicrophone(true);
+
+    try {
+      await requestMicrophoneAccess();
+      dispatch({ type: "START" });
+    } catch (caughtError) {
+      const setupMessage = getMicrophoneSetupErrorMessage(caughtError);
+      const message =
+        caughtError instanceof Error ? caughtError.message : "Microphone failed.";
+      setError(setupMessage || `无法准备麦克风：${message}`);
+    } finally {
+      setIsPreparingMicrophone(false);
+    }
   }
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
@@ -219,7 +251,11 @@ export function LessonPlayer() {
   const showStartButton =
     state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished;
   const startButtonLabel =
-    state.phase === LessonPhase.Finished ? "再来一次" : "开始";
+    isPreparingMicrophone
+      ? "准备麦克风"
+      : state.phase === LessonPhase.Finished
+        ? "再来一次"
+        : "开始";
   const showMicPrompt =
     state.phase === LessonPhase.Listening || state.phase === LessonPhase.Evaluating;
   const isListening = state.phase === LessonPhase.Listening;
@@ -275,6 +311,7 @@ export function LessonPlayer() {
           {showStartButton ? (
             <button
               className="start-lesson-button"
+              disabled={isPreparingMicrophone}
               onClick={startLesson}
               type="button"
             >
