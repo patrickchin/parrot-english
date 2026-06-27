@@ -27,6 +27,36 @@ function extractFunctionSource(name) {
   assert.fail(`Could not parse function ${name}`);
 }
 
+function extractUseEffectSource(functionSource, containingText) {
+  const markerIndex = functionSource.indexOf(containingText);
+  assert.notEqual(
+    markerIndex,
+    -1,
+    `Expected useEffect marker ${containingText}`
+  );
+
+  const start = functionSource.lastIndexOf("useEffect(() => {", markerIndex);
+  assert.notEqual(start, -1, `Expected useEffect for ${containingText}`);
+
+  let depth = 0;
+  let sawCall = false;
+  for (let index = start; index < functionSource.length; index += 1) {
+    const char = functionSource[index];
+    if (char === "(") {
+      depth += 1;
+      sawCall = true;
+    }
+    if (char === ")") {
+      depth -= 1;
+      if (sawCall && depth === 0) {
+        return functionSource.slice(start, index + 2);
+      }
+    }
+  }
+
+  assert.fail(`Could not parse useEffect for ${containingText}`);
+}
+
 describe("director packet UI integration", () => {
   it("imports the director packet modules", () => {
     assert.match(appSource, /ai-lesson-data/);
@@ -53,6 +83,45 @@ describe("director packet UI integration", () => {
     assert.match(appSource, /VITE_PARROT_DIRECTOR_API/);
     assert.match(loadPacketSource, /requestLessonDirectorPacket/);
     assert.match(loadPacketSource, /signal: controller\.signal/);
+  });
+
+  it("plays active director turns through the director speech helper", () => {
+    const directorSource = extractFunctionSource("DirectorLessonPlayer");
+    const playingTurnEffectSource = extractUseEffectSource(
+      directorSource,
+      "state.phase !== DirectorPacketPhase.PlayingTurn"
+    );
+
+    assert.match(appSource, /director-audio-playback/);
+    assert.match(appSource, /playDirectorTurnSpeech/);
+    assert.doesNotMatch(appSource, /DIRECTOR_TURN_DELAY_MS/);
+    assert.match(
+      directorSource,
+      /const activeTurn = state\.packet\?\.turns\[state\.activeTurnIndex\] \?\? null;/
+    );
+    assert.match(
+      playingTurnEffectSource,
+      /state\.phase !== DirectorPacketPhase\.PlayingTurn \|\| !activeTurn/
+    );
+    assert.match(playingTurnEffectSource, /const turn = activeTurn;/);
+    assert.match(playingTurnEffectSource, /let cancelled = false;/);
+    assert.match(
+      playingTurnEffectSource,
+      /const controller = new AbortController\(\);/
+    );
+    assert.match(
+      playingTurnEffectSource,
+      /await playDirectorTurnSpeech\(\{\s*speaker: turn\.speaker,\s*speech: turn\.speech,\s*signal: controller\.signal,\s*\}\);/s
+    );
+    assert.match(
+      playingTurnEffectSource,
+      /if \(!cancelled\) \{\s*dispatch\(\{ type: "TURN_DONE" \}\);\s*\}/s
+    );
+    assert.match(
+      playingTurnEffectSource,
+      /return \(\) => \{\s*cancelled = true;\s*controller\.abort\(\);\s*\};/s
+    );
+    assert.doesNotMatch(playingTurnEffectSource, /DIRECTOR_TURN_DELAY_MS/);
   });
 
   it("does not evaluate speech inside the director recording step", () => {

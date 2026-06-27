@@ -27,6 +27,7 @@ import {
   recordSpeechClip,
 } from "./speech-recorder";
 import { isAbortError, playAudioLine, type AssetAudioLine } from "./audio-playback";
+import { playDirectorTurnSpeech } from "./director-audio-playback";
 import {
   evaluateSpeech,
   type EvaluationResult,
@@ -39,7 +40,6 @@ const USE_DIRECTOR_PACKET_FLOW =
   import.meta.env.VITE_PARROT_DIRECTOR_FLOW === "1";
 const USE_DIRECTOR_PACKET_API =
   import.meta.env.VITE_PARROT_DIRECTOR_API === "1";
-const DIRECTOR_TURN_DELAY_MS = 900;
 
 type LessonEvent =
   | { type: "START" }
@@ -456,6 +456,7 @@ function DirectorLessonPlayer() {
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
   const [directorAudioBlob, setDirectorAudioBlob] = useState<Blob | null>(null);
+  const activeTurn = state.packet?.turns[state.activeTurnIndex] ?? null;
   const scene = useMemo(
     () => getDirectorPacketScenePresentation(AI_LESSON, state),
     [state]
@@ -512,14 +513,53 @@ function DirectorLessonPlayer() {
   }, [state.phase, state.runtimeState]);
 
   useEffect(() => {
-    if (state.phase !== DirectorPacketPhase.PlayingTurn) return;
+    if (state.phase !== DirectorPacketPhase.PlayingTurn || !activeTurn) return;
 
-    const timeout = window.setTimeout(() => {
-      dispatch({ type: "TURN_DONE" });
-    }, DIRECTOR_TURN_DELAY_MS);
+    const turn = activeTurn;
+    let cancelled = false;
+    const controller = new AbortController();
 
-    return () => window.clearTimeout(timeout);
-  }, [state.activeTurnIndex, state.packet?.packetId, state.phase]);
+    if (muted) {
+      const timeout = window.setTimeout(() => {
+        if (!cancelled) dispatch({ type: "TURN_DONE" });
+      }, Math.max(350, turn.speech.length * 250));
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(timeout);
+        controller.abort();
+      };
+    }
+
+    async function playDirectorTurn() {
+      setError("");
+      try {
+        await playDirectorTurnSpeech({
+          speaker: turn.speaker,
+          speech: turn.speech,
+          signal: controller.signal,
+        });
+
+        if (!cancelled) {
+          dispatch({ type: "TURN_DONE" });
+        }
+      } catch (caughtError) {
+        if (cancelled || isAbortError(caughtError)) return;
+
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Audio failed.";
+        setError(`声音暂时不可用：${message}`);
+        dispatch({ type: "TURN_DONE" });
+      }
+    }
+
+    void playDirectorTurn();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [activeTurn, muted, state.phase]);
 
   useEffect(() => {
     if (state.phase !== DirectorPacketPhase.Listening || !activePrompt) return;
