@@ -50,6 +50,8 @@ describe("director packet UI integration", () => {
     const recordingSource = extractFunctionSource("recordDirectorPrompt");
     const evaluationSource = extractFunctionSource("evaluateDirectorPrompt");
 
+    assert.match(appSource, /state\.phase !== DirectorPacketPhase\.Listening[\s\S]+void recordDirectorPrompt\(\);/);
+    assert.match(appSource, /state\.phase !== DirectorPacketPhase\.Evaluating[\s\S]+void evaluateDirectorPrompt\(\);/);
     assert.match(recordingSource, /recordSpeechClip/);
     assert.match(recordingSource, /dispatch\(\{ type: "RECORDING_DONE" \}\)/);
     assert.doesNotMatch(recordingSource, /evaluateSpeech/);

@@ -219,6 +219,28 @@ describe("director packet state", () => {
     assert.equal(error.phase, DirectorPacketPhase.Error);
   });
 
+  it("retries from error without resetting the current scene context", () => {
+    const state = reduceDirectorPacketState(
+      {
+        ...createInitialDirectorPacketState("cant-reach"),
+        phase: DirectorPacketPhase.Error,
+        runtimeState: {
+          currentSceneId: "cant-reach",
+          phase: "start_scene",
+          attemptNumber: 0,
+          successfulRepeats: 0,
+          previousTurnSummary: [],
+          lastChildResult: null,
+        },
+      },
+      { type: "START" }
+    );
+
+    assert.equal(state.phase, DirectorPacketPhase.LoadingPacket);
+    assert.equal(state.currentSceneId, "cant-reach");
+    assert.equal(state.runtimeState.currentSceneId, "cant-reach");
+  });
+
   it("returns the same state for unknown events", () => {
     const state = createInitialDirectorPacketState("greeting");
 
