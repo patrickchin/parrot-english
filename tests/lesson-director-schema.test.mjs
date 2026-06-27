@@ -83,6 +83,26 @@ const lesson = {
   ],
 };
 
+function createValidAdvancePacket() {
+  return {
+    schemaVersion: "lesson-director.response.v1",
+    packetId: "greeting-start-001",
+    sceneId: "greeting",
+    background: "meadowDay",
+    characters: {
+      peppa: { pose: "listen" },
+      polly: { pose: "talk" },
+    },
+    turns: [],
+    childPrompt: { shouldListen: false, targetText: "", displayText: "" },
+    lessonControl: {
+      status: "advance_scene",
+      nextSceneId: "greeting",
+      reason: "test",
+    },
+  };
+}
+
 describe("lesson director schema", () => {
   it("exports known purpose and status values", () => {
     assert.ok(DIRECTOR_PURPOSES.includes("prompt_repeat"));
@@ -94,6 +114,27 @@ describe("lesson director schema", () => {
       ok: true,
       errors: [],
     });
+  });
+
+  it("rejects null top-level lesson field shapes", () => {
+    const result = validateLessonDefinition({
+      ...lesson,
+      learner: null,
+      world: null,
+      characters: null,
+      availableAssets: null,
+      teachingPolicy: null,
+      scenes: null,
+    });
+    const errors = result.errors.join("\n");
+
+    assert.equal(result.ok, false);
+    assert.match(errors, /lesson\.learner must be an object/);
+    assert.match(errors, /lesson\.world must be an object/);
+    assert.match(errors, /lesson\.characters must be an array/);
+    assert.match(errors, /lesson\.availableAssets must be an object/);
+    assert.match(errors, /lesson\.teachingPolicy must be an object/);
+    assert.match(errors, /lesson\.scenes must be an array/);
   });
 
   it("rejects a packet with an unknown pose", () => {
@@ -119,6 +160,94 @@ describe("lesson director schema", () => {
 
     assert.equal(result.ok, false);
     assert.match(result.errors.join("\n"), /unknown pose floating for peppa/);
+  });
+
+  it("rejects listening child prompts without prompt_child status", () => {
+    const packet = {
+      schemaVersion: "lesson-director.response.v1",
+      packetId: "greeting-start-001",
+      sceneId: "greeting",
+      background: "meadowDay",
+      characters: {
+        peppa: { pose: "listen" },
+        polly: { pose: "talk" },
+      },
+      turns: [],
+      childPrompt: {
+        shouldListen: true,
+        targetText: "Hello, Peppa!",
+        displayText: "轮到你说：Hello, Peppa!",
+      },
+      lessonControl: {
+        status: "advance_scene",
+        nextSceneId: "greeting",
+        reason: "test",
+      },
+    };
+
+    const result = validateLessonDirectorResponse(packet, lesson);
+
+    assert.equal(result.ok, false);
+    assert.match(
+      result.errors.join("\n"),
+      /childPrompt.shouldListen requires prompt_child status/
+    );
+  });
+
+  it("returns validation errors for malformed packet shapes", () => {
+    const cases = [
+      {
+        name: "undefined lesson",
+        packet: createValidAdvancePacket(),
+        lessonValue: undefined,
+        expectedError: /unknown scene greeting/,
+      },
+      {
+        name: "malformed characters",
+        packet: { ...createValidAdvancePacket(), characters: [] },
+        lessonValue: lesson,
+        expectedError: /packet\.characters must be an object/,
+      },
+      {
+        name: "malformed turns",
+        packet: { ...createValidAdvancePacket(), turns: {} },
+        lessonValue: lesson,
+        expectedError: /packet\.turns must be an array/,
+      },
+      {
+        name: "malformed turn speech",
+        packet: {
+          ...createValidAdvancePacket(),
+          turns: [
+            {
+              turnId: "t1",
+              speaker: "polly",
+              purpose: "prompt_repeat",
+              visibleText: "轮到你说。",
+              speech: { lang: "zh-CN", text: "轮到你说。" },
+              pose: "talk",
+            },
+          ],
+        },
+        lessonValue: lesson,
+        expectedError: /turn t1 speech must be an array/,
+      },
+      {
+        name: "malformed turn entry",
+        packet: { ...createValidAdvancePacket(), turns: [null] },
+        lessonValue: lesson,
+        expectedError: /turn 0 must be an object/,
+      },
+    ];
+
+    for (const { name, packet, lessonValue, expectedError } of cases) {
+      let result;
+      assert.doesNotThrow(() => {
+        result = validateLessonDirectorResponse(packet, lessonValue);
+      }, name);
+      assert.equal(result.ok, false, name);
+      assert.match(result.errors.join("\n"), expectedError, name);
+    }
   });
 
   it("rejects mixed-language speech in one segment", () => {
