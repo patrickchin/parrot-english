@@ -27,4 +27,54 @@ describe("lesson director request", () => {
     assert.equal(calls[0].init.headers["content-type"], "application/json");
     assert.deepEqual(JSON.parse(calls[0].init.body), { lesson, runtimeState });
   });
+
+  it("uses readable messages for known Worker error codes", async () => {
+    await assert.rejects(
+      requestLessonDirectorPacket({
+        lesson: { lessonId: "l1" },
+        runtimeState: { currentSceneId: "greeting" },
+        fetch: async () =>
+          new Response(JSON.stringify({ error: "invalid_request" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          }),
+      }),
+      { message: "Lesson director request was incomplete or invalid." }
+    );
+  });
+
+  it("preserves Worker messages for non-OK JSON responses", async () => {
+    await assert.rejects(
+      requestLessonDirectorPacket({
+        lesson: { lessonId: "l1" },
+        runtimeState: { currentSceneId: "greeting" },
+        fetch: async () =>
+          new Response(JSON.stringify({ error: "invalid_request", message: "Custom message" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          }),
+      }),
+      { message: "Custom message" }
+    );
+  });
+
+  it("forwards abort signals to the request", async () => {
+    const controller = new AbortController();
+    let forwardedSignal;
+
+    await requestLessonDirectorPacket({
+      lesson: { lessonId: "l1" },
+      runtimeState: { currentSceneId: "greeting" },
+      signal: controller.signal,
+      fetch: async (_url, init) => {
+        forwardedSignal = init.signal;
+        return new Response(JSON.stringify({ packetId: "p1" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    });
+
+    assert.equal(forwardedSignal, controller.signal);
+  });
 });

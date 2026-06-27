@@ -5,10 +5,19 @@ type RequestLessonDirectorPacketOptions = {
   signal?: AbortSignal;
 };
 
+const ERROR_MESSAGES_BY_CODE: Record<string, string> = {
+  method_not_allowed: "Lesson director request method is not allowed.",
+  invalid_json: "Lesson director request body was not valid JSON.",
+  invalid_request: "Lesson director request was incomplete or invalid.",
+  rate_limited: "Too many lesson director requests. Please wait and try again.",
+};
+
 async function readJsonError(response: Response) {
   try {
     const payload = (await response.json()) as { message?: string; error?: string };
-    return payload.message ?? payload.error ?? response.statusText;
+    if (payload.message !== undefined) return payload.message;
+    if (payload.error !== undefined) return ERROR_MESSAGES_BY_CODE[payload.error] ?? payload.error;
+    return response.statusText;
   } catch {
     return response.statusText;
   }
