@@ -68,6 +68,23 @@ describe("director speech segments", () => {
     });
   });
 
+  it("does not match static audio when the segment language differs", () => {
+    const result = resolveStaticDirectorSpeechSegment({
+      speaker: "polly",
+      lang: "en-US",
+      text: "轮到你了，跟着佩奇说。",
+    });
+
+    assert.deepEqual(result, {
+      kind: "dynamic",
+      key: "polly__en-US__ea0dc272",
+      audioId: null,
+      audioSrc: null,
+      lang: "en-US",
+      text: "轮到你了，跟着佩奇说。",
+    });
+  });
+
   it("marks unmatched dynamic text for generated audio", () => {
     const result = resolveStaticDirectorSpeechSegment({
       speaker: "polly",
