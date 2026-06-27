@@ -66,8 +66,14 @@ function renderSpeechText(text: string) {
 }
 
 export function LessonPlayer() {
-  if (USE_DIRECTOR_PACKET_FLOW) return <DirectorLessonPlayer />;
+  return USE_DIRECTOR_PACKET_FLOW ? (
+    <DirectorLessonPlayer />
+  ) : (
+    <DeterministicLessonPlayer />
+  );
+}
 
+function DeterministicLessonPlayer() {
   const [state, dispatch] = useReducer(
     (
       currentState: ReturnType<typeof createInitialLessonState>,
@@ -388,16 +394,19 @@ export function LessonPlayer() {
   );
 }
 
+type DirectorPacketState = ReturnType<typeof createInitialDirectorPacketState>;
+type DirectorPacket = NonNullable<DirectorPacketState["packet"]>;
+
 type DirectorPacketEvent =
   | { type: "START" }
-  | { type: "PACKET_LOADED"; packet: unknown }
+  | { type: "PACKET_LOADED"; packet: DirectorPacket }
   | { type: "TURN_DONE" }
   | { type: "RECORDING_DONE" }
   | { type: "EVALUATED"; result: EvaluationResult }
   | { type: "PACKET_FAILED" };
 
 function reduceDirectorLessonPlayerState(
-  currentState: ReturnType<typeof createInitialDirectorPacketState>,
+  currentState: DirectorPacketState,
   event: DirectorPacketEvent
 ) {
   if (
@@ -518,7 +527,7 @@ function DirectorLessonPlayer() {
         const result = await evaluateSpeech({
           audio: audioBlob,
           signal: controller.signal,
-          targetText: activePrompt?.targetText,
+          targetText: activePrompt?.targetText as string,
         });
 
         if (!cancelled) dispatch({ type: "EVALUATED", result });
