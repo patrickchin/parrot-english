@@ -24,7 +24,7 @@ function mockDirectorTts({ keyForBody = createDirectorSpeechSegmentKey } = {}) {
     const body = JSON.parse(String(init.body));
     requests.push({ body, signal: init.signal });
 
-    return new Response(
+    return new globalThis.Response(
       JSON.stringify({
         audioSrc: `/generated/director-${requests.length}.mp3`,
         key: keyForBody(body),
@@ -102,7 +102,7 @@ describe("director audio playback", () => {
   });
 
   it("falls back to silent timing when generated audio fails", async () => {
-    globalThis.fetch = async () => new Response("{}", { status: 502 });
+    globalThis.fetch = async () => new globalThis.Response("{}", { status: 502 });
     let silentCount = 0;
 
     await playDirectorTurnSpeech({

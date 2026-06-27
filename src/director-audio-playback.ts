@@ -46,25 +46,21 @@ async function defaultWaitForSilentSegment(
       return;
     }
 
-    let timeoutId: number | undefined;
-
     function cleanup() {
       signal?.removeEventListener("abort", handleAbort);
     }
 
     function handleAbort() {
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
+      window.clearTimeout(timeoutId);
       cleanup();
       reject(createAbortError());
     }
 
-    signal?.addEventListener("abort", handleAbort, { once: true });
-    timeoutId = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       cleanup();
       resolve();
     }, getSilentDurationMs(segment.text));
+    signal?.addEventListener("abort", handleAbort, { once: true });
   });
 }
 
