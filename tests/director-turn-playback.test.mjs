@@ -65,6 +65,30 @@ describe("director turn UI playback orchestration", () => {
     assert.deepEqual(events, ["played"]);
   });
 
+  it("does not complete when playback returns after aborting the signal", async () => {
+    const controller = new AbortController();
+    const events = [];
+
+    await playDirectorTurnForUi({
+      muted: false,
+      signal: controller.signal,
+      speaker: "polly",
+      speech,
+      isCancelled: () => false,
+      onDone: () => events.push("done"),
+      onError: (error) => events.push(["error", error]),
+      playTurnSpeech: async () => {
+        events.push("played");
+        controller.abort();
+      },
+      waitForMutedTurn: async () => {
+        throw new Error("Muted wait should not run");
+      },
+    });
+
+    assert.deepEqual(events, ["played"]);
+  });
+
   it("ignores abort-shaped playback errors", async () => {
     const abortError = new Error("cancelled");
     abortError.name = "AbortError";
@@ -139,6 +163,30 @@ describe("director turn UI playback orchestration", () => {
       },
     ]);
     assert.deepEqual(events, ["waited", "done"]);
+  });
+
+  it("does not complete when muted wait returns after aborting the signal", async () => {
+    const controller = new AbortController();
+    const events = [];
+
+    await playDirectorTurnForUi({
+      muted: true,
+      signal: controller.signal,
+      speaker: "polly",
+      speech,
+      isCancelled: () => false,
+      onDone: () => events.push("done"),
+      onError: (error) => events.push(["error", error]),
+      playTurnSpeech: async () => {
+        throw new Error("Real playback should not run while muted");
+      },
+      waitForMutedTurn: async () => {
+        events.push("waited");
+        controller.abort();
+      },
+    });
+
+    assert.deepEqual(events, ["waited"]);
   });
 
   it("uses one shared silent duration policy for full muted turns", () => {

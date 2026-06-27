@@ -74,6 +74,8 @@ export async function playDirectorTurnForUi({
   playTurnSpeech = playDirectorTurnSpeech,
   waitForMutedTurn = defaultWaitForMutedTurn,
 }: PlayDirectorTurnForUiOptions) {
+  const shouldComplete = () => !isCancelled() && !signal?.aborted;
+
   try {
     if (muted) {
       await waitForMutedTurn(getDirectorTurnSilentDurationMs(speech), signal);
@@ -81,7 +83,7 @@ export async function playDirectorTurnForUi({
       await playTurnSpeech({ speaker, speech, signal });
     }
 
-    if (!isCancelled()) {
+    if (shouldComplete()) {
       onDone();
     }
   } catch (error) {
@@ -89,7 +91,7 @@ export async function playDirectorTurnForUi({
 
     onError(error);
 
-    if (!isCancelled()) {
+    if (shouldComplete()) {
       onDone();
     }
   }
