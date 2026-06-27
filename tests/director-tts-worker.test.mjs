@@ -5,8 +5,11 @@ import { createDirectorSpeechSegmentKey } from "../lib/director-speech-segments.
 import { handleDirectorTts } from "../worker/director-tts.ts";
 
 const originalFetch = globalThis.fetch;
+const originalSetTimeout = globalThis.setTimeout;
+const originalClearTimeout = globalThis.clearTimeout;
 const POLLY_VOICE_ID = "4NQthjVhIGGVfL3Si000";
 const PEPPA_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
+let activeMockTimers = [];
 
 function createRequest(body, init = {}) {
   return new Request("https://example.com/api/director-tts", {
@@ -46,7 +49,13 @@ function mockElevenLabsFetch({ status = 200, bytes = new Uint8Array([4, 5, 6]) }
 
 describe("director TTS Worker route", () => {
   afterEach(() => {
+    for (const timer of activeMockTimers.splice(0)) {
+      originalClearTimeout(timer);
+    }
+
     globalThis.fetch = originalFetch;
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
   });
 
   it("rejects mixed language segment text", async () => {
@@ -364,6 +373,53 @@ describe("director TTS Worker route", () => {
     assert.equal(payload.error, "tts_generation_failed");
     assert.equal(abortCount, 1);
     assert.ok(elapsedMs < 1000);
+  });
+
+  it("normalizes configured ElevenLabs timeout delays before scheduling", async () => {
+    const cases = [
+      { value: "0", expectedDelay: 15_000 },
+      { value: "abc", expectedDelay: 15_000 },
+      { value: "0.5", expectedDelay: 15_000 },
+      { value: "1500.9", expectedDelay: 15_000 },
+      { value: "90000", expectedDelay: 60_000 },
+    ];
+
+    for (const [index, { value, expectedDelay }] of cases.entries()) {
+      const delays = [];
+      globalThis.setTimeout = (callback, _delay, ...args) => {
+        delays.push(_delay);
+        const timer = originalSetTimeout(callback, 60_000, ...args);
+        activeMockTimers.push(timer);
+        return timer;
+      };
+      globalThis.clearTimeout = (timer) => {
+        const timerIndex = activeMockTimers.indexOf(timer);
+        if (timerIndex > -1) activeMockTimers.splice(timerIndex, 1);
+        return originalClearTimeout(timer);
+      };
+      mockElevenLabsFetch();
+
+      const response = await handleDirectorTts(
+        createRequest({
+          speaker: "polly",
+          lang: "zh-CN",
+          text: "新的动态句子。",
+        }, {
+          headers: {
+            "content-type": "application/json",
+            "CF-Connecting-IP": `203.0.113.${220 + index}`,
+          },
+        }),
+        {
+          ELEVENLABS_API_KEY: "live-key",
+          ELEVENLABS_BASE_URL: "https://eleven.test/v1",
+          ELEVENLABS_REQUEST_TIMEOUT_MS: value,
+        }
+      );
+
+      assert.equal(response.status, 200, value);
+      assert.deepEqual(delays, [expectedDelay], value);
+    }
   });
 
   it("returns a JSON 503 error for non-MP3 ElevenLabs output formats before fetch", async () => {

@@ -143,12 +143,17 @@ function readConfiguredValue(value: string | undefined, fallback: string) {
 }
 
 function readConfiguredTimeoutMs(value: string | undefined) {
-  const timeoutMs = Number(value);
+  const timeoutText = value?.trim();
+  if (!timeoutText || !/^\d+$/.test(timeoutText)) {
+    return ELEVENLABS_DEFAULT_REQUEST_TIMEOUT_MS;
+  }
+
+  const timeoutMs = Number(timeoutText);
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     return ELEVENLABS_DEFAULT_REQUEST_TIMEOUT_MS;
   }
 
-  return Math.min(Math.trunc(timeoutMs), ELEVENLABS_MAX_REQUEST_TIMEOUT_MS);
+  return Math.min(timeoutMs, ELEVENLABS_MAX_REQUEST_TIMEOUT_MS);
 }
 
 function requireElevenLabsApiKey(env: DirectorTtsEnv) {
