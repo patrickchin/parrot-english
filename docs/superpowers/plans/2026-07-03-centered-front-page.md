@@ -151,7 +151,7 @@ git commit -m "Center lesson list front page"
 - Delete: `public/assets/characters/pig-host.png`
 - Modify: `docs/design/audio-and-content-pipeline.md:90-151`
 
-- [ ] **Step 1: Re-run the existing failing asset-format regression test**
+- [x] **Step 1: Re-run the existing failing asset-format regression test**
 
 Run:
 
@@ -161,7 +161,7 @@ node --test tests/web-assets.test.mjs
 
 Expected: FAIL with the 25 tracked `.wav` and `.png` paths. This is the existing red test proving that the superseded formats violate the repository's public-asset contract.
 
-- [ ] **Step 2: Delete only the approved superseded assets**
+- [x] **Step 2: Delete only the approved superseded assets**
 
 Remove the 22 WAV files and three PNG files after confirming that each has a same-named `.mp3` or `.webp` replacement:
 
@@ -172,7 +172,7 @@ git rm public/assets/audio/*.wav \
   public/assets/characters/pig-host.png
 ```
 
-- [ ] **Step 3: Align audio pipeline documentation with MP3 output**
+- [x] **Step 3: Align audio pipeline documentation with MP3 output**
 
 Replace the stale generator and QA guidance in `docs/design/audio-and-content-pipeline.md` with:
 
@@ -192,7 +192,7 @@ Update the local verification URL to:
 curl -I http://localhost:3000/assets/audio/turn-hello.mp3
 ```
 
-- [ ] **Step 4: Verify the asset fix and full test suite**
+- [x] **Step 4: Verify the asset fix and full test suite**
 
 Run:
 
@@ -203,7 +203,7 @@ npm test
 
 Expected: the asset-format test and the complete test suite PASS with no unsupported public assets.
 
-- [ ] **Step 5: Commit the asset cleanup**
+- [x] **Step 5: Commit the asset cleanup**
 
 ```bash
 git add docs/design/audio-and-content-pipeline.md

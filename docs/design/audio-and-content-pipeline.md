@@ -89,9 +89,8 @@ asset or spend unnecessary credits.
 
 ## Generator Behavior
 
-The generator is `scripts/generate-static-audio.mjs`. It is ElevenLabs-only.
-If ElevenLabs returns MP3 output while the target file is `.wav`, the script
-converts through `ffmpeg`.
+The generator is `scripts/generate-static-audio.mjs`. It is ElevenLabs-only
+and requests MP3 output for the `.mp3` paths declared in `STATIC_AUDIO_LINES`.
 
 The generator reads line metadata from `STATIC_AUDIO_LINES` and uses:
 
@@ -136,8 +135,8 @@ native and that Polly should be more energetic. Current policy:
 
 After regenerating audio:
 
-- Confirm the changed `public/assets/audio/*.wav` files exist.
-- Confirm WAV format and playback manually if the line is user-facing.
+- Confirm the changed `public/assets/audio/*.mp3` files exist.
+- Confirm MP3 format and playback manually if the line is user-facing.
 - Run static audio tests.
 - Run `npm run build`.
 - If verifying a running Worker build, confirm public and `dist` audio hashes
@@ -145,5 +144,5 @@ After regenerating audio:
 - Hit one regenerated asset URL from the local server, for example:
 
 ```bash
-curl -I http://localhost:3000/assets/audio/turn-hello.wav
+curl -I http://localhost:3000/assets/audio/turn-hello.mp3
 ```
