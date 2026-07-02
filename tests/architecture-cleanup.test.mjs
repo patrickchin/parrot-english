@@ -11,7 +11,7 @@ describe("architecture cleanup contracts", () => {
     const app = readProjectFile("src/App.tsx");
 
     assert.doesNotMatch(app, /PROGRESS_DOT_COUNT/);
-    assert.match(app, /Array\.from\(\{\s*length:\s*LESSON_STEPS\.length\s*\}/s);
+    assert.match(app, /Array\.from\(\{\s*length:\s*lesson\.steps\.length\s*\}/s);
   });
 
   it("keeps browser lesson playback asset-only", () => {

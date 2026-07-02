@@ -103,13 +103,19 @@ The generator reads line metadata from `STATIC_AUDIO_LINES` and uses:
 
 ## Adding or Changing Lines
 
-When adding a new lesson line:
+When adding or changing a playable lesson:
 
-1. Add or update the lesson step in `lib/lesson-data.js`.
-2. Add a matching static audio manifest entry in `lib/static-audio.js`.
-3. Regenerate the source audio in `public/assets/audio`.
-4. Run focused static/audio tests.
-5. Run `npm run build` so `dist` contains the updated assets.
+1. Add or update the lesson entry in `lib/lesson-data.js`.
+2. Add or update its ordered `steps`.
+3. Set each step's `audio.example`, `audio.prompt`, and `audio.model` IDs.
+4. Add matching static audio manifest entries in `lib/static-audio.js`.
+5. Regenerate the source audio in `public/assets/audio`.
+6. Run focused lesson-data, static/audio, and build checks.
+7. Run `npm run build` so `dist` contains the updated assets.
+
+When removing a lesson, remove its catalog entry from `LESSONS`. Remove static
+audio manifest entries and source audio files only when no remaining lesson step
+uses those audio IDs.
 
 For feedback text, the exact visible feedback string must match an entry in the
 static audio manifest. `lib/lesson-audio.js` resolves feedback audio by text, so

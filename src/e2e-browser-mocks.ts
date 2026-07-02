@@ -1,7 +1,24 @@
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
 
-const MOCK_AUDIO_DELAY_MS = 20;
-const MOCK_RECORDING_DELAY_MS = 2500;
+const MOCK_AUDIO_DELAY_MS = 200;
+const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
+const MOCK_RECORDING_DELAY_MS = 5000;
+const DEFAULT_SCENARIO = "correct";
+const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
+
+function getE2eScenario() {
+  const scenario = new URL(window.location.href).searchParams.get(
+    "parrotE2eScenario"
+  );
+
+  return scenario && E2E_SCENARIOS.has(scenario) ? scenario : DEFAULT_SCENARIO;
+}
+
+function getMockAudioDelayMs(src: string) {
+  return src.includes("feedback-")
+    ? MOCK_FEEDBACK_AUDIO_DELAY_MS
+    : MOCK_AUDIO_DELAY_MS;
+}
 
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
@@ -14,7 +31,7 @@ class MockAudioElement {
   async play() {
     window.setTimeout(() => {
       this.onended?.(new Event("ended"));
-    }, MOCK_AUDIO_DELAY_MS);
+    }, getMockAudioDelayMs(this.src));
   }
 }
 
@@ -43,7 +60,9 @@ class MockMediaRecorder {
     if (this.state === "inactive") return;
 
     this.state = "inactive";
-    const data = new Blob(["parrot-e2e-audio"], { type: "audio/webm" });
+    const data = new Blob([`parrot-e2e-audio:${getE2eScenario()}`], {
+      type: "audio/webm",
+    });
     this.ondataavailable?.({ data } as BlobEvent);
     this.onstop?.(new Event("stop"));
   }

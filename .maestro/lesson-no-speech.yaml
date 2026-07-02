@@ -1,0 +1,21 @@
+url: ${MAESTRO_APP_URL}/?parrotE2eScenario=no-speech&parrotE2eAutostart=1
+name: Child gets no-speech retry feedback when nothing is captured
+tags:
+  - e2e
+  - mocked-api
+---
+- launchApp
+
+- extendedWaitUntil:
+    visible: "轮到你：Hello, Peppa!"
+    timeout: 8000
+
+- extendedWaitUntil:
+    visible: "正在检查发音"
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "我没有听清楚，我们慢一点再试一次。"
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "准备再试一次"
+    timeout: 8000

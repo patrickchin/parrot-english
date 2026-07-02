@@ -7,7 +7,22 @@ import { fileURLToPath } from "node:url";
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const defaultPort = Number(process.env.MAESTRO_PORT ?? 5173);
 const maestroBin = process.env.MAESTRO_BIN ?? "maestro";
-const flowFile = process.env.MAESTRO_FLOW ?? ".maestro/lesson-success.yaml";
+const defaultFlowFiles = [
+  ".maestro/lesson-success.yaml",
+  ".maestro/lesson-incorrect.yaml",
+  ".maestro/lesson-no-speech.yaml",
+];
+
+function getFlowFiles() {
+  if (process.env.MAESTRO_FLOW) return [process.env.MAESTRO_FLOW];
+  if (process.env.MAESTRO_FLOWS) {
+    return process.env.MAESTRO_FLOWS.split(",")
+      .map((flowFile) => flowFile.trim())
+      .filter(Boolean);
+  }
+
+  return defaultFlowFiles;
+}
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -75,6 +90,7 @@ function run(command, args, options) {
 async function main() {
   const port = await findAvailablePort(defaultPort);
   const appUrl = process.env.MAESTRO_APP_URL ?? `http://localhost:${port}`;
+  const flowFiles = getFlowFiles();
   const env = {
     ...process.env,
     MAESTRO_APP_URL: appUrl,
@@ -107,11 +123,13 @@ async function main() {
 
   try {
     await waitForServer(appUrl);
-    await run(maestroBin, ["test", flowFile], {
-      cwd: rootDir,
-      env,
-      stdio: "inherit",
-    });
+    for (const flowFile of flowFiles) {
+      await run(maestroBin, ["test", flowFile], {
+        cwd: rootDir,
+        env,
+        stdio: "inherit",
+      });
+    }
   } finally {
     stopServer();
   }

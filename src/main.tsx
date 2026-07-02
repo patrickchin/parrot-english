@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { LessonPlayer } from "./App";
+import { App } from "./App";
 import "./styles.css";
 
 async function bootstrap() {
@@ -10,7 +10,7 @@ async function bootstrap() {
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <LessonPlayer />
+      <App />
     </StrictMode>
   );
 }

@@ -25,7 +25,8 @@ Important entrypoints:
 
 - `index.html`: Vite HTML entrypoint.
 - `src/main.tsx`: React bootstrap and E2E-only browser mock import.
-- `src/App.tsx`: lesson UI, audio sequencing, recording, and evaluation effects.
+- `src/App.tsx`: data-driven lesson selection UI, audio sequencing, recording,
+  and evaluation effects.
 - `worker/index.ts`: Worker fetch handler and route dispatch.
 - `wrangler.jsonc`: Worker assets and compatibility configuration.
 
@@ -90,8 +91,9 @@ Audio sequencing lives in `lib/lesson-audio.js`.
 
 Current rules:
 
-- `example-speaking` plays `example-${step.id}` as Peppa.
-- `parrot-coaching` plays `turn-${step.id}` as Polly.
+- `example-speaking` plays `step.audio.example` as Peppa.
+- `parrot-coaching` plays `step.audio.prompt` as Polly, then
+  `step.audio.model` as the model line.
 - `feedback` finds a static audio line whose text matches `state.feedback`.
 - `finished` plays `finished`.
 - Feedback does not dispatch automatic `NEXT` after success.
