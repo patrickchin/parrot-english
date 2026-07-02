@@ -28,7 +28,8 @@ describe("lesson list UI", () => {
       "utf8"
     );
 
-    assert.match(lessonData, /export const LESSONS = \[/);
+    assert.match(lessonData, /from "\.\/lessons\.json"/);
+    assert.match(lessonData, /export const LESSONS = catalog\.lessons/);
     assert.doesNotMatch(app, /const LESSON_LIST_ITEMS/);
     assert.match(app, /lessons=\{LESSONS\}/);
     assert.match(app, /onStartLesson\(lesson\.id\)/);

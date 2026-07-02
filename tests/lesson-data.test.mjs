@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import {
   DEFAULT_LESSON_ID,
@@ -9,7 +10,19 @@ import {
   isLessonPlayable,
 } from "../lib/lesson-data.js";
 
+const lessonDataSource = readFileSync(
+  new URL("../lib/lesson-data.js", import.meta.url),
+  "utf8"
+);
+const lessonCatalogPath = new URL("../lib/lessons.json", import.meta.url);
+
 describe("lesson catalog data", () => {
+  it("loads editable lesson catalog data from JSON", () => {
+    assert.equal(existsSync(lessonCatalogPath), true);
+    assert.match(lessonDataSource, /from "\.\/lessons\.json"/);
+    assert.doesNotMatch(lessonDataSource, /const HELLO_PEPPA_STEPS/);
+  });
+
   it("keeps lesson list metadata outside the UI", () => {
     assert.ok(LESSONS.length >= 1);
 
