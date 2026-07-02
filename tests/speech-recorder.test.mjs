@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   RecordingUnsupportedError,
+  requestMicrophoneAccess,
   recordSpeechClip,
 } from "../src/speech-recorder.ts";
 
@@ -26,6 +27,29 @@ function createStream(track = createTrack()) {
 }
 
 describe("speech recorder", () => {
+  it("can request microphone permission without leaving the stream open", async () => {
+    const { stream, track } = createStream();
+    const getUserMediaCalls = [];
+
+    await requestMicrophoneAccess({
+      MediaRecorder: class FakeMediaRecorder {},
+      getUserMedia(constraints) {
+        getUserMediaCalls.push(constraints);
+        return Promise.resolve(stream);
+      },
+    });
+
+    assert.deepEqual(getUserMediaCalls, [
+      {
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      },
+    ]);
+    assert.equal(track.stopped, true);
+  });
+
   it("does not request microphone access when recording is unsupported", async () => {
     let requestedMicrophone = false;
 
@@ -114,6 +138,63 @@ describe("speech recorder", () => {
     assert.equal(await audioBlob.text(), "child audio");
     assert.equal(track.stopped, true);
     assert.deepEqual(clearTimeoutCalls, ["timer-id"]);
+  });
+
+  it("stops recording when the hold-to-talk stop signal is released", async () => {
+    const { stream, track } = createStream();
+    const stopController = new AbortController();
+    const clearTimeoutCalls = [];
+    let recorderState;
+
+    class FakeMediaRecorder {
+      constructor() {
+        this.state = "inactive";
+        recorderState = this.state;
+      }
+
+      start() {
+        this.state = "recording";
+        recorderState = this.state;
+      }
+
+      stop() {
+        this.state = "inactive";
+        recorderState = this.state;
+        this.ondataavailable?.({
+          data: new Blob(["held audio"], { type: "audio/webm" }),
+        });
+        this.onstop?.();
+      }
+    }
+
+    const promise = recordSpeechClip({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia() {
+        return Promise.resolve(stream);
+      },
+      setTimeout() {
+        return "max-recording-timer";
+      },
+      clearTimeout(timerId) {
+        clearTimeoutCalls.push(timerId);
+      },
+      stopSignal: stopController.signal,
+    });
+
+    await Promise.resolve();
+    assert.equal(recorderState, "recording");
+
+    stopController.abort();
+
+    const result = await Promise.race([
+      promise.then(async (blob) => blob.text()),
+      new Promise((resolve) => setTimeout(() => resolve("not-resolved"), 0)),
+    ]);
+
+    assert.equal(result, "held audio");
+    assert.equal(recorderState, "inactive");
+    assert.equal(track.stopped, true);
+    assert.deepEqual(clearTimeoutCalls, ["max-recording-timer"]);
   });
 
   it("turns off the microphone when recording is cancelled", async () => {
