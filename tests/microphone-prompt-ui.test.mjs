@@ -33,6 +33,15 @@ describe("microphone prompt UI", () => {
     assert.match(app, /currentStep\.childTarget/);
   });
 
+  it("requires holding the microphone button before recording starts", () => {
+    assert.doesNotMatch(app, /void recordAndEvaluate\(\);/);
+    assert.match(app, /按住麦克风说/);
+    assert.match(app, /onPointerDown=\{startHoldRecording\}/);
+    assert.match(app, /onPointerUp=\{stopHoldRecording\}/);
+    assert.match(app, /onPointerCancel=\{cancelHoldRecording\}/);
+    assert.match(app, /aria-pressed=\{isHoldingMic\}/);
+  });
+
   it("styles the listening state as a large animated microphone affordance", () => {
     const panelRule = getRule(".speak-now-panel");
     const micRule = getRule(".mic-symbol");

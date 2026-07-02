@@ -91,6 +91,7 @@ button:disabled {
 
 .scene-nav-button:focus-visible,
 .volume-button:focus-visible,
+.mic-symbol:focus-visible,
 .start-lesson-button:focus-visible,
 .control-button:focus-visible,
 .tip-button:focus-visible {
@@ -374,6 +375,7 @@ button:disabled {
 }
 
 .mic-symbol {
+  appearance: none;
   grid-area: mic;
   display: grid;
   width: clamp(92px, 10vw, 132px);
@@ -383,9 +385,13 @@ button:disabled {
   border-radius: 999px;
   background: #ff467b;
   color: #ffffff;
+  cursor: pointer;
+  padding: 0;
   box-shadow:
     inset 0 -7px 0 rgba(161, 28, 74, 0.2),
     0 9px 0 rgba(178, 37, 86, 0.38);
+  touch-action: none;
+  user-select: none;
 }
 
 .mic-symbol svg {
@@ -405,6 +411,7 @@ button:disabled {
 
 .speak-now-panel.is-evaluating .mic-symbol {
   background: #204c7f;
+  cursor: default;
   box-shadow:
     inset 0 -7px 0 rgba(12, 48, 82, 0.18),
     0 9px 0 rgba(18, 55, 92, 0.32);
@@ -459,7 +466,13 @@ button:disabled {
   height: 18px;
   border-radius: 999px;
   background: #ff467b;
+  opacity: 0.46;
+}
+
+.speak-now-panel.is-listening.is-recording .mic-waveform span,
+.speak-now-panel.is-evaluating .mic-waveform span {
   animation: micBars 720ms ease-in-out infinite;
+  opacity: 1;
 }
 
 .mic-waveform span:nth-child(2),
@@ -490,11 +503,12 @@ button:disabled {
   height: 100%;
   border-radius: inherit;
   background: #ff467b;
+  transform: scaleX(0);
   transform-origin: left center;
 }
 
-.speak-now-panel.is-listening .recording-progress span {
-  animation: recordingFill 4.2s linear forwards;
+.speak-now-panel.is-listening.is-recording .recording-progress span {
+  animation: recordingFill 12s linear forwards;
 }
 
 .speak-now-panel.is-evaluating .recording-progress span {

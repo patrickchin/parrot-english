@@ -23,6 +23,7 @@ type SpeechRecorderOptions = {
   recordingMs?: number;
   setTimeout?: (callback: () => void, delay: number) => TimerId;
   signal?: AbortSignal;
+  stopSignal?: AbortSignal;
 };
 
 type MicrophoneAccessOptions = Pick<
@@ -90,6 +91,7 @@ export async function recordSpeechClip({
   recordingMs = DEFAULT_RECORDING_MS,
   setTimeout: setRecordingTimeout = globalThis.setTimeout,
   signal,
+  stopSignal,
 }: SpeechRecorderOptions = {}) {
   if (!MediaRecorderClass) {
     throw new RecordingUnsupportedError();
@@ -123,6 +125,7 @@ export async function recordSpeechClip({
         timeoutId = null;
       }
       signal?.removeEventListener("abort", abortRecording);
+      stopSignal?.removeEventListener("abort", stopRecording);
       stopMediaStream(stream);
     }
 
@@ -155,6 +158,12 @@ export async function recordSpeechClip({
       fail(createAbortError());
     }
 
+    function stopRecording() {
+      if (recorder.state === "recording") {
+        recorder.stop();
+      }
+    }
+
     try {
       recorder = new MediaRecorderClass(stream, { mimeType });
     } catch (error) {
@@ -168,9 +177,15 @@ export async function recordSpeechClip({
     recorder.onerror = () => fail(new Error("Audio recording failed."));
     recorder.onstop = finish;
     signal?.addEventListener("abort", abortRecording, { once: true });
+    stopSignal?.addEventListener("abort", stopRecording, { once: true });
 
     try {
       recorder.start();
+      if (stopSignal?.aborted) {
+        stopRecording();
+        return;
+      }
+
       timeoutId = setRecordingTimeout(() => {
         if (recorder.state === "recording") recorder.stop();
       }, recordingMs);
