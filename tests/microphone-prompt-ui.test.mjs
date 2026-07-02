@@ -15,7 +15,7 @@ function getRule(selector) {
 
 describe("microphone prompt UI", () => {
   it("requests microphone permission before the lesson starts", () => {
-    const startLesson = app.match(/async function startLesson\(\) \{([\s\S]*?)\n  \}/);
+    const startLesson = app.match(/async function startLesson\(\) \{([\s\S]*?)\n {2}\}/);
 
     assert.match(app, /requestMicrophoneAccess/);
     assert.ok(startLesson, "Expected startLesson to be async");

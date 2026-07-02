@@ -1,9 +1,15 @@
+import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 import { Buffer } from "node:buffer";
 import type { ServerResponse } from "node:http";
 import { defineConfig, type Plugin } from "vite";
 
 type MockEvaluationScenario = "correct" | "incorrect" | "no-speech";
+
+type PackageManifest = {
+  version?: string;
+};
 
 const MOCK_API_DELAY_MS = Number.parseInt(
   process.env.PARROT_E2E_MOCK_API_DELAY_MS ?? "900",
@@ -63,6 +69,44 @@ function sendMockEvaluationResponse(
   response.end(JSON.stringify(MOCK_EVALUATIONS[scenario]));
 }
 
+function readPackageVersion() {
+  const packageJson = JSON.parse(
+    readFileSync(new URL("./package.json", import.meta.url), "utf8")
+  ) as PackageManifest;
+
+  return packageJson.version ?? "0.0.0";
+}
+
+function readGitValue(command: string, fallback: string) {
+  try {
+    return (
+      execSync(command, {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim() || fallback
+    );
+  } catch {
+    return fallback;
+  }
+}
+
+function getBuildVersion() {
+  const [major = "0", minor = "0"] = readPackageVersion().split(".");
+  const commitCount = readGitValue("git rev-list --count HEAD", "0").replace(
+    /\D/g,
+    ""
+  );
+
+  return `${major}.${minor}.${commitCount || "0"}`;
+}
+
+function getShortCommitSha() {
+  return (
+    process.env.GITHUB_SHA?.slice(0, 7) ??
+    readGitValue("git rev-parse --short=7 HEAD", "local")
+  );
+}
+
 function parrotE2eMockApi(): Plugin {
   return {
     name: "parrot-e2e-mock-api",
@@ -100,6 +144,10 @@ function parrotE2eMockApi(): Plugin {
 
 export default defineConfig({
   plugins: [react(), parrotE2eMockApi()],
+  define: {
+    "import.meta.env.VITE_PARROT_APP_VERSION": JSON.stringify(getBuildVersion()),
+    "import.meta.env.VITE_PARROT_COMMIT_SHA": JSON.stringify(getShortCommitSha()),
+  },
   build: {
     outDir: "dist",
   },

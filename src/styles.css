@@ -528,6 +528,23 @@ button:disabled {
   background: #ff467b;
 }
 
+.build-version-badge {
+  grid-column: 1 / -1;
+  justify-self: start;
+  max-width: 100%;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #204c7f;
+  padding: 5px 10px;
+  font-size: clamp(0.68rem, 0.9vw, 0.86rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(51, 123, 164, 0.14);
+}
+
 .lesson-flow-banner {
   position: absolute;
   z-index: 18;

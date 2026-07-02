@@ -598,6 +598,7 @@ export function LessonPlayer({
       ? `轮到你说。正在录音，松开麦克风按钮后检查。Target phrase: ${currentStep.childTarget}.`
       : `轮到你说。按住麦克风按钮说。Target phrase: ${currentStep.childTarget}.`
     : `我听到了。正在检查发音。Target phrase: ${currentStep.childTarget}.`;
+  const versionLabel = `v${import.meta.env.VITE_PARROT_APP_VERSION} @ ${import.meta.env.VITE_PARROT_COMMIT_SHA}`;
 
   return (
     <main className="lesson-shell">
@@ -625,6 +626,12 @@ export function LessonPlayer({
               />
             ))}
           </div>
+          <span
+            aria-label={`Build version ${versionLabel}`}
+            className="build-version-badge"
+          >
+            {versionLabel}
+          </span>
         </div>
 
         <button
