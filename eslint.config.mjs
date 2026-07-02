@@ -38,6 +38,7 @@ export default defineConfig([
         File: "readonly",
         FormData: "readonly",
         Request: "readonly",
+        Response: "readonly",
         URL: "readonly",
         setTimeout: "readonly",
       },

@@ -1,36 +1,15 @@
-url: ${MAESTRO_APP_URL}
+url: ${MAESTRO_APP_URL}/?parrotE2eScenario=correct&parrotE2eAutostart=1
 name: Child completes the first speaking turn with mocked evaluation
 tags:
   - e2e
   - mocked-api
 ---
-# The child starts from a recognizable lesson scene.
 - launchApp
-- assertVisible:
-    text: ".*多莉打招呼.*"
-- assertVisible:
-    text: ".*Hi, Bella.*"
-- assertVisible: "轮到你了，跟着佩奇说。"
-
-# Audio is muted so the test follows the visual learning states deterministically.
-- tapOn:
-    id: "Mute lesson audio"
-- tapOn: "开始"
-
-# Peppa says the English example, then Polly explains the child turn.
-- extendedWaitUntil:
-    visible: "听佩奇说"
-    timeout: 5000
-- extendedWaitUntil:
-    visible: "多莉告诉你怎么说"
-    timeout: 5000
 
 # The child's turn must be obvious before recording starts.
 - extendedWaitUntil:
-    visible: "轮到你了，现在说"
+    visible: "轮到你：Hello, Peppa!"
     timeout: 8000
-- assertVisible:
-    text: ".*轮到你：Hi, Bella.*"
 
 # The mocked evaluation should advance the lesson without making an LLM call.
 - extendedWaitUntil:
@@ -39,6 +18,9 @@ tags:
 - extendedWaitUntil:
     visible: "太棒了！我们继续下一句。"
     timeout: 8000
+- tapOn:
+    id: "Next scene"
+    waitToSettleTimeoutMs: 100
 - extendedWaitUntil:
-    visible: ".*佩奇需要帮助.*"
+    visible: "Oh! I can't reach it."
     timeout: 5000

@@ -13,6 +13,7 @@ export type AssetAudioLine = {
   audioId?: string;
   audioSrc: string;
   lang?: string;
+  pauseAfterMs?: number;
   style?: "character";
   text: string;
 };
@@ -20,6 +21,18 @@ export type AssetAudioLine = {
 export type PlayAudioLineOptions = AssetAudioLine & {
   env?: AudioPlaybackEnvironment;
   signal?: AbortSignal;
+};
+
+type AudioSequenceWait = (
+  durationMs: number,
+  signal?: AbortSignal
+) => Promise<void>;
+
+export type PlayAudioSequenceOptions = {
+  env?: AudioPlaybackEnvironment;
+  lines: AssetAudioLine[];
+  signal?: AbortSignal;
+  wait?: AudioSequenceWait;
 };
 
 function getBrowserEnvironment(): AudioPlaybackEnvironment {
@@ -36,6 +49,34 @@ function createAbortError() {
 
 export function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
+}
+
+async function waitForPlaybackPause(durationMs: number, signal?: AbortSignal) {
+  if (durationMs <= 0) return;
+
+  await new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(createAbortError());
+      return;
+    }
+
+    const timeoutId = globalThis.setTimeout(() => {
+      cleanup();
+      resolve();
+    }, durationMs);
+
+    const cleanup = () => {
+      signal?.removeEventListener("abort", handleAbort);
+      globalThis.clearTimeout(timeoutId);
+    };
+
+    const handleAbort = () => {
+      cleanup();
+      reject(createAbortError());
+    };
+
+    signal?.addEventListener("abort", handleAbort, { once: true });
+  });
 }
 
 async function playAudioUrl(
@@ -90,4 +131,24 @@ export async function playAudioLine({
   }
 
   await playAudioUrl(env, audioSrc, signal);
+}
+
+export async function playAudioSequence({
+  env = getBrowserEnvironment(),
+  lines,
+  signal,
+  wait = waitForPlaybackPause,
+}: PlayAudioSequenceOptions): Promise<void> {
+  for (const line of lines) {
+    await playAudioLine({
+      ...line,
+      env,
+      signal,
+    });
+
+    const pauseAfterMs = line.pauseAfterMs ?? 0;
+    if (pauseAfterMs > 0) {
+      await wait(pauseAfterMs, signal);
+    }
+  }
 }

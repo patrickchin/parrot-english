@@ -1,17 +1,26 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { describe, it } from "node:test";
-import { LESSON_STEPS } from "../lib/lesson-data.js";
+import { LESSONS } from "../lib/lesson-data.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
 describe("static audio assets", () => {
   it("covers every current lesson line", () => {
-    for (const step of LESSON_STEPS) {
-      assert.ok(
-        STATIC_AUDIO_LINES[`example-${step.id}`],
-        `missing example-${step.id}`
-      );
-      assert.ok(STATIC_AUDIO_LINES[`turn-${step.id}`], `missing turn-${step.id}`);
+    for (const lesson of LESSONS) {
+      for (const step of lesson.steps) {
+        assert.ok(
+          STATIC_AUDIO_LINES[step.audio.example],
+          `missing ${lesson.id}:${step.id} example audio ${step.audio.example}`
+        );
+        assert.ok(
+          STATIC_AUDIO_LINES[step.audio.prompt],
+          `missing ${lesson.id}:${step.id} prompt audio ${step.audio.prompt}`
+        );
+        assert.ok(
+          STATIC_AUDIO_LINES[step.audio.model],
+          `missing ${lesson.id}:${step.id} model audio ${step.audio.model}`
+        );
+      }
     }
   });
 
@@ -26,7 +35,10 @@ describe("static audio assets", () => {
     for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
       assert.ok(!line.src.includes("/host-"), `${id} uses host-prefixed audio`);
       if (id.startsWith("example-")) {
-        assert.match(line.src, /\/pig-[a-z-]+\.wav$/);
+        assert.match(line.src, /\/pig-[a-z-]+\.mp3$/);
+      }
+      if (id.startsWith("model-")) {
+        assert.match(line.src, /\/parrot-[a-z-]+\.mp3$/);
       }
     }
   });
@@ -39,6 +51,14 @@ describe("static audio assets", () => {
       assert.equal(line.voiceStyle, "energetic-character", `${id} voice style`);
       assert.match(line.ttsText, /^\[[^\]]+\]/, `${id} missing TTS direction`);
       assert.ok(line.ttsText.includes(line.text), `${id} TTS text omits lesson text`);
+    }
+  });
+
+  it("marks English parrot model lines for parrot voice generation", () => {
+    for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
+      if (!id.startsWith("model-")) continue;
+
+      assert.equal(line.speaker, "parrot", `${id} speaker`);
     }
   });
 });

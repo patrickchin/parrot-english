@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 import {
@@ -10,11 +10,34 @@ import {
 const step = {
   id: "hello",
   sceneTitleZh: "多莉打招呼",
-  exampleLine: "Hi, Bella! How are you?",
-  parrotPromptZh: "轮到你了，跟着佩奇说。",
-  childTarget: "Hi, Bella! How are you?",
-  tipZh: "先听佩奇打招呼，再跟着说。",
+  exampleLine: "Hello, Bella!",
+  parrotPromptZh: "佩奇在和你打招呼。我们回答佩奇。",
+  parrotModelLine: "Hello, Peppa!",
+  childTarget: "Hello, Peppa!",
+  tipZh: "听到别人叫你的名字，可以用对方的名字打招呼。",
 };
+
+function webpHasAlpha(assetSrc) {
+  const bytes = readFileSync(new URL(`../public${assetSrc}`, import.meta.url));
+
+  assert.equal(bytes.toString("ascii", 0, 4), "RIFF");
+  assert.equal(bytes.toString("ascii", 8, 12), "WEBP");
+
+  for (let offset = 12; offset + 8 <= bytes.length;) {
+    const chunkType = bytes.toString("ascii", offset, offset + 4);
+    const chunkSize = bytes.readUInt32LE(offset + 4);
+    const chunkDataOffset = offset + 8;
+
+    if (chunkType === "ALPH") return true;
+    if (chunkType === "VP8X" && (bytes[chunkDataOffset] & 0x10) !== 0) {
+      return true;
+    }
+
+    offset = chunkDataOffset + chunkSize + (chunkSize % 2);
+  }
+
+  return false;
+}
 
 describe("lesson scene presentation", () => {
   it("returns separate character bubbles for each scene", () => {
@@ -23,8 +46,8 @@ describe("lesson scene presentation", () => {
       step
     );
 
-    assert.equal(scene.peppaBubble.text, "Hi, Bella! How are you?");
-    assert.equal(scene.pollyBubble.text, "轮到你了，跟着佩奇说。");
+    assert.equal(scene.peppaBubble.text, "Hello, Bella!");
+    assert.equal(scene.pollyBubble.text, "佩奇在和你打招呼。我们回答佩奇。");
     assert.equal(scene.peppaBubble.tone, "example");
     assert.equal(scene.pollyBubble.tone, "coach");
     assert.equal(scene.activeSpeaker, null);
@@ -50,7 +73,7 @@ describe("lesson scene presentation", () => {
     assert.equal(scene.activeSpeaker, "polly");
     assert.equal(scene.peppaBubble.isActive, false);
     assert.equal(scene.pollyBubble.isActive, true);
-    assert.equal(scene.pollyBubble.text, "轮到你了，跟着佩奇说。");
+    assert.equal(scene.pollyBubble.text, "佩奇在和你打招呼。我们回答佩奇。");
   });
 
   it("prompts the child in Chinese with the target phrase while listening", () => {
@@ -60,7 +83,7 @@ describe("lesson scene presentation", () => {
     );
 
     assert.equal(scene.activeSpeaker, "child");
-    assert.equal(scene.pollyBubble.text, "轮到你：Hi, Bella! How are you?");
+    assert.equal(scene.pollyBubble.text, "轮到你：Hello, Peppa!");
     assert.equal(scene.pollyBubble.tone, "listen");
     assert.equal(scene.pollyBubble.isActive, true);
     assert.equal(scene.statusText, "麦克风正在听，请开口说");
@@ -154,6 +177,22 @@ describe("lesson scene presentation", () => {
       assert.ok(
         existsSync(new URL(`../public${asset.src}`, import.meta.url)),
         `Expected ${asset.src} to exist in public assets`
+      );
+    }
+  });
+
+  it("uses transparent cutout character image assets", () => {
+    const characterAssets = [
+      ...Object.values(LESSON_SCENE_ASSETS.peppa),
+      ...Object.values(LESSON_SCENE_ASSETS.polly),
+    ];
+    const uniqueAssetSrcs = new Set(characterAssets.map((asset) => asset.src));
+
+    for (const assetSrc of uniqueAssetSrcs) {
+      assert.equal(
+        webpHasAlpha(assetSrc),
+        true,
+        `Expected ${assetSrc} to preserve transparency for the scene cutout`
       );
     }
   });

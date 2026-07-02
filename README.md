@@ -21,6 +21,7 @@ npm run dev
 npm run build
 npm run lint
 npm test
+npm run test:e2e
 npm run generate:audio:elevenlabs -- --only=turn-hello --output-dir=/tmp/parrot-audio --force
 ```
 
@@ -44,6 +45,10 @@ Set `ELEVENLABS_API_KEY` to regenerate saved lesson audio with ElevenLabs.
 Use `--only=<audio-id>` while testing to avoid spending credits on all lines.
 Do not use local or macOS system text-to-speech for Chinese lesson audio; use
 ElevenLabs for regenerated Chinese assets.
+
+`npm run test:e2e` starts Vite with browser media and speech-evaluation mocks,
+then runs the Maestro flows for correct, incorrect, and no-speech speaking
+turns. Set `MAESTRO_FLOW=.maestro/lesson-success.yaml` to run one flow.
 
 Current generated voice direction:
 

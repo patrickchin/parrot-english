@@ -1,0 +1,21 @@
+url: ${MAESTRO_APP_URL}/?parrotE2eScenario=incorrect&parrotE2eAutostart=1
+name: Child gets retry feedback after an incorrect speaking turn
+tags:
+  - e2e
+  - mocked-api
+---
+- launchApp
+
+- extendedWaitUntil:
+    visible: "轮到你：Hello, Peppa!"
+    timeout: 8000
+
+- extendedWaitUntil:
+    visible: "正在检查发音"
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "差一点点，听多莉慢慢说，再试一次。"
+    timeout: 8000
+- extendedWaitUntil:
+    visible: "准备再试一次"
+    timeout: 8000

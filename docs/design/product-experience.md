@@ -50,9 +50,11 @@ The current implemented loop is:
 8. On retry, Polly's feedback audio completes, then the phrase restarts.
 9. After the last successful phrase, Polly plays the completion line.
 
-The current phrase set lives in `lib/lesson-data.js`:
+The lesson catalog lives in `lib/lesson-data.js`. Each lesson entry owns its
+list metadata and its ordered script steps, so the UI can render any playable
+lesson without lesson-specific JSX. The current default lesson phrase set is:
 
-- `Hi, Bella! How are you?`
+- `Hello, Peppa!`
 - `Oh! I can't reach it.`
 - `Can you help me, please?`
 - `Here you are!`

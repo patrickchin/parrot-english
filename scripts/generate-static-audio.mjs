@@ -1,15 +1,12 @@
 import { Buffer } from "node:buffer";
-import { execFile } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, dirname, extname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import process from "node:process";
 import { setTimeout as wait } from "node:timers/promises";
-import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
-const execFileAsync = promisify(execFile);
 const ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1";
 const ELEVENLABS_DEFAULT_MODEL = "eleven_v3";
 const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
@@ -98,6 +95,8 @@ async function getElevenLabsVoiceId(line) {
     (await readLocalSecret("ELEVENLABS_VOICE_ID"));
 
   if (configuredVoice) return configuredVoice;
+  if (line.speaker === "parrot") return ELEVENLABS_PARROT_VOICE_ID;
+  if (line.speaker === "pig") return ELEVENLABS_PIG_VOICE_ID;
   return line.lang === "zh-CN" ? ELEVENLABS_PARROT_VOICE_ID : ELEVENLABS_PIG_VOICE_ID;
 }
 
@@ -134,24 +133,7 @@ async function requestSpeech(apiKey, line) {
 
 async function writeAudioFile(filePath, audioBytes) {
   await mkdir(dirname(filePath), { recursive: true });
-
-  if (provider !== "elevenlabs" || extname(filePath) !== ".wav") {
-    await writeFile(filePath, audioBytes);
-    return;
-  }
-
-  const mp3Path = `${filePath}.tmp.mp3`;
-  await writeFile(mp3Path, audioBytes);
-  await execFileAsync("ffmpeg", [
-    "-hide_banner",
-    "-loglevel",
-    "error",
-    "-y",
-    "-i",
-    mp3Path,
-    filePath,
-  ]);
-  await rm(mp3Path, { force: true });
+  await writeFile(filePath, audioBytes);
 }
 
 async function generateAudioFile(apiKey, id, line) {

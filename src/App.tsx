@@ -1,14 +1,35 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Mic, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  List,
+  Lock,
+  Mic,
+  Pause,
+  Play,
+  PlayCircle,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   getLessonAudioCompletionEvent,
   getLessonAudioSequence,
 } from "../lib/lesson-audio";
-import { LESSON_STEPS } from "../lib/lesson-data";
+import { getLessonPrimaryControl } from "../lib/lesson-controls";
+import {
+  LESSONS,
+  getDefaultLesson,
+  getLessonById,
+  isLessonPlayable,
+} from "../lib/lesson-data";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
-import { getLessonScenePresentation } from "../lib/lesson-scene";
+import {
+  LESSON_SCENE_ASSETS,
+  getLessonScenePresentation,
+} from "../lib/lesson-scene";
 import {
   LessonPhase,
   createInitialLessonState,
@@ -19,21 +40,33 @@ import {
   RecordingUnsupportedError,
   recordSpeechClip,
 } from "./speech-recorder";
-import { isAbortError, playAudioLine, type AssetAudioLine } from "./audio-playback";
+import {
+  isAbortError,
+  playAudioSequence,
+  type AssetAudioLine,
+} from "./audio-playback";
 import {
   evaluateSpeech,
   type EvaluationResult,
 } from "./evaluation-request";
 
-const EVALUATION_FAILED_FEEDBACK = "我没有听清楚，我们慢一点再试一次。";
+const RECORDING_UNSUPPORTED_MESSAGE =
+  "这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。";
+const MICROPHONE_ACCESS_MESSAGE =
+  "无法打开麦克风。请允许浏览器使用麦克风后再试一次。";
+const MISSING_AUDIO_BLOB_MESSAGE = "录音没有准备好，请再试一次。";
+
+type AppScreen = "lesson-list" | "lesson-player";
+type Lesson = (typeof LESSONS)[number];
 
 type LessonEvent =
   | { type: "START" }
+  | { type: "PAUSE" }
   | { type: "EXAMPLE_DONE" }
   | { type: "COACH_DONE" }
-  | { type: "RECORDING_DONE" }
+  | { type: "RECORDING_DONE"; audioBlob: Blob }
   | ({ type: "EVALUATED" } & EvaluationResult)
-  | { type: "EVALUATION_FAILED"; feedbackText: string }
+  | { type: "SYSTEM_ERROR"; feedbackText: string }
   | { type: "NEXT" }
   | { type: "RETRY" }
   | { type: "RESET" }
@@ -54,25 +87,166 @@ function renderSpeechText(text: string) {
   );
 }
 
-export function LessonPlayer() {
+function shouldOpenLessonPlayerDirectly() {
+  if (typeof window === "undefined") return false;
+
+  return (
+    import.meta.env.VITE_PARROT_E2E === "1" &&
+    window.location.search.includes("parrotE2eAutostart=1")
+  );
+}
+
+function LessonListPage({
+  lessons,
+  onStartLesson,
+}: {
+  lessons: Lesson[];
+  onStartLesson: (lessonId: string) => void;
+}) {
+  return (
+    <main className="lesson-list-shell">
+      <img
+        alt=""
+        className="lesson-list-background"
+        draggable="false"
+        src="/assets/backgrounds/meadow-day.webp"
+      />
+
+      <section
+        aria-labelledby="lesson-list-title"
+        className="lesson-list-content"
+      >
+        <div className="lesson-list-header">
+          <span className="lesson-list-kicker">
+            <BookOpen aria-hidden="true" strokeWidth={2.5} />
+            Parrot English
+          </span>
+          <h1 id="lesson-list-title">Choose a lesson</h1>
+          <p>选择一节课，和多莉一起开口说英语。</p>
+        </div>
+
+        <div className="lesson-list-grid">
+          {lessons.map((lesson, index) => (
+            <button
+              aria-disabled={!isLessonPlayable(lesson)}
+              className={`lesson-list-card is-${lesson.status}`}
+              disabled={!isLessonPlayable(lesson)}
+              key={lesson.id}
+              onClick={
+                isLessonPlayable(lesson)
+                  ? () => onStartLesson(lesson.id)
+                  : undefined
+              }
+              type="button"
+            >
+              <span className="lesson-card-index">{index + 1}</span>
+              <span className="lesson-card-copy">
+                <span className="lesson-card-title">{lesson.title}</span>
+                <span className="lesson-card-subtitle">{lesson.subtitle}</span>
+                <span className="lesson-card-description">
+                  {lesson.description}
+                </span>
+              </span>
+              <span className="lesson-card-status">
+                {isLessonPlayable(lesson) ? (
+                  <PlayCircle aria-hidden="true" strokeWidth={2.7} />
+                ) : (
+                  <Lock aria-hidden="true" strokeWidth={2.7} />
+                )}
+                <span>{lesson.statusLabel}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <img
+        alt=""
+        className="lesson-list-mascot"
+        draggable="false"
+        src={LESSON_SCENE_ASSETS.polly.idle.src}
+      />
+      <img
+        alt=""
+        className="lesson-list-host"
+        draggable="false"
+        src={LESSON_SCENE_ASSETS.peppa.wave.src}
+      />
+    </main>
+  );
+}
+
+export function App() {
+  const [screen, setScreen] = useState<AppScreen>(() =>
+    shouldOpenLessonPlayerDirectly() ? "lesson-player" : "lesson-list"
+  );
+  const [selectedLessonId, setSelectedLessonId] = useState(
+    () => getDefaultLesson().id
+  );
+  const selectedLesson = getLessonById(selectedLessonId) ?? getDefaultLesson();
+
+  function handleStartLesson(lessonId: string) {
+    const lesson = getLessonById(lessonId);
+    if (!lesson || !isLessonPlayable(lesson)) return;
+
+    setSelectedLessonId(lesson.id);
+    setScreen("lesson-player");
+  }
+
+  if (screen === "lesson-player") {
+    return (
+      <LessonPlayer
+        key={selectedLesson.id}
+        lesson={selectedLesson}
+        onBackToList={() => setScreen("lesson-list")}
+      />
+    );
+  }
+
+  return <LessonListPage lessons={LESSONS} onStartLesson={handleStartLesson} />;
+}
+
+type LessonPlayerProps = {
+  lesson?: Lesson;
+  onBackToList?: () => void;
+};
+
+export function LessonPlayer({
+  lesson = getDefaultLesson(),
+  onBackToList,
+}: LessonPlayerProps = {}) {
+  const didE2eAutostart = useRef(false);
   const [state, dispatch] = useReducer(
     (
       currentState: ReturnType<typeof createInitialLessonState>,
       event: LessonEvent
     ) =>
-      reduceLessonState(currentState, event, LESSON_STEPS.length),
+      reduceLessonState(currentState, event, lesson.steps.length),
     undefined,
     createInitialLessonState
   );
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
-  const currentStep = LESSON_STEPS[state.stepIndex];
+  const currentStep = lesson.steps[state.stepIndex] ?? lesson.steps[0];
+  if (!currentStep) {
+    throw new Error(`Lesson has no steps: ${lesson.id}`);
+  }
   const scene = useMemo(
     () => getLessonScenePresentation(state, currentStep),
     [currentStep, state]
   );
 
   const progressLabel = useMemo(() => getLessonProgressLabel(state), [state]);
+  const primaryControl = useMemo(() => getLessonPrimaryControl(state), [state]);
+
+  useEffect(() => {
+    if (didE2eAutostart.current) return;
+    if (import.meta.env.VITE_PARROT_E2E !== "1") return;
+    if (!window.location.search.includes("parrotE2eAutostart=1")) return;
+
+    didE2eAutostart.current = true;
+    dispatch({ type: "START" });
+  }, []);
 
   useEffect(() => {
     const audioSequence = getLessonAudioSequence(
@@ -96,12 +270,10 @@ export function LessonPlayer() {
     async function playLessonSequence() {
       setError("");
       try {
-        for (const line of audioSequence) {
-          await playAudioLine({
-            ...line,
-            signal: controller.signal,
-          });
-        }
+        await playAudioSequence({
+          lines: audioSequence,
+          signal: controller.signal,
+        });
 
         if (!cancelled && completionEvent) {
           dispatch(completionEvent);
@@ -110,7 +282,9 @@ export function LessonPlayer() {
         if (!cancelled && !isAbortError(caughtError)) {
           const message =
             caughtError instanceof Error ? caughtError.message : "Audio failed.";
-          setError(`声音暂时不可用：${message}`);
+          const feedbackText = `声音暂时不可用：${message}`;
+          dispatch({ type: "SYSTEM_ERROR", feedbackText });
+          setError(feedbackText);
         }
       }
     }
@@ -143,39 +317,33 @@ export function LessonPlayer() {
         const audioBlob = await recordSpeechClip({ signal: controller.signal });
         if (cancelled) return;
 
-        dispatch({ type: "RECORDING_DONE" });
-
-        const result = await evaluateSpeech({
-          audio: audioBlob,
-          signal: controller.signal,
-          targetText: currentStep.childTarget,
-        });
-
-        if (!cancelled) dispatch({ type: "EVALUATED", ...result });
+        dispatch({ type: "RECORDING_DONE", audioBlob });
       } catch (caughtError) {
         if (cancelled) return;
 
         if (caughtError instanceof RecordingUnsupportedError) {
-          setError("这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。");
+          dispatch({
+            type: "SYSTEM_ERROR",
+            feedbackText: RECORDING_UNSUPPORTED_MESSAGE,
+          });
+          setError(RECORDING_UNSUPPORTED_MESSAGE);
           return;
         }
 
         if (caughtError instanceof MicrophoneAccessError) {
-          setError("无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
+          dispatch({
+            type: "SYSTEM_ERROR",
+            feedbackText: MICROPHONE_ACCESS_MESSAGE,
+          });
+          setError(MICROPHONE_ACCESS_MESSAGE);
           return;
         }
 
         const message =
-          caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
-        dispatch({
-          type: "EVALUATION_FAILED",
-          feedbackText: EVALUATION_FAILED_FEEDBACK,
-        });
-        setError(
-          message.includes("GROQ_API_KEY")
-            ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
-            : `判断语音时出错：${message}`
-        );
+          caughtError instanceof Error ? caughtError.message : "Recording failed.";
+        const feedbackText = `录音时出错：${message}`;
+        dispatch({ type: "SYSTEM_ERROR", feedbackText });
+        setError(feedbackText);
       }
     }
 
@@ -187,9 +355,73 @@ export function LessonPlayer() {
     };
   }, [currentStep.childTarget, state.phase]);
 
-  function startLesson() {
+  useEffect(() => {
+    if (state.phase !== LessonPhase.Evaluating) return;
+
+    if (!state.pendingAudioBlob) {
+      dispatch({
+        type: "SYSTEM_ERROR",
+        feedbackText: MISSING_AUDIO_BLOB_MESSAGE,
+      });
+      setError(MISSING_AUDIO_BLOB_MESSAGE);
+      return;
+    }
+
+    const audioBlob = state.pendingAudioBlob;
+    let cancelled = false;
+    const controller = new AbortController();
+
+    async function evaluateChildSpeech() {
+      try {
+        const result = await evaluateSpeech({
+          audio: audioBlob,
+          signal: controller.signal,
+          targetText: currentStep.childTarget,
+        });
+
+        if (!cancelled) {
+          dispatch({ type: "EVALUATED", ...result });
+        }
+      } catch (caughtError) {
+        if (cancelled) return;
+
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
+        const feedbackText =
+          message.includes("GROQ_API_KEY")
+            ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
+            : `判断语音时出错：${message}`;
+        dispatch({ type: "SYSTEM_ERROR", feedbackText });
+        setError(feedbackText);
+      }
+    }
+
+    void evaluateChildSpeech();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [currentStep.childTarget, state.pendingAudioBlob, state.phase]);
+
+  function handlePrimaryAction() {
     setError("");
-    dispatch({ type: "START" });
+
+    switch (primaryControl.action) {
+      case "pause":
+        dispatch({ type: "PAUSE" });
+        return;
+      case "retry":
+        dispatch({ type: "RETRY" });
+        return;
+      case "start":
+      case "play":
+      case "restart":
+        dispatch({ type: "START" });
+        return;
+      default:
+        return;
+    }
   }
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
@@ -207,10 +439,11 @@ export function LessonPlayer() {
   }
 
   const sceneNumber = state.stepIndex + 1;
-  const showStartButton =
-    state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished;
-  const startButtonLabel =
-    state.phase === LessonPhase.Finished ? "再来一次" : "开始";
+  const showStartButton = ["restart", "retry", "start"].includes(
+    primaryControl.kind
+  );
+  const showPlaybackToggle = ["pause", "play"].includes(primaryControl.kind);
+  const showPrimaryControl = showStartButton || showPlaybackToggle;
   const showMicPrompt =
     state.phase === LessonPhase.Listening || state.phase === LessonPhase.Evaluating;
   const isListening = state.phase === LessonPhase.Listening;
@@ -239,7 +472,7 @@ export function LessonPlayer() {
             {currentStep.sceneTitleZh}（{currentStep.durationHintSeconds}秒）
           </span>
           <div className="scene-progress" aria-hidden="true">
-            {Array.from({ length: LESSON_STEPS.length }, (_, index) => (
+            {Array.from({ length: lesson.steps.length }, (_, index) => (
               <span
                 className={index <= state.stepIndex ? "is-complete" : ""}
                 key={index}
@@ -256,20 +489,49 @@ export function LessonPlayer() {
           type="button"
         >
           {muted ? (
-            <VolumeX aria-hidden="true" strokeWidth={3.4} />
+            <VolumeX aria-hidden="true" strokeWidth={2.7} />
           ) : (
-            <Volume2 aria-hidden="true" strokeWidth={3.4} />
+            <Volume2 aria-hidden="true" strokeWidth={2.7} />
           )}
         </button>
 
-        <div className={`lesson-flow-banner ${showStartButton ? "has-action" : ""}`}>
-          {showStartButton ? (
+        {onBackToList ? (
+          <button
+            aria-label="Back to lesson list"
+            className="lesson-list-button"
+            onClick={onBackToList}
+            type="button"
+          >
+            <List aria-hidden="true" strokeWidth={3} />
+          </button>
+        ) : null}
+
+        <div className={`lesson-flow-banner ${showPrimaryControl ? "has-action" : ""}`}>
+          {showPrimaryControl ? (
             <button
-              className="start-lesson-button"
-              onClick={startLesson}
+              aria-label={primaryControl.ariaLabel}
+              className={
+                showPlaybackToggle
+                  ? `playback-toggle-button ${
+                      primaryControl.kind === "pause" ? "is-playing" : ""
+                    }`
+                  : "start-lesson-button"
+              }
+              onClick={handlePrimaryAction}
               type="button"
             >
-              {startButtonLabel}
+              {showPlaybackToggle ? (
+                <>
+                  {primaryControl.kind === "pause" ? (
+                    <Pause aria-hidden="true" strokeWidth={3} />
+                  ) : (
+                    <Play aria-hidden="true" strokeWidth={3} />
+                  )}
+                  <span>{primaryControl.label}</span>
+                </>
+              ) : (
+                primaryControl.label
+              )}
             </button>
           ) : (
             <span className="flow-status">{progressLabel}</span>
@@ -286,7 +548,7 @@ export function LessonPlayer() {
             role="status"
           >
             <span className="mic-symbol" aria-hidden="true">
-              <Mic strokeWidth={3.6} />
+              <Mic strokeWidth={2.6} />
             </span>
             <span className="mic-panel-title">{micPanelTitle}</span>
             <span className="mic-panel-instruction">{micPanelInstruction}</span>
@@ -352,7 +614,7 @@ export function LessonPlayer() {
           onClick={() => navigateScene("SCENE_PREVIOUS")}
           type="button"
         >
-          <ChevronLeft aria-hidden="true" strokeWidth={4} />
+          <ChevronLeft aria-hidden="true" strokeWidth={3} />
         </button>
 
         <button
@@ -361,12 +623,12 @@ export function LessonPlayer() {
           onClick={() => navigateScene("SCENE_NEXT")}
           type="button"
         >
-          <ChevronRight aria-hidden="true" strokeWidth={4} />
+          <ChevronRight aria-hidden="true" strokeWidth={3} />
         </button>
 
         <div className="sr-only" aria-live="polite">
           {progressLabel}. Target phrase: {currentStep.childTarget}.
-          Scene {sceneNumber} of {LESSON_STEPS.length}. {scene.statusText}.
+          Scene {sceneNumber} of {lesson.steps.length}. {scene.statusText}.
           {state.transcript ? ` Heard: ${state.transcript}.` : ""}
           {error ? ` ${error}` : ""}
         </div>

@@ -21,6 +21,42 @@ describe("lesson state", () => {
     assert.equal(state.retryCount, 0);
   });
 
+  it("starts from the selected idle scene", () => {
+    const selectedScene = {
+      ...createInitialLessonState(),
+      stepIndex: 2,
+    };
+    const state = reduce(selectedScene, { type: "START" });
+
+    assert.equal(state.phase, LessonPhase.ExampleSpeaking);
+    assert.equal(state.stepIndex, 2);
+    assert.equal(state.retryCount, 0);
+  });
+
+  it("pauses on the current scene and clears active turn state", () => {
+    const audioBlob = new Blob(["child audio"], { type: "audio/webm" });
+    const activeScene = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Evaluating,
+      stepIndex: 3,
+      retryCount: 1,
+      feedback: "Try again.",
+      transcript: "wrong words",
+      lastOutcome: "retry",
+      lastPassed: false,
+      pendingAudioBlob: audioBlob,
+    };
+    const paused = reduce(activeScene, { type: "PAUSE" });
+
+    assert.equal(paused.phase, LessonPhase.Idle);
+    assert.equal(paused.stepIndex, 3);
+    assert.equal(paused.retryCount, 0);
+    assert.equal(paused.feedback, "");
+    assert.equal(paused.transcript, "");
+    assert.equal(paused.lastOutcome, "idle");
+    assert.equal(paused.pendingAudioBlob, null);
+  });
+
   it("moves from example to parrot coaching to listening", () => {
     const started = reduce(createInitialLessonState(), { type: "START" });
     const parrot = reduce(started, { type: "EXAMPLE_DONE" });
@@ -51,28 +87,45 @@ describe("lesson state", () => {
     assert.equal(retry.stepIndex, 2);
   });
 
-  it("retries the current phrase after an evaluation request failure", () => {
-    const evaluating = {
+  it("stores recorded audio when entering evaluation", () => {
+    const audioBlob = new Blob(["child audio"], { type: "audio/webm" });
+    const listening = {
       ...createInitialLessonState(),
-      phase: LessonPhase.Evaluating,
+      phase: LessonPhase.Listening,
       stepIndex: 2,
     };
-    const failed = reduce(evaluating, {
-      type: "EVALUATION_FAILED",
-      feedbackText: "我没有听清楚，我们慢一点再试一次。",
+    const evaluating = reduce(listening, {
+      type: "RECORDING_DONE",
+      audioBlob,
     });
+
+    assert.equal(evaluating.phase, LessonPhase.Evaluating);
+    assert.equal(evaluating.pendingAudioBlob, audioBlob);
+  });
+
+  it("moves system failures out of active recording and evaluation states", () => {
+    const failed = reduce(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Listening,
+        stepIndex: 2,
+      },
+      {
+        type: "SYSTEM_ERROR",
+        feedbackText: "无法打开麦克风。请允许浏览器使用麦克风后再试一次。",
+      }
+    );
     const retry = reduce(failed, { type: "RETRY" });
 
-    assert.equal(failed.phase, LessonPhase.Feedback);
-    assert.equal(failed.lastOutcome, "retry");
-    assert.equal(failed.retryCount, 1);
-    assert.equal(failed.feedback, "我没有听清楚，我们慢一点再试一次。");
-    assert.equal(failed.transcript, "");
+    assert.equal(failed.phase, LessonPhase.Error);
+    assert.equal(failed.lastOutcome, "error");
+    assert.equal(failed.feedback, "无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
+    assert.equal(failed.pendingAudioBlob, null);
     assert.equal(retry.phase, LessonPhase.ExampleSpeaking);
     assert.equal(retry.stepIndex, 2);
   });
 
-  it("waits on the completed phrase until Next is clicked", () => {
+  it("marks correct answers for automatic continuation", () => {
     const listening = {
       ...createInitialLessonState(),
       phase: LessonPhase.Evaluating,
@@ -88,9 +141,31 @@ describe("lesson state", () => {
 
     assert.equal(evaluated.phase, LessonPhase.Feedback);
     assert.equal(evaluated.lastOutcome, "advance");
+    assert.equal(evaluated.lastPassed, true);
+    assert.equal(evaluated.pendingAudioBlob, null);
     assert.equal(evaluated.stepIndex, 1);
     assert.equal(next.phase, LessonPhase.ExampleSpeaking);
     assert.equal(next.stepIndex, 2);
+  });
+
+  it("does not mark exhausted incorrect answers as correct", () => {
+    const listening = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Evaluating,
+      retryCount: 1,
+      stepIndex: 1,
+    };
+    const evaluated = reduce(listening, {
+      type: "EVALUATED",
+      passed: false,
+      feedbackText: "Try the next one.",
+      transcript: "wrong words",
+    });
+
+    assert.equal(evaluated.phase, LessonPhase.Feedback);
+    assert.equal(evaluated.lastOutcome, "advance");
+    assert.equal(evaluated.lastPassed, false);
+    assert.equal(evaluated.stepIndex, 1);
   });
 
   it("navigates directly to the next scene", () => {
