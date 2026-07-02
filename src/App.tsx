@@ -1,7 +1,15 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Mic, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent,
+} from "react";
 import {
   getLessonAudioCompletionEvent,
   getLessonAudioSequence,
@@ -17,6 +25,7 @@ import {
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
+  requestMicrophoneAccess,
   recordSpeechClip,
 } from "./speech-recorder";
 import { isAbortError, playAudioLine, type AssetAudioLine } from "./audio-playback";
@@ -26,6 +35,20 @@ import {
 } from "./evaluation-request";
 
 const EVALUATION_FAILED_FEEDBACK = "我没有听清楚，我们慢一点再试一次。";
+const RECORDING_UNSUPPORTED_MESSAGE =
+  "这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。";
+const MICROPHONE_ACCESS_MESSAGE =
+  "无法打开麦克风。请允许浏览器使用麦克风后再试一次。";
+const MAX_HOLD_RECORDING_MS = 12000;
+const SPEECH_NAME_CLASSES = new Map([
+  ["Bella", "speech-name-child"],
+  ["Peppa", "speech-name-peppa"],
+  ["Polly", "speech-name-polly"],
+  ["Dolly", "speech-name-polly"],
+  ["佩奇", "speech-name-peppa"],
+  ["多莉", "speech-name-polly"],
+]);
+const SPEECH_NAME_PATTERN = /(Bella|Peppa|Polly|Dolly|佩奇|多莉)/g;
 
 type LessonEvent =
   | { type: "START" }
@@ -40,18 +63,35 @@ type LessonEvent =
   | { type: "SCENE_NEXT" }
   | { type: "SCENE_PREVIOUS" };
 
-function renderSpeechText(text: string) {
-  const highlight = "Polly!";
-  if (!text.includes(highlight)) return text;
+type ActiveRecording = {
+  cancelController: AbortController;
+  stopController: AbortController;
+};
 
-  const [before, after] = text.split(highlight);
-  return (
-    <>
-      {before}
-      <span className="speech-highlight">{highlight}</span>
-      {after}
-    </>
-  );
+function renderSpeechText(text: string) {
+  return text.split(SPEECH_NAME_PATTERN).map((part, index) => {
+    const nameClass = SPEECH_NAME_CLASSES.get(part);
+
+    if (!nameClass) return part;
+
+    return (
+      <span className={`speech-name ${nameClass}`} key={`${part}-${index}`}>
+        {part}
+      </span>
+    );
+  });
+}
+
+function getMicrophoneSetupErrorMessage(caughtError: unknown) {
+  if (caughtError instanceof RecordingUnsupportedError) {
+    return RECORDING_UNSUPPORTED_MESSAGE;
+  }
+
+  if (caughtError instanceof MicrophoneAccessError) {
+    return MICROPHONE_ACCESS_MESSAGE;
+  }
+
+  return "";
 }
 
 export function LessonPlayer() {
@@ -65,7 +105,10 @@ export function LessonPlayer() {
     createInitialLessonState
   );
   const [error, setError] = useState("");
+  const [isHoldingMic, setIsHoldingMic] = useState(false);
+  const [isPreparingMicrophone, setIsPreparingMicrophone] = useState(false);
   const [muted, setMuted] = useState(false);
+  const activeRecordingRef = useRef<ActiveRecording | null>(null);
   const currentStep = LESSON_STEPS[state.stepIndex];
   const scene = useMemo(
     () => getLessonScenePresentation(state, currentStep),
@@ -132,64 +175,163 @@ export function LessonPlayer() {
   ]);
 
   useEffect(() => {
-    if (state.phase !== LessonPhase.Listening) return;
+    return () => {
+      activeRecordingRef.current?.cancelController.abort();
+    };
+  }, []);
 
-    let cancelled = false;
-    const controller = new AbortController();
-
-    async function recordAndEvaluate() {
-      setError("");
-      try {
-        const audioBlob = await recordSpeechClip({ signal: controller.signal });
-        if (cancelled) return;
-
-        dispatch({ type: "RECORDING_DONE" });
-
-        const result = await evaluateSpeech({
-          audio: audioBlob,
-          signal: controller.signal,
-          targetText: currentStep.childTarget,
-        });
-
-        if (!cancelled) dispatch({ type: "EVALUATED", ...result });
-      } catch (caughtError) {
-        if (cancelled) return;
-
-        if (caughtError instanceof RecordingUnsupportedError) {
-          setError("这个浏览器不支持录音，请使用最新版 Chrome 或 Safari。");
-          return;
-        }
-
-        if (caughtError instanceof MicrophoneAccessError) {
-          setError("无法打开麦克风。请允许浏览器使用麦克风后再试一次。");
-          return;
-        }
-
-        const message =
-          caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
-        dispatch({
-          type: "EVALUATION_FAILED",
-          feedbackText: EVALUATION_FAILED_FEEDBACK,
-        });
-        setError(
-          message.includes("GROQ_API_KEY")
-            ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
-            : `判断语音时出错：${message}`
-        );
-      }
+  useEffect(() => {
+    if (
+      state.phase === LessonPhase.Listening ||
+      state.phase === LessonPhase.Evaluating
+    ) {
+      return;
     }
 
-    void recordAndEvaluate();
+    const activeRecording = activeRecordingRef.current;
+    if (!activeRecording) return;
 
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [currentStep.childTarget, state.phase]);
+    activeRecording.cancelController.abort();
+    activeRecordingRef.current = null;
+    setIsHoldingMic(false);
+  }, [state.phase, state.stepIndex]);
 
-  function startLesson() {
+  async function recordAndEvaluate(
+    activeRecording: ActiveRecording,
+    targetText: string
+  ) {
     setError("");
-    dispatch({ type: "START" });
+
+    try {
+      const audioBlob = await recordSpeechClip({
+        recordingMs: MAX_HOLD_RECORDING_MS,
+        signal: activeRecording.cancelController.signal,
+        stopSignal: activeRecording.stopController.signal,
+      });
+
+      if (activeRecording.cancelController.signal.aborted) return;
+
+      dispatch({ type: "RECORDING_DONE" });
+
+      const result = await evaluateSpeech({
+        audio: audioBlob,
+        signal: activeRecording.cancelController.signal,
+        targetText,
+      });
+
+      if (!activeRecording.cancelController.signal.aborted) {
+        dispatch({ type: "EVALUATED", ...result });
+      }
+    } catch (caughtError) {
+      if (
+        activeRecording.cancelController.signal.aborted ||
+        isAbortError(caughtError)
+      ) {
+        return;
+      }
+
+      if (caughtError instanceof RecordingUnsupportedError) {
+        setError(RECORDING_UNSUPPORTED_MESSAGE);
+        return;
+      }
+
+      if (caughtError instanceof MicrophoneAccessError) {
+        setError(MICROPHONE_ACCESS_MESSAGE);
+        return;
+      }
+
+      const message =
+        caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
+      dispatch({
+        type: "EVALUATION_FAILED",
+        feedbackText: EVALUATION_FAILED_FEEDBACK,
+      });
+      setError(
+        message.includes("GROQ_API_KEY")
+          ? "请先在 Worker 运行环境配置 GROQ_API_KEY，才能听写和判断孩子的发音。"
+          : `判断语音时出错：${message}`
+      );
+    } finally {
+      if (activeRecordingRef.current === activeRecording) {
+        activeRecordingRef.current = null;
+        setIsHoldingMic(false);
+      }
+    }
+  }
+
+  function startHoldRecording(event?: PointerEvent<HTMLButtonElement>) {
+    if (state.phase !== LessonPhase.Listening || activeRecordingRef.current) {
+      return;
+    }
+
+    event?.preventDefault();
+    event?.currentTarget.setPointerCapture(event.pointerId);
+
+    const activeRecording = {
+      cancelController: new AbortController(),
+      stopController: new AbortController(),
+    };
+    activeRecordingRef.current = activeRecording;
+    setIsHoldingMic(true);
+
+    void recordAndEvaluate(activeRecording, currentStep.childTarget);
+  }
+
+  function stopHoldRecording(
+    event?: PointerEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>
+  ) {
+    event?.preventDefault();
+    const activeRecording = activeRecordingRef.current;
+
+    if (!activeRecording || activeRecording.stopController.signal.aborted) {
+      return;
+    }
+
+    activeRecording.stopController.abort();
+    setIsHoldingMic(false);
+  }
+
+  function cancelHoldRecording(event?: PointerEvent<HTMLButtonElement>) {
+    event?.preventDefault();
+    const activeRecording = activeRecordingRef.current;
+    if (!activeRecording) return;
+
+    activeRecording.cancelController.abort();
+    activeRecordingRef.current = null;
+    setIsHoldingMic(false);
+  }
+
+  function startKeyboardHoldRecording(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key !== " " && event.key !== "Enter") return;
+    if (event.repeat) return;
+
+    event.preventDefault();
+    startHoldRecording();
+  }
+
+  function stopKeyboardHoldRecording(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key !== " " && event.key !== "Enter") return;
+
+    stopHoldRecording(event);
+  }
+
+  async function startLesson() {
+    if (isPreparingMicrophone) return;
+
+    setError("");
+    setIsPreparingMicrophone(true);
+
+    try {
+      await requestMicrophoneAccess();
+      dispatch({ type: "START" });
+    } catch (caughtError) {
+      const setupMessage = getMicrophoneSetupErrorMessage(caughtError);
+      const message =
+        caughtError instanceof Error ? caughtError.message : "Microphone failed.";
+      setError(setupMessage || `无法准备麦克风：${message}`);
+    } finally {
+      setIsPreparingMicrophone(false);
+    }
   }
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
@@ -210,14 +352,24 @@ export function LessonPlayer() {
   const showStartButton =
     state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished;
   const startButtonLabel =
-    state.phase === LessonPhase.Finished ? "再来一次" : "开始";
+    isPreparingMicrophone
+      ? "准备麦克风"
+      : state.phase === LessonPhase.Finished
+        ? "再来一次"
+        : "开始";
   const showMicPrompt =
     state.phase === LessonPhase.Listening || state.phase === LessonPhase.Evaluating;
   const isListening = state.phase === LessonPhase.Listening;
   const micPanelTitle = isListening ? "轮到你说" : "我听到了";
-  const micPanelInstruction = isListening ? "麦克风正在听，请说：" : "正在检查发音";
+  const micPanelInstruction = isListening
+    ? isHoldingMic
+      ? "正在听，松开后检查："
+      : "按住麦克风说："
+    : "正在检查发音";
   const micPanelAriaLabel = isListening
-    ? `轮到你说。麦克风正在听。Target phrase: ${currentStep.childTarget}.`
+    ? isHoldingMic
+      ? `轮到你说。正在录音，松开麦克风按钮后检查。Target phrase: ${currentStep.childTarget}.`
+      : `轮到你说。按住麦克风按钮说。Target phrase: ${currentStep.childTarget}.`
     : `我听到了。正在检查发音。Target phrase: ${currentStep.childTarget}.`;
 
   return (
@@ -266,6 +418,7 @@ export function LessonPlayer() {
           {showStartButton ? (
             <button
               className="start-lesson-button"
+              disabled={isPreparingMicrophone}
               onClick={startLesson}
               type="button"
             >
@@ -282,12 +435,33 @@ export function LessonPlayer() {
             aria-live="assertive"
             className={`speak-now-panel ${
               isListening ? "is-listening" : "is-evaluating"
-            }`}
+            } ${isHoldingMic ? "is-recording" : "is-ready"}`}
             role="status"
           >
-            <span className="mic-symbol" aria-hidden="true">
-              <Mic strokeWidth={3.6} />
-            </span>
+            {isListening ? (
+              <button
+                aria-label={
+                  isHoldingMic
+                    ? `Release microphone to check: ${currentStep.childTarget}`
+                    : `Hold microphone and say: ${currentStep.childTarget}`
+                }
+                aria-pressed={isHoldingMic}
+                className="mic-symbol"
+                onContextMenu={(event) => event.preventDefault()}
+                onKeyDown={startKeyboardHoldRecording}
+                onKeyUp={stopKeyboardHoldRecording}
+                onPointerCancel={cancelHoldRecording}
+                onPointerDown={startHoldRecording}
+                onPointerUp={stopHoldRecording}
+                type="button"
+              >
+                <Mic aria-hidden="true" strokeWidth={3.6} />
+              </button>
+            ) : (
+              <span className="mic-symbol" aria-hidden="true">
+                <Mic strokeWidth={3.6} />
+              </span>
+            )}
             <span className="mic-panel-title">{micPanelTitle}</span>
             <span className="mic-panel-instruction">{micPanelInstruction}</span>
             <strong className="mic-target-phrase">{currentStep.childTarget}</strong>
