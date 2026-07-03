@@ -36,4 +36,18 @@ describe("lesson list scrolling and color", () => {
     assert.match(availableRule, /border-color:\s*#ffd944/);
     assert.doesNotMatch(cardRule, /rgba\(255,\s*255,\s*255,\s*0\.96\)/);
   });
+
+  it("centers the front-page content without a transparent background treatment", () => {
+    const backgroundRule = getRule(".lesson-list-background");
+    const contentRule = getRule(".lesson-list-content");
+    const headerRule = getRule(".lesson-list-header");
+    const gridRule = getRule(".lesson-list-grid");
+
+    assert.match(backgroundRule, /opacity:\s*1/);
+    assert.doesNotMatch(styles, /\.lesson-list-shell::before\s*\{/);
+    assert.match(contentRule, /margin-inline:\s*auto/);
+    assert.match(headerRule, /justify-items:\s*center/);
+    assert.match(headerRule, /text-align:\s*center/);
+    assert.match(gridRule, /justify-content:\s*center/);
+  });
 });
