@@ -57,28 +57,9 @@ button:disabled {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.86;
+  opacity: 1;
   filter: saturate(1.12) contrast(1.04);
   user-select: none;
-}
-
-.lesson-list-shell::before {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 247, 206, 0.95) 0%,
-      rgba(255, 247, 206, 0.74) 42%,
-      rgba(121, 220, 124, 0.36) 100%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(255, 217, 68, 0.24) 0%,
-      rgba(255, 70, 123, 0.14) 100%
-    );
-  content: "";
 }
 
 .lesson-list-content {
@@ -90,12 +71,16 @@ button:disabled {
   min-height: 0;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(22px, 4vh, 34px);
+  margin-inline: auto;
 }
 
 .lesson-list-header {
   display: grid;
   max-width: 660px;
+  justify-items: center;
   gap: 10px;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .lesson-list-kicker {
@@ -139,6 +124,7 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 760px);
   min-height: 0;
+  justify-content: center;
   overflow-y: auto;
   overscroll-behavior: contain;
   gap: clamp(14px, 2vw, 20px);
@@ -988,10 +974,6 @@ button:disabled {
 
     overflow: hidden;
     padding: 24px;
-  }
-
-  .lesson-list-shell::before {
-    background: rgba(255, 252, 231, 0.82);
   }
 
   .lesson-list-content {
