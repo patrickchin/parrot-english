@@ -20,7 +20,8 @@ This change includes:
 
 - one JSON file per lesson;
 - automatic lesson discovery and a lesson picker;
-- the child name, two goal phrases, summary, location, scenes, and steps;
+- the child name, two goal phrases, short and detailed summaries, location,
+  scenes, and steps;
 - English-only dialogue, instruction, feedback, and narration;
 - a restored English narrator speaker;
 - global character, emote, and background catalogs;
@@ -58,6 +59,7 @@ four to seven additional scenes under the same `scenes` array.
     "Thank you!"
   ],
   "summary": "Peppa cannot reach her ball, and her friends help her.",
+  "detailedSummary": "Peppa finds her ball on a shelf that is too high to reach. Dolly helps the user practise asking for help and saying thank you while they get the ball down. The friends solve the problem together and celebrate the user's good English.",
   "location": {
     "name": "Peppa's playroom",
     "description": "A bright playroom with a tall toy shelf, a large window, and a soft green rug."
@@ -132,6 +134,8 @@ lesson creator prompt:
 - exactly two short, useful goal phrases;
 - between five and eight scenes;
 - one simple location and one short story;
+- one short summary plus a detailed summary of about three sentences covering
+  the beginning, learning action, and happy ending;
 - a clear beginning, simple action, and happy ending;
 - short beginner-level lines, normally two to seven words;
 - narrator-led practice instructions and feedback;
@@ -182,8 +186,9 @@ by lesson JSON.
 The catalog loader validates all discovered lessons before exposing them to the
 player. A lesson is invalid when any of these conditions is true:
 
-- its title, child name, summary, location name, or location description is
-  missing or empty;
+- its title, child name, short summary, detailed summary, location name, or
+  location description is missing or empty;
+- its detailed summary does not contain three sentences;
 - it does not contain exactly two non-empty goal phrases;
 - it contains fewer than five or more than eight scenes;
 - a scene title or setting description is missing or empty;
@@ -210,12 +215,16 @@ JSON matching the lesson contract above.
 
 The prompt retains its current rules for child age, English difficulty, two goal
 phrases, five-to-eight-scene stories, location consistency, retry limit, and
-final narrator praise. It also receives or embeds the currently allowed
-character, emote, and background IDs. Generated lessons may use only those IDs.
+final narrator praise. It expands the current short-summary rule to require both
+the existing one-sentence `summary` and a three-sentence `detailedSummary`. It
+also receives or embeds the currently allowed character, emote, and background
+IDs. Generated lessons may use only those IDs.
 
 The prompt must explicitly require:
 
 - valid JSON only, with no Markdown fences or commentary;
+- a one-sentence `summary` and a three-sentence `detailedSummary` covering the
+  story's beginning, learning action, and ending;
 - one speaker and one dialogue line per step;
 - `user` as the learner speaker ID;
 - `peppa` and `dolly`, never `pig` and `parrot`;
@@ -343,6 +352,8 @@ narration cache assets are generated ahead of use. The hard-coded
 Focused tests cover:
 
 - validation of the complete lesson contract and global catalogs;
+- enforcement of one-sentence short summaries and three-sentence detailed
+  summaries;
 - enforcement of exactly two goal phrases and five to eight scenes;
 - rejection of Chinese child-facing dialogue;
 - rejection of `pig`, `parrot`, unsupported speakers, and unsupported emotes;
