@@ -59,7 +59,7 @@ four to seven additional scenes under the same `scenes` array.
     "Thank you!"
   ],
   "summary": "Peppa cannot reach her ball, and her friends help her.",
-  "detailedSummary": "Peppa finds her ball on a shelf that is too high to reach. Dolly helps the user practise asking for help and saying thank you while they get the ball down. The friends solve the problem together and celebrate the user's good English.",
+  "detailedSummary": "Peppa finds her ball on a shelf that is too high to reach. Dolly flies up and brings the ball down after Peppa asks for help. Peppa thanks Dolly, and they happily return to playing.",
   "location": {
     "name": "Peppa's playroom",
     "description": "A bright playroom with a tall toy shelf, a large window, and a soft green rug."
@@ -134,8 +134,8 @@ lesson creator prompt:
 - exactly two short, useful goal phrases;
 - between five and eight scenes;
 - one simple location and one short story;
-- one short summary plus a detailed summary of about three sentences covering
-  the beginning, learning action, and happy ending;
+- one short summary plus a lesson-specific detailed summary of about three
+  sentences covering the story's situation, action, and happy ending;
 - a clear beginning, simple action, and happy ending;
 - short beginner-level lines, normally two to seven words;
 - narrator-led practice instructions and feedback;
@@ -144,6 +144,11 @@ lesson creator prompt:
 
 The final praise is the final step of the final scene. No review, recap, or
 additional activity follows it.
+
+Both summary fields describe only what happens inside the story. They do not
+mention teaching, practising, target phrases, learner performance, the user's
+English, or generic celebration of learning. The detailed summary must be
+specific enough that it would not make sense unchanged in a different lesson.
 
 ## Global Visual Catalogs
 
@@ -216,15 +221,17 @@ JSON matching the lesson contract above.
 The prompt retains its current rules for child age, English difficulty, two goal
 phrases, five-to-eight-scene stories, location consistency, retry limit, and
 final narrator praise. It expands the current short-summary rule to require both
-the existing one-sentence `summary` and a three-sentence `detailedSummary`. It
-also receives or embeds the currently allowed character, emote, and background
-IDs. Generated lessons may use only those IDs.
+the existing one-sentence `summary` and a three-sentence, story-only
+`detailedSummary`. Neither summary may describe instruction, practice, learner
+performance, or language learning. The prompt also receives or embeds the
+currently allowed character, emote, and background IDs. Generated lessons may
+use only those IDs.
 
 The prompt must explicitly require:
 
 - valid JSON only, with no Markdown fences or commentary;
-- a one-sentence `summary` and a three-sentence `detailedSummary` covering the
-  story's beginning, learning action, and ending;
+- a one-sentence `summary` and a three-sentence, lesson-specific
+  `detailedSummary` covering only the story's situation, action, and ending;
 - one speaker and one dialogue line per step;
 - `user` as the learner speaker ID;
 - `peppa` and `dolly`, never `pig` and `parrot`;
@@ -354,6 +361,8 @@ Focused tests cover:
 - validation of the complete lesson contract and global catalogs;
 - enforcement of one-sentence short summaries and three-sentence detailed
   summaries;
+- system-prompt requirements that prohibit summaries about teaching, practice,
+  learner performance, or generic language-learning praise;
 - enforcement of exactly two goal phrases and five to eight scenes;
 - rejection of Chinese child-facing dialogue;
 - rejection of `pig`, `parrot`, unsupported speakers, and unsupported emotes;
