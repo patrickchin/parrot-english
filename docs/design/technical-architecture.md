@@ -25,10 +25,27 @@ Important entrypoints:
 
 - `index.html`: Vite HTML entrypoint.
 - `src/main.tsx`: React bootstrap and E2E-only browser mock import.
-- `src/App.tsx`: data-driven lesson selection UI, audio sequencing, recording,
-  and evaluation effects.
+- `src/App.tsx`: declarative client routes, data-driven lesson list and player
+  UI, audio sequencing, recording, and evaluation effects.
 - `worker/index.ts`: Worker fetch handler and route dispatch.
 - `wrangler.jsonc`: Worker assets and compatibility configuration.
+
+## Client Routing
+
+The app uses React Router in Declarative Mode. `src/App.tsx` defines these
+routes:
+
+- `/`: lesson list.
+- `/lessons/:lessonNumber`: redirects to page 1 for a playable lesson.
+- `/lessons/:lessonNumber/pages/:pageNumber`: the addressed lesson page.
+
+Lesson and page numbers are one-based catalog positions. `lib/lesson-routes.js`
+parses and validates the route parameters against the catalog loaded from
+`lib/lessons.json`. Invalid numbers, unavailable lessons, and out-of-range pages
+redirect to `/`.
+
+Cloudflare's `single-page-application` asset fallback serves the app shell for
+refreshes and direct navigation to nested client URLs.
 
 ## Lesson State Machine
 
@@ -63,12 +80,16 @@ EVALUATED failed with retry remaining
   -> feedback with lastOutcome=retry
 feedback audio done and retry
   -> example-speaking
-Next button from successful feedback
+feedback audio done and success
+  -> routed NEXT and example-speaking for the next step
+Next button while successful feedback is visible
   -> example-speaking for the next step
 ```
 
-The state machine keeps successful feedback anchored to the completed step.
-This is deliberate: the next phrase starts only when the user clicks Next.
+The state machine keeps successful feedback anchored to the completed step while
+its audio plays. When successful feedback audio completes, the routed `NEXT`
+transition updates both the lesson state and page URL. The user can also click
+the scene Next control to advance while successful feedback is still visible.
 
 ## Scene Presentation
 
@@ -96,7 +117,9 @@ Current rules:
   `step.audio.model` as the model line.
 - `feedback` finds a static audio line whose text matches `state.feedback`.
 - `finished` plays `finished`.
-- Feedback does not dispatch automatic `NEXT` after success.
+- Successful feedback dispatches routed `NEXT` after its audio completes.
+- The scene Next control can dispatch the same transition while successful
+  feedback is visible.
 - Retry feedback dispatches `RETRY` after the feedback audio completes.
 
 `src/audio-playback.ts` only supports static audio assets for live lesson

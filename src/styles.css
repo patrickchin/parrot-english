@@ -152,6 +152,7 @@ button:disabled {
   cursor: pointer;
   padding: clamp(18px, 2.4vw, 24px);
   text-align: left;
+  text-decoration: none;
   transition:
     filter 160ms ease,
     transform 160ms ease;

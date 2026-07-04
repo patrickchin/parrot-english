@@ -17,9 +17,12 @@ function getRule(selector) {
 describe("lesson list UI", () => {
   it("uses the lesson list as the normal app entry while preserving e2e lesson autostart", () => {
     assert.match(main, /import \{ App \} from "\.\/App"/);
-    assert.match(main, /<App \/>/);
-    assert.match(app, /type AppScreen = "lesson-list" \| "lesson-player"/);
+    assert.match(main, /<BrowserRouter>\s*<App \/>\s*<\/BrowserRouter>/s);
+    assert.match(app, /<Route[^>]*path="\/"[^>]*element=\{<LessonListRoute \/>\}/);
     assert.match(app, /parrotE2eAutostart=1/);
+    assert.match(app, /getLessonPagePath\(getDefaultLessonNumber\(\), 1\)/);
+    assert.match(app, /search: location\.search/);
+    assert.doesNotMatch(app, /type AppScreen/);
   });
 
   it("keeps the current lesson as the only enabled lesson option", () => {
@@ -32,9 +35,16 @@ describe("lesson list UI", () => {
     assert.match(lessonData, /export const LESSONS = catalog\.lessons/);
     assert.doesNotMatch(app, /const LESSON_LIST_ITEMS/);
     assert.match(app, /lessons=\{LESSONS\}/);
-    assert.match(app, /onStartLesson\(lesson\.id\)/);
-    assert.match(app, /disabled=\{!isLessonPlayable\(lesson\)\}/);
-    assert.match(app, /aria-disabled=\{!isLessonPlayable\(lesson\)\}/);
+    assert.match(app, /function LessonCardContents\(/);
+    assert.match(
+      app,
+      /<Link[\s\S]*?className=\{`lesson-list-card is-\$\{lesson\.status\}`\}[\s\S]*?to=\{getLessonPagePath\(index \+ 1, 1\)\}/
+    );
+    assert.match(
+      app,
+      /<button\s+aria-disabled="true"[\s\S]*?disabled[\s\S]*?type="button"/
+    );
+    assert.match(getRule(".lesson-list-card"), /text-decoration:\s*none/);
   });
 
   it("reuses the same pig and parrot assets as the lesson stage", () => {

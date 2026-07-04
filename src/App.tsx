@@ -14,6 +14,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useReducer,
@@ -23,6 +24,15 @@ import {
   type PointerEvent,
 } from "react";
 import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
+import {
   getLessonAudioCompletionEvent,
   getLessonAudioSequence,
 } from "../lib/lesson-audio";
@@ -30,10 +40,17 @@ import { getLessonPrimaryControl } from "../lib/lesson-controls";
 import {
   LESSONS,
   getDefaultLesson,
-  getLessonById,
   isLessonPlayable,
 } from "../lib/lesson-data";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
+import { createLessonPageActivityGuard } from "../lib/lesson-page-activity";
+import { getLessonEventTargetPageIndex } from "../lib/lesson-page-transition";
+import {
+  getDefaultLessonNumber,
+  getLessonPagePath,
+  resolveLessonNumber,
+  resolveLessonPageRoute,
+} from "../lib/lesson-routes";
 import {
   LESSON_SCENE_ASSETS,
   getLessonScenePresentation,
@@ -46,7 +63,7 @@ import {
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
-  requestMicrophoneAccess,
+  requestMicrophoneAccess as requestMicrophoneAccessWithSignal,
   recordSpeechClip,
 } from "./speech-recorder";
 import {
@@ -75,7 +92,6 @@ const SPEECH_NAME_CLASSES = new Map([
 ]);
 const SPEECH_NAME_PATTERN = /(Bella|Peppa|Polly|Dolly|佩奇|多莉)/g;
 
-type AppScreen = "lesson-list" | "lesson-player";
 type Lesson = (typeof LESSONS)[number];
 
 type LessonEvent =
@@ -89,6 +105,7 @@ type LessonEvent =
   | { type: "NEXT" }
   | { type: "RETRY" }
   | { type: "RESET" }
+  | { type: "SELECT_STEP"; stepIndex: number }
   | { type: "SCENE_NEXT" }
   | { type: "SCENE_PREVIOUS" };
 
@@ -132,13 +149,34 @@ function shouldOpenLessonPlayerDirectly() {
   );
 }
 
-function LessonListPage({
-  lessons,
-  onStartLesson,
+function LessonCardContents({
+  lesson,
+  index,
 }: {
-  lessons: Lesson[];
-  onStartLesson: (lessonId: string) => void;
+  lesson: Lesson;
+  index: number;
 }) {
+  return (
+    <>
+      <span className="lesson-card-index">{index + 1}</span>
+      <span className="lesson-card-copy">
+        <span className="lesson-card-title">{lesson.title}</span>
+        <span className="lesson-card-subtitle">{lesson.subtitle}</span>
+        <span className="lesson-card-description">{lesson.description}</span>
+      </span>
+      <span className="lesson-card-status">
+        {isLessonPlayable(lesson) ? (
+          <PlayCircle aria-hidden="true" strokeWidth={2.7} />
+        ) : (
+          <Lock aria-hidden="true" strokeWidth={2.7} />
+        )}
+        <span>{lesson.statusLabel}</span>
+      </span>
+    </>
+  );
+}
+
+function LessonListPage({ lessons }: { lessons: Lesson[] }) {
   return (
     <main className="lesson-list-shell">
       <img
@@ -162,37 +200,27 @@ function LessonListPage({
         </div>
 
         <div className="lesson-list-grid">
-          {lessons.map((lesson, index) => (
-            <button
-              aria-disabled={!isLessonPlayable(lesson)}
-              className={`lesson-list-card is-${lesson.status}`}
-              disabled={!isLessonPlayable(lesson)}
-              key={lesson.id}
-              onClick={
-                isLessonPlayable(lesson)
-                  ? () => onStartLesson(lesson.id)
-                  : undefined
-              }
-              type="button"
-            >
-              <span className="lesson-card-index">{index + 1}</span>
-              <span className="lesson-card-copy">
-                <span className="lesson-card-title">{lesson.title}</span>
-                <span className="lesson-card-subtitle">{lesson.subtitle}</span>
-                <span className="lesson-card-description">
-                  {lesson.description}
-                </span>
-              </span>
-              <span className="lesson-card-status">
-                {isLessonPlayable(lesson) ? (
-                  <PlayCircle aria-hidden="true" strokeWidth={2.7} />
-                ) : (
-                  <Lock aria-hidden="true" strokeWidth={2.7} />
-                )}
-                <span>{lesson.statusLabel}</span>
-              </span>
-            </button>
-          ))}
+          {lessons.map((lesson, index) =>
+            isLessonPlayable(lesson) ? (
+              <Link
+                className={`lesson-list-card is-${lesson.status}`}
+                key={lesson.id}
+                to={getLessonPagePath(index + 1, 1)}
+              >
+                <LessonCardContents index={index} lesson={lesson} />
+              </Link>
+            ) : (
+              <button
+                aria-disabled="true"
+                className={`lesson-list-card is-${lesson.status}`}
+                disabled
+                key={lesson.id}
+                type="button"
+              >
+                <LessonCardContents index={index} lesson={lesson} />
+              </button>
+            )
+          )}
         </div>
       </section>
 
@@ -212,44 +240,93 @@ function LessonListPage({
   );
 }
 
-export function App() {
-  const [screen, setScreen] = useState<AppScreen>(() =>
-    shouldOpenLessonPlayerDirectly() ? "lesson-player" : "lesson-list"
-  );
-  const [selectedLessonId, setSelectedLessonId] = useState(
-    () => getDefaultLesson().id
-  );
-  const selectedLesson = getLessonById(selectedLessonId) ?? getDefaultLesson();
+function LessonListRoute() {
+  const location = useLocation();
 
-  function handleStartLesson(lessonId: string) {
-    const lesson = getLessonById(lessonId);
-    if (!lesson || !isLessonPlayable(lesson)) return;
-
-    setSelectedLessonId(lesson.id);
-    setScreen("lesson-player");
-  }
-
-  if (screen === "lesson-player") {
+  if (shouldOpenLessonPlayerDirectly()) {
     return (
-      <LessonPlayer
-        key={selectedLesson.id}
-        lesson={selectedLesson}
-        onBackToList={() => setScreen("lesson-list")}
+      <Navigate
+        replace
+        to={{
+          pathname: getLessonPagePath(getDefaultLessonNumber(), 1),
+          search: location.search,
+        }}
       />
     );
   }
 
-  return <LessonListPage lessons={LESSONS} onStartLesson={handleStartLesson} />;
+  return <LessonListPage lessons={LESSONS} />;
+}
+
+function LessonRedirectRoute() {
+  const location = useLocation();
+  const { lessonNumber } = useParams();
+  const resolved = resolveLessonNumber(lessonNumber);
+
+  if (!resolved) return <Navigate to="/" replace />;
+
+  return (
+    <Navigate
+      replace
+      to={{
+        pathname: getLessonPagePath(resolved.lessonNumber, 1),
+        search: location.search,
+      }}
+    />
+  );
+}
+
+function LessonPageRoute() {
+  const navigate = useNavigate();
+  const { lessonNumber, pageNumber } = useParams();
+  const resolved = resolveLessonPageRoute(lessonNumber, pageNumber);
+
+  if (!resolved) return <Navigate to="/" replace />;
+
+  return (
+    <LessonPlayer
+      initialStepIndex={resolved.pageIndex}
+      key={resolved.lesson.id}
+      lesson={resolved.lesson}
+      onBackToList={() => navigate("/")}
+      onNavigatePage={(nextPageIndex) =>
+        navigate(
+          getLessonPagePath(resolved.lessonNumber, nextPageIndex + 1)
+        )
+      }
+    />
+  );
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LessonListRoute />} />
+      <Route
+        path="/lessons/:lessonNumber"
+        element={<LessonRedirectRoute />}
+      />
+      <Route
+        path="/lessons/:lessonNumber/pages/:pageNumber"
+        element={<LessonPageRoute />}
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 type LessonPlayerProps = {
+  initialStepIndex?: number;
   lesson?: Lesson;
   onBackToList?: () => void;
+  onNavigatePage?: (pageIndex: number) => void;
 };
 
 export function LessonPlayer({
+  initialStepIndex = 0,
   lesson = getDefaultLesson(),
   onBackToList,
+  onNavigatePage,
 }: LessonPlayerProps = {}) {
   const didE2eAutostart = useRef(false);
   const [state, dispatch] = useReducer(
@@ -258,14 +335,61 @@ export function LessonPlayer({
       event: LessonEvent
     ) =>
       reduceLessonState(currentState, event, lesson.steps.length),
-    undefined,
+    initialStepIndex,
     createInitialLessonState
   );
   const [error, setError] = useState("");
   const [isHoldingMic, setIsHoldingMic] = useState(false);
   const [isPreparingMicrophone, setIsPreparingMicrophone] = useState(false);
   const [muted, setMuted] = useState(false);
+  const handledRoutedStepIndexRef = useRef(initialStepIndex);
+  const onNavigatePageRef = useRef(onNavigatePage);
   const activeRecordingRef = useRef<ActiveRecording | null>(null);
+  const microphoneAccessControllerRef = useRef<AbortController | null>(null);
+  const pageActivityGuardRef = useRef(createLessonPageActivityGuard());
+  onNavigatePageRef.current = onNavigatePage;
+
+  const cancelPageLocalActivity = useCallback(() => {
+    pageActivityGuardRef.current.invalidate();
+    setError("");
+    activeRecordingRef.current?.cancelController.abort();
+    activeRecordingRef.current = null;
+    microphoneAccessControllerRef.current?.abort();
+    microphoneAccessControllerRef.current = null;
+    setIsHoldingMic(false);
+    setIsPreparingMicrophone(false);
+  }, []);
+
+  const dispatchLessonEvent = useCallback(
+    (event: LessonEvent) => {
+      const nextStepIndex = getLessonEventTargetPageIndex(
+        state,
+        event,
+        lesson.steps.length
+      );
+
+      if (nextStepIndex !== null) {
+        handledRoutedStepIndexRef.current = nextStepIndex;
+        cancelPageLocalActivity();
+      }
+
+      dispatch(event);
+
+      if (nextStepIndex !== null) {
+        onNavigatePageRef.current?.(nextStepIndex);
+      }
+    },
+    [cancelPageLocalActivity, lesson.steps.length, state.phase, state.stepIndex]
+  );
+
+  useEffect(() => {
+    if (initialStepIndex === handledRoutedStepIndexRef.current) return;
+
+    handledRoutedStepIndexRef.current = initialStepIndex;
+    cancelPageLocalActivity();
+    dispatch({ type: "SELECT_STEP", stepIndex: initialStepIndex });
+  }, [initialStepIndex, cancelPageLocalActivity]);
+
   const currentStep = lesson.steps[state.stepIndex] ?? lesson.steps[0];
   if (!currentStep) {
     throw new Error(`Lesson has no steps: ${lesson.id}`);
@@ -277,6 +401,7 @@ export function LessonPlayer({
 
   const progressLabel = useMemo(() => getLessonProgressLabel(state), [state]);
   const primaryControl = useMemo(() => getLessonPrimaryControl(state), [state]);
+  const audioActivityGeneration = pageActivityGuardRef.current.capture();
 
   useEffect(() => {
     if (didE2eAutostart.current) return;
@@ -297,7 +422,13 @@ export function LessonPlayer({
 
     if (muted) {
       const timeout = window.setTimeout(() => {
-        if (completionEvent) dispatch(completionEvent);
+        if (
+          !pageActivityGuardRef.current.isCurrent(audioActivityGeneration)
+        ) {
+          return;
+        }
+
+        if (completionEvent) dispatchLessonEvent(completionEvent);
       }, Math.max(700, audioSequence.length * 800));
 
       return () => window.clearTimeout(timeout);
@@ -314,11 +445,19 @@ export function LessonPlayer({
           signal: controller.signal,
         });
 
-        if (!cancelled && completionEvent) {
-          dispatch(completionEvent);
+        if (
+          !cancelled &&
+          pageActivityGuardRef.current.isCurrent(audioActivityGeneration) &&
+          completionEvent
+        ) {
+          dispatchLessonEvent(completionEvent);
         }
       } catch (caughtError) {
-        if (!cancelled && !isAbortError(caughtError)) {
+        if (
+          !cancelled &&
+          pageActivityGuardRef.current.isCurrent(audioActivityGeneration) &&
+          !isAbortError(caughtError)
+        ) {
           const message =
             caughtError instanceof Error ? caughtError.message : "Audio failed.";
           const feedbackText = `声音暂时不可用：${message}`;
@@ -335,7 +474,9 @@ export function LessonPlayer({
       controller.abort();
     };
   }, [
+    audioActivityGeneration,
     currentStep,
+    dispatchLessonEvent,
     muted,
     state.feedback,
     state.lastOutcome,
@@ -346,7 +487,9 @@ export function LessonPlayer({
 
   useEffect(() => {
     return () => {
+      pageActivityGuardRef.current.invalidate();
       activeRecordingRef.current?.cancelController.abort();
+      microphoneAccessControllerRef.current?.abort();
     };
   }, []);
 
@@ -415,10 +558,18 @@ export function LessonPlayer({
     }
   }
 
+  const evaluationActivityGeneration = pageActivityGuardRef.current.capture();
+
   useEffect(() => {
     if (state.phase !== LessonPhase.Evaluating) return;
 
     if (!state.pendingAudioBlob) {
+      if (
+        !pageActivityGuardRef.current.isCurrent(evaluationActivityGeneration)
+      ) {
+        return;
+      }
+
       dispatch({
         type: "SYSTEM_ERROR",
         feedbackText: MISSING_AUDIO_BLOB_MESSAGE,
@@ -439,11 +590,22 @@ export function LessonPlayer({
           targetText: currentStep.childTarget,
         });
 
-        if (!cancelled) {
+        if (
+          !cancelled &&
+          pageActivityGuardRef.current.isCurrent(evaluationActivityGeneration)
+        ) {
           dispatch({ type: "EVALUATED", ...result });
         }
       } catch (caughtError) {
-        if (cancelled || isAbortError(caughtError)) return;
+        if (
+          cancelled ||
+          !pageActivityGuardRef.current.isCurrent(
+            evaluationActivityGeneration
+          ) ||
+          isAbortError(caughtError)
+        ) {
+          return;
+        }
 
         const message =
           caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
@@ -462,7 +624,12 @@ export function LessonPlayer({
       cancelled = true;
       controller.abort();
     };
-  }, [currentStep.childTarget, state.pendingAudioBlob, state.phase]);
+  }, [
+    currentStep.childTarget,
+    evaluationActivityGeneration,
+    state.pendingAudioBlob,
+    state.phase,
+  ]);
 
   function startHoldRecording(event?: PointerEvent<HTMLButtonElement>) {
     if (state.phase !== LessonPhase.Listening || activeRecordingRef.current) {
@@ -523,13 +690,41 @@ export function LessonPlayer({
   async function startLesson() {
     if (isPreparingMicrophone) return;
 
+    const microphoneAccessController = new AbortController();
+    microphoneAccessControllerRef.current?.abort();
+    microphoneAccessControllerRef.current = microphoneAccessController;
+    const requestMicrophoneAccess = () =>
+      requestMicrophoneAccessWithSignal({
+        signal: microphoneAccessController.signal,
+      });
+
     setError("");
     setIsPreparingMicrophone(true);
 
     try {
       await requestMicrophoneAccess();
-      dispatch({ type: "START" });
+
+      if (
+        microphoneAccessController.signal.aborted ||
+        microphoneAccessControllerRef.current !== microphoneAccessController
+      ) {
+        return;
+      }
+
+      if (state.phase === LessonPhase.Finished) {
+        dispatchLessonEvent({ type: "START" });
+      } else {
+        dispatch({ type: "START" });
+      }
     } catch (caughtError) {
+      if (
+        microphoneAccessController.signal.aborted ||
+        microphoneAccessControllerRef.current !== microphoneAccessController ||
+        isAbortError(caughtError)
+      ) {
+        return;
+      }
+
       const setupMessage = getMicrophoneSetupErrorMessage(caughtError);
       const message =
         caughtError instanceof Error ? caughtError.message : "Microphone failed.";
@@ -537,7 +732,10 @@ export function LessonPlayer({
       dispatch({ type: "SYSTEM_ERROR", feedbackText });
       setError(feedbackText);
     } finally {
-      setIsPreparingMicrophone(false);
+      if (microphoneAccessControllerRef.current === microphoneAccessController) {
+        microphoneAccessControllerRef.current = null;
+        setIsPreparingMicrophone(false);
+      }
     }
   }
 
@@ -563,16 +761,14 @@ export function LessonPlayer({
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
     setError("");
-    if (
+    const event: LessonEvent =
       type === "SCENE_NEXT" &&
       state.phase === LessonPhase.Feedback &&
       state.lastOutcome === "advance"
-    ) {
-      dispatch({ type: "NEXT" });
-      return;
-    }
+        ? { type: "NEXT" }
+        : { type };
 
-    dispatch({ type });
+    dispatchLessonEvent(event);
   }
 
   const sceneNumber = state.stepIndex + 1;

@@ -46,7 +46,9 @@ The current implemented loop is:
 4. The app records the child.
 5. The app evaluates the recording.
 6. Polly gives feedback.
-7. On success, the app waits for the child/adult to click Next.
+7. On success, the feedback audio completes and the app automatically continues
+   to the next routed page. The child/adult can also click scene Next while the
+   feedback is visible.
 8. On retry, Polly's feedback audio completes, then the phrase restarts.
 9. After the last successful phrase, Polly plays the completion line.
 
@@ -83,13 +85,21 @@ Evaluating state requirements:
 
 ## Navigation Rules
 
-The scene back/next controls navigate lesson scenes. A successful feedback state
-does not auto-start the next phrase. Clicking Next from successful feedback
-dispatches the lesson `NEXT` event and starts the next example.
+The lesson catalog and player use addressable routes:
 
-This decision came from repeated confusion around automatic progression. Manual
-Next gives the learner and adult a clear break after feedback and prevents the
-next line from starting unexpectedly.
+- Each lesson page has a one-based URL, such as `/lessons/1/pages/2`.
+- Playable lesson cards open page 1.
+- Scene controls update the URL when they move between pages.
+- Browser Back and Forward restore the page addressed by the URL in its idle
+  phase.
+- The URL owns lesson and page selection; the lesson state machine owns the
+  speaking phase within that page.
+
+The scene back/next controls navigate lesson scenes. Successful feedback remains
+visible and audible while its saved audio plays; completion dispatches the
+routed lesson `NEXT` event, updates the URL, and starts the next example.
+Clicking scene Next while successful feedback is visible dispatches the same
+transition without waiting for the audio to finish.
 
 ## Feedback Rules
 

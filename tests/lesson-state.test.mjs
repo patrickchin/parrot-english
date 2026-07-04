@@ -57,6 +57,26 @@ describe("lesson state", () => {
     assert.equal(paused.pendingAudioBlob, null);
   });
 
+  it("selects an idle lesson step and clears active turn state", () => {
+    const audioBlob = new Blob(["child audio"], { type: "audio/webm" });
+    const activeScene = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Evaluating,
+      stepIndex: 3,
+      retryCount: 1,
+      feedback: "Try again.",
+      transcript: "wrong words",
+      lastOutcome: "retry",
+      pendingAudioBlob: audioBlob,
+    };
+    const selected = reduce(activeScene, { type: "SELECT_STEP", stepIndex: 1 });
+
+    assert.deepEqual(selected, {
+      ...createInitialLessonState(),
+      stepIndex: 1,
+    });
+  });
+
   it("moves from example to parrot coaching to listening", () => {
     const started = reduce(createInitialLessonState(), { type: "START" });
     const parrot = reduce(started, { type: "EXAMPLE_DONE" });

@@ -14,6 +14,14 @@ The frontend is a Vite single-page app. The backend is a plain Cloudflare Worker
 that serves static Vite assets and handles REST API requests before falling back
 to `env.ASSETS.fetch(request)`.
 
+Client routes use one-based lesson and page numbers:
+
+- `/` shows the lesson list.
+- Playable lesson pages use URLs such as `/lessons/1/pages/1`.
+- `/lessons/1` redirects to page 1 at `/lessons/1/pages/1`.
+- Cloudflare's SPA fallback serves the app for refreshes and direct requests to
+  nested lesson URLs.
+
 ## Commands
 
 ```bash
