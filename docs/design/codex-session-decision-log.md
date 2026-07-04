@@ -45,7 +45,8 @@ The current design contract implied by the prompt history is:
 
 - The app is a child-facing, one-page speaking lesson, not a generic dashboard or
   marketing site.
-- The first screen should be the actual lesson stage.
+- The lesson list is the normal first screen; explicit E2E autostart opens the
+  lesson stage directly.
 - Peppa demonstrates English; Polly coaches in Chinese and gives feedback.
 - Saved audio is part of the product, not an optional enhancement.
 - Runtime lesson TTS is absent; lesson playback is static-asset only.
