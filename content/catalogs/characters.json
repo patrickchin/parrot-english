@@ -1,0 +1,92 @@
+[
+  {
+    "id": "peppa",
+    "name": "Peppa",
+    "assets": {
+      "idle": {
+        "src": "/assets/characters/peppa/peppa-idle.webp",
+        "alt": "Peppa waiting"
+      },
+      "talking": {
+        "src": "/assets/characters/peppa/peppa-talking.webp",
+        "alt": "Peppa talking"
+      },
+      "listening": {
+        "src": "/assets/characters/peppa/peppa-listening.webp",
+        "alt": "Peppa listening"
+      },
+      "happy": {
+        "src": "/assets/characters/peppa/peppa-happy.webp",
+        "alt": "Peppa feeling happy"
+      },
+      "sad": {
+        "src": "/assets/characters/peppa/peppa-sad.webp",
+        "alt": "Peppa feeling sad"
+      },
+      "surprised": {
+        "src": "/assets/characters/peppa/peppa-surprised.webp",
+        "alt": "Peppa feeling surprised"
+      }
+    }
+  },
+  {
+    "id": "dolly",
+    "name": "Dolly",
+    "assets": {
+      "idle": {
+        "src": "/assets/characters/dolly/dolly-idle.webp",
+        "alt": "Dolly waiting"
+      },
+      "talking": {
+        "src": "/assets/characters/dolly/dolly-talking.webp",
+        "alt": "Dolly talking"
+      },
+      "listening": {
+        "src": "/assets/characters/dolly/dolly-listening.webp",
+        "alt": "Dolly listening"
+      },
+      "happy": {
+        "src": "/assets/characters/dolly/dolly-happy.webp",
+        "alt": "Dolly feeling happy"
+      },
+      "sad": {
+        "src": "/assets/characters/dolly/dolly-sad.webp",
+        "alt": "Dolly feeling sad"
+      },
+      "surprised": {
+        "src": "/assets/characters/dolly/dolly-surprised.webp",
+        "alt": "Dolly feeling surprised"
+      }
+    }
+  },
+  {
+    "id": "user",
+    "name": "You",
+    "assets": {
+      "idle": {
+        "src": "/assets/characters/user/user-idle.webp",
+        "alt": "The learner waiting"
+      },
+      "talking": {
+        "src": "/assets/characters/user/user-talking.webp",
+        "alt": "The learner talking"
+      },
+      "listening": {
+        "src": "/assets/characters/user/user-listening.webp",
+        "alt": "The learner listening"
+      },
+      "happy": {
+        "src": "/assets/characters/user/user-happy.webp",
+        "alt": "The learner feeling happy"
+      },
+      "sad": {
+        "src": "/assets/characters/user/user-sad.webp",
+        "alt": "The learner feeling sad"
+      },
+      "surprised": {
+        "src": "/assets/characters/user/user-surprised.webp",
+        "alt": "The learner feeling surprised"
+      }
+    }
+  }
+]

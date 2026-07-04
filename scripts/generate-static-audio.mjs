@@ -1,17 +1,26 @@
 import { Buffer } from "node:buffer";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 import process from "node:process";
 import { setTimeout as wait } from "node:timers/promises";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
+const execFileAsync = promisify(execFile);
 const ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1";
 const ELEVENLABS_DEFAULT_MODEL = "eleven_v3";
 const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
-const ELEVENLABS_PIG_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
-const ELEVENLABS_PARROT_VOICE_ID = "4NQthjVhIGGVfL3Si000";
+const ELEVENLABS_PEPPA_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
+const ELEVENLABS_DOLLY_VOICE_ID = "4NQthjVhIGGVfL3Si000";
+const ELEVENLABS_NARRATOR_VOICE_ID = "4NQthjVhIGGVfL3Si000";
+const ELEVENLABS_SPEAKER_VOICE_IDS = {
+  peppa: ELEVENLABS_PEPPA_VOICE_ID,
+  dolly: ELEVENLABS_DOLLY_VOICE_ID,
+  narrator: ELEVENLABS_NARRATOR_VOICE_ID,
+};
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const audioDir = join(rootDir, "public", "assets", "audio");
@@ -90,14 +99,18 @@ async function requestElevenLabsSpeech(apiKey, line) {
 }
 
 async function getElevenLabsVoiceId(line) {
-  const configuredVoice =
-    process.env.ELEVENLABS_VOICE_ID ||
-    (await readLocalSecret("ELEVENLABS_VOICE_ID"));
+  const speakerKey = `ELEVENLABS_${line.speaker.toUpperCase()}_VOICE_ID`;
+  const configuredVoice = await readLocalSecret(
+    speakerKey,
+    "ELEVENLABS_VOICE_ID"
+  );
 
   if (configuredVoice) return configuredVoice;
-  if (line.speaker === "parrot") return ELEVENLABS_PARROT_VOICE_ID;
-  if (line.speaker === "pig") return ELEVENLABS_PIG_VOICE_ID;
-  return line.lang === "zh-CN" ? ELEVENLABS_PARROT_VOICE_ID : ELEVENLABS_PIG_VOICE_ID;
+  const defaultVoice = ELEVENLABS_SPEAKER_VOICE_IDS[line.speaker];
+  if (!defaultVoice) {
+    throw new Error(`No ElevenLabs voice configured for speaker: ${line.speaker}`);
+  }
+  return defaultVoice;
 }
 
 function getElevenLabsVoiceSettings(line) {
@@ -133,7 +146,24 @@ async function requestSpeech(apiKey, line) {
 
 async function writeAudioFile(filePath, audioBytes) {
   await mkdir(dirname(filePath), { recursive: true });
-  await writeFile(filePath, audioBytes);
+
+  if (provider !== "elevenlabs" || extname(filePath) !== ".wav") {
+    await writeFile(filePath, audioBytes);
+    return;
+  }
+
+  const mp3Path = `${filePath}.tmp.mp3`;
+  await writeFile(mp3Path, audioBytes);
+  await execFileAsync("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-i",
+    mp3Path,
+    filePath,
+  ]);
+  await rm(mp3Path, { force: true });
 }
 
 async function generateAudioFile(apiKey, id, line) {

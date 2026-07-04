@@ -1,6 +1,6 @@
 # Parrot English
 
-One-page fixed-stage English speaking practice prototype for children.
+One-page, scene-based English speaking practice for young learners.
 
 ## Stack
 
@@ -8,11 +8,10 @@ One-page fixed-stage English speaking practice prototype for children.
 - Vite 8
 - Tailwind CSS 4
 - Cloudflare Worker TypeScript REST API
-- Groq speech evaluation behind a server-side `/api/evaluate-speech` route
+- Groq speech evaluation behind `/api/evaluate-speech`
 
-The frontend is a Vite single-page app. The backend is a plain Cloudflare Worker
-that serves static Vite assets and handles REST API requests before falling back
-to `env.ASSETS.fetch(request)`.
+The frontend is a Vite single-page app. The Worker serves the built assets and
+handles API requests before falling back to `env.ASSETS.fetch(request)`.
 
 ## Commands
 
@@ -21,46 +20,55 @@ npm run dev
 npm run build
 npm run lint
 npm test
-npm run test:e2e
-npm run generate:audio:elevenlabs -- --only=turn-hello --output-dir=/tmp/parrot-audio --force
+npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force
 ```
 
-`npm run dev` builds the Vite app and starts Wrangler on port 3000 so local
-browser requests use the same Worker REST API shape as deployment.
+`npm run dev` builds the Vite app and starts Wrangler on port 3000, so local
+browser requests use the deployment REST shape. `npm run dev:vite` is the
+frontend-only convenience server.
+
+## Lesson Content
+
+Each file in `content/lessons/*.json` is discovered automatically and appears
+in the lesson picker. Adding or removing a lesson requires no registry edit.
+
+A lesson contains a story summary, a three-sentence detailed summary, two goal
+phrases, and five to eight scenes. Every scene chooses a pre-generated
+background while also describing its setting in free-form text. Each scene step
+contains exactly one line of English dialogue, one speaker, and one emote for
+every visible character.
+
+Lesson JSON deliberately contains no image or audio filenames. Visible
+character IDs, background IDs, and the six supported emotes are resolved through
+the global catalogs in `content/catalogs`. Saved audio is an optimization cache
+resolved by speaker plus exact dialogue text in `lib/static-audio.js`.
 
 ## Environment
 
-Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation calls. Keep real
-keys out of source control. The lesson plays saved audio files from
-`public/assets/audio`; runtime text-to-speech is not part of the Worker API.
-
-Optional Worker rate-limit settings for `/api/evaluate-speech`:
+Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation. Keep real keys out
+of source control. Optional evaluation limits are:
 
 ```bash
 EVALUATE_RATE_LIMIT_MAX=8
 EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
-Set `ELEVENLABS_API_KEY` to regenerate saved lesson audio with ElevenLabs.
-Use `--only=<audio-id>` while testing to avoid spending credits on all lines.
-Do not use local or macOS system text-to-speech for Chinese lesson audio; use
-ElevenLabs for regenerated Chinese assets.
+Set `ELEVENLABS_API_KEY` to generate missing saved lesson audio. Use
+`--only=<audio-id>` to avoid spending credits on unrelated lines. Saved audio
+must be generated with ElevenLabs; do not substitute local or macOS system
+speech.
 
-`npm run test:e2e` starts Vite with browser media and speech-evaluation mocks,
-then runs the Maestro flows for correct, incorrect, and no-speech speaking
-turns. Set `MAESTRO_FLOW=.maestro/lesson-success.yaml` to run one flow.
+The default generator uses ElevenLabs `eleven_v3` and selects a voice from the
+manifest speaker:
 
-Current generated voice direction:
+- Peppa: `Oqy85UMasXzUjUxF0ta5`
+- Dolly: `4NQthjVhIGGVfL3Si000`
+- Narrator: `4NQthjVhIGGVfL3Si000`
 
-- Pig example audio: ElevenLabs `Summer - British, Confident & Posh`
-  (`Oqy85UMasXzUjUxF0ta5`) with `eleven_v3`.
-- Parrot coach/Chinese audio: ElevenLabs `Chen - Friendly Narration Mandarin`
-  (`4NQthjVhIGGVfL3Si000`) with `eleven_v3`.
-  Chinese parrot lines use separate `ttsText` performance tags for a brighter,
-  more energetic delivery while keeping the visible lesson text unchanged.
+Override one speaker with `ELEVENLABS_PEPPA_VOICE_ID`,
+`ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`. The general
+`ELEVENLABS_VOICE_ID` remains a fallback override.
 
 ## Design Docs
 
 Project design and architecture notes live in [docs/README.md](docs/README.md).
-Start there for the product experience, technical architecture, audio pipeline,
-and Codex-session decision log.

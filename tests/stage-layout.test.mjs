@@ -12,75 +12,36 @@ function getRule(selector) {
   return match[1];
 }
 
-function getPercentValue(rule, property) {
-  const match = rule.match(new RegExp(`${property}:\\s*(-?\\d+(?:\\.\\d+)?)%`));
+describe("catalog-driven stage layout", () => {
+  it("positions every character through shared catalog slots", () => {
+    const layer = getRule(".character-layer");
+    const sprite = getRule(".character-sprite");
 
-  assert.ok(match, `Expected ${property} to be a percentage value`);
-  return Number(match[1]);
-}
-
-function getClampViewportPercent(rule, property) {
-  const match = rule.match(
-    new RegExp(`${property}:\\s*clamp\\([^,]+,\\s*(-?\\d+(?:\\.\\d+)?)vw,`)
-  );
-
-  assert.ok(match, `Expected ${property} to use clamp with a vw middle value`);
-  return Number(match[1]);
-}
-
-function getAspectRatio(rule) {
-  const match = rule.match(/aspect-ratio:\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
-
-  assert.ok(match, "Expected aspect-ratio to use a numeric ratio");
-  return Number(match[1]) / Number(match[2]);
-}
-
-describe("stage character bubble layout", () => {
-  it("keeps Peppa's desktop bubble visually anchored near the Peppa sprite", () => {
-    const peppaCharacter = getRule(".peppa-character");
-    const peppaBubble = getRule(".peppa-bubble");
-
-    const characterLeft = getPercentValue(peppaCharacter, "left");
-    const characterWidth = getClampViewportPercent(peppaCharacter, "width");
-    const bubbleLeft = getPercentValue(peppaBubble, "left");
-
-    assert.ok(
-      bubbleLeft <= characterLeft + characterWidth * 0.6,
-      `Expected Peppa bubble left (${bubbleLeft}%) to stay close to Peppa sprite at ${characterLeft}% with ${characterWidth}vw width`
-    );
+    assert.match(layer, /position:\s*absolute/);
+    assert.match(sprite, /--character-index/);
+    assert.match(sprite, /--character-count/);
+    assert.match(sprite, /position:\s*absolute/);
+    assert.match(sprite, /object-position|left:/);
   });
 
-  it("keeps Peppa's desktop bubble low enough to point back to the sprite", () => {
-    const peppaBubble = getRule(".peppa-bubble");
-    const bubbleTop = getPercentValue(peppaBubble, "top");
+  it("anchors speech to the same dynamic character slots", () => {
+    const bubble = getRule(".speech-bubble");
 
-    assert.ok(
-      bubbleTop >= 28,
-      `Expected Peppa bubble top (${bubbleTop}%) to sit near the sprite instead of high in the sky`
-    );
+    assert.match(bubble, /--character-index/);
+    assert.match(bubble, /--character-count/);
+    assert.match(bubble, /position:\s*absolute/);
   });
 
-  it("sizes Dolly with the trimmed cutout proportions", () => {
-    const pollyCharacter = getRule(".polly-character");
-    const aspectRatio = getAspectRatio(pollyCharacter);
+  it("keeps narrator text separate from character speech", () => {
+    const caption = getRule(".narrator-caption");
 
-    assert.ok(
-      aspectRatio >= 0.9 && aspectRatio <= 1.05,
-      `Expected Dolly's sprite box to match the near-square cutout, got ${aspectRatio}`
-    );
+    assert.match(caption, /position:\s*absolute/);
+    assert.match(caption, /text-align:\s*center/);
   });
 
-  it("keeps Peppa proportionate to Dolly after cutout trimming", () => {
-    const peppaCharacter = getRule(".peppa-character");
-    const pollyCharacter = getRule(".polly-character");
-
-    const peppaWidth = getClampViewportPercent(peppaCharacter, "width");
-    const pollyWidth = getClampViewportPercent(pollyCharacter, "width");
-    const widthRatio = peppaWidth / pollyWidth;
-
-    assert.ok(
-      widthRatio >= 1.05 && widthRatio <= 1.2,
-      `Expected Peppa to be slightly wider than Dolly, got width ratio ${widthRatio}`
-    );
+  it("provides a compact layout for narrow screens", () => {
+    assert.match(styles, /@media\s*\(max-width:\s*720px\)/);
+    assert.match(styles, /\.character-sprite[\s\S]*?width:\s*clamp\(/);
+    assert.match(styles, /\.user-turn-panel[\s\S]*?width:\s*min\(/);
   });
 });

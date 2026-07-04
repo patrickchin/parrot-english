@@ -2,147 +2,108 @@
 
 ## Summary
 
-Lesson speech is delivered from saved audio files in `public/assets/audio`.
-Runtime text-to-speech is disabled for the live app. The only live speech API
-call in normal lesson flow is speech-to-text evaluation through
-`/api/evaluate-speech`.
+Lesson scripts are editable JSON text. Visual and audio files live outside the
+lesson so authors can add or remove story content without managing filenames.
+All active lesson dialogue, instructions, and feedback are in English.
 
-This design came from reliability and voice-quality decisions made during the
-project: Groq TTS model availability changed, native Mandarin delivery mattered,
-and child-facing lesson audio should not fail at runtime.
+Runtime playback uses saved audio in `public/assets/audio`. That directory is an
+optimization cache and deployment source, not the lesson-authoring format.
 
-## Source of Truth
+## Sources of Truth
 
-The source audio assets live in:
+- Lessons: `content/lessons/*.json`
+- Global emotes: `content/catalogs/emotes.json`
+- Global characters and sprite paths: `content/catalogs/characters.json`
+- Global backgrounds: `content/catalogs/backgrounds.json`
+- Saved-audio metadata: `lib/static-audio.js`
+- Source audio files: `public/assets/audio`
+- Build output: `dist/assets/audio`
 
-```text
-public/assets/audio
-```
+Do not edit `dist` directly.
 
-The built copies live in:
+## Lesson Authoring
 
-```text
-dist/assets/audio
-```
+Each lesson file contains only text and catalog IDs. Every step has one English
+line, one speaker, and a complete visible-character emote map. The app discovers
+all lesson files eagerly, validates them, and builds the picker automatically.
 
-`dist` is build output. Do not edit `dist` audio directly.
+When adding a lesson:
 
-The audio manifest lives in `lib/static-audio.js`. It maps stable audio IDs to:
+1. Add one valid JSON file under `content/lessons`.
+2. Reuse global character, emote, and background IDs.
+3. Add any genuinely new visual definitions to the global catalogs first.
+4. Add saved-audio metadata for each unique non-user speaker/text pair.
+5. Generate only the missing audio IDs.
 
-- language
-- source path
-- visible text
-- optional generation-only `ttsText`
-- optional voice/performance metadata
+No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
 
 ## Runtime Playback Rules
 
-`src/audio-playback.ts` only accepts static asset audio lines for live playback.
-There is no Worker/runtime TTS branch in the playback API.
+`src/audio-playback.ts` plays static asset lines only. There is no runtime TTS
+branch and no `/api/tts` Worker route.
 
-There is no `/api/tts` Worker route. Runtime TTS is absent from both the
-frontend playback API and the Worker API surface.
+`lib/static-audio.js` resolves a cache entry by both `speaker` and exact `text`.
+The speaker is required because the same sentence may be spoken by Peppa and
+Dolly with different cached voices. User steps never require saved playback.
 
-This is intentional. A missing saved audio line should fail during development
-or tests instead of silently spending TTS credits or breaking a live lesson.
+A missing metadata entry or file should fail tests during development instead
+of generating speech during a live lesson.
 
-## Voice Direction
+## ElevenLabs Generation
 
-Current generated voice direction:
-
-- Pig example audio: ElevenLabs `Summer - British, Confident & Posh`
-  (`Oqy85UMasXzUjUxF0ta5`) with `eleven_v3`.
-- Polly/Chinese coach audio: ElevenLabs `Chen - Friendly Narration Mandarin`
-  (`4NQthjVhIGGVfL3Si000`) with `eleven_v3`.
-
-Chinese Polly lines should use:
-
-```js
-voiceStyle: "energetic-character"
-```
-
-They should also use `ttsText` performance tags such as `[excited]`,
-`[brightly]`, `[cheerful]`, or `[upbeat]`. The visible `text` must remain clean
-and child-facing; performance tags belong only in `ttsText`.
-
-## Generation Command
-
-Use ElevenLabs for regenerated Chinese lesson audio. Do not use local or macOS
-system text-to-speech for Chinese lesson audio.
-
-Common command:
+The generator is `scripts/generate-static-audio.mjs`. It is ElevenLabs-only,
+uses `eleven_v3` by default, and converts returned MP3 bytes to WAV through
+`ffmpeg` when needed.
 
 ```bash
-npm run generate:audio:elevenlabs -- --only=turn-hello --output-dir=/tmp/parrot-audio --force
+npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force
 ```
 
-Environment:
+Required environment:
 
 ```bash
 ELEVENLABS_API_KEY=...
+```
+
+Optional overrides:
+
+```bash
+ELEVENLABS_PEPPA_VOICE_ID=...
+ELEVENLABS_DOLLY_VOICE_ID=...
+ELEVENLABS_NARRATOR_VOICE_ID=...
 ELEVENLABS_VOICE_ID=...
 ELEVENLABS_MODEL_ID=eleven_v3
 ```
 
-Use `--only=<audio-id>` while testing so a small change does not regenerate every
-asset or spend unnecessary credits.
+The speaker-specific override wins over the general voice override. Current
+defaults are `Oqy85UMasXzUjUxF0ta5` for Peppa and
+`4NQthjVhIGGVfL3Si000` for Dolly and narrator. These are character-directed
+voices, not exact protected-character clones.
 
-## Generator Behavior
+Use `--only=<audio-id>` to avoid regenerating existing assets or spending
+credits unnecessarily. Never substitute local or macOS system speech for
+missing saved lesson audio.
 
-The generator is `scripts/generate-static-audio.mjs`. It is ElevenLabs-only
-and requests MP3 output for the `.mp3` paths declared in `STATIC_AUDIO_LINES`.
+## Visual Generation
 
-The generator reads line metadata from `STATIC_AUDIO_LINES` and uses:
+Every visible character has one pre-generated transparent WebP for each global
+emote: `idle`, `talking`, `listening`, `happy`, `sad`, and `surprised`.
 
-- `line.ttsText ?? line.text` for ElevenLabs text.
-- energetic voice settings when `voiceStyle === "energetic-character"`.
-- character voice settings when `style === "character"`.
-- the pig voice for English lines and the parrot voice for Chinese lines unless
-  `ELEVENLABS_VOICE_ID` is explicitly configured.
+Sprites are stored under:
 
-## Adding or Changing Lines
-
-When adding or changing a playable lesson:
-
-1. Add or update the lesson entry in `lib/lesson-data.js`.
-2. Add or update its ordered `steps`.
-3. Set each step's `audio.example`, `audio.prompt`, and `audio.model` IDs.
-4. Add matching static audio manifest entries in `lib/static-audio.js`.
-5. Regenerate the source audio in `public/assets/audio`.
-6. Run focused lesson-data, static/audio, and build checks.
-7. Run `npm run build` so `dist` contains the updated assets.
-
-When removing a lesson, remove its catalog entry from `LESSONS`. Remove static
-audio manifest entries and source audio files only when no remaining lesson step
-uses those audio IDs.
-
-For feedback text, the exact visible feedback string must match an entry in the
-static audio manifest. `lib/lesson-audio.js` resolves feedback audio by text, so
-copy drift will throw `Missing static feedback audio`.
-
-## Native Mandarin Quality Rules
-
-The prompt history repeatedly called out that the Chinese lines must sound
-native and that Polly should be more energetic. Current policy:
-
-- Keep the Mandarin voice native.
-- Change performance direction with ElevenLabs voice settings and `ttsText`
-  tags before changing to a non-native voice.
-- Use character-directed voices, not protected-character clones.
-- Keep visible lesson copy clean and separate from generation-only tags.
-
-## Audio QA Checklist
-
-After regenerating audio:
-
-- Confirm the changed `public/assets/audio/*.mp3` files exist.
-- Confirm MP3 format and playback manually if the line is user-facing.
-- Run static audio tests.
-- Run `npm run build`.
-- If verifying a running Worker build, confirm public and `dist` audio hashes
-  match for regenerated files.
-- Hit one regenerated asset URL from the local server, for example:
-
-```bash
-curl -I http://localhost:3000/assets/audio/turn-hello.mp3
+```text
+public/assets/characters/<character-id>/<character-id>-<emote>.webp
 ```
+
+Register paths and descriptive alt text in the character catalog. Verify that
+every registered file exists and contains transparency before using it in a
+lesson.
+
+## QA Checklist
+
+- Validate every checked-in lesson and catalog.
+- Confirm each character/emote catalog path exists.
+- Confirm each scripted non-user line resolves by speaker plus text.
+- Confirm each audio metadata path exists under `public`.
+- Run focused lesson/audio tests.
+- Run `npm run build` so Vite copies the source assets into `dist`.

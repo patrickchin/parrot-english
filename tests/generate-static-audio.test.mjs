@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -9,6 +10,20 @@ import { describe, it } from "node:test";
 const execFileAsync = promisify(execFile);
 
 describe("static audio generator", () => {
+  it("chooses ElevenLabs voices from speaker metadata", () => {
+    const generator = readFileSync(
+      new URL("../scripts/generate-static-audio.mjs", import.meta.url),
+      "utf8"
+    );
+
+    assert.match(generator, /ELEVENLABS_SPEAKER_VOICE_IDS/);
+    assert.match(generator, /ELEVENLABS_PEPPA_VOICE_ID/);
+    assert.match(generator, /ELEVENLABS_DOLLY_VOICE_ID/);
+    assert.match(generator, /ELEVENLABS_NARRATOR_VOICE_ID/);
+    assert.match(generator, /line\.speaker/);
+    assert.doesNotMatch(generator, /line\.lang\s*===\s*["']zh-CN["']/);
+  });
+
   it("rejects local macOS text-to-speech providers", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "parrot-audio-"));
 

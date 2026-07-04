@@ -31,6 +31,16 @@ type MicrophoneAccessOptions = Pick<
   "MediaRecorder" | "getUserMedia" | "signal"
 >;
 
+type SpeechRecordingSessionOptions = Pick<
+  SpeechRecorderOptions,
+  "MediaRecorder" | "getUserMedia" | "mimeType" | "signal"
+>;
+
+export type SpeechRecordingSession = {
+  cancel: () => void;
+  stop: () => Promise<Blob>;
+};
+
 export class RecordingUnsupportedError extends Error {
   constructor() {
     super("This browser does not support audio recording.");
@@ -81,6 +91,115 @@ export async function requestMicrophoneAccess({
   if (signal?.aborted) {
     throw createAbortError();
   }
+}
+
+export async function startSpeechRecording({
+  MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
+  getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(constraints),
+  mimeType = DEFAULT_MIME_TYPE,
+  signal,
+}: SpeechRecordingSessionOptions = {}): Promise<SpeechRecordingSession> {
+  if (signal?.aborted) {
+    throw createAbortError();
+  }
+
+  if (!MediaRecorderClass) {
+    throw new RecordingUnsupportedError();
+  }
+
+  let stream: MediaStream;
+  try {
+    stream = await getUserMedia(MICROPHONE_CONSTRAINTS);
+  } catch (error) {
+    if (signal?.aborted) throw createAbortError();
+    throw new MicrophoneAccessError(error);
+  }
+
+  if (signal?.aborted) {
+    stopMediaStream(stream);
+    throw createAbortError();
+  }
+
+  const chunks: BlobPart[] = [];
+  let recorder: MediaRecorder;
+  let cancelled = false;
+  let settled = false;
+  let stopRequested = false;
+  let resolveResult: (blob: Blob) => void;
+  let rejectResult: (error: unknown) => void;
+  const result = new Promise<Blob>((resolve, reject) => {
+    resolveResult = resolve;
+    rejectResult = reject;
+  });
+  void result.catch(() => {});
+
+  function cleanup() {
+    signal?.removeEventListener("abort", cancelRecording);
+    stopMediaStream(stream);
+  }
+
+  function finish() {
+    if (settled) return;
+    settled = true;
+    cleanup();
+
+    if (cancelled || signal?.aborted) {
+      rejectResult(createAbortError());
+      return;
+    }
+
+    resolveResult(new Blob(chunks, { type: mimeType }));
+  }
+
+  function fail(error: unknown) {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    rejectResult(error);
+  }
+
+  function cancelRecording() {
+    if (settled) return;
+    cancelled = true;
+    if (recorder.state === "recording") {
+      recorder.stop();
+      return;
+    }
+    finish();
+  }
+
+  try {
+    recorder = new MediaRecorderClass(stream, { mimeType });
+  } catch (error) {
+    stopMediaStream(stream);
+    throw error;
+  }
+
+  recorder.ondataavailable = (event) => {
+    if (event.data.size > 0) chunks.push(event.data);
+  };
+  recorder.onerror = () => fail(new Error("Audio recording failed."));
+  recorder.onstop = finish;
+  signal?.addEventListener("abort", cancelRecording, { once: true });
+
+  try {
+    recorder.start();
+  } catch (error) {
+    fail(error);
+    throw error;
+  }
+
+  return {
+    cancel: cancelRecording,
+    stop() {
+      if (!settled && !stopRequested) {
+        stopRequested = true;
+        if (recorder.state === "recording") recorder.stop();
+        else finish();
+      }
+      return result;
+    },
+  };
 }
 
 export async function recordSpeechClip({

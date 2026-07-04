@@ -1,199 +1,200 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { createLessonCatalog } from "../lib/lesson-data.js";
+import { getLessonScenePresentation } from "../lib/lesson-scene.js";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
-import {
-  LESSON_SCENE_ASSETS,
-  getLessonScenePresentation,
-} from "../lib/lesson-scene.js";
 
-const step = {
-  id: "hello",
-  sceneTitleZh: "多莉打招呼",
-  exampleLine: "Hello, Bella!",
-  parrotPromptZh: "佩奇在和你打招呼。我们回答佩奇。",
-  parrotModelLine: "Hello, Peppa!",
-  childTarget: "Hello, Peppa!",
-  tipZh: "听到别人叫你的名字，可以用对方的名字打招呼。",
+const emotes = ["idle", "talking", "listening", "happy", "sad", "surprised"];
+const makeAssets = (id) =>
+  Object.fromEntries(
+    emotes.map((emote) => [
+      emote,
+      { src: `/assets/${id}-${emote}.webp`, alt: `${id} ${emote}` },
+    ])
+  );
+const catalog = createLessonCatalog({
+  emotes,
+  characters: [
+    { id: "peppa", name: "Peppa", assets: makeAssets("peppa") },
+    { id: "dolly", name: "Dolly", assets: makeAssets("dolly") },
+    { id: "user", name: "You", assets: makeAssets("user") },
+  ],
+  backgrounds: [
+    { id: "garden", src: "/assets/garden.webp", alt: "Sunny garden" },
+  ],
+});
+const baseEmotes = {
+  peppa: "listening",
+  dolly: "talking",
+  user: "listening",
+};
+const lesson = {
+  childName: "Bella",
+  scenes: [
+    {
+      title: "Garden help",
+      settingDescription: "Peppa and Dolly stand under a tall tree.",
+      background: "garden",
+      characters: ["peppa", "dolly", "user"],
+      steps: [
+        { speaker: "dolly", dialogue: "Here you are!", emotes: baseEmotes },
+        {
+          speaker: "narrator",
+          dialogue: "Let's copy Dolly!",
+          emotes: { peppa: "listening", dolly: "happy", user: "listening" },
+        },
+        {
+          speaker: "user",
+          dialogue: "Here you are!",
+          emotes: { peppa: "listening", dolly: "listening", user: "talking" },
+        },
+      ],
+    },
+  ],
 };
 
-function webpHasAlpha(assetSrc) {
-  const bytes = readFileSync(new URL(`../public${assetSrc}`, import.meta.url));
+describe("scene-script presentation", () => {
+  it("resolves the background, complete character set, and active speaker", () => {
+    const scene = getLessonScenePresentation(
+      { ...createInitialLessonState(), phase: LessonPhase.Speaking },
+      lesson,
+      catalog
+    );
 
-  assert.equal(bytes.toString("ascii", 0, 4), "RIFF");
-  assert.equal(bytes.toString("ascii", 8, 12), "WEBP");
+    assert.deepEqual(scene.backgroundAsset, {
+      id: "garden",
+      src: "/assets/garden.webp",
+      alt: "Sunny garden",
+    });
+    assert.deepEqual(
+      scene.characters.map(({ id, emote, isActive, asset }) => ({
+        id,
+        emote,
+        isActive,
+        asset,
+      })),
+      [
+        {
+          id: "peppa",
+          emote: "listening",
+          isActive: false,
+          asset: {
+            src: "/assets/peppa-listening.webp",
+            alt: "peppa listening",
+          },
+        },
+        {
+          id: "dolly",
+          emote: "talking",
+          isActive: true,
+          asset: { src: "/assets/dolly-talking.webp", alt: "dolly talking" },
+        },
+        {
+          id: "user",
+          emote: "listening",
+          isActive: false,
+          asset: {
+            src: "/assets/user-listening.webp",
+            alt: "user listening",
+          },
+        },
+      ]
+    );
+    assert.deepEqual(scene.speech, {
+      speaker: "dolly",
+      text: "Here you are!",
+      kind: "character",
+    });
+    assert.equal(scene.settingDescription, lesson.scenes[0].settingDescription);
+    assert.equal(scene.title, "Garden help");
+  });
 
-  for (let offset = 12; offset + 8 <= bytes.length;) {
-    const chunkType = bytes.toString("ascii", offset, offset + 4);
-    const chunkSize = bytes.readUInt32LE(offset + 4);
-    const chunkDataOffset = offset + 8;
+  it("presents narrator steps without a visible narrator character", () => {
+    const scene = getLessonScenePresentation(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Speaking,
+        stepIndex: 1,
+      },
+      lesson,
+      catalog
+    );
 
-    if (chunkType === "ALPH") return true;
-    if (chunkType === "VP8X" && (bytes[chunkDataOffset] & 0x10) !== 0) {
-      return true;
+    assert.deepEqual(scene.speech, {
+      speaker: "narrator",
+      text: "Let's copy Dolly!",
+      kind: "narration",
+    });
+    assert.equal(scene.characters.some((character) => character.id === "narrator"), false);
+    assert.equal(scene.characters.some((character) => character.isActive), false);
+  });
+
+  it("keeps the user active while waiting, recording, and evaluating", () => {
+    for (const phase of [
+      LessonPhase.WaitingForUser,
+      LessonPhase.Recording,
+      LessonPhase.Evaluating,
+    ]) {
+      const scene = getLessonScenePresentation(
+        { ...createInitialLessonState(), phase, stepIndex: 2 },
+        lesson,
+        catalog
+      );
+
+      assert.equal(scene.speech.kind, "user");
+      assert.equal(
+        scene.characters.find((character) => character.id === "user").isActive,
+        true
+      );
     }
-
-    offset = chunkDataOffset + chunkSize + (chunkSize % 2);
-  }
-
-  return false;
-}
-
-describe("lesson scene presentation", () => {
-  it("returns separate character bubbles for each scene", () => {
-    const scene = getLessonScenePresentation(
-      createInitialLessonState(),
-      step
-    );
-
-    assert.equal(scene.peppaBubble.text, "Hello, Bella!");
-    assert.equal(scene.pollyBubble.text, "佩奇在和你打招呼。我们回答佩奇。");
-    assert.equal(scene.peppaBubble.tone, "example");
-    assert.equal(scene.pollyBubble.tone, "coach");
-    assert.equal(scene.activeSpeaker, null);
   });
 
-  it("marks Peppa active while the example is speaking", () => {
-    const scene = getLessonScenePresentation(
-      { ...createInitialLessonState(), phase: LessonPhase.ExampleSpeaking },
-      step
-    );
-
-    assert.equal(scene.activeSpeaker, "peppa");
-    assert.equal(scene.peppaBubble.isActive, true);
-    assert.equal(scene.pollyBubble.isActive, false);
-  });
-
-  it("marks Polly active while the parrot gives the Chinese prompt", () => {
-    const scene = getLessonScenePresentation(
-      { ...createInitialLessonState(), phase: LessonPhase.ParrotCoaching },
-      step
-    );
-
-    assert.equal(scene.activeSpeaker, "polly");
-    assert.equal(scene.peppaBubble.isActive, false);
-    assert.equal(scene.pollyBubble.isActive, true);
-    assert.equal(scene.pollyBubble.text, "佩奇在和你打招呼。我们回答佩奇。");
-  });
-
-  it("prompts the child in Chinese with the target phrase while listening", () => {
-    const scene = getLessonScenePresentation(
-      { ...createInitialLessonState(), phase: LessonPhase.Listening },
-      step
-    );
-
-    assert.equal(scene.activeSpeaker, "child");
-    assert.equal(scene.pollyBubble.text, "轮到你：Hello, Peppa!");
-    assert.equal(scene.pollyBubble.tone, "listen");
-    assert.equal(scene.pollyBubble.isActive, true);
-    assert.equal(scene.statusText, "麦克风正在听，请开口说");
-  });
-
-  it("uses live feedback in Polly's bubble after evaluation", () => {
+  it("uses narrator presentation for feedback", () => {
     const scene = getLessonScenePresentation(
       {
         ...createInitialLessonState(),
         phase: LessonPhase.Feedback,
-        feedback: "Great try. Say it one more time.",
-        transcript: "this is parrot polly",
-        lastOutcome: "retry",
+        stepIndex: 2,
+        feedback: "Great job!",
+        feedbackOutcome: "success",
       },
-      step
+      lesson,
+      catalog
     );
 
-    assert.equal(scene.activeSpeaker, "polly");
-    assert.equal(scene.pollyBubble.text, "Great try. Say it one more time.");
-    assert.equal(scene.pollyBubble.tone, "feedback");
-    assert.equal(scene.statusText, "我听到：this is parrot polly");
+    assert.deepEqual(scene.speech, {
+      speaker: "narrator",
+      text: "Great job!",
+      kind: "feedback",
+    });
   });
 
-  it("uses day, evening, and reward backgrounds across lesson states", () => {
-    const earlyScene = getLessonScenePresentation(
-      createInitialLessonState(),
-      step
-    );
-    const laterScene = getLessonScenePresentation(
-      { ...createInitialLessonState(), stepIndex: 4 },
-      { ...step, id: "thank-you" }
-    );
-    const finishedScene = getLessonScenePresentation(
-      { ...createInitialLessonState(), phase: LessonPhase.Finished },
-      step
-    );
-
-    assert.equal(earlyScene.backgroundAsset.id, "meadow_day");
-    assert.equal(laterScene.backgroundAsset.id, "meadow_evening");
-    assert.equal(finishedScene.backgroundAsset.id, "reward_bg");
-  });
-
-  it("uses optimized web-friendly scene image assets", () => {
-    const scenes = [
-      getLessonScenePresentation(createInitialLessonState(), step),
-      getLessonScenePresentation(
-        { ...createInitialLessonState(), phase: LessonPhase.ExampleSpeaking },
-        step
-      ),
-      getLessonScenePresentation(
-        { ...createInitialLessonState(), phase: LessonPhase.ParrotCoaching },
-        step
-      ),
-      getLessonScenePresentation(
-        { ...createInitialLessonState(), phase: LessonPhase.Listening },
-        step
-      ),
-      getLessonScenePresentation(
+  it("marks the final scripted line as finished after playback", () => {
+    const finalLesson = {
+      childName: "Bella",
+      scenes: [
         {
-          ...createInitialLessonState(),
-          phase: LessonPhase.Feedback,
-          lastOutcome: "advance",
+          ...lesson.scenes[0],
+          steps: [
+            {
+              speaker: "narrator",
+              dialogue: "Great job, Bella!",
+              emotes: { peppa: "happy", dolly: "happy", user: "happy" },
+            },
+          ],
         },
-        step
-      ),
-      getLessonScenePresentation(
-        { ...createInitialLessonState(), phase: LessonPhase.Finished },
-        step
-      ),
-    ];
+      ],
+    };
+    const scene = getLessonScenePresentation(
+      { ...createInitialLessonState(), phase: LessonPhase.Finished },
+      finalLesson,
+      catalog
+    );
 
-    const registryAssets = [
-      ...Object.values(LESSON_SCENE_ASSETS.backgrounds),
-      ...Object.values(LESSON_SCENE_ASSETS.peppa),
-      ...Object.values(LESSON_SCENE_ASSETS.polly),
-    ];
-    const renderedAssets = scenes.flatMap((scene) => [
-      scene.backgroundAsset,
-      scene.peppaAsset,
-      scene.pollyAsset,
-    ]);
-
-    for (const asset of [...registryAssets, ...renderedAssets]) {
-      assert.match(asset.src, /^\/assets\/[a-z0-9/_-]+\.webp$/);
-      assert.ok(
-        asset.src.includes("/peppa/") ||
-          asset.src.includes("/dolly/") ||
-          asset.src.includes("/backgrounds/"),
-        `Expected ${asset.src} to live in a scene asset folder`
-      );
-      assert.ok(
-        existsSync(new URL(`../public${asset.src}`, import.meta.url)),
-        `Expected ${asset.src} to exist in public assets`
-      );
-    }
-  });
-
-  it("uses transparent cutout character image assets", () => {
-    const characterAssets = [
-      ...Object.values(LESSON_SCENE_ASSETS.peppa),
-      ...Object.values(LESSON_SCENE_ASSETS.polly),
-    ];
-    const uniqueAssetSrcs = new Set(characterAssets.map((asset) => asset.src));
-
-    for (const assetSrc of uniqueAssetSrcs) {
-      assert.equal(
-        webpHasAlpha(assetSrc),
-        true,
-        `Expected ${assetSrc} to preserve transparency for the scene cutout`
-      );
-    }
+    assert.deepEqual(scene.speech, {
+      speaker: "narrator",
+      text: "Great job, Bella!",
+      kind: "finished",
+    });
   });
 });

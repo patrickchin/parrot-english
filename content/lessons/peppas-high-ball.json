@@ -1,0 +1,290 @@
+{
+  "title": "Peppa's High Ball",
+  "childName": "Bella",
+  "goalPhrases": [
+    "Can you help me, please?",
+    "Thank you!"
+  ],
+  "summary": "Peppa asks Dolly to help retrieve a ball from a high tree branch.",
+  "detailedSummary": "Peppa spots her ball resting on a branch that is too high to reach. Dolly flies up after Peppa asks for help and brings the ball safely down. Peppa thanks Dolly, and the friends happily continue their garden game.",
+  "location": {
+    "name": "The sunny garden",
+    "description": "A bright garden with green grass, colorful flowers, and a tall leafy tree. Peppa's red ball rests on one of the branches."
+  },
+  "scenes": [
+    {
+      "title": "The Ball Up High",
+      "settingDescription": "Peppa stands under the tall tree and looks up at her red ball while Dolly and the user watch beside her.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Look! My ball!",
+          "emotes": {
+            "peppa": "surprised",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "It is up high!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "It is up high!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "It is up high!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Peppa Cannot Reach",
+      "settingDescription": "Peppa stretches toward the branch, but the ball stays above her while Dolly and the user stand nearby.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Oh! I can't reach it.",
+          "emotes": {
+            "peppa": "sad",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Peppa!",
+          "emotes": {
+            "peppa": "sad",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "Oh! I can't reach it.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Oh! I can't reach it.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Asking for Help",
+      "settingDescription": "Peppa turns toward Dolly beneath the tree while the user stands ready to help.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Can you help me, please?",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's ask with Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Can you help me, please?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Can you help me, please?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Dolly Flies Up",
+      "settingDescription": "Dolly rises toward the branch as Peppa and the user look up from the grass.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "Yes! I can help!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Yes! I can help!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Yes! I can help!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "The Ball Comes Down",
+      "settingDescription": "Dolly gives the red ball to Peppa under the tree while the user watches them smile.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "Here you are!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Here you are!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Here you are!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "Thank you!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's thank Dolly!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Thank you!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Thank you!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Great job, Bella! Peppa has her ball!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "happy"
+          }
+        }
+      ]
+    }
+  ]
+}
