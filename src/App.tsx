@@ -23,6 +23,15 @@ import {
   type PointerEvent,
 } from "react";
 import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
+import {
   getLessonAudioCompletionEvent,
   getLessonAudioSequence,
 } from "../lib/lesson-audio";
@@ -30,10 +39,15 @@ import { getLessonPrimaryControl } from "../lib/lesson-controls";
 import {
   LESSONS,
   getDefaultLesson,
-  getLessonById,
   isLessonPlayable,
 } from "../lib/lesson-data";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
+import {
+  getDefaultLessonNumber,
+  getLessonPagePath,
+  resolveLessonNumber,
+  resolveLessonPageRoute,
+} from "../lib/lesson-routes";
 import {
   LESSON_SCENE_ASSETS,
   getLessonScenePresentation,
@@ -75,7 +89,6 @@ const SPEECH_NAME_CLASSES = new Map([
 ]);
 const SPEECH_NAME_PATTERN = /(Bella|Peppa|Polly|Dolly|佩奇|多莉)/g;
 
-type AppScreen = "lesson-list" | "lesson-player";
 type Lesson = (typeof LESSONS)[number];
 
 type LessonEvent =
@@ -89,6 +102,7 @@ type LessonEvent =
   | { type: "NEXT" }
   | { type: "RETRY" }
   | { type: "RESET" }
+  | { type: "SELECT_STEP"; stepIndex: number }
   | { type: "SCENE_NEXT" }
   | { type: "SCENE_PREVIOUS" };
 
@@ -132,13 +146,34 @@ function shouldOpenLessonPlayerDirectly() {
   );
 }
 
-function LessonListPage({
-  lessons,
-  onStartLesson,
+function LessonCardContents({
+  lesson,
+  index,
 }: {
-  lessons: Lesson[];
-  onStartLesson: (lessonId: string) => void;
+  lesson: Lesson;
+  index: number;
 }) {
+  return (
+    <>
+      <span className="lesson-card-index">{index + 1}</span>
+      <span className="lesson-card-copy">
+        <span className="lesson-card-title">{lesson.title}</span>
+        <span className="lesson-card-subtitle">{lesson.subtitle}</span>
+        <span className="lesson-card-description">{lesson.description}</span>
+      </span>
+      <span className="lesson-card-status">
+        {isLessonPlayable(lesson) ? (
+          <PlayCircle aria-hidden="true" strokeWidth={2.7} />
+        ) : (
+          <Lock aria-hidden="true" strokeWidth={2.7} />
+        )}
+        <span>{lesson.statusLabel}</span>
+      </span>
+    </>
+  );
+}
+
+function LessonListPage({ lessons }: { lessons: Lesson[] }) {
   return (
     <main className="lesson-list-shell">
       <img
@@ -162,37 +197,27 @@ function LessonListPage({
         </div>
 
         <div className="lesson-list-grid">
-          {lessons.map((lesson, index) => (
-            <button
-              aria-disabled={!isLessonPlayable(lesson)}
-              className={`lesson-list-card is-${lesson.status}`}
-              disabled={!isLessonPlayable(lesson)}
-              key={lesson.id}
-              onClick={
-                isLessonPlayable(lesson)
-                  ? () => onStartLesson(lesson.id)
-                  : undefined
-              }
-              type="button"
-            >
-              <span className="lesson-card-index">{index + 1}</span>
-              <span className="lesson-card-copy">
-                <span className="lesson-card-title">{lesson.title}</span>
-                <span className="lesson-card-subtitle">{lesson.subtitle}</span>
-                <span className="lesson-card-description">
-                  {lesson.description}
-                </span>
-              </span>
-              <span className="lesson-card-status">
-                {isLessonPlayable(lesson) ? (
-                  <PlayCircle aria-hidden="true" strokeWidth={2.7} />
-                ) : (
-                  <Lock aria-hidden="true" strokeWidth={2.7} />
-                )}
-                <span>{lesson.statusLabel}</span>
-              </span>
-            </button>
-          ))}
+          {lessons.map((lesson, index) =>
+            isLessonPlayable(lesson) ? (
+              <Link
+                className={`lesson-list-card is-${lesson.status}`}
+                key={lesson.id}
+                to={getLessonPagePath(index + 1, 1)}
+              >
+                <LessonCardContents index={index} lesson={lesson} />
+              </Link>
+            ) : (
+              <button
+                aria-disabled="true"
+                className={`lesson-list-card is-${lesson.status}`}
+                disabled
+                key={lesson.id}
+                type="button"
+              >
+                <LessonCardContents index={index} lesson={lesson} />
+              </button>
+            )
+          )}
         </div>
       </section>
 
@@ -212,44 +237,93 @@ function LessonListPage({
   );
 }
 
-export function App() {
-  const [screen, setScreen] = useState<AppScreen>(() =>
-    shouldOpenLessonPlayerDirectly() ? "lesson-player" : "lesson-list"
-  );
-  const [selectedLessonId, setSelectedLessonId] = useState(
-    () => getDefaultLesson().id
-  );
-  const selectedLesson = getLessonById(selectedLessonId) ?? getDefaultLesson();
+function LessonListRoute() {
+  const location = useLocation();
 
-  function handleStartLesson(lessonId: string) {
-    const lesson = getLessonById(lessonId);
-    if (!lesson || !isLessonPlayable(lesson)) return;
-
-    setSelectedLessonId(lesson.id);
-    setScreen("lesson-player");
-  }
-
-  if (screen === "lesson-player") {
+  if (shouldOpenLessonPlayerDirectly()) {
     return (
-      <LessonPlayer
-        key={selectedLesson.id}
-        lesson={selectedLesson}
-        onBackToList={() => setScreen("lesson-list")}
+      <Navigate
+        replace
+        to={{
+          pathname: getLessonPagePath(getDefaultLessonNumber(), 1),
+          search: location.search,
+        }}
       />
     );
   }
 
-  return <LessonListPage lessons={LESSONS} onStartLesson={handleStartLesson} />;
+  return <LessonListPage lessons={LESSONS} />;
+}
+
+function LessonRedirectRoute() {
+  const location = useLocation();
+  const { lessonNumber } = useParams();
+  const resolved = resolveLessonNumber(lessonNumber);
+
+  if (!resolved) return <Navigate to="/" replace />;
+
+  return (
+    <Navigate
+      replace
+      to={{
+        pathname: getLessonPagePath(resolved.lessonNumber, 1),
+        search: location.search,
+      }}
+    />
+  );
+}
+
+function LessonPageRoute() {
+  const navigate = useNavigate();
+  const { lessonNumber, pageNumber } = useParams();
+  const resolved = resolveLessonPageRoute(lessonNumber, pageNumber);
+
+  if (!resolved) return <Navigate to="/" replace />;
+
+  return (
+    <LessonPlayer
+      initialStepIndex={resolved.pageIndex}
+      key={resolved.lesson.id}
+      lesson={resolved.lesson}
+      onBackToList={() => navigate("/")}
+      onNavigatePage={(nextPageIndex) =>
+        navigate(
+          getLessonPagePath(resolved.lessonNumber, nextPageIndex + 1)
+        )
+      }
+    />
+  );
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LessonListRoute />} />
+      <Route
+        path="/lessons/:lessonNumber"
+        element={<LessonRedirectRoute />}
+      />
+      <Route
+        path="/lessons/:lessonNumber/pages/:pageNumber"
+        element={<LessonPageRoute />}
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 type LessonPlayerProps = {
+  initialStepIndex?: number;
   lesson?: Lesson;
   onBackToList?: () => void;
+  onNavigatePage?: (pageIndex: number) => void;
 };
 
 export function LessonPlayer({
+  initialStepIndex = 0,
   lesson = getDefaultLesson(),
   onBackToList,
+  onNavigatePage,
 }: LessonPlayerProps = {}) {
   const didE2eAutostart = useRef(false);
   const [state, dispatch] = useReducer(
@@ -258,9 +332,15 @@ export function LessonPlayer({
       event: LessonEvent
     ) =>
       reduceLessonState(currentState, event, lesson.steps.length),
-    undefined,
+    initialStepIndex,
     createInitialLessonState
   );
+
+  useEffect(() => {
+    if (state.stepIndex === initialStepIndex) return;
+    dispatch({ type: "SELECT_STEP", stepIndex: initialStepIndex });
+  }, [initialStepIndex, state.stepIndex]);
+
   const [error, setError] = useState("");
   const [isHoldingMic, setIsHoldingMic] = useState(false);
   const [isPreparingMicrophone, setIsPreparingMicrophone] = useState(false);
@@ -563,16 +643,25 @@ export function LessonPlayer({
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
     setError("");
+    const stepOffset = type === "SCENE_NEXT" ? 1 : -1;
+    const nextStepIndex = Math.max(
+      0,
+      Math.min(state.stepIndex + stepOffset, lesson.steps.length - 1)
+    );
+
     if (
       type === "SCENE_NEXT" &&
       state.phase === LessonPhase.Feedback &&
       state.lastOutcome === "advance"
     ) {
       dispatch({ type: "NEXT" });
-      return;
+    } else {
+      dispatch({ type });
     }
 
-    dispatch({ type });
+    if (nextStepIndex !== state.stepIndex) {
+      onNavigatePage?.(nextStepIndex);
+    }
   }
 
   const sceneNumber = state.stepIndex + 1;
