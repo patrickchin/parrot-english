@@ -43,6 +43,7 @@ import {
   isLessonPlayable,
 } from "../lib/lesson-data";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
+import { getLessonEventTargetPageIndex } from "../lib/lesson-page-transition";
 import {
   getDefaultLessonNumber,
   getLessonPagePath,
@@ -358,34 +359,24 @@ export function LessonPlayer({
 
   const dispatchLessonEvent = useCallback(
     (event: LessonEvent) => {
-      const stepOffset =
-        event.type === "NEXT" || event.type === "SCENE_NEXT"
-          ? 1
-          : event.type === "SCENE_PREVIOUS"
-            ? -1
-            : 0;
-      const nextStepIndex = Math.max(
-        0,
-        Math.min(
-          state.stepIndex + stepOffset,
-          lesson.steps.length - 1
-        )
+      const nextStepIndex = getLessonEventTargetPageIndex(
+        state,
+        event,
+        lesson.steps.length
       );
-      const changesPage =
-        stepOffset !== 0 && nextStepIndex !== state.stepIndex;
 
-      if (changesPage) {
+      if (nextStepIndex !== null) {
         handledRoutedStepIndexRef.current = nextStepIndex;
         cancelPageLocalActivity();
       }
 
       dispatch(event);
 
-      if (changesPage) {
+      if (nextStepIndex !== null) {
         onNavigatePageRef.current?.(nextStepIndex);
       }
     },
-    [cancelPageLocalActivity, lesson.steps.length, state.stepIndex]
+    [cancelPageLocalActivity, lesson.steps.length, state.phase, state.stepIndex]
   );
 
   useEffect(() => {
@@ -676,7 +667,11 @@ export function LessonPlayer({
         return;
       }
 
-      dispatch({ type: "START" });
+      if (state.phase === LessonPhase.Finished) {
+        dispatchLessonEvent({ type: "START" });
+      } else {
+        dispatch({ type: "START" });
+      }
     } catch (caughtError) {
       if (
         microphoneAccessController.signal.aborted ||

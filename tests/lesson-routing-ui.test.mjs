@@ -61,6 +61,10 @@ describe("lesson routing UI", () => {
   it("marks internal page navigation before dispatching and updating the URL", () => {
     assert.match(
       app,
+      /import \{ getLessonEventTargetPageIndex \} from "\.\.\/lib\/lesson-page-transition";/
+    );
+    assert.match(
+      app,
       /const handledRoutedStepIndexRef = useRef\(initialStepIndex\);/
     );
     assert.match(
@@ -74,6 +78,17 @@ describe("lesson routing UI", () => {
     assert.match(
       app,
       /function navigateScene[\s\S]*dispatchLessonEvent\([\s\S]*\);\s*\}/
+    );
+  });
+
+  it("coordinates a finished lesson restart with page-zero navigation", () => {
+    assert.match(
+      app,
+      /if \(state\.phase === LessonPhase\.Finished\) \{\s*dispatchLessonEvent\(\{ type: "START" \}\);\s*\} else \{\s*dispatch\(\{ type: "START" \}\);\s*\}/
+    );
+    assert.match(
+      app,
+      /\[cancelPageLocalActivity, lesson\.steps\.length, state\.phase, state\.stepIndex\]/
     );
   });
 
