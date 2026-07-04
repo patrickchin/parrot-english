@@ -83,6 +83,16 @@ Evaluating state requirements:
 
 ## Navigation Rules
 
+The lesson catalog and player use addressable routes:
+
+- Each lesson page has a one-based URL, such as `/lessons/1/pages/2`.
+- Playable lesson cards open page 1.
+- Scene controls update the URL when they move between pages.
+- Browser Back and Forward restore the page addressed by the URL in its idle
+  phase.
+- The URL owns lesson and page selection; the lesson state machine owns the
+  speaking phase within that page.
+
 The scene back/next controls navigate lesson scenes. A successful feedback state
 does not auto-start the next phrase. Clicking Next from successful feedback
 dispatches the lesson `NEXT` event and starts the next example.
