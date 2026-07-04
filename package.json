@@ -19,6 +19,7 @@
     "dev": "npm run build && wrangler dev --local --port 3000",
     "dev:vite": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
+    "db:migrate:local": "wrangler d1 migrations apply parrot-english-auth --local",
     "generate:audio": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "start": "wrangler dev --local --port 3000",
@@ -29,6 +30,7 @@
     "lint": "eslint . --ignore-pattern dist"
   },
   "dependencies": {
+    "better-auth": "^1.6.23",
     "lucide-react": "^1.21.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"

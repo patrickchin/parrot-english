@@ -19,6 +19,7 @@
     "lib",
     "worker",
     "tests",
+    "worker-configuration.d.ts",
     "vite.config.ts",
     "eslint.config.mjs"
   ],
