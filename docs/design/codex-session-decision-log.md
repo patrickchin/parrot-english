@@ -26,7 +26,7 @@ Source: Codex thread previews and latest thread summaries for sessions in
 | The child needs lots of repetition and obvious speaking prompts with audible praise/feedback. | Create the child speaking flow spec; make feedback audible and make speaking states more explicit. | `docs/superpowers/specs/2026-06-27-child-speaking-flow-design.md`, `src/App.tsx` |
 | The microphone listening state must be really obvious. | Add a dedicated assertive speak-now/evaluating panel with mic symbol, target phrase, waveform bars, and progress. | `src/App.tsx`, `src/styles.css`, `tests/microphone-prompt-ui.test.mjs` |
 | Only turn on the mic when needed. | Remove mic access from lesson start. Request microphone only during `listening`, then stop tracks before evaluation. | `src/speech-recorder.ts`, `src/App.tsx` |
-| Do not continue automatically; require clicking Next. | Successful feedback remains on the completed phrase. The next phrase starts only through the Next button. | `lib/lesson-state.js`, `lib/lesson-audio.js`, `src/App.tsx` |
+| Do not continue automatically; require clicking Next. | **Superseded.** Successful feedback now advances automatically through routed `NEXT` when its audio completes; scene Next can also advance while feedback is visible. | `lib/lesson-state.js`, `lib/lesson-audio.js`, `src/App.tsx` |
 | The flow text was duplicated. | Keep full feedback in Polly's bubble; use short flow banner labels for phase/status. | `lib/lesson-progress.js`, `src/App.tsx` |
 | Speech bubbles should be closer to the speaker. | Treat bubble placement as part of speaker clarity; keep Peppa/Polly bubbles visually tied to their characters. | `src/styles.css` |
 | Match back/forward buttons to a provided reference and use PNGs. | The project iterated on nav artwork. The current checked-in assets are the source of truth; avoid assuming SVG/PNG requirements without checking actual files. | `public/assets/ui`, `src/App.tsx` |
@@ -52,7 +52,8 @@ The current design contract implied by the prompt history is:
 - Groq is used for STT/evaluation, not for live lesson narration.
 - The microphone is requested only at the speaking turn.
 - The speaking turn must be unmistakable.
-- Success pauses for manual Next.
+- Success continues automatically after feedback audio; scene Next can advance
+  while feedback is visible.
 - The Worker-backed local server is the source of truth for runtime behavior.
 
 ## Risks and Follow-Ups
@@ -60,8 +61,8 @@ The current design contract implied by the prompt history is:
 The prompt history also exposes a few open risks:
 
 - The detailed child-speaking spec recommends extra repetition after success,
-  but the current implementation advances after one successful attempt and a
-  manual Next click.
+  but the current implementation advances after one successful attempt when
+  feedback audio completes (or when scene Next is clicked).
 - The scene asset map names future character poses, but the current assets reuse
   one image per character.
 - The rate limiter is in-memory per Worker isolate, not a durable global quota.

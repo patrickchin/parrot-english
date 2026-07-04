@@ -43,6 +43,7 @@ import {
   isLessonPlayable,
 } from "../lib/lesson-data";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
+import { createLessonPageActivityGuard } from "../lib/lesson-page-activity";
 import { getLessonEventTargetPageIndex } from "../lib/lesson-page-transition";
 import {
   getDefaultLessonNumber,
@@ -345,9 +346,11 @@ export function LessonPlayer({
   const onNavigatePageRef = useRef(onNavigatePage);
   const activeRecordingRef = useRef<ActiveRecording | null>(null);
   const microphoneAccessControllerRef = useRef<AbortController | null>(null);
+  const pageActivityGuardRef = useRef(createLessonPageActivityGuard());
   onNavigatePageRef.current = onNavigatePage;
 
   const cancelPageLocalActivity = useCallback(() => {
+    pageActivityGuardRef.current.invalidate();
     setError("");
     activeRecordingRef.current?.cancelController.abort();
     activeRecordingRef.current = null;
@@ -398,6 +401,7 @@ export function LessonPlayer({
 
   const progressLabel = useMemo(() => getLessonProgressLabel(state), [state]);
   const primaryControl = useMemo(() => getLessonPrimaryControl(state), [state]);
+  const audioActivityGeneration = pageActivityGuardRef.current.capture();
 
   useEffect(() => {
     if (didE2eAutostart.current) return;
@@ -418,6 +422,12 @@ export function LessonPlayer({
 
     if (muted) {
       const timeout = window.setTimeout(() => {
+        if (
+          !pageActivityGuardRef.current.isCurrent(audioActivityGeneration)
+        ) {
+          return;
+        }
+
         if (completionEvent) dispatchLessonEvent(completionEvent);
       }, Math.max(700, audioSequence.length * 800));
 
@@ -435,11 +445,19 @@ export function LessonPlayer({
           signal: controller.signal,
         });
 
-        if (!cancelled && completionEvent) {
+        if (
+          !cancelled &&
+          pageActivityGuardRef.current.isCurrent(audioActivityGeneration) &&
+          completionEvent
+        ) {
           dispatchLessonEvent(completionEvent);
         }
       } catch (caughtError) {
-        if (!cancelled && !isAbortError(caughtError)) {
+        if (
+          !cancelled &&
+          pageActivityGuardRef.current.isCurrent(audioActivityGeneration) &&
+          !isAbortError(caughtError)
+        ) {
           const message =
             caughtError instanceof Error ? caughtError.message : "Audio failed.";
           const feedbackText = `声音暂时不可用：${message}`;
@@ -456,6 +474,7 @@ export function LessonPlayer({
       controller.abort();
     };
   }, [
+    audioActivityGeneration,
     currentStep,
     dispatchLessonEvent,
     muted,
@@ -468,6 +487,7 @@ export function LessonPlayer({
 
   useEffect(() => {
     return () => {
+      pageActivityGuardRef.current.invalidate();
       activeRecordingRef.current?.cancelController.abort();
       microphoneAccessControllerRef.current?.abort();
     };
@@ -538,10 +558,18 @@ export function LessonPlayer({
     }
   }
 
+  const evaluationActivityGeneration = pageActivityGuardRef.current.capture();
+
   useEffect(() => {
     if (state.phase !== LessonPhase.Evaluating) return;
 
     if (!state.pendingAudioBlob) {
+      if (
+        !pageActivityGuardRef.current.isCurrent(evaluationActivityGeneration)
+      ) {
+        return;
+      }
+
       dispatch({
         type: "SYSTEM_ERROR",
         feedbackText: MISSING_AUDIO_BLOB_MESSAGE,
@@ -562,11 +590,22 @@ export function LessonPlayer({
           targetText: currentStep.childTarget,
         });
 
-        if (!cancelled) {
+        if (
+          !cancelled &&
+          pageActivityGuardRef.current.isCurrent(evaluationActivityGeneration)
+        ) {
           dispatch({ type: "EVALUATED", ...result });
         }
       } catch (caughtError) {
-        if (cancelled || isAbortError(caughtError)) return;
+        if (
+          cancelled ||
+          !pageActivityGuardRef.current.isCurrent(
+            evaluationActivityGeneration
+          ) ||
+          isAbortError(caughtError)
+        ) {
+          return;
+        }
 
         const message =
           caughtError instanceof Error ? caughtError.message : "Evaluation failed.";
@@ -585,7 +624,12 @@ export function LessonPlayer({
       cancelled = true;
       controller.abort();
     };
-  }, [currentStep.childTarget, state.pendingAudioBlob, state.phase]);
+  }, [
+    currentStep.childTarget,
+    evaluationActivityGeneration,
+    state.pendingAudioBlob,
+    state.phase,
+  ]);
 
   function startHoldRecording(event?: PointerEvent<HTMLButtonElement>) {
     if (state.phase !== LessonPhase.Listening || activeRecordingRef.current) {

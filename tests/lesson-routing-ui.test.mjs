@@ -128,6 +128,51 @@ describe("lesson routing UI", () => {
     );
   });
 
+  it("invalidates page activity before internal and external page transitions", () => {
+    assert.match(
+      app,
+      /import \{ createLessonPageActivityGuard \} from "\.\.\/lib\/lesson-page-activity";/
+    );
+    assert.match(
+      app,
+      /const pageActivityGuardRef = useRef\(createLessonPageActivityGuard\(\)\);/
+    );
+    assert.match(
+      app,
+      /const cancelPageLocalActivity = useCallback\(\(\) => \{\s*pageActivityGuardRef\.current\.invalidate\(\);[\s\S]*setError\(""\);/
+    );
+    assert.match(
+      app,
+      /if \(nextStepIndex !== null\) \{[\s\S]*cancelPageLocalActivity\(\);\s*\}[\s\S]*dispatch\(event\);[\s\S]*onNavigatePageRef\.current\?\.\(nextStepIndex\);/
+    );
+    assert.match(
+      app,
+      /handledRoutedStepIndexRef\.current = initialStepIndex;\s*cancelPageLocalActivity\(\);\s*dispatch\(\{ type: "SELECT_STEP", stepIndex: initialStepIndex \}\);/
+    );
+  });
+
+  it("guards audio and evaluation completions with captured page activity", () => {
+    assert.equal(
+      app.match(/pageActivityGuardRef\.current\.capture\(\)/g)?.length,
+      2,
+      "Expected audio and evaluation effects to capture page activity"
+    );
+    assert.equal(
+      app.match(
+        /pageActivityGuardRef\.current\.isCurrent\(\s*audioActivityGeneration\s*\)/g
+      )?.length,
+      3,
+      "Expected muted audio, played audio, and audio errors to reject stale activity"
+    );
+    assert.equal(
+      app.match(
+        /pageActivityGuardRef\.current\.isCurrent\(\s*evaluationActivityGeneration\s*\)/g
+      )?.length,
+      3,
+      "Expected missing-audio errors, evaluation results, and evaluation errors to reject stale activity"
+    );
+  });
+
   it("cancels stale microphone permission requests without changing the new page", () => {
     assert.match(
       app,
