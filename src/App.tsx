@@ -14,6 +14,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useReducer,
@@ -60,7 +61,7 @@ import {
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
-  requestMicrophoneAccess,
+  requestMicrophoneAccess as requestMicrophoneAccessWithSignal,
   recordSpeechClip,
 } from "./speech-recorder";
 import {
@@ -335,17 +336,66 @@ export function LessonPlayer({
     initialStepIndex,
     createInitialLessonState
   );
-
-  useEffect(() => {
-    if (state.stepIndex === initialStepIndex) return;
-    dispatch({ type: "SELECT_STEP", stepIndex: initialStepIndex });
-  }, [initialStepIndex, state.stepIndex]);
-
   const [error, setError] = useState("");
   const [isHoldingMic, setIsHoldingMic] = useState(false);
   const [isPreparingMicrophone, setIsPreparingMicrophone] = useState(false);
   const [muted, setMuted] = useState(false);
+  const handledRoutedStepIndexRef = useRef(initialStepIndex);
+  const onNavigatePageRef = useRef(onNavigatePage);
   const activeRecordingRef = useRef<ActiveRecording | null>(null);
+  const microphoneAccessControllerRef = useRef<AbortController | null>(null);
+  onNavigatePageRef.current = onNavigatePage;
+
+  const cancelPageLocalActivity = useCallback(() => {
+    setError("");
+    activeRecordingRef.current?.cancelController.abort();
+    activeRecordingRef.current = null;
+    microphoneAccessControllerRef.current?.abort();
+    microphoneAccessControllerRef.current = null;
+    setIsHoldingMic(false);
+    setIsPreparingMicrophone(false);
+  }, []);
+
+  const dispatchLessonEvent = useCallback(
+    (event: LessonEvent) => {
+      const stepOffset =
+        event.type === "NEXT" || event.type === "SCENE_NEXT"
+          ? 1
+          : event.type === "SCENE_PREVIOUS"
+            ? -1
+            : 0;
+      const nextStepIndex = Math.max(
+        0,
+        Math.min(
+          state.stepIndex + stepOffset,
+          lesson.steps.length - 1
+        )
+      );
+      const changesPage =
+        stepOffset !== 0 && nextStepIndex !== state.stepIndex;
+
+      if (changesPage) {
+        handledRoutedStepIndexRef.current = nextStepIndex;
+        cancelPageLocalActivity();
+      }
+
+      dispatch(event);
+
+      if (changesPage) {
+        onNavigatePageRef.current?.(nextStepIndex);
+      }
+    },
+    [cancelPageLocalActivity, lesson.steps.length, state.stepIndex]
+  );
+
+  useEffect(() => {
+    if (initialStepIndex === handledRoutedStepIndexRef.current) return;
+
+    handledRoutedStepIndexRef.current = initialStepIndex;
+    cancelPageLocalActivity();
+    dispatch({ type: "SELECT_STEP", stepIndex: initialStepIndex });
+  }, [initialStepIndex, cancelPageLocalActivity]);
+
   const currentStep = lesson.steps[state.stepIndex] ?? lesson.steps[0];
   if (!currentStep) {
     throw new Error(`Lesson has no steps: ${lesson.id}`);
@@ -377,7 +427,7 @@ export function LessonPlayer({
 
     if (muted) {
       const timeout = window.setTimeout(() => {
-        if (completionEvent) dispatch(completionEvent);
+        if (completionEvent) dispatchLessonEvent(completionEvent);
       }, Math.max(700, audioSequence.length * 800));
 
       return () => window.clearTimeout(timeout);
@@ -395,7 +445,7 @@ export function LessonPlayer({
         });
 
         if (!cancelled && completionEvent) {
-          dispatch(completionEvent);
+          dispatchLessonEvent(completionEvent);
         }
       } catch (caughtError) {
         if (!cancelled && !isAbortError(caughtError)) {
@@ -416,6 +466,7 @@ export function LessonPlayer({
     };
   }, [
     currentStep,
+    dispatchLessonEvent,
     muted,
     state.feedback,
     state.lastOutcome,
@@ -427,6 +478,7 @@ export function LessonPlayer({
   useEffect(() => {
     return () => {
       activeRecordingRef.current?.cancelController.abort();
+      microphoneAccessControllerRef.current?.abort();
     };
   }, []);
 
@@ -603,13 +655,37 @@ export function LessonPlayer({
   async function startLesson() {
     if (isPreparingMicrophone) return;
 
+    const microphoneAccessController = new AbortController();
+    microphoneAccessControllerRef.current?.abort();
+    microphoneAccessControllerRef.current = microphoneAccessController;
+    const requestMicrophoneAccess = () =>
+      requestMicrophoneAccessWithSignal({
+        signal: microphoneAccessController.signal,
+      });
+
     setError("");
     setIsPreparingMicrophone(true);
 
     try {
       await requestMicrophoneAccess();
+
+      if (
+        microphoneAccessController.signal.aborted ||
+        microphoneAccessControllerRef.current !== microphoneAccessController
+      ) {
+        return;
+      }
+
       dispatch({ type: "START" });
     } catch (caughtError) {
+      if (
+        microphoneAccessController.signal.aborted ||
+        microphoneAccessControllerRef.current !== microphoneAccessController ||
+        isAbortError(caughtError)
+      ) {
+        return;
+      }
+
       const setupMessage = getMicrophoneSetupErrorMessage(caughtError);
       const message =
         caughtError instanceof Error ? caughtError.message : "Microphone failed.";
@@ -617,7 +693,10 @@ export function LessonPlayer({
       dispatch({ type: "SYSTEM_ERROR", feedbackText });
       setError(feedbackText);
     } finally {
-      setIsPreparingMicrophone(false);
+      if (microphoneAccessControllerRef.current === microphoneAccessController) {
+        microphoneAccessControllerRef.current = null;
+        setIsPreparingMicrophone(false);
+      }
     }
   }
 
@@ -643,25 +722,14 @@ export function LessonPlayer({
 
   function navigateScene(type: "SCENE_NEXT" | "SCENE_PREVIOUS") {
     setError("");
-    const stepOffset = type === "SCENE_NEXT" ? 1 : -1;
-    const nextStepIndex = Math.max(
-      0,
-      Math.min(state.stepIndex + stepOffset, lesson.steps.length - 1)
-    );
-
-    if (
+    const event: LessonEvent =
       type === "SCENE_NEXT" &&
       state.phase === LessonPhase.Feedback &&
       state.lastOutcome === "advance"
-    ) {
-      dispatch({ type: "NEXT" });
-    } else {
-      dispatch({ type });
-    }
+        ? { type: "NEXT" }
+        : { type };
 
-    if (nextStepIndex !== state.stepIndex) {
-      onNavigatePage?.(nextStepIndex);
-    }
+    dispatchLessonEvent(event);
   }
 
   const sceneNumber = state.stepIndex + 1;
