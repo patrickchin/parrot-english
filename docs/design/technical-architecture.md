@@ -27,7 +27,7 @@ Important entrypoints:
 - `src/App.tsx`: lesson selection, rendering, audio sequencing, hold-to-talk,
   and evaluation effects.
 - `src/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
-- `lib/lesson-state.js`: pure automatic scene/step runner.
+- `lib/lesson-state.js`: pure automatic scene/step runner and scene controls.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
 - `lib/lesson-audio.js`: speaker-plus-text saved-audio resolution.
 - `src/AuthGate.tsx`: session-aware sign-in/sign-up UI and lesson gating.
@@ -90,6 +90,7 @@ the configured child name.
 Implemented phases:
 
 - `idle`
+- `paused`
 - `speaking`
 - `waiting-for-user`
 - `recording`
@@ -100,7 +101,11 @@ Implemented phases:
 Core transitions:
 
 ```text
-START -> first scripted step
+PLAY_SCENE -> first step of the current scene
+PAUSE_SCENE -> paused at the beginning of the current scene
+SCENE_PREVIOUS -> first step of the previous scene
+SCENE_NEXT -> first step of the next scene
+REPLAY_LESSON -> first step of the first scene
 LINE_DONE -> next scripted step
 MIC_STARTED -> recording
 MIC_RELEASED -> evaluating
@@ -110,17 +115,20 @@ EVALUATED second miss -> narrator feedback -> next step
 final LINE_DONE -> finished
 ```
 
-Scene boundaries are traversed automatically. The reducer stores only the
-current scene/step indices and interaction state; the lesson remains immutable
-content supplied to each transition.
+Scripted steps and scene boundaries advance automatically during uninterrupted
+playback. Back, Next, Pause, Play, and Replay Lesson restart at scene boundaries
+rather than resuming an interrupted step. The reducer stores only the current
+scene/step indices and interaction state; the lesson remains immutable content
+supplied to each transition.
 
 ## Scene Presentation
 
-`lib/lesson-scene.js` resolves the current background and every visible
-character's selected emote through the global catalog. It returns generic
-character objects, active-speaker state, setting metadata, and either character
-speech or narrator speech. React does not contain character-specific rendering
-branches.
+`lib/lesson-scene.js` resolves the current background and selected emotes through
+the global catalog. It filters `user` only at the presentation boundary, so the
+learner remains complete in validated script data but is not returned as a
+visible character. It returns generic character objects, active-speaker state,
+setting metadata, and either character speech or narrator speech. React does
+not contain character-specific rendering branches.
 
 ## Audio Sequencing
 
@@ -144,6 +152,8 @@ Rules:
 - MediaRecorder support is checked before permission is requested.
 - Releasing before permission resolves cancels the pending turn safely.
 - Tracks stop before evaluation starts.
+- Scene controls cancel active playback, recording, and evaluation before they
+  pause or change scenes.
 - Abort controllers cancel pending recording, evaluation, and playback when the
   lesson changes or the component unmounts.
 
