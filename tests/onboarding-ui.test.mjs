@@ -31,6 +31,7 @@ const {
   OnboardingGateView,
   answerForQuestion,
   createProfileOperationBoundary,
+  createProfileOperationOwnership,
   createProfileRouteLifecycle,
   nextProfileAcknowledgment,
   profileDraftsFromState,
@@ -579,6 +580,112 @@ describe("profile summary editor", () => {
     boundary.finish(third.controller);
     boundary.cancel();
     assert.equal(third.controller.signal.aborted, false);
+  });
+
+  it("rejects deferred profile completions across Back and unmount", async () => {
+    assert.equal(
+      typeof createProfileOperationOwnership,
+      "function",
+      "Expected executable profile operation ownership",
+    );
+
+    let generation = 0;
+    let abortCount = 0;
+    let stateWrites = 0;
+    let refreshCalls = 0;
+    let navigationCalls = 0;
+    const boundary = createProfileOperationBoundary(() => {
+      generation += 1;
+      return generation;
+    });
+    const ownership = createProfileOperationOwnership({
+      getCurrentOperation: () => generation,
+      initialIsProfileRoute: true,
+    });
+
+    const supersededOperation = boundary.begin();
+    assert.equal(ownership.isCurrent(supersededOperation), true);
+    generation += 1;
+    assert.equal(ownership.isCurrent(supersededOperation), false);
+    boundary.finish(supersededOperation.controller);
+
+    const abortedOperation = boundary.begin();
+    assert.equal(ownership.isCurrent(abortedOperation), true);
+    abortedOperation.controller.abort();
+    assert.equal(ownership.isCurrent(abortedOperation), false);
+    boundary.finish(abortedOperation.controller);
+
+    function deferred() {
+      let resolve;
+      const promise = new Promise((next) => {
+        resolve = next;
+      });
+      return { promise, resolve };
+    }
+
+    function settleLater(active, pending) {
+      return pending.promise.then(() => {
+        if (!ownership.isCurrent(active)) return;
+        stateWrites += 1;
+        refreshCalls += 1;
+        navigationCalls += 1;
+      });
+    }
+
+    const backOperation = boundary.begin();
+    backOperation.controller.signal.addEventListener("abort", () => {
+      abortCount += 1;
+    });
+    const backDeferred = deferred();
+    const backSettlement = settleLater(backOperation, backDeferred);
+
+    ownership.setProfileRoute(false);
+    backDeferred.resolve();
+    await backSettlement;
+    assert.equal(abortCount, 0);
+    assert.deepEqual(
+      { navigationCalls, refreshCalls, stateWrites },
+      { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
+    );
+
+    teardownProfileOperationResources({
+      boundary,
+      invalidateOperation() {
+        generation += 1;
+      },
+      resetLoadOperation() {},
+    });
+    assert.equal(abortCount, 1);
+
+    ownership.setProfileRoute(true);
+    const unmountOperation = boundary.begin();
+    unmountOperation.controller.signal.addEventListener("abort", () => {
+      abortCount += 1;
+    });
+    const unmountDeferred = deferred();
+    const unmountSettlement = settleLater(unmountOperation, unmountDeferred);
+
+    ownership.unmount();
+    teardownProfileOperationResources({
+      boundary,
+      invalidateOperation() {
+        generation += 1;
+      },
+      resetLoadOperation() {},
+    });
+    unmountDeferred.resolve();
+    await unmountSettlement;
+
+    assert.equal(abortCount, 2);
+    assert.deepEqual(
+      { navigationCalls, refreshCalls, stateWrites },
+      { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
+    );
+
+    assert.match(
+      gateSource,
+      /useIsomorphicLayoutEffect\(\(\) => \{[\s\S]*?ownership\?\.unmount\(\);[\s\S]*?teardownProfileResources\(\);/,
+    );
   });
 
   it("tears down active profile resources when the gate unmounts", () => {
