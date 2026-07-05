@@ -17,10 +17,12 @@ interest-oriented fields use a flexible JSON object.
 
 ## Dependency
 
-This feature builds on the approved Better Auth and D1 authentication design in
-`docs/superpowers/specs/2026-07-05-better-auth-d1-design.md`. Authentication is
-not yet implemented in the current repository state, so its implementation must
-land before the onboarding gate can be completed end to end.
+This feature builds on the merged Better Auth, Drizzle, and D1 authentication
+implementation described in
+`docs/superpowers/specs/2026-07-05-better-auth-d1-design.md`. Authentication,
+the shared `parrot-english` D1 binding, the request-scoped Drizzle client, and
+the React authentication gate already exist. Onboarding extends those existing
+boundaries rather than adding a second database or session mechanism.
 
 ## Agreed Product Decisions
 
@@ -99,22 +101,44 @@ The existing Cloudflare Worker remains the single origin:
 ```text
 Browser
   -> Cloudflare Worker
-       -> /api/auth/*                 -> Better Auth -> D1
-       -> /api/onboarding             -> questionnaire + learner profile -> D1
-       -> /api/onboarding/answer      -> validation + profile update -> D1
+       -> /api/auth/*                 -> Better Auth -> Drizzle -> shared D1
+       -> /api/onboarding             -> questionnaire + profile -> Drizzle -> shared D1
+       -> /api/onboarding/answer      -> validation + profile update -> Drizzle -> shared D1
        -> /api/onboarding/transcribe  -> authenticated audio -> Groq STT
-       -> /api/onboarding/skip        -> profile skip metadata -> D1
-       -> /api/onboarding/complete    -> completion validation -> D1
-       -> /api/profile                -> learner profile read/update -> D1
+       -> /api/onboarding/skip        -> profile skip metadata -> Drizzle -> shared D1
+       -> /api/onboarding/complete    -> completion validation -> Drizzle -> shared D1
+       -> /api/profile                -> learner profile read/update -> Drizzle -> shared D1
        -> /api/evaluate-speech        -> existing lesson evaluation
        -> static Vite assets
 ```
 
 All onboarding and profile endpoints require a Better Auth session. The Worker
 uses the session's user ID to address the learner profile; clients cannot submit
-another user ID.
+another user ID. Application routes receive the existing request-scoped Drizzle
+client created from `env.DB`.
+
+The frontend composes its protected gates explicitly:
+
+```text
+AuthGate
+  -> OnboardingGate
+       -> LessonPlayer
+```
+
+`AuthGate` remains responsible only for session restoration, sign-in, sign-up,
+and sign-out. `OnboardingGate` loads the questionnaire and learner profile for
+an authenticated session, renders onboarding when required, and otherwise
+renders the lesson. The one-question form and profile editor share presentational
+components and pure answer-state helpers.
 
 ## Data Model
+
+Drizzle owns the complete application schema. The following tables are added to
+`src/db/schema.ts` with typed relations to the existing Better Auth `user`
+table. Drizzle Kit generates the SQL migration through `npm run db:generate`;
+the generated migration is reviewed and committed before Wrangler applies it
+locally or remotely. The feature does not add handwritten schema SQL or a
+second migration system.
 
 ### `learner_profile`
 
@@ -175,7 +199,7 @@ required              INTEGER NOT NULL
 options_json          TEXT
 validation_json       TEXT
 branching_json        TEXT
-audio_asset_path      TEXT NOT NULL
+audio_id              TEXT NOT NULL
 ```
 
 `answer_key` is unique within a questionnaire. `answer_type` initially supports
@@ -215,8 +239,11 @@ from profile settings.
 
 ## Questionnaire Publishing
 
-The first release does not include an admin UI. A validated seed/publish tool
-writes a complete version to D1 and activates it only after checking:
+The first release does not include an admin UI. A validated seed/publish command
+checks a complete version and applies data-only statements to the shared D1
+database through Wrangler. Application runtime reads and writes the published
+records through Drizzle. The publisher does not own or alter table schema.
+It activates a version only after checking:
 
 - a supported version and unique stable keys;
 - unique, contiguous ordering;
@@ -225,12 +252,14 @@ writes a complete version to D1 and activates it only after checking:
 - valid option, validation, and branching JSON;
 - branch references to earlier stable keys;
 - no unreachable required questions; and
-- a non-empty saved audio asset path for every question.
+- an existing Peppa audio ID whose registered text exactly matches the English
+  prompt.
 
 The activation operation deactivates the prior active version and activates the
-new version together. Audio files remain source assets under
-`public/assets/audio`; publishing a prompt change therefore includes generating
-and deploying its matching saved audio asset.
+new version in one D1 batch. Saved-audio metadata remains in
+`lib/static-audio.js`, and audio files remain source assets under
+`public/assets/audio`. Publishing a prompt change therefore includes registering,
+generating, testing, and deploying its matching saved audio entry.
 
 ## Audio and Transcription
 
@@ -240,9 +269,13 @@ pig voice (`Summer - British, Confident & Posh`) and preferred `eleven_v3`
 model. Do not imitate or clone a protected character's exact voice. Runtime or
 local system text-to-speech is not used.
 
-The question record stores the matching static audio path. A question is not
-publishable without audio. The UI loads one question and its audio at a time,
-plays audio after an allowed user interaction, and always exposes Replay.
+The question record stores a stable `audio_id`, not a file path, voice ID, or
+TTS setting. The publisher resolves it through `lib/static-audio.js` and
+requires a `peppa` entry whose exact text matches `prompt_en`. The existing
+static-audio registry owns the browser asset path. A question is not publishable
+without registered metadata and an existing source file. The UI loads one
+question and its resolved audio at a time, plays it after an allowed user
+interaction, and always exposes Replay.
 
 `POST /api/onboarding/transcribe` accepts a short authenticated audio upload.
 It reuses the existing Groq Whisper transcription integration without lesson
@@ -363,11 +396,13 @@ Worker tests cover:
 - transcription success and failure without audio persistence; and
 - profile editing.
 
-Infrastructure tests cover D1 tables, indexes, foreign keys, JSON constraints,
-and the validated publisher. UI-focused tests cover loading, the one-question
-contract, audio replay, microphone state, editable transcription, typed and
-choice fallback, array chips, validation errors, progress, Skip, resume,
-completion, and keyboard use.
+Infrastructure tests cover the Drizzle table definitions and relations, the
+generated D1 migration, indexes, foreign keys, JSON constraints, the static
+audio registry contract, and the validated publisher. UI-focused tests cover
+loading, the `AuthGate -> OnboardingGate -> LessonPlayer` composition, the
+one-question contract, audio replay, microphone state, editable transcription,
+typed and choice fallback, array chips, validation errors, progress, Skip,
+resume, completion, and keyboard use.
 
 Local Worker-backed verification applies migrations and exercises registration,
 onboarding, skip/resume, completion, profile editing, and lesson entry. Final
@@ -391,3 +426,4 @@ to catch lesson and speech-evaluation regressions.
 - [Cloudflare D1 query guidance](https://developers.cloudflare.com/d1/best-practices/query-d1/)
 - [Better Auth database schema extension](https://better-auth.com/docs/concepts/database)
 - [Better Auth users and accounts](https://better-auth.com/docs/concepts/users-accounts)
+- [Drizzle ORM with Cloudflare D1](https://orm.drizzle.team/docs/sqlite/connect-cloudflare-d1)
