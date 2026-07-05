@@ -66,7 +66,7 @@ describe("catalog-driven stage layout", () => {
     assert.ok(compactEnd > compactStart);
     assert.match(
       compactStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(170px,\s*27vh,\s*218px\)/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(210px,\s*32vh,\s*238px\)/,
     );
     assert.match(
       compactStyles,

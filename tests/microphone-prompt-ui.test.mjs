@@ -48,4 +48,31 @@ describe("hold-to-talk UI", () => {
     assert.match(recordingRule, /animation:\s*micPulse/);
     assert.doesNotMatch(styles, /\.user-turn-panel\s*\{/);
   });
+
+  it("keeps the short evaluating status inside its prompt track", () => {
+    const combinedStart = styles.indexOf(
+      "@media (max-width: 720px) and (max-height: 620px)",
+    );
+    const combinedEnd = styles.indexOf(
+      "@media (prefers-reduced-motion: reduce)",
+    );
+    const combinedStyles = styles.slice(combinedStart, combinedEnd);
+
+    assert.notEqual(combinedStart, -1);
+    assert.ok(combinedEnd > combinedStart);
+    assert.match(app, /<strong>\{currentStep\.dialogue\}<\/strong>/);
+    assert.match(app, /Checking your speech\.\.\./);
+    assert.match(
+      combinedStyles,
+      /\.learner-mic-prompt\.is-evaluating\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^}]*padding:\s*4px 6px/,
+    );
+    assert.match(
+      combinedStyles,
+      /\.learner-mic-prompt\.is-evaluating > strong\s*\{[^}]*position:\s*absolute[^}]*width:\s*1px[^}]*height:\s*1px[^}]*overflow:\s*hidden[^}]*clip-path:\s*inset\(50%\)/,
+    );
+    assert.match(
+      combinedStyles,
+      /\.learner-mic-prompt\.is-evaluating \.checking-label\s*\{[^}]*min-width:\s*0[^}]*width:\s*100%[^}]*max-width:\s*100%[^}]*overflow:\s*hidden[^}]*padding:\s*0 6px[^}]*font-size:\s*0\.72rem[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
+    );
+  });
 });
