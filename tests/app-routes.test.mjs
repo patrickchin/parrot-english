@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, URLSearchParams } from "node:url";
 import { after, describe, it } from "node:test";
 import { createServer } from "vite";
 
@@ -12,6 +12,10 @@ const vite = await createServer({
 const routes = await vite.ssrLoadModule("/src/app-routes.ts").catch(() => ({}));
 
 after(async () => vite.close());
+
+function returnToSearch(returnTo) {
+  return `?${new URLSearchParams({ returnTo })}`;
+}
 
 describe("app route helpers", () => {
   it("builds source-specific lesson paths", () => {
@@ -31,6 +35,15 @@ describe("app route helpers", () => {
       routes.getLessonScenePath("my", "same-id", 2),
       "/lessons/my/same-id/scenes/3",
     );
+  });
+
+  it("rejects empty and dot-segment lesson IDs", () => {
+    for (const lessonId of ["", "   ", ".", ".."]) {
+      assert.throws(
+        () => routes.getLessonPath("parrot", lessonId),
+        /Lesson ID must be non-empty and cannot be a dot segment/,
+      );
+    }
   });
 
   it("builds auth paths with encoded return destinations", () => {
@@ -102,5 +115,27 @@ describe("app route helpers", () => {
     );
     assert.equal(routes.getSafeReturnTo("?returnTo=%2Flogin"), null);
     assert.equal(routes.getSafeReturnTo("?returnTo=%2Fonboarding"), null);
+  });
+
+  it("normalizes return destinations before checking durable routes", () => {
+    for (const returnTo of [
+      "/progress/../login",
+      "/lessons/../onboarding",
+      "/stories/../admin",
+      "/profile/../../outside",
+      "/progress/%2e%2e/login",
+      "/lessons/%2E%2E/onboarding",
+      "/stories/%2e%2e/admin",
+      "/profile/%2e%2e/%2e%2e/outside",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
+    }
+
+    assert.equal(
+      routes.getSafeReturnTo(
+        returnToSearch("/progress/./history?period=week#today"),
+      ),
+      "/progress/history?period=week#today",
+    );
   });
 });

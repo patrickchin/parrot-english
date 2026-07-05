@@ -3,7 +3,8 @@ import { LESSONS, type LessonCatalogEntry } from "./lesson-catalog";
 export type LessonSource = "parrot" | "my";
 
 const SAFE_RETURN_PATH =
-  /^(?:\/$|\/profile(?:[/?]|$)|\/lessons(?:[/?]|$)|\/progress(?:[/?]|$)|\/stories(?:[/?]|$))/;
+  /^(?:\/$|\/profile(?:\/|$)|\/lessons(?:\/|$)|\/progress(?:\/|$)|\/stories(?:\/|$))/;
+const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
 
 function parseSceneNumber(value: string | undefined) {
@@ -14,6 +15,10 @@ function parseSceneNumber(value: string | undefined) {
 }
 
 export function getLessonPath(source: LessonSource, lessonId: string) {
+  if (!lessonId.trim() || lessonId === "." || lessonId === "..") {
+    throw new TypeError("Lesson ID must be non-empty and cannot be a dot segment.");
+  }
+
   return `/lessons/${source}/${encodeURIComponent(lessonId)}`;
 }
 
@@ -35,9 +40,23 @@ export function getOnboardingPath(returnTo: string) {
 
 export function getSafeReturnTo(search: string) {
   const value = new URLSearchParams(search).get("returnTo");
-  return value && !value.startsWith("//") && SAFE_RETURN_PATH.test(value)
-    ? value
-    : null;
+  if (!value) return null;
+
+  let destination: URL;
+  try {
+    destination = new URL(value, RETURN_TO_ORIGIN);
+  } catch {
+    return null;
+  }
+
+  if (
+    destination.origin !== RETURN_TO_ORIGIN ||
+    !SAFE_RETURN_PATH.test(destination.pathname)
+  ) {
+    return null;
+  }
+
+  return `${destination.pathname}${destination.search}${destination.hash}`;
 }
 
 export function resolveParrotLesson(lessonId: string | undefined) {
