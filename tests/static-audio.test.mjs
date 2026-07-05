@@ -19,12 +19,12 @@ const feedbackLines = [
   "I couldn't hear that. Let's keep going.",
 ];
 const normalizedCharacterSources = {
-  "peppa-cant-reach": "/assets/audio/peppa-cant-reach.wav",
-  "peppa-can-help": "/assets/audio/peppa-can-help.wav",
-  "dolly-can-help": "/assets/audio/dolly-can-help.wav",
-  "dolly-here-you-are": "/assets/audio/dolly-here-you-are.wav",
-  "peppa-thank-you": "/assets/audio/peppa-thank-you.wav",
-  "dolly-thank-you": "/assets/audio/dolly-thank-you.wav",
+  "peppa-cant-reach": "/assets/audio/peppa-cant-reach.mp3",
+  "peppa-can-help": "/assets/audio/peppa-can-help.mp3",
+  "dolly-can-help": "/assets/audio/dolly-can-help.mp3",
+  "dolly-here-you-are": "/assets/audio/dolly-here-you-are.mp3",
+  "peppa-thank-you": "/assets/audio/peppa-thank-you.mp3",
+  "dolly-thank-you": "/assets/audio/dolly-thank-you.mp3",
 };
 
 describe("static audio cache metadata", () => {
@@ -32,11 +32,11 @@ describe("static audio cache metadata", () => {
     assert.equal(typeof staticAudio.getStaticAudioLineForSpeech, "function");
     assert.equal(
       getStaticAudioLineForSpeech("dolly", "Here you are!").src,
-      "/assets/audio/dolly-here-you-are.wav"
+      "/assets/audio/dolly-here-you-are.mp3"
     );
     assert.equal(
       getStaticAudioLineForSpeech("narrator", "Let's copy Dolly!").src,
-      "/assets/audio/narrator-copy-dolly.wav"
+      "/assets/audio/narrator-copy-dolly.mp3"
     );
   });
 
@@ -65,7 +65,7 @@ describe("static audio cache metadata", () => {
       assert.ok(allowedSpeakers.has(line.speaker), `${id} speaker`);
       assert.equal(line.lang, "en-US", `${id} language`);
       assert.doesNotMatch(line.text, /[\u3400-\u9fff]/u, `${id} text`);
-      assert.match(line.src, /^\/assets\/audio\/.+\.wav$/, `${id} source`);
+      assert.match(line.src, /^\/assets\/audio\/.+\.mp3$/, `${id} source`);
     }
   });
 

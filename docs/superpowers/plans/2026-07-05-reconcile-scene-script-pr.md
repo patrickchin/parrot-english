@@ -4,7 +4,7 @@
 
 **Goal:** Rebuild PR #7 on current `origin/main`, retain independent main features, remove superseded lesson implementations, and leave the PR conflict-free without rewriting `main`.
 
-**Architecture:** Preserve the existing PR head on a local backup branch, recreate `codex/scene-script-lessons` from current `origin/main`, and replay the seven scene-script commits. Resolve the implementation commit in favor of the scene/step architecture, then explicitly restore the version badge and platform/E2E infrastructure while removing the obsolete flat catalog, manual lesson controls, and separate lesson-list UI. Keep main's legacy-asset cleanup by replacing every scene-script reference to deleted PNG/WAV files with current or newly generated assets.
+**Architecture:** Preserve the existing PR head on a local backup branch, recreate `codex/scene-script-lessons` from current `origin/main`, and replay the seven scene-script commits. Resolve the implementation commit in favor of the scene/step architecture, then explicitly restore the version badge and platform/E2E infrastructure while removing the obsolete flat catalog, manual lesson controls, and separate lesson-list UI. Keep main's legacy-asset cleanup by replacing every scene-script reference to deleted PNG/WAV files with current or newly generated compressed assets.
 
 **Tech Stack:** Git, React 19, TypeScript, Vite, Node test runner, JSON lesson content, ElevenLabs `eleven_v3`
 
@@ -174,7 +174,7 @@ Expected: PASS with both the badge and scene-script hold-to-talk UI present.
 **Files:**
 - Modify: `content/catalogs/backgrounds.json`
 - Modify: `lib/static-audio.js`
-- Create: six speaker-specific WAV files under `public/assets/audio`
+- Create: speaker-specific MP3 files under `public/assets/audio`
 - Modify: `tests/static-audio.test.mjs`
 
 - [ ] **Step 1: Make focused asset coverage fail for normalized cache names**
@@ -183,12 +183,12 @@ Update `tests/static-audio.test.mjs` to require these cache paths:
 
 ```js
 const expectedSources = {
-  "peppa-cant-reach": "/assets/audio/peppa-cant-reach.wav",
-  "peppa-can-help": "/assets/audio/peppa-can-help.wav",
-  "dolly-can-help": "/assets/audio/dolly-can-help.wav",
-  "dolly-here-you-are": "/assets/audio/dolly-here-you-are.wav",
-  "peppa-thank-you": "/assets/audio/peppa-thank-you.wav",
-  "dolly-thank-you": "/assets/audio/dolly-thank-you.wav",
+  "peppa-cant-reach": "/assets/audio/peppa-cant-reach.mp3",
+  "peppa-can-help": "/assets/audio/peppa-can-help.mp3",
+  "dolly-can-help": "/assets/audio/dolly-can-help.mp3",
+  "dolly-here-you-are": "/assets/audio/dolly-here-you-are.mp3",
+  "peppa-thank-you": "/assets/audio/peppa-thank-you.mp3",
+  "dolly-thank-you": "/assets/audio/dolly-thank-you.mp3",
 };
 ```
 
@@ -196,7 +196,7 @@ Run `node --test tests/static-audio.test.mjs` and expect failure because those s
 
 - [ ] **Step 2: Stop referencing files removed from main**
 
-Change the `episode-garden` catalog source to `/assets/backgrounds/episode-garden.webp`. Change the six manifest entries to the normalized WAV paths above. Do not restore `episode-garden.png` or legacy `pig-*`, `parrot-*`, and `turn-*` WAV files deleted by `48763b3`.
+Change the `episode-garden` catalog source to `/assets/backgrounds/episode-garden.webp`. Change the manifest entries to normalized MP3 paths. Do not restore `episode-garden.png` or legacy `pig-*`, `parrot-*`, and `turn-*` WAV files deleted by `48763b3`.
 
 - [ ] **Step 3: Generate exactly the six missing ElevenLabs cache entries**
 
@@ -212,7 +212,7 @@ NODE_OPTIONS=--use-system-ca npm run generate:audio:elevenlabs -- \
   --only=dolly-thank-you
 ```
 
-Expected: six ElevenLabs-generated PCM WAV files; no local or macOS speech.
+Expected: speaker-specific ElevenLabs-generated MP3 files; no local or macOS speech.
 
 - [ ] **Step 4: Verify visual and audio coverage**
 

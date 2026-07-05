@@ -229,4 +229,3 @@ git diff -- docs/lesson-creator-system-prompt.md tests/lesson-creator-prompt.tes
 
 Expected: the active prompt, dated backup, test, and this plan are the only new
 task files; unrelated `.superpowers/` content remains untouched.
-

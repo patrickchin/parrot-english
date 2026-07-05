@@ -52,8 +52,9 @@ of generating speech during a live lesson.
 ## ElevenLabs Generation
 
 The generator is `scripts/generate-static-audio.mjs`. It is ElevenLabs-only,
-uses `eleven_v3` by default, and converts returned MP3 bytes to WAV through
-`ffmpeg` when needed.
+uses `eleven_v3` by default, and stores the returned MP3 bytes directly for
+browser playback. WAV conversion remains available only for an explicitly
+configured WAV manifest path.
 
 ```bash
 npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force

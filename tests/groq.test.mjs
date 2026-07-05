@@ -52,7 +52,7 @@ describe("Groq speech evaluation", () => {
     assert.equal(payload.transcript, "Hello Peppa");
     assert.equal(payload.passed, true);
     assert.equal(payload.similarity, 1);
-    assert.equal(payload.feedbackText, "太棒了！我们继续下一句。");
+    assert.equal(payload.feedbackText, "Great job!");
     assert.equal(payload.retryAllowed, false);
   });
 
@@ -61,7 +61,7 @@ describe("Groq speech evaluation", () => {
 
     assert.equal(payload.transcript, "yellow ball");
     assert.equal(payload.passed, false);
-    assert.equal(payload.feedbackText, "差一点点，听多莉慢慢说，再试一次。");
+    assert.equal(payload.feedbackText, "Almost! Try again.");
     assert.equal(payload.retryAllowed, true);
     assert.ok(payload.similarity < 0.74);
   });
@@ -72,7 +72,7 @@ describe("Groq speech evaluation", () => {
     assert.equal(payload.transcript, "");
     assert.equal(payload.passed, false);
     assert.equal(payload.similarity, 0);
-    assert.equal(payload.feedbackText, "我没有听清楚，我们慢一点再试一次。");
+    assert.equal(payload.feedbackText, "I couldn't hear you. Please try again.");
     assert.equal(payload.retryAllowed, true);
   });
 

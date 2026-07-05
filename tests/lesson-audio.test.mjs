@@ -26,7 +26,7 @@ describe("lesson audio", () => {
 
     assert.deepEqual(line, {
       audioId: "dolly-here-you-are",
-      audioSrc: "/assets/audio/dolly-here-you-are.wav",
+      audioSrc: "/assets/audio/dolly-here-you-are.mp3",
       lang: "en-US",
       speaker: "dolly",
       text: "Here you are!",
@@ -46,7 +46,7 @@ describe("lesson audio", () => {
 
     assert.equal(line.speaker, "narrator");
     assert.equal(line.text, "Almost! Try again, Bella.");
-    assert.equal(line.audioSrc, "/assets/audio/narrator-retry-bella.wav");
+    assert.equal(line.audioSrc, "/assets/audio/narrator-retry-bella.mp3");
   });
 
   it("stays silent for user interaction and idle phases", () => {

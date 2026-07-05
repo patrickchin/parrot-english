@@ -493,3 +493,7 @@ export function LessonPlayer() {
     </main>
   );
 }
+
+export function App() {
+  return <LessonPlayer />;
+}
