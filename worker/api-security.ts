@@ -1,28 +1,11 @@
-type RateLimitEntry = {
-  count: number;
-  resetAt: number;
-};
-
-const evaluateRateLimitBuckets = new Map<string, RateLimitEntry>();
-const onboardingTranscriptionRateLimitBuckets = new Map<
-  string,
-  RateLimitEntry
->();
-const onboardingEnrichmentRateLimitBuckets = new Map<string, RateLimitEntry>();
-const DEFAULT_EVALUATE_RATE_LIMIT_MAX = 8;
-const DEFAULT_EVALUATE_RATE_LIMIT_WINDOW_SECONDS = 60;
-const DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX = 6;
-const DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS = 60;
-const DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX = 12;
-const DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS = 60;
+export interface RateLimitBinding {
+  limit(input: { key: string }): Promise<{ success: boolean }>;
+}
 
 export interface RateLimitEnv {
-  EVALUATE_RATE_LIMIT_MAX?: string;
-  EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
-  ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX?: string;
-  ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS?: string;
-  ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX?: string;
-  ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS?: string;
+  EVALUATE_RATE_LIMITER: RateLimitBinding;
+  ONBOARDING_TRANSCRIPTION_RATE_LIMITER: RateLimitBinding;
+  ONBOARDING_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
 }
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
@@ -35,11 +18,6 @@ function jsonResponse(payload: unknown, init?: ResponseInit) {
   });
 }
 
-function readPositiveInteger(value: string | undefined, fallback: number) {
-  const parsed = Number.parseInt(String(value ?? ""), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
 function getClientAddress(request: Request) {
   return (
     request.headers.get("CF-Connecting-IP") ??
@@ -48,107 +26,54 @@ function getClientAddress(request: Request) {
   );
 }
 
-function checkRateLimit({
-  buckets,
-  key,
-  maxRequests,
-  message,
-  now,
-  windowSeconds,
-}: {
-  buckets: Map<string, RateLimitEntry>;
-  key: string;
-  maxRequests: number;
-  message: string;
-  now: number;
-  windowSeconds: number;
-}) {
-  const windowMs = windowSeconds * 1000;
-  const current = buckets.get(key);
+async function checkRateLimit(
+  binding: RateLimitBinding,
+  key: string,
+  message: string,
+) {
+  const { success } = await binding.limit({ key });
+  if (success) return null;
 
-  if (!current || current.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return null;
-  }
-
-  if (current.count >= maxRequests) {
-    const retryAfter = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
-    return jsonResponse(
-      { error: "rate_limited", message },
-      {
-        status: 429,
-        headers: { "Retry-After": String(retryAfter) },
-      }
-    );
-  }
-
-  current.count += 1;
-  return null;
+  return jsonResponse(
+    { error: "rate_limited", message },
+    {
+      status: 429,
+      headers: { "Retry-After": "60" },
+    },
+  );
 }
 
 export function checkEvaluateSpeechRateLimit(
   request: Request,
   env: RateLimitEnv,
-  now = Date.now()
 ) {
-  const maxRequests = readPositiveInteger(
-    env.EVALUATE_RATE_LIMIT_MAX,
-    DEFAULT_EVALUATE_RATE_LIMIT_MAX
+  return checkRateLimit(
+    env.EVALUATE_RATE_LIMITER,
+    getClientAddress(request),
+    "Too many speech evaluation requests. Please wait and try again.",
   );
-  const windowSeconds = readPositiveInteger(
-    env.EVALUATE_RATE_LIMIT_WINDOW_SECONDS,
-    DEFAULT_EVALUATE_RATE_LIMIT_WINDOW_SECONDS
-  );
-  return checkRateLimit({
-    buckets: evaluateRateLimitBuckets,
-    key: getClientAddress(request),
-    maxRequests,
-    message: "Too many speech evaluation requests. Please wait and try again.",
-    now,
-    windowSeconds,
-  });
 }
 
 export function checkOnboardingTranscriptionRateLimit(
   request: Request,
   env: RateLimitEnv,
   userId: string,
-  now = Date.now()
 ) {
-  return checkRateLimit({
-    buckets: onboardingTranscriptionRateLimitBuckets,
-    key: `${userId}:${getClientAddress(request)}`,
-    maxRequests: readPositiveInteger(
-      env.ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX,
-      DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX
-    ),
-    message: "Too many transcription requests. Please wait and try again.",
-    now,
-    windowSeconds: readPositiveInteger(
-      env.ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS,
-      DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS
-    ),
-  });
+  return checkRateLimit(
+    env.ONBOARDING_TRANSCRIPTION_RATE_LIMITER,
+    `${userId}:${getClientAddress(request)}`,
+    "Too many transcription requests. Please wait and try again.",
+  );
 }
 
 export function checkOnboardingEnrichmentRateLimit(
   request: Request,
   env: RateLimitEnv,
   userId: string,
-  now = Date.now()
 ) {
-  return checkRateLimit({
-    buckets: onboardingEnrichmentRateLimitBuckets,
-    key: `${userId}:${getClientAddress(request)}`,
-    maxRequests: readPositiveInteger(
-      env.ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX,
-      DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX
-    ),
-    message: "Too many onboarding answers. Please wait and try again.",
-    now,
-    windowSeconds: readPositiveInteger(
-      env.ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS,
-      DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS
-    ),
-  });
+  return checkRateLimit(
+    env.ONBOARDING_ENRICHMENT_RATE_LIMITER,
+    `${userId}:${getClientAddress(request)}`,
+    "Too many onboarding answers. Please wait and try again.",
+  );
 }

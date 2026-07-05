@@ -100,6 +100,30 @@ function indexDetails(database, table) {
 }
 
 describe("onboarding infrastructure", () => {
+  it("configures independent platform rate limits for speech endpoints", () => {
+    const config = JSON.parse(
+      readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    );
+
+    assert.deepEqual(config.ratelimits, [
+      {
+        name: "EVALUATE_RATE_LIMITER",
+        namespace_id: "104201",
+        simple: { limit: 8, period: 60 },
+      },
+      {
+        name: "ONBOARDING_TRANSCRIPTION_RATE_LIMITER",
+        namespace_id: "104202",
+        simple: { limit: 6, period: 60 },
+      },
+      {
+        name: "ONBOARDING_ENRICHMENT_RATE_LIMITER",
+        namespace_id: "104203",
+        simple: { limit: 12, period: 60 },
+      },
+    ]);
+  });
+
   it("keeps deployed v2 profile persistence independent of questionnaire tables", () => {
     const repository = readFileSync(
       new URL("../worker/onboarding-repository.ts", import.meta.url),
