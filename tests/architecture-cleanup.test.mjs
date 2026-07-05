@@ -76,7 +76,9 @@ describe("architecture cleanup contracts", () => {
     assert.doesNotMatch(packageJson, /generate:audio:groq/);
     assert.match(generator, /ELEVENLABS_DEFAULT_MODEL = "eleven_v3"/);
     assert.match(generator, /Oqy85UMasXzUjUxF0ta5/);
-    assert.match(generator, /4NQthjVhIGGVfL3Si000/);
+    assert.doesNotMatch(generator, /4NQthjVhIGGVfL3Si000/);
+    assert.match(generator, /5N1BjZ10t6GcJUhZCP40/);
+    assert.match(generator, /pFZP5JQG7iQjIQuC4Bku/);
     assert.match(generator, /line\.ttsText \?\? line\.text/);
   });
 
