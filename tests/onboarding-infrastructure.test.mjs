@@ -3,6 +3,8 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import { describe, it } from "node:test";
+import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
+import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
 import {
   buildQuestionnaireSql,
   validateQuestionnaireDefinition,
@@ -102,6 +104,42 @@ function indexDetails(database, table) {
 }
 
 describe("onboarding infrastructure", () => {
+  it("validates the six simple v2 prose questions", () => {
+    const definition = validateOnboardingQuestionnaire(questionnaireV2);
+
+    assert.deepEqual(
+      definition.questions.map(({ promptEn }) => promptEn),
+      [
+        "Hi! I'm Peppa. What's your name?",
+        "How old are you?",
+        "What cartoons do you like?",
+        "What animals do you like?",
+        "What do you like doing for fun?",
+        "What kind of stories do you like?",
+      ],
+    );
+    assert.deepEqual(
+      definition.questions.map(({ canonicalField }) => canonicalField),
+      ["name", "age", null, null, null, null],
+    );
+    assert.ok(Object.isFrozen(definition));
+    assert.ok(Object.isFrozen(definition.questions));
+    assert.ok(definition.questions.every(Object.isFrozen));
+  });
+
+  it("rejects duplicate positions and unknown definition fields", () => {
+    assert.throws(
+      () =>
+        validateOnboardingQuestionnaire({
+          ...questionnaireV2,
+          questions: questionnaireV2.questions.map((entry, index) =>
+            index === 1 ? { ...entry, position: 1, mystery: true } : entry,
+          ),
+        }),
+      /Invalid onboarding questionnaire/,
+    );
+  });
+
   it("exports separate learner profile and questionnaire Drizzle models", () => {
     for (const [exportName, expected] of Object.entries(EXPECTED_MODELS)) {
       const table = schema[exportName];
