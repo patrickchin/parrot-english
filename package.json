@@ -27,7 +27,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "test:e2e": "node scripts/run-maestro-tests.mjs",
     "test:maestro": "node scripts/run-maestro-tests.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test tests/*.test.mjs tests/lifecycle/*.test.mjs",
+    "test:lifecycle": "node --test tests/lifecycle/*.test.mjs",
     "lint": "eslint . --ignore-pattern dist"
   },
   "dependencies": {
@@ -46,6 +47,7 @@
     "@vitejs/plugin-react": "6.0.2",
     "drizzle-kit": "^0.31.10",
     "eslint": "9.39.4",
+    "happy-dom": "^20.10.6",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
