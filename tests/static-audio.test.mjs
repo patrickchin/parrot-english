@@ -1,16 +1,17 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
 
 const getStaticAudioLineForSpeech =
   staticAudio.getStaticAudioLineForSpeech ?? (() => undefined);
-const lesson = JSON.parse(
-  readFileSync(
-    new URL("../content/lessons/peppas-high-ball.json", import.meta.url),
-    "utf8"
-  )
-);
+const lessonDirectory = new URL("../content/lessons/", import.meta.url);
+const lessons = readdirSync(lessonDirectory)
+  .filter((filename) => filename.endsWith(".json"))
+  .sort((left, right) => left.localeCompare(right))
+  .map((filename) =>
+    JSON.parse(readFileSync(new URL(filename, lessonDirectory), "utf8"))
+  );
 const feedbackLines = [
   "Great job!",
   "Almost! Try again, Bella.",
@@ -50,10 +51,12 @@ describe("static audio cache metadata", () => {
   });
 
   it("covers every scripted non-user line and runner feedback line", () => {
-    const scriptedLines = lesson.scenes.flatMap((scene) =>
-      scene.steps
-        .filter((step) => step.speaker !== "user")
-        .map((step) => [step.speaker, step.dialogue])
+    const scriptedLines = lessons.flatMap((lesson) =>
+      lesson.scenes.flatMap((scene) =>
+        scene.steps
+          .filter((step) => step.speaker !== "user")
+          .map((step) => [step.speaker, step.dialogue])
+      )
     );
 
     for (const [speaker, text] of scriptedLines) {
