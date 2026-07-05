@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   sqliteTable,
@@ -99,8 +100,119 @@ export const verification = sqliteTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)]
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const questionnaire = sqliteTable(
+  "questionnaire",
+  {
+    id: text("id").primaryKey(),
+    version: integer("version").notNull(),
+    status: text("status").notNull(),
+    createdAt: createdAt(),
+    activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("questionnaire_version_unique").on(table.version),
+    index("questionnaire_status_idx").on(table.status),
+    check(
+      "questionnaire_status_check",
+      sql`${table.status} in ('draft', 'active', 'inactive')`
+    ),
+  ]
+);
+
+export const questionnaireQuestion = sqliteTable(
+  "questionnaire_question",
+  {
+    id: text("id").primaryKey(),
+    questionnaireId: text("questionnaire_id")
+      .notNull()
+      .references(() => questionnaire.id, { onDelete: "cascade" }),
+    answerKey: text("answer_key").notNull(),
+    position: integer("position").notNull(),
+    promptEn: text("prompt_en").notNull(),
+    promptZh: text("prompt_zh"),
+    answerType: text("answer_type").notNull(),
+    cardinality: text("cardinality").notNull(),
+    required: integer("required", { mode: "boolean" }).notNull(),
+    optionsJson: text("options_json"),
+    validationJson: text("validation_json"),
+    branchingJson: text("branching_json"),
+    audioId: text("audio_id").notNull(),
+  },
+  (table) => [
+    uniqueIndex("questionnaire_question_key_unique").on(
+      table.questionnaireId,
+      table.answerKey
+    ),
+    uniqueIndex("questionnaire_question_position_unique").on(
+      table.questionnaireId,
+      table.position
+    ),
+    check(
+      "questionnaire_question_answer_type_check",
+      sql`${table.answerType} in ('text', 'number', 'choice')`
+    ),
+    check(
+      "questionnaire_question_cardinality_check",
+      sql`${table.cardinality} in ('scalar', 'array')`
+    ),
+    check(
+      "questionnaire_question_options_json_check",
+      sql`${table.optionsJson} is null or json_valid(${table.optionsJson})`
+    ),
+    check(
+      "questionnaire_question_validation_json_check",
+      sql`${table.validationJson} is null or json_valid(${table.validationJson})`
+    ),
+    check(
+      "questionnaire_question_branching_json_check",
+      sql`${table.branchingJson} is null or json_valid(${table.branchingJson})`
+    ),
+  ]
+);
+
+export const learnerProfile = sqliteTable(
+  "learner_profile",
+  {
+    id: text("id").primaryKey(),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name"),
+    age: integer("age"),
+    answersJson: text("answers_json").default("{}").notNull(),
+    questionnaireVersion: integer("questionnaire_version").references(
+      () => questionnaire.version
+    ),
+    currentQuestionKey: text("current_question_key"),
+    onboardingStatus: text("onboarding_status")
+      .default("not_started")
+      .notNull(),
+    lastSkippedAt: integer("last_skipped_at", { mode: "timestamp_ms" }),
+    lastSkippedSessionId: text("last_skipped_session_id"),
+    completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    uniqueIndex("learner_profile_auth_user_id_unique").on(table.authUserId),
+    index("learner_profile_questionnaire_status_idx").on(
+      table.questionnaireVersion,
+      table.onboardingStatus
+    ),
+    check(
+      "learner_profile_answers_json_check",
+      sql`json_valid(${table.answersJson})`
+    ),
+    check(
+      "learner_profile_onboarding_status_check",
+      sql`${table.onboardingStatus} in ('not_started', 'in_progress', 'completed')`
+    ),
+  ]
+);
+
+export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
+  learnerProfile: one(learnerProfile),
   sessions: many(session),
 }));
 
@@ -111,3 +223,35 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, { fields: [account.userId], references: [user.id] }),
 }));
+
+export const learnerProfileRelations = relations(
+  learnerProfile,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [learnerProfile.authUserId],
+      references: [user.id],
+    }),
+    questionnaire: one(questionnaire, {
+      fields: [learnerProfile.questionnaireVersion],
+      references: [questionnaire.version],
+    }),
+  })
+);
+
+export const questionnaireRelations = relations(
+  questionnaire,
+  ({ many }) => ({
+    learnerProfiles: many(learnerProfile),
+    questions: many(questionnaireQuestion),
+  })
+);
+
+export const questionnaireQuestionRelations = relations(
+  questionnaireQuestion,
+  ({ one }) => ({
+    questionnaire: one(questionnaire, {
+      fields: [questionnaireQuestion.questionnaireId],
+      references: [questionnaire.id],
+    }),
+  })
+);

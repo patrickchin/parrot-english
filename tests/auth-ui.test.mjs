@@ -502,12 +502,16 @@ test("sign-out maps failures without refetching and refetches success", async ()
   assert.equal(refetchCalls, 1);
 });
 
-test("App wraps the complete lesson experience in AuthGate", () => {
+test("App composes AuthGate, OnboardingGate, and the complete lesson experience", () => {
   assert.match(app, /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\/AuthGate["']/);
+  assert.match(
+    app,
+    /import\s+\{\s*OnboardingGate\s*\}\s+from\s+["']\.\/OnboardingGate["']/,
+  );
   assert.match(app, /export function LessonExperience\(\)/);
   assert.match(
     app,
-    /<AuthGate>\s*<LessonExperience\s*\/>\s*<\/AuthGate>/,
+    /<AuthGate>\s*<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
   );
 });
 

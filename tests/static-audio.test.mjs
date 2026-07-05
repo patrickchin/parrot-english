@@ -26,6 +26,15 @@ const normalizedCharacterSources = {
   "peppa-thank-you": "/assets/audio/peppa-thank-you.mp3",
   "dolly-thank-you": "/assets/audio/dolly-thank-you.mp3",
 };
+const onboardingAudio = {
+  "onboarding-introduction":
+    "Hi! I'm Peppa. I'd love to get to know you before we start.",
+  "onboarding-age": "How old are you?",
+  "onboarding-favourite-cartoons": "Which cartoons do you like?",
+  "onboarding-favourite-animals": "Which animals do you like?",
+  "onboarding-favourite-activities": "What activities do you enjoy?",
+  "onboarding-favourite-story-topics": "What stories or topics do you like?",
+};
 
 describe("static audio cache metadata", () => {
   it("resolves speech by speaker and exact text", () => {
@@ -95,5 +104,16 @@ describe("static audio cache metadata", () => {
       () => getStaticAudioLineForSpeech("narrator", "A brand new line."),
       /Missing saved audio for narrator: A brand new line\./
     );
+  });
+
+  it("registers exact Peppa onboarding prompts with character-directed audio", () => {
+    for (const [id, text] of Object.entries(onboardingAudio)) {
+      const line = staticAudio.STATIC_AUDIO_LINES[id];
+      assert.ok(line, id);
+      assert.equal(line.speaker, "peppa", id);
+      assert.equal(line.text, text, id);
+      assert.equal(line.voiceStyle, "energetic-character", id);
+      assert.match(line.ttsText, /\[[^\]]+\]/, id);
+    }
   });
 });

@@ -37,6 +37,7 @@ import {
   type AppNavigationState,
 } from "./app-navigation";
 import { AuthGate } from "./AuthGate";
+import { OnboardingGate } from "./OnboardingGate";
 import { evaluateSpeech } from "./evaluation-request";
 import {
   LESSONS,
@@ -632,7 +633,9 @@ export function LessonExperience() {
 export function App() {
   return (
     <AuthGate>
-      <LessonExperience />
+      <OnboardingGate>
+        <LessonExperience />
+      </OnboardingGate>
     </AuthGate>
   );
 }

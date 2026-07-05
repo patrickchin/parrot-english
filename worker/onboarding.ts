@@ -1,0 +1,383 @@
+import {
+  canCompleteQuestionnaire,
+  canSkipForSession,
+  getApplicableQuestions,
+  getNextQuestion,
+  getProgress,
+  parseQuestionConfig,
+  readProfileAnswers,
+  validateAnswer,
+  writeProfileAnswer,
+} from "../lib/onboarding.js";
+import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
+import type { Database } from "./database.ts";
+import type { AuthEnv } from "./auth.ts";
+import {
+  handleOnboardingTranscription,
+  type ApiEnv,
+} from "./groq.ts";
+import { createOnboardingRepository } from "./onboarding-repository.ts";
+
+export interface OnboardingIdentity {
+  sessionId: string;
+  userId: string;
+  userName: string | null;
+}
+
+export interface OnboardingRequestInput {
+  database: Database;
+  env: AuthEnv & ApiEnv;
+  identity: OnboardingIdentity;
+  request: Request;
+}
+
+const MAX_PROFILE_BODY_BYTES = 16 * 1024;
+const INTRODUCTION_AUDIO_ID = "onboarding-introduction";
+
+type QuestionRow = Awaited<
+  ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>
+>["questions"][number];
+
+class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly fieldError?: string;
+  readonly details?: Record<string, unknown>;
+
+  constructor(
+    status: number,
+    code: string,
+    fieldError?: string,
+    details?: Record<string, unknown>
+  ) {
+    super(code);
+    this.status = status;
+    this.code = code;
+    this.fieldError = fieldError;
+    this.details = details;
+  }
+}
+
+function jsonResponse(payload: unknown, init?: ResponseInit) {
+  return Response.json(payload, {
+    ...init,
+    headers: {
+      "Cache-Control": "no-store",
+      ...(init?.headers ?? {}),
+    },
+  });
+}
+
+function resolveAudio(audioId: string, expectedText?: string) {
+  const line = STATIC_AUDIO_LINES[audioId];
+  if (!line || line.speaker !== "peppa") {
+    throw new Error("Question audio is unavailable.");
+  }
+  if (expectedText && line.text !== expectedText) {
+    throw new Error("Question audio does not match its prompt.");
+  }
+  return { id: audioId, src: line.src, text: line.text };
+}
+
+function serializeQuestion(entry: QuestionRow) {
+  const config = parseQuestionConfig(entry);
+  return {
+    answerKey: entry.answerKey,
+    position: entry.position,
+    promptEn: entry.promptEn,
+    promptZh: entry.promptZh,
+    answerType: entry.answerType,
+    cardinality: entry.cardinality,
+    required: entry.required,
+    options: config.options,
+    validation: config.validation,
+    audio: resolveAudio(entry.audioId, entry.promptEn),
+  };
+}
+
+function serializeProfile(profile: Awaited<ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>>["profile"]) {
+  return {
+    name: profile.name,
+    age: profile.age,
+    answers: readProfileAnswers(profile),
+    questionnaireVersion: profile.questionnaireVersion,
+    currentQuestionKey: profile.currentQuestionKey,
+    onboardingStatus: profile.onboardingStatus,
+    completedAt: profile.completedAt,
+  };
+}
+
+type LoadedState = Awaited<
+  ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>
+>;
+
+function onboardingPayload(state: LoadedState, sessionId: string) {
+  const answers = readProfileAnswers(state.profile);
+  const question =
+    state.profile.onboardingStatus === "completed"
+      ? null
+      : getNextQuestion({
+          answers,
+          currentQuestionKey: state.profile.currentQuestionKey,
+          questions: state.questions,
+        });
+  const canBypass =
+    state.profile.onboardingStatus === "completed" ||
+    canSkipForSession(state.profile, sessionId);
+
+  return {
+    profile: serializeProfile(state.profile),
+    questionnaire: {
+      version: state.questionnaire.version,
+      introductionAudio: resolveAudio(INTRODUCTION_AUDIO_ID),
+    },
+    question: question ? serializeQuestion(question) : null,
+    progress: getProgress(
+      state.questions,
+      answers,
+      question?.answerKey ?? null
+    ),
+    canBypass,
+  };
+}
+
+async function readJsonBody(request: Request) {
+  const body = await request.text();
+  if (new TextEncoder().encode(body).byteLength > MAX_PROFILE_BODY_BYTES) {
+    throw new ApiError(413, "payload_too_large");
+  }
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("invalid");
+    }
+    return parsed as { questionKey?: unknown; value?: unknown };
+  } catch {
+    throw new ApiError(400, "invalid_json");
+  }
+}
+
+const PROFILE_NAME_QUESTION = {
+  answerKey: "name",
+  answerType: "text",
+  branchingJson: null,
+  cardinality: "scalar",
+  optionsJson: null,
+  position: 0,
+  promptEn: "What name would you like us to use?",
+  promptZh: "你希望我们怎么称呼你？",
+  required: true,
+  validationJson: '{"maxLength":80}',
+};
+
+function serializeProfileNameQuestion() {
+  return {
+    answerKey: PROFILE_NAME_QUESTION.answerKey,
+    position: PROFILE_NAME_QUESTION.position,
+    promptEn: PROFILE_NAME_QUESTION.promptEn,
+    promptZh: PROFILE_NAME_QUESTION.promptZh,
+    answerType: PROFILE_NAME_QUESTION.answerType,
+    cardinality: PROFILE_NAME_QUESTION.cardinality,
+    required: PROFILE_NAME_QUESTION.required,
+    options: null,
+    validation: { maxLength: 80 },
+    audio: null,
+  };
+}
+
+export async function handleOnboardingRequest(
+  input: OnboardingRequestInput
+): Promise<Response> {
+  const repository = createOnboardingRepository(input.database);
+  const url = new URL(input.request.url);
+
+  try {
+    if (url.pathname === "/api/onboarding/transcribe") {
+      return handleOnboardingTranscription(input.request, input.env);
+    }
+
+    if (url.pathname === "/api/onboarding" && input.request.method === "GET") {
+      const state = await repository.loadState(input.identity);
+      return jsonResponse(onboardingPayload(state, input.identity.sessionId));
+    }
+
+    if (
+      url.pathname === "/api/onboarding/answer" &&
+      input.request.method === "PUT"
+    ) {
+      const body = await readJsonBody(input.request);
+      if (typeof body.questionKey !== "string") {
+        throw new ApiError(400, "invalid_answer", "A question key is required.");
+      }
+      const state = await repository.loadState(input.identity);
+      const entry = await repository.findQuestion(
+        state.questionnaire.id,
+        body.questionKey
+      );
+      if (!entry) {
+        throw new ApiError(
+          400,
+          "invalid_answer",
+          "This question is no longer available."
+        );
+      }
+
+      const answers = readProfileAnswers(state.profile);
+      const current = getNextQuestion({
+        answers,
+        currentQuestionKey: state.profile.currentQuestionKey,
+        questions: state.questions,
+      });
+      if (current?.answerKey !== entry.answerKey) {
+        throw new ApiError(
+          400,
+          "invalid_answer",
+          "Please answer the current question first."
+        );
+      }
+
+      const validation = validateAnswer(entry, body.value);
+      if ("error" in validation) {
+        throw new ApiError(400, "invalid_answer", validation.error);
+      }
+
+      const updated = writeProfileAnswer(
+        state.profile,
+        entry.answerKey,
+        validation.value
+      );
+      const updatedAnswers = readProfileAnswers(updated);
+      const next = getNextQuestion({
+        answers: updatedAnswers,
+        currentQuestionKey: null,
+        questions: state.questions,
+      });
+      await repository.saveAnswer(state.profile.id, {
+        age: updated.age,
+        answersJson: updated.answersJson,
+        currentQuestionKey: next?.answerKey ?? null,
+        name: updated.name,
+        onboardingStatus: "in_progress",
+      });
+
+      const nextState = await repository.loadState(input.identity);
+      return jsonResponse(onboardingPayload(nextState, input.identity.sessionId));
+    }
+
+    if (
+      url.pathname === "/api/onboarding/skip" &&
+      input.request.method === "POST"
+    ) {
+      const state = await repository.loadState(input.identity);
+      await repository.skip(state.profile.id, input.identity.sessionId);
+      const nextState = await repository.loadState(input.identity);
+      return jsonResponse(onboardingPayload(nextState, input.identity.sessionId));
+    }
+
+    if (
+      url.pathname === "/api/onboarding/complete" &&
+      input.request.method === "POST"
+    ) {
+      const state = await repository.loadState(input.identity);
+      const completion = canCompleteQuestionnaire(
+        state.questions,
+        readProfileAnswers(state.profile)
+      );
+      if (!completion.complete) {
+        throw new ApiError(409, "onboarding_incomplete", undefined, {
+          missingQuestionKey: completion.missingQuestionKey,
+        });
+      }
+      await repository.complete(state.profile.id);
+      const completedState = await repository.loadState(input.identity);
+      return jsonResponse(
+        onboardingPayload(completedState, input.identity.sessionId)
+      );
+    }
+
+    if (url.pathname === "/api/profile" && input.request.method === "GET") {
+      const state = await repository.loadState(input.identity);
+      const answers = readProfileAnswers(state.profile);
+      return jsonResponse({
+        profile: serializeProfile(state.profile),
+        questions: [
+          serializeProfileNameQuestion(),
+          ...getApplicableQuestions(state.questions, answers).map(serializeQuestion),
+        ],
+      });
+    }
+
+    if (url.pathname === "/api/profile" && input.request.method === "PUT") {
+      const body = await readJsonBody(input.request);
+      if (typeof body.questionKey !== "string") {
+        throw new ApiError(400, "invalid_answer", "A question key is required.");
+      }
+      const state = await repository.loadState(input.identity);
+      const entry =
+        body.questionKey === "name"
+          ? PROFILE_NAME_QUESTION
+          : await repository.findQuestion(
+              state.questionnaire.id,
+              body.questionKey
+            );
+      if (!entry) {
+        throw new ApiError(
+          400,
+          "invalid_answer",
+          "This question is no longer available."
+        );
+      }
+      const validation = validateAnswer(entry, body.value);
+      if ("error" in validation) {
+        throw new ApiError(400, "invalid_answer", validation.error);
+      }
+      const updated = writeProfileAnswer(
+        state.profile,
+        entry.answerKey,
+        validation.value
+      );
+      await repository.saveAnswer(state.profile.id, {
+        age: updated.age,
+        answersJson: updated.answersJson,
+        name: updated.name,
+      });
+      const nextState = await repository.loadState(input.identity);
+      return jsonResponse({
+        profile: serializeProfile(nextState.profile),
+        questions: [
+          serializeProfileNameQuestion(),
+          ...getApplicableQuestions(
+            nextState.questions,
+            readProfileAnswers(nextState.profile)
+          ).map(serializeQuestion),
+        ],
+      });
+    }
+
+    const recognized =
+      url.pathname === "/api/onboarding" ||
+      url.pathname === "/api/onboarding/answer" ||
+      url.pathname === "/api/onboarding/skip" ||
+      url.pathname === "/api/onboarding/complete" ||
+      url.pathname === "/api/profile";
+    return jsonResponse(
+      { error: recognized ? "method_not_allowed" : "not_found" },
+      { status: recognized ? 405 : 404 }
+    );
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return jsonResponse(
+        {
+          error: error.code,
+          ...(error.fieldError ? { fieldError: error.fieldError } : {}),
+          ...(error.details ?? {}),
+        },
+        { status: error.status }
+      );
+    }
+    return jsonResponse(
+      { error: "questionnaire_unavailable" },
+      { status: 503 }
+    );
+  }
+}

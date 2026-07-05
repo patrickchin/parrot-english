@@ -1,7 +1,9 @@
 import { checkEvaluateSpeechRateLimit } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
+import { createDatabase } from "./database.ts";
 import { handleEvaluateSpeech } from "./groq.ts";
+import { handleOnboardingRequest } from "./onboarding.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
@@ -19,6 +21,15 @@ interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
+  handleOnboardingRequest: typeof handleOnboardingRequest;
+}
+
+function isOnboardingPath(pathname: string) {
+  return (
+    pathname === "/api/onboarding" ||
+    pathname.startsWith("/api/onboarding/") ||
+    pathname === "/api/profile"
+  );
 }
 
 export function createWorker(
@@ -28,6 +39,8 @@ export function createWorker(
     dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
+  const onboardingRequest =
+    dependencies.handleOnboardingRequest ?? handleOnboardingRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
 
   return {
@@ -39,6 +52,26 @@ export function createWorker(
         url.pathname.startsWith("/api/auth/")
       ) {
         return authFactory(env).handler(request);
+      }
+
+      if (isOnboardingPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+
+        return onboardingRequest({
+          database: createDatabase(env.DB),
+          env,
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+            userName: session.user.name?.trim() || null,
+          },
+          request,
+        });
       }
 
       if (url.pathname === "/api/evaluate-speech") {

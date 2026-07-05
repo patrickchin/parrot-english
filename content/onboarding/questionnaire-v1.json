@@ -1,0 +1,72 @@
+{
+  "id": "voice-onboarding-v1",
+  "version": 1,
+  "introductionAudioId": "onboarding-introduction",
+  "questions": [
+    {
+      "answerKey": "age",
+      "position": 1,
+      "promptEn": "How old are you?",
+      "promptZh": "你几岁了？",
+      "answerType": "number",
+      "cardinality": "scalar",
+      "required": true,
+      "options": null,
+      "validation": { "min": 3, "max": 17 },
+      "branching": null,
+      "audioId": "onboarding-age"
+    },
+    {
+      "answerKey": "favoriteCartoons",
+      "position": 2,
+      "promptEn": "Which cartoons do you like?",
+      "promptZh": "你喜欢哪些动画片？",
+      "answerType": "text",
+      "cardinality": "array",
+      "required": true,
+      "options": ["Bluey", "Paw Patrol", "Peppa Pig", "Super Wings"],
+      "validation": { "maxItems": 4, "maxLength": 50 },
+      "branching": null,
+      "audioId": "onboarding-favourite-cartoons"
+    },
+    {
+      "answerKey": "favoriteAnimals",
+      "position": 3,
+      "promptEn": "Which animals do you like?",
+      "promptZh": "你喜欢哪些动物？",
+      "answerType": "text",
+      "cardinality": "array",
+      "required": true,
+      "options": ["dog", "cat", "dinosaur", "rabbit"],
+      "validation": { "maxItems": 4, "maxLength": 40 },
+      "branching": null,
+      "audioId": "onboarding-favourite-animals"
+    },
+    {
+      "answerKey": "favoriteActivities",
+      "position": 4,
+      "promptEn": "What activities do you enjoy?",
+      "promptZh": "你喜欢做什么活动？",
+      "answerType": "text",
+      "cardinality": "array",
+      "required": true,
+      "options": ["drawing", "football", "singing", "building"],
+      "validation": { "maxItems": 4, "maxLength": 50 },
+      "branching": null,
+      "audioId": "onboarding-favourite-activities"
+    },
+    {
+      "answerKey": "favoriteStoryTopics",
+      "position": 5,
+      "promptEn": "What stories or topics do you like?",
+      "promptZh": "你喜欢什么故事或话题？",
+      "answerType": "text",
+      "cardinality": "array",
+      "required": true,
+      "options": ["space", "adventure", "friendship", "magic"],
+      "validation": { "maxItems": 4, "maxLength": 60 },
+      "branching": null,
+      "audioId": "onboarding-favourite-story-topics"
+    }
+  ]
+}

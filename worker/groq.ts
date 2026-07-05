@@ -3,6 +3,13 @@ import { scoreSpeechTranscript } from "../lib/speech-scoring.js";
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const STT_MODEL = "whisper-large-v3-turbo";
 const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
+const SUPPORTED_AUDIO_TYPES = new Set([
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+]);
 const DEFAULT_GROQ_REQUEST_TIMEOUT_MS = 15_000;
 const MAX_GROQ_REQUEST_TIMEOUT_MS = 60_000;
 
@@ -75,6 +82,90 @@ async function fetchWithTimeout(
     throw error;
   } finally {
     if (timeoutId !== null) clearTimeout(timeoutId);
+  }
+}
+
+export async function handleOnboardingTranscription(
+  request: Request,
+  env: ApiEnv
+) {
+  if (request.method !== "POST") {
+    return jsonResponse({ error: "method_not_allowed" }, { status: 405 });
+  }
+
+  const apiKey = requireGroqKey(env);
+  if (!apiKey) {
+    return jsonResponse(
+      { error: "transcription_unavailable" },
+      { status: 503 }
+    );
+  }
+
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return jsonResponse({ error: "invalid_form_data" }, { status: 400 });
+  }
+  const audio = formData.get("audio");
+  if (!(audio instanceof File)) {
+    return jsonResponse({ error: "audio_file_required" }, { status: 400 });
+  }
+  if (!SUPPORTED_AUDIO_TYPES.has(audio.type)) {
+    return jsonResponse(
+      { error: "unsupported_audio_type" },
+      { status: 415 }
+    );
+  }
+  if (audio.size > MAX_AUDIO_BYTES) {
+    return jsonResponse({ error: "audio_too_large" }, { status: 413 });
+  }
+
+  const groqForm = new FormData();
+  groqForm.set("model", STT_MODEL);
+  groqForm.set("language", "en");
+  groqForm.set("response_format", "json");
+  groqForm.set("file", audio, audio.name || "onboarding-answer.webm");
+
+  let upstream: Response;
+  try {
+    upstream = await fetchWithTimeout(
+      `${GROQ_BASE_URL}/audio/transcriptions`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: groqForm,
+      },
+      getGroqRequestTimeoutMs(env)
+    );
+  } catch (error) {
+    return jsonResponse(
+      {
+        error:
+          error instanceof SpeechTranscriptionTimeoutError
+            ? "transcription_timeout"
+            : "transcription_failed",
+      },
+      {
+        status: error instanceof SpeechTranscriptionTimeoutError ? 504 : 502,
+      }
+    );
+  }
+
+  if (!upstream.ok) {
+    return jsonResponse({ error: "transcription_failed" }, { status: 502 });
+  }
+
+  try {
+    const transcription = (await upstream.json()) as { text?: unknown };
+    return jsonResponse({
+      transcript:
+        typeof transcription.text === "string"
+          ? transcription.text.trim()
+          : "",
+    });
+  } catch {
+    return jsonResponse({ error: "transcription_failed" }, { status: 502 });
   }
 }
 
