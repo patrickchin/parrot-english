@@ -330,7 +330,7 @@ describe("questionnaire publishing", () => {
       database.exec(buildQuestionnaireSql(definition, 1_000));
       database.exec(buildQuestionnaireSql(definition, 2_000));
 
-      const changed = structuredClone(definition);
+      const changed = JSON.parse(JSON.stringify(definition));
       changed.questions[0].validation.max = 18;
       assert.throws(
         () =>
