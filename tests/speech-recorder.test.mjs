@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  RecordingUnsupportedError,
-  requestMicrophoneAccess,
-  recordSpeechClip,
-} from "../src/speech-recorder.ts";
+import * as speechRecorder from "../src/speech-recorder.ts";
+
+const startSpeechRecording =
+  speechRecorder.startSpeechRecording ??
+  (() => Promise.reject(new Error("startSpeechRecording is missing")));
 
 function createTrack() {
   return {
@@ -26,219 +26,125 @@ function createStream(track = createTrack()) {
   };
 }
 
-describe("speech recorder", () => {
-  it("can request microphone permission without leaving the stream open", async () => {
-    const { stream, track } = createStream();
-    const getUserMediaCalls = [];
+function createRecorderClass() {
+  const instances = [];
+  class FakeMediaRecorder {
+    constructor(stream, options) {
+      this.stream = stream;
+      this.options = options;
+      this.state = "inactive";
+      this.stopCalls = 0;
+      instances.push(this);
+    }
 
-    await requestMicrophoneAccess({
-      MediaRecorder: class FakeMediaRecorder {},
-      getUserMedia(constraints) {
-        getUserMediaCalls.push(constraints);
-        return Promise.resolve(stream);
-      },
-    });
+    start() {
+      this.state = "recording";
+    }
 
-    assert.deepEqual(getUserMediaCalls, [
-      {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      },
-    ]);
-    assert.equal(track.stopped, true);
-  });
+    stop() {
+      this.stopCalls += 1;
+      this.state = "inactive";
+      this.ondataavailable?.({
+        data: new Blob(["child audio"], { type: "audio/webm" }),
+      });
+      this.onstop?.();
+    }
+  }
 
+  return { FakeMediaRecorder, instances };
+}
+
+describe("hold-to-talk speech recorder", () => {
   it("does not request microphone access when recording is unsupported", async () => {
     let requestedMicrophone = false;
 
     await assert.rejects(
-      recordSpeechClip({
+      startSpeechRecording({
         MediaRecorder: undefined,
         getUserMedia() {
           requestedMicrophone = true;
           throw new Error("microphone should not be requested");
         },
       }),
-      RecordingUnsupportedError
+      speechRecorder.RecordingUnsupportedError
     );
 
     assert.equal(requestedMicrophone, false);
   });
 
-  it("turns off the microphone after recording finishes", async () => {
+  it("starts immediately and returns captured audio when stopped", async () => {
     const { stream, track } = createStream();
-    const getUserMediaCalls = [];
-    const clearTimeoutCalls = [];
-    let scheduledStop;
-    let recorderOptions;
-    let recorderState;
-    let recorderStream;
-
-    class FakeMediaRecorder {
-      constructor(mediaStream, options) {
-        this.stream = mediaStream;
-        this.options = options;
-        this.state = "inactive";
-        recorderOptions = options;
-        recorderState = this.state;
-        recorderStream = mediaStream;
-      }
-
-      start() {
-        this.state = "recording";
-        recorderState = this.state;
-      }
-
-      stop() {
-        this.state = "inactive";
-        recorderState = this.state;
-        this.ondataavailable?.({
-          data: new Blob(["child audio"], { type: "audio/webm" }),
-        });
-        this.onstop?.();
-      }
-    }
-
-    const promise = recordSpeechClip({
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    const constraints = [];
+    const session = await startSpeechRecording({
       MediaRecorder: FakeMediaRecorder,
-      getUserMedia(constraints) {
-        getUserMediaCalls.push(constraints);
+      getUserMedia(value) {
+        constraints.push(value);
         return Promise.resolve(stream);
       },
-      setTimeout(callback, delay) {
-        scheduledStop = { callback, delay };
-        return "timer-id";
-      },
-      clearTimeout(timerId) {
-        clearTimeoutCalls.push(timerId);
-      },
-      recordingMs: 1234,
     });
 
-    await Promise.resolve();
-
-    assert.equal(getUserMediaCalls.length, 1);
-    assert.deepEqual(getUserMediaCalls[0], {
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
-    assert.equal(recorderStream, stream);
-    assert.deepEqual(recorderOptions, { mimeType: "audio/webm" });
-    assert.equal(recorderState, "recording");
+    assert.equal(instances[0].state, "recording");
     assert.equal(track.stopped, false);
-    assert.equal(scheduledStop.delay, 1234);
+    assert.deepEqual(constraints, [speechRecorder.MICROPHONE_CONSTRAINTS]);
 
-    scheduledStop.callback();
-    const audioBlob = await promise;
+    const blob = await session.stop();
 
-    assert.equal(await audioBlob.text(), "child audio");
+    assert.equal(await blob.text(), "child audio");
     assert.equal(track.stopped, true);
-    assert.deepEqual(clearTimeoutCalls, ["timer-id"]);
+    assert.equal(instances[0].stopCalls, 1);
   });
 
-  it("stops recording when the hold-to-talk stop signal is released", async () => {
+  it("cancels an active session with an AbortError and stops tracks", async () => {
     const { stream, track } = createStream();
-    const stopController = new AbortController();
-    const clearTimeoutCalls = [];
-    let recorderState;
-
-    class FakeMediaRecorder {
-      constructor() {
-        this.state = "inactive";
-        recorderState = this.state;
-      }
-
-      start() {
-        this.state = "recording";
-        recorderState = this.state;
-      }
-
-      stop() {
-        this.state = "inactive";
-        recorderState = this.state;
-        this.ondataavailable?.({
-          data: new Blob(["held audio"], { type: "audio/webm" }),
-        });
-        this.onstop?.();
-      }
-    }
-
-    const promise = recordSpeechClip({
+    const { FakeMediaRecorder } = createRecorderClass();
+    const session = await startSpeechRecording({
       MediaRecorder: FakeMediaRecorder,
-      getUserMedia() {
-        return Promise.resolve(stream);
-      },
-      setTimeout() {
-        return "max-recording-timer";
-      },
-      clearTimeout(timerId) {
-        clearTimeoutCalls.push(timerId);
-      },
-      stopSignal: stopController.signal,
+      getUserMedia: () => Promise.resolve(stream),
     });
 
-    await Promise.resolve();
-    assert.equal(recorderState, "recording");
+    session.cancel();
 
-    stopController.abort();
-
-    const result = await Promise.race([
-      promise.then(async (blob) => blob.text()),
-      new Promise((resolve) => setTimeout(() => resolve("not-resolved"), 0)),
-    ]);
-
-    assert.equal(result, "held audio");
-    assert.equal(recorderState, "inactive");
+    await assert.rejects(session.stop(), { name: "AbortError" });
     assert.equal(track.stopped, true);
-    assert.deepEqual(clearTimeoutCalls, ["max-recording-timer"]);
   });
 
-  it("turns off the microphone when recording is cancelled", async () => {
-    const { stream, track } = createStream();
-    const controller = new AbortController();
-    let recorderState;
-
-    class FakeMediaRecorder {
-      constructor() {
-        this.state = "inactive";
-        recorderState = this.state;
-      }
-
-      start() {
-        this.state = "recording";
-        recorderState = this.state;
-      }
-
-      stop() {
-        this.state = "inactive";
-        recorderState = this.state;
-        this.onstop?.();
-      }
-    }
-
-    const promise = recordSpeechClip({
+  it("makes repeated stop calls safe", async () => {
+    const { stream } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    const session = await startSpeechRecording({
       MediaRecorder: FakeMediaRecorder,
-      getUserMedia() {
-        return Promise.resolve(stream);
-      },
-      setTimeout() {
-        return "timer-id";
-      },
-      clearTimeout() {},
-      signal: controller.signal,
+      getUserMedia: () => Promise.resolve(stream),
     });
 
-    await Promise.resolve();
-    assert.equal(recorderState, "recording");
+    const first = session.stop();
+    const second = session.stop();
+    const [firstBlob, secondBlob] = await Promise.all([first, second]);
 
-    controller.abort();
+    assert.equal(firstBlob, secondBlob);
+    assert.equal(instances[0].stopCalls, 1);
+  });
 
-    await assert.rejects(promise, { name: "AbortError" });
-    assert.equal(recorderState, "inactive");
+  it("honors AbortSignal before and during recording", async () => {
+    const before = new AbortController();
+    before.abort();
+    await assert.rejects(
+      startSpeechRecording({ signal: before.signal }),
+      { name: "AbortError" }
+    );
+
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder } = createRecorderClass();
+    const during = new AbortController();
+    const session = await startSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: () => Promise.resolve(stream),
+      signal: during.signal,
+    });
+
+    during.abort();
+
+    await assert.rejects(session.stop(), { name: "AbortError" });
     assert.equal(track.stopped, true);
   });
 });

@@ -4,27 +4,33 @@ import { getLessonProgressLabel } from "../lib/lesson-progress.js";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 describe("lesson progress label", () => {
-  it("does not duplicate live retry feedback in the flow banner", () => {
-    const feedback = "差一点点，听多莉慢慢说，再试一次。";
-    const label = getLessonProgressLabel({
-      ...createInitialLessonState(),
-      phase: LessonPhase.Feedback,
-      feedback,
-      lastOutcome: "retry",
-    });
+  it("describes automatic character and narrator speech", () => {
+    const speaking = { ...createInitialLessonState(), phase: LessonPhase.Speaking };
 
-    assert.equal(label, "准备再试一次");
-    assert.notEqual(label, feedback);
+    assert.equal(
+      getLessonProgressLabel(speaking, { speaker: "dolly" }),
+      "Listen to Dolly"
+    );
+    assert.equal(
+      getLessonProgressLabel(speaking, { speaker: "narrator" }),
+      "Listen to the narrator"
+    );
   });
 
-  it("uses a short flow status before advancing", () => {
-    const label = getLessonProgressLabel({
-      ...createInitialLessonState(),
-      phase: LessonPhase.Feedback,
-      feedback: "太棒了！我们继续下一句。",
-      lastOutcome: "advance",
-    });
+  it("describes every user interaction phase in English", () => {
+    const labels = [
+      [LessonPhase.WaitingForUser, "Hold the microphone to speak"],
+      [LessonPhase.Recording, "Keep holding while you speak"],
+      [LessonPhase.Evaluating, "Checking your speech"],
+      [LessonPhase.Feedback, "Listen to the narrator"],
+      [LessonPhase.Finished, "Lesson complete"],
+    ];
 
-    assert.equal(label, "准备下一句");
+    for (const [phase, expected] of labels) {
+      assert.equal(
+        getLessonProgressLabel({ ...createInitialLessonState(), phase }),
+        expected
+      );
+    }
   });
 });

@@ -7,11 +7,39 @@ function readProjectFile(path) {
 }
 
 describe("architecture cleanup contracts", () => {
-  it("derives progress dots from the current lesson data", () => {
+  it("uses the discovered lesson catalog and current scene data", () => {
     const app = readProjectFile("src/App.tsx");
 
-    assert.doesNotMatch(app, /PROGRESS_DOT_COUNT/);
-    assert.match(app, /Array\.from\(\{\s*length:\s*lesson\.steps\.length\s*\}/s);
+    assert.match(app, /LESSONS/);
+    assert.match(app, /VISUAL_CATALOG/);
+    assert.match(app, /currentLesson\.scenes\.length/);
+    assert.doesNotMatch(app, /LESSON_STEPS|PROGRESS_DOT_COUNT/);
+  });
+
+  it("renders generic characters and a lesson picker", () => {
+    const app = readProjectFile("src/App.tsx");
+
+    assert.match(app, /<select/);
+    assert.match(app, /Lesson picker/);
+    assert.match(app, /scene\.characters\.map/);
+    assert.match(app, /narrator-caption/);
+    assert.doesNotMatch(app, /ChevronLeft|ChevronRight|SCENE_NEXT|SCENE_PREVIOUS/);
+  });
+
+  it("keeps the active lesson experience English-only", () => {
+    const runtimeFiles = [
+      "src/App.tsx",
+      "lib/lesson-audio.js",
+      "lib/lesson-progress.js",
+      "lib/lesson-scene.js",
+      "lib/lesson-state.js",
+      "lib/speech-scoring.js",
+      "lib/static-audio.js",
+    ];
+
+    for (const path of runtimeFiles) {
+      assert.doesNotMatch(readProjectFile(path), /[\u3400-\u9fff]/u, path);
+    }
   });
 
   it("keeps browser lesson playback asset-only", () => {

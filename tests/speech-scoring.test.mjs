@@ -25,6 +25,7 @@ describe("speech scoring", () => {
 
     assert.equal(result.passed, true);
     assert.equal(result.similarity, 1);
+    assert.equal(result.feedbackText, "Great job!");
   });
 
   it("passes close child transcripts", () => {
@@ -40,5 +41,17 @@ describe("speech scoring", () => {
     assert.equal(result.passed, false);
     assert.equal(result.retryAllowed, true);
     assert.ok(result.similarity < 0.74);
+    assert.equal(result.feedbackText, "Almost! Try again.");
+  });
+
+  it("uses English fallback feedback", () => {
+    assert.equal(
+      scoreSpeechTranscript("", "Thank you!").feedbackText,
+      "I couldn't hear you. Please try again."
+    );
+    assert.equal(
+      scoreSpeechTranscript("anything", "").feedbackText,
+      "Please choose a phrase to practise."
+    );
   });
 });
