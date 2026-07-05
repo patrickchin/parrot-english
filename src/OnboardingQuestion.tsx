@@ -8,7 +8,7 @@ import {
 } from "./onboarding-api";
 import { recordSpeechClip } from "./speech-recorder";
 
-type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
+export type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
 
 type OnboardingQuestionViewProps = {
   fieldError: string;

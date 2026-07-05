@@ -1,25 +1,20 @@
-import { Volume2 } from "lucide-react";
+import { Mic, Volume2 } from "lucide-react";
 import type { FormEvent } from "react";
-import { AnswerEditor, type QuestionStatus } from "./OnboardingQuestion";
+import type { QuestionStatus } from "./OnboardingQuestion";
 import type { OnboardingQuestion } from "./onboarding-api";
 
 type ProfileEditorViewProps = {
-  drafts: Record<string, unknown>;
+  drafts: Record<string, string>;
   fieldErrors: Record<string, string>;
   fieldStatuses: Record<string, QuestionStatus>;
   isSaving: boolean;
-  onAddPending: (answerKey: string) => void;
   onCancel: () => void;
   onClose: () => void;
-  onPendingChange: (answerKey: string, value: string) => void;
-  onRemoveValue: (answerKey: string, value: string) => void;
   onReplay: (question: OnboardingQuestion) => void;
   onSave: () => void;
-  onToggleOption: (answerKey: string, value: string) => void;
   onTranscribe: (question: OnboardingQuestion) => void;
-  onValueChange: (answerKey: string, value: string | number) => void;
+  onValueChange: (answerKey: string, value: string) => void;
   pageError: string;
-  pendingValues: Record<string, string>;
   questions: OnboardingQuestion[];
 };
 
@@ -28,18 +23,13 @@ export function ProfileEditorView({
   fieldErrors,
   fieldStatuses,
   isSaving,
-  onAddPending,
   onCancel,
   onClose,
-  onPendingChange,
-  onRemoveValue,
   onReplay,
   onSave,
-  onToggleOption,
   onTranscribe,
   onValueChange,
   pageError,
-  pendingValues,
   questions,
 }: ProfileEditorViewProps) {
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -76,6 +66,7 @@ export function ProfileEditorView({
             {questions.map((question) => {
               const status = fieldStatuses[question.answerKey] ?? "idle";
               const disabled = isSaving || status !== "idle";
+              const inputId = `profile-answer-${question.answerKey}`;
 
               return (
                 <section
@@ -102,29 +93,44 @@ export function ProfileEditorView({
                       </button>
                     ) : null}
                   </header>
-                  <AnswerEditor
-                    disabled={disabled}
-                    fieldError={fieldErrors[question.answerKey] ?? ""}
-                    inputId={`profile-answer-${question.answerKey}`}
-                    onAddPending={() => onAddPending(question.answerKey)}
-                    onPendingChange={(value) =>
-                      onPendingChange(question.answerKey, value)
-                    }
-                    onRemoveValue={(value) =>
-                      onRemoveValue(question.answerKey, value)
-                    }
-                    onToggleOption={(value) =>
-                      onToggleOption(question.answerKey, value)
-                    }
-                    onTranscribe={() => onTranscribe(question)}
-                    onValueChange={(value) =>
-                      onValueChange(question.answerKey, value)
-                    }
-                    pendingValue={pendingValues[question.answerKey] ?? ""}
-                    question={question}
-                    status={status}
-                    value={drafts[question.answerKey]}
-                  />
+                  <label className="onboarding-answer-field" htmlFor={inputId}>
+                    <span>Your answer</span>
+                    <span className="onboarding-input-row">
+                      <textarea
+                        disabled={disabled}
+                        id={inputId}
+                        maxLength={question.maxLength}
+                        onChange={(event) =>
+                          onValueChange(question.answerKey, event.target.value)
+                        }
+                        rows={3}
+                        value={drafts[question.answerKey] ?? ""}
+                      />
+                      <button
+                        aria-label={`Speak answer for ${question.promptEn}`}
+                        className="onboarding-input-action onboarding-mic-button"
+                        disabled={disabled}
+                        onClick={() => onTranscribe(question)}
+                        type="button"
+                      >
+                        <Mic aria-hidden="true" />
+                      </button>
+                    </span>
+                  </label>
+                  {status === "recording" ? (
+                    <p className="onboarding-input-status" role="status">
+                      Listening…
+                    </p>
+                  ) : status === "transcribing" ? (
+                    <p className="onboarding-input-status" role="status">
+                      Writing what I heard…
+                    </p>
+                  ) : null}
+                  {fieldErrors[question.answerKey] ? (
+                    <p className="onboarding-field-error" role="alert">
+                      {fieldErrors[question.answerKey]}
+                    </p>
+                  ) : null}
                 </section>
               );
             })}

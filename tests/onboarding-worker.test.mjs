@@ -643,4 +643,218 @@ describe("onboarding persistence and API", () => {
       state.close();
     }
   });
+
+  it("saves one changed legacy profile field without requiring blank v2 answers", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite.exec(
+        "INSERT INTO questionnaire (id, version, status, created_at) VALUES ('legacy-v1', 1, 'inactive', 1000)",
+      );
+      state.sqlite
+        .prepare(
+          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, questionnaire_version, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          "profile-1",
+          "user-1",
+          "Mia",
+          8,
+          '{"favoriteAnimals":["dog"]}',
+          1,
+          "completed",
+          2_000,
+          1_000,
+          1_000,
+        );
+      const enriched = [];
+
+      const response = await callOnboarding(
+        state.database,
+        "/api/profile",
+        "PUT",
+        {
+          answers: {
+            name: "Maya",
+            age: "8",
+            favoriteCartoons: "",
+            favoriteAnimals: "",
+            favoriteActivities: "",
+            favoriteStoryTopics: "",
+          },
+        },
+        {},
+        createDependencies({
+          async enrichAnswer({ question }) {
+            enriched.push(question.answerKey);
+            return {
+              ...GENERATED,
+              summary: "Is called Maya.",
+              acknowledgment: "Maya is a lovely name!",
+              canonicalName: "Maya",
+            };
+          },
+        }),
+      );
+
+      assert.equal(response.status, 200);
+      const payload = await response.json();
+      assert.deepEqual(enriched, ["name"]);
+      assert.deepEqual(payload.acknowledgments, [
+        { text: "Maya is a lovely name!", audio: null },
+      ]);
+      const row = state.sqlite
+        .prepare("SELECT name, age, answers_json FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(row.name, "Maya");
+      assert.equal(row.age, 8);
+      assert.deepEqual(JSON.parse(row.answers_json).legacyAnswers, {
+        favoriteAnimals: ["dog"],
+      });
+    } finally {
+      state.close();
+    }
+  });
+
+  it("enriches all changed prose fields and persists one atomic profile update", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callOnboarding(state.database, "/api/onboarding");
+      state.sqlite.exec(
+        "UPDATE learner_profile SET onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'",
+      );
+      const enriched = [];
+      let audioCalls = 0;
+      const dependencies = createDependencies({
+        async enrichAnswer({ question, rawAnswer }) {
+          enriched.push(question.answerKey);
+          return {
+            summary: `Summary: ${rawAnswer}`,
+            acknowledgment: `${question.answerKey} saved!`,
+            canonicalName: question.answerKey === "name" ? "Maya" : null,
+            canonicalAge: question.answerKey === "age" ? 9 : null,
+            enrichmentStatus: "generated",
+          };
+        },
+        async synthesizeAudio({ text }) {
+          audioCalls += 1;
+          const stored = state.sqlite
+            .prepare("SELECT answers_json FROM learner_profile WHERE auth_user_id = ?")
+            .get("user-1");
+          assert.equal(Object.keys(JSON.parse(stored.answers_json).responses).length, 3);
+          return text === "name saved!"
+            ? { contentType: "audio/mpeg", base64: "AQID" }
+            : null;
+        },
+      });
+
+      const response = await callOnboarding(
+        state.database,
+        "/api/profile",
+        "PUT",
+        {
+          answers: {
+            name: "Maya",
+            age: "I am nine",
+            favoriteCartoons: "I like Bluey",
+          },
+        },
+        {},
+        dependencies,
+      );
+      assert.equal(response.status, 200);
+      const payload = await response.json();
+      assert.deepEqual(enriched, ["name", "age", "favoriteCartoons"]);
+      assert.equal(audioCalls, 3);
+      assert.deepEqual(
+        payload.acknowledgments.map(({ text }) => text),
+        ["name saved!", "age saved!", "favoriteCartoons saved!"],
+      );
+
+      const row = state.sqlite
+        .prepare("SELECT name, age, answers_json, onboarding_status FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      const answers = JSON.parse(row.answers_json);
+      assert.equal(row.name, "Maya");
+      assert.equal(row.age, 9);
+      assert.equal(row.onboarding_status, "completed");
+      assert.equal(answers.responses.favoriteCartoons.rawAnswer, "I like Bluey");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects every atomic profile write when one prose field is invalid", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callOnboarding(state.database, "/api/onboarding");
+      state.sqlite.exec(
+        "UPDATE learner_profile SET onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'",
+      );
+      const statement = state.sqlite.prepare(
+        "SELECT name, age, answers_json, updated_at FROM learner_profile WHERE auth_user_id = ?",
+      );
+      const before = statement.get("user-1");
+      let audioCalls = 0;
+
+      const response = await callOnboarding(
+        state.database,
+        "/api/profile",
+        "PUT",
+        {
+          answers: Object.fromEntries([
+            ["name", "Maya"],
+            ["age", "very old"],
+            ["retired", "dragons"],
+            ["__proto__", "dragons"],
+          ]),
+        },
+        {},
+        createDependencies({
+          async enrichAnswer({ question, rawAnswer }) {
+            if (question.answerKey === "age") {
+              return {
+                fieldError:
+                  "Please tell me your age using a number from 3 to 17.",
+              };
+            }
+            return {
+              ...GENERATED,
+              summary: rawAnswer,
+              acknowledgment: "Saved!",
+              canonicalName: question.answerKey === "name" ? "Maya" : null,
+            };
+          },
+          async synthesizeAudio() {
+            audioCalls += 1;
+            return null;
+          },
+        }),
+      );
+
+      assert.equal(response.status, 400);
+      const payload = await response.json();
+      assert.equal(payload.error, "invalid_profile");
+      assert.deepEqual(Object.keys(payload.fieldErrors).sort(), [
+        "__proto__",
+        "age",
+        "retired",
+      ]);
+      assert.equal(
+        payload.fieldErrors.age,
+        "Please tell me your age using a number from 3 to 17.",
+      );
+      assert.equal(
+        payload.fieldErrors.retired,
+        "This question is no longer available.",
+      );
+      assert.equal(
+        payload.fieldErrors.__proto__,
+        "This question is no longer available.",
+      );
+      assert.deepEqual(statement.get("user-1"), before);
+      assert.equal(audioCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
 });

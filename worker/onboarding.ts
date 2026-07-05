@@ -207,8 +207,7 @@ async function readJsonRecord(request: Request) {
   return value as Record<string, unknown>;
 }
 
-async function readAnswerBody(request: Request) {
-  const record = await readJsonRecord(request);
+function parseAnswerRecord(record: Record<string, unknown>) {
   if (
     Object.keys(record).some(
       (key) => key !== "questionKey" && key !== "rawAnswer"
@@ -231,6 +230,31 @@ async function readAnswerBody(request: Request) {
     throw new ApiError(400, "invalid_answer", "Please answer this question.");
   }
   return { questionKey: record.questionKey, rawAnswer };
+}
+
+async function readAnswerBody(request: Request) {
+  return parseAnswerRecord(await readJsonRecord(request));
+}
+
+function parseProfileEditRecord(record: Record<string, unknown>) {
+  if (!("answers" in record)) {
+    return {
+      kind: "single" as const,
+      ...parseAnswerRecord(record),
+    };
+  }
+  if (
+    Object.keys(record).some((key) => key !== "answers") ||
+    record.answers === null ||
+    typeof record.answers !== "object" ||
+    Array.isArray(record.answers)
+  ) {
+    throw new ApiError(400, "invalid_profile");
+  }
+  return {
+    kind: "bulk" as const,
+    answers: record.answers as Record<string, unknown>,
+  };
 }
 
 async function readQuestionKeyBody(request: Request) {
@@ -373,6 +397,119 @@ async function saveAnswer({
     text: acknowledgment,
   });
   return { profile: storedProfile, acknowledgment: { text: acknowledgment, audio } };
+}
+
+async function saveProfileAnswers({
+  input,
+  dependencies,
+  repository,
+  profile,
+  answers,
+}: {
+  input: OnboardingRequestInput;
+  dependencies: HandlerDependencies;
+  repository: Repository;
+  profile: Profile;
+  answers: Record<string, unknown>;
+}) {
+  let updated = ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+    forProfileEdit: true,
+  });
+  const fieldErrors: Record<string, string> = Object.create(null);
+  const knownKeys = new Set(
+    ONBOARDING_QUESTIONNAIRE.questions.map((question) => question.answerKey)
+  );
+  for (const answerKey of Object.keys(answers)) {
+    if (!knownKeys.has(answerKey)) {
+      fieldErrors[answerKey] = "This question is no longer available.";
+    }
+  }
+
+  const changed: Array<{ question: Question; acknowledgment: string }> = [];
+  for (const question of ONBOARDING_QUESTIONNAIRE.questions) {
+    if (!(question.answerKey in answers)) continue;
+    const submitted = answers[question.answerKey];
+    if (typeof submitted !== "string") {
+      fieldErrors[question.answerKey] = "Please enter an answer.";
+      continue;
+    }
+    const rawAnswer = submitted.trim();
+    const savedResponse =
+      readV2Answers(updated).responses[question.answerKey] ?? null;
+    const hasCanonicalValue =
+      (question.canonicalField === "name" && Boolean(updated.name)) ||
+      (question.canonicalField === "age" && updated.age !== null);
+    if (!rawAnswer) {
+      if (!savedResponse && !hasCanonicalValue) continue;
+      fieldErrors[question.answerKey] = "Please answer this question.";
+      continue;
+    }
+    if (rawAnswer.length > Math.min(question.maxLength, 500)) {
+      fieldErrors[question.answerKey] =
+        `Please use ${Math.min(question.maxLength, 500)} characters or fewer.`;
+      continue;
+    }
+    if (isSameV2Answer(updated, question.answerKey, rawAnswer)) continue;
+    if (
+      !savedResponse &&
+      ((question.canonicalField === "name" &&
+        rawAnswer === updated.name?.trim()) ||
+        (question.canonicalField === "age" &&
+          rawAnswer === String(updated.age ?? "")))
+    ) {
+      continue;
+    }
+
+    const enrichment = await dependencies.enrichAnswer({
+      env: input.env,
+      question,
+      rawAnswer,
+    });
+    if ("fieldError" in enrichment) {
+      fieldErrors[question.answerKey] = enrichment.fieldError;
+      continue;
+    }
+
+    try {
+      updated = writeV2Response(updated, question, {
+        rawAnswer,
+        ...enrichment,
+        answeredAt: dependencies.now().toISOString(),
+      });
+      changed.push({
+        question,
+        acknowledgment:
+          readV2Answers(updated).responses[question.answerKey].acknowledgment,
+      });
+    } catch {
+      fieldErrors[question.answerKey] = "Please check this answer and try again.";
+    }
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    throw new ApiError(400, "invalid_profile", undefined, { fieldErrors });
+  }
+
+  let storedProfile = profile;
+  if (changed.length > 0) {
+    await repository.saveAnswer(profile.id, {
+      age: updated.age,
+      answersJson: updated.answersJson,
+      name: updated.name,
+      skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+    });
+    storedProfile = await repository.loadProfile(input.identity);
+  }
+
+  const acknowledgments = [];
+  for (const entry of changed) {
+    const audio = await dependencies.synthesizeAudio({
+      env: input.env,
+      text: entry.acknowledgment,
+    });
+    acknowledgments.push({ text: entry.acknowledgment, audio });
+  }
+  return { profile: storedProfile, acknowledgments };
 }
 
 export async function handleOnboardingRequest(
@@ -528,8 +665,21 @@ export async function handleOnboardingRequest(
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "PUT") {
-      const body = await readAnswerBody(input.request);
+      const body = parseProfileEditRecord(await readJsonRecord(input.request));
       const profile = await repository.loadProfile(input.identity);
+      if (body.kind === "bulk") {
+        const saved = await saveProfileAnswers({
+          input,
+          dependencies,
+          repository,
+          profile,
+          answers: body.answers,
+        });
+        return jsonResponse({
+          ...profilePayload(saved.profile),
+          acknowledgments: saved.acknowledgments,
+        });
+      }
       const question = findQuestion(body.questionKey);
       if (!question) {
         throw new ApiError(

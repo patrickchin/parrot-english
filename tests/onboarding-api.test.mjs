@@ -74,6 +74,37 @@ describe("onboarding browser API", () => {
     );
   });
 
+  it("submits all prose profile edits in one request", async () => {
+    assert.equal(typeof onboardingApi.saveProfileAnswers, "function");
+    const payload = {
+      profile: { name: "Maya" },
+      acknowledgments: [
+        { text: "Maya is a lovely name!", audio: null },
+      ],
+    };
+    const request = jsonFetch(payload);
+
+    assert.deepEqual(
+      await onboardingApi.saveProfileAnswers(
+        {
+          name: "Maya",
+          age: "I am nine",
+          favoriteCartoons: "I like Bluey",
+        },
+        { fetch: request.fetch },
+      ),
+      payload,
+    );
+    assert.equal(request.calls[0][0], "/api/profile");
+    assert.deepEqual(JSON.parse(request.calls[0][1].body), {
+      answers: {
+        name: "Maya",
+        age: "I am nine",
+        favoriteCartoons: "I like Bluey",
+      },
+    });
+  });
+
   it("posts skip and completion transitions", async () => {
     const skipped = jsonFetch({ canBypass: true });
     await skipOnboarding({ fetch: skipped.fetch });
@@ -137,6 +168,34 @@ describe("onboarding browser API", () => {
     const request = jsonFetch({ ok: true });
     await loadOnboarding({ fetch: request.fetch, signal: controller.signal });
     assert.equal(request.calls[0][1].signal, controller.signal);
+  });
+
+  it("preserves keyed errors from atomic profile validation", async () => {
+    const failed = jsonFetch(
+      {
+        error: "invalid_profile",
+        fieldErrors: {
+          age: "Please tell me your age using a number from 3 to 17.",
+          ignored: 123,
+        },
+      },
+      400,
+    );
+
+    await assert.rejects(
+      onboardingApi.saveProfileAnswers(
+        { name: "Maya", age: "very old" },
+        { fetch: failed.fetch },
+      ),
+      (error) => {
+        assert.ok(error instanceof OnboardingApiError);
+        assert.equal(error.code, "invalid_profile");
+        assert.deepEqual(error.fieldErrors, {
+          age: "Please tell me your age using a number from 3 to 17.",
+        });
+        return true;
+      },
+    );
   });
 
   it("models prose questions and self-contained v2 response snapshots", () => {

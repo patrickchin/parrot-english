@@ -24,9 +24,17 @@ const acknowledgmentModule = await vite.ssrLoadModule(
 );
 const { OnboardingAcknowledgment, beginAcknowledgmentPlayback } =
   acknowledgmentModule;
+const profileModule = await vite.ssrLoadModule("/src/ProfileEditor.tsx");
+const { ProfileEditorView } = profileModule;
 const gateModule = await vite.ssrLoadModule("/src/OnboardingGate.tsx");
-const { OnboardingGateView, answerForQuestion, saveQuestionAndAdvance } =
-  gateModule;
+const {
+  OnboardingGateView,
+  answerForQuestion,
+  nextProfileAcknowledgment,
+  profileDraftsFromState,
+  saveQuestionAndAdvance,
+  updateProfileDraft,
+} = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const questionSource = readFileSync(
   new URL("../src/OnboardingQuestion.tsx", import.meta.url),
@@ -278,6 +286,83 @@ describe("Peppa acknowledgment", () => {
   });
 });
 
+describe("profile summary editor", () => {
+  it("renders every answer as editable prose with one atomic save action", () => {
+    const questions = [
+      question({ answerKey: "name", position: 1, promptEn: "What's your name?" }),
+      question(),
+    ];
+    const html = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        drafts: { name: "Mia", age: "I am eight" },
+        fieldErrors: {},
+        fieldStatuses: {},
+        isSaving: false,
+        onCancel() {},
+        onClose() {},
+        onReplay() {},
+        onSave() {},
+        onTranscribe() {},
+        onValueChange() {},
+        pageError: "",
+        questions,
+      }),
+    );
+
+    assert.match(html, /Review and edit all your answers in one place/);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 2);
+    assert.match(html, /I am eight/);
+    assert.match(html, />Save changes</);
+    assert.doesNotMatch(html, /onboarding-chips|onboarding-suggestions/);
+  });
+
+  it("derives and immutably updates all prose drafts", () => {
+    const state = {
+      profile: {
+        name: "Mia",
+        age: 8,
+        answers: emptyAnswers({
+          favoriteAnimals: {
+            question: "What animals do you like?",
+            rawAnswer: "I like dinosaurs",
+            summary: "Likes dinosaurs.",
+            acknowledgment: "Dinosaurs are stompy!",
+            enrichmentStatus: "generated",
+            answeredAt: "2026-07-06T10:30:00.000Z",
+          },
+        }),
+      },
+      questions: [
+        question({ answerKey: "name" }),
+        question(),
+        question({ answerKey: "favoriteAnimals" }),
+      ],
+    };
+    assert.deepEqual(profileDraftsFromState(state), {
+      name: "Mia",
+      age: "8",
+      favoriteAnimals: "I like dinosaurs",
+    });
+    const original = { name: "Mia" };
+    assert.deepEqual(updateProfileDraft(original, "name", "Maya"), {
+      name: "Maya",
+    });
+    assert.deepEqual(original, { name: "Mia" });
+  });
+
+  it("advances profile acknowledgments one at a time", () => {
+    const acknowledgments = [
+      { text: "Name saved!", audio: null },
+      { text: "Age saved!", audio: null },
+    ];
+    assert.deepEqual(nextProfileAcknowledgment(acknowledgments, 0), {
+      acknowledgment: acknowledgments[1],
+      index: 1,
+    });
+    assert.equal(nextProfileAcknowledgment(acknowledgments, 1), null);
+  });
+});
+
 function emptyAnswers(responses = {}) {
   return {
     schemaVersion: 2,
@@ -382,7 +467,7 @@ describe("onboarding and profile gate", () => {
       }),
     });
     assert.match(html, /LESSON CONTENT/);
-    assert.match(html, /aria-label="Edit learner profile"/);
+    assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
 
     const bypass = renderGate({
       data: { mode: "bypass-only", canBypass: true },
@@ -391,22 +476,29 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(bypass, /Edit learner profile/);
   });
 
-  it("reuses the prose form for profile editing without bypass controls", () => {
+  it("renders the prose profile summary without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
       profileEditor: {
-        current: 1,
-        total: 6,
-        questionProps: questionProps({
-          mode: "profile",
-          question: fullState().question,
-          value: "Mia",
-        }),
+        drafts: { name: "Mia", age: "I am eight" },
+        fieldErrors: {},
+        fieldStatuses: {},
+        isSaving: false,
+        onCancel() {},
+        onClose() {},
+        onReplay() {},
+        onSave() {},
+        onTranscribe() {},
+        onValueChange() {},
+        pageError: "",
+        questions: [
+          fullState().question,
+          question(),
+        ],
       },
     });
     assert.match(html, /Edit profile/);
-    assert.match(html, /What&#x27;s your name\?/);
-    assert.match(html, /<textarea/);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 2);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
   });
@@ -469,5 +561,7 @@ describe("onboarding and profile gate", () => {
       styles,
       /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*onboarding/s,
     );
+    assert.match(gateSource, /useProfileAccountAction/);
+    assert.doesNotMatch(gateSource, /profile-edit-button/);
   });
 });
