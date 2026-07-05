@@ -906,12 +906,12 @@ select:focus-visible {
   padding: clamp(16px, 2vw, 22px) clamp(18px, 3vw, 30px);
 }
 
-.lesson-card-content h2,
+.lesson-card-content h3,
 .lesson-card-content p {
   margin: 0;
 }
 
-.lesson-card-content h2 {
+.lesson-card-content h3 {
   grid-area: title;
   color: #204c7f;
   font-size: clamp(1.5rem, 2.4vw, 2.1rem);
@@ -952,16 +952,14 @@ select:focus-visible {
   transition: filter 160ms ease, transform 160ms ease;
 }
 
-.lesson-card-action:hover:not(:disabled) {
+.lesson-card-action:hover {
   filter: brightness(1.04) saturate(1.05);
   transform: translateY(-2px);
 }
 
-.lesson-card-action:disabled {
-  background: #71869b;
-  box-shadow: 0 6px 0 rgb(53 72 90 / 34%);
-  cursor: not-allowed;
-  opacity: 1;
+.lesson-card-action:focus-visible {
+  outline: 5px solid #204c7f;
+  outline-offset: 4px;
 }
 
 .lesson-shell {
@@ -1490,7 +1488,7 @@ select:focus-visible {
     padding: 12px;
   }
 
-  .lesson-card-content h2 {
+  .lesson-card-content h3 {
     font-size: clamp(1.05rem, 4.8vw, 1.45rem);
   }
 

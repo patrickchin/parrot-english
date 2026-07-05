@@ -67,13 +67,13 @@ export function LessonList() {
               </div>
 
               <div className="lesson-card-content">
-                <h2>{lesson.title}</h2>
+                <h3>{lesson.title}</h3>
                 <p>{lesson.summary}</p>
                 <span className="lesson-scene-count">
                   <BookOpen aria-hidden="true" /> {lesson.sceneCount} scenes
                 </span>
                 <Link
-                  aria-label={`Start ${lesson.title}`}
+                  aria-label={`Start lesson: ${lesson.title}`}
                   className="lesson-card-action"
                   to={getLessonScenePath("parrot", lesson.id, 0)}
                 >

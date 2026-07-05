@@ -50,6 +50,21 @@ describe("scene playback controls", () => {
     assert.doesNotMatch(styles, /\.playback-control-button|\.volume-button/);
   });
 
+  it("focuses the prominent Start action when the routed player mounts", () => {
+    assert.match(
+      app,
+      /const startActionRef = useRef<HTMLButtonElement \| null>\(null\)/,
+    );
+    assert.match(
+      app,
+      /useEffect\(\(\) => \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}, \[\]\)/,
+    );
+    assert.match(
+      app,
+      /className="start-lesson-button"[\s\S]*?onClick=\{handleStartAction\}[\s\S]*?ref=\{startActionRef\}/,
+    );
+  });
+
   it("cancels pending learner work before manual scene controls", () => {
     assert.match(app, /function cancelPendingWork/);
     assert.match(app, /pressSequenceRef\.current \+= 1/);

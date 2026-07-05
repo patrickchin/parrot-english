@@ -38,7 +38,7 @@ describe("lesson list integration contracts", () => {
 
     assert.match(list, /import\s+\{\s*Link\s*\}\s+from\s+["']react-router["']/);
     assert.match(list, /getLessonScenePath\("parrot",\s*lesson\.id,\s*0\)/);
-    assert.match(list, /aria-label=\{`Start \$\{lesson\.title\}`\}/);
+    assert.match(list, /aria-label=\{`Start lesson: \$\{lesson\.title\}`\}/);
     assert.doesNotMatch(list, /onOpenLesson|UPCOMING_LESSONS|Coming soon|LockKeyhole/);
   });
 
@@ -47,6 +47,7 @@ describe("lesson list integration contracts", () => {
 
     assert.match(list, /id="parrot-lessons-title"[^>]*>Parrot Lessons/);
     assert.match(list, /id="my-lessons-title"[^>]*>My Lessons/);
+    assert.match(list, /<h3>\{lesson\.title\}<\/h3>/);
     assert.match(list, /className="my-lessons-empty"/);
     assert.match(list, /You haven't created any lessons yet\./);
     assert.match(list, /to="\/lessons\/my\/create"/);
@@ -58,7 +59,12 @@ describe("lesson list integration contracts", () => {
 
     assert.match(styles, /\.lesson-list-page\s*\{/);
     assert.match(styles, /\.lesson-card-grid\s*\{[^}]*grid-template-columns/s);
-    assert.match(styles, /\.lesson-card-action:disabled\s*\{/);
+    assert.match(styles, /\.lesson-card-action:hover\s*\{/);
+    assert.match(
+      styles,
+      /\.lesson-card-action:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
+    );
+    assert.doesNotMatch(styles, /\.lesson-card-action:disabled/);
     assert.match(styles, /\.lesson-list-back-button\s*\{/);
     assert.match(styles, /@media \(max-width: 700px\)/);
     assert.doesNotMatch(styles, /\.lesson-picker/);
@@ -83,5 +89,7 @@ describe("lesson list integration contracts", () => {
       styles,
       /\.lesson-card-action\s*\{[^}]*grid-area:\s*action/s,
     );
+    assert.match(styles, /\.lesson-card-content h3\s*\{/);
+    assert.doesNotMatch(styles, /\.lesson-card-content h2/);
   });
 });

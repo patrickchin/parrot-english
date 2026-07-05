@@ -49,10 +49,16 @@ test("lesson list separates all discovered Parrot lessons from My Lessons", () =
   assert.match(html, /<h1>Choose a lesson<\/h1>/);
   assert.match(html, /<h2 id="parrot-lessons-title">Parrot Lessons<\/h2>/);
   assert.match(html, /<h2 id="my-lessons-title">My Lessons<\/h2>/);
+  assert.equal((html.match(/<h2/g) ?? []).length, 2);
+  assert.equal((html.match(/<h3/g) ?? []).length, 7);
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.equal((html.match(/<article/g) ?? []).length, 7);
   assert.deepEqual(getParrotLessonHrefs(html), expectedHrefs);
-  assert.equal((html.match(/Start lesson/g) ?? []).length, 7);
+  assert.equal(
+    (html.match(/aria-label="Start lesson: [^"]+"/g) ?? []).length,
+    7,
+  );
+  assert.equal((html.match(/<\/svg> Start lesson<\/a>/g) ?? []).length, 7);
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
@@ -71,7 +77,7 @@ test("lesson list exposes My Lessons empty and creation states plus main-menu na
   );
 });
 
-test("following a Parrot catalog link renders its canonical lesson route", () => {
+test("a canonical Parrot catalog href renders its directly matched lesson route", () => {
   const [firstHref] = getParrotLessonHrefs(renderLessonList());
 
   assert.ok(firstHref, "Expected a canonical Parrot lesson link");

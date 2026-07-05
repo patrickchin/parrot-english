@@ -124,6 +124,11 @@ export function LessonPlayer({
   const evaluationControllerRef = useRef<AbortController | null>(null);
   const pressSequenceRef = useRef(0);
   const pressedRef = useRef(false);
+  const startActionRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    startActionRef.current?.focus({ preventScroll: true });
+  }, []);
 
   const currentStep = getCurrentStep(state, currentLesson);
   if (!currentStep) throw new Error("The lesson position is invalid.");
@@ -427,6 +432,7 @@ export function LessonPlayer({
               aria-label={startActionLabel}
               className="start-lesson-button"
               onClick={handleStartAction}
+              ref={startActionRef}
               type="button"
             >
               <span>{startActionLabel}</span>
