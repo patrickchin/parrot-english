@@ -33,6 +33,7 @@ const {
   nextProfileAcknowledgment,
   profileDraftsFromState,
   saveQuestionAndAdvance,
+  shouldSyncActiveQuestion,
   updateProfileDraft,
 } = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
@@ -428,6 +429,17 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
+  it("does not sync question state before the initial onboarding load finishes", () => {
+    assert.equal(typeof shouldSyncActiveQuestion, "function");
+    assert.equal(shouldSyncActiveQuestion(null, null), false);
+    assert.equal(shouldSyncActiveQuestion(fullState().profile, null), false);
+    assert.equal(shouldSyncActiveQuestion(null, fullState().question), false);
+    assert.equal(
+      shouldSyncActiveQuestion(fullState().profile, fullState().question),
+      true,
+    );
+  });
+
   it("hides lessons behind loading, errors, and explicit Start", () => {
     assert.doesNotMatch(renderGate({ isLoading: true }), /LESSON CONTENT/);
     const failed = renderGate({ loadError: "Questions are unavailable." });
