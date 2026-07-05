@@ -394,7 +394,10 @@ describe("authentication infrastructure", () => {
     assert.match(drizzleConfig, /schema:\s*["']\.\/src\/db\/schema\.ts["']/);
     assert.match(wrangler, /"nodejs_compat"/);
     assert.match(wrangler, /"binding"\s*:\s*"DB"/);
-    assert.match(wrangler, /"database_name"\s*:\s*"parrot-english"/);
+    assert.match(
+      wrangler,
+      /"database_name"\s*:\s*"parrot-english"\s*,\s*"database_id"\s*:\s*"[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"/i
+    );
     assert.doesNotMatch(wrangler, /parrot-english-auth/);
     assert.match(wrangler, /"migrations_dir"\s*:\s*"migrations"/);
     assert.match(tsconfig, /worker-configuration\.d\.ts/);

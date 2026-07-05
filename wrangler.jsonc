@@ -8,6 +8,7 @@
     {
       "binding": "DB",
       "database_name": "parrot-english",
+      "database_id": "a034d27d-7125-4a8f-b4fc-c403610e9994",
       "migrations_dir": "migrations"
     }
   ],
