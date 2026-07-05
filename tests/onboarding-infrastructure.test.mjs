@@ -323,6 +323,63 @@ describe("questionnaire publishing", () => {
     assert.doesNotMatch(sql, /\b(?:CREATE|ALTER|DROP)\b/i);
   });
 
+  it("keeps an identical publish idempotent and rejects changed versions", () => {
+    const definition = readDefinition();
+    const database = createMigratedDatabase();
+    try {
+      database.exec(buildQuestionnaireSql(definition, 1_000));
+      database.exec(buildQuestionnaireSql(definition, 2_000));
+
+      const changed = structuredClone(definition);
+      changed.questions[0].validation.max = 18;
+      assert.throws(
+        () =>
+          database.exec(
+            `BEGIN; ${buildQuestionnaireSql(changed, 3_000)} COMMIT;`,
+          ),
+        /constraint/i,
+      );
+      database.exec("ROLLBACK");
+
+      assert.equal(
+        database
+          .prepare(
+            "SELECT definition_hash FROM questionnaire WHERE version = 1",
+          )
+          .get().definition_hash,
+        "0e256950166405c15d0b7e303b733240f19558bb7aad48d217caaaf344014b8d",
+      );
+      assert.equal(
+        database
+          .prepare(
+            "SELECT validation_json FROM questionnaire_question WHERE answer_key = 'age'",
+          )
+          .get().validation_json,
+        '{"min":3,"max":17}',
+      );
+    } finally {
+      database.close();
+    }
+  });
+
+  it("migrates and publishes D1 before deploying the gated Worker", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      "utf8",
+    );
+    const migration = workflow.indexOf(
+      "wrangler d1 migrations apply parrot-english --remote",
+    );
+    const publish = workflow.indexOf(
+      "npm run questionnaire:publish -- --remote",
+    );
+    const deploy = workflow.indexOf("wrangler deploy --config wrangler.jsonc");
+
+    assert.ok(migration >= 0, "Expected a remote D1 migration step");
+    assert.ok(publish > migration, "Expected questionnaire publish after migration");
+    assert.ok(deploy > publish, "Expected Worker deploy after questionnaire publish");
+  });
+
   it("exposes an explicit local-or-remote publish command", () => {
     const packageJson = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),

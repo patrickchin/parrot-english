@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -142,14 +143,49 @@ function jsonValue(value) {
   return value == null ? "NULL" : sqlValue(JSON.stringify(value));
 }
 
+export function questionnaireDefinitionHash(definition) {
+  const validated = validateQuestionnaireDefinition(definition);
+  const persisted = {
+    id: validated.id,
+    version: validated.version,
+    introductionAudioId: validated.introductionAudioId,
+    questions: validated.questions.map((entry) => ({
+      answerKey: entry.answerKey,
+      position: entry.position,
+      promptEn: entry.promptEn,
+      promptZh: entry.promptZh,
+      answerType: entry.answerType,
+      cardinality: entry.cardinality,
+      required: entry.required,
+      options: entry.options,
+      validation: entry.validation,
+      branching: entry.branching,
+      audioId: entry.audioId,
+    })),
+  };
+  return createHash("sha256")
+    .update(JSON.stringify(persisted))
+    .digest("hex");
+}
+
 export function buildQuestionnaireSql(definition, activatedAt = Date.now()) {
   const validated = validateQuestionnaireDefinition(definition);
+  const definitionHash = questionnaireDefinitionHash(definition);
   const statements = [
     `UPDATE questionnaire SET status = 'inactive' WHERE status = 'active' AND id <> ${sqlValue(validated.id)};`,
     [
-      "INSERT INTO questionnaire (id, version, status, created_at, activated_at)",
-      `VALUES (${sqlValue(validated.id)}, ${validated.version}, 'active', ${activatedAt}, ${activatedAt})`,
-      "ON CONFLICT(id) DO UPDATE SET version = excluded.version, status = 'active', activated_at = excluded.activated_at;",
+      "INSERT INTO questionnaire (id, version, status, definition_hash, created_at, activated_at)",
+      `VALUES (${sqlValue(validated.id)}, ${validated.version}, 'active', ${sqlValue(definitionHash)}, ${activatedAt}, ${activatedAt})`,
+      "ON CONFLICT(id) DO UPDATE SET",
+      "version = excluded.version,",
+      "status = CASE",
+      "  WHEN questionnaire.version = excluded.version",
+      "   AND questionnaire.definition_hash = excluded.definition_hash",
+      "  THEN 'active'",
+      "  ELSE 'immutable_conflict'",
+      "END,",
+      "definition_hash = excluded.definition_hash,",
+      "activated_at = excluded.activated_at;",
     ].join("\n"),
     `DELETE FROM questionnaire_question WHERE questionnaire_id = ${sqlValue(validated.id)};`,
     ...validated.questions.map((entry) =>
