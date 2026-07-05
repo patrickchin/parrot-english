@@ -1,6 +1,6 @@
 # Parrot English
 
-One-page, scene-based English speaking practice for young learners.
+List-first, scene-based English speaking practice for young learners.
 
 ## Stack
 
@@ -62,7 +62,9 @@ changed; a clean no-drift result does not require a new migration.
 ## Lesson Content
 
 Each file in `content/lessons/*.json` is discovered automatically and appears
-in the lesson picker. Adding or removing a lesson requires no registry edit.
+as a playable card on the lesson list. Adding or removing a lesson requires no
+registry edit. Disabled preview cards demonstrate upcoming lesson topics
+without creating placeholder scripts or audio.
 
 A lesson contains a story summary, a three-sentence detailed summary, two goal
 phrases, and five to eight scenes. Every scene chooses a pre-generated

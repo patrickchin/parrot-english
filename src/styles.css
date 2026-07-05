@@ -278,6 +278,190 @@ select:focus-visible {
   box-shadow: 0 4px 0 rgb(95 16 36 / 35%);
 }
 
+.lesson-list-page {
+  width: 100vw;
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(
+      circle at 12% 12%,
+      rgb(255 255 255 / 76%) 0 8%,
+      transparent 28%
+    ),
+    linear-gradient(180deg, #8bd5fa 0 42%, #a8df7e 42% 100%);
+  color: #241d2b;
+  padding: clamp(104px, 12vh, 144px) clamp(24px, 5vw, 64px) 64px;
+}
+
+.lesson-list-header {
+  width: min(1120px, 100%);
+  margin: 0 auto clamp(24px, 4vw, 42px);
+  text-align: center;
+}
+
+.lesson-list-eyebrow,
+.lesson-scene-count,
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 950;
+}
+
+.lesson-list-eyebrow {
+  color: #087451;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  letter-spacing: 0.04em;
+}
+
+.lesson-list-eyebrow svg,
+.lesson-scene-count svg,
+.coming-soon-badge svg,
+.lesson-card-action svg {
+  width: 1.25em;
+  height: 1.25em;
+  flex: 0 0 auto;
+}
+
+.lesson-list-header h1 {
+  margin: 8px 0;
+  color: #204c7f;
+  font-size: clamp(2.8rem, 7vw, 5.7rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.lesson-list-header p {
+  margin: 0;
+  font-size: clamp(1.1rem, 2.3vw, 1.65rem);
+  font-weight: 850;
+}
+
+.lesson-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  gap: clamp(20px, 3vw, 32px);
+}
+
+.lesson-card {
+  overflow: hidden;
+  border: 6px solid rgb(255 255 255 / 94%);
+  border-radius: 32px;
+  background: rgb(255 255 255 / 95%);
+  box-shadow:
+    0 10px 0 rgb(35 93 126 / 20%),
+    0 24px 36px rgb(31 94 132 / 20%);
+}
+
+.lesson-card.is-disabled {
+  filter: saturate(0.58);
+}
+
+.lesson-card-artwork {
+  position: relative;
+  height: clamp(160px, 20vw, 240px);
+  overflow: hidden;
+}
+
+.lesson-card-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lesson-card.is-disabled .lesson-card-artwork img {
+  opacity: 0.66;
+}
+
+.lesson-card-number,
+.coming-soon-badge {
+  position: absolute;
+  border: 4px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.lesson-card-number {
+  top: 16px;
+  left: 16px;
+  display: grid;
+  width: 54px;
+  aspect-ratio: 1;
+  place-items: center;
+  background: #ff467b;
+  font-size: 1.6rem;
+  font-weight: 950;
+  box-shadow: 0 5px 0 rgb(171 38 83 / 42%);
+}
+
+.coming-soon-badge {
+  top: 16px;
+  right: 16px;
+  background: #204c7f;
+  padding: 9px 14px;
+  box-shadow: 0 5px 0 rgb(18 55 92 / 38%);
+}
+
+.lesson-card-content {
+  display: grid;
+  gap: 12px;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.lesson-card-content h2,
+.lesson-card-content p {
+  margin: 0;
+}
+
+.lesson-card-content h2 {
+  color: #204c7f;
+  font-size: clamp(1.75rem, 3vw, 2.55rem);
+  line-height: 1;
+}
+
+.lesson-card-content p {
+  min-height: 3.2em;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.lesson-scene-count {
+  color: #386177;
+}
+
+.lesson-card-action {
+  display: inline-flex;
+  min-height: 62px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 4px solid #fff;
+  border-radius: 999px;
+  background: #ff467b;
+  color: #fff;
+  box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
+  cursor: pointer;
+  font-size: 1.3rem;
+  font-weight: 950;
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.lesson-card-action:hover:not(:disabled) {
+  filter: brightness(1.04) saturate(1.05);
+  transform: translateY(-2px);
+}
+
+.lesson-card-action:disabled {
+  background: #71869b;
+  box-shadow: 0 6px 0 rgb(53 72 90 / 34%);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
 .lesson-shell {
   width: 100vw;
   height: 100dvh;
@@ -385,41 +569,36 @@ select:focus-visible {
   box-shadow: 0 3px 8px rgba(51, 123, 164, 0.14);
 }
 
-.lesson-picker {
+.lesson-list-back-button {
   position: absolute;
   top: clamp(14px, 2.2vh, 28px);
   left: 50%;
   z-index: 20;
-  display: grid;
-  gap: 4px;
-  width: min(36vw, 360px);
-  transform: translateX(-50%);
-  color: #173c67;
-  font-size: 0.75rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.lesson-picker select {
-  width: 100%;
+  display: inline-flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 5px;
   border: 4px solid rgb(255 255 255 / 94%);
   border-radius: 999px;
-  appearance: none;
   background: #204c7f;
   color: #fff;
-  cursor: pointer;
-  padding: 10px 34px 10px 18px;
-  font-size: clamp(0.9rem, 1.4vw, 1.18rem);
-  font-weight: 900;
-  text-align: center;
+  padding: 8px 20px 8px 12px;
+  transform: translateX(-50%);
   box-shadow: 0 5px 0 rgb(18 55 92 / 45%);
+  cursor: pointer;
+  font-size: clamp(0.9rem, 1.4vw, 1.12rem);
+  font-weight: 950;
+  transition: filter 160ms ease, transform 160ms ease;
 }
 
-.lesson-picker select:disabled {
-  cursor: default;
-  opacity: 0.78;
+.lesson-list-back-button:hover {
+  filter: brightness(1.08);
+  transform: translate(-50%, -2px);
+}
+
+.lesson-list-back-button svg {
+  width: 28px;
+  height: 28px;
 }
 
 .volume-button {
@@ -784,9 +963,8 @@ select:focus-visible {
 }
 
 @media (max-width: 900px) {
-  .lesson-picker {
+  .lesson-list-back-button {
     top: 88px;
-    width: min(62vw, 380px);
   }
 
   .character-sprite {
@@ -805,6 +983,20 @@ select:focus-visible {
   }
 }
 
+@media (max-width: 700px) {
+  .lesson-list-page {
+    padding: 154px 16px 44px;
+  }
+
+  .lesson-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lesson-card-artwork {
+    height: 190px;
+  }
+}
+
 @media (max-width: 720px) {
   .lesson-stage {
     --control-safe-area: clamp(210px, 32vh, 238px);
@@ -814,17 +1006,11 @@ select:focus-visible {
     display: none;
   }
 
-  .lesson-picker {
+  .lesson-list-back-button {
     top: 18px;
-    width: min(58vw, 300px);
-  }
-
-  .lesson-picker > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
+    max-width: min(58vw, 240px);
+    min-height: 52px;
+    padding-right: 14px;
   }
 
   .lesson-flow-banner {

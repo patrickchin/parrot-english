@@ -16,7 +16,6 @@ import {
   useReducer,
   useRef,
   useState,
-  type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -31,6 +30,12 @@ import {
   reduceLessonState,
 } from "../lib/lesson-state";
 import { isAbortError, playAudioLine } from "./audio-playback";
+import {
+  createInitialAppNavigation,
+  reduceAppNavigation,
+  type AppNavigationEvent,
+  type AppNavigationState,
+} from "./app-navigation";
 import { AuthGate } from "./AuthGate";
 import { evaluateSpeech } from "./evaluation-request";
 import {
@@ -38,6 +43,7 @@ import {
   VISUAL_CATALOG,
   type Lesson,
 } from "./lesson-catalog";
+import { LessonList } from "./LessonList";
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
@@ -72,6 +78,20 @@ type CharacterStyle = CSSProperties & {
   "--character-index": number;
 };
 
+type LessonPlayerProps = {
+  lesson: Lesson;
+  onBack: () => void;
+};
+
+const AVAILABLE_LESSON_IDS = new Set(LESSONS.map((entry) => entry.id));
+
+function appNavigationReducer(
+  state: AppNavigationState,
+  event: AppNavigationEvent,
+) {
+  return reduceAppNavigation(state, event, AVAILABLE_LESSON_IDS);
+}
+
 function getMicrophoneErrorMessage(caughtError: unknown) {
   if (caughtError instanceof RecordingUnsupportedError) {
     return RECORDING_UNSUPPORTED_MESSAGE;
@@ -88,13 +108,7 @@ function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
   return event.key === " " || event.key === "Enter";
 }
 
-export function LessonPlayer() {
-  const [selectedLessonId, setSelectedLessonId] = useState(LESSONS[0]?.id ?? "");
-  const selectedEntry =
-    LESSONS.find((entry) => entry.id === selectedLessonId) ?? LESSONS[0];
-  if (!selectedEntry) throw new Error("No lessons are available.");
-  const currentLesson: Lesson = selectedEntry.lesson;
-
+export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProps) {
   const [state, dispatch] = useReducer(
     (
       currentState: ReturnType<typeof createInitialLessonState>,
@@ -119,10 +133,6 @@ export function LessonPlayer() {
     [currentLesson, state]
   );
   const progressLabel = getLessonProgressLabel(state, currentStep);
-  const canSelectLesson =
-    state.phase === LessonPhase.Idle ||
-    state.phase === LessonPhase.Paused ||
-    state.phase === LessonPhase.Finished;
 
   useEffect(() => {
     if (
@@ -249,13 +259,6 @@ export function LessonPlayer() {
     }
 
     dispatchSceneControl("PLAY_SCENE");
-  }
-
-  function handleLessonChange(event: ChangeEvent<HTMLSelectElement>) {
-    cancelPendingWork();
-    setError("");
-    setSelectedLessonId(event.target.value);
-    dispatch({ type: "RESET" });
   }
 
   async function beginRecording() {
@@ -424,21 +427,15 @@ export function LessonPlayer() {
           </span>
         </header>
 
-        <label className="lesson-picker">
-          <span>Lesson picker</span>
-          <select
-            aria-label="Lesson picker"
-            disabled={!canSelectLesson}
-            onChange={handleLessonChange}
-            value={selectedEntry.id}
-          >
-            {LESSONS.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.lesson.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        <button
+          aria-label="Back to lesson list"
+          className="lesson-list-back-button"
+          onClick={onBack}
+          type="button"
+        >
+          <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
+          <span>Back to lessons</span>
+        </button>
 
         <button
           aria-label={muted ? "Unmute lesson audio" : "Mute lesson audio"}
@@ -603,10 +600,39 @@ export function LessonPlayer() {
   );
 }
 
+export function LessonExperience() {
+  const [navigation, dispatchNavigation] = useReducer(
+    appNavigationReducer,
+    undefined,
+    createInitialAppNavigation,
+  );
+  const selectedEntry = LESSONS.find(
+    (entry) => entry.id === navigation.activeLessonId,
+  );
+
+  if (!selectedEntry) {
+    return (
+      <LessonList
+        onOpenLesson={(lessonId) =>
+          dispatchNavigation({ type: "OPEN_LESSON", lessonId })
+        }
+      />
+    );
+  }
+
+  return (
+    <LessonPlayer
+      key={selectedEntry.id}
+      lesson={selectedEntry.lesson}
+      onBack={() => dispatchNavigation({ type: "BACK_TO_LIST" })}
+    />
+  );
+}
+
 export function App() {
   return (
     <AuthGate>
-      <LessonPlayer />
+      <LessonExperience />
     </AuthGate>
   );
 }
