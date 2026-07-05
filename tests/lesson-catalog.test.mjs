@@ -46,11 +46,54 @@ describe("lesson catalog", () => {
       ),
     }));
 
-    assert.ok(entries.length > 0);
+    const expectedLessons = [
+      [
+        "01-peppas-high-ball",
+        "Peppa's High Ball",
+        ["Can you help me, please?", "Thank you!"],
+      ],
+      [
+        "02-garden-colors",
+        "The Red Flower",
+        ["What color is it?", "It is red."],
+      ],
+      [
+        "03-snack-time",
+        "Peppa's Apple Snack",
+        ["May I have an apple?", "Here you are!"],
+      ],
+      [
+        "04-playground-words",
+        "A Turn on the Swing",
+        ["Can I have a turn?", "Let's play together!"],
+      ],
+      [
+        "05-market-day",
+        "Two Apples for Peppa",
+        ["How much is it?", "I'd like two apples, please."],
+      ],
+      [
+        "06-picnic-time",
+        "Juice at the Picnic",
+        ["Would you like some juice?", "Yes, please!"],
+      ],
+      [
+        "07-bedtime-story",
+        "Good Night, Peppa",
+        ["I'm sleepy.", "Good night!"],
+      ],
+    ];
+
     assert.deepEqual(
-      entries.map((entry) => entry.id),
-      ["peppas-high-ball"]
+      entries.map(({ id }) => id),
+      expectedLessons.map(([id]) => id)
     );
-    assert.equal(entries[0].lesson.title, "Peppa's High Ball");
+    entries.forEach(({ lesson }, index) => {
+      const [, title, goalPhrases] = expectedLessons[index];
+      assert.equal(lesson.title, title);
+      assert.equal(lesson.childName, "Bella");
+      assert.deepEqual(lesson.goalPhrases, goalPhrases);
+      assert.match(lesson.scenes.at(-1).steps.at(-1).dialogue, /Bella/);
+    });
   });
 });
