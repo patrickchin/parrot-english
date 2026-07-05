@@ -12,9 +12,15 @@ service in a lesson is speech evaluation.
 ```text
 Browser
   -> Cloudflare Worker
+       -> /api/auth/* -> Better Auth -> Drizzle -> shared D1
        -> /api/evaluate-speech
        -> static Vite assets through env.ASSETS
 ```
+
+The React Better Auth client talks to Better Auth on the Worker at
+`/api/auth/*`. Better Auth stores users, accounts, sessions, and verification
+records through Drizzle in the same `parrot-english` D1 database used for all
+future application data. Browser sessions use HTTP cookies.
 
 Important entrypoints:
 
@@ -24,7 +30,40 @@ Important entrypoints:
 - `lib/lesson-state.js`: pure automatic scene/step runner.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
 - `lib/lesson-audio.js`: speaker-plus-text saved-audio resolution.
+- `src/AuthGate.tsx`: session-aware sign-in/sign-up UI and lesson gating.
+- `src/auth-client.ts`: same-origin Better Auth React client.
+- `src/db/schema.ts`: complete Drizzle schema for the shared D1 database.
+- `worker/auth.ts`: Better Auth Worker configuration and Drizzle adapter.
 - `worker/index.ts`: Worker routing and static fallback.
+
+## Authentication
+
+The browser uses the Better Auth React client with same-origin requests. The
+Worker mounts Better Auth at `/api/auth/*`, and the Drizzle adapter persists its
+schema in the shared D1 database:
+
+```text
+Browser Better Auth React client
+  -> Worker /api/auth/*
+       -> Better Auth
+            -> Drizzle ORM
+                 -> shared D1 database: parrot-english
+```
+
+The current auth schema contains `user`, `session`, `account`, and
+`verification` tables. Drizzle owns the entire database schema and migration
+history, not only the auth tables. Future application tables belong in
+`src/db/schema.ts` and must be added through generated, reviewed migrations.
+
+Email/password authentication is enabled without email verification. Password
+reset, social providers, and email delivery (including Resend) are not
+configured. The server applies Better Auth endpoint rate limiting and trusts
+`cf-connecting-ip` for the client address. `BETTER_AUTH_SECRET` must contain at
+least 32 characters, and `BETTER_AUTH_URL` must exactly match the Worker origin.
+
+`src/AuthGate.tsx` uses the session state to show loading and failure states,
+render sign-in/sign-up controls for anonymous users, and render lesson content
+only for an authenticated user. Signing out returns the app to the auth gate.
 
 ## Content Boundaries
 
@@ -115,14 +154,36 @@ data containing `targetText` and `audio`, sends audio to Groq STT with
 `whisper-large-v3-turbo`, and scores the transcript locally through
 `lib/speech-scoring.js`.
 
-The endpoint requires `GROQ_API_KEY`, rejects audio over 6 MiB, and has a
-configurable upstream timeout. `worker/api-security.ts` applies an in-memory
-per-client rate limit with defaults of eight requests per 60 seconds.
+The endpoint requires an authenticated Better Auth cookie session. The Worker
+checks the session before its speech limiter or Groq handler runs; anonymous
+requests receive `401 {"error":"unauthorized"}`. Authenticated requests still
+require `GROQ_API_KEY`, reject audio over 6 MiB, and have a configurable upstream
+timeout. `worker/api-security.ts` applies an in-memory per-client rate limit
+with defaults of eight requests per 60 seconds.
 
 ## Development and Verification
 
-`npm run dev` is the Worker-backed source of truth on port 3000.
-`npm run dev:vite` is useful for frontend-only iteration.
+`npm run dev` is the Worker-backed source of truth on port 3000 and provides the
+auth and speech APIs. `npm run dev:vite` is useful only for frontend iteration;
+it cannot provide the Worker API surface.
+
+For a fresh local environment:
+
+```bash
+cp .dev.vars.example .dev.vars
+npm run db:migrate:local
+npm run dev
+```
+
+Run `npm run db:generate` before the migration command only after changing
+`src/db/schema.ts`. Keep `.dev.vars` out of source control, use a random
+`BETTER_AUTH_SECRET` of at least 32 characters, and keep `BETTER_AUTH_URL`
+identical to the local Worker origin.
+
+The production D1 database exists, but its schema is intentionally not migrated
+yet. A later production release must deliberately configure
+`BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`, then run
+`npx wrangler d1 migrations apply parrot-english --remote` after review.
 
 Before shipping a combined change, run:
 
