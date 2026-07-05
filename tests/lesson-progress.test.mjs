@@ -7,7 +7,7 @@ describe("lesson progress label", () => {
   it("describes idle and paused playback", () => {
     assert.equal(
       getLessonProgressLabel(createInitialLessonState()),
-      "Press Play to begin"
+      "Press Start to begin"
     );
     assert.equal(
       getLessonProgressLabel({
