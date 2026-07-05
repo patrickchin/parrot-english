@@ -8,9 +8,9 @@ import {
 
 describe("bounded Worker request bodies", () => {
   it("rejects a declared oversized body before reading it", async () => {
-    const body = new ReadableStream({
+    const body = new globalThis.ReadableStream({
       pull(controller) {
-        controller.enqueue(new TextEncoder().encode("small"));
+        controller.enqueue(new globalThis.TextEncoder().encode("small"));
         controller.close();
       },
     });
@@ -29,7 +29,7 @@ describe("bounded Worker request bodies", () => {
   });
 
   it("stops a streamed body when it crosses the limit", async () => {
-    const body = new ReadableStream({
+    const body = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(new Uint8Array(6));
         controller.enqueue(new Uint8Array(3));
