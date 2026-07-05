@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import {
+  LessonPhase,
+  createInitialLessonState,
+  reduceLessonState,
+} from "../lib/lesson-state.js";
 import { finishSpeechOperation } from "../src/speech-operation.ts";
 
 function createDeferred() {
@@ -57,7 +62,6 @@ async function runStaleOperationRace(
       evaluationControllerRef,
       generation: operationGeneration,
       getCurrentGeneration: () => generation,
-      onCancelled: () => events.push(`${label}:cancelled`),
       onEvaluated: () => events.push(`${label}:evaluated`),
       onFailed: (error) => {
         errors.push(error);
@@ -127,10 +131,75 @@ async function runStaleOperationRace(
 }
 
 describe("speech operation isolation", () => {
+  it("recovers an active evaluation AbortError through lesson failure feedback", async () => {
+    const lesson = {
+      childName: "Bella",
+      scenes: [
+        {
+          title: "Practice",
+          steps: [{ speaker: "user", dialogue: "Here you are!" }],
+        },
+      ],
+    };
+    const events = [];
+    let state = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Recording,
+    };
+    const dispatch = (event) => {
+      events.push(event);
+      state = reduceLessonState(state, event, lesson);
+    };
+    const recordingController = new AbortController();
+    const recordingControllerRef = { current: recordingController };
+    const evaluationControllerRef = { current: null };
+    const timeoutError = new Error("Speech evaluation timed out.");
+    timeoutError.name = "AbortError";
+
+    await finishSpeechOperation({
+      evaluate: () => Promise.reject(timeoutError),
+      evaluationControllerRef,
+      generation: 1,
+      getCurrentGeneration: () => 1,
+      onEvaluated: (result) =>
+        dispatch({
+          type: "EVALUATED",
+          passed: result.passed,
+          transcript: result.transcript,
+        }),
+      onFailed: () => dispatch({ type: "EVALUATION_FAILED" }),
+      onReleased: () => dispatch({ type: "MIC_RELEASED" }),
+      recordingController,
+      recordingControllerRef,
+      session: {
+        cancel() {},
+        stop: () => Promise.resolve(new Blob(["child audio"])),
+      },
+      targetText: "Here you are!",
+    });
+
+    assert.deepEqual(events, [
+      { type: "MIC_RELEASED" },
+      { type: "EVALUATION_FAILED" },
+    ]);
+    assert.equal(state.phase, LessonPhase.Feedback);
+    assert.equal(state.feedbackOutcome, "retry");
+  });
+
+  it("ignores a late recording settlement after a new operation starts", async () => {
+    await runStaleOperationRace(
+      (evaluation) =>
+        evaluation.resolve({
+          ...successfulEvaluation,
+          transcript: "old response",
+        }),
+      { settleRecordingLate: true }
+    );
+  });
+
   const staleOutcomes = [
     {
       name: "successful evaluation",
-      settleRecordingLate: true,
       settle: (evaluation) =>
         evaluation.resolve({
           ...successfulEvaluation,
@@ -152,9 +221,9 @@ describe("speech operation isolation", () => {
     },
   ];
 
-  for (const { name, settle, settleRecordingLate } of staleOutcomes) {
+  for (const { name, settle } of staleOutcomes) {
     it(`ignores a stale ${name} after a new operation starts`, async () => {
-      await runStaleOperationRace(settle, { settleRecordingLate });
+      await runStaleOperationRace(settle);
     });
   }
 });

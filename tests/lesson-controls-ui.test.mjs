@@ -25,7 +25,22 @@ describe("scene playback controls", () => {
     assert.match(app, /recordingControllerRef\.current\?\.abort\(\)/);
     assert.match(app, /recordingRef\.current\?\.cancel\(\)/);
     assert.match(app, /evaluationControllerRef\.current\?\.abort\(\)/);
-    assert.match(app, /function dispatchSceneControl/);
+    const sceneControl = app.match(
+      /function dispatchSceneControl\([\s\S]*?\n\s{2}\) \{([\s\S]*?)\n\s{2}\}/
+    );
+    assert.ok(sceneControl);
+
+    const cancelIndex = sceneControl[1].indexOf("cancelPendingWork()");
+    const dispatchIndex = sceneControl[1].indexOf("dispatch({ type })");
+    assert.ok(cancelIndex >= 0);
+    assert.ok(dispatchIndex > cancelIndex);
+  });
+
+  it("invalidates pending speech before unmount aborts it", () => {
+    assert.match(
+      app,
+      /useEffect\(\s*\(\) => \(\) => \{\s*pressedRef\.current = false;\s*pressSequenceRef\.current \+= 1;\s*recordingControllerRef\.current\?\.abort\(\)/
+    );
   });
 
   it("uses only the dock prompt for user speech", () => {

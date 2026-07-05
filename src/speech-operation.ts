@@ -16,7 +16,6 @@ type FinishSpeechOperationOptions = {
   evaluationControllerRef: MutableRef<AbortController | null>;
   generation: number;
   getCurrentGeneration: () => number;
-  onCancelled: () => void;
   onEvaluated: (result: EvaluationResult) => void;
   onFailed: (error: unknown) => void;
   onReleased: () => void;
@@ -26,16 +25,11 @@ type FinishSpeechOperationOptions = {
   targetText: string;
 };
 
-function isAbortError(error: unknown) {
-  return error instanceof Error && error.name === "AbortError";
-}
-
 export async function finishSpeechOperation({
   evaluate,
   evaluationControllerRef,
   generation,
   getCurrentGeneration,
-  onCancelled,
   onEvaluated,
   onFailed,
   onReleased,
@@ -67,10 +61,6 @@ export async function finishSpeechOperation({
   } catch (caughtError) {
     if (!isCurrent()) return;
 
-    if (isAbortError(caughtError)) {
-      onCancelled();
-      return;
-    }
     onFailed(caughtError);
   } finally {
     if (recordingControllerRef.current === recordingController) {

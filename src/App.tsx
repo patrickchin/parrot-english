@@ -189,6 +189,7 @@ export function LessonPlayer() {
   useEffect(
     () => () => {
       pressedRef.current = false;
+      pressSequenceRef.current += 1;
       recordingControllerRef.current?.abort();
       recordingRef.current?.cancel();
       evaluationControllerRef.current?.abort();
@@ -297,7 +298,6 @@ export function LessonPlayer() {
       evaluationControllerRef,
       generation,
       getCurrentGeneration: () => pressSequenceRef.current,
-      onCancelled: () => dispatch({ type: "RECORDING_CANCELLED" }),
       onEvaluated: (result) =>
         dispatch({
           type: "EVALUATED",
