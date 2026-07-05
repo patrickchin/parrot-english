@@ -1,9 +1,14 @@
 import { scoreSpeechTranscript } from "../lib/speech-scoring.js";
+import {
+  readBoundedFormData,
+  RequestBodyTooLargeError,
+} from "./request-body.ts";
 
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const STT_MODEL = "whisper-large-v3-turbo";
 const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
 const MAX_ONBOARDING_AUDIO_BYTES = 512 * 1024;
+const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
 const SUPPORTED_AUDIO_TYPES = new Set([
   "audio/mp4",
   "audio/mpeg",
@@ -105,8 +110,14 @@ export async function handleOnboardingTranscription(
 
   let formData: FormData;
   try {
-    formData = await request.formData();
-  } catch {
+    formData = await readBoundedFormData(
+      request,
+      MAX_ONBOARDING_AUDIO_BYTES + MULTIPART_OVERHEAD_BYTES,
+    );
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return jsonResponse({ error: "audio_too_large" }, { status: 413 });
+    }
     return jsonResponse({ error: "invalid_form_data" }, { status: 400 });
   }
   const audio = formData.get("audio");
@@ -190,8 +201,14 @@ export async function handleEvaluateSpeech(request: Request, env: ApiEnv) {
 
   let formData: FormData;
   try {
-    formData = await request.formData();
-  } catch {
+    formData = await readBoundedFormData(
+      request,
+      MAX_AUDIO_BYTES + MULTIPART_OVERHEAD_BYTES,
+    );
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return jsonResponse({ error: "audio_too_large" }, { status: 413 });
+    }
     return jsonResponse({ error: "invalid_form_data" }, { status: 400 });
   }
 

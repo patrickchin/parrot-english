@@ -26,6 +26,10 @@ import {
   type OnboardingEnrichmentResult,
 } from "./onboarding-enrichment.ts";
 import { createOnboardingRepository } from "./onboarding-repository.ts";
+import {
+  readBoundedText,
+  RequestBodyTooLargeError,
+} from "./request-body.ts";
 
 export interface OnboardingIdentity {
   sessionId: string;
@@ -189,9 +193,14 @@ function bypassOnlyPayload() {
 }
 
 async function readJsonRecord(request: Request) {
-  const body = await request.text();
-  if (new TextEncoder().encode(body).byteLength > MAX_PROFILE_BODY_BYTES) {
-    throw new ApiError(413, "payload_too_large");
+  let body: string;
+  try {
+    body = await readBoundedText(request, MAX_PROFILE_BODY_BYTES);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      throw new ApiError(413, "payload_too_large");
+    }
+    throw error;
   }
 
   let value: unknown;

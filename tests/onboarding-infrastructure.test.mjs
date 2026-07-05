@@ -100,6 +100,30 @@ function indexDetails(database, table) {
 }
 
 describe("onboarding infrastructure", () => {
+  it("configures independent platform rate limits for speech endpoints", () => {
+    const config = JSON.parse(
+      readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+    );
+
+    assert.deepEqual(config.ratelimits, [
+      {
+        name: "EVALUATE_RATE_LIMITER",
+        namespace_id: "104201",
+        simple: { limit: 8, period: 60 },
+      },
+      {
+        name: "ONBOARDING_TRANSCRIPTION_RATE_LIMITER",
+        namespace_id: "104202",
+        simple: { limit: 6, period: 60 },
+      },
+      {
+        name: "ONBOARDING_ENRICHMENT_RATE_LIMITER",
+        namespace_id: "104203",
+        simple: { limit: 12, period: 60 },
+      },
+    ]);
+  });
+
   it("keeps deployed v2 profile persistence independent of questionnaire tables", () => {
     const repository = readFileSync(
       new URL("../worker/onboarding-repository.ts", import.meta.url),
@@ -164,7 +188,7 @@ describe("onboarding infrastructure", () => {
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
-    assert.equal(migrations.length, 3, "Expected the onboarding recovery migration");
+    assert.equal(migrations.length, 4, "Expected the bypass integrity migration");
     assert.doesNotMatch(
       migrations[1].sql,
       /(?:^|\n)\s*(?:INSERT|UPDATE|DELETE)\b/im,
@@ -206,6 +230,10 @@ describe("onboarding infrastructure", () => {
       assert.match(
         bypassSql,
         /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(
+        bypassSql,
+        /REFERENCES [`"]?session[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
       );
 
       const profileIndexes = indexDetails(database, "learner_profile");
@@ -254,6 +282,50 @@ describe("onboarding infrastructure", () => {
       database.close();
     }
   });
+
+  it("prunes stale bypasses and cascades live bypasses with their session", () => {
+    const migrations = readMigrations();
+    const database = new DatabaseSync(":memory:");
+    database.exec("PRAGMA foreign_keys = ON");
+
+    try {
+      for (const migration of migrations.slice(0, 3)) {
+        database.exec(migration.sql);
+      }
+      database.exec(`
+        INSERT INTO user (id, name, email) VALUES ('user-1', 'Mia', 'mia@example.test');
+        INSERT INTO session (id, expires_at, token, user_id)
+          VALUES ('session-live', 9999999999999, 'token-live', 'user-1');
+        INSERT INTO onboarding_session_bypass (session_id, auth_user_id, skipped_at)
+          VALUES
+            ('session-live', 'user-1', 1),
+            ('session-stale', 'user-1', 2);
+      `);
+
+      database.exec(migrations[3].sql);
+
+      assert.deepEqual(
+        database
+          .prepare(
+            "SELECT session_id FROM onboarding_session_bypass ORDER BY session_id",
+          )
+          .all()
+          .map((row) => ({ ...row })),
+        [{ session_id: "session-live" }],
+      );
+
+      database.exec("DELETE FROM session WHERE id = 'session-live'");
+      assert.equal(
+        database
+          .prepare("SELECT count(*) AS count FROM onboarding_session_bypass")
+          .get().count,
+        0,
+      );
+      assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
+    } finally {
+      database.close();
+    }
+  });
 });
 
 describe("checked-in questionnaire deployment", () => {
@@ -270,6 +342,15 @@ describe("checked-in questionnaire deployment", () => {
     assert.ok(migration >= 0, "Expected a remote D1 migration step");
     assert.ok(deploy > migration, "Expected Worker deploy after migrations");
     assert.doesNotMatch(workflow, /questionnaire:publish|publish-questionnaire/);
+  });
+
+  it("serializes deploys without canceling a migration in progress", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(workflow, /concurrency:[\s\S]*cancel-in-progress: false/);
   });
 
   it("ships v2 with code and removes the obsolete publisher", () => {
