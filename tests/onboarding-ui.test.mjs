@@ -35,6 +35,7 @@ const {
   nextProfileAcknowledgment,
   profileDraftsFromState,
   saveQuestionAndAdvance,
+  teardownProfileOperationResources,
   updateProfileDraft,
 } = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
@@ -485,6 +486,37 @@ describe("profile summary editor", () => {
     boundary.finish(third.controller);
     boundary.cancel();
     assert.equal(third.controller.signal.aborted, false);
+  });
+
+  it("tears down active profile resources when the gate unmounts", () => {
+    assert.equal(
+      typeof teardownProfileOperationResources,
+      "function",
+      "Expected a shared no-state-write profile resource teardown",
+    );
+
+    let generation = 0;
+    let profileLoadOperation = null;
+    const boundary = createProfileOperationBoundary(() => {
+      generation += 1;
+      return generation;
+    });
+    const active = boundary.begin();
+    profileLoadOperation = active.operation;
+
+    teardownProfileOperationResources({
+      boundary,
+      invalidateOperation() {
+        generation += 1;
+      },
+      resetLoadOperation() {
+        profileLoadOperation = null;
+      },
+    });
+
+    assert.equal(active.controller.signal.aborted, true);
+    assert.equal(generation, 2);
+    assert.equal(profileLoadOperation, null);
   });
 
   it("does not invalidate refreshed data after an explicitly handled profile exit", () => {

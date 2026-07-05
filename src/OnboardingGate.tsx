@@ -345,6 +345,20 @@ export function createProfileOperationBoundary(
   };
 }
 
+export function teardownProfileOperationResources({
+  boundary,
+  invalidateOperation,
+  resetLoadOperation,
+}: {
+  boundary: ReturnType<typeof createProfileOperationBoundary> | null;
+  invalidateOperation: () => void;
+  resetLoadOperation: () => void;
+}) {
+  invalidateOperation();
+  boundary?.cancel();
+  resetLoadOperation();
+}
+
 export function createProfileRouteLifecycle(
   initialIsProfileRoute: boolean,
   { onExit }: { onExit: () => void },
@@ -432,6 +446,16 @@ export function OnboardingGate({
       createProfileOperationBoundary(nextOperation);
   }
 
+  const teardownProfileResources = useCallback(() => {
+    teardownProfileOperationResources({
+      boundary: profileOperationBoundaryRef.current,
+      invalidateOperation: nextOperation,
+      resetLoadOperation: () => {
+        profileLoadOperationRef.current = null;
+      },
+    });
+  }, [nextOperation]);
+
   const isCurrentOperation = useCallback(
     (operation: number) => operationRef.current === operation,
     [],
@@ -459,10 +483,10 @@ export function OnboardingGate({
     const controller = new AbortController();
     void refresh(controller.signal);
     return () => {
-      nextOperation();
       controller.abort();
+      teardownProfileResources();
     };
-  }, [nextOperation, refresh]);
+  }, [refresh, teardownProfileResources]);
 
   const fullData: FullOnboardingState | null =
     data?.mode === "full" ? data : null;
@@ -587,8 +611,7 @@ export function OnboardingGate({
   }
 
   const clearProfileEditor = useCallback(() => {
-    profileOperationBoundaryRef.current?.cancel();
-    profileLoadOperationRef.current = null;
+    teardownProfileResources();
     setProfileState(null);
     setProfileDrafts({});
     setProfileFieldErrors({});
@@ -597,15 +620,14 @@ export function OnboardingGate({
     setIsProfileSaving(false);
     setIsProfileLoading(false);
     setProfileLoadError("");
-  }, []);
+  }, [teardownProfileResources]);
 
   const handleProfileRouteExit = useCallback(() => {
-    nextOperation();
     setPendingAcknowledgment((current) =>
       current?.kind === "profile" ? null : current,
     );
     clearProfileEditor();
-  }, [clearProfileEditor, nextOperation]);
+  }, [clearProfileEditor]);
 
   if (!profileRouteLifecycleRef.current) {
     profileRouteLifecycleRef.current = createProfileRouteLifecycle(
@@ -619,12 +641,11 @@ export function OnboardingGate({
   }, [isProfileRoute]);
 
   const closeProfileEditor = useCallback(() => {
-    nextOperation();
     setPendingAcknowledgment(null);
     clearProfileEditor();
     profileRouteLifecycleRef.current?.markExitHandled();
     onCloseProfileRoute();
-  }, [clearProfileEditor, nextOperation, onCloseProfileRoute]);
+  }, [clearProfileEditor, onCloseProfileRoute]);
 
   const handleOpenProfile = useCallback(async () => {
     if (profileLoadOperationRef.current !== null) return;
@@ -803,7 +824,6 @@ export function OnboardingGate({
       return;
     }
 
-    nextOperation();
     setPendingAcknowledgment(null);
     clearProfileEditor();
     void refresh();
