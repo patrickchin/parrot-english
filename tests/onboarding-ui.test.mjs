@@ -30,6 +30,8 @@ const gateModule = await vite.ssrLoadModule("/src/OnboardingGate.tsx");
 const {
   OnboardingGateView,
   answerForQuestion,
+  createProfileOperationBoundary,
+  createProfileRouteLifecycle,
   nextProfileAcknowledgment,
   profileDraftsFromState,
   saveQuestionAndAdvance,
@@ -184,6 +186,18 @@ describe("onboarding prompt and transcription helpers", () => {
     });
     assert.equal(calls.length, 1);
     assert.equal(calls[0].audioSrc, "/assets/audio/onboarding-v2-age.mp3");
+  });
+
+  it("forwards cancellation when replaying a profile question", async () => {
+    const controller = new AbortController();
+    let replaySignal;
+    await replayOnboardingQuestion(question().audio, {
+      signal: controller.signal,
+      async playLine(options) {
+        replaySignal = options.signal;
+      },
+    });
+    assert.equal(replaySignal, controller.signal);
   });
 
   it("returns one editable transcript without persisting it", async () => {
@@ -361,6 +375,135 @@ describe("profile summary editor", () => {
     });
     assert.equal(nextProfileAcknowledgment(acknowledgments, 1), null);
   });
+
+  it("clears owned profile work on route exit and reloads after re-entry", () => {
+    assert.equal(
+      typeof createProfileRouteLifecycle,
+      "function",
+      "Expected an executable profile route lifecycle",
+    );
+
+    let generation = 0;
+    let loadCount = 0;
+    let profile = null;
+    let profileError = "";
+    let profileLoading = false;
+    let pendingAcknowledgment = null;
+    let controller = null;
+    let exitCount = 0;
+
+    function startOperation() {
+      generation += 1;
+      const operation = generation;
+      const operationController = new AbortController();
+      controller = operationController;
+      return {
+        complete(callback) {
+          if (operation === generation && !operationController.signal.aborted) {
+            callback();
+          }
+        },
+      };
+    }
+
+    function loadCurrentProfile(name) {
+      loadCount += 1;
+      profileLoading = true;
+      const operation = startOperation();
+      operation.complete(() => {
+        profile = name;
+        profileLoading = false;
+      });
+    }
+
+    const lifecycle = createProfileRouteLifecycle(false, {
+      onExit() {
+        exitCount += 1;
+        generation += 1;
+        controller?.abort();
+        controller = null;
+        profile = null;
+        profileError = "";
+        profileLoading = false;
+        if (pendingAcknowledgment?.kind === "profile") {
+          pendingAcknowledgment = null;
+        }
+      },
+    });
+
+    assert.equal(lifecycle.update(false), null);
+    assert.equal(lifecycle.update(true), "entered");
+    loadCurrentProfile("FIRST PROFILE");
+    assert.equal(profile, "FIRST PROFILE");
+
+    pendingAcknowledgment = { kind: "profile" };
+    const lateSave = startOperation();
+    assert.equal(lifecycle.update(true), null);
+    assert.equal(lifecycle.update(false), "exited");
+    assert.equal(exitCount, 1);
+    assert.equal(profile, null);
+    assert.equal(profileLoading, false);
+    assert.equal(profileError, "");
+    assert.equal(pendingAcknowledgment, null);
+
+    lateSave.complete(() => {
+      profileError = "STALE SAVE";
+    });
+    assert.equal(profileError, "");
+
+    assert.equal(lifecycle.update(false), null);
+    assert.equal(lifecycle.update(true), "entered");
+    loadCurrentProfile("FRESH PROFILE");
+    assert.equal(loadCount, 2);
+    assert.equal(profile, "FRESH PROFILE");
+  });
+
+  it("aborts superseded and exited profile operations", () => {
+    assert.equal(
+      typeof createProfileOperationBoundary,
+      "function",
+      "Expected an executable profile operation boundary",
+    );
+
+    let generation = 0;
+    const boundary = createProfileOperationBoundary(() => {
+      generation += 1;
+      return generation;
+    });
+    const first = boundary.begin();
+    const second = boundary.begin();
+    assert.equal(first.operation, 1);
+    assert.equal(second.operation, 2);
+    assert.equal(first.controller.signal.aborted, true);
+    assert.equal(second.controller.signal.aborted, false);
+
+    boundary.finish(first.controller);
+    boundary.cancel();
+    assert.equal(second.controller.signal.aborted, true);
+
+    const third = boundary.begin();
+    boundary.finish(third.controller);
+    boundary.cancel();
+    assert.equal(third.controller.signal.aborted, false);
+  });
+
+  it("does not invalidate refreshed data after an explicitly handled profile exit", () => {
+    let unexpectedExitCleanup = 0;
+    const lifecycle = createProfileRouteLifecycle(true, {
+      onExit() {
+        unexpectedExitCleanup += 1;
+      },
+    });
+    assert.equal(
+      typeof lifecycle.markExitHandled,
+      "function",
+      "Expected explicit exits to be marked before navigation",
+    );
+
+    lifecycle.markExitHandled();
+    assert.equal(lifecycle.update(false), "exited");
+    assert.equal(unexpectedExitCleanup, 0);
+  });
 });
 
 function emptyAnswers(responses = {}) {
@@ -461,6 +604,25 @@ describe("onboarding and profile gate", () => {
     });
     assert.match(completedOnboarding, /COMPLETED REDIRECT/);
     assert.doesNotMatch(completedOnboarding, /LESSON CONTENT|Meet Peppa/);
+  });
+
+  it("routes bypass-only sessions away from onboarding", () => {
+    const html = renderGate({
+      data: { mode: "bypass-only", canBypass: true },
+      isOnboardingRoute: true,
+    });
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
+  });
+
+  it("routes bypass-only sessions away from unavailable profile editing", () => {
+    const html = renderGate({
+      data: { mode: "bypass-only", canBypass: true },
+      isOnboardingRoute: false,
+      isProfileRoute: true,
+    });
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
   });
 
   it("keeps profile loading and retry errors on the profile route", () => {

@@ -44,7 +44,6 @@ import {
   type AppNavigationState,
 } from "./app-navigation";
 import {
-  getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
   getSafeReturnTo,
@@ -627,12 +626,13 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
   );
 }
 
-export function LessonExperience() {
-  const [navigation, dispatchNavigation] = useReducer(
-    appNavigationReducer,
-    undefined,
-    createInitialAppNavigation,
-  );
+export function LessonExperienceView({
+  dispatchNavigation,
+  navigation,
+}: {
+  dispatchNavigation: (event: AppNavigationEvent) => void;
+  navigation: AppNavigationState;
+}) {
   const selectedEntry = LESSONS.find(
     (entry) => entry.id === navigation.activeLessonId,
   );
@@ -656,22 +656,26 @@ export function LessonExperience() {
   );
 }
 
-export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
-  const navigate = useNavigate();
+export function LessonExperience() {
+  const [navigation, dispatchNavigation] = useReducer(
+    appNavigationReducer,
+    undefined,
+    createInitialAppNavigation,
+  );
 
+  return (
+    <LessonExperienceView
+      dispatchNavigation={dispatchNavigation}
+      navigation={navigation}
+    />
+  );
+}
+
+export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
     <Routes>
       <Route element={<HomeMenu />} path="/" />
-      <Route
-        element={
-          <LessonList
-            onOpenLesson={(lessonId) =>
-              navigate(getLessonScenePath("parrot", lessonId, 0))
-            }
-          />
-        }
-        path="/lessons"
-      />
+      <Route element={<LessonExperience />} path="/lessons" />
       <Route
         element={
           <FeaturePlaceholder

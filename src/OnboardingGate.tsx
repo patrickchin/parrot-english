@@ -146,6 +146,10 @@ export function OnboardingGateView({
     return <>{completedOnboardingFallback}</>;
   }
 
+  if (canAccessProtectedRoutes && isProfileRoute && !canEditProfile) {
+    return <>{completedOnboardingFallback}</>;
+  }
+
   if (isProfileRoute && canEditProfile) {
     if (isProfileLoading) {
       return (
@@ -319,6 +323,54 @@ type PendingAcknowledgment =
       next: ProfileState;
     };
 
+export function createProfileOperationBoundary(
+  nextOperation: () => number,
+) {
+  let activeController: AbortController | null = null;
+
+  return {
+    begin() {
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
+      return { controller, operation: nextOperation() };
+    },
+    cancel() {
+      activeController?.abort();
+      activeController = null;
+    },
+    finish(controller: AbortController) {
+      if (activeController === controller) activeController = null;
+    },
+  };
+}
+
+export function createProfileRouteLifecycle(
+  initialIsProfileRoute: boolean,
+  { onExit }: { onExit: () => void },
+) {
+  let isProfileRoute = initialIsProfileRoute;
+  let exitHandled = false;
+
+  return {
+    markExitHandled() {
+      exitHandled = true;
+    },
+    update(nextIsProfileRoute: boolean): "entered" | "exited" | null {
+      if (nextIsProfileRoute === isProfileRoute) return null;
+
+      const exited = isProfileRoute;
+      isProfileRoute = nextIsProfileRoute;
+      if (exited) {
+        if (exitHandled) exitHandled = false;
+        else onExit();
+        return "exited";
+      }
+      return "entered";
+    },
+  };
+}
+
 type OnboardingGateProps = {
   children: ReactNode;
   completedOnboardingFallback: ReactNode;
@@ -361,6 +413,12 @@ export function OnboardingGate({
     useState<PendingAcknowledgment | null>(null);
   const operationRef = useRef(0);
   const profileLoadOperationRef = useRef<number | null>(null);
+  const profileOperationBoundaryRef = useRef<ReturnType<
+    typeof createProfileOperationBoundary
+  > | null>(null);
+  const profileRouteLifecycleRef = useRef<ReturnType<
+    typeof createProfileRouteLifecycle
+  > | null>(null);
   const isProfileRouteRef = useRef(isProfileRoute);
   isProfileRouteRef.current = isProfileRoute;
 
@@ -368,6 +426,11 @@ export function OnboardingGate({
     operationRef.current += 1;
     return operationRef.current;
   }, []);
+
+  if (!profileOperationBoundaryRef.current) {
+    profileOperationBoundaryRef.current =
+      createProfileOperationBoundary(nextOperation);
+  }
 
   const isCurrentOperation = useCallback(
     (operation: number) => operationRef.current === operation,
@@ -524,6 +587,7 @@ export function OnboardingGate({
   }
 
   const clearProfileEditor = useCallback(() => {
+    profileOperationBoundaryRef.current?.cancel();
     profileLoadOperationRef.current = null;
     setProfileState(null);
     setProfileDrafts({});
@@ -535,21 +599,43 @@ export function OnboardingGate({
     setProfileLoadError("");
   }, []);
 
+  const handleProfileRouteExit = useCallback(() => {
+    nextOperation();
+    setPendingAcknowledgment((current) =>
+      current?.kind === "profile" ? null : current,
+    );
+    clearProfileEditor();
+  }, [clearProfileEditor, nextOperation]);
+
+  if (!profileRouteLifecycleRef.current) {
+    profileRouteLifecycleRef.current = createProfileRouteLifecycle(
+      isProfileRoute,
+      { onExit: handleProfileRouteExit },
+    );
+  }
+
+  useEffect(() => {
+    profileRouteLifecycleRef.current?.update(isProfileRoute);
+  }, [isProfileRoute]);
+
   const closeProfileEditor = useCallback(() => {
     nextOperation();
     setPendingAcknowledgment(null);
     clearProfileEditor();
+    profileRouteLifecycleRef.current?.markExitHandled();
     onCloseProfileRoute();
   }, [clearProfileEditor, nextOperation, onCloseProfileRoute]);
 
   const handleOpenProfile = useCallback(async () => {
     if (profileLoadOperationRef.current !== null) return;
-    const operation = nextOperation();
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const { controller, operation } = boundary.begin();
     profileLoadOperationRef.current = operation;
     setIsProfileLoading(true);
     setProfileLoadError("");
     try {
-      const profile = await loadProfile();
+      const profile = await loadProfile({ signal: controller.signal });
       if (!isCurrentOperation(operation) || !isProfileRouteRef.current) return;
       setProfileState(profile);
       setProfileDrafts(profileDraftsFromState(profile));
@@ -561,6 +647,7 @@ export function OnboardingGate({
         setProfileLoadError(readableError(error));
       }
     } finally {
+      boundary.finish(controller);
       if (profileLoadOperationRef.current === operation) {
         profileLoadOperationRef.current = null;
       }
@@ -588,11 +675,15 @@ export function OnboardingGate({
 
   async function handleProfileReplay(question: OnboardingQuestion) {
     if (!question.audio) return;
-    const operation = nextOperation();
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const { controller, operation } = boundary.begin();
     setProfileFieldStatuses({});
     setProfileFieldError(question.answerKey, "");
     try {
-      await replayOnboardingQuestion(question.audio);
+      await replayOnboardingQuestion(question.audio, {
+        signal: controller.signal,
+      });
     } catch {
       if (isCurrentOperation(operation)) {
         setProfileFieldError(
@@ -600,21 +691,27 @@ export function OnboardingGate({
           "Audio is unavailable. Please try Replay again.",
         );
       }
+    } finally {
+      boundary.finish(controller);
     }
   }
 
   async function handleProfileTranscribe(question: OnboardingQuestion) {
-    const operation = nextOperation();
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const { controller, operation } = boundary.begin();
     setProfileFieldError(question.answerKey, "");
     setProfileFieldStatuses({ [question.answerKey]: "recording" });
     try {
       const transcript = await captureOnboardingAnswer({
-        record: () => recordSpeechClip(),
+        record: () => recordSpeechClip({ signal: controller.signal }),
         transcribe: async (audio) => {
           if (isCurrentOperation(operation)) {
             setProfileFieldStatus(question.answerKey, "transcribing");
           }
-          return transcribeOnboardingAudio(audio);
+          return transcribeOnboardingAudio(audio, {
+            signal: controller.signal,
+          });
         },
       });
       if (isCurrentOperation(operation)) {
@@ -628,6 +725,7 @@ export function OnboardingGate({
         );
       }
     } finally {
+      boundary.finish(controller);
       if (isCurrentOperation(operation)) {
         setProfileFieldStatus(question.answerKey, "idle");
       }
@@ -636,7 +734,9 @@ export function OnboardingGate({
 
   async function handleProfileSave() {
     if (!profileState) return;
-    const operation = nextOperation();
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const { controller, operation } = boundary.begin();
     setIsProfileSaving(true);
     setProfileFieldErrors({});
     setProfileFieldStatuses({});
@@ -648,7 +748,9 @@ export function OnboardingGate({
           profileDrafts[question.answerKey] ?? "",
         ]),
       );
-      const saved = await saveProfileAnswers(answers);
+      const saved = await saveProfileAnswers(answers, {
+        signal: controller.signal,
+      });
       if (!isCurrentOperation(operation)) return;
       setProfileState(saved);
       if (saved.acknowledgments?.length) {
@@ -662,6 +764,7 @@ export function OnboardingGate({
       } else {
         clearProfileEditor();
         void refresh();
+        profileRouteLifecycleRef.current?.markExitHandled();
         onCloseProfileRoute();
       }
     } catch (error) {
@@ -672,6 +775,7 @@ export function OnboardingGate({
         setProfilePageError(readableError(error));
       }
     } finally {
+      boundary.finish(controller);
       if (isCurrentOperation(operation)) setIsProfileSaving(false);
     }
   }
@@ -703,6 +807,7 @@ export function OnboardingGate({
     setPendingAcknowledgment(null);
     clearProfileEditor();
     void refresh();
+    profileRouteLifecycleRef.current?.markExitHandled();
     onCloseProfileRoute();
   }
 

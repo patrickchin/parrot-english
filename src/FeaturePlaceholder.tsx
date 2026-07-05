@@ -10,11 +10,15 @@ export function FeaturePlaceholder({
   title: string;
 }) {
   return (
-    <main>
-      <p>{eyebrow}</p>
-      <h1>{title}</h1>
-      <p>{description}</p>
-      <Link to="/">Back to main menu</Link>
+    <main className="feature-placeholder-page">
+      <section className="feature-placeholder-card">
+        <p>{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{description}</p>
+        <Link className="main-menu-link" to="/">
+          Back to main menu
+        </Link>
+      </section>
     </main>
   );
 }

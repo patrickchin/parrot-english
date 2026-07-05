@@ -35,7 +35,7 @@ export function HomeMenu() {
         <p>PARROT ENGLISH</p>
         <h1>What would you like to practice?</h1>
       </header>
-      <nav aria-label="Learning activities">
+      <nav aria-label="Learning activities" className="home-menu-grid">
         {ACTIVITIES.map(({ description, icon: Icon, label, to }) => (
           <Link className="home-menu-card" key={to} to={to}>
             <Icon aria-hidden="true" />

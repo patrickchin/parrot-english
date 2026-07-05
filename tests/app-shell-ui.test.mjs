@@ -20,9 +20,13 @@ const placeholderModule = await vite
   .ssrLoadModule("/src/FeaturePlaceholder.tsx")
   .catch(() => ({}));
 const appModule = await vite.ssrLoadModule("/src/App.tsx").catch(() => ({}));
+const navigationModule = await vite.ssrLoadModule("/src/app-navigation.ts");
+const catalogModule = await vite.ssrLoadModule("/src/lesson-catalog.ts");
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
-const { ApplicationRoutes } = appModule;
+const { ApplicationRoutes, LessonExperienceView } = appModule;
+const { createInitialAppNavigation, reduceAppNavigation } = navigationModule;
+const { LESSONS } = catalogModule;
 
 after(async () => {
   await vite.close();
@@ -57,7 +61,10 @@ test("home menu exposes four equal learning activity links", () => {
   const html = renderInRouter(createElement(HomeMenu));
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
-  assert.match(html, /<nav[^>]*aria-label="Learning activities"/);
+  assert.match(
+    html,
+    /<nav[^>]*aria-label="Learning activities"[^>]*class="home-menu-grid"/,
+  );
   assert.equal((html.match(/class="home-menu-card"/g) ?? []).length, 4);
   assert.deepEqual(
     [...html.matchAll(/class="home-menu-card"[^>]*href="([^"]+)"/g)].map(
@@ -93,9 +100,14 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
   assert.match(html, /PARROT ENGLISH/);
+  assert.match(html, /<main class="feature-placeholder-page">/);
+  assert.match(html, /<section class="feature-placeholder-card">/);
   assert.match(html, /<h1>Progress<\/h1>/);
   assert.match(html, /This activity is coming soon\./);
-  assert.match(html, /<a[^>]*href="\/"[^>]*>Back to main menu<\/a>/);
+  assert.match(
+    html,
+    /<a class="main-menu-link" href="\/"[^>]*>Back to main menu<\/a>/,
+  );
 });
 
 test("authenticated application routes render durable home and activity pages", () => {
@@ -112,6 +124,36 @@ test("authenticated application routes render durable home and activity pages", 
     renderApplicationRoute("/stories"),
     /<h1>Storytelling<\/h1>/,
   );
+});
+
+test("the lessons compatibility route opens a lesson in the existing player", () => {
+  assert.equal(
+    typeof LessonExperienceView,
+    "function",
+    "Expected an executable LessonExperienceView",
+  );
+
+  const availableLessonIds = new Set(LESSONS.map((entry) => entry.id));
+  let navigation = createInitialAppNavigation();
+  const dispatchNavigation = (event) => {
+    navigation = reduceAppNavigation(navigation, event, availableLessonIds);
+  };
+
+  const lessonList = LessonExperienceView({
+    dispatchNavigation,
+    navigation,
+  });
+  lessonList.props.onOpenLesson(LESSONS[0].id);
+
+  const player = LessonExperienceView({ dispatchNavigation, navigation });
+  const html = renderToStaticMarkup(player);
+  assert.match(html, /Parrot English speaking lesson/);
+  assert.match(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
+  assert.doesNotMatch(html, /Learning activities/);
+
+  player.props.onBack();
+  const returnedList = LessonExperienceView({ dispatchNavigation, navigation });
+  assert.match(renderToStaticMarkup(returnedList), /Choose a lesson/);
 });
 
 test("the application shell builds login redirects from the current URL", () => {
@@ -155,7 +197,10 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
   ]) {
     assert.match(app, new RegExp(`path=["']${path.replace("*", "\\*")}["']`));
   }
-  assert.match(app, /getLessonScenePath\(["']parrot["'],\s*lessonId,\s*0\)/);
+  assert.match(
+    app,
+    /<Route\s+element=\{<LessonExperience\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
+  );
   assert.match(app, /const\s+safeReturnTo\s*=\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/);
   assert.match(app, /const\s+requestedProtectedTarget\s*=/);
   assert.match(app, /getOnboardingPath\(requestedProtectedTarget\)/);
