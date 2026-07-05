@@ -46,4 +46,5 @@ next-env.d.ts
 /.wrangler/
 *.tsbuildinfo
 tmp/
+.worktrees/
 .playwright-mcp/
