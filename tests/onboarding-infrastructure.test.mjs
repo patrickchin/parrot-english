@@ -296,6 +296,15 @@ describe("checked-in questionnaire deployment", () => {
     assert.doesNotMatch(workflow, /questionnaire:publish|publish-questionnaire/);
   });
 
+  it("serializes deploys without canceling a migration in progress", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(workflow, /concurrency:[\s\S]*cancel-in-progress: false/);
+  });
+
   it("ships v2 with code and removes the obsolete publisher", () => {
     const packageJson = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
