@@ -1,14 +1,12 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import test from "node:test";
 import { createServer } from "vite";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
-const navigationUrl = new URL("../src/app-navigation.ts", import.meta.url);
-const lessonListUrl = new URL("../src/LessonList.tsx", import.meta.url);
 
 const vite = await createServer({
   appType: "custom",
@@ -17,67 +15,73 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
+const { ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx");
+const { LESSONS } = await vite.ssrLoadModule("/src/lesson-catalog.ts");
+const { LessonList } = await vite.ssrLoadModule("/src/LessonList.tsx");
+
 test.after(async () => {
   await vite.close();
 });
 
-test("app navigation opens only available lessons and returns to the list", async () => {
-  assert.equal(
-    existsSync(navigationUrl),
-    true,
-    "Expected src/app-navigation.ts to define list-first navigation",
+function renderInRouter(element, initialEntry = "/lessons") {
+  return renderToStaticMarkup(
+    createElement(MemoryRouter, { initialEntries: [initialEntry] }, element),
+  );
+}
+
+function renderLessonList() {
+  assert.equal(typeof LessonList, "function", "Expected an executable LessonList");
+  return renderInRouter(createElement(LessonList));
+}
+
+function getParrotLessonHrefs(html) {
+  return [...html.matchAll(/href="([^"]+)"/g)]
+    .map(([, href]) => href)
+    .filter((href) => /^\/lessons\/parrot\/[^/]+\/scenes\/1$/.test(href));
+}
+
+test("lesson list separates all discovered Parrot lessons from My Lessons", () => {
+  const html = renderLessonList();
+  const expectedHrefs = LESSONS.map(
+    (entry) => `/lessons/parrot/${encodeURIComponent(entry.id)}/scenes/1`,
   );
 
-  const {
-    createInitialAppNavigation,
-    reduceAppNavigation,
-  } = await vite.ssrLoadModule("/src/app-navigation.ts");
-  const availableLessonIds = new Set(["available"]);
-  const initial = createInitialAppNavigation();
+  assert.match(html, /<h1>Choose a lesson<\/h1>/);
+  assert.match(html, /<h2 id="parrot-lessons-title">Parrot Lessons<\/h2>/);
+  assert.match(html, /<h2 id="my-lessons-title">My Lessons<\/h2>/);
+  assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.equal((html.match(/<article/g) ?? []).length, 7);
+  assert.deepEqual(getParrotLessonHrefs(html), expectedHrefs);
+  assert.equal((html.match(/Start lesson/g) ?? []).length, 7);
+  assert.doesNotMatch(html, /disabled=""|Coming soon/);
+});
 
-  assert.deepEqual(initial, { activeLessonId: null });
-  assert.deepEqual(
-    reduceAppNavigation(
-      initial,
-      { type: "OPEN_LESSON", lessonId: "available" },
-      availableLessonIds,
-    ),
-    { activeLessonId: "available" },
+test("lesson list exposes My Lessons empty and creation states plus main-menu navigation", () => {
+  const html = renderLessonList();
+
+  assert.match(
+    html,
+    /<a class="main-menu-link lesson-main-menu-link" href="\/"[^>]*>[^<]*<[^>]+>.*Back to main menu<\/a>/s,
   );
-  assert.equal(
-    reduceAppNavigation(
-      initial,
-      { type: "OPEN_LESSON", lessonId: "missing" },
-      availableLessonIds,
-    ),
-    initial,
-  );
-  assert.deepEqual(
-    reduceAppNavigation(
-      { activeLessonId: "available" },
-      { type: "BACK_TO_LIST" },
-      availableLessonIds,
-    ),
-    { activeLessonId: null },
+  assert.match(html, /class="my-lessons-empty"/);
+  assert.match(html, /You haven&#x27;t created any lessons yet\./);
+  assert.match(
+    html,
+    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create a lesson<\/a>/s,
   );
 });
 
-test("lesson list renders all seven discovered lessons as playable", async () => {
-  assert.equal(
-    existsSync(lessonListUrl),
-    true,
-    "Expected src/LessonList.tsx to render the discovered catalog",
+test("following a Parrot catalog link renders its canonical lesson route", () => {
+  const [firstHref] = getParrotLessonHrefs(renderLessonList());
+
+  assert.ok(firstHref, "Expected a canonical Parrot lesson link");
+  const html = renderInRouter(
+    createElement(ApplicationRoutes, { loginTarget: "/" }),
+    firstHref,
   );
 
-  const { LessonList } = await vite.ssrLoadModule("/src/LessonList.tsx");
-  const html = renderToStaticMarkup(
-    createElement(LessonList, { onOpenLesson() {} }),
-  );
-
-  assert.match(html, /Choose a lesson/);
-  assert.match(html, /Peppa&#x27;s High Ball/);
-  assert.equal((html.match(/<article/g) ?? []).length, 7);
-  assert.equal((html.match(/disabled=""/g) ?? []).length, 0);
-  assert.equal((html.match(/Start lesson/g) ?? []).length, 7);
-  assert.doesNotMatch(html, /Coming soon/);
+  assert.match(html, /Parrot English speaking lesson/);
+  assert.match(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
+  assert.match(html, /aria-label="Start lesson"/);
+  assert.match(html, />Back to lessons</);
 });

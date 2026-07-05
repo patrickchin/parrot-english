@@ -600,8 +600,11 @@ test("App composes AuthGate, route-aware onboarding, and authenticated routes", 
     app,
     /import\s+\{\s*OnboardingGate\s*\}\s+from\s+["']\.\/OnboardingGate["']/,
   );
-  assert.match(app, /export function LessonExperience\(\)/);
   assert.match(app, /export function ApplicationRoutes\(/);
+  assert.match(
+    app,
+    /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
+  );
   assert.match(
     app,
     /<AuthGate[\s\S]*?<OnboardingGate[\s\S]*?<ApplicationRoutes\s+loginTarget=\{safeReturnTo\}\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,

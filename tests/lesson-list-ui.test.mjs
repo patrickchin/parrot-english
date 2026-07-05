@@ -7,13 +7,15 @@ function readProjectFile(path) {
 }
 
 describe("lesson list integration contracts", () => {
-  it("starts the authenticated lesson experience on the catalog", () => {
+  it("routes the authenticated lessons page directly to the catalog", () => {
     const app = readProjectFile("src/App.tsx");
 
-    assert.match(app, /export function LessonExperience\(\)/);
-    assert.match(app, /<LessonList/);
-    assert.match(app, /activeLessonId/);
-    assert.match(app, /key=\{selectedEntry\.id\}/);
+    assert.match(
+      app,
+      /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
+    );
+    assert.doesNotMatch(app, /LessonExperience|activeLessonId|appNavigationReducer/);
+    assert.doesNotMatch(app, /from\s+["']\.\/app-navigation["']/);
   });
 
   it("keeps Back to lessons separate from previous-scene navigation", () => {
@@ -31,10 +33,24 @@ describe("lesson list integration contracts", () => {
     assert.doesNotMatch(app, /<select|Lesson picker/);
   });
 
-  it("renders only discovered playable lessons", () => {
+  it("links discovered Parrot lessons to their canonical first scenes", () => {
     const list = readProjectFile("src/LessonList.tsx");
 
-    assert.doesNotMatch(list, /UPCOMING_LESSONS|Coming soon|LockKeyhole/);
+    assert.match(list, /import\s+\{\s*Link\s*\}\s+from\s+["']react-router["']/);
+    assert.match(list, /getLessonScenePath\("parrot",\s*lesson\.id,\s*0\)/);
+    assert.match(list, /aria-label=\{`Start \$\{lesson\.title\}`\}/);
+    assert.doesNotMatch(list, /onOpenLesson|UPCOMING_LESSONS|Coming soon|LockKeyhole/);
+  });
+
+  it("presents separate Parrot and My lesson sources", () => {
+    const list = readProjectFile("src/LessonList.tsx");
+
+    assert.match(list, /id="parrot-lessons-title"[^>]*>Parrot Lessons/);
+    assert.match(list, /id="my-lessons-title"[^>]*>My Lessons/);
+    assert.match(list, /className="my-lessons-empty"/);
+    assert.match(list, /You haven't created any lessons yet\./);
+    assert.match(list, /to="\/lessons\/my\/create"/);
+    assert.match(list, /Create a lesson/);
   });
 
   it("provides responsive catalog and Back-control styles", () => {

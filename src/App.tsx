@@ -30,12 +30,6 @@ import {
 } from "../lib/lesson-state";
 import { isAbortError, playAudioLine } from "./audio-playback";
 import {
-  createInitialAppNavigation,
-  reduceAppNavigation,
-  type AppNavigationEvent,
-  type AppNavigationState,
-} from "./app-navigation";
-import {
   getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
@@ -50,11 +44,7 @@ import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { OnboardingGate } from "./OnboardingGate";
 import { evaluateSpeech } from "./evaluation-request";
-import {
-  LESSONS,
-  VISUAL_CATALOG,
-  type Lesson,
-} from "./lesson-catalog";
+import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
 import { LessonList } from "./LessonList";
 import {
   MicrophoneAccessError,
@@ -97,15 +87,6 @@ type LessonPlayerProps = {
   onNavigateScene: (sceneIndex: number) => void;
   routedSceneIndex: number;
 };
-
-const AVAILABLE_LESSON_IDS = new Set(LESSONS.map((entry) => entry.id));
-
-function appNavigationReducer(
-  state: AppNavigationState,
-  event: AppNavigationEvent,
-) {
-  return reduceAppNavigation(state, event, AVAILABLE_LESSON_IDS);
-}
 
 function getMicrophoneErrorMessage(caughtError: unknown) {
   if (caughtError instanceof RecordingUnsupportedError) {
@@ -594,54 +575,6 @@ export function LessonPlayer({
   );
 }
 
-export function LessonExperienceView({
-  dispatchNavigation,
-  navigation,
-}: {
-  dispatchNavigation: (event: AppNavigationEvent) => void;
-  navigation: AppNavigationState;
-}) {
-  const selectedEntry = LESSONS.find(
-    (entry) => entry.id === navigation.activeLessonId,
-  );
-
-  if (!selectedEntry) {
-    return (
-      <LessonList
-        onOpenLesson={(lessonId) =>
-          dispatchNavigation({ type: "OPEN_LESSON", lessonId })
-        }
-      />
-    );
-  }
-
-  return (
-    <LessonPlayer
-      key={selectedEntry.id}
-      lesson={selectedEntry.lesson}
-      onBack={() => dispatchNavigation({ type: "BACK_TO_LIST" })}
-      onHome={() => {}}
-      onNavigateScene={() => {}}
-      routedSceneIndex={0}
-    />
-  );
-}
-
-export function LessonExperience() {
-  const [navigation, dispatchNavigation] = useReducer(
-    appNavigationReducer,
-    undefined,
-    createInitialAppNavigation,
-  );
-
-  return (
-    <LessonExperienceView
-      dispatchNavigation={dispatchNavigation}
-      navigation={navigation}
-    />
-  );
-}
-
 function LessonRouteDecisionView({
   decision,
   source,
@@ -696,7 +629,7 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
     <Routes>
       <Route element={<HomeMenu />} path="/" />
-      <Route element={<LessonExperience />} path="/lessons" />
+      <Route element={<LessonList />} path="/lessons" />
       <Route
         element={
           <FeaturePlaceholder

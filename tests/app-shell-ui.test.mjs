@@ -20,13 +20,9 @@ const placeholderModule = await vite
   .ssrLoadModule("/src/FeaturePlaceholder.tsx")
   .catch(() => ({}));
 const appModule = await vite.ssrLoadModule("/src/App.tsx").catch(() => ({}));
-const navigationModule = await vite.ssrLoadModule("/src/app-navigation.ts");
-const catalogModule = await vite.ssrLoadModule("/src/lesson-catalog.ts");
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
-const { ApplicationRoutes, LessonExperienceView } = appModule;
-const { createInitialAppNavigation, reduceAppNavigation } = navigationModule;
-const { LESSONS } = catalogModule;
+const { ApplicationRoutes } = appModule;
 
 after(async () => {
   await vite.close();
@@ -136,36 +132,6 @@ test("canonical Parrot scene routes render the addressed one-based scene", () =>
   assert.match(html, /Scene 2 of 5/);
 });
 
-test("the lessons compatibility route opens a lesson in the existing player", () => {
-  assert.equal(
-    typeof LessonExperienceView,
-    "function",
-    "Expected an executable LessonExperienceView",
-  );
-
-  const availableLessonIds = new Set(LESSONS.map((entry) => entry.id));
-  let navigation = createInitialAppNavigation();
-  const dispatchNavigation = (event) => {
-    navigation = reduceAppNavigation(navigation, event, availableLessonIds);
-  };
-
-  const lessonList = LessonExperienceView({
-    dispatchNavigation,
-    navigation,
-  });
-  lessonList.props.onOpenLesson(LESSONS[0].id);
-
-  const player = LessonExperienceView({ dispatchNavigation, navigation });
-  const html = renderToStaticMarkup(player);
-  assert.match(html, /Parrot English speaking lesson/);
-  assert.match(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
-  assert.doesNotMatch(html, /Learning activities/);
-
-  player.props.onBack();
-  const returnedList = LessonExperienceView({ dispatchNavigation, navigation });
-  assert.match(renderToStaticMarkup(returnedList), /Choose a lesson/);
-});
-
 test("the application shell builds login redirects from the current URL", () => {
   assert.match(
     app,
@@ -213,7 +179,7 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
   }
   assert.match(
     app,
-    /<Route\s+element=\{<LessonExperience\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
+    /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
   );
   assert.match(app, /const\s+safeReturnTo\s*=\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/);
   assert.match(app, /const\s+requestedProtectedTarget\s*=/);
