@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 
 function getRule(selector) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -16,6 +17,7 @@ describe("catalog-driven stage layout", () => {
   it("reserves a safe area for the lesson control dock", () => {
     const stage = getRule(".lesson-stage");
     const sprite = getRule(".character-sprite");
+    const controls = getRule(".scene-controls");
     const dock = getRule(".scene-control-dock");
 
     assert.match(
@@ -26,9 +28,38 @@ describe("catalog-driven stage layout", () => {
       sprite,
       /bottom:\s*calc\(var\(--control-safe-area\)\s*\+\s*clamp\(4px,\s*1vh,\s*14px\)\)/,
     );
-    assert.match(dock, /position:\s*absolute/);
-    assert.match(dock, /grid-template-columns:/);
+    assert.match(controls, /position:\s*absolute/);
+    assert.match(controls, /grid-template-columns:/);
     assert.match(dock, /background:\s*rgb\(23 60 103/);
+  });
+
+  it("keeps pink chevron navigation outside the center action dock", () => {
+    const controls = app.match(
+      /<nav aria-label="Lesson controls" className="scene-controls">[\s\S]*?<\/nav>/,
+    );
+    const navigationButton = getRule(".scene-control-button");
+    const disabledNavigationButton = getRule(".scene-control-button:disabled");
+    const controlGroup = getRule(".scene-controls");
+    const dock = getRule(".scene-control-dock");
+
+    assert.ok(controls, "Expected the lesson controls nav");
+    assert.match(
+      controls[0],
+      /aria-label="Previous scene"[\s\S]*<ChevronLeft[\s\S]*<div className="scene-control-dock">[\s\S]*aria-label=\{playbackLabel\}[\s\S]*<\/div>\s*<button\s*aria-label="Next scene"[\s\S]*<ChevronRight/,
+    );
+    assert.match(controlGroup, /width:\s*min\(86vw,\s*1320px\)/);
+    assert.match(
+      controlGroup,
+      /grid-template-columns:\s*auto minmax\(0,\s*1fr\) auto/,
+    );
+    assert.match(
+      dock,
+      /grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
+    );
+    assert.match(navigationButton, /background:\s*#ff467b/);
+    assert.match(navigationButton, /color:\s*#fff/);
+    assert.match(navigationButton, /border:\s*5px solid #fff/);
+    assert.match(disabledNavigationButton, /opacity:\s*0\.68/);
   });
 
   it("positions every character through shared catalog slots", () => {
@@ -57,6 +88,57 @@ describe("catalog-driven stage layout", () => {
     assert.match(caption, /text-align:\s*center/);
   });
 
+  it("uses an explicit lesson-screen type hierarchy", () => {
+    assert.match(
+      getRule(".user-session-bar > span:first-child"),
+      /font-size:\s*0\.95rem/,
+    );
+    assert.match(
+      getRule(".user-session-bar button"),
+      /font-size:\s*0\.875rem/,
+    );
+    assert.match(
+      getRule(".scene-title"),
+      /font-size:\s*clamp\(1\.05rem,\s*1\.55vw,\s*1\.5rem\)/,
+    );
+    assert.match(
+      getRule(".lesson-list-back-button"),
+      /font-size:\s*clamp\(1rem,\s*1\.25vw,\s*1\.2rem\)/,
+    );
+    assert.match(
+      getRule(".character-name"),
+      /font-size:\s*clamp\(0\.9rem,\s*1vw,\s*1\.05rem\)/,
+    );
+    assert.match(
+      styles,
+      /\.speech-bubble > span,\s*\.narrator-caption > span\s*\{[^}]*font-size:\s*clamp\(0\.875rem,\s*1vw,\s*1rem\)/s,
+    );
+    assert.match(
+      styles,
+      /\.speech-bubble p,\s*\.narrator-caption p\s*\{[^}]*font-size:\s*clamp\(1\.5rem,\s*2\.5vw,\s*2\.625rem\)/s,
+    );
+    assert.match(
+      styles,
+      /\.playback-control-button\s*\{[^}]*flex-flow:[^}]*font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/s,
+    );
+    assert.match(
+      getRule(".dock-status"),
+      /font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/,
+    );
+    assert.match(
+      getRule(".learner-mic-prompt > strong"),
+      /font-size:\s*clamp\(1\.15rem,\s*1\.7vw,\s*1\.5rem\)/,
+    );
+    assert.match(
+      getRule(".hold-to-talk-button"),
+      /font-size:\s*clamp\(0\.95rem,\s*1\.3vw,\s*1\.15rem\)/,
+    );
+    assert.match(
+      getRule(".checking-label"),
+      /font-size:\s*clamp\(0\.9rem,\s*1\.2vw,\s*1\.05rem\)/,
+    );
+  });
+
   it("provides a compact layout for narrow screens", () => {
     const compactStart = styles.indexOf("@media (max-width: 720px)");
     const compactEnd = styles.indexOf("@media (max-height: 620px)");
@@ -70,7 +152,15 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       compactStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt prompt prompt"\s*"back playback next"/,
+      /\.scene-controls\s*\{[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-columns:\s*52px minmax\(0,\s*1fr\) 52px/,
+    );
+    assert.match(
+      compactStyles,
+      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt"\s*"playback"[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+    );
+    assert.match(
+      compactStyles,
+      /\.scene-control-button\s*\{[^}]*width:\s*52px[^}]*min-width:\s*52px[^}]*min-height:\s*52px/,
     );
     assert.match(
       compactStyles,
@@ -97,7 +187,11 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       shortStyles,
-      /\.scene-control-dock\s*\{[^}]*bottom:\s*6px[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
+      /\.scene-controls\s*\{[^}]*bottom:\s*6px[^}]*grid-template-columns:\s*44px minmax\(0,\s*1fr\) 44px/,
+    );
+    assert.match(
+      shortStyles,
+      /\.scene-control-dock\s*\{[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
     );
     assert.match(
       shortStyles,
@@ -111,6 +205,10 @@ describe("catalog-driven stage layout", () => {
     assert.match(
       shortStyles,
       /\.speech-bubble,\s*\.narrator-caption\s*\{[^}]*top:\s*112px/,
+    );
+    assert.match(
+      shortStyles,
+      /\.lesson-list-back-button\s*\{[^}]*top:\s*14px/,
     );
   });
 
@@ -131,7 +229,7 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       combinedStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"back playback prompt next"/,
+      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"playback prompt"[^}]*grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
     );
     assert.match(
       combinedStyles,
