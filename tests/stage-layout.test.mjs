@@ -32,13 +32,26 @@ describe("catalog-driven stage layout", () => {
     assert.match(controls, /flex-wrap:\s*wrap/);
   });
 
+  it("centers a large touch target for starting and replaying lessons", () => {
+    const startLayer = getRule(".lesson-start-layer");
+    const startButton = getRule(".start-lesson-button");
+
+    assert.match(startLayer, /position:\s*absolute/);
+    assert.match(startLayer, /inset:\s*0/);
+    assert.match(startLayer, /place-items:\s*center/);
+    assert.match(startLayer, /pointer-events:\s*none/);
+    assert.match(startButton, /width:\s*min\(/);
+    assert.match(startButton, /min-height:\s*clamp\(/);
+    assert.match(startButton, /pointer-events:\s*auto/);
+  });
+
   it("uses an invisible control layout with independent pill surfaces", () => {
     const controls = app.match(
       /<nav aria-label="Lesson controls" className="scene-controls">[\s\S]*?<\/nav>/,
     );
     const controlGroup = getRule(".scene-controls");
     const independentPills = getRule(
-      ".scene-control-button,\n.playback-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
+      ".scene-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
     );
     const navigationButton = getRule(".scene-control-button");
     const disabledNavigationButton = getRule(".scene-control-button:disabled");
@@ -46,7 +59,7 @@ describe("catalog-driven stage layout", () => {
     assert.ok(controls, "Expected the lesson controls nav");
     assert.match(
       controls[0],
-      /aria-label="Previous scene"[\s\S]*<ChevronLeft[\s\S]*aria-label=\{playbackLabel\}[\s\S]*className="learner-target-pill"[\s\S]*aria-label="Next scene"[\s\S]*<ChevronRight/,
+      /aria-label="Previous scene"[\s\S]*<ChevronLeft[\s\S]*className="learner-target-pill"[\s\S]*aria-label="Next scene"[\s\S]*<ChevronRight/,
     );
     assert.match(controlGroup, /display:\s*flex/);
     assert.match(controlGroup, /flex-wrap:\s*wrap/);
@@ -107,7 +120,7 @@ describe("catalog-driven stage layout", () => {
   it("shares one normal type size and pill geometry", () => {
     const root = getRule(":root");
     const lessonPills = getRule(
-      ".scene-control-button,\n.playback-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
+      ".scene-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
     );
 
     assert.match(
@@ -165,7 +178,7 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       compactStyles,
-      /\.scene-controls\s*\{[^}]*display:\s*grid[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-areas:\s*"prompt prompt prompt prompt"\s*"previous playback microphone next"/,
+      /\.scene-controls\s*\{[^}]*display:\s*grid[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-areas:\s*"prompt prompt prompt"\s*"previous microphone next"/,
     );
     assert.match(
       compactStyles,

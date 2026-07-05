@@ -1110,31 +1110,43 @@ select:focus-visible {
   height: 28px;
 }
 
-.volume-button {
+.lesson-start-layer {
   position: absolute;
-  top: clamp(14px, 2.2vh, 28px);
-  right: clamp(14px, 2vw, 30px);
-  z-index: 20;
+  inset: 0;
+  z-index: 23;
   display: grid;
-  width: var(--lesson-pill-height);
-  height: var(--lesson-pill-height);
   place-items: center;
-  border: var(--lesson-pill-border);
-  border-radius: var(--lesson-pill-radius);
+  padding: var(--lesson-edge-gap);
+  pointer-events: none;
+}
+
+.start-lesson-button {
+  width: min(72vw, 620px);
+  min-height: clamp(108px, 18vh, 176px);
+  border: 6px solid #fff;
+  border-radius: 999px;
   background: #ff467b;
   color: #fff;
+  padding: 18px 34px;
+  pointer-events: auto;
   cursor: pointer;
-  box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
+  font-size: clamp(2rem, 5vw, 4.4rem);
+  font-weight: 950;
+  line-height: 1;
+  box-shadow:
+    0 10px 0 rgb(171 38 83 / 42%),
+    0 24px 48px rgb(31 94 132 / 28%);
+  transition: filter 160ms ease, transform 160ms ease;
 }
 
-.volume-button.is-muted {
-  background: #204c7f;
-  box-shadow: 0 6px 0 rgb(18 55 92 / 45%);
+.start-lesson-button:hover {
+  filter: brightness(1.04) saturate(1.05);
+  transform: translateY(-3px) scale(1.015);
 }
 
-.volume-button svg {
-  width: 56%;
-  height: 56%;
+.start-lesson-button:focus-visible {
+  outline: 5px solid #204c7f;
+  outline-offset: 5px;
 }
 
 .character-layer {
@@ -1292,7 +1304,6 @@ select:focus-visible {
 }
 
 .scene-control-button,
-.playback-control-button,
 .dock-status,
 .learner-target-pill,
 .hold-to-talk-button,
@@ -1309,8 +1320,7 @@ select:focus-visible {
   line-height: 1;
 }
 
-.scene-control-button:focus-visible,
-.playback-control-button:focus-visible {
+.scene-control-button:focus-visible {
   outline: 4px solid #fff;
   outline-offset: 3px;
 }
@@ -1334,21 +1344,6 @@ select:focus-visible {
 .scene-control-button svg {
   width: 34px;
   height: 34px;
-}
-
-.playback-control-button {
-  flex-flow: row nowrap;
-  gap: 9px;
-  background: #ffd944;
-  color: #241d2b;
-  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(166 124 16 / 38%);
-  cursor: pointer;
-}
-
-.playback-control-button svg {
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
 }
 
 .dock-status {
@@ -1560,7 +1555,6 @@ select:focus-visible {
     max-width: calc(100vw - 24px);
   }
 
-  .start-lesson-button,
   .flow-status {
     min-height: 54px;
   }
@@ -1597,9 +1591,9 @@ select:focus-visible {
     display: grid;
     width: calc(100vw - 20px);
     grid-template-areas:
-      "prompt prompt prompt prompt"
-      "previous playback microphone next";
-    grid-template-columns: var(--lesson-pill-height) auto auto var(--lesson-pill-height);
+      "prompt prompt prompt"
+      "previous microphone next";
+    grid-template-columns: var(--lesson-pill-height) auto var(--lesson-pill-height);
     justify-content: center;
     gap: 8px;
   }
@@ -1610,11 +1604,6 @@ select:focus-visible {
 
   .scene-control-button:last-of-type {
     grid-area: next;
-  }
-
-  .playback-control-button {
-    grid-area: playback;
-    justify-self: center;
   }
 
   .dock-status,
@@ -1702,15 +1691,6 @@ select:focus-visible {
     height: 28px;
   }
 
-  .playback-control-button {
-    gap: 6px;
-  }
-
-  .playback-control-button svg {
-    width: 24px;
-    height: 24px;
-  }
-
   .dock-status {
     max-width: min(38vw, 380px);
   }
@@ -1750,15 +1730,10 @@ select:focus-visible {
     white-space: nowrap;
   }
 
-  .playback-control-button,
   .hold-to-talk-button {
     width: var(--lesson-pill-height);
     min-width: var(--lesson-pill-height);
     padding: 0;
-  }
-
-  .playback-control-button > span {
-    display: none;
   }
 
   .checking-label {
