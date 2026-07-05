@@ -153,19 +153,23 @@ describe("catalog-driven stage layout", () => {
     assert.ok(compactEnd > compactStart);
     assert.match(
       compactStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(210px,\s*32vh,\s*238px\)/,
+      /:root\s*\{[^}]*--lesson-pill-height:\s*52px/,
     );
     assert.match(
       compactStyles,
-      /\.scene-controls\s*\{[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-columns:\s*52px minmax\(0,\s*1fr\) 52px/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(150px,\s*22vh,\s*180px\)/,
     );
     assert.match(
       compactStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt"\s*"playback"[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+      /\.scene-controls\s*\{[^}]*display:\s*grid[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-areas:\s*"prompt prompt prompt prompt"\s*"previous playback microphone next"/,
     );
     assert.match(
       compactStyles,
-      /\.scene-control-button\s*\{[^}]*width:\s*52px[^}]*min-width:\s*52px[^}]*min-height:\s*52px/,
+      /\.lesson-list-back-button > span\s*\{[^}]*display:\s*none/,
+    );
+    assert.doesNotMatch(
+      compactStyles,
+      /scene-control-dock|learner-mic-prompt/,
     );
     assert.match(
       compactStyles,
@@ -173,7 +177,7 @@ describe("catalog-driven stage layout", () => {
     );
   });
 
-  it("compacts the dock and stage content for short viewports", () => {
+  it("compacts the independent pills and stage content for short viewports", () => {
     const shortStart = styles.indexOf("@media (max-height: 620px)");
     const combinedStart = styles.indexOf(
       "@media (max-width: 720px) and (max-height: 620px)",
@@ -188,25 +192,21 @@ describe("catalog-driven stage layout", () => {
     assert.ok(shortEnd > shortStart);
     assert.match(
       shortStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(84px,\s*23vh,\s*112px\)/,
+      /:root\s*\{[^}]*--lesson-pill-height:\s*44px/,
     );
     assert.match(
       shortStyles,
-      /\.scene-controls\s*\{[^}]*bottom:\s*6px[^}]*grid-template-columns:\s*44px minmax\(0,\s*1fr\) 44px/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(78px,\s*23vh,\s*104px\)/,
     );
     assert.match(
       shortStyles,
-      /\.scene-control-dock\s*\{[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
+      /\.scene-controls\s*\{[^}]*bottom:\s*6px[^}]*display:\s*flex[^}]*flex-wrap:\s*nowrap/,
     );
     assert.match(
       shortStyles,
-      /\.scene-control-button,\s*\.playback-control-button\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/,
+      /\.hold-to-talk-button > span\s*\{[^}]*display:\s*none/,
     );
-    assert.match(
-      shortStyles,
-      /\.hold-to-talk-button\s*\{[^}]*min-height:\s*44px/,
-    );
-    assert.match(shortStyles, /\.checking-label\s*\{[^}]*min-height:\s*44px/);
+    assert.doesNotMatch(shortStyles, /scene-control-dock|learner-mic-prompt/);
     assert.match(
       shortStyles,
       /\.speech-bubble,\s*\.narrator-caption\s*\{[^}]*top:\s*112px/,
@@ -217,7 +217,7 @@ describe("catalog-driven stage layout", () => {
     );
   });
 
-  it("uses a single-row dock in short narrow viewports", () => {
+  it("uses one row of independent pills in short narrow viewports", () => {
     const combinedStart = styles.indexOf(
       "@media (max-width: 720px) and (max-height: 620px)",
     );
@@ -230,19 +230,19 @@ describe("catalog-driven stage layout", () => {
     assert.ok(combinedEnd > combinedStart);
     assert.match(
       combinedStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(78px,\s*24vh,\s*96px\)/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(76px,\s*24vh,\s*94px\)/,
     );
     assert.match(
       combinedStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"playback prompt"[^}]*grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
+      /\.scene-controls\s*\{[^}]*display:\s*flex[^}]*flex-wrap:\s*nowrap/,
     );
     assert.match(
       combinedStyles,
-      /\.learner-mic-prompt\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) auto/,
+      /\.learner-target-pill\s*\{[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
     );
-    assert.match(
+    assert.doesNotMatch(
       combinedStyles,
-      /\.learner-mic-prompt > strong\s*\{[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
+      /scene-control-dock|learner-mic-prompt/,
     );
   });
 });
