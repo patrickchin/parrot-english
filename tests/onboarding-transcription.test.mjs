@@ -64,9 +64,18 @@ describe("onboarding transcription", () => {
       error: "unsupported_audio_type",
     });
 
+    const empty = await handleOnboardingTranscription(
+      transcriptionRequest({
+        audio: new File([], "answer.webm", { type: "audio/webm" }),
+      }),
+      { GROQ_API_KEY: "test-key" },
+    );
+    assert.equal(empty.status, 400);
+    assert.deepEqual(await empty.json(), { error: "audio_file_required" });
+
     const oversized = await handleOnboardingTranscription(
       transcriptionRequest({
-        audio: new File([new Uint8Array(6 * 1024 * 1024 + 1)], "answer.webm", {
+        audio: new File([new Uint8Array(512 * 1024 + 1)], "answer.webm", {
           type: "audio/webm",
         }),
       }),

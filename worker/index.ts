@@ -1,4 +1,8 @@
-import { checkEvaluateSpeechRateLimit } from "./api-security.ts";
+import {
+  checkEvaluateSpeechRateLimit,
+  checkOnboardingTranscriptionRateLimit,
+} from "./api-security.ts";
+import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
 import { createDatabase } from "./database.ts";
@@ -9,10 +13,8 @@ interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env extends AuthEnv {
+interface Env extends AuthEnv, RateLimitEnv {
   ASSETS: AssetFetcher;
-  EVALUATE_RATE_LIMIT_MAX?: string;
-  EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
 }
@@ -20,6 +22,7 @@ interface Env extends AuthEnv {
 interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
+  checkOnboardingTranscriptionRateLimit: typeof checkOnboardingTranscriptionRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleOnboardingRequest: typeof handleOnboardingRequest;
 }
@@ -37,6 +40,9 @@ export function createWorker(
 ) {
   const rateLimit =
     dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
+  const onboardingTranscriptionRateLimit =
+    dependencies.checkOnboardingTranscriptionRateLimit ??
+    checkOnboardingTranscriptionRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const onboardingRequest =
@@ -60,6 +66,18 @@ export function createWorker(
         });
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+
+        if (
+          url.pathname === "/api/onboarding/transcribe" &&
+          request.method === "POST"
+        ) {
+          const rateLimited = onboardingTranscriptionRateLimit(
+            request,
+            env,
+            session.user.id
+          );
+          if (rateLimited) return rateLimited;
         }
 
         return onboardingRequest({
