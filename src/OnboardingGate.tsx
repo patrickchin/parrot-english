@@ -10,8 +10,9 @@ import { useProfileAccountAction } from "./account-actions";
 import {
   loadOnboarding,
   loadProfile,
+  OnboardingApiError,
   saveOnboardingAnswer,
-  saveProfileAnswer,
+  saveProfileAnswers,
   skipOnboarding,
   skipOnboardingQuestion,
   transcribeOnboardingAudio,
@@ -542,21 +543,22 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     setIsProfileSaving(true);
     setProfileFieldErrors({});
     setProfilePageError("");
-    let savingQuestionKey = "";
     try {
-      for (const question of profileState.questions) {
-        savingQuestionKey = question.answerKey;
-        await saveProfileAnswer(
+      const answers = Object.fromEntries(
+        profileState.questions.map((question) => [
           question.answerKey,
-          submissionValue(question, profileDrafts[question.answerKey])
-        );
-      }
+          submissionValue(question, profileDrafts[question.answerKey]),
+        ])
+      );
+      const saved = await saveProfileAnswers(answers);
+      setProfileState(saved);
       setData(await loadOnboarding());
       closeProfileEditor();
     } catch (error) {
-      if (savingQuestionKey) {
-        setProfileFieldError(savingQuestionKey, readableError(error));
-      } else {
+      const fieldErrors =
+        error instanceof OnboardingApiError ? error.fieldErrors : {};
+      setProfileFieldErrors(fieldErrors);
+      if (Object.keys(fieldErrors).length === 0) {
         setProfilePageError(readableError(error));
       }
     } finally {

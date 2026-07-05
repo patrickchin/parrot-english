@@ -7,7 +7,6 @@ import {
   loadOnboarding,
   loadProfile,
   saveOnboardingAnswer,
-  saveProfileAnswer,
   skipOnboarding,
   transcribeOnboardingAudio,
 } from "../src/onboarding-api.ts";
@@ -41,7 +40,7 @@ describe("onboarding browser API", () => {
     assert.equal(profile.calls[0][1].method, "GET");
   });
 
-  it("saves confirmed onboarding and profile values as bounded JSON", async () => {
+  it("saves confirmed onboarding values as bounded JSON", async () => {
     const onboarding = jsonFetch({ question: null });
     await saveOnboardingAnswer("age", 8, { fetch: onboarding.fetch });
     assert.equal(onboarding.calls[0][0], "/api/onboarding/answer");
@@ -52,14 +51,29 @@ describe("onboarding browser API", () => {
       signal: undefined,
     });
 
+  });
+
+  it("saves all profile answers in one request", async () => {
+    assert.equal(typeof onboardingApi.saveProfileAnswers, "function");
     const profile = jsonFetch({ profile: { name: "Maya" } });
-    await saveProfileAnswer("name", "Maya", { fetch: profile.fetch });
+    await onboardingApi.saveProfileAnswers(
+      {
+        name: "Maya",
+        age: 8,
+        favoriteCartoons: ["Bluey"],
+      },
+      { fetch: profile.fetch },
+    );
+
     assert.equal(profile.calls[0][0], "/api/profile");
     assert.equal(profile.calls[0][1].method, "PUT");
-    assert.equal(
-      profile.calls[0][1].body,
-      '{"questionKey":"name","value":"Maya"}',
-    );
+    assert.deepEqual(JSON.parse(profile.calls[0][1].body), {
+      answers: {
+        name: "Maya",
+        age: 8,
+        favoriteCartoons: ["Bluey"],
+      },
+    });
   });
 
   it("posts skip and completion transitions", async () => {
@@ -125,5 +139,35 @@ describe("onboarding browser API", () => {
     const request = jsonFetch({ ok: true });
     await loadOnboarding({ fetch: request.fetch, signal: controller.signal });
     assert.equal(request.calls[0][1].signal, controller.signal);
+  });
+
+  it("preserves keyed profile validation errors", async () => {
+    assert.equal(typeof onboardingApi.saveProfileAnswers, "function");
+    const failed = jsonFetch(
+      {
+        error: "invalid_profile",
+        fieldErrors: {
+          age: "Please enter a number from 3 to 17.",
+          ignored: 123,
+        },
+      },
+      400,
+    );
+
+    await assert.rejects(
+      onboardingApi.saveProfileAnswers(
+        { name: "Maya", age: 99 },
+        { fetch: failed.fetch },
+      ),
+      (error) => {
+        assert.ok(error instanceof OnboardingApiError);
+        assert.equal(error.status, 400);
+        assert.equal(error.code, "invalid_profile");
+        assert.deepEqual(error.fieldErrors, {
+          age: "Please enter a number from 3 to 17.",
+        });
+        return true;
+      },
+    );
   });
 });
