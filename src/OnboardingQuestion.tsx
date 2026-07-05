@@ -8,7 +8,23 @@ import {
 } from "./onboarding-api";
 import { recordSpeechClip } from "./speech-recorder";
 
-type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
+export type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
+
+type AnswerEditorProps = {
+  disabled: boolean;
+  fieldError: string;
+  inputId: string;
+  onAddPending: () => void;
+  onPendingChange: (value: string) => void;
+  onRemoveValue: (value: string) => void;
+  onToggleOption: (value: string) => void;
+  onTranscribe: () => void;
+  onValueChange: (value: string | number) => void;
+  pendingValue: string;
+  question: OnboardingQuestion;
+  status: QuestionStatus;
+  value: unknown;
+};
 
 type OnboardingQuestionViewProps = {
   fieldError: string;
@@ -40,6 +56,160 @@ function arrayValue(value: unknown) {
     : [];
 }
 
+export function AnswerEditor({
+  disabled,
+  fieldError,
+  inputId,
+  onAddPending,
+  onPendingChange,
+  onRemoveValue,
+  onToggleOption,
+  onTranscribe,
+  onValueChange,
+  pendingValue,
+  question,
+  status,
+  value,
+}: AnswerEditorProps) {
+  const values = arrayValue(value);
+  const isArray = question.cardinality === "array";
+  const maxLength = question.validation.maxLength;
+  const min = question.validation.min;
+  const max = question.validation.max;
+
+  return (
+    <>
+      {isArray ? (
+        <div className="onboarding-array-answer">
+          {values.length > 0 ? (
+            <div aria-label="Confirmed answers" className="onboarding-chips">
+              {values.map((entry) => (
+                <span className="onboarding-chip" key={entry}>
+                  {entry}
+                  <button
+                    aria-label={`Remove ${entry}`}
+                    disabled={disabled}
+                    onClick={() => onRemoveValue(entry)}
+                    type="button"
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : null}
+          <label className="onboarding-answer-field" htmlFor={inputId}>
+            <span>Add one answer</span>
+            <span className="onboarding-input-row">
+              <input
+                disabled={disabled}
+                id={inputId}
+                maxLength={maxLength}
+                onChange={(event) => onPendingChange(event.target.value)}
+                type="text"
+                value={pendingValue}
+              />
+              <button
+                aria-label="Add answer"
+                className="onboarding-input-action"
+                disabled={disabled}
+                onClick={onAddPending}
+                type="button"
+              >
+                <Plus aria-hidden="true" />
+              </button>
+              <button
+                aria-label="Speak your answer"
+                className="onboarding-input-action onboarding-mic-button"
+                disabled={disabled}
+                onClick={onTranscribe}
+                type="button"
+              >
+                <Mic aria-hidden="true" />
+              </button>
+            </span>
+          </label>
+        </div>
+      ) : (
+        <label className="onboarding-answer-field" htmlFor={inputId}>
+          <span>Your answer</span>
+          <span className="onboarding-input-row">
+            <input
+              disabled={disabled}
+              id={inputId}
+              max={question.answerType === "number" ? max : undefined}
+              maxLength={question.answerType === "number" ? undefined : maxLength}
+              min={question.answerType === "number" ? min : undefined}
+              onChange={(event) =>
+                onValueChange(
+                  question.answerType === "number" && event.target.value !== ""
+                    ? Number(event.target.value)
+                    : event.target.value,
+                )
+              }
+              type={question.answerType === "number" ? "number" : "text"}
+              value={scalarValue(value)}
+            />
+            <button
+              aria-label="Speak your answer"
+              className="onboarding-input-action onboarding-mic-button"
+              disabled={disabled}
+              onClick={onTranscribe}
+              type="button"
+            >
+              <Mic aria-hidden="true" />
+            </button>
+          </span>
+        </label>
+      )}
+
+      {question.options?.length ? (
+        <div aria-label="Answer suggestions" className="onboarding-suggestions">
+          {question.options.map((option) => {
+            const selected = isArray
+              ? values.some(
+                  (entry) =>
+                    entry.toLocaleLowerCase("en") ===
+                    option.toLocaleLowerCase("en"),
+                )
+              : scalarValue(value).toString().toLocaleLowerCase("en") ===
+                option.toLocaleLowerCase("en");
+            return (
+              <button
+                aria-pressed={selected}
+                className={selected ? "is-selected" : ""}
+                disabled={disabled}
+                key={option}
+                onClick={() =>
+                  isArray ? onToggleOption(option) : onValueChange(option)
+                }
+                type="button"
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {status === "recording" ? (
+        <p className="onboarding-input-status" role="status">
+          Listening…
+        </p>
+      ) : status === "transcribing" ? (
+        <p className="onboarding-input-status" role="status">
+          Writing what I heard…
+        </p>
+      ) : null}
+      {fieldError ? (
+        <p className="onboarding-field-error" role="alert">
+          {fieldError}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 export function OnboardingQuestionView({
   fieldError,
   mode,
@@ -60,12 +230,7 @@ export function OnboardingQuestionView({
   value,
 }: OnboardingQuestionViewProps) {
   const disabled = status !== "idle";
-  const values = arrayValue(value);
-  const isArray = question.cardinality === "array";
   const inputId = `onboarding-answer-${question.answerKey}`;
-  const maxLength = question.validation.maxLength;
-  const min = question.validation.min;
-  const max = question.validation.max;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -107,122 +272,21 @@ export function OnboardingQuestionView({
 
       <form className="onboarding-answer-form" onSubmit={submit}>
         <fieldset disabled={disabled}>
-          {isArray ? (
-            <div className="onboarding-array-answer">
-              {values.length > 0 ? (
-                <div aria-label="Confirmed answers" className="onboarding-chips">
-                  {values.map((entry) => (
-                    <span className="onboarding-chip" key={entry}>
-                      {entry}
-                      <button
-                        aria-label={`Remove ${entry}`}
-                        onClick={() => onRemoveValue(entry)}
-                        type="button"
-                      >
-                        <X aria-hidden="true" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              <label className="onboarding-answer-field" htmlFor={inputId}>
-                <span>Add one answer</span>
-                <span className="onboarding-input-row">
-                  <input
-                    id={inputId}
-                    maxLength={maxLength}
-                    onChange={(event) => onPendingChange(event.target.value)}
-                    type="text"
-                    value={pendingValue}
-                  />
-                  <button
-                    aria-label="Add answer"
-                    className="onboarding-input-action"
-                    onClick={onAddPending}
-                    type="button"
-                  >
-                    <Plus aria-hidden="true" />
-                  </button>
-                  <button
-                    aria-label="Speak your answer"
-                    className="onboarding-input-action onboarding-mic-button"
-                    onClick={onTranscribe}
-                    type="button"
-                  >
-                    <Mic aria-hidden="true" />
-                  </button>
-                </span>
-              </label>
-            </div>
-          ) : (
-            <label className="onboarding-answer-field" htmlFor={inputId}>
-              <span>Your answer</span>
-              <span className="onboarding-input-row">
-                <input
-                  id={inputId}
-                  max={question.answerType === "number" ? max : undefined}
-                  maxLength={question.answerType === "number" ? undefined : maxLength}
-                  min={question.answerType === "number" ? min : undefined}
-                  onChange={(event) =>
-                    onValueChange(
-                      question.answerType === "number" && event.target.value !== ""
-                        ? Number(event.target.value)
-                        : event.target.value,
-                    )
-                  }
-                  type={question.answerType === "number" ? "number" : "text"}
-                  value={scalarValue(value)}
-                />
-                <button
-                  aria-label="Speak your answer"
-                  className="onboarding-input-action onboarding-mic-button"
-                  onClick={onTranscribe}
-                  type="button"
-                >
-                  <Mic aria-hidden="true" />
-                </button>
-              </span>
-            </label>
-          )}
-
-          {question.options?.length ? (
-            <div aria-label="Answer suggestions" className="onboarding-suggestions">
-              {question.options.map((option) => {
-                const selected = isArray
-                  ? values.some(
-                      (entry) => entry.toLocaleLowerCase("en") === option.toLocaleLowerCase("en"),
-                    )
-                  : scalarValue(value).toString().toLocaleLowerCase("en") ===
-                    option.toLocaleLowerCase("en");
-                return (
-                  <button
-                    aria-pressed={selected}
-                    className={selected ? "is-selected" : ""}
-                    key={option}
-                    onClick={() =>
-                      isArray ? onToggleOption(option) : onValueChange(option)
-                    }
-                    type="button"
-                  >
-                    {option}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-
-          {status === "recording" ? (
-            <p className="onboarding-input-status" role="status">Listening…</p>
-          ) : status === "transcribing" ? (
-            <p className="onboarding-input-status" role="status">
-              Writing what I heard…
-            </p>
-          ) : null}
-          {fieldError ? (
-            <p className="onboarding-field-error" role="alert">
-              {fieldError}
-            </p>
-          ) : null}
+          <AnswerEditor
+            disabled={disabled}
+            fieldError={fieldError}
+            inputId={inputId}
+            onAddPending={onAddPending}
+            onPendingChange={onPendingChange}
+            onRemoveValue={onRemoveValue}
+            onToggleOption={onToggleOption}
+            onTranscribe={onTranscribe}
+            onValueChange={onValueChange}
+            pendingValue={pendingValue}
+            question={question}
+            status={status}
+            value={value}
+          />
 
           <div className="onboarding-form-actions">
             {mode === "onboarding" && !question.required ? (
