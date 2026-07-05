@@ -6,15 +6,23 @@ const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 describe("scene playback controls", () => {
-  it("renders separate previous and next controls around one action dock", () => {
+  it("renders every lesson action as an independent control", () => {
     const controls = app.match(
       /<nav[\s\S]*?className="scene-controls"[\s\S]*?<\/nav>/g,
     ) ?? [];
 
     assert.equal(controls.length, 1);
     assert.match(controls[0], /aria-label="Previous scene"/);
-    assert.match(controls[0], /className="scene-control-dock"/);
+    assert.match(controls[0], /aria-label=\{playbackLabel\}/);
+    assert.match(controls[0], /className="learner-target-pill"/);
+    assert.match(controls[0], /className="dock-status"/);
+    assert.match(controls[0], /className=\{`hold-to-talk-button/);
+    assert.match(controls[0], /className="checking-label"/);
     assert.match(controls[0], /aria-label="Next scene"/);
+    assert.doesNotMatch(
+      controls[0],
+      /scene-control-dock|learner-mic-prompt/,
+    );
     assert.match(app, /PLAY_SCENE/);
     assert.match(app, /PAUSE_SCENE/);
     assert.match(app, /SCENE_PREVIOUS/);
@@ -70,10 +78,10 @@ describe("scene playback controls", () => {
     );
   });
 
-  it("uses only the dock prompt for user speech", () => {
+  it("uses an independent learner target pill for user speech", () => {
     assert.match(app, /scene\.speech\.kind === "user" \? null/);
-    assert.match(app, /learner-mic-prompt/);
-    assert.doesNotMatch(app, /user-turn-panel/);
+    assert.match(app, /learner-target-pill/);
+    assert.doesNotMatch(app, /learner-mic-prompt|user-turn-panel/);
   });
 
   it("keeps the screen-reader summary as the only live progress region", () => {
