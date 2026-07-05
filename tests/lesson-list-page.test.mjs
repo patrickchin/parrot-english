@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import test from "node:test";
 import { createServer } from "vite";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const navigationUrl = new URL("../src/app-navigation.ts", import.meta.url);
+const lessonListUrl = new URL("../src/LessonList.tsx", import.meta.url);
 
 const vite = await createServer({
   appType: "custom",
@@ -57,4 +60,23 @@ test("app navigation opens only available lessons and returns to the list", asyn
     ),
     { activeLessonId: null },
   );
+});
+
+test("lesson list renders discovered lessons and disabled previews", async () => {
+  assert.equal(
+    existsSync(lessonListUrl),
+    true,
+    "Expected src/LessonList.tsx to render the discovered catalog",
+  );
+
+  const { LessonList } = await vite.ssrLoadModule("/src/LessonList.tsx");
+  const html = renderToStaticMarkup(
+    createElement(LessonList, { onOpenLesson() {} }),
+  );
+
+  assert.match(html, /Choose a lesson/);
+  assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.equal((html.match(/<article/g) ?? []).length, 4);
+  assert.equal((html.match(/disabled=""/g) ?? []).length, 3);
+  assert.match(html, /Coming soon/);
 });
