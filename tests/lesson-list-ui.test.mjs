@@ -47,4 +47,25 @@ describe("lesson list integration contracts", () => {
     assert.match(styles, /@media \(max-width: 700px\)/);
     assert.doesNotMatch(styles, /\.lesson-picker/);
   });
+
+  it("uses compact horizontal cards with actions on the right", () => {
+    const styles = readProjectFile("src/styles.css");
+
+    assert.match(
+      styles,
+      /\.lesson-card-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s,
+    );
+    assert.match(
+      styles,
+      /\.lesson-card\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*clamp\(170px,\s*20vw,\s*230px\)\s+minmax\(0,\s*1fr\)/s,
+    );
+    assert.match(
+      styles,
+      /\.lesson-card-content\s*\{[^}]*grid-template-areas:[^;]*"title action"[^;]*"summary action"[^;]*"count action"/s,
+    );
+    assert.match(
+      styles,
+      /\.lesson-card-action\s*\{[^}]*grid-area:\s*action/s,
+    );
+  });
 });
