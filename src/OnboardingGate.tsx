@@ -266,6 +266,12 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const [pendingAcknowledgment, setPendingAcknowledgment] =
     useState<PendingAcknowledgment | null>(null);
   const operationRef = useRef(0);
+  const profileCaptureRef = useRef<AbortController | null>(null);
+
+  const cancelProfileCapture = useCallback(() => {
+    profileCaptureRef.current?.abort();
+    profileCaptureRef.current = null;
+  }, []);
 
   const nextOperation = useCallback(() => {
     operationRef.current += 1;
@@ -301,8 +307,9 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     return () => {
       nextOperation();
       controller.abort();
+      cancelProfileCapture();
     };
-  }, [nextOperation, refresh]);
+  }, [cancelProfileCapture, nextOperation, refresh]);
 
   const fullData: FullOnboardingState | null =
     data?.mode === "full" ? data : null;
@@ -436,10 +443,11 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }, []);
 
   const closeProfileEditor = useCallback(() => {
+    cancelProfileCapture();
     nextOperation();
     setPendingAcknowledgment(null);
     clearProfileEditor();
-  }, [clearProfileEditor, nextOperation]);
+  }, [cancelProfileCapture, clearProfileEditor, nextOperation]);
 
   const handleOpenProfile = useCallback(async () => {
     const operation = nextOperation();
@@ -493,31 +501,41 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }
 
   async function handleProfileTranscribe(question: OnboardingQuestion) {
+    cancelProfileCapture();
+    const controller = new AbortController();
+    profileCaptureRef.current = controller;
     const operation = nextOperation();
+    const isCurrentCapture = () =>
+      isCurrentOperation(operation) &&
+      profileCaptureRef.current === controller &&
+      !controller.signal.aborted;
     setProfileFieldError(question.answerKey, "");
     setProfileFieldStatuses({ [question.answerKey]: "recording" });
     try {
       const transcript = await captureOnboardingAnswer({
-        record: () => recordSpeechClip(),
-        transcribe: async (audio) => {
-          if (isCurrentOperation(operation)) {
+        record: (options) => recordSpeechClip(options),
+        signal: controller.signal,
+        transcribe: async (audio, options) => {
+          if (isCurrentCapture()) {
             setProfileFieldStatus(question.answerKey, "transcribing");
           }
-          return transcribeOnboardingAudio(audio);
+          return transcribeOnboardingAudio(audio, options);
         },
       });
-      if (isCurrentOperation(operation)) {
+      if (isCurrentCapture()) {
         handleProfileValueChange(question.answerKey, transcript);
       }
     } catch (error) {
-      if (isCurrentOperation(operation)) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      if (isCurrentCapture()) {
         setProfileFieldError(
           question.answerKey,
           `${readableError(error)} You can still type your answer.`,
         );
       }
     } finally {
-      if (isCurrentOperation(operation)) {
+      if (profileCaptureRef.current === controller) {
+        profileCaptureRef.current = null;
         setProfileFieldStatus(question.answerKey, "idle");
       }
     }

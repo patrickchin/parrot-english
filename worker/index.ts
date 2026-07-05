@@ -79,7 +79,7 @@ export function createWorker(
           url.pathname === "/api/onboarding/transcribe" &&
           request.method === "POST"
         ) {
-          const rateLimited = onboardingTranscriptionRateLimit(
+          const rateLimited = await onboardingTranscriptionRateLimit(
             request,
             env,
             session.user.id
@@ -91,7 +91,7 @@ export function createWorker(
           (url.pathname === "/api/onboarding/answer" ||
             url.pathname === "/api/profile")
         ) {
-          const rateLimited = onboardingEnrichmentRateLimit(
+          const rateLimited = await onboardingEnrichmentRateLimit(
             request,
             env,
             session.user.id
@@ -119,7 +119,7 @@ export function createWorker(
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
 
-        const rateLimited = rateLimit(request, env);
+        const rateLimited = await rateLimit(request, env);
         if (rateLimited) return rateLimited;
 
         return evaluateSpeech(request, env);

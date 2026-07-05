@@ -2,132 +2,100 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as apiSecurity from "../worker/api-security.ts";
 
-const { checkEvaluateSpeechRateLimit } = apiSecurity;
+function fakeLimiter(successes) {
+  const keys = [];
+  return {
+    keys,
+    async limit({ key }) {
+      keys.push(key);
+      return { success: successes.shift() ?? false };
+    },
+  };
+}
+
+function request(path) {
+  return new Request(`https://example.test${path}`, {
+    method: "POST",
+    headers: { "CF-Connecting-IP": "203.0.113.42" },
+  });
+}
 
 describe("API security", () => {
   it("rate limits speech evaluation by client address", async () => {
-    const env = {
-      EVALUATE_RATE_LIMIT_MAX: "2",
-      EVALUATE_RATE_LIMIT_WINDOW_SECONDS: "60",
-    };
-    const request = () =>
-      new Request("https://example.test/api/evaluate-speech", {
-        method: "POST",
-        headers: {
-          "CF-Connecting-IP": "203.0.113.42",
-        },
-      });
+    const limiter = fakeLimiter([true, false]);
+    const env = { EVALUATE_RATE_LIMITER: limiter };
 
-    assert.equal(checkEvaluateSpeechRateLimit(request(), env, 0), null);
-    assert.equal(checkEvaluateSpeechRateLimit(request(), env, 1000), null);
+    assert.equal(
+      await apiSecurity.checkEvaluateSpeechRateLimit(
+        request("/api/evaluate-speech"),
+        env,
+      ),
+      null,
+    );
 
-    const limited = checkEvaluateSpeechRateLimit(request(), env, 2000);
+    const limited = await apiSecurity.checkEvaluateSpeechRateLimit(
+      request("/api/evaluate-speech"),
+      env,
+    );
     const payload = await limited.json();
 
     assert.equal(limited.status, 429);
-    assert.equal(limited.headers.get("Retry-After"), "58");
+    assert.equal(limited.headers.get("Retry-After"), "60");
     assert.equal(payload.error, "rate_limited");
+    assert.deepEqual(limiter.keys, ["203.0.113.42", "203.0.113.42"]);
   });
 
   it("rate limits onboarding transcription by user and client address", async () => {
-    assert.equal(
-      typeof apiSecurity.checkOnboardingTranscriptionRateLimit,
-      "function",
-    );
-    const env = {
-      ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX: "2",
-      ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS: "60",
-    };
-    const request = () =>
-      new Request("https://example.test/api/onboarding/transcribe", {
-        method: "POST",
-        headers: { "CF-Connecting-IP": "203.0.113.42" },
-      });
+    const limiter = fakeLimiter([true, false]);
+    const env = { ONBOARDING_TRANSCRIPTION_RATE_LIMITER: limiter };
 
     assert.equal(
-      apiSecurity.checkOnboardingTranscriptionRateLimit(
-        request(),
+      await apiSecurity.checkOnboardingTranscriptionRateLimit(
+        request("/api/onboarding/transcribe"),
         env,
         "user-1",
-        0,
       ),
       null,
     );
-    assert.equal(
-      apiSecurity.checkOnboardingTranscriptionRateLimit(
-        request(),
-        env,
-        "user-1",
-        1_000,
-      ),
-      null,
-    );
-    const limited = apiSecurity.checkOnboardingTranscriptionRateLimit(
-      request(),
+
+    const limited = await apiSecurity.checkOnboardingTranscriptionRateLimit(
+      request("/api/onboarding/transcribe"),
       env,
       "user-1",
-      2_000,
     );
+
     assert.equal(limited.status, 429);
-    assert.equal(limited.headers.get("Retry-After"), "58");
-    assert.equal(
-      apiSecurity.checkOnboardingTranscriptionRateLimit(
-        request(),
-        env,
-        "user-2",
-        2_000,
-      ),
-      null,
-    );
+    assert.equal(limited.headers.get("Retry-After"), "60");
+    assert.deepEqual(limiter.keys, [
+      "user-1:203.0.113.42",
+      "user-1:203.0.113.42",
+    ]);
   });
 
   it("shares one enrichment bucket across onboarding answers and profile edits", async () => {
-    assert.equal(typeof apiSecurity.checkOnboardingEnrichmentRateLimit, "function");
-    const env = {
-      ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX: "2",
-      ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS: "60",
-    };
-    const answer = new Request(
-      "https://example.test/api/onboarding/answer",
-      {
-        method: "PUT",
-        headers: { "CF-Connecting-IP": "203.0.113.42" },
-      },
-    );
-    const profile = new Request("https://example.test/api/profile", {
-      method: "PUT",
-      headers: { "CF-Connecting-IP": "203.0.113.42" },
-    });
+    const limiter = fakeLimiter([true, false]);
+    const env = { ONBOARDING_ENRICHMENT_RATE_LIMITER: limiter };
 
     assert.equal(
-      apiSecurity.checkOnboardingEnrichmentRateLimit(answer, env, "user-1", 0),
-      null,
-    );
-    assert.equal(
-      apiSecurity.checkOnboardingEnrichmentRateLimit(
-        profile,
+      await apiSecurity.checkOnboardingEnrichmentRateLimit(
+        request("/api/onboarding/answer"),
         env,
         "user-1",
-        1_000,
       ),
       null,
     );
-    const limited = apiSecurity.checkOnboardingEnrichmentRateLimit(
-      answer,
+
+    const limited = await apiSecurity.checkOnboardingEnrichmentRateLimit(
+      request("/api/profile"),
       env,
       "user-1",
-      2_000,
     );
+
     assert.equal(limited.status, 429);
-    assert.equal(limited.headers.get("Retry-After"), "58");
-    assert.equal(
-      apiSecurity.checkOnboardingEnrichmentRateLimit(
-        profile,
-        env,
-        "user-2",
-        2_000,
-      ),
-      null,
-    );
+    assert.equal(limited.headers.get("Retry-After"), "60");
+    assert.deepEqual(limiter.keys, [
+      "user-1:203.0.113.42",
+      "user-1:203.0.113.42",
+    ]);
   });
 });

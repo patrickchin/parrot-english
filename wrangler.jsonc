@@ -13,6 +13,23 @@
       "migrations_dir": "migrations"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "EVALUATE_RATE_LIMITER",
+      "namespace_id": "104201",
+      "simple": { "limit": 8, "period": 60 }
+    },
+    {
+      "name": "ONBOARDING_TRANSCRIPTION_RATE_LIMITER",
+      "namespace_id": "104202",
+      "simple": { "limit": 6, "period": 60 }
+    },
+    {
+      "name": "ONBOARDING_ENRICHMENT_RATE_LIMITER",
+      "namespace_id": "104203",
+      "simple": { "limit": 12, "period": 60 }
+    }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

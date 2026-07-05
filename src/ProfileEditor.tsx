@@ -32,6 +32,11 @@ export function ProfileEditorView({
   pageError,
   questions,
 }: ProfileEditorViewProps) {
+  const isCapturing = Object.values(fieldStatuses).some(
+    (status) => status === "recording" || status === "transcribing",
+  );
+  const formDisabled = isSaving || isCapturing;
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSave();
@@ -51,6 +56,7 @@ export function ProfileEditorView({
           <button
             aria-label="Close profile editor"
             className="onboarding-icon-button"
+            disabled={isSaving}
             onClick={onClose}
             type="button"
           >
@@ -62,10 +68,9 @@ export function ProfileEditorView({
         </p>
 
         <form className="profile-editor-form" onSubmit={submit}>
-          <fieldset disabled={isSaving}>
+          <fieldset disabled={formDisabled}>
             {questions.map((question) => {
               const status = fieldStatuses[question.answerKey] ?? "idle";
-              const disabled = isSaving || status !== "idle";
               const inputId = `profile-answer-${question.answerKey}`;
 
               return (
@@ -85,7 +90,6 @@ export function ProfileEditorView({
                       <button
                         aria-label={`Replay ${question.promptEn}`}
                         className="onboarding-icon-button"
-                        disabled={disabled}
                         onClick={() => onReplay(question)}
                         type="button"
                       >
@@ -97,7 +101,6 @@ export function ProfileEditorView({
                     <span>Your answer</span>
                     <span className="onboarding-input-row">
                       <textarea
-                        disabled={disabled}
                         id={inputId}
                         maxLength={question.maxLength}
                         onChange={(event) =>
@@ -109,7 +112,6 @@ export function ProfileEditorView({
                       <button
                         aria-label={`Speak answer for ${question.promptEn}`}
                         className="onboarding-input-action onboarding-mic-button"
-                        disabled={disabled}
                         onClick={() => onTranscribe(question)}
                         type="button"
                       >
@@ -153,7 +155,7 @@ export function ProfileEditorView({
             </button>
             <button
               className="onboarding-next-button"
-              disabled={isSaving}
+              disabled={formDisabled}
               type="submit"
             >
               {isSaving ? "Saving…" : "Save changes"}
