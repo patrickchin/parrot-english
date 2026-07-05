@@ -37,10 +37,33 @@ describe("scene playback controls", () => {
     assert.ok(dispatchIndex > cancelIndex);
   });
 
+  it("invalidates stale playback outcomes before controls or unmount can move state", () => {
+    assert.match(app, /createPlaybackOperation/);
+    assert.match(app, /const playbackGenerationRef = useRef\(0\)/);
+    assert.match(
+      app,
+      /function cancelPendingWork\(\) \{[\s\S]*?playbackGenerationRef\.current \+= 1;[\s\S]*?playbackControllerRef\.current\?\.abort\(\)/
+    );
+    assert.match(
+      app,
+      /useEffect\(\s*\(\) => \(\) => \{[\s\S]*?playbackGenerationRef\.current \+= 1;/
+    );
+    assert.match(
+      app,
+      /createPlaybackOperation\(\{[\s\S]*?getCurrentGeneration: \(\) => playbackGenerationRef\.current[\s\S]*?\}\)/
+    );
+    assert.match(
+      app,
+      /window\.setTimeout\(\(\) => playbackOperation\.complete\(\), 700\)/
+    );
+    assert.match(app, /\.then\(\(\) => playbackOperation\.complete\(\)\)/);
+    assert.match(app, /playbackOperation\.fail\(caughtError\)/);
+  });
+
   it("invalidates pending speech before unmount aborts it", () => {
     assert.match(
       app,
-      /useEffect\(\s*\(\) => \(\) => \{\s*pressedRef\.current = false;\s*pressSequenceRef\.current \+= 1;\s*recordingControllerRef\.current\?\.abort\(\)/
+      /useEffect\(\s*\(\) => \(\) => \{\s*pressedRef\.current = false;\s*pressSequenceRef\.current \+= 1;[\s\S]*?recordingControllerRef\.current\?\.abort\(\)/
     );
   });
 

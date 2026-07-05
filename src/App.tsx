@@ -44,6 +44,7 @@ import {
   startSpeechRecording,
   type SpeechRecordingSession,
 } from "./speech-recorder";
+import { createPlaybackOperation } from "./playback-operation";
 import { finishSpeechOperation } from "./speech-operation";
 
 const RECORDING_UNSUPPORTED_MESSAGE =
@@ -104,6 +105,7 @@ export function LessonPlayer() {
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
   const playbackControllerRef = useRef<AbortController | null>(null);
+  const playbackGenerationRef = useRef(0);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const evaluationControllerRef = useRef<AbortController | null>(null);
@@ -145,8 +147,21 @@ export function LessonPlayer() {
     }
     if (!audioLine) return;
 
+    const generation = playbackGenerationRef.current + 1;
+    playbackGenerationRef.current = generation;
+    const playbackOperation = createPlaybackOperation({
+      generation,
+      getCurrentGeneration: () => playbackGenerationRef.current,
+      onCompleted: () => dispatch(completionEvent),
+      onFailed: (caughtError) => {
+        const message =
+          caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
+        setError(`Audio unavailable: ${message}`);
+      },
+    });
+
     if (muted) {
-      const timeout = window.setTimeout(() => dispatch(completionEvent), 700);
+      const timeout = window.setTimeout(() => playbackOperation.complete(), 700);
       return () => window.clearTimeout(timeout);
     }
 
@@ -155,14 +170,10 @@ export function LessonPlayer() {
     playbackControllerRef.current = controller;
     setError("");
     void playAudioLine({ ...audioLine, signal: controller.signal })
-      .then(() => {
-        if (!cancelled) dispatch(completionEvent);
-      })
+      .then(() => playbackOperation.complete())
       .catch((caughtError: unknown) => {
         if (cancelled || isAbortError(caughtError)) return;
-        const message =
-          caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
-        setError(`Audio unavailable: ${message}`);
+        playbackOperation.fail(caughtError);
       })
       .finally(() => {
         if (playbackControllerRef.current === controller) {
@@ -190,6 +201,8 @@ export function LessonPlayer() {
     () => () => {
       pressedRef.current = false;
       pressSequenceRef.current += 1;
+      playbackGenerationRef.current += 1;
+      playbackControllerRef.current?.abort();
       recordingControllerRef.current?.abort();
       recordingRef.current?.cancel();
       evaluationControllerRef.current?.abort();
@@ -200,6 +213,7 @@ export function LessonPlayer() {
   function cancelPendingWork() {
     pressedRef.current = false;
     pressSequenceRef.current += 1;
+    playbackGenerationRef.current += 1;
     playbackControllerRef.current?.abort();
     playbackControllerRef.current = null;
     recordingControllerRef.current?.abort();
