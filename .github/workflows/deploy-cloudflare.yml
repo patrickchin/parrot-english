@@ -51,8 +51,5 @@ jobs:
       - name: Apply D1 migrations
         run: npx wrangler d1 migrations apply parrot-english --remote
 
-      - name: Publish onboarding questionnaire
-        run: npm run questionnaire:publish -- --remote
-
       - name: Deploy to Cloudflare Workers
         run: npx wrangler deploy --config wrangler.jsonc
