@@ -34,7 +34,7 @@ function reduce(state, event, currentLesson = lesson) {
 }
 
 function startAtUser() {
-  const started = reduce(createInitialLessonState(), { type: "START" });
+  const started = reduce(createInitialLessonState(), { type: "PLAY_SCENE" });
   return reduce(started, { type: "LINE_DONE" });
 }
 
@@ -45,7 +45,7 @@ function releaseRecording(state) {
 
 describe("scene-script lesson state", () => {
   it("starts at the first scripted speaker", () => {
-    const state = reduce(createInitialLessonState(), { type: "START" });
+    const state = reduce(createInitialLessonState(), { type: "PLAY_SCENE" });
 
     assert.equal(state.phase, LessonPhase.Speaking);
     assert.equal(state.sceneIndex, 0);
@@ -61,11 +61,89 @@ describe("scene-script lesson state", () => {
     };
     const state = reduce(
       createInitialLessonState(),
-      { type: "START" },
+      { type: "PLAY_SCENE" },
       userFirstLesson
     );
 
     assert.equal(state.phase, LessonPhase.WaitingForUser);
+  });
+
+  it("pauses the current scene at its beginning and clears interaction state", () => {
+    const paused = reduce(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Feedback,
+        sceneIndex: 1,
+        stepIndex: 4,
+        attemptCount: 1,
+        feedback: "Almost!",
+        transcript: "partial response",
+        feedbackOutcome: "retry",
+      },
+      { type: "PAUSE_SCENE" }
+    );
+
+    assert.equal(paused.phase, LessonPhase.Paused);
+    assert.equal(paused.sceneIndex, 1);
+    assert.equal(paused.stepIndex, 0);
+    assert.equal(paused.attemptCount, 0);
+    assert.equal(paused.feedback, "");
+    assert.equal(paused.transcript, "");
+    assert.equal(paused.feedbackOutcome, null);
+  });
+
+  it("restarts a paused scene from its first scripted speaker", () => {
+    const state = reduce(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Paused,
+        sceneIndex: 1,
+        stepIndex: 4,
+      },
+      { type: "PLAY_SCENE" }
+    );
+
+    assert.equal(state.phase, LessonPhase.Speaking);
+    assert.equal(state.sceneIndex, 1);
+    assert.equal(state.stepIndex, 0);
+  });
+
+  it("starts adjacent scenes from their first step", () => {
+    const next = reduce(createInitialLessonState(), { type: "SCENE_NEXT" });
+    const previous = reduce(next, { type: "SCENE_PREVIOUS" });
+
+    assert.equal(next.phase, LessonPhase.Speaking);
+    assert.equal(next.sceneIndex, 1);
+    assert.equal(next.stepIndex, 0);
+    assert.equal(previous.phase, LessonPhase.Speaking);
+    assert.equal(previous.sceneIndex, 0);
+    assert.equal(previous.stepIndex, 0);
+  });
+
+  it("does not move beyond the first or final scene", () => {
+    const firstScene = createInitialLessonState();
+    const finalScene = { ...firstScene, sceneIndex: lesson.scenes.length - 1 };
+
+    assert.strictEqual(
+      reduce(firstScene, { type: "SCENE_PREVIOUS" }),
+      firstScene
+    );
+    assert.strictEqual(reduce(finalScene, { type: "SCENE_NEXT" }), finalScene);
+  });
+
+  it("replays a finished lesson from the first scene", () => {
+    const replaying = reduce(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Finished,
+        sceneIndex: 1,
+      },
+      { type: "REPLAY_LESSON" }
+    );
+
+    assert.equal(replaying.phase, LessonPhase.Speaking);
+    assert.equal(replaying.sceneIndex, 0);
+    assert.equal(replaying.stepIndex, 0);
   });
 
   it("moves from a model line into held recording and evaluation", () => {

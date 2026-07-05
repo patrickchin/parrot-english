@@ -16,14 +16,16 @@ describe("architecture cleanup contracts", () => {
     assert.doesNotMatch(app, /LESSON_STEPS|PROGRESS_DOT_COUNT/);
   });
 
-  it("renders generic characters and a lesson picker", () => {
+  it("renders generic story characters with scene controls", () => {
     const app = readProjectFile("src/App.tsx");
 
     assert.match(app, /<select/);
     assert.match(app, /Lesson picker/);
     assert.match(app, /scene\.characters\.map/);
     assert.match(app, /narrator-caption/);
-    assert.doesNotMatch(app, /ChevronLeft|ChevronRight|SCENE_NEXT|SCENE_PREVIOUS/);
+    assert.match(app, /ChevronLeft|ChevronRight/);
+    assert.match(app, /SCENE_NEXT|SCENE_PREVIOUS/);
+    assert.match(app, /scene-control-dock/);
   });
 
   it("keeps the active lesson experience English-only", () => {
@@ -74,7 +76,9 @@ describe("architecture cleanup contracts", () => {
     assert.doesNotMatch(packageJson, /generate:audio:groq/);
     assert.match(generator, /ELEVENLABS_DEFAULT_MODEL = "eleven_v3"/);
     assert.match(generator, /Oqy85UMasXzUjUxF0ta5/);
-    assert.match(generator, /4NQthjVhIGGVfL3Si000/);
+    assert.doesNotMatch(generator, /4NQthjVhIGGVfL3Si000/);
+    assert.match(generator, /5N1BjZ10t6GcJUhZCP40/);
+    assert.match(generator, /pFZP5JQG7iQjIQuC4Bku/);
     assert.match(generator, /line\.ttsText \?\? line\.text/);
   });
 

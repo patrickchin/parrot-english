@@ -24,8 +24,9 @@ Do not edit `dist` directly.
 ## Lesson Authoring
 
 Each lesson file contains only text and catalog IDs. Every step has one English
-line, one speaker, and a complete visible-character emote map. The app discovers
-all lesson files eagerly, validates them, and builds the picker automatically.
+line, one speaker, and a complete scripted-scene-character emote map. The app
+discovers all lesson files eagerly, validates them, and builds the picker
+automatically.
 
 When adding a lesson:
 
@@ -77,9 +78,13 @@ ELEVENLABS_MODEL_ID=eleven_v3
 ```
 
 The speaker-specific override wins over the general voice override. Current
-defaults are `Oqy85UMasXzUjUxF0ta5` for Peppa and
-`4NQthjVhIGGVfL3Si000` for Dolly and narrator. These are character-directed
-voices, not exact protected-character clones.
+defaults are:
+
+- Peppa: `Oqy85UMasXzUjUxF0ta5` (Summer)
+- Dolly: `5N1BjZ10t6GcJUhZCP40` (Adaline)
+- Narrator: `pFZP5JQG7iQjIQuC4Bku` (Lily)
+
+These are character-directed voices, not exact protected-character clones.
 
 Use `--only=<audio-id>` to avoid regenerating existing assets or spending
 credits unnecessarily. Never substitute local or macOS system speech for
@@ -97,8 +102,9 @@ public/assets/characters/<character-id>/<character-id>-<emote>.webp
 ```
 
 Register paths and descriptive alt text in the character catalog. Verify that
-every registered file exists and contains transparency before using it in a
-lesson.
+every registered file exists before using it in a lesson. The character subject
+must be opaque while its background remains transparent; partial alpha should
+be confined to antialiased subject edges.
 
 ## QA Checklist
 

@@ -4,6 +4,20 @@ import { getLessonProgressLabel } from "../lib/lesson-progress.js";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 describe("lesson progress label", () => {
+  it("describes idle and paused playback", () => {
+    assert.equal(
+      getLessonProgressLabel(createInitialLessonState()),
+      "Press Play to begin"
+    );
+    assert.equal(
+      getLessonProgressLabel({
+        ...createInitialLessonState(),
+        phase: LessonPhase.Paused,
+      }),
+      "Scene paused — press Play to restart"
+    );
+  });
+
   it("describes automatic character and narrator speech", () => {
     const speaking = { ...createInitialLessonState(), phase: LessonPhase.Speaking };
 

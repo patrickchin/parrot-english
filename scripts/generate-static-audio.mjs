@@ -14,8 +14,8 @@ const ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1";
 const ELEVENLABS_DEFAULT_MODEL = "eleven_v3";
 const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
 const ELEVENLABS_PEPPA_VOICE_ID = "Oqy85UMasXzUjUxF0ta5";
-const ELEVENLABS_DOLLY_VOICE_ID = "4NQthjVhIGGVfL3Si000";
-const ELEVENLABS_NARRATOR_VOICE_ID = "4NQthjVhIGGVfL3Si000";
+const ELEVENLABS_DOLLY_VOICE_ID = "5N1BjZ10t6GcJUhZCP40";
+const ELEVENLABS_NARRATOR_VOICE_ID = "pFZP5JQG7iQjIQuC4Bku";
 const ELEVENLABS_SPEAKER_VOICE_IDS = {
   peppa: ELEVENLABS_PEPPA_VOICE_ID,
   dolly: ELEVENLABS_DOLLY_VOICE_ID,
@@ -120,6 +120,16 @@ function getElevenLabsVoiceSettings(line) {
       speed: 1.1,
       stability: 0.28,
       style: 0.7,
+      use_speaker_boost: true,
+    };
+  }
+
+  if (line.speaker === "narrator") {
+    return {
+      similarity_boost: 0.82,
+      speed: 0.96,
+      stability: 0.5,
+      style: 0.35,
       use_speaker_boost: true,
     };
   }

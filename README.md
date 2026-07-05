@@ -68,12 +68,15 @@ A lesson contains a story summary, a three-sentence detailed summary, two goal
 phrases, and five to eight scenes. Every scene chooses a pre-generated
 background while also describing its setting in free-form text. Each scene step
 contains exactly one line of English dialogue, one speaker, and one emote for
-every visible character.
+every scripted scene character.
 
-Lesson JSON deliberately contains no image or audio filenames. Visible
-character IDs, background IDs, and the six supported emotes are resolved through
-the global catalogs in `content/catalogs`. Saved audio is an optimization cache
-resolved by speaker plus exact dialogue text in `lib/static-audio.js`.
+Lesson JSON deliberately contains no image or audio filenames. Scripted
+character IDs, background IDs, and the six supported emotes are resolved
+through the global catalogs in `content/catalogs`. Saved audio is an optimization
+cache resolved by speaker plus exact dialogue text in `lib/static-audio.js`.
+
+Character subjects must be opaque against a transparent sprite background.
+Partial alpha is reserved for antialiased subject edges.
 
 ## Environment
 
@@ -118,9 +121,9 @@ speech.
 The default generator uses ElevenLabs `eleven_v3` and selects a voice from the
 manifest speaker:
 
-- Peppa: `Oqy85UMasXzUjUxF0ta5`
-- Dolly: `4NQthjVhIGGVfL3Si000`
-- Narrator: `4NQthjVhIGGVfL3Si000`
+- Peppa: `Oqy85UMasXzUjUxF0ta5` (Summer)
+- Dolly: `5N1BjZ10t6GcJUhZCP40` (Adaline)
+- Narrator: `pFZP5JQG7iQjIQuC4Bku` (Lily)
 
 Override one speaker with `ELEVENLABS_PEPPA_VOICE_ID`,
 `ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`. The general

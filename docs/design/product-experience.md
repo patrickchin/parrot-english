@@ -7,18 +7,20 @@ children. A lesson plays like a short interactive episode: characters act out a
 situation, a character models a useful line, the learner repeats it, and a
 voice-only narrator gives brief feedback.
 
-All child-facing dialogue and narration is in English. The current lesson
-advances automatically except when the learner must press and hold the
-microphone button to speak.
+All child-facing dialogue and narration is in English. Steps within the current
+scene advance automatically except when the learner must press and hold the
+microphone button to speak, and playback advances automatically across scene
+boundaries. Back and Next restart adjacent scenes, while Pause stops the lesson
+and Play restarts the current scene from its first step.
 
 ## Roles
 
-The global character catalog contains three visible roles:
+The lesson script uses three character roles:
 
-- `peppa`: a story character.
-- `dolly`: a story character who frequently models the learner's line.
-- `user`: the learner, rendered and animated like every other visible
-  character.
+- `peppa`: a visible story character.
+- `dolly`: a visible story character who frequently models the learner's line.
+- `user`: the scripted learner role, represented on screen only by the
+  microphone prompt.
 
 `narrator` is a global voice-only speaker. Narrator steps appear as captions and
 never add a visible character or emote entry.
@@ -34,19 +36,20 @@ A lesson contains five to eight scenes. Each scene provides:
 - a title;
 - a free-form setting description;
 - a chosen pre-generated background ID;
-- the visible character IDs;
+- the scripted scene character IDs;
 - an ordered list of steps.
 
 Each step has one speaker and exactly one line of dialogue. It also selects one
-pre-generated emote for every visible character, including `user`. The global
-emote set is intentionally small: `idle`, `talking`, `listening`, `happy`,
-`sad`, and `surprised`.
+pre-generated emote for every scripted scene character, including `user`. User
+emote data remains complete even though the learner asset is not rendered. The
+global emote set is intentionally small: `idle`, `talking`, `listening`,
+`happy`, `sad`, and `surprised`.
 
 ## Automatic Lesson Loop
 
 The implemented loop is:
 
-1. The learner or adult selects a lesson and presses Start.
+1. The learner or adult selects a lesson and presses Play.
 2. Character and narrator steps play automatically in script order.
 3. A user step waits with an obvious hold-to-talk control.
 4. The learner holds the microphone button, speaks, and releases it.
@@ -56,9 +59,12 @@ The implemented loop is:
 8. The first unsuccessful attempt replays the preceding character model, then
    returns to the same user step.
 9. A second unsuccessful attempt receives feedback and continues the story.
-10. Final narrator praise completes the lesson and offers Play again.
+10. Final narrator praise completes the lesson and offers Replay Lesson.
 
 No character or narrator audio plays while recording or evaluating.
+Back and Next restart the adjacent scene from its first step. Pause stops the
+current activity, and the following Play restarts the current scene rather than
+resuming the interrupted step.
 
 ## Hold-to-Talk State
 
@@ -79,8 +85,10 @@ The user turn must:
 
 The app uses a fixed full-screen stage, a selected catalog background,
 transparent character sprites, rounded speech surfaces, and large tactile
-controls. Character placement is generic and based on each character's slot in
-the current scene, rather than hard-coded names.
+controls. A reserved bottom control dock contains Back, Play/Pause, Next, and
+the microphone prompt when it is the learner's turn, without covering story
+elements. Character placement is generic and based on each visible character's
+slot in the current scene, rather than hard-coded names.
 
 Design constraints:
 
