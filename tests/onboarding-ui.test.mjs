@@ -65,6 +65,7 @@ function renderQuestion(overrides = {}) {
       onRemoveValue() {},
       onReplay() {},
       onSkip() {},
+      onSkipQuestion() {},
       onSubmit() {},
       onToggleOption() {},
       onTranscribe() {},
@@ -144,6 +145,22 @@ describe("one-question onboarding view", () => {
     const transcribing = renderQuestion({ status: "transcribing" });
     assert.match(transcribing, /Writing what I heard…/);
     assert.match(transcribing, /type="number"/);
+  });
+
+  it("offers a per-question skip only for optional onboarding questions", () => {
+    const optional = renderQuestion({
+      question: question({ required: false }),
+    });
+    assert.match(optional, />Skip question</);
+
+    assert.doesNotMatch(renderQuestion(), />Skip question</);
+    assert.doesNotMatch(
+      renderQuestion({
+        mode: "profile",
+        question: question({ required: false }),
+      }),
+      />Skip question</,
+    );
   });
 });
 
@@ -234,6 +251,7 @@ function renderGate(overrides = {}) {
 
 describe("onboarding and profile gate", () => {
   const incompleteData = {
+    mode: "full",
     profile: {
       name: "Mia",
       age: null,
@@ -286,6 +304,7 @@ describe("onboarding and profile gate", () => {
         onRemoveValue() {},
         onReplay() {},
         onSkip() {},
+        onSkipQuestion() {},
         onSubmit() {},
         onToggleOption() {},
         onTranscribe() {},
@@ -318,6 +337,15 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(html, />Start</);
   });
 
+  it("renders bypass-only lessons without unavailable profile editing", () => {
+    const html = renderGate({
+      data: { mode: "bypass-only", canBypass: true },
+    });
+
+    assert.match(html, /LESSON CONTENT/);
+    assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
+  });
+
   it("reuses the one-question form for profile editing without introduction or Skip", () => {
     const html = renderGate({
       data: { ...incompleteData, canBypass: true },
@@ -332,6 +360,7 @@ describe("onboarding and profile gate", () => {
           onRemoveValue() {},
           onReplay() {},
           onSkip() {},
+          onSkipQuestion() {},
           onSubmit() {},
           onToggleOption() {},
           onTranscribe() {},
@@ -389,32 +418,34 @@ describe("onboarding and profile gate", () => {
     assert.equal(submissionValue(question(), "eight"), "eight");
   });
 
-  it("completes only after the saved final answer returns no next question", async () => {
-    const calls = [];
-    const savedState = { ...incompleteData, question: null };
+  it("uses the server-completed final answer response directly", async () => {
+    let saveCalls = 0;
+    let completeCalls = 0;
     const completedState = {
-      ...savedState,
+      ...incompleteData,
       canBypass: true,
-      profile: { ...savedState.profile, onboardingStatus: "completed" },
+      question: null,
+      profile: {
+        ...incompleteData.profile,
+        onboardingStatus: "completed",
+      },
     };
 
     const result = await saveQuestionAndAdvance({
       questionKey: "favoriteStoryTopics",
       value: ["space"],
-      async save(key, value) {
-        calls.push(["save", key, value]);
-        return savedState;
+      async save() {
+        saveCalls += 1;
+        return completedState;
       },
       async complete() {
-        calls.push(["complete"]);
+        completeCalls += 1;
         return completedState;
       },
     });
 
-    assert.deepEqual(calls, [
-      ["save", "favoriteStoryTopics", ["space"]],
-      ["complete"],
-    ]);
+    assert.equal(saveCalls, 1);
+    assert.equal(completeCalls, 0);
     assert.equal(result, completedState);
   });
 

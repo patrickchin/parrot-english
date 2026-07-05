@@ -18,6 +18,7 @@ type OnboardingQuestionViewProps = {
   onRemoveValue: (value: string) => void;
   onReplay: () => void;
   onSkip: () => void;
+  onSkipQuestion: () => void;
   onSubmit: () => void;
   onToggleOption: (value: string) => void;
   onTranscribe: () => void;
@@ -47,6 +48,7 @@ export function OnboardingQuestionView({
   onRemoveValue,
   onReplay,
   onSkip,
+  onSkipQuestion,
   onSubmit,
   onToggleOption,
   onTranscribe,
@@ -223,6 +225,15 @@ export function OnboardingQuestionView({
           ) : null}
 
           <div className="onboarding-form-actions">
+            {mode === "onboarding" && !question.required ? (
+              <button
+                className="onboarding-skip-button"
+                onClick={onSkipQuestion}
+                type="button"
+              >
+                Skip question
+              </button>
+            ) : null}
             {mode === "onboarding" ? (
               <button className="onboarding-skip-button" onClick={onSkip} type="button">
                 Skip for now
