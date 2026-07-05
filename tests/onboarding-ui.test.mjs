@@ -559,9 +559,10 @@ describe("onboarding and profile gate", () => {
   });
 
   it("composes AuthGate, OnboardingGate, then LessonExperience", () => {
+    assert.match(appSource, /<AuthGate\s+signedOutFallback=\{/);
     assert.match(
       appSource,
-      /<AuthGate>\s*<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
+      /<AuthGate[\s\S]*?<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
     );
   });
 

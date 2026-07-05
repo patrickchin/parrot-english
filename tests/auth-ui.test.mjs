@@ -344,20 +344,37 @@ test("signed-out route fallbacks replace the form after session checks finish", 
   assert.doesNotMatch(html, /LESSON CONTENT/);
 });
 
-test("pending and failed session checks take priority over redirects", () => {
+test("pending, retrying, and failed session checks take priority over redirects", () => {
   const fallback = createElement("span", null, "REDIRECT");
+  const pending = renderAuthGate({
+    isPending: true,
+    signedOutFallback: fallback,
+  });
+  const retrying = renderAuthGate({
+    isRetrying: true,
+    signedOutFallback: fallback,
+  });
+  const failed = renderAuthGate({
+    sessionError: new Error("offline"),
+    signedOutFallback: fallback,
+  });
 
-  assert.match(
-    renderAuthGate({ isPending: true, signedOutFallback: fallback }),
-    /正在检查登录状态/,
-  );
-  assert.match(
-    renderAuthGate({
-      sessionError: new Error("offline"),
-      signedOutFallback: fallback,
-    }),
-    /登录服务暂时不可用/,
-  );
+  assert.match(pending, /正在检查登录状态/);
+  assert.doesNotMatch(pending, /REDIRECT/);
+  assert.match(retrying, /正在检查登录状态/);
+  assert.doesNotMatch(retrying, /REDIRECT/);
+  assert.match(failed, /登录服务暂时不可用/);
+  assert.doesNotMatch(failed, /REDIRECT/);
+});
+
+test("authenticated sessions render lesson children instead of signed-out fallbacks", () => {
+  const html = renderAuthGate({
+    session: { user: { email: "learner@example.com", name: "小明" } },
+    signedOutFallback: createElement("span", null, "REDIRECT"),
+  });
+
+  assert.match(html, /LESSON CONTENT/);
+  assert.doesNotMatch(html, /REDIRECT/);
 });
 
 test("background session refetches preserve mounted lesson children", () => {
