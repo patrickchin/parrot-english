@@ -287,6 +287,7 @@ select:focus-visible {
 }
 
 .lesson-stage {
+  --control-safe-area: clamp(118px, 16vh, 154px);
   position: relative;
   width: 100%;
   height: 100%;
@@ -448,47 +449,6 @@ select:focus-visible {
   height: 56%;
 }
 
-.lesson-flow-banner {
-  position: absolute;
-  top: clamp(92px, 13vh, 126px);
-  left: 50%;
-  z-index: 18;
-  display: grid;
-  width: min(48vw, 440px);
-  min-height: 64px;
-  place-items: center;
-  transform: translateX(-50%);
-}
-
-.start-lesson-button,
-.flow-status {
-  display: inline-grid;
-  min-height: 62px;
-  place-items: center;
-  border: 5px solid rgb(255 255 255 / 94%);
-  border-radius: 999px;
-  color: #fff;
-  font-weight: 950;
-  line-height: 1;
-  text-align: center;
-}
-
-.start-lesson-button {
-  min-width: min(100%, 320px);
-  background: #ff467b;
-  cursor: pointer;
-  padding: 0 42px;
-  font-size: clamp(1.8rem, 4vw, 3.2rem);
-  box-shadow: 0 7px 0 rgb(171 38 83 / 42%);
-}
-
-.flow-status {
-  background: #204c7f;
-  padding: 0 28px;
-  font-size: clamp(1.05rem, 2.1vw, 1.7rem);
-  box-shadow: 0 6px 0 rgb(18 55 92 / 45%);
-}
-
 .character-layer {
   position: absolute;
   inset: 0;
@@ -501,12 +461,12 @@ select:focus-visible {
     (var(--character-index) + 1) * 100% / (var(--character-count) + 1)
   );
   position: absolute;
-  bottom: clamp(46px, 6vh, 76px);
+  bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
   left: var(--slot-left);
   z-index: 5;
   display: grid;
   width: clamp(150px, 23vw, 340px);
-  height: min(54vh, 500px);
+  height: min(48vh, 450px);
   justify-items: center;
   align-items: end;
   filter: drop-shadow(0 18px 13px rgb(64 75 48 / 22%));
@@ -597,10 +557,6 @@ select:focus-visible {
   line-height: 1.12;
 }
 
-.speech-bubble.is-user {
-  background: #fff7ce;
-}
-
 .narrator-caption {
   position: absolute;
   top: clamp(158px, 22vh, 220px);
@@ -631,29 +587,101 @@ select:focus-visible {
   box-shadow: 0 7px 0 rgb(145 24 72 / 45%), 0 17px 34px rgb(21 77 116 / 22%);
 }
 
-.user-turn-panel {
+.scene-control-dock {
   position: absolute;
-  bottom: clamp(18px, 3vh, 34px);
-  left: 50%;
+  right: clamp(12px, 2vw, 28px);
+  bottom: clamp(12px, 2vh, 24px);
+  left: clamp(12px, 2vw, 28px);
   z-index: 24;
   display: grid;
-  width: min(72vw, 720px);
-  min-height: 130px;
-  place-items: center;
-  gap: 12px;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  min-height: 86px;
+  align-items: center;
+  gap: clamp(8px, 1vw, 16px);
   border: 5px solid #fff;
-  border-radius: 28px;
-  background: rgb(255 255 255 / 97%);
-  padding: 16px 22px;
-  text-align: center;
-  transform: translateX(-50%);
-  box-shadow: 0 7px 0 rgb(38 88 130 / 35%), 0 18px 42px rgb(26 86 126 / 28%);
+  border-radius: 999px;
+  background: rgb(23 60 103 / 96%);
+  padding: clamp(8px, 1.2vw, 14px);
+  box-shadow: 0 8px 0 rgb(12 38 68 / 38%), 0 18px 42px rgb(26 86 126 / 28%);
 }
 
-.user-turn-panel > strong {
-  font-size: clamp(1.25rem, 2.6vw, 2.25rem);
+.scene-control-button,
+.playback-control-button {
+  display: inline-flex;
+  min-width: 58px;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.scene-control-button {
+  width: 58px;
+  aspect-ratio: 1;
+  background: #fff;
+  color: #173c67;
+}
+
+.scene-control-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.scene-control-button svg {
+  width: 34px;
+  height: 34px;
+}
+
+.playback-control-button {
+  flex-flow: row nowrap;
+  gap: 9px;
+  background: #ffd944;
+  color: #241d2b;
+  padding: 0 20px;
   font-weight: 950;
-  line-height: 1.05;
+  line-height: 1;
+}
+
+.playback-control-button svg {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+}
+
+.dock-status {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  font-weight: 900;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learner-mic-prompt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(10px, 1.2vw, 18px);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 97%);
+  padding: 8px 10px 8px 22px;
+}
+
+.learner-mic-prompt > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #173c67;
+  font-size: clamp(1rem, 1.8vw, 1.45rem);
+  font-weight: 950;
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hold-to-talk-button {
@@ -662,16 +690,16 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border: 5px solid #fff;
+  border: 0;
   border-radius: 999px;
-  background: #ff467b;
+  background: #0f8f68;
   color: #fff;
   cursor: pointer;
   padding: 10px 26px;
   font-size: clamp(1rem, 2vw, 1.45rem);
   font-weight: 950;
   touch-action: none;
-  box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
+  box-shadow: 0 5px 0 rgb(6 98 72 / 45%);
   user-select: none;
 }
 
@@ -685,30 +713,31 @@ select:focus-visible {
   background: #d62f70;
 }
 
-.user-turn-panel.is-recording {
+.learner-mic-prompt.is-recording {
   background: #fff7ce;
 }
 
-.user-turn-panel.is-evaluating {
+.learner-mic-prompt.is-evaluating {
   background: #eaf8ff;
 }
 
 .checking-label {
   display: inline-grid;
-  min-height: 56px;
+  min-height: 48px;
   place-items: center;
   border-radius: 999px;
-  background: #204c7f;
+  background: #173c67;
   color: #fff;
-  padding: 0 28px;
-  font-size: clamp(1rem, 2vw, 1.4rem);
+  padding: 0 20px;
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
   font-weight: 950;
+  white-space: nowrap;
 }
 
 .error-banner {
   position: absolute;
   right: 18px;
-  bottom: 18px;
+  bottom: calc(var(--control-safe-area) + 12px);
   z-index: 30;
   max-width: min(44vw, 480px);
   border: 4px solid #fff;
@@ -734,12 +763,12 @@ select:focus-visible {
   0%,
   100% {
     transform: scale(1);
-    box-shadow: 0 6px 0 rgb(171 38 83 / 42%), 0 0 0 0 rgb(255 70 123 / 38%);
+    box-shadow: 0 5px 0 rgb(145 24 72 / 45%), 0 0 0 0 rgb(214 47 112 / 38%);
   }
 
   50% {
     transform: scale(1.035);
-    box-shadow: 0 6px 0 rgb(171 38 83 / 42%), 0 0 0 15px rgb(255 70 123 / 0%);
+    box-shadow: 0 5px 0 rgb(145 24 72 / 45%), 0 0 0 15px rgb(214 47 112 / 0%);
   }
 }
 
@@ -749,12 +778,8 @@ select:focus-visible {
     width: min(62vw, 380px);
   }
 
-  .lesson-flow-banner {
-    top: 150px;
-  }
-
   .character-sprite {
-    bottom: 82px;
+    bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
     width: clamp(145px, 31vw, 280px);
     height: 48vh;
   }
@@ -770,6 +795,10 @@ select:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .lesson-stage {
+    --control-safe-area: clamp(170px, 27vh, 218px);
+  }
+
   .scene-title {
     display: none;
   }
@@ -804,7 +833,7 @@ select:focus-visible {
   }
 
   .character-sprite {
-    bottom: 122px;
+    bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
     width: clamp(120px, 34vw, 230px);
     height: 43vh;
   }
@@ -831,13 +860,42 @@ select:focus-visible {
     padding: 14px 18px;
   }
 
-  .user-turn-panel {
-    bottom: 14px;
-    width: min(92vw, 560px);
-    min-height: 112px;
-    gap: 8px;
+  .scene-control-dock {
+    grid-template-areas:
+      "back playback next"
+      "prompt prompt prompt";
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    border-radius: 28px;
+    padding: 10px;
+  }
+
+  .scene-control-button:first-child {
+    grid-area: back;
+  }
+
+  .playback-control-button {
+    grid-area: playback;
+  }
+
+  .scene-control-button:last-child {
+    grid-area: next;
+  }
+
+  .learner-mic-prompt,
+  .dock-status {
+    grid-area: prompt;
+  }
+
+  .learner-mic-prompt {
+    grid-template-columns: minmax(0, 1fr);
     border-radius: 22px;
-    padding: 12px 14px;
+    padding: 10px;
+  }
+
+  .learner-mic-prompt > strong {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .hold-to-talk-button {
@@ -847,7 +905,6 @@ select:focus-visible {
 
   .error-banner {
     right: 4vw;
-    bottom: 150px;
     max-width: 92vw;
   }
 }
@@ -881,7 +938,7 @@ select:focus-visible {
 
 @media (max-height: 620px) {
   .character-sprite {
-    bottom: 34px;
+    bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
     height: 49vh;
   }
 
@@ -890,9 +947,6 @@ select:focus-visible {
     top: 128px;
   }
 
-  .user-turn-panel {
-    min-height: 104px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

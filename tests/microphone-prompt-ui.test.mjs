@@ -38,10 +38,13 @@ describe("hold-to-talk UI", () => {
     assert.match(app, /Release when you finish/);
     assert.match(app, /aria-live="assertive"/);
 
+    const promptRule = getRule(".learner-mic-prompt");
     const buttonRule = getRule(".hold-to-talk-button");
     const recordingRule = getRule(".hold-to-talk-button.is-recording");
+    assert.match(promptRule, /background:\s*rgb\(255 255 255/);
     assert.match(buttonRule, /border-radius:\s*999px/);
     assert.match(buttonRule, /touch-action:\s*none/);
     assert.match(recordingRule, /animation:\s*micPulse/);
+    assert.doesNotMatch(styles, /\.user-turn-panel\s*\{/);
   });
 });
