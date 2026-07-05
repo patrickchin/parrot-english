@@ -20,7 +20,13 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Navigate, useLocation } from "react-router";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
 import { getLessonScenePresentation } from "../lib/lesson-scene";
@@ -37,8 +43,15 @@ import {
   type AppNavigationEvent,
   type AppNavigationState,
 } from "./app-navigation";
-import { getLoginPath } from "./app-routes";
+import {
+  getLessonScenePath,
+  getLoginPath,
+  getOnboardingPath,
+  getSafeReturnTo,
+} from "./app-routes";
 import { AuthGate } from "./AuthGate";
+import { FeaturePlaceholder } from "./FeaturePlaceholder";
+import { HomeMenu } from "./HomeMenu";
 import { OnboardingGate } from "./OnboardingGate";
 import { evaluateSpeech } from "./evaluation-request";
 import {
@@ -643,10 +656,70 @@ export function LessonExperience() {
   );
 }
 
+export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
+  const navigate = useNavigate();
+
+  return (
+    <Routes>
+      <Route element={<HomeMenu />} path="/" />
+      <Route
+        element={
+          <LessonList
+            onOpenLesson={(lessonId) =>
+              navigate(getLessonScenePath("parrot", lessonId, 0))
+            }
+          />
+        }
+        path="/lessons"
+      />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Lesson creation is coming soon. You will be able to build practice around your own interests."
+            eyebrow="LEARN YOUR WAY"
+            title="Create a Lesson"
+          />
+        }
+        path="/lessons/my/create"
+      />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Progress tracking is coming soon."
+            eyebrow="KEEP GROWING"
+            title="Progress"
+          />
+        }
+        path="/progress"
+      />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Storytelling practice is coming soon."
+            eyebrow="TELL A STORY"
+            title="Storytelling"
+          />
+        }
+        path="/stories"
+      />
+      <Route element={<Navigate replace to={loginTarget} />} path="/login" />
+      <Route element={null} path="/onboarding" />
+      <Route element={null} path="/profile" />
+      <Route element={<Navigate replace to="/" />} path="*" />
+    </Routes>
+  );
+}
+
 function RoutedApplication() {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentTarget = `${location.pathname}${location.search}${location.hash}`;
   const onLoginRoute = location.pathname === "/login";
+  const isOnboardingRoute = location.pathname === "/onboarding";
+  const isProfileRoute = location.pathname === "/profile";
+  const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
+  const requestedProtectedTarget =
+    onLoginRoute || isOnboardingRoute ? safeReturnTo : currentTarget;
 
   return (
     <AuthGate
@@ -656,8 +729,22 @@ function RoutedApplication() {
         )
       }
     >
-      <OnboardingGate>
-        <LessonExperience />
+      <OnboardingGate
+        completedOnboardingFallback={
+          <Navigate replace to={safeReturnTo} />
+        }
+        isOnboardingRoute={isOnboardingRoute}
+        isProfileRoute={isProfileRoute}
+        onboardingFallback={
+          <Navigate
+            replace
+            to={getOnboardingPath(requestedProtectedTarget)}
+          />
+        }
+        onCloseProfileRoute={() => navigate("/")}
+        onOpenProfileRoute={() => navigate("/profile")}
+      >
+        <ApplicationRoutes loginTarget={safeReturnTo} />
       </OnboardingGate>
     </AuthGate>
   );

@@ -408,16 +408,30 @@ function renderGate(overrides = {}) {
       OnboardingGateView,
       {
         acknowledgment: null,
+        completedOnboardingFallback: createElement(
+          "div",
+          { "data-completed-redirect": true },
+          "COMPLETED REDIRECT",
+        ),
         data: null,
+        isOnboardingRoute: true,
+        isProfileLoading: false,
+        isProfileRoute: false,
         isLoading: false,
         loadError: "",
         onAcknowledgmentNext() {},
-        onCloseProfile() {},
-        onOpenProfile() {},
+        onCloseProfileRoute() {},
         onRetry() {},
+        onRetryProfile() {},
         onSkip() {},
         onStart() {},
+        onboardingFallback: createElement(
+          "div",
+          { "data-onboarding-redirect": true },
+          "ONBOARDING REDIRECT",
+        ),
         profileEditor: null,
+        profileLoadError: "",
         questionProps: null,
         started: false,
         ...overrides,
@@ -428,6 +442,51 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
+  it("routes incomplete learners to onboarding and completed learners away from it", () => {
+    const protectedPage = renderGate({
+      data: fullState(),
+      isOnboardingRoute: false,
+    });
+    assert.match(protectedPage, /ONBOARDING REDIRECT/);
+    assert.doesNotMatch(protectedPage, /LESSON CONTENT|Meet Peppa/);
+
+    const completedOnboarding = renderGate({
+      data: fullState({
+        canBypass: false,
+        profile: {
+          ...fullState().profile,
+          onboardingStatus: "completed",
+        },
+      }),
+    });
+    assert.match(completedOnboarding, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(completedOnboarding, /LESSON CONTENT|Meet Peppa/);
+  });
+
+  it("keeps profile loading and retry errors on the profile route", () => {
+    const loading = renderGate({
+      data: fullState({ canBypass: true }),
+      isOnboardingRoute: false,
+      isProfileLoading: true,
+      isProfileRoute: true,
+    });
+    assert.match(loading, /role="status"/);
+    assert.match(loading, /Loading your profile/);
+    assert.doesNotMatch(loading, /LESSON CONTENT/);
+
+    const failed = renderGate({
+      data: fullState({ canBypass: true }),
+      isOnboardingRoute: false,
+      isProfileRoute: true,
+      profileLoadError: "Profile service is unavailable.",
+    });
+    assert.match(failed, /role="alert"/);
+    assert.match(failed, /Profile service is unavailable\./);
+    assert.match(failed, />Retry</);
+    assert.match(failed, />Back to main menu</);
+    assert.doesNotMatch(failed, /LESSON CONTENT/);
+  });
+
   it("hides lessons behind loading, errors, and explicit Start", () => {
     assert.doesNotMatch(renderGate({ isLoading: true }), /LESSON CONTENT/);
     const failed = renderGate({ loadError: "Questions are unavailable." });
@@ -465,12 +524,14 @@ describe("onboarding and profile gate", () => {
           onboardingStatus: "in_progress",
         },
       }),
+      isOnboardingRoute: false,
     });
     assert.match(html, /LESSON CONTENT/);
     assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
 
     const bypass = renderGate({
       data: { mode: "bypass-only", canBypass: true },
+      isOnboardingRoute: false,
     });
     assert.match(bypass, /LESSON CONTENT/);
     assert.doesNotMatch(bypass, /Edit learner profile/);
@@ -479,6 +540,8 @@ describe("onboarding and profile gate", () => {
   it("renders the prose profile summary without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
+      isOnboardingRoute: false,
+      isProfileRoute: true,
       profileEditor: {
         drafts: { name: "Mia", age: "I am eight" },
         fieldErrors: {},
@@ -549,12 +612,14 @@ describe("onboarding and profile gate", () => {
     assert.equal(result, completed);
   });
 
-  it("composes AuthGate, OnboardingGate, then LessonExperience", () => {
+  it("composes route-aware onboarding inside the authenticated shell", () => {
     assert.match(appSource, /<AuthGate\s+signedOutFallback=\{/);
-    assert.match(
-      appSource,
-      /<AuthGate[\s\S]*?<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
-    );
+    assert.match(appSource, /<OnboardingGate[\s\S]*?isOnboardingRoute=/);
+    assert.match(appSource, /completedOnboardingFallback=/);
+    assert.match(appSource, /onboardingFallback=/);
+    assert.match(appSource, /isProfileRoute=/);
+    assert.match(gateSource, /onOpen:\s*onOpenProfileRoute/);
+    assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);
   });
 
   it("keeps responsive reduced-motion styles", () => {

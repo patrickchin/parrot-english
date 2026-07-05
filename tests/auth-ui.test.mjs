@@ -594,16 +594,17 @@ test("sign-out maps failures without refetching and refetches success", async ()
   assert.equal(refetchCalls, 1);
 });
 
-test("App composes AuthGate, OnboardingGate, and the complete lesson experience", () => {
+test("App composes AuthGate, route-aware onboarding, and authenticated routes", () => {
   assert.match(app, /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\/AuthGate["']/);
   assert.match(
     app,
     /import\s+\{\s*OnboardingGate\s*\}\s+from\s+["']\.\/OnboardingGate["']/,
   );
   assert.match(app, /export function LessonExperience\(\)/);
+  assert.match(app, /export function ApplicationRoutes\(/);
   assert.match(
     app,
-    /<AuthGate[\s\S]*?<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
+    /<AuthGate[\s\S]*?<OnboardingGate[\s\S]*?<ApplicationRoutes\s+loginTarget=\{safeReturnTo\}\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
   );
 });
 
