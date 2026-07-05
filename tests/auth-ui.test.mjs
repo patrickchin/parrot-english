@@ -55,9 +55,11 @@ function renderAuthGate(overrides = {}) {
     mode: "sign-in",
     onFieldChange() {},
     onModeChange() {},
+    onOpenProfile: null,
     onRetry() {},
     onSignOut() {},
     onSubmit() {},
+    profileError: "",
     session: null,
     sessionError: null,
     ...overrides,
@@ -372,6 +374,21 @@ test("signed-in views render lesson children and disabled sign-out progress", ()
   assert.match(html, /learner@example.com/);
   assert.match(html, /正在退出…/);
   assert.match(html, /<button[^>]*disabled/);
+});
+
+test("renders Profile and Log out together in the account bar", () => {
+  const html = renderAuthGate({
+    onOpenProfile() {},
+    session: { user: { email: "mia@example.test", name: "Mia" } },
+  });
+  const bar = html.match(
+    /<aside[^>]*class="user-session-bar"[\s\S]*?<\/aside>/,
+  )?.[0];
+
+  assert.ok(bar);
+  assert.match(bar, /aria-label="Edit learner profile"/);
+  assert.match(bar, />退出登录</);
+  assert.doesNotMatch(html, /class="profile-edit-button"/);
 });
 
 test("auth submission validates before calling the client", async () => {

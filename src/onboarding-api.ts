@@ -61,13 +61,31 @@ export type OnboardingRequestOptions = {
 export class OnboardingApiError extends Error {
   readonly status: number;
   readonly code: string;
+  readonly fieldErrors: Record<string, string>;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    fieldErrors: Record<string, string> = {}
+  ) {
     super(message);
     this.name = "OnboardingApiError";
     this.status = status;
     this.code = code;
+    this.fieldErrors = fieldErrors;
   }
+}
+
+function stringRecord(value: unknown) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string"
+    )
+  );
 }
 
 async function requestJson<Result>(
@@ -86,7 +104,12 @@ async function requestJson<Result>(
   if (!response.ok) {
     const errorPayload =
       payload !== null && typeof payload === "object"
-        ? (payload as { error?: unknown; fieldError?: unknown; message?: unknown })
+        ? (payload as {
+            error?: unknown;
+            fieldError?: unknown;
+            fieldErrors?: unknown;
+            message?: unknown;
+          })
         : {};
     const code =
       typeof errorPayload.error === "string"
@@ -98,7 +121,12 @@ async function requestJson<Result>(
         : typeof errorPayload.message === "string"
           ? errorPayload.message
           : "The request could not be completed.";
-    throw new OnboardingApiError(response.status, code, message);
+    throw new OnboardingApiError(
+      response.status,
+      code,
+      message,
+      stringRecord(errorPayload.fieldErrors)
+    );
   }
 
   return payload as Result;
@@ -183,16 +211,17 @@ export function loadProfile(options?: OnboardingRequestOptions) {
   );
 }
 
-export function saveProfileAnswer(
-  questionKey: string,
-  value: unknown,
+export function saveProfileAnswers(
+  answers: Record<string, unknown>,
   options?: OnboardingRequestOptions
 ) {
-  return jsonRequest<ProfileState>(
+  return requestJson<ProfileState>(
     "/api/profile",
-    "PUT",
-    questionKey,
-    value,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers }),
+    },
     options
   );
 }

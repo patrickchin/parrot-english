@@ -19,16 +19,28 @@ const {
   playOnboardingStart,
   replayOnboardingQuestion,
 } = questionModule;
+let ProfileEditorView;
+try {
+  ({ ProfileEditorView } = await vite.ssrLoadModule("/src/ProfileEditor.tsx"));
+} catch {
+  ProfileEditorView = undefined;
+}
 const gateModule = await vite.ssrLoadModule("/src/OnboardingGate.tsx");
 const {
   OnboardingGateView,
   addArrayAnswer,
   answerForQuestion,
+  profileDraftsFromState,
   saveQuestionAndAdvance,
   submissionValue,
   toggleArrayAnswer,
+  updateProfileDraft,
 } = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const gateSource = readFileSync(
+  new URL("../src/OnboardingGate.tsx", import.meta.url),
+  "utf8",
+);
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 after(async () => {
@@ -226,6 +238,100 @@ describe("onboarding audio and transcription helpers", () => {
   });
 });
 
+describe("profile summary editor", () => {
+  const nameQuestion = question({
+    answerKey: "name",
+    position: 0,
+    promptEn: "What name would you like us to use?",
+    promptZh: "你希望我们怎么称呼你？",
+    answerType: "text",
+    validation: { maxLength: 80 },
+    audio: null,
+  });
+  const cartoonsQuestion = question({
+    answerKey: "favoriteCartoons",
+    position: 2,
+    promptEn: "Which cartoons do you like?",
+    promptZh: "你喜欢哪些动画片？",
+    answerType: "text",
+    cardinality: "array",
+    options: ["Bluey", "Paw Patrol"],
+    validation: { maxItems: 4, maxLength: 50 },
+  });
+
+  it("renders every prefilled question in one editable form", () => {
+    assert.equal(
+      typeof ProfileEditorView,
+      "function",
+      "Expected an executable ProfileEditorView",
+    );
+    const html = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        drafts: {
+          name: "Mia",
+          age: 8,
+          favoriteCartoons: ["Bluey"],
+        },
+        fieldErrors: {},
+        fieldStatuses: {},
+        isSaving: false,
+        onAddPending() {},
+        onCancel() {},
+        onClose() {},
+        onPendingChange() {},
+        onRemoveValue() {},
+        onReplay() {},
+        onSave() {},
+        onToggleOption() {},
+        onTranscribe() {},
+        onValueChange() {},
+        pageError: "",
+        pendingValues: {},
+        questions: [nameQuestion, question(), cartoonsQuestion],
+      }),
+    );
+
+    assert.match(html, /What name would you like us to use\?/);
+    assert.match(html, /How old are you\?/);
+    assert.match(html, /Which cartoons do you like\?/);
+    assert.match(html, /value="Mia"/);
+    assert.match(html, /value="8"/);
+    assert.match(html, /aria-label="Remove Bluey"/);
+    assert.equal((html.match(/<form/g) ?? []).length, 1);
+    assert.match(html, />Save changes</);
+    assert.match(html, />Cancel</);
+    assert.doesNotMatch(html, />Next</);
+    assert.doesNotMatch(html, /Question 1 of/);
+  });
+
+  it("builds and updates keyed drafts without changing other answers", () => {
+    assert.equal(typeof profileDraftsFromState, "function");
+    assert.equal(typeof updateProfileDraft, "function");
+    const state = {
+      profile: {
+        name: "Mia",
+        age: 8,
+        answers: { favoriteCartoons: ["Bluey"] },
+      },
+      questions: [nameQuestion, question(), cartoonsQuestion],
+    };
+    const drafts = profileDraftsFromState(state);
+    const updated = updateProfileDraft(drafts, "age", 9);
+
+    assert.deepEqual(drafts, {
+      name: "Mia",
+      age: 8,
+      favoriteCartoons: ["Bluey"],
+    });
+    assert.deepEqual(updated, {
+      name: "Mia",
+      age: 9,
+      favoriteCartoons: ["Bluey"],
+    });
+    assert.notEqual(updated, drafts);
+  });
+});
+
 function renderGate(overrides = {}) {
   return renderToStaticMarkup(
     createElement(
@@ -333,7 +439,8 @@ describe("onboarding and profile gate", () => {
     });
 
     assert.match(html, /LESSON CONTENT/);
-    assert.match(html, /aria-label="Edit learner profile"/);
+    assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
+    assert.match(gateSource, /useProfileAccountAction/);
     assert.doesNotMatch(html, />Start</);
   });
 
@@ -346,40 +453,42 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
   });
 
-  it("reuses the one-question form for profile editing without introduction or Skip", () => {
+  it("renders all profile questions without introduction or Skip", () => {
+    const nameQuestion = question({
+      answerKey: "name",
+      position: 0,
+      promptEn: "What name would you like us to use?",
+      promptZh: "你希望我们怎么称呼你？",
+      answerType: "text",
+      validation: { maxLength: 80 },
+      audio: null,
+    });
     const html = renderGate({
       data: { ...incompleteData, canBypass: true },
       profileEditor: {
-        current: 1,
-        total: 6,
-        questionProps: {
-          fieldError: "",
-          mode: "profile",
-          onAddPending() {},
-          onPendingChange() {},
-          onRemoveValue() {},
-          onReplay() {},
-          onSkip() {},
-          onSkipQuestion() {},
-          onSubmit() {},
-          onToggleOption() {},
-          onTranscribe() {},
-          onValueChange() {},
-          pendingValue: "",
-          progress: { answered: 0, current: 1, total: 6 },
-          question: question({
-            answerKey: "name",
-            promptEn: "What name would you like us to use?",
-            audio: null,
-          }),
-          status: "idle",
-          value: "Mia",
-        },
+        drafts: { name: "Mia", age: 8 },
+        fieldErrors: {},
+        fieldStatuses: {},
+        isSaving: false,
+        onAddPending() {},
+        onCancel() {},
+        onClose() {},
+        onPendingChange() {},
+        onRemoveValue() {},
+        onReplay() {},
+        onSave() {},
+        onToggleOption() {},
+        onTranscribe() {},
+        onValueChange() {},
+        pageError: "",
+        pendingValues: {},
+        questions: [nameQuestion, question()],
       },
     });
 
     assert.match(html, /Edit profile/);
     assert.match(html, /What name would you like us to use\?/);
+    assert.match(html, /How old are you\?/);
     assert.match(html, /aria-label="Close profile editor"/);
     assert.doesNotMatch(html, /Meet Peppa/);
     assert.doesNotMatch(html, /Skip for now/);

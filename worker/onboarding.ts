@@ -182,7 +182,11 @@ async function readJsonBody(request: Request) {
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
       throw new Error("invalid");
     }
-    return parsed as { questionKey?: unknown; value?: unknown };
+    return parsed as {
+      answers?: unknown;
+      questionKey?: unknown;
+      value?: unknown;
+    };
   } catch {
     throw new ApiError(400, "invalid_json");
   }
@@ -396,32 +400,57 @@ export async function handleOnboardingRequest(
 
     if (url.pathname === "/api/profile" && input.request.method === "PUT") {
       const body = await readJsonBody(input.request);
-      if (typeof body.questionKey !== "string") {
-        throw new ApiError(400, "invalid_answer", "A question key is required.");
-      }
-      const state = await repository.loadState(input.identity);
-      const entry =
-        body.questionKey === "name"
-          ? PROFILE_NAME_QUESTION
-          : await repository.findQuestion(
-              state.questionnaire.id,
-              body.questionKey
-            );
-      if (!entry) {
+      if (
+        body.answers === null ||
+        typeof body.answers !== "object" ||
+        Array.isArray(body.answers)
+      ) {
         throw new ApiError(
           400,
-          "invalid_answer",
-          "This question is no longer available."
+          "invalid_profile",
+          "A profile answer map is required."
         );
       }
-      const validation = validateAnswer(entry, body.value);
-      if ("error" in validation) {
-        throw new ApiError(400, "invalid_answer", validation.error);
+      const state = await repository.loadState(input.identity);
+      const validatedAnswers: Array<{
+        answerKey: string;
+        value: unknown;
+      }> = [];
+      const fieldErrors = Object.create(null) as Record<string, string>;
+
+      for (const [answerKey, value] of Object.entries(body.answers)) {
+        const entry =
+          answerKey === "name"
+            ? PROFILE_NAME_QUESTION
+            : state.questions.find(
+                (question) => question.answerKey === answerKey
+              );
+        if (!entry) {
+          fieldErrors[answerKey] = "This question is no longer available.";
+          continue;
+        }
+        const validation = validateAnswer(entry, value);
+        if ("error" in validation) {
+          fieldErrors[answerKey] =
+            validation.error ?? "This answer is invalid.";
+          continue;
+        }
+        validatedAnswers.push({
+          answerKey: entry.answerKey,
+          value: validation.value,
+        });
       }
-      const updated = writeProfileAnswer(
-        state.profile,
-        entry.answerKey,
-        validation.value
+
+      if (Object.keys(fieldErrors).length > 0) {
+        throw new ApiError(400, "invalid_profile", undefined, {
+          fieldErrors,
+        });
+      }
+
+      const updated = validatedAnswers.reduce(
+        (profile, answer) =>
+          writeProfileAnswer(profile, answer.answerKey, answer.value),
+        state.profile
       );
       await repository.saveAnswer(state.profile.id, {
         age: updated.age,

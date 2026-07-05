@@ -554,7 +554,7 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("loads and edits known profile fields with shared validation", async () => {
+  it("loads and edits all known profile fields in one request", async () => {
     const state = createSeededDatabase();
     try {
       await callOnboarding(state.database, "/api/onboarding");
@@ -568,35 +568,96 @@ describe("onboarding persistence and API", () => {
       assert.equal(profilePayload.questions[0].answerKey, "name");
       assert.equal(profilePayload.questions[1].answerKey, "age");
 
-      const nameResponse = await callOnboarding(
+      const saveResponse = await callOnboarding(
         state.database,
         "/api/profile",
         "PUT",
-        { questionKey: "name", value: "  Maya  " },
+        {
+          answers: {
+            name: "  Maya  ",
+            age: 9,
+            favoriteCartoons: ["Bluey"],
+          },
+        },
       );
-      assert.equal(nameResponse.status, 200);
-      assert.equal((await nameResponse.json()).profile.name, "Maya");
-
-      const ageResponse = await callOnboarding(
-        state.database,
-        "/api/profile",
-        "PUT",
-        { questionKey: "age", value: 18 },
-      );
-      assert.equal(ageResponse.status, 400);
-      assert.deepEqual(await ageResponse.json(), {
-        error: "invalid_answer",
-        fieldError: "Please enter a number from 3 to 17.",
-      });
+      assert.equal(saveResponse.status, 200);
+      const saved = await saveResponse.json();
+      assert.equal(saved.profile.name, "Maya");
+      assert.equal(saved.profile.age, 9);
+      assert.deepEqual(saved.profile.answers.favoriteCartoons, ["Bluey"]);
 
       const row = state.sqlite
-        .prepare("SELECT name, age, onboarding_status FROM learner_profile WHERE auth_user_id = ?")
+        .prepare("SELECT name, age, answers_json, onboarding_status FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
       assert.deepEqual({ ...row }, {
         name: "Maya",
-        age: 8,
+        age: 9,
+        answers_json: '{"favoriteCartoons":["Bluey"]}',
         onboarding_status: "completed",
       });
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects invalid profile answers without persisting valid siblings", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callOnboarding(state.database, "/api/onboarding");
+      state.sqlite.exec(
+        "UPDATE learner_profile SET age = 8, onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'",
+      );
+      const statement = state.sqlite.prepare(
+        "SELECT name, age, answers_json FROM learner_profile WHERE auth_user_id = ?",
+      );
+      const before = statement.get("user-1");
+
+      const response = await callOnboarding(
+        state.database,
+        "/api/profile",
+        "PUT",
+        { answers: { name: "Changed", age: 99 } },
+      );
+
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), {
+        error: "invalid_profile",
+        fieldErrors: { age: "Please enter a number from 3 to 17." },
+      });
+      assert.deepEqual(statement.get("user-1"), before);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects unknown profile answer keys without writing", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callOnboarding(state.database, "/api/onboarding");
+      const before = state.sqlite
+        .prepare("SELECT updated_at FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+
+      const response = await callOnboarding(
+        state.database,
+        "/api/profile",
+        "PUT",
+        { answers: { retiredFavorite: "dragons" } },
+      );
+
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), {
+        error: "invalid_profile",
+        fieldErrors: {
+          retiredFavorite: "This question is no longer available.",
+        },
+      });
+      assert.deepEqual(
+        state.sqlite
+          .prepare("SELECT updated_at FROM learner_profile WHERE auth_user_id = ?")
+          .get("user-1"),
+        before,
+      );
     } finally {
       state.close();
     }

@@ -6,12 +6,15 @@ const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 describe("scene playback controls", () => {
-  it("renders previous, playback, and next controls in one dock", () => {
-    const docks = app.match(/<nav[\s\S]*?scene-control-dock[\s\S]*?<\/nav>/g) ?? [];
+  it("renders separate previous and next controls around one action dock", () => {
+    const controls = app.match(
+      /<nav[\s\S]*?className="scene-controls"[\s\S]*?<\/nav>/g,
+    ) ?? [];
 
-    assert.equal(docks.length, 1);
-    assert.match(docks[0], /aria-label="Previous scene"/);
-    assert.match(docks[0], /aria-label="Next scene"/);
+    assert.equal(controls.length, 1);
+    assert.match(controls[0], /aria-label="Previous scene"/);
+    assert.match(controls[0], /className="scene-control-dock"/);
+    assert.match(controls[0], /aria-label="Next scene"/);
     assert.match(app, /PLAY_SCENE/);
     assert.match(app, /PAUSE_SCENE/);
     assert.match(app, /SCENE_PREVIOUS/);
