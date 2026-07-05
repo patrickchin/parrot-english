@@ -70,11 +70,76 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       compactStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"back playback next"\s*"prompt prompt prompt"/,
+      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt prompt prompt"\s*"back playback next"/,
     );
     assert.match(
       compactStyles,
       /\.character-sprite\s*\{[^}]*bottom:\s*calc\(var\(--control-safe-area\)/,
+    );
+  });
+
+  it("compacts the dock and stage content for short viewports", () => {
+    const shortStart = styles.indexOf("@media (max-height: 620px)");
+    const combinedStart = styles.indexOf(
+      "@media (max-width: 720px) and (max-height: 620px)",
+    );
+    const reducedMotionStart = styles.indexOf(
+      "@media (prefers-reduced-motion: reduce)",
+    );
+    const shortEnd = combinedStart === -1 ? reducedMotionStart : combinedStart;
+    const shortStyles = styles.slice(shortStart, shortEnd);
+
+    assert.notEqual(shortStart, -1);
+    assert.ok(shortEnd > shortStart);
+    assert.match(
+      shortStyles,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(84px,\s*23vh,\s*112px\)/,
+    );
+    assert.match(
+      shortStyles,
+      /\.scene-control-dock\s*\{[^}]*bottom:\s*6px[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
+    );
+    assert.match(
+      shortStyles,
+      /\.scene-control-button,\s*\.playback-control-button\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/,
+    );
+    assert.match(
+      shortStyles,
+      /\.hold-to-talk-button\s*\{[^}]*min-height:\s*44px/,
+    );
+    assert.match(shortStyles, /\.checking-label\s*\{[^}]*min-height:\s*44px/);
+    assert.match(
+      shortStyles,
+      /\.speech-bubble,\s*\.narrator-caption\s*\{[^}]*top:\s*112px/,
+    );
+  });
+
+  it("uses a single-row dock in short narrow viewports", () => {
+    const combinedStart = styles.indexOf(
+      "@media (max-width: 720px) and (max-height: 620px)",
+    );
+    const combinedEnd = styles.indexOf(
+      "@media (prefers-reduced-motion: reduce)",
+    );
+    const combinedStyles = styles.slice(combinedStart, combinedEnd);
+
+    assert.notEqual(combinedStart, -1);
+    assert.ok(combinedEnd > combinedStart);
+    assert.match(
+      combinedStyles,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(78px,\s*24vh,\s*96px\)/,
+    );
+    assert.match(
+      combinedStyles,
+      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"back playback prompt next"/,
+    );
+    assert.match(
+      combinedStyles,
+      /\.learner-mic-prompt\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) auto/,
+    );
+    assert.match(
+      combinedStyles,
+      /\.learner-mic-prompt > strong\s*\{[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
     );
   });
 });

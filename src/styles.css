@@ -617,6 +617,12 @@ select:focus-visible {
   cursor: pointer;
 }
 
+.scene-control-button:focus-visible,
+.playback-control-button:focus-visible {
+  outline: 4px solid #fff;
+  outline-offset: 3px;
+}
+
 .scene-control-button {
   width: 58px;
   aspect-ratio: 1;
@@ -692,15 +698,20 @@ select:focus-visible {
   gap: 12px;
   border: 0;
   border-radius: 999px;
-  background: #0f8f68;
+  background: #087451;
   color: #fff;
   cursor: pointer;
   padding: 10px 26px;
   font-size: clamp(1rem, 2vw, 1.45rem);
   font-weight: 950;
   touch-action: none;
-  box-shadow: 0 5px 0 rgb(6 98 72 / 45%);
+  box-shadow: 0 5px 0 rgb(4 79 55 / 45%);
   user-select: none;
+}
+
+.hold-to-talk-button:focus-visible {
+  outline: 4px solid #173c67;
+  outline-offset: 3px;
 }
 
 .hold-to-talk-button svg {
@@ -862,8 +873,8 @@ select:focus-visible {
 
   .scene-control-dock {
     grid-template-areas:
-      "back playback next"
-      "prompt prompt prompt";
+      "prompt prompt prompt"
+      "back playback next";
     grid-template-columns: auto minmax(0, 1fr) auto;
     border-radius: 28px;
     padding: 10px;
@@ -937,6 +948,10 @@ select:focus-visible {
 }
 
 @media (max-height: 620px) {
+  .lesson-stage {
+    --control-safe-area: clamp(84px, 23vh, 112px);
+  }
+
   .character-sprite {
     bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
     height: 49vh;
@@ -944,9 +959,92 @@ select:focus-visible {
 
   .speech-bubble,
   .narrator-caption {
-    top: 128px;
+    top: 112px;
   }
 
+  .scene-control-dock {
+    bottom: 6px;
+    min-height: 62px;
+    gap: 6px;
+    border-width: 3px;
+    padding: 6px;
+  }
+
+  .scene-control-button,
+  .playback-control-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .scene-control-button {
+    width: 44px;
+  }
+
+  .scene-control-button svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .playback-control-button {
+    gap: 6px;
+    padding: 0 12px;
+  }
+
+  .playback-control-button svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .learner-mic-prompt {
+    gap: 8px;
+    padding: 4px 6px 4px 14px;
+  }
+
+  .hold-to-talk-button {
+    min-height: 44px;
+    gap: 8px;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+  }
+
+  .hold-to-talk-button svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .checking-label {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 720px) and (max-height: 620px) {
+  .lesson-stage {
+    --control-safe-area: clamp(78px, 24vh, 96px);
+  }
+
+  .scene-control-dock {
+    grid-template-areas: "back playback prompt next";
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    border-radius: 999px;
+  }
+
+  .learner-mic-prompt {
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-radius: 999px;
+    padding: 4px 6px 4px 12px;
+  }
+
+  .learner-mic-prompt > strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hold-to-talk-button > span {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

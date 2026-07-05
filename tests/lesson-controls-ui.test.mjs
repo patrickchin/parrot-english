@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 describe("scene playback controls", () => {
   it("renders previous, playback, and next controls in one dock", () => {
@@ -54,6 +55,17 @@ describe("scene playback controls", () => {
     assert.doesNotMatch(
       app,
       /<span aria-live="polite" className="dock-status">/
+    );
+  });
+
+  it("shows contrasting local focus rings on dock controls", () => {
+    assert.match(
+      styles,
+      /\.scene-control-button:focus-visible,\s*\.playback-control-button:focus-visible\s*\{[^}]*outline:\s*4px solid #fff[^}]*outline-offset:\s*3px/,
+    );
+    assert.match(
+      styles,
+      /\.hold-to-talk-button:focus-visible\s*\{[^}]*outline:\s*4px solid #173c67/,
     );
   });
 
