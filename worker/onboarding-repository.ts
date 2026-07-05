@@ -1,6 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import {
   learnerProfile,
+  onboardingSessionBypass,
   questionnaire,
   questionnaireQuestion,
 } from "../src/db/schema.ts";
@@ -101,6 +102,44 @@ export function createOnboardingRepository(
     return { profile, questionnaire: assignedQuestionnaire, questions };
   }
 
+  async function hasSessionBypass(identity: OnboardingIdentity) {
+    const [row] = await database
+      .select({ sessionId: onboardingSessionBypass.sessionId })
+      .from(onboardingSessionBypass)
+      .where(
+        and(
+          eq(onboardingSessionBypass.sessionId, identity.sessionId),
+          eq(onboardingSessionBypass.authUserId, identity.userId)
+        )
+      )
+      .limit(1);
+    return Boolean(row);
+  }
+
+  async function canBypass(identity: OnboardingIdentity) {
+    const profile = await findProfile(identity.userId);
+    return (
+      profile?.onboardingStatus === "completed" ||
+      profile?.lastSkippedSessionId === identity.sessionId ||
+      (await hasSessionBypass(identity))
+    );
+  }
+
+  async function skipSession(identity: OnboardingIdentity) {
+    const skippedAt = now();
+    await database
+      .insert(onboardingSessionBypass)
+      .values({
+        authUserId: identity.userId,
+        sessionId: identity.sessionId,
+        skippedAt,
+      })
+      .onConflictDoUpdate({
+        target: onboardingSessionBypass.sessionId,
+        set: { authUserId: identity.userId, skippedAt },
+      });
+  }
+
   async function saveAnswer(
     profileId: string,
     values: {
@@ -109,11 +148,39 @@ export function createOnboardingRepository(
       currentQuestionKey?: string | null;
       name?: string | null;
       onboardingStatus?: string;
+      skippedQuestionKeysJson?: string;
     }
   ) {
     await database
       .update(learnerProfile)
       .set({ ...values, updatedAt: now() })
+      .where(eq(learnerProfile.id, profileId));
+  }
+
+  async function saveTransition(
+    profileId: string,
+    values: {
+      age?: number | null;
+      answersJson: string;
+      completed: boolean;
+      currentQuestionKey: string | null;
+      name?: string | null;
+      skippedQuestionKeysJson: string;
+    }
+  ) {
+    const timestamp = now();
+    await database
+      .update(learnerProfile)
+      .set({
+        age: values.age,
+        answersJson: values.answersJson,
+        completedAt: values.completed ? timestamp : null,
+        currentQuestionKey: values.currentQuestionKey,
+        name: values.name,
+        onboardingStatus: values.completed ? "completed" : "in_progress",
+        skippedQuestionKeysJson: values.skippedQuestionKeysJson,
+        updatedAt: timestamp,
+      })
       .where(eq(learnerProfile.id, profileId));
   }
 
@@ -157,10 +224,13 @@ export function createOnboardingRepository(
   }
 
   return {
+    canBypass,
     complete,
     findQuestion,
     loadState,
     saveAnswer,
+    saveTransition,
     skip,
+    skipSession,
   };
 }

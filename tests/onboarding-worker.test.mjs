@@ -11,6 +11,7 @@ const PROTECTED_REQUESTS = [
   ["GET", "/api/onboarding"],
   ["PUT", "/api/onboarding/answer"],
   ["POST", "/api/onboarding/transcribe"],
+  ["POST", "/api/onboarding/question/skip"],
   ["POST", "/api/onboarding/skip"],
   ["POST", "/api/onboarding/complete"],
   ["GET", "/api/profile"],
@@ -376,6 +377,159 @@ describe("onboarding persistence and API", () => {
       assert.equal(payload.profile.onboardingStatus, "completed");
       assert.equal(payload.question, null);
       assert.equal(payload.canBypass, true);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("completes onboarding in the final answer update", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callOnboarding(state.database, "/api/onboarding");
+      const answers = [
+        ["age", 8],
+        ["favoriteCartoons", ["Bluey"]],
+        ["favoriteAnimals", ["dog"]],
+        ["favoriteActivities", ["drawing"]],
+        ["favoriteStoryTopics", ["space"]],
+      ];
+
+      let finalPayload;
+      for (const [questionKey, value] of answers) {
+        const response = await callOnboarding(
+          state.database,
+          "/api/onboarding/answer",
+          "PUT",
+          { questionKey, value },
+        );
+        assert.equal(response.status, 200, questionKey);
+        finalPayload = await response.json();
+      }
+
+      assert.equal(finalPayload.profile.onboardingStatus, "completed");
+      assert.equal(finalPayload.question, null);
+      assert.equal(finalPayload.canBypass, true);
+      const row = state.sqlite
+        .prepare(
+          "SELECT onboarding_status, completed_at FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-1");
+      assert.equal(row.onboarding_status, "completed");
+      assert.ok(row.completed_at);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("skips only the current optional question and persists the decision", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite.exec(
+        "UPDATE questionnaire_question SET required = 0 WHERE answer_key = 'favoriteCartoons'",
+      );
+      await callOnboarding(state.database, "/api/onboarding");
+
+      const requiredSkip = await callOnboarding(
+        state.database,
+        "/api/onboarding/question/skip",
+        "POST",
+        { questionKey: "age" },
+      );
+      assert.equal(requiredSkip.status, 400);
+
+      await callOnboarding(state.database, "/api/onboarding/answer", "PUT", {
+        questionKey: "age",
+        value: 8,
+      });
+      const skipped = await callOnboarding(
+        state.database,
+        "/api/onboarding/question/skip",
+        "POST",
+        { questionKey: "favoriteCartoons" },
+      );
+      assert.equal(skipped.status, 200);
+      const payload = await skipped.json();
+      assert.equal(payload.question.answerKey, "favoriteAnimals");
+
+      const row = state.sqlite
+        .prepare(
+          "SELECT skipped_question_keys_json, current_question_key FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-1");
+      assert.deepEqual(JSON.parse(row.skipped_question_keys_json), [
+        "favoriteCartoons",
+      ]);
+      assert.equal(row.current_question_key, "favoriteAnimals");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("grants degraded access without questionnaire state for each skipped session", async () => {
+    const state = createTestD1Database();
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
+        )
+        .run("user-1", "Mia", "mia@example.test", 1_000, 1_000);
+      const database = createDatabase(state.d1);
+
+      for (const sessionId of ["session-1", "session-2"]) {
+        const skipped = await callOnboarding(
+          database,
+          "/api/onboarding/skip",
+          "POST",
+          undefined,
+          { sessionId },
+        );
+        assert.equal(skipped.status, 200, sessionId);
+        assert.deepEqual(await skipped.json(), {
+          mode: "bypass-only",
+          canBypass: true,
+        });
+      }
+
+      const resumed = await callOnboarding(database, "/api/onboarding");
+      assert.equal(resumed.status, 200);
+      assert.deepEqual(await resumed.json(), {
+        mode: "bypass-only",
+        canBypass: true,
+      });
+
+      const unskipped = await callOnboarding(
+        database,
+        "/api/onboarding",
+        "GET",
+        undefined,
+        { sessionId: "session-3" },
+      );
+      assert.equal(unskipped.status, 503);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM onboarding_session_bypass")
+          .get().count,
+        2,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("preserves lesson access for completed profiles when questions are unavailable", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callOnboarding(state.database, "/api/onboarding");
+      state.sqlite.exec(
+        "UPDATE learner_profile SET onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'; DELETE FROM questionnaire_question;",
+      );
+
+      const response = await callOnboarding(state.database, "/api/onboarding");
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), {
+        mode: "bypass-only",
+        canBypass: true,
+      });
     } finally {
       state.close();
     }
