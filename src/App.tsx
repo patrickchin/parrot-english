@@ -22,6 +22,7 @@ import {
   reduceLessonState,
 } from "../lib/lesson-state";
 import { isAbortError, playAudioLine } from "./audio-playback";
+import { AuthGate } from "./AuthGate";
 import { evaluateSpeech } from "./evaluation-request";
 import {
   LESSONS,
@@ -495,5 +496,9 @@ export function LessonPlayer() {
 }
 
 export function App() {
-  return <LessonPlayer />;
+  return (
+    <AuthGate>
+      <LessonPlayer />
+    </AuthGate>
+  );
 }
