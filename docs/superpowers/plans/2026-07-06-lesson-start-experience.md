@@ -2,159 +2,202 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the preflight lesson entry flow with one large centered Start action, defer microphone permission until recording, and remove the persistent audio control.
+**Goal:** Replace the small bottom playback entry with one large centered Start/Replay action, defer microphone permission until press-and-hold recording, and remove persistent playback and volume controls.
 
-**Architecture:** Keep the existing React reducer and lesson phases. Make the Start handler synchronously dispatch `START`, let `recordSpeechClip` continue to own microphone access in the listening phase, and use the existing `lesson-flow-banner has-action` state as a full-stage centering layer. Remove only the persistent volume state and control; automatic lesson audio remains unchanged.
+**Architecture:** Keep the existing React reducer and lesson phases. Dispatch `PLAY_SCENE` or `REPLAY_LESSON` from a stage-centered action, let `startSpeechRecording` continue to request microphone access only from the learner's press-and-hold action, and keep previous/next navigation in the bottom dock. Remove the rendered Play/Pause and volume controls plus their component state and CSS; automatic lesson audio remains unchanged.
 
 **Tech Stack:** React 19, TypeScript, CSS, Node.js test runner, Vite
 
 ---
 
-### Task 1: Specify the new entry behavior
+### Task 1: Specify the current lesson entry behavior
 
 **Files:**
-- Modify: `tests/microphone-prompt-ui.test.mjs`
+- Modify: `tests/lesson-controls-ui.test.mjs`
+- Modify: `tests/stage-layout.test.mjs`
 
-- [ ] **Step 1: Replace the preflight-permission expectation and add entry UI assertions**
+- [ ] **Step 1: Require a standalone Start/Replay action and no persistent media controls**
 
-Replace the existing `requests microphone permission before the lesson starts`
-test and add the two adjacent tests below inside the existing `describe` block:
+Update the first lesson-controls test so the bottom dock requires previous/next,
+status, and learner actions but explicitly excludes playback. Add this adjacent
+test:
 
 ```js
-it("starts immediately without preflight microphone permission", () => {
-  const startLesson = app.match(/\n  function startLesson\(\) \{([\s\S]*?)\n  \}/);
-
-  assert.ok(startLesson, "Expected startLesson to be synchronous");
-  assert.doesNotMatch(app, /requestMicrophoneAccess/);
+it("renders a standalone Start or Replay action outside the bottom controls", () => {
   assert.match(
-    startLesson[1],
-    /setError\(""\);[\s\S]*dispatch\(\{ type: "START" \}\);/
+    app,
+    /const showStartAction =\s*state\.phase === LessonPhase\.Idle \|\|\s*state\.phase === LessonPhase\.Finished/,
   );
-  assert.doesNotMatch(startLesson[1], /await|isPreparingMicrophone/);
-});
-
-it("centers a large primary action over the idle and finished scene", () => {
-  const actionLayerRule = getRule(".lesson-flow-banner.has-action");
-  const primaryActionRule = getRule(
-    ".lesson-flow-banner.has-action .start-lesson-button"
+  assert.match(
+    app,
+    /const startActionLabel =\s*state\.phase === LessonPhase\.Finished\s*\? "Replay lesson"\s*:\s*"Start lesson"/,
   );
-
-  assert.match(actionLayerRule, /inset:\s*0/);
-  assert.match(actionLayerRule, /width:\s*100%/);
-  assert.match(actionLayerRule, /min-height:\s*100%/);
-  assert.match(actionLayerRule, /transform:\s*none/);
-  assert.match(actionLayerRule, /pointer-events:\s*none/);
-  assert.match(primaryActionRule, /width:\s*min\(/);
-  assert.match(primaryActionRule, /min-height:\s*clamp\(/);
-  assert.match(primaryActionRule, /pointer-events:\s*auto/);
-});
-
-it("does not render a persistent lesson audio control", () => {
-  assert.doesNotMatch(app, /Volume2|VolumeX|volume-button/);
+  assert.match(
+    app,
+    /className="lesson-start-layer"[\s\S]*aria-label=\{startActionLabel\}[\s\S]*className="start-lesson-button"[\s\S]*onClick=\{handleStartAction\}/,
+  );
+  assert.doesNotMatch(app, /playback-control-button|playbackLabel|Volume2|VolumeX|volume-button/);
   assert.doesNotMatch(app, /const \[muted, setMuted\]/);
-  assert.doesNotMatch(styles, /\.volume-button/);
+  assert.doesNotMatch(styles, /\.playback-control-button|\.volume-button/);
 });
 ```
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [ ] **Step 2: Require centered, touch-sized overlay styling**
 
-Run:
+Add this test to `tests/stage-layout.test.mjs`:
 
-```bash
-node --test tests/microphone-prompt-ui.test.mjs
+```js
+it("centers a large touch target for starting and replaying lessons", () => {
+  const startLayer = getRule(".lesson-start-layer");
+  const startButton = getRule(".start-lesson-button");
+
+  assert.match(startLayer, /position:\s*absolute/);
+  assert.match(startLayer, /inset:\s*0/);
+  assert.match(startLayer, /place-items:\s*center/);
+  assert.match(startLayer, /pointer-events:\s*none/);
+  assert.match(startButton, /width:\s*min\(/);
+  assert.match(startButton, /min-height:\s*clamp\(/);
+  assert.match(startButton, /pointer-events:\s*auto/);
+});
 ```
 
-Expected: FAIL because `startLesson` is asynchronous, the centered
-`.lesson-flow-banner.has-action` rule does not exist, and the volume control is
-still rendered.
+Update existing control-selector and responsive-grid assertions to omit
+`.playback-control-button` and the `playback` grid area.
 
-- [ ] **Step 3: Commit the failing test specification**
+- [ ] **Step 3: Run focused tests and verify RED**
 
 ```bash
-git add tests/microphone-prompt-ui.test.mjs
-git commit -m "test: specify lesson start experience"
+node --test tests/lesson-controls-ui.test.mjs tests/stage-layout.test.mjs
 ```
 
-### Task 2: Implement the immediate centered Start action
+Expected: FAIL because the bottom Play/Pause and top-right volume controls still
+exist and the centered Start/Replay layer has not been implemented.
+
+- [ ] **Step 4: Commit the failing test specification**
+
+```bash
+git add tests/lesson-controls-ui.test.mjs tests/stage-layout.test.mjs
+git commit -m "test: specify prominent lesson start action"
+```
+
+### Task 2: Implement the centered Start/Replay action
 
 **Files:**
 - Modify: `src/App.tsx`
 - Modify: `src/styles.css`
+- Test: `tests/lesson-controls-ui.test.mjs`
+- Test: `tests/stage-layout.test.mjs`
 - Test: `tests/microphone-prompt-ui.test.mjs`
 
-- [ ] **Step 1: Simplify `LessonPlayer` entry and automatic audio behavior**
+- [ ] **Step 1: Add the dedicated idle/finished action**
 
-In `src/App.tsx`, keep only the icons still rendered:
+In `src/App.tsx`, keep only the lesson icons still rendered:
 
 ```tsx
 import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
 ```
 
-Remove `requestMicrophoneAccess` from the speech-recorder import, remove the
-`isPreparingMicrophone` and `muted` state values, and remove the muted timeout
-branch and `muted` dependency from the audio-sequencing effect. Replace the
-Start handler and label with:
+Remove the `muted` state, muted playback timeout, and `muted` effect dependency.
+Remove `handlePlaybackControl`, `playbackIsActive`, and `playbackLabel`. Add:
 
 ```tsx
-function startLesson() {
-  setError("");
-  dispatch({ type: "START" });
+function handleStartAction() {
+  dispatchSceneControl(
+    state.phase === LessonPhase.Finished ? "REPLAY_LESSON" : "PLAY_SCENE",
+  );
 }
 
-const startButtonLabel =
-  state.phase === LessonPhase.Finished ? "再来一次" : "开始";
+const showStartAction =
+  state.phase === LessonPhase.Idle ||
+  state.phase === LessonPhase.Finished;
+const startActionLabel =
+  state.phase === LessonPhase.Finished ? "Replay lesson" : "Start lesson";
 ```
 
-Delete the complete `volume-button` JSX block. Keep the existing
-`lesson-flow-banner` conditional so `has-action` is present only for idle and
-finished states.
+Render this outside the bottom controls:
 
-- [ ] **Step 2: Center and enlarge the primary action**
+```tsx
+{showStartAction ? (
+  <div className="lesson-start-layer">
+    <button
+      aria-label={startActionLabel}
+      className="start-lesson-button"
+      onClick={handleStartAction}
+      type="button"
+    >
+      <span>{startActionLabel}</span>
+    </button>
+  </div>
+) : null}
+```
 
-In `src/styles.css`, remove `.volume-button` from focus, shared control, SVG,
-hover, and mobile rules. Add this rule directly after `.lesson-flow-banner`:
+Delete the volume button block and the playback button inside
+`scene-controls`. Keep the press-and-hold microphone and previous/next controls
+unchanged.
+
+- [ ] **Step 2: Center and enlarge the primary action, then clean obsolete control CSS**
+
+Add:
 
 ```css
-.lesson-flow-banner.has-action {
+.lesson-start-layer {
+  position: absolute;
   inset: 0;
-  width: 100%;
-  min-height: 100%;
-  transform: none;
+  z-index: 23;
+  display: grid;
+  place-items: center;
+  padding: var(--lesson-edge-gap);
   pointer-events: none;
 }
-```
 
-Add this rule after the base `.start-lesson-button` rule:
-
-```css
-.lesson-flow-banner.has-action .start-lesson-button {
+.start-lesson-button {
   width: min(72vw, 620px);
   min-height: clamp(108px, 18vh, 176px);
+  border: 6px solid #fff;
+  border-radius: 999px;
+  background: #ff467b;
+  color: #fff;
+  padding: 18px 34px;
   pointer-events: auto;
+  cursor: pointer;
+  font-size: clamp(2rem, 5vw, 4.4rem);
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 10px 0 rgb(171 38 83 / 42%), 0 24px 48px rgb(31 94 132 / 28%);
 }
 ```
 
-Remove `.start-lesson-button:disabled`, because Start no longer has an
-asynchronous preparation state. Keep the existing responsive button font and
-border rules; the more-specific `has-action` selector preserves the large
-centered dimensions at every viewport size.
+Add hover and focus-visible states consistent with other lesson actions. Remove
+all `.volume-button` and `.playback-control-button` rules. Remove playback from
+shared pill selectors and change the compact grid to:
+
+```css
+grid-template-areas:
+  "prompt prompt prompt"
+  "previous microphone next";
+grid-template-columns: var(--lesson-pill-height) auto var(--lesson-pill-height);
+```
+
+Remove `.start-lesson-button` from the obsolete combined mobile selector so it
+cannot shrink the new centered action. Leave the unrelated responsive session
+layout rules unchanged.
 
 - [ ] **Step 3: Run the focused test and verify GREEN**
 
 Run:
 
 ```bash
-node --test tests/microphone-prompt-ui.test.mjs
+node --test tests/lesson-controls-ui.test.mjs tests/stage-layout.test.mjs tests/microphone-prompt-ui.test.mjs
 ```
 
-Expected: all microphone prompt UI tests PASS.
+Expected: all selected UI tests PASS.
 
 - [ ] **Step 4: Run adjacent UI and lesson tests**
 
 Run:
 
 ```bash
-node --test tests/stage-layout.test.mjs tests/lesson-state.test.mjs tests/lesson-audio.test.mjs tests/speech-recorder.test.mjs
+node --test tests/lesson-state.test.mjs tests/lesson-audio.test.mjs tests/speech-recorder.test.mjs tests/playback-operation.test.mjs
 ```
 
 Expected: all selected tests PASS.
@@ -163,7 +206,7 @@ Expected: all selected tests PASS.
 
 ```bash
 git add src/App.tsx src/styles.css
-git commit -m "feat: simplify lesson start experience"
+git commit -m "feat: add prominent lesson start action"
 ```
 
 ### Task 3: Verify the integrated experience
@@ -171,7 +214,8 @@ git commit -m "feat: simplify lesson start experience"
 **Files:**
 - Verify: `src/App.tsx`
 - Verify: `src/styles.css`
-- Verify: `tests/microphone-prompt-ui.test.mjs`
+- Verify: `tests/lesson-controls-ui.test.mjs`
+- Verify: `tests/stage-layout.test.mjs`
 
 - [ ] **Step 1: Run the complete automated verification suite**
 
@@ -191,16 +235,16 @@ Run the Vite development server, open the lesson at desktop and narrow mobile
 viewport widths, and verify:
 
 - one large Start button is centered over the stage;
-- no top-right audio control is visible;
+- no bottom Play/Pause control or top-right volume control is visible;
 - clicking Start begins the first example immediately;
 - no microphone permission prompt appears on Start; and
-- the progress banner replaces the Start button after entry.
+- the Start button disappears after entry.
 
 - [ ] **Step 3: Inspect the speaking transition**
 
-Continue until the first listening phase. Verify that the existing microphone
-panel appears and that microphone permission, if not already granted or denied,
-is requested at that point rather than on Start.
+Continue until the first user step. Verify that the existing press-and-hold
+microphone action appears and that microphone permission, if not already granted
+or denied, is requested when that action is pressed rather than on Start.
 
 - [ ] **Step 4: Review the final branch diff**
 
@@ -210,5 +254,5 @@ git diff --stat main...HEAD
 git status --short
 ```
 
-Expected: the branch contains only the design, plan, focused test, React, and
-CSS changes; unrelated pre-existing untracked files remain uncommitted.
+Expected: the branch contains only the worktree ignore, design, plan, focused
+tests, React, and CSS changes; unrelated pre-existing files remain uncommitted.
