@@ -18,9 +18,9 @@
 - Modify `worker/groq.ts`: bound multipart input before parsing while preserving the file-size cap.
 - Modify `worker/api-security.ts`: small async adapter over Cloudflare Rate Limiting bindings.
 - Modify `worker/index.ts`: await route-specific rate-limit checks and type the bindings.
-- Modify `wrangler.jsonc`: configure evaluation and onboarding rate-limit bindings.
+- Modify `wrangler.jsonc`: configure evaluation, transcription, and enrichment rate-limit bindings.
 - Modify `src/OnboardingQuestion.tsx`: forward an optional abort signal through capture and transcription.
-- Modify `src/OnboardingGate.tsx`: own and cancel the current profile capture and include pending array text in saves.
+- Modify `src/OnboardingGate.tsx`: abort the current profile capture when its existing operation generation is invalidated.
 - Modify `src/ProfileEditor.tsx`: lock Save during capture and lock Close/Cancel only during save.
 - Modify `src/db/schema.ts`: make bypass session IDs cascade from Better Auth sessions.
 - Create `migrations/0003_*.sql` and `migrations/meta/0003_snapshot.json`: rebuild the bypass table and prune orphans.
@@ -197,7 +197,7 @@ assert.equal(limited.status, 429);
 assert.deepEqual(limiter.keys, ["203.0.113.42", "203.0.113.42"]);
 ```
 
-Add equivalent onboarding assertions for `user-1:203.0.113.42`. Parse `wrangler.jsonc` and require two bindings with limits 8 and 6 and period 60. Update Worker dependency tests to use async checks.
+Add equivalent onboarding assertions for `user-1:203.0.113.42` for both transcription and enrichment. Parse `wrangler.jsonc` and require three bindings with limits 8, 6, and 12 and period 60. Update Worker dependency tests to use async checks.
 
 - [ ] **Step 2: Run focused security tests and verify RED**
 
@@ -219,6 +219,7 @@ export interface RateLimitBinding {
 export interface RateLimitEnv {
   EVALUATE_RATE_LIMITER: RateLimitBinding;
   ONBOARDING_TRANSCRIPTION_RATE_LIMITER: RateLimitBinding;
+  ONBOARDING_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
 }
 
 async function checkRateLimit(
@@ -249,6 +250,11 @@ Keep the two exported functions as thin key/message adapters. Await them in `wor
     "name": "ONBOARDING_TRANSCRIPTION_RATE_LIMITER",
     "namespace_id": "104202",
     "simple": { "limit": 6, "period": 60 }
+  },
+  {
+    "name": "ONBOARDING_ENRICHMENT_RATE_LIMITER",
+    "namespace_id": "104203",
+    "simple": { "limit": 12, "period": 60 }
   }
 ]
 ```
@@ -264,7 +270,7 @@ git add worker/api-security.ts worker/index.ts wrangler.jsonc tests/api-security
 git commit -m "fix: use platform speech rate limits"
 ```
 
-### Task 3: Make profile capture abortable and preserve pending answers
+### Task 3: Make profile capture abortable
 
 **Files:**
 - Modify: `src/OnboardingQuestion.tsx`
@@ -272,22 +278,9 @@ git commit -m "fix: use platform speech rate limits"
 - Modify: `src/ProfileEditor.tsx`
 - Test: `tests/onboarding-ui.test.mjs`
 
-- [ ] **Step 1: Write failing profile operation and submission tests**
+- [ ] **Step 1: Write failing profile operation tests**
 
-Add a pure submission assertion:
-
-```js
-assert.deepEqual(
-  profileAnswersForSubmission(
-    [cartoonsQuestion],
-    { favoriteCartoons: ["Bluey"] },
-    { favoriteCartoons: "Paw Patrol" },
-  ),
-  { favoriteCartoons: ["Bluey", "Paw Patrol"] },
-);
-```
-
-Extend the capture helper test so both dependencies receive the same signal. Render `ProfileEditorView` with a recording field and assert Save is disabled while Close and Cancel remain enabled; render with `isSaving: true` and assert all three are disabled. Add source assertions that close aborts the active controller and profile capture passes its signal.
+Extend the capture helper test so both dependencies receive the same signal. Render `ProfileEditorView` with a recording field and assert Save is disabled while Close and Cancel remain enabled; render with `isSaving: true` and assert all three are disabled. Add source assertions that closing the editor aborts the active capture controller and profile capture passes its signal. Keep the existing raw-string submission assertions: current main has no separate pending array state, so the pending-value finding is already superseded.
 
 - [ ] **Step 2: Run the UI test and verify RED**
 
@@ -295,7 +288,7 @@ Extend the capture helper test so both dependencies receive the same signal. Ren
 node --test tests/onboarding-ui.test.mjs
 ```
 
-Expected: FAIL because pending values are omitted, capture does not forward a signal, and busy controls are not coordinated.
+Expected: FAIL because capture does not forward a signal, closing does not abort physical work, and busy controls are not coordinated.
 
 - [ ] **Step 3: Forward abort signals through capture**
 
@@ -321,46 +314,19 @@ export async function captureOnboardingAnswer({
 
 - [ ] **Step 4: Add one profile capture lifetime**
 
-Keep an `AbortController` ref in `OnboardingGate`. Starting capture aborts the previous controller. Closing the editor aborts and clears it. After every await, update state only when the controller is still current and not aborted; ignore `AbortError` and clear status only for the current controller.
+Keep an `AbortController` ref in `OnboardingGate` alongside the existing operation-generation ref. Starting profile capture aborts the previous controller. Closing the editor aborts and clears it while incrementing the existing generation. After every await, update state only when the controller is still current and not aborted; ignore `AbortError` and clear status only for the current controller.
 
 Do not introduce a general operation manager. Use one local `cancelProfileCapture` callback and one ref.
 
-- [ ] **Step 5: Merge pending array values at submission**
-
-Export and use a focused pure helper:
-
-```ts
-export function profileAnswersForSubmission(
-  questions: OnboardingQuestion[],
-  drafts: Record<string, unknown>,
-  pendingValues: Record<string, string>,
-) {
-  return Object.fromEntries(
-    questions.map((question) => {
-      const value =
-        question.cardinality === "array"
-          ? addArrayAnswer(
-              arrayDraft(drafts[question.answerKey]),
-              pendingValues[question.answerKey] ?? "",
-            )
-          : drafts[question.answerKey];
-      return [question.answerKey, submissionValue(question, value)];
-    }),
-  );
-}
-```
-
-Use it in `handleProfileSave`.
-
-- [ ] **Step 6: Coordinate profile controls**
+- [ ] **Step 5: Coordinate profile controls**
 
 In `ProfileEditorView`, derive whether any field status is active. Disable the editor fieldset and Save during capture or save. Keep Close and Cancel enabled during capture so they can abort it, but disable them during save.
 
-- [ ] **Step 7: Run the UI test and verify GREEN**
+- [ ] **Step 6: Run the UI test and verify GREEN**
 
 Run the Step 2 command. Expected: all onboarding UI tests pass.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/OnboardingQuestion.tsx src/OnboardingGate.tsx src/ProfileEditor.tsx tests/onboarding-ui.test.mjs
@@ -545,7 +511,7 @@ Confirm:
 - no profile recording survives close/cancel;
 - no general operation framework or broad component split was introduced;
 - existing API error identifiers and successful payloads remain unchanged;
-- deployment mutation order remains migration, publish, deploy; and
+- deployment mutation order remains migration then deploy; and
 - the bypass migration preserves only valid session-owned rows.
 
 - [ ] **Step 5: Commit any test-only cleanup required by verification**

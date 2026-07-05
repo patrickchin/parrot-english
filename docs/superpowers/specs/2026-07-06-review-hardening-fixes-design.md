@@ -16,7 +16,8 @@ clear boundary for behavior that is currently repeated.
   bindings.
 - Stop profile microphone and network work when the editor is cancelled or
   closed, and prevent stale async results from changing current UI state.
-- Preserve visible pending array answers when the profile form is submitted.
+- Confirm the upstream flexible-onboarding change has removed the pending-array
+  form state that caused silent submission loss.
 - Prevent deployment cancellation between production database changes and the
   matching Worker deployment.
 - Remove bypass rows when their Better Auth sessions are deleted.
@@ -62,11 +63,13 @@ requests continue to return their current 400 responses.
 
 ## Cloudflare Rate Limiting
 
-Replace the module-level maps in `worker/api-security.ts` with two platform
+Replace the module-level maps in `worker/api-security.ts` with three platform
 bindings configured in `wrangler.jsonc`:
 
 - evaluation: 8 requests per 60 seconds, keyed by client address;
 - onboarding transcription: 6 requests per 60 seconds, keyed by authenticated
+  user ID and client address.
+- onboarding enrichment: 12 requests per 60 seconds, keyed by authenticated
   user ID and client address.
 
 The security module will contain one small async adapter that calls a binding
@@ -83,8 +86,10 @@ eventually-consistent protection; it is not used for billing-grade accounting.
 ## Profile Async Operation Boundary
 
 `OnboardingGate` remains the owner of profile loading, drafts, and microphone
-capture. It will keep one active profile operation controller and one generation
-counter rather than allow independent untracked work.
+capture. The upstream flexible-onboarding change already added a generation
+counter that suppresses stale UI results. This work adds one active capture
+controller so invalidating a generation also stops physical microphone and
+network work.
 
 - Starting a profile transcription cancels any previous profile operation.
 - `recordSpeechClip` and `transcribeOnboardingAudio` receive the same abort
@@ -101,21 +106,20 @@ counter rather than allow independent untracked work.
 This uses the existing per-field status map for display and adds only the
 minimal controller/generation state needed to make its lifetime explicit.
 
-## Pending Array Submission
+## Superseded Pending Array Finding
 
-When building the profile answer map, array questions will merge their trimmed
-pending value through the existing `addArrayAnswer` helper before submission.
-This applies whether submission comes from the Save button or Enter in an input.
-Empty and duplicate pending values keep the existing behavior. No new chip or
-form abstraction is introduced.
+Current main replaced array-chip profile inputs with one raw-answer textarea per
+question. There is no separate pending value to omit, and form submission reads
+the visible draft string directly. That reviewed failure mode is therefore
+already resolved upstream and requires no compatibility helper or new code.
 
 ## Deployment Serialization
 
 Change the main-branch deployment concurrency policy to
 `cancel-in-progress: false`. New deployments remain serialized under the same
-group, but a running job cannot be stopped after applying migrations or
-publishing a questionnaire and before deploying its Worker. The migration,
-questionnaire publish, and deploy order remains unchanged.
+group, but a running job cannot be stopped after applying migrations and before
+deploying its Worker. Current main embeds the questionnaire definition in the
+Worker, so there is no longer a separate questionnaire publish step.
 
 ## Session Bypass Lifecycle
 
@@ -150,8 +154,8 @@ reason.
   parsing reaches the route handler.
 - Security tests use fake Cloudflare bindings and assert keys, route-specific
   messages, and allowed/rejected behavior.
-- Profile tests cover abort-on-close, stale-result suppression, Save locking
-  during transcription, and merging pending array text on submit.
+- Profile tests cover abort-on-close, stale-result suppression, and Save locking
+  during transcription.
 - Workflow tests require non-cancelling deployment serialization.
 - Migration tests verify the session foreign key, cascade cleanup, and pruning
   of orphan rows.
@@ -172,9 +176,9 @@ reason.
 
 ## Acceptance Criteria
 
-All seven review findings have regression tests and are fixed. No active
-profile capture survives closing the editor, no configured body limit is
+All seven review findings are resolved or proven superseded by current main. No
+active profile capture survives closing the editor, no configured body limit is
 checked only after full buffering, rate-limit state no longer depends on module
-maps, pending array input cannot be silently dropped, deployments cannot be
-cancelled between production mutations, and bypass records follow their session
-lifecycle. The final diff contains no unrelated refactor.
+maps, deployments cannot be cancelled between production mutations, and bypass
+records follow their session lifecycle. The final diff contains no unrelated
+refactor.
