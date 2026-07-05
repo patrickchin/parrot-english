@@ -85,33 +85,41 @@ const expectedAssets = {
   },
   "dolly-happy.webp": {
     character: "dolly",
-    rgbSha256: "d3a611d5499f7b95c2c765f4bf4af554cb9a06391076d86ad8b1464fde76e49d",
+    rgbSha256: "ecf5d16adf5966fbb44c8842e8ce114ecdf79faae4c8ff1c0d7a8bc41177bd56",
     source: { width: 777, height: 1024, top: 283, bottom: 777, centerX: 418 },
+    sourceEyes: [{ x: 404, y: 358, width: 65, height: 65 }],
+    sourceEyeSamples: [{ x: 450, y: 375 }],
+    sourceExteriorSamples: [{ x: 450, y: 283, maxAlpha: 32 }],
   },
   "dolly-idle.webp": {
     character: "dolly",
-    rgbSha256: "4aa9f706b3f5781a2043344f23bf26b56fe3b1ab09ae87f86fe0a65fac02ca76",
+    rgbSha256: "9f91ae0dfef586b50f6bbb343058d1723316ea94a22ad5d822e046420bd4ae15",
     source: { width: 1092, height: 1441, top: 360, bottom: 1102, centerX: 525.5 },
+    sourceGrayTail: { x: 600, y: 600, width: 492, height: 500 },
   },
   "dolly-listening.webp": {
     character: "dolly",
-    rgbSha256: "40f40fd6a659961ef7d7bdacf07d140364dcb502af3ecf75f5e940852075e444",
+    rgbSha256: "3465d3e7f51d7c6f9eac3ece93f48c285046ce05befa8142ac34f923a3964106",
     source: { width: 1086, height: 1448, top: 357, bottom: 1113, centerX: 535 },
+    sourceGrayTail: { x: 600, y: 600, width: 486, height: 500 },
   },
   "dolly-sad.webp": {
     character: "dolly",
-    rgbSha256: "36c6282ae0c4061b63ad28c8904c0b5fe5e667f0f659abab3f781e56796ff8c5",
+    rgbSha256: "bd9c157c7cabb5b86b7dd0f18f7535cca377450fdcc31d8cacfb63f5b1080560",
     source: { width: 1054, height: 1492, top: 315, bottom: 1177, centerX: 491 },
+    sourceGrayTail: { x: 580, y: 600, width: 474, height: 550 },
   },
   "dolly-surprised.webp": {
     character: "dolly",
-    rgbSha256: "2231261cee374b977cdb5625685d6ffd2c44e4f27626cb63703405bb3684da19",
+    rgbSha256: "41d336ff4cfb0770b0aeac7e959e99c0781ea9fff1e3c697594d8dd8040530a8",
     source: { width: 1086, height: 1448, top: 353, bottom: 1118, centerX: 519.5 },
+    sourceGrayTail: { x: 600, y: 600, width: 486, height: 500 },
   },
   "dolly-talking.webp": {
     character: "dolly",
-    rgbSha256: "c761dbd3f2e081a2374351043e9ef2756e3d444d21fb9a2587b4db3619588f64",
+    rgbSha256: "68703519db3f6686068dea24e7f74b27d735a145578b92b54ae1dda4fd5490e1",
     source: { width: 1088, height: 1445, top: 358, bottom: 1118, centerX: 469 },
+    sourceGrayTail: { x: 600, y: 600, width: 488, height: 500 },
   },
 };
 
@@ -367,7 +375,7 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
     }
   });
 
-  it("renders Peppa sclera as opaque white while preserving pupils", () => {
+  it("renders repaired sclera as opaque white while preserving pupils", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
       if (!expected.sourceEyes) continue;
       const decoded = decodePam(fileName, expected);
@@ -396,6 +404,45 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
           `${fileName} sclera color at ${sampleX},${sampleY}`
         );
       }
+    }
+  });
+
+  it("does not promote low-alpha checkerboard fringe into artwork", () => {
+    for (const [fileName, expected] of Object.entries(expectedAssets)) {
+      if (!expected.sourceExteriorSamples) continue;
+      const decoded = decodePam(fileName, expected);
+      const transform = normalizationTransform(expected);
+
+      for (const sample of expected.sourceExteriorSamples) {
+        const x = Math.round(sample.x * transform.scaleX + transform.offsetX);
+        const y = Math.round(sample.y * transform.scaleY + transform.offsetY);
+        const alpha = decoded.rgba[(y * decoded.width + x) * 4 + 3];
+
+        assert.ok(
+          alpha <= sample.maxAlpha,
+          `${fileName} checkerboard fringe at ${x},${y}: alpha ${alpha}`
+        );
+      }
+    }
+  });
+
+  it("keeps gray Dolly tails free of warm line contamination", () => {
+    for (const [fileName, expected] of Object.entries(expectedAssets)) {
+      if (!expected.sourceGrayTail) continue;
+      const decoded = decodePam(fileName, expected);
+      const tailPixels = pixelsInRegion(
+        decoded,
+        transformRegion(expected, expected.sourceGrayTail)
+      );
+      const warmPixels = tailPixels.filter(
+        ({ r, g, a }) => a > 0 && r > g + 8
+      );
+
+      assert.equal(
+        warmPixels.length,
+        0,
+        `${fileName} warm tail pixels`
+      );
     }
   });
 
