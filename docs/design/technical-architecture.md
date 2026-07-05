@@ -180,9 +180,10 @@ Run `npm run db:generate` before the migration command only after changing
 `BETTER_AUTH_SECRET` of at least 32 characters, and keep `BETTER_AUTH_URL`
 identical to the local Worker origin.
 
-The production D1 database exists, but its schema is intentionally not migrated
-yet. A later production release must deliberately configure
-`BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`, then run
+The initial production D1 schema (`0000_better-auth.sql`) was applied on
+2026-07-05. Production authentication still requires
+`BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` to be configured before deployment.
+Apply later schema changes deliberately with
 `npx wrangler d1 migrations apply parrot-english --remote` after review.
 
 Before shipping a combined change, run:

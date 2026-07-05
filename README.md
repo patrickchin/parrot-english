@@ -90,14 +90,18 @@ reset, social sign-in, or Resend integration.
 
 ### Production Authentication Setup
 
-The production D1 schema is intentionally **not migrated yet**. Applying it is
-a separate production operation that must be reviewed and run deliberately.
-When production is ready, configure the Better Auth values without committing
-them, then apply the migration remotely:
+The initial production D1 schema (`0000_better-auth.sql`) was applied on
+2026-07-05. Production authentication still requires the Better Auth values to
+be configured without committing them:
 
 ```bash
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put BETTER_AUTH_URL
+```
+
+Apply future reviewed migrations with:
+
+```bash
 npx wrangler d1 migrations apply parrot-english --remote
 ```
 
