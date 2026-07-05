@@ -35,6 +35,7 @@ select {
 
 button:focus-visible,
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
   outline: 5px solid #204c7f;
   outline-offset: 4px;
@@ -56,6 +57,7 @@ select:focus-visible {
 .onboarding-start-card,
 .onboarding-status-card,
 .onboarding-question-card,
+.onboarding-acknowledgment-card,
 .onboarding-profile-shell {
   width: min(100%, 680px);
   border: 5px solid #fff;
@@ -71,6 +73,30 @@ select:focus-visible {
   gap: 14px;
   padding: clamp(26px, 6vw, 52px);
   text-align: center;
+}
+
+.onboarding-acknowledgment-card {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: clamp(28px, 7vw, 58px);
+  text-align: center;
+}
+
+.onboarding-acknowledgment-card h1 {
+  max-width: 540px;
+  margin: 0;
+  color: #173c67;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.08;
+}
+
+.onboarding-acknowledgment-peppa {
+  width: clamp(140px, 32vw, 230px);
+  max-height: 240px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 0 rgb(32 76 127 / 16%));
+  animation: onboarding-float 2.4s ease-in-out infinite;
 }
 
 .onboarding-start-card h1,
@@ -153,7 +179,8 @@ select:focus-visible {
 .onboarding-next-button:focus-visible,
 .onboarding-skip-button:focus-visible,
 .onboarding-icon-button:focus-visible,
-.onboarding-start-button:focus-visible {
+.onboarding-start-button:focus-visible,
+.profile-edit-button:focus-visible {
   outline: 5px solid #173c67;
   outline-offset: 4px;
 }
@@ -231,20 +258,24 @@ select:focus-visible {
 
 .onboarding-input-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
   gap: 8px;
 }
 
-.onboarding-input-row input {
+.onboarding-input-row textarea {
   width: 100%;
   min-width: 0;
-  min-height: 52px;
+  min-height: 112px;
+  resize: vertical;
   border: 3px solid #a9d5e8;
   border-radius: 16px;
   background: #fff;
   color: #173c67;
-  padding: 0 15px;
+  padding: 13px 15px;
+  font: inherit;
   font-weight: 800;
+  line-height: 1.45;
 }
 
 .onboarding-input-action {
@@ -263,63 +294,10 @@ select:focus-visible {
   color: #fff;
 }
 
-.onboarding-chips,
-.onboarding-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-}
-
-.onboarding-chips {
-  margin-bottom: 13px;
-}
-
-.onboarding-chip {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  gap: 5px;
-  border-radius: 999px;
-  background: #dff4fc;
-  color: #173c67;
-  padding: 4px 6px 4px 14px;
-  font-weight: 900;
-}
-
-.onboarding-chip button {
-  display: grid;
-  width: 32px;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: #fff;
-  color: #b92259;
-  cursor: pointer;
-}
-
-.onboarding-chip svg,
 .onboarding-input-action svg,
 .onboarding-icon-button svg {
   width: 22px;
   height: 22px;
-}
-
-.onboarding-suggestions button {
-  min-height: 44px;
-  border: 3px solid #b8dbea;
-  border-radius: 999px;
-  background: #fff;
-  color: #204c7f;
-  cursor: pointer;
-  padding: 7px 14px;
-  font-weight: 900;
-}
-
-.onboarding-suggestions button.is-selected {
-  border-color: #204c7f;
-  background: #204c7f;
-  color: #fff;
 }
 
 .onboarding-field-error,
@@ -349,72 +327,31 @@ select:focus-visible {
 }
 
 .onboarding-profile-shell {
-  width: min(100%, 860px);
   padding: clamp(18px, 4vw, 32px);
 }
 
-.onboarding-profile-screen {
-  align-items: start;
-  padding-top: clamp(88px, 12vh, 112px);
-}
-
-.profile-editor-intro {
-  margin: 14px 0 0;
-  color: #46617d;
-  font-weight: 750;
-  line-height: 1.5;
-}
-
-.profile-editor-form > fieldset {
-  display: grid;
-  gap: 18px;
-  min-width: 0;
-  margin: 24px 0 0;
+.onboarding-profile-shell .onboarding-question-card {
+  width: 100%;
+  margin-top: 18px;
   border: 0;
+  box-shadow: none;
   padding: 0;
 }
 
-.profile-editor-form > fieldset:disabled {
-  opacity: 0.72;
-}
-
-.profile-question-section {
-  display: grid;
-  gap: 14px;
-  border: 3px solid #d4eaf3;
-  border-radius: 22px;
-  background: #fff;
-  padding: clamp(16px, 3vw, 24px);
-}
-
-.profile-question-heading,
-.profile-editor-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.profile-question-heading h2 {
-  margin: 0;
-  color: #173c67;
-  font-size: clamp(1.25rem, 3vw, 1.65rem);
-  line-height: 1.15;
-}
-
-.profile-question-heading p {
-  margin: 7px 0 0;
-  color: #61758a;
-  font-weight: 750;
-}
-
-.profile-editor-actions {
-  position: sticky;
-  bottom: -1px;
-  margin-top: 22px;
-  border-top: 3px solid #d4eaf3;
-  background: rgb(255 255 255 / 96%);
-  padding-block: 14px 4px;
+.profile-edit-button {
+  position: fixed;
+  z-index: 25;
+  top: 18px;
+  right: 150px;
+  min-height: 42px;
+  border: 3px solid #fff;
+  border-radius: 999px;
+  background: #204c7f;
+  color: #fff;
+  cursor: pointer;
+  padding: 6px 15px;
+  font-weight: 900;
+  box-shadow: 0 4px 0 rgb(19 55 94 / 35%);
 }
 
 @keyframes onboarding-float {
@@ -436,6 +373,7 @@ select:focus-visible {
   .onboarding-start-card,
   .onboarding-status-card,
   .onboarding-question-card,
+  .onboarding-acknowledgment-card,
   .onboarding-profile-shell {
     margin-block: auto;
     border-width: 4px;
@@ -450,10 +388,11 @@ select:focus-visible {
     justify-content: space-between;
   }
 
-  .onboarding-profile-screen {
-    padding-top: 150px;
+  .profile-edit-button {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
   }
-
 }
 
 @media (max-width: 440px) {
@@ -467,17 +406,6 @@ select:focus-visible {
     margin-inline: auto;
   }
 
-  .onboarding-input-row {
-    grid-template-columns: 1fr auto;
-  }
-
-  .onboarding-array-answer .onboarding-input-row {
-    grid-template-columns: 1fr auto auto;
-  }
-
-  .profile-question-heading {
-    align-items: flex-start;
-  }
 }
 
 .auth-screen {
@@ -666,7 +594,7 @@ select:focus-visible {
   z-index: 40;
   display: flex;
   min-height: 48px;
-  max-width: min(62vw, 520px);
+  max-width: min(34vw, 360px);
   align-items: center;
   gap: 10px;
   border: 4px solid #fff;
@@ -678,9 +606,8 @@ select:focus-visible {
 }
 
 .user-session-bar > span:first-child {
-  min-width: 0;
   overflow: hidden;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -695,14 +622,8 @@ select:focus-visible {
   color: #fff;
   cursor: pointer;
   padding: 6px 12px;
-  font-size: 0.875rem;
+  font-size: 0.78rem;
   font-weight: 900;
-  white-space: nowrap;
-}
-
-.user-session-bar .profile-account-button {
-  background: #fff;
-  color: #204c7f;
 }
 
 .user-session-bar button:disabled {
@@ -972,7 +893,7 @@ select:focus-visible {
   border-radius: 999px;
   background: rgb(255 255 255 / 92%);
   padding: 12px 20px;
-  font-size: clamp(1.05rem, 1.55vw, 1.5rem);
+  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
   font-weight: 950;
   line-height: 1;
   text-overflow: ellipsis;
@@ -1033,7 +954,7 @@ select:focus-visible {
   transform: translateX(-50%);
   box-shadow: 0 5px 0 rgb(18 55 92 / 45%);
   cursor: pointer;
-  font-size: clamp(1rem, 1.25vw, 1.2rem);
+  font-size: clamp(0.9rem, 1.4vw, 1.12rem);
   font-weight: 950;
   transition: filter 160ms ease, transform 160ms ease;
 }
@@ -1125,7 +1046,7 @@ select:focus-visible {
   background: rgb(32 76 127 / 92%);
   color: #fff;
   padding: 4px 13px;
-  font-size: clamp(0.9rem, 1vw, 1.05rem);
+  font-size: clamp(0.8rem, 1.4vw, 1rem);
   font-weight: 950;
   line-height: 1;
   text-align: center;
@@ -1169,7 +1090,7 @@ select:focus-visible {
   display: block;
   margin-bottom: 5px;
   color: #d62f70;
-  font-size: clamp(0.875rem, 1vw, 1rem);
+  font-size: 0.78rem;
   font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1178,7 +1099,7 @@ select:focus-visible {
 .speech-bubble p,
 .narrator-caption p {
   margin: 0;
-  font-size: clamp(1.5rem, 2.5vw, 2.625rem);
+  font-size: clamp(1.2rem, 2.4vw, 2.15rem);
   font-weight: 950;
   line-height: 1.12;
 }
@@ -1213,22 +1134,14 @@ select:focus-visible {
   box-shadow: 0 7px 0 rgb(145 24 72 / 45%), 0 17px 34px rgb(21 77 116 / 22%);
 }
 
-.scene-controls {
+.scene-control-dock {
   position: absolute;
+  right: clamp(12px, 2vw, 28px);
   bottom: clamp(12px, 2vh, 24px);
-  left: 50%;
+  left: clamp(12px, 2vw, 28px);
   z-index: 24;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  width: min(86vw, 1320px);
-  align-items: center;
-  gap: clamp(10px, 1.2vw, 18px);
-  transform: translateX(-50%);
-}
-
-.scene-control-dock {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   min-height: 86px;
   align-items: center;
   gap: clamp(8px, 1vw, 16px);
@@ -1258,19 +1171,15 @@ select:focus-visible {
 }
 
 .scene-control-button {
-  width: 64px;
-  min-width: 64px;
-  min-height: 64px;
+  width: 58px;
   aspect-ratio: 1;
-  border: 5px solid #fff;
-  background: #ff467b;
-  color: #fff;
-  box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
+  background: #fff;
+  color: #173c67;
 }
 
 .scene-control-button:disabled {
   cursor: not-allowed;
-  opacity: 0.68;
+  opacity: 0.45;
 }
 
 .scene-control-button svg {
@@ -1284,7 +1193,6 @@ select:focus-visible {
   background: #ffd944;
   color: #241d2b;
   padding: 0 20px;
-  font-size: clamp(1rem, 1.3vw, 1.2rem);
   font-weight: 950;
   line-height: 1;
 }
@@ -1299,7 +1207,7 @@ select:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: #fff;
-  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
   font-weight: 900;
   text-align: center;
   text-overflow: ellipsis;
@@ -1321,7 +1229,7 @@ select:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: #173c67;
-  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+  font-size: clamp(1rem, 1.8vw, 1.45rem);
   font-weight: 950;
   line-height: 1.1;
   text-align: center;
@@ -1341,7 +1249,7 @@ select:focus-visible {
   color: #fff;
   cursor: pointer;
   padding: 10px 26px;
-  font-size: clamp(0.95rem, 1.3vw, 1.15rem);
+  font-size: clamp(1rem, 2vw, 1.45rem);
   font-weight: 950;
   touch-action: none;
   box-shadow: 0 5px 0 rgb(4 79 55 / 45%);
@@ -1379,7 +1287,7 @@ select:focus-visible {
   background: #173c67;
   color: #fff;
   padding: 0 20px;
-  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
   font-weight: 950;
   white-space: nowrap;
 }
@@ -1508,7 +1416,7 @@ select:focus-visible {
 
   .speech-bubble p,
   .narrator-caption p {
-    font-size: clamp(1.5rem, 5vw, 1.8rem);
+    font-size: clamp(1.08rem, 4.6vw, 1.55rem);
   }
 
   .narrator-caption {
@@ -1517,30 +1425,25 @@ select:focus-visible {
     padding: 14px 18px;
   }
 
-  .scene-controls {
-    width: calc(100vw - 20px);
-    grid-template-columns: 52px minmax(0, 1fr) 52px;
-    gap: 8px;
-  }
-
   .scene-control-dock {
     grid-template-areas:
-      "prompt"
-      "playback";
-    grid-template-columns: minmax(0, 1fr);
+      "prompt prompt prompt"
+      "back playback next";
+    grid-template-columns: auto minmax(0, 1fr) auto;
     border-radius: 28px;
     padding: 10px;
   }
 
-  .scene-control-button {
-    width: 52px;
-    min-width: 52px;
-    min-height: 52px;
+  .scene-control-button:first-child {
+    grid-area: back;
   }
 
   .playback-control-button {
     grid-area: playback;
-    justify-self: center;
+  }
+
+  .scene-control-button:last-child {
+    grid-area: next;
   }
 
   .learner-mic-prompt,
@@ -1603,10 +1506,6 @@ select:focus-visible {
     --control-safe-area: clamp(84px, 23vh, 112px);
   }
 
-  .lesson-list-back-button {
-    top: 14px;
-  }
-
   .character-sprite {
     bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
     height: 49vh;
@@ -1617,13 +1516,8 @@ select:focus-visible {
     top: 112px;
   }
 
-  .scene-controls {
-    bottom: 6px;
-    grid-template-columns: 44px minmax(0, 1fr) 44px;
-    gap: 6px;
-  }
-
   .scene-control-dock {
+    bottom: 6px;
     min-height: 62px;
     gap: 6px;
     border-width: 3px;
@@ -1685,8 +1579,8 @@ select:focus-visible {
   }
 
   .scene-control-dock {
-    grid-template-areas: "playback prompt";
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "back playback prompt next";
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     border-radius: 999px;
   }
 
@@ -1744,7 +1638,8 @@ select:focus-visible {
   }
 
   .onboarding-start-peppa,
-  .onboarding-peppa {
+  .onboarding-peppa,
+  .onboarding-acknowledgment-peppa {
     animation: none;
   }
 }

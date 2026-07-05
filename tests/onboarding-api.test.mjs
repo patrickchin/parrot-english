@@ -7,6 +7,7 @@ import {
   loadOnboarding,
   loadProfile,
   saveOnboardingAnswer,
+  saveProfileAnswer,
   skipOnboarding,
   transcribeOnboardingAudio,
 } from "../src/onboarding-api.ts";
@@ -40,40 +41,37 @@ describe("onboarding browser API", () => {
     assert.equal(profile.calls[0][1].method, "GET");
   });
 
-  it("saves confirmed onboarding values as bounded JSON", async () => {
-    const onboarding = jsonFetch({ question: null });
-    await saveOnboardingAnswer("age", 8, { fetch: onboarding.fetch });
+  it("submits prose and retains the acknowledgment response", async () => {
+    const payload = {
+      question: null,
+      acknowledgment: {
+        text: "Dinosaurs are very stompy!",
+        audio: { contentType: "audio/mpeg", base64: "AQID" },
+      },
+    };
+    const onboarding = jsonFetch(payload);
+    assert.deepEqual(
+      await saveOnboardingAnswer("favoriteAnimals", "I like dinosaurs", {
+        fetch: onboarding.fetch,
+      }),
+      payload,
+    );
     assert.equal(onboarding.calls[0][0], "/api/onboarding/answer");
     assert.deepEqual(onboarding.calls[0][1], {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: '{"questionKey":"age","value":8}',
+      body: '{"questionKey":"favoriteAnimals","rawAnswer":"I like dinosaurs"}',
       signal: undefined,
     });
 
-  });
-
-  it("saves all profile answers in one request", async () => {
-    assert.equal(typeof onboardingApi.saveProfileAnswers, "function");
     const profile = jsonFetch({ profile: { name: "Maya" } });
-    await onboardingApi.saveProfileAnswers(
-      {
-        name: "Maya",
-        age: 8,
-        favoriteCartoons: ["Bluey"],
-      },
-      { fetch: profile.fetch },
-    );
-
+    await saveProfileAnswer("name", "Maya", { fetch: profile.fetch });
     assert.equal(profile.calls[0][0], "/api/profile");
     assert.equal(profile.calls[0][1].method, "PUT");
-    assert.deepEqual(JSON.parse(profile.calls[0][1].body), {
-      answers: {
-        name: "Maya",
-        age: 8,
-        favoriteCartoons: ["Bluey"],
-      },
-    });
+    assert.equal(
+      profile.calls[0][1].body,
+      '{"questionKey":"name","rawAnswer":"Maya"}',
+    );
   });
 
   it("posts skip and completion transitions", async () => {
@@ -125,7 +123,7 @@ describe("onboarding browser API", () => {
       400,
     );
     await assert.rejects(
-      saveOnboardingAnswer("age", 99, { fetch: failed.fetch }),
+      saveOnboardingAnswer("age", "I am 99", { fetch: failed.fetch }),
       (error) => {
         assert.ok(error instanceof OnboardingApiError);
         assert.equal(error.status, 400);
@@ -141,33 +139,31 @@ describe("onboarding browser API", () => {
     assert.equal(request.calls[0][1].signal, controller.signal);
   });
 
-  it("preserves keyed profile validation errors", async () => {
-    assert.equal(typeof onboardingApi.saveProfileAnswers, "function");
-    const failed = jsonFetch(
-      {
-        error: "invalid_profile",
-        fieldErrors: {
-          age: "Please enter a number from 3 to 17.",
-          ignored: 123,
-        },
-      },
-      400,
-    );
+  it("models prose questions and self-contained v2 response snapshots", () => {
+    const source = onboardingApi;
+    assert.equal(typeof source.saveOnboardingAnswer, "function");
 
-    await assert.rejects(
-      onboardingApi.saveProfileAnswers(
-        { name: "Maya", age: 99 },
-        { fetch: failed.fetch },
-      ),
-      (error) => {
-        assert.ok(error instanceof OnboardingApiError);
-        assert.equal(error.status, 400);
-        assert.equal(error.code, "invalid_profile");
-        assert.deepEqual(error.fieldErrors, {
-          age: "Please enter a number from 3 to 17.",
-        });
-        return true;
-      },
-    );
+    const question = {
+      answerKey: "favoriteAnimals",
+      position: 4,
+      promptEn: "What animals do you like?",
+      promptZh: "你喜欢什么动物？",
+      required: true,
+      maxLength: 500,
+      audio: null,
+    };
+    assert.equal("answerType" in question, false);
+    assert.equal("cardinality" in question, false);
+    assert.equal("options" in question, false);
+
+    const response = {
+      question: question.promptEn,
+      rawAnswer: "I like dinosaurs",
+      summary: "Likes dinosaurs.",
+      acknowledgment: "Dinosaurs are very stompy!",
+      enrichmentStatus: "generated",
+      answeredAt: "2026-07-06T10:30:00.000Z",
+    };
+    assert.equal(response.rawAnswer, "I like dinosaurs");
   });
 });

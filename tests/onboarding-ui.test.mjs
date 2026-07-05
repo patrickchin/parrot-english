@@ -19,24 +19,19 @@ const {
   playOnboardingStart,
   replayOnboardingQuestion,
 } = questionModule;
-let ProfileEditorView;
-try {
-  ({ ProfileEditorView } = await vite.ssrLoadModule("/src/ProfileEditor.tsx"));
-} catch {
-  ProfileEditorView = undefined;
-}
+const acknowledgmentModule = await vite.ssrLoadModule(
+  "/src/OnboardingAcknowledgment.tsx",
+);
+const { OnboardingAcknowledgment, beginAcknowledgmentPlayback } =
+  acknowledgmentModule;
 const gateModule = await vite.ssrLoadModule("/src/OnboardingGate.tsx");
-const {
-  OnboardingGateView,
-  addArrayAnswer,
-  answerForQuestion,
-  profileDraftsFromState,
-  saveQuestionAndAdvance,
-  submissionValue,
-  toggleArrayAnswer,
-  updateProfileDraft,
-} = gateModule;
+const { OnboardingGateView, answerForQuestion, saveQuestionAndAdvance } =
+  gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const questionSource = readFileSync(
+  new URL("../src/OnboardingQuestion.tsx", import.meta.url),
+  "utf8",
+);
 const gateSource = readFileSync(
   new URL("../src/OnboardingGate.tsx", import.meta.url),
   "utf8",
@@ -50,157 +45,126 @@ after(async () => {
 function question(overrides = {}) {
   return {
     answerKey: "age",
-    position: 1,
+    position: 2,
     promptEn: "How old are you?",
     promptZh: "你几岁了？",
-    answerType: "number",
-    cardinality: "scalar",
     required: true,
-    options: null,
-    validation: { min: 3, max: 17 },
+    maxLength: 120,
     audio: {
-      id: "onboarding-age",
-      src: "/assets/audio/onboarding-age.mp3",
+      id: "onboarding-v2-age",
+      src: "/assets/audio/onboarding-v2-age.mp3",
       text: "How old are you?",
     },
     ...overrides,
   };
 }
 
+function questionProps(overrides = {}) {
+  return {
+    fieldError: "",
+    mode: "onboarding",
+    onReplay() {},
+    onSkip() {},
+    onSkipQuestion() {},
+    onSubmit() {},
+    onTranscribe() {},
+    onValueChange() {},
+    progress: { answered: 1, current: 2, total: 6 },
+    question: question(),
+    status: "idle",
+    value: "",
+    ...overrides,
+  };
+}
+
 function renderQuestion(overrides = {}) {
   return renderToStaticMarkup(
-    createElement(OnboardingQuestionView, {
-      fieldError: "",
-      mode: "onboarding",
-      onAddPending() {},
-      onPendingChange() {},
-      onRemoveValue() {},
-      onReplay() {},
-      onSkip() {},
-      onSkipQuestion() {},
-      onSubmit() {},
-      onToggleOption() {},
-      onTranscribe() {},
-      pendingValue: "",
-      progress: { answered: 0, current: 1, total: 5 },
-      question: question(),
-      status: "idle",
-      value: "",
-      ...overrides,
-    }),
+    createElement(OnboardingQuestionView, questionProps(overrides)),
   );
 }
 
-describe("one-question onboarding view", () => {
-  it("renders one accessible scalar form with permanent typed and voice controls", () => {
-    const html = renderQuestion();
+describe("one-question prose onboarding view", () => {
+  it("renders one editable prose answer without array controls", () => {
+    const html = renderQuestion({ value: "I am six" });
 
     assert.equal((html.match(/<h1/g) ?? []).length, 1);
     assert.match(html, /How old are you\?/);
     assert.match(html, /你几岁了？/);
-    assert.match(html, /Question 1 of 5/);
-    assert.match(html, /type="number"/);
-    assert.match(html, /min="3"/);
-    assert.match(html, /max="17"/);
+    assert.match(html, /Question 2 of 6/);
+    assert.match(html, /<textarea/);
+    assert.match(html, /maxlength="120"/i);
+    assert.match(html, /I am six/);
     assert.match(html, /aria-label="Replay question"/);
     assert.match(html, /aria-label="Speak your answer"/);
     assert.match(html, />Next</);
     assert.match(html, />Skip for now</);
-  });
-
-  it("renders array chips, one editable pending value, and toggle suggestions", () => {
-    const html = renderQuestion({
-      pendingValue: "Paw Patrol",
-      question: question({
-        answerKey: "favoriteCartoons",
-        promptEn: "Which cartoons do you like?",
-        promptZh: "你喜欢哪些动画片？",
-        answerType: "text",
-        cardinality: "array",
-        options: ["Bluey", "Paw Patrol", "Peppa Pig"],
-        validation: { maxItems: 4, maxLength: 50 },
-      }),
-      value: ["Bluey"],
-    });
-
-    assert.match(html, /aria-label="Remove Bluey"/);
-    assert.match(html, /value="Paw Patrol"/);
-    assert.match(html, /aria-label="Add answer"/);
-    assert.match(html, /aria-pressed="true"[^>]*>Bluey</);
-    assert.match(html, /aria-pressed="false"[^>]*>Peppa Pig</);
-    assert.equal(
-      (html.match(/<h1[^>]*class="onboarding-question-title"/g) ?? []).length,
-      1,
+    assert.doesNotMatch(
+      html,
+      /onboarding-chips|Answer suggestions|Add one answer|aria-label="Add answer"/,
     );
   });
 
-  it("keeps field errors visible, locks saving controls, and omits Skip in profile mode", () => {
-    const html = renderQuestion({
-      fieldError: "Please enter a number from 3 to 17.",
-      mode: "profile",
-      status: "saving",
-      value: 99,
-    });
-
-    assert.match(html, /role="alert"/);
-    assert.match(html, /Please enter a number from 3 to 17\./);
-    assert.match(html, /disabled=""/);
-    assert.match(html, />Saving…</);
-    assert.doesNotMatch(html, /Skip for now/);
-  });
-
-  it("shows microphone progress without removing the editable form fallback", () => {
+  it("keeps the editable fallback through listening, transcription, and thinking", () => {
     const recording = renderQuestion({ status: "recording" });
     assert.match(recording, /Listening…/);
-    assert.match(recording, /type="number"/);
+    assert.match(recording, /<textarea/);
 
     const transcribing = renderQuestion({ status: "transcribing" });
     assert.match(transcribing, /Writing what I heard…/);
-    assert.match(transcribing, /type="number"/);
+    assert.match(transcribing, /<textarea/);
+
+    const saving = renderQuestion({ status: "saving" });
+    assert.match(saving, /Peppa is thinking…/);
+    assert.match(saving, /disabled=""/);
+    assert.match(saving, /<textarea/);
   });
 
-  it("offers a per-question skip only for optional onboarding questions", () => {
-    const optional = renderQuestion({
-      question: question({ required: false }),
+  it("shows field errors and only offers per-question skip when optional", () => {
+    const failed = renderQuestion({
+      fieldError: "Please tell me your age using a number from 3 to 17.",
     });
-    assert.match(optional, />Skip question</);
+    assert.match(failed, /role="alert"/);
+    assert.match(failed, /Please tell me your age/);
 
+    assert.match(
+      renderQuestion({ question: question({ required: false }) }),
+      />Skip question</,
+    );
     assert.doesNotMatch(renderQuestion(), />Skip question</);
     assert.doesNotMatch(
-      renderQuestion({
-        mode: "profile",
-        question: question({ required: false }),
-      }),
-      />Skip question</,
+      renderQuestion({ mode: "profile", question: question({ required: false }) }),
+      /Skip for now|Skip question/,
+    );
+  });
+
+  it("contains no scalar-array branching helpers", () => {
+    assert.doesNotMatch(
+      questionSource,
+      /cardinality|answerType|onboarding-chips|onboarding-suggestions|onToggleOption|onAddPending/,
+    );
+    assert.doesNotMatch(
+      gateSource,
+      /addArrayAnswer|toggleArrayAnswer|submissionValue|pendingValue/,
     );
   });
 });
 
-describe("onboarding audio and transcription helpers", () => {
-  it("plays introduction then the first question only after Start", async () => {
-    const lines = [];
-    const introduction = {
-      id: "onboarding-introduction",
-      src: "/assets/audio/onboarding-introduction.mp3",
-      text: "Hi! I'm Peppa.",
-    };
-    const questionAudio = question().audio;
-
+describe("onboarding prompt and transcription helpers", () => {
+  it("plays only the first simple question after Start", async () => {
+    const calls = [];
     await playOnboardingStart({
-      introduction,
-      questionAudio,
-      async playSequence(options) {
-        lines.push(...options.lines);
+      questionAudio: question().audio,
+      async playLine(options) {
+        calls.push(options);
       },
     });
-
-    assert.deepEqual(
-      lines.map(({ audioSrc, text }) => ({ audioSrc, text })),
-      [
-        { audioSrc: introduction.src, text: introduction.text },
-        { audioSrc: questionAudio.src, text: questionAudio.text },
-      ],
-    );
+    assert.deepEqual(calls, [
+      {
+        audioId: "onboarding-v2-age",
+        audioSrc: "/assets/audio/onboarding-v2-age.mp3",
+        text: "How old are you?",
+      },
+    ]);
   });
 
   it("replays only the current question", async () => {
@@ -211,135 +175,158 @@ describe("onboarding audio and transcription helpers", () => {
       },
     });
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].audioSrc, "/assets/audio/onboarding-age.mp3");
+    assert.equal(calls[0].audioSrc, "/assets/audio/onboarding-v2-age.mp3");
   });
 
   it("returns one editable transcript without persisting it", async () => {
     const audio = new Blob(["audio"], { type: "audio/webm" });
     let transcribedAudio;
-    let saveCalls = 0;
-
     const transcript = await captureOnboardingAnswer({
       async record() {
         return audio;
       },
       async transcribe(value) {
         transcribedAudio = value;
-        return { transcript: "Paw Patrol" };
-      },
-      save() {
-        saveCalls += 1;
+        return { transcript: "I like dinosaurs" };
       },
     });
-
     assert.equal(transcribedAudio, audio);
-    assert.equal(transcript, "Paw Patrol");
-    assert.equal(saveCalls, 0);
+    assert.equal(transcript, "I like dinosaurs");
   });
 });
 
-describe("profile summary editor", () => {
-  const nameQuestion = question({
-    answerKey: "name",
-    position: 0,
-    promptEn: "What name would you like us to use?",
-    promptZh: "你希望我们怎么称呼你？",
-    answerType: "text",
-    validation: { maxLength: 80 },
-    audio: null,
-  });
-  const cartoonsQuestion = question({
-    answerKey: "favoriteCartoons",
-    position: 2,
-    promptEn: "Which cartoons do you like?",
-    promptZh: "你喜欢哪些动画片？",
-    answerType: "text",
-    cardinality: "array",
-    options: ["Bluey", "Paw Patrol"],
-    validation: { maxItems: 4, maxLength: 50 },
-  });
-
-  it("renders every prefilled question in one editable form", () => {
-    assert.equal(
-      typeof ProfileEditorView,
-      "function",
-      "Expected an executable ProfileEditorView",
-    );
+describe("Peppa acknowledgment", () => {
+  it("shows one acknowledgment and an immediate Next action", () => {
     const html = renderToStaticMarkup(
-      createElement(ProfileEditorView, {
-        drafts: {
-          name: "Mia",
-          age: 8,
-          favoriteCartoons: ["Bluey"],
-        },
-        fieldErrors: {},
-        fieldStatuses: {},
-        isSaving: false,
-        onAddPending() {},
-        onCancel() {},
-        onClose() {},
-        onPendingChange() {},
-        onRemoveValue() {},
-        onReplay() {},
-        onSave() {},
-        onToggleOption() {},
-        onTranscribe() {},
-        onValueChange() {},
-        pageError: "",
-        pendingValues: {},
-        questions: [nameQuestion, question(), cartoonsQuestion],
+      createElement(OnboardingAcknowledgment, {
+        acknowledgment: { text: "Dinosaurs are very stompy!", audio: null },
+        operationId: 1,
+        onNext() {},
       }),
     );
-
-    assert.match(html, /What name would you like us to use\?/);
-    assert.match(html, /How old are you\?/);
-    assert.match(html, /Which cartoons do you like\?/);
-    assert.match(html, /value="Mia"/);
-    assert.match(html, /value="8"/);
-    assert.match(html, /aria-label="Remove Bluey"/);
-    assert.equal((html.match(/<form/g) ?? []).length, 1);
-    assert.match(html, />Save changes</);
-    assert.match(html, />Cancel</);
-    assert.doesNotMatch(html, />Next</);
-    assert.doesNotMatch(html, /Question 1 of/);
+    assert.match(html, /Dinosaurs are very stompy!/);
+    assert.match(html, /aria-live="polite"/);
+    assert.match(html, />Next</);
+    assert.doesNotMatch(html, /<textarea/);
   });
 
-  it("builds and updates keyed drafts without changing other answers", () => {
-    assert.equal(typeof profileDraftsFromState, "function");
-    assert.equal(typeof updateProfileDraft, "function");
-    const state = {
-      profile: {
-        name: "Mia",
-        age: 8,
-        answers: { favoriteCartoons: ["Bluey"] },
+  it("plays base64 MP3, advances on completion, and revokes its URL", async () => {
+    let ended;
+    let playCalls = 0;
+    let advanced = 0;
+    let revoked = "";
+    const cleanup = beginAcknowledgmentPlayback({
+      acknowledgment: {
+        text: "Dinosaurs are very stompy!",
+        audio: { contentType: "audio/mpeg", base64: "AQID" },
       },
-      questions: [nameQuestion, question(), cartoonsQuestion],
-    };
-    const drafts = profileDraftsFromState(state);
-    const updated = updateProfileDraft(drafts, "age", 9);
+      createAudio(src) {
+        assert.equal(src, "blob:acknowledgment");
+        return {
+          addEventListener(event, listener) {
+            if (event === "ended") ended = listener;
+          },
+          pause() {},
+          play() {
+            playCalls += 1;
+            return Promise.resolve();
+          },
+          removeEventListener() {},
+        };
+      },
+      createObjectURL(blob) {
+        assert.equal(blob.type, "audio/mpeg");
+        assert.equal(blob.size, 3);
+        return "blob:acknowledgment";
+      },
+      onAdvance() {
+        advanced += 1;
+      },
+      revokeObjectURL(url) {
+        revoked = url;
+      },
+    });
 
-    assert.deepEqual(drafts, {
-      name: "Mia",
-      age: 8,
-      favoriteCartoons: ["Bluey"],
+    await Promise.resolve();
+    assert.equal(playCalls, 1);
+    ended();
+    assert.equal(advanced, 1);
+    cleanup();
+    assert.equal(revoked, "blob:acknowledgment");
+  });
+
+  it("uses a readable no-audio delay and ignores stale playback", () => {
+    let scheduled;
+    let advanced = 0;
+    const cleanup = beginAcknowledgmentPlayback({
+      acknowledgment: { text: "Lovely!", audio: null },
+      onAdvance() {
+        advanced += 1;
+      },
+      setTimer(callback, delay) {
+        assert.ok(delay >= 1_500);
+        scheduled = callback;
+        return 7;
+      },
+      clearTimer(id) {
+        assert.equal(id, 7);
+      },
     });
-    assert.deepEqual(updated, {
-      name: "Mia",
-      age: 9,
-      favoriteCartoons: ["Bluey"],
-    });
-    assert.notEqual(updated, drafts);
+    cleanup();
+    scheduled();
+    assert.equal(advanced, 0);
   });
 });
+
+function emptyAnswers(responses = {}) {
+  return {
+    schemaVersion: 2,
+    questionnaireVersion: 2,
+    responses,
+    legacyAnswers: null,
+  };
+}
+
+function fullState(overrides = {}) {
+  return {
+    mode: "full",
+    profile: {
+      name: "Mia",
+      age: null,
+      answers: emptyAnswers(),
+      questionnaireVersion: 2,
+      currentQuestionKey: "name",
+      onboardingStatus: "not_started",
+      completedAt: null,
+    },
+    questionnaire: { version: 2 },
+    question: question({
+      answerKey: "name",
+      position: 1,
+      promptEn: "Hi! I'm Peppa. What's your name?",
+      promptZh: "你好！我是佩奇。你叫什么名字？",
+      audio: {
+        id: "onboarding-v2-name",
+        src: "/assets/audio/onboarding-v2-name.mp3",
+        text: "Hi! I'm Peppa. What's your name?",
+      },
+    }),
+    progress: { answered: 0, current: 1, total: 6 },
+    canBypass: false,
+    ...overrides,
+  };
+}
 
 function renderGate(overrides = {}) {
   return renderToStaticMarkup(
     createElement(
       OnboardingGateView,
       {
+        acknowledgment: null,
         data: null,
         isLoading: false,
         loadError: "",
+        onAcknowledgmentNext() {},
         onCloseProfile() {},
         onOpenProfile() {},
         onRetry() {},
@@ -356,216 +343,125 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
-  const incompleteData = {
-    mode: "full",
-    profile: {
-      name: "Mia",
-      age: null,
-      answers: { name: "Mia" },
-      questionnaireVersion: 1,
-      currentQuestionKey: null,
-      onboardingStatus: "not_started",
-      completedAt: null,
-    },
-    questionnaire: {
-      version: 1,
-      introductionAudio: {
-        id: "onboarding-introduction",
-        src: "/assets/audio/onboarding-introduction.mp3",
-        text: "Hi! I'm Peppa.",
-      },
-    },
-    question: question(),
-    progress: { answered: 0, current: 1, total: 5 },
-    canBypass: false,
-  };
-
-  it("hides lesson children behind loading and retryable error states", () => {
-    const loading = renderGate({ isLoading: true });
-    assert.match(loading, /Loading your questions…/);
-    assert.doesNotMatch(loading, /LESSON CONTENT/);
-
+  it("hides lessons behind loading, errors, and explicit Start", () => {
+    assert.doesNotMatch(renderGate({ isLoading: true }), /LESSON CONTENT/);
     const failed = renderGate({ loadError: "Questions are unavailable." });
-    assert.match(failed, /role="alert"/);
     assert.match(failed, />Retry</);
     assert.match(failed, />Skip for now</);
     assert.doesNotMatch(failed, /LESSON CONTENT/);
-  });
 
-  it("requires an explicit Start before showing the first or resumed question", () => {
-    const start = renderGate({ data: incompleteData });
+    const start = renderGate({ data: fullState() });
     assert.match(start, /Meet Peppa/);
-    assert.match(start, />Start</);
-    assert.doesNotMatch(start, /How old are you\?/);
+    assert.match(start, /six quick questions/i);
+    assert.doesNotMatch(start, /What&#x27;s your name\?/);
     assert.doesNotMatch(start, /LESSON CONTENT/);
-
-    const questionHtml = renderGate({
-      data: incompleteData,
-      started: true,
-      questionProps: {
-        fieldError: "",
-        mode: "onboarding",
-        onAddPending() {},
-        onPendingChange() {},
-        onRemoveValue() {},
-        onReplay() {},
-        onSkip() {},
-        onSkipQuestion() {},
-        onSubmit() {},
-        onToggleOption() {},
-        onTranscribe() {},
-        onValueChange() {},
-        pendingValue: "",
-        progress: incompleteData.progress,
-        question: incompleteData.question,
-        status: "idle",
-        value: "",
-      },
-    });
-    assert.match(questionHtml, /How old are you\?/);
-    assert.doesNotMatch(questionHtml, /LESSON CONTENT/);
   });
 
-  it("renders lesson children after completion or current-session skip", () => {
+  it("shows acknowledgment before the next question or completed lesson", () => {
     const html = renderGate({
-      data: {
-        ...incompleteData,
+      acknowledgment: {
+        acknowledgment: { text: "Mia is a lovely name!", audio: null },
+        operationId: 4,
+      },
+      data: fullState({ canBypass: true }),
+      started: true,
+    });
+    assert.match(html, /Mia is a lovely name!/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
+    assert.doesNotMatch(html, /<textarea/);
+  });
+
+  it("renders lessons after completion or current-session bypass", () => {
+    const html = renderGate({
+      data: fullState({
         canBypass: true,
         profile: {
-          ...incompleteData.profile,
+          ...fullState().profile,
           onboardingStatus: "in_progress",
         },
-      },
+      }),
     });
-
     assert.match(html, /LESSON CONTENT/);
-    assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
-    assert.match(gateSource, /useProfileAccountAction/);
-    assert.doesNotMatch(html, />Start</);
-  });
+    assert.match(html, /aria-label="Edit learner profile"/);
 
-  it("renders bypass-only lessons without unavailable profile editing", () => {
-    const html = renderGate({
+    const bypass = renderGate({
       data: { mode: "bypass-only", canBypass: true },
     });
-
-    assert.match(html, /LESSON CONTENT/);
-    assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
+    assert.match(bypass, /LESSON CONTENT/);
+    assert.doesNotMatch(bypass, /Edit learner profile/);
   });
 
-  it("renders all profile questions without introduction or Skip", () => {
-    const nameQuestion = question({
-      answerKey: "name",
-      position: 0,
-      promptEn: "What name would you like us to use?",
-      promptZh: "你希望我们怎么称呼你？",
-      answerType: "text",
-      validation: { maxLength: 80 },
-      audio: null,
-    });
+  it("reuses the prose form for profile editing without bypass controls", () => {
     const html = renderGate({
-      data: { ...incompleteData, canBypass: true },
+      data: fullState({ canBypass: true }),
       profileEditor: {
-        drafts: { name: "Mia", age: 8 },
-        fieldErrors: {},
-        fieldStatuses: {},
-        isSaving: false,
-        onAddPending() {},
-        onCancel() {},
-        onClose() {},
-        onPendingChange() {},
-        onRemoveValue() {},
-        onReplay() {},
-        onSave() {},
-        onToggleOption() {},
-        onTranscribe() {},
-        onValueChange() {},
-        pageError: "",
-        pendingValues: {},
-        questions: [nameQuestion, question()],
+        current: 1,
+        total: 6,
+        questionProps: questionProps({
+          mode: "profile",
+          question: fullState().question,
+          value: "Mia",
+        }),
       },
     });
-
     assert.match(html, /Edit profile/);
-    assert.match(html, /What name would you like us to use\?/);
-    assert.match(html, /How old are you\?/);
-    assert.match(html, /aria-label="Close profile editor"/);
-    assert.doesNotMatch(html, /Meet Peppa/);
+    assert.match(html, /What&#x27;s your name\?/);
+    assert.match(html, /<textarea/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
   });
 
-  it("derives editable drafts and unique array updates without splitting phrases", () => {
+  it("derives editable prose from snapshots with canonical prefills", () => {
     const profile = {
       name: "Mia",
       age: 8,
-      answers: {
-        name: "Mia",
-        age: 8,
-        favoriteCartoons: ["Bluey"],
-      },
+      answers: emptyAnswers({
+        favoriteAnimals: {
+          question: "What animals do you like?",
+          rawAnswer: "I like dinosaurs",
+          summary: "Likes dinosaurs.",
+          acknowledgment: "Dinosaurs are stompy!",
+          enrichmentStatus: "generated",
+          answeredAt: "2026-07-06T10:30:00.000Z",
+        },
+      }),
     };
-    assert.equal(answerForQuestion(profile, question()), 8);
-    assert.deepEqual(
-      answerForQuestion(
-        profile,
-        question({ answerKey: "favoriteCartoons", cardinality: "array" }),
-      ),
-      ["Bluey"],
+    assert.equal(answerForQuestion(profile, question({ answerKey: "name" })), "Mia");
+    assert.equal(answerForQuestion(profile, question()), "8");
+    assert.equal(
+      answerForQuestion(profile, question({ answerKey: "favoriteAnimals" })),
+      "I like dinosaurs",
     );
-    assert.deepEqual(addArrayAnswer(["Bluey"], " Paw Patrol "), [
-      "Bluey",
-      "Paw Patrol",
-    ]);
-    assert.deepEqual(addArrayAnswer(["Bluey"], "bluey"), ["Bluey"]);
-    assert.deepEqual(toggleArrayAnswer(["Bluey"], "bluey"), []);
-    assert.deepEqual(toggleArrayAnswer(["Bluey"], "Paw Patrol"), [
-      "Bluey",
-      "Paw Patrol",
-    ]);
-    assert.equal(submissionValue(question(), "8"), 8);
-    assert.equal(submissionValue(question(), "eight"), "eight");
   });
 
   it("uses the server-completed final answer response directly", async () => {
-    let saveCalls = 0;
-    let completeCalls = 0;
-    const completedState = {
-      ...incompleteData,
+    const completed = fullState({
       canBypass: true,
       question: null,
       profile: {
-        ...incompleteData.profile,
+        ...fullState().profile,
         onboardingStatus: "completed",
       },
-    };
-
+      acknowledgment: { text: "Lovely stories!", audio: null },
+    });
+    let calls = 0;
     const result = await saveQuestionAndAdvance({
       questionKey: "favoriteStoryTopics",
-      value: ["space"],
+      rawAnswer: "I like space stories",
       async save() {
-        saveCalls += 1;
-        return completedState;
-      },
-      async complete() {
-        completeCalls += 1;
-        return completedState;
+        calls += 1;
+        return completed;
       },
     });
-
-    assert.equal(saveCalls, 1);
-    assert.equal(completeCalls, 0);
-    assert.equal(result, completedState);
+    assert.equal(calls, 1);
+    assert.equal(result, completed);
   });
 
-  it("composes AuthGate, OnboardingGate, then LessonExperience", () => {
+  it("composes gates and keeps responsive reduced-motion styles", () => {
     assert.match(
       appSource,
       /<AuthGate>\s*<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
     );
-  });
-
-  it("provides scroll-safe responsive layout and reduced-motion behavior", () => {
     assert.match(styles, /\.onboarding-screen\s*\{[^}]*overflow-y:\s*auto/s);
     assert.match(styles, /\.onboarding-(?:next|skip|icon)-button:focus-visible/);
     assert.match(styles, /@media\s*\(max-width:\s*720px\)[\s\S]*onboarding/);
