@@ -124,6 +124,7 @@ interface AuthGateViewProps {
   profileError: string;
   session: AuthSession | null;
   sessionError: unknown;
+  signedOutFallback: ReactNode | null;
 }
 
 export function AuthGateView({
@@ -144,6 +145,7 @@ export function AuthGateView({
   profileError,
   session,
   sessionError,
+  signedOutFallback,
 }: AuthGateViewProps) {
   if (isPending || isRetrying) {
     return (
@@ -173,6 +175,10 @@ export function AuthGateView({
         </section>
       </main>
     );
+  }
+
+  if (!session && signedOutFallback) {
+    return <>{signedOutFallback}</>;
   }
 
   if (!session) {
@@ -316,6 +322,7 @@ export function AuthGateView({
 
 interface AuthGateProps {
   children: ReactNode;
+  signedOutFallback?: ReactNode;
 }
 
 const EMPTY_FIELDS: AuthFields = { name: "", email: "", password: "" };
@@ -348,7 +355,10 @@ export function createAuthGate({
   submitAction = submitAuthForm,
   View = AuthGateView,
 }: CreateAuthGateOptions) {
-  return function AuthGateContainer({ children }: AuthGateProps) {
+  return function AuthGateContainer({
+    children,
+    signedOutFallback,
+  }: AuthGateProps) {
     const { data: session, isPending, error, refetch } = client.useSession();
     const [mode, setMode] = stateHook<AuthMode>("sign-in");
     const [fields, setFields] = stateHook<AuthFields>(EMPTY_FIELDS);
@@ -429,6 +439,7 @@ export function createAuthGate({
           profileError={profileAction?.error ?? ""}
           session={session}
           sessionError={error}
+          signedOutFallback={signedOutFallback ?? null}
         >
           {children}
         </View>

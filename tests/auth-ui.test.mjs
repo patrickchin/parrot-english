@@ -62,6 +62,7 @@ function renderAuthGate(overrides = {}) {
     profileError: "",
     session: null,
     sessionError: null,
+    signedOutFallback: null,
     ...overrides,
   };
 
@@ -242,6 +243,33 @@ test("auth gate container bridges its session hook, state, and actions", async (
   assert.equal(signOutCalls[0].refetch, refetch);
 });
 
+test("auth gate container forwards an optional signed-out fallback", () => {
+  let capturedProps;
+  const fallback = createElement("span", null, "REDIRECT");
+  const client = createAuthClientStub({
+    useSession() {
+      return {
+        data: null,
+        error: null,
+        isPending: false,
+        refetch: async () => {},
+      };
+    },
+  });
+
+  function CaptureView(props) {
+    capturedProps = props;
+    return createElement("div");
+  }
+
+  const TestAuthGate = createAuthGate({ client, View: CaptureView });
+  renderToStaticMarkup(
+    createElement(TestAuthGate, { signedOutFallback: fallback }),
+  );
+
+  assert.equal(capturedProps.signedOutFallback, fallback);
+});
+
 function getRule(selector) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const match = styles.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
@@ -300,6 +328,36 @@ test("session errors reject cached sessions until retry succeeds", () => {
   assert.match(html, /重试/);
   assert.doesNotMatch(html, /LESSON CONTENT/);
   assert.doesNotMatch(html, /cached@example\.com/);
+});
+
+test("signed-out route fallbacks replace the form after session checks finish", () => {
+  const html = renderAuthGate({
+    signedOutFallback: createElement(
+      "span",
+      { "data-login-redirect": true },
+      "REDIRECT",
+    ),
+  });
+
+  assert.match(html, /data-login-redirect/);
+  assert.doesNotMatch(html, /name="email"/);
+  assert.doesNotMatch(html, /LESSON CONTENT/);
+});
+
+test("pending and failed session checks take priority over redirects", () => {
+  const fallback = createElement("span", null, "REDIRECT");
+
+  assert.match(
+    renderAuthGate({ isPending: true, signedOutFallback: fallback }),
+    /正在检查登录状态/,
+  );
+  assert.match(
+    renderAuthGate({
+      sessionError: new Error("offline"),
+      signedOutFallback: fallback,
+    }),
+    /登录服务暂时不可用/,
+  );
 });
 
 test("background session refetches preserve mounted lesson children", () => {
@@ -528,7 +586,7 @@ test("App composes AuthGate, OnboardingGate, and the complete lesson experience"
   assert.match(app, /export function LessonExperience\(\)/);
   assert.match(
     app,
-    /<AuthGate>\s*<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
+    /<AuthGate[\s\S]*?<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
   );
 });
 

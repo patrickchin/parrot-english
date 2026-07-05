@@ -20,6 +20,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { Navigate, useLocation } from "react-router";
 import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
 import { getLessonScenePresentation } from "../lib/lesson-scene";
@@ -36,6 +37,7 @@ import {
   type AppNavigationEvent,
   type AppNavigationState,
 } from "./app-navigation";
+import { getLoginPath } from "./app-routes";
 import { AuthGate } from "./AuthGate";
 import { OnboardingGate } from "./OnboardingGate";
 import { evaluateSpeech } from "./evaluation-request";
@@ -636,12 +638,26 @@ export function LessonExperience() {
   );
 }
 
-export function App() {
+function RoutedApplication() {
+  const location = useLocation();
+  const currentTarget = `${location.pathname}${location.search}${location.hash}`;
+  const onLoginRoute = location.pathname === "/login";
+
   return (
-    <AuthGate>
+    <AuthGate
+      signedOutFallback={
+        onLoginRoute ? null : (
+          <Navigate replace to={getLoginPath(currentTarget)} />
+        )
+      }
+    >
       <OnboardingGate>
         <LessonExperience />
       </OnboardingGate>
     </AuthGate>
   );
+}
+
+export function App() {
+  return <RoutedApplication />;
 }
