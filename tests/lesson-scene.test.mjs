@@ -54,7 +54,7 @@ const lesson = {
 };
 
 describe("scene-script presentation", () => {
-  it("resolves the background, complete character set, and active speaker", () => {
+  it("resolves the background, visible story characters, and active speaker", () => {
     const scene = getLessonScenePresentation(
       { ...createInitialLessonState(), phase: LessonPhase.Speaking },
       lesson,
@@ -89,15 +89,6 @@ describe("scene-script presentation", () => {
           isActive: true,
           asset: { src: "/assets/dolly-talking.webp", alt: "dolly talking" },
         },
-        {
-          id: "user",
-          emote: "listening",
-          isActive: false,
-          asset: {
-            src: "/assets/user-listening.webp",
-            alt: "user listening",
-          },
-        },
       ]
     );
     assert.deepEqual(scene.speech, {
@@ -129,7 +120,7 @@ describe("scene-script presentation", () => {
     assert.equal(scene.characters.some((character) => character.isActive), false);
   });
 
-  it("keeps the user active while waiting, recording, and evaluating", () => {
+  it("keeps user speech metadata without presenting a user character", () => {
     for (const phase of [
       LessonPhase.WaitingForUser,
       LessonPhase.Recording,
@@ -141,11 +132,12 @@ describe("scene-script presentation", () => {
         catalog
       );
 
-      assert.equal(scene.speech.kind, "user");
-      assert.equal(
-        scene.characters.find((character) => character.id === "user").isActive,
-        true
-      );
+      assert.deepEqual(scene.speech, {
+        speaker: "user",
+        text: "Here you are!",
+        kind: "user",
+      });
+      assert.equal(scene.characters.some((character) => character.id === "user"), false);
     }
   });
 
