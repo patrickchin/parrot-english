@@ -31,6 +31,12 @@ describe("lesson list integration contracts", () => {
     assert.doesNotMatch(app, /<select|Lesson picker/);
   });
 
+  it("renders only discovered playable lessons", () => {
+    const list = readProjectFile("src/LessonList.tsx");
+
+    assert.doesNotMatch(list, /UPCOMING_LESSONS|Coming soon|LockKeyhole/);
+  });
+
   it("provides responsive catalog and Back-control styles", () => {
     const styles = readProjectFile("src/styles.css");
 
