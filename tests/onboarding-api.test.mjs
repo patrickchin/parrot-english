@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import * as onboardingApi from "../src/onboarding-api.ts";
 import {
   OnboardingApiError,
   completeOnboarding,
@@ -71,6 +72,22 @@ describe("onboarding browser API", () => {
     await completeOnboarding({ fetch: completed.fetch });
     assert.equal(completed.calls[0][0], "/api/onboarding/complete");
     assert.equal(completed.calls[0][1].method, "POST");
+  });
+
+  it("posts an explicit optional-question skip", async () => {
+    assert.equal(typeof onboardingApi.skipOnboardingQuestion, "function");
+    const request = jsonFetch({ mode: "full", question: null });
+
+    await onboardingApi.skipOnboardingQuestion("favoriteCartoons", {
+      fetch: request.fetch,
+    });
+
+    assert.equal(request.calls[0][0], "/api/onboarding/question/skip");
+    assert.equal(request.calls[0][1].method, "POST");
+    assert.equal(
+      request.calls[0][1].body,
+      '{"questionKey":"favoriteCartoons"}',
+    );
   });
 
   it("uploads only the current audio clip for transcript text", async () => {

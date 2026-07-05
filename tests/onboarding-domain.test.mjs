@@ -11,6 +11,8 @@ import {
   normalizeAnswer,
   parseQuestionConfig,
   readProfileAnswers,
+  readSkippedQuestionKeys,
+  skipProfileQuestion,
   validateAnswer,
   writeProfileAnswer,
 } from "../lib/onboarding.js";
@@ -270,6 +272,57 @@ describe("onboarding profile and flow rules", () => {
       }),
       { complete: true },
     );
+  });
+
+  it("advances past explicitly skipped optional questions in position order", () => {
+    const orderedQuestions = [
+      question({ answerKey: "favoriteCartoon", position: 1, required: false }),
+      question({ answerKey: "age", answerType: "number", position: 2 }),
+    ];
+    assert.equal(
+      getNextQuestion({
+        answers: {},
+        currentQuestionKey: null,
+        questions: orderedQuestions,
+      })?.answerKey,
+      "favoriteCartoon",
+    );
+    const profile = skipProfileQuestion(
+      { answersJson: "{}", skippedQuestionKeysJson: "[]" },
+      "favoriteCartoon",
+    );
+    const skippedQuestionKeys = readSkippedQuestionKeys(profile);
+
+    assert.deepEqual(skippedQuestionKeys, ["favoriteCartoon"]);
+    assert.equal(
+      getNextQuestion({
+        answers: {},
+        currentQuestionKey: null,
+        questions: orderedQuestions,
+        skippedQuestionKeys,
+      })?.answerKey,
+      "age",
+    );
+    assert.deepEqual(
+      getProgress(orderedQuestions, {}, "age", skippedQuestionKeys),
+      { answered: 1, current: 2, total: 2 },
+    );
+  });
+
+  it("removes an optional key from the skipped set when it receives an answer", () => {
+    const profile = writeProfileAnswer(
+      {
+        answersJson: "{}",
+        skippedQuestionKeysJson: '["favoriteCartoon"]',
+      },
+      "favoriteCartoon",
+      "Bluey",
+    );
+
+    assert.deepEqual(readSkippedQuestionKeys(profile), []);
+    assert.deepEqual(JSON.parse(profile.answersJson), {
+      favoriteCartoon: "Bluey",
+    });
   });
 
   it("preserves assigned versions and bypasses only the exact skipped session", () => {

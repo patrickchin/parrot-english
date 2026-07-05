@@ -1,11 +1,12 @@
 import {
   canCompleteQuestionnaire,
-  canSkipForSession,
   getApplicableQuestions,
   getNextQuestion,
   getProgress,
   parseQuestionConfig,
   readProfileAnswers,
+  readSkippedQuestionKeys,
+  skipProfileQuestion,
   validateAnswer,
   writeProfileAnswer,
 } from "../lib/onboarding.js";
@@ -111,8 +112,9 @@ type LoadedState = Awaited<
   ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>
 >;
 
-function onboardingPayload(state: LoadedState, sessionId: string) {
+function onboardingPayload(state: LoadedState, canBypass: boolean) {
   const answers = readProfileAnswers(state.profile);
+  const skippedQuestionKeys = readSkippedQuestionKeys(state.profile);
   const question =
     state.profile.onboardingStatus === "completed"
       ? null
@@ -120,12 +122,11 @@ function onboardingPayload(state: LoadedState, sessionId: string) {
           answers,
           currentQuestionKey: state.profile.currentQuestionKey,
           questions: state.questions,
+          skippedQuestionKeys,
         });
-  const canBypass =
-    state.profile.onboardingStatus === "completed" ||
-    canSkipForSession(state.profile, sessionId);
 
   return {
+    mode: "full" as const,
     profile: serializeProfile(state.profile),
     questionnaire: {
       version: state.questionnaire.version,
@@ -135,9 +136,39 @@ function onboardingPayload(state: LoadedState, sessionId: string) {
     progress: getProgress(
       state.questions,
       answers,
-      question?.answerKey ?? null
+      question?.answerKey ?? null,
+      skippedQuestionKeys
     ),
     canBypass,
+  };
+}
+
+function bypassOnlyPayload() {
+  return { mode: "bypass-only" as const, canBypass: true as const };
+}
+
+function getCurrentQuestion(state: LoadedState) {
+  return getNextQuestion({
+    answers: readProfileAnswers(state.profile),
+    currentQuestionKey: state.profile.currentQuestionKey,
+    questions: state.questions,
+    skippedQuestionKeys: readSkippedQuestionKeys(state.profile),
+  });
+}
+
+function getTransition(state: LoadedState, updatedProfile: LoadedState["profile"]) {
+  const answers = readProfileAnswers(updatedProfile);
+  const skippedQuestionKeys = readSkippedQuestionKeys(updatedProfile);
+  const next = getNextQuestion({
+    answers,
+    currentQuestionKey: null,
+    questions: state.questions,
+    skippedQuestionKeys,
+  });
+  const completion = canCompleteQuestionnaire(state.questions, answers);
+  return {
+    completed: next === null && completion.complete,
+    currentQuestionKey: next?.answerKey ?? null,
   };
 }
 
@@ -197,8 +228,17 @@ export async function handleOnboardingRequest(
     }
 
     if (url.pathname === "/api/onboarding" && input.request.method === "GET") {
-      const state = await repository.loadState(input.identity);
-      return jsonResponse(onboardingPayload(state, input.identity.sessionId));
+      try {
+        const state = await repository.loadState(input.identity);
+        return jsonResponse(
+          onboardingPayload(state, await repository.canBypass(input.identity))
+        );
+      } catch (error) {
+        if (await repository.canBypass(input.identity)) {
+          return jsonResponse(bypassOnlyPayload());
+        }
+        throw error;
+      }
     }
 
     if (
@@ -222,12 +262,7 @@ export async function handleOnboardingRequest(
         );
       }
 
-      const answers = readProfileAnswers(state.profile);
-      const current = getNextQuestion({
-        answers,
-        currentQuestionKey: state.profile.currentQuestionKey,
-        questions: state.questions,
-      });
+      const current = getCurrentQuestion(state);
       if (current?.answerKey !== entry.answerKey) {
         throw new ApiError(
           400,
@@ -246,32 +281,84 @@ export async function handleOnboardingRequest(
         entry.answerKey,
         validation.value
       );
-      const updatedAnswers = readProfileAnswers(updated);
-      const next = getNextQuestion({
-        answers: updatedAnswers,
-        currentQuestionKey: null,
-        questions: state.questions,
-      });
-      await repository.saveAnswer(state.profile.id, {
+      const transition = getTransition(state, updated);
+      await repository.saveTransition(state.profile.id, {
         age: updated.age,
         answersJson: updated.answersJson,
-        currentQuestionKey: next?.answerKey ?? null,
+        completed: transition.completed,
+        currentQuestionKey: transition.currentQuestionKey,
         name: updated.name,
-        onboardingStatus: "in_progress",
+        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
       });
 
       const nextState = await repository.loadState(input.identity);
-      return jsonResponse(onboardingPayload(nextState, input.identity.sessionId));
+      return jsonResponse(
+        onboardingPayload(nextState, await repository.canBypass(input.identity))
+      );
+    }
+
+    if (
+      url.pathname === "/api/onboarding/question/skip" &&
+      input.request.method === "POST"
+    ) {
+      const body = await readJsonBody(input.request);
+      if (typeof body.questionKey !== "string") {
+        throw new ApiError(400, "invalid_answer", "A question key is required.");
+      }
+      const state = await repository.loadState(input.identity);
+      const entry = await repository.findQuestion(
+        state.questionnaire.id,
+        body.questionKey
+      );
+      if (!entry) {
+        throw new ApiError(
+          400,
+          "invalid_answer",
+          "This question is no longer available."
+        );
+      }
+      if (getCurrentQuestion(state)?.answerKey !== entry.answerKey) {
+        throw new ApiError(
+          400,
+          "invalid_answer",
+          "Please answer the current question first."
+        );
+      }
+      if (entry.required) {
+        throw new ApiError(
+          400,
+          "invalid_answer",
+          "This question is required."
+        );
+      }
+
+      const updated = skipProfileQuestion(state.profile, entry.answerKey);
+      const transition = getTransition(state, updated);
+      await repository.saveTransition(state.profile.id, {
+        age: updated.age,
+        answersJson: updated.answersJson,
+        completed: transition.completed,
+        currentQuestionKey: transition.currentQuestionKey,
+        name: updated.name,
+        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+      });
+      const nextState = await repository.loadState(input.identity);
+      return jsonResponse(
+        onboardingPayload(nextState, await repository.canBypass(input.identity))
+      );
     }
 
     if (
       url.pathname === "/api/onboarding/skip" &&
       input.request.method === "POST"
     ) {
-      const state = await repository.loadState(input.identity);
-      await repository.skip(state.profile.id, input.identity.sessionId);
-      const nextState = await repository.loadState(input.identity);
-      return jsonResponse(onboardingPayload(nextState, input.identity.sessionId));
+      await repository.skipSession(input.identity);
+      try {
+        const state = await repository.loadState(input.identity);
+        return jsonResponse(onboardingPayload(state, true));
+      } catch {
+        return jsonResponse(bypassOnlyPayload());
+      }
     }
 
     if (
@@ -291,7 +378,7 @@ export async function handleOnboardingRequest(
       await repository.complete(state.profile.id);
       const completedState = await repository.loadState(input.identity);
       return jsonResponse(
-        onboardingPayload(completedState, input.identity.sessionId)
+        onboardingPayload(completedState, true)
       );
     }
 
@@ -340,6 +427,7 @@ export async function handleOnboardingRequest(
         age: updated.age,
         answersJson: updated.answersJson,
         name: updated.name,
+        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
       });
       const nextState = await repository.loadState(input.identity);
       return jsonResponse({
@@ -357,6 +445,7 @@ export async function handleOnboardingRequest(
     const recognized =
       url.pathname === "/api/onboarding" ||
       url.pathname === "/api/onboarding/answer" ||
+      url.pathname === "/api/onboarding/question/skip" ||
       url.pathname === "/api/onboarding/skip" ||
       url.pathname === "/api/onboarding/complete" ||
       url.pathname === "/api/profile";

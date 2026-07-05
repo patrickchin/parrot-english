@@ -27,7 +27,8 @@ export type LearnerProfileSummary = {
   completedAt: string | null;
 };
 
-export type OnboardingState = {
+export type FullOnboardingState = {
+  mode: "full";
   profile: LearnerProfileSummary;
   questionnaire: {
     version: number;
@@ -37,6 +38,15 @@ export type OnboardingState = {
   progress: { answered: number; current: number; total: number };
   canBypass: boolean;
 };
+
+export type BypassOnlyOnboardingState = {
+  mode: "bypass-only";
+  canBypass: true;
+};
+
+export type OnboardingState =
+  | FullOnboardingState
+  | BypassOnlyOnboardingState;
 
 export type ProfileState = {
   profile: LearnerProfileSummary;
@@ -138,6 +148,21 @@ export function skipOnboarding(options?: OnboardingRequestOptions) {
   return requestJson<OnboardingState>(
     "/api/onboarding/skip",
     { method: "POST" },
+    options
+  );
+}
+
+export function skipOnboardingQuestion(
+  questionKey: string,
+  options?: OnboardingRequestOptions
+) {
+  return requestJson<OnboardingState>(
+    "/api/onboarding/question/skip",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionKey }),
+    },
     options
   );
 }

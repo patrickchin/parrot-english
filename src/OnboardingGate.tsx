@@ -5,13 +5,14 @@ import {
   type ReactNode,
 } from "react";
 import {
-  completeOnboarding,
   loadOnboarding,
   loadProfile,
   saveOnboardingAnswer,
   saveProfileAnswer,
   skipOnboarding,
+  skipOnboardingQuestion,
   transcribeOnboardingAudio,
+  type FullOnboardingState,
   type LearnerProfileSummary,
   type OnboardingQuestion,
   type OnboardingState,
@@ -62,6 +63,8 @@ export function OnboardingGateView({
   questionProps,
   started,
 }: OnboardingGateViewProps) {
+  const fullData = data?.mode === "full" ? data : null;
+
   if (isLoading) {
     return (
       <main className="onboarding-screen">
@@ -117,24 +120,26 @@ export function OnboardingGateView({
 
   if (
     data?.canBypass ||
-    data?.profile.onboardingStatus === "completed"
+    fullData?.profile.onboardingStatus === "completed"
   ) {
     return (
       <>
         {children}
-        <button
-          aria-label="Edit learner profile"
-          className="profile-edit-button"
-          onClick={onOpenProfile}
-          type="button"
-        >
-          Profile
-        </button>
+        {fullData ? (
+          <button
+            aria-label="Edit learner profile"
+            className="profile-edit-button"
+            onClick={onOpenProfile}
+            type="button"
+          >
+            Profile
+          </button>
+        ) : null}
       </>
     );
   }
 
-  if (data && !started) {
+  if (fullData && !started) {
     return (
       <main className="onboarding-screen">
         <section className="onboarding-start-card">
@@ -231,18 +236,15 @@ export function submissionValue(
 }
 
 export async function saveQuestionAndAdvance({
-  complete = completeOnboarding,
   questionKey,
   save = saveOnboardingAnswer,
   value,
 }: {
-  complete?: () => Promise<OnboardingState>;
   questionKey: string;
   save?: (questionKey: string, value: unknown) => Promise<OnboardingState>;
   value: unknown;
 }) {
-  const saved = await save(questionKey, value);
-  return saved.question ? saved : complete();
+  return save(questionKey, value);
 }
 
 function readableError(error: unknown) {
@@ -290,8 +292,10 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }, []);
 
   const profileQuestion = profileState?.questions[profileIndex] ?? null;
-  const activeQuestion = profileQuestion ?? data?.question ?? null;
-  const activeProfile = profileState?.profile ?? data?.profile ?? null;
+  const fullData: FullOnboardingState | null =
+    data?.mode === "full" ? data : null;
+  const activeQuestion = profileQuestion ?? fullData?.question ?? null;
+  const activeProfile = profileState?.profile ?? fullData?.profile ?? null;
   const activeQuestionKey = activeQuestion?.answerKey ?? "";
 
   useEffect(() => {
@@ -303,13 +307,13 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }, [activeQuestionKey, profileIndex, Boolean(profileState)]);
 
   async function handleStart() {
-    if (!data?.question?.audio) return;
+    if (!fullData?.question?.audio) return;
     setStarted(true);
     setFieldError("");
     try {
       await playOnboardingStart({
-        introduction: data.questionnaire.introductionAudio,
-        questionAudio: data.question.audio,
+        introduction: fullData.questionnaire.introductionAudio,
+        questionAudio: fullData.question.audio,
       });
     } catch {
       setFieldError("Audio is unavailable. You can keep going or use Replay.");
@@ -419,6 +423,19 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     }
   }
 
+  async function handleSkipQuestion() {
+    if (!activeQuestion || activeQuestion.required) return;
+    setStatus("saving");
+    setFieldError("");
+    try {
+      setData(await skipOnboardingQuestion(activeQuestion.answerKey));
+    } catch (error) {
+      setFieldError(readableError(error));
+    } finally {
+      setStatus("idle");
+    }
+  }
+
   async function handleOpenProfile() {
     setFieldError("");
     try {
@@ -436,7 +453,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         current: profileIndex + 1,
         total: profileState.questions.length,
       }
-    : data?.progress ?? { answered: 0, current: 0, total: 0 };
+    : fullData?.progress ?? { answered: 0, current: 0, total: 0 };
 
   const questionProps: QuestionProps | null = activeQuestion
     ? {
@@ -447,6 +464,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         onRemoveValue: removeValue,
         onReplay: () => void handleReplay(),
         onSkip: () => void handleSkip(),
+        onSkipQuestion: () => void handleSkipQuestion(),
         onSubmit: () => void handleSubmit(),
         onToggleOption: toggleOption,
         onTranscribe: () => void handleTranscribe(),

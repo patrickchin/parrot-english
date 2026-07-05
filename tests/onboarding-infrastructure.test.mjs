@@ -18,6 +18,7 @@ const EXPECTED_MODELS = {
       "name",
       "age",
       "answersJson",
+      "skippedQuestionKeysJson",
       "questionnaireVersion",
       "currentQuestionKey",
       "onboardingStatus",
@@ -30,7 +31,14 @@ const EXPECTED_MODELS = {
   },
   questionnaire: {
     table: "questionnaire",
-    properties: ["id", "version", "status", "createdAt", "activatedAt"],
+    properties: [
+      "id",
+      "version",
+      "status",
+      "definitionHash",
+      "createdAt",
+      "activatedAt",
+    ],
   },
   questionnaireQuestion: {
     table: "questionnaire_question",
@@ -49,6 +57,10 @@ const EXPECTED_MODELS = {
       "branchingJson",
       "audioId",
     ],
+  },
+  onboardingSessionBypass: {
+    table: "onboarding_session_bypass",
+    properties: ["sessionId", "authUserId", "skippedAt"],
   },
 };
 
@@ -99,28 +111,43 @@ describe("onboarding infrastructure", () => {
     }
 
     assert.ok(schema.learnerProfileRelations);
+    assert.ok(schema.onboardingSessionBypassRelations);
     assert.ok(schema.questionnaireRelations);
     assert.ok(schema.questionnaireQuestionRelations);
   });
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
-    assert.equal(migrations.length, 2, "Expected one additive onboarding migration");
+    assert.equal(migrations.length, 3, "Expected the onboarding recovery migration");
     assert.doesNotMatch(
       migrations[1].sql,
       /(?:^|\n)\s*(?:INSERT|UPDATE|DELETE)\b/im,
     );
     assert.doesNotMatch(migrations[1].sql, /ALTER TABLE [`"]?(?:user|session|account|verification)/i);
+    assert.match(
+      migrations[2].sql,
+      /UPDATE [`"]?questionnaire[`"]?\s+SET [`"]?definition_hash/i,
+    );
+    assert.doesNotMatch(
+      migrations[2].sql,
+      /(?:INSERT|UPDATE|DELETE)\s+(?:INTO\s+)?[`"]?(?:user|session|account|verification)/i,
+    );
 
     const database = createMigratedDatabase();
     try {
       const profileSql = tableSql(database, "learner_profile");
       const questionnaireSql = tableSql(database, "questionnaire");
       const questionSql = tableSql(database, "questionnaire_question");
+      const bypassSql = tableSql(database, "onboarding_session_bypass");
 
       assert.match(profileSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
       assert.match(profileSql, /CHECK\s*\(json_valid\([^)]*answers_json[^)]*\)\)/i);
+      assert.match(
+        profileSql,
+        /CHECK\s*\(json_valid\([^)]*skipped_question_keys_json[^)]*\)\)/i,
+      );
       assert.match(profileSql, /CHECK\s*\([^\n]*onboarding_status[^\n]* in \('not_started', 'in_progress', 'completed'\)\)/i);
+      assert.match(questionnaireSql, /[`"]?definition_hash[`"]?\s+text/i);
       assert.match(questionnaireSql, /CHECK\s*\([^\n]*status[^\n]* in \('draft', 'active', 'inactive'\)\)/i);
       assert.match(questionSql, /CHECK\s*\([^\n]*answer_type[^\n]* in \('text', 'number', 'choice'\)\)/i);
       assert.match(questionSql, /CHECK\s*\([^\n]*cardinality[^\n]* in \('scalar', 'array'\)\)/i);
@@ -130,6 +157,10 @@ describe("onboarding infrastructure", () => {
           new RegExp(`CHECK\\s*\\([^\\n]*${column}[^\\n]*json_valid\\([^\\n]*${column}`),
         );
       }
+      assert.match(
+        bypassSql,
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
 
       const profileIndexes = indexDetails(database, "learner_profile");
       assert.ok(
@@ -167,6 +198,11 @@ describe("onboarding infrastructure", () => {
             index.unique === 1 &&
             index.columns.join() === "questionnaire_id,position",
         ),
+      );
+
+      const bypassIndexes = indexDetails(database, "onboarding_session_bypass");
+      assert.ok(
+        bypassIndexes.some((index) => index.columns.join() === "auth_user_id"),
       );
     } finally {
       database.close();
@@ -285,6 +321,63 @@ describe("questionnaire publishing", () => {
     );
     assert.match(sql, /孩子''s choice/);
     assert.doesNotMatch(sql, /\b(?:CREATE|ALTER|DROP)\b/i);
+  });
+
+  it("keeps an identical publish idempotent and rejects changed versions", () => {
+    const definition = readDefinition();
+    const database = createMigratedDatabase();
+    try {
+      database.exec(buildQuestionnaireSql(definition, 1_000));
+      database.exec(buildQuestionnaireSql(definition, 2_000));
+
+      const changed = JSON.parse(JSON.stringify(definition));
+      changed.questions[0].validation.max = 18;
+      assert.throws(
+        () =>
+          database.exec(
+            `BEGIN; ${buildQuestionnaireSql(changed, 3_000)} COMMIT;`,
+          ),
+        /constraint/i,
+      );
+      database.exec("ROLLBACK");
+
+      assert.equal(
+        database
+          .prepare(
+            "SELECT definition_hash FROM questionnaire WHERE version = 1",
+          )
+          .get().definition_hash,
+        "0e256950166405c15d0b7e303b733240f19558bb7aad48d217caaaf344014b8d",
+      );
+      assert.equal(
+        database
+          .prepare(
+            "SELECT validation_json FROM questionnaire_question WHERE answer_key = 'age'",
+          )
+          .get().validation_json,
+        '{"min":3,"max":17}',
+      );
+    } finally {
+      database.close();
+    }
+  });
+
+  it("migrates and publishes D1 before deploying the gated Worker", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      "utf8",
+    );
+    const migration = workflow.indexOf(
+      "wrangler d1 migrations apply parrot-english --remote",
+    );
+    const publish = workflow.indexOf(
+      "npm run questionnaire:publish -- --remote",
+    );
+    const deploy = workflow.indexOf("wrangler deploy --config wrangler.jsonc");
+
+    assert.ok(migration >= 0, "Expected a remote D1 migration step");
+    assert.ok(publish > migration, "Expected questionnaire publish after migration");
+    assert.ok(deploy > publish, "Expected Worker deploy after questionnaire publish");
   });
 
   it("exposes an explicit local-or-remote publish command", () => {

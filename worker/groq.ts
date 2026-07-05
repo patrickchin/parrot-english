@@ -3,6 +3,7 @@ import { scoreSpeechTranscript } from "../lib/speech-scoring.js";
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const STT_MODEL = "whisper-large-v3-turbo";
 const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
+const MAX_ONBOARDING_AUDIO_BYTES = 512 * 1024;
 const SUPPORTED_AUDIO_TYPES = new Set([
   "audio/mp4",
   "audio/mpeg",
@@ -117,7 +118,10 @@ export async function handleOnboardingTranscription(
       { status: 415 }
     );
   }
-  if (audio.size > MAX_AUDIO_BYTES) {
+  if (audio.size === 0) {
+    return jsonResponse({ error: "audio_file_required" }, { status: 400 });
+  }
+  if (audio.size > MAX_ONBOARDING_AUDIO_BYTES) {
     return jsonResponse({ error: "audio_too_large" }, { status: 413 });
   }
 

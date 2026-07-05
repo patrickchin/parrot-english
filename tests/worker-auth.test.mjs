@@ -230,6 +230,37 @@ describe("Worker authentication", () => {
     assert.equal(evaluationCalls, 0);
   });
 
+  it("rate limits authenticated onboarding transcription before its handler", async () => {
+    const authStub = createAuthStub({
+      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+    });
+    const { env } = createEnvironment();
+    let rateLimitIdentity = "";
+    let onboardingCalls = 0;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      checkOnboardingTranscriptionRateLimit(_request, _env, userId) {
+        rateLimitIdentity = userId;
+        return Response.json({ error: "rate_limited" }, { status: 429 });
+      },
+      async handleOnboardingRequest() {
+        onboardingCalls += 1;
+        return Response.json({ transcribed: true });
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/onboarding/transcribe", {
+        method: "POST",
+      }),
+      env,
+    );
+
+    assert.equal(response.status, 429);
+    assert.equal(rateLimitIdentity, "user-1");
+    assert.equal(onboardingCalls, 0);
+  });
+
   it("keeps non-auth and non-speech requests on the static asset fallback", async () => {
     let authFactoryCalls = 0;
     const assetResponse = new Response("lesson app");
