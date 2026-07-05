@@ -7,8 +7,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "parrot-english-auth",
-      "database_id": "f1eb0748-0901-4b6e-821e-c120f6d6768e",
+      "database_name": "parrot-english",
       "migrations_dir": "migrations"
     }
   ],
