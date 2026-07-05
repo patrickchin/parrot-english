@@ -794,20 +794,23 @@ select:focus-visible {
 
 .lesson-card-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   width: min(1120px, 100%);
   margin: 0 auto;
-  gap: clamp(20px, 3vw, 32px);
+  gap: clamp(14px, 2vw, 20px);
 }
 
 .lesson-card {
+  display: grid;
+  grid-template-columns: clamp(170px, 20vw, 230px) minmax(0, 1fr);
+  min-height: 154px;
   overflow: hidden;
   border: 6px solid rgb(255 255 255 / 94%);
-  border-radius: 32px;
+  border-radius: 24px;
   background: rgb(255 255 255 / 95%);
   box-shadow:
-    0 10px 0 rgb(35 93 126 / 20%),
-    0 24px 36px rgb(31 94 132 / 20%);
+    0 8px 0 rgb(35 93 126 / 20%),
+    0 16px 28px rgb(31 94 132 / 18%);
 }
 
 .lesson-card.is-disabled {
@@ -816,7 +819,7 @@ select:focus-visible {
 
 .lesson-card-artwork {
   position: relative;
-  height: clamp(160px, 20vw, 240px);
+  min-height: 154px;
   overflow: hidden;
 }
 
@@ -861,8 +864,14 @@ select:focus-visible {
 
 .lesson-card-content {
   display: grid;
-  gap: 12px;
-  padding: clamp(20px, 3vw, 30px);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title action"
+    "summary action"
+    "count action";
+  align-items: center;
+  gap: 6px clamp(18px, 3vw, 34px);
+  padding: clamp(16px, 2vw, 22px) clamp(18px, 3vw, 30px);
 }
 
 .lesson-card-content h2,
@@ -871,36 +880,43 @@ select:focus-visible {
 }
 
 .lesson-card-content h2 {
+  grid-area: title;
   color: #204c7f;
-  font-size: clamp(1.75rem, 3vw, 2.55rem);
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
   line-height: 1;
 }
 
 .lesson-card-content p {
-  min-height: 3.2em;
-  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  grid-area: summary;
+  min-height: 0;
+  font-size: clamp(0.95rem, 1.4vw, 1.1rem);
   font-weight: 750;
-  line-height: 1.55;
+  line-height: 1.35;
 }
 
 .lesson-scene-count {
+  grid-area: count;
   color: #386177;
 }
 
 .lesson-card-action {
+  grid-area: action;
   display: inline-flex;
-  min-height: 62px;
+  min-width: 172px;
+  min-height: 56px;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   border: 4px solid #fff;
   border-radius: 999px;
   background: #ff467b;
   color: #fff;
+  padding: 0 18px;
   box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
   cursor: pointer;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 950;
+  white-space: nowrap;
   transition: filter 160ms ease, transform 160ms ease;
 }
 
@@ -1419,12 +1435,53 @@ select:focus-visible {
     padding: 154px 16px 44px;
   }
 
-  .lesson-card-grid {
-    grid-template-columns: 1fr;
+  .lesson-card {
+    grid-template-columns: clamp(86px, 25vw, 140px) minmax(0, 1fr);
+    min-height: 112px;
+    border-width: 4px;
+    border-radius: 18px;
   }
 
   .lesson-card-artwork {
-    height: 190px;
+    min-height: 112px;
+  }
+
+  .lesson-card-number {
+    top: 9px;
+    left: 9px;
+    width: 40px;
+    border-width: 3px;
+    font-size: 1.15rem;
+  }
+
+  .lesson-card-content {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title action"
+      "count action";
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .lesson-card-content h2 {
+    font-size: clamp(1.05rem, 4.8vw, 1.45rem);
+  }
+
+  .lesson-card-content p {
+    display: none;
+  }
+
+  .lesson-scene-count {
+    gap: 5px;
+    font-size: 0.8rem;
+  }
+
+  .lesson-card-action {
+    min-width: 96px;
+    min-height: 48px;
+    gap: 5px;
+    padding: 0 10px;
+    font-size: 0.88rem;
   }
 }
 
