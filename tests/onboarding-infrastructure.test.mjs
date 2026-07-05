@@ -188,7 +188,7 @@ describe("onboarding infrastructure", () => {
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
-    assert.equal(migrations.length, 3, "Expected the onboarding recovery migration");
+    assert.equal(migrations.length, 4, "Expected the bypass integrity migration");
     assert.doesNotMatch(
       migrations[1].sql,
       /(?:^|\n)\s*(?:INSERT|UPDATE|DELETE)\b/im,
@@ -230,6 +230,10 @@ describe("onboarding infrastructure", () => {
       assert.match(
         bypassSql,
         /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(
+        bypassSql,
+        /REFERENCES [`"]?session[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
       );
 
       const profileIndexes = indexDetails(database, "learner_profile");
@@ -274,6 +278,50 @@ describe("onboarding infrastructure", () => {
       assert.ok(
         bypassIndexes.some((index) => index.columns.join() === "auth_user_id"),
       );
+    } finally {
+      database.close();
+    }
+  });
+
+  it("prunes stale bypasses and cascades live bypasses with their session", () => {
+    const migrations = readMigrations();
+    const database = new DatabaseSync(":memory:");
+    database.exec("PRAGMA foreign_keys = ON");
+
+    try {
+      for (const migration of migrations.slice(0, 3)) {
+        database.exec(migration.sql);
+      }
+      database.exec(`
+        INSERT INTO user (id, name, email) VALUES ('user-1', 'Mia', 'mia@example.test');
+        INSERT INTO session (id, expires_at, token, user_id)
+          VALUES ('session-live', 9999999999999, 'token-live', 'user-1');
+        INSERT INTO onboarding_session_bypass (session_id, auth_user_id, skipped_at)
+          VALUES
+            ('session-live', 'user-1', 1),
+            ('session-stale', 'user-1', 2);
+      `);
+
+      database.exec(migrations[3].sql);
+
+      assert.deepEqual(
+        database
+          .prepare(
+            "SELECT session_id FROM onboarding_session_bypass ORDER BY session_id",
+          )
+          .all()
+          .map((row) => ({ ...row })),
+        [{ session_id: "session-live" }],
+      );
+
+      database.exec("DELETE FROM session WHERE id = 'session-live'");
+      assert.equal(
+        database
+          .prepare("SELECT count(*) AS count FROM onboarding_session_bypass")
+          .get().count,
+        0,
+      );
+      assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
     } finally {
       database.close();
     }

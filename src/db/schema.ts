@@ -221,7 +221,9 @@ export const learnerProfile = sqliteTable(
 export const onboardingSessionBypass = sqliteTable(
   "onboarding_session_bypass",
   {
-    sessionId: text("session_id").primaryKey(),
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => session.id, { onDelete: "cascade" }),
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -264,6 +266,10 @@ export const learnerProfileRelations = relations(
 export const onboardingSessionBypassRelations = relations(
   onboardingSessionBypass,
   ({ one }) => ({
+    session: one(session, {
+      fields: [onboardingSessionBypass.sessionId],
+      references: [session.id],
+    }),
     user: one(user, {
       fields: [onboardingSessionBypass.authUserId],
       references: [user.id],
