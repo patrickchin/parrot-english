@@ -1,9 +1,12 @@
 import {
+  useCallback,
   useEffect,
+  useMemo,
   useState,
   type ComponentProps,
   type ReactNode,
 } from "react";
+import { useProfileAccountAction } from "./account-actions";
 import {
   loadOnboarding,
   loadProfile,
@@ -40,7 +43,6 @@ type OnboardingGateViewProps = {
   isLoading: boolean;
   loadError: string;
   onCloseProfile: () => void;
-  onOpenProfile: () => void;
   onRetry: () => void;
   onSkip: () => void;
   onStart: () => void;
@@ -55,7 +57,6 @@ export function OnboardingGateView({
   isLoading,
   loadError,
   onCloseProfile,
-  onOpenProfile,
   onRetry,
   onSkip,
   onStart,
@@ -123,19 +124,7 @@ export function OnboardingGateView({
     fullData?.profile.onboardingStatus === "completed"
   ) {
     return (
-      <>
-        {children}
-        {fullData ? (
-          <button
-            aria-label="Edit learner profile"
-            className="profile-edit-button"
-            onClick={onOpenProfile}
-            type="button"
-          >
-            Profile
-          </button>
-        ) : null}
-      </>
+      <>{children}</>
     );
   }
 
@@ -270,6 +259,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<QuestionProps["status"]>("idle");
   const [profileState, setProfileState] = useState<ProfileState | null>(null);
   const [profileIndex, setProfileIndex] = useState(0);
+  const [profileLoadError, setProfileLoadError] = useState("");
 
   async function refresh(signal?: AbortSignal) {
     setIsLoading(true);
@@ -436,16 +426,33 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     }
   }
 
-  async function handleOpenProfile() {
-    setFieldError("");
+  const handleOpenProfile = useCallback(async () => {
+    setProfileLoadError("");
     try {
       const profile = await loadProfile();
       setProfileIndex(0);
       setProfileState(profile);
     } catch (error) {
-      setFieldError(readableError(error));
+      setProfileLoadError(readableError(error));
     }
-  }
+  }, []);
+
+  const canEditProfile = Boolean(
+    fullData &&
+      (fullData.canBypass ||
+        fullData.profile.onboardingStatus === "completed")
+  );
+  const profileAction = useMemo(
+    () =>
+      canEditProfile
+        ? {
+            error: profileLoadError,
+            onOpen: () => void handleOpenProfile(),
+          }
+        : null,
+    [canEditProfile, handleOpenProfile, profileLoadError]
+  );
+  useProfileAccountAction(profileAction);
 
   const progress = profileState
     ? {
@@ -486,7 +493,6 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         setProfileState(null);
         setProfileIndex(0);
       }}
-      onOpenProfile={() => void handleOpenProfile()}
       onRetry={() => void refresh()}
       onSkip={() => void handleSkip()}
       onStart={() => void handleStart()}

@@ -29,6 +29,10 @@ const {
   toggleArrayAnswer,
 } = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const gateSource = readFileSync(
+  new URL("../src/OnboardingGate.tsx", import.meta.url),
+  "utf8",
+);
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 after(async () => {
@@ -333,7 +337,8 @@ describe("onboarding and profile gate", () => {
     });
 
     assert.match(html, /LESSON CONTENT/);
-    assert.match(html, /aria-label="Edit learner profile"/);
+    assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
+    assert.match(gateSource, /useProfileAccountAction/);
     assert.doesNotMatch(html, />Start</);
   });
 

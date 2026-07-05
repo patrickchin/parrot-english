@@ -13,6 +13,10 @@ import {
   type AuthFields,
   type AuthMode,
 } from "./auth-form";
+import {
+  AccountActionProvider,
+  type ProfileAccountAction,
+} from "./account-actions";
 import { authClient } from "./auth-client";
 
 interface AuthActionResult {
@@ -113,9 +117,11 @@ interface AuthGateViewProps {
   mode: AuthMode;
   onFieldChange: (field: keyof AuthFields, value: string) => void;
   onModeChange: (mode: AuthMode) => void;
+  onOpenProfile: (() => void) | null;
   onRetry: () => void;
   onSignOut: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
+  profileError: string;
   session: AuthSession | null;
   sessionError: unknown;
 }
@@ -131,9 +137,11 @@ export function AuthGateView({
   mode,
   onFieldChange,
   onModeChange,
+  onOpenProfile,
   onRetry,
   onSignOut,
   onSubmit,
+  profileError,
   session,
   sessionError,
 }: AuthGateViewProps) {
@@ -276,17 +284,28 @@ export function AuthGateView({
   }
 
   const userLabel = session.user.name?.trim() || session.user.email || "小朋友";
+  const accountError = profileError || formError;
 
   return (
     <>
       <aside className="user-session-bar" aria-label="当前登录账号">
         <span title={session.user.email}>{userLabel}</span>
+        {onOpenProfile ? (
+          <button
+            aria-label="Edit learner profile"
+            className="profile-account-button"
+            onClick={onOpenProfile}
+            type="button"
+          >
+            Profile
+          </button>
+        ) : null}
         <button disabled={isSigningOut} onClick={onSignOut} type="button">
           {isSigningOut ? "正在退出…" : "退出登录"}
         </button>
-        {formError ? (
+        {accountError ? (
           <span className="session-error" role="alert">
-            {formError}
+            {accountError}
           </span>
         ) : null}
       </aside>
@@ -337,6 +356,8 @@ export function createAuthGate({
     const [isSubmitting, setIsSubmitting] = stateHook(false);
     const [isSigningOut, setIsSigningOut] = stateHook(false);
     const [isRetrying, setIsRetrying] = stateHook(false);
+    const [profileAction, setProfileAction] =
+      stateHook<ProfileAccountAction>(null);
 
     function selectMode(nextMode: AuthMode) {
       setMode(nextMode);
@@ -390,24 +411,28 @@ export function createAuthGate({
     }
 
     return (
-      <View
-        fields={fields}
-        formError={formError}
-        isPending={isPending}
-        isRetrying={isRetrying}
-        isSigningOut={isSigningOut}
-        isSubmitting={isSubmitting}
-        mode={mode}
-        onFieldChange={updateField}
-        onModeChange={selectMode}
-        onRetry={() => void handleRetry()}
-        onSignOut={handleSignOut}
-        onSubmit={handleSubmit}
-        session={session}
-        sessionError={error}
-      >
-        {children}
-      </View>
+      <AccountActionProvider setProfileAction={setProfileAction}>
+        <View
+          fields={fields}
+          formError={formError}
+          isPending={isPending}
+          isRetrying={isRetrying}
+          isSigningOut={isSigningOut}
+          isSubmitting={isSubmitting}
+          mode={mode}
+          onFieldChange={updateField}
+          onModeChange={selectMode}
+          onOpenProfile={profileAction?.onOpen ?? null}
+          onRetry={() => void handleRetry()}
+          onSignOut={handleSignOut}
+          onSubmit={handleSubmit}
+          profileError={profileAction?.error ?? ""}
+          session={session}
+          sessionError={error}
+        >
+          {children}
+        </View>
+      </AccountActionProvider>
     );
   };
 }
