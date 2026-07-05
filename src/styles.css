@@ -1220,7 +1220,7 @@ select:focus-visible {
 
 .scene-control-button:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  opacity: 0.68;
 }
 
 .scene-control-button svg {
@@ -1551,6 +1551,10 @@ select:focus-visible {
 @media (max-height: 620px) {
   .lesson-stage {
     --control-safe-area: clamp(84px, 23vh, 112px);
+  }
+
+  .lesson-list-back-button {
+    top: 14px;
   }
 
   .character-sprite {

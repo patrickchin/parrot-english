@@ -38,6 +38,7 @@ describe("catalog-driven stage layout", () => {
       /<nav aria-label="Lesson controls" className="scene-controls">[\s\S]*?<\/nav>/,
     );
     const navigationButton = getRule(".scene-control-button");
+    const disabledNavigationButton = getRule(".scene-control-button:disabled");
     const controlGroup = getRule(".scene-controls");
     const dock = getRule(".scene-control-dock");
 
@@ -58,6 +59,7 @@ describe("catalog-driven stage layout", () => {
     assert.match(navigationButton, /background:\s*#ff467b/);
     assert.match(navigationButton, /color:\s*#fff/);
     assert.match(navigationButton, /border:\s*5px solid #fff/);
+    assert.match(disabledNavigationButton, /opacity:\s*0\.68/);
   });
 
   it("positions every character through shared catalog slots", () => {
@@ -203,6 +205,10 @@ describe("catalog-driven stage layout", () => {
     assert.match(
       shortStyles,
       /\.speech-bubble,\s*\.narrator-caption\s*\{[^}]*top:\s*112px/,
+    );
+    assert.match(
+      shortStyles,
+      /\.lesson-list-back-button\s*\{[^}]*top:\s*14px/,
     );
   });
 
