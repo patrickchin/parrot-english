@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as lessonData from "../lib/lesson-data.js";
 
@@ -226,7 +226,6 @@ describe("lesson data contract", () => {
       emotes: new URL("../content/catalogs/emotes.json", import.meta.url),
       characters: new URL("../content/catalogs/characters.json", import.meta.url),
       backgrounds: new URL("../content/catalogs/backgrounds.json", import.meta.url),
-      lesson: new URL("../content/lessons/peppas-high-ball.json", import.meta.url),
     };
 
     for (const path of Object.values(paths)) {
@@ -239,12 +238,19 @@ describe("lesson data contract", () => {
       characters: readJson(paths.characters),
       backgrounds: readJson(paths.backgrounds),
     });
-    const lesson = readJson(paths.lesson);
+    const lessonDirectory = new URL("../content/lessons/", import.meta.url);
+    const lessonFiles = readdirSync(lessonDirectory)
+      .filter((filename) => filename.endsWith(".json"))
+      .sort((left, right) => left.localeCompare(right));
 
-    assert.equal(
-      lessonData.validateLesson(lesson, catalog, "peppas-high-ball.json"),
-      lesson
-    );
+    assert.equal(lessonFiles.length, 7);
+    for (const filename of lessonFiles) {
+      const lesson = readJson(new URL(filename, lessonDirectory));
+      assert.equal(
+        lessonData.validateLesson(lesson, catalog, filename),
+        lesson
+      );
+    }
   });
 
   it("registers one existing pre-generated asset for every character emote", () => {

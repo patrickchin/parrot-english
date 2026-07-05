@@ -1,0 +1,191 @@
+{
+  "title": "Two Apples for Peppa",
+  "childName": "Bella",
+  "goalPhrases": [
+    "How much is it?",
+    "I'd like two apples, please."
+  ],
+  "summary": "Peppa visits Dolly's fruit stand and buys two red apples.",
+  "detailedSummary": "Dolly has a garden market stand filled with fresh fruit. Peppa asks the price and chooses two red apples. She pays two coins, and Dolly gives her the apples.",
+  "location": {
+    "name": "Dolly's garden market",
+    "description": "A colorful fruit stand in the sunny garden with baskets of apples, a small counter, and a two-coin price sign."
+  },
+  "scenes": [
+    {
+      "title": "The Fruit Stand",
+      "settingDescription": "Dolly stands behind the fruit counter while Peppa and the user look at baskets of red apples.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "Welcome to my fruit stand!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "I see red apples.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Asking the Price",
+      "settingDescription": "Peppa points to the apple basket as Dolly waits behind the counter and the user looks at the price sign.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "How much is it?",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's ask with Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "How much is it?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "How much is it?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Two Coins",
+      "settingDescription": "Dolly points to the two-coin sign while Peppa holds two coins and the user watches beside her.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "It is two coins.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "I have two coins.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Choosing Apples",
+      "settingDescription": "Peppa looks at two apples on the counter while Dolly and the user listen to her choice.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "I'd like two apples, please.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "I'd like two apples, please.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "I'd like two apples, please.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "The Apples Are Ready",
+      "settingDescription": "Dolly gives Peppa two red apples across the counter while the user smiles beside them.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "Here are two apples.",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "Thank you, Dolly!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Great job, Bella! Peppa bought two red apples!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "happy"
+          }
+        }
+      ]
+    }
+  ]
+}

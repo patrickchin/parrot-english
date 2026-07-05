@@ -1,0 +1,191 @@
+{
+  "title": "Juice at the Picnic",
+  "childName": "Bella",
+  "goalPhrases": [
+    "Would you like some juice?",
+    "Yes, please!"
+  ],
+  "summary": "Dolly offers Peppa some juice while the friends prepare their picnic.",
+  "detailedSummary": "Peppa and Dolly spread their picnic food across a blanket in the meadow. Dolly offers Peppa some juice, and Peppa politely accepts it. Dolly pours the juice, and the friends enjoy the picnic together.",
+  "location": {
+    "name": "The picnic meadow",
+    "description": "A sunny meadow with a checked blanket, a picnic basket, cups, fruit, and a bottle of juice."
+  },
+  "scenes": [
+    {
+      "title": "The Picnic Blanket",
+      "settingDescription": "Peppa, Dolly, and the user sit around the checked blanket with the open picnic basket between them.",
+      "background": "meadow-day",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Our picnic looks lovely!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "The cups are ready.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Dolly Offers Juice",
+      "settingDescription": "Dolly holds the juice bottle beside the cups while Peppa and the user listen across the blanket.",
+      "background": "meadow-day",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "Would you like some juice?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Would you like some juice?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Would you like some juice?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Peppa Says Yes",
+      "settingDescription": "Peppa looks at the empty cup while Dolly holds the juice and the user sits beside the fruit basket.",
+      "background": "meadow-day",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Yes, please!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Yes, please!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Yes, please!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "A Cup of Juice",
+      "settingDescription": "Dolly places a cup of juice in front of Peppa while the user watches from the other side of the blanket.",
+      "background": "meadow-day",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "Here is your juice.",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "Thank you, Dolly!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Picnic Time Together",
+      "settingDescription": "Peppa holds her juice as Dolly and the user sit with her beside the food on the blanket.",
+      "background": "meadow-day",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "The picnic is ready!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Let's eat together!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Great job, Bella! Peppa has her picnic juice!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "happy"
+          }
+        }
+      ]
+    }
+  ]
+}

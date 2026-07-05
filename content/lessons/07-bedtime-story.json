@@ -1,0 +1,191 @@
+{
+  "title": "Good Night, Peppa",
+  "childName": "Bella",
+  "goalPhrases": [
+    "I'm sleepy.",
+    "Good night!"
+  ],
+  "summary": "Peppa feels sleepy after Dolly finishes a quiet bedtime story.",
+  "detailedSummary": "Dolly reads a gentle story while Peppa rests in the quiet evening meadow. Peppa notices that she is sleepy and gets ready to close her eyes. The friends say good night, and Peppa settles down to sleep.",
+  "location": {
+    "name": "The evening story spot",
+    "description": "A peaceful evening meadow with a soft blanket, a storybook, warm lantern light, and stars appearing overhead."
+  },
+  "scenes": [
+    {
+      "title": "The Story Ends",
+      "settingDescription": "Dolly closes the storybook while Peppa and the user rest together on the soft blanket.",
+      "background": "meadow-evening",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "The story is finished.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "I liked the story.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "A Quiet Evening",
+      "settingDescription": "The moon shines over the blanket as Peppa, Dolly, and the user sit near the warm lantern.",
+      "background": "meadow-evening",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "The moon is high.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "peppa",
+          "dialogue": "It is very quiet.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Peppa Feels Sleepy",
+      "settingDescription": "Peppa rests her head near the pillow while Dolly and the user listen beside her.",
+      "background": "meadow-evening",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "I'm sleepy.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "I'm sleepy.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "I'm sleepy.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "The Blanket Is Ready",
+      "settingDescription": "Peppa lies beneath the soft blanket while Dolly and the user sit quietly beside the storybook.",
+      "background": "meadow-evening",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "My blanket is ready.",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Close your eyes.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Good Night",
+      "settingDescription": "Peppa closes her eyes under the blanket while Dolly and the user sit beside her in the lantern light.",
+      "background": "meadow-evening",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Good night!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Good night!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "Good night!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Great job, Bella! Peppa is ready to sleep!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "happy"
+          }
+        }
+      ]
+    }
+  ]
+}
