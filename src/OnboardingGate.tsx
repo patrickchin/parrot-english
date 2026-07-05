@@ -177,6 +177,13 @@ export function answerForQuestion(
   return "";
 }
 
+export function shouldSyncActiveQuestion(
+  profile: ProfileWithAnswers | null,
+  question: Pick<OnboardingQuestion, "answerKey"> | null,
+) {
+  return Boolean(profile && question);
+}
+
 export function profileDraftsFromState(profileState: ProfileState) {
   return Object.fromEntries(
     profileState.questions.map((question) => [
@@ -304,9 +311,9 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const activeQuestionKey = activeQuestion?.answerKey ?? "";
 
   useEffect(() => {
+    if (!shouldSyncActiveQuestion(activeProfile, activeQuestion)) return;
     nextOperation();
-    if (!activeQuestion || !activeProfile) return;
-    setDraft(answerForQuestion(activeProfile, activeQuestion));
+    setDraft(answerForQuestion(activeProfile!, activeQuestion!));
     setFieldError("");
     setStatus("idle");
   }, [activeProfile, activeQuestion, activeQuestionKey, nextOperation]);
