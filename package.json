@@ -19,6 +19,8 @@
     "dev": "npm run build && wrangler dev --local --port 3000",
     "dev:vite": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply parrot-english --local",
     "generate:audio": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "start": "wrangler dev --local --port 3000",
@@ -29,6 +31,8 @@
     "lint": "eslint . --ignore-pattern dist"
   },
   "dependencies": {
+    "better-auth": "^1.6.23",
+    "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.21.0",
     "react": "19.2.6",
     "react-dom": "19.2.6"
@@ -40,6 +44,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "9.39.4",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",

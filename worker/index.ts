@@ -1,11 +1,13 @@
-import { checkEvaluateSpeechRateLimit } from "./api-security";
-import { handleEvaluateSpeech } from "./groq";
+import { checkEvaluateSpeechRateLimit } from "./api-security.ts";
+import { createAuth } from "./auth.ts";
+import type { AuthEnv } from "./auth.ts";
+import { handleEvaluateSpeech } from "./groq.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env {
+interface Env extends AuthEnv {
   ASSETS: AssetFetcher;
   EVALUATE_RATE_LIMIT_MAX?: string;
   EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
@@ -13,19 +15,49 @@ interface Env {
   GROQ_REQUEST_TIMEOUT_MS?: string;
 }
 
-const worker = {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
+interface WorkerDependencies {
+  createAuth: typeof createAuth;
+  checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
+  handleEvaluateSpeech: typeof handleEvaluateSpeech;
+}
 
-    if (url.pathname === "/api/evaluate-speech") {
-      const rateLimited = checkEvaluateSpeechRateLimit(request, env);
-      if (rateLimited) return rateLimited;
+export function createWorker(
+  dependencies: Partial<WorkerDependencies> = {}
+) {
+  const rateLimit =
+    dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
+  const evaluateSpeech =
+    dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
+  const authFactory = dependencies.createAuth ?? createAuth;
 
-      return handleEvaluateSpeech(request, env);
-    }
+  return {
+    async fetch(request: Request, env: Env): Promise<Response> {
+      const url = new URL(request.url);
 
-    return env.ASSETS.fetch(request);
-  },
-};
+      if (
+        url.pathname === "/api/auth" ||
+        url.pathname.startsWith("/api/auth/")
+      ) {
+        return authFactory(env).handler(request);
+      }
 
-export default worker;
+      if (url.pathname === "/api/evaluate-speech") {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+
+        const rateLimited = rateLimit(request, env);
+        if (rateLimited) return rateLimited;
+
+        return evaluateSpeech(request, env);
+      }
+
+      return env.ASSETS.fetch(request);
+    },
+  };
+}
+
+export default createWorker();
