@@ -2,6 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "parrot-english",
   "main": "worker/index.ts",
+  "preview_urls": true,
   "compatibility_date": "2026-05-22",
   "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [

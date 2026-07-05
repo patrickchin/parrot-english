@@ -373,6 +373,12 @@ function assertAuthConstraints(database) {
 }
 
 describe("authentication infrastructure", () => {
+  it("explicitly enables Cloudflare Worker preview URLs", () => {
+    const wrangler = JSON.parse(readProjectFile("wrangler.jsonc"));
+
+    assert.equal(wrangler.preview_urls, true);
+  });
+
   it("configures Better Auth and a local-capable D1 binding", () => {
     const packageJson = JSON.parse(readProjectFile("package.json"));
     const wrangler = readProjectFile("wrangler.jsonc");
