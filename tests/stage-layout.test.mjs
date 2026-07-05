@@ -77,12 +77,16 @@ describe("catalog-driven stage layout", () => {
   it("positions every character through shared catalog slots", () => {
     const layer = getRule(".character-layer");
     const sprite = getRule(".character-sprite");
+    const artwork = getRule(".character-sprite img");
 
     assert.match(layer, /position:\s*absolute/);
     assert.match(sprite, /--character-index/);
     assert.match(sprite, /--character-count/);
     assert.match(sprite, /position:\s*absolute/);
     assert.match(sprite, /object-position|left:/);
+    assert.match(sprite, /grid-template-rows:\s*minmax\(0,\s*1fr\) auto/);
+    assert.match(artwork, /min-height:\s*0/);
+    assert.match(artwork, /height:\s*100%/);
   });
 
   it("anchors speech to the same dynamic character slots", () => {

@@ -1105,6 +1105,7 @@ select:focus-visible {
   left: var(--slot-left);
   z-index: 5;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   width: clamp(150px, 23vw, 340px);
   height: min(48vh, 450px);
   justify-items: center;
@@ -1125,7 +1126,8 @@ select:focus-visible {
 .character-sprite img {
   display: block;
   width: 100%;
-  height: calc(100% - 34px);
+  min-height: 0;
+  height: 100%;
   object-fit: contain;
   object-position: center bottom;
   user-select: none;
