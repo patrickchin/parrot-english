@@ -104,6 +104,18 @@ function indexDetails(database, table) {
 }
 
 describe("onboarding infrastructure", () => {
+  it("keeps deployed v2 profile persistence independent of questionnaire tables", () => {
+    const repository = readFileSync(
+      new URL("../worker/onboarding-repository.ts", import.meta.url),
+      "utf8",
+    );
+
+    assert.doesNotMatch(repository, /\bquestionnaireQuestion\b/);
+    assert.doesNotMatch(repository, /\bquestionnaire\b/);
+    assert.doesNotMatch(repository, /\bassignQuestionnaireVersion\b/);
+    assert.doesNotMatch(repository, /\basc\b/);
+  });
+
   it("validates the six simple v2 prose questions", () => {
     const definition = validateOnboardingQuestionnaire(questionnaireV2);
 

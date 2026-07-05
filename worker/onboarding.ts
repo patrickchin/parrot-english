@@ -1,22 +1,30 @@
 import {
-  canCompleteQuestionnaire,
-  getApplicableQuestions,
-  getNextQuestion,
-  getProgress,
-  parseQuestionConfig,
-  readProfileAnswers,
-  readSkippedQuestionKeys,
-  skipProfileQuestion,
-  validateAnswer,
-  writeProfileAnswer,
-} from "../lib/onboarding.js";
+  ensureV2Profile,
+  getV2CurrentQuestion,
+  getV2Progress,
+  isSameV2Answer,
+  isV2Complete,
+  readV2Answers,
+  writeV2Response,
+} from "../lib/onboarding-profile.js";
+import { skipProfileQuestion } from "../lib/onboarding.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
-import type { Database } from "./database.ts";
 import type { AuthEnv } from "./auth.ts";
+import type { Database } from "./database.ts";
 import {
   handleOnboardingTranscription,
   type ApiEnv,
 } from "./groq.ts";
+import {
+  synthesizeAcknowledgment,
+  type ElevenLabsEnv,
+} from "./onboarding-acknowledgment-audio.ts";
+import { ONBOARDING_QUESTIONNAIRE } from "./onboarding-definition.ts";
+import {
+  enrichOnboardingAnswer,
+  type OnboardingEnrichment,
+  type OnboardingEnrichmentResult,
+} from "./onboarding-enrichment.ts";
 import { createOnboardingRepository } from "./onboarding-repository.ts";
 
 export interface OnboardingIdentity {
@@ -27,17 +35,22 @@ export interface OnboardingIdentity {
 
 export interface OnboardingRequestInput {
   database: Database;
-  env: AuthEnv & ApiEnv;
+  env: AuthEnv & ApiEnv & ElevenLabsEnv;
   identity: OnboardingIdentity;
   request: Request;
 }
 
-const MAX_PROFILE_BODY_BYTES = 16 * 1024;
-const INTRODUCTION_AUDIO_ID = "onboarding-introduction";
+type HandlerDependencies = {
+  enrichAnswer: typeof enrichOnboardingAnswer;
+  synthesizeAudio: typeof synthesizeAcknowledgment;
+  now: () => Date;
+};
 
-type QuestionRow = Awaited<
-  ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>
->["questions"][number];
+type Repository = ReturnType<typeof createOnboardingRepository>;
+type Profile = Awaited<ReturnType<Repository["loadProfile"]>>;
+type Question = (typeof ONBOARDING_QUESTIONNAIRE.questions)[number];
+
+const MAX_PROFILE_BODY_BYTES = 16 * 1024;
 
 class ApiError extends Error {
   readonly status: number;
@@ -69,77 +82,105 @@ function jsonResponse(payload: unknown, init?: ResponseInit) {
   });
 }
 
-function resolveAudio(audioId: string, expectedText?: string) {
+function resolveAudio(audioId: string, expectedText: string) {
   const line = STATIC_AUDIO_LINES[audioId];
-  if (!line || line.speaker !== "peppa") {
+  if (!line || line.speaker !== "peppa" || line.text !== expectedText) {
     throw new Error("Question audio is unavailable.");
-  }
-  if (expectedText && line.text !== expectedText) {
-    throw new Error("Question audio does not match its prompt.");
   }
   return { id: audioId, src: line.src, text: line.text };
 }
 
-function serializeQuestion(entry: QuestionRow) {
-  const config = parseQuestionConfig(entry);
+function serializeQuestion(question: Question) {
   return {
-    answerKey: entry.answerKey,
-    position: entry.position,
-    promptEn: entry.promptEn,
-    promptZh: entry.promptZh,
-    answerType: entry.answerType,
-    cardinality: entry.cardinality,
-    required: entry.required,
-    options: config.options,
-    validation: config.validation,
-    audio: resolveAudio(entry.audioId, entry.promptEn),
+    answerKey: question.answerKey,
+    position: question.position,
+    promptEn: question.promptEn,
+    promptZh: question.promptZh,
+    required: question.required,
+    maxLength: question.maxLength,
+    audio: resolveAudio(question.audioId, question.promptEn),
   };
 }
 
-function serializeProfile(profile: Awaited<ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>>["profile"]) {
+function isV2Profile(profile: Profile) {
+  try {
+    readV2Answers(profile);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clientProfile(profile: Profile) {
+  const readable = isV2Profile(profile)
+    ? profile
+    : ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+        forProfileEdit: true,
+      });
   return {
     name: profile.name,
     age: profile.age,
-    answers: readProfileAnswers(profile),
-    questionnaireVersion: profile.questionnaireVersion,
+    answers: readV2Answers(readable),
+    questionnaireVersion: ONBOARDING_QUESTIONNAIRE.version,
     currentQuestionKey: profile.currentQuestionKey,
     onboardingStatus: profile.onboardingStatus,
     completedAt: profile.completedAt,
   };
 }
 
-type LoadedState = Awaited<
-  ReturnType<ReturnType<typeof createOnboardingRepository>["loadState"]>
->;
+async function prepareOnboardingProfile(
+  repository: Repository,
+  identity: OnboardingIdentity
+) {
+  const stored = await repository.loadProfile(identity);
+  const prepared = ensureV2Profile(stored, ONBOARDING_QUESTIONNAIRE);
+  if (
+    prepared.answersJson !== stored.answersJson ||
+    prepared.currentQuestionKey !== stored.currentQuestionKey ||
+    prepared.onboardingStatus !== stored.onboardingStatus ||
+    prepared.skippedQuestionKeysJson !== stored.skippedQuestionKeysJson
+  ) {
+    await repository.saveAnswer(stored.id, {
+      answersJson: prepared.answersJson,
+      currentQuestionKey: prepared.currentQuestionKey,
+      onboardingStatus: prepared.onboardingStatus,
+      skippedQuestionKeysJson: prepared.skippedQuestionKeysJson,
+    });
+    return repository.loadProfile(identity);
+  }
+  return stored;
+}
 
-function onboardingPayload(state: LoadedState, canBypass: boolean) {
-  const answers = readProfileAnswers(state.profile);
-  const skippedQuestionKeys = readSkippedQuestionKeys(state.profile);
-  const question =
-    state.profile.onboardingStatus === "completed"
-      ? null
-      : getNextQuestion({
-          answers,
-          currentQuestionKey: state.profile.currentQuestionKey,
-          questions: state.questions,
-          skippedQuestionKeys,
-        });
-
+function onboardingPayload(profile: Profile, canBypass: boolean) {
+  const completed = profile.onboardingStatus === "completed";
+  const readable = isV2Profile(profile)
+    ? profile
+    : ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+        forProfileEdit: true,
+      });
+  const question = completed
+    ? null
+    : getV2CurrentQuestion(readable, ONBOARDING_QUESTIONNAIRE);
   return {
     mode: "full" as const,
-    profile: serializeProfile(state.profile),
-    questionnaire: {
-      version: state.questionnaire.version,
-      introductionAudio: resolveAudio(INTRODUCTION_AUDIO_ID),
-    },
+    profile: clientProfile(profile),
+    questionnaire: { version: ONBOARDING_QUESTIONNAIRE.version },
     question: question ? serializeQuestion(question) : null,
-    progress: getProgress(
-      state.questions,
-      answers,
-      question?.answerKey ?? null,
-      skippedQuestionKeys
-    ),
+    progress: completed
+      ? {
+          answered: ONBOARDING_QUESTIONNAIRE.questions.length,
+          current: ONBOARDING_QUESTIONNAIRE.questions.length,
+          total: ONBOARDING_QUESTIONNAIRE.questions.length,
+        }
+      : getV2Progress(readable, ONBOARDING_QUESTIONNAIRE),
     canBypass,
+  };
+}
+
+function profilePayload(profile: Profile) {
+  return {
+    profile: clientProfile(profile),
+    questions: ONBOARDING_QUESTIONNAIRE.questions.map(serializeQuestion),
   };
 }
 
@@ -147,82 +188,203 @@ function bypassOnlyPayload() {
   return { mode: "bypass-only" as const, canBypass: true as const };
 }
 
-function getCurrentQuestion(state: LoadedState) {
-  return getNextQuestion({
-    answers: readProfileAnswers(state.profile),
-    currentQuestionKey: state.profile.currentQuestionKey,
-    questions: state.questions,
-    skippedQuestionKeys: readSkippedQuestionKeys(state.profile),
-  });
-}
-
-function getTransition(state: LoadedState, updatedProfile: LoadedState["profile"]) {
-  const answers = readProfileAnswers(updatedProfile);
-  const skippedQuestionKeys = readSkippedQuestionKeys(updatedProfile);
-  const next = getNextQuestion({
-    answers,
-    currentQuestionKey: null,
-    questions: state.questions,
-    skippedQuestionKeys,
-  });
-  const completion = canCompleteQuestionnaire(state.questions, answers);
-  return {
-    completed: next === null && completion.complete,
-    currentQuestionKey: next?.answerKey ?? null,
-  };
-}
-
-async function readJsonBody(request: Request) {
+async function readJsonRecord(request: Request) {
   const body = await request.text();
   if (new TextEncoder().encode(body).byteLength > MAX_PROFILE_BODY_BYTES) {
     throw new ApiError(413, "payload_too_large");
   }
+
+  let value: unknown;
   try {
-    const parsed = JSON.parse(body);
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("invalid");
-    }
-    return parsed as {
-      answers?: unknown;
-      questionKey?: unknown;
-      value?: unknown;
-    };
+    value = JSON.parse(body);
   } catch {
     throw new ApiError(400, "invalid_json");
   }
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new ApiError(400, "invalid_json");
+  }
+
+  return value as Record<string, unknown>;
 }
 
-const PROFILE_NAME_QUESTION = {
-  answerKey: "name",
-  answerType: "text",
-  branchingJson: null,
-  cardinality: "scalar",
-  optionsJson: null,
-  position: 0,
-  promptEn: "What name would you like us to use?",
-  promptZh: "你希望我们怎么称呼你？",
-  required: true,
-  validationJson: '{"maxLength":80}',
-};
+async function readAnswerBody(request: Request) {
+  const record = await readJsonRecord(request);
+  if (
+    Object.keys(record).some(
+      (key) => key !== "questionKey" && key !== "rawAnswer"
+    )
+  ) {
+    throw new ApiError(
+      400,
+      "invalid_answer",
+      "Only the question key and answer may be submitted."
+    );
+  }
+  if (typeof record.questionKey !== "string") {
+    throw new ApiError(400, "invalid_answer", "A question key is required.");
+  }
+  if (typeof record.rawAnswer !== "string") {
+    throw new ApiError(400, "invalid_answer", "Please enter an answer.");
+  }
+  const rawAnswer = record.rawAnswer.trim();
+  if (!rawAnswer) {
+    throw new ApiError(400, "invalid_answer", "Please answer this question.");
+  }
+  return { questionKey: record.questionKey, rawAnswer };
+}
 
-function serializeProfileNameQuestion() {
+async function readQuestionKeyBody(request: Request) {
+  const record = await readJsonRecord(request);
+  if (Object.keys(record).some((key) => key !== "questionKey")) {
+    throw new ApiError(
+      400,
+      "invalid_answer",
+      "Only the question key may be submitted."
+    );
+  }
+  if (typeof record.questionKey !== "string") {
+    throw new ApiError(400, "invalid_answer", "A question key is required.");
+  }
+  return { questionKey: record.questionKey };
+}
+
+function findQuestion(answerKey: string) {
+  return (
+    ONBOARDING_QUESTIONNAIRE.questions.find(
+      (question) => question.answerKey === answerKey
+    ) ?? null
+  );
+}
+
+function savedEnrichment(profile: Profile, answerKey: string) {
+  const response = readV2Answers(profile).responses[answerKey];
+  if (!response) return null;
   return {
-    answerKey: PROFILE_NAME_QUESTION.answerKey,
-    position: PROFILE_NAME_QUESTION.position,
-    promptEn: PROFILE_NAME_QUESTION.promptEn,
-    promptZh: PROFILE_NAME_QUESTION.promptZh,
-    answerType: PROFILE_NAME_QUESTION.answerType,
-    cardinality: PROFILE_NAME_QUESTION.cardinality,
-    required: PROFILE_NAME_QUESTION.required,
-    options: null,
-    validation: { maxLength: 80 },
-    audio: null,
-  };
+    summary: response.summary,
+    acknowledgment: response.acknowledgment,
+    canonicalName: answerKey === "name" ? profile.name : null,
+    canonicalAge: answerKey === "age" ? profile.age : null,
+    enrichmentStatus: response.enrichmentStatus,
+  } satisfies OnboardingEnrichment;
+}
+
+async function getEnrichment(
+  input: OnboardingRequestInput,
+  dependencies: HandlerDependencies,
+  profile: Profile,
+  question: Question,
+  rawAnswer: string
+): Promise<OnboardingEnrichmentResult> {
+  if (isSameV2Answer(profile, question.answerKey, rawAnswer)) {
+    const saved = savedEnrichment(profile, question.answerKey);
+    if (saved) return saved;
+  }
+  return dependencies.enrichAnswer({
+    env: input.env,
+    question,
+    rawAnswer,
+  });
+}
+
+async function saveAnswer({
+  input,
+  dependencies,
+  repository,
+  profile,
+  question,
+  rawAnswer,
+  profileEdit,
+}: {
+  input: OnboardingRequestInput;
+  dependencies: HandlerDependencies;
+  repository: Repository;
+  profile: Profile;
+  question: Question;
+  rawAnswer: string;
+  profileEdit: boolean;
+}) {
+  if (rawAnswer.length > Math.min(question.maxLength, 500)) {
+    throw new ApiError(
+      400,
+      "invalid_answer",
+      `Please use ${Math.min(question.maxLength, 500)} characters or fewer.`
+    );
+  }
+
+  const readable = profileEdit
+    ? ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+        forProfileEdit: true,
+      })
+    : profile;
+  const sameAnswer = isSameV2Answer(
+    readable,
+    question.answerKey,
+    rawAnswer
+  );
+  const enrichment = await getEnrichment(
+    input,
+    dependencies,
+    readable,
+    question,
+    rawAnswer
+  );
+  if ("fieldError" in enrichment) {
+    throw new ApiError(400, "invalid_answer", enrichment.fieldError);
+  }
+
+  let storedProfile = profile;
+  let acknowledgment = enrichment.acknowledgment;
+  if (!sameAnswer) {
+    const updated = writeV2Response(readable, question, {
+      rawAnswer,
+      ...enrichment,
+      answeredAt: dependencies.now().toISOString(),
+    });
+    acknowledgment =
+      readV2Answers(updated).responses[question.answerKey].acknowledgment;
+
+    if (profileEdit) {
+      await repository.saveAnswer(profile.id, {
+        age: updated.age,
+        answersJson: updated.answersJson,
+        name: updated.name,
+        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+      });
+    } else {
+      const next = getV2CurrentQuestion(updated, ONBOARDING_QUESTIONNAIRE);
+      const completed = next === null && isV2Complete(
+        updated,
+        ONBOARDING_QUESTIONNAIRE
+      );
+      await repository.saveTransition(profile.id, {
+        age: updated.age,
+        answersJson: updated.answersJson,
+        completed,
+        currentQuestionKey: next?.answerKey ?? null,
+        name: updated.name,
+        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+      });
+    }
+    storedProfile = await repository.loadProfile(input.identity);
+  }
+
+  const audio = await dependencies.synthesizeAudio({
+    env: input.env,
+    text: acknowledgment,
+  });
+  return { profile: storedProfile, acknowledgment: { text: acknowledgment, audio } };
 }
 
 export async function handleOnboardingRequest(
-  input: OnboardingRequestInput
+  input: OnboardingRequestInput,
+  dependencyOverrides: Partial<HandlerDependencies> = {}
 ): Promise<Response> {
+  const dependencies: HandlerDependencies = {
+    enrichAnswer: enrichOnboardingAnswer,
+    synthesizeAudio: synthesizeAcknowledgment,
+    now: () => new Date(),
+    ...dependencyOverrides,
+  };
   const repository = createOnboardingRepository(input.database);
   const url = new URL(input.request.url);
 
@@ -232,123 +394,99 @@ export async function handleOnboardingRequest(
     }
 
     if (url.pathname === "/api/onboarding" && input.request.method === "GET") {
-      try {
-        const state = await repository.loadState(input.identity);
-        return jsonResponse(
-          onboardingPayload(state, await repository.canBypass(input.identity))
-        );
-      } catch (error) {
-        if (await repository.canBypass(input.identity)) {
-          return jsonResponse(bypassOnlyPayload());
-        }
-        throw error;
-      }
+      const profile = await prepareOnboardingProfile(repository, input.identity);
+      return jsonResponse(
+        onboardingPayload(profile, await repository.canBypass(input.identity))
+      );
     }
 
     if (
       url.pathname === "/api/onboarding/answer" &&
       input.request.method === "PUT"
     ) {
-      const body = await readJsonBody(input.request);
-      if (typeof body.questionKey !== "string") {
-        throw new ApiError(400, "invalid_answer", "A question key is required.");
-      }
-      const state = await repository.loadState(input.identity);
-      const entry = await repository.findQuestion(
-        state.questionnaire.id,
-        body.questionKey
-      );
-      if (!entry) {
+      const body = await readAnswerBody(input.request);
+      const profile = await prepareOnboardingProfile(repository, input.identity);
+      const question = findQuestion(body.questionKey);
+      if (!question) {
         throw new ApiError(
-          400,
+          409,
           "invalid_answer",
           "This question is no longer available."
         );
       }
-
-      const current = getCurrentQuestion(state);
-      if (current?.answerKey !== entry.answerKey) {
+      const repeated = isSameV2Answer(
+        profile,
+        question.answerKey,
+        body.rawAnswer
+      );
+      const current = getV2CurrentQuestion(profile, ONBOARDING_QUESTIONNAIRE);
+      if (!repeated && current?.answerKey !== question.answerKey) {
         throw new ApiError(
-          400,
+          409,
           "invalid_answer",
           "Please answer the current question first."
         );
       }
 
-      const validation = validateAnswer(entry, body.value);
-      if ("error" in validation) {
-        throw new ApiError(400, "invalid_answer", validation.error);
-      }
-
-      const updated = writeProfileAnswer(
-        state.profile,
-        entry.answerKey,
-        validation.value
-      );
-      const transition = getTransition(state, updated);
-      await repository.saveTransition(state.profile.id, {
-        age: updated.age,
-        answersJson: updated.answersJson,
-        completed: transition.completed,
-        currentQuestionKey: transition.currentQuestionKey,
-        name: updated.name,
-        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+      const saved = await saveAnswer({
+        input,
+        dependencies,
+        repository,
+        profile,
+        question,
+        rawAnswer: body.rawAnswer,
+        profileEdit: false,
       });
-
-      const nextState = await repository.loadState(input.identity);
-      return jsonResponse(
-        onboardingPayload(nextState, await repository.canBypass(input.identity))
-      );
+      return jsonResponse({
+        ...onboardingPayload(
+          saved.profile,
+          await repository.canBypass(input.identity)
+        ),
+        acknowledgment: saved.acknowledgment,
+      });
     }
 
     if (
       url.pathname === "/api/onboarding/question/skip" &&
       input.request.method === "POST"
     ) {
-      const body = await readJsonBody(input.request);
-      if (typeof body.questionKey !== "string") {
-        throw new ApiError(400, "invalid_answer", "A question key is required.");
-      }
-      const state = await repository.loadState(input.identity);
-      const entry = await repository.findQuestion(
-        state.questionnaire.id,
-        body.questionKey
-      );
-      if (!entry) {
+      const body = await readQuestionKeyBody(input.request);
+      const profile = await prepareOnboardingProfile(repository, input.identity);
+      const question = findQuestion(body.questionKey);
+      if (!question) {
         throw new ApiError(
-          400,
+          409,
           "invalid_answer",
           "This question is no longer available."
         );
       }
-      if (getCurrentQuestion(state)?.answerKey !== entry.answerKey) {
+      if (
+        getV2CurrentQuestion(profile, ONBOARDING_QUESTIONNAIRE)?.answerKey !==
+        question.answerKey
+      ) {
         throw new ApiError(
-          400,
+          409,
           "invalid_answer",
           "Please answer the current question first."
         );
       }
-      if (entry.required) {
-        throw new ApiError(
-          400,
-          "invalid_answer",
-          "This question is required."
-        );
+      if (question.required) {
+        throw new ApiError(400, "invalid_answer", "This question is required.");
       }
 
-      const updated = skipProfileQuestion(state.profile, entry.answerKey);
-      const transition = getTransition(state, updated);
-      await repository.saveTransition(state.profile.id, {
+      const updated = skipProfileQuestion(profile, question.answerKey);
+      const next = getV2CurrentQuestion(updated, ONBOARDING_QUESTIONNAIRE);
+      await repository.saveTransition(profile.id, {
         age: updated.age,
         answersJson: updated.answersJson,
-        completed: transition.completed,
-        currentQuestionKey: transition.currentQuestionKey,
+        completed: next === null && isV2Complete(updated, ONBOARDING_QUESTIONNAIRE),
+        currentQuestionKey: next?.answerKey ?? null,
         name: updated.name,
         skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
       });
-      const nextState = await repository.loadState(input.identity);
+      const stored = await repository.loadProfile(input.identity);
       return jsonResponse(
-        onboardingPayload(nextState, await repository.canBypass(input.identity))
+        onboardingPayload(stored, await repository.canBypass(input.identity))
       );
     }
 
@@ -358,8 +496,9 @@ export async function handleOnboardingRequest(
     ) {
       await repository.skipSession(input.identity);
       try {
-        const state = await repository.loadState(input.identity);
-        return jsonResponse(onboardingPayload(state, true));
+        const profile = await prepareOnboardingProfile(repository, input.identity);
+        await repository.skip(profile.id, input.identity.sessionId);
+        return jsonResponse(onboardingPayload(profile, true));
       } catch {
         return jsonResponse(bypassOnlyPayload());
       }
@@ -369,105 +508,48 @@ export async function handleOnboardingRequest(
       url.pathname === "/api/onboarding/complete" &&
       input.request.method === "POST"
     ) {
-      const state = await repository.loadState(input.identity);
-      const completion = canCompleteQuestionnaire(
-        state.questions,
-        readProfileAnswers(state.profile)
-      );
-      if (!completion.complete) {
-        throw new ApiError(409, "onboarding_incomplete", undefined, {
-          missingQuestionKey: completion.missingQuestionKey,
-        });
+      const profile = await prepareOnboardingProfile(repository, input.identity);
+      if (profile.onboardingStatus !== "completed") {
+        const missing = getV2CurrentQuestion(profile, ONBOARDING_QUESTIONNAIRE);
+        if (missing || !isV2Complete(profile, ONBOARDING_QUESTIONNAIRE)) {
+          throw new ApiError(409, "onboarding_incomplete", undefined, {
+            missingQuestionKey: missing?.answerKey ?? null,
+          });
+        }
+        await repository.complete(profile.id);
       }
-      await repository.complete(state.profile.id);
-      const completedState = await repository.loadState(input.identity);
-      return jsonResponse(
-        onboardingPayload(completedState, true)
-      );
+      const completed = await repository.loadProfile(input.identity);
+      return jsonResponse(onboardingPayload(completed, true));
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "GET") {
-      const state = await repository.loadState(input.identity);
-      const answers = readProfileAnswers(state.profile);
-      return jsonResponse({
-        profile: serializeProfile(state.profile),
-        questions: [
-          serializeProfileNameQuestion(),
-          ...getApplicableQuestions(state.questions, answers).map(serializeQuestion),
-        ],
-      });
+      const profile = await repository.loadProfile(input.identity);
+      return jsonResponse(profilePayload(profile));
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "PUT") {
-      const body = await readJsonBody(input.request);
-      if (
-        body.answers === null ||
-        typeof body.answers !== "object" ||
-        Array.isArray(body.answers)
-      ) {
+      const body = await readAnswerBody(input.request);
+      const profile = await repository.loadProfile(input.identity);
+      const question = findQuestion(body.questionKey);
+      if (!question) {
         throw new ApiError(
-          400,
-          "invalid_profile",
-          "A profile answer map is required."
+          409,
+          "invalid_answer",
+          "This question is no longer available."
         );
       }
-      const state = await repository.loadState(input.identity);
-      const validatedAnswers: Array<{
-        answerKey: string;
-        value: unknown;
-      }> = [];
-      const fieldErrors = Object.create(null) as Record<string, string>;
-
-      for (const [answerKey, value] of Object.entries(body.answers)) {
-        const entry =
-          answerKey === "name"
-            ? PROFILE_NAME_QUESTION
-            : state.questions.find(
-                (question) => question.answerKey === answerKey
-              );
-        if (!entry) {
-          fieldErrors[answerKey] = "This question is no longer available.";
-          continue;
-        }
-        const validation = validateAnswer(entry, value);
-        if ("error" in validation) {
-          fieldErrors[answerKey] =
-            validation.error ?? "This answer is invalid.";
-          continue;
-        }
-        validatedAnswers.push({
-          answerKey: entry.answerKey,
-          value: validation.value,
-        });
-      }
-
-      if (Object.keys(fieldErrors).length > 0) {
-        throw new ApiError(400, "invalid_profile", undefined, {
-          fieldErrors,
-        });
-      }
-
-      const updated = validatedAnswers.reduce(
-        (profile, answer) =>
-          writeProfileAnswer(profile, answer.answerKey, answer.value),
-        state.profile
-      );
-      await repository.saveAnswer(state.profile.id, {
-        age: updated.age,
-        answersJson: updated.answersJson,
-        name: updated.name,
-        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+      const saved = await saveAnswer({
+        input,
+        dependencies,
+        repository,
+        profile,
+        question,
+        rawAnswer: body.rawAnswer,
+        profileEdit: true,
       });
-      const nextState = await repository.loadState(input.identity);
       return jsonResponse({
-        profile: serializeProfile(nextState.profile),
-        questions: [
-          serializeProfileNameQuestion(),
-          ...getApplicableQuestions(
-            nextState.questions,
-            readProfileAnswers(nextState.profile)
-          ).map(serializeQuestion),
-        ],
+        ...profilePayload(saved.profile),
+        acknowledgment: saved.acknowledgment,
       });
     }
 
@@ -493,9 +575,6 @@ export async function handleOnboardingRequest(
         { status: error.status }
       );
     }
-    return jsonResponse(
-      { error: "questionnaire_unavailable" },
-      { status: 503 }
-    );
+    return jsonResponse({ error: "questionnaire_unavailable" }, { status: 503 });
   }
 }

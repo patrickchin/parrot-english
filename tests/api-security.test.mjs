@@ -80,4 +80,54 @@ describe("API security", () => {
       null,
     );
   });
+
+  it("shares one enrichment bucket across onboarding answers and profile edits", async () => {
+    assert.equal(typeof apiSecurity.checkOnboardingEnrichmentRateLimit, "function");
+    const env = {
+      ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX: "2",
+      ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS: "60",
+    };
+    const answer = new Request(
+      "https://example.test/api/onboarding/answer",
+      {
+        method: "PUT",
+        headers: { "CF-Connecting-IP": "203.0.113.42" },
+      },
+    );
+    const profile = new Request("https://example.test/api/profile", {
+      method: "PUT",
+      headers: { "CF-Connecting-IP": "203.0.113.42" },
+    });
+
+    assert.equal(
+      apiSecurity.checkOnboardingEnrichmentRateLimit(answer, env, "user-1", 0),
+      null,
+    );
+    assert.equal(
+      apiSecurity.checkOnboardingEnrichmentRateLimit(
+        profile,
+        env,
+        "user-1",
+        1_000,
+      ),
+      null,
+    );
+    const limited = apiSecurity.checkOnboardingEnrichmentRateLimit(
+      answer,
+      env,
+      "user-1",
+      2_000,
+    );
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get("Retry-After"), "58");
+    assert.equal(
+      apiSecurity.checkOnboardingEnrichmentRateLimit(
+        profile,
+        env,
+        "user-2",
+        2_000,
+      ),
+      null,
+    );
+  });
 });

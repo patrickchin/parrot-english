@@ -261,6 +261,39 @@ describe("Worker authentication", () => {
     assert.equal(onboardingCalls, 0);
   });
 
+  it("rate limits authenticated answer and profile enrichment before handlers", async () => {
+    const authStub = createAuthStub({
+      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+    });
+    const { env } = createEnvironment();
+    const limitedPaths = [];
+    let onboardingCalls = 0;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      checkOnboardingEnrichmentRateLimit(request, _env, userId) {
+        limitedPaths.push([new URL(request.url).pathname, userId]);
+        return Response.json({ error: "rate_limited" }, { status: 429 });
+      },
+      async handleOnboardingRequest() {
+        onboardingCalls += 1;
+        return Response.json({ saved: true });
+      },
+    });
+
+    for (const path of ["/api/onboarding/answer", "/api/profile"]) {
+      const response = await worker.fetch(
+        new Request(`https://example.test${path}`, { method: "PUT" }),
+        env,
+      );
+      assert.equal(response.status, 429, path);
+    }
+    assert.deepEqual(limitedPaths, [
+      ["/api/onboarding/answer", "user-1"],
+      ["/api/profile", "user-1"],
+    ]);
+    assert.equal(onboardingCalls, 0);
+  });
+
   it("keeps non-auth and non-speech requests on the static asset fallback", async () => {
     let authFactoryCalls = 0;
     const assetResponse = new Response("lesson app");

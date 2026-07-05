@@ -8,16 +8,21 @@ const onboardingTranscriptionRateLimitBuckets = new Map<
   string,
   RateLimitEntry
 >();
+const onboardingEnrichmentRateLimitBuckets = new Map<string, RateLimitEntry>();
 const DEFAULT_EVALUATE_RATE_LIMIT_MAX = 8;
 const DEFAULT_EVALUATE_RATE_LIMIT_WINDOW_SECONDS = 60;
 const DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX = 6;
 const DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS = 60;
+const DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX = 12;
+const DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 export interface RateLimitEnv {
   EVALUATE_RATE_LIMIT_MAX?: string;
   EVALUATE_RATE_LIMIT_WINDOW_SECONDS?: string;
   ONBOARDING_TRANSCRIPTION_RATE_LIMIT_MAX?: string;
   ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS?: string;
+  ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX?: string;
+  ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS?: string;
 }
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
@@ -122,6 +127,28 @@ export function checkOnboardingTranscriptionRateLimit(
     windowSeconds: readPositiveInteger(
       env.ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS,
       DEFAULT_ONBOARDING_TRANSCRIPTION_RATE_LIMIT_WINDOW_SECONDS
+    ),
+  });
+}
+
+export function checkOnboardingEnrichmentRateLimit(
+  request: Request,
+  env: RateLimitEnv,
+  userId: string,
+  now = Date.now()
+) {
+  return checkRateLimit({
+    buckets: onboardingEnrichmentRateLimitBuckets,
+    key: `${userId}:${getClientAddress(request)}`,
+    maxRequests: readPositiveInteger(
+      env.ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX,
+      DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_MAX
+    ),
+    message: "Too many onboarding answers. Please wait and try again.",
+    now,
+    windowSeconds: readPositiveInteger(
+      env.ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS,
+      DEFAULT_ONBOARDING_ENRICHMENT_RATE_LIMIT_WINDOW_SECONDS
     ),
   });
 }
