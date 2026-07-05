@@ -106,6 +106,7 @@ export const questionnaire = sqliteTable(
     id: text("id").primaryKey(),
     version: integer("version").notNull(),
     status: text("status").notNull(),
+    definitionHash: text("definition_hash"),
     createdAt: createdAt(),
     activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
   },
@@ -180,6 +181,9 @@ export const learnerProfile = sqliteTable(
     name: text("name"),
     age: integer("age"),
     answersJson: text("answers_json").default("{}").notNull(),
+    skippedQuestionKeysJson: text("skipped_question_keys_json")
+      .default("[]")
+      .notNull(),
     questionnaireVersion: integer("questionnaire_version").references(
       () => questionnaire.version
     ),
@@ -204,15 +208,34 @@ export const learnerProfile = sqliteTable(
       sql`json_valid(${table.answersJson})`
     ),
     check(
+      "learner_profile_skipped_question_keys_json_check",
+      sql`json_valid(${table.skippedQuestionKeysJson})`
+    ),
+    check(
       "learner_profile_onboarding_status_check",
       sql`${table.onboardingStatus} in ('not_started', 'in_progress', 'completed')`
     ),
   ]
 );
 
+export const onboardingSessionBypass = sqliteTable(
+  "onboarding_session_bypass",
+  {
+    sessionId: text("session_id").primaryKey(),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    skippedAt: integer("skipped_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    index("onboarding_session_bypass_user_idx").on(table.authUserId),
+  ]
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   learnerProfile: one(learnerProfile),
+  onboardingSessionBypasses: many(onboardingSessionBypass),
   sessions: many(session),
 }));
 
@@ -234,6 +257,16 @@ export const learnerProfileRelations = relations(
     questionnaire: one(questionnaire, {
       fields: [learnerProfile.questionnaireVersion],
       references: [questionnaire.version],
+    }),
+  })
+);
+
+export const onboardingSessionBypassRelations = relations(
+  onboardingSessionBypass,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [onboardingSessionBypass.authUserId],
+      references: [user.id],
     }),
   })
 );

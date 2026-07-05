@@ -18,6 +18,7 @@ const EXPECTED_MODELS = {
       "name",
       "age",
       "answersJson",
+      "skippedQuestionKeysJson",
       "questionnaireVersion",
       "currentQuestionKey",
       "onboardingStatus",
@@ -30,7 +31,14 @@ const EXPECTED_MODELS = {
   },
   questionnaire: {
     table: "questionnaire",
-    properties: ["id", "version", "status", "createdAt", "activatedAt"],
+    properties: [
+      "id",
+      "version",
+      "status",
+      "definitionHash",
+      "createdAt",
+      "activatedAt",
+    ],
   },
   questionnaireQuestion: {
     table: "questionnaire_question",
@@ -49,6 +57,10 @@ const EXPECTED_MODELS = {
       "branchingJson",
       "audioId",
     ],
+  },
+  onboardingSessionBypass: {
+    table: "onboarding_session_bypass",
+    properties: ["sessionId", "authUserId", "skippedAt"],
   },
 };
 
@@ -99,28 +111,43 @@ describe("onboarding infrastructure", () => {
     }
 
     assert.ok(schema.learnerProfileRelations);
+    assert.ok(schema.onboardingSessionBypassRelations);
     assert.ok(schema.questionnaireRelations);
     assert.ok(schema.questionnaireQuestionRelations);
   });
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
-    assert.equal(migrations.length, 2, "Expected one additive onboarding migration");
+    assert.equal(migrations.length, 3, "Expected the onboarding recovery migration");
     assert.doesNotMatch(
       migrations[1].sql,
       /(?:^|\n)\s*(?:INSERT|UPDATE|DELETE)\b/im,
     );
     assert.doesNotMatch(migrations[1].sql, /ALTER TABLE [`"]?(?:user|session|account|verification)/i);
+    assert.match(
+      migrations[2].sql,
+      /UPDATE [`"]?questionnaire[`"]?\s+SET [`"]?definition_hash/i,
+    );
+    assert.doesNotMatch(
+      migrations[2].sql,
+      /(?:INSERT|UPDATE|DELETE)\s+(?:INTO\s+)?[`"]?(?:user|session|account|verification)/i,
+    );
 
     const database = createMigratedDatabase();
     try {
       const profileSql = tableSql(database, "learner_profile");
       const questionnaireSql = tableSql(database, "questionnaire");
       const questionSql = tableSql(database, "questionnaire_question");
+      const bypassSql = tableSql(database, "onboarding_session_bypass");
 
       assert.match(profileSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
       assert.match(profileSql, /CHECK\s*\(json_valid\([^)]*answers_json[^)]*\)\)/i);
+      assert.match(
+        profileSql,
+        /CHECK\s*\(json_valid\([^)]*skipped_question_keys_json[^)]*\)\)/i,
+      );
       assert.match(profileSql, /CHECK\s*\([^\n]*onboarding_status[^\n]* in \('not_started', 'in_progress', 'completed'\)\)/i);
+      assert.match(questionnaireSql, /[`"]?definition_hash[`"]?\s+text/i);
       assert.match(questionnaireSql, /CHECK\s*\([^\n]*status[^\n]* in \('draft', 'active', 'inactive'\)\)/i);
       assert.match(questionSql, /CHECK\s*\([^\n]*answer_type[^\n]* in \('text', 'number', 'choice'\)\)/i);
       assert.match(questionSql, /CHECK\s*\([^\n]*cardinality[^\n]* in \('scalar', 'array'\)\)/i);
@@ -130,6 +157,10 @@ describe("onboarding infrastructure", () => {
           new RegExp(`CHECK\\s*\\([^\\n]*${column}[^\\n]*json_valid\\([^\\n]*${column}`),
         );
       }
+      assert.match(
+        bypassSql,
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
 
       const profileIndexes = indexDetails(database, "learner_profile");
       assert.ok(
@@ -167,6 +198,11 @@ describe("onboarding infrastructure", () => {
             index.unique === 1 &&
             index.columns.join() === "questionnaire_id,position",
         ),
+      );
+
+      const bypassIndexes = indexDetails(database, "onboarding_session_bypass");
+      assert.ok(
+        bypassIndexes.some((index) => index.columns.join() === "auth_user_id"),
       );
     } finally {
       database.close();
