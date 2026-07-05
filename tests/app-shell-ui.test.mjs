@@ -220,41 +220,31 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
   assert.match(app, /getOnboardingPath\(requestedProtectedTarget\)/);
 });
 
-test("lesson route adapters canonicalize Parrot URLs and reject unavailable lessons", () => {
+test("lesson route adapters render the executable route decisions", () => {
   assert.match(
     app,
-    /function\s+ParrotLessonRedirect\(\)[\s\S]*?resolveParrotLesson\(lessonId\)[\s\S]*?<Navigate\s+replace\s+to=["']\/lessons["']\s*\/>[\s\S]*?getLessonScenePath\([\s\S]*?["']parrot["'][\s\S]*?entry\.id[\s\S]*?0[\s\S]*?\)/,
+    /function\s+LessonRouteDecisionView\([\s\S]*?decision:\s*LessonRouteDecision[\s\S]*?if\s*\(decision\.kind\s*===\s*["']redirect["']\)/,
   );
+  assert.match(app, /replace=\{decision\.replace\}/);
+  assert.match(app, /to=\{decision\.to\}/);
   assert.match(
     app,
-    /function\s+ParrotLessonSceneRoute\(\)[\s\S]*?resolveParrotLesson\(lessonId\)[\s\S]*?resolveParrotLessonScene\(lessonId,\s*sceneNumber\)/,
-  );
-  assert.match(
-    app,
-    /if\s*\(!entry\)[\s\S]*?<Navigate\s+replace\s+to=["']\/lessons["']\s*\/>/,
+    /function\s+ParrotLessonRedirect\(\)[\s\S]*?resolveParrotLessonRouteDecision\(lessonId,\s*undefined\)/,
   );
   assert.match(
     app,
-    /if\s*\(!resolved\)[\s\S]*?<Navigate[\s\S]*?replace[\s\S]*?getLessonScenePath\([\s\S]*?["']parrot["'][\s\S]*?entry\.id[\s\S]*?0[\s\S]*?\)/,
+    /function\s+ParrotLessonSceneRoute\(\)[\s\S]*?resolveParrotLessonRouteDecision\(lessonId,\s*sceneNumber\)/,
   );
-  const routeAdapter = app.match(
-    /function\s+ParrotLessonSceneRoute\(\)([\s\S]*?)function\s+MyLessonRouteUnavailable/,
-  );
-  assert.ok(routeAdapter, "Expected the Parrot scene route adapter");
-  assert.match(routeAdapter[1], /key=\{`parrot:\$\{entry\.id\}`\}/);
   assert.match(
-    routeAdapter[1],
-    /routedSceneIndex=\{resolved\.sceneIndex\}/,
+    app,
+    /function\s+MyLessonRouteUnavailable\(\)[\s\S]*?resolveMyLessonRouteDecision\(lessonId,\s*sceneNumber\)/,
   );
-  assert.match(routeAdapter[1], /onNavigateScene=/);
+  assert.match(app, /key=\{`\$\{source\}:\$\{decision\.entry\.id\}`\}/);
+  assert.match(app, /routedSceneIndex=\{decision\.sceneIndex\}/);
+  assert.match(app, /onNavigateScene=/);
 });
 
 test("My lesson routes stay unavailable while the create route stays statically ranked", () => {
-  assert.match(
-    app,
-    /function\s+MyLessonRouteUnavailable\(\)[\s\S]*?<Navigate\s+replace\s+to=["']\/lessons["']\s*\/>/,
-  );
-
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1>Create a Lesson<\/h1>/);
   assert.match(createLesson, /Lesson creation is coming soon/);

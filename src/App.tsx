@@ -40,8 +40,10 @@ import {
   getLoginPath,
   getOnboardingPath,
   getSafeReturnTo,
-  resolveParrotLesson,
-  resolveParrotLessonScene,
+  resolveMyLessonRouteDecision,
+  resolveParrotLessonRouteDecision,
+  type LessonRouteDecision,
+  type LessonSource,
 } from "./app-routes";
 import { AuthGate } from "./AuthGate";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
@@ -640,53 +642,54 @@ export function LessonExperience() {
   );
 }
 
-function ParrotLessonRedirect() {
-  const { lessonId } = useParams();
-  const entry = resolveParrotLesson(lessonId);
-
-  if (!entry) return <Navigate replace to="/lessons" />;
-
-  return (
-    <Navigate
-      replace
-      to={getLessonScenePath("parrot", entry.id, 0)}
-    />
-  );
-}
-
-function ParrotLessonSceneRoute() {
-  const { lessonId, sceneNumber } = useParams();
+function LessonRouteDecisionView({
+  decision,
+  source,
+}: {
+  decision: LessonRouteDecision;
+  source: LessonSource;
+}) {
   const navigate = useNavigate();
-  const entry = resolveParrotLesson(lessonId);
 
-  if (!entry) return <Navigate replace to="/lessons" />;
-
-  const resolved = resolveParrotLessonScene(lessonId, sceneNumber);
-  if (!resolved) {
+  if (decision.kind === "redirect") {
     return (
       <Navigate
-        replace
-        to={getLessonScenePath("parrot", entry.id, 0)}
+        replace={decision.replace}
+        to={decision.to}
       />
     );
   }
 
   return (
     <LessonPlayer
-      key={`parrot:${entry.id}`}
-      lesson={entry.lesson}
+      key={`${source}:${decision.entry.id}`}
+      lesson={decision.entry.lesson}
       onBack={() => navigate("/lessons")}
       onHome={() => navigate("/")}
       onNavigateScene={(sceneIndex) =>
-        navigate(getLessonScenePath("parrot", entry.id, sceneIndex))
+        navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
       }
-      routedSceneIndex={resolved.sceneIndex}
+      routedSceneIndex={decision.sceneIndex}
     />
   );
 }
 
+function ParrotLessonRedirect() {
+  const { lessonId } = useParams();
+  const decision = resolveParrotLessonRouteDecision(lessonId, undefined);
+  return <LessonRouteDecisionView decision={decision} source="parrot" />;
+}
+
+function ParrotLessonSceneRoute() {
+  const { lessonId, sceneNumber } = useParams();
+  const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
+  return <LessonRouteDecisionView decision={decision} source="parrot" />;
+}
+
 function MyLessonRouteUnavailable() {
-  return <Navigate replace to="/lessons" />;
+  const { lessonId, sceneNumber } = useParams();
+  const decision = resolveMyLessonRouteDecision(lessonId, sceneNumber);
+  return <LessonRouteDecisionView decision={decision} source="my" />;
 }
 
 export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {

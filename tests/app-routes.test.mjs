@@ -17,6 +17,24 @@ function returnToSearch(returnTo) {
   return `?${new URLSearchParams({ returnTo })}`;
 }
 
+function getParrotLessonRouteDecision(lessonId, sceneNumber) {
+  assert.equal(
+    typeof routes.resolveParrotLessonRouteDecision,
+    "function",
+    "Expected an executable Parrot lesson route decision boundary",
+  );
+  return routes.resolveParrotLessonRouteDecision(lessonId, sceneNumber);
+}
+
+function getMyLessonRouteDecision(lessonId, sceneNumber) {
+  assert.equal(
+    typeof routes.resolveMyLessonRouteDecision,
+    "function",
+    "Expected an executable My lesson route decision boundary",
+  );
+  return routes.resolveMyLessonRouteDecision(lessonId, sceneNumber);
+}
+
 describe("app route helpers", () => {
   it("builds source-specific lesson paths", () => {
     assert.equal(
@@ -26,6 +44,10 @@ describe("app route helpers", () => {
     assert.equal(
       routes.getLessonPath("my", "lesson/id"),
       "/lessons/my/lesson%2Fid",
+    );
+    assert.equal(
+      routes.getLessonPath("my", "100% ready"),
+      "/lessons/my/100%25%20ready",
     );
     assert.equal(
       routes.getLessonScenePath("parrot", "01-peppas-high-ball", 0),
@@ -76,6 +98,71 @@ describe("app route helpers", () => {
     assert.equal(typeof routes.resolveMyLessonScene, "function");
     assert.equal(routes.resolveMyLessonScene("same-id", "1"), null);
     assert.equal(routes.resolveMyLessonScene(undefined, undefined), null);
+  });
+
+  it("redirects a short Parrot lesson URL to its canonical first scene", () => {
+    assert.deepEqual(
+      getParrotLessonRouteDecision("01-peppas-high-ball", undefined),
+      {
+        kind: "redirect",
+        replace: true,
+        to: "/lessons/parrot/01-peppas-high-ball/scenes/1",
+      },
+    );
+  });
+
+  it("redirects invalid Parrot scenes to the canonical first scene", () => {
+    for (const sceneNumber of ["", "0", "01", "1.5", "6", "99", "x"]) {
+      assert.deepEqual(
+        getParrotLessonRouteDecision(
+          "01-peppas-high-ball",
+          sceneNumber,
+        ),
+        {
+          kind: "redirect",
+          replace: true,
+          to: "/lessons/parrot/01-peppas-high-ball/scenes/1",
+        },
+      );
+    }
+  });
+
+  it("redirects unknown and encoded Parrot IDs to the lesson list", () => {
+    for (const lessonId of [
+      "missing",
+      "01-peppas-high-ball%2Fscenes%2F1",
+      "01-peppas-high-ball/../02-garden-colors",
+    ]) {
+      assert.deepEqual(getParrotLessonRouteDecision(lessonId, "1"), {
+        kind: "redirect",
+        replace: true,
+        to: "/lessons",
+      });
+    }
+  });
+
+  it("returns a playable decision only for a valid Parrot scene", () => {
+    const decision = getParrotLessonRouteDecision(
+      "01-peppas-high-ball",
+      "2",
+    );
+
+    assert.equal(decision.kind, "lesson");
+    assert.equal(decision.entry.id, "01-peppas-high-ball");
+    assert.equal(decision.sceneIndex, 1);
+  });
+
+  it("redirects both My lesson route forms until authenticated loading exists", () => {
+    assert.deepEqual(getMyLessonRouteDecision("same-id", undefined), {
+      kind: "redirect",
+      replace: true,
+      to: "/lessons",
+    });
+    assert.deepEqual(getMyLessonRouteDecision("same-id", "2"), {
+      kind: "redirect",
+      replace: true,
+      to: "/lessons",
+    });
   });
 
   it("rejects unknown lessons and non-canonical scene values", () => {
