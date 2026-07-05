@@ -75,3 +75,12 @@ export function resolveParrotLessonScene(
 
   return { entry, sceneIndex: sceneNumber - 1 };
 }
+
+export function resolveMyLessonScene(
+  _lessonId: string | undefined,
+  _sceneNumberValue: string | undefined,
+) {
+  void _lessonId;
+  void _sceneNumberValue;
+  return null;
+}

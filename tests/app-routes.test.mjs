@@ -64,8 +64,18 @@ describe("app route helpers", () => {
     const resolved = routes.resolveParrotLessonScene("01-peppas-high-ball", "2");
 
     assert.equal(entry.id, "01-peppas-high-ball");
+    assert.equal(
+      routes.getLessonScenePath("parrot", entry.id, 0),
+      "/lessons/parrot/01-peppas-high-ball/scenes/1",
+    );
     assert.equal(resolved.entry, entry);
     assert.equal(resolved.sceneIndex, 1);
+  });
+
+  it("keeps My lesson scene resolution behind a future data boundary", () => {
+    assert.equal(typeof routes.resolveMyLessonScene, "function");
+    assert.equal(routes.resolveMyLessonScene("same-id", "1"), null);
+    assert.equal(routes.resolveMyLessonScene(undefined, undefined), null);
   });
 
   it("rejects unknown lessons and non-canonical scene values", () => {

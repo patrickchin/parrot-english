@@ -126,6 +126,16 @@ test("authenticated application routes render durable home and activity pages", 
   );
 });
 
+test("canonical Parrot scene routes render the addressed one-based scene", () => {
+  const html = renderApplicationRoute(
+    "/lessons/parrot/01-peppas-high-ball/scenes/2",
+  );
+
+  assert.match(html, /Peppa Cannot Reach/);
+  assert.doesNotMatch(html, /The Ball Up High/);
+  assert.match(html, /Scene 2 of 5/);
+});
+
 test("the lessons compatibility route opens a lesson in the existing player", () => {
   assert.equal(
     typeof LessonExperienceView,
@@ -188,6 +198,10 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
     "/",
     "/lessons",
     "/lessons/my/create",
+    "/lessons/parrot/:lessonId",
+    "/lessons/parrot/:lessonId/scenes/:sceneNumber",
+    "/lessons/my/:lessonId",
+    "/lessons/my/:lessonId/scenes/:sceneNumber",
     "/progress",
     "/stories",
     "/login",
@@ -204,4 +218,45 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
   assert.match(app, /const\s+safeReturnTo\s*=\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/);
   assert.match(app, /const\s+requestedProtectedTarget\s*=/);
   assert.match(app, /getOnboardingPath\(requestedProtectedTarget\)/);
+});
+
+test("lesson route adapters canonicalize Parrot URLs and reject unavailable lessons", () => {
+  assert.match(
+    app,
+    /function\s+ParrotLessonRedirect\(\)[\s\S]*?resolveParrotLesson\(lessonId\)[\s\S]*?<Navigate\s+replace\s+to=["']\/lessons["']\s*\/>[\s\S]*?getLessonScenePath\([\s\S]*?["']parrot["'][\s\S]*?entry\.id[\s\S]*?0[\s\S]*?\)/,
+  );
+  assert.match(
+    app,
+    /function\s+ParrotLessonSceneRoute\(\)[\s\S]*?resolveParrotLesson\(lessonId\)[\s\S]*?resolveParrotLessonScene\(lessonId,\s*sceneNumber\)/,
+  );
+  assert.match(
+    app,
+    /if\s*\(!entry\)[\s\S]*?<Navigate\s+replace\s+to=["']\/lessons["']\s*\/>/,
+  );
+  assert.match(
+    app,
+    /if\s*\(!resolved\)[\s\S]*?<Navigate[\s\S]*?replace[\s\S]*?getLessonScenePath\([\s\S]*?["']parrot["'][\s\S]*?entry\.id[\s\S]*?0[\s\S]*?\)/,
+  );
+  const routeAdapter = app.match(
+    /function\s+ParrotLessonSceneRoute\(\)([\s\S]*?)function\s+MyLessonRouteUnavailable/,
+  );
+  assert.ok(routeAdapter, "Expected the Parrot scene route adapter");
+  assert.match(routeAdapter[1], /key=\{`parrot:\$\{entry\.id\}`\}/);
+  assert.match(
+    routeAdapter[1],
+    /routedSceneIndex=\{resolved\.sceneIndex\}/,
+  );
+  assert.match(routeAdapter[1], /onNavigateScene=/);
+});
+
+test("My lesson routes stay unavailable while the create route stays statically ranked", () => {
+  assert.match(
+    app,
+    /function\s+MyLessonRouteUnavailable\(\)[\s\S]*?<Navigate\s+replace\s+to=["']\/lessons["']\s*\/>/,
+  );
+
+  const createLesson = renderApplicationRoute("/lessons/my/create");
+  assert.match(createLesson, /<h1>Create a Lesson<\/h1>/);
+  assert.match(createLesson, /Lesson creation is coming soon/);
+  assert.doesNotMatch(createLesson, /Parrot English speaking lesson/);
 });

@@ -17,6 +17,7 @@ import {
   Routes,
   useLocation,
   useNavigate,
+  useParams,
 } from "react-router";
 import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
@@ -35,9 +36,12 @@ import {
   type AppNavigationState,
 } from "./app-navigation";
 import {
+  getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
   getSafeReturnTo,
+  resolveParrotLesson,
+  resolveParrotLessonScene,
 } from "./app-routes";
 import { AuthGate } from "./AuthGate";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
@@ -87,6 +91,9 @@ type CharacterStyle = CSSProperties & {
 type LessonPlayerProps = {
   lesson: Lesson;
   onBack: () => void;
+  onHome: () => void;
+  onNavigateScene: (sceneIndex: number) => void;
+  routedSceneIndex: number;
 };
 
 const AVAILABLE_LESSON_IDS = new Set(LESSONS.map((entry) => entry.id));
@@ -114,13 +121,17 @@ function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
   return event.key === " " || event.key === "Enter";
 }
 
-export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProps) {
+export function LessonPlayer({
+  lesson: currentLesson,
+  onBack,
+  routedSceneIndex,
+}: LessonPlayerProps) {
   const [state, dispatch] = useReducer(
     (
       currentState: ReturnType<typeof createInitialLessonState>,
       event: LessonEvent
     ) => reduceLessonState(currentState, event, currentLesson),
-    createInitialLessonState()
+    { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
   const [error, setError] = useState("");
   const playbackControllerRef = useRef<AbortController | null>(null);
@@ -607,6 +618,9 @@ export function LessonExperienceView({
       key={selectedEntry.id}
       lesson={selectedEntry.lesson}
       onBack={() => dispatchNavigation({ type: "BACK_TO_LIST" })}
+      onHome={() => {}}
+      onNavigateScene={() => {}}
+      routedSceneIndex={0}
     />
   );
 }
@@ -626,6 +640,55 @@ export function LessonExperience() {
   );
 }
 
+function ParrotLessonRedirect() {
+  const { lessonId } = useParams();
+  const entry = resolveParrotLesson(lessonId);
+
+  if (!entry) return <Navigate replace to="/lessons" />;
+
+  return (
+    <Navigate
+      replace
+      to={getLessonScenePath("parrot", entry.id, 0)}
+    />
+  );
+}
+
+function ParrotLessonSceneRoute() {
+  const { lessonId, sceneNumber } = useParams();
+  const navigate = useNavigate();
+  const entry = resolveParrotLesson(lessonId);
+
+  if (!entry) return <Navigate replace to="/lessons" />;
+
+  const resolved = resolveParrotLessonScene(lessonId, sceneNumber);
+  if (!resolved) {
+    return (
+      <Navigate
+        replace
+        to={getLessonScenePath("parrot", entry.id, 0)}
+      />
+    );
+  }
+
+  return (
+    <LessonPlayer
+      key={`parrot:${entry.id}`}
+      lesson={entry.lesson}
+      onBack={() => navigate("/lessons")}
+      onHome={() => navigate("/")}
+      onNavigateScene={(sceneIndex) =>
+        navigate(getLessonScenePath("parrot", entry.id, sceneIndex))
+      }
+      routedSceneIndex={resolved.sceneIndex}
+    />
+  );
+}
+
+function MyLessonRouteUnavailable() {
+  return <Navigate replace to="/lessons" />;
+}
+
 export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
     <Routes>
@@ -640,6 +703,22 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
           />
         }
         path="/lessons/my/create"
+      />
+      <Route
+        element={<ParrotLessonRedirect />}
+        path="/lessons/parrot/:lessonId"
+      />
+      <Route
+        element={<ParrotLessonSceneRoute />}
+        path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
+      />
+      <Route
+        element={<MyLessonRouteUnavailable />}
+        path="/lessons/my/:lessonId"
+      />
+      <Route
+        element={<MyLessonRouteUnavailable />}
+        path="/lessons/my/:lessonId/scenes/:sceneNumber"
       />
       <Route
         element={
