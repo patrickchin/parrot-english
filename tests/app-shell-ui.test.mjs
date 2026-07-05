@@ -132,6 +132,18 @@ test("canonical Parrot scene routes render the addressed one-based scene", () =>
   assert.match(html, /Scene 2 of 5/);
 });
 
+test("lesson routes expose distinct lesson-list and main-menu controls", () => {
+  const html = renderApplicationRoute(
+    "/lessons/parrot/01-peppas-high-ball/scenes/2",
+  );
+
+  assert.match(html, /aria-label="Back to lesson list"/);
+  assert.match(html, />Back to lessons<\/span>/);
+  assert.match(html, /aria-label="Back to main menu"/);
+  assert.match(html, /class="lesson-home-button"/);
+  assert.match(html, />Back to main menu<\/span>/);
+});
+
 test("the application shell builds login redirects from the current URL", () => {
   assert.match(
     app,

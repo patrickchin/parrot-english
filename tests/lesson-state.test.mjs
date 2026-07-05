@@ -146,6 +146,46 @@ describe("scene-script lesson state", () => {
     assert.equal(replaying.stepIndex, 0);
   });
 
+  it("selects a routed scene while clearing transient lesson state", () => {
+    const selected = reduce(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Feedback,
+        stepIndex: 1,
+        attemptCount: 1,
+        feedback: "Almost!",
+        transcript: "partial response",
+        feedbackOutcome: "retry",
+      },
+      { type: "SELECT_SCENE", sceneIndex: 1 },
+    );
+
+    assert.deepEqual(selected, {
+      ...createInitialLessonState(),
+      sceneIndex: 1,
+    });
+  });
+
+  it("preserves state when a routed scene selection is invalid", () => {
+    const current = {
+      ...createInitialLessonState(),
+      phase: LessonPhase.Speaking,
+      sceneIndex: 1,
+    };
+
+    assert.strictEqual(
+      reduce(current, { type: "SELECT_SCENE", sceneIndex: -1 }),
+      current,
+    );
+    assert.strictEqual(
+      reduce(current, {
+        type: "SELECT_SCENE",
+        sceneIndex: lesson.scenes.length,
+      }),
+      current,
+    );
+  });
+
   it("moves from a model line into held recording and evaluation", () => {
     const waiting = startAtUser();
     const recording = reduce(waiting, { type: "MIC_STARTED" });

@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
+import { ChevronLeft, ChevronRight, House, Mic } from "lucide-react";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useReducer,
@@ -21,6 +22,11 @@ import {
 } from "react-router";
 import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
+import { createLessonRouteActivityGuard } from "../lib/lesson-route-activity";
+import {
+  getLessonEventTargetSceneIndex,
+  getLessonRouteReconciliationEvent,
+} from "../lib/lesson-route-transition";
 import { getLessonScenePresentation } from "../lib/lesson-scene";
 import {
   LessonPhase,
@@ -66,6 +72,7 @@ type LessonEvent =
   | { type: "SCENE_PREVIOUS" }
   | { type: "SCENE_NEXT" }
   | { type: "REPLAY_LESSON" }
+  | { type: "SELECT_SCENE"; sceneIndex: number }
   | { type: "LINE_DONE" }
   | { type: "MIC_STARTED" }
   | { type: "MIC_RELEASED" }
@@ -107,6 +114,8 @@ function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
 export function LessonPlayer({
   lesson: currentLesson,
   onBack,
+  onHome,
+  onNavigateScene,
   routedSceneIndex,
 }: LessonPlayerProps) {
   const [state, dispatch] = useReducer(
@@ -125,10 +134,83 @@ export function LessonPlayer({
   const pressSequenceRef = useRef(0);
   const pressedRef = useRef(false);
   const startActionRef = useRef<HTMLButtonElement | null>(null);
+  const routeActivityGuardRef = useRef(createLessonRouteActivityGuard());
+  const routedSceneRef = useRef(routedSceneIndex);
+  const pendingRoutedEventRef = useRef<{
+    event: LessonEvent;
+    sceneIndex: number;
+  } | null>(null);
+
+  if (routedSceneRef.current !== routedSceneIndex) {
+    routedSceneRef.current = routedSceneIndex;
+    routeActivityGuardRef.current.invalidate();
+  }
+
+  const cancelPendingWork = useCallback(() => {
+    pressedRef.current = false;
+    pressSequenceRef.current += 1;
+    playbackGenerationRef.current += 1;
+    playbackControllerRef.current?.abort();
+    playbackControllerRef.current = null;
+    recordingControllerRef.current?.abort();
+    recordingControllerRef.current = null;
+    recordingRef.current?.cancel();
+    recordingRef.current = null;
+    evaluationControllerRef.current?.abort();
+    evaluationControllerRef.current = null;
+  }, []);
+
+  const dispatchLessonEvent = useCallback(
+    (event: LessonEvent, { cancel = false }: { cancel?: boolean } = {}) => {
+      const targetSceneIndex = getLessonEventTargetSceneIndex(
+        state,
+        event,
+        currentLesson,
+      );
+      if (targetSceneIndex !== null) {
+        routeActivityGuardRef.current.invalidate();
+        cancelPendingWork();
+        setError("");
+        pendingRoutedEventRef.current = {
+          event,
+          sceneIndex: targetSceneIndex,
+        };
+        onNavigateScene(targetSceneIndex);
+        return;
+      }
+
+      if (cancel) {
+        cancelPendingWork();
+        setError("");
+      }
+      dispatch(event);
+    },
+    [cancelPendingWork, currentLesson, onNavigateScene, state],
+  );
 
   useEffect(() => {
-    startActionRef.current?.focus({ preventScroll: true });
-  }, []);
+    const pendingRoutedEvent = pendingRoutedEventRef.current;
+    pendingRoutedEventRef.current = null;
+    if (state.sceneIndex === routedSceneIndex) return;
+
+    cancelPendingWork();
+    setError("");
+    dispatch(
+      getLessonRouteReconciliationEvent(
+        pendingRoutedEvent,
+        routedSceneIndex,
+      ),
+    );
+  }, [cancelPendingWork, routedSceneIndex, state.sceneIndex]);
+
+  useEffect(() => {
+    if (
+      state.sceneIndex === routedSceneIndex &&
+      state.phase === LessonPhase.Idle
+    ) {
+      startActionRef.current?.focus({ preventScroll: true });
+    }
+  }, [routedSceneIndex, state.phase, state.sceneIndex]);
 
   const currentStep = getCurrentStep(state, currentLesson);
   if (!currentStep) throw new Error("The lesson position is invalid.");
@@ -139,6 +221,7 @@ export function LessonPlayer({
   const progressLabel = getLessonProgressLabel(state, currentStep);
 
   useEffect(() => {
+    if (state.sceneIndex !== routedSceneRef.current) return;
     if (
       state.phase !== LessonPhase.Speaking &&
       state.phase !== LessonPhase.Feedback
@@ -163,11 +246,16 @@ export function LessonPlayer({
 
     const generation = playbackGenerationRef.current + 1;
     playbackGenerationRef.current = generation;
+    const routeGeneration = routeActivityGuardRef.current.capture();
     const playbackOperation = createPlaybackOperation({
       generation,
       getCurrentGeneration: () => playbackGenerationRef.current,
-      onCompleted: () => dispatch(completionEvent),
+      onCompleted: () => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+        dispatchLessonEvent(completionEvent);
+      },
       onFailed: (caughtError) => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         const message =
           caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
         setError(`Audio unavailable: ${message}`);
@@ -199,6 +287,8 @@ export function LessonPlayer({
     };
   }, [
     currentLesson,
+    dispatchLessonEvent,
+    routedSceneIndex,
     state.feedback,
     state.phase,
     state.sceneIndex,
@@ -207,6 +297,7 @@ export function LessonPlayer({
 
   useEffect(
     () => () => {
+      routeActivityGuardRef.current.invalidate();
       pressedRef.current = false;
       pressSequenceRef.current += 1;
       playbackGenerationRef.current += 1;
@@ -218,20 +309,6 @@ export function LessonPlayer({
     []
   );
 
-  function cancelPendingWork() {
-    pressedRef.current = false;
-    pressSequenceRef.current += 1;
-    playbackGenerationRef.current += 1;
-    playbackControllerRef.current?.abort();
-    playbackControllerRef.current = null;
-    recordingControllerRef.current?.abort();
-    recordingControllerRef.current = null;
-    recordingRef.current?.cancel();
-    recordingRef.current = null;
-    evaluationControllerRef.current?.abort();
-    evaluationControllerRef.current = null;
-  }
-
   function dispatchSceneControl(
     type:
       | "PLAY_SCENE"
@@ -240,9 +317,7 @@ export function LessonPlayer({
       | "SCENE_NEXT"
       | "REPLAY_LESSON"
   ) {
-    cancelPendingWork();
-    setError("");
-    dispatch({ type });
+    dispatchLessonEvent({ type }, { cancel: true });
   }
 
   function handleStartAction() {
@@ -266,19 +341,25 @@ export function LessonPlayer({
     pressedRef.current = true;
     const sequence = pressSequenceRef.current + 1;
     pressSequenceRef.current = sequence;
+    const routeGeneration = routeActivityGuardRef.current.capture();
     const controller = new AbortController();
     recordingControllerRef.current = controller;
     setError("");
 
     try {
       const session = await startSpeechRecording({ signal: controller.signal });
-      if (!pressedRef.current || pressSequenceRef.current !== sequence) {
+      if (
+        !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
+        !pressedRef.current ||
+        pressSequenceRef.current !== sequence
+      ) {
         session.cancel();
         return;
       }
       recordingRef.current = session;
       dispatch({ type: "MIC_STARTED" });
     } catch (caughtError) {
+      if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
       if (isAbortError(caughtError)) return;
       pressedRef.current = false;
       setError(getMicrophoneErrorMessage(caughtError));
@@ -287,6 +368,7 @@ export function LessonPlayer({
 
   async function finishRecording() {
     if (!pressedRef.current) return;
+    const routeGeneration = routeActivityGuardRef.current.capture();
     pressedRef.current = false;
     const generation = pressSequenceRef.current;
     const session = recordingRef.current;
@@ -308,13 +390,16 @@ export function LessonPlayer({
       evaluationControllerRef,
       generation,
       getCurrentGeneration: () => pressSequenceRef.current,
-      onEvaluated: (result) =>
+      onEvaluated: (result) => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         dispatch({
           type: "EVALUATED",
           passed: result.passed,
           transcript: result.transcript,
-        }),
+        });
+      },
       onFailed: (caughtError) => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         setError(
           caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
             ? "Speech checking is not configured."
@@ -324,7 +409,10 @@ export function LessonPlayer({
         );
         dispatch({ type: "EVALUATION_FAILED" });
       },
-      onReleased: () => dispatch({ type: "MIC_RELEASED" }),
+      onReleased: () => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+        dispatch({ type: "MIC_RELEASED" });
+      },
       recordingController,
       recordingControllerRef,
       session,
@@ -417,6 +505,16 @@ export function LessonPlayer({
         >
           <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
           <span>Back to lessons</span>
+        </button>
+
+        <button
+          aria-label="Back to main menu"
+          className="lesson-home-button"
+          onClick={onHome}
+          type="button"
+        >
+          <House aria-hidden="true" strokeWidth={3.2} />
+          <span>Back to main menu</span>
         </button>
 
         <span

@@ -1108,6 +1108,36 @@ select:focus-visible {
   height: 28px;
 }
 
+.lesson-home-button {
+  position: absolute;
+  top: clamp(14px, 2.2vh, 28px);
+  right: var(--lesson-edge-gap);
+  z-index: 20;
+  display: inline-flex;
+  min-height: var(--lesson-pill-height);
+  align-items: center;
+  gap: 8px;
+  border: var(--lesson-pill-border);
+  border-radius: var(--lesson-pill-radius);
+  background: rgb(255 255 255 / 94%);
+  color: #204c7f;
+  padding: 0 var(--lesson-pill-padding);
+  cursor: pointer;
+  font-size: var(--lesson-ui-font-size);
+  font-weight: 950;
+  box-shadow: 0 5px 0 rgb(39 93 127 / 24%);
+}
+
+.lesson-home-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+.lesson-home-button:focus-visible {
+  outline: 5px solid #ff467b;
+  outline-offset: 4px;
+}
+
 .lesson-start-layer {
   position: absolute;
   inset: 0;
@@ -1535,6 +1565,17 @@ select:focus-visible {
   }
 
   .lesson-list-back-button > span {
+    display: none;
+  }
+
+  .lesson-home-button {
+    width: var(--lesson-pill-height);
+    min-width: var(--lesson-pill-height);
+    justify-content: center;
+    padding: 0;
+  }
+
+  .lesson-home-button > span {
     display: none;
   }
 

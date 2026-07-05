@@ -50,14 +50,14 @@ describe("scene playback controls", () => {
     assert.doesNotMatch(styles, /\.playback-control-button|\.volume-button/);
   });
 
-  it("focuses the prominent Start action when the routed player mounts", () => {
+  it("focuses Start only when an idle reducer state matches the routed scene", () => {
     assert.match(
       app,
       /const startActionRef = useRef<HTMLButtonElement \| null>\(null\)/,
     );
     assert.match(
       app,
-      /useEffect\(\(\) => \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}, \[\]\)/,
+      /useEffect\(\(\) => \{\s*if \(\s*state\.sceneIndex === routedSceneIndex &&\s*state\.phase === LessonPhase\.Idle\s*\) \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}\s*\}, \[routedSceneIndex, state\.phase, state\.sceneIndex\]\)/,
     );
     assert.match(
       app,
@@ -66,21 +66,18 @@ describe("scene playback controls", () => {
   });
 
   it("cancels pending learner work before manual scene controls", () => {
-    assert.match(app, /function cancelPendingWork/);
+    assert.match(app, /const cancelPendingWork = useCallback\(\(\) => \{/);
     assert.match(app, /pressSequenceRef\.current \+= 1/);
     assert.match(app, /playbackControllerRef\.current\?\.abort\(\)/);
     assert.match(app, /recordingControllerRef\.current\?\.abort\(\)/);
     assert.match(app, /recordingRef\.current\?\.cancel\(\)/);
     assert.match(app, /evaluationControllerRef\.current\?\.abort\(\)/);
     const sceneControl = app.match(
-      /function dispatchSceneControl\([\s\S]*?\n\s{2}\) \{([\s\S]*?)\n\s{2}\}/
+      /function dispatchSceneControl\([\s\S]*?\n\s{2}\) \{([\s\S]*?)\n\s{2}\}/,
     );
     assert.ok(sceneControl);
 
-    const cancelIndex = sceneControl[1].indexOf("cancelPendingWork()");
-    const dispatchIndex = sceneControl[1].indexOf("dispatch({ type })");
-    assert.ok(cancelIndex >= 0);
-    assert.ok(dispatchIndex > cancelIndex);
+    assert.match(sceneControl[1], /dispatchLessonEvent\(\{ type \}, \{ cancel: true \}\)/);
   });
 
   it("invalidates stale playback outcomes before controls or unmount can move state", () => {
@@ -88,7 +85,7 @@ describe("scene playback controls", () => {
     assert.match(app, /const playbackGenerationRef = useRef\(0\)/);
     assert.match(
       app,
-      /function cancelPendingWork\(\) \{[\s\S]*?playbackGenerationRef\.current \+= 1;[\s\S]*?playbackControllerRef\.current\?\.abort\(\)/
+      /const cancelPendingWork = useCallback\(\(\) => \{[\s\S]*?playbackGenerationRef\.current \+= 1;[\s\S]*?playbackControllerRef\.current\?\.abort\(\)/,
     );
     assert.match(
       app,
@@ -106,7 +103,7 @@ describe("scene playback controls", () => {
   it("invalidates pending speech before unmount aborts it", () => {
     assert.match(
       app,
-      /useEffect\(\s*\(\) => \(\) => \{\s*pressedRef\.current = false;\s*pressSequenceRef\.current \+= 1;[\s\S]*?recordingControllerRef\.current\?\.abort\(\)/
+      /useEffect\(\s*\(\) => \(\) => \{\s*routeActivityGuardRef\.current\.invalidate\(\);\s*pressedRef\.current = false;\s*pressSequenceRef\.current \+= 1;[\s\S]*?recordingControllerRef\.current\?\.abort\(\)/,
     );
   });
 
@@ -142,5 +139,70 @@ describe("scene playback controls", () => {
       app,
       /getCurrentGeneration: \(\) => pressSequenceRef\.current/
     );
+  });
+
+  it("uses URL-first scene transitions and reconciles POP routes through the production helper", () => {
+    assert.match(app, /createLessonRouteActivityGuard/);
+    assert.match(app, /getLessonEventTargetSceneIndex/);
+    assert.match(app, /getLessonRouteReconciliationEvent/);
+    assert.match(app, /const routeActivityGuardRef = useRef\(/);
+    assert.match(app, /const routedSceneRef = useRef\(routedSceneIndex\)/);
+    assert.match(app, /const pendingRoutedEventRef = useRef<\{[\s\S]*?event: LessonEvent;[\s\S]*?sceneIndex: number;[\s\S]*?\} \| null>\(null\)/);
+    assert.match(
+      app,
+      /if \(routedSceneRef\.current !== routedSceneIndex\) \{\s*routedSceneRef\.current = routedSceneIndex;\s*routeActivityGuardRef\.current\.invalidate\(\);\s*\}/,
+    );
+    assert.match(
+      app,
+      /useEffect\(\(\) => \{\s*const pendingRoutedEvent = pendingRoutedEventRef\.current;\s*pendingRoutedEventRef\.current = null;\s*if \(state\.sceneIndex === routedSceneIndex\) return;[\s\S]*?dispatch\(\s*getLessonRouteReconciliationEvent\(\s*pendingRoutedEvent,\s*routedSceneIndex,?\s*\),?\s*\)/,
+    );
+    assert.match(
+      app,
+      /const targetSceneIndex = getLessonEventTargetSceneIndex\(\s*state,\s*event,\s*currentLesson,?\s*\)/,
+    );
+    assert.match(app, /pendingRoutedEventRef\.current = \{\s*event,\s*sceneIndex: targetSceneIndex,\s*\}/);
+    assert.match(app, /onNavigateScene\(targetSceneIndex\);\s*return;/);
+  });
+
+  it("routes every potentially scene-crossing completion through dispatchLessonEvent", () => {
+    assert.match(app, /onCompleted: \(\) =>[\s\S]*?dispatchLessonEvent\(completionEvent\)/);
+    assert.match(app, /dispatchLessonEvent\(\{ type \}, \{ cancel: true \}\)/);
+    assert.match(app, /dispatchSceneControl\("REPLAY_LESSON"\)/);
+    assert.match(app, /dispatchSceneControl\("SCENE_PREVIOUS"\)/);
+    assert.match(app, /dispatchSceneControl\("SCENE_NEXT"\)/);
+    assert.doesNotMatch(app, /dispatch\(completionEvent\)/);
+  });
+
+  it("requires the current route generation for asynchronous playback and speech outcomes", () => {
+    assert.match(app, /const routeGeneration = routeActivityGuardRef\.current\.capture\(\)/);
+    assert.match(
+      app,
+      /onCompleted: \(\) => \{\s*if \(!routeActivityGuardRef\.current\.isCurrent\(routeGeneration\)\) return;\s*dispatchLessonEvent\(completionEvent\);\s*\}/,
+    );
+    assert.match(
+      app,
+      /onFailed: \(caughtError\) => \{\s*if \(!routeActivityGuardRef\.current\.isCurrent\(routeGeneration\)\) return;/,
+    );
+    assert.match(
+      app,
+      /const session = await startSpeechRecording[\s\S]*?if \(\s*!routeActivityGuardRef\.current\.isCurrent\(routeGeneration\) \|\|/,
+    );
+    assert.match(
+      app,
+      /onEvaluated: \(result\) => \{\s*if \(!routeActivityGuardRef\.current\.isCurrent\(routeGeneration\)\) return;/,
+    );
+    assert.match(
+      app,
+      /onFailed: \(caughtError\) => \{\s*if \(!routeActivityGuardRef\.current\.isCurrent\(routeGeneration\)\) return;[\s\S]*?Speech check failed/,
+    );
+  });
+
+  it("renders distinct lesson-list and main-menu navigation controls", () => {
+    assert.match(app, /aria-label="Back to lesson list"/);
+    assert.match(
+      app,
+      /aria-label="Back to main menu"[\s\S]*?className="lesson-home-button"[\s\S]*?onClick=\{onHome\}/,
+    );
+    assert.match(styles, /\.lesson-home-button:focus-visible\s*\{/);
   });
 });
