@@ -62,7 +62,7 @@ test("app navigation opens only available lessons and returns to the list", asyn
   );
 });
 
-test("lesson list renders discovered lessons and disabled previews", async () => {
+test("lesson list renders all seven discovered lessons as playable", async () => {
   assert.equal(
     existsSync(lessonListUrl),
     true,
@@ -76,7 +76,8 @@ test("lesson list renders discovered lessons and disabled previews", async () =>
 
   assert.match(html, /Choose a lesson/);
   assert.match(html, /Peppa&#x27;s High Ball/);
-  assert.equal((html.match(/<article/g) ?? []).length, 4);
-  assert.equal((html.match(/disabled=""/g) ?? []).length, 3);
-  assert.match(html, /Coming soon/);
+  assert.equal((html.match(/<article/g) ?? []).length, 7);
+  assert.equal((html.match(/disabled=""/g) ?? []).length, 0);
+  assert.equal((html.match(/Start lesson/g) ?? []).length, 7);
+  assert.doesNotMatch(html, /Coming soon/);
 });

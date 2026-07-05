@@ -1,0 +1,191 @@
+{
+  "title": "The Red Flower",
+  "childName": "Bella",
+  "goalPhrases": [
+    "What color is it?",
+    "It is red."
+  ],
+  "summary": "Peppa and Dolly search the garden for a red flower to finish their basket.",
+  "detailedSummary": "Peppa and Dolly have a basket that needs one red flower. They look closely at the colorful flowers and identify the red one. Peppa adds it to the basket, and the friends admire the finished display.",
+  "location": {
+    "name": "The flower garden",
+    "description": "A sunny garden with green grass, colorful flower beds, and a small basket beside a tall tree."
+  },
+  "scenes": [
+    {
+      "title": "Colorful Flowers",
+      "settingDescription": "Peppa stands beside the flower beds while Dolly and the user look at the colorful blooms near the basket.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "Look at the flowers!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "So many colors!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "A Color Question",
+      "settingDescription": "Peppa points toward one flower while Dolly and the user look closely from beside the basket.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "What color is it?",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's ask with Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "What color is it?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "What color is it?",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "The Red One",
+      "settingDescription": "Dolly hovers beside the red flower while Peppa and the user watch near the flower bed.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "dolly",
+          "dialogue": "It is red.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Let's copy Dolly!",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "It is red.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "user",
+          "dialogue": "It is red.",
+          "emotes": {
+            "peppa": "listening",
+            "dolly": "listening",
+            "user": "talking"
+          }
+        }
+      ]
+    },
+    {
+      "title": "The Flower Is Found",
+      "settingDescription": "Peppa holds the red flower above the basket while Dolly and the user smile beside her.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "A red flower!",
+          "emotes": {
+            "peppa": "surprised",
+            "dolly": "listening",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "We found it!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        }
+      ]
+    },
+    {
+      "title": "The Finished Basket",
+      "settingDescription": "The red flower sits in the finished basket as Peppa, Dolly, and the user gather around it.",
+      "background": "episode-garden",
+      "characters": ["peppa", "dolly", "user"],
+      "steps": [
+        {
+          "speaker": "peppa",
+          "dialogue": "The basket is ready!",
+          "emotes": {
+            "peppa": "talking",
+            "dolly": "happy",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "dolly",
+          "dialogue": "Red looks lovely.",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "talking",
+            "user": "listening"
+          }
+        },
+        {
+          "speaker": "narrator",
+          "dialogue": "Great job, Bella! The red flower is in the basket!",
+          "emotes": {
+            "peppa": "happy",
+            "dolly": "happy",
+            "user": "happy"
+          }
+        }
+      ]
+    }
+  ]
+}
