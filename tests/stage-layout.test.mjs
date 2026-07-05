@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 
 function getRule(selector) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -16,6 +17,7 @@ describe("catalog-driven stage layout", () => {
   it("reserves a safe area for the lesson control dock", () => {
     const stage = getRule(".lesson-stage");
     const sprite = getRule(".character-sprite");
+    const controls = getRule(".scene-controls");
     const dock = getRule(".scene-control-dock");
 
     assert.match(
@@ -26,9 +28,36 @@ describe("catalog-driven stage layout", () => {
       sprite,
       /bottom:\s*calc\(var\(--control-safe-area\)\s*\+\s*clamp\(4px,\s*1vh,\s*14px\)\)/,
     );
-    assert.match(dock, /position:\s*absolute/);
-    assert.match(dock, /grid-template-columns:/);
+    assert.match(controls, /position:\s*absolute/);
+    assert.match(controls, /grid-template-columns:/);
     assert.match(dock, /background:\s*rgb\(23 60 103/);
+  });
+
+  it("keeps pink chevron navigation outside the center action dock", () => {
+    const controls = app.match(
+      /<nav aria-label="Lesson controls" className="scene-controls">[\s\S]*?<\/nav>/,
+    );
+    const navigationButton = getRule(".scene-control-button");
+    const controlGroup = getRule(".scene-controls");
+    const dock = getRule(".scene-control-dock");
+
+    assert.ok(controls, "Expected the lesson controls nav");
+    assert.match(
+      controls[0],
+      /aria-label="Previous scene"[\s\S]*<ChevronLeft[\s\S]*<div className="scene-control-dock">[\s\S]*aria-label=\{playbackLabel\}[\s\S]*<\/div>\s*<button\s*aria-label="Next scene"[\s\S]*<ChevronRight/,
+    );
+    assert.match(controlGroup, /width:\s*min\(86vw,\s*1320px\)/);
+    assert.match(
+      controlGroup,
+      /grid-template-columns:\s*auto minmax\(0,\s*1fr\) auto/,
+    );
+    assert.match(
+      dock,
+      /grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
+    );
+    assert.match(navigationButton, /background:\s*#ff467b/);
+    assert.match(navigationButton, /color:\s*#fff/);
+    assert.match(navigationButton, /border:\s*5px solid #fff/);
   });
 
   it("positions every character through shared catalog slots", () => {

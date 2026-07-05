@@ -1163,14 +1163,22 @@ select:focus-visible {
   box-shadow: 0 7px 0 rgb(145 24 72 / 45%), 0 17px 34px rgb(21 77 116 / 22%);
 }
 
-.scene-control-dock {
+.scene-controls {
   position: absolute;
-  right: clamp(12px, 2vw, 28px);
   bottom: clamp(12px, 2vh, 24px);
-  left: clamp(12px, 2vw, 28px);
+  left: 50%;
   z-index: 24;
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  width: min(86vw, 1320px);
+  align-items: center;
+  gap: clamp(10px, 1.2vw, 18px);
+  transform: translateX(-50%);
+}
+
+.scene-control-dock {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   min-height: 86px;
   align-items: center;
   gap: clamp(8px, 1vw, 16px);
@@ -1200,10 +1208,14 @@ select:focus-visible {
 }
 
 .scene-control-button {
-  width: 58px;
+  width: 64px;
+  min-width: 64px;
+  min-height: 64px;
   aspect-ratio: 1;
-  background: #fff;
-  color: #173c67;
+  border: 5px solid #fff;
+  background: #ff467b;
+  color: #fff;
+  box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
 }
 
 .scene-control-button:disabled {
