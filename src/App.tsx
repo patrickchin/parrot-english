@@ -420,12 +420,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
               />
             ))}
           </div>
-          <span
-            aria-label={`Build version ${versionLabel}`}
-            className="build-version-badge"
-          >
-            {versionLabel}
-          </span>
         </header>
 
         <button
@@ -437,6 +431,13 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
           <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
           <span>Back to lessons</span>
         </button>
+
+        <span
+          aria-label={`Build version ${versionLabel}`}
+          className="build-version-badge"
+        >
+          {versionLabel}
+        </span>
 
         <button
           aria-label={muted ? "Unmute lesson audio" : "Mute lesson audio"}
