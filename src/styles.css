@@ -1467,25 +1467,30 @@ select:focus-visible {
     padding: 14px 18px;
   }
 
+  .scene-controls {
+    width: calc(100vw - 20px);
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    gap: 8px;
+  }
+
   .scene-control-dock {
     grid-template-areas:
-      "prompt prompt prompt"
-      "back playback next";
-    grid-template-columns: auto minmax(0, 1fr) auto;
+      "prompt"
+      "playback";
+    grid-template-columns: minmax(0, 1fr);
     border-radius: 28px;
     padding: 10px;
   }
 
-  .scene-control-button:first-child {
-    grid-area: back;
+  .scene-control-button {
+    width: 52px;
+    min-width: 52px;
+    min-height: 52px;
   }
 
   .playback-control-button {
     grid-area: playback;
-  }
-
-  .scene-control-button:last-child {
-    grid-area: next;
+    justify-self: center;
   }
 
   .learner-mic-prompt,
@@ -1558,8 +1563,13 @@ select:focus-visible {
     top: 112px;
   }
 
-  .scene-control-dock {
+  .scene-controls {
     bottom: 6px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 6px;
+  }
+
+  .scene-control-dock {
     min-height: 62px;
     gap: 6px;
     border-width: 3px;
@@ -1621,8 +1631,8 @@ select:focus-visible {
   }
 
   .scene-control-dock {
-    grid-template-areas: "back playback prompt next";
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: "playback prompt";
+    grid-template-columns: auto minmax(0, 1fr);
     border-radius: 999px;
   }
 

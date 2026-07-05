@@ -150,7 +150,15 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       compactStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt prompt prompt"\s*"back playback next"/,
+      /\.scene-controls\s*\{[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-columns:\s*52px minmax\(0,\s*1fr\) 52px/,
+    );
+    assert.match(
+      compactStyles,
+      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt"\s*"playback"[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+    );
+    assert.match(
+      compactStyles,
+      /\.scene-control-button\s*\{[^}]*width:\s*52px[^}]*min-width:\s*52px[^}]*min-height:\s*52px/,
     );
     assert.match(
       compactStyles,
@@ -177,7 +185,11 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       shortStyles,
-      /\.scene-control-dock\s*\{[^}]*bottom:\s*6px[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
+      /\.scene-controls\s*\{[^}]*bottom:\s*6px[^}]*grid-template-columns:\s*44px minmax\(0,\s*1fr\) 44px/,
+    );
+    assert.match(
+      shortStyles,
+      /\.scene-control-dock\s*\{[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
     );
     assert.match(
       shortStyles,
@@ -211,7 +223,7 @@ describe("catalog-driven stage layout", () => {
     );
     assert.match(
       combinedStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"back playback prompt next"/,
+      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"playback prompt"[^}]*grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
     );
     assert.match(
       combinedStyles,
