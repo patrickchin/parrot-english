@@ -3,10 +3,8 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import { describe, it } from "node:test";
-import {
-  buildQuestionnaireSql,
-  validateQuestionnaireDefinition,
-} from "../scripts/publish-questionnaire.mjs";
+import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
+import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
 import * as schema from "../src/db/schema.ts";
 
 const EXPECTED_MODELS = {
@@ -102,6 +100,54 @@ function indexDetails(database, table) {
 }
 
 describe("onboarding infrastructure", () => {
+  it("keeps deployed v2 profile persistence independent of questionnaire tables", () => {
+    const repository = readFileSync(
+      new URL("../worker/onboarding-repository.ts", import.meta.url),
+      "utf8",
+    );
+
+    assert.doesNotMatch(repository, /\bquestionnaireQuestion\b/);
+    assert.doesNotMatch(repository, /\bquestionnaire\b/);
+    assert.doesNotMatch(repository, /\bassignQuestionnaireVersion\b/);
+    assert.doesNotMatch(repository, /\basc\b/);
+  });
+
+  it("validates the six simple v2 prose questions", () => {
+    const definition = validateOnboardingQuestionnaire(questionnaireV2);
+
+    assert.deepEqual(
+      definition.questions.map(({ promptEn }) => promptEn),
+      [
+        "Hi! I'm Peppa. What's your name?",
+        "How old are you?",
+        "What cartoons do you like?",
+        "What animals do you like?",
+        "What do you like doing for fun?",
+        "What kind of stories do you like?",
+      ],
+    );
+    assert.deepEqual(
+      definition.questions.map(({ canonicalField }) => canonicalField),
+      ["name", "age", null, null, null, null],
+    );
+    assert.ok(Object.isFrozen(definition));
+    assert.ok(Object.isFrozen(definition.questions));
+    assert.ok(definition.questions.every(Object.isFrozen));
+  });
+
+  it("rejects duplicate positions and unknown definition fields", () => {
+    assert.throws(
+      () =>
+        validateOnboardingQuestionnaire({
+          ...questionnaireV2,
+          questions: questionnaireV2.questions.map((entry, index) =>
+            index === 1 ? { ...entry, position: 1, mystery: true } : entry,
+          ),
+        }),
+      /Invalid onboarding questionnaire/,
+    );
+  });
+
   it("exports separate learner profile and questionnaire Drizzle models", () => {
     for (const [exportName, expected] of Object.entries(EXPECTED_MODELS)) {
       const table = schema[exportName];
@@ -210,159 +256,8 @@ describe("onboarding infrastructure", () => {
   });
 });
 
-describe("questionnaire publishing", () => {
-  const definitionPath = new URL(
-    "../content/onboarding/questionnaire-v1.json",
-    import.meta.url,
-  );
-
-  function readDefinition() {
-    return JSON.parse(readFileSync(definitionPath, "utf8"));
-  }
-
-  it("validates the complete initial questionnaire and saved audio contract", () => {
-    const definition = readDefinition();
-    const validated = validateQuestionnaireDefinition(definition);
-
-    assert.equal(validated.version, 1);
-    assert.equal(validated.questions.length, 5);
-    assert.deepEqual(
-      validated.questions.map(({ position }) => position),
-      [1, 2, 3, 4, 5],
-    );
-    assert.deepEqual(
-      validated.questions.map(({ answerKey }) => answerKey),
-      [
-        "age",
-        "favoriteCartoons",
-        "favoriteAnimals",
-        "favoriteActivities",
-        "favoriteStoryTopics",
-      ],
-    );
-
-    for (const audioId of [
-      validated.introductionAudioId,
-      ...validated.questions.map(({ audioId }) => audioId),
-    ]) {
-      const line = validated.audioLines[audioId];
-      assert.equal(line.speaker, "peppa", audioId);
-      assert.equal(
-        existsSync(new URL(`../public${line.src}`, import.meta.url)),
-        true,
-        `${audioId} source audio`,
-      );
-    }
-  });
-
-  it("rejects invalid ordering, forward branches, and audio prompt drift", () => {
-    const definition = readDefinition();
-
-    assert.throws(
-      () =>
-        validateQuestionnaireDefinition({
-          ...definition,
-          questions: definition.questions.map((entry, index) => ({
-            ...entry,
-            position: index === 4 ? 4 : entry.position,
-          })),
-        }),
-      /positions must be unique and contiguous/i,
-    );
-    assert.throws(
-      () =>
-        validateQuestionnaireDefinition({
-          ...definition,
-          questions: definition.questions.map((entry, index) =>
-            index === 0
-              ? {
-                  ...entry,
-                  branching: {
-                    key: "favoriteAnimals",
-                    operator: "includes",
-                    value: "dog",
-                  },
-                }
-              : entry,
-          ),
-        }),
-      /earlier question/i,
-    );
-    assert.throws(
-      () =>
-        validateQuestionnaireDefinition({
-          ...definition,
-          questions: definition.questions.map((entry, index) =>
-            index === 0 ? { ...entry, promptEn: "A changed prompt" } : entry,
-          ),
-        }),
-      /audio text must exactly match/i,
-    );
-  });
-
-  it("builds escaped data-only activation SQL", () => {
-    const definition = readDefinition();
-    const sql = buildQuestionnaireSql(
-      {
-        ...definition,
-        questions: definition.questions.map((entry, index) =>
-          index === 1 ? { ...entry, promptZh: "孩子's choice" } : entry,
-        ),
-      },
-      1_783_257_600_000,
-    );
-
-    assert.match(sql, /UPDATE questionnaire SET status = 'inactive'/);
-    assert.match(sql, /INSERT INTO questionnaire /);
-    assert.match(sql, /DELETE FROM questionnaire_question/);
-    assert.equal(
-      (sql.match(/INSERT INTO questionnaire_question/g) ?? []).length,
-      5,
-    );
-    assert.match(sql, /孩子''s choice/);
-    assert.doesNotMatch(sql, /\b(?:CREATE|ALTER|DROP)\b/i);
-  });
-
-  it("keeps an identical publish idempotent and rejects changed versions", () => {
-    const definition = readDefinition();
-    const database = createMigratedDatabase();
-    try {
-      database.exec(buildQuestionnaireSql(definition, 1_000));
-      database.exec(buildQuestionnaireSql(definition, 2_000));
-
-      const changed = JSON.parse(JSON.stringify(definition));
-      changed.questions[0].validation.max = 18;
-      assert.throws(
-        () =>
-          database.exec(
-            `BEGIN; ${buildQuestionnaireSql(changed, 3_000)} COMMIT;`,
-          ),
-        /constraint/i,
-      );
-      database.exec("ROLLBACK");
-
-      assert.equal(
-        database
-          .prepare(
-            "SELECT definition_hash FROM questionnaire WHERE version = 1",
-          )
-          .get().definition_hash,
-        "0e256950166405c15d0b7e303b733240f19558bb7aad48d217caaaf344014b8d",
-      );
-      assert.equal(
-        database
-          .prepare(
-            "SELECT validation_json FROM questionnaire_question WHERE answer_key = 'age'",
-          )
-          .get().validation_json,
-        '{"min":3,"max":17}',
-      );
-    } finally {
-      database.close();
-    }
-  });
-
-  it("migrates and publishes D1 before deploying the gated Worker", () => {
+describe("checked-in questionnaire deployment", () => {
+  it("applies D1 migrations and deploys without publishing questionnaire rows", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
       "utf8",
@@ -370,23 +265,42 @@ describe("questionnaire publishing", () => {
     const migration = workflow.indexOf(
       "wrangler d1 migrations apply parrot-english --remote",
     );
-    const publish = workflow.indexOf(
-      "npm run questionnaire:publish -- --remote",
-    );
     const deploy = workflow.indexOf("wrangler deploy --config wrangler.jsonc");
 
     assert.ok(migration >= 0, "Expected a remote D1 migration step");
-    assert.ok(publish > migration, "Expected questionnaire publish after migration");
-    assert.ok(deploy > publish, "Expected Worker deploy after questionnaire publish");
+    assert.ok(deploy > migration, "Expected Worker deploy after migrations");
+    assert.doesNotMatch(workflow, /questionnaire:publish|publish-questionnaire/);
   });
 
-  it("exposes an explicit local-or-remote publish command", () => {
+  it("ships v2 with code and removes the obsolete publisher", () => {
     const packageJson = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
     );
+    assert.equal(packageJson.scripts["questionnaire:publish"], undefined);
     assert.equal(
-      packageJson.scripts["questionnaire:publish"],
-      "node scripts/publish-questionnaire.mjs",
+      existsSync(new URL("../scripts/publish-questionnaire.mjs", import.meta.url)),
+      false,
     );
+    assert.equal(
+      existsSync(
+        new URL("../content/onboarding/questionnaire-v2.json", import.meta.url),
+      ),
+      true,
+    );
+  });
+
+  it("documents the runtime secret, JSON snapshots, and dormant legacy tables", () => {
+    const documentation = [
+      readFileSync(new URL("../README.md", import.meta.url), "utf8"),
+      readFileSync(
+        new URL("../docs/design/technical-architecture.md", import.meta.url),
+        "utf8",
+      ),
+    ].join("\n");
+
+    assert.match(documentation, /wrangler secret put ELEVENLABS_API_KEY/);
+    assert.match(documentation, /answers_json/);
+    assert.match(documentation, /checked-in.*questionnaire/i);
+    assert.match(documentation, /dormant/i);
   });
 });

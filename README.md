@@ -10,7 +10,8 @@ List-first, scene-based English speaking practice for young learners.
 - Cloudflare Worker TypeScript REST API
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
-- Groq speech evaluation behind `/api/evaluate-speech`
+- Groq speech evaluation, onboarding transcription, and answer enrichment
+- ElevenLabs saved prompt audio and runtime onboarding acknowledgments
 
 The frontend is a Vite single-page app. The Worker serves the built assets and
 handles API requests before falling back to `env.ASSETS.fetch(request)`.
@@ -90,6 +91,10 @@ EVALUATE_RATE_LIMIT_MAX=8
 EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
+Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
+acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic
+acknowledgments; the browser never receives either provider key.
+
 Email/password authentication currently has no email verification, password
 reset, social sign-in, or Resend integration.
 
@@ -102,6 +107,7 @@ be configured without committing them:
 ```bash
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put BETTER_AUTH_URL
+npx wrangler secret put ELEVENLABS_API_KEY
 ```
 
 Apply future reviewed migrations with:
@@ -130,6 +136,23 @@ manifest speaker:
 Override one speaker with `ELEVENLABS_PEPPA_VOICE_ID`,
 `ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`. The general
 `ELEVENLABS_VOICE_ID` remains a fallback override.
+
+## Voice Onboarding
+
+The six v2 questions ship with the Worker in the checked-in questionnaire at
+`content/onboarding/questionnaire-v2.json`. Changing a prompt requires ordinary
+code review and deployment; there is no questionnaire publishing command.
+
+Every confirmed answer is stored as prose in `learner_profile.answers_json`
+with the exact question, raw answer, concise summary, playful acknowledgment,
+enrichment status, and server timestamp. Canonical name and age remain in their
+existing profile columns as well. Groq enrichment is persisted before the
+Worker requests optional acknowledgment audio from ElevenLabs, so a TTS failure
+does not lose the answer.
+
+The normalized `questionnaire` and `questionnaire_question` tables remain
+dormant for rollback safety. Runtime onboarding no longer reads or writes them;
+removing them requires a later reviewed migration.
 
 ## Design Docs
 

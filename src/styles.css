@@ -36,12 +36,14 @@ body {
 
 button,
 input,
+textarea,
 select {
   font: inherit;
 }
 
 button:focus-visible,
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
   outline: 5px solid #204c7f;
   outline-offset: 4px;
@@ -63,6 +65,7 @@ select:focus-visible {
 .onboarding-start-card,
 .onboarding-status-card,
 .onboarding-question-card,
+.onboarding-acknowledgment-card,
 .onboarding-profile-shell {
   width: min(100%, 680px);
   border: 5px solid #fff;
@@ -78,6 +81,30 @@ select:focus-visible {
   gap: 14px;
   padding: clamp(26px, 6vw, 52px);
   text-align: center;
+}
+
+.onboarding-acknowledgment-card {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: clamp(28px, 7vw, 58px);
+  text-align: center;
+}
+
+.onboarding-acknowledgment-card h1 {
+  max-width: 540px;
+  margin: 0;
+  color: #173c67;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.08;
+}
+
+.onboarding-acknowledgment-peppa {
+  width: clamp(140px, 32vw, 230px);
+  max-height: 240px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 0 rgb(32 76 127 / 16%));
+  animation: onboarding-float 2.4s ease-in-out infinite;
 }
 
 .onboarding-start-card h1,
@@ -238,20 +265,24 @@ select:focus-visible {
 
 .onboarding-input-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
   gap: 8px;
 }
 
-.onboarding-input-row input {
+.onboarding-input-row textarea {
   width: 100%;
   min-width: 0;
-  min-height: 52px;
+  min-height: 112px;
+  resize: vertical;
   border: 3px solid #a9d5e8;
   border-radius: 16px;
   background: #fff;
   color: #173c67;
-  padding: 0 15px;
+  padding: 13px 15px;
+  font: inherit;
   font-weight: 800;
+  line-height: 1.45;
 }
 
 .onboarding-input-action {
@@ -443,6 +474,7 @@ select:focus-visible {
   .onboarding-start-card,
   .onboarding-status-card,
   .onboarding-question-card,
+  .onboarding-acknowledgment-card,
   .onboarding-profile-shell {
     margin-block: auto;
     border-width: 4px;
@@ -1748,7 +1780,8 @@ select:focus-visible {
   }
 
   .onboarding-start-peppa,
-  .onboarding-peppa {
+  .onboarding-peppa,
+  .onboarding-acknowledgment-peppa {
     animation: none;
   }
 }

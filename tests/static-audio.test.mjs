@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
 
@@ -28,13 +28,12 @@ const normalizedCharacterSources = {
   "dolly-thank-you": "/assets/audio/dolly-thank-you.mp3",
 };
 const onboardingAudio = {
-  "onboarding-introduction":
-    "Hi! I'm Peppa. I'd love to get to know you before we start.",
-  "onboarding-age": "How old are you?",
-  "onboarding-favourite-cartoons": "Which cartoons do you like?",
-  "onboarding-favourite-animals": "Which animals do you like?",
-  "onboarding-favourite-activities": "What activities do you enjoy?",
-  "onboarding-favourite-story-topics": "What stories or topics do you like?",
+  "onboarding-v2-name": "Hi! I'm Peppa. What's your name?",
+  "onboarding-v2-age": "How old are you?",
+  "onboarding-v2-cartoons": "What cartoons do you like?",
+  "onboarding-v2-animals": "What animals do you like?",
+  "onboarding-v2-fun": "What do you like doing for fun?",
+  "onboarding-v2-stories": "What kind of stories do you like?",
 };
 
 describe("static audio cache metadata", () => {
@@ -93,6 +92,10 @@ describe("static audio cache metadata", () => {
         true,
         `${id} saved file`
       );
+      assert.ok(
+        statSync(new URL(`../public${line.src}`, import.meta.url)).size > 0,
+        `${id} non-empty saved file`,
+      );
     }
   });
 
@@ -117,6 +120,22 @@ describe("static audio cache metadata", () => {
       assert.equal(line.text, text, id);
       assert.equal(line.voiceStyle, "energetic-character", id);
       assert.match(line.ttsText, /\[[^\]]+\]/, id);
+    }
+    const generator = readFileSync(
+      new URL("../scripts/generate-static-audio.mjs", import.meta.url),
+      "utf8",
+    );
+    assert.match(generator, /Oqy85UMasXzUjUxF0ta5/);
+    assert.match(generator, /ELEVENLABS_DEFAULT_MODEL = "eleven_v3"/);
+    for (const legacyId of [
+      "onboarding-introduction",
+      "onboarding-age",
+      "onboarding-favourite-cartoons",
+      "onboarding-favourite-animals",
+      "onboarding-favourite-activities",
+      "onboarding-favourite-story-topics",
+    ]) {
+      assert.equal(staticAudio.STATIC_AUDIO_LINES[legacyId], undefined, legacyId);
     }
   });
 });

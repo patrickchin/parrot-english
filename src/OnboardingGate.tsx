@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ComponentProps,
   type ReactNode,
@@ -18,10 +19,12 @@ import {
   transcribeOnboardingAudio,
   type FullOnboardingState,
   type LearnerProfileSummary,
+  type OnboardingAcknowledgment as Acknowledgment,
   type OnboardingQuestion,
   type OnboardingState,
   type ProfileState,
 } from "./onboarding-api";
+import { OnboardingAcknowledgment } from "./OnboardingAcknowledgment";
 import {
   OnboardingQuestionView,
   captureOnboardingAnswer,
@@ -35,11 +38,18 @@ import { recordSpeechClip } from "./speech-recorder";
 type QuestionProps = ComponentProps<typeof OnboardingQuestionView>;
 type ProfileEditorProps = ComponentProps<typeof ProfileEditorView>;
 
+type AcknowledgmentView = {
+  acknowledgment: Acknowledgment;
+  operationId: number;
+};
+
 type OnboardingGateViewProps = {
+  acknowledgment: AcknowledgmentView | null;
   children: ReactNode;
   data: OnboardingState | null;
   isLoading: boolean;
   loadError: string;
+  onAcknowledgmentNext: () => void;
   onRetry: () => void;
   onSkip: () => void;
   onStart: () => void;
@@ -49,10 +59,12 @@ type OnboardingGateViewProps = {
 };
 
 export function OnboardingGateView({
+  acknowledgment,
   children,
   data,
   isLoading,
   loadError,
+  onAcknowledgmentNext,
   onRetry,
   onSkip,
   onStart,
@@ -91,17 +103,22 @@ export function OnboardingGateView({
     );
   }
 
-  if (profileEditor) {
-    return <ProfileEditorView {...profileEditor} />;
+  if (acknowledgment) {
+    return (
+      <main className="onboarding-screen">
+        <OnboardingAcknowledgment
+          acknowledgment={acknowledgment.acknowledgment}
+          onNext={onAcknowledgmentNext}
+          operationId={acknowledgment.operationId}
+        />
+      </main>
+    );
   }
 
-  if (
-    data?.canBypass ||
-    fullData?.profile.onboardingStatus === "completed"
-  ) {
-    return (
-      <>{children}</>
-    );
+  if (profileEditor) return <ProfileEditorView {...profileEditor} />;
+
+  if (data?.canBypass || fullData?.profile.onboardingStatus === "completed") {
+    return <>{children}</>;
   }
 
   if (fullData && !started) {
@@ -115,7 +132,10 @@ export function OnboardingGateView({
           />
           <p className="onboarding-eyebrow">PARROT ENGLISH</p>
           <h1>Meet Peppa</h1>
-          <p>Answer five quick questions so your English practice can feel more like you.</p>
+          <p>
+            Answer six quick questions so your English practice can feel more like
+            you.
+          </p>
           <button className="onboarding-start-button" onClick={onStart} type="button">
             Start
           </button>
@@ -148,18 +168,13 @@ type ProfileWithAnswers = Pick<LearnerProfileSummary, "age" | "answers" | "name"
 
 export function answerForQuestion(
   profile: ProfileWithAnswers,
-  question: Pick<OnboardingQuestion, "answerKey" | "cardinality">
+  question: Pick<OnboardingQuestion, "answerKey">,
 ) {
-  const value =
-    question.answerKey === "name"
-      ? profile.name
-      : question.answerKey === "age"
-        ? profile.age
-        : profile.answers[question.answerKey];
-  if (question.cardinality === "array") {
-    return Array.isArray(value) ? [...value] : [];
-  }
-  return value ?? "";
+  const saved = profile.answers.responses[question.answerKey]?.rawAnswer;
+  if (saved) return saved;
+  if (question.answerKey === "name") return profile.name ?? "";
+  if (question.answerKey === "age") return profile.age?.toString() ?? "";
+  return "";
 }
 
 export function profileDraftsFromState(profileState: ProfileState) {
@@ -167,66 +182,38 @@ export function profileDraftsFromState(profileState: ProfileState) {
     profileState.questions.map((question) => [
       question.answerKey,
       answerForQuestion(profileState.profile, question),
-    ])
+    ]),
   );
 }
 
 export function updateProfileDraft(
-  drafts: Record<string, unknown>,
+  drafts: Record<string, string>,
   answerKey: string,
-  value: unknown
+  value: string,
 ) {
   return { ...drafts, [answerKey]: value };
 }
 
-export function addArrayAnswer(values: string[], pendingValue: string) {
-  const next = pendingValue.trim();
-  if (!next) return values;
-  if (
-    values.some(
-      (entry) =>
-        entry.toLocaleLowerCase("en") === next.toLocaleLowerCase("en")
-    )
-  ) {
-    return values;
-  }
-  return [...values, next];
-}
-
-export function toggleArrayAnswer(values: string[], option: string) {
-  const existing = values.findIndex(
-    (entry) =>
-      entry.toLocaleLowerCase("en") === option.toLocaleLowerCase("en")
-  );
-  return existing >= 0
-    ? values.filter((_, index) => index !== existing)
-    : addArrayAnswer(values, option);
-}
-
-export function submissionValue(
-  question: Pick<OnboardingQuestion, "answerType">,
-  value: unknown
+export function nextProfileAcknowledgment(
+  acknowledgments: Acknowledgment[],
+  currentIndex: number,
 ) {
-  if (
-    question.answerType === "number" &&
-    typeof value === "string" &&
-    /^-?\d+$/.test(value.trim())
-  ) {
-    return Number(value);
-  }
-  return value;
+  const index = currentIndex + 1;
+  return index < acknowledgments.length
+    ? { acknowledgment: acknowledgments[index], index }
+    : null;
 }
 
 export async function saveQuestionAndAdvance({
   questionKey,
+  rawAnswer,
   save = saveOnboardingAnswer,
-  value,
 }: {
   questionKey: string;
-  save?: (questionKey: string, value: unknown) => Promise<OnboardingState>;
-  value: unknown;
+  rawAnswer: string;
+  save?: (questionKey: string, rawAnswer: string) => Promise<OnboardingState>;
 }) {
-  return save(questionKey, value);
+  return save(questionKey, rawAnswer);
 }
 
 function readableError(error: unknown) {
@@ -235,28 +222,31 @@ function readableError(error: unknown) {
     : "Something went wrong. Please try again.";
 }
 
-function arrayDraft(value: unknown) {
-  return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === "string")
-    : [];
-}
+type PendingAcknowledgment =
+  | {
+      kind: "onboarding";
+      operationId: number;
+      acknowledgment: Acknowledgment;
+      next: OnboardingState;
+    }
+  | {
+      kind: "profile";
+      operationId: number;
+      acknowledgments: Acknowledgment[];
+      index: number;
+      next: ProfileState;
+    };
 
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const [data, setData] = useState<OnboardingState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [started, setStarted] = useState(false);
-  const [draft, setDraft] = useState<unknown>("");
-  const [pendingValue, setPendingValue] = useState("");
+  const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [status, setStatus] = useState<QuestionProps["status"]>("idle");
   const [profileState, setProfileState] = useState<ProfileState | null>(null);
-  const [profileDrafts, setProfileDrafts] = useState<Record<string, unknown>>(
-    {}
-  );
-  const [profilePendingValues, setProfilePendingValues] = useState<
-    Record<string, string>
-  >({});
+  const [profileDrafts, setProfileDrafts] = useState<Record<string, string>>({});
   const [profileFieldErrors, setProfileFieldErrors] = useState<
     Record<string, string>
   >({});
@@ -266,26 +256,46 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const [profilePageError, setProfilePageError] = useState("");
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState("");
+  const [pendingAcknowledgment, setPendingAcknowledgment] =
+    useState<PendingAcknowledgment | null>(null);
+  const operationRef = useRef(0);
 
-  async function refresh(signal?: AbortSignal) {
-    setIsLoading(true);
-    setLoadError("");
-    try {
-      const next = await loadOnboarding({ signal });
-      setData(next);
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") return;
-      setLoadError(readableError(error));
-    } finally {
-      if (!signal?.aborted) setIsLoading(false);
-    }
-  }
+  const nextOperation = useCallback(() => {
+    operationRef.current += 1;
+    return operationRef.current;
+  }, []);
+
+  const isCurrentOperation = useCallback(
+    (operation: number) => operationRef.current === operation,
+    [],
+  );
+
+  const refresh = useCallback(
+    async (signal?: AbortSignal) => {
+      const operation = nextOperation();
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const next = await loadOnboarding({ signal });
+        if (isCurrentOperation(operation)) setData(next);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
+        if (isCurrentOperation(operation)) setLoadError(readableError(error));
+      } finally {
+        if (isCurrentOperation(operation) && !signal?.aborted) setIsLoading(false);
+      }
+    },
+    [isCurrentOperation, nextOperation],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
     void refresh(controller.signal);
-    return () => controller.abort();
-  }, []);
+    return () => {
+      nextOperation();
+      controller.abort();
+    };
+  }, [nextOperation, refresh]);
 
   const fullData: FullOnboardingState | null =
     data?.mode === "full" ? data : null;
@@ -294,108 +304,100 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const activeQuestionKey = activeQuestion?.answerKey ?? "";
 
   useEffect(() => {
+    nextOperation();
     if (!activeQuestion || !activeProfile) return;
     setDraft(answerForQuestion(activeProfile, activeQuestion));
-    setPendingValue("");
     setFieldError("");
     setStatus("idle");
-  }, [activeQuestionKey]);
+  }, [activeProfile, activeQuestion, activeQuestionKey, nextOperation]);
 
   async function handleStart() {
-    if (!fullData?.question?.audio) return;
+    if (!fullData?.question) return;
+    const operation = nextOperation();
     setStarted(true);
     setFieldError("");
+    if (!fullData.question.audio) return;
     try {
-      await playOnboardingStart({
-        introduction: fullData.questionnaire.introductionAudio,
-        questionAudio: fullData.question.audio,
-      });
+      await playOnboardingStart({ questionAudio: fullData.question.audio });
     } catch {
-      setFieldError("Audio is unavailable. You can keep going or use Replay.");
+      if (isCurrentOperation(operation)) {
+        setFieldError("Audio is unavailable. You can keep going or use Replay.");
+      }
     }
   }
 
   async function handleReplay() {
     if (!activeQuestion?.audio) return;
+    const operation = nextOperation();
     setFieldError("");
     try {
       await replayOnboardingQuestion(activeQuestion.audio);
     } catch {
-      setFieldError("Audio is unavailable. Please try Replay again.");
+      if (isCurrentOperation(operation)) {
+        setFieldError("Audio is unavailable. Please try Replay again.");
+      }
     }
   }
 
   async function handleTranscribe() {
     if (!activeQuestion) return;
+    const operation = nextOperation();
     setFieldError("");
     setStatus("recording");
     try {
       const transcript = await captureOnboardingAnswer({
         record: () => recordSpeechClip(),
         transcribe: async (audio) => {
-          setStatus("transcribing");
+          if (isCurrentOperation(operation)) setStatus("transcribing");
           return transcribeOnboardingAudio(audio);
         },
       });
-      if (activeQuestion.cardinality === "array") {
-        setPendingValue(transcript);
-      } else {
-        setDraft(transcript);
-      }
+      if (isCurrentOperation(operation)) setDraft(transcript);
     } catch (error) {
-      setFieldError(
-        `${readableError(error)} You can still type or choose an answer.`
-      );
+      if (isCurrentOperation(operation)) {
+        setFieldError(`${readableError(error)} You can still type your answer.`);
+      }
     } finally {
-      setStatus("idle");
+      if (isCurrentOperation(operation)) setStatus("idle");
     }
-  }
-
-  function addPending() {
-    setDraft((current: unknown) =>
-      addArrayAnswer(arrayDraft(current), pendingValue)
-    );
-    setPendingValue("");
-  }
-
-  function removeValue(value: string) {
-    setDraft((current: unknown) =>
-      arrayDraft(current).filter(
-        (entry) =>
-          entry.toLocaleLowerCase("en") !== value.toLocaleLowerCase("en")
-      )
-    );
-  }
-
-  function toggleOption(value: string) {
-    setDraft((current: unknown) =>
-      toggleArrayAnswer(arrayDraft(current), value)
-    );
   }
 
   async function handleSubmit() {
     if (!activeQuestion) return;
+    const operation = nextOperation();
     setStatus("saving");
     setFieldError("");
     try {
       const next = await saveQuestionAndAdvance({
         questionKey: activeQuestion.answerKey,
-        value: submissionValue(activeQuestion, draft),
+        rawAnswer: draft,
       });
-      setData(next);
+      if (!isCurrentOperation(operation)) return;
+      if (next.mode !== "full" || !next.acknowledgment) {
+        throw new Error("Peppa could not answer just now.");
+      }
+      setPendingAcknowledgment({
+        kind: "onboarding",
+        operationId: operation,
+        acknowledgment: next.acknowledgment,
+        next,
+      });
     } catch (error) {
-      setFieldError(readableError(error));
+      if (isCurrentOperation(operation)) setFieldError(readableError(error));
     } finally {
-      setStatus("idle");
+      if (isCurrentOperation(operation)) setStatus("idle");
     }
   }
 
   async function handleSkip() {
+    const operation = nextOperation();
     setLoadError("");
     setFieldError("");
     try {
-      setData(await skipOnboarding());
+      const next = await skipOnboarding();
+      if (isCurrentOperation(operation)) setData(next);
     } catch (error) {
+      if (!isCurrentOperation(operation)) return;
       const message = readableError(error);
       if (data) setFieldError(message);
       else setLoadError(message);
@@ -404,172 +406,189 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
 
   async function handleSkipQuestion() {
     if (!activeQuestion || activeQuestion.required) return;
+    const operation = nextOperation();
     setStatus("saving");
     setFieldError("");
     try {
-      setData(await skipOnboardingQuestion(activeQuestion.answerKey));
+      const next = await skipOnboardingQuestion(activeQuestion.answerKey);
+      if (isCurrentOperation(operation)) setData(next);
     } catch (error) {
-      setFieldError(readableError(error));
+      if (isCurrentOperation(operation)) setFieldError(readableError(error));
     } finally {
-      setStatus("idle");
+      if (isCurrentOperation(operation)) setStatus("idle");
     }
   }
 
-  const handleOpenProfile = useCallback(async () => {
-    setProfileLoadError("");
-    try {
-      const profile = await loadProfile();
-      setProfileState(profile);
-      setProfileDrafts(profileDraftsFromState(profile));
-      setProfilePendingValues({});
-      setProfileFieldErrors({});
-      setProfileFieldStatuses({});
-      setProfilePageError("");
-    } catch (error) {
-      setProfileLoadError(readableError(error));
-    }
-  }, []);
-
-  const closeProfileEditor = useCallback(() => {
+  const clearProfileEditor = useCallback(() => {
     setProfileState(null);
     setProfileDrafts({});
-    setProfilePendingValues({});
     setProfileFieldErrors({});
     setProfileFieldStatuses({});
     setProfilePageError("");
     setIsProfileSaving(false);
   }, []);
 
+  const closeProfileEditor = useCallback(() => {
+    nextOperation();
+    setPendingAcknowledgment(null);
+    clearProfileEditor();
+  }, [clearProfileEditor, nextOperation]);
+
+  const handleOpenProfile = useCallback(async () => {
+    const operation = nextOperation();
+    setProfileLoadError("");
+    try {
+      const profile = await loadProfile();
+      if (!isCurrentOperation(operation)) return;
+      setProfileState(profile);
+      setProfileDrafts(profileDraftsFromState(profile));
+      setProfileFieldErrors({});
+      setProfileFieldStatuses({});
+      setProfilePageError("");
+    } catch (error) {
+      if (isCurrentOperation(operation)) {
+        setProfileLoadError(readableError(error));
+      }
+    }
+  }, [isCurrentOperation, nextOperation]);
+
   function setProfileFieldError(answerKey: string, message: string) {
-    setProfileFieldErrors((current) => ({
-      ...current,
-      [answerKey]: message,
-    }));
+    setProfileFieldErrors((current) => ({ ...current, [answerKey]: message }));
   }
 
-  function setProfileFieldStatus(
-    answerKey: string,
-    nextStatus: QuestionStatus
-  ) {
+  function setProfileFieldStatus(answerKey: string, nextStatus: QuestionStatus) {
     setProfileFieldStatuses((current) => ({
       ...current,
       [answerKey]: nextStatus,
     }));
   }
 
-  function handleProfileValueChange(answerKey: string, value: unknown) {
-    setProfileDrafts((current) =>
-      updateProfileDraft(current, answerKey, value)
-    );
+  function handleProfileValueChange(answerKey: string, value: string) {
+    setProfileDrafts((current) => updateProfileDraft(current, answerKey, value));
     setProfileFieldError(answerKey, "");
-  }
-
-  function handleProfilePendingChange(answerKey: string, value: string) {
-    setProfilePendingValues((current) => ({
-      ...current,
-      [answerKey]: value,
-    }));
-  }
-
-  function handleProfileAddPending(answerKey: string) {
-    handleProfileValueChange(
-      answerKey,
-      addArrayAnswer(
-        arrayDraft(profileDrafts[answerKey]),
-        profilePendingValues[answerKey] ?? ""
-      )
-    );
-    handleProfilePendingChange(answerKey, "");
-  }
-
-  function handleProfileRemoveValue(answerKey: string, value: string) {
-    handleProfileValueChange(
-      answerKey,
-      arrayDraft(profileDrafts[answerKey]).filter(
-        (entry) =>
-          entry.toLocaleLowerCase("en") !== value.toLocaleLowerCase("en")
-      )
-    );
-  }
-
-  function handleProfileToggleOption(answerKey: string, value: string) {
-    handleProfileValueChange(
-      answerKey,
-      toggleArrayAnswer(arrayDraft(profileDrafts[answerKey]), value)
-    );
   }
 
   async function handleProfileReplay(question: OnboardingQuestion) {
     if (!question.audio) return;
+    const operation = nextOperation();
+    setProfileFieldStatuses({});
     setProfileFieldError(question.answerKey, "");
     try {
       await replayOnboardingQuestion(question.audio);
     } catch {
-      setProfileFieldError(
-        question.answerKey,
-        "Audio is unavailable. Please try Replay again."
-      );
+      if (isCurrentOperation(operation)) {
+        setProfileFieldError(
+          question.answerKey,
+          "Audio is unavailable. Please try Replay again.",
+        );
+      }
     }
   }
 
   async function handleProfileTranscribe(question: OnboardingQuestion) {
+    const operation = nextOperation();
     setProfileFieldError(question.answerKey, "");
-    setProfileFieldStatus(question.answerKey, "recording");
+    setProfileFieldStatuses({ [question.answerKey]: "recording" });
     try {
       const transcript = await captureOnboardingAnswer({
         record: () => recordSpeechClip(),
         transcribe: async (audio) => {
-          setProfileFieldStatus(question.answerKey, "transcribing");
+          if (isCurrentOperation(operation)) {
+            setProfileFieldStatus(question.answerKey, "transcribing");
+          }
           return transcribeOnboardingAudio(audio);
         },
       });
-      if (question.cardinality === "array") {
-        handleProfilePendingChange(question.answerKey, transcript);
-      } else {
+      if (isCurrentOperation(operation)) {
         handleProfileValueChange(question.answerKey, transcript);
       }
     } catch (error) {
-      setProfileFieldError(
-        question.answerKey,
-        `${readableError(error)} You can still type or choose an answer.`
-      );
+      if (isCurrentOperation(operation)) {
+        setProfileFieldError(
+          question.answerKey,
+          `${readableError(error)} You can still type your answer.`,
+        );
+      }
     } finally {
-      setProfileFieldStatus(question.answerKey, "idle");
+      if (isCurrentOperation(operation)) {
+        setProfileFieldStatus(question.answerKey, "idle");
+      }
     }
   }
 
   async function handleProfileSave() {
     if (!profileState) return;
+    const operation = nextOperation();
     setIsProfileSaving(true);
     setProfileFieldErrors({});
+    setProfileFieldStatuses({});
     setProfilePageError("");
     try {
       const answers = Object.fromEntries(
         profileState.questions.map((question) => [
           question.answerKey,
-          submissionValue(question, profileDrafts[question.answerKey]),
-        ])
+          profileDrafts[question.answerKey] ?? "",
+        ]),
       );
       const saved = await saveProfileAnswers(answers);
+      if (!isCurrentOperation(operation)) return;
       setProfileState(saved);
-      setData(await loadOnboarding());
-      closeProfileEditor();
+      if (saved.acknowledgments?.length) {
+        setPendingAcknowledgment({
+          kind: "profile",
+          operationId: operation,
+          acknowledgments: saved.acknowledgments,
+          index: 0,
+          next: saved,
+        });
+      } else {
+        clearProfileEditor();
+        void refresh();
+      }
     } catch (error) {
-      const fieldErrors =
-        error instanceof OnboardingApiError ? error.fieldErrors : {};
-      setProfileFieldErrors(fieldErrors);
-      if (Object.keys(fieldErrors).length === 0) {
+      if (!isCurrentOperation(operation)) return;
+      const errors = error instanceof OnboardingApiError ? error.fieldErrors : {};
+      setProfileFieldErrors(errors);
+      if (Object.keys(errors).length === 0) {
         setProfilePageError(readableError(error));
       }
     } finally {
-      setIsProfileSaving(false);
+      if (isCurrentOperation(operation)) setIsProfileSaving(false);
     }
+  }
+
+  function handleAcknowledgmentNext() {
+    const pending = pendingAcknowledgment;
+    if (!pending) return;
+    if (pending.kind === "onboarding") {
+      nextOperation();
+      setPendingAcknowledgment(null);
+      setData(pending.next);
+      return;
+    }
+
+    const next = nextProfileAcknowledgment(
+      pending.acknowledgments,
+      pending.index,
+    );
+    if (next) {
+      setPendingAcknowledgment({
+        ...pending,
+        operationId: nextOperation(),
+        index: next.index,
+      });
+      return;
+    }
+
+    nextOperation();
+    setPendingAcknowledgment(null);
+    clearProfileEditor();
+    void refresh();
   }
 
   const canEditProfile = Boolean(
     fullData &&
-      (fullData.canBypass ||
-        fullData.profile.onboardingStatus === "completed")
+      (fullData.canBypass || fullData.profile.onboardingStatus === "completed"),
   );
   const profileAction = useMemo(
     () =>
@@ -579,27 +598,21 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
             onOpen: () => void handleOpenProfile(),
           }
         : null,
-    [canEditProfile, handleOpenProfile, profileLoadError]
+    [canEditProfile, handleOpenProfile, profileLoadError],
   );
   useProfileAccountAction(profileAction);
 
   const progress = fullData?.progress ?? { answered: 0, current: 0, total: 0 };
-
   const questionProps: QuestionProps | null = activeQuestion
     ? {
         fieldError,
         mode: "onboarding",
-        onAddPending: addPending,
-        onPendingChange: setPendingValue,
-        onRemoveValue: removeValue,
         onReplay: () => void handleReplay(),
         onSkip: () => void handleSkip(),
         onSkipQuestion: () => void handleSkipQuestion(),
         onSubmit: () => void handleSubmit(),
-        onToggleOption: toggleOption,
         onTranscribe: () => void handleTranscribe(),
         onValueChange: setDraft,
-        pendingValue,
         progress,
         question: activeQuestion,
         status,
@@ -607,11 +620,25 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       }
     : null;
 
+  const acknowledgment = pendingAcknowledgment
+    ? {
+        acknowledgment:
+          pendingAcknowledgment.kind === "onboarding"
+            ? pendingAcknowledgment.acknowledgment
+            : pendingAcknowledgment.acknowledgments[
+                pendingAcknowledgment.index
+              ],
+        operationId: pendingAcknowledgment.operationId,
+      }
+    : null;
+
   return (
     <OnboardingGateView
+      acknowledgment={acknowledgment}
       data={data}
       isLoading={isLoading}
       loadError={loadError}
+      onAcknowledgmentNext={handleAcknowledgmentNext}
       onRetry={() => void refresh()}
       onSkip={() => void handleSkip()}
       onStart={() => void handleStart()}
@@ -622,19 +649,14 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
               fieldErrors: profileFieldErrors,
               fieldStatuses: profileFieldStatuses,
               isSaving: isProfileSaving,
-              onAddPending: handleProfileAddPending,
               onCancel: closeProfileEditor,
               onClose: closeProfileEditor,
-              onPendingChange: handleProfilePendingChange,
-              onRemoveValue: handleProfileRemoveValue,
               onReplay: (question) => void handleProfileReplay(question),
               onSave: () => void handleProfileSave(),
-              onToggleOption: handleProfileToggleOption,
               onTranscribe: (question) =>
                 void handleProfileTranscribe(question),
               onValueChange: handleProfileValueChange,
               pageError: profilePageError,
-              pendingValues: profilePendingValues,
               questions: profileState.questions,
             }
           : null

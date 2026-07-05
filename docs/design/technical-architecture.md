@@ -14,6 +14,7 @@ Browser
   -> Cloudflare Worker
        -> /api/auth/* -> Better Auth -> Drizzle -> shared D1
        -> /api/evaluate-speech
+       -> /api/onboarding/* -> Groq -> learner_profile -> ElevenLabs
        -> static Vite assets through env.ASSETS
 ```
 
@@ -35,6 +36,9 @@ Important entrypoints:
 - `src/db/schema.ts`: complete Drizzle schema for the shared D1 database.
 - `worker/auth.ts`: Better Auth Worker configuration and Drizzle adapter.
 - `worker/index.ts`: Worker routing and static fallback.
+- `worker/onboarding.ts`: checked-in questionnaire orchestration and profile API.
+- `worker/onboarding-enrichment.ts`: strict Groq summary/acknowledgment boundary.
+- `worker/onboarding-acknowledgment-audio.ts`: server-only ElevenLabs TTS.
 
 ## Authentication
 
@@ -79,6 +83,18 @@ Three boundaries keep lesson authoring simple:
 Lesson JSON never contains asset filenames. `src/lesson-catalog.ts` uses eager
 `import.meta.glob` discovery, so adding or removing a valid lesson file changes
 the picker automatically.
+
+Voice onboarding is a separate checked-in content boundary. The Worker imports
+and validates `content/onboarding/questionnaire-v2.json`; it does not fetch
+question definitions from D1. Fixed prompt IDs resolve through
+`lib/static-audio.js`, while each dynamic acknowledgment is synthesized by the
+Worker after its answer snapshot is durable.
+
+The separate `learner_profile` table stores canonical name and age columns plus
+a versioned `answers_json` envelope. Each response snapshot contains the exact
+question, raw prose, summary, acknowledgment, enrichment status, and timestamp.
+The old normalized `questionnaire` and `questionnaire_question` tables remain
+dormant for rollback safety and are not part of the v2 runtime path.
 
 `lib/lesson-data.js` validates both catalogs and lessons. It enforces English
 text, exact root/scene/step fields, five to eight scenes, two goal phrases,
@@ -170,6 +186,30 @@ requests receive `401 {"error":"unauthorized"}`. Authenticated requests still
 require `GROQ_API_KEY`, reject audio over 6 MiB, and have a configurable upstream
 timeout. `worker/api-security.ts` applies an in-memory per-client rate limit
 with defaults of eight requests per 60 seconds.
+
+## Voice Onboarding APIs
+
+`AuthGate -> OnboardingGate -> LessonExperience` remains the browser gate order.
+Authenticated onboarding accepts one editable prose answer at a time. The
+Worker derives all question metadata from the checked-in questionnaire, sends
+only the current question and raw answer to Groq, validates strict structured
+output, writes the complete snapshot to shared D1, and then sends only the saved
+acknowledgment to ElevenLabs. Provider failures use deterministic text fallback;
+TTS failure returns the saved acknowledgment with no audio.
+
+Incomplete v1 profiles restart v2 with their original JSON under
+`legacyAnswers`; completed v1 users remain completed. Session bypass records
+keep their existing exact-session semantics. Answer/profile enrichment and
+transcription have authenticated per-user and per-client rate limits.
+
+Production requires:
+
+```bash
+npx wrangler secret put ELEVENLABS_API_KEY
+```
+
+Questions deploy with code. The deployment workflow still applies reviewed D1
+migrations, but it does not publish questionnaire data rows.
 
 ## Development and Verification
 

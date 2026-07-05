@@ -1,0 +1,72 @@
+{
+  "id": "voice-onboarding-v2",
+  "version": 2,
+  "questions": [
+    {
+      "answerKey": "name",
+      "position": 1,
+      "promptEn": "Hi! I'm Peppa. What's your name?",
+      "promptZh": "你好！我是佩奇。你叫什么名字？",
+      "audioId": "onboarding-v2-name",
+      "canonicalField": "name",
+      "required": true,
+      "maxLength": 120,
+      "fallbackAcknowledgment": "It's lovely to meet you!"
+    },
+    {
+      "answerKey": "age",
+      "position": 2,
+      "promptEn": "How old are you?",
+      "promptZh": "你几岁了？",
+      "audioId": "onboarding-v2-age",
+      "canonicalField": "age",
+      "required": true,
+      "maxLength": 120,
+      "fallbackAcknowledgment": "That sounds like a brilliant age!"
+    },
+    {
+      "answerKey": "favoriteCartoons",
+      "position": 3,
+      "promptEn": "What cartoons do you like?",
+      "promptZh": "你喜欢什么动画片？",
+      "audioId": "onboarding-v2-cartoons",
+      "canonicalField": null,
+      "required": true,
+      "maxLength": 500,
+      "fallbackAcknowledgment": "Those cartoons sound fun!"
+    },
+    {
+      "answerKey": "favoriteAnimals",
+      "position": 4,
+      "promptEn": "What animals do you like?",
+      "promptZh": "你喜欢什么动物？",
+      "audioId": "onboarding-v2-animals",
+      "canonicalField": null,
+      "required": true,
+      "maxLength": 500,
+      "fallbackAcknowledgment": "Those animals sound brilliant!"
+    },
+    {
+      "answerKey": "favoriteActivities",
+      "position": 5,
+      "promptEn": "What do you like doing for fun?",
+      "promptZh": "你喜欢做什么好玩的事？",
+      "audioId": "onboarding-v2-fun",
+      "canonicalField": null,
+      "required": true,
+      "maxLength": 500,
+      "fallbackAcknowledgment": "That sounds like lots of fun!"
+    },
+    {
+      "answerKey": "favoriteStoryTopics",
+      "position": 6,
+      "promptEn": "What kind of stories do you like?",
+      "promptZh": "你喜欢什么样的故事？",
+      "audioId": "onboarding-v2-stories",
+      "canonicalField": null,
+      "required": true,
+      "maxLength": 500,
+      "fallbackAcknowledgment": "Those stories sound exciting!"
+    }
+  ]
+}
