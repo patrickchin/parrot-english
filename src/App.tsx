@@ -1,6 +1,15 @@
 "use client";
 
-import { Mic, Volume2, VolumeX } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Mic,
+  Pause,
+  Play,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -42,7 +51,11 @@ const MICROPHONE_ACCESS_MESSAGE =
   "Please allow microphone access, then press and hold the button again.";
 
 type LessonEvent =
-  | { type: "START" }
+  | { type: "PLAY_SCENE" }
+  | { type: "PAUSE_SCENE" }
+  | { type: "SCENE_PREVIOUS" }
+  | { type: "SCENE_NEXT" }
+  | { type: "REPLAY_LESSON" }
   | { type: "LINE_DONE" }
   | { type: "MIC_STARTED" }
   | { type: "MIC_RELEASED" }
@@ -89,6 +102,7 @@ export function LessonPlayer() {
   );
   const [error, setError] = useState("");
   const [muted, setMuted] = useState(false);
+  const playbackControllerRef = useRef<AbortController | null>(null);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const evaluationControllerRef = useRef<AbortController | null>(null);
@@ -103,7 +117,9 @@ export function LessonPlayer() {
   );
   const progressLabel = getLessonProgressLabel(state, currentStep);
   const canSelectLesson =
-    state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished;
+    state.phase === LessonPhase.Idle ||
+    state.phase === LessonPhase.Paused ||
+    state.phase === LessonPhase.Finished;
 
   useEffect(() => {
     if (
@@ -135,6 +151,7 @@ export function LessonPlayer() {
 
     let cancelled = false;
     const controller = new AbortController();
+    playbackControllerRef.current = controller;
     setError("");
     void playAudioLine({ ...audioLine, signal: controller.signal })
       .then(() => {
@@ -145,11 +162,19 @@ export function LessonPlayer() {
         const message =
           caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
         setError(`Audio unavailable: ${message}`);
+      })
+      .finally(() => {
+        if (playbackControllerRef.current === controller) {
+          playbackControllerRef.current = null;
+        }
       });
 
     return () => {
       cancelled = true;
       controller.abort();
+      if (playbackControllerRef.current === controller) {
+        playbackControllerRef.current = null;
+      }
     };
   }, [
     currentLesson,
@@ -170,17 +195,48 @@ export function LessonPlayer() {
     []
   );
 
-  function startLesson() {
+  function cancelPendingWork() {
+    pressedRef.current = false;
+    pressSequenceRef.current += 1;
+    playbackControllerRef.current?.abort();
+    playbackControllerRef.current = null;
+    recordingControllerRef.current?.abort();
+    recordingControllerRef.current = null;
+    recordingRef.current?.cancel();
+    recordingRef.current = null;
+    evaluationControllerRef.current?.abort();
+    evaluationControllerRef.current = null;
+  }
+
+  function dispatchSceneControl(
+    type:
+      | "PLAY_SCENE"
+      | "PAUSE_SCENE"
+      | "SCENE_PREVIOUS"
+      | "SCENE_NEXT"
+      | "REPLAY_LESSON"
+  ) {
+    cancelPendingWork();
     setError("");
-    dispatch({ type: "START" });
+    dispatch({ type });
+  }
+
+  function handlePlaybackControl() {
+    if (state.phase === LessonPhase.Finished) {
+      dispatchSceneControl("REPLAY_LESSON");
+      return;
+    }
+
+    if (playbackIsActive) {
+      dispatchSceneControl("PAUSE_SCENE");
+      return;
+    }
+
+    dispatchSceneControl("PLAY_SCENE");
   }
 
   function handleLessonChange(event: ChangeEvent<HTMLSelectElement>) {
-    pressedRef.current = false;
-    recordingControllerRef.current?.abort();
-    recordingRef.current?.cancel();
-    evaluationControllerRef.current?.abort();
-    recordingRef.current = null;
+    cancelPendingWork();
     setError("");
     setSelectedLessonId(event.target.value);
     dispatch({ type: "RESET" });
@@ -264,12 +320,7 @@ export function LessonPlayer() {
   }
 
   function cancelRecording() {
-    pressedRef.current = false;
-    pressSequenceRef.current += 1;
-    recordingControllerRef.current?.abort();
-    recordingControllerRef.current = null;
-    recordingRef.current?.cancel();
-    recordingRef.current = null;
+    cancelPendingWork();
     if (state.phase === LessonPhase.Recording) {
       dispatch({ type: "RECORDING_CANCELLED" });
     }
@@ -305,6 +356,18 @@ export function LessonPlayer() {
   const isEvaluating = state.phase === LessonPhase.Evaluating;
   const showUserTurn =
     state.phase === LessonPhase.WaitingForUser || isRecording || isEvaluating;
+  const playbackIsActive =
+    state.phase !== LessonPhase.Idle &&
+    state.phase !== LessonPhase.Paused &&
+    state.phase !== LessonPhase.Finished;
+  const atFirstScene = state.sceneIndex === 0;
+  const atFinalScene = state.sceneIndex === currentLesson.scenes.length - 1;
+  const playbackLabel =
+    state.phase === LessonPhase.Finished
+      ? "Replay lesson"
+      : playbackIsActive
+        ? "Pause"
+        : "Play";
   const speechCharacterIndex = scene.characters.findIndex(
     (character) => character.id === scene.speech.speaker
   );
@@ -374,16 +437,6 @@ export function LessonPlayer() {
           )}
         </button>
 
-        <div className="lesson-flow-banner">
-          {canSelectLesson ? (
-            <button className="start-lesson-button" onClick={startLesson} type="button">
-              {state.phase === LessonPhase.Finished ? "Play again" : "Start"}
-            </button>
-          ) : (
-            <span className="flow-status">{progressLabel}</span>
-          )}
-        </div>
-
         <div className="character-layer">
           {scene.characters.map((character, index) => (
             <div
@@ -410,9 +463,9 @@ export function LessonPlayer() {
           ))}
         </div>
 
-        {scene.speech.kind === "narration" ||
-        scene.speech.kind === "feedback" ||
-        scene.speech.kind === "finished" ? (
+        {scene.speech.kind === "user" ? null : scene.speech.kind === "narration" ||
+          scene.speech.kind === "feedback" ||
+          scene.speech.kind === "finished" ? (
           <div
             aria-live="polite"
             className={`narrator-caption is-${scene.speech.kind}`}
@@ -434,49 +487,87 @@ export function LessonPlayer() {
               } as CharacterStyle
             }
           >
-            <span>{scene.speech.speaker === "user" ? "You" : scene.speech.speaker}</span>
+            <span>{scene.speech.speaker}</span>
             <p>{scene.speech.text}</p>
           </div>
         )}
 
-        {showUserTurn ? (
-          <div
-            aria-live="assertive"
-            className={`user-turn-panel ${
-              isRecording ? "is-recording" : isEvaluating ? "is-evaluating" : ""
-            }`}
-            role="status"
+        <nav aria-label="Lesson controls" className="scene-control-dock">
+          <button
+            aria-label="Previous scene"
+            className="scene-control-button"
+            disabled={atFirstScene}
+            onClick={() => dispatchSceneControl("SCENE_PREVIOUS")}
+            type="button"
           >
-            <strong>{currentStep.dialogue}</strong>
-            {isEvaluating ? (
-              <span className="checking-label">Checking your speech...</span>
+            <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
+          </button>
+
+          <button
+            aria-label={playbackLabel}
+            className={`playback-control-button ${
+              playbackIsActive ? "is-playing" : ""
+            }`}
+            onClick={handlePlaybackControl}
+            type="button"
+          >
+            {state.phase === LessonPhase.Finished ? (
+              <RotateCcw aria-hidden="true" strokeWidth={3} />
+            ) : playbackIsActive ? (
+              <Pause aria-hidden="true" strokeWidth={3} />
             ) : (
-              <button
-                aria-label={
-                  isRecording
-                    ? "Release when you finish"
-                    : "Press and hold to speak"
-                }
-                className={`hold-to-talk-button ${
-                  isRecording ? "is-recording" : ""
-                }`}
-                onKeyDown={handleKeyDown}
-                onKeyUp={handleKeyUp}
-                onPointerCancel={cancelRecording}
-                onPointerDown={handlePointerDown}
-                onPointerUp={handlePointerUp}
-                type="button"
-              >
-                <Mic aria-hidden="true" strokeWidth={3.6} />
-                <span>
-                  {isRecording
-                    ? "Release when you finish"
-                    : "Press and hold to speak"}
-                </span>
-              </button>
+              <Play aria-hidden="true" strokeWidth={3} />
             )}
-          </div>
-        ) : null}
+            <span>{playbackLabel}</span>
+          </button>
+
+          {showUserTurn ? (
+            <div
+              aria-live="assertive"
+              className={`learner-mic-prompt ${
+                isRecording ? "is-recording" : isEvaluating ? "is-evaluating" : ""
+              }`}
+              role="status"
+            >
+              <strong>{currentStep.dialogue}</strong>
+              {isEvaluating ? (
+                <span className="checking-label">Checking your speech...</span>
+              ) : (
+                <button
+                  aria-label={
+                    isRecording ? "Release when you finish" : "Press and hold to speak"
+                  }
+                  className={`hold-to-talk-button ${isRecording ? "is-recording" : ""}`}
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyUp}
+                  onPointerCancel={cancelRecording}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  type="button"
+                >
+                  <Mic aria-hidden="true" strokeWidth={3.6} />
+                  <span>
+                    {isRecording ? "Release when you finish" : "Press and hold to speak"}
+                  </span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <span aria-live="polite" className="dock-status">
+              {progressLabel}
+            </span>
+          )}
+
+          <button
+            aria-label="Next scene"
+            className="scene-control-button"
+            disabled={atFinalScene}
+            onClick={() => dispatchSceneControl("SCENE_NEXT")}
+            type="button"
+          >
+            <ChevronRight aria-hidden="true" strokeWidth={3.2} />
+          </button>
+        </nav>
 
         {error ? (
           <div className="error-banner" role="alert">

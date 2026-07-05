@@ -16,7 +16,7 @@ function getRule(selector) {
 describe("hold-to-talk UI", () => {
   it("starts the lesson without requesting microphone permission", () => {
     assert.doesNotMatch(app, /requestMicrophoneAccess|recordSpeechClip/);
-    assert.match(app, /dispatch\(\{ type: "START" \}\)/);
+    assert.match(app, /dispatchSceneControl\("PLAY_SCENE"\)/);
     assert.match(app, /startSpeechRecording/);
   });
 
@@ -31,6 +31,8 @@ describe("hold-to-talk UI", () => {
   });
 
   it("renders an accessible hold button with recording states", () => {
+    assert.match(app, /learner-mic-prompt/);
+    assert.doesNotMatch(app, /className="speech-bubble is-user"/);
     assert.match(app, /hold-to-talk-button/);
     assert.match(app, /Press and hold to speak/);
     assert.match(app, /Release when you finish/);
