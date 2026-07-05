@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Mic,
-  Pause,
-  Play,
-  RotateCcw,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -132,7 +123,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
     createInitialLessonState()
   );
   const [error, setError] = useState("");
-  const [muted, setMuted] = useState(false);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackGenerationRef = useRef(0);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
@@ -185,11 +175,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
       },
     });
 
-    if (muted) {
-      const timeout = window.setTimeout(() => playbackOperation.complete(), 700);
-      return () => window.clearTimeout(timeout);
-    }
-
     let cancelled = false;
     const controller = new AbortController();
     playbackControllerRef.current = controller;
@@ -215,7 +200,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
     };
   }, [
     currentLesson,
-    muted,
     state.feedback,
     state.phase,
     state.sceneIndex,
@@ -262,14 +246,9 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
     dispatch({ type });
   }
 
-  function handlePlaybackControl() {
+  function handleStartAction() {
     if (state.phase === LessonPhase.Finished) {
       dispatchSceneControl("REPLAY_LESSON");
-      return;
-    }
-
-    if (playbackIsActive) {
-      dispatchSceneControl("PAUSE_SCENE");
       return;
     }
 
@@ -391,18 +370,13 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
   const isEvaluating = state.phase === LessonPhase.Evaluating;
   const showUserTurn =
     state.phase === LessonPhase.WaitingForUser || isRecording || isEvaluating;
-  const playbackIsActive =
-    state.phase !== LessonPhase.Idle &&
-    state.phase !== LessonPhase.Paused &&
-    state.phase !== LessonPhase.Finished;
+  const showStartAction =
+    state.phase === LessonPhase.Idle ||
+    state.phase === LessonPhase.Finished;
+  const startActionLabel =
+    state.phase === LessonPhase.Finished ? "Replay lesson" : "Start lesson";
   const atFirstScene = state.sceneIndex === 0;
   const atFinalScene = state.sceneIndex === currentLesson.scenes.length - 1;
-  const playbackLabel =
-    state.phase === LessonPhase.Finished
-      ? "Replay lesson"
-      : playbackIsActive
-        ? "Pause"
-        : "Play";
   const speechCharacterIndex = scene.characters.findIndex(
     (character) => character.id === scene.speech.speaker
   );
@@ -453,19 +427,18 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
           {versionLabel}
         </span>
 
-        <button
-          aria-label={muted ? "Unmute lesson audio" : "Mute lesson audio"}
-          aria-pressed={muted}
-          className={`volume-button ${muted ? "is-muted" : ""}`}
-          onClick={() => setMuted((value) => !value)}
-          type="button"
-        >
-          {muted ? (
-            <VolumeX aria-hidden="true" strokeWidth={3.4} />
-          ) : (
-            <Volume2 aria-hidden="true" strokeWidth={3.4} />
-          )}
-        </button>
+        {showStartAction ? (
+          <div className="lesson-start-layer">
+            <button
+              aria-label={startActionLabel}
+              className="start-lesson-button"
+              onClick={handleStartAction}
+              type="button"
+            >
+              <span>{startActionLabel}</span>
+            </button>
+          </div>
+        ) : null}
 
         <div className="character-layer">
           {scene.characters.map((character, index) => (
@@ -531,24 +504,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
             type="button"
           >
             <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
-          </button>
-
-          <button
-            aria-label={playbackLabel}
-            className={`playback-control-button ${
-              playbackIsActive ? "is-playing" : ""
-            }`}
-            onClick={handlePlaybackControl}
-            type="button"
-          >
-            {state.phase === LessonPhase.Finished ? (
-              <RotateCcw aria-hidden="true" strokeWidth={3} />
-            ) : playbackIsActive ? (
-              <Pause aria-hidden="true" strokeWidth={3} />
-            ) : (
-              <Play aria-hidden="true" strokeWidth={3} />
-            )}
-            <span>{playbackLabel}</span>
           </button>
 
           {showUserTurn ? (

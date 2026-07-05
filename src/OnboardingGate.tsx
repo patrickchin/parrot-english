@@ -263,6 +263,13 @@ export function answerForQuestion(
   return "";
 }
 
+export function shouldSyncActiveQuestion(
+  profile: ProfileWithAnswers | null,
+  question: Pick<OnboardingQuestion, "answerKey"> | null,
+) {
+  return Boolean(profile && question);
+}
+
 export function profileDraftsFromState(profileState: ProfileState) {
   return Object.fromEntries(
     profileState.questions.map((question) => [
@@ -495,9 +502,9 @@ export function OnboardingGate({
   const activeQuestionKey = activeQuestion?.answerKey ?? "";
 
   useEffect(() => {
+    if (!shouldSyncActiveQuestion(activeProfile, activeQuestion)) return;
     nextOperation();
-    if (!activeQuestion || !activeProfile) return;
-    setDraft(answerForQuestion(activeProfile, activeQuestion));
+    setDraft(answerForQuestion(activeProfile!, activeQuestion!));
     setFieldError("");
     setStatus("idle");
   }, [activeProfile, activeQuestion, activeQuestionKey, nextOperation]);
@@ -721,25 +728,28 @@ export function OnboardingGate({
     const boundary = profileOperationBoundaryRef.current;
     if (!boundary) return;
     const { controller, operation } = boundary.begin();
+    const isCurrentCapture = () =>
+      isCurrentOperation(operation) &&
+      !controller.signal.aborted;
     setProfileFieldError(question.answerKey, "");
     setProfileFieldStatuses({ [question.answerKey]: "recording" });
     try {
       const transcript = await captureOnboardingAnswer({
-        record: () => recordSpeechClip({ signal: controller.signal }),
-        transcribe: async (audio) => {
-          if (isCurrentOperation(operation)) {
+        record: (options) => recordSpeechClip(options),
+        signal: controller.signal,
+        transcribe: async (audio, options) => {
+          if (isCurrentCapture()) {
             setProfileFieldStatus(question.answerKey, "transcribing");
           }
-          return transcribeOnboardingAudio(audio, {
-            signal: controller.signal,
-          });
+          return transcribeOnboardingAudio(audio, options);
         },
       });
-      if (isCurrentOperation(operation)) {
+      if (isCurrentCapture()) {
         handleProfileValueChange(question.answerKey, transcript);
       }
     } catch (error) {
-      if (isCurrentOperation(operation)) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      if (isCurrentCapture()) {
         setProfileFieldError(
           question.answerKey,
           `${readableError(error)} You can still type your answer.`,
@@ -747,7 +757,7 @@ export function OnboardingGate({
       }
     } finally {
       boundary.finish(controller);
-      if (isCurrentOperation(operation)) {
+      if (isCurrentCapture()) {
         setProfileFieldStatus(question.answerKey, "idle");
       }
     }

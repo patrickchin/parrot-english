@@ -6,14 +6,13 @@ const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 describe("scene playback controls", () => {
-  it("renders every lesson action as an independent control", () => {
+  it("renders navigation and speaking actions without persistent playback controls", () => {
     const controls = app.match(
       /<nav[\s\S]*?className="scene-controls"[\s\S]*?<\/nav>/g,
     ) ?? [];
 
     assert.equal(controls.length, 1);
     assert.match(controls[0], /aria-label="Previous scene"/);
-    assert.match(controls[0], /aria-label=\{playbackLabel\}/);
     assert.match(controls[0], /className="learner-target-pill"/);
     assert.match(controls[0], /className="dock-status"/);
     assert.match(controls[0], /className=\{`hold-to-talk-button/);
@@ -21,13 +20,34 @@ describe("scene playback controls", () => {
     assert.match(controls[0], /aria-label="Next scene"/);
     assert.doesNotMatch(
       controls[0],
-      /scene-control-dock|learner-mic-prompt/,
+      /scene-control-dock|learner-mic-prompt|playback-control-button|playbackLabel/,
     );
     assert.match(app, /PLAY_SCENE/);
     assert.match(app, /PAUSE_SCENE/);
     assert.match(app, /SCENE_PREVIOUS/);
     assert.match(app, /SCENE_NEXT/);
     assert.match(app, /REPLAY_LESSON/);
+  });
+
+  it("renders a standalone Start or Replay action outside the bottom controls", () => {
+    assert.match(
+      app,
+      /const showStartAction =\s*state\.phase === LessonPhase\.Idle \|\|\s*state\.phase === LessonPhase\.Finished/,
+    );
+    assert.match(
+      app,
+      /const startActionLabel =\s*state\.phase === LessonPhase\.Finished\s*\? "Replay lesson"\s*:\s*"Start lesson"/,
+    );
+    assert.match(
+      app,
+      /className="lesson-start-layer"[\s\S]*aria-label=\{startActionLabel\}[\s\S]*className="start-lesson-button"[\s\S]*onClick=\{handleStartAction\}/,
+    );
+    assert.doesNotMatch(
+      app,
+      /playback-control-button|playbackLabel|Volume2|VolumeX|volume-button/,
+    );
+    assert.doesNotMatch(app, /const \[muted, setMuted\]/);
+    assert.doesNotMatch(styles, /\.playback-control-button|\.volume-button/);
   });
 
   it("cancels pending learner work before manual scene controls", () => {
@@ -63,10 +83,7 @@ describe("scene playback controls", () => {
       app,
       /createPlaybackOperation\(\{[\s\S]*?getCurrentGeneration: \(\) => playbackGenerationRef\.current[\s\S]*?\}\)/
     );
-    assert.match(
-      app,
-      /window\.setTimeout\(\(\) => playbackOperation\.complete\(\), 700\)/
-    );
+    assert.doesNotMatch(app, /if \(muted\)|window\.setTimeout/);
     assert.match(app, /\.then\(\(\) => playbackOperation\.complete\(\)\)/);
     assert.match(app, /playbackOperation\.fail\(caughtError\)/);
   });
@@ -95,7 +112,7 @@ describe("scene playback controls", () => {
   it("shows contrasting local focus rings on dock controls", () => {
     assert.match(
       styles,
-      /\.scene-control-button:focus-visible,\s*\.playback-control-button:focus-visible\s*\{[^}]*outline:\s*4px solid #fff[^}]*outline-offset:\s*3px/,
+      /\.scene-control-button:focus-visible\s*\{[^}]*outline:\s*4px solid #fff[^}]*outline-offset:\s*3px/,
     );
     assert.match(
       styles,

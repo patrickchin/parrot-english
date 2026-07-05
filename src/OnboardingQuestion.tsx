@@ -189,12 +189,18 @@ export async function replayOnboardingQuestion(
 
 export async function captureOnboardingAnswer({
   record = recordSpeechClip,
+  signal,
   transcribe = transcribeOnboardingAudio,
 }: {
-  record?: () => Promise<Blob>;
-  transcribe?: (audio: Blob) => Promise<{ transcript: string }>;
+  record?: (options?: { signal?: AbortSignal }) => Promise<Blob>;
+  signal?: AbortSignal;
+  transcribe?: (
+    audio: Blob,
+    options?: { signal?: AbortSignal },
+  ) => Promise<{ transcript: string }>;
 }) {
-  const audio = await record();
-  const result = await transcribe(audio);
+  const options = { signal };
+  const audio = await record(options);
+  const result = await transcribe(audio, options);
   return result.transcript;
 }

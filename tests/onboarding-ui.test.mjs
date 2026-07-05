@@ -35,6 +35,7 @@ const {
   nextProfileAcknowledgment,
   profileDraftsFromState,
   saveQuestionAndAdvance,
+  shouldSyncActiveQuestion,
   teardownProfileOperationResources,
   updateProfileDraft,
 } = gateModule;
@@ -216,6 +217,28 @@ describe("onboarding prompt and transcription helpers", () => {
     assert.equal(transcribedAudio, audio);
     assert.equal(transcript, "I like dinosaurs");
   });
+
+  it("forwards one abort signal through recording and transcription", async () => {
+    const controller = new AbortController();
+    const audio = new Blob(["audio"], { type: "audio/webm" });
+    let recordSignal;
+    let transcribeSignal;
+
+    await captureOnboardingAnswer({
+      signal: controller.signal,
+      async record(options) {
+        recordSignal = options?.signal;
+        return audio;
+      },
+      async transcribe(_audio, options) {
+        transcribeSignal = options?.signal;
+        return { transcript: "I like dinosaurs" };
+      },
+    });
+
+    assert.equal(recordSignal, controller.signal);
+    assert.equal(transcribeSignal, controller.signal);
+  });
 });
 
 describe("Peppa acknowledgment", () => {
@@ -329,6 +352,76 @@ describe("profile summary editor", () => {
     assert.match(html, /I am eight/);
     assert.match(html, />Save changes</);
     assert.doesNotMatch(html, /onboarding-chips|onboarding-suggestions/);
+  });
+
+  it("keeps cancel available during capture but blocks editing and saving", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        drafts: { age: "I am eight" },
+        fieldErrors: {},
+        fieldStatuses: { age: "recording" },
+        isSaving: false,
+        onCancel() {},
+        onClose() {},
+        onReplay() {},
+        onSave() {},
+        onTranscribe() {},
+        onValueChange() {},
+        pageError: "",
+        questions: [question()],
+      }),
+    );
+    const close = html.match(
+      /<button[^>]*aria-label="Close profile editor"[^>]*>/,
+    )?.[0];
+    const cancel = html.match(/<button[^>]*>Cancel<\/button>/)?.[0];
+    const save = html.match(/<button[^>]*>Save changes<\/button>/)?.[0];
+
+    assert.match(html, /<fieldset disabled="">/);
+    assert.doesNotMatch(close, /disabled/);
+    assert.doesNotMatch(cancel, /disabled/);
+    assert.match(save, /disabled/);
+  });
+
+  it("blocks closing, canceling, and saving while a save is active", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        drafts: { age: "I am eight" },
+        fieldErrors: {},
+        fieldStatuses: {},
+        isSaving: true,
+        onCancel() {},
+        onClose() {},
+        onReplay() {},
+        onSave() {},
+        onTranscribe() {},
+        onValueChange() {},
+        pageError: "",
+        questions: [question()],
+      }),
+    );
+    const buttons = [
+      html.match(/<button[^>]*aria-label="Close profile editor"[^>]*>/)?.[0],
+      html.match(/<button[^>]*>Cancel<\/button>/)?.[0],
+      html.match(/<button[^>]*>Saving…<\/button>/)?.[0],
+    ];
+
+    assert.ok(buttons.every((button) => button?.includes('disabled=""')));
+  });
+
+  it("cancels the active profile capture through shared profile teardown", () => {
+    assert.match(
+      gateSource,
+      /const clearProfileEditor = useCallback\(\(\) => \{\s*teardownProfileResources\(\);/,
+    );
+    assert.match(
+      gateSource,
+      /const closeProfileEditor = useCallback\(\(\) => \{[\s\S]*?clearProfileEditor\(\);/,
+    );
+    assert.match(
+      gateSource,
+      /captureOnboardingAnswer\(\{[\s\S]*?signal: controller\.signal,[\s\S]*?\}\);/,
+    );
   });
 
   it("derives and immutably updates all prose drafts", () => {
@@ -617,6 +710,17 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
+  it("does not sync question state before the initial onboarding load finishes", () => {
+    assert.equal(typeof shouldSyncActiveQuestion, "function");
+    assert.equal(shouldSyncActiveQuestion(null, null), false);
+    assert.equal(shouldSyncActiveQuestion(fullState().profile, null), false);
+    assert.equal(shouldSyncActiveQuestion(null, fullState().question), false);
+    assert.equal(
+      shouldSyncActiveQuestion(fullState().profile, fullState().question),
+      true,
+    );
+  });
+
   it("routes incomplete learners to onboarding and completed learners away from it", () => {
     const protectedPage = renderGate({
       data: fullState(),

@@ -127,6 +127,11 @@ function createSeededDatabase() {
       "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
     )
     .run("user-1", "Mia", "mia@example.test", 1_000, 1_000);
+  const insertSession = testDatabase.sqlite.prepare(
+    "INSERT INTO session (id, expires_at, token, user_id) VALUES (?, ?, ?, ?)",
+  );
+  insertSession.run("session-1", 9_999_999_999_999, "token-1", "user-1");
+  insertSession.run("session-2", 9_999_999_999_999, "token-2", "user-1");
   return {
     ...testDatabase,
     database: createDatabase(testDatabase.d1),
