@@ -272,7 +272,10 @@ describe("authentication infrastructure", () => {
     assert.match(wrangler, /"binding"\s*:\s*"DB"/);
     assert.match(wrangler, /"database_name"\s*:\s*"parrot-english-auth"/);
     assert.match(wrangler, /"migrations_dir"\s*:\s*"migrations"/);
-    assert.doesNotMatch(wrangler, /"database_id"\s*:/);
+    assert.match(
+      wrangler,
+      /"database_id"\s*:\s*"f1eb0748-0901-4b6e-821e-c120f6d6768e"/
+    );
     assert.match(tsconfig, /worker-configuration\.d\.ts/);
     assert.equal(
       devVars,
