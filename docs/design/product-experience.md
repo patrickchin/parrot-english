@@ -2,10 +2,11 @@
 
 ## Summary
 
-Parrot English is a one-page, full-screen English speaking experience for young
-children. A lesson plays like a short interactive episode: characters act out a
-situation, a character models a useful line, the learner repeats it, and a
-voice-only narrator gives brief feedback.
+Parrot English is a list-first English speaking experience for young children.
+After authentication, the learner sees discovered playable lessons and
+disabled previews for upcoming stories. A lesson plays like a short interactive
+episode: characters act out a situation, a character models a useful line, the
+learner repeats it, and a voice-only narrator gives brief feedback.
 
 All child-facing dialogue and narration is in English. Steps within the current
 scene advance automatically except when the learner must press and hold the
@@ -28,8 +29,10 @@ never add a visible character or emote entry.
 ## Lesson and Scene Structure
 
 Each lesson is an independent JSON file in `content/lessons`. The app discovers
-those files automatically and lists them in the lesson picker, so authors can
-add or remove lessons without changing application code.
+those files automatically and renders them as enabled lesson cards, so authors
+can add or remove lessons without changing application code. Three disabled
+preview cards show how the catalog can grow without creating incomplete lesson
+scripts.
 
 A lesson contains five to eight scenes. Each scene provides:
 
@@ -49,7 +52,7 @@ global emote set is intentionally small: `idle`, `talking`, `listening`,
 
 The implemented loop is:
 
-1. The learner or adult selects a lesson and presses Play.
+1. The learner or adult opens an enabled lesson card and presses Play.
 2. Character and narrator steps play automatically in script order.
 3. A user step waits with an obvious hold-to-talk control.
 4. The learner holds the microphone button, speaks, and releases it.
@@ -62,9 +65,13 @@ The implemented loop is:
 10. Final narrator praise completes the lesson and offers Replay Lesson.
 
 No character or narrator audio plays while recording or evaluating.
-Back and Next restart the adjacent scene from its first step. Pause stops the
-current activity, and the following Play restarts the current scene rather than
-resuming the interrupted step.
+Previous and Next restart the adjacent scene from its first step. Pause stops
+the current activity, and the following Play restarts the current scene rather
+than resuming the interrupted step.
+
+The separate Back to lessons control returns to the catalog and unmounts the
+active player. Reopening a lesson creates fresh state at scene 1. It never
+shares behavior or placement with the playback dock's Previous scene control.
 
 ## Hold-to-Talk State
 
@@ -83,12 +90,14 @@ The user turn must:
 
 ## Visual Design
 
-The app uses a fixed full-screen stage, a selected catalog background,
-transparent character sprites, rounded speech surfaces, and large tactile
-controls. A reserved bottom control dock contains Back, Play/Pause, Next, and
-the microphone prompt when it is the learner's turn, without covering story
-elements. Character placement is generic and based on each visible character's
-slot in the current scene, rather than hard-coded names.
+The lesson list uses a scrollable responsive card grid with story artwork,
+summaries, scene counts, and explicit disabled states. The player uses a fixed
+full-screen stage, a selected catalog background, transparent character
+sprites, rounded speech surfaces, and large tactile controls. A reserved bottom
+control dock contains Previous, Play/Pause, Next, and the microphone prompt
+when it is the learner's turn, without covering story elements. Character
+placement is generic and based on each visible character's slot in the current
+scene, rather than hard-coded names.
 
 Design constraints:
 

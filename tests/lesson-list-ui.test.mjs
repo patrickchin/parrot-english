@@ -30,4 +30,15 @@ describe("lesson list integration contracts", () => {
 
     assert.doesNotMatch(app, /<select|Lesson picker/);
   });
+
+  it("provides responsive catalog and Back-control styles", () => {
+    const styles = readProjectFile("src/styles.css");
+
+    assert.match(styles, /\.lesson-list-page\s*\{/);
+    assert.match(styles, /\.lesson-card-grid\s*\{[^}]*grid-template-columns/s);
+    assert.match(styles, /\.lesson-card-action:disabled\s*\{/);
+    assert.match(styles, /\.lesson-list-back-button\s*\{/);
+    assert.match(styles, /@media \(max-width: 700px\)/);
+    assert.doesNotMatch(styles, /\.lesson-picker/);
+  });
 });
