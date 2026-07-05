@@ -19,8 +19,9 @@ describe("architecture cleanup contracts", () => {
   it("renders generic story characters with scene controls", () => {
     const app = readProjectFile("src/App.tsx");
 
-    assert.match(app, /<select/);
-    assert.match(app, /Lesson picker/);
+    assert.match(app, /<LessonList/);
+    assert.match(app, /Back to lessons/);
+    assert.doesNotMatch(app, /<select|Lesson picker/);
     assert.match(app, /scene\.characters\.map/);
     assert.match(app, /narrator-caption/);
     assert.match(app, /ChevronLeft|ChevronRight/);
