@@ -33,4 +33,21 @@ describe("scene playback controls", () => {
     assert.match(app, /learner-mic-prompt/);
     assert.doesNotMatch(app, /user-turn-panel/);
   });
+
+  it("keeps the screen-reader summary as the only live progress region", () => {
+    assert.match(app, /<span className="dock-status">/);
+    assert.doesNotMatch(
+      app,
+      /<span aria-live="polite" className="dock-status">/
+    );
+  });
+
+  it("delegates completed recordings to the speech operation boundary", () => {
+    assert.match(app, /finishSpeechOperation/);
+    assert.match(app, /const generation = pressSequenceRef\.current/);
+    assert.match(
+      app,
+      /getCurrentGeneration: \(\) => pressSequenceRef\.current/
+    );
+  });
 });

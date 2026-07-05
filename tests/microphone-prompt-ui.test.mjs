@@ -32,7 +32,7 @@ describe("hold-to-talk UI", () => {
 
   it("renders an accessible hold button with recording states", () => {
     assert.match(app, /learner-mic-prompt/);
-    assert.doesNotMatch(app, /className="speech-bubble is-user"/);
+    assert.match(app, /scene\.speech\.kind === "user" \? null/);
     assert.match(app, /hold-to-talk-button/);
     assert.match(app, /Press and hold to speak/);
     assert.match(app, /Release when you finish/);

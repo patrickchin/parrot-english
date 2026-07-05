@@ -44,6 +44,7 @@ import {
   startSpeechRecording,
   type SpeechRecordingSession,
 } from "./speech-recorder";
+import { finishSpeechOperation } from "./speech-operation";
 
 const RECORDING_UNSUPPORTED_MESSAGE =
   "This browser does not support audio recording. Try the latest Chrome or Safari.";
@@ -276,47 +277,49 @@ export function LessonPlayer() {
   async function finishRecording() {
     if (!pressedRef.current) return;
     pressedRef.current = false;
+    const generation = pressSequenceRef.current;
     const session = recordingRef.current;
-    recordingRef.current = null;
+    const recordingController = recordingControllerRef.current;
+    if (recordingRef.current === session) {
+      recordingRef.current = null;
+    }
 
     if (!session) {
-      recordingControllerRef.current?.abort();
-      recordingControllerRef.current = null;
+      recordingController?.abort();
+      if (recordingControllerRef.current === recordingController) {
+        recordingControllerRef.current = null;
+      }
       return;
     }
 
-    dispatch({ type: "MIC_RELEASED" });
-    try {
-      const audio = await session.stop();
-      const controller = new AbortController();
-      evaluationControllerRef.current = controller;
-      const result = await evaluateSpeech({
-        audio,
-        signal: controller.signal,
-        targetText: currentStep.dialogue,
-      });
-      dispatch({
-        type: "EVALUATED",
-        passed: result.passed,
-        transcript: result.transcript,
-      });
-    } catch (caughtError) {
-      if (isAbortError(caughtError)) {
-        dispatch({ type: "RECORDING_CANCELLED" });
-        return;
-      }
-      setError(
-        caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
-          ? "Speech checking is not configured."
-          : `Speech check failed: ${
-              caughtError instanceof Error ? caughtError.message : "Unknown error."
-            }`
-      );
-      dispatch({ type: "EVALUATION_FAILED" });
-    } finally {
-      recordingControllerRef.current = null;
-      evaluationControllerRef.current = null;
-    }
+    await finishSpeechOperation({
+      evaluate: evaluateSpeech,
+      evaluationControllerRef,
+      generation,
+      getCurrentGeneration: () => pressSequenceRef.current,
+      onCancelled: () => dispatch({ type: "RECORDING_CANCELLED" }),
+      onEvaluated: (result) =>
+        dispatch({
+          type: "EVALUATED",
+          passed: result.passed,
+          transcript: result.transcript,
+        }),
+      onFailed: (caughtError) => {
+        setError(
+          caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
+            ? "Speech checking is not configured."
+            : `Speech check failed: ${
+                caughtError instanceof Error ? caughtError.message : "Unknown error."
+              }`
+        );
+        dispatch({ type: "EVALUATION_FAILED" });
+      },
+      onReleased: () => dispatch({ type: "MIC_RELEASED" }),
+      recordingController,
+      recordingControllerRef,
+      session,
+      targetText: currentStep.dialogue,
+    });
   }
 
   function cancelRecording() {
@@ -553,7 +556,7 @@ export function LessonPlayer() {
               )}
             </div>
           ) : (
-            <span aria-live="polite" className="dock-status">
+            <span className="dock-status">
               {progressLabel}
             </span>
           )}
