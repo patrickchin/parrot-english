@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 :root {
+  --lesson-ui-font-size: clamp(1rem, 1.3vw, 1.2rem);
+  --lesson-pill-height: 64px;
+  --lesson-pill-padding: 20px;
+  --lesson-pill-border: 4px solid #fff;
+  --lesson-pill-radius: 999px;
+  --lesson-pill-shadow-depth: 5px;
+  --lesson-edge-gap: clamp(14px, 2vw, 30px);
   color: #241d2b;
   font-family:
     ui-rounded,
@@ -29,12 +36,14 @@ body {
 
 button,
 input,
+textarea,
 select {
   font: inherit;
 }
 
 button:focus-visible,
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
   outline: 5px solid #204c7f;
   outline-offset: 4px;
@@ -56,6 +65,7 @@ select:focus-visible {
 .onboarding-start-card,
 .onboarding-status-card,
 .onboarding-question-card,
+.onboarding-acknowledgment-card,
 .onboarding-profile-shell {
   width: min(100%, 680px);
   border: 5px solid #fff;
@@ -71,6 +81,30 @@ select:focus-visible {
   gap: 14px;
   padding: clamp(26px, 6vw, 52px);
   text-align: center;
+}
+
+.onboarding-acknowledgment-card {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: clamp(28px, 7vw, 58px);
+  text-align: center;
+}
+
+.onboarding-acknowledgment-card h1 {
+  max-width: 540px;
+  margin: 0;
+  color: #173c67;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.08;
+}
+
+.onboarding-acknowledgment-peppa {
+  width: clamp(140px, 32vw, 230px);
+  max-height: 240px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 0 rgb(32 76 127 / 16%));
+  animation: onboarding-float 2.4s ease-in-out infinite;
 }
 
 .onboarding-start-card h1,
@@ -231,20 +265,24 @@ select:focus-visible {
 
 .onboarding-input-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
   gap: 8px;
 }
 
-.onboarding-input-row input {
+.onboarding-input-row textarea {
   width: 100%;
   min-width: 0;
-  min-height: 52px;
+  min-height: 112px;
+  resize: vertical;
   border: 3px solid #a9d5e8;
   border-radius: 16px;
   background: #fff;
   color: #173c67;
-  padding: 0 15px;
+  padding: 13px 15px;
+  font: inherit;
   font-weight: 800;
+  line-height: 1.45;
 }
 
 .onboarding-input-action {
@@ -436,6 +474,7 @@ select:focus-visible {
   .onboarding-start-card,
   .onboarding-status-card,
   .onboarding-question-card,
+  .onboarding-acknowledgment-card,
   .onboarding-profile-shell {
     margin-block: auto;
     border-width: 4px;
@@ -680,7 +719,7 @@ select:focus-visible {
 .user-session-bar > span:first-child {
   min-width: 0;
   overflow: hidden;
-  font-size: 0.95rem;
+  font-size: var(--lesson-ui-font-size);
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -695,7 +734,7 @@ select:focus-visible {
   color: #fff;
   cursor: pointer;
   padding: 6px 12px;
-  font-size: 0.875rem;
+  font-size: var(--lesson-ui-font-size);
   font-weight: 900;
   white-space: nowrap;
 }
@@ -956,10 +995,12 @@ select:focus-visible {
 .scene-hud {
   position: absolute;
   top: clamp(14px, 2.2vh, 28px);
-  left: clamp(14px, 2vw, 30px);
+  left: 50%;
   z-index: 20;
   display: grid;
+  justify-items: center;
   gap: 10px;
+  transform: translateX(-50%);
 }
 
 .scene-title-card {
@@ -983,12 +1024,16 @@ select:focus-visible {
 }
 
 .scene-title {
+  display: grid;
   max-width: min(36vw, 360px);
   overflow: hidden;
-  border-radius: 999px;
+  min-height: var(--lesson-pill-height);
+  align-content: center;
+  border: var(--lesson-pill-border);
+  border-radius: var(--lesson-pill-radius);
   background: rgb(255 255 255 / 92%);
-  padding: 12px 20px;
-  font-size: clamp(1.05rem, 1.55vw, 1.5rem);
+  padding: 0 var(--lesson-pill-padding);
+  font-size: var(--lesson-ui-font-size);
   font-weight: 950;
   line-height: 1;
   text-overflow: ellipsis;
@@ -1016,8 +1061,10 @@ select:focus-visible {
 }
 
 .build-version-badge {
-  grid-column: 1 / -1;
-  justify-self: start;
+  position: absolute;
+  top: calc(clamp(14px, 2.2vh, 28px) + var(--lesson-pill-height) + 10px);
+  left: var(--lesson-edge-gap);
+  z-index: 20;
   max-width: 100%;
   border: 2px solid rgba(255, 255, 255, 0.88);
   border-radius: 999px;
@@ -1035,28 +1082,27 @@ select:focus-visible {
 .lesson-list-back-button {
   position: absolute;
   top: clamp(14px, 2.2vh, 28px);
-  left: 50%;
+  left: var(--lesson-edge-gap);
   z-index: 20;
   display: inline-flex;
-  min-height: 54px;
+  min-height: var(--lesson-pill-height);
   align-items: center;
   gap: 5px;
-  border: 4px solid rgb(255 255 255 / 94%);
-  border-radius: 999px;
+  border: var(--lesson-pill-border);
+  border-radius: var(--lesson-pill-radius);
   background: #204c7f;
   color: #fff;
-  padding: 8px 20px 8px 12px;
-  transform: translateX(-50%);
+  padding: 0 var(--lesson-pill-padding) 0 12px;
   box-shadow: 0 5px 0 rgb(18 55 92 / 45%);
   cursor: pointer;
-  font-size: clamp(1rem, 1.25vw, 1.2rem);
+  font-size: var(--lesson-ui-font-size);
   font-weight: 950;
   transition: filter 160ms ease, transform 160ms ease;
 }
 
 .lesson-list-back-button:hover {
   filter: brightness(1.08);
-  transform: translate(-50%, -2px);
+  transform: translateY(-2px);
 }
 
 .lesson-list-back-button svg {
@@ -1070,11 +1116,11 @@ select:focus-visible {
   right: clamp(14px, 2vw, 30px);
   z-index: 20;
   display: grid;
-  width: clamp(54px, 5vw, 72px);
-  aspect-ratio: 1;
+  width: var(--lesson-pill-height);
+  height: var(--lesson-pill-height);
   place-items: center;
-  border: 5px solid rgb(255 255 255 / 94%);
-  border-radius: 999px;
+  border: var(--lesson-pill-border);
+  border-radius: var(--lesson-pill-radius);
   background: #ff467b;
   color: #fff;
   cursor: pointer;
@@ -1107,6 +1153,7 @@ select:focus-visible {
   left: var(--slot-left);
   z-index: 5;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   width: clamp(150px, 23vw, 340px);
   height: min(48vh, 450px);
   justify-items: center;
@@ -1127,7 +1174,8 @@ select:focus-visible {
 .character-sprite img {
   display: block;
   width: 100%;
-  height: calc(100% - 34px);
+  min-height: 0;
+  height: 100%;
   object-fit: contain;
   object-position: center bottom;
   user-select: none;
@@ -1141,7 +1189,7 @@ select:focus-visible {
   background: rgb(32 76 127 / 92%);
   color: #fff;
   padding: 4px 13px;
-  font-size: clamp(0.9rem, 1vw, 1.05rem);
+  font-size: var(--lesson-ui-font-size);
   font-weight: 950;
   line-height: 1;
   text-align: center;
@@ -1234,37 +1282,31 @@ select:focus-visible {
   bottom: clamp(12px, 2vh, 24px);
   left: 50%;
   z-index: 24;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  width: min(86vw, 1320px);
+  display: flex;
+  width: min(calc(100vw - 24px), 1160px);
   align-items: center;
-  gap: clamp(10px, 1.2vw, 18px);
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(8px, 1vw, 14px);
   transform: translateX(-50%);
 }
 
-.scene-control-dock {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  min-height: 86px;
-  align-items: center;
-  gap: clamp(8px, 1vw, 16px);
-  border: 5px solid #fff;
-  border-radius: 999px;
-  background: rgb(23 60 103 / 96%);
-  padding: clamp(8px, 1.2vw, 14px);
-  box-shadow: 0 8px 0 rgb(12 38 68 / 38%), 0 18px 42px rgb(26 86 126 / 28%);
-}
-
 .scene-control-button,
-.playback-control-button {
+.playback-control-button,
+.dock-status,
+.learner-target-pill,
+.hold-to-talk-button,
+.checking-label {
   display: inline-flex;
-  min-width: 58px;
-  min-height: 58px;
+  min-height: var(--lesson-pill-height);
   align-items: center;
   justify-content: center;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
+  border: var(--lesson-pill-border);
+  border-radius: var(--lesson-pill-radius);
+  padding: 0 var(--lesson-pill-padding);
+  font-size: var(--lesson-ui-font-size);
+  font-weight: 950;
+  line-height: 1;
 }
 
 .scene-control-button:focus-visible,
@@ -1274,14 +1316,14 @@ select:focus-visible {
 }
 
 .scene-control-button {
-  width: 64px;
-  min-width: 64px;
-  min-height: 64px;
-  aspect-ratio: 1;
-  border: 5px solid #fff;
+  width: var(--lesson-pill-height);
+  min-width: var(--lesson-pill-height);
+  height: var(--lesson-pill-height);
   background: #ff467b;
   color: #fff;
-  box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
+  padding: 0;
+  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(171 38 83 / 42%);
+  cursor: pointer;
 }
 
 .scene-control-button:disabled {
@@ -1299,10 +1341,8 @@ select:focus-visible {
   gap: 9px;
   background: #ffd944;
   color: #241d2b;
-  padding: 0 20px;
-  font-size: clamp(1rem, 1.3vw, 1.2rem);
-  font-weight: 950;
-  line-height: 1;
+  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(166 124 16 / 38%);
+  cursor: pointer;
 }
 
 .playback-control-button svg {
@@ -1312,55 +1352,36 @@ select:focus-visible {
 }
 
 .dock-status {
+  max-width: min(42vw, 520px);
   min-width: 0;
   overflow: hidden;
+  background: #173c67;
   color: #fff;
-  font-size: clamp(1rem, 1.3vw, 1.2rem);
-  font-weight: 900;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(12 38 68 / 38%);
 }
 
-.learner-mic-prompt {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+.learner-target-pill {
+  max-width: min(38vw, 500px);
   min-width: 0;
-  align-items: center;
-  gap: clamp(10px, 1.2vw, 18px);
-  border-radius: 999px;
   background: rgb(255 255 255 / 97%);
-  padding: 8px 10px 8px 22px;
-}
-
-.learner-mic-prompt > strong {
-  min-width: 0;
-  overflow: hidden;
   color: #173c67;
-  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
-  font-weight: 950;
-  line-height: 1.1;
+  overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(70 143 190 / 28%);
 }
 
 .hold-to-talk-button {
-  display: flex;
-  min-height: 62px;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
-  border: 0;
-  border-radius: 999px;
   background: #087451;
   color: #fff;
   cursor: pointer;
-  padding: 10px 26px;
-  font-size: clamp(0.95rem, 1.3vw, 1.15rem);
-  font-weight: 950;
   touch-action: none;
-  box-shadow: 0 5px 0 rgb(4 79 55 / 45%);
+  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(4 79 55 / 45%);
   user-select: none;
 }
 
@@ -1379,25 +1400,11 @@ select:focus-visible {
   background: #d62f70;
 }
 
-.learner-mic-prompt.is-recording {
-  background: #fff7ce;
-}
-
-.learner-mic-prompt.is-evaluating {
-  background: #eaf8ff;
-}
-
 .checking-label {
-  display: inline-grid;
-  min-height: 48px;
-  place-items: center;
-  border-radius: 999px;
   background: #173c67;
   color: #fff;
-  padding: 0 20px;
-  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
-  font-weight: 950;
   white-space: nowrap;
+  box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(12 38 68 / 38%);
 }
 
 .error-banner {
@@ -1439,10 +1446,6 @@ select:focus-visible {
 }
 
 @media (max-width: 900px) {
-  .lesson-list-back-button {
-    top: 88px;
-  }
-
   .character-sprite {
     bottom: calc(var(--control-safe-area) + clamp(4px, 1vh, 14px));
     width: clamp(145px, 31vw, 280px);
@@ -1515,19 +1518,35 @@ select:focus-visible {
 }
 
 @media (max-width: 720px) {
+  :root {
+    --lesson-pill-height: 52px;
+    --lesson-pill-padding: 14px;
+    --lesson-pill-shadow-depth: 4px;
+  }
+
   .lesson-stage {
-    --control-safe-area: clamp(210px, 32vh, 238px);
+    --control-safe-area: clamp(150px, 22vh, 180px);
   }
 
   .scene-title {
-    display: none;
+    max-width: min(48vw, 220px);
   }
 
   .lesson-list-back-button {
     top: 18px;
-    max-width: min(58vw, 240px);
-    min-height: 52px;
-    padding-right: 14px;
+    width: var(--lesson-pill-height);
+    min-width: var(--lesson-pill-height);
+    height: var(--lesson-pill-height);
+    justify-content: center;
+    padding: 0;
+  }
+
+  .lesson-list-back-button > span {
+    display: none;
+  }
+
+  .build-version-badge {
+    display: none;
   }
 
   .lesson-flow-banner {
@@ -1536,7 +1555,7 @@ select:focus-visible {
   }
 
   .user-session-bar {
-    top: 82px;
+    top: 94px;
     right: 12px;
     max-width: calc(100vw - 24px);
   }
@@ -1557,7 +1576,7 @@ select:focus-visible {
   }
 
   .speech-bubble {
-    top: 154px;
+    top: 168px;
     width: min(58vw, 310px);
     min-height: 98px;
     padding: 14px 16px;
@@ -1569,30 +1588,28 @@ select:focus-visible {
   }
 
   .narrator-caption {
-    top: 148px;
+    top: 164px;
     width: min(88vw, 560px);
     padding: 14px 18px;
   }
 
   .scene-controls {
+    display: grid;
     width: calc(100vw - 20px);
-    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    grid-template-areas:
+      "prompt prompt prompt prompt"
+      "previous playback microphone next";
+    grid-template-columns: var(--lesson-pill-height) auto auto var(--lesson-pill-height);
+    justify-content: center;
     gap: 8px;
   }
 
-  .scene-control-dock {
-    grid-template-areas:
-      "prompt"
-      "playback";
-    grid-template-columns: minmax(0, 1fr);
-    border-radius: 28px;
-    padding: 10px;
+  .scene-control-button:first-of-type {
+    grid-area: previous;
   }
 
-  .scene-control-button {
-    width: 52px;
-    min-width: 52px;
-    min-height: 52px;
+  .scene-control-button:last-of-type {
+    grid-area: next;
   }
 
   .playback-control-button {
@@ -1600,26 +1617,18 @@ select:focus-visible {
     justify-self: center;
   }
 
-  .learner-mic-prompt,
-  .dock-status {
+  .dock-status,
+  .learner-target-pill {
     grid-area: prompt;
+    width: min(100%, 360px);
+    max-width: calc(100vw - 20px);
+    justify-self: center;
   }
 
-  .learner-mic-prompt {
-    grid-template-columns: minmax(0, 1fr);
-    border-radius: 22px;
-    padding: 10px;
-  }
-
-  .learner-mic-prompt > strong {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
-  }
-
-  .hold-to-talk-button {
-    min-height: 56px;
-    padding: 8px 18px;
+  .hold-to-talk-button,
+  .checking-label {
+    grid-area: microphone;
+    justify-self: center;
   }
 
   .error-banner {
@@ -1656,8 +1665,14 @@ select:focus-visible {
 }
 
 @media (max-height: 620px) {
+  :root {
+    --lesson-pill-height: 44px;
+    --lesson-pill-padding: 12px;
+    --lesson-pill-shadow-depth: 4px;
+  }
+
   .lesson-stage {
-    --control-safe-area: clamp(84px, 23vh, 112px);
+    --control-safe-area: clamp(78px, 23vh, 104px);
   }
 
   .lesson-list-back-button {
@@ -1676,25 +1691,10 @@ select:focus-visible {
 
   .scene-controls {
     bottom: 6px;
-    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    display: flex;
+    width: min(calc(100vw - 12px), 1160px);
+    flex-wrap: nowrap;
     gap: 6px;
-  }
-
-  .scene-control-dock {
-    min-height: 62px;
-    gap: 6px;
-    border-width: 3px;
-    padding: 6px;
-  }
-
-  .scene-control-button,
-  .playback-control-button {
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .scene-control-button {
-    width: 44px;
   }
 
   .scene-control-button svg {
@@ -1704,7 +1704,6 @@ select:focus-visible {
 
   .playback-control-button {
     gap: 6px;
-    padding: 0 12px;
   }
 
   .playback-control-button svg {
@@ -1712,16 +1711,16 @@ select:focus-visible {
     height: 24px;
   }
 
-  .learner-mic-prompt {
-    gap: 8px;
-    padding: 4px 6px 4px 14px;
+  .dock-status {
+    max-width: min(38vw, 380px);
+  }
+
+  .learner-target-pill {
+    max-width: min(34vw, 340px);
   }
 
   .hold-to-talk-button {
-    min-height: 44px;
     gap: 8px;
-    padding: 6px 14px;
-    font-size: 0.9rem;
   }
 
   .hold-to-talk-button svg {
@@ -1729,64 +1728,44 @@ select:focus-visible {
     height: 24px;
   }
 
-  .checking-label {
-    min-height: 44px;
-    padding: 0 14px;
-    font-size: 0.85rem;
+  .hold-to-talk-button > span {
+    display: none;
   }
 }
 
 @media (max-width: 720px) and (max-height: 620px) {
   .lesson-stage {
-    --control-safe-area: clamp(78px, 24vh, 96px);
+    --control-safe-area: clamp(76px, 24vh, 94px);
   }
 
-  .scene-control-dock {
-    grid-template-areas: "playback prompt";
-    grid-template-columns: auto minmax(0, 1fr);
-    border-radius: 999px;
+  .scene-controls {
+    display: flex;
+    flex-wrap: nowrap;
   }
 
-  .learner-mic-prompt {
-    grid-template-columns: minmax(0, 1fr) auto;
-    border-radius: 999px;
-    padding: 4px 6px 4px 12px;
-  }
-
-  .learner-mic-prompt > strong {
+  .learner-target-pill {
+    max-width: 28vw;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .learner-mic-prompt.is-evaluating {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 4px 6px;
+  .playback-control-button,
+  .hold-to-talk-button {
+    width: var(--lesson-pill-height);
+    min-width: var(--lesson-pill-height);
+    padding: 0;
   }
 
-  .learner-mic-prompt.is-evaluating > strong {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .learner-mic-prompt.is-evaluating .checking-label {
-    min-width: 0;
-    width: 100%;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 0 6px;
-    font-size: 0.72rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .hold-to-talk-button > span {
+  .playback-control-button > span {
     display: none;
+  }
+
+  .checking-label {
+    max-width: 26vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -1801,7 +1780,8 @@ select:focus-visible {
   }
 
   .onboarding-start-peppa,
-  .onboarding-peppa {
+  .onboarding-peppa,
+  .onboarding-acknowledgment-peppa {
     animation: none;
   }
 }

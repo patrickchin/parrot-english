@@ -14,11 +14,10 @@ function getRule(selector) {
 }
 
 describe("catalog-driven stage layout", () => {
-  it("reserves a safe area for the lesson control dock", () => {
+  it("reserves a safe area for the independent lesson controls", () => {
     const stage = getRule(".lesson-stage");
     const sprite = getRule(".character-sprite");
     const controls = getRule(".scene-controls");
-    const dock = getRule(".scene-control-dock");
 
     assert.match(
       stage,
@@ -29,48 +28,65 @@ describe("catalog-driven stage layout", () => {
       /bottom:\s*calc\(var\(--control-safe-area\)\s*\+\s*clamp\(4px,\s*1vh,\s*14px\)\)/,
     );
     assert.match(controls, /position:\s*absolute/);
-    assert.match(controls, /grid-template-columns:/);
-    assert.match(dock, /background:\s*rgb\(23 60 103/);
+    assert.match(controls, /display:\s*flex/);
+    assert.match(controls, /flex-wrap:\s*wrap/);
   });
 
-  it("keeps pink chevron navigation outside the center action dock", () => {
+  it("uses an invisible control layout with independent pill surfaces", () => {
     const controls = app.match(
       /<nav aria-label="Lesson controls" className="scene-controls">[\s\S]*?<\/nav>/,
     );
+    const controlGroup = getRule(".scene-controls");
+    const independentPills = getRule(
+      ".scene-control-button,\n.playback-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
+    );
     const navigationButton = getRule(".scene-control-button");
     const disabledNavigationButton = getRule(".scene-control-button:disabled");
-    const controlGroup = getRule(".scene-controls");
-    const dock = getRule(".scene-control-dock");
 
     assert.ok(controls, "Expected the lesson controls nav");
     assert.match(
       controls[0],
-      /aria-label="Previous scene"[\s\S]*<ChevronLeft[\s\S]*<div className="scene-control-dock">[\s\S]*aria-label=\{playbackLabel\}[\s\S]*<\/div>\s*<button\s*aria-label="Next scene"[\s\S]*<ChevronRight/,
+      /aria-label="Previous scene"[\s\S]*<ChevronLeft[\s\S]*aria-label=\{playbackLabel\}[\s\S]*className="learner-target-pill"[\s\S]*aria-label="Next scene"[\s\S]*<ChevronRight/,
     );
-    assert.match(controlGroup, /width:\s*min\(86vw,\s*1320px\)/);
+    assert.match(controlGroup, /display:\s*flex/);
+    assert.match(controlGroup, /flex-wrap:\s*wrap/);
+    assert.doesNotMatch(controlGroup, /background:|border:|box-shadow:/);
     assert.match(
-      controlGroup,
-      /grid-template-columns:\s*auto minmax\(0,\s*1fr\) auto/,
+      independentPills,
+      /min-height:\s*var\(--lesson-pill-height\)/,
     );
-    assert.match(
-      dock,
-      /grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
-    );
+    assert.doesNotMatch(app, /scene-control-dock/);
     assert.match(navigationButton, /background:\s*#ff467b/);
     assert.match(navigationButton, /color:\s*#fff/);
-    assert.match(navigationButton, /border:\s*5px solid #fff/);
     assert.match(disabledNavigationButton, /opacity:\s*0\.68/);
+  });
+
+  it("anchors Back left and centers the title cluster", () => {
+    const backButton = getRule(".lesson-list-back-button");
+    const titleCluster = getRule(".scene-hud");
+    const buildBadge = getRule(".build-version-badge");
+
+    assert.match(backButton, /left:\s*var\(--lesson-edge-gap\)/);
+    assert.doesNotMatch(backButton, /translateX/);
+    assert.match(titleCluster, /left:\s*50%/);
+    assert.match(titleCluster, /transform:\s*translateX\(-50%\)/);
+    assert.match(buildBadge, /position:\s*absolute/);
+    assert.match(buildBadge, /left:\s*var\(--lesson-edge-gap\)/);
   });
 
   it("positions every character through shared catalog slots", () => {
     const layer = getRule(".character-layer");
     const sprite = getRule(".character-sprite");
+    const artwork = getRule(".character-sprite img");
 
     assert.match(layer, /position:\s*absolute/);
     assert.match(sprite, /--character-index/);
     assert.match(sprite, /--character-count/);
     assert.match(sprite, /position:\s*absolute/);
     assert.match(sprite, /object-position|left:/);
+    assert.match(sprite, /grid-template-rows:\s*minmax\(0,\s*1fr\) auto/);
+    assert.match(artwork, /min-height:\s*0/);
+    assert.match(artwork, /height:\s*100%/);
   });
 
   it("anchors speech to the same dynamic character slots", () => {
@@ -88,26 +104,38 @@ describe("catalog-driven stage layout", () => {
     assert.match(caption, /text-align:\s*center/);
   });
 
-  it("uses an explicit lesson-screen type hierarchy", () => {
+  it("shares one normal type size and pill geometry", () => {
+    const root = getRule(":root");
+    const lessonPills = getRule(
+      ".scene-control-button,\n.playback-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
+    );
+
+    assert.match(
+      root,
+      /--lesson-ui-font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/,
+    );
+    assert.match(root, /--lesson-pill-height:\s*64px/);
+    assert.match(root, /--lesson-pill-border:\s*4px solid #fff/);
+    assert.match(root, /--lesson-pill-radius:\s*999px/);
     assert.match(
       getRule(".user-session-bar > span:first-child"),
-      /font-size:\s*0\.95rem/,
+      /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
     assert.match(
       getRule(".user-session-bar button"),
-      /font-size:\s*0\.875rem/,
+      /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
     assert.match(
       getRule(".scene-title"),
-      /font-size:\s*clamp\(1\.05rem,\s*1\.55vw,\s*1\.5rem\)/,
+      /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
     assert.match(
       getRule(".lesson-list-back-button"),
-      /font-size:\s*clamp\(1rem,\s*1\.25vw,\s*1\.2rem\)/,
+      /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
     assert.match(
       getRule(".character-name"),
-      /font-size:\s*clamp\(0\.9rem,\s*1vw,\s*1\.05rem\)/,
+      /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
     assert.match(
       styles,
@@ -117,26 +145,7 @@ describe("catalog-driven stage layout", () => {
       styles,
       /\.speech-bubble p,\s*\.narrator-caption p\s*\{[^}]*font-size:\s*clamp\(1\.5rem,\s*2\.5vw,\s*2\.625rem\)/s,
     );
-    assert.match(
-      styles,
-      /\.playback-control-button\s*\{[^}]*flex-flow:[^}]*font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/s,
-    );
-    assert.match(
-      getRule(".dock-status"),
-      /font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/,
-    );
-    assert.match(
-      getRule(".learner-mic-prompt > strong"),
-      /font-size:\s*clamp\(1\.15rem,\s*1\.7vw,\s*1\.5rem\)/,
-    );
-    assert.match(
-      getRule(".hold-to-talk-button"),
-      /font-size:\s*clamp\(0\.95rem,\s*1\.3vw,\s*1\.15rem\)/,
-    );
-    assert.match(
-      getRule(".checking-label"),
-      /font-size:\s*clamp\(0\.9rem,\s*1\.2vw,\s*1\.05rem\)/,
-    );
+    assert.match(lessonPills, /font-size:\s*var\(--lesson-ui-font-size\)/);
   });
 
   it("provides a compact layout for narrow screens", () => {
@@ -148,19 +157,23 @@ describe("catalog-driven stage layout", () => {
     assert.ok(compactEnd > compactStart);
     assert.match(
       compactStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(210px,\s*32vh,\s*238px\)/,
+      /:root\s*\{[^}]*--lesson-pill-height:\s*52px/,
     );
     assert.match(
       compactStyles,
-      /\.scene-controls\s*\{[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-columns:\s*52px minmax\(0,\s*1fr\) 52px/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(150px,\s*22vh,\s*180px\)/,
     );
     assert.match(
       compactStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"prompt"\s*"playback"[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+      /\.scene-controls\s*\{[^}]*display:\s*grid[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-areas:\s*"prompt prompt prompt prompt"\s*"previous playback microphone next"/,
     );
     assert.match(
       compactStyles,
-      /\.scene-control-button\s*\{[^}]*width:\s*52px[^}]*min-width:\s*52px[^}]*min-height:\s*52px/,
+      /\.lesson-list-back-button > span\s*\{[^}]*display:\s*none/,
+    );
+    assert.doesNotMatch(
+      compactStyles,
+      /scene-control-dock|learner-mic-prompt/,
     );
     assert.match(
       compactStyles,
@@ -168,7 +181,7 @@ describe("catalog-driven stage layout", () => {
     );
   });
 
-  it("compacts the dock and stage content for short viewports", () => {
+  it("compacts the independent pills and stage content for short viewports", () => {
     const shortStart = styles.indexOf("@media (max-height: 620px)");
     const combinedStart = styles.indexOf(
       "@media (max-width: 720px) and (max-height: 620px)",
@@ -183,25 +196,21 @@ describe("catalog-driven stage layout", () => {
     assert.ok(shortEnd > shortStart);
     assert.match(
       shortStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(84px,\s*23vh,\s*112px\)/,
+      /:root\s*\{[^}]*--lesson-pill-height:\s*44px/,
     );
     assert.match(
       shortStyles,
-      /\.scene-controls\s*\{[^}]*bottom:\s*6px[^}]*grid-template-columns:\s*44px minmax\(0,\s*1fr\) 44px/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(78px,\s*23vh,\s*104px\)/,
     );
     assert.match(
       shortStyles,
-      /\.scene-control-dock\s*\{[^}]*min-height:\s*62px[^}]*border-width:\s*3px[^}]*padding:\s*6px/,
+      /\.scene-controls\s*\{[^}]*bottom:\s*6px[^}]*display:\s*flex[^}]*flex-wrap:\s*nowrap/,
     );
     assert.match(
       shortStyles,
-      /\.scene-control-button,\s*\.playback-control-button\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/,
+      /\.hold-to-talk-button > span\s*\{[^}]*display:\s*none/,
     );
-    assert.match(
-      shortStyles,
-      /\.hold-to-talk-button\s*\{[^}]*min-height:\s*44px/,
-    );
-    assert.match(shortStyles, /\.checking-label\s*\{[^}]*min-height:\s*44px/);
+    assert.doesNotMatch(shortStyles, /scene-control-dock|learner-mic-prompt/);
     assert.match(
       shortStyles,
       /\.speech-bubble,\s*\.narrator-caption\s*\{[^}]*top:\s*112px/,
@@ -212,7 +221,7 @@ describe("catalog-driven stage layout", () => {
     );
   });
 
-  it("uses a single-row dock in short narrow viewports", () => {
+  it("uses one row of independent pills in short narrow viewports", () => {
     const combinedStart = styles.indexOf(
       "@media (max-width: 720px) and (max-height: 620px)",
     );
@@ -225,19 +234,19 @@ describe("catalog-driven stage layout", () => {
     assert.ok(combinedEnd > combinedStart);
     assert.match(
       combinedStyles,
-      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(78px,\s*24vh,\s*96px\)/,
+      /\.lesson-stage\s*\{[^}]*--control-safe-area:\s*clamp\(76px,\s*24vh,\s*94px\)/,
     );
     assert.match(
       combinedStyles,
-      /\.scene-control-dock\s*\{[^}]*grid-template-areas:\s*"playback prompt"[^}]*grid-template-columns:\s*auto minmax\(0,\s*1fr\)/,
+      /\.scene-controls\s*\{[^}]*display:\s*flex[^}]*flex-wrap:\s*nowrap/,
     );
     assert.match(
       combinedStyles,
-      /\.learner-mic-prompt\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\) auto/,
+      /\.learner-target-pill\s*\{[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
     );
-    assert.match(
+    assert.doesNotMatch(
       combinedStyles,
-      /\.learner-mic-prompt > strong\s*\{[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
+      /scene-control-dock|learner-mic-prompt/,
     );
   });
 });

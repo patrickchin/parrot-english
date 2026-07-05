@@ -422,12 +422,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
               />
             ))}
           </div>
-          <span
-            aria-label={`Build version ${versionLabel}`}
-            className="build-version-badge"
-          >
-            {versionLabel}
-          </span>
         </header>
 
         <button
@@ -439,6 +433,13 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
           <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
           <span>Back to lessons</span>
         </button>
+
+        <span
+          aria-label={`Build version ${versionLabel}`}
+          className="build-version-badge"
+        >
+          {versionLabel}
+        </span>
 
         <button
           aria-label={muted ? "Unmute lesson audio" : "Mute lesson audio"}
@@ -520,66 +521,70 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
             <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
           </button>
 
-          <div className="scene-control-dock">
-            <button
-              aria-label={playbackLabel}
-              className={`playback-control-button ${
-                playbackIsActive ? "is-playing" : ""
-              }`}
-              onClick={handlePlaybackControl}
-              type="button"
-            >
-              {state.phase === LessonPhase.Finished ? (
-                <RotateCcw aria-hidden="true" strokeWidth={3} />
-              ) : playbackIsActive ? (
-                <Pause aria-hidden="true" strokeWidth={3} />
-              ) : (
-                <Play aria-hidden="true" strokeWidth={3} />
-              )}
-              <span>{playbackLabel}</span>
-            </button>
+          <button
+            aria-label={playbackLabel}
+            className={`playback-control-button ${
+              playbackIsActive ? "is-playing" : ""
+            }`}
+            onClick={handlePlaybackControl}
+            type="button"
+          >
+            {state.phase === LessonPhase.Finished ? (
+              <RotateCcw aria-hidden="true" strokeWidth={3} />
+            ) : playbackIsActive ? (
+              <Pause aria-hidden="true" strokeWidth={3} />
+            ) : (
+              <Play aria-hidden="true" strokeWidth={3} />
+            )}
+            <span>{playbackLabel}</span>
+          </button>
 
-            {showUserTurn ? (
-              <div
+          {showUserTurn ? (
+            <>
+              <strong
                 aria-live="assertive"
-                className={`learner-mic-prompt ${
-                  isRecording ? "is-recording" : isEvaluating ? "is-evaluating" : ""
-                }`}
+                className="learner-target-pill"
                 role="status"
               >
-                <strong>{currentStep.dialogue}</strong>
-                {isEvaluating ? (
-                  <span className="checking-label">Checking your speech...</span>
-                ) : (
-                  <button
-                    aria-label={
-                      isRecording
-                        ? "Release when you finish"
-                        : "Press and hold to speak"
-                    }
-                    className={`hold-to-talk-button ${
-                      isRecording ? "is-recording" : ""
-                    }`}
-                    onKeyDown={handleKeyDown}
-                    onKeyUp={handleKeyUp}
-                    onPointerCancel={cancelRecording}
-                    onPointerDown={handlePointerDown}
-                    onPointerUp={handlePointerUp}
-                    type="button"
-                  >
-                    <Mic aria-hidden="true" strokeWidth={3.6} />
-                    <span>
-                      {isRecording
-                        ? "Release when you finish"
-                        : "Press and hold to speak"}
-                    </span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <span className="dock-status">{progressLabel}</span>
-            )}
-          </div>
+                {currentStep.dialogue}
+              </strong>
+              {isEvaluating ? (
+                <span
+                  aria-live="assertive"
+                  className="checking-label"
+                  role="status"
+                >
+                  Checking your speech...
+                </span>
+              ) : (
+                <button
+                  aria-label={
+                    isRecording
+                      ? "Release when you finish"
+                      : "Press and hold to speak"
+                  }
+                  className={`hold-to-talk-button ${
+                    isRecording ? "is-recording" : ""
+                  }`}
+                  onKeyDown={handleKeyDown}
+                  onKeyUp={handleKeyUp}
+                  onPointerCancel={cancelRecording}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  type="button"
+                >
+                  <Mic aria-hidden="true" strokeWidth={3.6} />
+                  <span>
+                    {isRecording
+                      ? "Release when you finish"
+                      : "Press and hold to speak"}
+                  </span>
+                </button>
+              )}
+            </>
+          ) : (
+            <span className="dock-status">{progressLabel}</span>
+          )}
 
           <button
             aria-label="Next scene"

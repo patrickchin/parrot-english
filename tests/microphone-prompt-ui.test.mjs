@@ -31,25 +31,26 @@ describe("hold-to-talk UI", () => {
   });
 
   it("renders an accessible hold button with recording states", () => {
-    assert.match(app, /learner-mic-prompt/);
+    assert.match(app, /learner-target-pill/);
+    assert.doesNotMatch(app, /learner-mic-prompt/);
     assert.match(app, /scene\.speech\.kind === "user" \? null/);
     assert.match(app, /hold-to-talk-button/);
     assert.match(app, /Press and hold to speak/);
     assert.match(app, /Release when you finish/);
     assert.match(app, /aria-live="assertive"/);
 
-    const promptRule = getRule(".learner-mic-prompt");
+    const targetRule = getRule(".learner-target-pill");
     const buttonRule = getRule(".hold-to-talk-button");
     const recordingRule = getRule(".hold-to-talk-button.is-recording");
-    assert.match(promptRule, /background:\s*rgb\(255 255 255/);
+    assert.match(targetRule, /background:\s*rgb\(255 255 255/);
     assert.match(buttonRule, /background:\s*#087451/);
-    assert.match(buttonRule, /border-radius:\s*999px/);
     assert.match(buttonRule, /touch-action:\s*none/);
+    assert.match(getRule(":root"), /--lesson-pill-radius:\s*999px/);
     assert.match(recordingRule, /animation:\s*micPulse/);
     assert.doesNotMatch(styles, /\.user-turn-panel\s*\{/);
   });
 
-  it("keeps the short evaluating status inside its prompt track", () => {
+  it("keeps the short evaluating status as an independent bounded pill", () => {
     const combinedStart = styles.indexOf(
       "@media (max-width: 720px) and (max-height: 620px)",
     );
@@ -60,19 +61,15 @@ describe("hold-to-talk UI", () => {
 
     assert.notEqual(combinedStart, -1);
     assert.ok(combinedEnd > combinedStart);
-    assert.match(app, /<strong>\{currentStep\.dialogue\}<\/strong>/);
+    assert.match(
+      app,
+      /className="learner-target-pill"[\s\S]*\{currentStep\.dialogue\}[\s\S]*className="checking-label"/,
+    );
     assert.match(app, /Checking your speech\.\.\./);
     assert.match(
       combinedStyles,
-      /\.learner-mic-prompt\.is-evaluating\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^}]*padding:\s*4px 6px/,
+      /\.checking-label\s*\{[^}]*max-width:\s*26vw[^}]*overflow:\s*hidden[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
     );
-    assert.match(
-      combinedStyles,
-      /\.learner-mic-prompt\.is-evaluating > strong\s*\{[^}]*position:\s*absolute[^}]*width:\s*1px[^}]*height:\s*1px[^}]*overflow:\s*hidden[^}]*clip-path:\s*inset\(50%\)/,
-    );
-    assert.match(
-      combinedStyles,
-      /\.learner-mic-prompt\.is-evaluating \.checking-label\s*\{[^}]*min-width:\s*0[^}]*width:\s*100%[^}]*max-width:\s*100%[^}]*overflow:\s*hidden[^}]*padding:\s*0 6px[^}]*font-size:\s*0\.72rem[^}]*text-overflow:\s*ellipsis[^}]*white-space:\s*nowrap/,
-    );
+    assert.doesNotMatch(combinedStyles, /learner-mic-prompt/);
   });
 });

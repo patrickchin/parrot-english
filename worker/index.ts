@@ -1,5 +1,6 @@
 import {
   checkEvaluateSpeechRateLimit,
+  checkOnboardingEnrichmentRateLimit,
   checkOnboardingTranscriptionRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
@@ -17,11 +18,14 @@ interface Env extends AuthEnv, RateLimitEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
+  ELEVENLABS_API_KEY?: string;
+  ELEVENLABS_REQUEST_TIMEOUT_MS?: string;
 }
 
 interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
+  checkOnboardingEnrichmentRateLimit: typeof checkOnboardingEnrichmentRateLimit;
   checkOnboardingTranscriptionRateLimit: typeof checkOnboardingTranscriptionRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleOnboardingRequest: typeof handleOnboardingRequest;
@@ -43,6 +47,9 @@ export function createWorker(
   const onboardingTranscriptionRateLimit =
     dependencies.checkOnboardingTranscriptionRateLimit ??
     checkOnboardingTranscriptionRateLimit;
+  const onboardingEnrichmentRateLimit =
+    dependencies.checkOnboardingEnrichmentRateLimit ??
+    checkOnboardingEnrichmentRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const onboardingRequest =
@@ -73,6 +80,18 @@ export function createWorker(
           request.method === "POST"
         ) {
           const rateLimited = onboardingTranscriptionRateLimit(
+            request,
+            env,
+            session.user.id
+          );
+          if (rateLimited) return rateLimited;
+        }
+        if (
+          request.method === "PUT" &&
+          (url.pathname === "/api/onboarding/answer" ||
+            url.pathname === "/api/profile")
+        ) {
+          const rateLimited = onboardingEnrichmentRateLimit(
             request,
             env,
             session.user.id

@@ -9,18 +9,39 @@ export type OnboardingQuestion = {
   position: number;
   promptEn: string;
   promptZh: string | null;
-  answerType: "text" | "number" | "choice";
-  cardinality: "scalar" | "array";
   required: boolean;
-  options: string[] | null;
-  validation: Record<string, number>;
+  maxLength: number;
   audio: OnboardingAudio | null;
+};
+
+export type OnboardingResponseSnapshot = {
+  question: string;
+  rawAnswer: string;
+  summary: string;
+  acknowledgment: string;
+  enrichmentStatus: "generated" | "fallback";
+  answeredAt: string;
+};
+
+export type OnboardingAnswers = {
+  schemaVersion: 2;
+  questionnaireVersion: number;
+  responses: Record<string, OnboardingResponseSnapshot>;
+  legacyAnswers: Record<string, unknown> | null;
+};
+
+export type OnboardingAcknowledgment = {
+  text: string;
+  audio: {
+    contentType: "audio/mpeg";
+    base64: string;
+  } | null;
 };
 
 export type LearnerProfileSummary = {
   name: string | null;
   age: number | null;
-  answers: Record<string, unknown>;
+  answers: OnboardingAnswers;
   questionnaireVersion: number;
   currentQuestionKey: string | null;
   onboardingStatus: "not_started" | "in_progress" | "completed";
@@ -32,11 +53,11 @@ export type FullOnboardingState = {
   profile: LearnerProfileSummary;
   questionnaire: {
     version: number;
-    introductionAudio: OnboardingAudio;
   };
   question: OnboardingQuestion | null;
   progress: { answered: number; current: number; total: number };
   canBypass: boolean;
+  acknowledgment?: OnboardingAcknowledgment;
 };
 
 export type BypassOnlyOnboardingState = {
@@ -51,6 +72,8 @@ export type OnboardingState =
 export type ProfileState = {
   profile: LearnerProfileSummary;
   questions: OnboardingQuestion[];
+  acknowledgment?: OnboardingAcknowledgment;
+  acknowledgments?: OnboardingAcknowledgment[];
 };
 
 export type OnboardingRequestOptions = {
@@ -67,7 +90,7 @@ export class OnboardingApiError extends Error {
     status: number,
     code: string,
     message: string,
-    fieldErrors: Record<string, string> = {}
+    fieldErrors: Record<string, string> = {},
   ) {
     super(message);
     this.name = "OnboardingApiError";
@@ -83,8 +106,8 @@ function stringRecord(value: unknown) {
   }
   return Object.fromEntries(
     Object.entries(value).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string"
-    )
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
   );
 }
 
@@ -125,7 +148,7 @@ async function requestJson<Result>(
       response.status,
       code,
       message,
-      stringRecord(errorPayload.fieldErrors)
+      stringRecord(errorPayload.fieldErrors),
     );
   }
 
@@ -136,7 +159,7 @@ function jsonRequest<Result>(
   path: string,
   method: "PUT",
   questionKey: string,
-  value: unknown,
+  rawAnswer: string,
   options?: OnboardingRequestOptions
 ) {
   return requestJson<Result>(
@@ -144,7 +167,7 @@ function jsonRequest<Result>(
     {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ questionKey, value }),
+      body: JSON.stringify({ questionKey, rawAnswer }),
     },
     options
   );
@@ -160,14 +183,14 @@ export function loadOnboarding(options?: OnboardingRequestOptions) {
 
 export function saveOnboardingAnswer(
   questionKey: string,
-  value: unknown,
+  rawAnswer: string,
   options?: OnboardingRequestOptions
 ) {
   return jsonRequest<OnboardingState>(
     "/api/onboarding/answer",
     "PUT",
     questionKey,
-    value,
+    rawAnswer,
     options
   );
 }
@@ -211,9 +234,23 @@ export function loadProfile(options?: OnboardingRequestOptions) {
   );
 }
 
-export function saveProfileAnswers(
-  answers: Record<string, unknown>,
+export function saveProfileAnswer(
+  questionKey: string,
+  rawAnswer: string,
   options?: OnboardingRequestOptions
+) {
+  return jsonRequest<ProfileState>(
+    "/api/profile",
+    "PUT",
+    questionKey,
+    rawAnswer,
+    options
+  );
+}
+
+export function saveProfileAnswers(
+  answers: Record<string, string>,
+  options?: OnboardingRequestOptions,
 ) {
   return requestJson<ProfileState>(
     "/api/profile",
@@ -222,7 +259,7 @@ export function saveProfileAnswers(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ answers }),
     },
-    options
+    options,
   );
 }
 

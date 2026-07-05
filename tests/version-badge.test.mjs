@@ -41,7 +41,8 @@ describe("visual build versioning", () => {
     assert.match(app, /aria-label=\{`Build version \$\{versionLabel\}`\}/);
 
     const badgeRule = getRule(".build-version-badge");
-    assert.match(badgeRule, /grid-column:\s*1 \/ -1/);
+    assert.match(badgeRule, /position:\s*absolute/);
+    assert.match(badgeRule, /left:\s*var\(--lesson-edge-gap\)/);
     assert.match(badgeRule, /background:\s*rgba\(255,\s*255,\s*255,\s*0\.82\)/);
   });
 

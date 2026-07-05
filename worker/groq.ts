@@ -19,10 +19,10 @@ export interface ApiEnv {
   GROQ_REQUEST_TIMEOUT_MS?: string;
 }
 
-class SpeechTranscriptionTimeoutError extends Error {
+export class UpstreamRequestTimeoutError extends Error {
   constructor() {
-    super("Groq speech-to-text timed out.");
-    this.name = "SpeechTranscriptionTimeoutError";
+    super("Upstream request timed out.");
+    this.name = "UpstreamRequestTimeoutError";
   }
 }
 
@@ -44,7 +44,7 @@ function requireGroqKey(env: ApiEnv) {
   return env.GROQ_API_KEY;
 }
 
-function getGroqRequestTimeoutMs(env: ApiEnv) {
+export function getGroqRequestTimeoutMs(env: ApiEnv) {
   const configuredTimeout = Number.parseInt(env.GROQ_REQUEST_TIMEOUT_MS ?? "", 10);
   if (!Number.isFinite(configuredTimeout) || configuredTimeout <= 0) {
     return DEFAULT_GROQ_REQUEST_TIMEOUT_MS;
@@ -53,7 +53,8 @@ function getGroqRequestTimeoutMs(env: ApiEnv) {
   return Math.min(configuredTimeout, MAX_GROQ_REQUEST_TIMEOUT_MS);
 }
 
-async function fetchWithTimeout(
+export async function fetchWithTimeout(
+  fetchImplementation: typeof globalThis.fetch,
   input: RequestInfo | URL,
   init: RequestInit,
   timeoutMs: number
@@ -61,7 +62,7 @@ async function fetchWithTimeout(
   const controller = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let timedOut = false;
-  const upstreamRequest = fetch(input, {
+  const upstreamRequest = fetchImplementation(input, {
     ...init,
     signal: controller.signal,
   });
@@ -69,7 +70,7 @@ async function fetchWithTimeout(
     timeoutId = setTimeout(() => {
       timedOut = true;
       controller.abort();
-      reject(new SpeechTranscriptionTimeoutError());
+      reject(new UpstreamRequestTimeoutError());
     }, timeoutMs);
   });
 
@@ -77,7 +78,7 @@ async function fetchWithTimeout(
     return await Promise.race([upstreamRequest, timeout]);
   } catch (error) {
     if (timedOut) {
-      throw new SpeechTranscriptionTimeoutError();
+      throw new UpstreamRequestTimeoutError();
     }
 
     throw error;
@@ -134,6 +135,7 @@ export async function handleOnboardingTranscription(
   let upstream: Response;
   try {
     upstream = await fetchWithTimeout(
+      globalThis.fetch,
       `${GROQ_BASE_URL}/audio/transcriptions`,
       {
         method: "POST",
@@ -146,12 +148,12 @@ export async function handleOnboardingTranscription(
     return jsonResponse(
       {
         error:
-          error instanceof SpeechTranscriptionTimeoutError
+          error instanceof UpstreamRequestTimeoutError
             ? "transcription_timeout"
             : "transcription_failed",
       },
       {
-        status: error instanceof SpeechTranscriptionTimeoutError ? 504 : 502,
+        status: error instanceof UpstreamRequestTimeoutError ? 504 : 502,
       }
     );
   }
@@ -217,6 +219,7 @@ export async function handleEvaluateSpeech(request: Request, env: ApiEnv) {
   let upstream: Response;
   try {
     upstream = await fetchWithTimeout(
+      globalThis.fetch,
       `${GROQ_BASE_URL}/audio/transcriptions`,
       {
         method: "POST",
@@ -228,7 +231,7 @@ export async function handleEvaluateSpeech(request: Request, env: ApiEnv) {
       getGroqRequestTimeoutMs(env)
     );
   } catch (error) {
-    if (error instanceof SpeechTranscriptionTimeoutError) {
+    if (error instanceof UpstreamRequestTimeoutError) {
       return jsonResponse(
         {
           error: "stt_timeout",

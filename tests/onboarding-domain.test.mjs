@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
 import {
   assignQuestionnaireVersion,
   canCompleteQuestionnaire,
@@ -16,6 +17,18 @@ import {
   validateAnswer,
   writeProfileAnswer,
 } from "../lib/onboarding.js";
+import {
+  ensureV2Profile,
+  getV2CurrentQuestion,
+  getV2Progress,
+  isSameV2Answer,
+  isV2Complete,
+  readV2Answers,
+  writeV2Response,
+} from "../lib/onboarding-profile.js";
+import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
+
+const definitionV2 = validateOnboardingQuestionnaire(questionnaireV2);
 
 function question(overrides = {}) {
   return {
@@ -360,6 +373,161 @@ describe("onboarding profile and flow rules", () => {
         "session-1",
       ),
       false,
+    );
+  });
+});
+
+describe("v2 prose profile envelope", () => {
+  it("stores exact prose metadata and mirrors canonical age", () => {
+    const profile = ensureV2Profile(
+      {
+        answersJson: "{}",
+        onboardingStatus: "not_started",
+        currentQuestionKey: null,
+        name: "Mia",
+        age: null,
+      },
+      definitionV2,
+    );
+    const updated = writeV2Response(profile, definitionV2.questions[1], {
+      rawAnswer: "I am six years old.",
+      summary: "Is six years old.",
+      acknowledgment: "Six is a brilliant age!",
+      canonicalAge: 6,
+      canonicalName: null,
+      enrichmentStatus: "generated",
+      answeredAt: "2026-07-06T10:30:00.000Z",
+    });
+
+    assert.equal(updated.age, 6);
+    assert.deepEqual(readV2Answers(updated).responses.age, {
+      question: "How old are you?",
+      rawAnswer: "I am six years old.",
+      summary: "Is six years old.",
+      acknowledgment: "Six is a brilliant age!",
+      enrichmentStatus: "generated",
+      answeredAt: "2026-07-06T10:30:00.000Z",
+    });
+  });
+
+  it("retains v1 JSON while restarting only incomplete profiles", () => {
+    const legacy = { favoriteAnimals: ["cat", "dog"] };
+    const updated = ensureV2Profile(
+      {
+        answersJson: JSON.stringify(legacy),
+        onboardingStatus: "in_progress",
+        currentQuestionKey: "favoriteAnimals",
+        skippedQuestionKeysJson: '["favoriteStoryTopics"]',
+        lastSkippedSessionId: "session-1",
+        name: "Mia",
+        age: 6,
+      },
+      definitionV2,
+    );
+
+    assert.deepEqual(readV2Answers(updated).legacyAnswers, legacy);
+    assert.deepEqual(readV2Answers(updated).responses, {});
+    assert.equal(updated.onboardingStatus, "not_started");
+    assert.equal(updated.currentQuestionKey, "name");
+    assert.equal(updated.skippedQuestionKeysJson, "[]");
+    assert.equal(updated.lastSkippedSessionId, "session-1");
+    assert.equal(updated.name, "Mia");
+    assert.equal(updated.age, 6);
+  });
+
+  it("leaves completed v1 profiles untouched until profile editing", () => {
+    const profile = {
+      answersJson: '{"favoriteAnimals":["dog"]}',
+      onboardingStatus: "completed",
+      currentQuestionKey: null,
+      questionnaireVersion: 1,
+      name: "Mia",
+      age: 6,
+    };
+
+    assert.deepEqual(ensureV2Profile(profile, definitionV2), profile);
+
+    const editable = ensureV2Profile(profile, definitionV2, {
+      forProfileEdit: true,
+    });
+    assert.equal(editable.onboardingStatus, "completed");
+    assert.equal(editable.questionnaireVersion, 1);
+    assert.deepEqual(readV2Answers(editable), {
+      schemaVersion: 2,
+      questionnaireVersion: 2,
+      responses: {},
+      legacyAnswers: { favoriteAnimals: ["dog"] },
+    });
+  });
+
+  it("computes current question, progress, completion, and idempotency from snapshots", () => {
+    let profile = ensureV2Profile(
+      {
+        answersJson: "{}",
+        onboardingStatus: "not_started",
+        currentQuestionKey: null,
+        skippedQuestionKeysJson: "[]",
+        name: null,
+        age: null,
+      },
+      definitionV2,
+    );
+
+    assert.equal(getV2CurrentQuestion(profile, definitionV2)?.answerKey, "name");
+    assert.deepEqual(getV2Progress(profile, definitionV2), {
+      answered: 0,
+      current: 1,
+      total: 6,
+    });
+    assert.equal(isV2Complete(profile, definitionV2), false);
+
+    for (const [index, question] of definitionV2.questions.entries()) {
+      profile = writeV2Response(profile, question, {
+        rawAnswer: `Answer ${index + 1}`,
+        summary: `Summary ${index + 1}`,
+        acknowledgment: `Acknowledgment ${index + 1}!`,
+        canonicalAge: question.canonicalField === "age" ? 6 : null,
+        canonicalName: question.canonicalField === "name" ? "Mia" : null,
+        enrichmentStatus: index === 5 ? "fallback" : "generated",
+        answeredAt: `2026-07-06T10:30:0${index}.000Z`,
+      });
+    }
+
+    assert.equal(getV2CurrentQuestion(profile, definitionV2), null);
+    assert.deepEqual(getV2Progress(profile, definitionV2), {
+      answered: 6,
+      current: 6,
+      total: 6,
+    });
+    assert.equal(isV2Complete(profile, definitionV2), true);
+    assert.equal(isSameV2Answer(profile, "name", "  Answer 1  "), true);
+    assert.equal(isSameV2Answer(profile, "name", "Different"), false);
+  });
+
+  it("rejects malformed envelopes and response metadata", () => {
+    assert.throws(
+      () =>
+        readV2Answers({
+          answersJson: '{"schemaVersion":2,"questionnaireVersion":2,"responses":[]}',
+        }),
+      /Invalid learner profile data/,
+    );
+    const profile = ensureV2Profile(
+      { answersJson: "{}", onboardingStatus: "not_started" },
+      definitionV2,
+    );
+    assert.throws(
+      () =>
+        writeV2Response(profile, definitionV2.questions[0], {
+          rawAnswer: "Mia",
+          summary: "Mia",
+          acknowledgment: "Hello!",
+          canonicalAge: null,
+          canonicalName: "Mia",
+          enrichmentStatus: "generated",
+          answeredAt: "not-a-date",
+        }),
+      /Invalid onboarding response/,
     );
   });
 });

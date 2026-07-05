@@ -26,7 +26,8 @@ describe("architecture cleanup contracts", () => {
     assert.match(app, /narrator-caption/);
     assert.match(app, /ChevronLeft|ChevronRight/);
     assert.match(app, /SCENE_NEXT|SCENE_PREVIOUS/);
-    assert.match(app, /scene-control-dock/);
+    assert.match(app, /learner-target-pill/);
+    assert.doesNotMatch(app, /scene-control-dock/);
   });
 
   it("keeps the active lesson experience English-only", () => {

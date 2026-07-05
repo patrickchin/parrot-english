@@ -638,7 +638,7 @@ test("auth screen owns a reachable short-viewport scroll area", () => {
 test("session controls relocate at the 720px lesson breakpoint", () => {
   const tablet = getMaxWidthSection(720, 560);
 
-  assert.match(tablet, /\.user-session-bar\s*\{[\s\S]*?top:\s*82px/);
+  assert.match(tablet, /\.user-session-bar\s*\{[\s\S]*?top:\s*94px/);
   assert.match(tablet, /\.user-session-bar\s*\{[\s\S]*?right:\s*12px/);
   assert.match(tablet, /\.lesson-flow-banner\s*\{[\s\S]*?top:\s*144px/);
 });
