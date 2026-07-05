@@ -86,6 +86,28 @@ describe("onboarding transcription", () => {
     assert.equal(fetchCalls, 0);
   });
 
+  it("rejects an oversized multipart envelope before parsing it", async () => {
+    const boundary = "bounded-onboarding-audio";
+    const request = new Request(
+      "https://example.test/api/onboarding/transcribe",
+      {
+        method: "POST",
+        headers: {
+          "Content-Length": String(512 * 1024 + 64 * 1024 + 1),
+          "Content-Type": `multipart/form-data; boundary=${boundary}`,
+        },
+        body: `--${boundary}--\r\n`,
+      },
+    );
+
+    const response = await handleOnboardingTranscription(request, {
+      GROQ_API_KEY: "test-key",
+    });
+
+    assert.equal(response.status, 413);
+    assert.deepEqual(await response.json(), { error: "audio_too_large" });
+  });
+
   it("forwards supported audio to English Whisper and returns transcript only", async () => {
     let providerForm;
     globalThis.fetch = async (url, init) => {
