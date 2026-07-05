@@ -86,6 +86,57 @@ describe("catalog-driven stage layout", () => {
     assert.match(caption, /text-align:\s*center/);
   });
 
+  it("uses an explicit lesson-screen type hierarchy", () => {
+    assert.match(
+      getRule(".user-session-bar > span:first-child"),
+      /font-size:\s*0\.95rem/,
+    );
+    assert.match(
+      getRule(".user-session-bar button"),
+      /font-size:\s*0\.875rem/,
+    );
+    assert.match(
+      getRule(".scene-title"),
+      /font-size:\s*clamp\(1\.05rem,\s*1\.55vw,\s*1\.5rem\)/,
+    );
+    assert.match(
+      getRule(".lesson-list-back-button"),
+      /font-size:\s*clamp\(1rem,\s*1\.25vw,\s*1\.2rem\)/,
+    );
+    assert.match(
+      getRule(".character-name"),
+      /font-size:\s*clamp\(0\.9rem,\s*1vw,\s*1\.05rem\)/,
+    );
+    assert.match(
+      styles,
+      /\.speech-bubble > span,\s*\.narrator-caption > span\s*\{[^}]*font-size:\s*clamp\(0\.875rem,\s*1vw,\s*1rem\)/s,
+    );
+    assert.match(
+      styles,
+      /\.speech-bubble p,\s*\.narrator-caption p\s*\{[^}]*font-size:\s*clamp\(1\.5rem,\s*2\.5vw,\s*2\.625rem\)/s,
+    );
+    assert.match(
+      styles,
+      /\.playback-control-button\s*\{[^}]*flex-flow:[^}]*font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/s,
+    );
+    assert.match(
+      getRule(".dock-status"),
+      /font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/,
+    );
+    assert.match(
+      getRule(".learner-mic-prompt > strong"),
+      /font-size:\s*clamp\(1\.15rem,\s*1\.7vw,\s*1\.5rem\)/,
+    );
+    assert.match(
+      getRule(".hold-to-talk-button"),
+      /font-size:\s*clamp\(0\.95rem,\s*1\.3vw,\s*1\.15rem\)/,
+    );
+    assert.match(
+      getRule(".checking-label"),
+      /font-size:\s*clamp\(0\.9rem,\s*1\.2vw,\s*1\.05rem\)/,
+    );
+  });
+
   it("provides a compact layout for narrow screens", () => {
     const compactStart = styles.indexOf("@media (max-width: 720px)");
     const compactEnd = styles.indexOf("@media (max-height: 620px)");

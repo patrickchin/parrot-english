@@ -636,7 +636,7 @@ select:focus-visible {
 
 .user-session-bar > span:first-child {
   overflow: hidden;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -651,7 +651,7 @@ select:focus-visible {
   color: #fff;
   cursor: pointer;
   padding: 6px 12px;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 900;
 }
 
@@ -922,7 +922,7 @@ select:focus-visible {
   border-radius: 999px;
   background: rgb(255 255 255 / 92%);
   padding: 12px 20px;
-  font-size: clamp(0.95rem, 1.5vw, 1.35rem);
+  font-size: clamp(1.05rem, 1.55vw, 1.5rem);
   font-weight: 950;
   line-height: 1;
   text-overflow: ellipsis;
@@ -983,7 +983,7 @@ select:focus-visible {
   transform: translateX(-50%);
   box-shadow: 0 5px 0 rgb(18 55 92 / 45%);
   cursor: pointer;
-  font-size: clamp(0.9rem, 1.4vw, 1.12rem);
+  font-size: clamp(1rem, 1.25vw, 1.2rem);
   font-weight: 950;
   transition: filter 160ms ease, transform 160ms ease;
 }
@@ -1075,7 +1075,7 @@ select:focus-visible {
   background: rgb(32 76 127 / 92%);
   color: #fff;
   padding: 4px 13px;
-  font-size: clamp(0.8rem, 1.4vw, 1rem);
+  font-size: clamp(0.9rem, 1vw, 1.05rem);
   font-weight: 950;
   line-height: 1;
   text-align: center;
@@ -1119,7 +1119,7 @@ select:focus-visible {
   display: block;
   margin-bottom: 5px;
   color: #d62f70;
-  font-size: 0.78rem;
+  font-size: clamp(0.875rem, 1vw, 1rem);
   font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1128,7 +1128,7 @@ select:focus-visible {
 .speech-bubble p,
 .narrator-caption p {
   margin: 0;
-  font-size: clamp(1.2rem, 2.4vw, 2.15rem);
+  font-size: clamp(1.5rem, 2.5vw, 2.625rem);
   font-weight: 950;
   line-height: 1.12;
 }
@@ -1234,6 +1234,7 @@ select:focus-visible {
   background: #ffd944;
   color: #241d2b;
   padding: 0 20px;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
   font-weight: 950;
   line-height: 1;
 }
@@ -1248,7 +1249,7 @@ select:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: #fff;
-  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
   font-weight: 900;
   text-align: center;
   text-overflow: ellipsis;
@@ -1270,7 +1271,7 @@ select:focus-visible {
   min-width: 0;
   overflow: hidden;
   color: #173c67;
-  font-size: clamp(1rem, 1.8vw, 1.45rem);
+  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
   font-weight: 950;
   line-height: 1.1;
   text-align: center;
@@ -1290,7 +1291,7 @@ select:focus-visible {
   color: #fff;
   cursor: pointer;
   padding: 10px 26px;
-  font-size: clamp(1rem, 2vw, 1.45rem);
+  font-size: clamp(0.95rem, 1.3vw, 1.15rem);
   font-weight: 950;
   touch-action: none;
   box-shadow: 0 5px 0 rgb(4 79 55 / 45%);
@@ -1328,7 +1329,7 @@ select:focus-visible {
   background: #173c67;
   color: #fff;
   padding: 0 20px;
-  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.2vw, 1.05rem);
   font-weight: 950;
   white-space: nowrap;
 }
@@ -1457,7 +1458,7 @@ select:focus-visible {
 
   .speech-bubble p,
   .narrator-caption p {
-    font-size: clamp(1.08rem, 4.6vw, 1.55rem);
+    font-size: clamp(1.5rem, 5vw, 1.8rem);
   }
 
   .narrator-caption {
