@@ -187,28 +187,28 @@ test("lesson routes expose distinct lesson-list and main-menu controls", () => {
   assert.match(html, />Back to main menu<\/span>/);
 });
 
-test("the application shell builds login redirects from the current URL", () => {
+test("the application shell derives protected targets from the current URL", () => {
   assert.match(
     app,
     /import\s+\{[^}]*\bNavigate\b[^}]*\buseLocation\b[^}]*\}\s+from\s+["']react-router["']/s,
   );
   assert.match(
     app,
-    /import\s+\{[^}]*\bgetLoginPath\b[^}]*\}\s+from\s+["']\.\/app-routes["']/s,
+    /import\s+\{[^}]*\bgetLoginPath\b[^}]*\bgetRequestedProtectedTarget\b[^}]*\}\s+from\s+["']\.\/app-routes["']/s,
   );
   assert.match(app, /const\s+location\s*=\s*useLocation\(\)/);
   assert.match(
     app,
-    /const\s+currentTarget\s*=\s*`\$\{location\.pathname\}\$\{location\.search\}\$\{location\.hash\}`/,
+    /const\s+requestedProtectedTarget\s*=\s*getRequestedProtectedTarget\(\s*location\.pathname,\s*location\.search,\s*location\.hash,?\s*\)/s,
   );
 });
 
-test("protected signed-out URLs replace themselves with a login redirect", () => {
+test("signed-out redirects reuse the safe requested protected target", () => {
   assert.match(app, /const\s+onLoginRoute\s*=\s*location\.pathname\s*===\s*["']\/login["']/);
   assert.match(app, /signedOutFallback=\{/);
   assert.match(
     app,
-    /<Navigate\s+replace\s+to=\{getLoginPath\(currentTarget\)\}\s*\/>/,
+    /<Navigate\s+replace\s+to=\{getLoginPath\(requestedProtectedTarget\)\}\s*\/>/,
   );
   assert.match(app, /onLoginRoute\s*\?\s*null\s*:/);
 });

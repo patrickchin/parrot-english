@@ -180,12 +180,13 @@ final LINE_DONE -> finished
 ```
 
 Scripted steps and scene boundaries advance automatically during uninterrupted
-playback. Back, Next, Pause, Play, and Replay Lesson restart at scene boundaries
-rather than resuming an interrupted step. The reducer stores the current
-scene/step indices and interaction state; the lesson remains immutable content
-supplied to each transition. A route-activity generation guard invalidates
-playback, microphone, recording, and evaluation completions captured before a
-routed scene change.
+playback. The mounted lesson UI exposes Start or Replay Lesson and Previous/Next;
+these actions restart at scene boundaries rather than resuming an interrupted
+step. `PAUSE_SCENE` remains an internal reducer transition and is not currently
+exposed as a control. The reducer stores the current scene/step indices and
+interaction state; the lesson remains immutable content supplied to each
+transition. A route-activity generation guard invalidates playback, microphone,
+recording, and evaluation completions captured before a routed scene change.
 
 ## Scene Presentation
 

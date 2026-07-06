@@ -66,6 +66,18 @@ export function getSafeReturnTo(search: string) {
   return `${destination.pathname}${destination.search}${destination.hash}`;
 }
 
+export function getRequestedProtectedTarget(
+  pathname: string,
+  search: string,
+  hash: string,
+) {
+  if (pathname === "/login" || pathname === "/onboarding") {
+    return getSafeReturnTo(search) ?? "/";
+  }
+
+  return `${pathname}${search}${hash}`;
+}
+
 export function resolveParrotLesson(lessonId: string | undefined) {
   return lessonId ? (PARROT_LESSONS.get(lessonId) ?? null) : null;
 }

@@ -81,6 +81,39 @@ describe("app route helpers", () => {
     );
   });
 
+  it("preserves an onboarding return target when reauthentication is required", () => {
+    assert.equal(
+      routes.getRequestedProtectedTarget(
+        "/onboarding",
+        "?returnTo=%2Fprogress",
+        "",
+      ),
+      "/progress",
+    );
+  });
+
+  it("keeps an ordinary protected URL as its reauthentication target", () => {
+    assert.equal(
+      routes.getRequestedProtectedTarget(
+        "/progress",
+        "?period=week",
+        "#today",
+      ),
+      "/progress?period=week#today",
+    );
+  });
+
+  it("falls back home from an unsafe auth gate return target", () => {
+    assert.equal(
+      routes.getRequestedProtectedTarget(
+        "/onboarding",
+        "?returnTo=https%3A%2F%2Fevil.example",
+        "",
+      ),
+      "/",
+    );
+  });
+
   it("resolves a stable Parrot lesson ID and one-based scene", () => {
     const entry = routes.resolveParrotLesson("01-peppas-high-ball");
     const resolved = routes.resolveParrotLessonScene("01-peppas-high-ball", "2");

@@ -49,6 +49,7 @@ import {
   getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
+  getRequestedProtectedTarget,
   getSafeReturnTo,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
@@ -910,13 +911,15 @@ function RoutedApplication() {
     lessonRouteExitRegistryRef.current.exit();
     navigate("/profile");
   }, [navigate]);
-  const currentTarget = `${location.pathname}${location.search}${location.hash}`;
   const onLoginRoute = location.pathname === "/login";
   const isOnboardingRoute = location.pathname === "/onboarding";
   const isProfileRoute = location.pathname === "/profile";
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
-  const requestedProtectedTarget =
-    onLoginRoute || isOnboardingRoute ? safeReturnTo : currentTarget;
+  const requestedProtectedTarget = getRequestedProtectedTarget(
+    location.pathname,
+    location.search,
+    location.hash,
+  );
 
   return (
     <LessonRouteExitBarrierContext.Provider
@@ -925,7 +928,7 @@ function RoutedApplication() {
       <AuthGate
         signedOutFallback={
           onLoginRoute ? null : (
-            <Navigate replace to={getLoginPath(currentTarget)} />
+            <Navigate replace to={getLoginPath(requestedProtectedTarget)} />
           )
         }
       >
