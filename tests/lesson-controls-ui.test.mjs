@@ -50,14 +50,14 @@ describe("scene playback controls", () => {
     assert.doesNotMatch(styles, /\.playback-control-button|\.volume-button/);
   });
 
-  it("focuses Start only when an idle reducer state matches the routed scene", () => {
+  it("focuses Start after an idle reducer state agrees with each routed history entry", () => {
     assert.match(
       app,
       /const startActionRef = useRef<HTMLButtonElement \| null>\(null\)/,
     );
     assert.match(
       app,
-      /useEffect\(\(\) => \{\s*if \(\s*state\.sceneIndex === routedSceneIndex &&\s*state\.phase === LessonPhase\.Idle\s*\) \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}\s*\}, \[routedSceneIndex, state\.phase, state\.sceneIndex\]\)/,
+      /useEffect\(\(\) => \{\s*if \(\s*state\.sceneIndex === routedSceneIndex &&\s*state\.phase === LessonPhase\.Idle\s*\) \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}\s*\}, \[routedHistoryKey, routedSceneIndex, state\.phase, state\.sceneIndex\]\)/,
     );
     assert.match(
       app,
@@ -148,6 +148,8 @@ describe("scene playback controls", () => {
     assert.match(app, /getLessonRouteReconciliationEvent/);
     assert.match(app, /const routeActivityGuardRef = useRef\(/);
     assert.match(app, /const routedSceneRef = useRef\(routedSceneIndex\)/);
+    assert.match(app, /routedHistoryKey: string/);
+    assert.match(app, /const pendingHistoryPopRef = useRef\(false\)/);
     assert.match(app, /const pendingRoutedEventRef = useRef<\{[\s\S]*?event: LessonEvent;[\s\S]*?sceneIndex: number;[\s\S]*?\} \| null>\(null\)/);
 
     const renderSetup = app.slice(
@@ -162,7 +164,7 @@ describe("scene playback controls", () => {
     );
     assert.match(
       app,
-      /useEffect\(\(\) => \{\s*const pendingRoutedEvent = pendingRoutedEventRef\.current;\s*pendingRoutedEventRef\.current = null;\s*if \(state\.sceneIndex === routedSceneIndex\) return;[\s\S]*?dispatch\(\s*getLessonRouteReconciliationEvent\(\s*pendingRoutedEvent,\s*routedSceneIndex,?\s*\),?\s*\)/,
+      /useEffect\(\(\) => \{\s*const pendingRoutedEvent = pendingRoutedEventRef\.current;\s*pendingRoutedEventRef\.current = null;\s*const isHistoryPop = pendingHistoryPopRef\.current;\s*pendingHistoryPopRef\.current = false;\s*const reconciliationEvent = getLessonRouteReconciliationEvent\(\s*pendingRoutedEvent,\s*routedSceneIndex,\s*\{\s*currentSceneIndex: state\.sceneIndex,\s*isHistoryPop,\s*\},?\s*\);\s*if \(!reconciliationEvent\) return;[\s\S]*?dispatch\(reconciliationEvent\);\s*\}, \[\s*cancelPendingWork,\s*routedHistoryKey,\s*routedSceneIndex,\s*state\.sceneIndex,?\s*\]\)/,
     );
     assert.match(
       app,
@@ -172,7 +174,7 @@ describe("scene playback controls", () => {
     assert.match(app, /onNavigateScene\(targetSceneIndex\);\s*return;/);
   });
 
-  it("invalidates route activity synchronously for Back, Home, and native POP", () => {
+  it("records POP intent before synchronously invalidating route activity", () => {
     assert.match(
       app,
       /const invalidateRouteActivity = useCallback\(\(\) => \{\s*invalidateLessonRouteActivity\(\s*routeActivityGuardRef\.current,\s*cancelPendingWork,?\s*\);\s*\}, \[cancelPendingWork\]\)/,
@@ -183,7 +185,7 @@ describe("scene playback controls", () => {
     );
     assert.match(
       app,
-      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(\) => exitRouteActivity\(\);\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[exitRouteActivity\]\)/,
+      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(\) => \{\s*pendingHistoryPopRef\.current = true;\s*exitRouteActivity\(\);\s*\};\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[exitRouteActivity\]\)/,
     );
     assert.match(
       app,

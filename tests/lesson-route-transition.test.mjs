@@ -128,4 +128,38 @@ describe("lesson route transitions", () => {
       { type: "SELECT_SCENE", sceneIndex: 1 },
     );
   });
+
+  it("resets a rapid Next then Back POP even when the reducer already matches", () => {
+    assert.equal(
+      typeof lessonRouteTransition.getLessonRouteReconciliationEvent,
+      "function",
+    );
+
+    assert.deepEqual(
+      lessonRouteTransition.getLessonRouteReconciliationEvent(null, 0, {
+        currentSceneIndex: 0,
+        isHistoryPop: true,
+      }),
+      { type: "SELECT_SCENE", sceneIndex: 0 },
+    );
+    assert.equal(
+      lessonRouteTransition.getLessonRouteReconciliationEvent(null, 0, {
+        currentSceneIndex: 0,
+        isHistoryPop: false,
+      }),
+      null,
+    );
+  });
+
+  it("forces idle selection when a duplicate-history POP matches stale pending intent", () => {
+    const pending = { event: { type: "SCENE_NEXT" }, sceneIndex: 0 };
+
+    assert.deepEqual(
+      lessonRouteTransition.getLessonRouteReconciliationEvent(pending, 0, {
+        currentSceneIndex: 0,
+        isHistoryPop: true,
+      }),
+      { type: "SELECT_SCENE", sceneIndex: 0 },
+    );
+  });
 });

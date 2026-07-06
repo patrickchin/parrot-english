@@ -258,6 +258,10 @@ test("lesson route adapters render the executable route decisions", () => {
   );
   assert.match(app, /key=\{`\$\{source\}:\$\{decision\.entry\.id\}`\}/);
   assert.match(app, /routedSceneIndex=\{decision\.sceneIndex\}/);
+  assert.match(
+    app,
+    /function\s+LessonRouteDecisionView[\s\S]*?const location = useLocation\(\)[\s\S]*?routedHistoryKey=\{location\.key\}/,
+  );
   assert.match(app, /onNavigateScene=/);
 });
 
