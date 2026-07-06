@@ -3,11 +3,14 @@ import { fileURLToPath } from "node:url";
 import {
   act,
   createElement,
-  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
-import { MemoryRouter } from "react-router";
+import {
+  MemoryRouter,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
 import {
@@ -35,19 +38,18 @@ const vite = await createServer({
 });
 
 let ApplicationRoutes;
-let LessonPlayer;
 let OnboardingGate;
 let createAuthGate;
 let firstLesson;
+let firstLessonId;
 
 before(async () => {
   ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
   ({ OnboardingGate } = await vite.ssrLoadModule("/src/OnboardingGate.tsx"));
-  ({ ApplicationRoutes, LessonPlayer } = await vite.ssrLoadModule(
-    "/src/App.tsx",
-  ));
+  ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx"));
   const catalog = await vite.ssrLoadModule("/src/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
+  firstLessonId = catalog.LESSONS[0].id;
 });
 
 afterEach(async () => {
@@ -61,6 +63,7 @@ afterEach(async () => {
     configurable: true,
     value: originalMediaDevices,
   });
+  window.history.replaceState(null, "", "/");
 });
 
 after(async () => {
@@ -174,46 +177,145 @@ function ProfileRouteHarness({ children }) {
   );
 }
 
-function RoutedLessonPlayerHarness({ initialSceneIndex = 0 }) {
-  const locationSequence = useRef(0);
-  const [route, setRoute] = useState({
-    key: `initial-${initialSceneIndex}`,
-    sceneIndex: initialSceneIndex,
-  });
-
-  function updateRoute(sceneIndex, kind) {
-    locationSequence.current += 1;
-    const key = `${kind}-${sceneIndex}-${locationSequence.current}`;
-    setRoute({ key, sceneIndex });
-  }
-
-  function simulateHistoryBack() {
-    locationSequence.current += 1;
-    const key = `pop-0-${locationSequence.current}`;
-    window.history.replaceState({ key }, "");
-    window.dispatchEvent(
-      new window.PopStateEvent("popstate", { state: { key } }),
-    );
-    setRoute({ key, sceneIndex: 0 });
-  }
+function RouterHistoryControls() {
+  const location = useLocation();
+  const navigate = useNavigate();
 
   return createElement(
-    "div",
-    null,
+    "aside",
+    { "aria-label": "Router test controls" },
+    createElement(
+      "output",
+      {
+        "aria-label": "Current route",
+        "data-location-key": location.key,
+      },
+      `${location.pathname}${location.search}${location.hash}`,
+    ),
     createElement(
       "button",
-      { onClick: simulateHistoryBack, type: "button" },
-      "Simulate browser back",
+      { onClick: () => navigate(-1), type: "button" },
+      "History back",
     ),
-    createElement(LessonPlayer, {
-      lesson: firstLesson,
-      onBack() {},
-      onHome() {},
-      onNavigateScene: (sceneIndex) => updateRoute(sceneIndex, "push"),
-      routedLocationKey: route.key,
-      routedSceneIndex: route.sceneIndex,
-    }),
   );
+}
+
+function applicationRoutesInMemory({ initialEntries, initialIndex }) {
+  return createElement(
+    MemoryRouter,
+    { initialEntries, initialIndex },
+    createElement(
+      "div",
+      null,
+      createElement(ApplicationRoutes, { loginTarget: "/" }),
+      createElement(RouterHistoryControls),
+    ),
+  );
+}
+
+function currentRoute() {
+  const route = document.querySelector('output[aria-label="Current route"]');
+  assert.ok(route, "Expected the router controls to expose the current route.");
+  return {
+    key: route.getAttribute("data-location-key"),
+    path: route.textContent,
+  };
+}
+
+function lessonScenePath(sceneNumber) {
+  return `/lessons/parrot/${encodeURIComponent(firstLessonId)}/scenes/${sceneNumber}`;
+}
+
+function installControlledAudio() {
+  class ControlledAudio {
+    static instances = [];
+
+    constructor(source) {
+      this.source = source;
+      this.onended = null;
+      this.onerror = null;
+      this.paused = false;
+      ControlledAudio.instances.push(this);
+    }
+
+    pause() {
+      this.paused = true;
+    }
+
+    play() {
+      return Promise.resolve();
+    }
+
+    finish() {
+      this.onended?.(new window.Event("ended"));
+    }
+  }
+
+  globalThis.Audio = ControlledAudio;
+  window.Audio = ControlledAudio;
+  return ControlledAudio;
+}
+
+function installSpeechRecorder() {
+  class TestMediaRecorder {
+    constructor() {
+      this.ondataavailable = null;
+      this.onerror = null;
+      this.onstop = null;
+      this.state = "inactive";
+    }
+
+    start() {
+      this.state = "recording";
+    }
+
+    stop() {
+      if (this.state !== "recording") return;
+      this.state = "inactive";
+      this.ondataavailable?.({
+        data: new Blob(["recorded audio"], { type: "audio/webm" }),
+      });
+      this.onstop?.();
+    }
+  }
+
+  globalThis.MediaRecorder = TestMediaRecorder;
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: {
+      async getUserMedia() {
+        return { getTracks: () => [{ stop() {} }] };
+      },
+    },
+  });
+}
+
+async function advanceToLearnerTurn(ControlledAudio) {
+  await click(button("Start lesson"));
+  for (let index = 0; index < 4; index += 1) {
+    await waitFor(() =>
+      assert.equal(ControlledAudio.instances.length, index + 1),
+    );
+    await act(async () => ControlledAudio.instances[index].finish());
+  }
+  await waitFor(() => button("Press and hold to speak"));
+}
+
+async function recordLearnerTurn() {
+  const microphone = button("Press and hold to speak");
+  await act(async () => {
+    microphone.dispatchEvent(
+      new window.KeyboardEvent("keydown", { bubbles: true, key: "Enter" }),
+    );
+  });
+  await waitFor(() => button("Release when you finish"));
+
+  await act(async () => {
+    microphone.dispatchEvent(
+      new window.KeyboardEvent("keyup", { bubbles: true, key: "Enter" }),
+    );
+  });
+  await waitFor(() => text(/Checking your speech/));
 }
 
 function text(value) {
@@ -469,126 +571,66 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.deepEqual(savedBodies, [{ answers: { name: "Maya" } }]);
   });
 
-  it("navigates the lesson catalog and controls mounted lesson playback", async () => {
+  it("navigates production lesson routes and isolates stale playback", async () => {
+    const ControlledAudio = installControlledAudio();
+
     await mountStrict(
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/lessons"] },
-        createElement(ApplicationRoutes, { loginTarget: "/" }),
-      ),
+      applicationRoutesInMemory({ initialEntries: ["/lessons"] }),
     );
     text(/Choose a lesson/);
     await click(document.querySelector(".lesson-card-action"));
-    await waitFor(() =>
-      assert.ok(
-        document.querySelector('[aria-label="Parrot English speaking lesson"]'),
-      ),
+    await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
+    assert.ok(
+      document.querySelector('[aria-label="Parrot English speaking lesson"]'),
     );
     await click(button("Back to lesson list"));
-    await waitFor(() => text(/Choose a lesson/));
+    await waitFor(() => assert.equal(currentRoute().path, "/lessons"));
+    text(/Choose a lesson/);
 
-    await cleanupMountedRoots();
-    document.body.replaceChildren();
-    class ControlledAudio {
-      static instances = [];
-
-      constructor(source) {
-        this.source = source;
-        this.onended = null;
-        this.onerror = null;
-        this.paused = false;
-        ControlledAudio.instances.push(this);
-      }
-
-      pause() {
-        this.paused = true;
-      }
-
-      play() {
-        return Promise.resolve();
-      }
-
-      finish() {
-        this.onended?.(new window.Event("ended"));
-      }
-    }
-    globalThis.Audio = ControlledAudio;
-    window.Audio = ControlledAudio;
-
-    await mountStrict(createElement(RoutedLessonPlayerHarness));
+    await click(document.querySelector(".lesson-card-action"));
+    await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
+    const popDestination = currentRoute();
     await click(button("Start lesson"));
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
     const firstPlayback = ControlledAudio.instances[0];
+    const staleFirstCompletion = firstPlayback.onended;
+    assert.equal(typeof staleFirstCompletion, "function");
 
     await click(button("Next scene"));
+    await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(2)));
     await waitFor(() => text(new RegExp(firstLesson.scenes[1].title)));
     assert.equal(firstPlayback.paused, true);
-    firstPlayback.finish();
-    await flush();
+    await act(async () => staleFirstCompletion(new window.Event("ended")));
     text(new RegExp(firstLesson.scenes[1].title));
+    assert.equal(currentRoute().path, lessonScenePath(2));
+
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 2));
     const secondPlayback = ControlledAudio.instances[1];
-    await click(button("Simulate browser back"));
+    const staleSecondCompletion = secondPlayback.onended;
+    assert.equal(typeof staleSecondCompletion, "function");
+    await act(async () => {
+      window.dispatchEvent(
+        new window.PopStateEvent("popstate", {
+          state: { key: popDestination.key },
+        }),
+      );
+    });
+    await click(button("History back"));
+    await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
+    assert.equal(currentRoute().key, popDestination.key);
     await waitFor(() => text(new RegExp(firstLesson.scenes[0].title)));
     assert.equal(secondPlayback.paused, true);
-    secondPlayback.finish();
-    await flush();
+    await act(async () => staleSecondCompletion(new window.Event("ended")));
     text(new RegExp(firstLesson.scenes[0].title));
-    button("Start lesson");
+    assert.equal(currentRoute().path, lessonScenePath(1));
+    await waitFor(() =>
+      assert.equal(document.activeElement, button("Start lesson")),
+    );
   });
 
   it("moves a mounted learner turn through recording, checking, and feedback", async () => {
-    class ControlledAudio {
-      static instances = [];
-
-      constructor() {
-        this.onended = null;
-        this.onerror = null;
-        ControlledAudio.instances.push(this);
-      }
-
-      pause() {}
-
-      play() {
-        return Promise.resolve();
-      }
-
-      finish() {
-        this.onended?.(new window.Event("ended"));
-      }
-    }
-    globalThis.Audio = ControlledAudio;
-    window.Audio = ControlledAudio;
-    class TestMediaRecorder {
-      constructor() {
-        this.ondataavailable = null;
-        this.onerror = null;
-        this.onstop = null;
-        this.state = "inactive";
-      }
-
-      start() {
-        this.state = "recording";
-      }
-
-      stop() {
-        if (this.state !== "recording") return;
-        this.state = "inactive";
-        this.ondataavailable?.({
-          data: new Blob(["recorded audio"], { type: "audio/webm" }),
-        });
-        this.onstop?.();
-      }
-    }
-    globalThis.MediaRecorder = TestMediaRecorder;
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: {
-        async getUserMedia() {
-          return { getTracks: () => [{ stop() {} }] };
-        },
-      },
-    });
+    const ControlledAudio = installControlledAudio();
+    installSpeechRecorder();
     const evaluation = deferred();
     globalThis.fetch = async (path, init = {}) => {
       assert.equal(path, "/api/evaluate-speech");
@@ -597,31 +639,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       return evaluation.promise;
     };
 
-    await mountStrict(createElement(RoutedLessonPlayerHarness));
-    await click(button("Start lesson"));
-
-    for (let index = 0; index < 4; index += 1) {
-      await waitFor(() =>
-        assert.equal(ControlledAudio.instances.length, index + 1),
-      );
-      await act(async () => ControlledAudio.instances[index].finish());
-    }
-    await waitFor(() => button("Press and hold to speak"));
-
-    const microphone = button("Press and hold to speak");
-    await act(async () => {
-      microphone.dispatchEvent(
-        new window.KeyboardEvent("keydown", { bubbles: true, key: "Enter" }),
-      );
-    });
-    await waitFor(() => button("Release when you finish"));
-
-    await act(async () => {
-      microphone.dispatchEvent(
-        new window.KeyboardEvent("keyup", { bubbles: true, key: "Enter" }),
-      );
-    });
-    await waitFor(() => text(/Checking your speech/));
+    await mountStrict(
+      applicationRoutesInMemory({ initialEntries: [lessonScenePath(1)] }),
+    );
+    assert.equal(currentRoute().path, lessonScenePath(1));
+    await advanceToLearnerTurn(ControlledAudio);
+    await recordLearnerTurn();
     evaluation.resolve(
       json({
         transcript: "It is up high!",
@@ -632,5 +655,68 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
     await waitFor(() => text(/Great job!/));
+  });
+
+  it("aborts a stale evaluation when browser history changes the lesson route", async () => {
+    const ControlledAudio = installControlledAudio();
+    installSpeechRecorder();
+    const evaluation = deferred();
+    let evaluationSignal = null;
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/evaluate-speech");
+      assert.equal(init.method, "POST");
+      evaluationSignal = init.signal;
+      return evaluation.promise;
+    };
+
+    const destinationKey = "evaluation-pop-destination";
+    await mountStrict(
+      applicationRoutesInMemory({
+        initialEntries: [
+          { key: destinationKey, pathname: lessonScenePath(2) },
+          { key: "evaluation-source", pathname: lessonScenePath(1) },
+        ],
+        initialIndex: 1,
+      }),
+    );
+    assert.equal(currentRoute().path, lessonScenePath(1));
+    await advanceToLearnerTurn(ControlledAudio);
+    await recordLearnerTurn();
+    await waitFor(() => assert.ok(evaluationSignal));
+    assert.equal(evaluationSignal.aborted, false);
+
+    await act(async () => {
+      window.dispatchEvent(
+        new window.PopStateEvent("popstate", {
+          state: { key: destinationKey },
+        }),
+      );
+    });
+    assert.equal(evaluationSignal.aborted, true);
+    await click(button("History back"));
+    await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(2)));
+    assert.equal(currentRoute().key, destinationKey);
+    await waitFor(() =>
+      assert.equal(document.activeElement, button("Start lesson")),
+    );
+
+    await act(async () => {
+      evaluation.resolve(
+        json({
+          transcript: "It is up high!",
+          similarity: 1,
+          passed: true,
+          feedbackText: "Great job!",
+          retryAllowed: false,
+        }),
+      );
+      await evaluation.promise;
+    });
+    await flush();
+
+    assert.equal(currentRoute().path, lessonScenePath(2));
+    text(new RegExp(firstLesson.scenes[1].title));
+    noText(/Checking your speech|Great job!|Speech check failed|Audio unavailable/);
+    assert.equal(document.activeElement, button("Start lesson"));
   });
 });
