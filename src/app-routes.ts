@@ -10,15 +10,15 @@ export type LessonRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
   | ({ kind: "lesson" } & ResolvedLessonScene);
 
-const GATE_ROUTE_PATH = /^\/(login|onboarding|profile)\/?$/i;
+const GATE_ROUTE_PATH = /^\/(login|onboarding|profile)\/*$/i;
 const SAFE_RETURN_PATHS = [
   /^\/$/,
-  /^\/profile\/?$/i,
-  /^\/lessons\/?$/i,
-  /^\/lessons\/my\/create\/?$/i,
-  /^\/lessons\/(?:parrot|my)\/[^/]+\/?$/i,
-  /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/?$/i,
-  /^\/(?:progress|stories)\/?$/i,
+  /^\/profile\/*$/i,
+  /^\/lessons\/*$/i,
+  /^\/lessons\/my\/create\/*$/i,
+  /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
+  /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
+  /^\/(?:progress|stories)\/*$/i,
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));

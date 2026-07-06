@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { fileURLToPath, URLSearchParams } from "node:url";
 import { after, describe, it } from "node:test";
+import { matchPath } from "react-router";
 import { createServer } from "vite";
 
 const vite = await createServer({
@@ -81,14 +82,14 @@ describe("app route helpers", () => {
     );
   });
 
-  it("classifies gate routes case-insensitively with one optional trailing slash", () => {
+  it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {
     for (const [pathname, kind] of [
       ["/login", "login"],
-      ["/Login/", "login"],
+      ["/Login///", "login"],
       ["/ONBOARDING", "onboarding"],
-      ["/Onboarding/", "onboarding"],
+      ["/Onboarding//", "onboarding"],
       ["/profile", "profile"],
-      ["/Profile/", "profile"],
+      ["/Profile//", "profile"],
     ]) {
       assert.equal(routes.getGateRouteKind(pathname), kind);
     }
@@ -97,17 +98,47 @@ describe("app route helpers", () => {
       "/",
       "/progress",
       "/login/extra",
-      "/login//",
-      "/onboarding//",
-      "/profile//",
+      "/login//extra",
       "//login",
     ]) {
       assert.equal(routes.getGateRouteKind(pathname), null);
     }
   });
 
+  it("stays aligned with React Router matching for declared route shapes", () => {
+    for (const [pattern, pathname, gateKind] of [
+      ["/login", "/Login///", "login"],
+      ["/onboarding", "/Onboarding//", "onboarding"],
+      ["/profile", "/Profile//", "profile"],
+      ["/progress", "/Progress///", null],
+      ["/lessons", "/Lessons//", null],
+      ["/lessons/my/create", "/Lessons/My/Create///", null],
+      ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],
+      [
+        "/lessons/parrot/:lessonId/scenes/:sceneNumber",
+        "/Lessons/Parrot/demo/Scenes/2///",
+        null,
+      ],
+    ]) {
+      assert.ok(matchPath({ path: pattern, end: true }, pathname));
+      if (gateKind) {
+        assert.equal(routes.getGateRouteKind(pathname), gateKind);
+      } else {
+        assert.equal(
+          routes.getSafeReturnTo(returnToSearch(pathname)),
+          pathname,
+        );
+      }
+    }
+
+    for (const pathname of ["//login", "/login/extra"]) {
+      assert.equal(matchPath({ path: "/login", end: true }, pathname), null);
+      assert.equal(routes.getGateRouteKind(pathname), null);
+    }
+  });
+
   it("preserves an onboarding return target when reauthentication is required", () => {
-    for (const pathname of ["/onboarding", "/Onboarding/", "/ONBOARDING"]) {
+    for (const pathname of ["/onboarding", "/Onboarding//", "/ONBOARDING///"]) {
       assert.equal(
         routes.getRequestedProtectedTarget(
           pathname,
@@ -120,13 +151,13 @@ describe("app route helpers", () => {
   });
 
   it("treats case-variant login routes as auth gates", () => {
-    assert.equal(routes.getRequestedProtectedTarget("/Login/", "", ""), "/");
+    assert.equal(routes.getRequestedProtectedTarget("/Login///", "", ""), "/");
   });
 
   it("keeps a case-variant profile route as a protected target", () => {
     assert.equal(
-      routes.getRequestedProtectedTarget("/Profile/", "", ""),
-      "/Profile/",
+      routes.getRequestedProtectedTarget("/Profile//", "", ""),
+      "/Profile//",
     );
   });
 
@@ -271,6 +302,20 @@ describe("app route helpers", () => {
       routes.getSafeReturnTo("?returnTo=%2FProgress%2F"),
       "/Progress/",
     );
+    for (const returnTo of [
+      "/progress//",
+      "/stories///",
+      "/profile//",
+      "/lessons//",
+      "/lessons/my/create///",
+      "/lessons/parrot/01-peppas-high-ball//",
+      "/lessons/parrot/01-peppas-high-ball/scenes/2///",
+    ]) {
+      assert.equal(
+        routes.getSafeReturnTo(returnToSearch(returnTo)),
+        returnTo,
+      );
+    }
     assert.equal(
       routes.getSafeReturnTo(
         "?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
@@ -301,10 +346,10 @@ describe("app route helpers", () => {
     );
     for (const returnTo of [
       "/progress/history",
-      "/progress//",
-      "/stories//",
-      "/profile//",
-      "/lessons//",
+      "/progress//history",
+      "/lessons//parrot/01-peppas-high-ball",
+      "/lessons/parrot//",
+      "//lessons",
     ]) {
       assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
     }
