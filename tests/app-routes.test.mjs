@@ -81,14 +81,52 @@ describe("app route helpers", () => {
     );
   });
 
-  it("preserves an onboarding return target when reauthentication is required", () => {
-    assert.equal(
-      routes.getRequestedProtectedTarget(
-        "/onboarding",
-        "?returnTo=%2Fprogress",
-        "",
-      ),
+  it("classifies gate routes case-insensitively with one optional trailing slash", () => {
+    for (const [pathname, kind] of [
+      ["/login", "login"],
+      ["/Login/", "login"],
+      ["/ONBOARDING", "onboarding"],
+      ["/Onboarding/", "onboarding"],
+      ["/profile", "profile"],
+      ["/Profile/", "profile"],
+    ]) {
+      assert.equal(routes.getGateRouteKind(pathname), kind);
+    }
+
+    for (const pathname of [
+      "/",
       "/progress",
+      "/login/extra",
+      "/login//",
+      "/onboarding//",
+      "/profile//",
+      "//login",
+    ]) {
+      assert.equal(routes.getGateRouteKind(pathname), null);
+    }
+  });
+
+  it("preserves an onboarding return target when reauthentication is required", () => {
+    for (const pathname of ["/onboarding", "/Onboarding/", "/ONBOARDING"]) {
+      assert.equal(
+        routes.getRequestedProtectedTarget(
+          pathname,
+          "?returnTo=%2Fprogress",
+          "",
+        ),
+        "/progress",
+      );
+    }
+  });
+
+  it("treats case-variant login routes as auth gates", () => {
+    assert.equal(routes.getRequestedProtectedTarget("/Login/", "", ""), "/");
+  });
+
+  it("keeps a case-variant profile route as a protected target", () => {
+    assert.equal(
+      routes.getRequestedProtectedTarget("/Profile/", "", ""),
+      "/Profile/",
     );
   });
 
@@ -230,6 +268,10 @@ describe("app route helpers", () => {
       "/progress",
     );
     assert.equal(
+      routes.getSafeReturnTo("?returnTo=%2FProgress%2F"),
+      "/Progress/",
+    );
+    assert.equal(
       routes.getSafeReturnTo(
         "?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
       ),
@@ -245,6 +287,27 @@ describe("app route helpers", () => {
     );
     assert.equal(routes.getSafeReturnTo("?returnTo=%2Flogin"), null);
     assert.equal(routes.getSafeReturnTo("?returnTo=%2Fonboarding"), null);
+    assert.equal(
+      routes.getSafeReturnTo(
+        returnToSearch("/Login/?returnTo=%2Fprogress"),
+      ),
+      null,
+    );
+    assert.equal(
+      routes.getSafeReturnTo(
+        returnToSearch("/ONBOARDING?returnTo=%2Fprogress"),
+      ),
+      null,
+    );
+    for (const returnTo of [
+      "/progress/history",
+      "/progress//",
+      "/stories//",
+      "/profile//",
+      "/lessons//",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
+    }
   });
 
   it("normalizes return destinations before checking durable routes", () => {
@@ -265,7 +328,7 @@ describe("app route helpers", () => {
       routes.getSafeReturnTo(
         returnToSearch("/progress/./history?period=week#today"),
       ),
-      "/progress/history?period=week#today",
+      null,
     );
   });
 });

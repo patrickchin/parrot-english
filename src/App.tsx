@@ -46,6 +46,7 @@ import {
 } from "../lib/lesson-state";
 import { isAbortError, playAudioLine } from "./audio-playback";
 import {
+  getGateRouteKind,
   getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
@@ -911,9 +912,10 @@ function RoutedApplication() {
     lessonRouteExitRegistryRef.current.exit();
     navigate("/profile");
   }, [navigate]);
-  const onLoginRoute = location.pathname === "/login";
-  const isOnboardingRoute = location.pathname === "/onboarding";
-  const isProfileRoute = location.pathname === "/profile";
+  const gateRoute = getGateRouteKind(location.pathname);
+  const onLoginRoute = gateRoute === "login";
+  const isOnboardingRoute = gateRoute === "onboarding";
+  const isProfileRoute = gateRoute === "profile";
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,

@@ -1,6 +1,7 @@
 import { LESSONS, type LessonCatalogEntry } from "./lesson-catalog";
 
 export type LessonSource = "parrot" | "my";
+export type GateRouteKind = "login" | "onboarding" | "profile";
 type ResolvedLessonScene = {
   entry: LessonCatalogEntry;
   sceneIndex: number;
@@ -9,8 +10,16 @@ export type LessonRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
   | ({ kind: "lesson" } & ResolvedLessonScene);
 
-const SAFE_RETURN_PATH =
-  /^(?:\/$|\/profile(?:\/|$)|\/lessons(?:\/|$)|\/progress(?:\/|$)|\/stories(?:\/|$))/;
+const GATE_ROUTE_PATH = /^\/(login|onboarding|profile)\/?$/i;
+const SAFE_RETURN_PATHS = [
+  /^\/$/,
+  /^\/profile\/?$/i,
+  /^\/lessons\/?$/i,
+  /^\/lessons\/my\/create\/?$/i,
+  /^\/lessons\/(?:parrot|my)\/[^/]+\/?$/i,
+  /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/?$/i,
+  /^\/(?:progress|stories)\/?$/i,
+];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
 
@@ -45,6 +54,11 @@ export function getOnboardingPath(returnTo: string) {
   return `/onboarding?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
+export function getGateRouteKind(pathname: string): GateRouteKind | null {
+  const match = GATE_ROUTE_PATH.exec(pathname);
+  return match ? (match[1].toLowerCase() as GateRouteKind) : null;
+}
+
 export function getSafeReturnTo(search: string) {
   const value = new URLSearchParams(search).get("returnTo");
   if (!value) return null;
@@ -58,7 +72,7 @@ export function getSafeReturnTo(search: string) {
 
   if (
     destination.origin !== RETURN_TO_ORIGIN ||
-    !SAFE_RETURN_PATH.test(destination.pathname)
+    !SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname))
   ) {
     return null;
   }
@@ -71,7 +85,8 @@ export function getRequestedProtectedTarget(
   search: string,
   hash: string,
 ) {
-  if (pathname === "/login" || pathname === "/onboarding") {
+  const gateRoute = getGateRouteKind(pathname);
+  if (gateRoute === "login" || gateRoute === "onboarding") {
     return getSafeReturnTo(search) ?? "/";
   }
 

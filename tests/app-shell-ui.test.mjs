@@ -194,9 +194,20 @@ test("the application shell derives protected targets from the current URL", () 
   );
   assert.match(
     app,
-    /import\s+\{[^}]*\bgetLoginPath\b[^}]*\bgetRequestedProtectedTarget\b[^}]*\}\s+from\s+["']\.\/app-routes["']/s,
+    /import\s+\{[^}]*\bgetGateRouteKind\b[^}]*\bgetLoginPath\b[^}]*\bgetRequestedProtectedTarget\b[^}]*\}\s+from\s+["']\.\/app-routes["']/s,
   );
   assert.match(app, /const\s+location\s*=\s*useLocation\(\)/);
+  assert.match(
+    app,
+    /const\s+gateRoute\s*=\s*getGateRouteKind\(location\.pathname\)/,
+  );
+  assert.match(app, /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/);
+  assert.match(app, /const\s+isOnboardingRoute\s*=\s*gateRoute\s*===\s*["']onboarding["']/);
+  assert.match(app, /const\s+isProfileRoute\s*=\s*gateRoute\s*===\s*["']profile["']/);
+  assert.doesNotMatch(
+    app,
+    /location\.pathname\s*===\s*["']\/(?:login|onboarding|profile)["']/,
+  );
   assert.match(
     app,
     /const\s+requestedProtectedTarget\s*=\s*getRequestedProtectedTarget\(\s*location\.pathname,\s*location\.search,\s*location\.hash,?\s*\)/s,
@@ -204,7 +215,10 @@ test("the application shell derives protected targets from the current URL", () 
 });
 
 test("signed-out redirects reuse the safe requested protected target", () => {
-  assert.match(app, /const\s+onLoginRoute\s*=\s*location\.pathname\s*===\s*["']\/login["']/);
+  assert.match(
+    app,
+    /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/,
+  );
   assert.match(app, /signedOutFallback=\{/);
   assert.match(
     app,
