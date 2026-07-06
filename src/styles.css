@@ -764,7 +764,203 @@ select:focus-visible {
   box-shadow: 0 4px 0 rgb(95 16 36 / 35%);
 }
 
+main:has(> .home-menu-grid) {
+  width: 100vw;
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 12% 14%, rgb(255 220 74 / 72%) 0 7%, transparent 7.3%),
+    radial-gradient(circle at 88% 84%, rgb(255 70 123 / 38%) 0 9%, transparent 9.3%),
+    linear-gradient(145deg, #8bd5fa, #76cfee);
+  padding: clamp(108px, 13vh, 144px) clamp(24px, 5vw, 64px) 56px;
+}
+
+main:has(> .home-menu-grid) > header {
+  width: min(980px, 100%);
+  margin: 0 auto clamp(24px, 4vh, 40px);
+  text-align: center;
+}
+
+main:has(> .home-menu-grid) > header p {
+  margin: 0 0 8px;
+  color: #087451;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+main:has(> .home-menu-grid) > header h1 {
+  margin: 0;
+  color: #173c67;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.home-menu-grid {
+  display: grid;
+  width: min(980px, 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: clamp(16px, 2.4vw, 26px);
+  margin: 0 auto;
+}
+
+.home-menu-card {
+  --home-card-accent: #204c7f;
+  display: grid;
+  min-height: 210px;
+  grid-template-columns: 76px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-content: center;
+  align-items: center;
+  gap: 8px 18px;
+  border: 5px solid #fff;
+  border-radius: 28px;
+  background: rgb(255 255 255 / 95%);
+  color: #241d2b;
+  padding: clamp(22px, 3vw, 34px);
+  text-decoration: none;
+  box-shadow:
+    0 8px 0 rgb(31 76 126 / 22%),
+    0 22px 42px rgb(27 83 123 / 18%);
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.home-menu-card:nth-child(2) {
+  --home-card-accent: #d62f70;
+}
+
+.home-menu-card:nth-child(3) {
+  --home-card-accent: #087451;
+}
+
+.home-menu-card:nth-child(4) {
+  --home-card-accent: #bc7512;
+}
+
+.home-menu-card:hover {
+  filter: brightness(1.02) saturate(1.03);
+  transform: translateY(-3px);
+}
+
+.home-menu-card:focus-visible {
+  outline: 5px solid #204c7f;
+  outline-offset: 4px;
+}
+
+.home-menu-card svg {
+  grid-row: 1 / span 2;
+  width: 70px;
+  height: 70px;
+  border-radius: 22px;
+  background: var(--home-card-accent);
+  color: #fff;
+  padding: 18px;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--home-card-accent), #000 28%);
+}
+
+.home-menu-card strong {
+  align-self: end;
+  color: var(--home-card-accent);
+  font-size: clamp(1.45rem, 2.6vw, 2rem);
+  line-height: 1.05;
+}
+
+.home-menu-card span {
+  align-self: start;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.feature-placeholder-page {
+  display: grid;
+  width: 100vw;
+  height: 100dvh;
+  place-items: center;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 14% 18%, rgb(255 220 74 / 64%) 0 7%, transparent 7.3%),
+    linear-gradient(145deg, #8bd5fa, #75cfef);
+  padding: clamp(112px, 14vh, 154px) 24px 48px;
+}
+
+.feature-placeholder-card {
+  display: grid;
+  width: min(100%, 680px);
+  justify-items: center;
+  gap: 16px;
+  border: 5px solid #fff;
+  border-radius: 32px;
+  background: rgb(255 255 255 / 96%);
+  padding: clamp(30px, 6vw, 56px);
+  text-align: center;
+  box-shadow:
+    0 9px 0 rgb(31 76 126 / 22%),
+    0 26px 56px rgb(27 83 123 / 22%);
+}
+
+.feature-placeholder-card p {
+  max-width: 520px;
+  margin: 0;
+  color: #46617d;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.feature-placeholder-card p:first-child {
+  color: #d62f70;
+  font-size: 0.85rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.feature-placeholder-card h1 {
+  margin: 0;
+  color: #173c67;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  line-height: 1;
+}
+
+.main-menu-link,
+.my-lessons-empty a {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 4px solid #fff;
+  border-radius: 999px;
+  background: #204c7f;
+  color: #fff;
+  padding: 8px 20px;
+  font-weight: 950;
+  text-decoration: none;
+  box-shadow: 0 5px 0 rgb(18 55 92 / 38%);
+}
+
+.main-menu-link:hover,
+.my-lessons-empty a:hover {
+  filter: brightness(1.08);
+}
+
+.main-menu-link:focus-visible {
+  outline: 5px solid #204c7f;
+  outline-offset: 4px;
+}
+
+.my-lessons-empty a:focus-visible {
+  outline: 5px solid #204c7f;
+  outline-offset: 4px;
+}
+
+.feature-placeholder-card .main-menu-link:focus-visible,
+.lesson-main-menu-link:focus-visible {
+  outline-color: #ff467b;
+}
+
 .lesson-list-page {
+  position: relative;
   width: 100vw;
   height: 100dvh;
   overflow-x: hidden;
@@ -822,6 +1018,60 @@ select:focus-visible {
   margin: 0;
   font-size: clamp(1.1rem, 2.3vw, 1.65rem);
   font-weight: 850;
+}
+
+.lesson-main-menu-link {
+  position: absolute;
+  top: clamp(20px, 3vh, 34px);
+  left: clamp(18px, 3vw, 42px);
+  z-index: 20;
+}
+
+.lesson-main-menu-link svg,
+.my-lessons-empty svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.lesson-catalog-section {
+  width: min(1120px, 100%);
+  margin: 0 auto clamp(42px, 6vw, 72px);
+}
+
+.lesson-catalog-section > h2 {
+  margin: 0 0 18px;
+  color: #204c7f;
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  line-height: 1;
+}
+
+.my-lessons-section {
+  margin-bottom: 0;
+}
+
+.my-lessons-empty {
+  display: flex;
+  min-height: 150px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 4px dashed rgb(32 76 127 / 46%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 64%);
+  padding: clamp(22px, 4vw, 36px);
+}
+
+.my-lessons-empty p {
+  margin: 0;
+  color: #315f89;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  font-weight: 850;
+}
+
+.my-lessons-empty a {
+  flex: none;
+  background: #ff467b;
+  box-shadow: 0 5px 0 rgb(171 38 83 / 42%);
 }
 
 .lesson-card-grid {
@@ -1111,7 +1361,8 @@ select:focus-visible {
 .lesson-home-button {
   position: absolute;
   top: clamp(14px, 2.2vh, 28px);
-  right: var(--lesson-edge-gap);
+  left: calc(var(--lesson-edge-gap) + clamp(188px, 18vw, 230px));
+  right: auto;
   z-index: 20;
   display: inline-flex;
   min-height: var(--lesson-pill-height);
@@ -1126,6 +1377,12 @@ select:focus-visible {
   font-size: var(--lesson-ui-font-size);
   font-weight: 950;
   box-shadow: 0 5px 0 rgb(39 93 127 / 24%);
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.lesson-home-button:hover {
+  filter: brightness(1.04);
+  transform: translateY(-2px);
 }
 
 .lesson-home-button svg {
@@ -1485,9 +1742,91 @@ select:focus-visible {
   }
 }
 
+@media (max-width: 1360px) {
+  .lesson-list-back-button {
+    width: var(--lesson-pill-height);
+    min-width: var(--lesson-pill-height);
+    height: var(--lesson-pill-height);
+    justify-content: center;
+    padding: 0;
+  }
+
+  .lesson-list-back-button > span {
+    display: none;
+  }
+
+  .lesson-home-button {
+    left: calc(var(--lesson-edge-gap) + var(--lesson-pill-height) + 10px);
+    width: var(--lesson-pill-height);
+    min-width: var(--lesson-pill-height);
+    justify-content: center;
+    padding: 0;
+  }
+
+  .lesson-home-button > span {
+    display: none;
+  }
+}
+
 @media (max-width: 700px) {
+  main:has(> .home-menu-grid) {
+    padding: 170px 16px 38px;
+  }
+
+  main:has(> .home-menu-grid) > header {
+    margin-bottom: 24px;
+  }
+
+  .home-menu-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+  }
+
+  .home-menu-card {
+    min-height: 148px;
+    grid-template-columns: 58px minmax(0, 1fr);
+    border-radius: 22px;
+    padding: 20px;
+  }
+
+  .home-menu-card svg {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .feature-placeholder-page {
+    place-items: start center;
+    padding: 170px 16px 38px;
+  }
+
+  .feature-placeholder-card {
+    margin-block: auto;
+    border-width: 4px;
+    border-radius: 24px;
+  }
+
   .lesson-list-page {
-    padding: 154px 16px 44px;
+    padding: 170px 16px 44px;
+  }
+
+  .lesson-main-menu-link {
+    top: 20px;
+    left: 16px;
+  }
+
+  .lesson-catalog-section {
+    margin-bottom: 42px;
+  }
+
+  .my-lessons-empty {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .my-lessons-empty a {
+    width: 100%;
   }
 
   .lesson-card {

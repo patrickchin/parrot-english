@@ -32,6 +32,10 @@ const app = readFileSync(
   fileURLToPath(new URL("../src/App.tsx", import.meta.url)),
   "utf8",
 );
+const styles = readFileSync(
+  fileURLToPath(new URL("../src/styles.css", import.meta.url)),
+  "utf8",
+);
 
 function renderInRouter(element, initialEntry = "/") {
   return renderToStaticMarkup(
@@ -103,6 +107,34 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
   assert.match(
     html,
     /<a class="main-menu-link" href="\/"[^>]*>Back to main menu<\/a>/,
+  );
+});
+
+test("home and placeholder routes have equal, responsive, keyboard-visible surfaces", () => {
+  assert.match(
+    styles,
+    /\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[^}]*grid-auto-rows:\s*1fr/s,
+  );
+  assert.match(
+    styles,
+    /\.home-menu-card\s*\{[^}]*display:\s*grid[^}]*min-height:\s*\d+px/s,
+  );
+  assert.match(
+    styles,
+    /\.home-menu-card:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
+  );
+  assert.match(
+    styles,
+    /\.feature-placeholder-page\s*\{[^}]*display:\s*grid[^}]*place-items:\s*center[^}]*overflow-y:\s*auto/s,
+  );
+  assert.match(styles, /\.feature-placeholder-card\s*\{/);
+  assert.match(
+    styles,
+    /\.main-menu-link:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 700px\)[\s\S]*?\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s,
   );
 });
 

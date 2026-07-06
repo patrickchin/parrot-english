@@ -74,6 +74,32 @@ describe("lesson list integration contracts", () => {
     assert.doesNotMatch(styles, /\.lesson-picker/);
   });
 
+  it("separates lesson sources and keeps navigation clear of fixed lesson chrome", () => {
+    const styles = readProjectFile("src/styles.css");
+
+    assert.match(styles, /\.lesson-catalog-section\s*\{/);
+    assert.match(
+      styles,
+      /\.lesson-catalog-section\s+>\s+h2\s*\{[^}]*color:\s*#204c7f/s,
+    );
+    assert.match(
+      styles,
+      /\.my-lessons-empty\s*\{[^}]*border:\s*4px dashed[^}]*background:/s,
+    );
+    assert.match(
+      styles,
+      /\.lesson-main-menu-link\s*\{[^}]*position:\s*absolute[^}]*top:[^;}]+;[^}]*left:/s,
+    );
+    assert.match(
+      styles,
+      /\.lesson-home-button\s*\{[^}]*left:[^;}]+;[^}]*right:\s*auto/s,
+    );
+    assert.match(
+      styles,
+      /@media \(max-width: 700px\)[\s\S]*?\.lesson-main-menu-link\s*\{/s,
+    );
+  });
+
   it("uses compact horizontal cards with actions on the right", () => {
     const styles = readProjectFile("src/styles.css");
 
