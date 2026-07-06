@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement, useSyncExternalStore } from "react";
+import {
+  act,
+  createElement,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { MemoryRouter } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
 import {
@@ -27,7 +34,7 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-let LessonExperience;
+let ApplicationRoutes;
 let LessonPlayer;
 let OnboardingGate;
 let createAuthGate;
@@ -36,7 +43,9 @@ let firstLesson;
 before(async () => {
   ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
   ({ OnboardingGate } = await vite.ssrLoadModule("/src/OnboardingGate.tsx"));
-  ({ LessonExperience, LessonPlayer } = await vite.ssrLoadModule("/src/App.tsx"));
+  ({ ApplicationRoutes, LessonPlayer } = await vite.ssrLoadModule(
+    "/src/App.tsx",
+  ));
   const catalog = await vite.ssrLoadModule("/src/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
 });
@@ -137,6 +146,76 @@ function button(name) {
   return match;
 }
 
+function onboardingRouteProps(completedOnboardingFallback) {
+  return {
+    completedOnboardingFallback,
+    isOnboardingRoute: true,
+    isProfileRoute: false,
+    onboardingFallback: createElement("p", null, "ONBOARDING ROUTE"),
+    onCloseProfileRoute() {},
+    onOpenProfileRoute() {},
+  };
+}
+
+function ProfileRouteHarness({ children }) {
+  const [route, setRoute] = useState("/");
+
+  return createElement(
+    OnboardingGate,
+    {
+      completedOnboardingFallback: children,
+      isOnboardingRoute: false,
+      isProfileRoute: route === "/profile",
+      onboardingFallback: createElement("p", null, "ONBOARDING ROUTE"),
+      onCloseProfileRoute: () => setRoute("/"),
+      onOpenProfileRoute: () => setRoute("/profile"),
+    },
+    children,
+  );
+}
+
+function RoutedLessonPlayerHarness({ initialSceneIndex = 0 }) {
+  const locationSequence = useRef(0);
+  const [route, setRoute] = useState({
+    key: `initial-${initialSceneIndex}`,
+    sceneIndex: initialSceneIndex,
+  });
+
+  function updateRoute(sceneIndex, kind) {
+    locationSequence.current += 1;
+    const key = `${kind}-${sceneIndex}-${locationSequence.current}`;
+    setRoute({ key, sceneIndex });
+  }
+
+  function simulateHistoryBack() {
+    locationSequence.current += 1;
+    const key = `pop-0-${locationSequence.current}`;
+    window.history.replaceState({ key }, "");
+    window.dispatchEvent(
+      new window.PopStateEvent("popstate", { state: { key } }),
+    );
+    setRoute({ key, sceneIndex: 0 });
+  }
+
+  return createElement(
+    "div",
+    null,
+    createElement(
+      "button",
+      { onClick: simulateHistoryBack, type: "button" },
+      "Simulate browser back",
+    ),
+    createElement(LessonPlayer, {
+      lesson: firstLesson,
+      onBack() {},
+      onHome() {},
+      onNavigateScene: (sceneIndex) => updateRoute(sceneIndex, "push"),
+      routedLocationKey: route.key,
+      routedSceneIndex: route.sceneIndex,
+    }),
+  );
+}
+
 function text(value) {
   assert.match(document.body.textContent, value);
 }
@@ -227,7 +306,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(
         OnboardingGate,
-        null,
+        onboardingRouteProps(createElement("p", null, "LESSON CATALOG")),
         createElement("p", null, "LESSON CATALOG"),
       ),
     );
@@ -294,7 +373,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(
         OnboardingGate,
-        null,
+        onboardingRouteProps(createElement("p", null, "BYPASSED LESSONS")),
         createElement("p", null, "BYPASSED LESSONS"),
       ),
     );
@@ -323,7 +402,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(
         OnboardingGate,
-        null,
+        onboardingRouteProps(createElement("p", null, "COMPLETED LESSONS")),
         createElement("p", null, "COMPLETED LESSONS"),
       ),
     );
@@ -373,7 +452,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         TestAuthGate,
         null,
         createElement(
-          OnboardingGate,
+          ProfileRouteHarness,
           null,
           createElement("p", null, "PROFILE LESSONS"),
         ),
@@ -391,7 +470,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("navigates the lesson catalog and controls mounted lesson playback", async () => {
-    await mountStrict(createElement(LessonExperience));
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/lessons"] },
+        createElement(ApplicationRoutes, { loginTarget: "/" }),
+      ),
+    );
     text(/Choose a lesson/);
     await click(document.querySelector(".lesson-card-action"));
     await waitFor(() =>
@@ -430,18 +515,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     globalThis.Audio = ControlledAudio;
     window.Audio = ControlledAudio;
 
-    await mountStrict(
-      createElement(LessonPlayer, {
-        lesson: firstLesson,
-        onBack() {},
-      }),
-    );
-    await click(button("Mute lesson audio"));
-    assert.equal(button("Unmute lesson audio").getAttribute("aria-pressed"), "true");
-    await click(button("Unmute lesson audio"));
-
-    await click(button("Play"));
-    await waitFor(() => button("Pause"));
+    await mountStrict(createElement(RoutedLessonPlayerHarness));
+    await click(button("Start lesson"));
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
     const firstPlayback = ControlledAudio.instances[0];
 
@@ -451,12 +526,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     firstPlayback.finish();
     await flush();
     text(new RegExp(firstLesson.scenes[1].title));
-
-    await click(button("Pause"));
-    await waitFor(() => button("Play"));
-    await click(button("Previous scene"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 2));
+    const secondPlayback = ControlledAudio.instances[1];
+    await click(button("Simulate browser back"));
     await waitFor(() => text(new RegExp(firstLesson.scenes[0].title)));
-    button("Pause");
+    assert.equal(secondPlayback.paused, true);
+    secondPlayback.finish();
+    await flush();
+    text(new RegExp(firstLesson.scenes[0].title));
+    button("Start lesson");
   });
 
   it("moves a mounted learner turn through recording, checking, and feedback", async () => {
@@ -519,13 +597,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       return evaluation.promise;
     };
 
-    await mountStrict(
-      createElement(LessonPlayer, {
-        lesson: firstLesson,
-        onBack() {},
-      }),
-    );
-    await click(button("Play"));
+    await mountStrict(createElement(RoutedLessonPlayerHarness));
+    await click(button("Start lesson"));
 
     for (let index = 0; index < 4; index += 1) {
       await waitFor(() =>
