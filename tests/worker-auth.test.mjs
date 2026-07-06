@@ -96,6 +96,55 @@ describe("Worker authentication", () => {
     );
   });
 
+  it("trusts production and Parrot Worker preview origins", async () => {
+    const productionOrigin = "https://parrot-english.p-ch.workers.dev";
+    const auth = createAuth({
+      DB: {},
+      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+      BETTER_AUTH_URL: productionOrigin,
+    });
+    const context = await auth.$context;
+
+    assert.equal(auth.options.baseURL, productionOrigin);
+    assert.equal(context.isTrustedOrigin(productionOrigin), true);
+    assert.equal(
+      context.isTrustedOrigin(
+        "https://codex-app-home-routing-parrot-english.p-ch.workers.dev"
+      ),
+      true
+    );
+    assert.equal(
+      context.isTrustedOrigin(
+        "https://e8bf6255-parrot-english.p-ch.workers.dev"
+      ),
+      true
+    );
+  });
+
+  it("rejects origins outside Parrot Worker HTTPS previews", async () => {
+    const auth = createAuth({
+      DB: {},
+      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+      BETTER_AUTH_URL: "https://parrot-english.p-ch.workers.dev",
+    });
+    const context = await auth.$context;
+    const rejectedOrigins = [
+      "https://unrelated.workers.dev",
+      "https://branch-parrot-english.other-account.workers.dev",
+      "http://branch-parrot-english.p-ch.workers.dev",
+      "not a valid origin",
+      "https://branch-parrot-english.p-ch.workers.dev.evil.example",
+    ];
+
+    for (const origin of rejectedOrigins) {
+      assert.equal(
+        context.isTrustedOrigin(origin),
+        false,
+        `Expected ${origin} to remain untrusted`
+      );
+    }
+  });
+
   it("enables Better Auth rate limiting with the Cloudflare client IP header", () => {
     const auth = createAuth({
       DB: {},
