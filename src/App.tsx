@@ -32,6 +32,8 @@ import {
   invalidateLessonRouteActivity,
 } from "../lib/lesson-route-activity";
 import {
+  consumeLessonHistoryPopToken,
+  createLessonHistoryPopToken,
   getLessonEventTargetSceneIndex,
   getLessonRouteReconciliationEvent,
 } from "../lib/lesson-route-transition";
@@ -100,7 +102,7 @@ type LessonPlayerProps = {
   onBack: () => void;
   onHome: () => void;
   onNavigateScene: (sceneIndex: number) => void;
-  routedHistoryKey: string;
+  routedLocationKey: string;
   routedSceneIndex: number;
 };
 
@@ -132,7 +134,7 @@ export function LessonPlayer({
   onBack,
   onHome,
   onNavigateScene,
-  routedHistoryKey,
+  routedLocationKey,
   routedSceneIndex,
 }: LessonPlayerProps) {
   const registerLessonRouteExitBarrier = useContext(
@@ -146,6 +148,7 @@ export function LessonPlayer({
     { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
   const [error, setError] = useState("");
+  const [historyPopSequence, setHistoryPopSequence] = useState(0);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackGenerationRef = useRef(0);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
@@ -156,7 +159,11 @@ export function LessonPlayer({
   const startActionRef = useRef<HTMLButtonElement | null>(null);
   const routeActivityGuardRef = useRef(createLessonRouteActivityGuard());
   const routedSceneRef = useRef(routedSceneIndex);
-  const pendingHistoryPopRef = useRef(false);
+  const historyPopSequenceRef = useRef(0);
+  const pendingHistoryPopTokenRef = useRef<{
+    destinationKey: string;
+    sequence: number;
+  } | null>(null);
   const pendingRoutedEventRef = useRef<{
     event: LessonEvent;
     sceneIndex: number;
@@ -198,8 +205,15 @@ export function LessonPlayer({
   }, [invalidateRouteActivity, routedSceneIndex]);
 
   useLayoutEffect(() => {
-    const handlePopState = () => {
-      pendingHistoryPopRef.current = true;
+    const handlePopState = (event: PopStateEvent) => {
+      const token = createLessonHistoryPopToken(
+        historyPopSequenceRef.current,
+        event.state,
+        window.history.state,
+      );
+      historyPopSequenceRef.current = token.sequence;
+      pendingHistoryPopTokenRef.current = token;
+      setHistoryPopSequence(token.sequence);
       exitRouteActivity();
     };
     window.addEventListener("popstate", handlePopState, true);
@@ -235,6 +249,7 @@ export function LessonPlayer({
       if (targetSceneIndex !== null) {
         invalidateRouteActivity();
         setError("");
+        pendingHistoryPopTokenRef.current = null;
         pendingRoutedEventRef.current = {
           event,
           sceneIndex: targetSceneIndex,
@@ -260,25 +275,29 @@ export function LessonPlayer({
 
   useEffect(() => {
     const pendingRoutedEvent = pendingRoutedEventRef.current;
-    pendingRoutedEventRef.current = null;
-    const isHistoryPop = pendingHistoryPopRef.current;
-    pendingHistoryPopRef.current = false;
+    const popReconciliation = consumeLessonHistoryPopToken(
+      pendingHistoryPopTokenRef.current,
+      routedLocationKey,
+    );
+    pendingHistoryPopTokenRef.current = popReconciliation.pendingToken;
     const reconciliationEvent = getLessonRouteReconciliationEvent(
       pendingRoutedEvent,
       routedSceneIndex,
       {
         currentSceneIndex: state.sceneIndex,
-        isHistoryPop,
+        isHistoryPop: popReconciliation.isHistoryPop,
       },
     );
     if (!reconciliationEvent) return;
+    pendingRoutedEventRef.current = null;
 
     cancelPendingWork();
     setError("");
     dispatch(reconciliationEvent);
   }, [
     cancelPendingWork,
-    routedHistoryKey,
+    historyPopSequence,
+    routedLocationKey,
     routedSceneIndex,
     state.sceneIndex,
   ]);
@@ -290,7 +309,13 @@ export function LessonPlayer({
     ) {
       startActionRef.current?.focus({ preventScroll: true });
     }
-  }, [routedHistoryKey, routedSceneIndex, state.phase, state.sceneIndex]);
+  }, [
+    historyPopSequence,
+    routedLocationKey,
+    routedSceneIndex,
+    state.phase,
+    state.sceneIndex,
+  ]);
 
   const currentStep = getCurrentStep(state, currentLesson);
   if (!currentStep) throw new Error("The lesson position is invalid.");
@@ -787,7 +812,7 @@ function LessonRouteDecisionView({
       onNavigateScene={(sceneIndex) =>
         navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
       }
-      routedHistoryKey={location.key}
+      routedLocationKey={location.key}
       routedSceneIndex={decision.sceneIndex}
     />
   );

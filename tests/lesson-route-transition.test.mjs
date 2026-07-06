@@ -162,4 +162,98 @@ describe("lesson route transitions", () => {
       { type: "SELECT_SCENE", sceneIndex: 0 },
     );
   });
+
+  it("creates destination-correlated POP tokens with a monotonic sequence", () => {
+    assert.equal(
+      typeof lessonRouteTransition.createLessonHistoryPopToken,
+      "function",
+    );
+
+    const back = lessonRouteTransition.createLessonHistoryPopToken(
+      0,
+      { key: "back-entry" },
+      { key: "ignored-history-entry" },
+    );
+    const forward = lessonRouteTransition.createLessonHistoryPopToken(
+      back.sequence,
+      null,
+      { key: "forward-entry" },
+    );
+
+    assert.deepEqual(back, {
+      destinationKey: "back-entry",
+      sequence: 1,
+    });
+    assert.deepEqual(forward, {
+      destinationKey: "forward-entry",
+      sequence: 2,
+    });
+  });
+
+  it("retains a POP token until its exact destination key commits", () => {
+    assert.equal(
+      typeof lessonRouteTransition.consumeLessonHistoryPopToken,
+      "function",
+    );
+    const token = { destinationKey: "pop-destination", sequence: 4 };
+
+    const intermediate =
+      lessonRouteTransition.consumeLessonHistoryPopToken(
+        token,
+        "intermediate-entry",
+      );
+    const destination = lessonRouteTransition.consumeLessonHistoryPopToken(
+      intermediate.pendingToken,
+      "pop-destination",
+    );
+
+    assert.equal(intermediate.isHistoryPop, false);
+    assert.strictEqual(intermediate.pendingToken, token);
+    assert.deepEqual(destination, {
+      isHistoryPop: true,
+      pendingToken: null,
+    });
+  });
+
+  it("applies ordinary Next after rapid Back then Forward returns to the committed key", () => {
+    const back = lessonRouteTransition.createLessonHistoryPopToken(
+      0,
+      { key: "back-entry" },
+      null,
+    );
+    const forward = lessonRouteTransition.createLessonHistoryPopToken(
+      back.sequence,
+      { key: "current-entry" },
+      null,
+    );
+    const popReconciliation =
+      lessonRouteTransition.consumeLessonHistoryPopToken(
+        forward,
+        "current-entry",
+      );
+    const pendingNext = {
+      event: { type: "SCENE_NEXT" },
+      sceneIndex: 1,
+    };
+
+    assert.equal(forward.sequence, 2);
+    assert.deepEqual(
+      lessonRouteTransition.getLessonRouteReconciliationEvent(null, 0, {
+        currentSceneIndex: 0,
+        isHistoryPop: popReconciliation.isHistoryPop,
+      }),
+      { type: "SELECT_SCENE", sceneIndex: 0 },
+    );
+    assert.strictEqual(
+      lessonRouteTransition.getLessonRouteReconciliationEvent(
+        pendingNext,
+        1,
+        {
+          currentSceneIndex: 0,
+          isHistoryPop: false,
+        },
+      ),
+      pendingNext.event,
+    );
+  });
 });

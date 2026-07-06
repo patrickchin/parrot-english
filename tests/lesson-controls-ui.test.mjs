@@ -50,14 +50,14 @@ describe("scene playback controls", () => {
     assert.doesNotMatch(styles, /\.playback-control-button|\.volume-button/);
   });
 
-  it("focuses Start after an idle reducer state agrees with each routed history entry", () => {
+  it("focuses Start after idle agreement for every correlated POP sequence", () => {
     assert.match(
       app,
       /const startActionRef = useRef<HTMLButtonElement \| null>\(null\)/,
     );
     assert.match(
       app,
-      /useEffect\(\(\) => \{\s*if \(\s*state\.sceneIndex === routedSceneIndex &&\s*state\.phase === LessonPhase\.Idle\s*\) \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}\s*\}, \[routedHistoryKey, routedSceneIndex, state\.phase, state\.sceneIndex\]\)/,
+      /useEffect\(\(\) => \{\s*if \(\s*state\.sceneIndex === routedSceneIndex &&\s*state\.phase === LessonPhase\.Idle\s*\) \{\s*startActionRef\.current\?\.focus\(\{ preventScroll: true \}\);\s*\}\s*\}, \[\s*historyPopSequence,\s*routedLocationKey,\s*routedSceneIndex,\s*state\.phase,\s*state\.sceneIndex,?\s*\]\)/,
     );
     assert.match(
       app,
@@ -144,12 +144,16 @@ describe("scene playback controls", () => {
   it("uses URL-first scene transitions and reconciles POP routes through the production helper", () => {
     assert.match(app, /createLessonRouteActivityGuard/);
     assert.match(app, /invalidateLessonRouteActivity/);
+    assert.match(app, /createLessonHistoryPopToken/);
+    assert.match(app, /consumeLessonHistoryPopToken/);
     assert.match(app, /getLessonEventTargetSceneIndex/);
     assert.match(app, /getLessonRouteReconciliationEvent/);
     assert.match(app, /const routeActivityGuardRef = useRef\(/);
     assert.match(app, /const routedSceneRef = useRef\(routedSceneIndex\)/);
-    assert.match(app, /routedHistoryKey: string/);
-    assert.match(app, /const pendingHistoryPopRef = useRef\(false\)/);
+    assert.match(app, /routedLocationKey: string/);
+    assert.match(app, /const \[historyPopSequence, setHistoryPopSequence\] = useState\(0\)/);
+    assert.match(app, /const historyPopSequenceRef = useRef\(0\)/);
+    assert.match(app, /const pendingHistoryPopTokenRef = useRef<\{\s*destinationKey: string;\s*sequence: number;\s*\} \| null>\(null\)/);
     assert.match(app, /const pendingRoutedEventRef = useRef<\{[\s\S]*?event: LessonEvent;[\s\S]*?sceneIndex: number;[\s\S]*?\} \| null>\(null\)/);
 
     const renderSetup = app.slice(
@@ -164,17 +168,24 @@ describe("scene playback controls", () => {
     );
     assert.match(
       app,
-      /useEffect\(\(\) => \{\s*const pendingRoutedEvent = pendingRoutedEventRef\.current;\s*pendingRoutedEventRef\.current = null;\s*const isHistoryPop = pendingHistoryPopRef\.current;\s*pendingHistoryPopRef\.current = false;\s*const reconciliationEvent = getLessonRouteReconciliationEvent\(\s*pendingRoutedEvent,\s*routedSceneIndex,\s*\{\s*currentSceneIndex: state\.sceneIndex,\s*isHistoryPop,\s*\},?\s*\);\s*if \(!reconciliationEvent\) return;[\s\S]*?dispatch\(reconciliationEvent\);\s*\}, \[\s*cancelPendingWork,\s*routedHistoryKey,\s*routedSceneIndex,\s*state\.sceneIndex,?\s*\]\)/,
+      /useEffect\(\(\) => \{\s*const pendingRoutedEvent = pendingRoutedEventRef\.current;\s*const popReconciliation = consumeLessonHistoryPopToken\(\s*pendingHistoryPopTokenRef\.current,\s*routedLocationKey,?\s*\);\s*pendingHistoryPopTokenRef\.current = popReconciliation\.pendingToken;\s*const reconciliationEvent = getLessonRouteReconciliationEvent\(\s*pendingRoutedEvent,\s*routedSceneIndex,\s*\{\s*currentSceneIndex: state\.sceneIndex,\s*isHistoryPop: popReconciliation\.isHistoryPop,\s*\},?\s*\);\s*if \(!reconciliationEvent\) return;\s*pendingRoutedEventRef\.current = null;[\s\S]*?dispatch\(reconciliationEvent\);\s*\}, \[\s*cancelPendingWork,\s*historyPopSequence,\s*routedLocationKey,\s*routedSceneIndex,\s*state\.sceneIndex,?\s*\]\)/,
     );
     assert.match(
       app,
       /const targetSceneIndex = getLessonEventTargetSceneIndex\(\s*state,\s*event,\s*currentLesson,?\s*\)/,
     );
-    assert.match(app, /pendingRoutedEventRef\.current = \{\s*event,\s*sceneIndex: targetSceneIndex,\s*\}/);
+    assert.match(app, /pendingHistoryPopTokenRef\.current = null;\s*pendingRoutedEventRef\.current = \{\s*event,\s*sceneIndex: targetSceneIndex,\s*\}/);
     assert.match(app, /onNavigateScene\(targetSceneIndex\);\s*return;/);
   });
 
-  it("records POP intent before synchronously invalidating route activity", () => {
+  it("clears stale POP intent before recording a rapid internal scene PUSH", () => {
+    assert.match(
+      app,
+      /if \(targetSceneIndex !== null\) \{[\s\S]*?pendingHistoryPopTokenRef\.current = null;\s*pendingRoutedEventRef\.current = \{\s*event,\s*sceneIndex: targetSceneIndex,\s*\};\s*onNavigateScene\(targetSceneIndex\)/,
+    );
+  });
+
+  it("captures a keyed POP token and increments its render sequence before exiting", () => {
     assert.match(
       app,
       /const invalidateRouteActivity = useCallback\(\(\) => \{\s*invalidateLessonRouteActivity\(\s*routeActivityGuardRef\.current,\s*cancelPendingWork,?\s*\);\s*\}, \[cancelPendingWork\]\)/,
@@ -185,7 +196,7 @@ describe("scene playback controls", () => {
     );
     assert.match(
       app,
-      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(\) => \{\s*pendingHistoryPopRef\.current = true;\s*exitRouteActivity\(\);\s*\};\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[exitRouteActivity\]\)/,
+      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(event: PopStateEvent\) => \{\s*const token = createLessonHistoryPopToken\(\s*historyPopSequenceRef\.current,\s*event\.state,\s*window\.history\.state,?\s*\);\s*historyPopSequenceRef\.current = token\.sequence;\s*pendingHistoryPopTokenRef\.current = token;\s*setHistoryPopSequence\(token\.sequence\);\s*exitRouteActivity\(\);\s*\};\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[exitRouteActivity\]\)/,
     );
     assert.match(
       app,
