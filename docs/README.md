@@ -1,7 +1,7 @@
 # Parrot English Docs
 
 These docs describe the current product and technical design as of
-2026-06-27. They are based on the implemented code, existing specs, and the
+2026-07-06. They are based on the implemented code, existing specs, and the
 prompt history from Codex sessions in this project.
 
 ## Design Docs
@@ -19,6 +19,9 @@ prompt history from Codex sessions in this project.
 
 ## Related Specs
 
+- [App Home and URL Routing Design](./superpowers/specs/2026-07-06-app-home-and-url-routing-design.md)
+  is the approved design for authenticated entry, lesson source namespaces,
+  durable scene URLs, browser history, and future-feature skeleton pages.
 - [Child Speaking Flow Design](./superpowers/specs/2026-06-27-child-speaking-flow-design.md)
   is the detailed UX spec for repetition, speaking prompts, feedback, and retry
   behavior.

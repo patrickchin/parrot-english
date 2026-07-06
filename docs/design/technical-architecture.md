@@ -4,8 +4,9 @@
 
 Parrot English is a Vite React single-page app served by a Cloudflare Worker.
 The Worker serves built assets from `dist` and owns the REST API surface under
-`/api/*`. Runtime lesson playback uses saved static audio; the only live speech
-service in a lesson is speech evaluation.
+`/api/*`. React Router owns durable browser navigation below one
+`BrowserRouter`. Runtime lesson playback uses saved static audio; the only live
+speech service in a lesson is speech evaluation.
 
 ## Runtime Shape
 
@@ -25,8 +26,13 @@ future application data. Browser sessions use HTTP cookies.
 
 Important entrypoints:
 
-- `src/App.tsx`: lesson selection, rendering, audio sequencing, hold-to-talk,
-  and evaluation effects.
+- `src/main.tsx`: mounts the single browser router around the application.
+- `src/App.tsx`: route guards and adapters, lesson rendering, audio sequencing,
+  hold-to-talk, and evaluation effects.
+- `src/app-routes.ts`: canonical path builders, safe return-path parsing, and
+  source-specific route decisions.
+- `src/HomeMenu.tsx` and `src/FeaturePlaceholder.tsx`: the authenticated home
+  and intentional future-feature skeletons.
 - `src/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
 - `lib/lesson-state.js`: pure automatic scene/step runner and scene controls.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
@@ -66,8 +72,45 @@ configured. The server applies Better Auth endpoint rate limiting and trusts
 least 32 characters, and `BETTER_AUTH_URL` must exactly match the Worker origin.
 
 `src/AuthGate.tsx` uses the session state to show loading and failure states,
-render sign-in/sign-up controls for anonymous users, and render lesson content
-only for an authenticated user. Signing out returns the app to the auth gate.
+render sign-in/sign-up controls at `/login`, and render protected routes only
+for an authenticated user. A protected request while signed out redirects to
+`/login?returnTo=...`; only validated same-origin application paths are
+accepted. Signing out returns the app to the login route.
+
+After authentication, `OnboardingGate` checks the learner profile. Incomplete
+learners remain at `/onboarding`; completed learners continue to the preserved
+destination. The normal completed sequence is therefore authentication →
+onboarding → the four-card home at `/`.
+
+## Browser Route Ownership
+
+The URL is authoritative for durable screens and lesson scenes:
+
+```text
+/
+├── /lessons
+│   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
+│   ├── /lessons/my/:lessonId/scenes/:sceneNumber
+│   └── /lessons/my/create
+├── /progress
+├── /stories
+├── /profile
+├── /login
+└── /onboarding
+```
+
+`/lessons` combines two presentation sections without combining their data
+ownership. Parrot lessons are checked-in JSON. Future learner-created lessons
+belong in separate D1 application tables and use the `/lessons/my/*` namespace;
+the built-in catalog has no D1 lesson rows, and the route namespace prevents an
+identical ID from conflicting. The create, progress, and storytelling routes
+intentionally render skeleton pages until those features are implemented.
+
+Scene URLs are one-based and durable. Button-driven scene changes navigate
+first and reconcile reducer state to the new route. Browser Back/Forward and a
+direct refresh select the routed scene and reset its player state. Playback,
+recording, evaluation, feedback, and step position remain transient React state
+and never become URL parameters.
 
 ## Content Boundaries
 
@@ -79,6 +122,10 @@ Three boundaries keep lesson authoring simple:
    visual asset definitions.
 3. `lib/static-audio.js` owns the saved-speech cache keyed by speaker plus exact
    dialogue.
+
+Learner-created lessons will form a fourth, database-backed boundary. They must
+not be written into `content/lessons` or mixed into the built-in Parrot content
+namespace.
 
 Lesson JSON never contains asset filenames. `src/lesson-catalog.ts` uses eager
 `import.meta.glob` discovery, so adding or removing a valid lesson file changes
@@ -121,6 +168,7 @@ PLAY_SCENE -> first step of the current scene
 PAUSE_SCENE -> paused at the beginning of the current scene
 SCENE_PREVIOUS -> first step of the previous scene
 SCENE_NEXT -> first step of the next scene
+SELECT_SCENE -> clean state at the scene selected by the browser URL
 REPLAY_LESSON -> first step of the first scene
 LINE_DONE -> next scripted step
 MIC_STARTED -> recording
@@ -132,10 +180,13 @@ final LINE_DONE -> finished
 ```
 
 Scripted steps and scene boundaries advance automatically during uninterrupted
-playback. Back, Next, Pause, Play, and Replay Lesson restart at scene boundaries
-rather than resuming an interrupted step. The reducer stores only the current
-scene/step indices and interaction state; the lesson remains immutable content
-supplied to each transition.
+playback. The mounted lesson UI exposes Start or Replay Lesson and Previous/Next;
+these actions restart at scene boundaries rather than resuming an interrupted
+step. `PAUSE_SCENE` remains an internal reducer transition and is not currently
+exposed as a control. The reducer stores the current scene/step indices and
+interaction state; the lesson remains immutable content supplied to each
+transition. A route-activity generation guard invalidates playback, microphone,
+recording, and evaluation completions captured before a routed scene change.
 
 ## Scene Presentation
 
@@ -189,7 +240,7 @@ with defaults of eight requests per 60 seconds.
 
 ## Voice Onboarding APIs
 
-`AuthGate -> OnboardingGate -> LessonExperience` remains the browser gate order.
+`AuthGate -> OnboardingGate -> ApplicationRoutes` is the browser gate order.
 Authenticated onboarding accepts one editable prose answer at a time. The
 Worker derives all question metadata from the checked-in questionnaire, sends
 only the current question and raw answer to Groq, validates strict structured
@@ -216,6 +267,13 @@ migrations, but it does not publish questionnaire data rows.
 `npm run dev` is the Worker-backed source of truth on port 3000 and provides the
 auth and speech APIs. `npm run dev:vite` is useful only for frontend iteration;
 it cannot provide the Worker API surface.
+
+Cloudflare must serve the SPA entry document for non-API paths that do not
+match a physical asset. `wrangler.jsonc` therefore keeps
+`assets.not_found_handling` set to `single-page-application`. Without that
+fallback, refreshing `/progress` or a nested lesson scene would return a 404
+before React Router can resolve the route. API paths continue to be handled by
+the Worker before the static asset fallback.
 
 For a fresh local environment:
 

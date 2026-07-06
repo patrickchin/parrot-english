@@ -9,8 +9,9 @@ function readProjectFile(path) {
 describe("architecture cleanup contracts", () => {
   it("uses the discovered lesson catalog and current scene data", () => {
     const app = readProjectFile("src/App.tsx");
+    const lessonList = readProjectFile("src/LessonList.tsx");
 
-    assert.match(app, /LESSONS/);
+    assert.match(lessonList, /LESSONS/);
     assert.match(app, /VISUAL_CATALOG/);
     assert.match(app, /currentLesson\.scenes\.length/);
     assert.doesNotMatch(app, /LESSON_STEPS|PROGRESS_DOT_COUNT/);

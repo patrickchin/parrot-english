@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -35,6 +36,9 @@ import {
 import { ProfileEditorView } from "./ProfileEditor";
 import { recordSpeechClip } from "./speech-recorder";
 
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 type QuestionProps = ComponentProps<typeof OnboardingQuestionView>;
 type ProfileEditorProps = ComponentProps<typeof ProfileEditorView>;
 
@@ -46,14 +50,22 @@ type AcknowledgmentView = {
 type OnboardingGateViewProps = {
   acknowledgment: AcknowledgmentView | null;
   children: ReactNode;
+  completedOnboardingFallback: ReactNode;
   data: OnboardingState | null;
+  isOnboardingRoute: boolean;
+  isProfileLoading: boolean;
+  isProfileRoute: boolean;
   isLoading: boolean;
   loadError: string;
   onAcknowledgmentNext: () => void;
+  onCloseProfileRoute: () => void;
   onRetry: () => void;
+  onRetryProfile: () => void;
   onSkip: () => void;
   onStart: () => void;
+  onboardingFallback: ReactNode;
   profileEditor: ProfileEditorProps | null;
+  profileLoadError: string;
   questionProps: QuestionProps | null;
   started: boolean;
 };
@@ -61,18 +73,33 @@ type OnboardingGateViewProps = {
 export function OnboardingGateView({
   acknowledgment,
   children,
+  completedOnboardingFallback,
   data,
+  isOnboardingRoute,
+  isProfileLoading,
+  isProfileRoute,
   isLoading,
   loadError,
   onAcknowledgmentNext,
+  onCloseProfileRoute,
   onRetry,
+  onRetryProfile,
   onSkip,
   onStart,
+  onboardingFallback,
   profileEditor,
+  profileLoadError,
   questionProps,
   started,
 }: OnboardingGateViewProps) {
   const fullData = data?.mode === "full" ? data : null;
+  const onboardingComplete = Boolean(
+    fullData &&
+      (fullData.canBypass ||
+        fullData.profile.onboardingStatus === "completed"),
+  );
+  const canAccessProtectedRoutes = Boolean(data?.canBypass || onboardingComplete);
+  const canEditProfile = onboardingComplete;
 
   if (isLoading) {
     return (
@@ -115,9 +142,72 @@ export function OnboardingGateView({
     );
   }
 
-  if (profileEditor) return <ProfileEditorView {...profileEditor} />;
+  if (data && !canAccessProtectedRoutes && !isOnboardingRoute) {
+    return <>{onboardingFallback}</>;
+  }
 
-  if (data?.canBypass || fullData?.profile.onboardingStatus === "completed") {
+  if (canAccessProtectedRoutes && isOnboardingRoute) {
+    return <>{completedOnboardingFallback}</>;
+  }
+
+  if (canAccessProtectedRoutes && isProfileRoute && !canEditProfile) {
+    return <>{completedOnboardingFallback}</>;
+  }
+
+  if (isProfileRoute && canEditProfile) {
+    if (isProfileLoading) {
+      return (
+        <main className="onboarding-screen">
+          <section
+            aria-busy="true"
+            className="onboarding-status-card"
+            role="status"
+          >
+            <p>Loading your profile…</p>
+          </section>
+        </main>
+      );
+    }
+
+    if (profileLoadError) {
+      return (
+        <main className="onboarding-screen">
+          <section className="onboarding-status-card" role="alert">
+            <h1>Profile is taking a break</h1>
+            <p>{profileLoadError}</p>
+            <div className="onboarding-form-actions">
+              <button
+                className="onboarding-skip-button"
+                onClick={onCloseProfileRoute}
+                type="button"
+              >
+                Back to main menu
+              </button>
+              <button
+                className="onboarding-next-button"
+                onClick={onRetryProfile}
+                type="button"
+              >
+                Retry
+              </button>
+            </div>
+          </section>
+        </main>
+      );
+    }
+
+    if (profileEditor) return <ProfileEditorView {...profileEditor} />;
+
+    return (
+      <main className="onboarding-screen">
+        <section aria-busy="true" className="onboarding-status-card" role="status">
+          <p>Loading your profile…</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (canAccessProtectedRoutes) {
     return <>{children}</>;
   }
 
@@ -238,13 +328,133 @@ type PendingAcknowledgment =
     }
   | {
       kind: "profile";
+      controller: AbortController;
       operationId: number;
       acknowledgments: Acknowledgment[];
       index: number;
       next: ProfileState;
     };
 
-export function OnboardingGate({ children }: { children: ReactNode }) {
+export function createProfileOperationBoundary(
+  nextOperation: () => number,
+) {
+  let activeController: AbortController | null = null;
+
+  return {
+    begin() {
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
+      return { controller, operation: nextOperation() };
+    },
+    cancel() {
+      activeController?.abort();
+      activeController = null;
+    },
+    finish(controller: AbortController) {
+      if (activeController === controller) activeController = null;
+    },
+  };
+}
+
+type ProfileOperation = {
+  controller: AbortController;
+  operation: number;
+};
+
+export function createProfileOperationOwnership({
+  getCurrentOperation,
+  initialIsProfileRoute,
+}: {
+  getCurrentOperation: () => number;
+  initialIsProfileRoute: boolean;
+}) {
+  let isMounted = true;
+  let isProfileRoute = initialIsProfileRoute;
+
+  return {
+    isActive() {
+      return isMounted && isProfileRoute;
+    },
+    isCurrent({ controller, operation }: ProfileOperation) {
+      return (
+        isMounted &&
+        isProfileRoute &&
+        !controller.signal.aborted &&
+        getCurrentOperation() === operation
+      );
+    },
+    mount() {
+      isMounted = true;
+    },
+    setProfileRoute(nextIsProfileRoute: boolean) {
+      isProfileRoute = nextIsProfileRoute;
+    },
+    unmount() {
+      isMounted = false;
+    },
+  };
+}
+
+export function teardownProfileOperationResources({
+  boundary,
+  invalidateOperation,
+  resetLoadOperation,
+}: {
+  boundary: ReturnType<typeof createProfileOperationBoundary> | null;
+  invalidateOperation: () => void;
+  resetLoadOperation: () => void;
+}) {
+  invalidateOperation();
+  boundary?.cancel();
+  resetLoadOperation();
+}
+
+export function createProfileRouteLifecycle(
+  initialIsProfileRoute: boolean,
+  { onExit }: { onExit: () => void },
+) {
+  let isProfileRoute = initialIsProfileRoute;
+  let exitHandled = false;
+
+  return {
+    markExitHandled() {
+      exitHandled = true;
+    },
+    update(nextIsProfileRoute: boolean): "entered" | "exited" | null {
+      if (nextIsProfileRoute === isProfileRoute) return null;
+
+      const exited = isProfileRoute;
+      isProfileRoute = nextIsProfileRoute;
+      if (exited) {
+        if (exitHandled) exitHandled = false;
+        else onExit();
+        return "exited";
+      }
+      return "entered";
+    },
+  };
+}
+
+type OnboardingGateProps = {
+  children: ReactNode;
+  completedOnboardingFallback: ReactNode;
+  isOnboardingRoute: boolean;
+  isProfileRoute: boolean;
+  onboardingFallback: ReactNode;
+  onCloseProfileRoute: () => void;
+  onOpenProfileRoute: () => void;
+};
+
+export function OnboardingGate({
+  children,
+  completedOnboardingFallback,
+  isOnboardingRoute,
+  isProfileRoute,
+  onboardingFallback,
+  onCloseProfileRoute,
+  onOpenProfileRoute,
+}: OnboardingGateProps) {
   const [data, setData] = useState<OnboardingState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -262,26 +472,74 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   >({});
   const [profilePageError, setProfilePageError] = useState("");
   const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState("");
   const [pendingAcknowledgment, setPendingAcknowledgment] =
     useState<PendingAcknowledgment | null>(null);
   const operationRef = useRef(0);
-  const profileCaptureRef = useRef<AbortController | null>(null);
-
-  const cancelProfileCapture = useCallback(() => {
-    profileCaptureRef.current?.abort();
-    profileCaptureRef.current = null;
-  }, []);
+  const profileLoadOperationRef = useRef<number | null>(null);
+  const profileOperationBoundaryRef = useRef<ReturnType<
+    typeof createProfileOperationBoundary
+  > | null>(null);
+  const profileOperationOwnershipRef = useRef<ReturnType<
+    typeof createProfileOperationOwnership
+  > | null>(null);
+  const profileRouteLifecycleRef = useRef<ReturnType<
+    typeof createProfileRouteLifecycle
+  > | null>(null);
 
   const nextOperation = useCallback(() => {
     operationRef.current += 1;
     return operationRef.current;
   }, []);
 
+  if (!profileOperationBoundaryRef.current) {
+    profileOperationBoundaryRef.current =
+      createProfileOperationBoundary(nextOperation);
+  }
+
+  if (!profileOperationOwnershipRef.current) {
+    profileOperationOwnershipRef.current = createProfileOperationOwnership({
+      getCurrentOperation: () => operationRef.current,
+      initialIsProfileRoute: isProfileRoute,
+    });
+  }
+  profileOperationOwnershipRef.current.setProfileRoute(isProfileRoute);
+
+  const teardownProfileResources = useCallback(() => {
+    teardownProfileOperationResources({
+      boundary: profileOperationBoundaryRef.current,
+      invalidateOperation: nextOperation,
+      resetLoadOperation: () => {
+        profileLoadOperationRef.current = null;
+      },
+    });
+  }, [nextOperation]);
+
   const isCurrentOperation = useCallback(
     (operation: number) => operationRef.current === operation,
     [],
   );
+
+  const isCurrentProfileOperation = useCallback(
+    (profileOperation: ProfileOperation) =>
+      profileOperationOwnershipRef.current?.isCurrent(profileOperation) ?? false,
+    [],
+  );
+
+  const isActiveProfileRoute = useCallback(
+    () => profileOperationOwnershipRef.current?.isActive() ?? false,
+    [],
+  );
+
+  useIsomorphicLayoutEffect(() => {
+    const ownership = profileOperationOwnershipRef.current;
+    ownership?.mount();
+    return () => {
+      ownership?.unmount();
+      teardownProfileResources();
+    };
+  }, [teardownProfileResources]);
 
   const refresh = useCallback(
     async (signal?: AbortSignal) => {
@@ -305,11 +563,9 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     void refresh(controller.signal);
     return () => {
-      nextOperation();
       controller.abort();
-      cancelProfileCapture();
     };
-  }, [cancelProfileCapture, nextOperation, refresh]);
+  }, [refresh]);
 
   const fullData: FullOnboardingState | null =
     data?.mode === "full" ? data : null;
@@ -434,38 +690,78 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }
 
   const clearProfileEditor = useCallback(() => {
+    teardownProfileResources();
     setProfileState(null);
     setProfileDrafts({});
     setProfileFieldErrors({});
     setProfileFieldStatuses({});
     setProfilePageError("");
     setIsProfileSaving(false);
-  }, []);
+    setIsProfileLoading(false);
+    setProfileLoadError("");
+  }, [teardownProfileResources]);
+
+  const handleProfileRouteExit = useCallback(() => {
+    setPendingAcknowledgment((current) =>
+      current?.kind === "profile" ? null : current,
+    );
+    clearProfileEditor();
+  }, [clearProfileEditor]);
+
+  if (!profileRouteLifecycleRef.current) {
+    profileRouteLifecycleRef.current = createProfileRouteLifecycle(
+      isProfileRoute,
+      { onExit: handleProfileRouteExit },
+    );
+  }
+
+  useEffect(() => {
+    profileRouteLifecycleRef.current?.update(isProfileRoute);
+  }, [isProfileRoute]);
 
   const closeProfileEditor = useCallback(() => {
-    cancelProfileCapture();
-    nextOperation();
+    if (!isActiveProfileRoute()) return;
     setPendingAcknowledgment(null);
     clearProfileEditor();
-  }, [cancelProfileCapture, clearProfileEditor, nextOperation]);
+    profileRouteLifecycleRef.current?.markExitHandled();
+    onCloseProfileRoute();
+  }, [clearProfileEditor, isActiveProfileRoute, onCloseProfileRoute]);
 
   const handleOpenProfile = useCallback(async () => {
-    const operation = nextOperation();
+    if (
+      !isActiveProfileRoute() ||
+      profileLoadOperationRef.current !== null
+    ) {
+      return;
+    }
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const profileOperation = boundary.begin();
+    const { controller, operation } = profileOperation;
+    profileLoadOperationRef.current = operation;
+    setIsProfileLoading(true);
     setProfileLoadError("");
     try {
-      const profile = await loadProfile();
-      if (!isCurrentOperation(operation)) return;
+      const profile = await loadProfile({ signal: controller.signal });
+      if (!isCurrentProfileOperation(profileOperation)) return;
       setProfileState(profile);
       setProfileDrafts(profileDraftsFromState(profile));
       setProfileFieldErrors({});
       setProfileFieldStatuses({});
       setProfilePageError("");
     } catch (error) {
-      if (isCurrentOperation(operation)) {
+      if (isCurrentProfileOperation(profileOperation)) {
         setProfileLoadError(readableError(error));
       }
+    } finally {
+      const isCurrent = isCurrentProfileOperation(profileOperation);
+      boundary.finish(controller);
+      if (profileLoadOperationRef.current === operation) {
+        profileLoadOperationRef.current = null;
+      }
+      if (isCurrent) setIsProfileLoading(false);
     }
-  }, [isCurrentOperation, nextOperation]);
+  }, [isActiveProfileRoute, isCurrentProfileOperation]);
 
   function setProfileFieldError(answerKey: string, message: string) {
     setProfileFieldErrors((current) => ({ ...current, [answerKey]: message }));
@@ -484,31 +780,36 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   }
 
   async function handleProfileReplay(question: OnboardingQuestion) {
-    if (!question.audio) return;
-    const operation = nextOperation();
+    if (!question.audio || !isActiveProfileRoute()) return;
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const profileOperation = boundary.begin();
+    const { controller } = profileOperation;
     setProfileFieldStatuses({});
     setProfileFieldError(question.answerKey, "");
     try {
-      await replayOnboardingQuestion(question.audio);
+      await replayOnboardingQuestion(question.audio, {
+        signal: controller.signal,
+      });
+      if (!isCurrentProfileOperation(profileOperation)) return;
     } catch {
-      if (isCurrentOperation(operation)) {
+      if (isCurrentProfileOperation(profileOperation)) {
         setProfileFieldError(
           question.answerKey,
           "Audio is unavailable. Please try Replay again.",
         );
       }
+    } finally {
+      boundary.finish(controller);
     }
   }
 
   async function handleProfileTranscribe(question: OnboardingQuestion) {
-    cancelProfileCapture();
-    const controller = new AbortController();
-    profileCaptureRef.current = controller;
-    const operation = nextOperation();
-    const isCurrentCapture = () =>
-      isCurrentOperation(operation) &&
-      profileCaptureRef.current === controller &&
-      !controller.signal.aborted;
+    if (!isActiveProfileRoute()) return;
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const profileOperation = boundary.begin();
+    const { controller } = profileOperation;
     setProfileFieldError(question.answerKey, "");
     setProfileFieldStatuses({ [question.answerKey]: "recording" });
     try {
@@ -516,34 +817,38 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
         record: (options) => recordSpeechClip(options),
         signal: controller.signal,
         transcribe: async (audio, options) => {
-          if (isCurrentCapture()) {
+          if (isCurrentProfileOperation(profileOperation)) {
             setProfileFieldStatus(question.answerKey, "transcribing");
           }
           return transcribeOnboardingAudio(audio, options);
         },
       });
-      if (isCurrentCapture()) {
+      if (isCurrentProfileOperation(profileOperation)) {
         handleProfileValueChange(question.answerKey, transcript);
       }
     } catch (error) {
+      if (!isCurrentProfileOperation(profileOperation)) return;
       if (error instanceof Error && error.name === "AbortError") return;
-      if (isCurrentCapture()) {
-        setProfileFieldError(
-          question.answerKey,
-          `${readableError(error)} You can still type your answer.`,
-        );
-      }
+      setProfileFieldError(
+        question.answerKey,
+        `${readableError(error)} You can still type your answer.`,
+      );
     } finally {
-      if (profileCaptureRef.current === controller) {
-        profileCaptureRef.current = null;
+      const isCurrent = isCurrentProfileOperation(profileOperation);
+      boundary.finish(controller);
+      if (isCurrent) {
         setProfileFieldStatus(question.answerKey, "idle");
       }
     }
   }
 
   async function handleProfileSave() {
-    if (!profileState) return;
-    const operation = nextOperation();
+    if (!profileState || !isActiveProfileRoute()) return;
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const profileOperation = boundary.begin();
+    const { controller, operation } = profileOperation;
+    let acknowledgmentOwnsOperation = false;
     setIsProfileSaving(true);
     setProfileFieldErrors({});
     setProfileFieldStatuses({});
@@ -555,12 +860,16 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
           profileDrafts[question.answerKey] ?? "",
         ]),
       );
-      const saved = await saveProfileAnswers(answers);
-      if (!isCurrentOperation(operation)) return;
+      const saved = await saveProfileAnswers(answers, {
+        signal: controller.signal,
+      });
+      if (!isCurrentProfileOperation(profileOperation)) return;
       setProfileState(saved);
       if (saved.acknowledgments?.length) {
+        acknowledgmentOwnsOperation = true;
         setPendingAcknowledgment({
           kind: "profile",
+          controller,
           operationId: operation,
           acknowledgments: saved.acknowledgments,
           index: 0,
@@ -569,16 +878,20 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       } else {
         clearProfileEditor();
         void refresh();
+        profileRouteLifecycleRef.current?.markExitHandled();
+        onCloseProfileRoute();
       }
     } catch (error) {
-      if (!isCurrentOperation(operation)) return;
+      if (!isCurrentProfileOperation(profileOperation)) return;
       const errors = error instanceof OnboardingApiError ? error.fieldErrors : {};
       setProfileFieldErrors(errors);
       if (Object.keys(errors).length === 0) {
         setProfilePageError(readableError(error));
       }
     } finally {
-      if (isCurrentOperation(operation)) setIsProfileSaving(false);
+      const isCurrent = isCurrentProfileOperation(profileOperation);
+      if (!acknowledgmentOwnsOperation) boundary.finish(controller);
+      if (isCurrent) setIsProfileSaving(false);
     }
   }
 
@@ -591,6 +904,12 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       setData(pending.next);
       return;
     }
+
+    const profileOperation = {
+      controller: pending.controller,
+      operation: pending.operationId,
+    };
+    if (!isCurrentProfileOperation(profileOperation)) return;
 
     const next = nextProfileAcknowledgment(
       pending.acknowledgments,
@@ -605,25 +924,45 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       return;
     }
 
-    nextOperation();
     setPendingAcknowledgment(null);
     clearProfileEditor();
     void refresh();
+    profileRouteLifecycleRef.current?.markExitHandled();
+    onCloseProfileRoute();
   }
 
   const canEditProfile = Boolean(
     fullData &&
       (fullData.canBypass || fullData.profile.onboardingStatus === "completed"),
   );
+  useEffect(() => {
+    if (
+      !isProfileRoute ||
+      !canEditProfile ||
+      profileState ||
+      profileLoadError ||
+      profileLoadOperationRef.current !== null
+    ) {
+      return;
+    }
+    void handleOpenProfile();
+  }, [
+    canEditProfile,
+    handleOpenProfile,
+    isProfileRoute,
+    profileLoadError,
+    profileState,
+  ]);
+
   const profileAction = useMemo(
     () =>
       canEditProfile
         ? {
-            error: profileLoadError,
-            onOpen: () => void handleOpenProfile(),
+            error: "",
+            onOpen: onOpenProfileRoute,
           }
         : null,
-    [canEditProfile, handleOpenProfile, profileLoadError],
+    [canEditProfile, onOpenProfileRoute],
   );
   useProfileAccountAction(profileAction);
 
@@ -645,30 +984,39 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       }
     : null;
 
-  const acknowledgment = pendingAcknowledgment
-    ? {
-        acknowledgment:
-          pendingAcknowledgment.kind === "onboarding"
-            ? pendingAcknowledgment.acknowledgment
-            : pendingAcknowledgment.acknowledgments[
-                pendingAcknowledgment.index
-              ],
-        operationId: pendingAcknowledgment.operationId,
-      }
-    : null;
+  let acknowledgment: AcknowledgmentView | null = null;
+  if (pendingAcknowledgment?.kind === "onboarding" && isOnboardingRoute) {
+    acknowledgment = {
+      acknowledgment: pendingAcknowledgment.acknowledgment,
+      operationId: pendingAcknowledgment.operationId,
+    };
+  } else if (pendingAcknowledgment?.kind === "profile" && isProfileRoute) {
+    acknowledgment = {
+      acknowledgment:
+        pendingAcknowledgment.acknowledgments[pendingAcknowledgment.index],
+      operationId: pendingAcknowledgment.operationId,
+    };
+  }
 
   return (
     <OnboardingGateView
       acknowledgment={acknowledgment}
+      completedOnboardingFallback={completedOnboardingFallback}
       data={data}
+      isOnboardingRoute={isOnboardingRoute}
+      isProfileLoading={isProfileLoading}
+      isProfileRoute={isProfileRoute}
       isLoading={isLoading}
       loadError={loadError}
       onAcknowledgmentNext={handleAcknowledgmentNext}
+      onCloseProfileRoute={closeProfileEditor}
       onRetry={() => void refresh()}
+      onRetryProfile={() => void handleOpenProfile()}
       onSkip={() => void handleSkip()}
       onStart={() => void handleStart()}
+      onboardingFallback={onboardingFallback}
       profileEditor={
-        profileState
+        isProfileRoute && profileState
           ? {
               drafts: profileDrafts,
               fieldErrors: profileFieldErrors,
@@ -686,7 +1034,8 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
             }
           : null
       }
-      questionProps={profileState ? null : questionProps}
+      profileLoadError={profileLoadError}
+      questionProps={isProfileRoute && profileState ? null : questionProps}
       started={started}
     >
       {children}

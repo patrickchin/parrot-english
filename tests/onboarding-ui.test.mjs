@@ -30,10 +30,14 @@ const gateModule = await vite.ssrLoadModule("/src/OnboardingGate.tsx");
 const {
   OnboardingGateView,
   answerForQuestion,
+  createProfileOperationBoundary,
+  createProfileOperationOwnership,
+  createProfileRouteLifecycle,
   nextProfileAcknowledgment,
   profileDraftsFromState,
   saveQuestionAndAdvance,
   shouldSyncActiveQuestion,
+  teardownProfileOperationResources,
   updateProfileDraft,
 } = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
@@ -185,6 +189,18 @@ describe("onboarding prompt and transcription helpers", () => {
     });
     assert.equal(calls.length, 1);
     assert.equal(calls[0].audioSrc, "/assets/audio/onboarding-v2-age.mp3");
+  });
+
+  it("forwards cancellation when replaying a profile question", async () => {
+    const controller = new AbortController();
+    let replaySignal;
+    await replayOnboardingQuestion(question().audio, {
+      signal: controller.signal,
+      async playLine(options) {
+        replaySignal = options.signal;
+      },
+    });
+    assert.equal(replaySignal, controller.signal);
   });
 
   it("returns one editable transcript without persisting it", async () => {
@@ -394,10 +410,14 @@ describe("profile summary editor", () => {
     assert.ok(buttons.every((button) => button?.includes('disabled=""')));
   });
 
-  it("cancels the active profile capture when the editor closes", () => {
+  it("cancels the active profile capture through shared profile teardown", () => {
     assert.match(
       gateSource,
-      /const closeProfileEditor = useCallback\(\(\) => \{\s*cancelProfileCapture\(\);/,
+      /const clearProfileEditor = useCallback\(\(\) => \{\s*teardownProfileResources\(\);/,
+    );
+    assert.match(
+      gateSource,
+      /const closeProfileEditor = useCallback\(\(\) => \{[\s\S]*?clearProfileEditor\(\);/,
     );
     assert.match(
       gateSource,
@@ -450,6 +470,272 @@ describe("profile summary editor", () => {
     });
     assert.equal(nextProfileAcknowledgment(acknowledgments, 1), null);
   });
+
+  it("clears owned profile work on route exit and reloads after re-entry", () => {
+    assert.equal(
+      typeof createProfileRouteLifecycle,
+      "function",
+      "Expected an executable profile route lifecycle",
+    );
+
+    let generation = 0;
+    let loadCount = 0;
+    let profile = null;
+    let profileError = "";
+    let profileLoading = false;
+    let pendingAcknowledgment = null;
+    let controller = null;
+    let exitCount = 0;
+
+    function startOperation() {
+      generation += 1;
+      const operation = generation;
+      const operationController = new AbortController();
+      controller = operationController;
+      return {
+        complete(callback) {
+          if (operation === generation && !operationController.signal.aborted) {
+            callback();
+          }
+        },
+      };
+    }
+
+    function loadCurrentProfile(name) {
+      loadCount += 1;
+      profileLoading = true;
+      const operation = startOperation();
+      operation.complete(() => {
+        profile = name;
+        profileLoading = false;
+      });
+    }
+
+    const lifecycle = createProfileRouteLifecycle(false, {
+      onExit() {
+        exitCount += 1;
+        generation += 1;
+        controller?.abort();
+        controller = null;
+        profile = null;
+        profileError = "";
+        profileLoading = false;
+        if (pendingAcknowledgment?.kind === "profile") {
+          pendingAcknowledgment = null;
+        }
+      },
+    });
+
+    assert.equal(lifecycle.update(false), null);
+    assert.equal(lifecycle.update(true), "entered");
+    loadCurrentProfile("FIRST PROFILE");
+    assert.equal(profile, "FIRST PROFILE");
+
+    pendingAcknowledgment = { kind: "profile" };
+    const lateSave = startOperation();
+    assert.equal(lifecycle.update(true), null);
+    assert.equal(lifecycle.update(false), "exited");
+    assert.equal(exitCount, 1);
+    assert.equal(profile, null);
+    assert.equal(profileLoading, false);
+    assert.equal(profileError, "");
+    assert.equal(pendingAcknowledgment, null);
+
+    lateSave.complete(() => {
+      profileError = "STALE SAVE";
+    });
+    assert.equal(profileError, "");
+
+    assert.equal(lifecycle.update(false), null);
+    assert.equal(lifecycle.update(true), "entered");
+    loadCurrentProfile("FRESH PROFILE");
+    assert.equal(loadCount, 2);
+    assert.equal(profile, "FRESH PROFILE");
+  });
+
+  it("aborts superseded and exited profile operations", () => {
+    assert.equal(
+      typeof createProfileOperationBoundary,
+      "function",
+      "Expected an executable profile operation boundary",
+    );
+
+    let generation = 0;
+    const boundary = createProfileOperationBoundary(() => {
+      generation += 1;
+      return generation;
+    });
+    const first = boundary.begin();
+    const second = boundary.begin();
+    assert.equal(first.operation, 1);
+    assert.equal(second.operation, 2);
+    assert.equal(first.controller.signal.aborted, true);
+    assert.equal(second.controller.signal.aborted, false);
+
+    boundary.finish(first.controller);
+    boundary.cancel();
+    assert.equal(second.controller.signal.aborted, true);
+
+    const third = boundary.begin();
+    boundary.finish(third.controller);
+    boundary.cancel();
+    assert.equal(third.controller.signal.aborted, false);
+  });
+
+  it("rejects deferred profile completions across Back and unmount", async () => {
+    assert.equal(
+      typeof createProfileOperationOwnership,
+      "function",
+      "Expected executable profile operation ownership",
+    );
+
+    let generation = 0;
+    let abortCount = 0;
+    let stateWrites = 0;
+    let refreshCalls = 0;
+    let navigationCalls = 0;
+    const boundary = createProfileOperationBoundary(() => {
+      generation += 1;
+      return generation;
+    });
+    const ownership = createProfileOperationOwnership({
+      getCurrentOperation: () => generation,
+      initialIsProfileRoute: true,
+    });
+
+    const supersededOperation = boundary.begin();
+    assert.equal(ownership.isCurrent(supersededOperation), true);
+    generation += 1;
+    assert.equal(ownership.isCurrent(supersededOperation), false);
+    boundary.finish(supersededOperation.controller);
+
+    const abortedOperation = boundary.begin();
+    assert.equal(ownership.isCurrent(abortedOperation), true);
+    abortedOperation.controller.abort();
+    assert.equal(ownership.isCurrent(abortedOperation), false);
+    boundary.finish(abortedOperation.controller);
+
+    function deferred() {
+      let resolve;
+      const promise = new Promise((next) => {
+        resolve = next;
+      });
+      return { promise, resolve };
+    }
+
+    function settleLater(active, pending) {
+      return pending.promise.then(() => {
+        if (!ownership.isCurrent(active)) return;
+        stateWrites += 1;
+        refreshCalls += 1;
+        navigationCalls += 1;
+      });
+    }
+
+    const backOperation = boundary.begin();
+    backOperation.controller.signal.addEventListener("abort", () => {
+      abortCount += 1;
+    });
+    const backDeferred = deferred();
+    const backSettlement = settleLater(backOperation, backDeferred);
+
+    ownership.setProfileRoute(false);
+    backDeferred.resolve();
+    await backSettlement;
+    assert.equal(abortCount, 0);
+    assert.deepEqual(
+      { navigationCalls, refreshCalls, stateWrites },
+      { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
+    );
+
+    teardownProfileOperationResources({
+      boundary,
+      invalidateOperation() {
+        generation += 1;
+      },
+      resetLoadOperation() {},
+    });
+    assert.equal(abortCount, 1);
+
+    ownership.setProfileRoute(true);
+    const unmountOperation = boundary.begin();
+    unmountOperation.controller.signal.addEventListener("abort", () => {
+      abortCount += 1;
+    });
+    const unmountDeferred = deferred();
+    const unmountSettlement = settleLater(unmountOperation, unmountDeferred);
+
+    ownership.unmount();
+    teardownProfileOperationResources({
+      boundary,
+      invalidateOperation() {
+        generation += 1;
+      },
+      resetLoadOperation() {},
+    });
+    unmountDeferred.resolve();
+    await unmountSettlement;
+
+    assert.equal(abortCount, 2);
+    assert.deepEqual(
+      { navigationCalls, refreshCalls, stateWrites },
+      { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
+    );
+
+    assert.match(
+      gateSource,
+      /useIsomorphicLayoutEffect\(\(\) => \{[\s\S]*?ownership\?\.unmount\(\);[\s\S]*?teardownProfileResources\(\);/,
+    );
+  });
+
+  it("tears down active profile resources when the gate unmounts", () => {
+    assert.equal(
+      typeof teardownProfileOperationResources,
+      "function",
+      "Expected a shared no-state-write profile resource teardown",
+    );
+
+    let generation = 0;
+    let profileLoadOperation = null;
+    const boundary = createProfileOperationBoundary(() => {
+      generation += 1;
+      return generation;
+    });
+    const active = boundary.begin();
+    profileLoadOperation = active.operation;
+
+    teardownProfileOperationResources({
+      boundary,
+      invalidateOperation() {
+        generation += 1;
+      },
+      resetLoadOperation() {
+        profileLoadOperation = null;
+      },
+    });
+
+    assert.equal(active.controller.signal.aborted, true);
+    assert.equal(generation, 2);
+    assert.equal(profileLoadOperation, null);
+  });
+
+  it("does not invalidate refreshed data after an explicitly handled profile exit", () => {
+    let unexpectedExitCleanup = 0;
+    const lifecycle = createProfileRouteLifecycle(true, {
+      onExit() {
+        unexpectedExitCleanup += 1;
+      },
+    });
+    assert.equal(
+      typeof lifecycle.markExitHandled,
+      "function",
+      "Expected explicit exits to be marked before navigation",
+    );
+
+    lifecycle.markExitHandled();
+    assert.equal(lifecycle.update(false), "exited");
+    assert.equal(unexpectedExitCleanup, 0);
+  });
 });
 
 function emptyAnswers(responses = {}) {
@@ -497,16 +783,30 @@ function renderGate(overrides = {}) {
       OnboardingGateView,
       {
         acknowledgment: null,
+        completedOnboardingFallback: createElement(
+          "div",
+          { "data-completed-redirect": true },
+          "COMPLETED REDIRECT",
+        ),
         data: null,
+        isOnboardingRoute: true,
+        isProfileLoading: false,
+        isProfileRoute: false,
         isLoading: false,
         loadError: "",
         onAcknowledgmentNext() {},
-        onCloseProfile() {},
-        onOpenProfile() {},
+        onCloseProfileRoute() {},
         onRetry() {},
+        onRetryProfile() {},
         onSkip() {},
         onStart() {},
+        onboardingFallback: createElement(
+          "div",
+          { "data-onboarding-redirect": true },
+          "ONBOARDING REDIRECT",
+        ),
         profileEditor: null,
+        profileLoadError: "",
         questionProps: null,
         started: false,
         ...overrides,
@@ -526,6 +826,70 @@ describe("onboarding and profile gate", () => {
       shouldSyncActiveQuestion(fullState().profile, fullState().question),
       true,
     );
+  });
+
+  it("routes incomplete learners to onboarding and completed learners away from it", () => {
+    const protectedPage = renderGate({
+      data: fullState(),
+      isOnboardingRoute: false,
+    });
+    assert.match(protectedPage, /ONBOARDING REDIRECT/);
+    assert.doesNotMatch(protectedPage, /LESSON CONTENT|Meet Peppa/);
+
+    const completedOnboarding = renderGate({
+      data: fullState({
+        canBypass: false,
+        profile: {
+          ...fullState().profile,
+          onboardingStatus: "completed",
+        },
+      }),
+    });
+    assert.match(completedOnboarding, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(completedOnboarding, /LESSON CONTENT|Meet Peppa/);
+  });
+
+  it("routes bypass-only sessions away from onboarding", () => {
+    const html = renderGate({
+      data: { mode: "bypass-only", canBypass: true },
+      isOnboardingRoute: true,
+    });
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
+  });
+
+  it("routes bypass-only sessions away from unavailable profile editing", () => {
+    const html = renderGate({
+      data: { mode: "bypass-only", canBypass: true },
+      isOnboardingRoute: false,
+      isProfileRoute: true,
+    });
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
+  });
+
+  it("keeps profile loading and retry errors on the profile route", () => {
+    const loading = renderGate({
+      data: fullState({ canBypass: true }),
+      isOnboardingRoute: false,
+      isProfileLoading: true,
+      isProfileRoute: true,
+    });
+    assert.match(loading, /role="status"/);
+    assert.match(loading, /Loading your profile/);
+    assert.doesNotMatch(loading, /LESSON CONTENT/);
+
+    const failed = renderGate({
+      data: fullState({ canBypass: true }),
+      isOnboardingRoute: false,
+      isProfileRoute: true,
+      profileLoadError: "Profile service is unavailable.",
+    });
+    assert.match(failed, /role="alert"/);
+    assert.match(failed, /Profile service is unavailable\./);
+    assert.match(failed, />Retry</);
+    assert.match(failed, />Back to main menu</);
+    assert.doesNotMatch(failed, /LESSON CONTENT/);
   });
 
   it("hides lessons behind loading, errors, and explicit Start", () => {
@@ -565,12 +929,14 @@ describe("onboarding and profile gate", () => {
           onboardingStatus: "in_progress",
         },
       }),
+      isOnboardingRoute: false,
     });
     assert.match(html, /LESSON CONTENT/);
     assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
 
     const bypass = renderGate({
       data: { mode: "bypass-only", canBypass: true },
+      isOnboardingRoute: false,
     });
     assert.match(bypass, /LESSON CONTENT/);
     assert.doesNotMatch(bypass, /Edit learner profile/);
@@ -579,6 +945,8 @@ describe("onboarding and profile gate", () => {
   it("renders the prose profile summary without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
+      isOnboardingRoute: false,
+      isProfileRoute: true,
       profileEditor: {
         drafts: { name: "Mia", age: "I am eight" },
         fieldErrors: {},
@@ -649,11 +1017,17 @@ describe("onboarding and profile gate", () => {
     assert.equal(result, completed);
   });
 
-  it("composes gates and keeps responsive reduced-motion styles", () => {
-    assert.match(
-      appSource,
-      /<AuthGate>\s*<OnboardingGate>\s*<LessonExperience\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
-    );
+  it("composes route-aware onboarding inside the authenticated shell", () => {
+    assert.match(appSource, /<AuthGate\s+signedOutFallback=\{/);
+    assert.match(appSource, /<OnboardingGate[\s\S]*?isOnboardingRoute=/);
+    assert.match(appSource, /completedOnboardingFallback=/);
+    assert.match(appSource, /onboardingFallback=/);
+    assert.match(appSource, /isProfileRoute=/);
+    assert.match(gateSource, /onOpen:\s*onOpenProfileRoute/);
+    assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);
+  });
+
+  it("keeps responsive reduced-motion styles", () => {
     assert.match(styles, /\.onboarding-screen\s*\{[^}]*overflow-y:\s*auto/s);
     assert.match(styles, /\.onboarding-(?:next|skip|icon)-button:focus-visible/);
     assert.match(styles, /@media\s*\(max-width:\s*720px\)[\s\S]*onboarding/);

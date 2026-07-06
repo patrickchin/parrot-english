@@ -1,8 +1,12 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
+import { ChevronLeft, ChevronRight, House, Mic } from "lucide-react";
 import {
+  createContext,
+  useCallback,
+  useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -11,8 +15,28 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
+import {
+  createLessonRouteActivityGuard,
+  createLessonRouteExitRegistry,
+  exitLessonRouteActivity,
+  invalidateLessonRouteActivity,
+} from "../lib/lesson-route-activity";
+import {
+  consumeLessonHistoryPopToken,
+  createLessonHistoryPopToken,
+  getLessonEventTargetSceneIndex,
+  getLessonRouteReconciliationEvent,
+} from "../lib/lesson-route-transition";
 import { getLessonScenePresentation } from "../lib/lesson-scene";
 import {
   LessonPhase,
@@ -22,19 +46,23 @@ import {
 } from "../lib/lesson-state";
 import { isAbortError, playAudioLine } from "./audio-playback";
 import {
-  createInitialAppNavigation,
-  reduceAppNavigation,
-  type AppNavigationEvent,
-  type AppNavigationState,
-} from "./app-navigation";
+  getGateRouteKind,
+  getLessonScenePath,
+  getLoginPath,
+  getOnboardingPath,
+  getRequestedProtectedTarget,
+  getSafeReturnTo,
+  resolveMyLessonRouteDecision,
+  resolveParrotLessonRouteDecision,
+  type LessonRouteDecision,
+  type LessonSource,
+} from "./app-routes";
 import { AuthGate } from "./AuthGate";
+import { FeaturePlaceholder } from "./FeaturePlaceholder";
+import { HomeMenu } from "./HomeMenu";
 import { OnboardingGate } from "./OnboardingGate";
 import { evaluateSpeech } from "./evaluation-request";
-import {
-  LESSONS,
-  VISUAL_CATALOG,
-  type Lesson,
-} from "./lesson-catalog";
+import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
 import { LessonList } from "./LessonList";
 import {
   MicrophoneAccessError,
@@ -56,6 +84,7 @@ type LessonEvent =
   | { type: "SCENE_PREVIOUS" }
   | { type: "SCENE_NEXT" }
   | { type: "REPLAY_LESSON" }
+  | { type: "SELECT_SCENE"; sceneIndex: number }
   | { type: "LINE_DONE" }
   | { type: "MIC_STARTED" }
   | { type: "MIC_RELEASED" }
@@ -73,16 +102,18 @@ type CharacterStyle = CSSProperties & {
 type LessonPlayerProps = {
   lesson: Lesson;
   onBack: () => void;
+  onHome: () => void;
+  onNavigateScene: (sceneIndex: number) => void;
+  routedLocationKey: string;
+  routedSceneIndex: number;
 };
 
-const AVAILABLE_LESSON_IDS = new Set(LESSONS.map((entry) => entry.id));
+type RegisterLessonRouteExitBarrier = (
+  barrier: () => void,
+) => () => void;
 
-function appNavigationReducer(
-  state: AppNavigationState,
-  event: AppNavigationEvent,
-) {
-  return reduceAppNavigation(state, event, AVAILABLE_LESSON_IDS);
-}
+const LessonRouteExitBarrierContext =
+  createContext<RegisterLessonRouteExitBarrier>(() => () => {});
 
 function getMicrophoneErrorMessage(caughtError: unknown) {
   if (caughtError instanceof RecordingUnsupportedError) {
@@ -100,15 +131,26 @@ function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
   return event.key === " " || event.key === "Enter";
 }
 
-export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProps) {
+export function LessonPlayer({
+  lesson: currentLesson,
+  onBack,
+  onHome,
+  onNavigateScene,
+  routedLocationKey,
+  routedSceneIndex,
+}: LessonPlayerProps) {
+  const registerLessonRouteExitBarrier = useContext(
+    LessonRouteExitBarrierContext,
+  );
   const [state, dispatch] = useReducer(
     (
       currentState: ReturnType<typeof createInitialLessonState>,
       event: LessonEvent
     ) => reduceLessonState(currentState, event, currentLesson),
-    createInitialLessonState()
+    { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
   const [error, setError] = useState("");
+  const [historyPopSequence, setHistoryPopSequence] = useState(0);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackGenerationRef = useRef(0);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
@@ -116,6 +158,166 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
   const evaluationControllerRef = useRef<AbortController | null>(null);
   const pressSequenceRef = useRef(0);
   const pressedRef = useRef(false);
+  const startActionRef = useRef<HTMLButtonElement | null>(null);
+  const routeActivityGuardRef = useRef(createLessonRouteActivityGuard());
+  const routedSceneRef = useRef(routedSceneIndex);
+  const historyPopSequenceRef = useRef(0);
+  const pendingHistoryPopTokenRef = useRef<{
+    destinationKey: string;
+    sequence: number;
+  } | null>(null);
+  const pendingRoutedEventRef = useRef<{
+    event: LessonEvent;
+    sceneIndex: number;
+  } | null>(null);
+
+  const cancelPendingWork = useCallback(() => {
+    pressedRef.current = false;
+    pressSequenceRef.current += 1;
+    playbackGenerationRef.current += 1;
+    playbackControllerRef.current?.abort();
+    playbackControllerRef.current = null;
+    recordingControllerRef.current?.abort();
+    recordingControllerRef.current = null;
+    recordingRef.current?.cancel();
+    recordingRef.current = null;
+    evaluationControllerRef.current?.abort();
+    evaluationControllerRef.current = null;
+  }, []);
+
+  const invalidateRouteActivity = useCallback(() => {
+    invalidateLessonRouteActivity(
+      routeActivityGuardRef.current,
+      cancelPendingWork,
+    );
+  }, [cancelPendingWork]);
+
+  const exitRouteActivity = useCallback(() => {
+    exitLessonRouteActivity(
+      pendingRoutedEventRef,
+      routeActivityGuardRef.current,
+      cancelPendingWork,
+    );
+  }, [cancelPendingWork]);
+
+  useLayoutEffect(() => {
+    if (routedSceneRef.current === routedSceneIndex) return;
+    routedSceneRef.current = routedSceneIndex;
+    invalidateRouteActivity();
+  }, [invalidateRouteActivity, routedSceneIndex]);
+
+  useLayoutEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const token = createLessonHistoryPopToken(
+        historyPopSequenceRef.current,
+        event.state,
+        window.history.state,
+      );
+      historyPopSequenceRef.current = token.sequence;
+      pendingHistoryPopTokenRef.current = token;
+      setHistoryPopSequence(token.sequence);
+      exitRouteActivity();
+    };
+    window.addEventListener("popstate", handlePopState, true);
+    return () =>
+      window.removeEventListener("popstate", handlePopState, true);
+  }, [exitRouteActivity]);
+
+  useLayoutEffect(() => {
+    const unregister = registerLessonRouteExitBarrier(exitRouteActivity);
+    return () => {
+      exitRouteActivity();
+      unregister();
+    };
+  }, [exitRouteActivity, registerLessonRouteExitBarrier]);
+
+  const handleBack = useCallback(() => {
+    exitRouteActivity();
+    onBack();
+  }, [exitRouteActivity, onBack]);
+
+  const handleHome = useCallback(() => {
+    exitRouteActivity();
+    onHome();
+  }, [exitRouteActivity, onHome]);
+
+  const dispatchLessonEvent = useCallback(
+    (event: LessonEvent, { cancel = false }: { cancel?: boolean } = {}) => {
+      const targetSceneIndex = getLessonEventTargetSceneIndex(
+        state,
+        event,
+        currentLesson,
+      );
+      if (targetSceneIndex !== null) {
+        invalidateRouteActivity();
+        setError("");
+        pendingHistoryPopTokenRef.current = null;
+        pendingRoutedEventRef.current = {
+          event,
+          sceneIndex: targetSceneIndex,
+        };
+        onNavigateScene(targetSceneIndex);
+        return;
+      }
+
+      if (cancel) {
+        cancelPendingWork();
+        setError("");
+      }
+      dispatch(event);
+    },
+    [
+      cancelPendingWork,
+      currentLesson,
+      invalidateRouteActivity,
+      onNavigateScene,
+      state,
+    ],
+  );
+
+  useEffect(() => {
+    const pendingRoutedEvent = pendingRoutedEventRef.current;
+    const popReconciliation = consumeLessonHistoryPopToken(
+      pendingHistoryPopTokenRef.current,
+      routedLocationKey,
+    );
+    pendingHistoryPopTokenRef.current = popReconciliation.pendingToken;
+    const reconciliationEvent = getLessonRouteReconciliationEvent(
+      pendingRoutedEvent,
+      routedSceneIndex,
+      {
+        currentSceneIndex: state.sceneIndex,
+        isHistoryPop: popReconciliation.isHistoryPop,
+      },
+    );
+    if (!reconciliationEvent) return;
+    pendingRoutedEventRef.current = null;
+
+    cancelPendingWork();
+    setError("");
+    dispatch(reconciliationEvent);
+  }, [
+    cancelPendingWork,
+    historyPopSequence,
+    routedLocationKey,
+    routedSceneIndex,
+    state.sceneIndex,
+  ]);
+
+  useEffect(() => {
+    if (
+      state.sceneIndex === routedSceneIndex &&
+      state.phase === LessonPhase.Idle
+    ) {
+      startActionRef.current?.focus({ preventScroll: true });
+    }
+  }, [
+    historyPopSequence,
+    routedLocationKey,
+    routedSceneIndex,
+    state.phase,
+    state.sceneIndex,
+  ]);
 
   const currentStep = getCurrentStep(state, currentLesson);
   if (!currentStep) throw new Error("The lesson position is invalid.");
@@ -126,6 +328,7 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
   const progressLabel = getLessonProgressLabel(state, currentStep);
 
   useEffect(() => {
+    if (state.sceneIndex !== routedSceneRef.current) return;
     if (
       state.phase !== LessonPhase.Speaking &&
       state.phase !== LessonPhase.Feedback
@@ -150,11 +353,16 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
 
     const generation = playbackGenerationRef.current + 1;
     playbackGenerationRef.current = generation;
+    const routeGeneration = routeActivityGuardRef.current.capture();
     const playbackOperation = createPlaybackOperation({
       generation,
       getCurrentGeneration: () => playbackGenerationRef.current,
-      onCompleted: () => dispatch(completionEvent),
+      onCompleted: () => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+        dispatchLessonEvent(completionEvent);
+      },
       onFailed: (caughtError) => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         const message =
           caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
         setError(`Audio unavailable: ${message}`);
@@ -186,6 +394,8 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
     };
   }, [
     currentLesson,
+    dispatchLessonEvent,
+    routedSceneIndex,
     state.feedback,
     state.phase,
     state.sceneIndex,
@@ -194,6 +404,7 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
 
   useEffect(
     () => () => {
+      routeActivityGuardRef.current.invalidate();
       pressedRef.current = false;
       pressSequenceRef.current += 1;
       playbackGenerationRef.current += 1;
@@ -205,20 +416,6 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
     []
   );
 
-  function cancelPendingWork() {
-    pressedRef.current = false;
-    pressSequenceRef.current += 1;
-    playbackGenerationRef.current += 1;
-    playbackControllerRef.current?.abort();
-    playbackControllerRef.current = null;
-    recordingControllerRef.current?.abort();
-    recordingControllerRef.current = null;
-    recordingRef.current?.cancel();
-    recordingRef.current = null;
-    evaluationControllerRef.current?.abort();
-    evaluationControllerRef.current = null;
-  }
-
   function dispatchSceneControl(
     type:
       | "PLAY_SCENE"
@@ -227,9 +424,7 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
       | "SCENE_NEXT"
       | "REPLAY_LESSON"
   ) {
-    cancelPendingWork();
-    setError("");
-    dispatch({ type });
+    dispatchLessonEvent({ type }, { cancel: true });
   }
 
   function handleStartAction() {
@@ -253,19 +448,25 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
     pressedRef.current = true;
     const sequence = pressSequenceRef.current + 1;
     pressSequenceRef.current = sequence;
+    const routeGeneration = routeActivityGuardRef.current.capture();
     const controller = new AbortController();
     recordingControllerRef.current = controller;
     setError("");
 
     try {
       const session = await startSpeechRecording({ signal: controller.signal });
-      if (!pressedRef.current || pressSequenceRef.current !== sequence) {
+      if (
+        !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
+        !pressedRef.current ||
+        pressSequenceRef.current !== sequence
+      ) {
         session.cancel();
         return;
       }
       recordingRef.current = session;
       dispatch({ type: "MIC_STARTED" });
     } catch (caughtError) {
+      if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
       if (isAbortError(caughtError)) return;
       pressedRef.current = false;
       setError(getMicrophoneErrorMessage(caughtError));
@@ -274,6 +475,7 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
 
   async function finishRecording() {
     if (!pressedRef.current) return;
+    const routeGeneration = routeActivityGuardRef.current.capture();
     pressedRef.current = false;
     const generation = pressSequenceRef.current;
     const session = recordingRef.current;
@@ -295,13 +497,16 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
       evaluationControllerRef,
       generation,
       getCurrentGeneration: () => pressSequenceRef.current,
-      onEvaluated: (result) =>
+      onEvaluated: (result) => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         dispatch({
           type: "EVALUATED",
           passed: result.passed,
           transcript: result.transcript,
-        }),
+        });
+      },
       onFailed: (caughtError) => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         setError(
           caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
             ? "Speech checking is not configured."
@@ -311,7 +516,10 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
         );
         dispatch({ type: "EVALUATION_FAILED" });
       },
-      onReleased: () => dispatch({ type: "MIC_RELEASED" }),
+      onReleased: () => {
+        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+        dispatch({ type: "MIC_RELEASED" });
+      },
       recordingController,
       recordingControllerRef,
       session,
@@ -399,11 +607,21 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
         <button
           aria-label="Back to lesson list"
           className="lesson-list-back-button"
-          onClick={onBack}
+          onClick={handleBack}
           type="button"
         >
           <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
           <span>Back to lessons</span>
+        </button>
+
+        <button
+          aria-label="Back to main menu"
+          className="lesson-home-button"
+          onClick={handleHome}
+          type="button"
+        >
+          <House aria-hidden="true" strokeWidth={3.2} />
+          <span>Back to main menu</span>
         </button>
 
         <span
@@ -419,6 +637,7 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
               aria-label={startActionLabel}
               className="start-lesson-button"
               onClick={handleStartAction}
+              ref={startActionRef}
               type="button"
             >
               <span>{startActionLabel}</span>
@@ -567,41 +786,176 @@ export function LessonPlayer({ lesson: currentLesson, onBack }: LessonPlayerProp
   );
 }
 
-export function LessonExperience() {
-  const [navigation, dispatchNavigation] = useReducer(
-    appNavigationReducer,
-    undefined,
-    createInitialAppNavigation,
-  );
-  const selectedEntry = LESSONS.find(
-    (entry) => entry.id === navigation.activeLessonId,
-  );
+function LessonRouteDecisionView({
+  decision,
+  source,
+}: {
+  decision: LessonRouteDecision;
+  source: LessonSource;
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  if (!selectedEntry) {
+  if (decision.kind === "redirect") {
     return (
-      <LessonList
-        onOpenLesson={(lessonId) =>
-          dispatchNavigation({ type: "OPEN_LESSON", lessonId })
-        }
+      <Navigate
+        replace={decision.replace}
+        to={decision.to}
       />
     );
   }
 
   return (
     <LessonPlayer
-      key={selectedEntry.id}
-      lesson={selectedEntry.lesson}
-      onBack={() => dispatchNavigation({ type: "BACK_TO_LIST" })}
+      key={`${source}:${decision.entry.id}`}
+      lesson={decision.entry.lesson}
+      onBack={() => navigate("/lessons")}
+      onHome={() => navigate("/")}
+      onNavigateScene={(sceneIndex) =>
+        navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
+      }
+      routedLocationKey={location.key}
+      routedSceneIndex={decision.sceneIndex}
     />
   );
 }
 
-export function App() {
+function ParrotLessonRedirect() {
+  const { lessonId } = useParams();
+  const decision = resolveParrotLessonRouteDecision(lessonId, undefined);
+  return <LessonRouteDecisionView decision={decision} source="parrot" />;
+}
+
+function ParrotLessonSceneRoute() {
+  const { lessonId, sceneNumber } = useParams();
+  const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
+  return <LessonRouteDecisionView decision={decision} source="parrot" />;
+}
+
+function MyLessonRouteUnavailable() {
+  const { lessonId, sceneNumber } = useParams();
+  const decision = resolveMyLessonRouteDecision(lessonId, sceneNumber);
+  return <LessonRouteDecisionView decision={decision} source="my" />;
+}
+
+export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
-    <AuthGate>
-      <OnboardingGate>
-        <LessonExperience />
-      </OnboardingGate>
-    </AuthGate>
+    <Routes>
+      <Route element={<HomeMenu />} path="/" />
+      <Route element={<LessonList />} path="/lessons" />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Lesson creation is coming soon. You will be able to build practice around your own interests."
+            eyebrow="LEARN YOUR WAY"
+            title="Create a Lesson"
+          />
+        }
+        path="/lessons/my/create"
+      />
+      <Route
+        element={<ParrotLessonRedirect />}
+        path="/lessons/parrot/:lessonId"
+      />
+      <Route
+        element={<ParrotLessonSceneRoute />}
+        path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
+      />
+      <Route
+        element={<MyLessonRouteUnavailable />}
+        path="/lessons/my/:lessonId"
+      />
+      <Route
+        element={<MyLessonRouteUnavailable />}
+        path="/lessons/my/:lessonId/scenes/:sceneNumber"
+      />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Progress tracking is coming soon."
+            eyebrow="KEEP GROWING"
+            title="Progress"
+          />
+        }
+        path="/progress"
+      />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Storytelling practice is coming soon."
+            eyebrow="TELL A STORY"
+            title="Storytelling"
+          />
+        }
+        path="/stories"
+      />
+      <Route element={<Navigate replace to={loginTarget} />} path="/login" />
+      <Route element={null} path="/onboarding" />
+      <Route element={null} path="/profile" />
+      <Route element={<Navigate replace to="/" />} path="*" />
+    </Routes>
   );
+}
+
+function RoutedApplication() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lessonRouteExitRegistryRef = useRef(
+    createLessonRouteExitRegistry(),
+  );
+  const registerLessonRouteExitBarrier = useCallback(
+    (barrier: () => void) =>
+      lessonRouteExitRegistryRef.current.register(barrier),
+    [],
+  );
+  const openProfileRoute = useCallback(() => {
+    lessonRouteExitRegistryRef.current.exit();
+    navigate("/profile");
+  }, [navigate]);
+  const gateRoute = getGateRouteKind(location.pathname);
+  const onLoginRoute = gateRoute === "login";
+  const isOnboardingRoute = gateRoute === "onboarding";
+  const isProfileRoute = gateRoute === "profile";
+  const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
+  const requestedProtectedTarget = getRequestedProtectedTarget(
+    location.pathname,
+    location.search,
+    location.hash,
+  );
+
+  return (
+    <LessonRouteExitBarrierContext.Provider
+      value={registerLessonRouteExitBarrier}
+    >
+      <AuthGate
+        signedOutFallback={
+          onLoginRoute ? null : (
+            <Navigate replace to={getLoginPath(requestedProtectedTarget)} />
+          )
+        }
+      >
+        <OnboardingGate
+          completedOnboardingFallback={
+            <Navigate replace to={safeReturnTo} />
+          }
+          isOnboardingRoute={isOnboardingRoute}
+          isProfileRoute={isProfileRoute}
+          onboardingFallback={
+            <Navigate
+              replace
+              to={getOnboardingPath(requestedProtectedTarget)}
+            />
+          }
+          onCloseProfileRoute={() => navigate("/")}
+          onOpenProfileRoute={openProfileRoute}
+        >
+          <ApplicationRoutes loginTarget={safeReturnTo} />
+        </OnboardingGate>
+      </AuthGate>
+    </LessonRouteExitBarrierContext.Provider>
+  );
+}
+
+export function App() {
+  return <RoutedApplication />;
 }

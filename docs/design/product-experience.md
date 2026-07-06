@@ -2,17 +2,35 @@
 
 ## Summary
 
-Parrot English is a list-first English speaking experience for young children.
-After authentication, the learner sees discovered playable lessons and
-disabled previews for upcoming stories. A lesson plays like a short interactive
-episode: characters act out a situation, a character models a useful line, the
-learner repeats it, and a voice-only narrator gives brief feedback.
+Parrot English is an English speaking experience for young children. After
+authentication and the one-time onboarding flow, the learner arrives at a
+four-card home menu for Lessons, Create a Lesson, Progress, and Storytelling.
+A lesson plays like a short interactive episode: characters act out a
+situation, a character models a useful line, the learner repeats it, and a
+voice-only narrator gives brief feedback.
 
 All child-facing dialogue and narration is in English. Steps within the current
 scene advance automatically except when the learner must press and hold the
 microphone button to speak, and playback advances automatically across scene
-boundaries. Back and Next restart adjacent scenes, while Pause stops the lesson
-and Play restarts the current scene from its first step.
+boundaries. Start begins the current scene, while Previous and Next restart
+adjacent scenes from their first steps.
+
+## Entry and Navigation
+
+The durable entry sequence is:
+
+1. Anonymous visitors are sent to `/login`, with their original protected URL
+   preserved as a safe `returnTo` value.
+2. Authenticated learners who have not finished onboarding are sent to
+   `/onboarding` and return to the preserved destination after completion.
+3. Returning learners land on `/`, the authenticated home menu.
+
+The home menu uses four equal activity cards. Lessons opens the combined lesson
+catalog at `/lessons`. Create a Lesson, Progress, and Storytelling open
+intentional skeleton pages at `/lessons/my/create`, `/progress`, and `/stories`.
+Those routes are addressable now so links, refreshes, and browser history remain
+stable as their full features are added. Each non-home page provides a direct
+way back to the main menu.
 
 ## Roles
 
@@ -28,11 +46,19 @@ never add a visible character or emote entry.
 
 ## Lesson and Scene Structure
 
-Each lesson is an independent JSON file in `content/lessons`. The app discovers
-those files automatically and renders them as enabled lesson cards, so authors
-can add or remove lessons without changing application code. Three disabled
-preview cards show how the catalog can grow without creating incomplete lesson
-scripts.
+`/lessons` is one catalog with two visibly separate sources. **Parrot Lessons**
+contains the built-in curriculum discovered from independent JSON files in
+`content/lessons`. **My Lessons** is reserved for lessons a learner creates;
+until creation and persistence are implemented, it shows a friendly empty state
+and a link to the creation skeleton. The two sources remain separate even when
+they eventually use the same card presentation.
+
+Parrot lesson URLs use `/lessons/parrot/:lessonId`, while learner-created lesson
+URLs use `/lessons/my/:lessonId`. The source namespace prevents identical IDs
+from conflicting and preserves the different storage and ownership rules. A
+short Parrot lesson URL canonicalizes to scene 1. The catalog discovers built-in
+files automatically, so authors can add or remove Parrot lessons without
+changing application code.
 
 A lesson contains five to eight scenes. Each scene provides:
 
@@ -52,7 +78,7 @@ global emote set is intentionally small: `idle`, `talking`, `listening`,
 
 The implemented loop is:
 
-1. The learner or adult opens an enabled lesson card and presses Play.
+1. The learner or adult opens a Parrot lesson card and presses Start lesson.
 2. Character and narrator steps play automatically in script order.
 3. A user step waits with an obvious hold-to-talk control.
 4. The learner holds the microphone button, speaks, and releases it.
@@ -65,13 +91,29 @@ The implemented loop is:
 10. Final narrator praise completes the lesson and offers Replay Lesson.
 
 No character or narrator audio plays while recording or evaluating.
-Previous and Next restart the adjacent scene from its first step. Pause stops
-the current activity, and the following Play restarts the current scene rather
-than resuming the interrupted step.
+Previous and Next restart the adjacent scene from its first step. Once started,
+the current scene continues automatically except for the learner's
+press-and-hold speaking turn.
 
 The separate Back to lessons control returns to the catalog and unmounts the
 active player. Reopening a lesson creates fresh state at scene 1. It never
 shares behavior or placement with the playback dock's Previous scene control.
+The separate Home control exits the player and returns to the four-card menu.
+
+## Durable and Transient Lesson State
+
+The active scene is durable navigation state. Its canonical address is
+`/lessons/parrot/:lessonId/scenes/:sceneNumber` for a built-in lesson, with the
+equivalent `/lessons/my/:lessonId/scenes/:sceneNumber` namespace reserved for a
+learner-created lesson. Direct refreshes and browser Back/Forward restore the
+addressed scene.
+
+Playback phase, step progress within the scene, microphone permission,
+recording, evaluation, and feedback are transient interaction state. They are
+reset when the routed scene changes and are never encoded into the URL. Any
+asynchronous work captured for an old route is invalidated before the new scene
+becomes active, preventing stale audio, recording, or evaluation results from
+advancing the restored scene.
 
 ## Hold-to-Talk State
 
@@ -91,13 +133,14 @@ The user turn must:
 ## Visual Design
 
 The lesson list uses a scrollable responsive card grid with story artwork,
-summaries, scene counts, and explicit disabled states. The player uses a fixed
+summaries, scene counts, and clear source headings. The player uses a fixed
 full-screen stage, a selected catalog background, transparent character
-sprites, rounded speech surfaces, and large tactile controls. A reserved bottom
-control dock contains Previous, Play/Pause, Next, and the microphone prompt
-when it is the learner's turn, without covering story elements. Character
-placement is generic and based on each visible character's slot in the current
-scene, rather than hard-coded names.
+sprites, rounded speech surfaces, and large tactile controls. A large standalone
+Start lesson or Replay lesson action appears when appropriate. The reserved
+bottom control dock contains Previous, Next, and the microphone prompt when it
+is the learner's turn, without covering story elements. Character placement is
+generic and based on each visible character's slot in the current scene, rather
+than hard-coded names.
 
 Design constraints:
 

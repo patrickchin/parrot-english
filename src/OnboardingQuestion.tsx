@@ -176,9 +176,15 @@ export async function playOnboardingStart({
 
 export async function replayOnboardingQuestion(
   audio: OnboardingAudio,
-  { playLine = playAudioLine }: { playLine?: PlayLine } = {},
+  {
+    playLine = playAudioLine,
+    signal,
+  }: { playLine?: PlayLine; signal?: AbortSignal } = {},
 ) {
-  await playLine(playbackLine(audio));
+  await playLine({
+    ...playbackLine(audio),
+    ...(signal ? { signal } : {}),
+  });
 }
 
 export async function captureOnboardingAnswer({
