@@ -143,14 +143,22 @@ describe("scene playback controls", () => {
 
   it("uses URL-first scene transitions and reconciles POP routes through the production helper", () => {
     assert.match(app, /createLessonRouteActivityGuard/);
+    assert.match(app, /invalidateLessonRouteActivity/);
     assert.match(app, /getLessonEventTargetSceneIndex/);
     assert.match(app, /getLessonRouteReconciliationEvent/);
     assert.match(app, /const routeActivityGuardRef = useRef\(/);
     assert.match(app, /const routedSceneRef = useRef\(routedSceneIndex\)/);
     assert.match(app, /const pendingRoutedEventRef = useRef<\{[\s\S]*?event: LessonEvent;[\s\S]*?sceneIndex: number;[\s\S]*?\} \| null>\(null\)/);
+
+    const renderSetup = app.slice(
+      app.indexOf("const routeActivityGuardRef"),
+      app.indexOf("const cancelPendingWork"),
+    );
+    assert.doesNotMatch(renderSetup, /routedSceneRef\.current\s*=/);
+    assert.doesNotMatch(renderSetup, /\.invalidate\(\)/);
     assert.match(
       app,
-      /if \(routedSceneRef\.current !== routedSceneIndex\) \{\s*routedSceneRef\.current = routedSceneIndex;\s*routeActivityGuardRef\.current\.invalidate\(\);\s*\}/,
+      /useLayoutEffect\(\(\) => \{\s*if \(routedSceneRef\.current === routedSceneIndex\) return;\s*routedSceneRef\.current = routedSceneIndex;\s*invalidateRouteActivity\(\);\s*\}, \[invalidateRouteActivity, routedSceneIndex\]\)/,
     );
     assert.match(
       app,
@@ -162,6 +170,27 @@ describe("scene playback controls", () => {
     );
     assert.match(app, /pendingRoutedEventRef\.current = \{\s*event,\s*sceneIndex: targetSceneIndex,\s*\}/);
     assert.match(app, /onNavigateScene\(targetSceneIndex\);\s*return;/);
+  });
+
+  it("invalidates route activity synchronously for Back, Home, and native POP", () => {
+    assert.match(
+      app,
+      /const invalidateRouteActivity = useCallback\(\(\) => \{\s*invalidateLessonRouteActivity\(\s*routeActivityGuardRef\.current,\s*cancelPendingWork,?\s*\);\s*\}, \[cancelPendingWork\]\)/,
+    );
+    assert.match(
+      app,
+      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(\) => invalidateRouteActivity\(\);\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[invalidateRouteActivity\]\)/,
+    );
+    assert.match(
+      app,
+      /const handleBack = useCallback\(\(\) => \{\s*invalidateRouteActivity\(\);\s*onBack\(\);\s*\}, \[invalidateRouteActivity, onBack\]\)/,
+    );
+    assert.match(
+      app,
+      /const handleHome = useCallback\(\(\) => \{\s*invalidateRouteActivity\(\);\s*onHome\(\);\s*\}, \[invalidateRouteActivity, onHome\]\)/,
+    );
+    assert.match(app, /onClick=\{handleBack\}/);
+    assert.match(app, /onClick=\{handleHome\}/);
   });
 
   it("routes every potentially scene-crossing completion through dispatchLessonEvent", () => {
@@ -201,7 +230,7 @@ describe("scene playback controls", () => {
     assert.match(app, /aria-label="Back to lesson list"/);
     assert.match(
       app,
-      /aria-label="Back to main menu"[\s\S]*?className="lesson-home-button"[\s\S]*?onClick=\{onHome\}/,
+      /aria-label="Back to main menu"[\s\S]*?className="lesson-home-button"[\s\S]*?onClick=\{handleHome\}/,
     );
     assert.match(styles, /\.lesson-home-button:focus-visible\s*\{/);
   });

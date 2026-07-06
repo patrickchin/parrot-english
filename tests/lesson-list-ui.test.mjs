@@ -23,7 +23,11 @@ describe("lesson list integration contracts", () => {
 
     assert.match(app, /aria-label="Back to lesson list"/);
     assert.match(app, /className="lesson-list-back-button"/);
-    assert.match(app, /onClick=\{onBack\}/);
+    assert.match(app, /onClick=\{handleBack\}/);
+    assert.match(
+      app,
+      /const handleBack = useCallback\(\(\) => \{[\s\S]*?onBack\(\);[\s\S]*?\}, \[invalidateRouteActivity, onBack\]\)/,
+    );
     assert.match(app, /aria-label="Previous scene"/);
   });
 

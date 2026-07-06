@@ -48,4 +48,37 @@ describe("lesson route activity guard", () => {
 
     assert.deepEqual(outcomes, []);
   });
+
+  it("invalidates before cancelling route-exit work and blocks deferred navigation", async () => {
+    assert.equal(
+      typeof lessonRouteActivity.invalidateLessonRouteActivity,
+      "function",
+    );
+
+    const guard = lessonRouteActivity.createLessonRouteActivityGuard();
+    const capturedGeneration = guard.capture();
+    const outcomes = [];
+    let resolveCompletion;
+    let rejectFailure;
+    const completion = new Promise((resolve) => {
+      resolveCompletion = resolve;
+    }).then(() => {
+      if (guard.isCurrent(capturedGeneration)) outcomes.push("navigate");
+    });
+    const failure = new Promise((_, reject) => {
+      rejectFailure = reject;
+    }).catch(() => {
+      if (guard.isCurrent(capturedGeneration)) outcomes.push("error");
+    });
+
+    lessonRouteActivity.invalidateLessonRouteActivity(guard, () => {
+      assert.equal(guard.isCurrent(capturedGeneration), false);
+      outcomes.push("cancel");
+    });
+    resolveCompletion();
+    rejectFailure(new Error("old route failed"));
+    await Promise.all([completion, failure]);
+
+    assert.deepEqual(outcomes, ["cancel"]);
+  });
 });

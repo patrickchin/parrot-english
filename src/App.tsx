@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, House, Mic } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -22,7 +23,10 @@ import {
 } from "react-router";
 import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
-import { createLessonRouteActivityGuard } from "../lib/lesson-route-activity";
+import {
+  createLessonRouteActivityGuard,
+  invalidateLessonRouteActivity,
+} from "../lib/lesson-route-activity";
 import {
   getLessonEventTargetSceneIndex,
   getLessonRouteReconciliationEvent,
@@ -141,11 +145,6 @@ export function LessonPlayer({
     sceneIndex: number;
   } | null>(null);
 
-  if (routedSceneRef.current !== routedSceneIndex) {
-    routedSceneRef.current = routedSceneIndex;
-    routeActivityGuardRef.current.invalidate();
-  }
-
   const cancelPendingWork = useCallback(() => {
     pressedRef.current = false;
     pressSequenceRef.current += 1;
@@ -160,6 +159,36 @@ export function LessonPlayer({
     evaluationControllerRef.current = null;
   }, []);
 
+  const invalidateRouteActivity = useCallback(() => {
+    invalidateLessonRouteActivity(
+      routeActivityGuardRef.current,
+      cancelPendingWork,
+    );
+  }, [cancelPendingWork]);
+
+  useLayoutEffect(() => {
+    if (routedSceneRef.current === routedSceneIndex) return;
+    routedSceneRef.current = routedSceneIndex;
+    invalidateRouteActivity();
+  }, [invalidateRouteActivity, routedSceneIndex]);
+
+  useLayoutEffect(() => {
+    const handlePopState = () => invalidateRouteActivity();
+    window.addEventListener("popstate", handlePopState, true);
+    return () =>
+      window.removeEventListener("popstate", handlePopState, true);
+  }, [invalidateRouteActivity]);
+
+  const handleBack = useCallback(() => {
+    invalidateRouteActivity();
+    onBack();
+  }, [invalidateRouteActivity, onBack]);
+
+  const handleHome = useCallback(() => {
+    invalidateRouteActivity();
+    onHome();
+  }, [invalidateRouteActivity, onHome]);
+
   const dispatchLessonEvent = useCallback(
     (event: LessonEvent, { cancel = false }: { cancel?: boolean } = {}) => {
       const targetSceneIndex = getLessonEventTargetSceneIndex(
@@ -168,8 +197,7 @@ export function LessonPlayer({
         currentLesson,
       );
       if (targetSceneIndex !== null) {
-        routeActivityGuardRef.current.invalidate();
-        cancelPendingWork();
+        invalidateRouteActivity();
         setError("");
         pendingRoutedEventRef.current = {
           event,
@@ -185,7 +213,13 @@ export function LessonPlayer({
       }
       dispatch(event);
     },
-    [cancelPendingWork, currentLesson, onNavigateScene, state],
+    [
+      cancelPendingWork,
+      currentLesson,
+      invalidateRouteActivity,
+      onNavigateScene,
+      state,
+    ],
   );
 
   useEffect(() => {
@@ -500,7 +534,7 @@ export function LessonPlayer({
         <button
           aria-label="Back to lesson list"
           className="lesson-list-back-button"
-          onClick={onBack}
+          onClick={handleBack}
           type="button"
         >
           <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
@@ -510,7 +544,7 @@ export function LessonPlayer({
         <button
           aria-label="Back to main menu"
           className="lesson-home-button"
-          onClick={onHome}
+          onClick={handleHome}
           type="button"
         >
           <House aria-hidden="true" strokeWidth={3.2} />
