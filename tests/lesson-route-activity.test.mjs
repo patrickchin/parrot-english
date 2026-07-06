@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { getLessonRouteReconciliationEvent } from "../lib/lesson-route-transition.js";
 
 const lessonRouteActivity = await import("../lib/lesson-route-activity.js").catch(
   () => ({}),
@@ -80,5 +81,55 @@ describe("lesson route activity guard", () => {
     await Promise.all([completion, failure]);
 
     assert.deepEqual(outcomes, ["cancel"]);
+  });
+
+  it("clears an uncommitted internal event before POP so later Forward selects idle", () => {
+    assert.equal(
+      typeof lessonRouteActivity.exitLessonRouteActivity,
+      "function",
+    );
+
+    const guard = lessonRouteActivity.createLessonRouteActivityGuard();
+    const capturedGeneration = guard.capture();
+    const pendingRoutedEventRef = {
+      current: { event: { type: "SCENE_NEXT" }, sceneIndex: 1 },
+    };
+    let cancelled = false;
+
+    lessonRouteActivity.exitLessonRouteActivity(
+      pendingRoutedEventRef,
+      guard,
+      () => {
+        assert.equal(pendingRoutedEventRef.current, null);
+        assert.equal(guard.isCurrent(capturedGeneration), false);
+        cancelled = true;
+      },
+    );
+
+    assert.equal(cancelled, true);
+    assert.deepEqual(
+      getLessonRouteReconciliationEvent(pendingRoutedEventRef.current, 1),
+      { type: "SELECT_SCENE", sceneIndex: 1 },
+    );
+  });
+
+  it("routes global exits to only the currently registered lesson barrier", () => {
+    assert.equal(
+      typeof lessonRouteActivity.createLessonRouteExitRegistry,
+      "function",
+    );
+
+    const registry = lessonRouteActivity.createLessonRouteExitRegistry();
+    const exits = [];
+    const unregisterFirst = registry.register(() => exits.push("first"));
+
+    registry.exit();
+    const unregisterSecond = registry.register(() => exits.push("second"));
+    unregisterFirst();
+    registry.exit();
+    unregisterSecond();
+    registry.exit();
+
+    assert.deepEqual(exits, ["first", "second"]);
   });
 });

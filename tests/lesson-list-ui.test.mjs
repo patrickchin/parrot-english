@@ -26,7 +26,7 @@ describe("lesson list integration contracts", () => {
     assert.match(app, /onClick=\{handleBack\}/);
     assert.match(
       app,
-      /const handleBack = useCallback\(\(\) => \{[\s\S]*?onBack\(\);[\s\S]*?\}, \[invalidateRouteActivity, onBack\]\)/,
+      /const handleBack = useCallback\(\(\) => \{[\s\S]*?onBack\(\);[\s\S]*?\}, \[exitRouteActivity, onBack\]\)/,
     );
     assert.match(app, /aria-label="Previous scene"/);
   });

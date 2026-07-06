@@ -2,7 +2,9 @@
 
 import { ChevronLeft, ChevronRight, House, Mic } from "lucide-react";
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -25,6 +27,8 @@ import { getLessonAudioLine } from "../lib/lesson-audio";
 import { getLessonProgressLabel } from "../lib/lesson-progress";
 import {
   createLessonRouteActivityGuard,
+  createLessonRouteExitRegistry,
+  exitLessonRouteActivity,
   invalidateLessonRouteActivity,
 } from "../lib/lesson-route-activity";
 import {
@@ -99,6 +103,13 @@ type LessonPlayerProps = {
   routedSceneIndex: number;
 };
 
+type RegisterLessonRouteExitBarrier = (
+  barrier: () => void,
+) => () => void;
+
+const LessonRouteExitBarrierContext =
+  createContext<RegisterLessonRouteExitBarrier>(() => () => {});
+
 function getMicrophoneErrorMessage(caughtError: unknown) {
   if (caughtError instanceof RecordingUnsupportedError) {
     return RECORDING_UNSUPPORTED_MESSAGE;
@@ -122,6 +133,9 @@ export function LessonPlayer({
   onNavigateScene,
   routedSceneIndex,
 }: LessonPlayerProps) {
+  const registerLessonRouteExitBarrier = useContext(
+    LessonRouteExitBarrierContext,
+  );
   const [state, dispatch] = useReducer(
     (
       currentState: ReturnType<typeof createInitialLessonState>,
@@ -166,6 +180,14 @@ export function LessonPlayer({
     );
   }, [cancelPendingWork]);
 
+  const exitRouteActivity = useCallback(() => {
+    exitLessonRouteActivity(
+      pendingRoutedEventRef,
+      routeActivityGuardRef.current,
+      cancelPendingWork,
+    );
+  }, [cancelPendingWork]);
+
   useLayoutEffect(() => {
     if (routedSceneRef.current === routedSceneIndex) return;
     routedSceneRef.current = routedSceneIndex;
@@ -173,21 +195,29 @@ export function LessonPlayer({
   }, [invalidateRouteActivity, routedSceneIndex]);
 
   useLayoutEffect(() => {
-    const handlePopState = () => invalidateRouteActivity();
+    const handlePopState = () => exitRouteActivity();
     window.addEventListener("popstate", handlePopState, true);
     return () =>
       window.removeEventListener("popstate", handlePopState, true);
-  }, [invalidateRouteActivity]);
+  }, [exitRouteActivity]);
+
+  useLayoutEffect(() => {
+    const unregister = registerLessonRouteExitBarrier(exitRouteActivity);
+    return () => {
+      exitRouteActivity();
+      unregister();
+    };
+  }, [exitRouteActivity, registerLessonRouteExitBarrier]);
 
   const handleBack = useCallback(() => {
-    invalidateRouteActivity();
+    exitRouteActivity();
     onBack();
-  }, [invalidateRouteActivity, onBack]);
+  }, [exitRouteActivity, onBack]);
 
   const handleHome = useCallback(() => {
-    invalidateRouteActivity();
+    exitRouteActivity();
     onHome();
-  }, [invalidateRouteActivity, onHome]);
+  }, [exitRouteActivity, onHome]);
 
   const dispatchLessonEvent = useCallback(
     (event: LessonEvent, { cancel = false }: { cancel?: boolean } = {}) => {
@@ -825,6 +855,18 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
 function RoutedApplication() {
   const location = useLocation();
   const navigate = useNavigate();
+  const lessonRouteExitRegistryRef = useRef(
+    createLessonRouteExitRegistry(),
+  );
+  const registerLessonRouteExitBarrier = useCallback(
+    (barrier: () => void) =>
+      lessonRouteExitRegistryRef.current.register(barrier),
+    [],
+  );
+  const openProfileRoute = useCallback(() => {
+    lessonRouteExitRegistryRef.current.exit();
+    navigate("/profile");
+  }, [navigate]);
   const currentTarget = `${location.pathname}${location.search}${location.hash}`;
   const onLoginRoute = location.pathname === "/login";
   const isOnboardingRoute = location.pathname === "/onboarding";
@@ -834,31 +876,35 @@ function RoutedApplication() {
     onLoginRoute || isOnboardingRoute ? safeReturnTo : currentTarget;
 
   return (
-    <AuthGate
-      signedOutFallback={
-        onLoginRoute ? null : (
-          <Navigate replace to={getLoginPath(currentTarget)} />
-        )
-      }
+    <LessonRouteExitBarrierContext.Provider
+      value={registerLessonRouteExitBarrier}
     >
-      <OnboardingGate
-        completedOnboardingFallback={
-          <Navigate replace to={safeReturnTo} />
+      <AuthGate
+        signedOutFallback={
+          onLoginRoute ? null : (
+            <Navigate replace to={getLoginPath(currentTarget)} />
+          )
         }
-        isOnboardingRoute={isOnboardingRoute}
-        isProfileRoute={isProfileRoute}
-        onboardingFallback={
-          <Navigate
-            replace
-            to={getOnboardingPath(requestedProtectedTarget)}
-          />
-        }
-        onCloseProfileRoute={() => navigate("/")}
-        onOpenProfileRoute={() => navigate("/profile")}
       >
-        <ApplicationRoutes loginTarget={safeReturnTo} />
-      </OnboardingGate>
-    </AuthGate>
+        <OnboardingGate
+          completedOnboardingFallback={
+            <Navigate replace to={safeReturnTo} />
+          }
+          isOnboardingRoute={isOnboardingRoute}
+          isProfileRoute={isProfileRoute}
+          onboardingFallback={
+            <Navigate
+              replace
+              to={getOnboardingPath(requestedProtectedTarget)}
+            />
+          }
+          onCloseProfileRoute={() => navigate("/")}
+          onOpenProfileRoute={openProfileRoute}
+        >
+          <ApplicationRoutes loginTarget={safeReturnTo} />
+        </OnboardingGate>
+      </AuthGate>
+    </LessonRouteExitBarrierContext.Provider>
   );
 }
 

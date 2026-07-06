@@ -222,6 +222,27 @@ test("lesson route adapters render the executable route decisions", () => {
   assert.match(app, /onNavigateScene=/);
 });
 
+test("global Profile navigation exits the active lesson before routing", () => {
+  assert.match(app, /createLessonRouteExitRegistry/);
+  assert.match(
+    app,
+    /const lessonRouteExitRegistryRef = useRef\(\s*createLessonRouteExitRegistry\(\),?\s*\)/,
+  );
+  assert.match(
+    app,
+    /const registerLessonRouteExitBarrier = useCallback\(\s*\(barrier: \(\) => void\) =>\s*lessonRouteExitRegistryRef\.current\.register\(barrier\),\s*\[\],?\s*\)/,
+  );
+  assert.match(
+    app,
+    /const openProfileRoute = useCallback\(\(\) => \{\s*lessonRouteExitRegistryRef\.current\.exit\(\);\s*navigate\("\/profile"\);\s*\}, \[navigate\]\)/,
+  );
+  assert.match(
+    app,
+    /<LessonRouteExitBarrierContext\.Provider\s+value=\{registerLessonRouteExitBarrier\}\s*>[\s\S]*?<AuthGate/,
+  );
+  assert.match(app, /onOpenProfileRoute=\{openProfileRoute\}/);
+});
+
 test("My lesson routes stay unavailable while the create route stays statically ranked", () => {
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1>Create a Lesson<\/h1>/);

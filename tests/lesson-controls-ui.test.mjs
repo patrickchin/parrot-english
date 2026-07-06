@@ -179,18 +179,38 @@ describe("scene playback controls", () => {
     );
     assert.match(
       app,
-      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(\) => invalidateRouteActivity\(\);\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[invalidateRouteActivity\]\)/,
+      /const exitRouteActivity = useCallback\(\(\) => \{\s*exitLessonRouteActivity\(\s*pendingRoutedEventRef,\s*routeActivityGuardRef\.current,\s*cancelPendingWork,?\s*\);\s*\}, \[cancelPendingWork\]\)/,
     );
     assert.match(
       app,
-      /const handleBack = useCallback\(\(\) => \{\s*invalidateRouteActivity\(\);\s*onBack\(\);\s*\}, \[invalidateRouteActivity, onBack\]\)/,
+      /useLayoutEffect\(\(\) => \{\s*const handlePopState = \(\) => exitRouteActivity\(\);\s*window\.addEventListener\("popstate", handlePopState, true\);\s*return \(\) =>\s*window\.removeEventListener\("popstate", handlePopState, true\);\s*\}, \[exitRouteActivity\]\)/,
     );
     assert.match(
       app,
-      /const handleHome = useCallback\(\(\) => \{\s*invalidateRouteActivity\(\);\s*onHome\(\);\s*\}, \[invalidateRouteActivity, onHome\]\)/,
+      /const handleBack = useCallback\(\(\) => \{\s*exitRouteActivity\(\);\s*onBack\(\);\s*\}, \[exitRouteActivity, onBack\]\)/,
+    );
+    assert.match(
+      app,
+      /const handleHome = useCallback\(\(\) => \{\s*exitRouteActivity\(\);\s*onHome\(\);\s*\}, \[exitRouteActivity, onHome\]\)/,
     );
     assert.match(app, /onClick=\{handleBack\}/);
     assert.match(app, /onClick=\{handleHome\}/);
+  });
+
+  it("registers the distinct route-exit barrier and invalidates during layout cleanup", () => {
+    assert.match(app, /const registerLessonRouteExitBarrier = useContext\(/);
+    assert.match(
+      app,
+      /useLayoutEffect\(\(\) => \{\s*const unregister = registerLessonRouteExitBarrier\(exitRouteActivity\);\s*return \(\) => \{\s*exitRouteActivity\(\);\s*unregister\(\);\s*\};\s*\}, \[exitRouteActivity, registerLessonRouteExitBarrier\]\)/,
+    );
+    assert.match(
+      app,
+      /routedSceneRef\.current = routedSceneIndex;\s*invalidateRouteActivity\(\)/,
+    );
+    assert.match(
+      app,
+      /if \(targetSceneIndex !== null\) \{\s*invalidateRouteActivity\(\)/,
+    );
   });
 
   it("routes every potentially scene-crossing completion through dispatchLessonEvent", () => {
