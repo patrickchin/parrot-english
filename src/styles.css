@@ -1779,7 +1779,7 @@ select:focus-visible {
 
   .home-menu-grid {
     grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: auto;
+    grid-auto-rows: 1fr;
   }
 
   .home-menu-card {

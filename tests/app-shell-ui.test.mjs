@@ -141,7 +141,11 @@ test("home and placeholder routes have equal, responsive, keyboard-visible surfa
   );
   assert.match(
     styles,
-    /@media \(max-width: 700px\)[\s\S]*?\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s,
+    /@media \(max-width: 700px\)[\s\S]*?\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^}]*grid-auto-rows:\s*1fr/s,
+  );
+  assert.doesNotMatch(
+    styles,
+    /@media \(max-width: 700px\)[\s\S]*?\.home-menu-grid\s*\{[^}]*grid-auto-rows:\s*auto/s,
   );
 });
 
