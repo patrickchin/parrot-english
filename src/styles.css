@@ -764,7 +764,7 @@ select:focus-visible {
   box-shadow: 0 4px 0 rgb(95 16 36 / 35%);
 }
 
-main:has(> .home-menu-grid) {
+.home-menu-page {
   width: 100vw;
   height: 100dvh;
   overflow-x: hidden;
@@ -776,20 +776,20 @@ main:has(> .home-menu-grid) {
   padding: clamp(108px, 13vh, 144px) clamp(24px, 5vw, 64px) 56px;
 }
 
-main:has(> .home-menu-grid) > header {
+.home-menu-header {
   width: min(980px, 100%);
   margin: 0 auto clamp(24px, 4vh, 40px);
   text-align: center;
 }
 
-main:has(> .home-menu-grid) > header p {
+.home-menu-header p {
   margin: 0 0 8px;
   color: #087451;
   font-weight: 950;
   letter-spacing: 0.12em;
 }
 
-main:has(> .home-menu-grid) > header h1 {
+.home-menu-header h1 {
   margin: 0;
   color: #173c67;
   font-size: clamp(2.4rem, 6vw, 4.8rem);
@@ -1769,11 +1769,11 @@ main:has(> .home-menu-grid) > header h1 {
 }
 
 @media (max-width: 700px) {
-  main:has(> .home-menu-grid) {
+  .home-menu-page {
     padding: 170px 16px 38px;
   }
 
-  main:has(> .home-menu-grid) > header {
+  .home-menu-header {
     margin-bottom: 24px;
   }
 

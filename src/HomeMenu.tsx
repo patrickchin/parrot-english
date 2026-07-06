@@ -30,8 +30,8 @@ const ACTIVITIES = [
 
 export function HomeMenu() {
   return (
-    <main>
-      <header>
+    <main className="home-menu-page">
+      <header className="home-menu-header">
         <p>PARROT ENGLISH</p>
         <h1>What would you like to practice?</h1>
       </header>

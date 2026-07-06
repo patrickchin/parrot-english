@@ -61,6 +61,8 @@ test("home menu exposes four equal learning activity links", () => {
   const html = renderInRouter(createElement(HomeMenu));
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
+  assert.match(html, /^<main class="home-menu-page">/);
+  assert.match(html, /<header class="home-menu-header">/);
   assert.match(
     html,
     /<nav[^>]*aria-label="Learning activities"[^>]*class="home-menu-grid"/,
@@ -111,6 +113,11 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
 });
 
 test("home and placeholder routes have equal, responsive, keyboard-visible surfaces", () => {
+  assert.match(
+    styles,
+    /\.home-menu-page\s*\{[^}]*height:\s*100dvh[^}]*overflow-y:\s*auto[^}]*background:[^}]*padding:/s,
+  );
+  assert.doesNotMatch(styles, /:has\(>\s*\.home-menu-grid\)/);
   assert.match(
     styles,
     /\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[^}]*grid-auto-rows:\s*1fr/s,

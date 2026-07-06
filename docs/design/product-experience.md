@@ -12,8 +12,8 @@ voice-only narrator gives brief feedback.
 All child-facing dialogue and narration is in English. Steps within the current
 scene advance automatically except when the learner must press and hold the
 microphone button to speak, and playback advances automatically across scene
-boundaries. Back and Next restart adjacent scenes, while Pause stops the lesson
-and Play restarts the current scene from its first step.
+boundaries. Start begins the current scene, while Previous and Next restart
+adjacent scenes from their first steps.
 
 ## Entry and Navigation
 
@@ -78,7 +78,7 @@ global emote set is intentionally small: `idle`, `talking`, `listening`,
 
 The implemented loop is:
 
-1. The learner or adult opens an enabled lesson card and presses Play.
+1. The learner or adult opens a Parrot lesson card and presses Start lesson.
 2. Character and narrator steps play automatically in script order.
 3. A user step waits with an obvious hold-to-talk control.
 4. The learner holds the microphone button, speaks, and releases it.
@@ -91,9 +91,9 @@ The implemented loop is:
 10. Final narrator praise completes the lesson and offers Replay Lesson.
 
 No character or narrator audio plays while recording or evaluating.
-Previous and Next restart the adjacent scene from its first step. Pause stops
-the current activity, and the following Play restarts the current scene rather
-than resuming the interrupted step.
+Previous and Next restart the adjacent scene from its first step. Once started,
+the current scene continues automatically except for the learner's
+press-and-hold speaking turn.
 
 The separate Back to lessons control returns to the catalog and unmounts the
 active player. Reopening a lesson creates fresh state at scene 1. It never
@@ -133,13 +133,14 @@ The user turn must:
 ## Visual Design
 
 The lesson list uses a scrollable responsive card grid with story artwork,
-summaries, scene counts, and explicit disabled states. The player uses a fixed
+summaries, scene counts, and clear source headings. The player uses a fixed
 full-screen stage, a selected catalog background, transparent character
-sprites, rounded speech surfaces, and large tactile controls. A reserved bottom
-control dock contains Previous, Play/Pause, Next, and the microphone prompt
-when it is the learner's turn, without covering story elements. Character
-placement is generic and based on each visible character's slot in the current
-scene, rather than hard-coded names.
+sprites, rounded speech surfaces, and large tactile controls. A large standalone
+Start lesson or Replay lesson action appears when appropriate. The reserved
+bottom control dock contains Previous, Next, and the microphone prompt when it
+is the learner's turn, without covering story elements. Character placement is
+generic and based on each visible character's slot in the current scene, rather
+than hard-coded names.
 
 Design constraints:
 
