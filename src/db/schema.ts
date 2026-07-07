@@ -234,8 +234,120 @@ export const onboardingSessionBypass = sqliteTable(
   ]
 );
 
+export const conversationSession = sqliteTable(
+  "conversation_session",
+  {
+    id: text("id").primaryKey(),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    scenarioKey: text("scenario_key").notNull(),
+    scenarioVersion: integer("scenario_version").notNull(),
+    roomName: text("room_name").notNull(),
+    status: text("status").notNull(),
+    finishReason: text("finish_reason"),
+    controllerState: text("controller_state").default("{}").notNull(),
+    startedAt: integer("started_at", { mode: "timestamp_ms" })
+      .default(sql`(unixepoch('subsecond') * 1000)`)
+      .notNull(),
+    endedAt: integer("ended_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    uniqueIndex("conversation_session_room_name_unique").on(table.roomName),
+    index("conversation_session_user_status_idx").on(
+      table.authUserId,
+      table.status
+    ),
+    check(
+      "conversation_session_status_check",
+      sql`${table.status} in ('starting', 'active', 'completed', 'stopped', 'disconnected', 'failed', 'abandoned')`
+    ),
+    check(
+      "conversation_session_controller_state_json_check",
+      sql`json_valid(${table.controllerState})`
+    ),
+  ]
+);
+
+export const conversationTurn = sqliteTable(
+  "conversation_turn",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversationSession.id, { onDelete: "cascade" }),
+    providerItemId: text("provider_item_id").notNull(),
+    sequence: integer("sequence").notNull(),
+    role: text("role").notNull(),
+    text: text("text").notNull(),
+    language: text("language"),
+    inputMode: text("input_mode").notNull(),
+    interrupted: integer("interrupted", { mode: "boolean" })
+      .default(false)
+      .notNull(),
+    startedAt: integer("started_at", { mode: "timestamp_ms" }),
+    endedAt: integer("ended_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    uniqueIndex("conversation_turn_provider_item_unique").on(
+      table.conversationId,
+      table.providerItemId
+    ),
+    uniqueIndex("conversation_turn_sequence_unique").on(
+      table.conversationId,
+      table.sequence
+    ),
+    check(
+      "conversation_turn_role_check",
+      sql`${table.role} in ('user', 'assistant')`
+    ),
+    check(
+      "conversation_turn_input_mode_check",
+      sql`${table.inputMode} in ('voice', 'text')`
+    ),
+  ]
+);
+
+export const conversationFact = sqliteTable(
+  "conversation_fact",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversationSession.id, { onDelete: "cascade" }),
+    factKey: text("fact_key").notNull(),
+    valueJson: text("value_json").notNull(),
+    sourceTurnIds: text("source_turn_ids").default("[]").notNull(),
+    status: text("status").default("candidate").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("conversation_fact_session_status_idx").on(
+      table.conversationId,
+      table.status
+    ),
+    check(
+      "conversation_fact_value_json_check",
+      sql`json_valid(${table.valueJson})`
+    ),
+    check(
+      "conversation_fact_source_turn_ids_json_check",
+      sql`json_valid(${table.sourceTurnIds})`
+    ),
+    check(
+      "conversation_fact_status_check",
+      sql`${table.status} in ('candidate', 'accepted', 'edited', 'rejected')`
+    ),
+  ]
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
+  conversationSessions: many(conversationSession),
   learnerProfile: one(learnerProfile),
   onboardingSessionBypasses: many(onboardingSessionBypass),
   sessions: many(session),
@@ -273,6 +385,38 @@ export const onboardingSessionBypassRelations = relations(
     user: one(user, {
       fields: [onboardingSessionBypass.authUserId],
       references: [user.id],
+    }),
+  })
+);
+
+export const conversationSessionRelations = relations(
+  conversationSession,
+  ({ many, one }) => ({
+    facts: many(conversationFact),
+    turns: many(conversationTurn),
+    user: one(user, {
+      fields: [conversationSession.authUserId],
+      references: [user.id],
+    }),
+  })
+);
+
+export const conversationTurnRelations = relations(
+  conversationTurn,
+  ({ one }) => ({
+    conversation: one(conversationSession, {
+      fields: [conversationTurn.conversationId],
+      references: [conversationSession.id],
+    }),
+  })
+);
+
+export const conversationFactRelations = relations(
+  conversationFact,
+  ({ one }) => ({
+    conversation: one(conversationSession, {
+      fields: [conversationFact.conversationId],
+      references: [conversationSession.id],
     }),
   })
 );
