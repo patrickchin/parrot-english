@@ -1,5 +1,10 @@
 # Voice Onboarding Questionnaire Design
 
+> **Superseded on 2026-07-08.** The fixed-form questionnaire described here
+> has been replaced by the bounded realtime conversation design in
+> `2026-07-08-realtime-conversation-foundation-design.md`. This document is
+> retained as implementation history for the current form fallback.
+
 **Date:** 2026-07-05
 
 ## Goal

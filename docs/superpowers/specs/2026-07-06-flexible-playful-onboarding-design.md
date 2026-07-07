@@ -1,5 +1,10 @@
 # Flexible, Playful Voice Onboarding Design
 
+> **Superseded on 2026-07-08.** The fixed-question experience described here
+> remains available as the accessible rollout fallback, but the primary
+> onboarding experience is now defined by
+> `2026-07-08-realtime-conversation-foundation-design.md`.
+
 **Date:** 2026-07-06
 
 ## Summary
