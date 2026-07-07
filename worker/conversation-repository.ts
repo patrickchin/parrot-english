@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import {
   conversationFact,
   conversationSession,
@@ -115,6 +115,20 @@ export function createConversationRepository(
     identity: OnboardingIdentity,
     scenario: { key: string; version: number },
   ) {
+    const [active] = await database
+      .select()
+      .from(conversationSession)
+      .where(
+        and(
+          eq(conversationSession.authUserId, identity.userId),
+          eq(conversationSession.scenarioKey, scenario.key),
+          inArray(conversationSession.status, ["starting", "active"]),
+        ),
+      )
+      .orderBy(desc(conversationSession.updatedAt))
+      .limit(1);
+    if (active) return active;
+
     const id = createId();
     const timestamp = now();
     const roomName = `conversation-${id}`;

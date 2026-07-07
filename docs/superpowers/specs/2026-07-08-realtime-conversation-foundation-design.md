@@ -1,6 +1,6 @@
 # Realtime Conversation Foundation and Voice Onboarding Design
 
-**Date:** 2026-07-08  
+**Date:** 2026-07-08
 **Status:** Approved for implementation
 
 ## Supersedes

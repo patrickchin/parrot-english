@@ -6,6 +6,7 @@ import {
   startConversation,
   type ConversationFact,
   type ConversationReviewDecision,
+  type ConversationTurn,
 } from "./conversation-api";
 import type {
   ConversationSurfaceCandidate,
@@ -23,6 +24,34 @@ export function selectOnboardingExperience(
   userSelectedForm: boolean,
 ) {
   return serverMode === "realtime" && !userSelectedForm ? "realtime" : "form";
+}
+
+export function mergeConversationTurns(
+  liveTurns: ConversationSurfaceTurn[],
+  storedTurns: Array<Pick<ConversationTurn, "id" | "role" | "text">>,
+) {
+  const storedIds = new Set(storedTurns.map((turn) => turn.id));
+  return [
+    ...storedTurns.map(({ id, role, text }) => ({ id, role, text })),
+    ...liveTurns.filter((turn) => !storedIds.has(turn.id)),
+  ];
+}
+
+export function updateConversationCandidateStatus<
+  Candidate extends { id: string; status: "accepted" | "edited" | "rejected" },
+>(
+  candidates: Candidate[],
+  id: string,
+  nextStatus: Candidate["status"],
+) {
+  return candidates.map((candidate) =>
+    candidate.id === id
+      ? {
+          ...candidate,
+          status: nextStatus === "accepted" ? "edited" : nextStatus,
+        }
+      : candidate,
+  );
 }
 
 export async function completeConversationReview({
@@ -104,6 +133,9 @@ export function useConversationOnboarding({
         if (!isCurrent(operation)) return;
         setCandidates(
           (loaded.conversation.facts ?? []).map(candidateFromFact),
+        );
+        setTurns((current) =>
+          mergeConversationTurns(current, loaded.conversation.turns ?? []),
         );
         setStatus("summary");
       } catch (summaryError) {
@@ -250,9 +282,7 @@ export function useConversationOnboarding({
   const updateCandidateStatus = useCallback(
     (id: string, nextStatus: ConversationSurfaceCandidate["status"]) => {
       setCandidates((current) =>
-        current.map((candidate) =>
-          candidate.id === id ? { ...candidate, status: nextStatus } : candidate,
-        ),
+        updateConversationCandidateStatus(current, id, nextStatus),
       );
     },
     [],

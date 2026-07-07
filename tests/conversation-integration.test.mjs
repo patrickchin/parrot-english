@@ -16,7 +16,9 @@ const { OnboardingGateView } = await vite.ssrLoadModule(
 );
 const {
   completeConversationReview,
+  mergeConversationTurns,
   selectOnboardingExperience,
+  updateConversationCandidateStatus,
 } = await vite.ssrLoadModule("/src/useConversationOnboarding.ts");
 
 after(async () => {
@@ -164,5 +166,30 @@ describe("realtime onboarding gate integration", () => {
       ["conversation-1", [{ factId: "name", status: "accepted" }]],
       "refresh",
     ]);
+  });
+
+  it("merges the durable transcript and preserves edits after reject-then-keep", () => {
+    assert.deepEqual(
+      mergeConversationTurns(
+        [{ id: "live", role: "assistant", text: "Hi there!" }],
+        [
+          { id: "saved", role: "user", text: "My name is Mia." },
+          { id: "live", role: "assistant", text: "Hi there!" },
+        ],
+      ),
+      [
+        { id: "saved", role: "user", text: "My name is Mia." },
+        { id: "live", role: "assistant", text: "Hi there!" },
+      ],
+    );
+
+    assert.deepEqual(
+      updateConversationCandidateStatus(
+        [{ id: "name", status: "rejected", value: "Maya" }],
+        "name",
+        "accepted",
+      ),
+      [{ id: "name", status: "edited", value: "Maya" }],
+    );
   });
 });

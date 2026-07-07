@@ -35,6 +35,7 @@ function createEnvironment(overrides = {}) {
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
+    REALTIME_ONBOARDING_ENABLED: "1",
     ...overrides,
   };
 }
@@ -137,6 +138,7 @@ async function callConversation(
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
+    REALTIME_ONBOARDING_ENABLED: "1",
     ...options.env,
   };
   return handleConversationRequest(
@@ -157,6 +159,30 @@ async function callConversation(
 }
 
 describe("conversation persistence and API", () => {
+  it("does not mint a conversation token while realtime rollout is disabled", async () => {
+    const state = createSeededDatabase();
+    try {
+      const response = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        undefined,
+        { env: { REALTIME_ONBOARDING_ENABLED: "0" } },
+      );
+
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "realtime_disabled" });
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("starts one owner-scoped onboarding conversation with a short-lived room token", async () => {
     const state = createSeededDatabase();
     const tokenCalls = [];
@@ -196,6 +222,35 @@ describe("conversation persistence and API", () => {
         .get("conversation-1");
       assert.equal(stored.auth_user_id, "user-1");
       assert.equal(JSON.parse(stored.controller_state).activeObjective, "name");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("reuses the learner's active conversation instead of creating parallel rooms", async () => {
+    const state = createSeededDatabase();
+    try {
+      const first = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+      );
+      const second = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+      );
+      const firstPayload = await first.json();
+      const secondPayload = await second.json();
+
+      assert.equal(second.status, 201);
+      assert.equal(secondPayload.conversation.id, firstPayload.conversation.id);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        1,
+      );
     } finally {
       state.close();
     }

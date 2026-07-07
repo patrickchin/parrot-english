@@ -127,6 +127,9 @@ export async function handleConversationRequest(
   try {
     if (url.pathname === "/api/conversations" && input.request.method === "POST") {
       if (!input.identity) throw new ConversationApiError(401, "unauthorized");
+      if (input.env.REALTIME_ONBOARDING_ENABLED !== "1") {
+        throw new ConversationApiError(404, "realtime_disabled");
+      }
       const livekitUrl = required(input.env.LIVEKIT_URL, "livekit_url");
       const conversation = await repository.createConversation(
         input.identity,
