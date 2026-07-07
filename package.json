@@ -34,6 +34,7 @@
   "dependencies": {
     "better-auth": "^1.6.23",
     "drizzle-orm": "^0.45.2",
+    "livekit-client": "2.20.0",
     "livekit-server-sdk": "2.16.0",
     "lucide-react": "^1.21.0",
     "react": "19.2.6",
