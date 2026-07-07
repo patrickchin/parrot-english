@@ -28,10 +28,25 @@ export default defineConfig([
     },
   },
   {
+    files: ["agent/**/*.ts"],
+    languageOptions: {
+      globals: {
+        AbortSignal: "readonly",
+        console: "readonly",
+        crypto: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+        setTimeout: "readonly",
+        TextEncoder: "readonly",
+      },
+    },
+  },
+  {
     files: ["tests/**/*.mjs", "*.config.mjs"],
     languageOptions: {
       globals: {
         AbortController: "readonly",
+        AbortSignal: "readonly",
         Blob: "readonly",
         clearTimeout: "readonly",
         console: "readonly",
