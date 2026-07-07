@@ -35,12 +35,18 @@ import {
 } from "./OnboardingQuestion";
 import { ProfileEditorView } from "./ProfileEditor";
 import { recordSpeechClip } from "./speech-recorder";
+import { ConversationSurface } from "./ConversationSurface";
+import {
+  selectOnboardingExperience,
+  useConversationOnboarding,
+} from "./useConversationOnboarding";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 type QuestionProps = ComponentProps<typeof OnboardingQuestionView>;
 type ProfileEditorProps = ComponentProps<typeof ProfileEditorView>;
+type ConversationProps = ComponentProps<typeof ConversationSurface>;
 
 type AcknowledgmentView = {
   acknowledgment: Acknowledgment;
@@ -51,6 +57,7 @@ type OnboardingGateViewProps = {
   acknowledgment: AcknowledgmentView | null;
   children: ReactNode;
   completedOnboardingFallback: ReactNode;
+  conversationProps: ConversationProps | null;
   data: OnboardingState | null;
   isOnboardingRoute: boolean;
   isProfileLoading: boolean;
@@ -74,6 +81,7 @@ export function OnboardingGateView({
   acknowledgment,
   children,
   completedOnboardingFallback,
+  conversationProps,
   data,
   isOnboardingRoute,
   isProfileLoading,
@@ -209,6 +217,10 @@ export function OnboardingGateView({
 
   if (canAccessProtectedRoutes) {
     return <>{children}</>;
+  }
+
+  if (fullData && conversationProps) {
+    return <ConversationSurface {...conversationProps} />;
   }
 
   if (fullData && !started) {
@@ -459,6 +471,7 @@ export function OnboardingGate({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [started, setStarted] = useState(false);
+  const [useFormFallback, setUseFormFallback] = useState(false);
   const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [status, setStatus] = useState<QuestionProps["status"]>("idle");
@@ -569,6 +582,27 @@ export function OnboardingGate({
 
   const fullData: FullOnboardingState | null =
     data?.mode === "full" ? data : null;
+  const selectedExperience = fullData
+    ? selectOnboardingExperience(fullData.experienceMode, useFormFallback)
+    : "form";
+  const handleUseFormFallback = useCallback(() => {
+    setUseFormFallback(true);
+    setStarted(false);
+  }, []);
+  const handleConversationCompleted = useCallback(async () => {
+    await refresh();
+  }, [refresh]);
+  const conversationProps = useConversationOnboarding({
+    active: Boolean(
+      isOnboardingRoute &&
+        selectedExperience === "realtime" &&
+        fullData &&
+        !fullData.canBypass &&
+        fullData.profile.onboardingStatus !== "completed",
+    ),
+    onCompleted: handleConversationCompleted,
+    onUseForm: handleUseFormFallback,
+  });
   const activeQuestion = fullData?.question ?? null;
   const activeProfile = fullData?.profile ?? null;
   const activeQuestionKey = activeQuestion?.answerKey ?? "";
@@ -1002,6 +1036,9 @@ export function OnboardingGate({
     <OnboardingGateView
       acknowledgment={acknowledgment}
       completedOnboardingFallback={completedOnboardingFallback}
+      conversationProps={
+        selectedExperience === "realtime" ? conversationProps : null
+      }
       data={data}
       isOnboardingRoute={isOnboardingRoute}
       isProfileLoading={isProfileLoading}

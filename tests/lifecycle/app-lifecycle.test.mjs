@@ -39,6 +39,7 @@ const vite = await createServer({
 
 let ApplicationRoutes;
 let OnboardingGate;
+let useConversationOnboarding;
 let createAuthGate;
 let firstLesson;
 let firstLessonId;
@@ -46,6 +47,9 @@ let firstLessonId;
 before(async () => {
   ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
   ({ OnboardingGate } = await vite.ssrLoadModule("/src/OnboardingGate.tsx"));
+  ({ useConversationOnboarding } = await vite.ssrLoadModule(
+    "/src/useConversationOnboarding.ts",
+  ));
   ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx"));
   const catalog = await vite.ssrLoadModule("/src/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
@@ -158,6 +162,21 @@ function onboardingRouteProps(completedOnboardingFallback) {
     onCloseProfileRoute() {},
     onOpenProfileRoute() {},
   };
+}
+
+function ConversationHookHarness({ createTransport }) {
+  const conversation = useConversationOnboarding({
+    active: true,
+    createTransport,
+    async onCompleted() {},
+    onUseForm() {},
+  });
+  return createElement(
+    "section",
+    null,
+    createElement("output", { "aria-label": "Conversation status" }, conversation.status),
+    createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
+  );
 }
 
 function ProfileRouteHarness({ children }) {
@@ -420,6 +439,55 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     response.resolve(json(fullOnboardingState()));
     await waitFor(() => text(/Meet Peppa/));
     noText(/Loading your questions…/);
+  });
+
+  it("keeps a newly connected conversation transport alive when its ID is stored", async () => {
+    let disconnectCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {
+        disconnectCalls += 1;
+      },
+      async sendText() {},
+      async setMicrophoneEnabled() {},
+      subscribe() {
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/conversations");
+      assert.equal(init.method, "POST");
+      return json({
+        conversation: { id: "conversation-1" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "onboarding",
+          maxOptionalExchanges: 3,
+          optionalFact: "interest",
+          requiredFacts: ["name", "age"],
+          version: 1,
+        },
+      });
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "listening",
+      ),
+    );
+
+    assert.equal(disconnectCalls, 0);
   });
 
   it("moves authentication through retry, sign-in, child content, and sign-out", async () => {
