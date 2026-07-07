@@ -91,6 +91,17 @@ describe("architecture cleanup contracts", () => {
     assert.doesNotMatch(scene, /futureSrc|sparkle/);
   });
 
+  it("documents durable transcripts without raw-audio retention", () => {
+    const readme = readProjectFile("README.md");
+    const agent = readProjectFile("agent/index.ts");
+    const worker = readProjectFile("worker/conversations.ts");
+
+    assert.match(readme, /finalized conversation transcript/i);
+    assert.match(readme, /raw audio is\s+not stored/i);
+    assert.match(agent, /record:\s*AGENT_SESSION_START_OPTIONS\.record/);
+    assert.doesNotMatch(worker, /audio(?:Blob|Base64|Bytes)|rawAudio/i);
+  });
+
   it("type-checks the shared lesson contract modules", () => {
     const contractModules = [
       "lib/lesson-audio.js",

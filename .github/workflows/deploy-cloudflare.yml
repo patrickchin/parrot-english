@@ -37,6 +37,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Typecheck LiveKit agent
+        run: npm run build:agent
+
       - name: Verify Cloudflare credentials
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID"

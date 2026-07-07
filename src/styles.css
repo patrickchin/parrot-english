@@ -2372,6 +2372,25 @@ select:focus-visible {
   margin: 8px 0;
 }
 
+.conversation-summary-transcript {
+  width: 100%;
+  border: 3px solid #d5edf7;
+  border-radius: 18px;
+  padding: 12px;
+  text-align: left;
+}
+
+.conversation-summary-transcript summary {
+  cursor: pointer;
+  color: #315f89;
+  font-weight: 950;
+}
+
+.conversation-summary-transcript .conversation-transcript {
+  max-height: 230px;
+  margin-top: 12px;
+}
+
 .conversation-candidate {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

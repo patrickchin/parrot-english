@@ -56,6 +56,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /Start talking/);
     assert.match(html, /Use the form instead/);
     assert.match(html, /pig-host\.webp/);
+    assert.match(html, /save the words.*not the audio/i);
     assert.doesNotMatch(html, /Peppa/);
   });
 
@@ -122,6 +123,10 @@ describe("accessible realtime conversation surface", () => {
           value: "pandas",
         },
       ],
+      turns: [
+        { id: "heard-one", role: "assistant", text: "How old are you?" },
+        { id: "heard-two", role: "user", text: "I am seven." },
+      ],
     });
 
     assert.match(html, /Here’s what I heard/);
@@ -132,6 +137,9 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /Save and continue/);
     assert.match(html, /Keep this/);
     assert.match(html, /Leave this out/);
+    assert.match(html, /Conversation transcript/);
+    assert.match(html, /How old are you\?/);
+    assert.match(html, /I am seven\./);
   });
 
   it("adds responsive, short-height, focus, transcript, and reduced-motion styles", () => {

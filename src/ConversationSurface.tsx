@@ -99,6 +99,7 @@ export function ConversationSurface({
             Have a short chat in English. You can say “I don’t know”, stay quiet,
             or finish whenever you like. Only your name and age are needed.
           </p>
+          <p>We save the words from this chat, not the audio.</p>
           <button
             className="conversation-primary-button"
             onClick={onStart}
@@ -157,6 +158,24 @@ export function ConversationSurface({
               ))
             )}
           </div>
+          {turns.length > 0 ? (
+            <details className="conversation-summary-transcript">
+              <summary>Conversation transcript</summary>
+              <ol className="conversation-transcript">
+                {turns.map((turn) => (
+                  <li
+                    className={`conversation-turn conversation-turn--${turn.role}`}
+                    key={turn.id}
+                  >
+                    <strong>
+                      {turn.role === "assistant" ? "Pig pal" : "You"}
+                    </strong>
+                    <span>{turn.text}</span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          ) : null}
           {error ? <p role="alert">{error}</p> : null}
           <button
             className="conversation-primary-button"

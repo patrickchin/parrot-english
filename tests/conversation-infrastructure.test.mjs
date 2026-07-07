@@ -105,6 +105,80 @@ describe("conversation persistence infrastructure", () => {
     assert.ok(schema.conversationFactRelations);
   });
 
+  it("keeps realtime deployment production-shaped and feature-flagged off", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      "utf8",
+    );
+    const dockerfile = readFileSync(
+      new URL("../agent/Dockerfile", import.meta.url),
+      "utf8",
+    );
+    const deployDockerfile = readFileSync(
+      new URL("../Dockerfile", import.meta.url),
+      "utf8",
+    );
+    const workerExample = readFileSync(
+      new URL("../.dev.vars.example", import.meta.url),
+      "utf8",
+    );
+    const agentExample = readFileSync(
+      new URL("../.env.example", import.meta.url),
+      "utf8",
+    );
+    const wrangler = readFileSync(
+      new URL("../wrangler.jsonc", import.meta.url),
+      "utf8",
+    );
+    const deployment = readFileSync(
+      new URL("../docs/deployment/livekit-agent.md", import.meta.url),
+      "utf8",
+    );
+
+    assert.ok(
+      workflow.indexOf("d1 migrations apply") < workflow.indexOf("wrangler deploy"),
+      "D1 migrations must run before the Worker deploy.",
+    );
+    assert.match(workflow, /npm run build:agent/);
+    assert.match(dockerfile, /COPY package\.json package-lock\.json/);
+    assert.match(dockerfile, /npm ci/);
+    assert.equal(deployDockerfile, dockerfile);
+    assert.match(dockerfile, /ca-certificates/);
+    assert.match(dockerfile, /USER node/);
+    assert.match(wrangler, /"REALTIME_ONBOARDING_ENABLED": "0"/);
+    for (const name of [
+      "LIVEKIT_URL",
+      "LIVEKIT_API_KEY",
+      "LIVEKIT_API_SECRET",
+      "CONVERSATION_AGENT_SECRET",
+    ]) {
+      assert.match(workerExample, new RegExp(`^${name}=`, "m"));
+    }
+    for (const name of [
+      "CONVERSATION_INGEST_URL",
+      "AGENT_STT_MODEL",
+      "AGENT_LLM_MODEL",
+      "AGENT_TTS_MODEL",
+      "AGENT_TTS_VOICE_ID",
+    ]) {
+      assert.match(agentExample, new RegExp(`^${name}=`, "m"));
+    }
+    assert.doesNotMatch(workerExample, /sk-[A-Za-z0-9]/);
+    assert.doesNotMatch(agentExample, /sk-[A-Za-z0-9]/);
+    for (const command of [
+      "npm run db:migrate:local",
+      "npm run build",
+      "npm run build:agent",
+      "lk agent create",
+      "lk agent deploy",
+    ]) {
+      assert.match(deployment, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
+    assert.match(deployment, /REALTIME_ONBOARDING_ENABLED/);
+    assert.match(deployment, /record: false/);
+    assert.match(deployment, /form fallback/i);
+  });
+
   it("migrates constrained conversation storage with cascading ownership", () => {
     const migrations = readMigrations();
     assert.equal(migrations.length, 5);

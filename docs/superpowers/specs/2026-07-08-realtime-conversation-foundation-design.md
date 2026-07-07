@@ -251,10 +251,10 @@ Required agent configuration includes:
 LIVEKIT_URL
 LIVEKIT_API_KEY
 LIVEKIT_API_SECRET
-LIVEKIT_STT_MODEL
-LIVEKIT_LLM_MODEL
-LIVEKIT_TTS_MODEL
-LIVEKIT_TTS_VOICE_ID
+AGENT_STT_MODEL
+AGENT_LLM_MODEL
+AGENT_TTS_MODEL
+AGENT_TTS_VOICE_ID
 CONVERSATION_INGEST_URL
 CONVERSATION_AGENT_SECRET
 ```
@@ -277,9 +277,10 @@ model availability changes independently of application releases. The deployed
 environment must pin explicit identifiers; it must not use an implicit “latest”
 model.
 
-LiveKit observability upload is disabled for audio, transcripts, traces, and
-session logs. Application transcript persistence is handled by D1 rather than
-relying on LiveKit session recordings.
+LiveKit session recording is disabled with `record: false`; raw room audio is
+not retained by the application. Normal operational logs and model-usage
+metrics remain available for deployment diagnostics. Application transcript
+persistence is handled by D1 rather than relying on LiveKit recordings.
 
 ## Data Model
 
@@ -346,24 +347,24 @@ updated_at          INTEGER NOT NULL
 allows `name`, `age`, and a maximum of three `interest` candidates.
 
 Accepted name and age update the existing canonical columns. Accepted optional
-facts are written into a schema-versioned interests collection in
-`learner_profile.answers_json`; existing v1/v2 answer envelopes are preserved
-under legacy data during the first accepted realtime review.
+facts remain durable, queryable `conversation_fact` rows. Realtime review does
+not add keys to the strict v2 `learner_profile.answers_json` envelope, so the
+existing form and profile editor remain backward compatible.
 
 ## API Contracts
 
 ### Authenticated browser APIs
 
 - `POST /api/conversations` creates an onboarding conversation for the current
-  session and returns `{ conversationId, livekitUrl, participantToken,
+  session and returns `{ conversation, livekit: { url, participantToken },
   scenario }`.
 - `GET /api/conversations/:id` returns the owned session, ordered transcript,
   candidates, and summary state.
 - `POST /api/conversations/:id/finish` records an explicit Finish now request
   and asks the agent session to close.
 - `PUT /api/conversations/:id/review` accepts edited fact decisions, applies
-  valid profile updates atomically, and returns the updated onboarding gate
-  state.
+  valid profile updates atomically, and returns completion/bypass status. The
+  browser refreshes the existing onboarding gate after success.
 
 The existing `GET /api/onboarding` response gains an experience mode so the
 server-controlled rollout can select `realtime` or `form` without trusting a
