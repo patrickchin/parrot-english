@@ -50,6 +50,7 @@ export type LearnerProfileSummary = {
 
 export type FullOnboardingState = {
   mode: "full";
+  experienceMode: "realtime" | "form";
   profile: LearnerProfileSummary;
   questionnaire: {
     version: number;

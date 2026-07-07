@@ -5,6 +5,9 @@
   "preview_urls": true,
   "compatibility_date": "2026-05-22",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "REALTIME_ONBOARDING_ENABLED": "0"
+  },
   "d1_databases": [
     {
       "binding": "DB",

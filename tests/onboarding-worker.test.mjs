@@ -287,6 +287,7 @@ describe("onboarding persistence and API", () => {
       assert.equal("options" in payload.question, false);
       assert.deepEqual(payload.progress, { answered: 0, current: 1, total: 6 });
       assert.equal(payload.canBypass, false);
+      assert.equal(payload.experienceMode, "form");
 
       const row = state.sqlite
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
@@ -294,6 +295,30 @@ describe("onboarding persistence and API", () => {
       assert.equal(row.name, "Mia");
       assert.equal(row.questionnaire_version, null);
       assert.equal(JSON.parse(row.answers_json).schemaVersion, 2);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("selects realtime onboarding only when the server feature flag is enabled", async () => {
+    const state = createSeededDatabase();
+    try {
+      const response = await handleOnboardingRequest(
+        {
+          database: state.database,
+          env: { DB: state.d1, REALTIME_ONBOARDING_ENABLED: "1" },
+          identity: {
+            sessionId: "session-1",
+            userId: "user-1",
+            userName: "Mia",
+          },
+          request: request("/api/onboarding"),
+        },
+        createDependencies(),
+      );
+
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).experienceMode, "realtime");
     } finally {
       state.close();
     }

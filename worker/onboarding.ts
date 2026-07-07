@@ -39,7 +39,9 @@ export interface OnboardingIdentity {
 
 export interface OnboardingRequestInput {
   database: Database;
-  env: AuthEnv & ApiEnv & ElevenLabsEnv;
+  env: AuthEnv &
+    ApiEnv &
+    ElevenLabsEnv & { REALTIME_ONBOARDING_ENABLED?: string };
   identity: OnboardingIdentity;
   request: Request;
 }
@@ -155,7 +157,11 @@ async function prepareOnboardingProfile(
   return stored;
 }
 
-function onboardingPayload(profile: Profile, canBypass: boolean) {
+function onboardingPayload(
+  profile: Profile,
+  canBypass: boolean,
+  experienceMode: "realtime" | "form",
+) {
   const completed = profile.onboardingStatus === "completed";
   const readable = isV2Profile(profile)
     ? profile
@@ -178,7 +184,12 @@ function onboardingPayload(profile: Profile, canBypass: boolean) {
         }
       : getV2Progress(readable, ONBOARDING_QUESTIONNAIRE),
     canBypass,
+    experienceMode,
   };
+}
+
+function onboardingExperienceMode(env: OnboardingRequestInput["env"]) {
+  return env.REALTIME_ONBOARDING_ENABLED === "1" ? "realtime" : "form";
 }
 
 function profilePayload(profile: Profile) {
@@ -542,7 +553,11 @@ export async function handleOnboardingRequest(
     if (url.pathname === "/api/onboarding" && input.request.method === "GET") {
       const profile = await prepareOnboardingProfile(repository, input.identity);
       return jsonResponse(
-        onboardingPayload(profile, await repository.canBypass(input.identity))
+        onboardingPayload(
+          profile,
+          await repository.canBypass(input.identity),
+          onboardingExperienceMode(input.env),
+        )
       );
     }
 
@@ -586,7 +601,8 @@ export async function handleOnboardingRequest(
       return jsonResponse({
         ...onboardingPayload(
           saved.profile,
-          await repository.canBypass(input.identity)
+          await repository.canBypass(input.identity),
+          onboardingExperienceMode(input.env),
         ),
         acknowledgment: saved.acknowledgment,
       });
@@ -632,7 +648,11 @@ export async function handleOnboardingRequest(
       });
       const stored = await repository.loadProfile(input.identity);
       return jsonResponse(
-        onboardingPayload(stored, await repository.canBypass(input.identity))
+        onboardingPayload(
+          stored,
+          await repository.canBypass(input.identity),
+          onboardingExperienceMode(input.env),
+        )
       );
     }
 
@@ -644,7 +664,9 @@ export async function handleOnboardingRequest(
       try {
         const profile = await prepareOnboardingProfile(repository, input.identity);
         await repository.skip(profile.id, input.identity.sessionId);
-        return jsonResponse(onboardingPayload(profile, true));
+        return jsonResponse(
+          onboardingPayload(profile, true, onboardingExperienceMode(input.env)),
+        );
       } catch {
         return jsonResponse(bypassOnlyPayload());
       }
@@ -665,7 +687,9 @@ export async function handleOnboardingRequest(
         await repository.complete(profile.id);
       }
       const completed = await repository.loadProfile(input.identity);
-      return jsonResponse(onboardingPayload(completed, true));
+      return jsonResponse(
+        onboardingPayload(completed, true, onboardingExperienceMode(input.env)),
+      );
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "GET") {
