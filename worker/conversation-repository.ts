@@ -250,7 +250,12 @@ export function createConversationRepository(
       database
         .update(conversationSession)
         .set({ status: "active", updatedAt: timestamp })
-        .where(eq(conversationSession.id, conversationId)),
+        .where(
+          and(
+            eq(conversationSession.id, conversationId),
+            inArray(conversationSession.status, ["starting", "active"]),
+          ),
+        ),
     ] as const);
     const [turn] = await database
       .select()

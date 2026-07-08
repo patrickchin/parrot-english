@@ -266,9 +266,10 @@ The initial provider compatibility check must prove:
 
 - streaming English transcription with short Mandarin rescue responses;
 - a low-latency tool-capable LLM;
-- ElevenLabs streaming TTS;
-- support for the approved Summer voice ID (`Oqy85UMasXzUjUxF0ta5`) or selection
-  of another supported character-directed voice;
+- low-latency streaming TTS from a currently supported LiveKit Inference model;
+- the character-directed `Olivia` voice on `inworld/inworld-tts-2`, selected
+  after the deprecated ElevenLabs v3 stream failed the production smoke test,
+  with a managed `cartesia/sonic-3` cross-provider fallback;
 - correct interruption and transcript truncation; and
 - acceptable end-to-end latency on a child-paced conversation.
 

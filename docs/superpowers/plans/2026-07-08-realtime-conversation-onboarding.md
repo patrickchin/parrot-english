@@ -477,8 +477,8 @@ npm install @livekit/agents@1.5.0 zod@4.4.3
 
 - [ ] **Step 2: Write failing config and prompt-contract tests**
 
-Assert all required environment variables, explicit model IDs, default voice ID
-`Oqy85UMasXzUjUxF0ta5`, no protected-character claim, exactly four bounded tool
+Assert all required environment variables, explicit model IDs, the
+character-directed `Olivia` default voice, no protected-character claim, exactly four bounded tool
 names, and `record: false` in the session start contract.
 
 - [ ] **Step 3: Implement environment parsing**

@@ -59,16 +59,22 @@ export function createAgentModels(config: AgentConfig) {
     tts: new inference.TTS({
       apiKey: config.livekitApiKey,
       apiSecret: config.livekitApiSecret,
+      fallback: {
+        extraKwargs: { emotion: "excited", speed: 1.05 },
+        model: "cartesia/sonic-3",
+        voice: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+      },
       model: config.ttsModel,
       voice: config.ttsVoiceId,
     }),
   };
 }
 
-function textInputMode(item: ChatMessage) {
-  return item.extra.inputModality === "text" || item.extra.input_modality === "text"
-    ? "text"
-    : "voice";
+export function conversationInputMode(
+  role: "user" | "assistant",
+  hasVoiceTranscript: boolean,
+) {
+  return role === "user" && !hasVoiceTranscript ? "text" : "voice";
 }
 
 function createTranscriptPersistence({
@@ -125,7 +131,7 @@ function createTranscriptPersistence({
     const pending = pendingUserTranscripts.get(item.id);
     pendingUserTranscripts.delete(item.id);
     enqueueTurn({
-      inputMode: item.role === "user" ? textInputMode(item) : "voice",
+      inputMode: conversationInputMode(item.role, pending !== undefined),
       interrupted: item.interrupted,
       language: pending?.language ?? null,
       providerItemId: item.id,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { initializeLogger } from "@livekit/agents";
+import { initializeLogger, llm } from "@livekit/agents";
 import {
   DEFAULT_AGENT_MODELS,
   readAgentConfig,
@@ -17,6 +17,7 @@ import {
   createAgentModels,
   parseConversationParticipantMetadata,
 } from "../agent/index.ts";
+import * as agentRuntime from "../agent/index.ts";
 
 initializeLogger({ level: "silent", pretty: false });
 
@@ -39,8 +40,8 @@ describe("LiveKit agent configuration", () => {
     assert.equal(config.ingestSecret, "agent-secret");
     assert.equal(config.sttModel, "elevenlabs/scribe_v2_realtime");
     assert.equal(config.llmModel, "openai/gpt-4.1-mini");
-    assert.equal(config.ttsModel, "elevenlabs/eleven_v3");
-    assert.equal(config.ttsVoiceId, "Oqy85UMasXzUjUxF0ta5");
+    assert.equal(config.ttsModel, "inworld/inworld-tts-2");
+    assert.equal(config.ttsVoiceId, "Olivia");
     assert.deepEqual(
       Object.values(DEFAULT_AGENT_MODELS).some((value) =>
         /(?:auto|latest)$/i.test(value),
@@ -56,6 +57,13 @@ describe("LiveKit agent configuration", () => {
     assert.equal(models.stt.model, config.sttModel);
     assert.equal(models.llm.model, config.llmModel);
     assert.equal(models.tts.model, config.ttsModel);
+    assert.deepEqual(models.tts.opts.fallback, [
+      {
+        extraKwargs: { emotion: "excited", speed: 1.05 },
+        model: "cartesia/sonic-3",
+        voice: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+      },
+    ]);
     assert.equal(
       parseConversationParticipantMetadata(
         JSON.stringify({ conversationId: "conversation-1" }),
@@ -66,6 +74,12 @@ describe("LiveKit agent configuration", () => {
       () => parseConversationParticipantMetadata("{}"),
       /conversationId/,
     );
+  });
+
+  it("distinguishes typed user items from voice transcripts", () => {
+    assert.equal(agentRuntime.conversationInputMode("user", true), "voice");
+    assert.equal(agentRuntime.conversationInputMode("user", false), "text");
+    assert.equal(agentRuntime.conversationInputMode("assistant", false), "voice");
   });
 
   it("rejects blank required settings and moving model aliases", () => {
@@ -85,6 +99,126 @@ describe("LiveKit agent configuration", () => {
 });
 
 describe("bounded onboarding agent contract", () => {
+  it("uses an Azure/OpenAI-compatible record-facts tool schema", () => {
+    const ingest = {
+      async appendTurn() {},
+      async endConversation() {},
+      async upsertFacts() {},
+    };
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest,
+    });
+    const schema = llm.toJsonSchema(
+      task.toolCtx.functionTools.recordCandidateFacts.parameters,
+      true,
+      true,
+    );
+
+    assert.equal(JSON.stringify(schema).includes('"oneOf"'), false);
+  });
+
+  it("normalizes the gateway-safe age value before persistence", async () => {
+    const calls = [];
+    const ingest = {
+      async appendTurn() {},
+      async endConversation() {},
+      async upsertFacts(...args) {
+        calls.push(args);
+      },
+    };
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      createId: () => "fact-age",
+      ingest,
+    });
+
+    await task.toolCtx.functionTools.recordCandidateFacts.execute(
+      {
+        facts: [{ key: "age", topic: "none", value: "8" }],
+        nextInterestTopic: null,
+        outcome: "answered",
+      },
+      {},
+    );
+
+    assert.deepEqual(calls[0][1][0], {
+      id: "fact-age",
+      key: "age",
+      sourceTurnIds: [],
+      value: 8,
+    });
+  });
+
+  it("reuses candidate IDs when the model repeats an already captured fact", async () => {
+    const calls = [];
+    let nextId = 0;
+    const ingest = {
+      async appendTurn() {},
+      async endConversation() {},
+      async upsertFacts(...args) {
+        calls.push(args);
+      },
+    };
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      createId: () => `fact-${nextId++}`,
+      ingest,
+    });
+    const record = task.toolCtx.functionTools.recordCandidateFacts;
+
+    await record.execute(
+      {
+        facts: [{ key: "name", topic: "none", value: "Mia" }],
+        nextInterestTopic: null,
+        outcome: "answered",
+      },
+      {},
+    );
+    await record.execute(
+      {
+        facts: [
+          { key: "name", topic: "none", value: "Mia" },
+          { key: "age", topic: "none", value: "8" },
+        ],
+        nextInterestTopic: "animals",
+        outcome: "answered",
+      },
+      {},
+    );
+
+    assert.equal(calls[0][1][0].id, calls[1][1][0].id);
+    assert.notEqual(calls[1][1][0].id, calls[1][1][1].id);
+  });
+
+  it("keeps the task completion callback bound to its hook context", async () => {
+    const completed = [];
+    const ingest = {
+      async appendTurn() {},
+      async endConversation() {},
+      async upsertFacts() {},
+    };
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest,
+    });
+    const hookContext = {
+      agent: { completed },
+      complete(result) {
+        this.agent.completed.push(result);
+      },
+      session: { generateReply() {} },
+    };
+
+    await task.hookAdapter.hooks.onEnter(hookContext);
+    await task.toolCtx.functionTools.finishConversation.execute(
+      { reason: "child_stopped" },
+      {},
+    );
+
+    assert.deepEqual(completed, [{ finishReason: "child_stopped" }]);
+  });
+
   it("uses four constrained tools and a warm non-impersonating prompt", () => {
     const ingest = {
       async appendTurn() {},

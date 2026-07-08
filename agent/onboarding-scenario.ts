@@ -55,15 +55,56 @@ export const AGENT_TURN_HANDLING = {
   turnDetection: "inference",
 } as const;
 
+const interestTopicSchema = z.enum([
+  "activities",
+  "animals",
+  "cartoons",
+  "food",
+  "music",
+  "stories",
+]);
+
 const candidateFactSchema = z.discriminatedUnion("key", [
   z.object({ key: z.literal("name"), value: z.string().trim().min(1).max(120) }),
   z.object({ key: z.literal("age"), value: z.number().int().min(3).max(17) }),
   z.object({
     key: z.literal("interest"),
-    topic: z.enum(["activities", "animals", "cartoons", "food", "music", "stories"]),
+    topic: interestTopicSchema,
     value: z.string().trim().min(1).max(240),
   }),
 ]);
+
+const candidateFactToolSchema = z.object({
+  key: z.enum(["name", "age", "interest"]),
+  topic: z
+    .enum(["none", "activities", "animals", "cartoons", "food", "music", "stories"])
+    .describe("Use none for name or age; otherwise select the matching interest topic."),
+  value: z
+    .string()
+    .trim()
+    .min(1)
+    .max(240)
+    .describe("Use decimal digits for age, for example 8."),
+});
+
+function normalizeToolCandidateFact(
+  fact: z.infer<typeof candidateFactToolSchema>,
+) {
+  if (fact.key === "age") {
+    return candidateFactSchema.parse({
+      key: fact.key,
+      value: Number(fact.value),
+    });
+  }
+  if (fact.key === "interest") {
+    return candidateFactSchema.parse({
+      key: fact.key,
+      topic: fact.topic,
+      value: fact.value,
+    });
+  }
+  return candidateFactSchema.parse({ key: fact.key, value: fact.value });
+}
 
 type ControllerState = Omit<
   ReturnType<typeof createOnboardingConversationState>,
@@ -87,13 +128,24 @@ export function createGettingToKnowYouTask({
 }: CreateTaskOptions) {
   let state = initialState;
   let completeTask: ((result: { finishReason: string | null }) => void) | null = null;
+  const candidateIds = new Map<string, string>();
+
+  function candidateId(fact: Record<string, unknown>) {
+    const semanticKey =
+      fact.key === "interest" ? `interest:${String(fact.topic)}` : String(fact.key);
+    const existing = candidateIds.get(semanticKey);
+    if (existing) return existing;
+    const id = createId();
+    candidateIds.set(semanticKey, id);
+    return id;
+  }
 
   async function transition(
     observation: { outcome: string; facts: Array<Record<string, unknown>> },
   ) {
     state = applyConversationObservation(state, observation) as ControllerState;
     const candidates: AgentCandidateFact[] = observation.facts.map((fact) => ({
-      id: createId(),
+      id: candidateId(fact),
       key: fact.key as AgentCandidateFact["key"],
       sourceTurnIds: [],
       ...(fact.topic === undefined ? {} : { topic: String(fact.topic) }),
@@ -118,14 +170,19 @@ export function createGettingToKnowYouTask({
       description:
         "Record only facts directly stated by the child, then get the next bounded objective.",
       parameters: z.object({
-        facts: z.array(candidateFactSchema).min(1).max(5),
+        facts: z.array(candidateFactToolSchema).min(1).max(5),
         nextInterestTopic: z
           .enum(["activities", "animals", "cartoons", "food", "music", "stories"])
           .nullable(),
         outcome: z.literal("answered"),
       }),
       execute: async ({ facts, outcome }) =>
-        transition({ outcome, facts: facts as Array<Record<string, unknown>> }),
+        transition({
+          outcome,
+          facts: facts.map(normalizeToolCandidateFact) as Array<
+            Record<string, unknown>
+          >,
+        }),
     }),
     llm.tool({
       name: "markObjectiveUnanswered",
@@ -175,7 +232,7 @@ export function createGettingToKnowYouTask({
     instructions: ONBOARDING_AGENT_INSTRUCTIONS,
     tools,
     onEnter(ctx) {
-      completeTask = ctx.complete;
+      completeTask = (result) => ctx.complete(result);
       ctx.session.generateReply({
         allowInterruptions: true,
         instructions:

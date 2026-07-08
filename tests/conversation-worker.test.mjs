@@ -348,6 +348,59 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("keeps a terminal conversation stopped when a final assistant turn arrives late", async () => {
+    const state = createSeededDatabase();
+    try {
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+      );
+      const { conversation } = await started.json();
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+
+      const ended = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "child_stopped", status: "stopped" },
+        agentOptions,
+      );
+      assert.equal(ended.status, 200);
+
+      const finalTurn = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/turns`,
+        "POST",
+        {
+          providerItemId: "provider-assistant-final",
+          sequence: 0,
+          role: "assistant",
+          text: "Thanks for chatting with me!",
+          language: "en",
+          inputMode: "voice",
+          interrupted: false,
+        },
+        agentOptions,
+      );
+      assert.equal(finalTurn.status, 201);
+
+      const stored = state.sqlite
+        .prepare(
+          "SELECT status, finish_reason, ended_at FROM conversation_session WHERE id = ?",
+        )
+        .get(conversation.id);
+      assert.equal(stored.status, "stopped");
+      assert.equal(stored.finish_reason, "child_stopped");
+      assert.notEqual(stored.ended_at, null);
+    } finally {
+      state.close();
+    }
+  });
+
   it("reviews bounded facts, updates the canonical profile, and completes onboarding", async () => {
     const state = createSeededDatabase();
     try {

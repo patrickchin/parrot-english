@@ -16,12 +16,23 @@ Inference. Each conversation can incur agent compute plus usage for:
 
 - `elevenlabs/scribe_v2_realtime` speech recognition;
 - `openai/gpt-4.1-mini` language-model tokens; and
-- `elevenlabs/eleven_v3` speech synthesis with voice
-  `Oqy85UMasXzUjUxF0ta5`.
+- `inworld/inworld-tts-2` speech synthesis with the upbeat British voice
+  `Olivia`, with `cartesia/sonic-3` as a managed cross-provider fallback.
 
 Confirm that all three model/voice combinations are enabled in the target
 LiveKit project before enabling the flag. The voice is character-directed; do
 not replace it with an exact protected-character voice clone.
+
+The first production smoke test rejected ElevenLabs v3 for realtime use: the
+model is deprecated in LiveKit Inference and its WebSocket stream repeatedly
+errored after partial audio. Saved Chinese assets still follow the repository's
+ElevenLabs rule; the realtime agent uses Inworld through LiveKit Inference and
+falls back to Cartesia when a provider stream is unavailable.
+
+The current agent is deployed in `us-east`. The same managed TTS models worked
+from a direct project-credential check but failed inside the initial `ap-south`
+Cloud agent, so retain this region while that provider-path difference remains
+unexplained.
 
 ## Local verification
 
@@ -90,7 +101,7 @@ later versions from the repository root:
 
 ```bash
 lk cloud auth
-lk agent create --secrets-file=.env.livekit
+lk agent create --region us-east --secrets-file=.env.livekit
 lk agent deploy
 ```
 
@@ -102,8 +113,8 @@ CONVERSATION_INGEST_URL=https://your-worker.example.com
 CONVERSATION_AGENT_SECRET=the-same-random-worker-secret
 AGENT_STT_MODEL=elevenlabs/scribe_v2_realtime
 AGENT_LLM_MODEL=openai/gpt-4.1-mini
-AGENT_TTS_MODEL=elevenlabs/eleven_v3
-AGENT_TTS_VOICE_ID=Oqy85UMasXzUjUxF0ta5
+AGENT_TTS_MODEL=inworld/inworld-tts-2
+AGENT_TTS_VOICE_ID=Olivia
 ```
 
 LiveKit excludes environment files from the build context and injects secrets

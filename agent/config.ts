@@ -1,8 +1,8 @@
 export const DEFAULT_AGENT_MODELS = {
   llm: "openai/gpt-4.1-mini",
   stt: "elevenlabs/scribe_v2_realtime",
-  tts: "elevenlabs/eleven_v3",
-  ttsVoiceId: "Oqy85UMasXzUjUxF0ta5",
+  tts: "inworld/inworld-tts-2",
+  ttsVoiceId: "Olivia",
 } as const;
 
 export type AgentConfig = {
