@@ -135,10 +135,15 @@ export async function handleConversationRequest(
         input.identity,
         ONBOARDING_SCENARIO,
       );
+      const initialState = JSON.parse(conversation.controllerState) as Record<
+        string,
+        unknown
+      >;
       const participantToken = await dependencies.createParticipantToken({
         env: input.env,
         conversation,
         identity: input.identity,
+        initialState,
         now: dependencies.now(),
       });
       return json(

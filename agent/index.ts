@@ -21,6 +21,7 @@ import {
   ONBOARDING_AGENT_INSTRUCTIONS,
   createGettingToKnowYouTask,
 } from "./onboarding-scenario.ts";
+import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
 
 export function parseConversationParticipantMetadata(metadata: string) {
   let value: unknown;
@@ -40,7 +41,46 @@ export function parseConversationParticipantMetadata(metadata: string) {
   ) {
     throw new Error("Participant metadata must contain conversationId.");
   }
-  return conversationId.trim();
+  const profile = (value as Record<string, unknown>).onboardingProfile;
+  if (profile !== undefined && (
+    profile === null ||
+    typeof profile !== "object" ||
+    Array.isArray(profile)
+  )) {
+    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+  }
+  const profileRecord = (profile ?? {}) as Record<string, unknown>;
+  const profileName = profileRecord.name;
+  const profileAge = profileRecord.age;
+  const profileSummary = profileRecord.summary;
+  if (
+    profileName !== undefined &&
+    profileName !== null &&
+    (typeof profileName !== "string" || !profileName.trim() || profileName.length > 120)
+  ) {
+    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+  }
+  if (
+    profileAge !== undefined &&
+    profileAge !== null &&
+    (!Number.isSafeInteger(profileAge) || Number(profileAge) < 0)
+  ) {
+    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+  }
+  if (
+    profileSummary !== undefined &&
+    (typeof profileSummary !== "string" || profileSummary.length > 2_000)
+  ) {
+    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+  }
+  return {
+    conversationId: conversationId.trim(),
+    initialState: createOnboardingConversationState({
+      profileAge,
+      profileName,
+      profileSummary,
+    }),
+  };
 }
 
 export function createAgentModels(config: AgentConfig) {
@@ -186,12 +226,15 @@ export const agentDefinition = defineAgent({
 
     await ctx.connect();
     const participant = await ctx.waitForParticipant();
-    const conversationId = parseConversationParticipantMetadata(participant.metadata);
+    const { conversationId, initialState } = parseConversationParticipantMetadata(
+      participant.metadata,
+    );
     const persistence = createTranscriptPersistence({ conversationId, ingest });
 
     const task = createGettingToKnowYouTask({
       conversationId,
       ingest,
+      initialState,
       onEnded: persistence.markEnded,
     });
     const rootAgent = voice.Agent.create({

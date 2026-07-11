@@ -135,7 +135,7 @@ export function useConversationOnboarding({
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
   const [candidates, setCandidates] = useState<ConversationSurfaceCandidate[]>([]);
   const [typedValue, setTypedValue] = useState("");
-  const [microphoneEnabled, setMicrophoneEnabled] = useState(true);
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [error, setError] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -143,6 +143,9 @@ export function useConversationOnboarding({
   const operationRef = useRef(0);
   const autoStartRef = useRef(false);
   const completingConversationRef = useRef<string | null>(null);
+  const transportReadyRef = useRef(false);
+  const openingHeardRef = useRef(false);
+  const learnerTurnOpenRef = useRef(false);
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
@@ -187,11 +190,44 @@ export function useConversationOnboarding({
     [isCurrent, onCompleted],
   );
 
+  const openLearnerTurn = useCallback(
+    async (operation: number) => {
+      if (
+        !isCurrent(operation) ||
+        !transportReadyRef.current ||
+        !openingHeardRef.current ||
+        learnerTurnOpenRef.current ||
+        !transportRef.current
+      ) {
+        return;
+      }
+      learnerTurnOpenRef.current = true;
+      try {
+        await transportRef.current.setMicrophoneEnabled(true);
+        if (!isCurrent(operation)) return;
+        setMicrophoneEnabled(true);
+        setStatus("listening");
+      } catch (microphoneError) {
+        learnerTurnOpenRef.current = false;
+        if (!isCurrent(operation)) return;
+        setError(readableError(microphoneError));
+        setStatus("error");
+      }
+    },
+    [isCurrent],
+  );
+
   const handleTransportEvent = useCallback(
     (event: ConversationTransportEvent, id: string, operation: number) => {
       if (!isCurrent(operation)) return;
       if (event.type === "state") {
-        setStatus(event.state === "connected" ? "listening" : event.state);
+        setStatus(
+          event.state === "connected"
+            ? learnerTurnOpenRef.current
+              ? "listening"
+              : "connecting"
+            : event.state,
+        );
         return;
       }
       if (event.type === "disconnected") {
@@ -210,10 +246,17 @@ export function useConversationOnboarding({
           entryIndex === index ? turn : entry,
         );
       });
-      if (event.role === "assistant") setStatus("speaking");
-      else if (event.final) setStatus("listening");
+      if (event.role === "assistant") {
+        if (!learnerTurnOpenRef.current && event.final) {
+          openingHeardRef.current = true;
+          void openLearnerTurn(operation);
+        }
+        if (learnerTurnOpenRef.current) setStatus("speaking");
+      } else if (event.final) {
+        setStatus("listening");
+      }
     },
-    [isCurrent, loadSummary],
+    [isCurrent, loadSummary, openLearnerTurn],
   );
 
   const start = useCallback(async () => {
@@ -223,7 +266,11 @@ export function useConversationOnboarding({
     setStatus("connecting");
     setTurns([]);
     setCandidates([]);
+    setMicrophoneEnabled(false);
     completingConversationRef.current = null;
+    transportReadyRef.current = false;
+    openingHeardRef.current = false;
+    learnerTurnOpenRef.current = false;
     try {
       const started = await startConversation();
       if (!isCurrent(operation)) return;
@@ -242,15 +289,18 @@ export function useConversationOnboarding({
         await transport.disconnect();
         return;
       }
-      await transport.setMicrophoneEnabled(true);
-      setMicrophoneEnabled(true);
-      setStatus("listening");
+      await transport.setMicrophoneEnabled(false);
+      if (!isCurrent(operation)) return;
+      transportReadyRef.current = true;
+      setMicrophoneEnabled(false);
+      setStatus("connecting");
+      await openLearnerTurn(operation);
     } catch (startError) {
       if (!isCurrent(operation)) return;
       setError(readableError(startError));
       setStatus("error");
     }
-  }, [createTransport, handleTransportEvent, isCurrent]);
+  }, [createTransport, handleTransportEvent, isCurrent, openLearnerTurn]);
 
   const finish = useCallback(async () => {
     if (!conversationId) return;
@@ -281,7 +331,7 @@ export function useConversationOnboarding({
 
   const sendText = useCallback(async () => {
     const value = typedValue.trim();
-    if (!value || !transportRef.current) return;
+    if (!value || !transportRef.current || !learnerTurnOpenRef.current) return;
     try {
       await transportRef.current.sendText(value);
       setTurns((current) => [
@@ -296,7 +346,7 @@ export function useConversationOnboarding({
   }, [typedValue]);
 
   const toggleMicrophone = useCallback(async () => {
-    if (!transportRef.current) return;
+    if (!transportRef.current || !learnerTurnOpenRef.current) return;
     const enabled = !microphoneEnabled;
     try {
       await transportRef.current.setMicrophoneEnabled(enabled);
@@ -377,6 +427,9 @@ export function useConversationOnboarding({
     operationRef.current += 1;
     autoStartRef.current = false;
     completingConversationRef.current = null;
+    transportReadyRef.current = false;
+    openingHeardRef.current = false;
+    learnerTurnOpenRef.current = false;
     const activeConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
@@ -386,7 +439,7 @@ export function useConversationOnboarding({
     setTurns([]);
     setCandidates([]);
     setTypedValue("");
-    setMicrophoneEnabled(true);
+    setMicrophoneEnabled(false);
     setError("");
     void transport?.disconnect();
     if (activeConversationId) {
@@ -401,6 +454,9 @@ export function useConversationOnboarding({
       operationRef.current += 1;
       autoStartRef.current = false;
       completingConversationRef.current = null;
+      transportReadyRef.current = false;
+      openingHeardRef.current = false;
+      learnerTurnOpenRef.current = false;
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();

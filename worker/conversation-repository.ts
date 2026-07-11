@@ -169,7 +169,33 @@ export function createConversationRepository(
     const id = createId();
     const timestamp = now();
     const roomName = `conversation-${id}`;
-    const controllerState = createOnboardingConversationState();
+    const [storedProfile] = await database
+      .select()
+      .from(learnerProfile)
+      .where(eq(learnerProfile.authUserId, identity.userId))
+      .limit(1);
+    let controllerState = createOnboardingConversationState();
+    if (storedProfile) {
+      const readableProfile = ensureV2Profile(
+        storedProfile,
+        ONBOARDING_QUESTIONNAIRE,
+        { forProfileEdit: true },
+      );
+      const answers = readV2Answers(readableProfile);
+      const completed = storedProfile.onboardingStatus === "completed";
+      controllerState = createOnboardingConversationState({
+        profileName:
+          completed || Object.hasOwn(answers.responses, "name")
+            ? storedProfile.name
+            : null,
+        profileAge:
+          completed || Object.hasOwn(answers.responses, "age")
+            ? storedProfile.age
+            : null,
+        profileSummary:
+          typeof answers.description === "string" ? answers.description : "",
+      });
+    }
     await database.insert(conversationSession).values({
       id,
       authUserId: identity.userId,

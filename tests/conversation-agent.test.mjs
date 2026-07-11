@@ -232,7 +232,7 @@ describe("bounded onboarding agent contract", () => {
     assert.match(opening.instructions, /Mia/);
     assert.match(opening.instructions, /fast red cars/);
     assert.match(opening.instructions, /already know|remember/i);
-    assert.doesNotMatch(opening.instructions, /ask their name/i);
+    assert.match(opening.instructions, /Do not ask their name or age/i);
     assert.match(task._instructions, /Mia/);
     assert.match(task._instructions, /fast red cars/);
   });

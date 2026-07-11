@@ -568,6 +568,17 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         },
       }),
     );
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello again, Mia!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
     await waitFor(() =>
       assert.equal(
         document.querySelector('output[aria-label="Conversation status"]')

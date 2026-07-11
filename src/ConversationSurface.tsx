@@ -134,6 +134,7 @@ export function ConversationSurface({
   }
 
   const saving = status === "saving";
+  const waitingForPeppa = status === "connecting";
   const speech = latestAssistantSpeech(turns) ??
     (status === "connecting"
       ? "Hello! Here I come…"
@@ -167,6 +168,7 @@ export function ConversationSurface({
           <button
             aria-pressed={!microphoneEnabled}
             className="conversation-secondary-button"
+            disabled={waitingForPeppa}
             onClick={onToggleMicrophone}
             type="button"
           >
@@ -195,12 +197,17 @@ export function ConversationSurface({
           <form className="conversation-text-form" onSubmit={submitTypedAnswer}>
             <input
               aria-label="Type your answer"
+              disabled={waitingForPeppa}
               maxLength={1_000}
               onChange={(event) => onTypedValueChange(event.currentTarget.value)}
               placeholder="Type an answer here"
               value={typedValue}
             />
-            <button className="conversation-send-button" type="submit">
+            <button
+              className="conversation-send-button"
+              disabled={waitingForPeppa}
+              type="submit"
+            >
               Send
             </button>
           </form>

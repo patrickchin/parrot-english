@@ -15,6 +15,7 @@ type TokenInput = {
   env: LiveKitTokenEnv;
   conversation: { id: string; roomName: string };
   identity: OnboardingIdentity;
+  initialState?: Record<string, unknown>;
   now?: Date;
 };
 
@@ -27,6 +28,7 @@ export async function createLiveKitParticipantToken({
   env,
   conversation,
   identity,
+  initialState,
 }: TokenInput) {
   const token = new AccessToken(
     required(env.LIVEKIT_API_KEY, "LIVEKIT_API_KEY"),
@@ -35,6 +37,11 @@ export async function createLiveKitParticipantToken({
       identity: `learner:${identity.userId}:${conversation.id}`,
       metadata: JSON.stringify({
         conversationId: conversation.id,
+        onboardingProfile: {
+          age: initialState?.profileAge ?? null,
+          name: initialState?.profileName ?? null,
+          summary: initialState?.profileSummary ?? "",
+        },
         scenarioKey: "onboarding",
       }),
       ttl: "10m",
