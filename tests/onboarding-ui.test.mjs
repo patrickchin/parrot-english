@@ -400,7 +400,7 @@ describe("profile summary editor", () => {
     const cancel = html.match(/<button[^>]*>Cancel<\/button>/)?.[0];
     const save = html.match(/<button[^>]*>Save changes<\/button>/)?.[0];
     const redo = html.match(
-      /<button[^>]*>Chat with your pig pal again<\/button>/,
+      /<button[^>]*>Chat with Peppa again<\/button>/,
     )?.[0];
 
     assert.doesNotMatch(html, /<fieldset disabled="">/);
@@ -428,7 +428,7 @@ describe("profile summary editor", () => {
       html.match(/<button[^>]*aria-label="Close profile editor"[^>]*>/)?.[0],
       html.match(/<button[^>]*>Cancel<\/button>/)?.[0],
       html.match(
-        /<button[^>]*>Chat with your pig pal again<\/button>/,
+        /<button[^>]*>Chat with Peppa again<\/button>/,
       )?.[0],
       html.match(/<button[^>]*>Saving…<\/button>/)?.[0],
     ];
@@ -986,8 +986,8 @@ describe("onboarding and profile gate", () => {
     });
     assert.match(html, /Edit profile/);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
-    assert.equal((html.match(/<textarea/g) ?? []).length, 0);
-    assert.match(html, /Chat with your pig pal again/);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 1);
+    assert.match(html, /Chat with Peppa again/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
   });

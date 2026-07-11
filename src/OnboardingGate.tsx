@@ -836,6 +836,7 @@ export function OnboardingGate({
       const answers = {
         name: profileDrafts.name ?? "",
         age: profileDrafts.age ?? "",
+        description: profileDrafts.description ?? "",
       };
       const saved = await saveProfileAnswers(answers, {
         signal: controller.signal,

@@ -440,11 +440,39 @@ async function saveProfileAnswers({
   });
   const fieldErrors: Record<string, string> = Object.create(null);
   const knownKeys = new Set(
-    ONBOARDING_QUESTIONNAIRE.questions.map((question) => question.answerKey)
+    [
+      ...ONBOARDING_QUESTIONNAIRE.questions.map((question) => question.answerKey),
+      "description",
+    ]
   );
   for (const answerKey of Object.keys(answers)) {
     if (!knownKeys.has(answerKey)) {
       fieldErrors[answerKey] = "This question is no longer available.";
+    }
+  }
+
+  let descriptionChanged = false;
+  if ("description" in answers) {
+    const submittedDescription = answers.description;
+    if (typeof submittedDescription !== "string") {
+      fieldErrors.description = "Please enter a description.";
+    } else if (submittedDescription.length > 2_000) {
+      fieldErrors.description = "Please use 2000 characters or fewer.";
+    } else {
+      const description = submittedDescription.trim();
+      const envelope = readV2Answers(updated);
+      const currentDescription =
+        typeof envelope.description === "string" ? envelope.description : "";
+      if (description !== currentDescription) {
+        updated = {
+          ...updated,
+          answersJson: JSON.stringify({
+            ...envelope,
+            description: description || null,
+          }),
+        };
+        descriptionChanged = true;
+      }
     }
   }
 
@@ -514,7 +542,7 @@ async function saveProfileAnswers({
   }
 
   let storedProfile = profile;
-  if (changed.length > 0) {
+  if (changed.length > 0 || descriptionChanged) {
     await repository.saveAnswer(profile.id, {
       age: updated.age,
       answersJson: updated.answersJson,

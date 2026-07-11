@@ -86,28 +86,43 @@ export function ProfileEditorView({
               </p>
             ) : null}
 
-            <section
-              aria-label="Profile description"
-              className="profile-description"
-            >
-              <h2>
+            <label className="profile-basic-field" htmlFor="profile-description">
+              <span>
                 About {(drafts.name ?? "").trim() || "this learner"}
-              </h2>
-              <p>
-                {(drafts.description ?? "").trim() ||
-                  "Chat with Peppa and a little description will appear here."}
+              </span>
+              <textarea
+                id="profile-description"
+                maxLength={2_000}
+                onChange={(event) =>
+                  onValueChange("description", event.currentTarget.value)
+                }
+                placeholder="Add a short description"
+                rows={4}
+                value={drafts.description ?? ""}
+              />
+            </label>
+            {fieldErrors.description ? (
+              <p className="onboarding-field-error" role="alert">
+                {fieldErrors.description}
               </p>
-            </section>
+            ) : null}
           </fieldset>
 
-          <button
-            className="profile-chat-button"
-            disabled={isSaving}
-            onClick={onRedoOnboarding}
-            type="button"
-          >
-            Chat with your pig pal again
-          </button>
+          <div className="profile-chat-row">
+            <img
+              alt="Peppa smiling"
+              className="profile-chat-peppa"
+              src="/assets/characters/peppa/peppa-happy.webp"
+            />
+            <button
+              className="profile-chat-button"
+              disabled={isSaving}
+              onClick={onRedoOnboarding}
+              type="button"
+            >
+              Chat with Peppa again
+            </button>
+          </div>
 
           {pageError ? (
             <p className="onboarding-field-error" role="alert">

@@ -417,7 +417,8 @@ select:focus-visible {
   font-weight: 900;
 }
 
-.profile-basic-field input {
+.profile-basic-field input,
+.profile-basic-field textarea {
   width: 100%;
   min-height: 52px;
   border: 3px solid #a9d5e8;
@@ -428,34 +429,29 @@ select:focus-visible {
   font-weight: 800;
 }
 
-.profile-description {
-  display: grid;
-  gap: 8px;
-  border-radius: 18px;
-  background: #eef8fc;
-  padding: 16px;
+.profile-basic-field textarea {
+  min-height: 112px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
-.profile-description h2,
-.profile-description p {
-  margin: 0;
+.profile-chat-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
 }
 
-.profile-description h2 {
-  color: #173c67;
-  font-size: 1.05rem;
-}
-
-.profile-description p {
-  color: #355875;
-  font-weight: 700;
-  line-height: 1.55;
+.profile-chat-peppa {
+  width: 82px;
+  height: 82px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .profile-chat-button {
   width: 100%;
   min-height: 46px;
-  margin-top: 24px;
   border: 0;
   border-radius: 15px;
   background: #ff467b;
