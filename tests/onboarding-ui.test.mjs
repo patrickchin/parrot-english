@@ -354,10 +354,10 @@ describe("profile summary editor", () => {
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
-    assert.match(html, /<input[^>]*id="profile-age"[^>]*type="number"/);
+    assert.match(html, /<input[^>]*id="profile-age"[^>]*type="text"/);
     assert.doesNotMatch(
       html,
-      /<input[^>]*id="profile-age"[^>]*(?:min="3"|max="17")/,
+      /<input[^>]*id="profile-age"[^>]*(?:inputmode="numeric"|min="3"|max="17")/,
     );
     assert.match(html, /value="Mia"/);
     assert.match(html, /value="30"/);

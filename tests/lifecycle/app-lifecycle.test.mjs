@@ -753,6 +753,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Edit learner profile"));
     await waitFor(() => text(/Edit profile/));
     await input(document.querySelector("#profile-name"), "Maya");
+    await input(document.querySelector("#profile-age"), "almost nine");
     await input(
       document.querySelector("#profile-description"),
       "Maya is eight and loves drawing dragons.",
@@ -763,7 +764,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         answers: {
           name: "Maya",
-          age: "8",
+          age: "almost nine",
           description: "Maya is eight and loves drawing dragons.",
         },
       },
