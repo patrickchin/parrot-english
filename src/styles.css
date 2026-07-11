@@ -2264,7 +2264,10 @@ select:focus-visible {
 
 .conversation-primary-button,
 .conversation-send-button,
-.conversation-secondary-button {
+.conversation-secondary-button,
+.conversation-microphone-button,
+.conversation-retry-button,
+.conversation-finish-button {
   min-height: 48px;
   border: 0;
   border-radius: 17px;
@@ -2298,10 +2301,12 @@ select:focus-visible {
 .conversation-primary-button:focus-visible,
 .conversation-send-button:focus-visible,
 .conversation-secondary-button:focus-visible,
+.conversation-microphone-button:focus-visible,
+.conversation-retry-button:focus-visible,
+.conversation-finish-button:focus-visible,
 .conversation-link-button:focus-visible,
 .conversation-type-panel summary:focus-visible,
 .conversation-info-panel summary:focus-visible,
-.conversation-debug-transcript summary:focus-visible,
 .conversation-candidate input:focus-visible,
 .conversation-candidate textarea:focus-visible,
 .conversation-candidate select:focus-visible,
@@ -2335,13 +2340,47 @@ select:focus-visible {
 }
 
 .conversation-state {
+  display: inline-flex;
   margin: 0;
+  align-items: center;
+  gap: 8px;
   border-radius: 999px;
   background: rgb(255 255 255 / 82%);
   color: #315f89;
   padding: 6px 12px;
   font-size: 0.88rem;
   font-weight: 850;
+}
+
+.conversation-state > span {
+  width: 9px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: #087451;
+  box-shadow: 0 0 0 4px rgb(8 116 81 / 14%);
+}
+
+.conversation-state--speaking > span,
+.conversation-state--connecting > span,
+.conversation-state--reconnecting > span {
+  background: #ffb800;
+  box-shadow: 0 0 0 4px rgb(255 184 0 / 16%);
+}
+
+.conversation-state--error > span {
+  background: #b92259;
+  box-shadow: 0 0 0 4px rgb(185 34 89 / 14%);
+}
+
+.conversation-error {
+  width: min(100%, 560px);
+  margin: 0;
+  border-radius: 14px;
+  background: #ffe2eb;
+  color: #8c1845;
+  padding: 10px 14px;
+  font-weight: 850;
+  text-align: center;
 }
 
 .conversation-speech-bubble {
@@ -2384,44 +2423,38 @@ select:focus-visible {
   list-style: none;
 }
 
-.conversation-type-panel,
-.conversation-info-panel,
-.conversation-debug-transcript {
+.conversation-type-panel {
   width: min(100%, 560px);
   border: 2px solid rgb(255 255 255 / 72%);
   border-radius: 15px;
-  background: rgb(255 255 255 / 78%);
+  background: rgb(255 255 255 / 72%);
   padding: 9px 12px;
   color: #315f89;
 }
 
-.conversation-type-panel summary,
-.conversation-info-panel summary,
-.conversation-debug-transcript summary {
+.conversation-type-panel summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   cursor: pointer;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 900;
   text-align: center;
 }
 
-.conversation-type-panel[open],
-.conversation-info-panel[open],
-.conversation-debug-transcript[open] {
+.conversation-type-panel summary svg {
+  width: 20px;
+  height: 20px;
+}
+
+.conversation-type-panel[open] {
   background: rgb(255 255 255 / 96%);
 }
 
-.conversation-info-panel p {
+.conversation-type-panel .conversation-text-form {
   margin-top: 10px;
-  font-size: 0.9rem;
-}
-
-.conversation-type-panel .conversation-text-form,
-.conversation-debug-transcript .conversation-transcript {
-  margin-top: 10px;
-}
-
-.conversation-debug-transcript .conversation-transcript {
-  max-height: 220px;
 }
 
 .conversation-turn {
@@ -2486,6 +2519,61 @@ select:focus-visible {
   justify-content: center;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.conversation-actions {
+  display: grid;
+  width: min(100%, 560px);
+  justify-items: center;
+  gap: 12px;
+}
+
+.conversation-microphone-button {
+  background: #ff467b;
+  color: #fff;
+}
+
+.conversation-microphone-button,
+.conversation-retry-button {
+  display: inline-flex;
+  min-width: min(100%, 280px);
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 24px;
+  box-shadow: 0 6px 0 #b92259;
+  font-size: 1.05rem;
+}
+
+.conversation-retry-button {
+  background: #ff467b;
+  color: #fff;
+}
+
+.conversation-microphone-button svg,
+.conversation-retry-button svg,
+.conversation-finish-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.conversation-microphone-button:disabled {
+  cursor: wait;
+  filter: saturate(0.45);
+  opacity: 0.68;
+}
+
+.conversation-finish-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  color: #315f89;
+  padding: 0 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .conversation-secondary-button {
@@ -2554,6 +2642,12 @@ select:focus-visible {
   }
 
   .conversation-candidate select {
+    width: 100%;
+  }
+
+  .conversation-microphone-button,
+  .conversation-retry-button,
+  .conversation-type-panel {
     width: 100%;
   }
 }

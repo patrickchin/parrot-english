@@ -13,26 +13,27 @@ export function validateAuthForm(
   fields: AuthFields,
 ): string | null {
   if (mode === "sign-up" && !fields.name.trim()) {
-    return "请输入名字。";
+    return "Enter your name.";
   }
 
   if (!EMAIL_PATTERN.test(fields.email.trim())) {
-    return "请输入有效的邮箱地址。";
+    return "Enter a valid email address.";
   }
 
   if (fields.password.length < 8) {
-    return "密码至少需要 8 个字符。";
+    return "Password must be at least 8 characters.";
   }
 
   return null;
 }
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  USER_ALREADY_EXISTS: "这个邮箱已经注册，请直接登录。",
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "这个邮箱已经注册，请直接登录。",
-  INVALID_EMAIL_OR_PASSWORD: "邮箱或密码不正确。",
-  INVALID_EMAIL: "请输入有效的邮箱地址。",
-  PASSWORD_TOO_SHORT: "密码至少需要 8 个字符。",
+  USER_ALREADY_EXISTS: "This email is already registered. Sign in instead.",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:
+    "This email is already registered. Sign in instead.",
+  INVALID_EMAIL_OR_PASSWORD: "The email or password is incorrect.",
+  INVALID_EMAIL: "Enter a valid email address.",
+  PASSWORD_TOO_SHORT: "Password must be at least 8 characters.",
 };
 
 export function getAuthErrorMessage(error: unknown): string {
@@ -44,8 +45,8 @@ export function getAuthErrorMessage(error: unknown): string {
   ) {
     return Object.hasOwn(AUTH_ERROR_MESSAGES, error.code)
       ? AUTH_ERROR_MESSAGES[error.code]
-      : "暂时无法登录，请稍后再试。";
+      : "Unable to sign you in. Please try again.";
   }
 
-  return "暂时无法登录，请稍后再试。";
+  return "Unable to sign you in. Please try again.";
 }

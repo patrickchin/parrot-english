@@ -147,7 +147,7 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /aria-label="Edit About this learner"/);
     assert.doesNotMatch(html, /<textarea/);
     assert.doesNotMatch(html, /Save and continue|Keep this|Leave this out/);
-    assert.doesNotMatch(html, /Debug transcript|How old are you\?|I am seven\./);
+    assert.doesNotMatch(html, /Debug transcript|I am seven\./);
   });
 
   it("gives primary, secondary, and exit actions distinct visual hierarchy", () => {
