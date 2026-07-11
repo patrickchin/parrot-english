@@ -61,17 +61,17 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /About this chat/);
   });
 
-  it("waits for Peppa's opening before enabling learner input", () => {
+  it("makes joining unmistakable before Peppa enables learner input", () => {
     const connecting = render({ status: "connecting", microphoneEnabled: false });
+    assert.match(connecting, /class="conversation-joining-notice"/);
+    assert.match(connecting, /Joining Peppa/);
+    assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
+    assert.doesNotMatch(connecting, /conversation-microphone-button/);
+    assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
     assert.match(
-      connecting,
-      /<button[^>]+class="conversation-microphone-button"[^>]+disabled=""[\s\S]*Turn microphone on[\s\S]*<\/button>/,
+      styles,
+      /\.conversation-joining-notice\s*\{[^}]*background:\s*#173c67[^}]*color:\s*#fff/s,
     );
-    assert.match(
-      connecting,
-      /<input[^>]+aria-label="Type your answer"[^>]+disabled=""/i,
-    );
-    assert.match(connecting, /<button[^>]+disabled=""[^>]*>Send<\/button>/);
   });
 
   it("keeps typed answers and stop controls available after Peppa opens", () => {
