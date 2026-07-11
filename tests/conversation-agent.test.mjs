@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { initializeLogger, llm } from "@livekit/agents";
+import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
 import {
   DEFAULT_AGENT_MODELS,
   readAgentConfig,
@@ -64,11 +65,32 @@ describe("LiveKit agent configuration", () => {
         voice: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
       },
     ]);
-    assert.equal(
+    assert.deepEqual(
       parseConversationParticipantMetadata(
-        JSON.stringify({ conversationId: "conversation-1" }),
+        JSON.stringify({
+          conversationId: "conversation-1",
+          onboardingProfile: {
+            age: 30,
+            name: "Mia",
+            summary: "Mia is thirty and loves fast red cars.",
+          },
+        }),
       ),
-      "conversation-1",
+      {
+        conversationId: "conversation-1",
+        initialState: {
+          phase: "optional",
+          activeObjective: "interest",
+          rephraseCount: { name: 0, age: 0, interest: 0 },
+          optionalExchangeCount: 0,
+          profileSummary: "Mia is thirty and loves fast red cars.",
+          profileName: "Mia",
+          profileAge: 30,
+          learnedName: true,
+          learnedAge: true,
+          finishReason: null,
+        },
+      },
     );
     assert.throws(
       () => parseConversationParticipantMetadata("{}"),
@@ -183,6 +205,36 @@ describe("bounded onboarding agent contract", () => {
     );
 
     assert.deepEqual(completed, [{ finishReason: "child_stopped" }]);
+  });
+
+  it("speaks first without interruption and greets a returning learner from saved context", async () => {
+    let opening;
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest(),
+      initialState: createOnboardingConversationState({
+        profileAge: 30,
+        profileName: "Mia",
+        profileSummary: "Mia is thirty and loves fast red cars.",
+      }),
+    });
+
+    await task.hookAdapter.hooks.onEnter({
+      complete() {},
+      session: {
+        generateReply(options) {
+          opening = options;
+        },
+      },
+    });
+
+    assert.equal(opening.allowInterruptions, false);
+    assert.match(opening.instructions, /Mia/);
+    assert.match(opening.instructions, /fast red cars/);
+    assert.match(opening.instructions, /already know|remember/i);
+    assert.doesNotMatch(opening.instructions, /ask their name/i);
+    assert.match(task._instructions, /Mia/);
+    assert.match(task._instructions, /fast red cars/);
   });
 
   it("uses four constrained tools and asks for a natural prose paragraph", () => {

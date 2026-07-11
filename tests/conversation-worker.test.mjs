@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { describe, it } from "node:test";
+import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
 import { createDatabase } from "../worker/database.ts";
 import {
   handleConversationRequest,
@@ -253,6 +254,60 @@ describe("conversation persistence and API", () => {
           .get().count,
         1,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("seeds redo onboarding and its signed agent handoff from the saved profile", async () => {
+    const state = createSeededDatabase();
+    const tokenCalls = [];
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          "profile-1",
+          "user-1",
+          "Mia",
+          30,
+          JSON.stringify({
+            schemaVersion: 2,
+            questionnaireVersion: 2,
+            responses: {},
+            legacyAnswers: null,
+            description: "Mia is thirty and loves fast red cars.",
+          }),
+          "completed",
+          2_000,
+          1_000,
+          2_000,
+        );
+
+      const response = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        undefined,
+        {
+          async createParticipantToken(input) {
+            tokenCalls.push(input);
+            return "participant-token";
+          },
+        },
+      );
+      const payload = await response.json();
+
+      assert.equal(response.status, 201);
+      assert.equal(payload.conversation.controllerState.phase, "optional");
+      assert.equal(payload.conversation.controllerState.profileName, "Mia");
+      assert.equal(payload.conversation.controllerState.profileAge, 30);
+      assert.equal(
+        payload.conversation.controllerState.profileSummary,
+        "Mia is thirty and loves fast red cars.",
+      );
+      assert.deepEqual(tokenCalls[0].initialState, payload.conversation.controllerState);
     } finally {
       state.close();
     }
@@ -639,6 +694,11 @@ describe("LiveKit participant tokens", () => {
       },
       conversation: { id: "conversation-1", roomName: "onboarding-room-1" },
       identity,
+      initialState: createOnboardingConversationState({
+        profileAge: 30,
+        profileName: "Mia",
+        profileSummary: "Mia is thirty and loves fast red cars.",
+      }),
       now: new Date("2026-07-08T08:00:00.000Z"),
     });
     const [, encodedPayload] = token.split(".");
@@ -647,6 +707,11 @@ describe("LiveKit participant tokens", () => {
     assert.equal(payload.sub, "learner:user-1:conversation-1");
     assert.deepEqual(JSON.parse(payload.metadata), {
       conversationId: "conversation-1",
+      onboardingProfile: {
+        age: 30,
+        name: "Mia",
+        summary: "Mia is thirty and loves fast red cars.",
+      },
       scenarioKey: "onboarding",
     });
     assert.equal(payload.video.room, "onboarding-room-1");

@@ -443,14 +443,19 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("keeps a newly connected conversation transport alive when its ID is stored", async () => {
     let disconnectCalls = 0;
+    let listener = () => {};
+    const microphoneCalls = [];
     const transport = {
       async connect() {},
       async disconnect() {
         disconnectCalls += 1;
       },
       async sendText() {},
-      async setMicrophoneEnabled() {},
-      subscribe() {
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
         return () => {};
       },
     };
@@ -482,10 +487,23 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(
         document.querySelector('output[aria-label="Conversation status"]')
           .textContent,
-        "listening",
+        "connecting",
       ),
     );
 
+    assert.deepEqual(microphoneCalls, [false]);
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hi Mia! Lovely to see you again!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
   });
 

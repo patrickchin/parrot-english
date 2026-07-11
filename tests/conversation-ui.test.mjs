@@ -61,9 +61,21 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /About this chat/);
   });
 
-  it("keeps typed answers and stop controls available in every live state", () => {
+  it("waits for Peppa's opening before enabling learner input", () => {
+    const connecting = render({ status: "connecting", microphoneEnabled: false });
+    assert.match(
+      connecting,
+      /<button[^>]+disabled=""[^>]*>Microphone off<\/button>/,
+    );
+    assert.match(
+      connecting,
+      /<input[^>]+aria-label="Type your answer"[^>]+disabled=""/i,
+    );
+    assert.match(connecting, /<button[^>]+disabled=""[^>]*>Send<\/button>/);
+  });
+
+  it("keeps typed answers and stop controls available after Peppa opens", () => {
     for (const status of [
-      "connecting",
       "listening",
       "speaking",
       "reconnecting",

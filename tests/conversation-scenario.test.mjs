@@ -19,6 +19,27 @@ function answered(summary, learnedName, learnedAge, profileAge = 8) {
 }
 
 describe("bounded onboarding conversation", () => {
+  it("starts redo conversations from the confirmed saved profile", () => {
+    const state = createOnboardingConversationState({
+      profileAge: 30,
+      profileName: "Mia",
+      profileSummary: "Mia is thirty and loves fast red cars.",
+    });
+
+    assert.deepEqual(state, {
+      phase: "optional",
+      activeObjective: "interest",
+      rephraseCount: { name: 0, age: 0, interest: 0 },
+      optionalExchangeCount: 0,
+      profileSummary: "Mia is thirty and loves fast red cars.",
+      profileName: "Mia",
+      profileAge: 30,
+      learnedName: true,
+      learnedAge: true,
+      finishReason: null,
+    });
+  });
+
   it("tracks required details while storing only one cumulative prose summary", () => {
     const initial = createOnboardingConversationState();
     assert.equal(initial.activeObjective, "name");
