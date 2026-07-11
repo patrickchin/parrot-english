@@ -6,8 +6,8 @@ agent. The Worker owns Better Auth, D1 persistence, review, and short-lived room
 tokens. The agent owns speech recognition, the constrained conversation loop,
 speech synthesis, and finalized transcript ingest.
 
-The rollout flag defaults to off. Keep the form fallback available throughout
-preview and production rollout.
+Realtime onboarding is enabled in the production Worker configuration. Keep
+the form fallback available throughout production operation and rollback.
 
 ## Provider and cost dependencies
 
@@ -86,8 +86,8 @@ npx wrangler secret put LIVEKIT_API_SECRET
 npx wrangler secret put CONVERSATION_AGENT_SECRET
 ```
 
-`wrangler.jsonc` keeps `REALTIME_ONBOARDING_ENABLED` at `0`. Enable it only in a
-reviewed preview or production deployment after the agent smoke test.
+`wrangler.jsonc` keeps `REALTIME_ONBOARDING_ENABLED` at `1` for production.
+Set it to `0` and redeploy when rolling back the realtime experience.
 
 ## LiveKit Cloud agent
 
@@ -137,9 +137,9 @@ Before enabling the flag, authenticate as a test user and verify:
 7. D1 contains finalized user and assistant turns for completed and abandoned
    sessions, but no raw-audio payload. LiveKit starts with `record: false`.
 
-After the smoke test, deploy the Worker with
-`REALTIME_ONBOARDING_ENABLED=1`. Watch LiveKit agent logs, Worker errors, token
-issuance failures, D1 ingest conflicts, session duration, and model usage/cost.
+The production Worker deploys with `REALTIME_ONBOARDING_ENABLED=1`. After each
+deployment, watch LiveKit agent logs, Worker errors, token issuance failures,
+D1 ingest conflicts, session duration, and model usage/cost.
 
 ## Rollback
 
