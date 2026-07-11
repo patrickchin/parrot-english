@@ -80,8 +80,6 @@ export function ProfileEditorView({
               <input
                 id="profile-age"
                 inputMode="numeric"
-                max={17}
-                min={3}
                 onChange={(event) =>
                   onValueChange("age", event.currentTarget.value)
                 }

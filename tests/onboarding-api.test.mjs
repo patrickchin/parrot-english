@@ -150,7 +150,7 @@ describe("onboarding browser API", () => {
 
   it("throws safe field errors and propagates cancellation signals", async () => {
     const failed = jsonFetch(
-      { error: "invalid_answer", fieldError: "Please enter a number from 3 to 17." },
+      { error: "invalid_answer", fieldError: "Please enter a whole number." },
       400,
     );
     await assert.rejects(
@@ -159,7 +159,7 @@ describe("onboarding browser API", () => {
         assert.ok(error instanceof OnboardingApiError);
         assert.equal(error.status, 400);
         assert.equal(error.code, "invalid_answer");
-        assert.equal(error.message, "Please enter a number from 3 to 17.");
+        assert.equal(error.message, "Please enter a whole number.");
         return true;
       },
     );
@@ -175,7 +175,7 @@ describe("onboarding browser API", () => {
       {
         error: "invalid_profile",
         fieldErrors: {
-          age: "Please tell me your age using a number from 3 to 17.",
+          age: "Please tell me your age using a whole number.",
           ignored: 123,
         },
       },
@@ -191,7 +191,7 @@ describe("onboarding browser API", () => {
         assert.ok(error instanceof OnboardingApiError);
         assert.equal(error.code, "invalid_profile");
         assert.deepEqual(error.fieldErrors, {
-          age: "Please tell me your age using a number from 3 to 17.",
+          age: "Please tell me your age using a whole number.",
         });
         return true;
       },

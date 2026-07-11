@@ -139,8 +139,7 @@ export function createGettingToKnowYouTask({
         profileAge: z
           .number()
           .int()
-          .min(3)
-          .max(17)
+          .nonnegative()
           .nullable()
           .describe("The child's directly shared age, or null until known."),
         outcome: z.literal("answered"),

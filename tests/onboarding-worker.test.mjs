@@ -844,7 +844,7 @@ describe("onboarding persistence and API", () => {
             if (question.answerKey === "age") {
               return {
                 fieldError:
-                  "Please tell me your age using a number from 3 to 17.",
+                  "Please tell me your age using a whole number.",
               };
             }
             return {
@@ -871,7 +871,7 @@ describe("onboarding persistence and API", () => {
       ]);
       assert.equal(
         payload.fieldErrors.age,
-        "Please tell me your age using a number from 3 to 17.",
+        "Please tell me your age using a whole number.",
       );
       assert.equal(
         payload.fieldErrors.retired,

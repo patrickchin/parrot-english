@@ -96,9 +96,8 @@ function normalizeCandidate(candidate: CandidateFact) {
     };
   } else if (key === "age") {
     if (
-      !Number.isInteger(candidate.value) ||
-      (candidate.value as number) < 3 ||
-      (candidate.value as number) > 17
+      !Number.isSafeInteger(candidate.value) ||
+      (candidate.value as number) < 0
     ) {
       throw new ConversationRepositoryError(400, "invalid_facts");
     }
@@ -453,9 +452,7 @@ export function createConversationRepository(
       const profileAge = controllerState.profileAge;
       if (
         controllerState.learnedAge === true &&
-        (!Number.isInteger(profileAge) ||
-          (profileAge as number) < 3 ||
-          (profileAge as number) > 17)
+        (!Number.isSafeInteger(profileAge) || (profileAge as number) < 0)
       ) {
         throw new ConversationRepositoryError(400, "invalid_review");
       }
@@ -464,7 +461,7 @@ export function createConversationRepository(
         controllerState.learnedName === true &&
         controllerState.learnedAge === true &&
         profileName !== null &&
-        Number.isInteger(profileAge);
+        Number.isSafeInteger(profileAge);
       const nextState = {
         ...controllerState,
         profileSummary,
@@ -521,7 +518,7 @@ export function createConversationRepository(
             ...(decision.status !== "rejected" && profileName
               ? { name: profileName }
               : {}),
-            ...(decision.status !== "rejected" && Number.isInteger(profileAge)
+            ...(decision.status !== "rejected" && Number.isSafeInteger(profileAge)
               ? { age: profileAge as number }
               : {}),
             answersJson,

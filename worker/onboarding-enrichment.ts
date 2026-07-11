@@ -50,7 +50,7 @@ const RESPONSE_SCHEMA = {
     },
     canonicalAge: {
       anyOf: [
-        { type: "integer", minimum: 3, maximum: 17 },
+        { type: "integer", minimum: 0 },
         { type: "null" },
       ],
     },
@@ -74,7 +74,7 @@ function validName(value: unknown): value is string {
 }
 
 function validAge(value: unknown): value is number {
-  return Number.isInteger(value) && Number(value) >= 3 && Number(value) <= 17;
+  return Number.isSafeInteger(value) && Number(value) >= 0;
 }
 
 function fallbackCanonical(
@@ -90,11 +90,11 @@ function fallbackCanonical(
     return { canonicalName: rawAnswer, canonicalAge: null };
   }
   if (question.canonicalField === "age") {
-    const match = rawAnswer.match(/(?:^|\D)(\d{1,2})(?:\D|$)/);
+    const match = rawAnswer.match(/(?:^|[^\d.-])(\d+)(?![\d.])/);
     const age = match ? Number.parseInt(match[1], 10) : null;
     if (!validAge(age)) {
       return {
-        fieldError: "Please tell me your age using a number from 3 to 17.",
+        fieldError: "Please tell me your age using a whole number.",
       };
     }
     return { canonicalName: null, canonicalAge: age };
