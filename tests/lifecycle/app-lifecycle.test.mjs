@@ -710,7 +710,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const TestAuthGate = createAuthGate({ client });
     const profileQuestion = question();
     const profileState = {
-      profile: { ...completedOnboardingState().profile, age: 8 },
+      profile: {
+        ...completedOnboardingState().profile,
+        age: 8,
+        description: "Mia is eight and likes dinosaurs.",
+      },
       questions: [profileQuestion],
     };
     const savedBodies = [];
@@ -749,9 +753,21 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Edit learner profile"));
     await waitFor(() => text(/Edit profile/));
     await input(document.querySelector("#profile-name"), "Maya");
+    await input(
+      document.querySelector("#profile-description"),
+      "Maya is eight and loves drawing dragons.",
+    );
     await click(button("Save changes"));
     await waitFor(() => text(/PROFILE LESSONS/));
-    assert.deepEqual(savedBodies, [{ answers: { name: "Maya", age: "8" } }]);
+    assert.deepEqual(savedBodies, [
+      {
+        answers: {
+          name: "Maya",
+          age: "8",
+          description: "Maya is eight and loves drawing dragons.",
+        },
+      },
+    ]);
   });
 
   it("navigates production lesson routes and isolates stale playback", async () => {

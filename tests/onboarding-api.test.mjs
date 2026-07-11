@@ -89,6 +89,7 @@ describe("onboarding browser API", () => {
         {
           name: "Maya",
           age: "I am nine",
+          description: "Maya loves drawing dragons.",
           favoriteCartoons: "I like Bluey",
         },
         { fetch: request.fetch },
@@ -100,6 +101,7 @@ describe("onboarding browser API", () => {
       answers: {
         name: "Maya",
         age: "I am nine",
+        description: "Maya loves drawing dragons.",
         favoriteCartoons: "I like Bluey",
       },
     });

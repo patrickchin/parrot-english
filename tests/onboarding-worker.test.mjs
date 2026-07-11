@@ -785,6 +785,7 @@ describe("onboarding persistence and API", () => {
           answers: {
             name: "Maya",
             age: "I am nine",
+            description: "Maya is nine and loves drawing dragons.",
             favoriteCartoons: "I like Bluey",
           },
         },
@@ -807,6 +808,10 @@ describe("onboarding persistence and API", () => {
       assert.equal(row.name, "Maya");
       assert.equal(row.age, 9);
       assert.equal(row.onboarding_status, "completed");
+      assert.equal(
+        answers.description,
+        "Maya is nine and loves drawing dragons.",
+      );
       assert.equal(answers.responses.favoriteCartoons.rawAnswer, "I like Bluey");
     } finally {
       state.close();
@@ -834,6 +839,7 @@ describe("onboarding persistence and API", () => {
           answers: Object.fromEntries([
             ["name", "Maya"],
             ["age", "very old"],
+            ["description", "x".repeat(2_001)],
             ["retired", "dragons"],
             ["__proto__", "dragons"],
           ]),
@@ -867,11 +873,16 @@ describe("onboarding persistence and API", () => {
       assert.deepEqual(Object.keys(payload.fieldErrors).sort(), [
         "__proto__",
         "age",
+        "description",
         "retired",
       ]);
       assert.equal(
         payload.fieldErrors.age,
         "Please tell me your age using a whole number.",
+      );
+      assert.equal(
+        payload.fieldErrors.description,
+        "Please use 2000 characters or fewer.",
       );
       assert.equal(
         payload.fieldErrors.retired,

@@ -352,7 +352,7 @@ describe("profile summary editor", () => {
       /Your profile|Keep the basics up to date|Want another little chat|Redo the short onboarding conversation/,
     );
     assert.equal((html.match(/<input/g) ?? []).length, 2);
-    assert.equal((html.match(/<textarea/g) ?? []).length, 0);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
     assert.match(html, /<input[^>]*id="profile-age"[^>]*type="number"/);
     assert.doesNotMatch(
@@ -361,13 +361,18 @@ describe("profile summary editor", () => {
     );
     assert.match(html, /value="Mia"/);
     assert.match(html, /value="30"/);
-    assert.match(html, /About Mia/);
-    assert.match(html, /Mia is thirty and loves pandas and fast red cars\./);
+    assert.match(html, /<label[^>]*for="profile-description"[^>]*>.*About Mia/s);
+    assert.match(
+      html,
+      /<textarea[^>]*id="profile-description"[^>]*maxlength="2000"[^>]*>Mia is thirty and loves pandas and fast red cars\.<\/textarea>/i,
+    );
     assert.ok(
       html.indexOf("Mia is thirty and loves pandas") >
         html.indexOf('id="profile-age"'),
     );
-    assert.match(html, />Chat with your pig pal again</);
+    assert.match(html, /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy\.webp/);
+    assert.match(html, />Chat with Peppa again</);
+    assert.doesNotMatch(html, /pig pal/i);
     assert.match(html, />Save changes</);
     assert.doesNotMatch(
       html,
@@ -442,7 +447,7 @@ describe("profile summary editor", () => {
     );
   });
 
-  it("derives only the two basic drafts and updates them immutably", () => {
+  it("derives the three editable profile drafts and updates them immutably", () => {
     const state = {
       profile: {
         name: "Mia",
