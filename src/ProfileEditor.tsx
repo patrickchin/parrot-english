@@ -72,11 +72,10 @@ export function ProfileEditorView({
               <span>Age</span>
               <input
                 id="profile-age"
-                inputMode="numeric"
                 onChange={(event) =>
                   onValueChange("age", event.currentTarget.value)
                 }
-                type="number"
+                type="text"
                 value={drafts.age ?? ""}
               />
             </label>
