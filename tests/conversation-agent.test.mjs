@@ -127,6 +127,7 @@ describe("bounded onboarding agent contract", () => {
     assert.match(serialized, /learnedName/);
     assert.match(serialized, /learnedAge/);
     assert.doesNotMatch(serialized, /facts|topic|vehicles/);
+    assert.doesNotMatch(serialized, /"maximum":17/);
   });
 
   it("persists one cumulative paragraph and no candidate fact rows", async () => {
@@ -145,9 +146,9 @@ describe("bounded onboarding agent contract", () => {
         learnedAge: true,
         learnedName: true,
         outcome: "answered",
-        profileAge: 8,
+        profileAge: 30,
         profileName: "Mia",
-        summary: "Mia is eight years old and loves fast red cars.",
+        summary: "Mia is thirty years old and loves fast red cars.",
       },
       {},
     );
@@ -156,7 +157,7 @@ describe("bounded onboarding agent contract", () => {
     assert.equal(calls[0][0], "conversation-1");
     assert.equal(calls[0][1].profileSummary, result.state.profileSummary);
     assert.equal(calls[0][1].profileName, "Mia");
-    assert.equal(calls[0][1].profileAge, 8);
+    assert.equal(calls[0][1].profileAge, 30);
     assert.equal("facts" in result.state, false);
     assert.equal(result.nextPrompt.objective, "interest");
   });

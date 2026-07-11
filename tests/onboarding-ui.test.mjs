@@ -134,7 +134,7 @@ describe("one-question prose onboarding view", () => {
 
   it("shows field errors and only offers per-question skip when optional", () => {
     const failed = renderQuestion({
-      fieldError: "Please tell me your age using a number from 3 to 17.",
+      fieldError: "Please tell me your age using a whole number.",
     });
     assert.match(failed, /role="alert"/);
     assert.match(failed, /Please tell me your age/);
@@ -331,8 +331,8 @@ describe("profile summary editor", () => {
       createElement(ProfileEditorView, {
         drafts: {
           name: "Mia",
-          age: "8",
-          description: "Mia is eight and loves pandas and fast red cars.",
+          age: "30",
+          description: "Mia is thirty and loves pandas and fast red cars.",
           favoriteAnimals: "pandas",
         },
         fieldErrors: {},
@@ -351,12 +351,16 @@ describe("profile summary editor", () => {
     assert.equal((html.match(/<textarea/g) ?? []).length, 0);
     assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
     assert.match(html, /<input[^>]*id="profile-age"[^>]*type="number"/);
+    assert.doesNotMatch(
+      html,
+      /<input[^>]*id="profile-age"[^>]*(?:min="3"|max="17")/,
+    );
     assert.match(html, /value="Mia"/);
-    assert.match(html, /value="8"/);
+    assert.match(html, /value="30"/);
     assert.match(html, /About Mia/);
-    assert.match(html, /Mia is eight and loves pandas and fast red cars\./);
+    assert.match(html, /Mia is thirty and loves pandas and fast red cars\./);
     assert.ok(
-      html.indexOf("Mia is eight and loves pandas") >
+      html.indexOf("Mia is thirty and loves pandas") >
         html.indexOf('id="profile-age"'),
     );
     assert.match(html, />Chat with your pig pal again</);

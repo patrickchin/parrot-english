@@ -419,7 +419,7 @@ describe("conversation persistence and API", () => {
         optionalExchangeCount: 1,
         facts: [
           { key: "name", value: "Mia" },
-          { key: "age", value: 7 },
+          { key: "age", value: 30 },
           { key: "interest", topic: "animals", value: "pandas" },
         ],
         finishReason: "child_stopped",
@@ -432,7 +432,7 @@ describe("conversation persistence and API", () => {
           controllerState,
           candidates: [
             { id: "fact-name", key: "name", value: "Mia", sourceTurnIds: [] },
-            { id: "fact-age", key: "age", value: 7, sourceTurnIds: [] },
+            { id: "fact-age", key: "age", value: 30, sourceTurnIds: [] },
             {
               id: "fact-interest",
               key: "interest",
@@ -474,7 +474,7 @@ describe("conversation persistence and API", () => {
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
       assert.equal(profile.name, "Mia");
-      assert.equal(profile.age, 7);
+      assert.equal(profile.age, 30);
       assert.equal(profile.onboarding_status, "completed");
       assert.equal(
         state.sqlite
@@ -501,9 +501,9 @@ describe("conversation persistence and API", () => {
         activeObjective: null,
         rephraseCount: { name: 0, age: 0, interest: 0 },
         optionalExchangeCount: 1,
-        profileSummary: "Mia is seven years old and likes pandas.",
+        profileSummary: "Mia is thirty years old and likes pandas.",
         profileName: "Mia",
-        profileAge: 7,
+        profileAge: 30,
         learnedName: true,
         learnedAge: true,
         finishReason: "task_complete",
@@ -529,7 +529,7 @@ describe("conversation persistence and API", () => {
             {
               factId: "profile-summary",
               status: "edited",
-              value: "Mia is seven years old and loves giant pandas.",
+              value: "Mia is thirty years old and loves giant pandas.",
             },
           ],
         },
@@ -545,12 +545,12 @@ describe("conversation persistence and API", () => {
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
       assert.equal(profile.name, "Mia");
-      assert.equal(profile.age, 7);
+      assert.equal(profile.age, 30);
       assert.equal(profile.onboarding_status, "completed");
       const answers = JSON.parse(profile.answers_json);
       assert.equal(
         answers.description,
-        "Mia is seven years old and loves giant pandas.",
+        "Mia is thirty years old and loves giant pandas.",
       );
       assert.equal(
         state.sqlite
@@ -563,7 +563,7 @@ describe("conversation persistence and API", () => {
         .get(conversation.id);
       assert.deepEqual(JSON.parse(stored.controller_state), {
         ...controllerState,
-        profileSummary: "Mia is seven years old and loves giant pandas.",
+        profileSummary: "Mia is thirty years old and loves giant pandas.",
         summaryStatus: "edited",
       });
     } finally {

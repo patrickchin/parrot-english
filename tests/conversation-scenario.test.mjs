@@ -7,14 +7,14 @@ import {
   nextConversationPrompt,
 } from "../lib/conversation-scenario.js";
 
-function answered(summary, learnedName, learnedAge) {
+function answered(summary, learnedName, learnedAge, profileAge = 8) {
   return {
     outcome: "answered",
     summary,
     learnedName,
     learnedAge,
     profileName: learnedName ? "Mia" : null,
-    profileAge: learnedAge ? 8 : null,
+    profileAge: learnedAge ? profileAge : null,
   };
 }
 
@@ -40,6 +40,16 @@ describe("bounded onboarding conversation", () => {
     assert.equal(withBoth.phase, "optional");
     assert.equal(withBoth.activeObjective, "interest");
     assert.equal(withBoth.profileSummary, "Mia is eight years old.");
+  });
+
+  it("accepts adult ages without an upper age cap", () => {
+    const state = applyConversationObservation(
+      createOnboardingConversationState(),
+      answered("Mia is thirty years old.", true, true, 30),
+    );
+
+    assert.equal(state.profileAge, 30);
+    assert.equal(state.learnedAge, true);
   });
 
   it("allows only one rephrase and keeps the rescue turn English-only", () => {

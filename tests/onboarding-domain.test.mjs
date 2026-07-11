@@ -390,21 +390,21 @@ describe("v2 prose profile envelope", () => {
       definitionV2,
     );
     const updated = writeV2Response(profile, definitionV2.questions[1], {
-      rawAnswer: "I am six years old.",
-      summary: "Is six years old.",
-      acknowledgment: "Six is a brilliant age!",
-      canonicalAge: 6,
+      rawAnswer: "I am thirty years old.",
+      summary: "Is thirty years old.",
+      acknowledgment: "Thirty is a brilliant age!",
+      canonicalAge: 30,
       canonicalName: null,
       enrichmentStatus: "generated",
       answeredAt: "2026-07-06T10:30:00.000Z",
     });
 
-    assert.equal(updated.age, 6);
+    assert.equal(updated.age, 30);
     assert.deepEqual(readV2Answers(updated).responses.age, {
       question: "How old are you?",
-      rawAnswer: "I am six years old.",
-      summary: "Is six years old.",
-      acknowledgment: "Six is a brilliant age!",
+      rawAnswer: "I am thirty years old.",
+      summary: "Is thirty years old.",
+      acknowledgment: "Thirty is a brilliant age!",
       enrichmentStatus: "generated",
       answeredAt: "2026-07-06T10:30:00.000Z",
     });
