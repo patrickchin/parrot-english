@@ -326,50 +326,59 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
-  it("renders every answer as editable prose with one atomic save action", () => {
-    const questions = [
-      question({ answerKey: "name", position: 1, promptEn: "What's your name?" }),
-      question(),
-    ];
+  it("renders name, age, and the conversational description with a realtime onboarding action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
-        drafts: { name: "Mia", age: "I am eight" },
+        drafts: {
+          name: "Mia",
+          age: "8",
+          description: "Mia is eight and loves pandas and fast red cars.",
+          favoriteAnimals: "pandas",
+        },
         fieldErrors: {},
-        fieldStatuses: {},
         isSaving: false,
         onCancel() {},
         onClose() {},
-        onReplay() {},
+        onRedoOnboarding() {},
         onSave() {},
-        onTranscribe() {},
         onValueChange() {},
         pageError: "",
-        questions,
       }),
     );
 
-    assert.match(html, /Review and edit all your answers in one place/);
-    assert.equal((html.match(/<textarea/g) ?? []).length, 2);
-    assert.match(html, /I am eight/);
+    assert.match(html, /Keep the basics up to date/);
+    assert.equal((html.match(/<input/g) ?? []).length, 2);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 0);
+    assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
+    assert.match(html, /<input[^>]*id="profile-age"[^>]*type="number"/);
+    assert.match(html, /value="Mia"/);
+    assert.match(html, /value="8"/);
+    assert.match(html, /About Mia/);
+    assert.match(html, /Mia is eight and loves pandas and fast red cars\./);
+    assert.ok(
+      html.indexOf("Mia is eight and loves pandas") >
+        html.indexOf('id="profile-age"'),
+    );
+    assert.match(html, />Chat with your pig pal again</);
     assert.match(html, />Save changes</);
-    assert.doesNotMatch(html, /onboarding-chips|onboarding-suggestions/);
+    assert.doesNotMatch(
+      html,
+      /What animals do you like|你喜欢什么动物|Replay|Speak answer|pandas/,
+    );
   });
 
-  it("keeps cancel available during capture but blocks editing and saving", () => {
+  it("keeps the basic form and navigation actions available while idle", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
-        drafts: { age: "I am eight" },
+        drafts: { name: "Mia", age: "8" },
         fieldErrors: {},
-        fieldStatuses: { age: "recording" },
         isSaving: false,
         onCancel() {},
         onClose() {},
-        onReplay() {},
+        onRedoOnboarding() {},
         onSave() {},
-        onTranscribe() {},
         onValueChange() {},
         pageError: "",
-        questions: [question()],
       }),
     );
     const close = html.match(
@@ -377,11 +386,15 @@ describe("profile summary editor", () => {
     )?.[0];
     const cancel = html.match(/<button[^>]*>Cancel<\/button>/)?.[0];
     const save = html.match(/<button[^>]*>Save changes<\/button>/)?.[0];
+    const redo = html.match(
+      /<button[^>]*>Chat with your pig pal again<\/button>/,
+    )?.[0];
 
-    assert.match(html, /<fieldset disabled="">/);
+    assert.doesNotMatch(html, /<fieldset disabled="">/);
     assert.doesNotMatch(close, /disabled/);
     assert.doesNotMatch(cancel, /disabled/);
-    assert.match(save, /disabled/);
+    assert.doesNotMatch(redo, /disabled/);
+    assert.doesNotMatch(save, /disabled/);
   });
 
   it("blocks closing, canceling, and saving while a save is active", () => {
@@ -389,28 +402,28 @@ describe("profile summary editor", () => {
       createElement(ProfileEditorView, {
         drafts: { age: "I am eight" },
         fieldErrors: {},
-        fieldStatuses: {},
         isSaving: true,
         onCancel() {},
         onClose() {},
-        onReplay() {},
+        onRedoOnboarding() {},
         onSave() {},
-        onTranscribe() {},
         onValueChange() {},
         pageError: "",
-        questions: [question()],
       }),
     );
     const buttons = [
       html.match(/<button[^>]*aria-label="Close profile editor"[^>]*>/)?.[0],
       html.match(/<button[^>]*>Cancel<\/button>/)?.[0],
+      html.match(
+        /<button[^>]*>Chat with your pig pal again<\/button>/,
+      )?.[0],
       html.match(/<button[^>]*>Saving…<\/button>/)?.[0],
     ];
 
     assert.ok(buttons.every((button) => button?.includes('disabled=""')));
   });
 
-  it("cancels the active profile capture through shared profile teardown", () => {
+  it("clears profile work through shared route teardown", () => {
     assert.match(
       gateSource,
       /const clearProfileEditor = useCallback\(\(\) => \{\s*teardownProfileResources\(\);/,
@@ -419,17 +432,14 @@ describe("profile summary editor", () => {
       gateSource,
       /const closeProfileEditor = useCallback\(\(\) => \{[\s\S]*?clearProfileEditor\(\);/,
     );
-    assert.match(
-      gateSource,
-      /captureOnboardingAnswer\(\{[\s\S]*?signal: controller\.signal,[\s\S]*?\}\);/,
-    );
   });
 
-  it("derives and immutably updates all prose drafts", () => {
+  it("derives only the two basic drafts and updates them immutably", () => {
     const state = {
       profile: {
         name: "Mia",
         age: 8,
+        description: "Mia is eight and likes dinosaurs.",
         answers: emptyAnswers({
           favoriteAnimals: {
             question: "What animals do you like?",
@@ -450,7 +460,7 @@ describe("profile summary editor", () => {
     assert.deepEqual(profileDraftsFromState(state), {
       name: "Mia",
       age: "8",
-      favoriteAnimals: "I like dinosaurs",
+      description: "Mia is eight and likes dinosaurs.",
     });
     const original = { name: "Mia" };
     assert.deepEqual(updateProfileDraft(original, "name", "Maya"), {
@@ -808,6 +818,7 @@ function renderGate(overrides = {}) {
         profileEditor: null,
         profileLoadError: "",
         questionProps: null,
+        redoOnboarding: false,
         started: false,
         ...overrides,
       },
@@ -942,7 +953,7 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(bypass, /Edit learner profile/);
   });
 
-  it("renders the prose profile summary without bypass controls", () => {
+  it("renders the basic profile editor without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
       isOnboardingRoute: false,
@@ -950,23 +961,19 @@ describe("onboarding and profile gate", () => {
       profileEditor: {
         drafts: { name: "Mia", age: "I am eight" },
         fieldErrors: {},
-        fieldStatuses: {},
         isSaving: false,
         onCancel() {},
         onClose() {},
-        onReplay() {},
+        onRedoOnboarding() {},
         onSave() {},
-        onTranscribe() {},
         onValueChange() {},
         pageError: "",
-        questions: [
-          fullState().question,
-          question(),
-        ],
       },
     });
     assert.match(html, /Edit profile/);
-    assert.equal((html.match(/<textarea/g) ?? []).length, 2);
+    assert.equal((html.match(/<input/g) ?? []).length, 2);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 0);
+    assert.match(html, /Chat with your pig pal again/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
   });

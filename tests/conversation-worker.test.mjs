@@ -211,7 +211,9 @@ describe("conversation persistence and API", () => {
       assert.equal(payload.conversation.status, "starting");
       assert.equal(payload.livekit.url, "wss://livekit.example.test");
       assert.equal(payload.livekit.participantToken, "participant-token");
-      assert.equal(payload.scenario.requiredFacts.length, 2);
+      assert.deepEqual(payload.scenario.requiredDetails, ["name", "age"]);
+      assert.equal(payload.scenario.summaryMode, "prose");
+      assert.equal("requiredFacts" in payload.scenario, false);
       assert.equal(payload.scenario.maxOptionalExchanges, 3);
       assert.equal(tokenCalls.length, 1);
       assert.equal(tokenCalls[0].conversation.roomName, payload.conversation.roomName);
@@ -485,6 +487,90 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("reviews one prose profile without creating structured fact rows", async () => {
+    const state = createSeededDatabase();
+    try {
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+      );
+      const { conversation } = await started.json();
+      const controllerState = {
+        phase: "closing",
+        activeObjective: null,
+        rephraseCount: { name: 0, age: 0, interest: 0 },
+        optionalExchangeCount: 1,
+        profileSummary: "Mia is seven years old and likes pandas.",
+        profileName: "Mia",
+        profileAge: 7,
+        learnedName: true,
+        learnedAge: true,
+        finishReason: "task_complete",
+      };
+      const stateResponse = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/facts`,
+        "POST",
+        { controllerState, candidates: [] },
+        {
+          identity: null,
+          headers: { Authorization: "Bearer agent-secret" },
+        },
+      );
+      assert.equal(stateResponse.status, 200);
+
+      const review = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {
+          decisions: [
+            {
+              factId: "profile-summary",
+              status: "edited",
+              value: "Mia is seven years old and loves giant pandas.",
+            },
+          ],
+        },
+      );
+
+      assert.equal(review.status, 200);
+      assert.deepEqual(await review.json(), {
+        conversationId: conversation.id,
+        profileCompleted: true,
+        bypassed: false,
+      });
+      const profile = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(profile.name, "Mia");
+      assert.equal(profile.age, 7);
+      assert.equal(profile.onboarding_status, "completed");
+      const answers = JSON.parse(profile.answers_json);
+      assert.equal(
+        answers.description,
+        "Mia is seven years old and loves giant pandas.",
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_fact")
+          .get().count,
+        0,
+      );
+      const stored = state.sqlite
+        .prepare("SELECT controller_state FROM conversation_session WHERE id = ?")
+        .get(conversation.id);
+      assert.deepEqual(JSON.parse(stored.controller_state), {
+        ...controllerState,
+        profileSummary: "Mia is seven years old and loves giant pandas.",
+        summaryStatus: "edited",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
   it("creates an exact-session bypass when review omits a required fact", async () => {
     const state = createSeededDatabase();
     try {
@@ -565,7 +651,25 @@ describe("LiveKit participant tokens", () => {
     });
     assert.equal(payload.video.room, "onboarding-room-1");
     assert.equal(payload.video.roomJoin, true);
+    assert.equal(payload.roomConfig, undefined);
     assert.equal(payload.exp - payload.nbf, 600);
     assert.equal(token.includes("api-secret"), false);
+  });
+
+  it("targets an explicitly named agent for isolated local development", async () => {
+    const token = await createLiveKitParticipantToken({
+      env: {
+        LIVEKIT_AGENT_NAME: "parrot-local",
+        LIVEKIT_API_KEY: "api-key",
+        LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
+      },
+      conversation: { id: "conversation-2", roomName: "onboarding-room-2" },
+      identity,
+    });
+    const [, encodedPayload] = token.split(".");
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());
+
+    assert.equal(payload.roomConfig.agents.length, 1);
+    assert.equal(payload.roomConfig.agents[0].agentName, "parrot-local");
   });
 });

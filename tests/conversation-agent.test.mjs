@@ -99,108 +99,73 @@ describe("LiveKit agent configuration", () => {
 });
 
 describe("bounded onboarding agent contract", () => {
-  it("uses an Azure/OpenAI-compatible record-facts tool schema", () => {
-    const ingest = {
+  function ingest(overrides = {}) {
+    return {
       async appendTurn() {},
       async endConversation() {},
-      async upsertFacts() {},
+      async updateState() {},
+      ...overrides,
     };
+  }
+
+  it("uses one gateway-safe prose update tool without a fact schema", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
-      ingest,
+      ingest: ingest(),
     });
     const schema = llm.toJsonSchema(
-      task.toolCtx.functionTools.recordCandidateFacts.parameters,
+      task.toolCtx.functionTools.updateProfileSummary.parameters,
       true,
       true,
     );
+    const serialized = JSON.stringify(schema);
 
-    assert.equal(JSON.stringify(schema).includes('"oneOf"'), false);
+    assert.equal(serialized.includes('"oneOf"'), false);
+    assert.match(serialized, /summary/);
+    assert.match(serialized, /profileName/);
+    assert.match(serialized, /profileAge/);
+    assert.match(serialized, /learnedName/);
+    assert.match(serialized, /learnedAge/);
+    assert.doesNotMatch(serialized, /facts|topic|vehicles/);
   });
 
-  it("normalizes the gateway-safe age value before persistence", async () => {
+  it("persists one cumulative paragraph and no candidate fact rows", async () => {
     const calls = [];
-    const ingest = {
-      async appendTurn() {},
-      async endConversation() {},
-      async upsertFacts(...args) {
-        calls.push(args);
-      },
-    };
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
-      createId: () => "fact-age",
-      ingest,
+      ingest: ingest({
+        async updateState(...args) {
+          calls.push(args);
+        },
+      }),
     });
 
-    await task.toolCtx.functionTools.recordCandidateFacts.execute(
+    const result = await task.toolCtx.functionTools.updateProfileSummary.execute(
       {
-        facts: [{ key: "age", topic: "none", value: "8" }],
-        nextInterestTopic: null,
+        learnedAge: true,
+        learnedName: true,
         outcome: "answered",
+        profileAge: 8,
+        profileName: "Mia",
+        summary: "Mia is eight years old and loves fast red cars.",
       },
       {},
     );
 
-    assert.deepEqual(calls[0][1][0], {
-      id: "fact-age",
-      key: "age",
-      sourceTurnIds: [],
-      value: 8,
-    });
-  });
-
-  it("reuses candidate IDs when the model repeats an already captured fact", async () => {
-    const calls = [];
-    let nextId = 0;
-    const ingest = {
-      async appendTurn() {},
-      async endConversation() {},
-      async upsertFacts(...args) {
-        calls.push(args);
-      },
-    };
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      createId: () => `fact-${nextId++}`,
-      ingest,
-    });
-    const record = task.toolCtx.functionTools.recordCandidateFacts;
-
-    await record.execute(
-      {
-        facts: [{ key: "name", topic: "none", value: "Mia" }],
-        nextInterestTopic: null,
-        outcome: "answered",
-      },
-      {},
-    );
-    await record.execute(
-      {
-        facts: [
-          { key: "name", topic: "none", value: "Mia" },
-          { key: "age", topic: "none", value: "8" },
-        ],
-        nextInterestTopic: "animals",
-        outcome: "answered",
-      },
-      {},
-    );
-
-    assert.equal(calls[0][1][0].id, calls[1][1][0].id);
-    assert.notEqual(calls[1][1][0].id, calls[1][1][1].id);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], "conversation-1");
+    assert.equal(calls[0][1].profileSummary, result.state.profileSummary);
+    assert.equal(calls[0][1].profileName, "Mia");
+    assert.equal(calls[0][1].profileAge, 8);
+    assert.equal("facts" in result.state, false);
+    assert.equal(result.nextPrompt.objective, "interest");
   });
 
   it("keeps the task completion callback bound to its hook context", async () => {
     const completed = [];
-    const ingest = {
-      async appendTurn() {},
-      async endConversation() {},
-      async upsertFacts() {},
-    };
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
-      ingest,
+      ingest: ingest(),
     });
     const hookContext = {
       agent: { completed },
@@ -219,19 +184,14 @@ describe("bounded onboarding agent contract", () => {
     assert.deepEqual(completed, [{ finishReason: "child_stopped" }]);
   });
 
-  it("uses four constrained tools and a warm non-impersonating prompt", () => {
-    const ingest = {
-      async appendTurn() {},
-      async endConversation() {},
-      async upsertFacts() {},
-    };
+  it("uses four constrained tools and asks for a natural prose paragraph", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
-      ingest,
+      ingest: ingest(),
     });
 
     assert.deepEqual(ONBOARDING_TOOL_NAMES, [
-      "recordCandidateFacts",
+      "updateProfileSummary",
       "markObjectiveUnanswered",
       "finishConversation",
       "requestGentleRephrase",
@@ -241,59 +201,50 @@ describe("bounded onboarding agent contract", () => {
       [...ONBOARDING_TOOL_NAMES].sort(),
     );
     assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /warm, playful pig friend/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /one short English question/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /brief Chinese hint/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /three optional/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /unrelated topics/i);
+    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /one natural paragraph/i);
+    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /no labels, bullets, or field names/i);
+    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /bright, bouncy energy/i);
+    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /different category/i);
+    assert.doesNotMatch(ONBOARDING_AGENT_INSTRUCTIONS, /fact schema|candidate facts/i);
+    assert.doesNotMatch(ONBOARDING_AGENT_INSTRUCTIONS, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
       ONBOARDING_AGENT_INSTRUCTIONS,
       /(?:I am|I'm|you are|you're) Peppa/i,
     );
-    assert.doesNotMatch(ONBOARDING_AGENT_INSTRUCTIONS, /clone|impersonat/i);
   });
 
-  it("advances controller state only through tools and persists candidate facts", async () => {
+  it("advances only through tools and preserves the prose on a rephrase", async () => {
     const calls = [];
-    const ingest = {
-      async appendTurn() {},
-      async endConversation(...args) {
-        calls.push(["end", ...args]);
-      },
-      async upsertFacts(...args) {
-        calls.push(["facts", ...args]);
-      },
-    };
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
-      createId: () => "fact-name",
-      ingest,
+      ingest: ingest({
+        async updateState(...args) {
+          calls.push(args);
+        },
+      }),
     });
     const tools = task.toolCtx.functionTools;
 
-    const recorded = await tools.recordCandidateFacts.execute(
+    const recorded = await tools.updateProfileSummary.execute(
       {
-        facts: [{ key: "name", value: "Mia" }],
-        nextInterestTopic: null,
+        learnedAge: false,
+        learnedName: true,
         outcome: "answered",
+        profileAge: null,
+        profileName: "Mia",
+        summary: "The learner's name is Mia.",
       },
       {},
     );
     assert.equal(recorded.nextPrompt.objective, "age");
-    assert.equal(calls[0][0], "facts");
-    assert.equal(calls[0][1], "conversation-1");
-    assert.deepEqual(calls[0][2][0], {
-      id: "fact-name",
-      key: "name",
-      sourceTurnIds: [],
-      value: "Mia",
-    });
+    assert.equal(calls[0][1].profileSummary, "The learner's name is Mia.");
 
     const rephrased = await tools.requestGentleRephrase.execute(
       { reason: "unclear" },
       {},
     );
     assert.equal(rephrased.nextPrompt.mode, "rephrase");
-    assert.equal(rephrased.nextPrompt.includeChineseHint, true);
+    assert.equal(rephrased.state.profileSummary, "The learner's name is Mia.");
   });
 
   it("starts without recording and configures acoustic endpointing and barge-in", () => {

@@ -1,0 +1,40 @@
+url: ${MAESTRO_APP_URL}/
+name: Learner redoes onboarding from Profile and reaches the pig conversation
+tags:
+  - e2e
+  - mocked-api
+  - onboarding
+---
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Profile"
+    timeout: 8000
+- tapOn: "Profile"
+
+- extendedWaitUntil:
+    visible: "Edit profile"
+    timeout: 8000
+- assertVisible: "Name"
+- assertVisible: "Age"
+- tapOn: "Chat with your pig pal again"
+
+- extendedWaitUntil:
+    visible: "Hello again! What's your name?"
+    timeout: 8000
+- assertVisible: "Listening — take your time"
+
+# Leave the first live room, then verify that Profile starts a genuinely fresh
+# second conversation instead of reusing a disconnected listening screen.
+- tapOn: "Profile"
+- extendedWaitUntil:
+    visible: "Edit profile"
+    timeout: 8000
+- tapOn: "Chat with your pig pal again"
+- extendedWaitUntil:
+    visible: "Hello again! What's your name?"
+    timeout: 8000
+- assertVisible: "Listening — take your time"
+- assertVisible: "Debug transcript"
+- tapOn: "Debug transcript"
+- assertVisible: "Pig pal"

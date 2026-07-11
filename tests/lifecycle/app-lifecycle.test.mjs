@@ -466,8 +466,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         scenario: {
           key: "onboarding",
           maxOptionalExchanges: 3,
-          optionalFact: "interest",
-          requiredFacts: ["name", "age"],
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
           version: 1,
         },
       });
@@ -478,7 +478,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createTransport: () => transport,
       }),
     );
-    await click(button("Start voice"));
     await waitFor(() =>
       assert.equal(
         document.querySelector('output[aria-label="Conversation status"]')
@@ -595,7 +594,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const TestAuthGate = createAuthGate({ client });
     const profileQuestion = question();
     const profileState = {
-      profile: completedOnboardingState().profile,
+      profile: { ...completedOnboardingState().profile, age: 8 },
       questions: [profileQuestion],
     };
     const savedBodies = [];
@@ -633,10 +632,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => button("Edit learner profile"));
     await click(button("Edit learner profile"));
     await waitFor(() => text(/Edit profile/));
-    await input(document.querySelector("#profile-answer-name"), "Maya");
+    await input(document.querySelector("#profile-name"), "Maya");
     await click(button("Save changes"));
     await waitFor(() => text(/PROFILE LESSONS/));
-    assert.deepEqual(savedBodies, [{ answers: { name: "Maya" } }]);
+    assert.deepEqual(savedBodies, [{ answers: { name: "Maya", age: "8" } }]);
   });
 
   it("navigates production lesson routes and isolates stale playback", async () => {
