@@ -105,7 +105,7 @@ describe("conversation persistence infrastructure", () => {
     assert.ok(schema.conversationFactRelations);
   });
 
-  it("keeps realtime deployment production-shaped and feature-flagged off", () => {
+  it("keeps realtime deployment production-shaped and enabled", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
       "utf8",
@@ -145,7 +145,7 @@ describe("conversation persistence infrastructure", () => {
     assert.equal(deployDockerfile, dockerfile);
     assert.match(dockerfile, /ca-certificates/);
     assert.match(dockerfile, /USER node/);
-    assert.match(wrangler, /"REALTIME_ONBOARDING_ENABLED": "0"/);
+    assert.match(wrangler, /"REALTIME_ONBOARDING_ENABLED": "1"/);
     for (const name of [
       "LIVEKIT_URL",
       "LIVEKIT_API_KEY",
