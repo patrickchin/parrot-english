@@ -2372,6 +2372,53 @@ select:focus-visible {
   box-shadow: 0 0 0 4px rgb(185 34 89 / 14%);
 }
 
+.conversation-joining-notice {
+  display: flex;
+  width: min(100%, 560px);
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border: 4px solid #fff;
+  border-radius: 22px;
+  background: #173c67;
+  box-shadow: 0 8px 0 rgb(23 60 103 / 22%);
+  color: #fff;
+  padding: 18px 22px;
+  text-align: left;
+}
+
+.conversation-joining-notice > span:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.conversation-joining-notice strong {
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
+  line-height: 1.15;
+}
+
+.conversation-joining-notice strong + span {
+  font-size: 0.95rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.conversation-joining-spinner {
+  width: 38px;
+  flex: 0 0 38px;
+  aspect-ratio: 1;
+  border: 5px solid rgb(255 255 255 / 35%);
+  border-top-color: #ffcf40;
+  border-radius: 50%;
+  animation: conversation-joining-spin 0.9s linear infinite;
+}
+
+@keyframes conversation-joining-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 .conversation-error {
   width: min(100%, 560px);
   margin: 0;
@@ -2676,7 +2723,8 @@ select:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .conversation-character {
+  .conversation-character,
+  .conversation-joining-spinner {
     animation: none;
   }
 }

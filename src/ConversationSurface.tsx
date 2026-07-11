@@ -49,7 +49,7 @@ const STATUS_LABELS: Record<
   Exclude<ConversationSurfaceStatus, "ready">,
   string
 > = {
-  connecting: "Joining your voice room…",
+  connecting: "Joining Peppa…",
   listening: "Listening — take your time",
   speaking: "Peppa is talking",
   reconnecting: "Reconnecting… your answers are safe",
@@ -112,10 +112,10 @@ export function ConversationSurface({
   }
 
   const saving = status === "saving";
-  const waitingForPeppa = status === "connecting";
+  const joining = status === "connecting";
   const speech = latestAssistantSpeech(turns) ??
-    (status === "connecting"
-      ? "Hello! Here I come…"
+    (joining
+      ? "Almost ready!"
       : saving
         ? "Lovely chat! I'll remember that."
         : "I'm listening!");
@@ -136,14 +136,33 @@ export function ConversationSurface({
           />
         </div>
 
-        <p className={`conversation-state conversation-state--${status}`} role="status">
-          <span aria-hidden="true" />
-          {STATUS_LABELS[status]}
-        </p>
+        {joining ? (
+          <div
+            aria-live="assertive"
+            className="conversation-joining-notice"
+            role="status"
+          >
+            <span aria-hidden="true" className="conversation-joining-spinner" />
+            <span>
+              <strong>{STATUS_LABELS.connecting}</strong>
+              <span>
+                Please wait until Peppa says hello before you start talking.
+              </span>
+            </span>
+          </div>
+        ) : (
+          <p
+            className={`conversation-state conversation-state--${status}`}
+            role="status"
+          >
+            <span aria-hidden="true" />
+            {STATUS_LABELS[status]}
+          </p>
+        )}
 
         {error ? <p className="conversation-error" role="alert">{error}</p> : null}
 
-        {!saving ? (
+        {!saving && !joining ? (
           <div className="conversation-actions">
             <div className="conversation-controls">
               {status === "error" ? (
@@ -159,7 +178,6 @@ export function ConversationSurface({
                 <button
                   aria-pressed={!microphoneEnabled}
                   className="conversation-microphone-button"
-                  disabled={waitingForPeppa}
                   onClick={onToggleMicrophone}
                   type="button"
                 >
@@ -181,7 +199,6 @@ export function ConversationSurface({
               <form className="conversation-text-form" onSubmit={submitTypedAnswer}>
                 <input
                   aria-label="Type your answer"
-                  disabled={waitingForPeppa}
                   maxLength={1_000}
                   onChange={(event) => onTypedValueChange(event.currentTarget.value)}
                   placeholder="Type an answer here"
@@ -189,7 +206,6 @@ export function ConversationSurface({
                 />
                 <button
                   className="conversation-send-button"
-                  disabled={waitingForPeppa}
                   type="submit"
                 >
                   Send
