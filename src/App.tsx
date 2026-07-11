@@ -849,7 +849,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={
           <FeaturePlaceholder
             description="Lesson creation is coming soon. You will be able to build practice around your own interests."
-            eyebrow="LEARN YOUR WAY"
             title="Create a Lesson"
           />
         }
@@ -875,7 +874,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={
           <FeaturePlaceholder
             description="Progress tracking is coming soon."
-            eyebrow="KEEP GROWING"
             title="Progress"
           />
         }
@@ -885,7 +883,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={
           <FeaturePlaceholder
             description="Storytelling practice is coming soon."
-            eyebrow="TELL A STORY"
             title="Storytelling"
           />
         }

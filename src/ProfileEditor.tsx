@@ -35,10 +35,7 @@ export function ProfileEditorView({
         className="onboarding-profile-shell profile-basic-shell"
       >
         <header className="onboarding-profile-heading">
-          <div>
-            <p>Your profile</p>
-            <h1 id="profile-title">Edit profile</h1>
-          </div>
+          <h1 id="profile-title">Edit profile</h1>
           <button
             aria-label="Close profile editor"
             className="onboarding-icon-button"
@@ -49,10 +46,6 @@ export function ProfileEditorView({
             ×
           </button>
         </header>
-        <p className="profile-editor-intro">
-          Keep the basics up to date. You can chat with your pig pal again any
-          time.
-        </p>
 
         <form className="profile-editor-form" onSubmit={submit}>
           <fieldset className="profile-basic-fields" disabled={isSaving}>
@@ -107,20 +100,14 @@ export function ProfileEditorView({
             </section>
           </fieldset>
 
-          <section className="profile-chat-card" aria-labelledby="profile-chat-title">
-            <div>
-              <h2 id="profile-chat-title">Want another little chat?</h2>
-              <p>Redo the short onboarding conversation with your pig pal.</p>
-            </div>
-            <button
-              className="profile-chat-button"
-              disabled={isSaving}
-              onClick={onRedoOnboarding}
-              type="button"
-            >
-              Chat with your pig pal again
-            </button>
-          </section>
+          <button
+            className="profile-chat-button"
+            disabled={isSaving}
+            onClick={onRedoOnboarding}
+            type="button"
+          >
+            Chat with your pig pal again
+          </button>
 
           {pageError ? (
             <p className="onboarding-field-error" role="alert">

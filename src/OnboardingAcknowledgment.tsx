@@ -97,7 +97,6 @@ export function OnboardingAcknowledgment({
         className="onboarding-acknowledgment-peppa"
         src="/assets/characters/peppa/peppa-happy.webp"
       />
-      <p className="onboarding-eyebrow">PEPPA SAYS</p>
       <h1>{acknowledgment.text}</h1>
       <button className="onboarding-next-button" onClick={onNext} type="button">
         Next

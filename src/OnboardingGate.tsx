@@ -237,7 +237,6 @@ export function OnboardingGateView({
             className="onboarding-start-peppa"
             src="/assets/characters/peppa/peppa-happy.webp"
           />
-          <p className="onboarding-eyebrow">PARROT ENGLISH</p>
           <h1>Meet Peppa</h1>
           <p>
             Answer six quick questions so your English practice can feel more like

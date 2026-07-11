@@ -133,13 +133,6 @@ select:focus-visible {
   animation: onboarding-float 2.8s ease-in-out infinite;
 }
 
-.onboarding-eyebrow {
-  color: #d62f70 !important;
-  font-size: 0.8rem;
-  font-weight: 950 !important;
-  letter-spacing: 0.14em;
-}
-
 .onboarding-start-button,
 .onboarding-next-button {
   min-width: 148px;
@@ -204,8 +197,7 @@ select:focus-visible {
   gap: 18px;
 }
 
-.onboarding-progress,
-.onboarding-profile-heading p {
+.onboarding-progress {
   margin: 0;
   color: #d62f70;
   font-size: 0.82rem;
@@ -396,13 +388,6 @@ select:focus-visible {
   padding-top: clamp(88px, 12vh, 112px);
 }
 
-.profile-editor-intro {
-  margin: 14px 0 0;
-  color: #46617d;
-  font-weight: 750;
-  line-height: 1.5;
-}
-
 .profile-editor-form > fieldset {
   display: grid;
   gap: 18px;
@@ -467,38 +452,10 @@ select:focus-visible {
   line-height: 1.55;
 }
 
-.profile-chat-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  margin-top: 24px;
-  border: 3px solid #ffd052;
-  border-radius: 20px;
-  background: #fff8d8;
-  padding: 16px;
-}
-
-.profile-chat-card h2,
-.profile-chat-card p {
-  margin: 0;
-}
-
-.profile-chat-card h2 {
-  color: #173c67;
-  font-size: 1.1rem;
-}
-
-.profile-chat-card p {
-  margin-top: 5px;
-  color: #46617d;
-  font-weight: 750;
-  line-height: 1.4;
-}
-
 .profile-chat-button {
+  width: 100%;
   min-height: 46px;
-  flex: 0 0 auto;
+  margin-top: 24px;
   border: 0;
   border-radius: 15px;
   background: #ff467b;
@@ -606,11 +563,6 @@ select:focus-visible {
     justify-content: space-between;
   }
 
-  .profile-chat-card {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .onboarding-profile-screen {
     padding-top: 150px;
   }
@@ -668,6 +620,7 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 16px;
+  margin-bottom: 22px;
 }
 
 .auth-heading h1,
@@ -692,21 +645,6 @@ select:focus-visible {
   font-weight: 950;
   box-shadow: 0 5px 0 rgb(171 38 83 / 35%);
   transform: rotate(-5deg);
-}
-
-.auth-eyebrow {
-  margin: 0 0 6px;
-  color: #d62f70;
-  font-size: 0.78rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-}
-
-.auth-intro {
-  margin: 20px 0 22px;
-  color: #46617d;
-  font-weight: 750;
-  line-height: 1.55;
 }
 
 .auth-fieldset {
@@ -904,13 +842,6 @@ select:focus-visible {
   text-align: center;
 }
 
-.home-menu-header p {
-  margin: 0 0 8px;
-  color: #087451;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-}
-
 .home-menu-header h1 {
   margin: 0;
   color: #173c67;
@@ -1030,13 +961,6 @@ select:focus-visible {
   line-height: 1.55;
 }
 
-.feature-placeholder-card p:first-child {
-  color: #d62f70;
-  font-size: 0.85rem;
-  font-weight: 950;
-  letter-spacing: 0.12em;
-}
-
 .feature-placeholder-card h1 {
   margin: 0;
   color: #173c67;
@@ -1104,7 +1028,6 @@ select:focus-visible {
   text-align: center;
 }
 
-.lesson-list-eyebrow,
 .lesson-scene-count,
 .coming-soon-badge {
   display: inline-flex;
@@ -1113,13 +1036,6 @@ select:focus-visible {
   font-weight: 950;
 }
 
-.lesson-list-eyebrow {
-  color: #087451;
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  letter-spacing: 0.04em;
-}
-
-.lesson-list-eyebrow svg,
 .lesson-scene-count svg,
 .coming-soon-badge svg,
 .lesson-card-action svg {
@@ -1129,17 +1045,11 @@ select:focus-visible {
 }
 
 .lesson-list-header h1 {
-  margin: 8px 0;
+  margin: 0;
   color: #204c7f;
   font-size: clamp(2.8rem, 7vw, 5.7rem);
   letter-spacing: -0.04em;
   line-height: 0.95;
-}
-
-.lesson-list-header p {
-  margin: 0;
-  font-size: clamp(1.1rem, 2.3vw, 1.65rem);
-  font-weight: 850;
 }
 
 .lesson-main-menu-link {
