@@ -37,4 +37,4 @@ tags:
 - assertVisible: "Listening — take your time"
 - assertVisible: "Debug transcript"
 - tapOn: "Debug transcript"
-- assertVisible: "Pig pal"
+- assertVisible: "Peppa"

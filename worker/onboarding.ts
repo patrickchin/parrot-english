@@ -123,10 +123,13 @@ function clientProfile(profile: Profile) {
     : ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
+  const answers = readV2Answers(readable);
   return {
     name: profile.name,
     age: profile.age,
-    answers: readV2Answers(readable),
+    description:
+      typeof answers.description === "string" ? answers.description : null,
+    answers,
     questionnaireVersion: ONBOARDING_QUESTIONNAIRE.version,
     currentQuestionKey: profile.currentQuestionKey,
     onboardingStatus: profile.onboardingStatus,

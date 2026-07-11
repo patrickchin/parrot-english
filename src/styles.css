@@ -416,6 +416,108 @@ select:focus-visible {
   opacity: 0.72;
 }
 
+.profile-basic-shell {
+  width: min(100%, 640px);
+}
+
+.profile-basic-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-basic-field {
+  display: grid;
+  gap: 7px;
+  color: #173c67;
+  font-weight: 900;
+}
+
+.profile-basic-field input {
+  width: 100%;
+  min-height: 52px;
+  border: 3px solid #a9d5e8;
+  border-radius: 16px;
+  background: #fff;
+  color: #173c67;
+  padding: 11px 14px;
+  font-weight: 800;
+}
+
+.profile-description {
+  display: grid;
+  gap: 8px;
+  border-radius: 18px;
+  background: #eef8fc;
+  padding: 16px;
+}
+
+.profile-description h2,
+.profile-description p {
+  margin: 0;
+}
+
+.profile-description h2 {
+  color: #173c67;
+  font-size: 1.05rem;
+}
+
+.profile-description p {
+  color: #355875;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.profile-chat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 24px;
+  border: 3px solid #ffd052;
+  border-radius: 20px;
+  background: #fff8d8;
+  padding: 16px;
+}
+
+.profile-chat-card h2,
+.profile-chat-card p {
+  margin: 0;
+}
+
+.profile-chat-card h2 {
+  color: #173c67;
+  font-size: 1.1rem;
+}
+
+.profile-chat-card p {
+  margin-top: 5px;
+  color: #46617d;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.profile-chat-button {
+  min-height: 46px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 15px;
+  background: #ff467b;
+  color: #fff;
+  cursor: pointer;
+  padding: 9px 15px;
+  font-weight: 950;
+  box-shadow: 0 4px 0 #b92259;
+}
+
+.profile-chat-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.profile-basic-shell .profile-editor-actions {
+  position: static;
+}
+
 .profile-question-section {
   display: grid;
   gap: 14px;
@@ -431,6 +533,12 @@ select:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.profile-editor-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .profile-question-heading h2 {
@@ -487,6 +595,20 @@ select:focus-visible {
 
   .onboarding-form-actions {
     justify-content: space-between;
+  }
+
+  .profile-editor-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .profile-editor-secondary-actions {
+    justify-content: space-between;
+  }
+
+  .profile-chat-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .onboarding-profile-screen {
@@ -2171,6 +2293,26 @@ select:focus-visible {
   text-align: center;
 }
 
+.conversation-start-card--minimal {
+  width: min(100%, 700px);
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: clamp(8px, 2vw, 20px);
+}
+
+.conversation-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .conversation-start-card h1,
 .conversation-summary-card h1,
 .conversation-header h1 {
@@ -2195,6 +2337,11 @@ select:focus-visible {
   object-fit: contain;
   filter: drop-shadow(0 8px 0 rgb(32 76 127 / 16%));
   animation: onboarding-float 2.8s ease-in-out infinite;
+}
+
+.conversation-character--start {
+  width: clamp(170px, 34vw, 250px);
+  max-height: 260px;
 }
 
 .conversation-character--speaking {
@@ -2246,7 +2393,11 @@ select:focus-visible {
 .conversation-send-button:focus-visible,
 .conversation-secondary-button:focus-visible,
 .conversation-link-button:focus-visible,
+.conversation-type-panel summary:focus-visible,
+.conversation-info-panel summary:focus-visible,
+.conversation-debug-transcript summary:focus-visible,
 .conversation-candidate input:focus-visible,
+.conversation-candidate textarea:focus-visible,
 .conversation-candidate select:focus-visible,
 .conversation-text-form input:focus-visible {
   outline: 5px solid #173c67;
@@ -2255,39 +2406,65 @@ select:focus-visible {
 
 .conversation-shell {
   display: grid;
+  width: min(100%, 700px);
   max-height: calc(100dvh - 32px);
-  grid-template-rows: auto auto minmax(110px, 1fr) auto auto auto;
-  gap: 14px;
-  padding: clamp(18px, 4vw, 34px);
+  justify-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: clamp(8px, 2vw, 20px);
 }
 
-.conversation-header {
+.conversation-character-stage {
   display: grid;
-  grid-template-columns: minmax(90px, 150px) 1fr;
-  align-items: center;
-  gap: clamp(12px, 3vw, 26px);
+  width: 100%;
+  place-items: center;
+  gap: clamp(12px, 2.5vh, 22px);
 }
 
-.conversation-header .conversation-character {
-  width: 100%;
+.conversation-character-stage .conversation-character {
+  width: clamp(230px, 42vw, 390px);
+  max-height: min(48vh, 420px);
 }
 
 .conversation-state {
-  margin: 9px 0 0;
-  color: #46617d;
+  margin: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  color: #315f89;
+  padding: 6px 12px;
+  font-size: 0.88rem;
   font-weight: 850;
 }
 
-.conversation-caption {
+.conversation-speech-bubble {
+  position: relative;
+  width: min(92%, 520px);
   margin: 0;
-  border: 3px solid #ffd052;
-  border-radius: 18px;
-  background: #fff8d8;
-  padding: 13px 16px;
+  border: 4px solid #fff;
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 7px 0 rgb(31 76 126 / 16%);
+  padding: clamp(15px, 3vw, 22px);
   color: #173c67;
-  font-size: 1.08rem;
-  font-weight: 850;
+  font-size: clamp(1.15rem, 3vw, 1.55rem);
+  font-weight: 900;
+  line-height: 1.35;
   text-align: center;
+}
+
+.conversation-speech-bubble::after {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 20px solid #fff;
+  border-right: 18px solid transparent;
+  border-left: 18px solid transparent;
+  content: "";
+  transform: translateX(-50%);
 }
 
 .conversation-transcript {
@@ -2299,6 +2476,46 @@ select:focus-visible {
   padding: 4px 8px;
   overflow-y: auto;
   list-style: none;
+}
+
+.conversation-type-panel,
+.conversation-info-panel,
+.conversation-debug-transcript {
+  width: min(100%, 560px);
+  border: 2px solid rgb(255 255 255 / 72%);
+  border-radius: 15px;
+  background: rgb(255 255 255 / 78%);
+  padding: 9px 12px;
+  color: #315f89;
+}
+
+.conversation-type-panel summary,
+.conversation-info-panel summary,
+.conversation-debug-transcript summary {
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.conversation-type-panel[open],
+.conversation-info-panel[open],
+.conversation-debug-transcript[open] {
+  background: rgb(255 255 255 / 96%);
+}
+
+.conversation-info-panel p {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.conversation-type-panel .conversation-text-form,
+.conversation-debug-transcript .conversation-transcript {
+  margin-top: 10px;
+}
+
+.conversation-debug-transcript .conversation-transcript {
+  max-height: 220px;
 }
 
 .conversation-turn {
@@ -2335,6 +2552,7 @@ select:focus-visible {
 
 .conversation-text-form input,
 .conversation-candidate input,
+.conversation-candidate textarea,
 .conversation-candidate select {
   min-width: 0;
   min-height: 48px;
@@ -2344,6 +2562,12 @@ select:focus-visible {
   padding: 10px 14px;
   color: #173c67;
   font-weight: 750;
+}
+
+.conversation-candidate textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .conversation-send-button {
@@ -2359,9 +2583,10 @@ select:focus-visible {
 }
 
 .conversation-secondary-button {
+  min-height: 42px;
   border: 3px solid #b8dbea;
-  background: #fff;
-  padding: 0 16px;
+  background: rgb(255 255 255 / 90%);
+  padding: 0 13px;
   color: #315f89;
 }
 
@@ -2414,6 +2639,10 @@ select:focus-visible {
     max-height: none;
   }
 
+  .conversation-character-stage .conversation-character {
+    width: clamp(210px, 66vw, 330px);
+  }
+
   .conversation-candidate {
     grid-template-columns: 1fr;
   }
@@ -2435,12 +2664,14 @@ select:focus-visible {
     padding: 14px;
   }
 
-  .conversation-header {
-    grid-template-columns: 72px 1fr;
+  .conversation-character-stage .conversation-character {
+    width: clamp(160px, 40vw, 230px);
+    max-height: 38vh;
   }
 
-  .conversation-transcript {
-    max-height: 150px;
+  .conversation-speech-bubble {
+    padding: 12px 15px;
+    font-size: 1rem;
   }
 }
 

@@ -31,7 +31,6 @@ import {
   captureOnboardingAnswer,
   playOnboardingStart,
   replayOnboardingQuestion,
-  type QuestionStatus,
 } from "./OnboardingQuestion";
 import { ProfileEditorView } from "./ProfileEditor";
 import { recordSpeechClip } from "./speech-recorder";
@@ -74,6 +73,7 @@ type OnboardingGateViewProps = {
   profileEditor: ProfileEditorProps | null;
   profileLoadError: string;
   questionProps: QuestionProps | null;
+  redoOnboarding: boolean;
   started: boolean;
 };
 
@@ -98,6 +98,7 @@ export function OnboardingGateView({
   profileEditor,
   profileLoadError,
   questionProps,
+  redoOnboarding,
   started,
 }: OnboardingGateViewProps) {
   const fullData = data?.mode === "full" ? data : null;
@@ -154,7 +155,7 @@ export function OnboardingGateView({
     return <>{onboardingFallback}</>;
   }
 
-  if (canAccessProtectedRoutes && isOnboardingRoute) {
+  if (canAccessProtectedRoutes && isOnboardingRoute && !redoOnboarding) {
     return <>{completedOnboardingFallback}</>;
   }
 
@@ -213,6 +214,10 @@ export function OnboardingGateView({
         </section>
       </main>
     );
+  }
+
+  if (fullData && redoOnboarding && conversationProps) {
+    return <ConversationSurface {...conversationProps} />;
   }
 
   if (canAccessProtectedRoutes) {
@@ -287,12 +292,11 @@ export function shouldSyncActiveQuestion(
 }
 
 export function profileDraftsFromState(profileState: ProfileState) {
-  return Object.fromEntries(
-    profileState.questions.map((question) => [
-      question.answerKey,
-      answerForQuestion(profileState.profile, question),
-    ]),
-  );
+  return {
+    name: profileState.profile.name ?? "",
+    age: profileState.profile.age?.toString() ?? "",
+    description: profileState.profile.description ?? "",
+  };
 }
 
 export function updateProfileDraft(
@@ -456,6 +460,9 @@ type OnboardingGateProps = {
   onboardingFallback: ReactNode;
   onCloseProfileRoute: () => void;
   onOpenProfileRoute: () => void;
+  onRedoCompleted: () => void;
+  onRedoOnboardingRoute: () => void;
+  redoOnboarding: boolean;
 };
 
 export function OnboardingGate({
@@ -466,6 +473,9 @@ export function OnboardingGate({
   onboardingFallback,
   onCloseProfileRoute,
   onOpenProfileRoute,
+  onRedoCompleted,
+  onRedoOnboardingRoute,
+  redoOnboarding,
 }: OnboardingGateProps) {
   const [data, setData] = useState<OnboardingState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -479,9 +489,6 @@ export function OnboardingGate({
   const [profileDrafts, setProfileDrafts] = useState<Record<string, string>>({});
   const [profileFieldErrors, setProfileFieldErrors] = useState<
     Record<string, string>
-  >({});
-  const [profileFieldStatuses, setProfileFieldStatuses] = useState<
-    Record<string, QuestionStatus>
   >({});
   const [profilePageError, setProfilePageError] = useState("");
   const [isProfileSaving, setIsProfileSaving] = useState(false);
@@ -591,14 +598,16 @@ export function OnboardingGate({
   }, []);
   const handleConversationCompleted = useCallback(async () => {
     await refresh();
-  }, [refresh]);
+    if (redoOnboarding) onRedoCompleted();
+  }, [onRedoCompleted, redoOnboarding, refresh]);
   const conversationProps = useConversationOnboarding({
     active: Boolean(
       isOnboardingRoute &&
         selectedExperience === "realtime" &&
         fullData &&
-        !fullData.canBypass &&
-        fullData.profile.onboardingStatus !== "completed",
+        (redoOnboarding ||
+          (!fullData.canBypass &&
+            fullData.profile.onboardingStatus !== "completed")),
     ),
     onCompleted: handleConversationCompleted,
     onUseForm: handleUseFormFallback,
@@ -728,7 +737,6 @@ export function OnboardingGate({
     setProfileState(null);
     setProfileDrafts({});
     setProfileFieldErrors({});
-    setProfileFieldStatuses({});
     setProfilePageError("");
     setIsProfileSaving(false);
     setIsProfileLoading(false);
@@ -761,6 +769,16 @@ export function OnboardingGate({
     onCloseProfileRoute();
   }, [clearProfileEditor, isActiveProfileRoute, onCloseProfileRoute]);
 
+  const handleRedoOnboarding = useCallback(() => {
+    if (!isActiveProfileRoute()) return;
+    setPendingAcknowledgment(null);
+    clearProfileEditor();
+    setUseFormFallback(false);
+    setStarted(false);
+    profileRouteLifecycleRef.current?.markExitHandled();
+    onRedoOnboardingRoute();
+  }, [clearProfileEditor, isActiveProfileRoute, onRedoOnboardingRoute]);
+
   const handleOpenProfile = useCallback(async () => {
     if (
       !isActiveProfileRoute() ||
@@ -781,7 +799,6 @@ export function OnboardingGate({
       setProfileState(profile);
       setProfileDrafts(profileDraftsFromState(profile));
       setProfileFieldErrors({});
-      setProfileFieldStatuses({});
       setProfilePageError("");
     } catch (error) {
       if (isCurrentProfileOperation(profileOperation)) {
@@ -801,79 +818,9 @@ export function OnboardingGate({
     setProfileFieldErrors((current) => ({ ...current, [answerKey]: message }));
   }
 
-  function setProfileFieldStatus(answerKey: string, nextStatus: QuestionStatus) {
-    setProfileFieldStatuses((current) => ({
-      ...current,
-      [answerKey]: nextStatus,
-    }));
-  }
-
   function handleProfileValueChange(answerKey: string, value: string) {
     setProfileDrafts((current) => updateProfileDraft(current, answerKey, value));
     setProfileFieldError(answerKey, "");
-  }
-
-  async function handleProfileReplay(question: OnboardingQuestion) {
-    if (!question.audio || !isActiveProfileRoute()) return;
-    const boundary = profileOperationBoundaryRef.current;
-    if (!boundary) return;
-    const profileOperation = boundary.begin();
-    const { controller } = profileOperation;
-    setProfileFieldStatuses({});
-    setProfileFieldError(question.answerKey, "");
-    try {
-      await replayOnboardingQuestion(question.audio, {
-        signal: controller.signal,
-      });
-      if (!isCurrentProfileOperation(profileOperation)) return;
-    } catch {
-      if (isCurrentProfileOperation(profileOperation)) {
-        setProfileFieldError(
-          question.answerKey,
-          "Audio is unavailable. Please try Replay again.",
-        );
-      }
-    } finally {
-      boundary.finish(controller);
-    }
-  }
-
-  async function handleProfileTranscribe(question: OnboardingQuestion) {
-    if (!isActiveProfileRoute()) return;
-    const boundary = profileOperationBoundaryRef.current;
-    if (!boundary) return;
-    const profileOperation = boundary.begin();
-    const { controller } = profileOperation;
-    setProfileFieldError(question.answerKey, "");
-    setProfileFieldStatuses({ [question.answerKey]: "recording" });
-    try {
-      const transcript = await captureOnboardingAnswer({
-        record: (options) => recordSpeechClip(options),
-        signal: controller.signal,
-        transcribe: async (audio, options) => {
-          if (isCurrentProfileOperation(profileOperation)) {
-            setProfileFieldStatus(question.answerKey, "transcribing");
-          }
-          return transcribeOnboardingAudio(audio, options);
-        },
-      });
-      if (isCurrentProfileOperation(profileOperation)) {
-        handleProfileValueChange(question.answerKey, transcript);
-      }
-    } catch (error) {
-      if (!isCurrentProfileOperation(profileOperation)) return;
-      if (error instanceof Error && error.name === "AbortError") return;
-      setProfileFieldError(
-        question.answerKey,
-        `${readableError(error)} You can still type your answer.`,
-      );
-    } finally {
-      const isCurrent = isCurrentProfileOperation(profileOperation);
-      boundary.finish(controller);
-      if (isCurrent) {
-        setProfileFieldStatus(question.answerKey, "idle");
-      }
-    }
   }
 
   async function handleProfileSave() {
@@ -885,15 +832,12 @@ export function OnboardingGate({
     let acknowledgmentOwnsOperation = false;
     setIsProfileSaving(true);
     setProfileFieldErrors({});
-    setProfileFieldStatuses({});
     setProfilePageError("");
     try {
-      const answers = Object.fromEntries(
-        profileState.questions.map((question) => [
-          question.answerKey,
-          profileDrafts[question.answerKey] ?? "",
-        ]),
-      );
+      const answers = {
+        name: profileDrafts.name ?? "",
+        age: profileDrafts.age ?? "",
+      };
       const saved = await saveProfileAnswers(answers, {
         signal: controller.signal,
       });
@@ -1057,22 +1001,19 @@ export function OnboardingGate({
           ? {
               drafts: profileDrafts,
               fieldErrors: profileFieldErrors,
-              fieldStatuses: profileFieldStatuses,
               isSaving: isProfileSaving,
               onCancel: closeProfileEditor,
               onClose: closeProfileEditor,
-              onReplay: (question) => void handleProfileReplay(question),
+              onRedoOnboarding: handleRedoOnboarding,
               onSave: () => void handleProfileSave(),
-              onTranscribe: (question) =>
-                void handleProfileTranscribe(question),
               onValueChange: handleProfileValueChange,
               pageError: profilePageError,
-              questions: profileState.questions,
             }
           : null
       }
       profileLoadError={profileLoadError}
       questionProps={isProfileRoute && profileState ? null : questionProps}
+      redoOnboarding={redoOnboarding}
       started={started}
     >
       {children}

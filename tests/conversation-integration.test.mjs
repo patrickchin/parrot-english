@@ -15,6 +15,7 @@ const { OnboardingGateView } = await vite.ssrLoadModule(
   "/src/OnboardingGate.tsx",
 );
 const {
+  candidateFromControllerState,
   completeConversationReview,
   mergeConversationTurns,
   selectOnboardingExperience,
@@ -103,6 +104,7 @@ function renderGate(overrides = {}) {
         profileEditor: null,
         profileLoadError: "",
         questionProps: null,
+        redoOnboarding: false,
         started: false,
         ...overrides,
       },
@@ -121,15 +123,14 @@ describe("realtime onboarding gate integration", () => {
       conversationProps: conversationProps(),
       data: fullState("realtime"),
     });
-    assert.match(realtime, /Meet your pig pal/);
-    assert.doesNotMatch(realtime, /Meet Peppa/);
+    assert.match(realtime, /Chat with Peppa/);
 
     const fallback = renderGate({ data: fullState("form") });
     assert.match(fallback, /Meet Peppa/);
-    assert.doesNotMatch(fallback, /Meet your pig pal/);
+    assert.doesNotMatch(fallback, /Chat with Peppa/);
   });
 
-  it("keeps the accessible form action visible after a voice-room failure", () => {
+  it("keeps typed input and retry visible after a voice-room failure", () => {
     const html = renderGate({
       conversationProps: conversationProps({
         error: "The voice room took a break.",
@@ -139,8 +140,26 @@ describe("realtime onboarding gate integration", () => {
     });
 
     assert.match(html, /The voice room took a break/);
-    assert.match(html, /Use the form instead/);
+    assert.doesNotMatch(html, /Use the form instead/);
+    assert.match(html, /Try again/);
     assert.match(html, /aria-label="Type your answer"/);
+  });
+
+  it("lets a completed learner deliberately start a fresh realtime onboarding", () => {
+    const completed = fullState("realtime");
+    completed.profile.onboardingStatus = "completed";
+    completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
+
+    const ordinaryVisit = renderGate({ data: completed });
+    assert.match(ordinaryVisit, /COMPLETE/);
+
+    const redoVisit = renderGate({
+      conversationProps: conversationProps(),
+      data: completed,
+      redoOnboarding: true,
+    });
+    assert.match(redoVisit, /Chat with Peppa/);
+    assert.doesNotMatch(redoVisit, /COMPLETE/);
   });
 
   it("refreshes the existing onboarding gate after successful review", async () => {
@@ -166,6 +185,24 @@ describe("realtime onboarding gate integration", () => {
       ["conversation-1", [{ factId: "name", status: "accepted" }]],
       "refresh",
     ]);
+  });
+
+  it("maps the cumulative controller prose to one virtual review item", () => {
+    assert.deepEqual(
+      candidateFromControllerState({
+        learnedAge: true,
+        learnedName: true,
+        profileSummary: "Mia is seven and loves giant pandas.",
+      }),
+      {
+        factKey: "summary",
+        id: "profile-summary",
+        label: "About this learner",
+        status: "accepted",
+        value: "Mia is seven and loves giant pandas.",
+      },
+    );
+    assert.equal(candidateFromControllerState({ profileSummary: " " }), null);
   });
 
   it("merges the durable transcript and preserves edits after reject-then-keep", () => {

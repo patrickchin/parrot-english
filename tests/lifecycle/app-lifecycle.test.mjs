@@ -164,11 +164,11 @@ function onboardingRouteProps(completedOnboardingFallback) {
   };
 }
 
-function ConversationHookHarness({ createTransport }) {
+function ConversationHookHarness({ createTransport, onCompleted = async () => {} }) {
   const conversation = useConversationOnboarding({
     active: true,
     createTransport,
-    async onCompleted() {},
+    onCompleted,
     onUseForm() {},
   });
   return createElement(
@@ -487,6 +487,93 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     assert.equal(disconnectCalls, 0);
+  });
+
+  it("accepts the prose profile automatically when the room ends", async () => {
+    let listener = () => {};
+    let completions = 0;
+    const reviews = [];
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations") {
+        return json({
+          conversation: { id: "conversation-2" },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "onboarding",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      if (path === "/api/conversations/conversation-2") {
+        return json({
+          conversation: {
+            controllerState: {
+              profileSummary: "Mia is eight and loves red racing cars.",
+            },
+            facts: [],
+            turns: [],
+          },
+        });
+      }
+      if (path === "/api/conversations/conversation-2/review") {
+        reviews.push(JSON.parse(init.body));
+        return json({
+          bypassed: false,
+          conversationId: "conversation-2",
+          profileCompleted: true,
+        });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        async onCompleted() {
+          completions += 1;
+        },
+      }),
+    );
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "listening",
+      ),
+    );
+
+    await act(async () => {
+      listener({ type: "disconnected", reason: "task_complete" });
+      await flush();
+    });
+    await waitFor(() => assert.equal(completions, 1));
+
+    assert.deepEqual(reviews, [
+      {
+        decisions: [{ factId: "profile-summary", status: "accepted" }],
+      },
+    ]);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
   });
 
   it("moves authentication through retry, sign-in, child content, and sign-out", async () => {

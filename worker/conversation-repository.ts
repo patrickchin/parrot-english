@@ -5,16 +5,27 @@ import {
   conversationTurn,
   learnerProfile,
 } from "../src/db/schema.ts";
+import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
 import {
-  createOnboardingConversationState,
-  validateCandidateFacts,
-} from "../lib/conversation-scenario.js";
+  ensureV2Profile,
+  readV2Answers,
+} from "../lib/onboarding-profile.js";
 import type { Database } from "./database.ts";
 import type { OnboardingIdentity } from "./onboarding.ts";
+import { ONBOARDING_QUESTIONNAIRE } from "./onboarding-definition.ts";
 import { createOnboardingRepository } from "./onboarding-repository.ts";
 
 const MAX_CONTROLLER_STATE_BYTES = 16 * 1024;
 const MAX_FACTS = 5;
+const LEGACY_INTEREST_TOPICS = new Set([
+  "activities",
+  "animals",
+  "cartoons",
+  "food",
+  "music",
+  "stories",
+  "vehicles",
+]);
 
 export class ConversationRepositoryError extends Error {
   readonly code: string;
@@ -73,11 +84,38 @@ function serializeJson(value: unknown, maxBytes: number, code: string) {
 
 function normalizeCandidate(candidate: CandidateFact) {
   const key = candidate?.key;
-  const normalized = validateCandidateFacts(createOnboardingConversationState(), [
-    key === "interest"
-      ? { key, topic: candidate.topic, value: candidate.value }
-      : { key, value: candidate.value },
-  ])[0] as { key: "name" | "age" | "interest"; value: string | number; topic?: string };
+  let normalized: {
+    key: "name" | "age" | "interest";
+    topic?: string;
+    value: string | number;
+  };
+  if (key === "name") {
+    normalized = {
+      key,
+      value: boundedString(candidate.value, 120, "invalid_facts"),
+    };
+  } else if (key === "age") {
+    if (
+      !Number.isInteger(candidate.value) ||
+      (candidate.value as number) < 3 ||
+      (candidate.value as number) > 17
+    ) {
+      throw new ConversationRepositoryError(400, "invalid_facts");
+    }
+    normalized = { key, value: candidate.value as number };
+  } else if (key === "interest") {
+    const topic = boundedString(candidate.topic, 40, "invalid_facts").toLowerCase();
+    if (!LEGACY_INTEREST_TOPICS.has(topic)) {
+      throw new ConversationRepositoryError(400, "invalid_facts");
+    }
+    normalized = {
+      key,
+      topic,
+      value: boundedString(candidate.value, 240, "invalid_facts"),
+    };
+  } else {
+    throw new ConversationRepositoryError(400, "invalid_facts");
+  }
   const sourceTurnIds = Array.isArray(candidate.sourceTurnIds)
     ? candidate.sourceTurnIds.map((id) => boundedString(id, 200))
     : [];
@@ -380,6 +418,124 @@ export function createConversationRepository(
     if (!owned) throw new ConversationRepositoryError(404, "not_found");
     if (!Array.isArray(decisions) || decisions.length > MAX_FACTS) {
       throw new ConversationRepositoryError(400, "invalid_review");
+    }
+    if (decisions.length === 1 && decisions[0]?.factId === "profile-summary") {
+      const decision = decisions[0];
+      if (
+        decision.status !== "accepted" &&
+        decision.status !== "edited" &&
+        decision.status !== "rejected"
+      ) {
+        throw new ConversationRepositoryError(400, "invalid_review");
+      }
+      const storedState = parseJson(owned.conversation.controllerState);
+      if (
+        storedState === null ||
+        typeof storedState !== "object" ||
+        Array.isArray(storedState)
+      ) {
+        throw new ConversationRepositoryError(500, "invalid_stored_data");
+      }
+      const controllerState = storedState as Record<string, unknown>;
+      const currentSummary = boundedString(
+        controllerState.profileSummary,
+        2_000,
+        "invalid_review",
+      );
+      const profileSummary =
+        decision.status === "edited"
+          ? boundedString(decision.value, 2_000, "invalid_review")
+          : currentSummary;
+      const profileName =
+        controllerState.learnedName === true
+          ? boundedString(controllerState.profileName, 120, "invalid_review")
+          : null;
+      const profileAge = controllerState.profileAge;
+      if (
+        controllerState.learnedAge === true &&
+        (!Number.isInteger(profileAge) ||
+          (profileAge as number) < 3 ||
+          (profileAge as number) > 17)
+      ) {
+        throw new ConversationRepositoryError(400, "invalid_review");
+      }
+      const profileCompleted =
+        decision.status !== "rejected" &&
+        controllerState.learnedName === true &&
+        controllerState.learnedAge === true &&
+        profileName !== null &&
+        Number.isInteger(profileAge);
+      const nextState = {
+        ...controllerState,
+        profileSummary,
+        summaryStatus: decision.status,
+      };
+      const timestamp = now();
+      const onboarding = createOnboardingRepository(database, { createId, now });
+      const profile = await onboarding.ensureProfile(identity);
+      const readableProfile = ensureV2Profile(
+        profile,
+        ONBOARDING_QUESTIONNAIRE,
+        { forProfileEdit: true },
+      );
+      const answers = readV2Answers(readableProfile);
+      const answersJson = JSON.stringify({
+        ...answers,
+        description:
+          decision.status === "rejected"
+            ? (answers.description ?? null)
+            : profileSummary,
+      });
+      const sessionUpdate = database
+        .update(conversationSession)
+        .set({
+          controllerState: serializeJson(
+            nextState,
+            MAX_CONTROLLER_STATE_BYTES,
+            "invalid_controller_state",
+          ),
+          status: "completed",
+          finishReason: owned.conversation.finishReason ?? "reviewed",
+          endedAt: owned.conversation.endedAt ?? timestamp,
+          updatedAt: timestamp,
+        })
+        .where(eq(conversationSession.id, conversationId));
+      if (profileCompleted) {
+        const profileUpdate = database
+          .update(learnerProfile)
+          .set({
+            name: profileName,
+            age: profileAge as number,
+            answersJson,
+            onboardingStatus: "completed",
+            currentQuestionKey: null,
+            completedAt: timestamp,
+            updatedAt: timestamp,
+          })
+          .where(eq(learnerProfile.id, profile.id));
+        await database.batch([profileUpdate, sessionUpdate] as const);
+      } else {
+        const profileUpdate = database
+          .update(learnerProfile)
+          .set({
+            ...(decision.status !== "rejected" && profileName
+              ? { name: profileName }
+              : {}),
+            ...(decision.status !== "rejected" && Number.isInteger(profileAge)
+              ? { age: profileAge as number }
+              : {}),
+            answersJson,
+            updatedAt: timestamp,
+          })
+          .where(eq(learnerProfile.id, profile.id));
+        await database.batch([profileUpdate, sessionUpdate] as const);
+        await onboarding.skipSession(identity);
+      }
+      return {
+        conversationId,
+        profileCompleted,
+        bypassed: !profileCompleted,
+      };
     }
     const byId = new Map(owned.facts.map((fact) => [fact.id, fact]));
     const seen = new Set<string>();

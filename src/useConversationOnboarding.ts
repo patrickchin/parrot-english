@@ -97,6 +97,26 @@ function candidateFromFact(fact: ConversationFact): ConversationSurfaceCandidate
   };
 }
 
+export function candidateFromControllerState(
+  state: Record<string, unknown>,
+): ConversationSurfaceCandidate | null {
+  if (typeof state.profileSummary !== "string" || !state.profileSummary.trim()) {
+    return null;
+  }
+  const storedStatus = state.summaryStatus;
+  const status =
+    storedStatus === "edited" || storedStatus === "rejected"
+      ? storedStatus
+      : "accepted";
+  return {
+    factKey: "summary",
+    id: "profile-summary",
+    label: "About this learner",
+    status,
+    value: state.profileSummary.trim(),
+  };
+}
+
 type UseConversationOnboardingOptions = {
   active: boolean;
   createTransport?: typeof createLiveKitConversation;
@@ -121,6 +141,8 @@ export function useConversationOnboarding({
   const conversationIdRef = useRef<string | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
+  const autoStartRef = useRef(false);
+  const completingConversationRef = useRef<string | null>(null);
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
@@ -128,23 +150,41 @@ export function useConversationOnboarding({
 
   const loadSummary = useCallback(
     async (id: string, operation = operationRef.current) => {
+      if (completingConversationRef.current === id) return;
+      completingConversationRef.current = id;
       try {
         const loaded = await loadConversation(id);
         if (!isCurrent(operation)) return;
+        const proseProfile = candidateFromControllerState(
+          loaded.conversation.controllerState,
+        );
         setCandidates(
-          (loaded.conversation.facts ?? []).map(candidateFromFact),
+          proseProfile
+            ? [proseProfile]
+            : (loaded.conversation.facts ?? []).map(candidateFromFact),
         );
         setTurns((current) =>
           mergeConversationTurns(current, loaded.conversation.turns ?? []),
         );
-        setStatus("summary");
+        setStatus("saving");
+        await reviewConversation(
+          id,
+          proseProfile
+            ? [{ factId: proseProfile.id, status: "accepted" }]
+            : [],
+        );
+        if (!isCurrent(operation)) return;
+        conversationIdRef.current = null;
+        setConversationId(null);
+        await onCompleted();
       } catch (summaryError) {
         if (!isCurrent(operation)) return;
+        completingConversationRef.current = null;
         setError(readableError(summaryError));
         setStatus("error");
       }
     },
-    [isCurrent],
+    [isCurrent, onCompleted],
   );
 
   const handleTransportEvent = useCallback(
@@ -183,6 +223,7 @@ export function useConversationOnboarding({
     setStatus("connecting");
     setTurns([]);
     setCandidates([]);
+    completingConversationRef.current = null;
     try {
       const started = await startConversation();
       if (!isCurrent(operation)) return;
@@ -326,16 +367,40 @@ export function useConversationOnboarding({
   }, [candidates, conversationId, onCompleted]);
 
   useEffect(() => {
+    if (!active || status !== "ready" || autoStartRef.current) return;
+    autoStartRef.current = true;
+    void start();
+  }, [active, start, status]);
+
+  useEffect(() => {
     if (active) return;
     operationRef.current += 1;
+    autoStartRef.current = false;
+    completingConversationRef.current = null;
+    const activeConversationId = conversationIdRef.current;
+    conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
+    setConversationId(null);
+    setStatus("ready");
+    setTurns([]);
+    setCandidates([]);
+    setTypedValue("");
+    setMicrophoneEnabled(true);
+    setError("");
     void transport?.disconnect();
+    if (activeConversationId) {
+      void finishConversation(activeConversationId, "left_conversation").catch(
+        () => {},
+      );
+    }
   }, [active]);
 
   useEffect(
     () => () => {
       operationRef.current += 1;
+      autoStartRef.current = false;
+      completingConversationRef.current = null;
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();

@@ -5,134 +5,143 @@ import {
   createOnboardingConversationState,
   isConversationTerminal,
   nextConversationPrompt,
-  validateCandidateFacts,
 } from "../lib/conversation-scenario.js";
 
-describe("bounded onboarding conversation", () => {
-  it("collects volunteered core facts in either order", () => {
-    const initial = createOnboardingConversationState();
-    assert.equal(initial.phase, "core");
-    assert.equal(initial.activeObjective, "name");
+function answered(summary, learnedName, learnedAge) {
+  return {
+    outcome: "answered",
+    summary,
+    learnedName,
+    learnedAge,
+    profileName: learnedName ? "Mia" : null,
+    profileAge: learnedAge ? 8 : null,
+  };
+}
 
-    const withAge = applyConversationObservation(initial, {
-      outcome: "answered",
-      facts: [{ key: "age", value: 8 }],
-    });
+describe("bounded onboarding conversation", () => {
+  it("tracks required details while storing only one cumulative prose summary", () => {
+    const initial = createOnboardingConversationState();
+    assert.equal(initial.activeObjective, "name");
+    assert.equal(initial.profileSummary, "");
+    assert.equal(initial.learnedName, false);
+    assert.equal(initial.learnedAge, false);
+    assert.equal("facts" in initial, false);
+
+    const withAge = applyConversationObservation(
+      initial,
+      answered("The learner is eight years old.", false, true),
+    );
     assert.equal(withAge.activeObjective, "name");
 
-    const withBoth = applyConversationObservation(withAge, {
-      outcome: "answered",
-      facts: [{ key: "name", value: "Mia" }],
-    });
+    const withBoth = applyConversationObservation(
+      withAge,
+      answered("Mia is eight years old.", true, true),
+    );
     assert.equal(withBoth.phase, "optional");
     assert.equal(withBoth.activeObjective, "interest");
-    assert.deepEqual(withBoth.facts, [
-      { key: "age", value: 8 },
-      { key: "name", value: "Mia" },
-    ]);
+    assert.equal(withBoth.profileSummary, "Mia is eight years old.");
   });
 
-  it("allows only one rephrase and marks it as the Chinese rescue turn", () => {
+  it("allows only one rephrase and keeps the rescue turn English-only", () => {
     const initial = createOnboardingConversationState();
     const rephrased = applyConversationObservation(initial, {
       outcome: "unclear",
-      facts: [],
     });
 
     assert.equal(rephrased.rephraseCount.name, 1);
     assert.deepEqual(nextConversationPrompt(rephrased), {
       objective: "name",
       mode: "rephrase",
-      includeChineseHint: true,
       mustFinishAfterTurn: false,
     });
 
     const advanced = applyConversationObservation(rephrased, {
       outcome: "unclear",
-      facts: [],
     });
     assert.equal(advanced.activeObjective, "age");
-    assert.equal(advanced.rephraseCount.name, 1);
-    assert.equal(nextConversationPrompt(advanced).mode, "initial");
+  });
+
+  it("follows a different relevant interest by updating the prose", () => {
+    const optional = applyConversationObservation(
+      createOnboardingConversationState(),
+      answered("Mia is eight years old.", true, true),
+    );
+    const followedInterest = applyConversationObservation(
+      optional,
+      answered(
+        "Mia is eight years old and gets excited about red racing cars.",
+        true,
+        true,
+      ),
+    );
+
+    assert.equal(
+      followedInterest.profileSummary,
+      "Mia is eight years old and gets excited about red racing cars.",
+    );
+    assert.equal(followedInterest.optionalExchangeCount, 1);
   });
 
   it("accepts uncertainty without spending the rephrase", () => {
     const advanced = applyConversationObservation(
       createOnboardingConversationState(),
-      { outcome: "unknown", facts: [] },
+      { outcome: "unknown" },
     );
 
     assert.equal(advanced.activeObjective, "age");
     assert.equal(advanced.rephraseCount.name, 0);
   });
 
-  it("closes after at most three optional exchanges", () => {
+  it("closes after at most three optional prose updates", () => {
     let state = applyConversationObservation(
       createOnboardingConversationState(),
-      {
-        outcome: "answered",
-        facts: [
-          { key: "name", value: "Mia" },
-          { key: "age", value: 8 },
-        ],
-      },
+      answered("Mia is eight years old.", true, true),
     );
 
-    for (const [topic, value] of [
-      ["animals", "dinosaurs"],
-      ["stories", "space adventures"],
-      ["activities", "drawing"],
+    for (const summary of [
+      "Mia is eight years old and likes dinosaurs.",
+      "Mia is eight years old, likes dinosaurs, and enjoys space stories.",
+      "Mia is eight years old, likes dinosaurs and space stories, and loves drawing.",
     ]) {
-      state = applyConversationObservation(state, {
-        outcome: "answered",
-        facts: [{ key: "interest", topic, value }],
-      });
+      state = applyConversationObservation(state, answered(summary, true, true));
     }
 
     assert.equal(state.optionalExchangeCount, 3);
     assert.equal(state.phase, "closing");
-    assert.equal(state.finishReason, "max_optional_exchanges");
     assert.equal(isConversationTerminal(state), true);
-    assert.deepEqual(nextConversationPrompt(state), {
-      objective: "closing",
-      mode: "close",
-      includeChineseHint: false,
-      mustFinishAfterTurn: true,
-    });
   });
 
   it("ends warmly when the child asks to stop", () => {
     const stopped = applyConversationObservation(
       createOnboardingConversationState(),
-      { outcome: "stop", facts: [] },
+      { outcome: "stop" },
     );
 
     assert.equal(stopped.phase, "closing");
     assert.equal(stopped.finishReason, "child_stopped");
     assert.throws(
       () =>
-        applyConversationObservation(stopped, {
-          outcome: "answered",
-          facts: [{ key: "name", value: "Late" }],
-        }),
+        applyConversationObservation(
+          stopped,
+          answered("This is too late.", true, true),
+        ),
       /already terminal/,
     );
   });
 
-  it("rejects unsupported or malformed candidate facts", () => {
+  it("requires a bounded paragraph for answered turns", () => {
     const state = createOnboardingConversationState();
-
     assert.throws(
-      () => validateCandidateFacts(state, [{ key: "email", value: "x@y.z" }]),
-      /Unsupported conversation fact/,
+      () => applyConversationObservation(state, answered(" ", true, false)),
+      /summary must be a non-empty paragraph/i,
     );
     assert.throws(
-      () => validateCandidateFacts(state, [{ key: "age", value: 22 }]),
-      /Age must be an integer from 3 to 17/,
-    );
-    assert.throws(
-      () => validateCandidateFacts(state, [{ key: "interest", value: "dogs" }]),
-      /Interest topic is required/,
+      () =>
+        applyConversationObservation(
+          state,
+          answered("x".repeat(2_001), true, false),
+        ),
+      /summary is too long/i,
     );
   });
 });

@@ -6,13 +6,10 @@ import {
   isConversationTerminal,
   nextConversationPrompt,
 } from "../lib/conversation-scenario.js";
-import type {
-  AgentCandidateFact,
-  ConversationIngestClient,
-} from "./ingest-client.js";
+import type { ConversationIngestClient } from "./ingest-client.js";
 
 export const ONBOARDING_TOOL_NAMES = [
-  "recordCandidateFacts",
+  "updateProfileSummary",
   "markObjectiveUnanswered",
   "finishConversation",
   "requestGentleRephrase",
@@ -22,22 +19,34 @@ export const ONBOARDING_AGENT_INSTRUCTIONS = `
 You are a warm, playful pig friend helping a young child with one short
 getting-to-know-you conversation. You are an original Parrot English friend.
 Never say you are a named television character and never discuss voice identity.
+Speak only English. Use bright, bouncy energy: sound delighted, curious, and a
+little silly, with quick playful reactions and varied wording.
 
 Stay inside this onboarding task. Ask one short English question at a time.
 Collect name and age in either order, then have at most three optional exchanges
-about activities, animals, cartoons, food, music, or stories. Follow the objective
-returned by the tools. Do not answer or explore unrelated topics; warmly say you
-need to finish getting to know them and return to the current objective.
+about activities, animals, cartoons, food, music, stories, or vehicles. Treat any
+personal preference or child-safe detail as a relevant answer, even when it is a
+different category from the question. If you ask about an animal and the child
+says they like a food or a car, record what they actually shared, react warmly,
+and keep going with that interest. Never correct them or force them back to the
+category you asked about. Use off-topic only for something unrelated to getting
+to know the child; briefly redirect truly unrelated topics.
 
 Never pressure the child. "I don't know", silence, uncertainty, and refusal are
 valid. After an unclear or off-topic answer, request at most one gentle rephrase.
-Only when the tool result says includeChineseHint=true, add one brief Chinese hint
-after the English question. Otherwise speak English only. Keep every spoken turn
-to one or two short child-friendly sentences.
+Keep every spoken turn to one or two short child-friendly sentences. Celebrate
+what they share with an upbeat reaction before the next playful question.
 
 After every child turn, call exactly one appropriate state tool before speaking
-again. Do not invent or retain facts outside the tool schema. When the state is
-closing, thank the child briefly and finish. Never begin general open-ended chat.
+again. After an answered turn, rewrite everything useful the child has directly
+shared as one natural paragraph written in the third person. Keep earlier
+details unless the child corrects them. No labels, bullets, or field names; do
+not make unsupported guesses.
+The learnedName and learnedAge booleans are controller signals only; the profile
+itself is always prose. Also keep profileName and profileAge updated with only
+the two required values the child directly shared; use null until each is known.
+When the state is closing, thank the child briefly and finish. Never begin
+general open-ended chat.
 `.trim();
 
 export const AGENT_SESSION_START_OPTIONS = { record: false } as const;
@@ -55,57 +64,6 @@ export const AGENT_TURN_HANDLING = {
   turnDetection: "inference",
 } as const;
 
-const interestTopicSchema = z.enum([
-  "activities",
-  "animals",
-  "cartoons",
-  "food",
-  "music",
-  "stories",
-]);
-
-const candidateFactSchema = z.discriminatedUnion("key", [
-  z.object({ key: z.literal("name"), value: z.string().trim().min(1).max(120) }),
-  z.object({ key: z.literal("age"), value: z.number().int().min(3).max(17) }),
-  z.object({
-    key: z.literal("interest"),
-    topic: interestTopicSchema,
-    value: z.string().trim().min(1).max(240),
-  }),
-]);
-
-const candidateFactToolSchema = z.object({
-  key: z.enum(["name", "age", "interest"]),
-  topic: z
-    .enum(["none", "activities", "animals", "cartoons", "food", "music", "stories"])
-    .describe("Use none for name or age; otherwise select the matching interest topic."),
-  value: z
-    .string()
-    .trim()
-    .min(1)
-    .max(240)
-    .describe("Use decimal digits for age, for example 8."),
-});
-
-function normalizeToolCandidateFact(
-  fact: z.infer<typeof candidateFactToolSchema>,
-) {
-  if (fact.key === "age") {
-    return candidateFactSchema.parse({
-      key: fact.key,
-      value: Number(fact.value),
-    });
-  }
-  if (fact.key === "interest") {
-    return candidateFactSchema.parse({
-      key: fact.key,
-      topic: fact.topic,
-      value: fact.value,
-    });
-  }
-  return candidateFactSchema.parse({ key: fact.key, value: fact.value });
-}
-
 type ControllerState = Omit<
   ReturnType<typeof createOnboardingConversationState>,
   "finishReason"
@@ -113,7 +71,6 @@ type ControllerState = Omit<
 
 type CreateTaskOptions = {
   conversationId: string;
-  createId?: () => string;
   ingest: ConversationIngestClient;
   initialState?: ControllerState;
   onEnded?: () => void;
@@ -121,37 +78,25 @@ type CreateTaskOptions = {
 
 export function createGettingToKnowYouTask({
   conversationId,
-  createId = () => crypto.randomUUID(),
   ingest,
   initialState = createOnboardingConversationState() as ControllerState,
   onEnded = () => {},
 }: CreateTaskOptions) {
   let state = initialState;
   let completeTask: ((result: { finishReason: string | null }) => void) | null = null;
-  const candidateIds = new Map<string, string>();
-
-  function candidateId(fact: Record<string, unknown>) {
-    const semanticKey =
-      fact.key === "interest" ? `interest:${String(fact.topic)}` : String(fact.key);
-    const existing = candidateIds.get(semanticKey);
-    if (existing) return existing;
-    const id = createId();
-    candidateIds.set(semanticKey, id);
-    return id;
-  }
 
   async function transition(
-    observation: { outcome: string; facts: Array<Record<string, unknown>> },
+    observation: {
+      learnedAge?: boolean;
+      learnedName?: boolean;
+      outcome: string;
+      profileAge?: number | null;
+      profileName?: string | null;
+      summary?: string;
+    },
   ) {
     state = applyConversationObservation(state, observation) as ControllerState;
-    const candidates: AgentCandidateFact[] = observation.facts.map((fact) => ({
-      id: candidateId(fact),
-      key: fact.key as AgentCandidateFact["key"],
-      sourceTurnIds: [],
-      ...(fact.topic === undefined ? {} : { topic: String(fact.topic) }),
-      value: fact.value as string | number,
-    }));
-    await ingest.upsertFacts(conversationId, candidates, state);
+    await ingest.updateState(conversationId, state);
     if (isConversationTerminal(state)) {
       await ingest.endConversation(
         conversationId,
@@ -166,22 +111,55 @@ export function createGettingToKnowYouTask({
 
   const tools = [
     llm.tool({
-      name: "recordCandidateFacts",
+      name: "updateProfileSummary",
       description:
-        "Record only facts directly stated by the child, then get the next bounded objective.",
+        "Save one cumulative prose paragraph containing only details the child directly shared.",
       parameters: z.object({
-        facts: z.array(candidateFactToolSchema).min(1).max(5),
-        nextInterestTopic: z
-          .enum(["activities", "animals", "cartoons", "food", "music", "stories"])
-          .nullable(),
+        summary: z
+          .string()
+          .trim()
+          .min(1)
+          .max(2_000)
+          .describe(
+            "The complete current profile as one natural third-person paragraph, with no labels, bullets, or field names.",
+          ),
+        learnedName: z
+          .boolean()
+          .describe("True once the child has directly shared their name."),
+        learnedAge: z
+          .boolean()
+          .describe("True once the child has directly shared their age."),
+        profileName: z
+          .string()
+          .trim()
+          .min(1)
+          .max(120)
+          .nullable()
+          .describe("The child's directly shared name, or null until known."),
+        profileAge: z
+          .number()
+          .int()
+          .min(3)
+          .max(17)
+          .nullable()
+          .describe("The child's directly shared age, or null until known."),
         outcome: z.literal("answered"),
       }),
-      execute: async ({ facts, outcome }) =>
+      execute: async ({
+        learnedAge,
+        learnedName,
+        outcome,
+        profileAge,
+        profileName,
+        summary,
+      }) =>
         transition({
+          learnedAge,
+          learnedName,
           outcome,
-          facts: facts.map(normalizeToolCandidateFact) as Array<
-            Record<string, unknown>
-          >,
+          profileAge,
+          profileName,
+          summary,
         }),
     }),
     llm.tool({
@@ -191,7 +169,7 @@ export function createGettingToKnowYouTask({
       parameters: z.object({
         outcome: z.enum(["declined", "silence", "unknown", "unclear"]),
       }),
-      execute: async ({ outcome }) => transition({ outcome, facts: [] }),
+      execute: async ({ outcome }) => transition({ outcome }),
     }),
     llm.tool({
       name: "finishConversation",
@@ -203,11 +181,10 @@ export function createGettingToKnowYouTask({
         if (!isConversationTerminal(state)) {
           state = applyConversationObservation(state, {
             outcome: "stop",
-            facts: [],
           }) as ControllerState;
         }
         state = { ...state, finishReason: reason };
-        await ingest.upsertFacts(conversationId, [], state);
+        await ingest.updateState(conversationId, state);
         await ingest.endConversation(
           conversationId,
           reason === "task_complete" ? "completed" : "stopped",
@@ -221,9 +198,9 @@ export function createGettingToKnowYouTask({
     llm.tool({
       name: "requestGentleRephrase",
       description:
-        "Use only for the first unclear or off-topic response; the returned prompt controls the Chinese hint.",
+        "Use only for the first truly unclear or unrelated response; rephrase once in simple English.",
       parameters: z.object({ reason: z.enum(["off_topic", "unclear"]) }),
-      execute: async ({ reason }) => transition({ outcome: reason, facts: [] }),
+      execute: async ({ reason }) => transition({ outcome: reason }),
     }),
   ];
 
@@ -236,7 +213,7 @@ export function createGettingToKnowYouTask({
       ctx.session.generateReply({
         allowInterruptions: true,
         instructions:
-          "Greet the child in one short sentence, then ask their name. Do not call a tool before the first answer.",
+          "Greet the child with bright, playful energy in one short sentence, then ask their name. Do not call a tool before the first answer.",
       });
     },
   });

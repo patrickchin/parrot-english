@@ -111,7 +111,7 @@ describe("accessible realtime conversation surface", () => {
       /<details class="conversation-debug-transcript"><summary>Debug transcript<\/summary>/,
     );
     assert.doesNotMatch(html, /conversation-debug-transcript" open/);
-    assert.match(html, /Pig pal/);
+    assert.match(html, /Peppa/);
     assert.match(html, /You/);
     assert.match(html, /Microphone off/);
     assert.match(html, /Reconnecting/);

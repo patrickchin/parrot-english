@@ -363,7 +363,7 @@ describe("profile summary editor", () => {
     assert.match(html, />Save changes</);
     assert.doesNotMatch(
       html,
-      /What animals do you like|你喜欢什么动物|Replay|Speak answer|pandas/,
+      /What animals do you like|你喜欢什么动物|Replay|Speak answer/,
     );
   });
 
@@ -959,7 +959,7 @@ describe("onboarding and profile gate", () => {
       isOnboardingRoute: false,
       isProfileRoute: true,
       profileEditor: {
-        drafts: { name: "Mia", age: "I am eight" },
+        drafts: { name: "Mia", age: "I am eight", description: "" },
         fieldErrors: {},
         isSaving: false,
         onCancel() {},
