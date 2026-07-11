@@ -80,6 +80,15 @@ describe("app route helpers", () => {
       ),
       "/onboarding?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
     );
+    assert.equal(
+      routes.getRedoOnboardingPath("/profile"),
+      "/onboarding?redo=1&returnTo=%2Fprofile",
+    );
+    assert.equal(
+      routes.isRedoOnboardingRequest("?redo=1&returnTo=%2Fprofile"),
+      true,
+    );
+    assert.equal(routes.isRedoOnboardingRequest("?redo=0"), false);
   });
 
   it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {

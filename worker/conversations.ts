@@ -15,8 +15,8 @@ const MAX_BODY_BYTES = 32 * 1024;
 const ONBOARDING_SCENARIO = {
   key: "onboarding",
   version: 1,
-  requiredFacts: ["name", "age"],
-  optionalFact: "interest",
+  requiredDetails: ["name", "age"],
+  summaryMode: "prose",
   maxOptionalExchanges: 3,
 } as const;
 

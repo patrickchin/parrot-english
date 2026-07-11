@@ -48,6 +48,9 @@ type CreateLiveKitConversationOptions = {
   url: string;
 };
 
+const E2E_PARTICIPANT_TOKEN = "parrot-e2e-participant-token";
+const E2E_LIVEKIT_URL = "wss://parrot-e2e.invalid";
+
 function defaultMountAudio(element: AudioElementLike) {
   if (element instanceof HTMLMediaElement) {
     element.autoplay = true;
@@ -70,12 +73,64 @@ function segmentRecords(value: unknown) {
     : [];
 }
 
+function createE2eLiveKitConversation() {
+  const listeners = new Set<Listener>();
+
+  function publish(event: ConversationTransportEvent) {
+    for (const listener of listeners) listener(event);
+  }
+
+  return {
+    async connect() {
+      publish({ type: "state", state: "connecting" });
+      await Promise.resolve();
+      publish({ type: "state", state: "connected" });
+      publish({
+        type: "transcription",
+        id: "e2e-agent-greeting",
+        text: "Hello again! What's your name?",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+    },
+
+    async setMicrophoneEnabled() {},
+
+    async sendText(text: string) {
+      const trimmed = text.trim();
+      if (!trimmed) throw new Error("Type a short answer first.");
+      publish({
+        type: "transcription",
+        id: `e2e-user-${Date.now()}`,
+        text: trimmed,
+        final: true,
+        language: "en",
+        role: "user",
+      });
+    },
+
+    async disconnect() {
+      listeners.clear();
+    },
+
+    subscribe(listener: Listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
 export function createLiveKitConversation({
   mountAudio = defaultMountAudio,
-  room = new Room() as unknown as RoomLike,
+  room,
   token,
   url,
 }: CreateLiveKitConversationOptions) {
+  if (token === E2E_PARTICIPANT_TOKEN && url === E2E_LIVEKIT_URL) {
+    return createE2eLiveKitConversation();
+  }
+  const activeRoom = room ?? (new Room() as unknown as RoomLike);
   const listeners = new Set<Listener>();
   const attachments = new Map<TrackLike, AudioElementLike>();
   let connected = false;
@@ -131,20 +186,20 @@ export function createLiveKitConversation({
     ],
   ]);
 
-  for (const [event, listener] of eventListeners) room.on(event, listener);
+  for (const [event, listener] of eventListeners) activeRoom.on(event, listener);
 
   return {
     async connect() {
       if (connected) return;
       publish({ type: "state", state: "connecting" });
-      await room.connect(url, token);
+      await activeRoom.connect(url, token);
       connected = true;
       publish({ type: "state", state: "connected" });
     },
 
     async setMicrophoneEnabled(enabled: boolean) {
       if (!connected) throw new Error("Connect before changing the microphone.");
-      await room.localParticipant.setMicrophoneEnabled(enabled);
+      await activeRoom.localParticipant.setMicrophoneEnabled(enabled);
     },
 
     async sendText(text: string) {
@@ -152,20 +207,22 @@ export function createLiveKitConversation({
       if (!trimmed) throw new Error("Type a short answer first.");
       if (trimmed.length > 1_000) throw new Error("Please use 1000 characters or fewer.");
       if (!connected) throw new Error("Connect before sending an answer.");
-      await room.localParticipant.sendText(trimmed, { topic: "lk.chat" });
+      await activeRoom.localParticipant.sendText(trimmed, { topic: "lk.chat" });
     },
 
     async disconnect() {
       if (disconnected) return;
       disconnected = true;
-      for (const [event, listener] of eventListeners) room.off(event, listener);
+      for (const [event, listener] of eventListeners) {
+        activeRoom.off(event, listener);
+      }
       for (const [track, element] of attachments) {
         track.detach?.();
         element.remove();
       }
       attachments.clear();
       listeners.clear();
-      await room.disconnect();
+      await activeRoom.disconnect();
       connected = false;
     },
 

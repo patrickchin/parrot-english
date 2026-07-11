@@ -10,6 +10,27 @@
 
 ---
 
+## 2026-07-10 prose-summary amendment
+
+The implemented extraction contract supersedes the candidate-fact steps below:
+
+- The transcript is still stored turn by turn.
+- The agent rewrites all useful directly shared information as one cumulative,
+  natural third-person paragraph after each answered turn.
+- `learnedName` and `learnedAge` are controller readiness booleans only. There
+  is no active fact array, fact key schema, interest enum, or per-fact review.
+- The active agent persists controller state through the existing `/facts`
+  endpoint with `candidates: []`; no new `conversation_fact` rows are created.
+- The summary screen reviews one virtual `profile-summary` textarea. Keeping it
+  completes onboarding when both readiness booleans are true; editing replaces
+  the whole paragraph; leaving it out uses the existing session bypass.
+- The old fact table and review branch remain only for historical conversations,
+  avoiding a destructive database migration.
+
+The task-by-task content below records the original implementation sequence and
+should be read with this amendment applied wherever it refers to active
+candidate facts.
+
 ## File map
 
 New focused units:
@@ -65,7 +86,7 @@ const rephrased = applyConversationObservation(afterName, {
   facts: [],
 });
 assert.equal(rephrased.rephraseCount.age, 1);
-assert.equal(nextConversationPrompt(rephrased).includeChineseHint, true);
+assert.equal(nextConversationPrompt(rephrased).includeChineseHint, false);
 
 const skipped = applyConversationObservation(rephrased, {
   outcome: "unclear",
@@ -110,7 +131,7 @@ model prose:
 {
   objective: "age",
   mode: "rephrase",
-  includeChineseHint: true,
+  includeChineseHint: false,
   mustFinishAfterTurn: false,
 }
 ```
@@ -514,8 +535,9 @@ requestGentleRephrase({ reason })
 
 Every executor calls `lib/conversation-scenario.js`, persists resulting facts
 and controller state, and rejects invalid/terminal transitions. Instructions
-require one short English question, permit one brief Chinese hint only when the
-controller says so, forbid unrelated answers, and never claim an exact
+require short English-only turns, playful energetic delivery, and acceptance of
+another bounded child-safe preference category even when it differs from the
+question. They still redirect truly unrelated requests and never claim an exact
 protected identity.
 
 - [ ] **Step 6: Implement agent entrypoint**

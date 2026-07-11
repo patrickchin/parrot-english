@@ -149,12 +149,13 @@ immediate finish. The existing six-question experience remains the complete
 keyboard/recording form fallback and is the default while the flag is `0`.
 
 The Worker stores every finalized conversation transcript turn, including
-partial or abandoned sessions, plus bounded candidate facts in D1. Raw audio is
-not stored: LiveKit session recording is explicitly disabled with
-`record: false`. A learner reviews extracted facts before accepted name and age
-update `learner_profile`; accepted interests remain queryable conversation
-facts. Conversation rows cascade from the Better Auth user and therefore remain
-until account deletion under the current retention policy.
+partial or abandoned sessions, plus one cumulative “About this learner” prose
+paragraph in D1. Raw audio is not stored: LiveKit session recording is
+explicitly disabled with `record: false`. A learner reviews or edits the whole
+paragraph before continuing. Name and age are internal readiness signals only;
+the active agent creates no structured fact rows. Conversation rows cascade
+from the Better Auth user and therefore remain until account deletion under the
+current retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.
 LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit

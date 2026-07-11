@@ -1,7 +1,12 @@
-import { AccessToken } from "livekit-server-sdk";
+import {
+  AccessToken,
+  RoomAgentDispatch,
+  RoomConfiguration,
+} from "livekit-server-sdk";
 import type { OnboardingIdentity } from "./onboarding.ts";
 
 export interface LiveKitTokenEnv {
+  LIVEKIT_AGENT_NAME?: string;
   LIVEKIT_API_KEY?: string;
   LIVEKIT_API_SECRET?: string;
 }
@@ -36,5 +41,11 @@ export async function createLiveKitParticipantToken({
     },
   );
   token.addGrant({ roomJoin: true, room: conversation.roomName });
+  const agentName = env.LIVEKIT_AGENT_NAME?.trim();
+  if (agentName) {
+    token.roomConfig = new RoomConfiguration({
+      agents: [new RoomAgentDispatch({ agentName })],
+    });
+  }
   return token.toJwt();
 }

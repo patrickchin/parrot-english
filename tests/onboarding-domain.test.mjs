@@ -457,6 +457,7 @@ describe("v2 prose profile envelope", () => {
       questionnaireVersion: 2,
       responses: {},
       legacyAnswers: { favoriteAnimals: ["dog"] },
+      description: null,
     });
   });
 

@@ -54,6 +54,14 @@ export function getOnboardingPath(returnTo: string) {
   return `/onboarding?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
+export function getRedoOnboardingPath(returnTo: string) {
+  return `/onboarding?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
+}
+
+export function isRedoOnboardingRequest(search: string) {
+  return new URLSearchParams(search).get("redo") === "1";
+}
+
 export function getGateRouteKind(pathname: string): GateRouteKind | null {
   const match = GATE_ROUTE_PATH.exec(pathname);
   return match ? (match[1].toLowerCase() as GateRouteKind) : null;

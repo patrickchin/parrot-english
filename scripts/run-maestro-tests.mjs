@@ -8,6 +8,7 @@ const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const defaultPort = Number(process.env.MAESTRO_PORT ?? 5173);
 const maestroBin = process.env.MAESTRO_BIN ?? "maestro";
 const defaultFlowFiles = [
+  ".maestro/profile-redo-onboarding.yaml",
   ".maestro/lesson-success.yaml",
   ".maestro/lesson-incorrect.yaml",
   ".maestro/lesson-no-speech.yaml",

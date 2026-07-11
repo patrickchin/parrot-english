@@ -45,6 +45,31 @@ class FakeRoom {
 }
 
 describe("LiveKit conversation adapter", () => {
+  it("provides a deterministic greeting only for the Maestro marker credentials", async () => {
+    const conversation = createLiveKitConversation({
+      token: "parrot-e2e-participant-token",
+      url: "wss://parrot-e2e.invalid",
+    });
+    const events = [];
+    conversation.subscribe((event) => events.push(event));
+
+    await conversation.connect();
+    await conversation.setMicrophoneEnabled(true);
+
+    assert.deepEqual(events, [
+      { type: "state", state: "connecting" },
+      { type: "state", state: "connected" },
+      {
+        type: "transcription",
+        id: "e2e-agent-greeting",
+        text: "Hello again! What's your name?",
+        final: true,
+        language: "en",
+        role: "assistant",
+      },
+    ]);
+  });
+
   it("connects before enabling the microphone and sends bounded chat text", async () => {
     const log = [];
     const room = new FakeRoom(log);

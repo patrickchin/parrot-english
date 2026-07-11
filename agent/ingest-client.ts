@@ -12,14 +12,6 @@ export type AgentConversationTurn = {
   text: string;
 };
 
-export type AgentCandidateFact = {
-  id: string;
-  key: "name" | "age" | "interest";
-  sourceTurnIds: string[];
-  topic?: string;
-  value: string | number;
-};
-
 type IngestClientOptions = {
   baseUrl: string;
   fetch?: typeof globalThis.fetch;
@@ -88,12 +80,8 @@ export function createConversationIngestClient({
       return post(conversationId, "end", { finishReason, status });
     },
 
-    upsertFacts(
-      conversationId: string,
-      candidates: AgentCandidateFact[],
-      controllerState: unknown,
-    ) {
-      return post(conversationId, "facts", { candidates, controllerState });
+    updateState(conversationId: string, controllerState: unknown) {
+      return post(conversationId, "facts", { candidates: [], controllerState });
     },
   };
 }

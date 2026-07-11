@@ -50,8 +50,10 @@ import {
   getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
+  getRedoOnboardingPath,
   getRequestedProtectedTarget,
   getSafeReturnTo,
+  isRedoOnboardingRequest,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
   type LessonRouteDecision,
@@ -916,6 +918,8 @@ function RoutedApplication() {
   const onLoginRoute = gateRoute === "login";
   const isOnboardingRoute = gateRoute === "onboarding";
   const isProfileRoute = gateRoute === "profile";
+  const redoOnboarding =
+    isOnboardingRoute && isRedoOnboardingRequest(location.search);
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
@@ -948,6 +952,11 @@ function RoutedApplication() {
           }
           onCloseProfileRoute={() => navigate("/")}
           onOpenProfileRoute={openProfileRoute}
+          onRedoCompleted={() => navigate("/profile", { replace: true })}
+          onRedoOnboardingRoute={() =>
+            navigate(getRedoOnboardingPath("/profile"))
+          }
+          redoOnboarding={redoOnboarding}
         >
           <ApplicationRoutes loginTarget={safeReturnTo} />
         </OnboardingGate>

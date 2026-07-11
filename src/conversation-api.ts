@@ -51,8 +51,8 @@ export type ConversationSession = {
 export type ConversationScenarioDescriptor = {
   key: "onboarding";
   version: number;
-  requiredFacts: readonly ["name", "age"];
-  optionalFact: "interest";
+  requiredDetails: readonly ["name", "age"];
+  summaryMode: "prose";
   maxOptionalExchanges: 3;
 };
 

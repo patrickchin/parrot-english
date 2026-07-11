@@ -23,7 +23,7 @@ The child can interrupt, type instead of speaking, stop early, skip a topic, or
 say that they do not know.
 
 The first scenario tries to learn the child's name and age, then explores at
-most three optional interests. Name and age are the only facts required for a
+most three optional interests. Name and age are the only details required for a
 completed learner profile. They are not required to finish the conversation or
 open the lesson for the current authenticated session.
 
@@ -49,8 +49,9 @@ The deployed investigation must use the real application boundaries:
   exchanges.
 - End sooner when the child wants to stop, stays silent, declines, or is unsure.
 - Allow one initial question and at most one light rephrase for an objective.
-- Speak English first. A single rephrase may include one brief Chinese rescue
-  hint when the child appears confused.
+- Speak English only, including the single permitted rephrase.
+- Treat child-safe preferences as relevant even when they answer a different
+  category than the one asked; follow what the child actually shared.
 - Acknowledge unrelated input briefly and bridge back instead of answering as
   a general assistant.
 - Keep microphone capture active during agent speech so genuine barge-in stops
@@ -62,8 +63,9 @@ The deployed investigation must use the real application boundaries:
   character or voice.
 - Save every finalized user and assistant transcript turn, including turns in
   stopped, failed, disconnected, and abandoned sessions.
-- Extract useful facts separately from the transcript. Only facts accepted or
-  edited in the summary update the canonical learner profile.
+- Rewrite useful details separately from the transcript as one cumulative,
+  natural prose paragraph. The summary is not a fact schema and is reviewed as
+  a whole before onboarding completes.
 - Never persist raw audio.
 - Keep the current form onboarding available behind a server-controlled
   realtime rollout flag and as the permanent non-voice fallback.
@@ -106,15 +108,18 @@ explicit user action.
 The conversation controller moves through these finite phases:
 
 ```text
-connecting -> introduction -> core facts -> optional interests -> closing
+connecting -> introduction -> core details -> optional interests -> closing
                                       \-> early closing
 ```
 
 The agent starts with a short introduction. It may learn name and age in either
 order when the child volunteers them naturally. It then explores up to three
-interest topics chosen from bounded, child-appropriate categories such as
-animals, cartoons, stories, activities, music, or food. A follow-on question
-may depend on the child's last answer, but it still consumes one of the three
+  interest topics inspired by child-appropriate subjects such as animals,
+cartoons, stories, activities, music, food, or vehicles. These are conversational
+examples, not an extraction enum. If the child answers with another relevant
+preference, the agent follows that answer rather than forcing the original
+category. A follow-on question may
+depend on the child's last answer, but it still consumes one of the three
 optional exchanges.
 
 For each active objective:
@@ -122,7 +127,7 @@ For each active objective:
 1. Ask one short question.
 2. If the response is unclear, silent, uncertain, or apparently misunderstood,
    either accept that outcome or make one gentle rephrase.
-3. The rephrase may contain one short Chinese hint.
+3. The rephrase stays short, playful, and English-only.
 4. After that turn, accept the answer or mark the objective unanswered and move
    on.
 
@@ -147,14 +152,15 @@ The UI reflects `connecting`, `listening`, `thinking`, `speaking`, `interrupted`
 At the warm closing, or after “Finish now,” the UI shows:
 
 - the complete saved transcript;
-- editable candidate name and age;
-- up to three editable optional interests; and
-- Accept, Reject, and Continue later actions.
+- one editable “About this learner” prose paragraph; and
+- Keep, Leave out, and Continue actions.
 
-Accepted facts update the learner profile in one server transaction. If valid
-name and age are present, onboarding becomes completed. Otherwise it remains
-in progress and the existing exact-session bypass permits lesson entry for the
-current session. Incomplete onboarding can be offered again later.
+Keeping the paragraph completes onboarding only when the controller observed
+both name and age during the conversation. Those booleans are readiness signals,
+not stored extracted fields. The prose paragraph remains in the conversation
+session state; it does not overwrite the canonical structured profile name or
+age. If either required detail was not learned, or the paragraph is left out,
+the existing exact-session bypass permits lesson entry for the current session.
 
 ## Reusable Architecture
 
@@ -171,7 +177,7 @@ React browser
          |-- Better Auth session
          |-- conversation start/read/review APIs
          |-- short-lived LiveKit participant token
-         |-- agent-only transcript/fact ingest APIs
+         |-- agent-only transcript/state ingest APIs
          `-- Drizzle -> shared D1
 
 LiveKit Cloud room <-> TypeScript agent server
@@ -206,9 +212,10 @@ The Worker owns authenticated application state:
 - create a conversation session for the current Better Auth user;
 - mint a short-lived, room-scoped LiveKit participant token;
 - return only public LiveKit connection information to the browser;
-- accept idempotent transcript and candidate-fact events from the agent;
+- accept idempotent transcript events and bounded controller-state updates from
+  the agent;
 - load only sessions owned by the authenticated user;
-- apply accepted facts to `learner_profile`; and
+- apply the prose review completion result to `learner_profile`; and
 - preserve the current session-bypass semantics.
 
 The Worker and agent share a long-lived service secret stored only in their
@@ -225,13 +232,15 @@ reuse. A `ConversationScenario` defines:
 - permitted tools and schemas;
 - initial state;
 - transition and completion policy;
-- candidate-fact schema; and
+- one cumulative prose summary contract; and
 - UI summary descriptor.
 
 The initial `onboarding.get-to-know-you` scenario implements the approved
-limits. It exposes only tools for recording a bounded candidate fact, marking
-an objective unanswered, advancing the finite controller, and finishing the
-session. It has no web, retrieval, MCP, handoff, or arbitrary action tools.
+limits. It exposes only tools for replacing the cumulative prose summary,
+marking an objective unanswered, requesting the single permitted rephrase, and
+finishing the session. The tool carries `learnedName` and `learnedAge` readiness
+signals, but no array of facts, keys, categories, or topic enum. It has no web,
+retrieval, MCP, handoff, or arbitrary action tools.
 
 The controller, not prompt prose alone, enforces maximum topic and rephrase
 counts. Tool executors reject invalid transitions and finish the session once a
@@ -264,7 +273,7 @@ ingest secret as server-only bindings or secrets.
 
 The initial provider compatibility check must prove:
 
-- streaming English transcription with short Mandarin rescue responses;
+- streaming English transcription and English-only responses;
 - a low-latency tool-capable LLM;
 - low-latency streaming TTS from a currently supported LiveKit Inference model;
 - the character-directed `Olivia` voice on `inworld/inworld-tts-2`, selected
@@ -306,7 +315,9 @@ updated_at          INTEGER NOT NULL
 
 `status` is restricted to `starting`, `active`, `completed`, `stopped`,
 `disconnected`, `failed`, or `abandoned`. `controller_state` is valid JSON and
-contains only bounded scenario state, not audio.
+contains only bounded scenario state, not audio. For the active onboarding
+scenario it includes the cumulative `profileSummary`, the two readiness
+booleans, finite phase/counter state, and review status.
 
 ### `conversation_turn`
 
@@ -330,7 +341,7 @@ Unique constraints cover `(conversation_id, provider_item_id)` and
 `voice` or `text`. Streaming deltas are not individual rows. Finalized turns
 and the heard portion of an interrupted assistant turn are durable.
 
-### `conversation_fact`
+### Legacy `conversation_fact`
 
 ```text
 id                  TEXT PRIMARY KEY
@@ -343,14 +354,11 @@ created_at          INTEGER NOT NULL
 updated_at          INTEGER NOT NULL
 ```
 
-`value_json` and `source_turn_ids` must contain valid JSON. `status` is
-`candidate`, `accepted`, `edited`, or `rejected`. The onboarding scenario
-allows `name`, `age`, and a maximum of three `interest` candidates.
-
-Accepted name and age update the existing canonical columns. Accepted optional
-facts remain durable, queryable `conversation_fact` rows. Realtime review does
-not add keys to the strict v2 `learner_profile.answers_json` envelope, so the
-existing form and profile editor remain backward compatible.
+This table remains in place only for backward-compatible review of conversations
+created by the earlier candidate-fact implementation. The active prose scenario
+creates no rows in it. Avoiding a destructive migration preserves historical
+sessions while ensuring all newly extracted information is stored as the single
+paragraph in `conversation_session.controller_state`.
 
 ## API Contracts
 
@@ -360,11 +368,12 @@ existing form and profile editor remain backward compatible.
   session and returns `{ conversation, livekit: { url, participantToken },
   scenario }`.
 - `GET /api/conversations/:id` returns the owned session, ordered transcript,
-  candidates, and summary state.
+  and summary state. Legacy candidates may be returned for historical sessions.
 - `POST /api/conversations/:id/finish` records an explicit Finish now request
   and asks the agent session to close.
-- `PUT /api/conversations/:id/review` accepts edited fact decisions, applies
-  valid profile updates atomically, and returns completion/bypass status. The
+- `PUT /api/conversations/:id/review` accepts the whole-paragraph review using
+  the virtual `profile-summary` identifier, applies completion atomically, and
+  returns completion/bypass status. The
   browser refreshes the existing onboarding gate after success.
 
 The existing `GET /api/onboarding` response gains an experience mode so the
@@ -374,25 +383,28 @@ client flag.
 ### Agent-only APIs
 
 - `POST /api/conversations/:id/turns` appends one idempotent finalized turn.
-- `POST /api/conversations/:id/facts` upserts bounded candidate facts and
-  controller state.
+- `POST /api/conversations/:id/facts` retains its deployed route name but the
+  active agent sends an empty candidate array and a bounded controller state.
+  The legacy candidate upsert remains available only for historical compatibility.
 - `POST /api/conversations/:id/end` records the terminal status and finish
   reason.
 
 Agent routes reject cookie authentication and require the dedicated service
 secret. Payload, text, array, and batch sizes are bounded.
 
-## Transcript and Fact Semantics
+## Transcript and Prose Summary Semantics
 
 All finalized and recoverable turns are saved, even when the conversation does
-not complete. The transcript is not the canonical learner profile. A hard
-disconnect may lose the final untranscribed audio fragment because preserving
-it would require raw-audio storage.
+not complete. A hard disconnect may lose the final untranscribed audio fragment
+because preserving it would require raw-audio storage.
 
-Candidate facts include source turn IDs. The summary UI can edit, accept, or
-reject them. Review is authoritative; agent confidence is not. Raw transcripts
-are not automatically injected into later scenarios. Future scenario access to
-history requires an explicit design decision.
+After each answered turn, the agent rewrites the full useful profile as one
+natural third-person paragraph containing only details the child directly
+shared. It keeps earlier details unless the child corrects them. The summary UI
+can edit, keep, or leave out that paragraph as a whole. The full transcript and
+paragraph remain separate. Raw transcripts are not automatically injected into
+later scenarios; future use of either artifact requires an explicit scenario
+contract.
 
 ## Accessibility and Fallbacks
 
@@ -434,10 +446,11 @@ Implementation follows test-first development.
 - name/age in either order;
 - maximum three optional exchanges;
 - maximum one rephrase per objective;
-- Chinese hint only in the allowed rephrase;
+- English-only speech, including the allowed rephrase;
+- acceptance of a different bounded preference category than the one asked;
 - silence, uncertainty, refusal, stop, and off-topic behavior;
 - terminal-state tool rejection;
-- candidate-fact limits and schemas; and
+- cumulative prose bounds and name/age readiness signals; and
 - transcript truncation semantics after interruption.
 
 ### Worker and persistence tests
@@ -448,7 +461,7 @@ Implementation follows test-first development.
 - short-lived room-scoped token claims;
 - transcript ordering and idempotency;
 - partial and abandoned session persistence;
-- candidate review and atomic profile updates;
+- whole-paragraph review, zero new fact rows, and atomic completion updates;
 - existing session bypass behavior when name or age is missing;
 - migration constraints and cascade deletion; and
 - server-owned rollout mode.
@@ -470,7 +483,8 @@ Using a real authenticated preview deployment and LiveKit agent, verify:
 - child-paced endpointing;
 - barge-in while the agent is speaking;
 - false-interruption recovery;
-- English transcription and brief Chinese hint output;
+- English-only agent output with playful, energetic delivery;
+- following a different child-safe interest category without forcing the prompt;
 - ElevenLabs voice compatibility and latency;
 - transcript/fact persistence in D1;
 - reconnect and Finish now; and

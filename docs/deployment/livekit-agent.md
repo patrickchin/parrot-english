@@ -29,10 +29,10 @@ errored after partial audio. Saved Chinese assets still follow the repository's
 ElevenLabs rule; the realtime agent uses Inworld through LiveKit Inference and
 falls back to Cartesia when a provider stream is unavailable.
 
-The current agent is deployed in `us-east`. The same managed TTS models worked
-from a direct project-credential check but failed inside the initial `ap-south`
-Cloud agent, so retain this region while that provider-path difference remains
-unexplained.
+The current agent is deployed in `ap-south` for a renewed provider-path test
+from Asia. The same managed TTS models failed inside the initial `ap-south`
+Cloud agent even though a direct project-credential check worked, so return to
+`us-east` if the realtime smoke test reproduces those streaming errors.
 
 ## Local verification
 
@@ -127,13 +127,14 @@ Before enabling the flag, authenticate as a test user and verify:
 1. Start creates one D1 conversation and joins one LiveKit room.
 2. Speaking over the pig friend stops its playback and the child is not spoken
    over.
-3. English works first; only the single gentle rephrase contains a brief Chinese
-   hint.
-4. “I don’t know”, silence, refusal, typed input, Finish now, and the form
+3. Every agent response stays in English, including the single gentle rephrase.
+4. A different child-safe preference than the category asked is recorded and
+   followed naturally instead of being treated as off-topic.
+5. “I don’t know”, silence, refusal, typed input, Finish now, and the form
    fallback all remain usable.
-5. The summary can edit, accept, or reject extracted facts and then reaches the
+6. The summary can edit, accept, or reject extracted facts and then reaches the
    existing onboarding completion/bypass path.
-6. D1 contains finalized user and assistant turns for completed and abandoned
+7. D1 contains finalized user and assistant turns for completed and abandoned
    sessions, but no raw-audio payload. LiveKit starts with `record: false`.
 
 After the smoke test, deploy the Worker with
