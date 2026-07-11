@@ -50,8 +50,10 @@ import {
   getLessonScenePath,
   getLoginPath,
   getOnboardingPath,
+  getRedoOnboardingPath,
   getRequestedProtectedTarget,
   getSafeReturnTo,
+  isRedoOnboardingRequest,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
   type LessonRouteDecision,
@@ -847,7 +849,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={
           <FeaturePlaceholder
             description="Lesson creation is coming soon. You will be able to build practice around your own interests."
-            eyebrow="LEARN YOUR WAY"
             title="Create a Lesson"
           />
         }
@@ -873,7 +874,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={
           <FeaturePlaceholder
             description="Progress tracking is coming soon."
-            eyebrow="KEEP GROWING"
             title="Progress"
           />
         }
@@ -883,7 +883,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={
           <FeaturePlaceholder
             description="Storytelling practice is coming soon."
-            eyebrow="TELL A STORY"
             title="Storytelling"
           />
         }
@@ -916,6 +915,8 @@ function RoutedApplication() {
   const onLoginRoute = gateRoute === "login";
   const isOnboardingRoute = gateRoute === "onboarding";
   const isProfileRoute = gateRoute === "profile";
+  const redoOnboarding =
+    isOnboardingRoute && isRedoOnboardingRequest(location.search);
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
@@ -948,6 +949,11 @@ function RoutedApplication() {
           }
           onCloseProfileRoute={() => navigate("/")}
           onOpenProfileRoute={openProfileRoute}
+          onRedoCompleted={() => navigate("/profile", { replace: true })}
+          onRedoOnboardingRoute={() =>
+            navigate(getRedoOnboardingPath("/profile"))
+          }
+          redoOnboarding={redoOnboarding}
         >
           <ApplicationRoutes loginTarget={safeReturnTo} />
         </OnboardingGate>

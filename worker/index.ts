@@ -9,12 +9,16 @@ import type { AuthEnv } from "./auth.ts";
 import { createDatabase } from "./database.ts";
 import { handleEvaluateSpeech } from "./groq.ts";
 import { handleOnboardingRequest } from "./onboarding.ts";
+import {
+  handleConversationRequest,
+  type ConversationEnv,
+} from "./conversations.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env extends AuthEnv, RateLimitEnv {
+interface Env extends AuthEnv, RateLimitEnv, ConversationEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
@@ -29,6 +33,7 @@ interface WorkerDependencies {
   checkOnboardingTranscriptionRateLimit: typeof checkOnboardingTranscriptionRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleOnboardingRequest: typeof handleOnboardingRequest;
+  handleConversationRequest: typeof handleConversationRequest;
 }
 
 function isOnboardingPath(pathname: string) {
@@ -37,6 +42,14 @@ function isOnboardingPath(pathname: string) {
     pathname.startsWith("/api/onboarding/") ||
     pathname === "/api/profile"
   );
+}
+
+function isConversationPath(pathname: string) {
+  return pathname === "/api/conversations" || pathname.startsWith("/api/conversations/");
+}
+
+function isAgentConversationPath(pathname: string) {
+  return /^\/api\/conversations\/[^/]+\/(turns|facts|end)$/.test(pathname);
 }
 
 export function createWorker(
@@ -54,6 +67,8 @@ export function createWorker(
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const onboardingRequest =
     dependencies.handleOnboardingRequest ?? handleOnboardingRequest;
+  const conversationRequest =
+    dependencies.handleConversationRequest ?? handleConversationRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
 
   return {
@@ -100,6 +115,33 @@ export function createWorker(
         }
 
         return onboardingRequest({
+          database: createDatabase(env.DB),
+          env,
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+            userName: session.user.name?.trim() || null,
+          },
+          request,
+        });
+      }
+
+      if (isConversationPath(url.pathname)) {
+        if (isAgentConversationPath(url.pathname)) {
+          return conversationRequest({
+            database: createDatabase(env.DB),
+            env,
+            identity: null,
+            request,
+          });
+        }
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+        return conversationRequest({
           database: createDatabase(env.DB),
           env,
           identity: {

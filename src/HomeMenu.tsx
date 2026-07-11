@@ -32,7 +32,6 @@ export function HomeMenu() {
   return (
     <main className="home-menu-page">
       <header className="home-menu-header">
-        <p>PARROT ENGLISH</p>
         <h1>What would you like to practice?</h1>
       </header>
       <nav aria-label="Learning activities" className="home-menu-grid">

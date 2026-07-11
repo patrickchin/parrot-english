@@ -287,6 +287,7 @@ describe("onboarding persistence and API", () => {
       assert.equal("options" in payload.question, false);
       assert.deepEqual(payload.progress, { answered: 0, current: 1, total: 6 });
       assert.equal(payload.canBypass, false);
+      assert.equal(payload.experienceMode, "form");
 
       const row = state.sqlite
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
@@ -294,6 +295,30 @@ describe("onboarding persistence and API", () => {
       assert.equal(row.name, "Mia");
       assert.equal(row.questionnaire_version, null);
       assert.equal(JSON.parse(row.answers_json).schemaVersion, 2);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("selects realtime onboarding only when the server feature flag is enabled", async () => {
+    const state = createSeededDatabase();
+    try {
+      const response = await handleOnboardingRequest(
+        {
+          database: state.database,
+          env: { DB: state.d1, REALTIME_ONBOARDING_ENABLED: "1" },
+          identity: {
+            sessionId: "session-1",
+            userId: "user-1",
+            userName: "Mia",
+          },
+          request: request("/api/onboarding"),
+        },
+        createDependencies(),
+      );
+
+      assert.equal(response.status, 200);
+      assert.equal((await response.json()).experienceMode, "realtime");
     } finally {
       state.close();
     }
@@ -760,6 +785,7 @@ describe("onboarding persistence and API", () => {
           answers: {
             name: "Maya",
             age: "I am nine",
+            description: "Maya is nine and loves drawing dragons.",
             favoriteCartoons: "I like Bluey",
           },
         },
@@ -782,6 +808,10 @@ describe("onboarding persistence and API", () => {
       assert.equal(row.name, "Maya");
       assert.equal(row.age, 9);
       assert.equal(row.onboarding_status, "completed");
+      assert.equal(
+        answers.description,
+        "Maya is nine and loves drawing dragons.",
+      );
       assert.equal(answers.responses.favoriteCartoons.rawAnswer, "I like Bluey");
     } finally {
       state.close();
@@ -809,6 +839,7 @@ describe("onboarding persistence and API", () => {
           answers: Object.fromEntries([
             ["name", "Maya"],
             ["age", "very old"],
+            ["description", "x".repeat(2_001)],
             ["retired", "dragons"],
             ["__proto__", "dragons"],
           ]),
@@ -819,7 +850,7 @@ describe("onboarding persistence and API", () => {
             if (question.answerKey === "age") {
               return {
                 fieldError:
-                  "Please tell me your age using a number from 3 to 17.",
+                  "Please tell me your age using a whole number.",
               };
             }
             return {
@@ -842,11 +873,16 @@ describe("onboarding persistence and API", () => {
       assert.deepEqual(Object.keys(payload.fieldErrors).sort(), [
         "__proto__",
         "age",
+        "description",
         "retired",
       ]);
       assert.equal(
         payload.fieldErrors.age,
-        "Please tell me your age using a number from 3 to 17.",
+        "Please tell me your age using a whole number.",
+      );
+      assert.equal(
+        payload.fieldErrors.description,
+        "Please use 2000 characters or fewer.",
       );
       assert.equal(
         payload.fieldErrors.retired,

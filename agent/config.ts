@@ -1,0 +1,58 @@
+export const DEFAULT_AGENT_MODELS = {
+  llm: "openai/gpt-4.1-mini",
+  stt: "elevenlabs/scribe_v2_realtime",
+  tts: "inworld/inworld-tts-2",
+  ttsVoiceId: "Olivia",
+} as const;
+
+export type AgentConfig = {
+  ingestSecret: string;
+  ingestUrl: string;
+  livekitApiKey: string;
+  livekitApiSecret: string;
+  livekitUrl: string;
+  llmModel: string;
+  sttModel: string;
+  ttsModel: string;
+  ttsVoiceId: string;
+};
+
+function required(env: NodeJS.ProcessEnv, name: string) {
+  const value = env[name]?.trim();
+  if (!value) throw new Error(`${name} is required.`);
+  return value;
+}
+
+function explicitModel(value: string, name: string) {
+  if (/(?:^|[/:_-])(?:auto|latest)$/i.test(value)) {
+    throw new Error(`${name} must use an explicit model version.`);
+  }
+  return value;
+}
+
+function optionalModel(
+  env: NodeJS.ProcessEnv,
+  name: string,
+  fallback: string,
+) {
+  const value = env[name]?.trim() || fallback;
+  return explicitModel(value, name);
+}
+
+export function readAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentConfig {
+  return {
+    ingestSecret: required(env, "CONVERSATION_AGENT_SECRET"),
+    ingestUrl: required(env, "CONVERSATION_INGEST_URL").replace(/\/$/, ""),
+    livekitApiKey: required(env, "LIVEKIT_API_KEY"),
+    livekitApiSecret: required(env, "LIVEKIT_API_SECRET"),
+    livekitUrl: required(env, "LIVEKIT_URL"),
+    llmModel: optionalModel(env, "AGENT_LLM_MODEL", DEFAULT_AGENT_MODELS.llm),
+    sttModel: optionalModel(env, "AGENT_STT_MODEL", DEFAULT_AGENT_MODELS.stt),
+    ttsModel: optionalModel(env, "AGENT_TTS_MODEL", DEFAULT_AGENT_MODELS.tts),
+    ttsVoiceId: optionalModel(
+      env,
+      "AGENT_TTS_VOICE_ID",
+      DEFAULT_AGENT_MODELS.ttsVoiceId,
+    ),
+  };
+}

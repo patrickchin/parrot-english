@@ -15,6 +15,40 @@ const MOCK_API_DELAY_MS = Number.parseInt(
   process.env.PARROT_E2E_MOCK_API_DELAY_MS ?? "900",
   10
 );
+const E2E_TIMESTAMP = "2026-07-10T08:00:00.000Z";
+
+const E2E_PROFILE = {
+  name: "Mia",
+  age: 8,
+  answers: {
+    schemaVersion: 2,
+    questionnaireVersion: 2,
+    responses: {},
+    legacyAnswers: null,
+  },
+  questionnaireVersion: 2,
+  currentQuestionKey: null,
+  onboardingStatus: "completed",
+  completedAt: E2E_TIMESTAMP,
+};
+
+const E2E_ONBOARDING_STATE = {
+  mode: "full",
+  experienceMode: "realtime",
+  profile: E2E_PROFILE,
+  questionnaire: { version: 2 },
+  question: null,
+  progress: { answered: 2, current: 2, total: 2 },
+  canBypass: true,
+};
+
+function sendMockJson(response: ServerResponse, payload: unknown, status = 200) {
+  response.statusCode = status;
+  response.setHeader("Cache-Control", "no-store");
+  response.setHeader("Content-Type", "application/json");
+  response.setHeader("X-Parrot-Mock-Api", "true");
+  response.end(JSON.stringify(payload));
+}
 
 const MOCK_EVALUATIONS: Record<
   MockEvaluationScenario,
@@ -112,6 +146,84 @@ function parrotE2eMockApi(): Plugin {
     name: "parrot-e2e-mock-api",
     configureServer(server) {
       if (process.env.PARROT_E2E_MOCK_API !== "1") return;
+
+      server.middlewares.use((request, response, next) => {
+        const pathname = new URL(
+          request.url ?? "/",
+          "http://parrot-e2e.invalid",
+        ).pathname;
+
+        if (pathname === "/api/auth/get-session" && request.method === "GET") {
+          sendMockJson(response, {
+            session: {
+              id: "e2e-session",
+              userId: "e2e-user",
+              token: "e2e-token",
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              createdAt: E2E_TIMESTAMP,
+              updatedAt: E2E_TIMESTAMP,
+              ipAddress: null,
+              userAgent: "Maestro",
+            },
+            user: {
+              id: "e2e-user",
+              name: "Mia",
+              email: "mia@example.test",
+              emailVerified: true,
+              createdAt: E2E_TIMESTAMP,
+              updatedAt: E2E_TIMESTAMP,
+            },
+          });
+          return;
+        }
+
+        if (pathname === "/api/onboarding" && request.method === "GET") {
+          sendMockJson(response, E2E_ONBOARDING_STATE);
+          return;
+        }
+
+        if (pathname === "/api/profile" && request.method === "GET") {
+          sendMockJson(response, { profile: E2E_PROFILE, questions: [] });
+          return;
+        }
+
+        if (pathname === "/api/conversations" && request.method === "POST") {
+          sendMockJson(
+            response,
+            {
+              conversation: {
+                id: "e2e-conversation",
+                authUserId: "e2e-user",
+                scenarioKey: "onboarding",
+                scenarioVersion: 1,
+                roomName: "e2e-room",
+                status: "starting",
+                finishReason: null,
+                controllerState: {},
+                startedAt: E2E_TIMESTAMP,
+                endedAt: null,
+                createdAt: E2E_TIMESTAMP,
+                updatedAt: E2E_TIMESTAMP,
+              },
+              livekit: {
+                participantToken: "parrot-e2e-participant-token",
+                url: "wss://parrot-e2e.invalid",
+              },
+              scenario: {
+                key: "onboarding",
+                version: 1,
+                requiredDetails: ["name", "age"],
+                summaryMode: "prose",
+                maxOptionalExchanges: 3,
+              },
+            },
+            201,
+          );
+          return;
+        }
+
+        next();
+      });
 
       server.middlewares.use("/api/evaluate-speech", (request, response, next) => {
         if (request.method !== "POST") {

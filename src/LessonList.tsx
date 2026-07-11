@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, Play, Plus, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, Play, Plus } from "lucide-react";
 import { Link } from "react-router";
 import { getLessonScenePath } from "./app-routes";
 import {
@@ -46,11 +46,7 @@ export function LessonList() {
       </Link>
 
       <header className="lesson-list-header">
-        <span className="lesson-list-eyebrow">
-          <Sparkles aria-hidden="true" /> Parrot English
-        </span>
         <h1>Choose a lesson</h1>
-        <p>Pick a story and start speaking English.</p>
       </header>
 
       <section

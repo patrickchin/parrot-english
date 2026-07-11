@@ -12,6 +12,7 @@ List-first, scene-based English speaking practice for young learners.
 - Drizzle ORM over one shared Cloudflare D1 database
 - Groq speech evaluation, onboarding transcription, and answer enrichment
 - ElevenLabs saved prompt audio and runtime onboarding acknowledgments
+- LiveKit WebRTC and Agents for bounded realtime onboarding conversations
 
 The frontend is a Vite single-page app. The Worker serves the built assets and
 handles API requests before falling back to `env.ASSETS.fetch(request)`.
@@ -21,6 +22,7 @@ handles API requests before falling back to `env.ASSETS.fetch(request)`.
 ```bash
 npm run dev
 npm run build
+npm run build:agent
 npm run lint
 npm test
 npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force
@@ -137,7 +139,36 @@ Override one speaker with `ELEVENLABS_PEPPA_VOICE_ID`,
 `ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`. The general
 `ELEVENLABS_VOICE_ID` remains a fallback override.
 
-## Voice Onboarding
+## Realtime Voice Onboarding
+
+When `REALTIME_ONBOARDING_ENABLED=1`, an authenticated learner can complete a
+short LiveKit conversation with an original, playful pig friend. The agent asks
+for name and age, then adapts at most three optional interest exchanges to what
+the child says. It permits interruption, uncertainty, silence, refusal, and an
+immediate finish. The existing six-question experience remains the complete
+keyboard/recording form fallback and is the default while the flag is `0`.
+
+The Worker stores every finalized conversation transcript turn, including
+partial or abandoned sessions, plus one cumulative “About this learner” prose
+paragraph in D1. Raw audio is not stored: LiveKit session recording is
+explicitly disabled with `record: false`. A learner reviews or edits the whole
+paragraph before continuing. Name and age are internal readiness signals only;
+the active agent creates no structured fact rows. Conversation rows cascade
+from the Better Auth user and therefore remain until account deletion under the
+current retention policy.
+
+The browser receives only a short-lived, room-scoped LiveKit participant token.
+LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit
+LiveKit Inference model IDs for ElevenLabs Scribe STT, OpenAI LLM reasoning, and
+ElevenLabs `eleven_v3` TTS with the Summer character-directed voice. It does not
+claim to be a named television character and does not use an exact protected
+voice clone.
+
+See [the LiveKit agent deployment runbook](docs/deployment/livekit-agent.md) for
+local setup, secrets, deployment, cost dependencies, smoke testing, and
+feature-flag rollback.
+
+### Form fallback
 
 The six v2 questions ship with the Worker in the checked-in questionnaire at
 `content/onboarding/questionnaire-v2.json`. Changing a prompt requires ordinary

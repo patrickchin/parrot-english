@@ -97,15 +97,15 @@ describe("onboarding answer enrichment", () => {
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
-          summary: "Is six years old.",
-          acknowledgment: "Six is a brilliant age!",
+          summary: "Is thirty years old.",
+          acknowledgment: "Thirty is a brilliant age!",
           canonicalName: null,
-          canonicalAge: 6,
+          canonicalAge: 30,
         }),
       question: ageQuestion,
-      rawAnswer: "I'm six",
+      rawAnswer: "I'm 30",
     });
-    assert.equal(generatedAge.canonicalAge, 6);
+    assert.equal(generatedAge.canonicalAge, 30);
   });
 
   it("falls back deterministically for missing keys and invalid provider output", async () => {
@@ -160,9 +160,9 @@ describe("onboarding answer enrichment", () => {
     const ageFallback = await enrichOnboardingAnswer({
       env: {},
       question: ageQuestion,
-      rawAnswer: "I am 7 years old",
+      rawAnswer: "I am 30 years old",
     });
-    assert.equal(ageFallback.canonicalAge, 7);
+    assert.equal(ageFallback.canonicalAge, 30);
 
     assert.deepEqual(
       await enrichOnboardingAnswer({
@@ -170,7 +170,7 @@ describe("onboarding answer enrichment", () => {
         question: ageQuestion,
         rawAnswer: "I am very little",
       }),
-      { fieldError: "Please tell me your age using a number from 3 to 17." },
+      { fieldError: "Please tell me your age using a whole number." },
     );
   });
 

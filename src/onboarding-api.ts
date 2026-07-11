@@ -28,6 +28,7 @@ export type OnboardingAnswers = {
   questionnaireVersion: number;
   responses: Record<string, OnboardingResponseSnapshot>;
   legacyAnswers: Record<string, unknown> | null;
+  description?: string | null;
 };
 
 export type OnboardingAcknowledgment = {
@@ -41,6 +42,7 @@ export type OnboardingAcknowledgment = {
 export type LearnerProfileSummary = {
   name: string | null;
   age: number | null;
+  description: string | null;
   answers: OnboardingAnswers;
   questionnaireVersion: number;
   currentQuestionKey: string | null;
@@ -50,6 +52,7 @@ export type LearnerProfileSummary = {
 
 export type FullOnboardingState = {
   mode: "full";
+  experienceMode: "realtime" | "form";
   profile: LearnerProfileSummary;
   questionnaire: {
     version: number;

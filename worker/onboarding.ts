@@ -39,7 +39,9 @@ export interface OnboardingIdentity {
 
 export interface OnboardingRequestInput {
   database: Database;
-  env: AuthEnv & ApiEnv & ElevenLabsEnv;
+  env: AuthEnv &
+    ApiEnv &
+    ElevenLabsEnv & { REALTIME_ONBOARDING_ENABLED?: string };
   identity: OnboardingIdentity;
   request: Request;
 }
@@ -121,10 +123,13 @@ function clientProfile(profile: Profile) {
     : ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
+  const answers = readV2Answers(readable);
   return {
     name: profile.name,
     age: profile.age,
-    answers: readV2Answers(readable),
+    description:
+      typeof answers.description === "string" ? answers.description : null,
+    answers,
     questionnaireVersion: ONBOARDING_QUESTIONNAIRE.version,
     currentQuestionKey: profile.currentQuestionKey,
     onboardingStatus: profile.onboardingStatus,
@@ -155,7 +160,11 @@ async function prepareOnboardingProfile(
   return stored;
 }
 
-function onboardingPayload(profile: Profile, canBypass: boolean) {
+function onboardingPayload(
+  profile: Profile,
+  canBypass: boolean,
+  experienceMode: "realtime" | "form",
+) {
   const completed = profile.onboardingStatus === "completed";
   const readable = isV2Profile(profile)
     ? profile
@@ -178,7 +187,12 @@ function onboardingPayload(profile: Profile, canBypass: boolean) {
         }
       : getV2Progress(readable, ONBOARDING_QUESTIONNAIRE),
     canBypass,
+    experienceMode,
   };
+}
+
+function onboardingExperienceMode(env: OnboardingRequestInput["env"]) {
+  return env.REALTIME_ONBOARDING_ENABLED === "1" ? "realtime" : "form";
 }
 
 function profilePayload(profile: Profile) {
@@ -426,11 +440,39 @@ async function saveProfileAnswers({
   });
   const fieldErrors: Record<string, string> = Object.create(null);
   const knownKeys = new Set(
-    ONBOARDING_QUESTIONNAIRE.questions.map((question) => question.answerKey)
+    [
+      ...ONBOARDING_QUESTIONNAIRE.questions.map((question) => question.answerKey),
+      "description",
+    ]
   );
   for (const answerKey of Object.keys(answers)) {
     if (!knownKeys.has(answerKey)) {
       fieldErrors[answerKey] = "This question is no longer available.";
+    }
+  }
+
+  let descriptionChanged = false;
+  if ("description" in answers) {
+    const submittedDescription = answers.description;
+    if (typeof submittedDescription !== "string") {
+      fieldErrors.description = "Please enter a description.";
+    } else if (submittedDescription.length > 2_000) {
+      fieldErrors.description = "Please use 2000 characters or fewer.";
+    } else {
+      const description = submittedDescription.trim();
+      const envelope = readV2Answers(updated);
+      const currentDescription =
+        typeof envelope.description === "string" ? envelope.description : "";
+      if (description !== currentDescription) {
+        updated = {
+          ...updated,
+          answersJson: JSON.stringify({
+            ...envelope,
+            description: description || null,
+          }),
+        };
+        descriptionChanged = true;
+      }
     }
   }
 
@@ -500,7 +542,7 @@ async function saveProfileAnswers({
   }
 
   let storedProfile = profile;
-  if (changed.length > 0) {
+  if (changed.length > 0 || descriptionChanged) {
     await repository.saveAnswer(profile.id, {
       age: updated.age,
       answersJson: updated.answersJson,
@@ -542,7 +584,11 @@ export async function handleOnboardingRequest(
     if (url.pathname === "/api/onboarding" && input.request.method === "GET") {
       const profile = await prepareOnboardingProfile(repository, input.identity);
       return jsonResponse(
-        onboardingPayload(profile, await repository.canBypass(input.identity))
+        onboardingPayload(
+          profile,
+          await repository.canBypass(input.identity),
+          onboardingExperienceMode(input.env),
+        )
       );
     }
 
@@ -586,7 +632,8 @@ export async function handleOnboardingRequest(
       return jsonResponse({
         ...onboardingPayload(
           saved.profile,
-          await repository.canBypass(input.identity)
+          await repository.canBypass(input.identity),
+          onboardingExperienceMode(input.env),
         ),
         acknowledgment: saved.acknowledgment,
       });
@@ -632,7 +679,11 @@ export async function handleOnboardingRequest(
       });
       const stored = await repository.loadProfile(input.identity);
       return jsonResponse(
-        onboardingPayload(stored, await repository.canBypass(input.identity))
+        onboardingPayload(
+          stored,
+          await repository.canBypass(input.identity),
+          onboardingExperienceMode(input.env),
+        )
       );
     }
 
@@ -644,7 +695,9 @@ export async function handleOnboardingRequest(
       try {
         const profile = await prepareOnboardingProfile(repository, input.identity);
         await repository.skip(profile.id, input.identity.sessionId);
-        return jsonResponse(onboardingPayload(profile, true));
+        return jsonResponse(
+          onboardingPayload(profile, true, onboardingExperienceMode(input.env)),
+        );
       } catch {
         return jsonResponse(bypassOnlyPayload());
       }
@@ -665,7 +718,9 @@ export async function handleOnboardingRequest(
         await repository.complete(profile.id);
       }
       const completed = await repository.loadProfile(input.identity);
-      return jsonResponse(onboardingPayload(completed, true));
+      return jsonResponse(
+        onboardingPayload(completed, true, onboardingExperienceMode(input.env)),
+      );
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "GET") {

@@ -191,16 +191,8 @@ export function AuthGateView({
             <span aria-hidden="true" className="auth-parrot-mark">
               P
             </span>
-            <div>
-              <p className="auth-eyebrow">PARROT ENGLISH</p>
-              <h1 id="auth-title">{isSignUp ? "创建学习账号" : "欢迎回来"}</h1>
-            </div>
+            <h1 id="auth-title">{isSignUp ? "创建学习账号" : "欢迎回来"}</h1>
           </header>
-          <p className="auth-intro">
-            {isSignUp
-              ? "注册后就可以开始英语口语练习。"
-              : "登录后继续你的英语口语练习。"}
-          </p>
 
           <form onSubmit={onSubmit}>
             <fieldset className="auth-fieldset" disabled={isSubmitting}>

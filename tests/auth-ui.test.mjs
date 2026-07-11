@@ -414,10 +414,12 @@ test("signed-out views switch between sign-in and sign-up fields", () => {
   assert.match(signIn, /name="password"/);
   assert.doesNotMatch(signIn, /name="name"/);
   assert.doesNotMatch(signIn, /LESSON CONTENT/);
+  assert.doesNotMatch(signIn, /PARROT ENGLISH|登录后继续你的英语口语练习/);
   assert.match(signUp, /name="name"/);
   assert.match(signUp, /name="email"/);
   assert.match(signUp, /name="password"/);
   assert.doesNotMatch(signUp, /LESSON CONTENT/);
+  assert.doesNotMatch(signUp, /PARROT ENGLISH|注册后就可以开始英语口语练习/);
 });
 
 test("failed form state preserves values and disables controls while submitting", () => {

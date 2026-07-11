@@ -39,6 +39,7 @@ const vite = await createServer({
 
 let ApplicationRoutes;
 let OnboardingGate;
+let useConversationOnboarding;
 let createAuthGate;
 let firstLesson;
 let firstLessonId;
@@ -46,6 +47,9 @@ let firstLessonId;
 before(async () => {
   ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
   ({ OnboardingGate } = await vite.ssrLoadModule("/src/OnboardingGate.tsx"));
+  ({ useConversationOnboarding } = await vite.ssrLoadModule(
+    "/src/useConversationOnboarding.ts",
+  ));
   ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx"));
   const catalog = await vite.ssrLoadModule("/src/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
@@ -158,6 +162,21 @@ function onboardingRouteProps(completedOnboardingFallback) {
     onCloseProfileRoute() {},
     onOpenProfileRoute() {},
   };
+}
+
+function ConversationHookHarness({ createTransport, onCompleted = async () => {} }) {
+  const conversation = useConversationOnboarding({
+    active: true,
+    createTransport,
+    onCompleted,
+    onUseForm() {},
+  });
+  return createElement(
+    "section",
+    null,
+    createElement("output", { "aria-label": "Conversation status" }, conversation.status),
+    createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
+  );
 }
 
 function ProfileRouteHarness({ children }) {
@@ -422,6 +441,170 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Loading your questions…/);
   });
 
+  it("keeps a newly connected conversation transport alive when its ID is stored", async () => {
+    let disconnectCalls = 0;
+    let listener = () => {};
+    const microphoneCalls = [];
+    const transport = {
+      async connect() {},
+      async disconnect() {
+        disconnectCalls += 1;
+      },
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/conversations");
+      assert.equal(init.method, "POST");
+      return json({
+        conversation: { id: "conversation-1" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "onboarding",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "connecting",
+      ),
+    );
+
+    assert.deepEqual(microphoneCalls, [false]);
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hi Mia! Lovely to see you again!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
+    assert.equal(disconnectCalls, 0);
+  });
+
+  it("accepts the prose profile automatically when the room ends", async () => {
+    let listener = () => {};
+    let completions = 0;
+    const reviews = [];
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations") {
+        return json({
+          conversation: { id: "conversation-2" },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "onboarding",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      if (path === "/api/conversations/conversation-2") {
+        return json({
+          conversation: {
+            controllerState: {
+              profileSummary: "Mia is eight and loves red racing cars.",
+            },
+            facts: [],
+            turns: [],
+          },
+        });
+      }
+      if (path === "/api/conversations/conversation-2/review") {
+        reviews.push(JSON.parse(init.body));
+        return json({
+          bypassed: false,
+          conversationId: "conversation-2",
+          profileCompleted: true,
+        });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        async onCompleted() {
+          completions += 1;
+        },
+      }),
+    );
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello again, Mia!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "listening",
+      ),
+    );
+
+    await act(async () => {
+      listener({ type: "disconnected", reason: "task_complete" });
+      await flush();
+    });
+    await waitFor(() => assert.equal(completions, 1));
+
+    assert.deepEqual(reviews, [
+      {
+        decisions: [{ factId: "profile-summary", status: "accepted" }],
+      },
+    ]);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+  });
+
   it("moves authentication through retry, sign-in, child content, and sign-out", async () => {
     const client = createSessionClient({
       data: null,
@@ -527,7 +710,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const TestAuthGate = createAuthGate({ client });
     const profileQuestion = question();
     const profileState = {
-      profile: completedOnboardingState().profile,
+      profile: {
+        ...completedOnboardingState().profile,
+        age: 8,
+        description: "Mia is eight and likes dinosaurs.",
+      },
       questions: [profileQuestion],
     };
     const savedBodies = [];
@@ -565,10 +752,23 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => button("Edit learner profile"));
     await click(button("Edit learner profile"));
     await waitFor(() => text(/Edit profile/));
-    await input(document.querySelector("#profile-answer-name"), "Maya");
+    await input(document.querySelector("#profile-name"), "Maya");
+    await input(document.querySelector("#profile-age"), "almost nine");
+    await input(
+      document.querySelector("#profile-description"),
+      "Maya is eight and loves drawing dragons.",
+    );
     await click(button("Save changes"));
     await waitFor(() => text(/PROFILE LESSONS/));
-    assert.deepEqual(savedBodies, [{ answers: { name: "Maya" } }]);
+    assert.deepEqual(savedBodies, [
+      {
+        answers: {
+          name: "Maya",
+          age: "almost nine",
+          description: "Maya is eight and loves drawing dragons.",
+        },
+      },
+    ]);
   });
 
   it("navigates production lesson routes and isolates stale playback", async () => {

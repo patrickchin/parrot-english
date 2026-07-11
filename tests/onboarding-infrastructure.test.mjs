@@ -188,7 +188,11 @@ describe("onboarding infrastructure", () => {
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
-    assert.equal(migrations.length, 4, "Expected the bypass integrity migration");
+    assert.equal(
+      migrations.length,
+      5,
+      "Expected the conversation persistence migration",
+    );
     assert.doesNotMatch(
       migrations[1].sql,
       /(?:^|\n)\s*(?:INSERT|UPDATE|DELETE)\b/im,
