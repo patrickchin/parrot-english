@@ -254,6 +254,7 @@ describe("Peppa acknowledgment", () => {
     assert.match(html, /Dinosaurs are very stompy!/);
     assert.match(html, /aria-live="polite"/);
     assert.match(html, />Next</);
+    assert.doesNotMatch(html, /PEPPA SAYS/);
     assert.doesNotMatch(html, /<textarea/);
   });
 
@@ -346,7 +347,10 @@ describe("profile summary editor", () => {
       }),
     );
 
-    assert.match(html, /Keep the basics up to date/);
+    assert.doesNotMatch(
+      html,
+      /Your profile|Keep the basics up to date|Want another little chat|Redo the short onboarding conversation/,
+    );
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 0);
     assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
@@ -917,6 +921,7 @@ describe("onboarding and profile gate", () => {
     const start = renderGate({ data: fullState() });
     assert.match(start, /Meet Peppa/);
     assert.match(start, /six quick questions/i);
+    assert.doesNotMatch(start, /PARROT ENGLISH/);
     assert.doesNotMatch(start, /What&#x27;s your name\?/);
     assert.doesNotMatch(start, /LESSON CONTENT/);
   });

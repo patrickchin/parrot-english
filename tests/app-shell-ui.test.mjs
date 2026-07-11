@@ -79,6 +79,7 @@ test("home menu exposes four equal learning activity links", () => {
   assert.match(html, />Create a Lesson</);
   assert.match(html, />Progress</);
   assert.match(html, />Storytelling</);
+  assert.doesNotMatch(html, /PARROT ENGLISH/);
   for (const icon of ["play", "plus", "sparkles", "book-open"]) {
     assert.match(html, new RegExp(`lucide-${icon}`));
   }
@@ -94,18 +95,18 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
   const html = renderInRouter(
     createElement(FeaturePlaceholder, {
       description: "This activity is coming soon.",
-      eyebrow: "PARROT ENGLISH",
       title: "Progress",
     }),
     "/progress",
   );
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
-  assert.match(html, /PARROT ENGLISH/);
+  assert.doesNotMatch(html, /PARROT ENGLISH/);
   assert.match(html, /<main class="feature-placeholder-page">/);
   assert.match(html, /<section class="feature-placeholder-card">/);
   assert.match(html, /<h1>Progress<\/h1>/);
   assert.match(html, /This activity is coming soon\./);
+  assert.equal((html.match(/<p/g) ?? []).length, 1);
   assert.match(
     html,
     /<a class="main-menu-link" href="\/"[^>]*>Back to main menu<\/a>/,
@@ -156,13 +157,16 @@ test("authenticated application routes render durable home and activity pages", 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1>Create a Lesson<\/h1>/);
   assert.match(createLesson, /coming soon/i);
+  assert.doesNotMatch(createLesson, /LEARN YOUR WAY/);
   assert.doesNotMatch(createLesson, /<form|<input|<textarea/);
 
   assert.match(renderApplicationRoute("/progress"), /<h1>Progress<\/h1>/);
+  assert.doesNotMatch(renderApplicationRoute("/progress"), /KEEP GROWING/);
   assert.match(
     renderApplicationRoute("/stories"),
     /<h1>Storytelling<\/h1>/,
   );
+  assert.doesNotMatch(renderApplicationRoute("/stories"), /TELL A STORY/);
 });
 
 test("canonical Parrot scene routes render the addressed one-based scene", () => {

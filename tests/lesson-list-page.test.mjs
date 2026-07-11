@@ -47,6 +47,7 @@ test("lesson list separates all discovered Parrot lessons from My Lessons", () =
   );
 
   assert.match(html, /<h1>Choose a lesson<\/h1>/);
+  assert.doesNotMatch(html, /lesson-list-eyebrow|Pick a story and start speaking English/);
   assert.match(html, /<h2 id="parrot-lessons-title">Parrot Lessons<\/h2>/);
   assert.match(html, /<h2 id="my-lessons-title">My Lessons<\/h2>/);
   assert.equal((html.match(/<h2/g) ?? []).length, 2);
