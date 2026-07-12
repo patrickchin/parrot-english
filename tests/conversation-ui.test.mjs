@@ -61,17 +61,17 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /About this chat/);
   });
 
-  it("waits for Peppa's opening before enabling learner input", () => {
+  it("makes joining unmistakable before Peppa enables learner input", () => {
     const connecting = render({ status: "connecting", microphoneEnabled: false });
+    assert.match(connecting, /class="conversation-joining-notice"/);
+    assert.match(connecting, /Joining Peppa/);
+    assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
+    assert.doesNotMatch(connecting, /conversation-microphone-button/);
+    assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
     assert.match(
-      connecting,
-      /<button[^>]+disabled=""[^>]*>Microphone off<\/button>/,
+      styles,
+      /\.conversation-joining-notice\s*\{[^}]*background:\s*#173c67[^}]*color:\s*#fff/s,
     );
-    assert.match(
-      connecting,
-      /<input[^>]+aria-label="Type your answer"[^>]+disabled=""/i,
-    );
-    assert.match(connecting, /<button[^>]+disabled=""[^>]*>Send<\/button>/);
   });
 
   it("keeps typed answers and stop controls available after Peppa opens", () => {
@@ -88,8 +88,8 @@ describe("accessible realtime conversation surface", () => {
       });
       assert.match(html, /aria-label="Type your answer"/i, status);
       assert.match(html, /value="pandas"/, status);
-      assert.match(html, /<summary>Type instead<\/summary>/, status);
-      assert.match(html, /Finish now/, status);
+      assert.match(html, /<summary>[\s\S]*Type instead[\s\S]*<\/summary>/, status);
+      assert.match(html, /Finish conversation/, status);
       assert.doesNotMatch(html, /Use the form instead/, status);
       assert.match(html, /aria-live="polite"/, status);
       assert.match(html, /peppa\/peppa-[a-z]+\.webp/, status);
@@ -101,7 +101,7 @@ describe("accessible realtime conversation surface", () => {
     }
   });
 
-  it("centers the character, shows only her latest speech, and hides the debug transcript", () => {
+  it("centers the character, shows only her latest speech, and removes developer controls", () => {
     const html = render({
       microphoneEnabled: false,
       status: "reconnecting",
@@ -118,14 +118,8 @@ describe("accessible realtime conversation surface", () => {
     assert.match(speechBubble, /Ooh, drawing is brilliant!/);
     assert.doesNotMatch(speechBubble, /I like drawing/);
     assert.match(html, /class="conversation-character-stage"/);
-    assert.match(
-      html,
-      /<details class="conversation-debug-transcript"><summary>Debug transcript<\/summary>/,
-    );
-    assert.doesNotMatch(html, /conversation-debug-transcript" open/);
-    assert.match(html, /Peppa/);
-    assert.match(html, /You/);
-    assert.match(html, /Microphone off/);
+    assert.doesNotMatch(html, /conversation-debug-transcript|Debug transcript/);
+    assert.match(html, /Turn microphone on/);
     assert.match(html, /Reconnecting/);
     assert.doesNotMatch(html, /Chat with your pig pal/);
   });
@@ -153,17 +147,26 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /aria-label="Edit About this learner"/);
     assert.doesNotMatch(html, /<textarea/);
     assert.doesNotMatch(html, /Save and continue|Keep this|Leave this out/);
-    assert.match(html, /Debug transcript/);
-    assert.match(html, /How old are you\?/);
-    assert.match(html, /I am seven\./);
+    assert.doesNotMatch(html, /Debug transcript|I am seven\./);
   });
 
-  it("adds responsive, speech-bubble, debug, focus, and reduced-motion styles", () => {
+  it("gives primary, secondary, and exit actions distinct visual hierarchy", () => {
     assert.match(styles, /\.conversation-shell/);
     assert.match(styles, /\.conversation-character-stage/);
     assert.match(styles, /\.conversation-speech-bubble::after/);
-    assert.match(styles, /\.conversation-debug-transcript/);
-    assert.match(styles, /\.conversation-transcript/);
+    assert.match(
+      styles,
+      /\.conversation-microphone-button\s*\{[^}]*background:\s*#ff467b[^}]*color:\s*#fff/s,
+    );
+    assert.match(
+      styles,
+      /\.conversation-finish-button\s*\{[^}]*background:\s*transparent[^}]*text-decoration:\s*underline/s,
+    );
+    assert.match(
+      styles,
+      /\.conversation-type-panel\s*\{[^}]*background:\s*rgb\(255 255 255 \/ 72%\)/s,
+    );
+    assert.doesNotMatch(styles, /\.conversation-debug-transcript/);
     assert.match(styles, /\.conversation-[^{]+:focus-visible/);
     assert.match(styles, /@media \(max-height:/);
     assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);

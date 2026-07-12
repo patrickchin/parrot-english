@@ -621,22 +621,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    text(/登录服务暂时不可用/);
-    await click(button("重试"));
-    text(/正在检查登录状态…/);
+    text(/Sign-in is temporarily unavailable/);
+    await click(button("Try again"));
+    text(/Checking your session…/);
     client.retry.resolve();
-    await waitFor(() => text(/欢迎回来/));
+    await waitFor(() => text(/Welcome back/));
 
     await input(document.querySelector("#auth-email"), "mia@example.com");
     await input(document.querySelector("#auth-password"), "correct-horse");
-    await click(button("登录并开始"));
+    await click(button("Sign in and start"));
     await waitFor(() => text(/AUTHENTICATED APP/));
     assert.deepEqual(client.signInCalls, [
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
-    await click(button("退出登录"));
-    await waitFor(() => text(/欢迎回来/));
+    await click(button("Log out"));
+    await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
   });
 

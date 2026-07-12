@@ -15,7 +15,7 @@ const validFields = {
 test("sign-up requires a non-empty trimmed name", () => {
   assert.equal(
     validateAuthForm("sign-up", { ...validFields, name: " \t " }),
-    "请输入名字。",
+    "Enter your name.",
   );
 });
 
@@ -30,7 +30,7 @@ test("email must use a simple local@domain.tld shape", () => {
   for (const email of ["", "name", "name@example", "name @example.com"]) {
     assert.equal(
       validateAuthForm("sign-in", { ...validFields, email }),
-      "请输入有效的邮箱地址。",
+      "Enter a valid email address.",
       email,
     );
   }
@@ -49,7 +49,7 @@ test("email is trimmed before validation", () => {
 test("password must contain at least eight characters", () => {
   assert.equal(
     validateAuthForm("sign-in", { ...validFields, password: "1234567" }),
-    "密码至少需要 8 个字符。",
+    "Password must be at least 8 characters.",
   );
   assert.equal(
     validateAuthForm("sign-in", { ...validFields, password: "12345678" }),
@@ -60,7 +60,7 @@ test("password must contain at least eight characters", () => {
 test("sign-up validation order is name, email, then password", () => {
   assert.equal(
     validateAuthForm("sign-up", { name: "", email: "bad", password: "" }),
-    "请输入名字。",
+    "Enter your name.",
   );
   assert.equal(
     validateAuthForm("sign-up", {
@@ -68,7 +68,7 @@ test("sign-up validation order is name, email, then password", () => {
       email: "bad",
       password: "",
     }),
-    "请输入有效的邮箱地址。",
+    "Enter a valid email address.",
   );
   assert.equal(
     validateAuthForm("sign-up", {
@@ -76,7 +76,7 @@ test("sign-up validation order is name, email, then password", () => {
       email: "xiaoming@example.com",
       password: "",
     }),
-    "密码至少需要 8 个字符。",
+    "Password must be at least 8 characters.",
   );
 });
 
@@ -91,7 +91,7 @@ test("existing-user error codes direct the user to sign in", () => {
   ]) {
     assert.equal(
       getAuthErrorMessage({ code }),
-      "这个邮箱已经注册，请直接登录。",
+      "This email is already registered. Sign in instead.",
       code,
     );
   }
@@ -100,21 +100,21 @@ test("existing-user error codes direct the user to sign in", () => {
 test("invalid-credential error code uses the credential message", () => {
   assert.equal(
     getAuthErrorMessage({ code: "INVALID_EMAIL_OR_PASSWORD" }),
-    "邮箱或密码不正确。",
+    "The email or password is incorrect.",
   );
 });
 
 test("invalid-email error code uses the email validation message", () => {
   assert.equal(
     getAuthErrorMessage({ code: "INVALID_EMAIL" }),
-    "请输入有效的邮箱地址。",
+    "Enter a valid email address.",
   );
 });
 
 test("short-password error code uses the password validation message", () => {
   assert.equal(
     getAuthErrorMessage({ code: "PASSWORD_TOO_SHORT" }),
-    "密码至少需要 8 个字符。",
+    "Password must be at least 8 characters.",
   );
 });
 
@@ -128,7 +128,7 @@ test("missing and unknown errors use a safe fallback", () => {
   ]) {
     assert.equal(
       getAuthErrorMessage(error),
-      "暂时无法登录，请稍后再试。",
+      "Unable to sign you in. Please try again.",
     );
   }
 });
@@ -140,7 +140,7 @@ test("prototype property names are treated as unknown error codes", () => {
     assert.equal(Object.hasOwn(error, "code"), true);
     assert.equal(
       getAuthErrorMessage(error),
-      "暂时无法登录，请稍后再试。",
+      "Unable to sign you in. Please try again.",
       code,
     );
   }

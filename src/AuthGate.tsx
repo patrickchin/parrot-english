@@ -49,7 +49,7 @@ interface SignOutSessionOptions {
   refetch: () => Promise<unknown>;
 }
 
-const SIGN_OUT_ERROR_MESSAGE = "暂时无法退出登录，请稍后再试。";
+const SIGN_OUT_ERROR_MESSAGE = "Unable to log you out. Please try again.";
 
 export async function submitAuthForm({
   client,
@@ -154,7 +154,7 @@ export function AuthGateView({
           <span aria-hidden="true" className="auth-parrot-mark">
             P
           </span>
-          <p>正在检查登录状态…</p>
+          <p>Checking your session…</p>
         </section>
       </main>
     );
@@ -167,10 +167,10 @@ export function AuthGateView({
           <span aria-hidden="true" className="auth-parrot-mark">
             P
           </span>
-          <h1>登录服务暂时不可用</h1>
-          <p>请检查网络连接，然后再试一次。</p>
+          <h1>Sign-in is temporarily unavailable</h1>
+          <p>Check your connection, then try again.</p>
           <button className="auth-submit" onClick={onRetry} type="button">
-            重试
+            Try again
           </button>
         </section>
       </main>
@@ -191,19 +191,21 @@ export function AuthGateView({
             <span aria-hidden="true" className="auth-parrot-mark">
               P
             </span>
-            <h1 id="auth-title">{isSignUp ? "创建学习账号" : "欢迎回来"}</h1>
+            <h1 id="auth-title">
+              {isSignUp ? "Create a learning account" : "Welcome back"}
+            </h1>
           </header>
 
           <form onSubmit={onSubmit}>
             <fieldset className="auth-fieldset" disabled={isSubmitting}>
-              <div className="auth-mode-switch" aria-label="选择登录或注册">
+              <div className="auth-mode-switch" aria-label="Choose sign in or sign up">
                 <button
                   aria-pressed={!isSignUp}
                   className={!isSignUp ? "is-active" : ""}
                   onClick={() => onModeChange("sign-in")}
                   type="button"
                 >
-                  登录
+                  Sign in
                 </button>
                 <button
                   aria-pressed={isSignUp}
@@ -211,13 +213,13 @@ export function AuthGateView({
                   onClick={() => onModeChange("sign-up")}
                   type="button"
                 >
-                  注册
+                  Sign up
                 </button>
               </div>
 
               {isSignUp ? (
                 <label className="auth-field" htmlFor="auth-name">
-                  <span>名字</span>
+                  <span>Name</span>
                   <input
                     autoComplete="name"
                     id="auth-name"
@@ -231,7 +233,7 @@ export function AuthGateView({
               ) : null}
 
               <label className="auth-field" htmlFor="auth-email">
-                <span>邮箱</span>
+                <span>Email</span>
                 <input
                   autoComplete="email"
                   id="auth-email"
@@ -245,7 +247,7 @@ export function AuthGateView({
               </label>
 
               <label className="auth-field" htmlFor="auth-password">
-                <span>密码</span>
+                <span>Password</span>
                 <input
                   autoComplete={isSignUp ? "new-password" : "current-password"}
                   id="auth-password"
@@ -256,7 +258,7 @@ export function AuthGateView({
                   type="password"
                   value={fields.password}
                 />
-                <small>至少 8 个字符</small>
+                <small>At least 8 characters</small>
               </label>
 
               {formError ? (
@@ -268,11 +270,11 @@ export function AuthGateView({
               <button className="auth-submit" type="submit">
                 {isSubmitting
                   ? isSignUp
-                    ? "正在注册…"
-                    : "正在登录…"
+                    ? "Creating account…"
+                    : "Signing in…"
                   : isSignUp
-                    ? "创建账号"
-                    : "登录并开始"}
+                    ? "Create account"
+                    : "Sign in and start"}
               </button>
             </fieldset>
           </form>
@@ -281,12 +283,12 @@ export function AuthGateView({
     );
   }
 
-  const userLabel = session.user.name?.trim() || session.user.email || "小朋友";
+  const userLabel = session.user.name?.trim() || session.user.email || "Learner";
   const accountError = profileError || formError;
 
   return (
     <>
-      <aside className="user-session-bar" aria-label="当前登录账号">
+      <aside className="user-session-bar" aria-label="Current account">
         <span title={session.user.email}>{userLabel}</span>
         {onOpenProfile ? (
           <button
@@ -299,7 +301,7 @@ export function AuthGateView({
           </button>
         ) : null}
         <button disabled={isSigningOut} onClick={onSignOut} type="button">
-          {isSigningOut ? "正在退出…" : "退出登录"}
+          {isSigningOut ? "Signing out…" : "Log out"}
         </button>
         {accountError ? (
           <span className="session-error" role="alert">

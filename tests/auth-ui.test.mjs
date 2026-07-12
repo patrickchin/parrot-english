@@ -156,7 +156,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
     },
     submitAction: async (options) => {
       submitCalls.push(options);
-      return "邮箱或密码不正确。";
+      return "The email or password is incorrect.";
     },
     stateHook: stateHarness.useState,
     View: CaptureView,
@@ -195,7 +195,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   const retryHtml = renderToStaticMarkup(
     createElement(AuthGateView, capturedProps),
   );
-  assert.match(retryHtml, /正在检查登录状态…/);
+  assert.match(retryHtml, /Checking your session…/);
   assert.doesNotMatch(retryHtml, /CONTAINER CHILD/);
 
   sessionState = { ...sessionState, error: null };
@@ -208,7 +208,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
     createElement(AuthGateView, capturedProps),
   );
   assert.match(retrySuccessHtml, /CONTAINER CHILD/);
-  assert.doesNotMatch(retrySuccessHtml, /正在检查登录状态…/);
+  assert.doesNotMatch(retrySuccessHtml, /Checking your session…/);
 
   let prevented = false;
   await capturedProps.onSubmit({
@@ -228,7 +228,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   });
 
   renderContainer();
-  assert.equal(capturedProps.formError, "邮箱或密码不正确。");
+  assert.equal(capturedProps.formError, "The email or password is incorrect.");
 
   capturedProps.onFieldChange("email", "new@example.com");
   capturedProps.onModeChange("sign-up");
@@ -303,16 +303,16 @@ test("pending sessions hide lesson children", () => {
     sessionError: new Error("refresh pending"),
   });
 
-  assert.match(html, /正在检查登录状态…/);
-  assert.doesNotMatch(html, /登录服务暂时不可用/);
+  assert.match(html, /Checking your session…/);
+  assert.doesNotMatch(html, /Sign-in is temporarily unavailable/);
   assert.doesNotMatch(html, /LESSON CONTENT/);
 });
 
 test("session errors show retry UI and hide lesson children", () => {
   const html = renderAuthGate({ sessionError: new Error("offline") });
 
-  assert.match(html, /登录服务暂时不可用/);
-  assert.match(html, /重试/);
+  assert.match(html, /Sign-in is temporarily unavailable/);
+  assert.match(html, /Try again/);
   assert.doesNotMatch(html, /LESSON CONTENT/);
 });
 
@@ -324,8 +324,8 @@ test("session errors reject cached sessions until retry succeeds", () => {
     sessionError: new Error("refresh failed"),
   });
 
-  assert.match(html, /登录服务暂时不可用/);
-  assert.match(html, /重试/);
+  assert.match(html, /Sign-in is temporarily unavailable/);
+  assert.match(html, /Try again/);
   assert.doesNotMatch(html, /LESSON CONTENT/);
   assert.doesNotMatch(html, /cached@example\.com/);
 });
@@ -359,11 +359,11 @@ test("pending, retrying, and failed session checks take priority over redirects"
     signedOutFallback: fallback,
   });
 
-  assert.match(pending, /正在检查登录状态/);
+  assert.match(pending, /Checking your session/);
   assert.doesNotMatch(pending, /REDIRECT/);
-  assert.match(retrying, /正在检查登录状态/);
+  assert.match(retrying, /Checking your session/);
   assert.doesNotMatch(retrying, /REDIRECT/);
-  assert.match(failed, /登录服务暂时不可用/);
+  assert.match(failed, /Sign-in is temporarily unavailable/);
   assert.doesNotMatch(failed, /REDIRECT/);
 });
 
@@ -403,7 +403,7 @@ test("background session refetches preserve mounted lesson children", () => {
 
   assert.match(html, /BACKGROUND REFRESH CHILD/);
   assert.match(html, /cached@example\.com/);
-  assert.doesNotMatch(html, /正在检查登录状态…/);
+  assert.doesNotMatch(html, /Checking your session…/);
 });
 
 test("signed-out views switch between sign-in and sign-up fields", () => {
@@ -429,14 +429,14 @@ test("failed form state preserves values and disables controls while submitting"
       email: " learner@example.com ",
       password: "password",
     },
-    formError: "邮箱或密码不正确。",
+    formError: "The email or password is incorrect.",
     isSubmitting: true,
     mode: "sign-up",
   });
 
   assert.match(html, /value=" 小明 "/);
   assert.match(html, /value=" learner@example.com "/);
-  assert.match(html, /邮箱或密码不正确。/);
+  assert.match(html, /The email or password is incorrect./);
   assert.match(html, /<fieldset[^>]*disabled/);
   assert.match(html, /role="alert"/);
 });
@@ -449,7 +449,7 @@ test("signed-in views render lesson children and disabled sign-out progress", ()
 
   assert.match(html, /LESSON CONTENT/);
   assert.match(html, /learner@example.com/);
-  assert.match(html, /正在退出…/);
+  assert.match(html, /Signing out…/);
   assert.match(html, /<button[^>]*disabled/);
 });
 
@@ -464,7 +464,7 @@ test("renders Profile and Log out together in the account bar", () => {
 
   assert.ok(bar);
   assert.match(bar, /aria-label="Edit learner profile"/);
-  assert.match(bar, />退出登录</);
+  assert.match(bar, />Log out</);
   assert.doesNotMatch(html, /class="profile-edit-button"/);
 });
 
@@ -490,7 +490,7 @@ test("auth submission validates before calling the client", async () => {
     },
   });
 
-  assert.equal(error, "请输入有效的邮箱地址。");
+  assert.equal(error, "Enter a valid email address.");
   assert.equal(clientCalls, 0);
   assert.equal(refetchCalls, 0);
 });
@@ -554,7 +554,7 @@ test("sign-in maps result errors, omits the name, and does not refetch", async (
     },
   });
 
-  assert.equal(error, "邮箱或密码不正确。");
+  assert.equal(error, "The email or password is incorrect.");
   assert.deepEqual(payloads, [
     { email: "learner@example.com", password: "password" },
   ]);
@@ -574,7 +574,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     }),
     refetch,
   });
-  assert.equal(failure, "暂时无法退出登录，请稍后再试。");
+  assert.equal(failure, "Unable to log you out. Please try again.");
   assert.equal(refetchCalls, 0);
 
   const thrownFailure = await signOutSession({
@@ -585,7 +585,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     }),
     refetch,
   });
-  assert.equal(thrownFailure, "暂时无法退出登录，请稍后再试。");
+  assert.equal(thrownFailure, "Unable to log you out. Please try again.");
   assert.equal(refetchCalls, 0);
 
   const success = await signOutSession({

@@ -1,3 +1,4 @@
+import { Keyboard, Mic, MicOff, RotateCcw, Square } from "lucide-react";
 import type { FormEvent } from "react";
 
 export type ConversationSurfaceStatus =
@@ -48,7 +49,7 @@ const STATUS_LABELS: Record<
   Exclude<ConversationSurfaceStatus, "ready">,
   string
 > = {
-  connecting: "Joining your voice room…",
+  connecting: "Joining Peppa…",
   listening: "Listening — take your time",
   speaking: "Peppa is talking",
   reconnecting: "Reconnecting… your answers are safe",
@@ -65,29 +66,6 @@ const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
   error: "/assets/characters/peppa/peppa-sad.webp",
   saving: "/assets/characters/peppa/peppa-happy.webp",
 };
-
-function debugTranscript(
-  turns: ConversationSurfaceTurn[],
-  className = "conversation-debug-transcript",
-) {
-  if (turns.length === 0) return null;
-  return (
-    <details className={className}>
-      <summary>Debug transcript</summary>
-      <ol className="conversation-transcript">
-        {turns.map((turn) => (
-          <li
-            className={`conversation-turn conversation-turn--${turn.role}`}
-            key={turn.id}
-          >
-            <strong>{turn.role === "assistant" ? "Peppa" : "You"}</strong>
-            <span>{turn.text}</span>
-          </li>
-        ))}
-      </ol>
-    </details>
-  );
-}
 
 function latestAssistantSpeech(turns: ConversationSurfaceTurn[]) {
   for (let index = turns.length - 1; index >= 0; index -= 1) {
@@ -134,10 +112,10 @@ export function ConversationSurface({
   }
 
   const saving = status === "saving";
-  const waitingForPeppa = status === "connecting";
+  const joining = status === "connecting";
   const speech = latestAssistantSpeech(turns) ??
-    (status === "connecting"
-      ? "Hello! Here I come…"
+    (joining
+      ? "Almost ready!"
       : saving
         ? "Lovely chat! I'll remember that."
         : "I'm listening!");
@@ -158,62 +136,93 @@ export function ConversationSurface({
           />
         </div>
 
-        <p className="conversation-state" role="status">
-          {STATUS_LABELS[status]}
-        </p>
-
-        {error ? <p role="alert">{error}</p> : null}
-
-        {!saving ? <div className="conversation-controls">
-          <button
-            aria-pressed={!microphoneEnabled}
-            className="conversation-secondary-button"
-            disabled={waitingForPeppa}
-            onClick={onToggleMicrophone}
-            type="button"
+        {joining ? (
+          <div
+            aria-live="assertive"
+            className="conversation-joining-notice"
+            role="status"
           >
-            {microphoneEnabled ? "Mute microphone" : "Microphone off"}
-          </button>
-          <button
-            className="conversation-secondary-button"
-            onClick={onFinish}
-            type="button"
+            <span aria-hidden="true" className="conversation-joining-spinner" />
+            <span>
+              <strong>{STATUS_LABELS.connecting}</strong>
+              <span>
+                Please wait until Peppa says hello before you start talking.
+              </span>
+            </span>
+          </div>
+        ) : (
+          <p
+            className={`conversation-state conversation-state--${status}`}
+            role="status"
           >
-            Finish now
-          </button>
-          {status === "error" ? (
+            <span aria-hidden="true" />
+            {STATUS_LABELS[status]}
+          </p>
+        )}
+
+        {error ? <p className="conversation-error" role="alert">{error}</p> : null}
+
+        {!saving && !joining ? (
+          <div className="conversation-actions">
+            <div className="conversation-controls">
+              {status === "error" ? (
+                <button
+                  className="conversation-retry-button"
+                  onClick={onStart}
+                  type="button"
+                >
+                  <RotateCcw aria-hidden="true" />
+                  Try again
+                </button>
+              ) : (
+                <button
+                  aria-pressed={!microphoneEnabled}
+                  className="conversation-microphone-button"
+                  onClick={onToggleMicrophone}
+                  type="button"
+                >
+                  {microphoneEnabled ? (
+                    <MicOff aria-hidden="true" />
+                  ) : (
+                    <Mic aria-hidden="true" />
+                  )}
+                  {microphoneEnabled ? "Mute microphone" : "Turn microphone on"}
+                </button>
+              )}
+            </div>
+
+            <details className="conversation-type-panel">
+              <summary>
+                <Keyboard aria-hidden="true" />
+                <span>Type instead</span>
+              </summary>
+              <form className="conversation-text-form" onSubmit={submitTypedAnswer}>
+                <input
+                  aria-label="Type your answer"
+                  maxLength={1_000}
+                  onChange={(event) => onTypedValueChange(event.currentTarget.value)}
+                  placeholder="Type an answer here"
+                  value={typedValue}
+                />
+                <button
+                  className="conversation-send-button"
+                  type="submit"
+                >
+                  Send
+                </button>
+              </form>
+            </details>
+
             <button
-              className="conversation-secondary-button"
-              onClick={onStart}
+              className="conversation-finish-button"
+              onClick={onFinish}
               type="button"
             >
-              Try again
+              <Square aria-hidden="true" />
+              Finish conversation
             </button>
-          ) : null}
-        </div> : null}
-
-        {!saving ? <details className="conversation-type-panel">
-          <summary>Type instead</summary>
-          <form className="conversation-text-form" onSubmit={submitTypedAnswer}>
-            <input
-              aria-label="Type your answer"
-              disabled={waitingForPeppa}
-              maxLength={1_000}
-              onChange={(event) => onTypedValueChange(event.currentTarget.value)}
-              placeholder="Type an answer here"
-              value={typedValue}
-            />
-            <button
-              className="conversation-send-button"
-              disabled={waitingForPeppa}
-              type="submit"
-            >
-              Send
-            </button>
-          </form>
-        </details> : null}
-
-        {debugTranscript(turns)}
+          </div>
+        ) : null}
       </section>
     </main>
   );
