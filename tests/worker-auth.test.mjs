@@ -96,7 +96,7 @@ describe("Worker authentication", () => {
     );
   });
 
-  it("trusts production and Parrot Worker preview origins", async () => {
+  it("trusts the public site and Parrot Worker origins", async () => {
     const productionOrigin = "https://parrot-english.p-ch.workers.dev";
     const auth = createAuth({
       DB: {},
@@ -107,6 +107,7 @@ describe("Worker authentication", () => {
 
     assert.equal(auth.options.baseURL, productionOrigin);
     assert.equal(context.isTrustedOrigin(productionOrigin), true);
+    assert.equal(context.isTrustedOrigin("https://parrotbook.com"), true);
     assert.equal(
       context.isTrustedOrigin(
         "https://codex-app-home-routing-parrot-english.p-ch.workers.dev"
