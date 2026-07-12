@@ -5,6 +5,7 @@ import { createDatabase } from "./database.ts";
 
 const PR_PREVIEW_ORIGIN_PATTERN =
   "https://*-parrot-english.p-ch.workers.dev";
+const PUBLIC_APP_ORIGIN = "https://parrotbook.com";
 
 export interface AuthEnv {
   DB: D1Database;
@@ -40,7 +41,7 @@ export function createAuth(env: AuthEnv) {
   return betterAuth({
     appName: "Parrot English",
     baseURL,
-    trustedOrigins: [PR_PREVIEW_ORIGIN_PATTERN],
+    trustedOrigins: [PUBLIC_APP_ORIGIN, PR_PREVIEW_ORIGIN_PATTERN],
     secret,
     database: drizzleAdapter(createDatabase(env.DB), {
       provider: "sqlite",
