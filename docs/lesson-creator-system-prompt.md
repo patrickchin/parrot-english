@@ -23,8 +23,8 @@ The root fields are:
 - `scenes`, containing one or more scene objects
 
 Each scene includes `title`, `settingDescription`, `background`, `characters`,
-and `steps`. Each scene needs one or more steps. Each step includes `speaker`,
-`dialogue`, and an `emotes` object.
+and `steps`. Each scene needs one or more steps. Each step includes `speaker`
+and `dialogue`; `emotes` and `check` are optional.
 
 ## Playable IDs
 
@@ -37,14 +37,29 @@ and `steps`. Each scene needs one or more steps. Each step includes `speaker`,
   does not have to be visible in the scene.
 - Supported emotes are `idle`, `talking`, `listening`, `happy`, `sad`, and
   `surprised`.
-- An emote map may be partial or contain extra metadata. A visible character
-  without a supplied emote is shown as `idle`.
+- An emote map may be partial or contain extra metadata. At the start of a
+  scene, visible characters are `idle`; later omitted emotes keep their current
+  value.
 
 These ID rules are runtime compatibility requirements: the player can only
 render assets that exist in its catalog. They do not impose curriculum rules.
 If a draft omits a display field or supplies an unsupported ID, the app applies
 a safe default and shows a warning instead of rejecting the draft. Only invalid
 JSON or a draft with no playable dialogue is blocked.
+
+## User Practice and Scripted Responses
+
+- Omit check to accept a user turn and continue without evaluating it.
+- Add `check` only to a step whose speaker is `user`.
+- Omit emotes when no character changes; visible characters keep their current emotes.
+- `maxAttempts` must be an integer from 1 to 5.
+- `correct`, `incorrect`, and `incorrectFinal` are required responses.
+- `noInput` and `noInputFinal` are optional responses. When omitted, the
+  matching incorrect response is used.
+- Every response includes `speaker`, `dialogue`, and `after`. The `after` value
+  is `retry` or `continue`; correct and final responses must continue.
+- A response may include a partial `emotes` object. The response speaker may be
+  `peppa`, `dolly`, or `narrator`, but never `user`.
 
 ## Flexible Authoring
 
@@ -96,6 +111,27 @@ This example assumes `episode-garden` is an available background ID.
           "dialogue": "我喜欢红色。",
           "emotes": {
             "dolly": "listening"
+          },
+          "check": {
+            "maxAttempts": 2,
+            "correct": {
+              "speaker": "dolly",
+              "dialogue": "说得好！",
+              "emotes": {
+                "dolly": "happy"
+              },
+              "after": "continue"
+            },
+            "incorrect": {
+              "speaker": "dolly",
+              "dialogue": "再试一次。",
+              "after": "retry"
+            },
+            "incorrectFinal": {
+              "speaker": "dolly",
+              "dialogue": "我们继续吧。",
+              "after": "continue"
+            }
           }
         }
       ]

@@ -12,7 +12,7 @@ type SpeechEvaluator = (options: {
 }) => Promise<EvaluationResult>;
 
 type FinishSpeechOperationOptions = {
-  evaluate: SpeechEvaluator;
+  evaluate: SpeechEvaluator | null;
   evaluationControllerRef: MutableRef<AbortController | null>;
   generation: number;
   getCurrentGeneration: () => number;
@@ -47,6 +47,7 @@ export async function finishSpeechOperation({
   try {
     const audio = await session.stop();
     if (!isCurrent()) return;
+    if (!evaluate) return;
 
     evaluationController = new AbortController();
     evaluationControllerRef.current = evaluationController;

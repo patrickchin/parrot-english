@@ -1,9 +1,7 @@
 export type EvaluationResult = {
   transcript: string;
   similarity: number;
-  passed: boolean;
-  feedbackText: string;
-  retryAllowed: boolean;
+  outcome: "correct" | "incorrect" | "noInput";
 };
 
 type TimerId = ReturnType<typeof setTimeout>;

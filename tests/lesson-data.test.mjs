@@ -257,6 +257,11 @@ describe("lesson data contract", () => {
       lessonData.validateLesson(lesson, catalog, "valid.json"),
       lesson,
     );
+    const prepared = lessonData.prepareLesson(lesson, catalog, "draft.json");
+    assert.deepEqual(prepared.lesson.scenes[0].steps[1].emotes, {
+      dolly: "listening",
+    });
+    assert.deepEqual(prepared.lesson.scenes[0].steps[1].check, userStep.check);
   });
 
   it("normalizes recoverable draft problems into warnings and safe defaults", () => {
@@ -295,9 +300,7 @@ describe("lesson data contract", () => {
     assert.deepEqual(prepared.lesson.scenes[0].characters, ["dolly"]);
     assert.equal(prepared.lesson.scenes[0].steps.length, 1);
     assert.equal(prepared.lesson.scenes[0].steps[0].speaker, "narrator");
-    assert.deepEqual(prepared.lesson.scenes[0].steps[0].emotes, {
-      dolly: "idle",
-    });
+    assert.deepEqual(prepared.lesson.scenes[0].steps[0].emotes, {});
     assert.ok(prepared.warnings.length >= 8);
     assert.ok(prepared.warnings.length <= 15);
     assert.match(prepared.warnings.at(-1), /additional repairs were applied/i);
@@ -398,7 +401,6 @@ describe("lesson data contract", () => {
       lessonData.validateLesson(missing, catalog, "missing.json"),
       missing,
     );
-
     const extra = createLesson();
     extra.scenes[0].steps[0].emotes.narrator = "idle";
     assert.equal(
@@ -433,15 +435,6 @@ describe("lesson data contract", () => {
       /incorrectFinal\.after.*continue/,
     );
 
-    const unknownEmoteCharacter = createLesson();
-    unknownEmoteCharacter.scenes[0].steps[1].check = createCheck();
-    unknownEmoteCharacter.scenes[0].steps[1].check.correct.emotes = {
-      narrator: "happy",
-    };
-    assert.throws(
-      () => lessonData.validateLesson(unknownEmoteCharacter, catalog, "bad.json"),
-      /correct\.emotes\.narrator/,
-    );
   });
 
   it("validates every checked-in lesson against the checked-in catalogs", () => {

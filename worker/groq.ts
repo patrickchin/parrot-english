@@ -287,8 +287,6 @@ export async function handleEvaluateSpeech(request: Request, env: ApiEnv) {
   return jsonResponse({
     transcript: result.transcript,
     similarity: result.similarity,
-    passed: result.passed,
-    feedbackText: result.feedbackText,
-    retryAllowed: result.retryAllowed,
+    outcome: result.outcome,
   });
 }

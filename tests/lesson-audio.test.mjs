@@ -32,8 +32,12 @@ describe("lesson audio", () => {
       getLessonSpeechLine(
         {
           ...createInitialLessonState(),
-          phase: LessonPhase.Feedback,
-          feedback: "Almost! Try again, Bella.",
+          phase: LessonPhase.Responding,
+          response: {
+            speaker: "narrator",
+            dialogue: "Almost! Try again, Bella.",
+            after: "retry",
+          },
         },
         lesson,
       ),

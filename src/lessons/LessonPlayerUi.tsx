@@ -174,7 +174,7 @@ export function LessonSpeech({
 
   if (
     speech.kind === "narration" ||
-    speech.kind === "feedback" ||
+    (speech.kind === "feedback" && speech.speaker === "narrator") ||
     speech.kind === "finished"
   ) {
     return (
