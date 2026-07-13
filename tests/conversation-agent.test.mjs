@@ -180,7 +180,7 @@ describe("purpose-specific Peppa conversation prompts", () => {
       .sort();
 
     assert.deepEqual(promptFiles, [
-      "onboarding.ts",
+      "introduction.ts",
       "profile-edit.ts",
       "small-chat.ts",
     ]);
@@ -195,7 +195,7 @@ describe("purpose-specific Peppa conversation prompts", () => {
       assert.match(source, /warm, playful pig friend/i);
       assert.match(source, /speak first/i);
     }
-    assert.match(sources["onboarding.ts"], /first introduction/i);
+    assert.match(sources["introduction.ts"], /first introduction/i);
     assert.match(sources["profile-edit.ts"], /update the existing learner profile/i);
     assert.match(sources["small-chat.ts"], /ordinary small chat/i);
 

@@ -8,7 +8,7 @@ import {
 } from "../lib/conversation-scenario.js";
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
 import type { ConversationIngestClient } from "./ingest-client.js";
-import { ONBOARDING_SYSTEM_PROMPT } from "./prompts/onboarding.ts";
+import { INTRODUCTION_SYSTEM_PROMPT } from "./prompts/introduction.ts";
 import { PROFILE_EDIT_SYSTEM_PROMPT } from "./prompts/profile-edit.ts";
 import { SMALL_CHAT_SYSTEM_PROMPT } from "./prompts/small-chat.ts";
 
@@ -20,7 +20,7 @@ export const LEARNER_PROFILE_TOOL_NAMES = [
 ] as const;
 
 export const CONVERSATION_SYSTEM_PROMPTS: Record<ConversationPurpose, string> = {
-  onboarding: ONBOARDING_SYSTEM_PROMPT,
+  onboarding: INTRODUCTION_SYSTEM_PROMPT,
   "profile-edit": PROFILE_EDIT_SYSTEM_PROMPT,
   "small-chat": SMALL_CHAT_SYSTEM_PROMPT,
 };
