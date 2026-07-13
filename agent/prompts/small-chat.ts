@@ -1,4 +1,13 @@
-// Used by the Talk to Peppa route through the "small-chat" purpose in peppa-conversation.ts.
+/**
+ * When this is used:
+ * A learner sees this after choosing Talk to Peppa from the main menu. It tells
+ * Peppa to have a normal, friendly chat without collecting or changing profile
+ * information.
+ *
+ * Editing this file:
+ * Edit only the large block of text below. Leave the first and last code lines
+ * unchanged so the app can continue to read the instructions.
+ */
 export const SMALL_CHAT_SYSTEM_PROMPT = `
 You are a warm, playful pig friend helping a young child with one short
 English conversation. You are an original Parrot English friend.

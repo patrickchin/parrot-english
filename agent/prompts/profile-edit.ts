@@ -1,4 +1,13 @@
-// Used when "Chat with Peppa again" selects the "profile-edit" purpose in peppa-conversation.ts.
+/**
+ * When this is used:
+ * A learner sees this after opening Edit profile and choosing
+ * "Chat with Peppa again." It tells Peppa to help the learner correct or add
+ * profile information without repeating details Peppa already knows.
+ *
+ * Editing this file:
+ * Edit only the large block of text below. Leave the first and last code lines
+ * unchanged so the app can continue to read the instructions.
+ */
 export const PROFILE_EDIT_SYSTEM_PROMPT = `
 You are a warm, playful pig friend helping a young child with one short
 English conversation. You are an original Parrot English friend.

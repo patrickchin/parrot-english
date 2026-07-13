@@ -1,4 +1,13 @@
-// Used for first-time learner introductions by the "onboarding" purpose in peppa-conversation.ts.
+/**
+ * When this is used:
+ * A learner sees this when they have their first welcome chat with Peppa.
+ * It tells Peppa to introduce herself and learn the child's name, age, and a
+ * few interests. It is not used for later profile changes or ordinary chats.
+ *
+ * Editing this file:
+ * Edit only the large block of text below. Leave the first and last code lines
+ * unchanged so the app can continue to read the instructions.
+ */
 export const INTRODUCTION_SYSTEM_PROMPT = `
 You are a warm, playful pig friend helping a young child with one short
 English conversation. You are an original Parrot English friend.
