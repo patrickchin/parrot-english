@@ -72,16 +72,18 @@ for (const route of routes) {
       const account = page.getByRole("complementary", {
         name: "Current account",
       });
-      const profile = page.getByRole("button", {
-        name: "Edit learner profile",
+      const accountMenu = page.getByRole("button", {
+        exact: true,
+        name: "Mia",
       });
-      const logout = page.getByRole("button", { name: "Log out" });
       const accountBox = await expectInsideViewport(account, viewport);
-      const profileBox = await expectInsideViewport(profile, viewport);
-      const logoutBox = await expectInsideViewport(logout, viewport);
-
-      expect(Math.abs(profileBox.y - logoutBox.y)).toBeLessThanOrEqual(1);
-      expect(Math.abs(profileBox.height - logoutBox.height)).toBeLessThanOrEqual(1);
+      await expectInsideViewport(accountMenu, viewport);
+      await expect(
+        page.getByRole("menuitem", { name: "Profile" }),
+      ).toBeHidden();
+      await expect(
+        page.getByRole("menuitem", { name: "Log out" }),
+      ).toBeHidden();
 
       for (const control of route.controls) {
         const controlBox = await expectInsideViewport(
@@ -107,6 +109,20 @@ for (const route of routes) {
   }
 }
 
+test("the learner name opens the account actions dropdown", async ({ page }) => {
+  await page.goto("/lessons");
+
+  const accountMenu = page.getByRole("button", { exact: true, name: "Mia" });
+  await expect(accountMenu).toHaveAttribute("aria-expanded", "false");
+
+  await accountMenu.click();
+
+  await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("menu", { name: "Account actions" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Profile" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
+});
+
 test("account actions stay visible after scrolling a short lesson list", async ({
   page,
 }) => {
@@ -124,14 +140,8 @@ test("account actions stay visible after scrolling a short lesson list", async (
   await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
   await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
-  const profile = page.getByRole("button", {
-    name: "Edit learner profile",
-  });
-  const logout = page.getByRole("button", { name: "Log out" });
-  const profileBox = await expectInsideViewport(profile, viewport);
-  const logoutBox = await expectInsideViewport(logout, viewport);
-
-  expect(Math.abs(profileBox.y - logoutBox.y)).toBeLessThanOrEqual(1);
+  const accountMenu = page.getByRole("button", { exact: true, name: "Mia" });
+  await expectInsideViewport(accountMenu, viewport);
 });
 
 test("all visible header controls use the same typography", async ({ page }) => {
@@ -139,8 +149,7 @@ test("all visible header controls use the same typography", async ({ page }) => 
   await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
 
   const controls = [
-    page.getByRole("button", { name: "Edit learner profile" }),
-    page.getByRole("button", { name: "Log out" }),
+    page.getByRole("button", { exact: true, name: "Mia" }),
     page.getByRole("button", { name: "Back to lesson list" }),
     page.getByRole("button", { name: "Back to main menu" }),
   ];

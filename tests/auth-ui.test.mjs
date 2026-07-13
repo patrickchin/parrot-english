@@ -432,7 +432,7 @@ test("signed-in views render lesson children and disabled sign-out progress", ()
   assert.match(html, /<button[^>]*disabled/);
 });
 
-test("renders Profile and Log out together in the account bar", () => {
+test("renders the learner name as the collapsed account menu trigger", () => {
   const html = renderAuthGate({
     onOpenProfile() {},
     session: { user: { email: "mia@example.test", name: "Mia" } },
@@ -442,8 +442,10 @@ test("renders Profile and Log out together in the account bar", () => {
   )?.[0];
 
   assert.ok(bar);
-  assert.match(bar, /aria-label="Edit learner profile"/);
-  assert.match(bar, />Log out</);
+  assert.match(bar, /<button[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/);
+  assert.match(bar, />Mia</);
+  assert.doesNotMatch(bar, /aria-label="Edit learner profile"/);
+  assert.doesNotMatch(bar, />Log out</);
 });
 
 test("auth submission validates before calling the client", async () => {
