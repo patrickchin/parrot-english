@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { LESSON_GENERATOR_SYSTEM_PROMPT } from "../worker/prompts/lesson-generator.ts";
 
-const prompt = readFileSync(
-  new URL("../docs/lesson-creator-system-prompt.md", import.meta.url),
-  "utf8"
-);
+const prompt = LESSON_GENERATOR_SYSTEM_PROMPT;
 function getJsonExamples() {
   return [...prompt.matchAll(/```json\n([\s\S]*?)\n```/g)].map((match) =>
     JSON.parse(match[1])
@@ -13,6 +11,43 @@ function getJsonExamples() {
 }
 
 describe("lesson creator system prompt", () => {
+  it("keeps the runtime prompt module as the only prompt source", () => {
+    const generatorSource = readFileSync(
+      new URL("../worker/lesson-generator.ts", import.meta.url),
+      "utf8",
+    );
+    const promptSource = readFileSync(
+      new URL("../worker/prompts/lesson-generator.ts", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(
+      generatorSource,
+      /import \{ LESSON_GENERATOR_SYSTEM_PROMPT \} from "\.\/prompts\/lesson-generator\.ts"/,
+    );
+    assert.match(
+      generatorSource,
+      /content: LESSON_GENERATOR_SYSTEM_PROMPT/,
+    );
+    assert.doesNotMatch(generatorSource, /const SYSTEM_PROMPT\s*=/);
+    assert.match(promptSource, /^\/\*\*[\s\S]*When this is used:/);
+    assert.equal(
+      existsSync(
+        new URL("../docs/lesson-creator-system-prompt.md", import.meta.url),
+      ),
+      false,
+    );
+    assert.equal(
+      existsSync(
+        new URL(
+          "../docs/lesson-creator-system-prompt.backup-2026-07-05.md",
+          import.meta.url,
+        ),
+      ),
+      false,
+    );
+  });
+
   it("documents the flexible playable JSON contract", () => {
     assert.match(prompt, /valid JSON only/i);
     assert.match(prompt, /no Markdown fences/i);

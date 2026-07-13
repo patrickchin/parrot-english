@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { generateLessonScript } from "../worker/lesson-generator.ts";
+import { LESSON_GENERATOR_SYSTEM_PROMPT } from "../worker/prompts/lesson-generator.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
 describe("lesson script generation", () => {
@@ -28,6 +29,10 @@ describe("lesson script generation", () => {
     assert.equal(calls[0].body.reasoning_effort, "low");
     assert.equal(calls[0].body.max_completion_tokens, 4500);
     assert.equal("json_schema" in calls[0].body.response_format, false);
+    assert.equal(
+      calls[0].body.messages[0].content,
+      LESSON_GENERATOR_SYSTEM_PROMPT,
+    );
     assert.doesNotMatch(
       calls[0].body.messages[0].content,
       /exactly|must.*repeat|English-only|narrator praise|two and seven words/i,
