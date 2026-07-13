@@ -45,6 +45,80 @@ describe("lesson script generation", () => {
     assert.match(calls[0].body.messages[1].content, /episode-garden/);
   });
 
+  it("retries one Groq schema-generation failure with stricter shape guidance", async () => {
+    const calls = [];
+    const lesson = createLessonScript();
+    const generated = await generateLessonScript({
+      childName: "Mia",
+      env: { GROQ_API_KEY: "test-key" },
+      topic: "ordering ice cream",
+      async fetch(url, init) {
+        calls.push({ url, body: JSON.parse(init.body) });
+        if (calls.length === 1) {
+          return Response.json(
+            {
+              error: {
+                code: "json_validate_failed",
+                message: "Generated JSON does not match the expected schema.",
+              },
+            },
+            { status: 400 },
+          );
+        }
+        return Response.json({
+          choices: [{ message: { content: JSON.stringify(lesson) } }],
+        });
+      },
+    });
+
+    assert.equal(generated.title, "Garden Help");
+    assert.equal(calls.length, 2);
+    assert.match(
+      calls[1].body.messages[0].content,
+      /include every required field exactly once/i,
+    );
+  });
+
+  it("stops after the bounded schema-generation retry", async () => {
+    let callCount = 0;
+    await assert.rejects(
+      generateLessonScript({
+        childName: "Mia",
+        env: { GROQ_API_KEY: "test-key" },
+        topic: "ordering ice cream",
+        async fetch() {
+          callCount += 1;
+          return Response.json(
+            { error: { code: "json_validate_failed" } },
+            { status: 400 },
+          );
+        },
+      }),
+      /lesson generation failed/i,
+    );
+    assert.equal(callCount, 2);
+  });
+
+  it("does not retry unrelated upstream failures", async () => {
+    let callCount = 0;
+    await assert.rejects(
+      generateLessonScript({
+        childName: "Mia",
+        env: { GROQ_API_KEY: "test-key" },
+        topic: "ordering ice cream",
+        async fetch() {
+          callCount += 1;
+          return Response.json(
+            { error: { code: "service_unavailable" } },
+            { status: 503 },
+          );
+        },
+      }),
+      /lesson generation failed/i,
+    );
+    assert.equal(callCount, 1);
+  });
+
   it("rejects malformed provider output instead of returning an unusable script", async () => {
     await assert.rejects(
       generateLessonScript({
