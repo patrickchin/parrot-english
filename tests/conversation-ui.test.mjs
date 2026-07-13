@@ -35,7 +35,6 @@ function props(overrides = {}) {
     onSubmitReview() {},
     onToggleMicrophone() {},
     onTypedValueChange() {},
-    onUseForm() {},
     status: "ready",
     turns: [],
     typedValue: "",

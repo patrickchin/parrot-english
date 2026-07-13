@@ -1,4 +1,4 @@
-import { Flag, Mic, MicOff, RotateCcw } from "lucide-react";
+import { ArrowLeft, Flag, Mic, MicOff, RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 
 export type ConversationSurfaceStatus =
@@ -28,6 +28,7 @@ type ConversationSurfaceProps = {
   candidates: ConversationSurfaceCandidate[];
   error: string;
   microphoneEnabled: boolean;
+  onBack: () => void;
   onCandidateChange: (id: string, value: string) => void;
   onCandidateStatusChange: (
     id: string,
@@ -39,7 +40,6 @@ type ConversationSurfaceProps = {
   onSubmitReview: () => void;
   onToggleMicrophone: () => void;
   onTypedValueChange: (value: string) => void;
-  onUseForm: () => void;
   status: ConversationSurfaceStatus;
   turns: ConversationSurfaceTurn[];
   typedValue: string;
@@ -82,9 +82,24 @@ function isInteractiveSpaceTarget(target: EventTarget | null) {
   );
 }
 
+function ConversationBackButton({ onBack }: { onBack: () => void }) {
+  return (
+    <button
+      aria-label="Back"
+      className="conversation-back-button"
+      onClick={onBack}
+      type="button"
+    >
+      <ArrowLeft aria-hidden="true" />
+      <span>Back</span>
+    </button>
+  );
+}
+
 export function ConversationSurface({
   error,
   microphoneEnabled,
+  onBack,
   onFinish,
   onStart,
   onToggleMicrophone,
@@ -117,6 +132,7 @@ export function ConversationSurface({
   if (status === "ready") {
     return (
       <main className="conversation-screen">
+        <ConversationBackButton onBack={onBack} />
         <section className="conversation-start-card conversation-start-card--minimal">
           <h1 className="conversation-visually-hidden">Chat with Peppa</h1>
           <div className="conversation-character-stage">
@@ -142,6 +158,7 @@ export function ConversationSurface({
         : "I'm listening!");
   return (
     <main className="conversation-screen">
+      <ConversationBackButton onBack={onBack} />
       <section className="conversation-shell">
         <div className="conversation-character-stage">
           <p

@@ -172,8 +172,8 @@ function ConversationHookHarness({ createTransport, onCompleted = async () => {}
   const conversation = useConversationOnboarding({
     active: true,
     createTransport,
+    onBack() {},
     onCompleted,
-    onUseForm() {},
   });
   return createElement(
     "section",
@@ -202,7 +202,6 @@ function conversationSurfaceProps(overrides = {}) {
     onSubmitReview() {},
     onToggleMicrophone() {},
     onTypedValueChange() {},
-    onUseForm() {},
     status: "listening",
     turns: [],
     typedValue: "",

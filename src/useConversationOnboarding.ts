@@ -120,15 +120,15 @@ export function candidateFromControllerState(
 type UseConversationOnboardingOptions = {
   active: boolean;
   createTransport?: typeof createLiveKitConversation;
+  onBack: () => void;
   onCompleted: () => Promise<void>;
-  onUseForm: () => void;
 };
 
 export function useConversationOnboarding({
   active,
   createTransport = createLiveKitConversation,
+  onBack,
   onCompleted,
-  onUseForm,
 }: UseConversationOnboardingOptions) {
   const [status, setStatus] =
     useState<ConversationSurfaceStatus>("ready");
@@ -314,16 +314,16 @@ export function useConversationOnboarding({
     }
   }, [conversationId, isCurrent, loadSummary]);
 
-  const useForm = useCallback(() => {
+  const back = useCallback(() => {
     operationRef.current += 1;
     const id = conversationId;
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
-    onUseForm();
-    if (id) void finishConversation(id, "form_fallback").catch(() => {});
+    onBack();
+    if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
-  }, [conversationId, onUseForm]);
+  }, [conversationId, onBack]);
 
   const sendText = useCallback(async () => {
     const value = typedValue.trim();
@@ -472,6 +472,7 @@ export function useConversationOnboarding({
       candidates,
       error,
       microphoneEnabled,
+      onBack: back,
       onCandidateChange: updateCandidate,
       onCandidateStatusChange: updateCandidateStatus,
       onFinish: () => void finish(),
@@ -480,13 +481,13 @@ export function useConversationOnboarding({
       onSubmitReview: () => void submitReview(),
       onToggleMicrophone: () => void toggleMicrophone(),
       onTypedValueChange: setTypedValue,
-      onUseForm: useForm,
       status,
       turns,
       typedValue,
     }),
     [
       candidates,
+      back,
       error,
       finish,
       microphoneEnabled,
@@ -499,7 +500,6 @@ export function useConversationOnboarding({
       typedValue,
       updateCandidate,
       updateCandidateStatus,
-      useForm,
     ],
   );
 }
