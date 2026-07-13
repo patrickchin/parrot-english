@@ -637,6 +637,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   it("updates and clears the live learner transcript during a microphone turn", async () => {
     let listener = () => {};
     const transport = {
+      async commitUserTurn() {},
       async connect() {},
       async disconnect() {},
       async sendText() {},
@@ -728,8 +729,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
     let listener = () => {};
     let now = 1_000;
+    let turnCommits = 0;
     const microphoneCalls = [];
     const transport = {
+      async commitUserTurn() {
+        turnCommits += 1;
+      },
       async connect() {},
       async disconnect() {},
       async sendText() {},
@@ -782,6 +787,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 1));
     await waitFor(() =>
       assert.equal(
         document.querySelector('output[aria-label="Conversation status"]')
