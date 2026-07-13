@@ -1041,7 +1041,7 @@ describe("onboarding and profile gate", () => {
   it("composes route-aware onboarding inside the authenticated shell", () => {
     assert.match(
       appSource,
-      /<AuthGate[\s\S]*?compactSessionBar=\{isConversationRoute\}[\s\S]*?signedOutFallback=\{/,
+      /<AuthGate[\s\S]*?compactSessionBar=\{isConversationRoute\s*\|\|\s*isOnboardingRoute\}[\s\S]*?signedOutFallback=\{/,
     );
     assert.match(appSource, /<OnboardingGate[\s\S]*?isOnboardingRoute=/);
     assert.match(appSource, /completedOnboardingFallback=/);

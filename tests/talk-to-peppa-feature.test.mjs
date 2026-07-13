@@ -38,7 +38,10 @@ test("conversation route uses a compact same-row mobile header", () => {
   const authGate = source("../src/AuthGate.tsx");
   const styles = source("../src/styles.css");
 
-  assert.match(app, /compactSessionBar=\{isConversationRoute\}/);
+  assert.match(
+    app,
+    /compactSessionBar=\{isConversationRoute\s*\|\|\s*isOnboardingRoute\}/,
+  );
   assert.match(authGate, /user-session-bar--conversation/);
   assert.match(
     styles,
