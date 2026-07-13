@@ -16,6 +16,7 @@ import {
 } from "../agent/onboarding-scenario.ts";
 import {
   createAgentModels,
+  createAgentTurnHandling,
   parseConversationParticipantMetadata,
 } from "../agent/index.ts";
 import * as agentRuntime from "../agent/index.ts";
@@ -404,6 +405,24 @@ describe("bounded onboarding agent contract", () => {
       preemptiveTts: true,
     });
     assert.equal(AGENT_TURN_HANDLING.turnDetection, "inference");
+  });
+
+  it("passes the low-latency options into the running agent session", () => {
+    const turnHandling = createAgentTurnHandling();
+
+    assert.equal(
+      turnHandling.endpointing,
+      AGENT_TURN_HANDLING.endpointing,
+    );
+    assert.equal(
+      turnHandling.interruption,
+      AGENT_TURN_HANDLING.interruption,
+    );
+    assert.equal(
+      turnHandling.preemptiveGeneration,
+      AGENT_TURN_HANDLING.preemptiveGeneration,
+    );
+    assert.equal(turnHandling.turnDetection.constructor.name, "TurnDetector");
   });
 });
 
