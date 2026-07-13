@@ -18,6 +18,7 @@ const SAFE_RETURN_PATHS = [
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
+  /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
   /^\/(?:progress|stories)\/*$/i,
@@ -46,6 +47,10 @@ export function getLessonScenePath(
   sceneIndex: number,
 ) {
   return `${getLessonPath(source, lessonId)}/scenes/${sceneIndex + 1}`;
+}
+
+export function getMyLessonEditPath(lessonId: string) {
+  return `${getLessonPath("my", lessonId)}/edit`;
 }
 
 export function getLoginPath(returnTo: string) {

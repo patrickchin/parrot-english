@@ -1,6 +1,6 @@
-import { ArrowLeft, BookOpen, Play, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, Pencil, Play, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getLessonScenePath } from "../app/app-routes";
+import { getLessonScenePath, getMyLessonEditPath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   LESSONS,
@@ -169,15 +169,26 @@ export function LessonListView({
                       {lesson.sceneCount} scenes
                     </span>
                   </div>
-                  <ActionLink
-                    aria-label={`Start lesson: ${lesson.title}`}
-                    className="shrink-0 rounded-full border-3 border-white md:min-h-14 md:min-w-44 md:gap-2 md:border-4 md:px-4"
-                    size="compact"
-                    to={getLessonScenePath("my", lesson.id, 0)}
-                  >
-                    <Play aria-hidden="true" className="size-5 shrink-0" />
-                    Start lesson
-                  </ActionLink>
+                  <div className="grid shrink-0 gap-2">
+                    <ActionLink
+                      aria-label={`Start lesson: ${lesson.title}`}
+                      className="rounded-full border-3 border-white md:min-h-14 md:min-w-44 md:gap-2 md:border-4 md:px-4"
+                      size="compact"
+                      to={getLessonScenePath("my", lesson.id, 0)}
+                    >
+                      <Play aria-hidden="true" className="size-5 shrink-0" />
+                      Start lesson
+                    </ActionLink>
+                    <ActionLink
+                      aria-label={`Edit lesson: ${lesson.title}`}
+                      className="rounded-full border-3 border-white bg-brand-blue shadow-control-blue md:min-h-14 md:min-w-44 md:gap-2 md:border-4 md:px-4"
+                      size="compact"
+                      to={getMyLessonEditPath(lesson.id)}
+                    >
+                      <Pencil aria-hidden="true" className="size-5 shrink-0" />
+                      Edit lesson
+                    </ActionLink>
+                  </div>
                 </div>
               </article>
             ))}

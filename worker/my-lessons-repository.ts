@@ -46,6 +46,22 @@ export function createMyLessonRepository(
     return row ?? null;
   }
 
+  async function updateOwned(id: string, userId: string, lesson: unknown) {
+    await database
+      .update(learnerLesson)
+      .set({
+        lessonJson: JSON.stringify(lesson),
+        updatedAt: now(),
+      })
+      .where(
+        and(
+          eq(learnerLesson.id, id),
+          eq(learnerLesson.authUserId, userId),
+        ),
+      );
+    return findOwned(id, userId);
+  }
+
   async function listOwned(userId: string) {
     return database
       .select()
@@ -63,5 +79,5 @@ export function createMyLessonRepository(
     return profile?.name?.trim() || null;
   }
 
-  return { create, findOwned, learnerName, listOwned };
+  return { create, findOwned, learnerName, listOwned, updateOwned };
 }

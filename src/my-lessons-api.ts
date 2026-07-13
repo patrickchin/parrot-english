@@ -73,6 +73,22 @@ function jsonPost<Result>(
   );
 }
 
+function jsonPut<Result>(
+  path: string,
+  body: unknown,
+  options?: MyLessonsRequestOptions,
+) {
+  return requestJson<Result>(
+    path,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    options,
+  );
+}
+
 export async function generateMyLesson(
   topic: string,
   options?: MyLessonsRequestOptions,
@@ -116,4 +132,16 @@ export async function loadMyLesson(
     options,
   );
   return result.lesson;
+}
+
+export async function updateMyLesson(
+  lessonId: string,
+  lesson: Lesson,
+  options?: MyLessonsRequestOptions,
+) {
+  return jsonPut<{ lesson: MyLessonDescriptor; warnings: string[] }>(
+    `/api/lessons/my/${encodeURIComponent(lessonId)}`,
+    { lesson },
+    options,
+  );
 }

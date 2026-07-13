@@ -178,6 +178,18 @@ export async function handleMyLessonRequest(
       });
     }
 
+    if (detailMatch && input.request.method === "PUT") {
+      const body = await readJson(input.request);
+      const draft = preparedLesson(body.lesson, "edited lesson");
+      const row = await repository.updateOwned(
+        decodeURIComponent(detailMatch[1]),
+        input.identity.userId,
+        draft.lesson,
+      );
+      if (!row) throw new MyLessonApiError(404, "not_found");
+      return json({ lesson: clientLesson(row), warnings: draft.warnings });
+    }
+
     if (detailMatch && input.request.method === "GET") {
       const row = await repository.findOwned(
         decodeURIComponent(detailMatch[1]),

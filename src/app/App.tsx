@@ -84,6 +84,7 @@ import {
   LessonStartAction,
 } from "../lessons/LessonPlayerUi";
 import { LessonCreator } from "../LessonCreator";
+import { LessonEditor } from "../LessonEditor";
 import { playDeviceSpeech } from "../device-speech";
 import { loadMyLesson } from "../my-lessons-api";
 import {
@@ -760,6 +761,10 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
       <Route
         element={<LessonCreator />}
         path="/lessons/my/create"
+      />
+      <Route
+        element={<LessonEditor />}
+        path="/lessons/my/:lessonId/edit"
       />
       <Route
         element={<ParrotLessonRedirect />}

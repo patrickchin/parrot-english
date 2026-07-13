@@ -21,15 +21,19 @@ function selectedTab(value: string | null): CreatorTab {
   return value === "upload" ? "upload" : "generate";
 }
 
-function LessonPreview({
+export function LessonPreview({
   isSaving,
   lesson,
   onSave,
+  saveLabel = "Save and play lesson",
+  savingLabel = "Saving lesson...",
   warnings,
 }: {
   isSaving: boolean;
   lesson: Lesson;
   onSave: () => void;
+  saveLabel?: string;
+  savingLabel?: string;
   warnings: string[];
 }) {
   return (
@@ -49,7 +53,7 @@ function LessonPreview({
       </dl>
       <LessonWarnings warnings={warnings} />
       <button disabled={isSaving} onClick={onSave} type="button">
-        {isSaving ? "Saving lesson..." : "Save and play lesson"}
+        {isSaving ? savingLabel : saveLabel}
       </button>
     </section>
   );
@@ -74,7 +78,7 @@ export function LessonWarnings({ warnings }: { warnings: string[] }) {
   );
 }
 
-function ScriptEditor({
+export function ScriptEditor({
   activeTab,
   busyAction,
   onPaste,
@@ -82,7 +86,7 @@ function ScriptEditor({
   onScriptChange,
   scriptText,
 }: {
-  activeTab: CreatorTab;
+  activeTab: CreatorTab | "edit";
   busyAction: "generate" | "paste" | "save" | null;
   onPaste: () => void;
   onReview: () => void;
@@ -101,7 +105,9 @@ function ScriptEditor({
           <p>
             {activeTab === "generate"
               ? "Generate a draft, then change any JSON before saving."
-              : "Paste your lesson JSON into the editor, then change anything you need."}
+              : activeTab === "upload"
+                ? "Paste your lesson JSON into the editor, then change anything you need."
+                : "Change any part of the saved lesson JSON, then review your edits."}
           </p>
         </div>
         {activeTab === "upload" ? (
@@ -124,7 +130,9 @@ function ScriptEditor({
         placeholder={
           activeTab === "generate"
             ? "Your generated lesson JSON will appear here."
-            : "Paste a complete Parrot English lesson JSON script here."
+            : activeTab === "upload"
+              ? "Paste a complete Parrot English lesson JSON script here."
+              : "The saved lesson JSON will appear here."
         }
         rows={18}
         spellCheck={false}
