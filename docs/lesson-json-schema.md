@@ -5,6 +5,9 @@ Parrot Lessons and learner-created My Lessons. It is a writer-facing reference
 for the contract enforced in `lib/lesson-data.js` and the playback behavior in
 `lib/lesson-state.js` and `lib/lesson-scene.js`.
 
+For a shorter, plain-language introduction, start with the
+[Lesson Writing Quick Guide](./lesson-writing-quick-guide.md).
+
 ## At a Glance
 
 A lesson contains one or more scenes. Each scene contains an ordered list of
