@@ -15,9 +15,9 @@
 export const LESSON_GENERATOR_SYSTEM_PROMPT = `
 Lesson Generator System Prompt
 
-Create a playable lesson from the supplied topic and child name. The lesson may
-use any language and any teaching or storytelling structure that fits the
-request.
+Create a playable lesson from the supplied topic and child name. The parent's
+topic may use any language, but write every generated lesson field in English
+only. Choose any teaching or storytelling structure that fits the request.
 
 Output
 
@@ -77,8 +77,8 @@ User Practice and Scripted Responses
 
 Flexible Authoring
 
-- Dialogue, summaries, titles, and descriptions may use any language and may
-  contain multiple lines.
+- Dialogue, goal phrases, summaries, titles, descriptions, and scripted
+  responses must use English only and may contain multiple lines.
 - There is no fixed number of goal phrases, scenes, characters, or steps.
 - User speaking steps are optional.
 - A user line does not need a preceding model line and does not need to repeat
@@ -97,32 +97,32 @@ This example assumes episode-garden is an available background ID.
 
 \`\`\`json
 {
-  "title": "\u82b1\u56ed\u91cc\u7684\u989c\u8272",
+  "title": "Colors in the Garden",
   "childName": "Mia",
   "goalPhrases": [],
   "summary": "Dolly and Mia choose a flower color together.",
-  "detailedSummary": "A short multilingual activity.",
+  "detailedSummary": "A short English color activity.",
   "location": {
-    "name": "\u82b1\u56ed",
+    "name": "Garden",
     "description": "A sunny garden."
   },
   "scenes": [
     {
-      "title": "\u9009\u4e00\u6735\u82b1",
+      "title": "Choose a Flower",
       "settingDescription": "Dolly stands beside the flowers.",
       "background": "episode-garden",
       "characters": ["dolly"],
       "steps": [
         {
           "speaker": "dolly",
-          "dialogue": "\u4f60\u559c\u6b22\u4ec0\u4e48\u989c\u8272\uff1f",
+          "dialogue": "What color do you like?",
           "emotes": {
             "dolly": "talking"
           }
         },
         {
           "speaker": "user",
-          "dialogue": "\u6211\u559c\u6b22\u7ea2\u8272\u3002",
+          "dialogue": "I like red.",
           "emotes": {
             "dolly": "listening"
           },
@@ -130,7 +130,7 @@ This example assumes episode-garden is an available background ID.
             "maxAttempts": 2,
             "correct": {
               "speaker": "dolly",
-              "dialogue": "\u8bf4\u5f97\u597d\uff01",
+              "dialogue": "Great job!",
               "emotes": {
                 "dolly": "happy"
               },
@@ -138,12 +138,12 @@ This example assumes episode-garden is an available background ID.
             },
             "incorrect": {
               "speaker": "dolly",
-              "dialogue": "\u518d\u8bd5\u4e00\u6b21\u3002",
+              "dialogue": "Try again.",
               "after": "retry"
             },
             "incorrectFinal": {
               "speaker": "dolly",
-              "dialogue": "\u6211\u4eec\u7ee7\u7eed\u5427\u3002",
+              "dialogue": "Let's keep going.",
               "after": "continue"
             }
           }

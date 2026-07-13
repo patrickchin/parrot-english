@@ -52,7 +52,7 @@ describe("lesson creator system prompt", () => {
     assert.match(prompt, /valid JSON only/i);
     assert.match(prompt, /no Markdown fences/i);
     assert.match(prompt, /English only/i);
-    assert.match(prompt, /parent.*topic.*any language/i);
+    assert.match(prompt, /parent's\s+topic may use any language/i);
     assert.match(prompt, /zero or more goal phrases/i);
     assert.match(prompt, /one or more scene/i);
     assert.match(prompt, /user speaking steps are optional/i);
