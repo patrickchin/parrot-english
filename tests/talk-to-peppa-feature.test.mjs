@@ -36,32 +36,20 @@ test("the learner gate gives completed learners a reusable conversation route", 
 test("conversation route uses a compact same-row mobile header", () => {
   const app = source("../src/App.tsx");
   const authGate = source("../src/AuthGate.tsx");
+  const conversationSurface = source("../src/ConversationSurface.tsx");
   const styles = source("../src/styles.css");
 
-  assert.match(app, /compactSessionBar=\{isConversationRoute\}/);
-  assert.match(authGate, /user-session-bar--conversation/);
+  assert.doesNotMatch(app, /compactSessionBar/);
   assert.match(
-    styles,
-    /\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*112px[^}]*padding-top:\s*max\([^;]*var\(--conversation-account-inset\)[^;]*\)/s,
+    authGate,
+    /max-\[720px\]:\[&:has\(\+_\.conversation-screen\)\]:min-h-\[52px\]/,
   );
   assert.match(
-    styles,
-    /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*top:\s*clamp\(14px,\s*2\.2vh,\s*28px\)[^}]*max-width:\s*calc\(100vw\s*-\s*92px\)/s,
+    authGate,
+    /\[@media\(max-height:620px\)\]:\[&:has\(\+_\.conversation-screen\)\]:top-\[10px\]/,
   );
-  assert.match(
-    styles,
-    /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*min-height:\s*52px[^}]*padding:\s*0\s+4px/s,
-  );
-  assert.match(
-    styles,
-    /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*>\s*span:first-child\s*\{[^}]*display:\s*none/s,
-  );
-  assert.match(
-    styles,
-    /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*92px/s,
-  );
-  assert.match(
-    styles,
-    /@media \(max-height:\s*620px\)[\s\S]*?\.conversation-back-button\s*\{[^}]*top:\s*10px[^}]*\}[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*top:\s*10px/s,
-  );
+  assert.match(conversationSurface, /max-\[720px\]:pt-\[92px\]/);
+  assert.match(conversationSurface, /after:content-\[''\]/);
+  assert.doesNotMatch(styles, /\.user-session-bar/);
+  assert.doesNotMatch(styles, /\.conversation-[a-z-]+\s*(?:[,{:]|::)/);
 });

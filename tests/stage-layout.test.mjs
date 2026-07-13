@@ -131,14 +131,6 @@ describe("catalog-driven stage layout", () => {
     assert.match(root, /--lesson-pill-border:\s*4px solid #fff/);
     assert.match(root, /--lesson-pill-radius:\s*999px/);
     assert.match(
-      getRule(".user-session-bar > span:first-child"),
-      /font-size:\s*var\(--lesson-ui-font-size\)/,
-    );
-    assert.match(
-      getRule(".user-session-bar button"),
-      /font-size:\s*var\(--lesson-ui-font-size\)/,
-    );
-    assert.match(
       getRule(".scene-title"),
       /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
