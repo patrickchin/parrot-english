@@ -1,6 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import {
-  conversationFact,
   conversationSession,
   conversationTurn,
   learnerProfile,
@@ -16,16 +15,6 @@ import { ONBOARDING_QUESTIONNAIRE } from "./onboarding-definition.ts";
 import { createOnboardingRepository } from "./onboarding-repository.ts";
 
 const MAX_CONTROLLER_STATE_BYTES = 16 * 1024;
-const MAX_FACTS = 5;
-const LEGACY_INTEREST_TOPICS = new Set([
-  "activities",
-  "animals",
-  "cartoons",
-  "food",
-  "music",
-  "stories",
-  "vehicles",
-]);
 
 export class ConversationRepositoryError extends Error {
   readonly code: string;
@@ -42,21 +31,6 @@ export class ConversationRepositoryError extends Error {
 type RepositoryOptions = {
   createId?: () => string;
   now?: () => Date;
-};
-
-type CandidateFact = {
-  id?: string;
-  key: "name" | "age" | "interest";
-  value: unknown;
-  topic?: unknown;
-  sourceTurnIds?: unknown;
-};
-
-type ReviewDecision = {
-  factId: string;
-  status: "accepted" | "edited" | "rejected";
-  value?: unknown;
-  topic?: unknown;
 };
 
 function boundedString(value: unknown, max: number, code = "invalid_payload") {
@@ -80,56 +54,6 @@ function serializeJson(value: unknown, maxBytes: number, code: string) {
     throw new ConversationRepositoryError(400, code);
   }
   return serialized;
-}
-
-function normalizeCandidate(candidate: CandidateFact) {
-  const key = candidate?.key;
-  let normalized: {
-    key: "name" | "age" | "interest";
-    topic?: string;
-    value: string | number;
-  };
-  if (key === "name") {
-    normalized = {
-      key,
-      value: boundedString(candidate.value, 120, "invalid_facts"),
-    };
-  } else if (key === "age") {
-    if (
-      !Number.isSafeInteger(candidate.value) ||
-      (candidate.value as number) < 0
-    ) {
-      throw new ConversationRepositoryError(400, "invalid_facts");
-    }
-    normalized = { key, value: candidate.value as number };
-  } else if (key === "interest") {
-    const topic = boundedString(candidate.topic, 40, "invalid_facts").toLowerCase();
-    if (!LEGACY_INTEREST_TOPICS.has(topic)) {
-      throw new ConversationRepositoryError(400, "invalid_facts");
-    }
-    normalized = {
-      key,
-      topic,
-      value: boundedString(candidate.value, 240, "invalid_facts"),
-    };
-  } else {
-    throw new ConversationRepositoryError(400, "invalid_facts");
-  }
-  const sourceTurnIds = Array.isArray(candidate.sourceTurnIds)
-    ? candidate.sourceTurnIds.map((id) => boundedString(id, 200))
-    : [];
-  if (sourceTurnIds.length > 10) {
-    throw new ConversationRepositoryError(400, "invalid_facts");
-  }
-  return { ...normalized, sourceTurnIds };
-}
-
-function factValue(fact: { valueJson: string }) {
-  const parsed = parseJson(fact.valueJson);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new ConversationRepositoryError(500, "invalid_stored_data");
-  }
-  return parsed as { value?: unknown; topic?: unknown };
 }
 
 export function createConversationRepository(
@@ -228,12 +152,7 @@ export function createConversationRepository(
       .from(conversationTurn)
       .where(eq(conversationTurn.conversationId, conversationId))
       .orderBy(asc(conversationTurn.sequence));
-    const facts = await database
-      .select()
-      .from(conversationFact)
-      .where(eq(conversationFact.conversationId, conversationId))
-      .orderBy(asc(conversationFact.createdAt));
-    return { conversation, facts, turns };
+    return { conversation, turns };
   }
 
   async function appendTurn(
@@ -328,89 +247,22 @@ export function createConversationRepository(
     return { created: true, turn };
   }
 
-  async function upsertCandidates(
+  async function updateControllerState(
     conversationId: string,
-    candidates: CandidateFact[],
     controllerState: unknown,
   ) {
     if (!(await findConversation(conversationId))) {
       throw new ConversationRepositoryError(404, "not_found");
-    }
-    if (!Array.isArray(candidates) || candidates.length > MAX_FACTS) {
-      throw new ConversationRepositoryError(400, "invalid_facts");
     }
     const serializedState = serializeJson(
       controllerState,
       MAX_CONTROLLER_STATE_BYTES,
       "invalid_controller_state",
     );
-    const normalized = candidates.map((candidate) => ({
-      id: candidate.id ? boundedString(candidate.id, 200, "invalid_facts") : createId(),
-      fact: normalizeCandidate(candidate),
-    }));
-    const existing = await database
-      .select()
-      .from(conversationFact)
-      .where(eq(conversationFact.conversationId, conversationId));
-    const replacedIds = new Set(normalized.map(({ id }) => id));
-    const interestCount =
-      existing.filter(
-        (fact) => fact.factKey === "interest" && !replacedIds.has(fact.id),
-      ).length + normalized.filter(({ fact }) => fact.key === "interest").length;
-    if (interestCount > 3) {
-      throw new ConversationRepositoryError(400, "invalid_facts");
-    }
-    for (const { id } of normalized) {
-      const [anyFact] = await database
-        .select()
-        .from(conversationFact)
-        .where(eq(conversationFact.id, id))
-        .limit(1);
-      if (anyFact && anyFact.conversationId !== conversationId) {
-        throw new ConversationRepositoryError(409, "fact_conflict");
-      }
-    }
-    const timestamp = now();
-    const queries = normalized.map(({ id, fact }) =>
-      database
-        .insert(conversationFact)
-        .values({
-          id,
-          conversationId,
-          factKey: fact.key,
-          valueJson: JSON.stringify({
-            value: fact.value,
-            ...(fact.key === "interest" ? { topic: fact.topic } : {}),
-          }),
-          sourceTurnIds: JSON.stringify(fact.sourceTurnIds),
-          status: "candidate",
-          createdAt: timestamp,
-          updatedAt: timestamp,
-        })
-        .onConflictDoUpdate({
-          target: conversationFact.id,
-          set: {
-            factKey: fact.key,
-            valueJson: JSON.stringify({
-              value: fact.value,
-              ...(fact.key === "interest" ? { topic: fact.topic } : {}),
-            }),
-            sourceTurnIds: JSON.stringify(fact.sourceTurnIds),
-            status: "candidate",
-            updatedAt: timestamp,
-          },
-        }),
-    );
-    const controllerUpdate = database
+    await database
       .update(conversationSession)
-      .set({ controllerState: serializedState, updatedAt: timestamp })
+      .set({ controllerState: serializedState, updatedAt: now() })
       .where(eq(conversationSession.id, conversationId));
-    await database.batch(
-      [...queries, controllerUpdate] as unknown as Parameters<
-        typeof database.batch
-      >[0],
-    );
-    return normalized.map(({ id }) => id);
   }
 
   async function endConversation(
@@ -434,198 +286,69 @@ export function createConversationRepository(
     return (await findConversation(conversationId))!;
   }
 
-  async function reviewConversation(
+  async function finalizeConversation(
     conversationId: string,
     identity: OnboardingIdentity,
-    decisions: ReviewDecision[],
   ) {
     const owned = await loadOwnedConversation(conversationId, identity.userId);
     if (!owned) throw new ConversationRepositoryError(404, "not_found");
-    if (!Array.isArray(decisions) || decisions.length > MAX_FACTS) {
+    const storedState = parseJson(owned.conversation.controllerState);
+    if (
+      storedState === null ||
+      typeof storedState !== "object" ||
+      Array.isArray(storedState)
+    ) {
+      throw new ConversationRepositoryError(500, "invalid_stored_data");
+    }
+    const controllerState = storedState as Record<string, unknown>;
+    const summaryValue = controllerState.profileSummary;
+    if (summaryValue !== undefined && typeof summaryValue !== "string") {
       throw new ConversationRepositoryError(400, "invalid_review");
     }
-    if (decisions.length === 1 && decisions[0]?.factId === "profile-summary") {
-      const decision = decisions[0];
-      if (
-        decision.status !== "accepted" &&
-        decision.status !== "edited" &&
-        decision.status !== "rejected"
-      ) {
-        throw new ConversationRepositoryError(400, "invalid_review");
-      }
-      const storedState = parseJson(owned.conversation.controllerState);
-      if (
-        storedState === null ||
-        typeof storedState !== "object" ||
-        Array.isArray(storedState)
-      ) {
-        throw new ConversationRepositoryError(500, "invalid_stored_data");
-      }
-      const controllerState = storedState as Record<string, unknown>;
-      const currentSummary = boundedString(
-        controllerState.profileSummary,
-        2_000,
-        "invalid_review",
-      );
-      const profileSummary =
-        decision.status === "edited"
-          ? boundedString(decision.value, 2_000, "invalid_review")
-          : currentSummary;
-      const profileName =
-        controllerState.learnedName === true
-          ? boundedString(controllerState.profileName, 120, "invalid_review")
-          : null;
-      const profileAge = controllerState.profileAge;
-      if (
-        controllerState.learnedAge === true &&
-        (!Number.isSafeInteger(profileAge) || (profileAge as number) < 0)
-      ) {
-        throw new ConversationRepositoryError(400, "invalid_review");
-      }
-      const profileCompleted =
-        decision.status !== "rejected" &&
-        controllerState.learnedName === true &&
-        controllerState.learnedAge === true &&
-        profileName !== null &&
-        Number.isSafeInteger(profileAge);
-      const nextState = {
-        ...controllerState,
-        profileSummary,
-        summaryStatus: decision.status,
-      };
-      const timestamp = now();
-      const onboarding = createOnboardingRepository(database, { createId, now });
-      const profile = await onboarding.ensureProfile(identity);
-      const readableProfile = ensureV2Profile(
-        profile,
-        ONBOARDING_QUESTIONNAIRE,
-        { forProfileEdit: true },
-      );
-      const answers = readV2Answers(readableProfile);
-      const answersJson = JSON.stringify({
-        ...answers,
-        description:
-          decision.status === "rejected"
-            ? (answers.description ?? null)
-            : profileSummary,
-      });
-      const sessionUpdate = database
-        .update(conversationSession)
-        .set({
-          controllerState: serializeJson(
-            nextState,
-            MAX_CONTROLLER_STATE_BYTES,
-            "invalid_controller_state",
-          ),
-          status: "completed",
-          finishReason: owned.conversation.finishReason ?? "reviewed",
-          endedAt: owned.conversation.endedAt ?? timestamp,
-          updatedAt: timestamp,
-        })
-        .where(eq(conversationSession.id, conversationId));
-      if (profileCompleted) {
-        const profileUpdate = database
-          .update(learnerProfile)
-          .set({
-            name: profileName,
-            age: profileAge as number,
-            answersJson,
-            onboardingStatus: "completed",
-            currentQuestionKey: null,
-            completedAt: timestamp,
-            updatedAt: timestamp,
-          })
-          .where(eq(learnerProfile.id, profile.id));
-        await database.batch([profileUpdate, sessionUpdate] as const);
-      } else {
-        const profileUpdate = database
-          .update(learnerProfile)
-          .set({
-            ...(decision.status !== "rejected" && profileName
-              ? { name: profileName }
-              : {}),
-            ...(decision.status !== "rejected" && Number.isSafeInteger(profileAge)
-              ? { age: profileAge as number }
-              : {}),
-            answersJson,
-            updatedAt: timestamp,
-          })
-          .where(eq(learnerProfile.id, profile.id));
-        await database.batch([profileUpdate, sessionUpdate] as const);
-        await onboarding.skipSession(identity);
-      }
-      return {
-        conversationId,
-        profileCompleted,
-        bypassed: !profileCompleted,
-      };
+    const profileSummary = summaryValue?.trim()
+      ? boundedString(summaryValue, 2_000, "invalid_review")
+      : null;
+    const learnedName = controllerState.learnedName === true;
+    const learnedAge = controllerState.learnedAge === true;
+    const profileName = learnedName
+      ? boundedString(controllerState.profileName, 120, "invalid_review")
+      : null;
+    const profileAge = controllerState.profileAge;
+    if (
+      learnedAge &&
+      (!Number.isSafeInteger(profileAge) || (profileAge as number) < 0)
+    ) {
+      throw new ConversationRepositoryError(400, "invalid_review");
     }
-    const byId = new Map(owned.facts.map((fact) => [fact.id, fact]));
-    const seen = new Set<string>();
-    const normalized = decisions.map((decision) => {
-      const factId = boundedString(decision?.factId, 200, "invalid_review");
-      const stored = byId.get(factId);
-      if (!stored || seen.has(factId)) {
-        throw new ConversationRepositoryError(400, "invalid_review");
-      }
-      seen.add(factId);
-      if (
-        decision.status !== "accepted" &&
-        decision.status !== "edited" &&
-        decision.status !== "rejected"
-      ) {
-        throw new ConversationRepositoryError(400, "invalid_review");
-      }
-      if (decision.status === "rejected") {
-        return { stored, status: decision.status, value: factValue(stored) };
-      }
-      const current = factValue(stored);
-      const candidate = normalizeCandidate({
-        key: stored.factKey as CandidateFact["key"],
-        value: decision.status === "edited" ? decision.value : current.value,
-        topic: decision.topic ?? current.topic,
-        sourceTurnIds: parseJson(stored.sourceTurnIds),
-      });
-      return {
-        stored,
-        status: decision.status,
-        value: {
-          value: candidate.value,
-          ...(candidate.key === "interest" ? { topic: candidate.topic } : {}),
-        },
-      };
-    });
-
-    const resulting = owned.facts.map((stored) => {
-      const changed = normalized.find((entry) => entry.stored.id === stored.id);
-      return changed
-        ? { ...stored, status: changed.status, parsed: changed.value }
-        : { ...stored, parsed: factValue(stored) };
-    });
-    const confirmed = resulting.filter(
-      (fact) => fact.status === "accepted" || fact.status === "edited",
+    const profileCompleted = Boolean(
+      profileSummary &&
+        learnedName &&
+        learnedAge &&
+        profileName &&
+        Number.isSafeInteger(profileAge),
     );
-    if (confirmed.filter((fact) => fact.factKey === "interest").length > 3) {
-      throw new ConversationRepositoryError(400, "invalid_review");
-    }
-    const nameFacts = confirmed.filter((fact) => fact.factKey === "name");
-    const ageFacts = confirmed.filter((fact) => fact.factKey === "age");
-    if (nameFacts.length > 1 || ageFacts.length > 1) {
-      throw new ConversationRepositoryError(400, "invalid_review");
-    }
     const onboarding = createOnboardingRepository(database, { createId, now });
     const profile = await onboarding.ensureProfile(identity);
-    const timestamp = now();
-    const profileCompleted = nameFacts.length === 1 && ageFacts.length === 1;
-    const factUpdates = normalized.map(({ stored, status, value }) =>
-      database
-        .update(conversationFact)
-        .set({ valueJson: JSON.stringify(value), status, updatedAt: timestamp })
-        .where(eq(conversationFact.id, stored.id)),
+    const readableProfile = ensureV2Profile(
+      profile,
+      ONBOARDING_QUESTIONNAIRE,
+      { forProfileEdit: true },
     );
+    const answers = readV2Answers(readableProfile);
+    const answersJson = profileSummary
+      ? JSON.stringify({ ...answers, description: profileSummary })
+      : readableProfile.answersJson;
+    const timestamp = now();
     const sessionUpdate = database
       .update(conversationSession)
       .set({
+        controllerState: serializeJson(
+          profileSummary
+            ? { ...controllerState, profileSummary }
+            : controllerState,
+          MAX_CONTROLLER_STATE_BYTES,
+          "invalid_controller_state",
+        ),
         status: "completed",
         finishReason: owned.conversation.finishReason ?? "reviewed",
         endedAt: owned.conversation.endedAt ?? timestamp,
@@ -636,25 +359,29 @@ export function createConversationRepository(
       const profileUpdate = database
         .update(learnerProfile)
         .set({
-          name: String(nameFacts[0].parsed.value),
-          age: Number(ageFacts[0].parsed.value),
+          name: profileName,
+          age: profileAge as number,
+          answersJson,
           onboardingStatus: "completed",
           currentQuestionKey: null,
           completedAt: timestamp,
           updatedAt: timestamp,
         })
         .where(eq(learnerProfile.id, profile.id));
-      await database.batch(
-        [...factUpdates, profileUpdate, sessionUpdate] as unknown as Parameters<
-          typeof database.batch
-        >[0],
-      );
+      await database.batch([profileUpdate, sessionUpdate] as const);
     } else {
-      await database.batch(
-        [...factUpdates, sessionUpdate] as unknown as Parameters<
-          typeof database.batch
-        >[0],
-      );
+      const profileUpdate = database
+        .update(learnerProfile)
+        .set({
+          ...(profileSummary && profileName ? { name: profileName } : {}),
+          ...(profileSummary && Number.isSafeInteger(profileAge)
+            ? { age: profileAge as number }
+            : {}),
+          ...(profileSummary ? { answersJson } : {}),
+          updatedAt: timestamp,
+        })
+        .where(eq(learnerProfile.id, profile.id));
+      await database.batch([profileUpdate, sessionUpdate] as const);
       await onboarding.skipSession(identity);
     }
     return {
@@ -669,8 +396,8 @@ export function createConversationRepository(
     createConversation,
     endConversation,
     findConversation,
+    finalizeConversation,
     loadOwnedConversation,
-    reviewConversation,
-    upsertCandidates,
+    updateControllerState,
   };
 }

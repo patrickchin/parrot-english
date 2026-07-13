@@ -151,10 +151,12 @@ keyboard/recording form fallback and is the default while the flag is `0`.
 The Worker stores every finalized conversation transcript turn, including
 partial or abandoned sessions, plus one cumulative “About this learner” prose
 paragraph in D1. Raw audio is not stored: LiveKit session recording is
-explicitly disabled with `record: false`. A learner reviews or edits the whole
-paragraph before continuing. Name and age are internal readiness signals only;
-the active agent creates no structured fact rows. Conversation rows cascade
-from the Better Auth user and therefore remain until account deletion under the
+explicitly disabled with `record: false`. When the room ends, the application
+automatically finalizes the saved paragraph and completes onboarding only when
+the agent learned both name and age; otherwise it grants the existing
+session-scoped bypass. The active agent creates no structured fact rows. The
+legacy fact table remains dormant for rollback safety, while conversation rows
+cascade from the Better Auth user and remain until account deletion under the
 current retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.

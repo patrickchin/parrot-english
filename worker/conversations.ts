@@ -98,12 +98,6 @@ function clientConversation(
   return {
     ...loaded.conversation,
     controllerState: JSON.parse(loaded.conversation.controllerState),
-    facts: loaded.facts.map((fact) => ({
-      ...fact,
-      value: JSON.parse(fact.valueJson),
-      sourceTurnIds: JSON.parse(fact.sourceTurnIds),
-      valueJson: undefined,
-    })),
     turns: loaded.turns,
   };
 }
@@ -188,11 +182,10 @@ export async function handleConversationRequest(
 
     if (action === "facts" && input.request.method === "POST") {
       const body = await readJson(input.request);
-      await repository.upsertCandidates(
-        conversationId,
-        body.candidates as Parameters<typeof repository.upsertCandidates>[1],
-        body.controllerState,
-      );
+      if (!Array.isArray(body.candidates) || body.candidates.length !== 0) {
+        throw new ConversationApiError(400, "invalid_facts");
+      }
+      await repository.updateControllerState(conversationId, body.controllerState);
       return json({ conversationId });
     }
 
@@ -232,11 +225,10 @@ export async function handleConversationRequest(
     }
 
     if (action === "review" && input.request.method === "PUT") {
-      const body = await readJson(input.request);
-      const result = await repository.reviewConversation(
+      await readJson(input.request);
+      const result = await repository.finalizeConversation(
         conversationId,
         input.identity!,
-        body.decisions as Parameters<typeof repository.reviewConversation>[2],
       );
       return json(result);
     }
