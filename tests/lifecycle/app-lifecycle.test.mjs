@@ -237,6 +237,40 @@ function ProfileRouteHarness({ children }) {
   );
 }
 
+function StandaloneConversationRouteHarness() {
+  const [route, setRoute] = useState("/talk-to-peppa");
+  const isConversationRoute = route === "/talk-to-peppa";
+
+  return createElement(
+    OnboardingGate,
+    {
+      completedOnboardingFallback: createElement("p", null, "MAIN MENU"),
+      isConversationRoute,
+      isOnboardingRoute: false,
+      isProfileRoute: false,
+      onboardingFallback: createElement("p", null, "ONBOARDING ROUTE"),
+      onCloseProfileRoute() {},
+      onConversationCompleted: () => setRoute("/"),
+      onOpenProfileRoute() {},
+      onRedoCompleted() {},
+      onRedoOnboardingRoute() {},
+      redoOnboarding: false,
+    },
+    isConversationRoute
+      ? createElement("p", null, "VOICE CHAT UNAVAILABLE")
+      : createElement(
+          "main",
+          null,
+          createElement("p", null, "MAIN MENU"),
+          createElement(
+            "button",
+            { onClick: () => setRoute("/talk-to-peppa"), type: "button" },
+            "Talk to Peppa",
+          ),
+        ),
+  );
+}
+
 function RouterHistoryControls() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -556,6 +590,48 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
+  });
+
+  it("returns a standalone conversation to the main menu and allows reopening it", async () => {
+    let conversationStarts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/onboarding" && init.method === "GET") {
+        return json({
+          ...completedOnboardingState(),
+          experienceMode: "realtime",
+        });
+      }
+      if (path === "/api/conversations" && init.method === "POST") {
+        conversationStarts += 1;
+        return json({
+          conversation: { id: `conversation-route-${conversationStarts}` },
+          livekit: {
+            participantToken: "parrot-e2e-participant-token",
+            url: "wss://parrot-e2e.invalid",
+          },
+          scenario: {
+            key: "onboarding",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(createElement(StandaloneConversationRouteHarness));
+    await waitFor(() => text(/Start my turn/));
+
+    await click(button("Back"));
+
+    await waitFor(() => text(/MAIN MENU/));
+    noText(/VOICE CHAT UNAVAILABLE/);
+
+    await click(button("Talk to Peppa"));
+    await waitFor(() => text(/Start my turn/));
+    assert.equal(conversationStarts, 2);
   });
 
   it("updates and clears the live learner transcript during a microphone turn", async () => {
