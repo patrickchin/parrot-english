@@ -122,16 +122,13 @@ Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 LIVEKIT_AGENT_NAME=parrot-conversation
 CONVERSATION_INGEST_URL=https://your-worker.example.com
 CONVERSATION_AGENT_SECRET=the-same-random-worker-secret
-AGENT_STT_LANGUAGE=en
 AGENT_STT_MODEL=elevenlabs/scribe_v2_realtime
 AGENT_LLM_MODEL=openai/gpt-4.1-mini
 AGENT_TTS_MODEL=inworld/inworld-tts-2
 AGENT_TTS_VOICE_ID=Olivia
 ```
 
-`AGENT_STT_LANGUAGE` accepts `en` or `zh` and defaults to `en`. ElevenLabs
-accepts one language hint per realtime session, so use `zh` only for a
-Chinese-speaking deployment; omitting the hint would re-enable unrestricted
+The realtime agent pins speech recognition to English instead of using
 automatic language detection.
 
 LiveKit excludes environment files from the build context and injects secrets
