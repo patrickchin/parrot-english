@@ -6,6 +6,9 @@ prompt history from Codex sessions in this project.
 
 ## Design Docs
 
+- [Lesson JSON Schema Reference](./lesson-json-schema.md) documents every lesson,
+  scene, step, emote, speech check, response, branching, validation, and draft
+  repair rule.
 - [Product Experience](./design/product-experience.md) explains the child-facing
   lesson experience, character roles, state flow, and UX rules.
 - [Technical Architecture](./design/technical-architecture.md) explains the app,
