@@ -46,6 +46,7 @@ function renderAuthGate(overrides = {}) {
   assert.equal(typeof AuthGateView, "function", "Expected an executable AuthGateView");
 
   const props = {
+    compactSessionBar: false,
     fields: { name: "", email: "", password: "" },
     formError: "",
     isPending: false,
@@ -243,7 +244,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   assert.equal(signOutCalls[0].refetch, refetch);
 });
 
-test("auth gate container forwards an optional signed-out fallback", () => {
+test("auth gate container forwards its layout context and optional fallback", () => {
   let capturedProps;
   const fallback = createElement("span", null, "REDIRECT");
   const client = createAuthClientStub({
@@ -264,9 +265,13 @@ test("auth gate container forwards an optional signed-out fallback", () => {
 
   const TestAuthGate = createAuthGate({ client, View: CaptureView });
   renderToStaticMarkup(
-    createElement(TestAuthGate, { signedOutFallback: fallback }),
+    createElement(TestAuthGate, {
+      compactSessionBar: true,
+      signedOutFallback: fallback,
+    }),
   );
 
+  assert.equal(capturedProps.compactSessionBar, true);
   assert.equal(capturedProps.signedOutFallback, fallback);
 });
 
@@ -466,6 +471,22 @@ test("renders Profile and Log out together in the account bar", () => {
   assert.match(bar, /aria-label="Edit learner profile"/);
   assert.match(bar, />Log out</);
   assert.doesNotMatch(html, /class="profile-edit-button"/);
+});
+
+test("marks the conversation account bar for compact mobile layout", () => {
+  const html = renderAuthGate({
+    compactSessionBar: true,
+    onOpenProfile() {},
+    session: { user: { email: "mia@example.test", name: "Mia" } },
+  });
+
+  assert.match(
+    html,
+    /<aside[^>]*class="user-session-bar user-session-bar--conversation"/,
+  );
+  assert.match(html, />Mia</);
+  assert.match(html, />Profile</);
+  assert.match(html, />Log out</);
 });
 
 test("auth submission validates before calling the client", async () => {
