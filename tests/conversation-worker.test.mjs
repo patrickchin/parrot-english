@@ -630,6 +630,66 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("creates a completed learner profile from a fresh conversation snapshot", async () => {
+    const state = createSeededDatabase();
+    try {
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+      );
+      const { conversation } = await started.json();
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+      const staged = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/facts`,
+        "POST",
+        {
+          controllerState: {
+            phase: "closing",
+            activeObjective: null,
+            rephraseCount: { name: 0, age: 0, interest: 0 },
+            optionalExchangeCount: 1,
+            profileSummary: "Mia is eight years old and loves pandas.",
+            profileName: "Mia",
+            profileAge: 8,
+            learnedName: true,
+            learnedAge: true,
+            finishReason: "task_complete",
+          },
+          candidates: [],
+        },
+        agentOptions,
+      );
+      assert.equal(staged.status, 200);
+
+      const ended = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "task_complete", status: "completed" },
+        agentOptions,
+      );
+
+      assert.equal(ended.status, 200);
+      const profile = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(profile.name, "Mia");
+      assert.equal(profile.age, 8);
+      assert.equal(profile.onboarding_status, "completed");
+      assert.equal(
+        JSON.parse(profile.answers_json).description,
+        "Mia is eight years old and loves pandas.",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("rejects legacy structured fact candidates without storing them", async () => {
     const state = createSeededDatabase();
     try {
