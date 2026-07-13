@@ -726,6 +726,57 @@ describe("conversation persistence and API", () => {
       state.close();
     }
   });
+
+  it("abandons an active conversation after its participant token has expired", async () => {
+    const state = createSeededDatabase();
+    const ids = ["conversation-1", "conversation-2"];
+    const createId = () => ids.shift() ?? "generated-id";
+    try {
+      const first = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        undefined,
+        {
+          createId,
+          now: () => new Date("2026-07-08T08:00:00.000Z"),
+        },
+      );
+      const second = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        undefined,
+        {
+          createId,
+          now: () => new Date("2026-07-08T08:10:01.000Z"),
+        },
+      );
+      const firstPayload = await first.json();
+      const secondPayload = await second.json();
+
+      assert.notEqual(secondPayload.conversation.id, firstPayload.conversation.id);
+      assert.equal(secondPayload.conversation.status, "starting");
+      const expired = state.sqlite
+        .prepare(
+          "SELECT status, finish_reason FROM conversation_session WHERE id = ?",
+        )
+        .get(firstPayload.conversation.id);
+      assert.equal(expired.status, "abandoned");
+      assert.equal(
+        expired.finish_reason,
+        "participant_token_expired",
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        2,
+      );
+    } finally {
+      state.close();
+    }
+  });
 });
 
 describe("LiveKit participant tokens", () => {

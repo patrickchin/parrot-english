@@ -6,6 +6,8 @@ import {
 import { isConversationPurpose } from "../lib/conversation-purpose.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 
+export const LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS = 10 * 60 * 1_000;
+
 export interface LiveKitTokenEnv {
   LIVEKIT_AGENT_NAME?: string;
   LIVEKIT_API_KEY?: string;
@@ -48,7 +50,7 @@ export async function createLiveKitParticipantToken({
         },
         scenarioKey: conversation.scenarioKey,
       }),
-      ttl: "10m",
+      ttl: LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS / 1_000,
     },
   );
   token.addGrant({ roomJoin: true, room: conversation.roomName });

@@ -58,35 +58,5 @@
         "alt": "Dolly feeling surprised"
       }
     }
-  },
-  {
-    "id": "user",
-    "name": "You",
-    "assets": {
-      "idle": {
-        "src": "/assets/characters/user/user-idle.webp",
-        "alt": "The learner waiting"
-      },
-      "talking": {
-        "src": "/assets/characters/user/user-talking.webp",
-        "alt": "The learner talking"
-      },
-      "listening": {
-        "src": "/assets/characters/user/user-listening.webp",
-        "alt": "The learner listening"
-      },
-      "happy": {
-        "src": "/assets/characters/user/user-happy.webp",
-        "alt": "The learner feeling happy"
-      },
-      "sad": {
-        "src": "/assets/characters/user/user-sad.webp",
-        "alt": "The learner feeling sad"
-      },
-      "surprised": {
-        "src": "/assets/characters/user/user-surprised.webp",
-        "alt": "The learner feeling surprised"
-      }
-    }
   }
 ]

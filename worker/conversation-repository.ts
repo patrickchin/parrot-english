@@ -17,6 +17,7 @@ import type { Database } from "./database.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
+import { LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS } from "./livekit-token.ts";
 
 const MAX_CONTROLLER_STATE_BYTES = 16 * 1024;
 
@@ -80,6 +81,7 @@ export function createConversationRepository(
     identity: LearnerProfileIdentity,
     scenario: { key: string; version: number },
   ) {
+    const timestamp = now();
     const [active] = await database
       .select()
       .from(conversationSession)
@@ -92,10 +94,31 @@ export function createConversationRepository(
       )
       .orderBy(desc(conversationSession.updatedAt))
       .limit(1);
-    if (active) return active;
+    if (
+      active &&
+      timestamp.getTime() - active.updatedAt.getTime() <
+        LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS
+    ) {
+      return active;
+    }
+    if (active) {
+      await database
+        .update(conversationSession)
+        .set({
+          status: "abandoned",
+          finishReason: "participant_token_expired",
+          endedAt: timestamp,
+          updatedAt: timestamp,
+        })
+        .where(
+          and(
+            eq(conversationSession.id, active.id),
+            inArray(conversationSession.status, ["starting", "active"]),
+          ),
+        );
+    }
 
     const id = createId();
-    const timestamp = now();
     const roomName = `conversation-${id}`;
     const [storedProfile] = await database
       .select()

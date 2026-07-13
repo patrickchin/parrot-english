@@ -14,17 +14,16 @@
   "scenes": [
     {
       "title": "The Snack Basket",
-      "settingDescription": "Dolly opens the snack basket on the blanket while Peppa and the user sit beside her.",
+      "settingDescription": "Dolly opens the snack basket on the blanket while Peppa sits beside her.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "It is snack time!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -32,25 +31,23 @@
           "dialogue": "What is in the basket?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Fruit for Snack",
-      "settingDescription": "Apples and bananas are visible inside the open basket as Peppa, Dolly, and the user look down at them.",
+      "settingDescription": "Apples and bananas are visible inside the open basket as Peppa and Dolly look down at them.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Apples and bananas!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -58,25 +55,23 @@
           "dialogue": "That apple looks yummy.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Peppa Asks Politely",
-      "settingDescription": "Peppa looks toward Dolly and the apple basket while the user listens beside the blanket.",
+      "settingDescription": "Peppa looks toward Dolly and the apple basket beside the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "May I have an apple?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -84,8 +79,7 @@
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -93,8 +87,7 @@
           "dialogue": "May I have an apple?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -102,25 +95,23 @@
           "dialogue": "May I have an apple?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "An Apple for Peppa",
-      "settingDescription": "Dolly holds an apple out to Peppa while the user watches from the edge of the blanket.",
+      "settingDescription": "Dolly holds an apple out to Peppa at the edge of the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -128,8 +119,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -137,8 +127,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -146,25 +135,23 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "A Happy Snack",
-      "settingDescription": "Peppa holds the apple as Dolly closes the basket and the user sits with them on the blanket.",
+      "settingDescription": "Peppa holds the apple as Dolly closes the basket beside her on the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Thank you, Dolly!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -172,8 +159,7 @@
           "dialogue": "Enjoy your apple!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -181,8 +167,7 @@
           "dialogue": "Great job, Bella! Peppa has her apple snack!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]

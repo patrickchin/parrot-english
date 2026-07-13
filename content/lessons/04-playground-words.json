@@ -14,17 +14,16 @@
   "scenes": [
     {
       "title": "Dolly on the Swing",
-      "settingDescription": "Dolly sits on the swing while Peppa and the user wait together on the grass nearby.",
+      "settingDescription": "Dolly sits on the swing while Peppa waits on the grass nearby.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "The swing is busy.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -32,25 +31,23 @@
           "dialogue": "I am swinging!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         }
       ]
     },
     {
       "title": "Peppa Waits",
-      "settingDescription": "Peppa watches the swing from beside the slide while Dolly swings and the user waits with Peppa.",
+      "settingDescription": "Peppa watches from beside the slide while Dolly swings.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "I want a turn.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -58,25 +55,23 @@
           "dialogue": "You can ask me.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         }
       ]
     },
     {
       "title": "Asking for a Turn",
-      "settingDescription": "Peppa faces Dolly beside the swing while the user listens from the soft grass.",
+      "settingDescription": "Peppa faces Dolly beside the swing on the soft grass.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -84,8 +79,7 @@
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -93,8 +87,7 @@
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -102,25 +95,23 @@
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Peppa's Turn",
-      "settingDescription": "Dolly steps away from the swing as Peppa moves toward it and the user watches beside them.",
+      "settingDescription": "Dolly steps away from the swing as Peppa moves toward it.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Yes! Your turn is next.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -128,25 +119,23 @@
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         }
       ]
     },
     {
       "title": "Playing Together",
-      "settingDescription": "Peppa stands by the swing and invites Dolly and the user to continue playing around the playground.",
+      "settingDescription": "Peppa stands by the swing and invites Dolly to continue playing around the playground.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Let's play together!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -154,8 +143,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -163,8 +151,7 @@
           "dialogue": "Let's play together!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -172,8 +159,7 @@
           "dialogue": "Let's play together!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         },
         {
@@ -181,8 +167,7 @@
           "dialogue": "Great job, Bella! Peppa and Dolly are playing together!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]

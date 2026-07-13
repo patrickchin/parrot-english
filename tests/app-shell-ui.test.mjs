@@ -63,10 +63,15 @@ test("home menu exposes Talk to Peppa with the learning activities", () => {
       "/talk-to-peppa",
       "/lessons",
       "/lessons/my/create",
-      "/progress",
-      "/stories",
     ],
   );
+  assert.deepEqual(
+    [...html.matchAll(/<button[^>]*aria-label="([^"]+)"[^>]*disabled/g)].map(
+      ([, label]) => label,
+    ),
+    ["Progress, coming soon", "Storytelling, coming soon"],
+  );
+  assert.equal((html.match(/>Coming soon</g) ?? []).length, 2);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, /friendly English conversation/i);
   assert.match(html, />Lessons</);

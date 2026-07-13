@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
+import { Window } from "happy-dom";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { after, describe, it } from "node:test";
@@ -21,6 +22,7 @@ after(async () => {
 function props(overrides = {}) {
   return {
     error: "",
+    liveTranscript: "",
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},
@@ -119,6 +121,27 @@ describe("accessible realtime conversation surface", () => {
     assert.match(activeTurn, /Click or press Space/);
   });
 
+  it("streams the learner transcript only while their turn is active", () => {
+    const activeTurn = render({
+      liveTranscript: "My name is Mia",
+      microphoneEnabled: true,
+      status: "listening",
+    });
+
+    assert.match(activeTurn, /aria-label="Live transcript"/);
+    assert.match(activeTurn, /aria-live="polite"/);
+    assert.match(activeTurn, /You(?:’|&#x27;)re saying/);
+    assert.match(activeTurn, /My name is Mia/);
+
+    const endedTurn = render({
+      liveTranscript: "My name is Mia",
+      microphoneEnabled: false,
+      status: "thinking",
+    });
+    assert.doesNotMatch(endedTurn, /aria-label="Live transcript"/);
+    assert.doesNotMatch(endedTurn, /My name is Mia/);
+  });
+
   it("shows that Peppa is preparing a reply after the learner ends their turn", () => {
     const html = render({
       microphoneEnabled: false,
@@ -134,7 +157,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /Peppa is thinking/);
     assert.match(html, /Getting her reply ready/);
     assert.match(html, /Peppa response latency/);
-    assert.match(html, /Measuring reply time/);
+    assert.match(html, /Timing…/);
     assert.doesNotMatch(html, /Start my turn|End my turn/);
     assert.match(html, /Finish conversation/);
   });
@@ -147,8 +170,26 @@ describe("accessible realtime conversation surface", () => {
     });
 
     assert.match(html, /Peppa response latency/);
-    assert.match(html, /Reply time/);
+    assert.match(html, /Reply:/);
     assert.match(html, /1\.25 s/);
+  });
+
+  it("keeps response timing with Peppa instead of adding a layout row", () => {
+    const html = render({
+      microphoneEnabled: false,
+      responseLatencyMs: 1_254,
+      status: "speaking",
+    });
+    const document = new Window().document;
+    document.body.innerHTML = html;
+
+    const timer = document.querySelector(
+      'output[aria-label="Peppa response latency"]',
+    );
+    const figure = timer?.closest("figure");
+
+    assert.ok(figure);
+    assert.ok(figure.querySelector('img[alt="Peppa"]'));
   });
 
   it("centers the character, shows only her latest speech, and removes developer controls", () => {

@@ -23,8 +23,8 @@ const allowedSceneKeys = [
   "title",
 ];
 const allowedStepKeys = ["dialogue", "emotes", "speaker"];
-const allowedCharacters = new Set(["peppa", "dolly", "user"]);
-const allowedSpeakers = new Set([...allowedCharacters, "narrator"]);
+const allowedCharacters = new Set(["peppa", "dolly"]);
+const allowedSpeakers = new Set([...allowedCharacters, "user", "narrator"]);
 const allowedEmotes = new Set([
   "idle",
   "talking",

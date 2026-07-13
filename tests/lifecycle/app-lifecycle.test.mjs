@@ -191,6 +191,11 @@ function ConversationHookHarness({
       { "aria-label": "Peppa response latency" },
       conversation.responseLatencyMs ?? "",
     ),
+    createElement(
+      "output",
+      { "aria-label": "Live transcript" },
+      conversation.liveTranscript ?? "",
+    ),
     createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
     createElement(
       "button",
@@ -203,6 +208,7 @@ function ConversationHookHarness({
 function conversationSurfaceProps(overrides = {}) {
   return {
     error: "",
+    liveTranscript: "",
     microphoneEnabled: false,
     onBack() {},
     onFinish() {},
@@ -553,6 +559,97 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
+  });
+
+  it("updates and clears the live learner transcript during a microphone turn", async () => {
+    let listener = () => {};
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/conversations");
+      assert.equal(init.method, "POST");
+      return json({
+        conversation: { id: "conversation-live-transcript" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "onboarding",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello! What's your name?",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+
+    await click(button("Start my turn"));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "learner-answer",
+        text: "My name",
+        final: false,
+        language: "en",
+        role: "user",
+      });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Live transcript"]')
+        .textContent,
+      "My name",
+    );
+
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "learner-answer",
+        text: "My name is Mia",
+        final: false,
+        language: "en",
+        role: "user",
+      });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Live transcript"]')
+        .textContent,
+      "My name is Mia",
+    );
+
+    await click(button("End my turn"));
+    assert.equal(
+      document.querySelector('output[aria-label="Live transcript"]')
+        .textContent,
+      "",
+    );
   });
 
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {

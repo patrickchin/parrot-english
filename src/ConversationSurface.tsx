@@ -30,6 +30,7 @@ export type ConversationSurfaceTurn = {
 
 type ConversationSurfaceProps = {
   error: string;
+  liveTranscript: string;
   microphoneEnabled: boolean;
   onBack: () => void;
   onFinish: () => void;
@@ -158,6 +159,7 @@ function ConversationCharacter({ alt, src }: { alt: string; src: string }) {
 
 export function ConversationSurface({
   error,
+  liveTranscript,
   microphoneEnabled,
   onBack,
   onFinish,
@@ -237,10 +239,24 @@ export function ConversationSurface({
           >
             {speech}
           </ConversationSpeech>
-          <ConversationCharacter
-            alt="Peppa"
-            src={PEPPA_ASSETS[status]}
-          />
+          <figure className="relative m-0">
+            <ConversationCharacter
+              alt="Peppa"
+              src={PEPPA_ASSETS[status]}
+            />
+            {thinking || responseLatencyMs !== null ? (
+              <output
+                aria-label="Peppa response latency"
+                aria-live="polite"
+                className="pointer-events-none absolute bottom-2 right-2 whitespace-nowrap rounded-full border-2 border-white/80 bg-brand-ink/90 px-2.5 py-1 text-xs font-black text-white shadow-sm"
+                title="Time from ending your turn until Peppa starts speaking"
+              >
+                {responseLatencyMs === null
+                  ? "Timing…"
+                  : `Reply: ${formatResponseLatency(responseLatencyMs)}`}
+              </output>
+            ) : null}
+          </figure>
         </div>
 
         {joining ? (
@@ -293,18 +309,20 @@ export function ConversationSurface({
           </p>
         )}
 
-        {thinking || responseLatencyMs !== null ? (
+        {microphoneEnabled ? (
           <output
-            aria-label="Peppa response latency"
+            aria-label="Live transcript"
             aria-live="polite"
-            className="rounded-full border-2 border-white/80 bg-brand-ink/85 px-4 py-2 text-sm font-black text-white shadow-control-navy"
+            className="grid w-full max-w-xl gap-1 rounded-3xl border-4 border-white bg-brand-yellow px-5 py-3 text-center text-brand-ink shadow-control-surface"
           >
-            {responseLatencyMs === null
-              ? "Measuring reply time…"
-              : `Reply time: ${formatResponseLatency(responseLatencyMs)}`}
+            <span className="text-sm font-black uppercase tracking-wide opacity-75">
+              You’re saying
+            </span>
+            <span className="min-h-7 text-lg font-black leading-snug sm:text-xl">
+              {liveTranscript || "Listening for your words…"}
+            </span>
           </output>
         ) : null}
-
         {error ? (
           <p
             className="m-0 w-full max-w-xl rounded-2xl bg-rose-100 px-4 py-2.5 text-center font-extrabold text-rose-900"

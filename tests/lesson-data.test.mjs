@@ -115,6 +115,61 @@ describe("lesson data contract", () => {
     );
   });
 
+  it("accepts learner speaking turns without a learner visual character", { skip: !hasValidator }, () => {
+    const catalogInput = createCatalogInput();
+    catalogInput.characters = catalogInput.characters.filter(
+      (character) => character.id !== "user"
+    );
+    const catalog = lessonData.createLessonCatalog(catalogInput);
+    const lesson = createLesson();
+
+    for (const scene of lesson.scenes) {
+      scene.characters = scene.characters.filter((id) => id !== "user");
+      for (const step of scene.steps) delete step.emotes.user;
+    }
+
+    assert.equal(
+      lessonData.validateLesson(lesson, catalog, "non-visual-learner.json"),
+      lesson
+    );
+    assert.ok(
+      lesson.scenes.some((scene) =>
+        scene.steps.some((step) => step.speaker === "user")
+      )
+    );
+  });
+
+  it("keeps checked-in learner turns non-visual", () => {
+    const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
+    const characters = readJson(
+      new URL("../content/catalogs/characters.json", import.meta.url)
+    );
+    const lessonDirectory = new URL("../content/lessons/", import.meta.url);
+    const lessonFiles = readdirSync(lessonDirectory).filter((filename) =>
+      filename.endsWith(".json")
+    );
+    let learnerTurnCount = 0;
+
+    assert.equal(characters.some((character) => character.id === "user"), false);
+    assert.equal(
+      existsSync(new URL("../public/assets/characters/user/", import.meta.url)),
+      false
+    );
+
+    for (const filename of lessonFiles) {
+      const lesson = readJson(new URL(filename, lessonDirectory));
+      for (const scene of lesson.scenes) {
+        assert.equal(scene.characters.includes("user"), false, filename);
+        for (const step of scene.steps) {
+          assert.equal(Object.hasOwn(step.emotes, "user"), false, filename);
+          if (step.speaker === "user") learnerTurnCount += 1;
+        }
+      }
+    }
+
+    assert.ok(learnerTurnCount > 0);
+  });
+
   it("rejects invalid root content with its source path", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const cases = [
@@ -158,17 +213,6 @@ describe("lesson data contract", () => {
     speakerLesson.scenes[0].steps[0].speaker = "nobody";
     assert.throws(
       () => lessonData.validateLesson(speakerLesson, catalog, "bad.json"),
-      /bad\.json scenes\[0\]\.steps\[0\]\.speaker/
-    );
-
-    const userLesson = createLesson();
-    userLesson.scenes[0].characters = ["peppa", "dolly"];
-    userLesson.scenes[0].steps[0] = createStep({
-      speaker: "user",
-      emotes: { peppa: "listening", dolly: "listening" },
-    });
-    assert.throws(
-      () => lessonData.validateLesson(userLesson, catalog, "bad.json"),
       /bad\.json scenes\[0\]\.steps\[0\]\.speaker/
     );
 

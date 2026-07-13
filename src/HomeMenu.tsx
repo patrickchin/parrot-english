@@ -5,6 +5,7 @@ import { cx } from "./ui";
 const ACTIVITIES = [
   {
     description: "Have a friendly English conversation with Peppa.",
+    disabled: false,
     icon: MessageCircle,
     label: "Talk to Peppa",
     tone: "navy",
@@ -12,6 +13,7 @@ const ACTIVITIES = [
   },
   {
     description: "Practice with Parrot lessons and learner-created lessons.",
+    disabled: false,
     icon: Play,
     label: "Lessons",
     tone: "rose",
@@ -19,6 +21,7 @@ const ACTIVITIES = [
   },
   {
     description: "Build a new lesson around what you want to practice.",
+    disabled: false,
     icon: Plus,
     label: "Create a Lesson",
     tone: "green",
@@ -26,6 +29,7 @@ const ACTIVITIES = [
   },
   {
     description: "See how your English practice is growing.",
+    disabled: true,
     icon: Sparkles,
     label: "Progress",
     tone: "amber",
@@ -33,6 +37,7 @@ const ACTIVITIES = [
   },
   {
     description: "Practice English by making and telling stories.",
+    disabled: true,
     icon: BookOpen,
     label: "Storytelling",
     tone: "navy",
@@ -52,38 +57,67 @@ export function HomeMenu() {
         aria-label="Learning activities"
         className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
       >
-        {ACTIVITIES.map(({ description, icon: Icon, label, to, tone }) => (
-          <Link
-            className="flex min-h-36 items-center gap-4 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-52 md:gap-5 md:p-8"
-            key={to}
-            to={to}
-          >
-            <Icon
-              aria-hidden="true"
-              className={cx(
-                "size-14 shrink-0 rounded-2xl p-3 text-white shadow-control-navy md:size-18 md:p-4",
-                tone === "navy" && "bg-brand-navy",
-                tone === "rose" && "bg-brand-rose",
-                tone === "green" && "bg-brand-green",
-                tone === "amber" && "bg-amber-600",
-              )}
-            />
-            <span className="grid gap-2">
-              <strong
-                className={cx(
-                  "text-2xl leading-tight md:text-3xl",
-                  tone === "navy" && "text-brand-navy",
-                  tone === "rose" && "text-brand-rose",
-                  tone === "green" && "text-brand-green",
-                  tone === "amber" && "text-amber-700",
-                )}
+        {ACTIVITIES.map(
+          ({ description, disabled, icon: Icon, label, to, tone }) => {
+            const content = (
+              <>
+                <Icon
+                  aria-hidden="true"
+                  className={cx(
+                    "size-14 shrink-0 rounded-2xl p-3 text-white shadow-control-navy md:size-18 md:p-4",
+                    disabled
+                      ? "bg-slate-500"
+                      : tone === "navy" && "bg-brand-navy",
+                    !disabled && tone === "rose" && "bg-brand-rose",
+                    !disabled && tone === "green" && "bg-brand-green",
+                  )}
+                />
+                <span className="grid gap-2">
+                  <strong
+                    className={cx(
+                      "text-2xl leading-tight md:text-3xl",
+                      disabled
+                        ? "text-slate-600"
+                        : tone === "navy" && "text-brand-navy",
+                      !disabled && tone === "rose" && "text-brand-rose",
+                      !disabled && tone === "green" && "text-brand-green",
+                    )}
+                  >
+                    {label}
+                  </strong>
+                  <span className="font-bold leading-relaxed">
+                    {description}
+                  </span>
+                  {disabled ? (
+                    <small className="w-fit rounded-full bg-brand-navy px-3 py-1 text-xs font-black uppercase tracking-wider text-white">
+                      Coming soon
+                    </small>
+                  ) : null}
+                </span>
+              </>
+            );
+
+            return disabled ? (
+              <button
+                aria-label={label + ", coming soon"}
+                className="flex min-h-36 w-full cursor-not-allowed items-center gap-4 rounded-3xl border-4 border-white bg-slate-200/95 p-5 text-left text-slate-900 opacity-70 shadow-card grayscale focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-52 md:gap-5 md:p-8"
+                disabled
+                key={to}
+                type="button"
               >
-                {label}
-              </strong>
-              <span className="font-bold leading-relaxed">{description}</span>
-            </span>
-          </Link>
-        ))}
+                {content}
+              </button>
+            ) : (
+              <Link
+                className="flex min-h-36 items-center gap-4 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-52 md:gap-5 md:p-8"
+                key={to}
+                to={to}
+              >
+                {content}
+              </Link>
+            );
+          },
+        )}
       </nav>
     </main>
   );

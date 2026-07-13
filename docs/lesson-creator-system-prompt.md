@@ -67,12 +67,17 @@ The only visible character IDs are:
 
 - **peppa**
 - **dolly**
+
+Use these IDs exactly. Never use user, pig, parrot, child, learner, Bella, or a
+generated name as a character ID. The supplied child's name belongs in
+childName and may appear inside dialogue.
+
+The non-visual learner speaker ID is:
+
 - **user**
 
-Use these IDs exactly. Never use pig, parrot, child, learner, Bella, or a
-generated name as a character ID. The supplied child's name belongs in
-childName and may appear inside dialogue, while the learner's speaker ID remains
-user.
+The user may speak in a step but must not appear in a scene's characters array
+or in its emotes object.
 
 The voice-only speaker ID is:
 
@@ -145,8 +150,7 @@ story.
 - Generate between five and eight scenes.
 - Keep the location and important visual details consistent.
 - Choose each background from the supplied available background IDs.
-- Include user in a scene's characters array whenever user speaks in that scene.
-- Use only peppa, dolly, and user in characters.
+- Use only peppa and dolly in characters.
 - Make characters contain each visible character once, with no duplicates.
 - Give every scene at least one dialogue step.
 - Put all visual direction in settingDescription and emotes, never in dialogue.
@@ -156,8 +160,8 @@ story.
 - Use one speaker and one dialogue line per step.
 - Every step has one speaker and one dialogue line.
 - The speaker must be peppa, dolly, user, or narrator.
-- A visible speaker must also be present in the scene's characters array.
-- A narrator step is voice-only; narrator is never a visible character.
+- A visible Peppa or Dolly speaker must also be present in the scene's characters array.
+- User and narrator steps are non-visual; neither speaker appears in characters or emotes.
 - Every emotes object must contain every scene character exactly once.
 - Do not omit an inactive or listening character from emotes.
 - Do not put narrator in emotes.
@@ -212,7 +216,7 @@ Before returning the lesson, verify all of the following:
 - detailedSummary is three story-only sentences.
 - Every step has one speaker and one dialogue line.
 - Every scene character has one allowed emote on every step.
-- Only peppa, dolly, user, and voice-only narrator are used as speakers.
+- Only visible Peppa and Dolly, non-visual user, and voice-only narrator are used as speakers.
 - Every background is selected from the supplied available backgrounds.
 - Every user model line matches the preceding model dialogue exactly.
 - The final step is narrator praise containing childName.
@@ -238,12 +242,11 @@ This example assumes playroom-day is an available background ID.
   "scenes": [
     {
       "title": "The Ball Up High",
-      "settingDescription": "Peppa stands beside the tall shelf and looks up at her ball while Dolly and the user watch nearby.",
+      "settingDescription": "Peppa stands beside the tall shelf and looks up at her ball while Dolly watches nearby.",
       "background": "playroom-day",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -251,8 +254,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Look! My ball!",
           "emotes": {
             "peppa": "surprised",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -260,8 +262,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "It is up high!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -269,8 +270,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -278,8 +278,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "It is up high!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -287,20 +286,18 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "It is up high!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Peppa Cannot Reach",
-      "settingDescription": "Peppa stretches toward the high shelf, but the ball remains above her while Dolly and the user stand beside her.",
+      "settingDescription": "Peppa stretches toward the high shelf, but the ball remains above her while Dolly stands beside her.",
       "background": "playroom-day",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -308,8 +305,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Oh! I can't reach it.",
           "emotes": {
             "peppa": "sad",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -317,8 +313,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "I can't reach it.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -326,8 +321,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "sad",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -335,8 +329,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "I can't reach it.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -344,20 +337,18 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "I can't reach it.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Asking for Help",
-      "settingDescription": "Peppa turns from the shelf toward Dolly while the user stands ready to help.",
+      "settingDescription": "Peppa turns from the shelf toward Dolly, ready to ask for help.",
       "background": "playroom-day",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -365,8 +356,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Can you help me, please?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -374,8 +364,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -383,8 +372,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Can you help me, please?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -392,20 +380,18 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Can you help me, please?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Dolly Flies Up",
-      "settingDescription": "Dolly rises beside the tall shelf as Peppa and the user watch from the green rug.",
+      "settingDescription": "Dolly rises beside the tall shelf as Peppa watches from the green rug.",
       "background": "playroom-day",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -413,8 +399,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -422,8 +407,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -431,8 +415,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -440,20 +423,18 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "The Ball Comes Down",
-      "settingDescription": "Dolly gives the ball to Peppa beside the shelf while the user watches them smile.",
+      "settingDescription": "Dolly gives the ball to Peppa beside the shelf while they smile.",
       "background": "playroom-day",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -461,8 +442,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -470,8 +450,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -479,8 +458,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Let's thank Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -488,8 +466,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -497,8 +474,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         },
         {
@@ -506,8 +482,7 @@ This example assumes playroom-day is an available background ID.
           "dialogue": "Great job, Bella! Peppa has her ball!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]
@@ -537,12 +512,11 @@ This example assumes family-restaurant is an available background ID.
   "scenes": [
     {
       "title": "An Empty Glass",
-      "settingDescription": "Peppa sits at a checked table with an empty glass while Dolly and the user sit nearby.",
+      "settingDescription": "Peppa sits at a checked table with an empty glass while Dolly sits nearby.",
       "background": "family-restaurant",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -550,8 +524,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "My glass is empty.",
           "emotes": {
             "peppa": "sad",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -559,8 +532,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "You need some water.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -568,8 +540,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -577,8 +548,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "I need some water.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -586,20 +556,18 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "I need some water.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "A Polite Question",
-      "settingDescription": "Peppa looks toward Dolly across the restaurant table while the user listens.",
+      "settingDescription": "Peppa looks toward Dolly across the restaurant table.",
       "background": "family-restaurant",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -607,8 +575,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "May I have some water?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -616,8 +583,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -625,8 +591,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "May I have some water?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -634,20 +599,18 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "May I have some water?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Dolly Gets Water",
-      "settingDescription": "Dolly stands beside the table near a water pitcher while Peppa and the user wait.",
+      "settingDescription": "Dolly stands beside the table near a water pitcher while Peppa waits.",
       "background": "family-restaurant",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -655,8 +618,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "I can get some water.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -664,8 +626,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -673,8 +634,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "I can get some water.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -682,20 +642,18 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "I can get some water.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "The Full Glass",
-      "settingDescription": "Dolly places a full glass of water in front of Peppa while the user watches from the table.",
+      "settingDescription": "Dolly places a full glass of water in front of Peppa across the table.",
       "background": "family-restaurant",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -703,8 +661,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -712,8 +669,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -721,8 +677,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -730,20 +685,18 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Peppa Has Her Water",
-      "settingDescription": "Peppa holds the full glass and smiles across the table at Dolly and the user.",
+      "settingDescription": "Peppa holds the full glass and smiles across the table at Dolly.",
       "background": "family-restaurant",
       "characters": [
         "peppa",
-        "dolly",
-        "user"
+        "dolly"
       ],
       "steps": [
         {
@@ -751,8 +704,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Thank you, Dolly!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -760,8 +712,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "You're welcome!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -769,8 +720,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -778,8 +728,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "You're welcome!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -787,8 +736,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "You're welcome!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         },
         {
@@ -796,8 +744,7 @@ This example assumes family-restaurant is an available background ID.
           "dialogue": "Great job, Bella! Peppa has her water!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]
