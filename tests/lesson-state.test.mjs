@@ -10,6 +10,26 @@ const {
 const getCurrentScene = lessonState.getCurrentScene ?? (() => undefined);
 const getCurrentStep = lessonState.getCurrentStep ?? (() => undefined);
 
+const check = {
+  maxAttempts: 2,
+  correct: {
+    speaker: "peppa",
+    dialogue: "Well done!",
+    emotes: { peppa: "happy" },
+    after: "continue",
+  },
+  incorrect: {
+    speaker: "dolly",
+    dialogue: "Almost! Try again.",
+    after: "retry",
+  },
+  incorrectFinal: {
+    speaker: "peppa",
+    dialogue: "Good try! Let's continue.",
+    after: "continue",
+  },
+};
+
 const lesson = {
   childName: "Bella",
   scenes: [
@@ -17,7 +37,7 @@ const lesson = {
       title: "Practice",
       steps: [
         { speaker: "dolly", dialogue: "Here you are!" },
-        { speaker: "user", dialogue: "Here you are!" },
+        { speaker: "user", dialogue: "Here you are!", check },
       ],
     },
     {
@@ -72,13 +92,13 @@ describe("scene-script lesson state", () => {
     const paused = reduce(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.Feedback,
+        phase: LessonPhase.Responding,
         sceneIndex: 1,
         stepIndex: 4,
         attemptCount: 1,
-        feedback: "Almost!",
+        response: check.incorrect,
         transcript: "partial response",
-        feedbackOutcome: "retry",
+        responseOutcome: "incorrect",
       },
       { type: "PAUSE_SCENE" }
     );
@@ -87,9 +107,9 @@ describe("scene-script lesson state", () => {
     assert.equal(paused.sceneIndex, 1);
     assert.equal(paused.stepIndex, 0);
     assert.equal(paused.attemptCount, 0);
-    assert.equal(paused.feedback, "");
+    assert.equal(paused.response, null);
     assert.equal(paused.transcript, "");
-    assert.equal(paused.feedbackOutcome, null);
+    assert.equal(paused.responseOutcome, null);
   });
 
   it("restarts a paused scene from its first scripted speaker", () => {
@@ -150,12 +170,12 @@ describe("scene-script lesson state", () => {
     const selected = reduce(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.Feedback,
+        phase: LessonPhase.Responding,
         stepIndex: 1,
         attemptCount: 1,
-        feedback: "Almost!",
+        response: check.incorrect,
         transcript: "partial response",
-        feedbackOutcome: "retry",
+        responseOutcome: "incorrect",
       },
       { type: "SELECT_SCENE", sceneIndex: 1 },
     );
@@ -197,54 +217,91 @@ describe("scene-script lesson state", () => {
     assert.equal(evaluating.phase, LessonPhase.Evaluating);
   });
 
-  it("advances automatically after successful feedback", () => {
+  it("plays the scripted responder and advances after a correct check", () => {
     const evaluating = releaseRecording(startAtUser());
-    const feedback = reduce(evaluating, {
+    const responding = reduce(evaluating, {
       type: "EVALUATED",
-      passed: true,
+      outcome: "correct",
       transcript: "here you are",
     });
-    const narrator = reduce(feedback, { type: "FEEDBACK_DONE" });
-    const finished = reduce(narrator, { type: "LINE_DONE" });
+    const nextScene = reduce(responding, { type: "RESPONSE_DONE" });
+    const finished = reduce(nextScene, { type: "LINE_DONE" });
 
-    assert.equal(feedback.phase, LessonPhase.Feedback);
-    assert.equal(feedback.feedback, "Great job!");
-    assert.equal(feedback.feedbackOutcome, "success");
-    assert.equal(narrator.phase, LessonPhase.Speaking);
-    assert.equal(narrator.sceneIndex, 1);
-    assert.equal(narrator.stepIndex, 0);
+    assert.equal(responding.phase, LessonPhase.Responding);
+    assert.strictEqual(responding.response, check.correct);
+    assert.equal(responding.responseOutcome, "correct");
+    assert.equal(nextScene.phase, LessonPhase.Speaking);
+    assert.equal(nextScene.sceneIndex, 1);
+    assert.equal(nextScene.stepIndex, 0);
     assert.equal(finished.phase, LessonPhase.Finished);
   });
 
   it("replays the model after the first miss and continues after the second", () => {
     const firstEvaluation = releaseRecording(startAtUser());
-    const firstFeedback = reduce(firstEvaluation, {
+    const firstResponse = reduce(firstEvaluation, {
       type: "EVALUATED",
-      passed: false,
+      outcome: "incorrect",
       transcript: "here",
     });
-    const replayingModel = reduce(firstFeedback, { type: "FEEDBACK_DONE" });
+    const replayingModel = reduce(firstResponse, { type: "RESPONSE_DONE" });
     const waitingAgain = reduce(replayingModel, { type: "LINE_DONE" });
     const secondEvaluation = releaseRecording(waitingAgain);
-    const secondFeedback = reduce(secondEvaluation, {
+    const secondResponse = reduce(secondEvaluation, {
       type: "EVALUATED",
-      passed: false,
+      outcome: "incorrect",
       transcript: "are",
     });
-    const narrator = reduce(secondFeedback, { type: "FEEDBACK_DONE" });
+    const nextScene = reduce(secondResponse, { type: "RESPONSE_DONE" });
 
-    assert.equal(firstFeedback.feedback, "Almost! Try again, Bella.");
-    assert.equal(firstFeedback.feedbackOutcome, "retry");
-    assert.equal(firstFeedback.attemptCount, 1);
+    assert.strictEqual(firstResponse.response, check.incorrect);
+    assert.equal(firstResponse.responseOutcome, "incorrect");
+    assert.equal(firstResponse.attemptCount, 1);
     assert.equal(replayingModel.phase, LessonPhase.Speaking);
     assert.equal(replayingModel.stepIndex, 0);
     assert.equal(replayingModel.attemptCount, 1);
     assert.equal(waitingAgain.phase, LessonPhase.WaitingForUser);
     assert.equal(waitingAgain.attemptCount, 1);
-    assert.equal(secondFeedback.feedback, "Almost! Let's keep going.");
-    assert.equal(secondFeedback.feedbackOutcome, "continue");
-    assert.equal(narrator.sceneIndex, 1);
-    assert.equal(narrator.phase, LessonPhase.Speaking);
+    assert.strictEqual(secondResponse.response, check.incorrectFinal);
+    assert.equal(secondResponse.responseOutcome, "incorrectFinal");
+    assert.equal(nextScene.sceneIndex, 1);
+    assert.equal(nextScene.phase, LessonPhase.Speaking);
+  });
+
+  it("uses no-input handlers when present and incorrect handlers as fallbacks", () => {
+    const noInputResponse = {
+      speaker: "narrator",
+      dialogue: "I couldn't hear you. Try again.",
+      after: "retry",
+    };
+    const explicitLesson = structuredClone(lesson);
+    explicitLesson.scenes[0].steps[1].check.noInput = noInputResponse;
+    const explicit = reduce(
+      releaseRecording(startAtUser()),
+      { type: "EVALUATED", outcome: "noInput", transcript: "" },
+      explicitLesson,
+    );
+    const fallback = reduce(releaseRecording(startAtUser()), {
+      type: "EVALUATED",
+      outcome: "noInput",
+      transcript: "",
+    });
+
+    assert.strictEqual(explicit.response, noInputResponse);
+    assert.equal(explicit.responseOutcome, "noInput");
+    assert.strictEqual(fallback.response, check.incorrect);
+    assert.equal(fallback.responseOutcome, "noInput");
+  });
+
+  it("advances an unchecked user step without entering evaluation", () => {
+    const uncheckedLesson = structuredClone(lesson);
+    delete uncheckedLesson.scenes[0].steps[1].check;
+    const waiting = startAtUser();
+    const recording = reduce(waiting, { type: "MIC_STARTED" }, uncheckedLesson);
+    const advanced = reduce(recording, { type: "MIC_RELEASED" }, uncheckedLesson);
+
+    assert.equal(advanced.phase, LessonPhase.Speaking);
+    assert.equal(advanced.sceneIndex, 1);
+    assert.equal(advanced.stepIndex, 0);
   });
 
   it("returns to the same user step when recording is cancelled", () => {
@@ -257,25 +314,24 @@ describe("scene-script lesson state", () => {
     assert.equal(cancelled.stepIndex, waiting.stepIndex);
   });
 
-  it("turns evaluation request failures into one retry", () => {
+  it("returns to the same user step after an evaluation service failure", () => {
     const evaluating = releaseRecording(startAtUser());
-    const feedback = reduce(evaluating, { type: "EVALUATION_FAILED" });
+    const waiting = reduce(evaluating, { type: "EVALUATION_FAILED" });
 
-    assert.equal(feedback.phase, LessonPhase.Feedback);
-    assert.equal(feedback.feedback, "I couldn't hear that. Try again, Bella.");
-    assert.equal(feedback.feedbackOutcome, "retry");
-    assert.equal(feedback.attemptCount, 1);
+    assert.equal(waiting.phase, LessonPhase.WaitingForUser);
+    assert.equal(waiting.stepIndex, evaluating.stepIndex);
+    assert.equal(waiting.attemptCount, 0);
   });
 
   it("resets the complete script position", () => {
     const reset = reduce(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.Feedback,
+        phase: LessonPhase.Responding,
         sceneIndex: 1,
         stepIndex: 2,
         attemptCount: 1,
-        feedback: "Almost!",
+        response: check.incorrect,
       },
       { type: "RESET" }
     );

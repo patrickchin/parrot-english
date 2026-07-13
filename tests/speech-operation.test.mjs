@@ -24,9 +24,7 @@ async function flushMicrotasks() {
 }
 
 const successfulEvaluation = {
-  feedbackText: "Great job!",
-  passed: true,
-  retryAllowed: false,
+  outcome: "correct",
   similarity: 1,
   transcript: "new response",
 };
@@ -131,13 +129,64 @@ async function runStaleOperationRace(
 }
 
 describe("speech operation isolation", () => {
-  it("recovers an active evaluation AbortError through lesson failure feedback", async () => {
+  it("stops an unchecked recording without calling speech evaluation", async () => {
+    const events = [];
+    const recordingController = new AbortController();
+    const recordingControllerRef = { current: recordingController };
+    const evaluationControllerRef = { current: null };
+
+    await finishSpeechOperation({
+      evaluate: null,
+      evaluationControllerRef,
+      generation: 1,
+      getCurrentGeneration: () => 1,
+      onEvaluated: () => events.push("evaluated"),
+      onFailed: () => events.push("failed"),
+      onReleased: () => events.push("released"),
+      recordingController,
+      recordingControllerRef,
+      session: {
+        cancel() {},
+        stop: () => Promise.resolve(new Blob(["child audio"])),
+      },
+      targetText: "Hello!",
+    });
+
+    assert.deepEqual(events, ["released"]);
+    assert.equal(recordingControllerRef.current, null);
+    assert.equal(evaluationControllerRef.current, null);
+  });
+
+  it("recovers an active evaluation AbortError by returning to the learner turn", async () => {
     const lesson = {
       childName: "Bella",
       scenes: [
         {
           title: "Practice",
-          steps: [{ speaker: "user", dialogue: "Here you are!" }],
+          steps: [
+            {
+              speaker: "user",
+              dialogue: "Here you are!",
+              check: {
+                maxAttempts: 2,
+                correct: {
+                  speaker: "narrator",
+                  dialogue: "Well done!",
+                  after: "continue",
+                },
+                incorrect: {
+                  speaker: "narrator",
+                  dialogue: "Try again.",
+                  after: "retry",
+                },
+                incorrectFinal: {
+                  speaker: "narrator",
+                  dialogue: "Let's continue.",
+                  after: "continue",
+                },
+              },
+            },
+          ],
         },
       ],
     };
@@ -164,7 +213,7 @@ describe("speech operation isolation", () => {
       onEvaluated: (result) =>
         dispatch({
           type: "EVALUATED",
-          passed: result.passed,
+          outcome: result.outcome,
           transcript: result.transcript,
         }),
       onFailed: () => dispatch({ type: "EVALUATION_FAILED" }),
@@ -182,8 +231,8 @@ describe("speech operation isolation", () => {
       { type: "MIC_RELEASED" },
       { type: "EVALUATION_FAILED" },
     ]);
-    assert.equal(state.phase, LessonPhase.Feedback);
-    assert.equal(state.feedbackOutcome, "retry");
+    assert.equal(state.phase, LessonPhase.WaitingForUser);
+    assert.equal(state.attemptCount, 0);
   });
 
   it("ignores a late recording settlement after a new operation starts", async () => {

@@ -36,17 +36,22 @@ function target(state, event) {
 }
 
 describe("lesson route transitions", () => {
-  it("returns the next scene for final successful feedback", () => {
+  it("returns the next scene when a scripted response continues", () => {
     assert.equal(
       target(
         {
           ...createInitialLessonState(),
-          phase: LessonPhase.Feedback,
+          phase: LessonPhase.Responding,
           sceneIndex: 0,
           stepIndex: 1,
-          feedbackOutcome: "success",
+          response: {
+            speaker: "narrator",
+            dialogue: "Well done!",
+            after: "continue",
+          },
+          responseOutcome: "correct",
         },
-        { type: "FEEDBACK_DONE" },
+        { type: "RESPONSE_DONE" },
       ),
       1,
     );

@@ -36,7 +36,6 @@ describe("lesson progress label", () => {
       [LessonPhase.WaitingForUser, "Hold the microphone to speak"],
       [LessonPhase.Recording, "Keep holding while you speak"],
       [LessonPhase.Evaluating, "Checking your speech"],
-      [LessonPhase.Feedback, "Listen to the narrator"],
       [LessonPhase.Finished, "Lesson complete"],
     ];
 
@@ -46,5 +45,15 @@ describe("lesson progress label", () => {
         expected
       );
     }
+  });
+
+  it("names the scripted responder", () => {
+    assert.equal(
+      getLessonProgressLabel(
+        { ...createInitialLessonState(), phase: LessonPhase.Responding },
+        { speaker: "peppa" },
+      ),
+      "Listen to Peppa",
+    );
   });
 });

@@ -56,20 +56,24 @@ describe("lesson audio", () => {
     });
   });
 
-  it("uses narrator cache entries for runner feedback", () => {
+  it("resolves scripted response audio using its actual speaker", () => {
     const line = getLessonAudioLine(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.Feedback,
-        feedback: "Almost! Try again, Bella.",
-        feedbackOutcome: "retry",
+        phase: LessonPhase.Responding,
+        response: {
+          speaker: "dolly",
+          dialogue: "Here you are!",
+          after: "retry",
+        },
+        responseOutcome: "incorrect",
       },
       lesson
     );
 
-    assert.equal(line.speaker, "narrator");
-    assert.equal(line.text, "Almost! Try again, Bella.");
-    assert.equal(line.audioSrc, "/assets/audio/narrator-retry-bella.mp3");
+    assert.equal(line.speaker, "dolly");
+    assert.equal(line.text, "Here you are!");
+    assert.equal(line.audioSrc, "/assets/audio/dolly-here-you-are.mp3");
   });
 
   it("stays silent for user interaction and idle phases", () => {

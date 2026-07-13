@@ -12,13 +12,6 @@ const lessons = readdirSync(lessonDirectory)
   .map((filename) =>
     JSON.parse(readFileSync(new URL(filename, lessonDirectory), "utf8"))
   );
-const feedbackLines = [
-  "Great job!",
-  "Almost! Try again, Bella.",
-  "Almost! Let's keep going.",
-  "I couldn't hear that. Try again, Bella.",
-  "I couldn't hear that. Let's keep going.",
-];
 const normalizedCharacterSources = {
   "peppa-cant-reach": "/assets/audio/peppa-cant-reach.mp3",
   "peppa-can-help": "/assets/audio/peppa-can-help.mp3",
@@ -49,23 +42,25 @@ describe("static audio cache metadata", () => {
     );
   });
 
-  it("covers every scripted non-user line and runner feedback line", () => {
+  it("covers every scripted non-user line and speech-check response", () => {
     const scriptedLines = lessons.flatMap((lesson) =>
       lesson.scenes.flatMap((scene) =>
-        scene.steps
-          .filter((step) => step.speaker !== "user")
-          .map((step) => [step.speaker, step.dialogue])
+        scene.steps.flatMap((step) => {
+          const lines =
+            step.speaker === "user" ? [] : [[step.speaker, step.dialogue]];
+          const responses = step.check
+            ? Object.entries(step.check)
+                .filter(([key]) => key !== "maxAttempts")
+                .map(([, response]) => [response.speaker, response.dialogue])
+            : [];
+          return [...lines, ...responses];
+        })
       )
     );
 
     for (const [speaker, text] of scriptedLines) {
       const line = getStaticAudioLineForSpeech(speaker, text);
       assert.ok(line, `${speaker}: ${text}`);
-      assert.equal(line.text, text);
-    }
-    for (const text of feedbackLines) {
-      const line = getStaticAudioLineForSpeech("narrator", text);
-      assert.ok(line, `narrator: ${text}`);
       assert.equal(line.text, text);
     }
   });

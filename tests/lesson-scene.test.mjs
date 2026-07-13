@@ -46,7 +46,26 @@ const lesson = {
         {
           speaker: "user",
           dialogue: "Here you are!",
-          emotes: { peppa: "listening", dolly: "listening", user: "talking" },
+          emotes: { dolly: "listening", user: "talking" },
+          check: {
+            maxAttempts: 2,
+            correct: {
+              speaker: "peppa",
+              dialogue: "Well done!",
+              emotes: { peppa: "happy" },
+              after: "continue",
+            },
+            incorrect: {
+              speaker: "dolly",
+              dialogue: "Almost! Try again.",
+              after: "retry",
+            },
+            incorrectFinal: {
+              speaker: "peppa",
+              dialogue: "Good try! Let's continue.",
+              after: "continue",
+            },
+          },
         },
       ],
     },
@@ -165,28 +184,73 @@ describe("scene-script presentation", () => {
         text: "Here you are!",
         kind: "user",
       });
+      assert.equal(
+        scene.characters.find((character) => character.id === "peppa").emote,
+        "listening",
+      );
       assert.equal(scene.characters.some((character) => character.id === "user"), false);
     }
   });
 
-  it("uses narrator presentation for feedback", () => {
+  it("presents a scripted responder with inherited and partial emotes", () => {
+    const response = lesson.scenes[0].steps[2].check.correct;
     const scene = getLessonScenePresentation(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.Feedback,
+        phase: LessonPhase.Responding,
         stepIndex: 2,
-        feedback: "Great job!",
-        feedbackOutcome: "success",
+        response,
+        responseOutcome: "correct",
       },
       lesson,
       catalog
     );
 
     assert.deepEqual(scene.speech, {
-      speaker: "narrator",
-      text: "Great job!",
+      speaker: "peppa",
+      text: "Well done!",
       kind: "feedback",
     });
+    assert.equal(
+      scene.characters.find((character) => character.id === "peppa").emote,
+      "happy",
+    );
+    assert.equal(
+      scene.characters.find((character) => character.id === "dolly").emote,
+      "listening",
+    );
+    assert.equal(
+      scene.characters.find((character) => character.id === "peppa").isActive,
+      true,
+    );
+  });
+
+  it("starts omitted scene emotes from idle and applies later overrides", () => {
+    const inheritedLesson = {
+      ...lesson,
+      scenes: [
+        {
+          ...lesson.scenes[0],
+          steps: [
+            { speaker: "narrator", dialogue: "Look!" },
+            { speaker: "dolly", dialogue: "A ball!", emotes: { dolly: "surprised" } },
+          ],
+        },
+      ],
+    };
+    const scene = getLessonScenePresentation(
+      { ...createInitialLessonState(), phase: LessonPhase.Speaking, stepIndex: 1 },
+      inheritedLesson,
+      catalog,
+    );
+
+    assert.deepEqual(
+      scene.characters.map(({ id, emote }) => ({ id, emote })),
+      [
+        { id: "peppa", emote: "idle" },
+        { id: "dolly", emote: "surprised" },
+      ],
+    );
   });
 
   it("marks the final scripted line as finished after playback", () => {
