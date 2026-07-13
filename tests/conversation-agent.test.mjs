@@ -342,6 +342,56 @@ describe("bounded onboarding agent contract", () => {
     assert.equal(outcome, "completed");
   });
 
+  it("lets session shutdown flush a write-behind profile update", async () => {
+    let releasePersistence;
+    const persistenceBlocked = new Promise((resolve) => {
+      releasePersistence = resolve;
+    });
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState() {
+          await persistenceBlocked;
+        },
+      }),
+    });
+    const transition =
+      task.toolCtx.functionTools.updateProfileSummary.execute(
+        {
+          learnedAge: false,
+          learnedName: true,
+          outcome: "answered",
+          profileAge: null,
+          profileName: "Mia",
+          summary: "The learner's name is Mia.",
+        },
+        {},
+      );
+
+    const hasPersistenceWaiter =
+      typeof task.waitForPendingStatePersistence === "function";
+    let stateBeforeRelease;
+    if (hasPersistenceWaiter) {
+      const waiting = task.waitForPendingStatePersistence().then(
+        () => "flushed",
+      );
+      stateBeforeRelease = await Promise.race([
+        waiting,
+        new Promise((resolve) =>
+          setTimeout(() => resolve("still-pending"), 25),
+        ),
+      ]);
+      releasePersistence();
+      await waiting;
+    } else {
+      releasePersistence();
+    }
+    await transition;
+
+    assert.equal(hasPersistenceWaiter, true);
+    assert.equal(stateBeforeRelease, "still-pending");
+  });
+
   it("starts without recording and uses a sub-second-first low-latency turn budget", () => {
     assert.deepEqual(AGENT_SESSION_START_OPTIONS, { record: false });
     assert.equal(AGENT_TURN_HANDLING.interruption.enabled, true);
