@@ -3,6 +3,7 @@ import {
   getGroqRequestTimeoutMs,
   type ApiEnv,
 } from "./groq.ts";
+import { LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT } from "./prompts/learner-profile-enrichment.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
@@ -195,8 +196,7 @@ export async function enrichLearnerProfileAnswer({
           messages: [
             {
               role: "system",
-              content:
-                "Summarize the child's answer factually in third person. Write one warm, playful acknowledgment for a child. Do not ask a question or invent details. Return only the requested JSON. Set canonicalName or canonicalAge only when the question asks for it; otherwise return null.",
+              content: LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT,
             },
             {
               role: "user",
