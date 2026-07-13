@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Flag,
+  LoaderCircle,
   Mic,
   MicOff,
   RotateCcw,
@@ -278,26 +279,7 @@ export function ConversationSurface({
               </span>
             </span>
           </div>
-        ) : thinking ? (
-          <div
-            aria-live="polite"
-            className="flex w-full max-w-xl items-center justify-center gap-4 rounded-3xl border-4 border-white bg-white/90 px-5 py-4 text-left text-brand-ink shadow-control-surface"
-            role="status"
-          >
-            <span
-              aria-hidden="true"
-              className="size-10 shrink-0 animate-spin rounded-full border-4 border-sky-300 border-t-brand-rose motion-reduce:animate-none"
-            />
-            <span className="grid gap-1">
-              <strong className="text-lg leading-tight sm:text-xl">
-                {STATUS_LABELS.thinking}
-              </strong>
-              <span className="text-sm font-bold leading-snug sm:text-base">
-                Getting her reply ready.
-              </span>
-            </span>
-          </div>
-        ) : (
+        ) : !thinking ? (
           <p
             aria-live="polite"
             className="sr-only"
@@ -307,7 +289,7 @@ export function ConversationSurface({
               ? "Finishing your chat…"
               : STATUS_LABELS[status]}
           </p>
-        )}
+        ) : null}
 
         {microphoneEnabled || liveTranscript ? (
           <output
@@ -343,7 +325,30 @@ export function ConversationSurface({
                 <RotateCcw aria-hidden="true" />
                 Try again
               </ActionButton>
-            ) : thinking ? null : (
+            ) : thinking ? (
+              <ActionButton
+                aria-label="Waiting for Peppa's reply"
+                disabled
+                size="large"
+                type="button"
+                variant="surface"
+              >
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                />
+                <span
+                  aria-live="polite"
+                  className="grid justify-items-start leading-tight"
+                  role="status"
+                >
+                  <strong>{STATUS_LABELS.thinking}</strong>
+                  <small className="mt-1 text-xs font-bold opacity-85">
+                    Getting her reply ready
+                  </small>
+                </span>
+              </ActionButton>
+            ) : (
               <ActionButton
                 aria-keyshortcuts="Space"
                 aria-pressed={microphoneEnabled}
