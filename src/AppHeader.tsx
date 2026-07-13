@@ -97,7 +97,7 @@ export function AccountHeader({
       {onOpenProfile ? (
         <ActionButton
           aria-label="Edit learner profile"
-          className="min-h-11 min-w-0 rounded-full px-2 shadow-none short:min-h-9 short:px-1.5 md:min-h-14 md:px-3"
+          className="min-h-11 min-w-0 rounded-full px-2 shadow-none short:min-h-9 short:px-1 short:text-sm md:min-h-14 md:px-3 md:text-base"
           onClick={onOpenProfile}
           size="bare"
           type="button"
@@ -107,7 +107,7 @@ export function AccountHeader({
         </ActionButton>
       ) : null}
       <ActionButton
-        className="min-h-11 min-w-0 rounded-full px-2 shadow-none short:min-h-9 short:px-1.5 md:min-h-14 md:px-3"
+        className="min-h-11 min-w-0 rounded-full px-2 shadow-none short:min-h-9 short:px-1 short:text-sm md:min-h-14 md:px-3 md:text-base"
         disabled={isSigningOut}
         onClick={onSignOut}
         size="bare"
