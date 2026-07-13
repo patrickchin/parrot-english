@@ -27,6 +27,7 @@ function environment(overrides = {}) {
   return {
     CONVERSATION_AGENT_SECRET: "agent-secret",
     CONVERSATION_INGEST_URL: "https://app.example.test",
+    LIVEKIT_AGENT_NAME: "parrot-onboarding",
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
@@ -40,6 +41,7 @@ describe("LiveKit agent configuration", () => {
 
     assert.equal(config.livekitUrl, "wss://livekit.example.test");
     assert.equal(config.ingestSecret, "agent-secret");
+    assert.equal(config.agentName, "parrot-onboarding");
     assert.equal(config.sttModel, "elevenlabs/scribe_v2_realtime");
     assert.equal(config.llmModel, "openai/gpt-4.1-mini");
     assert.equal(config.ttsModel, "inworld/inworld-tts-2");
@@ -106,6 +108,10 @@ describe("LiveKit agent configuration", () => {
   });
 
   it("rejects blank required settings and moving model aliases", () => {
+    assert.throws(
+      () => readAgentConfig(environment({ LIVEKIT_AGENT_NAME: " " })),
+      /LIVEKIT_AGENT_NAME/,
+    );
     assert.throws(
       () => readAgentConfig(environment({ LIVEKIT_API_SECRET: " " })),
       /LIVEKIT_API_SECRET/,

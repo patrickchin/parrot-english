@@ -316,6 +316,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   cli.runApp(
     new ServerOptions({
       agent: fileURLToPath(import.meta.url),
+      agentName: config.agentName,
       apiKey: config.livekitApiKey,
       apiSecret: config.livekitApiSecret,
       wsURL: config.livekitUrl,

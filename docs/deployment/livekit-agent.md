@@ -83,8 +83,13 @@ Configure these Worker values without committing their real values:
 npx wrangler secret put LIVEKIT_URL
 npx wrangler secret put LIVEKIT_API_KEY
 npx wrangler secret put LIVEKIT_API_SECRET
+npx wrangler secret put LIVEKIT_AGENT_NAME # parrot-onboarding
 npx wrangler secret put CONVERSATION_AGENT_SECRET
 ```
+
+`LIVEKIT_AGENT_NAME` must exactly match the value in the agent's
+`.env.livekit`; otherwise rooms wait indefinitely for a nonexistent dispatch
+target.
 
 `wrangler.jsonc` keeps `REALTIME_ONBOARDING_ENABLED` at `1` for production.
 Set it to `0` and redeploy when rolling back the realtime experience.
@@ -109,6 +114,7 @@ Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 `LIVEKIT_API_SECRET` into `.env.livekit`. The agent secrets file needs only:
 
 ```text
+LIVEKIT_AGENT_NAME=parrot-onboarding
 CONVERSATION_INGEST_URL=https://your-worker.example.com
 CONVERSATION_AGENT_SECRET=the-same-random-worker-secret
 AGENT_STT_MODEL=elevenlabs/scribe_v2_realtime
