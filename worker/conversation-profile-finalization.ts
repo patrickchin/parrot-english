@@ -13,6 +13,11 @@ const OUTPUT_KEYS = new Set(["name", "age", "description"]);
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u;
 
 type ConversationTurn = {
+  role: string;
+  text: string;
+};
+
+type ProfileConversationTurn = {
   role: "user" | "assistant";
   text: string;
 };
@@ -65,7 +70,7 @@ function validAge(value: unknown): value is number {
 }
 
 function boundedTranscript(turns: ConversationTurn[]) {
-  const selected: ConversationTurn[] = [];
+  const selected: ProfileConversationTurn[] = [];
   let characters = 0;
   for (let index = turns.length - 1; index >= 0; index -= 1) {
     const turn = turns[index];
