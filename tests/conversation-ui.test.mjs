@@ -74,31 +74,36 @@ describe("accessible realtime conversation surface", () => {
     );
   });
 
-  it("keeps typed answers and stop controls available after Peppa opens", () => {
+  it("keeps only the two clear conversation actions after Peppa opens", () => {
     for (const status of [
       "listening",
       "speaking",
       "reconnecting",
-      "error",
     ]) {
       const html = render({
-        error: status === "error" ? "The voice room took a break." : "",
+        microphoneEnabled: false,
         status,
-        typedValue: "pandas",
       });
-      assert.match(html, /aria-label="Type your answer"/i, status);
-      assert.match(html, /value="pandas"/, status);
-      assert.match(html, /<summary>[\s\S]*Type instead[\s\S]*<\/summary>/, status);
+      assert.match(html, /aria-pressed="false"/, status);
+      assert.match(html, /Start my turn/, status);
       assert.match(html, /Finish conversation/, status);
-      assert.doesNotMatch(html, /Use the form instead/, status);
-      assert.match(html, /aria-live="polite"/, status);
-      assert.match(html, /peppa\/peppa-[a-z]+\.webp/, status);
       assert.doesNotMatch(
         html,
-        /<input[^>]+aria-label="Type your answer"[^>]+disabled/i,
+        /Type instead|Type your answer|>Send<|Mute microphone|Turn microphone on/,
         status,
       );
+      assert.doesNotMatch(html, /class="conversation-state/, status);
+      assert.match(html, /aria-live="polite"/, status);
+      assert.match(html, /peppa\/peppa-[a-z]+\.webp/, status);
     }
+
+    const activeTurn = render({
+      microphoneEnabled: true,
+      status: "listening",
+    });
+    assert.match(activeTurn, /aria-pressed="true"/);
+    assert.match(activeTurn, /End my turn/);
+    assert.match(activeTurn, /Click or press Space/);
   });
 
   it("centers the character, shows only her latest speech, and removes developer controls", () => {
@@ -119,9 +124,21 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(speechBubble, /I like drawing/);
     assert.match(html, /class="conversation-character-stage"/);
     assert.doesNotMatch(html, /conversation-debug-transcript|Debug transcript/);
-    assert.match(html, /Turn microphone on/);
-    assert.match(html, /Reconnecting/);
+    assert.match(html, /Start my turn/);
+    assert.doesNotMatch(html, />Reconnecting[^<]*</);
     assert.doesNotMatch(html, /Chat with your pig pal/);
+  });
+
+  it("keeps retry and finish available without bringing back typed input", () => {
+    const html = render({
+      error: "The voice room took a break.",
+      status: "error",
+    });
+
+    assert.match(html, /The voice room took a break/);
+    assert.match(html, /Try again/);
+    assert.match(html, /Finish conversation/);
+    assert.doesNotMatch(html, /Type instead|Type your answer|>Send</);
   });
 
   it("saves the prose profile without showing a review page", () => {
@@ -150,22 +167,23 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /Debug transcript|I am seven\./);
   });
 
-  it("gives primary, secondary, and exit actions distinct visual hierarchy", () => {
+  it("makes the screen scrollable and both remaining actions large", () => {
     assert.match(styles, /\.conversation-shell/);
     assert.match(styles, /\.conversation-character-stage/);
     assert.match(styles, /\.conversation-speech-bubble::after/);
     assert.match(
       styles,
-      /\.conversation-microphone-button\s*\{[^}]*background:\s*#ff467b[^}]*color:\s*#fff/s,
+      /\.conversation-screen\s*\{[^}]*height:\s*100dvh[^}]*overflow-y:\s*auto/s,
     );
     assert.match(
       styles,
-      /\.conversation-finish-button\s*\{[^}]*background:\s*transparent[^}]*text-decoration:\s*underline/s,
+      /\.conversation-turn-button\s*\{[^}]*width:\s*100%[^}]*min-height:\s*64px[^}]*background:\s*#087451[^}]*color:\s*#fff/s,
     );
     assert.match(
       styles,
-      /\.conversation-type-panel\s*\{[^}]*background:\s*rgb\(255 255 255 \/ 72%\)/s,
+      /\.conversation-finish-button\s*\{[^}]*width:\s*100%[^}]*min-height:\s*64px[^}]*background:\s*rgb\(255 255 255 \/ 88%\)[^}]*text-decoration:\s*none/s,
     );
+    assert.doesNotMatch(styles, /\.conversation-type-panel/);
     assert.doesNotMatch(styles, /\.conversation-debug-transcript/);
     assert.match(styles, /\.conversation-[^{]+:focus-visible/);
     assert.match(styles, /@media \(max-height:/);

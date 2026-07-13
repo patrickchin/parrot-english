@@ -38,6 +38,7 @@ const vite = await createServer({
 });
 
 let ApplicationRoutes;
+let ConversationSurface;
 let OnboardingGate;
 let useConversationOnboarding;
 let createAuthGate;
@@ -45,6 +46,9 @@ let firstLesson;
 let firstLessonId;
 
 before(async () => {
+  ({ ConversationSurface } = await vite.ssrLoadModule(
+    "/src/ConversationSurface.tsx",
+  ));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
   ({ OnboardingGate } = await vite.ssrLoadModule("/src/OnboardingGate.tsx"));
   ({ useConversationOnboarding } = await vite.ssrLoadModule(
@@ -176,7 +180,33 @@ function ConversationHookHarness({ createTransport, onCompleted = async () => {}
     null,
     createElement("output", { "aria-label": "Conversation status" }, conversation.status),
     createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
+    createElement(
+      "button",
+      { onClick: conversation.onToggleMicrophone, type: "button" },
+      conversation.microphoneEnabled ? "End my turn" : "Start my turn",
+    ),
   );
+}
+
+function conversationSurfaceProps(overrides = {}) {
+  return {
+    candidates: [],
+    error: "",
+    microphoneEnabled: false,
+    onCandidateChange() {},
+    onCandidateStatusChange() {},
+    onFinish() {},
+    onSendText() {},
+    onStart() {},
+    onSubmitReview() {},
+    onToggleMicrophone() {},
+    onTypedValueChange() {},
+    onUseForm() {},
+    status: "listening",
+    turns: [],
+    typedValue: "",
+    ...overrides,
+  };
 }
 
 function ProfileRouteHarness({ children }) {
@@ -503,8 +533,66 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
       await flush();
     });
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "listening",
+      ),
+    );
+    assert.deepEqual(microphoneCalls, [false]);
+
+    await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
+  });
+
+  it("toggles the learner turn with Space without hijacking focused controls", async () => {
+    const toggles = [];
+    await mountStrict(
+      createElement(
+        ConversationSurface,
+        conversationSurfaceProps({
+          onToggleMicrophone() {
+            toggles.push("toggle");
+          },
+        }),
+      ),
+    );
+
+    const space = new window.KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      code: "Space",
+      key: " ",
+    });
+    await act(async () => window.dispatchEvent(space));
+    assert.deepEqual(toggles, ["toggle"]);
+    assert.equal(space.defaultPrevented, true);
+
+    await act(async () => {
+      window.dispatchEvent(
+        new window.KeyboardEvent("keydown", {
+          bubbles: true,
+          code: "Space",
+          key: " ",
+          repeat: true,
+        }),
+      );
+    });
+    assert.deepEqual(toggles, ["toggle"]);
+
+    const finish = button("Finish conversation");
+    await act(async () => {
+      finish.dispatchEvent(
+        new window.KeyboardEvent("keydown", {
+          bubbles: true,
+          code: "Space",
+          key: " ",
+        }),
+      );
+    });
+    assert.deepEqual(toggles, ["toggle"]);
   });
 
   it("accepts the prose profile automatically when the room ends", async () => {

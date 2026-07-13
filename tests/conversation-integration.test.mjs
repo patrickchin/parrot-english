@@ -130,7 +130,7 @@ describe("realtime onboarding gate integration", () => {
     assert.doesNotMatch(fallback, /Chat with Peppa/);
   });
 
-  it("keeps typed input and retry visible after a voice-room failure", () => {
+  it("keeps retry and a large finish action visible after a voice-room failure", () => {
     const html = renderGate({
       conversationProps: conversationProps({
         error: "The voice room took a break.",
@@ -142,7 +142,8 @@ describe("realtime onboarding gate integration", () => {
     assert.match(html, /The voice room took a break/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.match(html, /Try again/);
-    assert.match(html, /aria-label="Type your answer"/);
+    assert.match(html, /Finish conversation/);
+    assert.doesNotMatch(html, /Type instead|aria-label="Type your answer"/);
   });
 
   it("lets a completed learner deliberately start a fresh realtime onboarding", () => {
