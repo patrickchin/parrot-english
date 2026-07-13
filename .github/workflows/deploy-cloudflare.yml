@@ -60,4 +60,5 @@ jobs:
           npx wrangler deploy --config wrangler.jsonc \
             --tag "${{ steps.build-metadata.outputs.sha }}" \
             --var "PARROT_BACKEND_VERSION:${{ steps.build-metadata.outputs.version }}" \
-            --var "PARROT_BACKEND_COMMIT_SHA:${{ steps.build-metadata.outputs.sha }}"
+            --var "PARROT_BACKEND_COMMIT_SHA:${{ steps.build-metadata.outputs.sha }}" \
+            --var "REALTIME_CONVERSATIONS_ENABLED:1"

@@ -39,6 +39,7 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(agent, /reportBuild/);
   assert.match(workflow, /PARROT_BACKEND_VERSION/);
   assert.match(workflow, /PARROT_BACKEND_COMMIT_SHA/);
+  assert.match(workflow, /--var "REALTIME_CONVERSATIONS_ENABLED:1"/);
   assert.match(wrangler, /version_metadata/);
   assert.match(agentDeploy, /PARROT_AGENT_VERSION/);
   assert.match(agentDeploy, /PARROT_AGENT_COMMIT_SHA/);
