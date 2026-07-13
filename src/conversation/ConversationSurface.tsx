@@ -309,14 +309,14 @@ export function ConversationSurface({
           </p>
         )}
 
-        {microphoneEnabled ? (
+        {microphoneEnabled || liveTranscript ? (
           <output
             aria-label="Live transcript"
             aria-live="polite"
-            className="grid w-full max-w-xl gap-1 rounded-3xl border-4 border-white bg-brand-yellow px-5 py-3 text-center text-brand-ink shadow-control-surface"
+            className="grid w-full max-w-xl gap-1 rounded-3xl border-4 border-white/80 bg-white/80 px-5 py-3 text-center text-brand-ink shadow-control-surface"
           >
             <span className="text-sm font-black uppercase tracking-wide opacity-75">
-              You’re saying
+              {microphoneEnabled ? "You’re saying" : "You said"}
             </span>
             <span className="min-h-7 text-lg font-black leading-snug sm:text-xl">
               {liveTranscript || "Listening for your words…"}

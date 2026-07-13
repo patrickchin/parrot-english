@@ -637,7 +637,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(conversationStarts, 2);
   });
 
-  it("updates and clears the live learner transcript during a microphone turn", async () => {
+  it("updates and preserves the latest learner transcript after a microphone turn", async () => {
     let listener = () => {};
     const transport = {
       async commitUserTurn() {},
@@ -725,7 +725,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(
       document.querySelector('output[aria-label="Live transcript"]')
         .textContent,
-      "",
+      "My name is Mia",
     );
   });
 

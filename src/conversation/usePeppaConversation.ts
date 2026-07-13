@@ -314,7 +314,6 @@ export function usePeppaConversation({
       await transportRef.current.setMicrophoneEnabled(enabled);
       setMicrophoneEnabled(enabled);
       if (!enabled) {
-        setLiveTranscript("");
         await transportRef.current.commitUserTurn();
       }
     } catch (microphoneError) {
