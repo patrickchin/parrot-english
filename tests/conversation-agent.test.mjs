@@ -194,10 +194,14 @@ describe("purpose-specific Peppa conversation prompts", () => {
     for (const source of Object.values(sources)) {
       assert.match(source, /warm, playful pig friend/i);
       assert.match(source, /speak first/i);
+      assert.match(source, /edit only the large block of text below/i);
     }
     assert.match(sources["introduction.ts"], /first introduction/i);
+    assert.match(sources["introduction.ts"], /first welcome chat/i);
     assert.match(sources["profile-edit.ts"], /update the existing learner profile/i);
+    assert.match(sources["profile-edit.ts"], /Edit profile.*Chat with Peppa again/is);
     assert.match(sources["small-chat.ts"], /ordinary small chat/i);
+    assert.match(sources["small-chat.ts"], /Talk to Peppa.*main menu/is);
 
     const runtimeSource = readFileSync(
       resolve(import.meta.dirname, "../agent/peppa-conversation.ts"),

@@ -34,7 +34,8 @@ describe("onboarding answer enrichment", () => {
     );
 
     assert.match(promptSource, /summarize the child's answer factually/i);
-    assert.match(promptSource, /used.*enrichLearnerProfileAnswer/i);
+    assert.match(promptSource, /not spoken directly to the child/i);
+    assert.match(promptSource, /edit only the large block of text below/i);
     assert.doesNotMatch(runtimeSource, /summarize the child's answer factually/i);
   });
 
