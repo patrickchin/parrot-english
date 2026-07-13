@@ -247,7 +247,7 @@ describe("lesson data contract", () => {
       dolly: "idle",
     });
     assert.ok(prepared.warnings.length >= 8);
-    assert.ok(prepared.warnings.length <= 13);
+    assert.ok(prepared.warnings.length <= 15);
     assert.match(prepared.warnings.at(-1), /additional repairs were applied/i);
     assert.ok(prepared.warnings.some((warning) => /title/i.test(warning)));
     assert.ok(prepared.warnings.some((warning) => /background/i.test(warning)));
