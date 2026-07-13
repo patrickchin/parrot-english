@@ -82,11 +82,17 @@ describe("LiveKit conversation adapter", () => {
     await conversation.connect();
     await conversation.setMicrophoneEnabled(true);
     await conversation.sendText("I like pandas");
+    await conversation.repeatLastAudio();
 
     assert.deepEqual(log, [
       ["connect", "wss://livekit.example.test", "participant-token"],
       ["microphone", true],
       ["text", "I like pandas", { topic: "lk.chat" }],
+      [
+        "text",
+        "__parrot_repeat_last_audio__",
+        { topic: "lk.chat" },
+      ],
     ]);
     await assert.rejects(
       conversation.sendText(" "),
