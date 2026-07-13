@@ -36,28 +36,43 @@ function renderCreator(initialEntry) {
 
 test("Create Lesson defaults to an accessible Generate Script tab", () => {
   const html = renderCreator("/lessons/my/create");
+  const tabList = html.match(/<div[^>]*class="lesson-creator-tabs"[^>]*>/)?.[0];
+  const generateTab = html.match(
+    /<button[^>]*>[\s\S]*?Generate Script<\/button>/,
+  )?.[0];
 
   assert.match(html, /<h1>Create a Lesson<\/h1>/);
-  assert.match(html, /role="tablist"[^>]*aria-label="Create lesson methods"/);
+  assert.ok(tabList);
+  assert.match(tabList, /role="tablist"/);
+  assert.match(tabList, /aria-label="Create lesson methods"/);
+  assert.ok(generateTab);
+  assert.match(generateTab, /role="tab"/);
+  assert.match(generateTab, /aria-selected="true"/);
+  assert.match(html, /role="tab"[\s\S]*?Upload Script<\/button>/);
+  assert.match(html, /<label[^>]*for="lesson-topic"[^>]*>.*lesson.*about/is);
+  assert.match(html, /<textarea[^>]*id="lesson-topic"[^>]*maxlength="500"/i);
   assert.match(
     html,
-    /role="tab"[^>]*aria-selected="true"[^>]*>Generate Script<\/button>/,
+    /<button[^>]*type="submit"[^>]*>[\s\S]*?Generate script<\/button>/,
   );
-  assert.match(html, /role="tab"[^>]*>Upload Script<\/button>/);
-  assert.match(html, /<label[^>]*for="lesson-topic"[^>]*>.*lesson.*about/is);
-  assert.match(html, /<textarea[^>]*id="lesson-topic"[^>]*maxlength="500"/);
-  assert.match(html, />Generate script<\/button>/);
   assert.doesNotMatch(html, /type="file"/);
 });
 
 test("the upload query selects a JSON upload panel", () => {
   const html = renderCreator("/lessons/my/create?tab=upload");
+  const uploadTab = [...html.matchAll(/<button[^>]*>[\s\S]*?<\/button>/g)]
+    .map(([button]) => button)
+    .find((button) => button.includes("Upload Script"));
+  const uploadPanel = html.match(
+    /<section[^>]*id="upload-script-panel"[^>]*>/,
+  )?.[0];
 
-  assert.match(
-    html,
-    /role="tab"[^>]*aria-selected="true"[^>]*>Upload Script<\/button>/,
-  );
-  assert.match(html, /role="tabpanel"[^>]*aria-labelledby="upload-script-tab"/);
+  assert.ok(uploadTab);
+  assert.match(uploadTab, /role="tab"/);
+  assert.match(uploadTab, /aria-selected="true"/);
+  assert.ok(uploadPanel);
+  assert.match(uploadPanel, /role="tabpanel"/);
+  assert.match(uploadPanel, /aria-labelledby="upload-script-tab"/);
   assert.match(
     html,
     /<input[^>]*type="file"[^>]*accept="\.json,application\/json"/,
