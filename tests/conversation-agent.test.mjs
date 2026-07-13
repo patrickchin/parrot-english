@@ -318,6 +318,50 @@ describe("bounded learner-profile agent contract", () => {
     assert.deepEqual(completed, [{ finishReason: "child_stopped" }]);
   });
 
+  it("uses finishConversation as the only tool that ends a completed task", async () => {
+    const ended = [];
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async endConversation(...args) {
+          ended.push(args);
+        },
+      }),
+      initialState: {
+        ...createLearnerProfileConversationState({
+          profileAge: 8,
+          profileName: "Mia",
+          profileSummary: "Mia is eight years old.",
+        }),
+        optionalExchangeCount: 2,
+      },
+    });
+
+    const updated = await task.toolCtx.functionTools.updateLearnerProfile.execute(
+      {
+        age: 9,
+        description: "Maya is nine years old and loves pandas.",
+        learnedAge: true,
+        learnedName: true,
+        name: "Maya",
+        outcome: "answered",
+      },
+      {},
+    );
+
+    assert.equal(updated.state.phase, "closing");
+    assert.deepEqual(ended, []);
+
+    await task.toolCtx.functionTools.finishConversation.execute(
+      { reason: "task_complete" },
+      {},
+    );
+
+    assert.deepEqual(ended, [
+      ["conversation-1", "completed", "task_complete"],
+    ]);
+  });
+
   it("keeps opening behavior in the static profile-edit system prompt", async () => {
     let opening;
     const task = createGettingToKnowYouTask({
