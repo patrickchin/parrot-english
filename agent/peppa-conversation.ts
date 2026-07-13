@@ -13,7 +13,7 @@ import { PROFILE_EDIT_SYSTEM_PROMPT } from "./prompts/profile-edit.ts";
 import { SMALL_CHAT_SYSTEM_PROMPT } from "./prompts/small-chat.ts";
 
 export const LEARNER_PROFILE_TOOL_NAMES = [
-  "updateProfileSummary",
+  "updateLearnerProfile",
   "markObjectiveUnanswered",
   "finishConversation",
   "requestGentleRephrase",
@@ -104,33 +104,40 @@ export function createGettingToKnowYouTask({
     },
   ) {
     state = applyConversationObservation(state, observation) as ControllerState;
-    const pendingStateUpdate = persistState(state);
-    if (isConversationTerminal(state)) {
-      await pendingStateUpdate;
-      await ingest.endConversation(
-        conversationId,
-        state.finishReason === "child_stopped" ? "stopped" : "completed",
-        state.finishReason ?? "completed",
-      );
-      onEnded();
-      completeTask?.({ finishReason: state.finishReason });
-    }
+    persistState(state);
     return { nextPrompt: nextConversationPrompt(state), state };
   }
 
   const tools = [
     llm.tool({
-      name: "updateProfileSummary",
+      name: "updateLearnerProfile",
       description:
-        "Save one cumulative prose paragraph containing only details the child directly shared.",
+        "Silently record the complete current learner name, age, and natural description without ending the conversation.",
       parameters: z.object({
-        summary: z
+        name: z
+          .string()
+          .trim()
+          .min(1)
+          .max(120)
+          .nullable()
+          .describe(
+            "The learner's directly shared current name, including any correction, or null until known.",
+          ),
+        age: z
+          .number()
+          .int()
+          .nonnegative()
+          .nullable()
+          .describe(
+            "The learner's directly shared current age, including any correction, or null until known.",
+          ),
+        description: z
           .string()
           .trim()
           .min(1)
           .max(2_000)
           .describe(
-            "The complete current profile as one natural third-person paragraph, with no labels, bullets, or field names.",
+            "The complete current learner profile as one natural third-person paragraph, with no labels, bullets, or field names.",
           ),
         learnedName: z
           .boolean()
@@ -138,36 +145,23 @@ export function createGettingToKnowYouTask({
         learnedAge: z
           .boolean()
           .describe("True once the child has directly shared their age."),
-        profileName: z
-          .string()
-          .trim()
-          .min(1)
-          .max(120)
-          .nullable()
-          .describe("The child's directly shared name, or null until known."),
-        profileAge: z
-          .number()
-          .int()
-          .nonnegative()
-          .nullable()
-          .describe("The child's directly shared age, or null until known."),
         outcome: z.literal("answered"),
       }),
       execute: async ({
+        age,
+        description,
         learnedAge,
         learnedName,
+        name,
         outcome,
-        profileAge,
-        profileName,
-        summary,
       }) =>
         transition({
           learnedAge,
           learnedName,
           outcome,
-          profileAge,
-          profileName,
-          summary,
+          profileAge: age,
+          profileName: name,
+          summary: description,
         }),
     }),
     llm.tool({

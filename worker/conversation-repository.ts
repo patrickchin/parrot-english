@@ -61,6 +61,42 @@ function serializeJson(value: unknown, maxBytes: number, code: string) {
   return serialized;
 }
 
+function completeProfileSnapshot(controllerStateJson: string) {
+  const storedState = parseJson(controllerStateJson);
+  if (
+    storedState === null ||
+    typeof storedState !== "object" ||
+    Array.isArray(storedState)
+  ) {
+    throw new ConversationRepositoryError(500, "invalid_stored_data");
+  }
+  const controllerState = storedState as Record<string, unknown>;
+  if (
+    controllerState.learnedName !== true ||
+    controllerState.learnedAge !== true
+  ) {
+    return null;
+  }
+  const profileName = boundedString(
+    controllerState.profileName,
+    120,
+    "invalid_controller_state",
+  );
+  const profileAge = controllerState.profileAge;
+  if (!Number.isSafeInteger(profileAge) || (profileAge as number) < 0) {
+    throw new ConversationRepositoryError(400, "invalid_controller_state");
+  }
+  const profileSummary = boundedString(
+    controllerState.profileSummary,
+    2_000,
+    "invalid_controller_state",
+  );
+  return {
+    profileAge: profileAge as number,
+    profileName,
+    profileSummary,
+  };
+}
 export function createConversationRepository(
   database: Database,
   {
@@ -292,16 +328,98 @@ export function createConversationRepository(
       .where(eq(conversationSession.id, conversationId));
   }
 
+  async function buildProfileFinalization(
+    conversation: NonNullable<Awaited<ReturnType<typeof findConversation>>>,
+    timestamp: Date,
+  ) {
+    if (
+      !isConversationPurpose(conversation.scenarioKey) ||
+      !updatesLearnerProfile(conversation.scenarioKey)
+    ) {
+      return null;
+    }
+    const snapshot = completeProfileSnapshot(conversation.controllerState);
+    if (!snapshot) return null;
+    const [storedProfile] = await database
+      .select()
+      .from(learnerProfile)
+      .where(eq(learnerProfile.authUserId, conversation.authUserId))
+      .limit(1);
+
+    if (storedProfile) {
+      const readableProfile = ensureV2Profile(
+        storedProfile,
+        LEARNER_PROFILE_QUESTIONNAIRE,
+        { forProfileEdit: true },
+      );
+      const answers = readV2Answers(readableProfile);
+      return {
+        query: database
+          .update(learnerProfile)
+          .set({
+            name: snapshot.profileName,
+            age: snapshot.profileAge,
+            answersJson: JSON.stringify({
+              ...answers,
+              description: snapshot.profileSummary,
+            }),
+            profileStatus: "completed",
+            currentQuestionKey: null,
+            completedAt: timestamp,
+            updatedAt: timestamp,
+          })
+          .where(eq(learnerProfile.id, storedProfile.id)),
+      };
+    }
+
+    const answersJson = JSON.stringify({
+      schemaVersion: 2,
+      questionnaireVersion: LEARNER_PROFILE_QUESTIONNAIRE.version,
+      responses: {},
+      legacyAnswers: null,
+      description: snapshot.profileSummary,
+    });
+    return {
+      query: database
+        .insert(learnerProfile)
+        .values({
+          id: createId(),
+          authUserId: conversation.authUserId,
+          name: snapshot.profileName,
+          age: snapshot.profileAge,
+          answersJson,
+          profileStatus: "completed",
+          currentQuestionKey: null,
+          completedAt: timestamp,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        })
+        .onConflictDoUpdate({
+          target: learnerProfile.authUserId,
+          set: {
+            name: snapshot.profileName,
+            age: snapshot.profileAge,
+            answersJson,
+            profileStatus: "completed",
+            currentQuestionKey: null,
+            completedAt: timestamp,
+            updatedAt: timestamp,
+          },
+        }),
+    };
+  }
+
   async function endConversation(
     conversationId: string,
     status: "completed" | "stopped" | "disconnected" | "failed" | "abandoned",
     finishReason: string,
   ) {
-    if (!(await findConversation(conversationId))) {
+    const conversation = await findConversation(conversationId);
+    if (!conversation) {
       throw new ConversationRepositoryError(404, "not_found");
     }
     const timestamp = now();
-    await database
+    const sessionUpdate = database
       .update(conversationSession)
       .set({
         status,
@@ -310,6 +428,19 @@ export function createConversationRepository(
         updatedAt: timestamp,
       })
       .where(eq(conversationSession.id, conversationId));
+    const profileFinalization =
+      status === "completed" || status === "stopped"
+        ? await buildProfileFinalization(conversation, timestamp)
+        : null;
+    if (profileFinalization) {
+      await database.batch(
+        [profileFinalization.query, sessionUpdate] as unknown as Parameters<
+          typeof database.batch
+        >[0],
+      );
+    } else {
+      await sessionUpdate;
+    }
     return (await findConversation(conversationId))!;
   }
 
