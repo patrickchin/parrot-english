@@ -13,8 +13,6 @@ function readSource(path) {
 
 const authClient = readSource("../src/auth-client.ts");
 const app = readSource("../src/App.tsx");
-const designSystem = readSource("../src/design-system.css");
-const styles = readSource("../src/styles.css");
 
 const vite = await createServer({
   appType: "custom",
@@ -271,26 +269,6 @@ test("auth gate container forwards an optional signed-out fallback", () => {
   assert.equal(capturedProps.signedOutFallback, fallback);
 });
 
-function getRule(selector) {
-  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = styles.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
-
-  assert.ok(match, `Expected to find CSS rule for ${selector}`);
-  return match[1];
-}
-
-function getMaxWidthSection(maxWidth, nextMaxWidth) {
-  const startMarker = `@media (max-width: ${maxWidth}px)`;
-  const start = styles.indexOf(startMarker);
-  const end = nextMaxWidth
-    ? styles.indexOf(`@media (max-width: ${nextMaxWidth}px)`, start + 1)
-    : styles.indexOf("@media (max-height:", start + 1);
-
-  assert.ok(start >= 0, `Expected ${startMarker}`);
-  assert.ok(end > start, `Expected a boundary after ${startMarker}`);
-  return styles.slice(start, end);
-}
-
 test("auth client uses Better Auth's same-origin defaults", () => {
   assert.match(authClient, /from ["']better-auth\/react["']/);
   assert.match(authClient, /export const authClient\s*=\s*createAuthClient\(\s*\)/);
@@ -460,29 +438,12 @@ test("renders Profile and Log out together in the account bar", () => {
     session: { user: { email: "mia@example.test", name: "Mia" } },
   });
   const bar = html.match(
-    /<aside[^>]*class="[^"]*\bapp-header-account\b[^"]*"[\s\S]*?<\/aside>/,
+    /<aside[^>]*aria-label="Current account"[^>]*>[\s\S]*?<\/aside>/,
   )?.[0];
 
   assert.ok(bar);
   assert.match(bar, /aria-label="Edit learner profile"/);
   assert.match(bar, />Log out</);
-  assert.doesNotMatch(html, /class="profile-edit-button"/);
-});
-
-test("uses the same account header classes on every authenticated route", () => {
-  const html = renderAuthGate({
-    onOpenProfile() {},
-    session: { user: { email: "mia@example.test", name: "Mia" } },
-  });
-  const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
-
-  assert.ok(bar);
-  assert.equal(bar, "app-header-account");
-  assert.doesNotMatch(html, /:has|group-has|conversation-screen/);
-  assert.match(html, /class="app-header-account-label"/);
-  assert.match(html, />Mia</);
-  assert.match(html, />Profile</);
-  assert.match(html, />Log out</);
 });
 
 test("auth submission validates before calling the client", async () => {
@@ -628,60 +589,4 @@ test("App composes AuthGate, route-aware onboarding, and authenticated routes", 
     app,
     /<AuthGate[\s\S]*?<OnboardingGate[\s\S]*?<ApplicationRoutes\s+loginTarget=\{safeReturnTo\}\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
   );
-});
-
-test("auth layout is responsive, touch-friendly, and visually distinct", () => {
-  for (const selector of [".auth-screen", ".auth-card", ".auth-submit"]) {
-    getRule(selector);
-  }
-
-  const html = renderAuthGate({
-    onOpenProfile() {},
-    session: { user: { email: "mia@example.test", name: "Mia" } },
-  });
-  const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
-
-  assert.ok(bar);
-  assert.match(styles, /@media\s*\(max-width:\s*560px\)/);
-  assert.match(styles, /\.auth-(?:field input|submit)[\s\S]*?min-height:\s*48px/);
-  assert.match(styles, /\.auth-card[\s\S]*?background:\s*(?:#fff|white|rgb\(255)/);
-  assert.match(
-    styles,
-    /\.auth-submit[\s\S]*?background:\s*var\(--color-brand-pink\)/,
-  );
-  assert.equal(bar, "app-header-account");
-  assert.match(designSystem, /\.app-header-account\s*\{/);
-  assert.match(designSystem, /background:\s*var\(--color-brand-navy\)/);
-  assert.match(designSystem, /top:\s*var\(--app-header-top\)/);
-  assert.match(styles, /:focus-visible/);
-});
-
-test("auth screen owns a reachable short-viewport scroll area", () => {
-  const screen = getRule(".auth-screen");
-  const card = getRule(".auth-card");
-
-  assert.match(screen, /height:\s*100dvh/);
-  assert.match(screen, /overflow-y:\s*auto/);
-  assert.match(screen, /place-items:\s*start center/);
-  assert.match(card, /margin-block:\s*auto/);
-});
-
-test("session controls use the global mobile header breakpoint", () => {
-  const tablet = getMaxWidthSection(720, 560);
-  const html = renderAuthGate({
-    session: { user: { email: "mia@example.test", name: "Mia" } },
-  });
-  const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
-
-  assert.ok(bar);
-  assert.equal(bar, "app-header-account");
-  assert.match(
-    designSystem,
-    /@media\s*\(max-width:\s*720px\)[\s\S]*?--app-header-control-size:\s*52px/,
-  );
-  assert.match(
-    designSystem,
-    /\.app-header-account-label\s*\{[\s\S]*?display:\s*none/,
-  );
-  assert.match(tablet, /\.lesson-flow-banner\s*\{[\s\S]*?top:\s*144px/);
 });

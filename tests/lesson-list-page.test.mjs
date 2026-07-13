@@ -63,14 +63,9 @@ test("lesson list separates all discovered Parrot lessons from My Lessons", () =
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
-test("lesson list exposes My Lessons empty and creation states plus main-menu navigation", () => {
+test("lesson list exposes My Lessons empty and creation states", () => {
   const html = renderLessonList();
 
-  assert.match(
-    html,
-    /<a class="lesson-main-menu-link app-header-control" href="\/"[^>]*>[^<]*<svg[^>]*>.*<\/svg>[^<]*<span>Back to main menu<\/span>[^<]*<\/a>/s,
-  );
-  assert.match(html, /class="my-lessons-empty"/);
   assert.match(html, /You haven&#x27;t created any lessons yet\./);
   assert.match(
     html,

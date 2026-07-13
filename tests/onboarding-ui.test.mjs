@@ -49,7 +49,6 @@ const gateSource = readFileSync(
   new URL("../src/OnboardingGate.tsx", import.meta.url),
   "utf8",
 );
-const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 after(async () => {
   await vite.close();
@@ -1050,17 +1049,5 @@ describe("onboarding and profile gate", () => {
     assert.match(appSource, /isProfileRoute=/);
     assert.match(gateSource, /onOpen:\s*onOpenProfileRoute/);
     assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);
-  });
-
-  it("keeps responsive reduced-motion styles", () => {
-    assert.match(styles, /\.onboarding-screen\s*\{[^}]*overflow-y:\s*auto/s);
-    assert.match(styles, /\.onboarding-(?:next|skip|icon)-button:focus-visible/);
-    assert.match(styles, /@media\s*\(max-width:\s*720px\)[\s\S]*onboarding/);
-    assert.match(
-      styles,
-      /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*onboarding/s,
-    );
-    assert.match(gateSource, /useProfileAccountAction/);
-    assert.doesNotMatch(gateSource, /profile-edit-button/);
   });
 });

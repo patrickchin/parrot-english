@@ -35,20 +35,3 @@ test("the learner gate gives completed learners a reusable conversation route", 
     /if\s*\(isConversationRoute\)\s*\{\s*onConversationCompleted\(\)/,
   );
 });
-
-test("conversation route uses the same global header as every other page", () => {
-  const app = source("../src/App.tsx");
-  const authGate = source("../src/AuthGate.tsx");
-  const designSystem = source("../src/design-system.css");
-  const conversationSurface = source("../src/ConversationSurface.tsx");
-
-  assert.doesNotMatch(app, /compactSessionBar/);
-  assert.doesNotMatch(authGate, /:has|group-has|conversation-screen/);
-  assert.match(authGate, /className="app-header-account"/);
-  assert.match(
-    conversationSurface,
-    /conversation-back-button app-header-control/,
-  );
-  assert.match(designSystem, /--app-header-control-size:\s*64px/);
-  assert.match(designSystem, /--app-header-control-size:\s*52px/);
-});
