@@ -117,6 +117,16 @@ export function conversationInputMode(
   return role === "user" && !hasVoiceTranscript ? "text" : "voice";
 }
 
+export function createAgentTurnHandling() {
+  return {
+    endpointing: AGENT_TURN_HANDLING.endpointing,
+    interruption: AGENT_TURN_HANDLING.interruption,
+    preemptiveGeneration: AGENT_TURN_HANDLING.preemptiveGeneration,
+    turnDetection: new inference.TurnDetector(),
+    userTurnLimit: { maxDuration: 30_000, maxWords: 40 },
+  };
+}
+
 function createTranscriptPersistence({
   conversationId,
   ingest,
@@ -253,12 +263,7 @@ export const agentDefinition = defineAgent({
       maxToolSteps: 2,
       stt: models.stt,
       tts: models.tts,
-      turnHandling: {
-        endpointing: AGENT_TURN_HANDLING.endpointing,
-        interruption: AGENT_TURN_HANDLING.interruption,
-        turnDetection: new inference.TurnDetector(),
-        userTurnLimit: { maxDuration: 30_000, maxWords: 40 },
-      },
+      turnHandling: createAgentTurnHandling(),
     });
 
     session.on(AgentSessionEventTypes.UserInputTranscribed, (event) => {
