@@ -1,13 +1,14 @@
-# LiveKit onboarding agent deployment
+# LiveKit Peppa conversation agent deployment
 
-This runbook deploys the bounded onboarding conversation as two cooperating
+This runbook deploys the purpose-specific Peppa conversations as two cooperating
 services: the existing Cloudflare Worker/D1 application and a LiveKit Node.js
 agent. The Worker owns Better Auth, D1 persistence, review, and short-lived room
 tokens. The agent owns speech recognition, the constrained conversation loop,
 speech synthesis, and finalized transcript ingest.
 
-Realtime onboarding is enabled in the production Worker configuration. Keep
-the form fallback available throughout production operation and rollback.
+Realtime conversations are enabled in the production Worker configuration.
+Keep the onboarding form fallback available throughout production operation
+and rollback.
 
 ## Provider and cost dependencies
 
@@ -62,9 +63,13 @@ Run the agent in another terminal:
 node --env-file=.env.local --experimental-strip-types agent/index.ts dev
 ```
 
-For local investigation, set `REALTIME_ONBOARDING_ENABLED=1` in `.dev.vars`.
+For local investigation, set `REALTIME_CONVERSATIONS_ENABLED=1` in `.dev.vars`.
 Return it to `0` before committing. The browser must still offer Use the form
 instead at every realtime error or stop point.
+
+The Worker sends one of `onboarding`, `profile-edit`, or `small-chat` in the
+signed participant metadata. The agent must select the matching system prompt;
+small chat must start without profile-writing tools.
 
 ## Cloudflare Worker and D1
 
@@ -83,7 +88,7 @@ Configure these Worker values without committing their real values:
 npx wrangler secret put LIVEKIT_URL
 npx wrangler secret put LIVEKIT_API_KEY
 npx wrangler secret put LIVEKIT_API_SECRET
-npx wrangler secret put LIVEKIT_AGENT_NAME # parrot-onboarding
+npx wrangler secret put LIVEKIT_AGENT_NAME # parrot-conversation
 npx wrangler secret put CONVERSATION_AGENT_SECRET
 ```
 
@@ -91,7 +96,7 @@ npx wrangler secret put CONVERSATION_AGENT_SECRET
 `.env.livekit`; otherwise rooms wait indefinitely for a nonexistent dispatch
 target.
 
-`wrangler.jsonc` keeps `REALTIME_ONBOARDING_ENABLED` at `1` for production.
+`wrangler.jsonc` keeps `REALTIME_CONVERSATIONS_ENABLED` at `1` for production.
 Set it to `0` and redeploy when rolling back the realtime experience.
 
 ## LiveKit Cloud agent
@@ -114,7 +119,7 @@ Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 `LIVEKIT_API_SECRET` into `.env.livekit`. The agent secrets file needs only:
 
 ```text
-LIVEKIT_AGENT_NAME=parrot-onboarding
+LIVEKIT_AGENT_NAME=parrot-conversation
 CONVERSATION_INGEST_URL=https://your-worker.example.com
 CONVERSATION_AGENT_SECRET=the-same-random-worker-secret
 AGENT_STT_MODEL=elevenlabs/scribe_v2_realtime
@@ -130,7 +135,8 @@ at runtime. Keep `.env.livekit` untracked.
 
 Before enabling the flag, authenticate as a test user and verify:
 
-1. Start creates one D1 conversation and joins one LiveKit room.
+1. Onboarding, profile editing, and Talk to Peppa each store the matching
+   scenario key and join one LiveKit room.
 2. Speaking over the pig friend stops its playback and the child is not spoken
    over.
 3. Every agent response stays in English, including the single gentle rephrase.
@@ -138,19 +144,19 @@ Before enabling the flag, authenticate as a test user and verify:
    followed naturally instead of being treated as off-topic.
 5. “I don’t know”, silence, refusal, Finish conversation, and the form fallback
    all remain usable.
-6. The saved prose summary finalizes automatically and reaches either profile
-   completion or the existing session-scoped bypass path.
+6. Onboarding and profile editing finalize the saved prose summary; small chat
+   finishes without changing the learner profile.
 7. D1 contains finalized user and assistant turns for completed and abandoned
    sessions, but no raw-audio payload or structured fact rows. LiveKit starts
    with `record: false`.
 
-The production Worker deploys with `REALTIME_ONBOARDING_ENABLED=1`. After each
+The production Worker deploys with `REALTIME_CONVERSATIONS_ENABLED=1`. After each
 deployment, watch LiveKit agent logs, Worker errors, token issuance failures,
 D1 ingest conflicts, session duration, and model usage/cost.
 
 ## Rollback
 
-Disable `REALTIME_ONBOARDING_ENABLED` and redeploy the Worker. This immediately
+Disable `REALTIME_CONVERSATIONS_ENABLED` and redeploy the Worker. This immediately
 returns new onboarding visits to the form fallback without deleting transcripts
 or requiring a D1 rollback. The additive tables and deployed agent can remain in
 place while the incident is investigated. If the agent version itself is bad,

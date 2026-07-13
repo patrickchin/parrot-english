@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cx } from "./ui";
 
-export function OnboardingScreen({
+export function LearnerProfileScreen({
   children,
   profile = false,
 }: {
@@ -11,7 +11,7 @@ export function OnboardingScreen({
   return (
     <main
       className={cx(
-        "grid h-dvh w-full items-start justify-items-center overflow-y-auto bg-onboarding",
+        "grid h-dvh w-full items-start justify-items-center overflow-y-auto bg-learner-profile",
         !profile && "p-3.5 sm:place-items-center sm:p-8 lg:p-12",
         profile &&
           "px-3.5 pb-3.5 pt-40 sm:px-8 sm:pb-8 sm:pt-32 md:pt-28 lg:px-12 lg:pb-12",
@@ -22,7 +22,7 @@ export function OnboardingScreen({
   );
 }
 
-export function OnboardingCard({
+export function LearnerProfileCard({
   children,
   className,
   width = "standard",
@@ -46,16 +46,16 @@ export function OnboardingCard({
   );
 }
 
-export function OnboardingStatusCard({
+export function LearnerProfileStatusCard({
   children,
   ...props
 }: ComponentProps<"section">) {
   return (
-    <OnboardingCard
+    <LearnerProfileCard
       className="grid justify-items-center gap-4 p-7 text-center sm:p-12"
       {...props}
     >
       {children}
-    </OnboardingCard>
+    </LearnerProfileCard>
   );
 }

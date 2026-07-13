@@ -4,8 +4,8 @@ export interface RateLimitBinding {
 
 export interface RateLimitEnv {
   EVALUATE_RATE_LIMITER: RateLimitBinding;
-  ONBOARDING_TRANSCRIPTION_RATE_LIMITER: RateLimitBinding;
-  ONBOARDING_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
+  LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER: RateLimitBinding;
+  LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
 }
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
@@ -54,26 +54,26 @@ export function checkEvaluateSpeechRateLimit(
   );
 }
 
-export function checkOnboardingTranscriptionRateLimit(
+export function checkLearnerProfileTranscriptionRateLimit(
   request: Request,
   env: RateLimitEnv,
   userId: string,
 ) {
   return checkRateLimit(
-    env.ONBOARDING_TRANSCRIPTION_RATE_LIMITER,
+    env.LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER,
     `${userId}:${getClientAddress(request)}`,
     "Too many transcription requests. Please wait and try again.",
   );
 }
 
-export function checkOnboardingEnrichmentRateLimit(
+export function checkLearnerProfileEnrichmentRateLimit(
   request: Request,
   env: RateLimitEnv,
   userId: string,
 ) {
   return checkRateLimit(
-    env.ONBOARDING_ENRICHMENT_RATE_LIMITER,
+    env.LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER,
     `${userId}:${getClientAddress(request)}`,
-    "Too many onboarding answers. Please wait and try again.",
+    "Too many learner-profile answers. Please wait and try again.",
   );
 }

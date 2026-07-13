@@ -1,17 +1,17 @@
 import { and, eq } from "drizzle-orm";
 import {
   learnerProfile,
-  onboardingSessionBypass,
+  profileSessionBypass,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
-import type { OnboardingIdentity } from "./onboarding.ts";
+import type { LearnerProfileIdentity } from "./learner-profile.ts";
 
 type RepositoryOptions = {
   createId?: () => string;
   now?: () => Date;
 };
 
-export function createOnboardingRepository(
+export function createLearnerProfileRepository(
   database: Database,
   {
     createId = () => crypto.randomUUID(),
@@ -27,7 +27,7 @@ export function createOnboardingRepository(
     return profile ?? null;
   }
 
-  async function ensureProfile(identity: OnboardingIdentity) {
+  async function ensureProfile(identity: LearnerProfileIdentity) {
     let profile = await findProfile(identity.userId);
 
     if (!profile) {
@@ -38,7 +38,7 @@ export function createOnboardingRepository(
           id: createId(),
           authUserId: identity.userId,
           name: identity.userName,
-          onboardingStatus: "not_started",
+          profileStatus: "not_started",
           createdAt: timestamp,
           updatedAt: timestamp,
         })
@@ -52,40 +52,40 @@ export function createOnboardingRepository(
 
   const loadProfile = ensureProfile;
 
-  async function hasSessionBypass(identity: OnboardingIdentity) {
+  async function hasSessionBypass(identity: LearnerProfileIdentity) {
     const [row] = await database
-      .select({ sessionId: onboardingSessionBypass.sessionId })
-      .from(onboardingSessionBypass)
+      .select({ sessionId: profileSessionBypass.sessionId })
+      .from(profileSessionBypass)
       .where(
         and(
-          eq(onboardingSessionBypass.sessionId, identity.sessionId),
-          eq(onboardingSessionBypass.authUserId, identity.userId)
+          eq(profileSessionBypass.sessionId, identity.sessionId),
+          eq(profileSessionBypass.authUserId, identity.userId)
         )
       )
       .limit(1);
     return Boolean(row);
   }
 
-  async function canBypass(identity: OnboardingIdentity) {
+  async function canBypass(identity: LearnerProfileIdentity) {
     const profile = await findProfile(identity.userId);
     return (
-      profile?.onboardingStatus === "completed" ||
+      profile?.profileStatus === "completed" ||
       profile?.lastSkippedSessionId === identity.sessionId ||
       (await hasSessionBypass(identity))
     );
   }
 
-  async function skipSession(identity: OnboardingIdentity) {
+  async function skipSession(identity: LearnerProfileIdentity) {
     const skippedAt = now();
     await database
-      .insert(onboardingSessionBypass)
+      .insert(profileSessionBypass)
       .values({
         authUserId: identity.userId,
         sessionId: identity.sessionId,
         skippedAt,
       })
       .onConflictDoUpdate({
-        target: onboardingSessionBypass.sessionId,
+        target: profileSessionBypass.sessionId,
         set: { authUserId: identity.userId, skippedAt },
       });
   }
@@ -97,7 +97,7 @@ export function createOnboardingRepository(
       answersJson: string;
       currentQuestionKey?: string | null;
       name?: string | null;
-      onboardingStatus?: string;
+      profileStatus?: string;
       skippedQuestionKeysJson?: string;
     }
   ) {
@@ -127,7 +127,7 @@ export function createOnboardingRepository(
         completedAt: values.completed ? timestamp : null,
         currentQuestionKey: values.currentQuestionKey,
         name: values.name,
-        onboardingStatus: values.completed ? "completed" : "in_progress",
+        profileStatus: values.completed ? "completed" : "in_progress",
         skippedQuestionKeysJson: values.skippedQuestionKeysJson,
         updatedAt: timestamp,
       })
@@ -153,7 +153,7 @@ export function createOnboardingRepository(
       .set({
         completedAt: timestamp,
         currentQuestionKey: null,
-        onboardingStatus: "completed",
+        profileStatus: "completed",
         updatedAt: timestamp,
       })
       .where(eq(learnerProfile.id, profileId));

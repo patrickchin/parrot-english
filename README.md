@@ -12,7 +12,7 @@ List-first, scene-based English speaking practice for young learners.
 - Drizzle ORM over one shared Cloudflare D1 database
 - Groq speech evaluation, onboarding transcription, and answer enrichment
 - ElevenLabs saved prompt audio and runtime onboarding acknowledgments
-- LiveKit WebRTC and Agents for bounded realtime onboarding conversations
+- LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
 The frontend is a Vite single-page app. The Worker serves the built assets and
 handles API requests before falling back to `env.ASSETS.fetch(request)`.
@@ -139,25 +139,29 @@ Override one speaker with `ELEVENLABS_PEPPA_VOICE_ID`,
 `ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`. The general
 `ELEVENLABS_VOICE_ID` remains a fallback override.
 
-## Realtime Voice Onboarding
+## Realtime Peppa Conversations
 
-When `REALTIME_ONBOARDING_ENABLED=1`, an authenticated learner can complete a
-short LiveKit conversation with an original, playful pig friend. The agent asks
-for name and age, then adapts at most three optional interest exchanges to what
-the child says. It permits interruption, uncertainty, silence, refusal, and an
-immediate finish. The existing six-question experience remains the complete
-keyboard/recording form fallback and is the default while the flag is `0`.
+When `REALTIME_CONVERSATIONS_ENABLED=1`, the same LiveKit agent supports three
+explicit conversation purposes with separate system prompts:
+
+- onboarding is a first introduction that learns name, age, and a few interests;
+- profile editing asks what the learner wants to change or add and persists it;
+- Talk to Peppa is ordinary small chat and never updates the learner profile.
+
+All three permit interruption and an immediate finish. Onboarding and profile
+editing also accept uncertainty, silence, and refusal without pressure. The
+existing six-question experience remains the complete keyboard/recording form
+fallback for onboarding while the flag is `0`.
 
 The Worker stores every finalized conversation transcript turn, including
-partial or abandoned sessions, plus one cumulative “About this learner” prose
-paragraph in D1. Raw audio is not stored: LiveKit session recording is
-explicitly disabled with `record: false`. When the room ends, the application
-automatically finalizes the saved paragraph and completes onboarding only when
-the agent learned both name and age; otherwise it grants the existing
-session-scoped bypass. The active agent creates no structured fact rows. The
-legacy fact table remains dormant for rollback safety, while conversation rows
-cascade from the Better Auth user and remain until account deletion under the
-current retention policy.
+partial or abandoned sessions. Onboarding and profile editing can also persist
+one cumulative “About this learner” paragraph in D1; small chat cannot.
+Raw audio is not stored: LiveKit session recording is explicitly disabled with
+`record: false`. Onboarding completes only when the agent learned both name and
+age; otherwise it grants the existing session-scoped bypass. The active agent
+creates no structured fact rows. The legacy fact table remains dormant for
+rollback safety, while conversation rows cascade from the Better Auth user and
+remain until account deletion under the current retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.
 LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit
@@ -173,7 +177,7 @@ feature-flag rollback.
 ### Form fallback
 
 The six v2 questions ship with the Worker in the checked-in questionnaire at
-`content/onboarding/questionnaire-v2.json`. Changing a prompt requires ordinary
+`content/learner-profile/questionnaire-v2.json`. Changing a prompt requires ordinary
 code review and deployment; there is no questionnaire publishing command.
 
 Every confirmed answer is stored as prose in `learner_profile.answers_json`

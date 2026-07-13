@@ -23,7 +23,7 @@ describe("conversation browser API", () => {
   it("uses exact same-origin routes for start, load, finish, and finalization", async () => {
     const fake = createJsonFetch();
 
-    await startConversation({ fetch: fake.fetch });
+    await startConversation("small-chat", { fetch: fake.fetch });
     await loadConversation("conversation-1", { fetch: fake.fetch });
     await finishConversation("conversation-1", "finished_by_learner", {
       fetch: fake.fetch,
@@ -41,6 +41,9 @@ describe("conversation browser API", () => {
     );
     assert.deepEqual(JSON.parse(fake.calls[2][1].body), {
       reason: "finished_by_learner",
+    });
+    assert.deepEqual(JSON.parse(fake.calls[0][1].body), {
+      purpose: "small-chat",
     });
     assert.deepEqual(JSON.parse(fake.calls[3][1].body), {});
   });
@@ -70,7 +73,7 @@ describe("conversation browser API", () => {
       },
     };
     await assert.rejects(
-      startConversation({ fetch: invalid.fetch }),
+      startConversation("onboarding", { fetch: invalid.fetch }),
       (error) =>
         error instanceof ConversationApiError &&
         error.code === "request_failed" &&

@@ -22,7 +22,7 @@ test("Talk to Peppa is a durable main-menu feature route", () => {
 });
 
 test("the learner gate gives completed learners a reusable conversation route", () => {
-  const gate = source("../src/OnboardingGate.tsx");
+  const gate = source("../src/LearnerProfileGate.tsx");
 
   assert.match(gate, /isConversationRoute:\s*boolean/);
   assert.match(
@@ -36,7 +36,7 @@ test("the learner gate gives completed learners a reusable conversation route", 
   );
 });
 test("ending a learner turn immediately exposes Peppa's response-loading state", () => {
-  const controller = source("../src/useConversationOnboarding.ts");
+  const controller = source("../src/usePeppaConversation.ts");
   const surface = source("../src/ConversationSurface.tsx");
 
   assert.match(controller, /setStatus\(["']thinking["']\)/);

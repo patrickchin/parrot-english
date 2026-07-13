@@ -27,13 +27,13 @@ const normalizedCharacterSources = {
   "peppa-thank-you": "/assets/audio/peppa-thank-you.mp3",
   "dolly-thank-you": "/assets/audio/dolly-thank-you.mp3",
 };
-const onboardingAudio = {
-  "onboarding-v2-name": "Hi! I'm Peppa. What's your name?",
-  "onboarding-v2-age": "How old are you?",
-  "onboarding-v2-cartoons": "What cartoons do you like?",
-  "onboarding-v2-animals": "What animals do you like?",
-  "onboarding-v2-fun": "What do you like doing for fun?",
-  "onboarding-v2-stories": "What kind of stories do you like?",
+const learnerProfileAudio = {
+  "learner-profile-v2-name": "Hi! I'm Peppa. What's your name?",
+  "learner-profile-v2-age": "How old are you?",
+  "learner-profile-v2-cartoons": "What cartoons do you like?",
+  "learner-profile-v2-animals": "What animals do you like?",
+  "learner-profile-v2-fun": "What do you like doing for fun?",
+  "learner-profile-v2-stories": "What kind of stories do you like?",
 };
 
 describe("static audio cache metadata", () => {
@@ -113,7 +113,7 @@ describe("static audio cache metadata", () => {
   });
 
   it("registers exact Peppa onboarding prompts with character-directed audio", () => {
-    for (const [id, text] of Object.entries(onboardingAudio)) {
+    for (const [id, text] of Object.entries(learnerProfileAudio)) {
       const line = staticAudio.STATIC_AUDIO_LINES[id];
       assert.ok(line, id);
       assert.equal(line.speaker, "peppa", id);
@@ -128,12 +128,12 @@ describe("static audio cache metadata", () => {
     assert.match(generator, /Oqy85UMasXzUjUxF0ta5/);
     assert.match(generator, /ELEVENLABS_DEFAULT_MODEL = "eleven_v3"/);
     for (const legacyId of [
-      "onboarding-introduction",
-      "onboarding-age",
-      "onboarding-favourite-cartoons",
-      "onboarding-favourite-animals",
-      "onboarding-favourite-activities",
-      "onboarding-favourite-story-topics",
+      "learner-profile-introduction",
+      "learner-profile-age",
+      "learner-profile-favourite-cartoons",
+      "learner-profile-favourite-animals",
+      "learner-profile-favourite-activities",
+      "learner-profile-favourite-story-topics",
     ]) {
       assert.equal(staticAudio.STATIC_AUDIO_LINES[legacyId], undefined, legacyId);
     }

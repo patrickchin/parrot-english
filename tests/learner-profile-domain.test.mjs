@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
+import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
 import {
   assignQuestionnaireVersion,
   canCompleteQuestionnaire,
@@ -16,7 +16,7 @@ import {
   skipProfileQuestion,
   validateAnswer,
   writeProfileAnswer,
-} from "../lib/onboarding.js";
+} from "../lib/learner-profile.js";
 import {
   ensureV2Profile,
   getV2CurrentQuestion,
@@ -25,10 +25,10 @@ import {
   isV2Complete,
   readV2Answers,
   writeV2Response,
-} from "../lib/onboarding-profile.js";
-import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
+} from "../lib/learner-profile-responses.js";
+import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
 
-const definitionV2 = validateOnboardingQuestionnaire(questionnaireV2);
+const definitionV2 = validateLearnerProfileQuestionnaire(questionnaireV2);
 
 function question(overrides = {}) {
   return {
@@ -341,35 +341,35 @@ describe("onboarding profile and flow rules", () => {
   it("preserves assigned versions and bypasses only the exact skipped session", () => {
     assert.equal(
       assignQuestionnaireVersion(
-        { onboardingStatus: "not_started", questionnaireVersion: null },
+        { profileStatus: "not_started", questionnaireVersion: null },
         2,
       ),
       2,
     );
     assert.equal(
       assignQuestionnaireVersion(
-        { onboardingStatus: "in_progress", questionnaireVersion: 1 },
+        { profileStatus: "in_progress", questionnaireVersion: 1 },
         2,
       ),
       1,
     );
     assert.equal(
       assignQuestionnaireVersion(
-        { onboardingStatus: "completed", questionnaireVersion: 1 },
+        { profileStatus: "completed", questionnaireVersion: 1 },
         2,
       ),
       1,
     );
 
     const skipped = {
-      onboardingStatus: "in_progress",
+      profileStatus: "in_progress",
       lastSkippedSessionId: "session-1",
     };
     assert.equal(canSkipForSession(skipped, "session-1"), true);
     assert.equal(canSkipForSession(skipped, "session-2"), false);
     assert.equal(
       canSkipForSession(
-        { ...skipped, onboardingStatus: "completed" },
+        { ...skipped, profileStatus: "completed" },
         "session-1",
       ),
       false,
@@ -382,7 +382,7 @@ describe("v2 prose profile envelope", () => {
     const profile = ensureV2Profile(
       {
         answersJson: "{}",
-        onboardingStatus: "not_started",
+        profileStatus: "not_started",
         currentQuestionKey: null,
         name: "Mia",
         age: null,
@@ -415,7 +415,7 @@ describe("v2 prose profile envelope", () => {
     const updated = ensureV2Profile(
       {
         answersJson: JSON.stringify(legacy),
-        onboardingStatus: "in_progress",
+        profileStatus: "in_progress",
         currentQuestionKey: "favoriteAnimals",
         skippedQuestionKeysJson: '["favoriteStoryTopics"]',
         lastSkippedSessionId: "session-1",
@@ -427,7 +427,7 @@ describe("v2 prose profile envelope", () => {
 
     assert.deepEqual(readV2Answers(updated).legacyAnswers, legacy);
     assert.deepEqual(readV2Answers(updated).responses, {});
-    assert.equal(updated.onboardingStatus, "not_started");
+    assert.equal(updated.profileStatus, "not_started");
     assert.equal(updated.currentQuestionKey, "name");
     assert.equal(updated.skippedQuestionKeysJson, "[]");
     assert.equal(updated.lastSkippedSessionId, "session-1");
@@ -438,7 +438,7 @@ describe("v2 prose profile envelope", () => {
   it("leaves completed v1 profiles untouched until profile editing", () => {
     const profile = {
       answersJson: '{"favoriteAnimals":["dog"]}',
-      onboardingStatus: "completed",
+      profileStatus: "completed",
       currentQuestionKey: null,
       questionnaireVersion: 1,
       name: "Mia",
@@ -450,7 +450,7 @@ describe("v2 prose profile envelope", () => {
     const editable = ensureV2Profile(profile, definitionV2, {
       forProfileEdit: true,
     });
-    assert.equal(editable.onboardingStatus, "completed");
+    assert.equal(editable.profileStatus, "completed");
     assert.equal(editable.questionnaireVersion, 1);
     assert.deepEqual(readV2Answers(editable), {
       schemaVersion: 2,
@@ -465,7 +465,7 @@ describe("v2 prose profile envelope", () => {
     let profile = ensureV2Profile(
       {
         answersJson: "{}",
-        onboardingStatus: "not_started",
+        profileStatus: "not_started",
         currentQuestionKey: null,
         skippedQuestionKeysJson: "[]",
         name: null,
@@ -514,7 +514,7 @@ describe("v2 prose profile envelope", () => {
       /Invalid learner profile data/,
     );
     const profile = ensureV2Profile(
-      { answersJson: "{}", onboardingStatus: "not_started" },
+      { answersJson: "{}", profileStatus: "not_started" },
       definitionV2,
     );
     assert.throws(
@@ -528,7 +528,7 @@ describe("v2 prose profile envelope", () => {
           enrichmentStatus: "generated",
           answeredAt: "not-a-date",
         }),
-      /Invalid onboarding response/,
+      /Invalid learner-profile response/,
     );
   });
 });

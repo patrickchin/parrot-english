@@ -581,7 +581,7 @@ test("App composes AuthGate, route-aware onboarding, and authenticated routes", 
   assert.match(app, /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\/AuthGate["']/);
   assert.match(
     app,
-    /import\s+\{\s*OnboardingGate\s*\}\s+from\s+["']\.\/OnboardingGate["']/,
+    /import\s+\{\s*LearnerProfileGate\s*\}\s+from\s+["']\.\/LearnerProfileGate["']/,
   );
   assert.match(app, /export function ApplicationRoutes\(/);
   assert.match(
@@ -590,6 +590,6 @@ test("App composes AuthGate, route-aware onboarding, and authenticated routes", 
   );
   assert.match(
     app,
-    /<AuthGate[\s\S]*?<OnboardingGate[\s\S]*?<ApplicationRoutes\s+loginTarget=\{safeReturnTo\}\s*\/>\s*<\/OnboardingGate>\s*<\/AuthGate>/,
+    /<AuthGate[\s\S]*?<LearnerProfileGate[\s\S]*?<ApplicationRoutes\s+loginTarget=\{safeReturnTo\}\s*\/>\s*<\/LearnerProfileGate>\s*<\/AuthGate>/,
   );
 });

@@ -39,8 +39,8 @@ const vite = await createServer({
 
 let ApplicationRoutes;
 let ConversationSurface;
-let OnboardingGate;
-let useConversationOnboarding;
+let LearnerProfileGate;
+let usePeppaConversation;
 let createAuthGate;
 let firstLesson;
 let firstLessonId;
@@ -50,9 +50,9 @@ before(async () => {
     "/src/ConversationSurface.tsx",
   ));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
-  ({ OnboardingGate } = await vite.ssrLoadModule("/src/OnboardingGate.tsx"));
-  ({ useConversationOnboarding } = await vite.ssrLoadModule(
-    "/src/useConversationOnboarding.ts",
+  ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/LearnerProfileGate.tsx"));
+  ({ usePeppaConversation } = await vite.ssrLoadModule(
+    "/src/usePeppaConversation.ts",
   ));
   ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx"));
   const catalog = await vite.ssrLoadModule("/src/lesson-catalog.ts");
@@ -101,7 +101,7 @@ function question(overrides = {}) {
   };
 }
 
-function fullOnboardingState(overrides = {}) {
+function fullLearnerProfileState(overrides = {}) {
   const base = {
     mode: "full",
     profile: {
@@ -110,7 +110,7 @@ function fullOnboardingState(overrides = {}) {
       answers: emptyAnswers(),
       questionnaireVersion: 2,
       currentQuestionKey: "name",
-      onboardingStatus: "not_started",
+      profileStatus: "not_started",
       completedAt: null,
     },
     questionnaire: { version: 2 },
@@ -122,14 +122,14 @@ function fullOnboardingState(overrides = {}) {
   return { ...base, ...overrides };
 }
 
-function completedOnboardingState() {
-  return fullOnboardingState({
+function completedLearnerProfileState() {
+  return fullLearnerProfileState({
     canBypass: true,
     profile: {
-      ...fullOnboardingState().profile,
+      ...fullLearnerProfileState().profile,
       name: "Mia",
       currentQuestionKey: null,
-      onboardingStatus: "completed",
+      profileStatus: "completed",
       completedAt: "2026-07-06T08:00:00.000Z",
     },
     question: null,
@@ -157,12 +157,12 @@ function button(name) {
   return match;
 }
 
-function onboardingRouteProps(completedOnboardingFallback) {
+function learnerProfileRouteProps(completedLearnerProfileFallback) {
   return {
-    completedOnboardingFallback,
-    isOnboardingRoute: true,
+    completedLearnerProfileFallback,
+    isLearnerProfileRoute: true,
     isProfileRoute: false,
-    onboardingFallback: createElement("p", null, "ONBOARDING ROUTE"),
+    learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
     onCloseProfileRoute() {},
     onOpenProfileRoute() {},
   };
@@ -172,13 +172,15 @@ function ConversationHookHarness({
   createTransport,
   now,
   onCompleted = async () => {},
+  purpose = "small-chat",
 }) {
-  const conversation = useConversationOnboarding({
+  const conversation = usePeppaConversation({
     active: true,
     createTransport,
     now,
     onBack() {},
     onCompleted,
+    purpose,
   });
   return createElement(
     "section",
@@ -213,6 +215,7 @@ function conversationSurfaceProps(overrides = {}) {
     onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
+    purpose: "small-chat",
     responseLatencyMs: null,
     status: "listening",
     turns: [],
@@ -224,12 +227,12 @@ function ProfileRouteHarness({ children }) {
   const [route, setRoute] = useState("/");
 
   return createElement(
-    OnboardingGate,
+    LearnerProfileGate,
     {
-      completedOnboardingFallback: children,
-      isOnboardingRoute: false,
+      completedLearnerProfileFallback: children,
+      isLearnerProfileRoute: false,
       isProfileRoute: route === "/profile",
-      onboardingFallback: createElement("p", null, "ONBOARDING ROUTE"),
+      learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
       onCloseProfileRoute: () => setRoute("/"),
       onOpenProfileRoute: () => setRoute("/profile"),
     },
@@ -453,7 +456,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const response = deferred();
     let requests = 0;
     globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/onboarding");
+      assert.equal(path, "/api/learner-profile");
       requests += 1;
       if (requests === 1) {
         return new Promise((_, reject) => {
@@ -467,8 +470,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await mountStrict(
       createElement(
-        OnboardingGate,
-        onboardingRouteProps(createElement("p", null, "LESSON CATALOG")),
+        LearnerProfileGate,
+        learnerProfileRouteProps(createElement("p", null, "LESSON CATALOG")),
         createElement("p", null, "LESSON CATALOG"),
       ),
     );
@@ -477,7 +480,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     text(/Loading your questions…/);
     noText(/Meet Peppa/);
 
-    response.resolve(json(fullOnboardingState()));
+    response.resolve(json(fullLearnerProfileState()));
     await waitFor(() => text(/Meet Peppa/));
     noText(/Loading your questions…/);
   });
@@ -510,7 +513,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           url: "wss://livekit.example.test",
         },
         scenario: {
-          key: "onboarding",
+          key: "small-chat",
           maxOptionalExchanges: 3,
           requiredDetails: ["name", "age"],
           summaryMode: "prose",
@@ -675,7 +678,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           url: "wss://livekit.example.test",
         },
         scenario: {
-          key: "onboarding",
+          key: "small-chat",
           maxOptionalExchanges: 3,
           requiredDetails: ["name", "age"],
           summaryMode: "prose",
@@ -903,6 +906,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         async onCompleted() {
           completions += 1;
         },
+        purpose: "onboarding",
       }),
     );
     await act(async () => {
@@ -977,13 +981,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   it("moves onboarding through retry, bypass, and final-answer completion", async () => {
     let loadAttempts = 0;
     globalThis.fetch = async (path, init = {}) => {
-      if (path === "/api/onboarding" && init.method === "GET") {
+      if (path === "/api/learner-profile" && init.method === "GET") {
         loadAttempts += 1;
         return loadAttempts <= 2
           ? json({ message: "Questions are unavailable." }, 503)
-          : json(fullOnboardingState());
+          : json(fullLearnerProfileState());
       }
-      if (path === "/api/onboarding/skip" && init.method === "POST") {
+      if (path === "/api/learner-profile/skip" && init.method === "POST") {
         return json({ mode: "bypass-only", canBypass: true });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -991,8 +995,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await mountStrict(
       createElement(
-        OnboardingGate,
-        onboardingRouteProps(createElement("p", null, "BYPASSED LESSONS")),
+        LearnerProfileGate,
+        learnerProfileRouteProps(createElement("p", null, "BYPASSED LESSONS")),
         createElement("p", null, "BYPASSED LESSONS"),
       ),
     );
@@ -1004,12 +1008,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await cleanupMountedRoots();
     document.body.replaceChildren();
-    const completed = completedOnboardingState();
+    const completed = completedLearnerProfileState();
     globalThis.fetch = async (path, init = {}) => {
-      if (path === "/api/onboarding" && init.method === "GET") {
-        return json(fullOnboardingState());
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(fullLearnerProfileState());
       }
-      if (path === "/api/onboarding/answer" && init.method === "PUT") {
+      if (path === "/api/learner-profile/answer" && init.method === "PUT") {
         return json({
           ...completed,
           acknowledgment: { text: "Mia is a lovely name!", audio: null },
@@ -1020,15 +1024,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await mountStrict(
       createElement(
-        OnboardingGate,
-        onboardingRouteProps(createElement("p", null, "COMPLETED LESSONS")),
+        LearnerProfileGate,
+        learnerProfileRouteProps(createElement("p", null, "COMPLETED LESSONS")),
         createElement("p", null, "COMPLETED LESSONS"),
       ),
     );
     await waitFor(() => text(/Meet Peppa/));
     await click(button("Start"));
     await waitFor(() => text(/What's your name/));
-    await input(document.querySelector("#onboarding-answer-name"), "Mia");
+    await input(document.querySelector("#learner-profile-answer-name"), "Mia");
     await click(button("Next"));
     await waitFor(() => text(/Mia is a lovely name!/));
     await click(button("Next"));
@@ -1045,7 +1049,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const profileQuestion = question();
     const profileState = {
       profile: {
-        ...completedOnboardingState().profile,
+        ...completedLearnerProfileState().profile,
         age: 8,
         description: "Mia is eight and likes dinosaurs.",
       },
@@ -1054,8 +1058,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const savedBodies = [];
 
     globalThis.fetch = async (path, init = {}) => {
-      if (path === "/api/onboarding" && init.method === "GET") {
-        return json(completedOnboardingState());
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
       }
       if (path === "/api/profile" && init.method === "GET") {
         return json(profileState);

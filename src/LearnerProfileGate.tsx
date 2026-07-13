@@ -9,47 +9,48 @@ import {
   type ReactNode,
 } from "react";
 import { useProfileAccountAction } from "./account-actions";
+import { selectConversationPurpose } from "../lib/conversation-purpose";
 import {
-  loadOnboarding,
+  loadLearnerProfile,
   loadProfile,
-  OnboardingApiError,
-  saveOnboardingAnswer,
+  LearnerProfileApiError,
+  saveLearnerProfileAnswer,
   saveProfileAnswers,
-  skipOnboarding,
-  skipOnboardingQuestion,
-  transcribeOnboardingAudio,
-  type FullOnboardingState,
+  skipLearnerProfile,
+  skipLearnerProfileQuestion,
+  transcribeLearnerProfileAudio,
+  type FullLearnerProfileState,
   type LearnerProfileSummary,
-  type OnboardingAcknowledgment as Acknowledgment,
-  type OnboardingQuestion,
-  type OnboardingState,
+  type LearnerProfileAcknowledgment as Acknowledgment,
+  type LearnerProfileQuestion,
+  type LearnerProfileState,
   type ProfileState,
-} from "./onboarding-api";
-import { OnboardingAcknowledgment } from "./OnboardingAcknowledgment";
+} from "./learner-profile-api";
+import { LearnerProfileAcknowledgment } from "./LearnerProfileAcknowledgment";
 import {
-  OnboardingCard,
-  OnboardingScreen,
-  OnboardingStatusCard,
-} from "./OnboardingLayout";
+  LearnerProfileCard,
+  LearnerProfileScreen,
+  LearnerProfileStatusCard,
+} from "./LearnerProfileLayout";
 import {
-  OnboardingQuestionView,
-  captureOnboardingAnswer,
-  playOnboardingStart,
-  replayOnboardingQuestion,
-} from "./OnboardingQuestion";
+  LearnerProfileQuestionView,
+  captureLearnerProfileAnswer,
+  playLearnerProfileStart,
+  replayLearnerProfileQuestion,
+} from "./LearnerProfileQuestion";
 import { ProfileEditorView } from "./ProfileEditor";
 import { recordSpeechClip } from "./speech-recorder";
 import { ConversationSurface } from "./ConversationSurface";
 import {
-  selectOnboardingExperience,
-  useConversationOnboarding,
-} from "./useConversationOnboarding";
+  selectLearnerProfileExperience,
+  usePeppaConversation,
+} from "./usePeppaConversation";
 import { ActionButton, TextButton } from "./ui";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-type QuestionProps = ComponentProps<typeof OnboardingQuestionView>;
+type QuestionProps = ComponentProps<typeof LearnerProfileQuestionView>;
 type ProfileEditorProps = ComponentProps<typeof ProfileEditorView>;
 type ConversationProps = ComponentProps<typeof ConversationSurface>;
 
@@ -58,14 +59,14 @@ type AcknowledgmentView = {
   operationId: number;
 };
 
-type OnboardingGateViewProps = {
+type LearnerProfileGateViewProps = {
   acknowledgment: AcknowledgmentView | null;
   children: ReactNode;
-  completedOnboardingFallback: ReactNode;
+  completedLearnerProfileFallback: ReactNode;
   conversationProps: ConversationProps | null;
-  data: OnboardingState | null;
+  data: LearnerProfileState | null;
   isConversationRoute: boolean;
-  isOnboardingRoute: boolean;
+  isLearnerProfileRoute: boolean;
   isProfileLoading: boolean;
   isProfileRoute: boolean;
   isLoading: boolean;
@@ -77,22 +78,22 @@ type OnboardingGateViewProps = {
   onRetryProfile: () => void;
   onSkip: () => void;
   onStart: () => void;
-  onboardingFallback: ReactNode;
+  learnerProfileFallback: ReactNode;
   profileEditor: ProfileEditorProps | null;
   profileLoadError: string;
   questionProps: QuestionProps | null;
-  redoOnboarding: boolean;
+  redoLearnerProfile: boolean;
   started: boolean;
 };
 
-export function OnboardingGateView({
+export function LearnerProfileGateView({
   acknowledgment,
   children,
-  completedOnboardingFallback,
+  completedLearnerProfileFallback,
   conversationProps,
   data,
   isConversationRoute,
-  isOnboardingRoute,
+  isLearnerProfileRoute,
   isProfileLoading,
   isProfileRoute,
   isLoading,
@@ -104,40 +105,40 @@ export function OnboardingGateView({
   onRetryProfile,
   onSkip,
   onStart,
-  onboardingFallback,
+  learnerProfileFallback,
   profileEditor,
   profileLoadError,
   questionProps,
-  redoOnboarding,
+  redoLearnerProfile,
   started,
-}: OnboardingGateViewProps) {
+}: LearnerProfileGateViewProps) {
   const fullData = data?.mode === "full" ? data : null;
-  const onboardingComplete = Boolean(
+  const learnerProfileComplete = Boolean(
     fullData &&
       (fullData.canBypass ||
-        fullData.profile.onboardingStatus === "completed"),
+        fullData.profile.profileStatus === "completed"),
   );
-  const canAccessProtectedRoutes = Boolean(data?.canBypass || onboardingComplete);
-  const canEditProfile = onboardingComplete;
+  const canAccessProtectedRoutes = Boolean(data?.canBypass || learnerProfileComplete);
+  const canEditProfile = learnerProfileComplete;
 
   if (isLoading) {
     return (
-      <OnboardingScreen>
-        <OnboardingStatusCard aria-busy="true" role="status">
+      <LearnerProfileScreen>
+        <LearnerProfileStatusCard aria-busy="true" role="status">
           <p className="m-0 font-bold leading-relaxed text-slate-600">
             {isConversationRoute
               ? "Getting Peppa ready…"
               : "Loading your questions…"}
           </p>
-        </OnboardingStatusCard>
-      </OnboardingScreen>
+        </LearnerProfileStatusCard>
+      </LearnerProfileScreen>
     );
   }
 
   if (loadError) {
     return (
-      <OnboardingScreen>
-        <OnboardingStatusCard role="alert">
+      <LearnerProfileScreen>
+        <LearnerProfileStatusCard role="alert">
           <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
             {isConversationRoute
               ? "Peppa is taking a break"
@@ -163,52 +164,52 @@ export function OnboardingGateView({
               Retry
             </ActionButton>
           </div>
-        </OnboardingStatusCard>
-      </OnboardingScreen>
+        </LearnerProfileStatusCard>
+      </LearnerProfileScreen>
     );
   }
 
   if (acknowledgment) {
     return (
-      <OnboardingScreen>
-        <OnboardingAcknowledgment
+      <LearnerProfileScreen>
+        <LearnerProfileAcknowledgment
           acknowledgment={acknowledgment.acknowledgment}
           onNext={onAcknowledgmentNext}
           operationId={acknowledgment.operationId}
         />
-      </OnboardingScreen>
+      </LearnerProfileScreen>
     );
   }
 
-  if (data && !canAccessProtectedRoutes && !isOnboardingRoute) {
-    return <>{onboardingFallback}</>;
+  if (data && !canAccessProtectedRoutes && !isLearnerProfileRoute) {
+    return <>{learnerProfileFallback}</>;
   }
 
-  if (canAccessProtectedRoutes && isOnboardingRoute && !redoOnboarding) {
-    return <>{completedOnboardingFallback}</>;
+  if (canAccessProtectedRoutes && isLearnerProfileRoute && !redoLearnerProfile) {
+    return <>{completedLearnerProfileFallback}</>;
   }
 
   if (canAccessProtectedRoutes && isProfileRoute && !canEditProfile) {
-    return <>{completedOnboardingFallback}</>;
+    return <>{completedLearnerProfileFallback}</>;
   }
 
   if (isProfileRoute && canEditProfile) {
     if (isProfileLoading) {
       return (
-        <OnboardingScreen>
-          <OnboardingStatusCard aria-busy="true" role="status">
+        <LearnerProfileScreen>
+          <LearnerProfileStatusCard aria-busy="true" role="status">
             <p className="m-0 font-bold leading-relaxed text-slate-600">
               Loading your profile…
             </p>
-          </OnboardingStatusCard>
-        </OnboardingScreen>
+          </LearnerProfileStatusCard>
+        </LearnerProfileScreen>
       );
     }
 
     if (profileLoadError) {
       return (
-        <OnboardingScreen>
-          <OnboardingStatusCard role="alert">
+        <LearnerProfileScreen>
+          <LearnerProfileStatusCard role="alert">
             <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
               Profile is taking a break
             </h1>
@@ -226,21 +227,21 @@ export function OnboardingGateView({
                 Retry
               </ActionButton>
             </div>
-          </OnboardingStatusCard>
-        </OnboardingScreen>
+          </LearnerProfileStatusCard>
+        </LearnerProfileScreen>
       );
     }
 
     if (profileEditor) return <ProfileEditorView {...profileEditor} />;
 
     return (
-      <OnboardingScreen>
-        <OnboardingStatusCard aria-busy="true" role="status">
+      <LearnerProfileScreen>
+        <LearnerProfileStatusCard aria-busy="true" role="status">
           <p className="m-0 font-bold leading-relaxed text-slate-600">
             Loading your profile…
           </p>
-        </OnboardingStatusCard>
-      </OnboardingScreen>
+        </LearnerProfileStatusCard>
+      </LearnerProfileScreen>
     );
   }
 
@@ -253,7 +254,7 @@ export function OnboardingGateView({
     return <ConversationSurface {...conversationProps} />;
   }
 
-  if (fullData && redoOnboarding && conversationProps) {
+  if (fullData && redoLearnerProfile && conversationProps) {
     return <ConversationSurface {...conversationProps} />;
   }
 
@@ -267,8 +268,8 @@ export function OnboardingGateView({
 
   if (fullData && !started) {
     return (
-      <OnboardingScreen>
-        <OnboardingCard className="grid justify-items-center gap-4 p-7 text-center sm:p-12">
+      <LearnerProfileScreen>
+        <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center sm:p-12">
           <img
             alt="Peppa waving hello"
             className="max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-52"
@@ -287,27 +288,27 @@ export function OnboardingGateView({
           <TextButton onClick={onSkip} type="button">
             Skip for now
           </TextButton>
-        </OnboardingCard>
-      </OnboardingScreen>
+        </LearnerProfileCard>
+      </LearnerProfileScreen>
     );
   }
 
   if (questionProps) {
     return (
-      <OnboardingScreen>
-        <OnboardingQuestionView {...questionProps} />
-      </OnboardingScreen>
+      <LearnerProfileScreen>
+        <LearnerProfileQuestionView {...questionProps} />
+      </LearnerProfileScreen>
     );
   }
 
   return (
-    <OnboardingScreen>
-      <OnboardingStatusCard aria-busy="true" role="status">
+    <LearnerProfileScreen>
+      <LearnerProfileStatusCard aria-busy="true" role="status">
         <p className="m-0 font-bold leading-relaxed text-slate-600">
           Finishing your profile…
         </p>
-      </OnboardingStatusCard>
-    </OnboardingScreen>
+      </LearnerProfileStatusCard>
+    </LearnerProfileScreen>
   );
 }
 
@@ -315,7 +316,7 @@ type ProfileWithAnswers = Pick<LearnerProfileSummary, "age" | "answers" | "name"
 
 export function answerForQuestion(
   profile: ProfileWithAnswers,
-  question: Pick<OnboardingQuestion, "answerKey">,
+  question: Pick<LearnerProfileQuestion, "answerKey">,
 ) {
   const saved = profile.answers.responses[question.answerKey]?.rawAnswer;
   if (saved) return saved;
@@ -326,7 +327,7 @@ export function answerForQuestion(
 
 export function shouldSyncActiveQuestion(
   profile: ProfileWithAnswers | null,
-  question: Pick<OnboardingQuestion, "answerKey"> | null,
+  question: Pick<LearnerProfileQuestion, "answerKey"> | null,
 ) {
   return Boolean(profile && question);
 }
@@ -360,11 +361,11 @@ export function nextProfileAcknowledgment(
 export async function saveQuestionAndAdvance({
   questionKey,
   rawAnswer,
-  save = saveOnboardingAnswer,
+  save = saveLearnerProfileAnswer,
 }: {
   questionKey: string;
   rawAnswer: string;
-  save?: (questionKey: string, rawAnswer: string) => Promise<OnboardingState>;
+  save?: (questionKey: string, rawAnswer: string) => Promise<LearnerProfileState>;
 }) {
   return save(questionKey, rawAnswer);
 }
@@ -377,10 +378,10 @@ function readableError(error: unknown) {
 
 type PendingAcknowledgment =
   | {
-      kind: "onboarding";
+      kind: "learner-profile";
       operationId: number;
       acknowledgment: Acknowledgment;
-      next: OnboardingState;
+      next: LearnerProfileState;
     }
   | {
       kind: "profile";
@@ -492,36 +493,36 @@ export function createProfileRouteLifecycle(
   };
 }
 
-type OnboardingGateProps = {
+type LearnerProfileGateProps = {
   children: ReactNode;
-  completedOnboardingFallback: ReactNode;
+  completedLearnerProfileFallback: ReactNode;
   isConversationRoute: boolean;
-  isOnboardingRoute: boolean;
+  isLearnerProfileRoute: boolean;
   isProfileRoute: boolean;
-  onboardingFallback: ReactNode;
+  learnerProfileFallback: ReactNode;
   onCloseProfileRoute: () => void;
   onConversationCompleted: () => void;
   onOpenProfileRoute: () => void;
   onRedoCompleted: () => void;
-  onRedoOnboardingRoute: () => void;
-  redoOnboarding: boolean;
+  onRedoLearnerProfileRoute: () => void;
+  redoLearnerProfile: boolean;
 };
 
-export function OnboardingGate({
+export function LearnerProfileGate({
   children,
-  completedOnboardingFallback,
+  completedLearnerProfileFallback,
   isConversationRoute,
-  isOnboardingRoute,
+  isLearnerProfileRoute,
   isProfileRoute,
-  onboardingFallback,
+  learnerProfileFallback,
   onCloseProfileRoute,
   onConversationCompleted,
   onOpenProfileRoute,
   onRedoCompleted,
-  onRedoOnboardingRoute,
-  redoOnboarding,
-}: OnboardingGateProps) {
-  const [data, setData] = useState<OnboardingState | null>(null);
+  onRedoLearnerProfileRoute,
+  redoLearnerProfile,
+}: LearnerProfileGateProps) {
+  const [data, setData] = useState<LearnerProfileState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [started, setStarted] = useState(false);
@@ -611,7 +612,7 @@ export function OnboardingGate({
       setIsLoading(true);
       setLoadError("");
       try {
-        const next = await loadOnboarding({ signal });
+        const next = await loadLearnerProfile({ signal });
         if (isCurrentOperation(operation)) setData(next);
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") return;
@@ -631,51 +632,56 @@ export function OnboardingGate({
     };
   }, [refresh]);
 
-  const fullData: FullOnboardingState | null =
+  const fullData: FullLearnerProfileState | null =
     data?.mode === "full" ? data : null;
   const selectedExperience = fullData
-    ? selectOnboardingExperience(fullData.experienceMode, useFormFallback)
+    ? selectLearnerProfileExperience(fullData.experienceMode, useFormFallback)
     : "form";
   const handleConversationBack = useCallback(() => {
-    if (redoOnboarding) {
+    if (redoLearnerProfile) {
       onRedoCompleted();
       return;
     }
     setUseFormFallback(true);
     setStarted(false);
-  }, [onRedoCompleted, redoOnboarding]);
+  }, [onRedoCompleted, redoLearnerProfile]);
   const handleConversationCompleted = useCallback(async () => {
     await refresh();
     if (isConversationRoute) {
       onConversationCompleted();
       return;
     }
-    if (redoOnboarding) onRedoCompleted();
+    if (redoLearnerProfile) onRedoCompleted();
   }, [
     isConversationRoute,
     onConversationCompleted,
     onRedoCompleted,
-    redoOnboarding,
+    redoLearnerProfile,
     refresh,
   ]);
   const conversationRouteAvailable = Boolean(
     isConversationRoute &&
       fullData &&
       (fullData.canBypass ||
-        fullData.profile.onboardingStatus === "completed"),
+        fullData.profile.profileStatus === "completed"),
   );
-  const conversationProps = useConversationOnboarding({
+  const conversationPurpose = selectConversationPurpose({
+    isProfileEdit: redoLearnerProfile,
+    isSmallChatRoute: isConversationRoute,
+  });
+  const conversationProps = usePeppaConversation({
     active: Boolean(
       selectedExperience === "realtime" &&
         fullData &&
         (conversationRouteAvailable ||
-          (isOnboardingRoute &&
-            (redoOnboarding ||
+          (isLearnerProfileRoute &&
+            (redoLearnerProfile ||
               (!fullData.canBypass &&
-                fullData.profile.onboardingStatus !== "completed")))),
+                fullData.profile.profileStatus !== "completed")))),
     ),
     onBack: handleConversationBack,
     onCompleted: handleConversationCompleted,
+    purpose: conversationPurpose,
   });
   const activeQuestion = fullData?.question ?? null;
   const activeProfile = fullData?.profile ?? null;
@@ -696,7 +702,7 @@ export function OnboardingGate({
     setFieldError("");
     if (!fullData.question.audio) return;
     try {
-      await playOnboardingStart({ questionAudio: fullData.question.audio });
+      await playLearnerProfileStart({ questionAudio: fullData.question.audio });
     } catch {
       if (isCurrentOperation(operation)) {
         setFieldError("Audio is unavailable. You can keep going or use Replay.");
@@ -709,7 +715,7 @@ export function OnboardingGate({
     const operation = nextOperation();
     setFieldError("");
     try {
-      await replayOnboardingQuestion(activeQuestion.audio);
+      await replayLearnerProfileQuestion(activeQuestion.audio);
     } catch {
       if (isCurrentOperation(operation)) {
         setFieldError("Audio is unavailable. Please try Replay again.");
@@ -723,11 +729,11 @@ export function OnboardingGate({
     setFieldError("");
     setStatus("recording");
     try {
-      const transcript = await captureOnboardingAnswer({
+      const transcript = await captureLearnerProfileAnswer({
         record: () => recordSpeechClip(),
         transcribe: async (audio) => {
           if (isCurrentOperation(operation)) setStatus("transcribing");
-          return transcribeOnboardingAudio(audio);
+          return transcribeLearnerProfileAudio(audio);
         },
       });
       if (isCurrentOperation(operation)) setDraft(transcript);
@@ -755,7 +761,7 @@ export function OnboardingGate({
         throw new Error("Peppa could not answer just now.");
       }
       setPendingAcknowledgment({
-        kind: "onboarding",
+        kind: "learner-profile",
         operationId: operation,
         acknowledgment: next.acknowledgment,
         next,
@@ -772,7 +778,7 @@ export function OnboardingGate({
     setLoadError("");
     setFieldError("");
     try {
-      const next = await skipOnboarding();
+      const next = await skipLearnerProfile();
       if (isCurrentOperation(operation)) setData(next);
     } catch (error) {
       if (!isCurrentOperation(operation)) return;
@@ -788,7 +794,7 @@ export function OnboardingGate({
     setStatus("saving");
     setFieldError("");
     try {
-      const next = await skipOnboardingQuestion(activeQuestion.answerKey);
+      const next = await skipLearnerProfileQuestion(activeQuestion.answerKey);
       if (isCurrentOperation(operation)) setData(next);
     } catch (error) {
       if (isCurrentOperation(operation)) setFieldError(readableError(error));
@@ -834,15 +840,15 @@ export function OnboardingGate({
     onCloseProfileRoute();
   }, [clearProfileEditor, isActiveProfileRoute, onCloseProfileRoute]);
 
-  const handleRedoOnboarding = useCallback(() => {
+  const handleRedoLearnerProfile = useCallback(() => {
     if (!isActiveProfileRoute()) return;
     setPendingAcknowledgment(null);
     clearProfileEditor();
     setUseFormFallback(false);
     setStarted(false);
     profileRouteLifecycleRef.current?.markExitHandled();
-    onRedoOnboardingRoute();
-  }, [clearProfileEditor, isActiveProfileRoute, onRedoOnboardingRoute]);
+    onRedoLearnerProfileRoute();
+  }, [clearProfileEditor, isActiveProfileRoute, onRedoLearnerProfileRoute]);
 
   const handleOpenProfile = useCallback(async () => {
     if (
@@ -927,7 +933,7 @@ export function OnboardingGate({
       }
     } catch (error) {
       if (!isCurrentProfileOperation(profileOperation)) return;
-      const errors = error instanceof OnboardingApiError ? error.fieldErrors : {};
+      const errors = error instanceof LearnerProfileApiError ? error.fieldErrors : {};
       setProfileFieldErrors(errors);
       if (Object.keys(errors).length === 0) {
         setProfilePageError(readableError(error));
@@ -942,7 +948,7 @@ export function OnboardingGate({
   function handleAcknowledgmentNext() {
     const pending = pendingAcknowledgment;
     if (!pending) return;
-    if (pending.kind === "onboarding") {
+    if (pending.kind === "learner-profile") {
       nextOperation();
       setPendingAcknowledgment(null);
       setData(pending.next);
@@ -977,7 +983,7 @@ export function OnboardingGate({
 
   const canEditProfile = Boolean(
     fullData &&
-      (fullData.canBypass || fullData.profile.onboardingStatus === "completed"),
+      (fullData.canBypass || fullData.profile.profileStatus === "completed"),
   );
   useEffect(() => {
     if (
@@ -1014,7 +1020,7 @@ export function OnboardingGate({
   const questionProps: QuestionProps | null = activeQuestion
     ? {
         fieldError,
-        mode: "onboarding",
+        mode: "learner-profile",
         onReplay: () => void handleReplay(),
         onSkip: () => void handleSkip(),
         onSkipQuestion: () => void handleSkipQuestion(),
@@ -1029,7 +1035,7 @@ export function OnboardingGate({
     : null;
 
   let acknowledgment: AcknowledgmentView | null = null;
-  if (pendingAcknowledgment?.kind === "onboarding" && isOnboardingRoute) {
+  if (pendingAcknowledgment?.kind === "learner-profile" && isLearnerProfileRoute) {
     acknowledgment = {
       acknowledgment: pendingAcknowledgment.acknowledgment,
       operationId: pendingAcknowledgment.operationId,
@@ -1043,15 +1049,15 @@ export function OnboardingGate({
   }
 
   return (
-    <OnboardingGateView
+    <LearnerProfileGateView
       acknowledgment={acknowledgment}
-      completedOnboardingFallback={completedOnboardingFallback}
+      completedLearnerProfileFallback={completedLearnerProfileFallback}
       conversationProps={
         selectedExperience === "realtime" ? conversationProps : null
       }
       data={data}
       isConversationRoute={isConversationRoute}
-      isOnboardingRoute={isOnboardingRoute}
+      isLearnerProfileRoute={isLearnerProfileRoute}
       isProfileLoading={isProfileLoading}
       isProfileRoute={isProfileRoute}
       isLoading={isLoading}
@@ -1063,7 +1069,7 @@ export function OnboardingGate({
       onRetryProfile={() => void handleOpenProfile()}
       onSkip={() => void handleSkip()}
       onStart={() => void handleStart()}
-      onboardingFallback={onboardingFallback}
+      learnerProfileFallback={learnerProfileFallback}
       profileEditor={
         isProfileRoute && profileState
           ? {
@@ -1072,7 +1078,7 @@ export function OnboardingGate({
               isSaving: isProfileSaving,
               onCancel: closeProfileEditor,
               onClose: closeProfileEditor,
-              onRedoOnboarding: handleRedoOnboarding,
+              onRedoLearnerProfile: handleRedoLearnerProfile,
               onSave: () => void handleProfileSave(),
               onValueChange: handleProfileValueChange,
               pageError: profilePageError,
@@ -1081,10 +1087,10 @@ export function OnboardingGate({
       }
       profileLoadError={profileLoadError}
       questionProps={isProfileRoute && profileState ? null : questionProps}
-      redoOnboarding={redoOnboarding}
+      redoLearnerProfile={redoLearnerProfile}
       started={started}
     >
       {children}
-    </OnboardingGateView>
+    </LearnerProfileGateView>
   );
 }

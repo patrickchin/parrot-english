@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
-import { handleOnboardingRequest } from "../worker/onboarding.ts";
-import { createOnboardingRepository } from "../worker/onboarding-repository.ts";
+import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
+import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
 import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const PROTECTED_REQUESTS = [
-  ["GET", "/api/onboarding"],
-  ["PUT", "/api/onboarding/answer"],
-  ["POST", "/api/onboarding/transcribe"],
-  ["POST", "/api/onboarding/question/skip"],
-  ["POST", "/api/onboarding/skip"],
-  ["POST", "/api/onboarding/complete"],
+  ["GET", "/api/learner-profile"],
+  ["PUT", "/api/learner-profile/answer"],
+  ["POST", "/api/learner-profile/transcribe"],
+  ["POST", "/api/learner-profile/question/skip"],
+  ["POST", "/api/learner-profile/skip"],
+  ["POST", "/api/learner-profile/complete"],
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
 ];
@@ -57,7 +57,7 @@ describe("onboarding Worker routing", () => {
     let handlerCalls = 0;
     const worker = createWorker({
       createAuth: () => authStub.auth,
-      async handleOnboardingRequest() {
+      async handleLearnerProfileRequest() {
         handlerCalls += 1;
         return Response.json({ ok: true });
       },
@@ -85,13 +85,13 @@ describe("onboarding Worker routing", () => {
     const calls = [];
     const worker = createWorker({
       createAuth: () => authStub.auth,
-      async handleOnboardingRequest(input) {
+      async handleLearnerProfileRequest(input) {
         calls.push(input);
         return Response.json({ routed: true });
       },
     });
     const { env, getAssetCalls } = createEnvironment();
-    const request = new Request("https://example.test/api/onboarding", {
+    const request = new Request("https://example.test/api/learner-profile", {
       headers: { Cookie: "better-auth.session_token=secret-token" },
     });
 
@@ -168,7 +168,7 @@ function createDependencies(overrides = {}) {
   };
 }
 
-async function callOnboarding(
+async function callLearnerProfile(
   database,
   path,
   method = "GET",
@@ -176,7 +176,7 @@ async function callOnboarding(
   identity = {},
   dependencies = createDependencies(),
 ) {
-  return handleOnboardingRequest(
+  return handleLearnerProfileRequest(
     {
       database,
       env: { DB: database.$client },
@@ -201,7 +201,7 @@ describe("onboarding persistence and API", () => {
           "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
         )
         .run("user-1", "Mia", "mia@example.test", 1_000, 1_000);
-      const repository = createOnboardingRepository(createDatabase(state.d1), {
+      const repository = createLearnerProfileRepository(createDatabase(state.d1), {
         createId: () => "profile-v2",
         now: () => new Date("2026-07-06T00:00:00.000Z"),
       });
@@ -235,7 +235,7 @@ describe("onboarding persistence and API", () => {
         "audio",
         new File(["audio"], "answer.webm", { type: "audio/webm" }),
       );
-      const response = await handleOnboardingRequest({
+      const response = await handleLearnerProfileRequest({
         database: state.database,
         env: { DB: state.d1, GROQ_API_KEY: "test-key" },
         identity: {
@@ -244,7 +244,7 @@ describe("onboarding persistence and API", () => {
           userName: "Mia",
         },
         request: new Request(
-          "https://example.test/api/onboarding/transcribe",
+          "https://example.test/api/learner-profile/transcribe",
           { method: "POST", body: formData },
         ),
       });
@@ -265,23 +265,23 @@ describe("onboarding persistence and API", () => {
   it("loads six deployed prose questions without normalized questionnaire rows", async () => {
     const state = createSeededDatabase();
     try {
-      const response = await callOnboarding(state.database, "/api/onboarding");
+      const response = await callLearnerProfile(state.database, "/api/learner-profile");
       assert.equal(response.status, 200);
       const payload = await response.json();
 
       assert.equal(payload.profile.name, "Mia");
       assert.equal(payload.profile.age, null);
-      assert.equal(payload.profile.onboardingStatus, "not_started");
+      assert.equal(payload.profile.profileStatus, "not_started");
       assert.equal(payload.profile.questionnaireVersion, 2);
       assert.equal(payload.profile.answers.schemaVersion, 2);
       assert.deepEqual(payload.profile.answers.responses, {});
       assert.equal(payload.questionnaire.version, 2);
       assert.equal(payload.question.answerKey, "name");
       assert.equal(payload.question.promptEn, "Hi! I'm Peppa. What's your name?");
-      assert.equal(payload.question.audio.id, "onboarding-v2-name");
+      assert.equal(payload.question.audio.id, "learner-profile-v2-name");
       assert.equal(
         payload.question.audio.src,
-        "/assets/audio/onboarding-v2-name.mp3",
+        "/assets/audio/learner-profile-v2-name.mp3",
       );
       assert.equal("answerType" in payload.question, false);
       assert.equal("options" in payload.question, false);
@@ -303,16 +303,16 @@ describe("onboarding persistence and API", () => {
   it("selects realtime onboarding only when the server feature flag is enabled", async () => {
     const state = createSeededDatabase();
     try {
-      const response = await handleOnboardingRequest(
+      const response = await handleLearnerProfileRequest(
         {
           database: state.database,
-          env: { DB: state.d1, REALTIME_ONBOARDING_ENABLED: "1" },
+          env: { DB: state.d1, REALTIME_CONVERSATIONS_ENABLED: "1" },
           identity: {
             sessionId: "session-1",
             userId: "user-1",
             userName: "Mia",
           },
-          request: request("/api/onboarding"),
+          request: request("/api/learner-profile"),
         },
         createDependencies(),
       );
@@ -327,7 +327,7 @@ describe("onboarding persistence and API", () => {
   it("persists a complete snapshot before requesting acknowledgment audio", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
+      await callLearnerProfile(state.database, "/api/learner-profile");
       const calls = [];
       const dependencies = createDependencies({
         async enrichAnswer() {
@@ -352,9 +352,9 @@ describe("onboarding persistence and API", () => {
           return { contentType: "audio/mpeg", base64: "AQID" };
         },
       });
-      const response = await callOnboarding(
+      const response = await callLearnerProfile(
         state.database,
-        "/api/onboarding/answer",
+        "/api/learner-profile/answer",
         "PUT",
         { questionKey: "name", rawAnswer: "  Mia  " },
         {},
@@ -391,7 +391,7 @@ describe("onboarding persistence and API", () => {
   it("rejects client metadata, invalid prose, retired keys, and out-of-order answers", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
+      await callLearnerProfile(state.database, "/api/learner-profile");
       for (const [body, expectedStatus] of [
         [{ questionKey: "name", rawAnswer: "Mia", question: "Trust me" }, 400],
         [{ questionKey: "name", rawAnswer: "   " }, 400],
@@ -399,9 +399,9 @@ describe("onboarding persistence and API", () => {
         [{ questionKey: "retiredQuestion", rawAnswer: "anything" }, 409],
         [{ questionKey: "age", rawAnswer: "I am 8" }, 409],
       ]) {
-        const response = await callOnboarding(
+        const response = await callLearnerProfile(
           state.database,
-          "/api/onboarding/answer",
+          "/api/learner-profile/answer",
           "PUT",
           body,
         );
@@ -421,7 +421,7 @@ describe("onboarding persistence and API", () => {
   it("reuses an identical saved answer without calling Groq and retries TTS", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
+      await callLearnerProfile(state.database, "/api/learner-profile");
       let enrichmentCalls = 0;
       let audioCalls = 0;
       const dependencies = createDependencies({
@@ -440,9 +440,9 @@ describe("onboarding persistence and API", () => {
         },
       });
       for (let attempt = 0; attempt < 2; attempt += 1) {
-        const response = await callOnboarding(
+        const response = await callLearnerProfile(
           state.database,
-          "/api/onboarding/answer",
+          "/api/learner-profile/answer",
           "PUT",
           { questionKey: "name", rawAnswer: "Mia" },
           {},
@@ -460,27 +460,27 @@ describe("onboarding persistence and API", () => {
   it("preserves partial progress and bypasses only the skipped Better Auth session", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
-      await callOnboarding(state.database, "/api/onboarding/answer", "PUT", {
+      await callLearnerProfile(state.database, "/api/learner-profile");
+      await callLearnerProfile(state.database, "/api/learner-profile/answer", "PUT", {
         questionKey: "name",
         rawAnswer: "Mia",
       });
-      const skipped = await callOnboarding(
+      const skipped = await callLearnerProfile(
         state.database,
-        "/api/onboarding/skip",
+        "/api/learner-profile/skip",
         "POST",
       );
       assert.equal(skipped.status, 200);
       assert.equal((await skipped.json()).canBypass, true);
 
-      const sameSession = await callOnboarding(state.database, "/api/onboarding");
+      const sameSession = await callLearnerProfile(state.database, "/api/learner-profile");
       const samePayload = await sameSession.json();
       assert.equal(samePayload.canBypass, true);
       assert.equal(samePayload.question.answerKey, "age");
 
-      const nextSession = await callOnboarding(
+      const nextSession = await callLearnerProfile(
         state.database,
-        "/api/onboarding",
+        "/api/learner-profile",
         "GET",
         undefined,
         { sessionId: "session-2" },
@@ -491,18 +491,18 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("completes onboarding in the final prose answer update", async () => {
+  it("completes the learner profile in the final prose answer update", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
-      const early = await callOnboarding(
+      await callLearnerProfile(state.database, "/api/learner-profile");
+      const early = await callLearnerProfile(
         state.database,
-        "/api/onboarding/complete",
+        "/api/learner-profile/complete",
         "POST",
       );
       assert.equal(early.status, 409);
       assert.deepEqual(await early.json(), {
-        error: "onboarding_incomplete",
+        error: "learner_profile_incomplete",
         missingQuestionKey: "name",
       });
 
@@ -516,16 +516,16 @@ describe("onboarding persistence and API", () => {
       ];
       let payload;
       for (const [questionKey, rawAnswer] of answers) {
-        const response = await callOnboarding(
+        const response = await callLearnerProfile(
           state.database,
-          "/api/onboarding/answer",
+          "/api/learner-profile/answer",
           "PUT",
           { questionKey, rawAnswer },
         );
         assert.equal(response.status, 200, questionKey);
         payload = await response.json();
       }
-      assert.equal(payload.profile.onboardingStatus, "completed");
+      assert.equal(payload.profile.profileStatus, "completed");
       assert.equal(payload.question, null);
       assert.equal(payload.canBypass, true);
       const row = state.sqlite
@@ -543,10 +543,10 @@ describe("onboarding persistence and API", () => {
   it("rejects skipping required deployed questions", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
-      const requiredSkip = await callOnboarding(
+      await callLearnerProfile(state.database, "/api/learner-profile");
+      const requiredSkip = await callLearnerProfile(
         state.database,
-        "/api/onboarding/question/skip",
+        "/api/learner-profile/question/skip",
         "POST",
         { questionKey: "name" },
       );
@@ -582,7 +582,7 @@ describe("onboarding persistence and API", () => {
           1_000,
           1_000,
         );
-      const restarted = await callOnboarding(state.database, "/api/onboarding");
+      const restarted = await callLearnerProfile(state.database, "/api/learner-profile");
       const restartedPayload = await restarted.json();
       assert.equal(restartedPayload.question.answerKey, "name");
       assert.deepEqual(
@@ -592,9 +592,9 @@ describe("onboarding persistence and API", () => {
       state.sqlite.exec(
         "UPDATE learner_profile SET answers_json = '{\"favoriteAnimals\":[\"dog\"]}', onboarding_status = 'completed', current_question_key = NULL, completed_at = 2000 WHERE auth_user_id = 'user-1'",
       );
-      const completed = await callOnboarding(state.database, "/api/onboarding");
+      const completed = await callLearnerProfile(state.database, "/api/learner-profile");
       const completedPayload = await completed.json();
-      assert.equal(completedPayload.profile.onboardingStatus, "completed");
+      assert.equal(completedPayload.profile.profileStatus, "completed");
       assert.equal(completedPayload.question, null);
       assert.equal(completedPayload.canBypass, true);
       assert.equal(
@@ -631,13 +631,13 @@ describe("onboarding persistence and API", () => {
           1_000,
         );
 
-      const profileResponse = await callOnboarding(state.database, "/api/profile");
+      const profileResponse = await callLearnerProfile(state.database, "/api/profile");
       const profilePayload = await profileResponse.json();
       assert.equal(profilePayload.profile.name, "Mia");
       assert.equal(profilePayload.questions[0].answerKey, "name");
       assert.equal(profilePayload.questions[1].answerKey, "age");
 
-      const editResponse = await callOnboarding(
+      const editResponse = await callLearnerProfile(
         state.database,
         "/api/profile",
         "PUT",
@@ -698,7 +698,7 @@ describe("onboarding persistence and API", () => {
         );
       const enriched = [];
 
-      const response = await callOnboarding(
+      const response = await callLearnerProfile(
         state.database,
         "/api/profile",
         "PUT",
@@ -748,7 +748,7 @@ describe("onboarding persistence and API", () => {
   it("enriches all changed prose fields and persists one atomic profile update", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
+      await callLearnerProfile(state.database, "/api/learner-profile");
       state.sqlite.exec(
         "UPDATE learner_profile SET onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'",
       );
@@ -777,7 +777,7 @@ describe("onboarding persistence and API", () => {
         },
       });
 
-      const response = await callOnboarding(
+      const response = await callLearnerProfile(
         state.database,
         "/api/profile",
         "PUT",
@@ -821,7 +821,7 @@ describe("onboarding persistence and API", () => {
   it("rejects every atomic profile write when one prose field is invalid", async () => {
     const state = createSeededDatabase();
     try {
-      await callOnboarding(state.database, "/api/onboarding");
+      await callLearnerProfile(state.database, "/api/learner-profile");
       state.sqlite.exec(
         "UPDATE learner_profile SET onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'",
       );
@@ -831,7 +831,7 @@ describe("onboarding persistence and API", () => {
       const before = statement.get("user-1");
       let audioCalls = 0;
 
-      const response = await callOnboarding(
+      const response = await callLearnerProfile(
         state.database,
         "/api/profile",
         "PUT",
