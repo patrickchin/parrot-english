@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
-const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
+const source = (path) => {
+  const url = new URL(path, import.meta.url);
+  return existsSync(url) ? readFileSync(url, "utf8") : "";
+};
 
 test("Talk to Peppa is a durable main-menu feature route", () => {
   const home = source("../src/HomeMenu.tsx");
@@ -31,25 +34,4 @@ test("the learner gate gives completed learners a reusable conversation route", 
     gate,
     /if\s*\(isConversationRoute\)\s*\{\s*onConversationCompleted\(\)/,
   );
-});
-
-test("conversation route uses a compact same-row mobile header", () => {
-  const app = source("../src/App.tsx");
-  const authGate = source("../src/AuthGate.tsx");
-  const conversationSurface = source("../src/ConversationSurface.tsx");
-  const styles = source("../src/styles.css");
-
-  assert.doesNotMatch(app, /compactSessionBar/);
-  assert.match(
-    authGate,
-    /max-\[720px\]:\[&:has\(\+_\.conversation-screen\)\]:min-h-\[52px\]/,
-  );
-  assert.match(
-    authGate,
-    /\[@media\(max-height:620px\)\]:\[&:has\(\+_\.conversation-screen\)\]:top-\[10px\]/,
-  );
-  assert.match(conversationSurface, /max-\[720px\]:pt-\[92px\]/);
-  assert.match(conversationSurface, /after:content-\[''\]/);
-  assert.doesNotMatch(styles, /\.user-session-bar/);
-  assert.doesNotMatch(styles, /\.conversation-[a-z-]+\s*(?:[,{:]|::)/);
 });

@@ -609,7 +609,7 @@ export function LessonPlayer({
 
         <button
           aria-label="Back to lesson list"
-          className="lesson-list-back-button"
+          className="lesson-list-back-button app-header-control"
           onClick={handleBack}
           type="button"
         >
@@ -619,7 +619,7 @@ export function LessonPlayer({
 
         <button
           aria-label="Back to main menu"
-          className="lesson-home-button"
+          className="lesson-home-button app-header-control app-header-control--secondary app-header-control--surface"
           onClick={handleHome}
           type="button"
         >

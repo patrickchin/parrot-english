@@ -67,25 +67,6 @@ const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
   saving: "/assets/characters/peppa/peppa-happy.webp",
 };
 
-const SCREEN_CLASSES =
-  "conversation-screen relative grid h-dvh w-full items-start justify-items-center overflow-y-auto [background:radial-gradient(circle_at_12%_14%,rgb(255_222_81_/_86%)_0_7%,transparent_7.3%),radial-gradient(circle_at_90%_86%,rgb(255_91_142_/_44%)_0_9%,transparent_9.3%),linear-gradient(145deg,#90dcf8,#69c8ee)] px-[clamp(16px,4vw,44px)] pb-[clamp(16px,4vw,44px)] pt-[112px] max-[720px]:pt-[92px] [@media(max-height:620px)]:px-2.5 [@media(max-height:620px)]:pb-2.5 [@media(max-height:620px)]:pt-[72px]";
-const BACK_BUTTON_CLASSES =
-  "conversation-back-button absolute top-[clamp(14px,2.2vh,28px)] left-[var(--lesson-edge-gap)] z-20 inline-flex min-h-[52px] cursor-pointer items-center gap-[7px] rounded-full border-4 border-white bg-[#204c7f] py-0 pr-[18px] pl-3 font-[950] text-white shadow-[0_5px_0_rgb(18_55_92_/_45%)] focus-visible:outline-5 focus-visible:outline-offset-3 focus-visible:outline-[#173c67] [&_svg]:size-[25px] max-[720px]:w-[52px] max-[720px]:min-w-[52px] max-[720px]:justify-center max-[720px]:p-0 max-[720px]:[&_span]:hidden [@media(max-height:620px)]:top-[10px] [@media(max-height:620px)]:left-[10px]";
-const START_CARD_CLASSES =
-  "conversation-start-card conversation-start-card--minimal grid w-[min(100%,700px)] justify-items-center gap-2.5 bg-transparent p-[clamp(8px,2vw,20px)] text-center";
-const SHELL_CLASSES =
-  "conversation-shell my-auto grid w-[min(100%,700px)] max-h-[calc(100dvh-32px)] justify-items-center gap-2.5 bg-transparent p-[clamp(8px,2vw,20px)] max-[560px]:max-h-none [@media(max-height:620px)]:max-h-none [@media(max-height:620px)]:gap-[9px] [@media(max-height:620px)]:p-3.5";
-const CHARACTER_STAGE_CLASSES =
-  "conversation-character-stage grid w-full place-items-center gap-[clamp(12px,2.5vh,22px)]";
-const SPEECH_BUBBLE_CLASSES =
-  "conversation-speech-bubble relative m-0 w-[min(92%,520px)] rounded-[26px] border-4 border-white bg-white p-[clamp(15px,3vw,22px)] text-center text-[clamp(1.15rem,3vw,1.55rem)] leading-[1.35] font-black text-[#173c67] shadow-[0_7px_0_rgb(31_76_126_/_16%)] after:absolute after:bottom-[-20px] after:left-1/2 after:h-0 after:w-0 after:-translate-x-1/2 after:border-x-[18px] after:border-t-[20px] after:border-x-transparent after:border-t-white after:content-[''] [@media(max-height:620px)]:px-[15px] [@media(max-height:620px)]:py-3 [@media(max-height:620px)]:text-base";
-const CHARACTER_CLASSES =
-  "conversation-character w-[clamp(230px,42vw,390px)] max-h-[min(48vh,420px)] object-contain drop-shadow-[0_8px_0_rgb(32_76_127_/_16%)] animate-[onboarding-float_2.8s_ease-in-out_infinite] motion-reduce:animate-none max-[560px]:w-[clamp(210px,66vw,330px)] [@media(max-height:620px)]:w-[clamp(160px,40vw,230px)] [@media(max-height:620px)]:max-h-[38vh]";
-const JOINING_NOTICE_CLASSES =
-  "conversation-joining-notice flex w-[min(100%,560px)] items-center justify-center gap-4 rounded-[22px] border-4 border-white bg-[#173c67] px-[22px] py-[18px] text-left text-white shadow-[0_8px_0_rgb(23_60_103_/_22%)] [&>span:last-child]:grid [&>span:last-child]:gap-[3px] [&_strong]:text-[clamp(1.2rem,4vw,1.5rem)] [&_strong]:leading-[1.15] [&_strong+span]:text-[0.95rem] [&_strong+span]:leading-[1.35] [&_strong+span]:font-bold";
-const ACTION_BUTTON_FOCUS_CLASSES =
-  "focus-visible:outline-5 focus-visible:outline-offset-3 focus-visible:outline-[#173c67]";
-
 function latestAssistantSpeech(turns: ConversationSurfaceTurn[]) {
   for (let index = turns.length - 1; index >= 0; index -= 1) {
     if (turns[index].role === "assistant") return turns[index].text;
@@ -105,7 +86,7 @@ function ConversationBackButton({ onBack }: { onBack: () => void }) {
   return (
     <button
       aria-label="Back"
-      className={BACK_BUTTON_CLASSES}
+      className="conversation-back-button app-header-control"
       onClick={onBack}
       type="button"
     >
@@ -150,19 +131,19 @@ export function ConversationSurface({
 
   if (status === "ready") {
     return (
-      <main className={SCREEN_CLASSES}>
+      <main className="conversation-screen">
         <ConversationBackButton onBack={onBack} />
-        <section className={START_CARD_CLASSES}>
-          <h1 className="conversation-visually-hidden sr-only">
+        <section className="conversation-start-card">
+          <h1 className="conversation-visually-hidden">
             Chat with Peppa
           </h1>
-          <div className={CHARACTER_STAGE_CLASSES}>
-            <p className={SPEECH_BUBBLE_CLASSES}>
+          <div className="conversation-character-stage">
+            <p className="conversation-speech-bubble">
               Getting our chat ready…
             </p>
             <img
               alt="Peppa smiling"
-              className={`${CHARACTER_CLASSES} conversation-character--start`}
+              className="conversation-character conversation-character--start"
               src={PEPPA_ASSETS.ready}
             />
           </div>
@@ -178,21 +159,19 @@ export function ConversationSurface({
         ? "Lovely chat! I'll remember that."
         : "I'm listening!");
   return (
-    <main className={SCREEN_CLASSES}>
+    <main className="conversation-screen">
       <ConversationBackButton onBack={onBack} />
-      <section className={SHELL_CLASSES}>
-        <div className={CHARACTER_STAGE_CLASSES}>
+      <section className="conversation-shell">
+        <div className="conversation-character-stage">
           <p
             aria-live="polite"
-            className={SPEECH_BUBBLE_CLASSES}
+            className="conversation-speech-bubble"
           >
             {speech}
           </p>
           <img
             alt="Peppa"
-            className={`${CHARACTER_CLASSES} conversation-character--${status} ${
-              status === "speaking" ? "[animation-duration:1.1s]" : ""
-            }`}
+            className={`conversation-character conversation-character--${status}`}
             src={PEPPA_ASSETS[status]}
           />
         </div>
@@ -200,12 +179,12 @@ export function ConversationSurface({
         {joining ? (
           <div
             aria-live="assertive"
-            className={JOINING_NOTICE_CLASSES}
+            className="conversation-joining-notice"
             role="status"
           >
             <span
               aria-hidden="true"
-              className="conversation-joining-spinner aspect-square size-[38px] shrink-0 animate-spin rounded-full border-[5px] border-white/35 border-t-[#ffcf40] motion-reduce:animate-none"
+              className="conversation-joining-spinner"
             />
             <span>
               <strong>{STATUS_LABELS.connecting}</strong>
@@ -217,7 +196,7 @@ export function ConversationSurface({
         ) : (
           <p
             aria-live="polite"
-            className="conversation-visually-hidden sr-only"
+            className="conversation-visually-hidden"
             role="status"
           >
             {STATUS_LABELS[status]}
@@ -226,7 +205,7 @@ export function ConversationSurface({
 
         {error ? (
           <p
-            className="conversation-error m-0 w-[min(100%,560px)] rounded-[14px] bg-[#ffe2eb] px-3.5 py-2.5 text-center font-[850] text-[#8c1845]"
+            className="conversation-error"
             role="alert"
           >
             {error}
@@ -234,10 +213,10 @@ export function ConversationSurface({
         ) : null}
 
         {!saving && !joining ? (
-          <div className="conversation-actions grid w-[min(100%,560px)] justify-items-center gap-3">
+          <div className="conversation-actions">
             {status === "error" ? (
               <button
-                className={`conversation-retry-button inline-flex min-h-16 w-full cursor-pointer items-center justify-center gap-2.5 rounded-[17px] border-0 bg-[#ff467b] px-6 py-0 text-[1.05rem] font-[950] text-white shadow-[0_6px_0_#b92259] [&_svg]:size-[22px] ${ACTION_BUTTON_FOCUS_CLASSES}`}
+                className="conversation-retry-button app-button app-button--large app-button--brand"
                 onClick={onStart}
                 type="button"
               >
@@ -248,10 +227,10 @@ export function ConversationSurface({
               <button
                 aria-keyshortcuts="Space"
                 aria-pressed={microphoneEnabled}
-                className={`conversation-turn-button inline-flex min-h-16 w-full touch-manipulation cursor-pointer items-center justify-center gap-3 rounded-[17px] border-0 px-6 py-2 text-[1.05rem] font-[950] text-white [&_svg]:size-[22px] ${ACTION_BUTTON_FOCUS_CLASSES} ${
+                className={`conversation-turn-button app-button app-button--large ${
                   microphoneEnabled
-                    ? "is-active bg-[#d62f70] shadow-[0_6px_0_#941c4d]"
-                    : "bg-[#087451] shadow-[0_6px_0_#045b3e]"
+                    ? "is-active app-button--brand"
+                    : "app-button--success"
                 }`}
                 onClick={onToggleMicrophone}
                 type="button"
@@ -261,11 +240,11 @@ export function ConversationSurface({
                 ) : (
                   <Mic aria-hidden="true" />
                 )}
-                <span className="conversation-turn-button-copy grid justify-items-start leading-[1.1]">
+                <span className="conversation-turn-button-copy">
                   <strong>
                     {microphoneEnabled ? "End my turn" : "Start my turn"}
                   </strong>
-                  <small className="mt-[3px] text-[0.73rem] font-bold opacity-[0.86]">
+                  <small>
                     Click or press Space
                   </small>
                 </span>
@@ -273,7 +252,7 @@ export function ConversationSurface({
             )}
 
             <button
-              className={`conversation-finish-button inline-flex min-h-16 w-full cursor-pointer items-center justify-center gap-[7px] rounded-[17px] border-0 bg-white/88 px-6 py-0 text-[1.05rem] font-[950] text-[#315f89] no-underline shadow-[0_6px_0_rgb(31_76_126_/_22%)] [&_svg]:size-[22px] ${ACTION_BUTTON_FOCUS_CLASSES}`}
+              className="conversation-finish-button app-button app-button--large app-button--surface"
               onClick={onFinish}
               type="button"
             >

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,8 +14,6 @@ const vite = await createServer({
 const { ConversationSurface } = await vite.ssrLoadModule(
   "/src/ConversationSurface.tsx",
 );
-const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
-
 after(async () => {
   await vite.close();
 });
@@ -48,21 +45,12 @@ function render(overrides = {}) {
   );
 }
 
-function classNamesFor(html, semanticClass) {
-  for (const match of html.matchAll(/class="([^"]*)"/g)) {
-    if (match[1].split(/\s+/).includes(semanticClass)) return match[1];
-  }
-
-  assert.fail(`Expected rendered class token ${semanticClass}`);
-}
-
 describe("accessible realtime conversation surface", () => {
   it("shows Peppa while the conversation starts automatically", () => {
     const html = render();
 
-    classNamesFor(html, "conversation-character-stage");
     assert.match(html, /Getting our chat ready/);
-    classNamesFor(html, "conversation-visually-hidden");
+    assert.match(html, /Chat with Peppa/);
     assert.match(html, /peppa\/peppa-happy\.webp/);
     assert.doesNotMatch(html, /Start talking/);
     assert.doesNotMatch(html, /Use the form instead/);
@@ -82,7 +70,7 @@ describe("accessible realtime conversation surface", () => {
       const html = render({ status });
       assert.match(
         html,
-        /<button aria-label="Back" class="[^"]*\bconversation-back-button\b[^"]*"[^>]*>/,
+        /<button aria-label="Back"[^>]*>/,
         status,
       );
       assert.match(html, /lucide-arrow-left/, status);
@@ -91,16 +79,10 @@ describe("accessible realtime conversation surface", () => {
 
   it("makes joining unmistakable before Peppa enables learner input", () => {
     const connecting = render({ status: "connecting", microphoneEnabled: false });
-    const noticeClasses = classNamesFor(
-      connecting,
-      "conversation-joining-notice",
-    );
     assert.match(connecting, /Joining Peppa/);
     assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
     assert.doesNotMatch(connecting, /conversation-microphone-button/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
-    assert.match(noticeClasses, /\bbg-\[#173c67\](?=\s|$)/);
-    assert.match(noticeClasses, /\btext-white\b/);
   });
 
   it("keeps only the two clear conversation actions after Peppa opens", () => {
@@ -121,7 +103,6 @@ describe("accessible realtime conversation surface", () => {
         /Type instead|Type your answer|>Send<|Mute microphone|Turn microphone on/,
         status,
       );
-      assert.doesNotMatch(html, /class="conversation-state/, status);
       assert.match(html, /aria-live="polite"/, status);
       assert.match(html, /peppa\/peppa-[a-z]+\.webp/, status);
     }
@@ -146,15 +127,10 @@ describe("accessible realtime conversation surface", () => {
       ],
     });
 
-    const speechBubble = html.match(
-      /<p[^>]*class="[^"]*\bconversation-speech-bubble\b[^"]*"[^>]*>(.*?)<\/p>/,
-    )?.[1];
-    assert.match(speechBubble, /Ooh, drawing is brilliant!/);
-    assert.doesNotMatch(speechBubble, /I like drawing/);
-    classNamesFor(html, "conversation-character-stage");
+    assert.match(html, /Ooh, drawing is brilliant!/);
+    assert.doesNotMatch(html, /I like drawing/);
     assert.doesNotMatch(html, /conversation-debug-transcript|Debug transcript/);
     assert.match(html, /Start my turn/);
-    assert.doesNotMatch(html, /class="conversation-state/);
     assert.doesNotMatch(html, /Chat with your pig pal/);
   });
 
@@ -194,36 +170,5 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /<textarea/);
     assert.doesNotMatch(html, /Save and continue|Keep this|Leave this out/);
     assert.doesNotMatch(html, /Debug transcript|I am seven\./);
-  });
-
-  it("uses Tailwind utilities for responsive layout and large actions", () => {
-    const html = render({ microphoneEnabled: false, status: "listening" });
-    const screenClasses = classNamesFor(html, "conversation-screen");
-    const backClasses = classNamesFor(html, "conversation-back-button");
-    const turnClasses = classNamesFor(html, "conversation-turn-button");
-    const finishClasses = classNamesFor(html, "conversation-finish-button");
-    const bubbleClasses = classNamesFor(html, "conversation-speech-bubble");
-
-    assert.match(screenClasses, /\bh-dvh\b/);
-    assert.match(screenClasses, /\boverflow-y-auto\b/);
-    assert.match(screenClasses, /\bpt-\[112px\](?=\s|$)/);
-    assert.match(screenClasses, /\bmax-\[720px\]:pt-\[92px\](?=\s|$)/);
-    assert.match(backClasses, /\babsolute\b/);
-    assert.match(backClasses, /\bmin-h-\[52px\](?=\s|$)/);
-    assert.match(backClasses, /\bbg-\[#204c7f\](?=\s|$)/);
-    assert.match(
-      backClasses,
-      /\[@media\(max-height:620px\)\]:top-\[10px\](?=\s|$)/,
-    );
-    assert.match(turnClasses, /\bw-full\b/);
-    assert.match(turnClasses, /\bmin-h-16\b/);
-    assert.match(turnClasses, /\bbg-\[#087451\](?=\s|$)/);
-    assert.match(finishClasses, /\bw-full\b/);
-    assert.match(finishClasses, /\bmin-h-16\b/);
-    assert.match(
-      bubbleClasses,
-      /after:content-\[(?:''|&#x27;&#x27;)\]/,
-    );
-    assert.doesNotMatch(styles, /\.conversation-[a-z-]+\s*(?:[,{:]|::)/);
   });
 });

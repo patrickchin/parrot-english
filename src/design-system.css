@@ -1,0 +1,261 @@
+@theme {
+  --font-ui:
+    ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --color-brand-ink: #173c67;
+  --color-brand-navy: #204c7f;
+  --color-brand-blue: #315f89;
+  --color-brand-pink: #ff467b;
+  --color-brand-pink-shadow: #b92259;
+  --color-brand-rose: #d62f70;
+  --color-brand-rose-shadow: #941c4d;
+  --color-brand-green: #087451;
+  --color-brand-green-shadow: #045b3e;
+  --color-brand-yellow: #ffcf40;
+  --radius-button: 17px;
+  --radius-control: 999px;
+  --shadow-control-navy: 0 5px 0 rgb(18 55 92 / 45%);
+  --shadow-control-pink: 0 6px 0 var(--color-brand-pink-shadow);
+  --shadow-control-rose: 0 6px 0 var(--color-brand-rose-shadow);
+  --shadow-control-green: 0 6px 0 var(--color-brand-green-shadow);
+  --shadow-control-surface: 0 6px 0 rgb(31 76 126 / 22%);
+}
+
+:root {
+  --app-control-font-size: clamp(1rem, 1.3vw, 1.2rem);
+  --app-control-font-weight: 900;
+  --app-control-small: 48px;
+  --app-control-medium: 52px;
+  --app-control-large: 64px;
+  --app-control-border: 4px solid #fff;
+  --app-control-inline-padding: 20px;
+  --app-header-control-size: 64px;
+  --app-header-top: clamp(14px, 2.2vh, 28px);
+  --app-header-edge: clamp(14px, 2vw, 30px);
+  --app-header-clearance: calc(
+    var(--app-header-top) + var(--app-header-control-size) + 20px
+  );
+  --app-header-secondary-offset: clamp(188px, 18vw, 230px);
+  --app-conversation-background:
+    radial-gradient(
+      circle at 12% 14%,
+      rgb(255 222 81 / 86%) 0 7%,
+      transparent 7.3%
+    ),
+    radial-gradient(
+      circle at 90% 86%,
+      rgb(255 91 142 / 44%) 0 9%,
+      transparent 9.3%
+    ),
+    linear-gradient(145deg, #90dcf8, #69c8ee);
+}
+
+@layer components {
+  .app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: var(--app-control-font-size);
+    font-weight: var(--app-control-font-weight);
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .app-button:disabled {
+    cursor: wait;
+    opacity: 0.76;
+  }
+
+  .app-button:focus-visible,
+  .app-header-control:focus-visible {
+    outline: 5px solid var(--color-brand-ink);
+    outline-offset: 3px;
+  }
+
+  .app-button--large {
+    width: 100%;
+    min-height: var(--app-control-large);
+    padding: 8px 24px;
+  }
+
+  .app-button--brand {
+    background: var(--color-brand-pink);
+    color: #fff;
+    box-shadow: var(--shadow-control-pink);
+  }
+
+  .app-button--success {
+    background: var(--color-brand-green);
+    color: #fff;
+    box-shadow: var(--shadow-control-green);
+  }
+
+  .app-button--surface {
+    background: rgb(255 255 255 / 92%);
+    color: var(--color-brand-blue);
+    box-shadow: var(--shadow-control-surface);
+  }
+
+  .app-button--account {
+    min-height: calc(var(--app-header-control-size) - 8px);
+    flex: none;
+    border-radius: var(--radius-control);
+    padding: 4px 12px;
+    box-shadow: none;
+    white-space: nowrap;
+  }
+
+  .app-header-account {
+    position: fixed;
+    top: var(--app-header-top);
+    right: var(--app-header-edge);
+    z-index: 40;
+    display: flex;
+    min-height: var(--app-header-control-size);
+    max-width: min(62vw, 520px);
+    align-items: center;
+    gap: 10px;
+    border: var(--app-control-border);
+    border-radius: var(--radius-control);
+    background: var(--color-brand-navy);
+    color: #fff;
+    padding: 0 5px 0 15px;
+    box-shadow: var(--shadow-control-navy);
+    font-family: var(--font-ui);
+    font-size: var(--app-control-font-size);
+    font-weight: var(--app-control-font-weight);
+    line-height: 1;
+  }
+
+  .app-header-account-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-header-error {
+    position: absolute;
+    top: calc(100% + 9px);
+    right: 0;
+    width: min(82vw, 340px);
+    border: 3px solid #fff;
+    border-radius: var(--radius-button);
+    background: #9d243f;
+    color: #fff;
+    padding: 9px 12px;
+    font-size: 0.8rem;
+    font-weight: 850;
+    line-height: 1.25;
+    box-shadow: 0 4px 0 rgb(95 16 36 / 35%);
+  }
+
+  .app-header-control {
+    position: absolute;
+    top: var(--app-header-top);
+    left: var(--app-header-edge);
+    z-index: 20;
+    display: inline-flex;
+    min-height: var(--app-header-control-size);
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: var(--app-control-border);
+    border-radius: var(--radius-control);
+    background: var(--color-brand-navy);
+    color: #fff;
+    padding: 0 var(--app-control-inline-padding) 0 12px;
+    box-shadow: var(--shadow-control-navy);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: var(--app-control-font-size);
+    font-weight: var(--app-control-font-weight);
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .app-header-control--secondary {
+    left: calc(var(--app-header-edge) + var(--app-header-secondary-offset));
+  }
+
+  .app-header-control--surface {
+    background: rgb(255 255 255 / 94%);
+    color: var(--color-brand-navy);
+    box-shadow: var(--shadow-control-surface);
+  }
+
+  .app-header-control:hover {
+    filter: brightness(1.06);
+    transform: translateY(-2px);
+  }
+
+  .app-header-control svg {
+    width: 25px;
+    height: 25px;
+    flex: none;
+  }
+}
+
+@media (max-width: 1360px) {
+  .app-header-control {
+    width: var(--app-header-control-size);
+    min-width: var(--app-header-control-size);
+    padding: 0;
+  }
+
+  .app-header-control > span {
+    display: none;
+  }
+
+  .app-header-control--secondary {
+    left: calc(
+      var(--app-header-edge) + var(--app-header-control-size) + 10px
+    );
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --app-header-control-size: 52px;
+    --app-control-inline-padding: 14px;
+  }
+
+  .app-header-account {
+    right: var(--app-header-edge);
+    max-width: calc(
+      100vw - (var(--app-header-edge) * 2) - var(--app-header-control-size) - 14px
+    );
+    gap: 6px;
+    padding: 0 4px;
+  }
+
+  .app-header-account-label {
+    display: none;
+  }
+}
+
+@media (max-height: 620px) {
+  :root {
+    --app-header-control-size: 44px;
+    --app-header-top: 10px;
+    --app-header-edge: 10px;
+    --app-control-inline-padding: 12px;
+  }
+}
+
+@media (max-width: 320px) {
+  :root {
+    --app-control-font-size: 0.875rem;
+  }
+
+  .app-header-account {
+    gap: 4px;
+  }
+
+  .app-button--account {
+    padding-inline: 8px;
+  }
+}

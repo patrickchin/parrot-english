@@ -1,0 +1,233 @@
+@layer components {
+  .conversation-screen {
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: 100dvh;
+    align-items: start;
+    justify-items: center;
+    overflow-y: auto;
+    background: var(--app-conversation-background);
+    padding-top: var(--app-header-clearance);
+    padding-right: clamp(16px, 4vw, 44px);
+    padding-bottom: clamp(16px, 4vw, 44px);
+    padding-left: clamp(16px, 4vw, 44px);
+  }
+
+  .conversation-start-card {
+    display: grid;
+    width: min(100%, 700px);
+    justify-items: center;
+    gap: 10px;
+    background: transparent;
+    padding: clamp(8px, 2vw, 20px);
+    text-align: center;
+  }
+
+  .conversation-shell {
+    display: grid;
+    width: min(100%, 700px);
+    max-height: calc(100dvh - 32px);
+    justify-items: center;
+    gap: 10px;
+    margin-block: auto;
+    background: transparent;
+    padding: clamp(8px, 2vw, 20px);
+  }
+
+  .conversation-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .conversation-character-stage {
+    display: grid;
+    width: 100%;
+    place-items: center;
+    gap: clamp(12px, 2.5vh, 22px);
+  }
+
+  .conversation-character {
+    width: clamp(230px, 42vw, 390px);
+    max-height: min(48vh, 420px);
+    object-fit: contain;
+    filter: drop-shadow(0 8px 0 rgb(32 76 127 / 16%));
+    animation: onboarding-float 2.8s ease-in-out infinite;
+  }
+
+  .conversation-character--speaking {
+    animation-duration: 1.1s;
+  }
+
+  .conversation-speech-bubble {
+    position: relative;
+    width: min(92%, 520px);
+    margin: 0;
+    border: 4px solid #fff;
+    border-radius: 26px;
+    background: #fff;
+    color: var(--color-brand-ink);
+    padding: clamp(15px, 3vw, 22px);
+    box-shadow: 0 7px 0 rgb(31 76 126 / 16%);
+    font-size: clamp(1.15rem, 3vw, 1.55rem);
+    font-weight: var(--app-control-font-weight);
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .conversation-speech-bubble::after {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-top: 20px solid #fff;
+    border-right: 18px solid transparent;
+    border-left: 18px solid transparent;
+    content: "";
+    transform: translateX(-50%);
+  }
+
+  .conversation-joining-notice {
+    display: flex;
+    width: min(100%, 560px);
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    border: 4px solid #fff;
+    border-radius: 22px;
+    background: var(--color-brand-ink);
+    color: #fff;
+    padding: 18px 22px;
+    box-shadow: 0 8px 0 rgb(23 60 103 / 22%);
+    text-align: left;
+  }
+
+  .conversation-joining-notice > span:last-child {
+    display: grid;
+    gap: 3px;
+  }
+
+  .conversation-joining-notice strong {
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    line-height: 1.15;
+  }
+
+  .conversation-joining-notice strong + span {
+    font-size: 0.95rem;
+    font-weight: 750;
+    line-height: 1.35;
+  }
+
+  .conversation-joining-spinner {
+    width: 38px;
+    flex: 0 0 38px;
+    aspect-ratio: 1;
+    border: 5px solid rgb(255 255 255 / 35%);
+    border-top-color: var(--color-brand-yellow);
+    border-radius: 50%;
+    animation: conversation-spin 0.9s linear infinite;
+  }
+
+  .conversation-error {
+    width: min(100%, 560px);
+    margin: 0;
+    border-radius: 14px;
+    background: #ffe2eb;
+    color: #8c1845;
+    padding: 10px 14px;
+    font-weight: 850;
+    text-align: center;
+  }
+
+  .conversation-actions {
+    display: grid;
+    width: min(100%, 560px);
+    justify-items: center;
+    gap: 12px;
+  }
+
+  .conversation-turn-button,
+  .conversation-retry-button,
+  .conversation-finish-button {
+    gap: 10px;
+  }
+
+  .conversation-turn-button {
+    gap: 12px;
+    touch-action: manipulation;
+  }
+
+  .conversation-turn-button-copy {
+    display: grid;
+    justify-items: start;
+    line-height: 1.1;
+  }
+
+  .conversation-turn-button-copy small {
+    margin-top: 3px;
+    font-size: 0.73rem;
+    font-weight: 750;
+    opacity: 0.86;
+  }
+
+  .conversation-turn-button svg,
+  .conversation-retry-button svg,
+  .conversation-finish-button svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@keyframes conversation-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (max-width: 560px) {
+  .conversation-shell {
+    max-height: none;
+  }
+
+  .conversation-character {
+    width: clamp(210px, 66vw, 330px);
+  }
+}
+
+@media (max-height: 620px) {
+  .conversation-screen {
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+  }
+
+  .conversation-shell {
+    max-height: none;
+    gap: 9px;
+    padding: 14px;
+  }
+
+  .conversation-character {
+    width: clamp(160px, 40vw, 230px);
+    max-height: 38vh;
+  }
+
+  .conversation-speech-bubble {
+    padding: 12px 15px;
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-character,
+  .conversation-joining-spinner {
+    animation: none;
+  }
+}
