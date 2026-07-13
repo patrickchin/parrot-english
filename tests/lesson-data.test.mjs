@@ -265,7 +265,7 @@ describe("lesson data contract", () => {
     );
   });
 
-  it("requires a complete supported emote map", { skip: !hasValidator }, () => {
+  it("validates supplied visual emotes without requiring a complete map", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const unsupported = createLesson();
     unsupported.scenes[0].steps[0].emotes.peppa = "hopeful";
@@ -275,10 +275,11 @@ describe("lesson data contract", () => {
     );
 
     const missing = createLesson();
+    delete missing.scenes[0].steps[0].emotes.peppa;
     delete missing.scenes[0].steps[0].emotes.user;
-    assert.throws(
-      () => lessonData.validateLesson(missing, catalog, "bad.json"),
-      /bad\.json scenes\[0\]\.steps\[0\]\.emotes/
+    assert.equal(
+      lessonData.validateLesson(missing, catalog, "missing.json"),
+      missing,
     );
 
     const extra = createLesson();
