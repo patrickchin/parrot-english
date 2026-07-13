@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { initializeLogger, llm } from "@livekit/agents";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
@@ -171,6 +173,39 @@ describe("LiveKit agent configuration", () => {
 });
 
 describe("purpose-specific Peppa conversation prompts", () => {
+  it("stores each complete static system prompt in its own source file", () => {
+    const promptDirectory = resolve(import.meta.dirname, "../agent/prompts");
+    const promptFiles = readdirSync(promptDirectory)
+      .filter((file) => file.endsWith(".ts"))
+      .sort();
+
+    assert.deepEqual(promptFiles, [
+      "onboarding.ts",
+      "profile-edit.ts",
+      "small-chat.ts",
+    ]);
+
+    const sources = Object.fromEntries(
+      promptFiles.map((file) => [
+        file,
+        readFileSync(resolve(promptDirectory, file), "utf8"),
+      ]),
+    );
+    for (const source of Object.values(sources)) {
+      assert.match(source, /warm, playful pig friend/i);
+      assert.match(source, /speak first/i);
+    }
+    assert.match(sources["onboarding.ts"], /first introduction/i);
+    assert.match(sources["profile-edit.ts"], /update the existing learner profile/i);
+    assert.match(sources["small-chat.ts"], /ordinary small chat/i);
+
+    const runtimeSource = readFileSync(
+      resolve(import.meta.dirname, "../agent/peppa-conversation.ts"),
+      "utf8",
+    );
+    assert.doesNotMatch(runtimeSource, /warm, playful pig friend/i);
+  });
+
   it("keeps onboarding, profile editing, and small chat as distinct contracts", () => {
     const prompts = conversationScenario.CONVERSATION_SYSTEM_PROMPTS;
 
