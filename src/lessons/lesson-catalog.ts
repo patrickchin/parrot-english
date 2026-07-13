@@ -5,6 +5,7 @@ import characters from "../../content/catalogs/characters.json";
 import emotes from "../../content/catalogs/emotes.json";
 import {
   createLessonCatalog,
+  prepareLesson,
   validateLesson,
 } from "../../lib/lesson-data";
 
@@ -20,6 +21,7 @@ export const VISUAL_CATALOG = createLessonCatalog({
 });
 
 export type Lesson = ReturnType<typeof validateLesson>;
+export type LessonDraft = ReturnType<typeof prepareLesson>;
 export type LessonCatalogEntry = {
   id: string;
   lesson: Lesson;

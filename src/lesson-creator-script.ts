@@ -1,4 +1,4 @@
-import { validateLesson } from "../lib/lesson-data";
+import { prepareLesson } from "../lib/lesson-data";
 import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
 
 export const MAX_LESSON_SCRIPT_BYTES = 256 * 1024;
@@ -26,5 +26,5 @@ export function parseLessonScript(
     throw new Error(`${sourceName} must contain valid JSON.`);
   }
 
-  return validateLesson(value, VISUAL_CATALOG, sourceName);
+  return prepareLesson(value, VISUAL_CATALOG, sourceName);
 }

@@ -25,10 +25,12 @@ function LessonPreview({
   isSaving,
   lesson,
   onSave,
+  warnings,
 }: {
   isSaving: boolean;
   lesson: Lesson;
   onSave: () => void;
+  warnings: string[];
 }) {
   return (
     <section aria-live="polite" className="lesson-creator-preview">
@@ -45,9 +47,29 @@ function LessonPreview({
           <dd>{lesson.scenes.length}</dd>
         </div>
       </dl>
+      <LessonWarnings warnings={warnings} />
       <button disabled={isSaving} onClick={onSave} type="button">
         {isSaving ? "Saving lesson..." : "Save and play lesson"}
       </button>
+    </section>
+  );
+}
+
+export function LessonWarnings({ warnings }: { warnings: string[] }) {
+  if (warnings.length === 0) return null;
+  return (
+    <section
+      aria-label="Draft warnings"
+      className="lesson-draft-warnings"
+      role="status"
+    >
+      <h3>Draft warnings</h3>
+      <p>Safe defaults were applied. You can edit the JSON or save it as-is.</p>
+      <ul>
+        {warnings.map((warning, index) => (
+          <li key={`${index}-${warning}`}>{warning}</li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -139,6 +161,7 @@ export function LessonCreator() {
     upload: "",
   });
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [lessonSource, setLessonSource] = useState<MyLessonSource>("generated");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -149,6 +172,7 @@ export function LessonCreator() {
 
   function chooseTab(tab: CreatorTab) {
     setLesson(null);
+    setWarnings([]);
     setError("");
     setNotice("");
     setSearchParams(tab === "generate" ? {} : { tab });
@@ -157,6 +181,7 @@ export function LessonCreator() {
   function updateScript(value: string) {
     setScripts((current) => ({ ...current, [activeTab]: value }));
     setLesson(null);
+    setWarnings([]);
     setError("");
     setNotice("");
   }
@@ -170,17 +195,23 @@ export function LessonCreator() {
     }
     setBusyAction("generate");
     setLesson(null);
+    setWarnings([]);
     setError("");
     setNotice("");
     try {
-      const generatedLesson = await generateMyLesson(requestedTopic);
+      const generatedDraft = await generateMyLesson(requestedTopic);
       setScripts((current) => ({
         ...current,
-        generate: formatLessonScript(generatedLesson),
+        generate: formatLessonScript(generatedDraft.lesson),
       }));
-      setLesson(generatedLesson);
+      setLesson(generatedDraft.lesson);
+      setWarnings(generatedDraft.warnings);
       setLessonSource("generated");
-      setNotice("Generated script ready. You can edit the JSON before saving.");
+      setNotice(
+        generatedDraft.warnings.length > 0
+          ? "Generated script ready with safe defaults. Review the warnings or save it as-is."
+          : "Generated script ready. You can edit the JSON before saving.",
+      );
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -194,6 +225,7 @@ export function LessonCreator() {
 
   async function handlePaste() {
     setLesson(null);
+    setWarnings([]);
     setError("");
     setNotice("");
     if (!navigator.clipboard?.readText) {
@@ -225,16 +257,22 @@ export function LessonCreator() {
 
   function handleReview() {
     setLesson(null);
+    setWarnings([]);
     setError("");
     setNotice("");
     try {
-      const reviewedLesson = parseLessonScript(
+      const reviewedDraft = parseLessonScript(
         scriptText,
         activeTab === "generate" ? "edited generated script" : "pasted script",
       );
-      setLesson(reviewedLesson);
+      setLesson(reviewedDraft.lesson);
+      setWarnings(reviewedDraft.warnings);
       setLessonSource(activeTab === "generate" ? "generated" : "uploaded");
-      setNotice("Script validated. Review the lesson summary before saving.");
+      setNotice(
+        reviewedDraft.warnings.length > 0
+          ? "Script is playable with safe defaults. Review the warnings or save it as-is."
+          : "Script validated. Review the lesson summary before saving.",
+      );
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -368,6 +406,7 @@ export function LessonCreator() {
             isSaving={busyAction === "save"}
             lesson={lesson}
             onSave={() => void handleSave()}
+            warnings={warnings}
           />
         ) : null}
       </section>

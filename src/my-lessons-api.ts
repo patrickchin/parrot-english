@@ -1,4 +1,4 @@
-import type { Lesson } from "./lesson-catalog";
+import type { Lesson, LessonDraft } from "./lesson-catalog";
 
 export type MyLessonSource = "generated" | "uploaded";
 export type MyLessonDescriptor = {
@@ -77,12 +77,11 @@ export async function generateMyLesson(
   topic: string,
   options?: MyLessonsRequestOptions,
 ) {
-  const result = await jsonPost<{ lesson: Lesson }>(
+  return jsonPost<LessonDraft>(
     "/api/lessons/my/generate",
     { topic },
     options,
   );
-  return result.lesson;
 }
 
 export async function saveMyLesson(

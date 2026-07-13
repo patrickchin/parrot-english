@@ -1,4 +1,4 @@
-import { validateLesson } from "../lib/lesson-data.js";
+import { prepareLesson } from "../lib/lesson-data.js";
 import type { Lesson } from "../src/lesson-catalog.ts";
 import type { Database } from "./database.ts";
 import {
@@ -86,9 +86,13 @@ function clientLesson(row: {
   };
 }
 
-function validatedLesson(value: unknown, sourceName = "lesson") {
+function preparedLesson(
+  value: unknown,
+  sourceName = "lesson",
+  defaults?: { childName?: string },
+) {
   try {
-    return validateLesson(value, LESSON_VISUAL_CATALOG, sourceName);
+    return prepareLesson(value, LESSON_VISUAL_CATALOG, sourceName, defaults);
   } catch (caughtError) {
     throw new MyLessonApiError(
       400,
@@ -122,14 +126,17 @@ export async function handleMyLessonRequest(
       if (body.source !== "generated" && body.source !== "uploaded") {
         throw new MyLessonApiError(400, "invalid_source");
       }
-      const lesson = validatedLesson(body.lesson);
+      const draft = preparedLesson(body.lesson);
       const row = await repository.create(
         input.identity.userId,
         body.source,
-        lesson,
+        draft.lesson,
       );
       if (!row) throw new Error("Lesson could not be loaded after saving.");
-      return json({ lesson: clientLesson(row) }, { status: 201 });
+      return json(
+        { lesson: clientLesson(row), warnings: draft.warnings },
+        { status: 201 },
+      );
     }
 
     if (
@@ -155,15 +162,20 @@ export async function handleMyLessonRequest(
           "Add the learner's name to their profile before generating a lesson.",
         );
       }
-      const lesson = validatedLesson(
-        await dependencies.generateLesson({
-          childName,
-          env: input.env,
-          topic,
-        }),
+      const generated = await dependencies.generateLesson({
+        childName,
+        env: input.env,
+        topic,
+      });
+      const draft = preparedLesson(
+        generated.lesson,
         "generated lesson",
+        { childName },
       );
-      return json({ lesson });
+      return json({
+        lesson: draft.lesson,
+        warnings: [...generated.warnings, ...draft.warnings],
+      });
     }
 
     if (detailMatch && input.request.method === "GET") {
