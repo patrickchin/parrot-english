@@ -50,6 +50,14 @@ interface SignOutSessionOptions {
 }
 
 const SIGN_OUT_ERROR_MESSAGE = "Unable to log you out. Please try again.";
+const SESSION_BAR_CLASSES =
+  "user-session-bar group/session fixed top-[clamp(14px,2.2vh,28px)] right-[clamp(86px,7vw,112px)] z-40 flex min-h-12 max-w-[min(62vw,520px)] items-center gap-2.5 rounded-full border-4 border-white bg-[#204c7f] py-1 pr-[5px] pl-[15px] text-white shadow-[0_5px_0_rgb(18_55_92_/_45%)] max-[720px]:top-[94px] max-[720px]:right-3 max-[720px]:max-w-[calc(100vw-24px)] max-[720px]:[&:has(+_.conversation-screen)]:top-[clamp(14px,2.2vh,28px)] max-[720px]:[&:has(+_.conversation-screen)]:min-h-[52px] max-[720px]:[&:has(+_.conversation-screen)]:max-w-[calc(100vw-92px)] max-[720px]:[&:has(+_.conversation-screen)]:gap-1.5 max-[720px]:[&:has(+_.conversation-screen)]:px-1 max-[720px]:[&:has(+_.conversation-screen)]:py-0 [@media(max-height:620px)]:[&:has(+_.conversation-screen)]:top-[10px]";
+const SESSION_LABEL_CLASSES =
+  "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--lesson-ui-font-size)] font-[900] max-[720px]:group-has-[+_.conversation-screen]/session:hidden";
+const SESSION_BUTTON_CLASSES =
+  "min-h-12 shrink-0 cursor-pointer whitespace-nowrap rounded-full border-0 px-3 py-1.5 text-[length:var(--lesson-ui-font-size)] font-[900] disabled:cursor-wait disabled:opacity-[0.76] max-[720px]:group-has-[+_.conversation-screen]/session:min-h-11 max-[720px]:group-has-[+_.conversation-screen]/session:px-3 max-[720px]:group-has-[+_.conversation-screen]/session:py-1";
+const SESSION_ERROR_CLASSES =
+  "session-error absolute top-[calc(100%+9px)] right-0 w-[min(82vw,340px)] rounded-[13px] border-[3px] border-white bg-[#9d243f] px-3 py-[9px] text-[0.8rem] font-[850] text-white shadow-[0_4px_0_rgb(95_16_36_/_35%)]";
 
 export async function submitAuthForm({
   client,
@@ -108,7 +116,6 @@ interface AuthSession {
 
 interface AuthGateViewProps {
   children: ReactNode;
-  compactSessionBar: boolean;
   fields: AuthFields;
   formError: string;
   isPending: boolean;
@@ -130,7 +137,6 @@ interface AuthGateViewProps {
 
 export function AuthGateView({
   children,
-  compactSessionBar,
   fields,
   formError,
   isPending,
@@ -291,27 +297,32 @@ export function AuthGateView({
   return (
     <>
       <aside
-        className={`user-session-bar${
-          compactSessionBar ? " user-session-bar--conversation" : ""
-        }`}
+        className={SESSION_BAR_CLASSES}
         aria-label="Current account"
       >
-        <span title={session.user.email}>{userLabel}</span>
+        <span className={SESSION_LABEL_CLASSES} title={session.user.email}>
+          {userLabel}
+        </span>
         {onOpenProfile ? (
           <button
             aria-label="Edit learner profile"
-            className="profile-account-button"
+            className={`${SESSION_BUTTON_CLASSES} bg-white text-[#204c7f]`}
             onClick={onOpenProfile}
             type="button"
           >
             Profile
           </button>
         ) : null}
-        <button disabled={isSigningOut} onClick={onSignOut} type="button">
+        <button
+          className={`${SESSION_BUTTON_CLASSES} bg-[#ff467b] text-white`}
+          disabled={isSigningOut}
+          onClick={onSignOut}
+          type="button"
+        >
           {isSigningOut ? "Signing out…" : "Log out"}
         </button>
         {accountError ? (
-          <span className="session-error" role="alert">
+          <span className={SESSION_ERROR_CLASSES} role="alert">
             {accountError}
           </span>
         ) : null}
@@ -323,7 +334,6 @@ export function AuthGateView({
 
 interface AuthGateProps {
   children: ReactNode;
-  compactSessionBar?: boolean;
   signedOutFallback?: ReactNode;
 }
 
@@ -359,7 +369,6 @@ export function createAuthGate({
 }: CreateAuthGateOptions) {
   return function AuthGateContainer({
     children,
-    compactSessionBar = false,
     signedOutFallback,
   }: AuthGateProps) {
     const { data: session, isPending, error, refetch } = client.useSession();
@@ -426,7 +435,6 @@ export function createAuthGate({
     return (
       <AccountActionProvider setProfileAction={setProfileAction}>
         <View
-          compactSessionBar={compactSessionBar}
           fields={fields}
           formError={formError}
           isPending={isPending}

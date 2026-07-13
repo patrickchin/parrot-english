@@ -99,7 +99,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
     assert.doesNotMatch(connecting, /conversation-microphone-button/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
-    assert.match(noticeClasses, /\bbg-\[#173c67\]\b/);
+    assert.match(noticeClasses, /\bbg-\[#173c67\](?=\s|$)/);
     assert.match(noticeClasses, /\btext-white\b/);
   });
 
@@ -206,21 +206,24 @@ describe("accessible realtime conversation surface", () => {
 
     assert.match(screenClasses, /\bh-dvh\b/);
     assert.match(screenClasses, /\boverflow-y-auto\b/);
-    assert.match(screenClasses, /\bpt-\[112px\]\b/);
-    assert.match(screenClasses, /\bmax-\[720px\]:pt-\[92px\]\b/);
+    assert.match(screenClasses, /\bpt-\[112px\](?=\s|$)/);
+    assert.match(screenClasses, /\bmax-\[720px\]:pt-\[92px\](?=\s|$)/);
     assert.match(backClasses, /\babsolute\b/);
-    assert.match(backClasses, /\bmin-h-\[52px\]\b/);
-    assert.match(backClasses, /\bbg-\[#204c7f\]\b/);
+    assert.match(backClasses, /\bmin-h-\[52px\](?=\s|$)/);
+    assert.match(backClasses, /\bbg-\[#204c7f\](?=\s|$)/);
     assert.match(
       backClasses,
-      /\b\[@media\(max-height:620px\)\]:top-\[10px\]\b/,
+      /\[@media\(max-height:620px\)\]:top-\[10px\](?=\s|$)/,
     );
     assert.match(turnClasses, /\bw-full\b/);
     assert.match(turnClasses, /\bmin-h-16\b/);
-    assert.match(turnClasses, /\bbg-\[#087451\]\b/);
+    assert.match(turnClasses, /\bbg-\[#087451\](?=\s|$)/);
     assert.match(finishClasses, /\bw-full\b/);
     assert.match(finishClasses, /\bmin-h-16\b/);
-    assert.match(bubbleClasses, /after:content-\[''\]/);
+    assert.match(
+      bubbleClasses,
+      /after:content-\[(?:''|&#x27;&#x27;)\]/,
+    );
     assert.doesNotMatch(styles, /\.conversation-[a-z-]+\s*(?:[,{:]|::)/);
   });
 });

@@ -651,8 +651,8 @@ test("auth layout is responsive, touch-friendly, and visually distinct", () => {
   assert.match(styles, /\.auth-card[\s\S]*?background:\s*(?:#fff|white|rgb\(255)/);
   assert.match(styles, /\.auth-submit[\s\S]*?background:\s*#ff467b/);
   assert.match(bar, /\bfixed\b/);
-  assert.match(bar, /\bbg-\[#204c7f\]\b/);
-  assert.match(bar, /\bmax-\[720px\]:top-\[94px\]\b/);
+  assert.match(bar, /\bbg-\[#204c7f\](?=\s|$)/);
+  assert.match(bar, /\bmax-\[720px\]:top-\[94px\](?=\s|$)/);
   assert.doesNotMatch(styles, /\.user-session-bar/);
   assert.match(styles, /:focus-visible/);
 });
@@ -675,7 +675,7 @@ test("session controls relocate with Tailwind at the 720px lesson breakpoint", (
   const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
 
   assert.ok(bar);
-  assert.match(bar, /\bmax-\[720px\]:top-\[94px\]\b/);
+  assert.match(bar, /\bmax-\[720px\]:top-\[94px\](?=\s|$)/);
   assert.match(bar, /\bmax-\[720px\]:right-3\b/);
   assert.match(tablet, /\.lesson-flow-banner\s*\{[\s\S]*?top:\s*144px/);
 });
