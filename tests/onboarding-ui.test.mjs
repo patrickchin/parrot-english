@@ -403,10 +403,10 @@ describe("profile summary editor", () => {
     )?.[0];
 
     assert.doesNotMatch(html, /<fieldset disabled="">/);
-    assert.doesNotMatch(close, /disabled/);
-    assert.doesNotMatch(cancel, /disabled/);
-    assert.doesNotMatch(redo, /disabled/);
-    assert.doesNotMatch(save, /disabled/);
+    assert.doesNotMatch(close, /\sdisabled(?:=""|(?=[ >]))/);
+    assert.doesNotMatch(cancel, /\sdisabled(?:=""|(?=[ >]))/);
+    assert.doesNotMatch(redo, /\sdisabled(?:=""|(?=[ >]))/);
+    assert.doesNotMatch(save, /\sdisabled(?:=""|(?=[ >]))/);
   });
 
   it("blocks closing, canceling, and saving while a save is active", () => {

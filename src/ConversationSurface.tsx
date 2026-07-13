@@ -1,5 +1,7 @@
 import { ArrowLeft, Flag, Mic, MicOff, RotateCcw } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
+import { HeaderButton, RouteHeader } from "./AppHeader";
+import { ActionButton } from "./ui";
 
 export type ConversationSurfaceStatus =
   | "ready"
@@ -85,17 +87,53 @@ function isInteractiveSpaceTarget(target: EventTarget | null) {
   );
 }
 
-function ConversationBackButton({ onBack }: { onBack: () => void }) {
+function ConversationHeader({ onBack }: { onBack: () => void }) {
   return (
-    <button
-      aria-label="Back"
-      className="conversation-back-button app-header-control"
-      onClick={onBack}
-      type="button"
+    <RouteHeader>
+      <HeaderButton
+        aria-label="Back"
+        icon={<ArrowLeft />}
+        onClick={onBack}
+        type="button"
+      >
+        Back
+      </HeaderButton>
+    </RouteHeader>
+  );
+}
+
+function ConversationScreen({ children }: { children: ReactNode }) {
+  return (
+    <main className="relative grid h-dvh w-full justify-items-center overflow-y-auto bg-conversation px-4 pb-4 pt-24 short:px-2.5 short:pb-2.5 short:pt-20 md:px-11 md:pb-11 md:pt-28">
+      {children}
+    </main>
+  );
+}
+
+function ConversationSpeech({
+  children,
+  live = false,
+}: {
+  children: ReactNode;
+  live?: boolean;
+}) {
+  return (
+    <p
+      aria-live={live ? "polite" : undefined}
+      className="relative m-0 w-11/12 max-w-lg rounded-3xl border-4 border-white bg-white p-4 text-center text-xl font-black leading-snug text-brand-ink shadow-control-surface after:absolute after:-bottom-3 after:left-1/2 after:size-6 after:-translate-x-1/2 after:rotate-45 after:bg-white short:p-3 short:text-base sm:p-5 sm:text-2xl"
     >
-      <ArrowLeft aria-hidden="true" />
-      <span>Back</span>
-    </button>
+      {children}
+    </p>
+  );
+}
+
+function ConversationCharacter({ alt, src }: { alt: string; src: string }) {
+  return (
+    <img
+      alt={alt}
+      className="max-h-96 w-64 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-h-52 short:w-40 sm:w-80 lg:w-96"
+      src={src}
+    />
   );
 }
 
@@ -136,24 +174,19 @@ export function ConversationSurface({
 
   if (status === "ready") {
     return (
-      <main className="conversation-screen">
-        <ConversationBackButton onBack={onBack} />
-        <section className="conversation-start-card">
-          <h1 className="conversation-visually-hidden">
-            Chat with Peppa
-          </h1>
-          <div className="conversation-character-stage">
-            <p className="conversation-speech-bubble">
-              Getting our chat ready…
-            </p>
-            <img
+      <ConversationScreen>
+        <ConversationHeader onBack={onBack} />
+        <section className="grid w-full max-w-3xl justify-items-center gap-3 bg-transparent p-2 text-center md:p-5">
+          <h1 className="sr-only">Chat with Peppa</h1>
+          <div className="grid w-full place-items-center gap-4 short:gap-3 md:gap-6">
+            <ConversationSpeech>Getting our chat ready…</ConversationSpeech>
+            <ConversationCharacter
               alt="Peppa smiling"
-              className="conversation-character conversation-character--start"
               src={PEPPA_ASSETS.ready}
             />
           </div>
         </section>
-      </main>
+      </ConversationScreen>
     );
   }
 
@@ -164,19 +197,13 @@ export function ConversationSurface({
         ? "Lovely chat! I'll remember that."
         : "I'm listening!");
   return (
-    <main className="conversation-screen">
-      <ConversationBackButton onBack={onBack} />
-      <section className="conversation-shell">
-        <div className="conversation-character-stage">
-          <p
-            aria-live="polite"
-            className="conversation-speech-bubble"
-          >
-            {speech}
-          </p>
-          <img
+    <ConversationScreen>
+      <ConversationHeader onBack={onBack} />
+      <section className="my-auto grid w-full max-w-3xl justify-items-center gap-3 bg-transparent p-2 short:p-3 md:p-5">
+        <div className="grid w-full place-items-center gap-4 short:gap-3 md:gap-6">
+          <ConversationSpeech live>{speech}</ConversationSpeech>
+          <ConversationCharacter
             alt="Peppa"
-            className={`conversation-character conversation-character--${status}`}
             src={PEPPA_ASSETS[status]}
           />
         </div>
@@ -184,16 +211,18 @@ export function ConversationSurface({
         {joining ? (
           <div
             aria-live="assertive"
-            className="conversation-joining-notice"
+            className="flex w-full max-w-xl items-center justify-center gap-4 rounded-3xl border-4 border-white bg-brand-ink px-5 py-4 text-left text-white shadow-control-navy"
             role="status"
           >
             <span
               aria-hidden="true"
-              className="conversation-joining-spinner"
+              className="size-10 shrink-0 animate-spin rounded-full border-4 border-white/35 border-t-brand-yellow motion-reduce:animate-none"
             />
-            <span>
-              <strong>{STATUS_LABELS.connecting}</strong>
-              <span>
+            <span className="grid gap-1">
+              <strong className="text-xl leading-tight sm:text-2xl">
+                {STATUS_LABELS.connecting}
+              </strong>
+              <span className="text-sm font-bold leading-snug sm:text-base">
                 Please wait until Peppa says hello before you start talking.
               </span>
             </span>
@@ -201,22 +230,26 @@ export function ConversationSurface({
         ) : thinking ? (
           <div
             aria-live="polite"
-            className="conversation-response-notice"
+            className="flex w-full max-w-xl items-center justify-center gap-4 rounded-3xl border-4 border-white bg-white/90 px-5 py-4 text-left text-brand-ink shadow-control-surface"
             role="status"
           >
             <span
               aria-hidden="true"
-              className="conversation-response-spinner"
+              className="size-10 shrink-0 animate-spin rounded-full border-4 border-sky-300 border-t-brand-rose motion-reduce:animate-none"
             />
-            <span>
-              <strong>{STATUS_LABELS.thinking}</strong>
-              <span>Getting her reply ready.</span>
+            <span className="grid gap-1">
+              <strong className="text-lg leading-tight sm:text-xl">
+                {STATUS_LABELS.thinking}
+              </strong>
+              <span className="text-sm font-bold leading-snug sm:text-base">
+                Getting her reply ready.
+              </span>
             </span>
           </div>
         ) : (
           <p
             aria-live="polite"
-            className="conversation-visually-hidden"
+            className="sr-only"
             role="status"
           >
             {STATUS_LABELS[status]}
@@ -225,7 +258,7 @@ export function ConversationSurface({
 
         {error ? (
           <p
-            className="conversation-error"
+            className="m-0 w-full max-w-xl rounded-2xl bg-rose-100 px-4 py-2.5 text-center font-extrabold text-rose-900"
             role="alert"
           >
             {error}
@@ -233,55 +266,53 @@ export function ConversationSurface({
         ) : null}
 
         {!saving && !joining ? (
-          <div className="conversation-actions">
+          <div className="grid w-full max-w-xl justify-items-center gap-3">
             {status === "error" ? (
-              <button
-                className="conversation-retry-button app-button app-button--large app-button--brand"
+              <ActionButton
                 onClick={onStart}
+                size="large"
                 type="button"
               >
                 <RotateCcw aria-hidden="true" />
                 Try again
-              </button>
+              </ActionButton>
             ) : thinking ? null : (
-              <button
+              <ActionButton
                 aria-keyshortcuts="Space"
                 aria-pressed={microphoneEnabled}
-                className={`conversation-turn-button app-button app-button--large ${
-                  microphoneEnabled
-                    ? "is-active app-button--brand"
-                    : "app-button--success"
-                }`}
                 onClick={onToggleMicrophone}
+                size="large"
                 type="button"
+                variant={microphoneEnabled ? "brand" : "success"}
               >
                 {microphoneEnabled ? (
                   <MicOff aria-hidden="true" />
                 ) : (
                   <Mic aria-hidden="true" />
                 )}
-                <span className="conversation-turn-button-copy">
+                <span className="grid justify-items-start leading-tight">
                   <strong>
                     {microphoneEnabled ? "End my turn" : "Start my turn"}
                   </strong>
-                  <small>
+                  <small className="mt-1 text-xs font-bold opacity-85">
                     Click or press Space
                   </small>
                 </span>
-              </button>
+              </ActionButton>
             )}
 
-            <button
-              className="conversation-finish-button app-button app-button--large app-button--surface"
+            <ActionButton
               onClick={onFinish}
+              size="large"
               type="button"
+              variant="surface"
             >
               <Flag aria-hidden="true" />
               Finish conversation
-            </button>
+            </ActionButton>
           </div>
         ) : null}
       </section>
-    </main>
+    </ConversationScreen>
   );
 }

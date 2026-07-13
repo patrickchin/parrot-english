@@ -1,5 +1,6 @@
 import {
   useState,
+  type ComponentProps,
   type ComponentType,
   type Dispatch,
   type FormEvent,
@@ -7,6 +8,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
+import { AccountHeader } from "./AppHeader";
 import {
   getAuthErrorMessage,
   validateAuthForm,
@@ -18,6 +20,7 @@ import {
   type ProfileAccountAction,
 } from "./account-actions";
 import { authClient } from "./auth-client";
+import { ActionButton, cx, fieldClassName } from "./ui";
 
 interface AuthActionResult {
   error?: unknown | null;
@@ -50,6 +53,43 @@ interface SignOutSessionOptions {
 }
 
 const SIGN_OUT_ERROR_MESSAGE = "Unable to log you out. Please try again.";
+
+function AuthScreen({ children }: { children: ReactNode }) {
+  return (
+    <main className="grid h-dvh w-full items-start justify-items-center overflow-y-auto bg-auth p-5 sm:place-items-center sm:p-10 lg:p-14">
+      {children}
+    </main>
+  );
+}
+
+function AuthCard({
+  children,
+  className,
+  ...props
+}: ComponentProps<"section">) {
+  return (
+    <section
+      className={cx(
+        "my-auto w-full max-w-lg rounded-3xl border-4 border-white bg-white p-6 shadow-card sm:p-10",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </section>
+  );
+}
+
+function AuthParrotMark() {
+  return (
+    <span
+      aria-hidden="true"
+      className="grid size-14 shrink-0 -rotate-6 place-items-center rounded-full border-4 border-white bg-brand-pink text-3xl font-black text-white shadow-control-pink sm:size-16"
+    >
+      P
+    </span>
+  );
+}
 
 export async function submitAuthForm({
   client,
@@ -149,31 +189,38 @@ export function AuthGateView({
 }: AuthGateViewProps) {
   if (isPending || isRetrying) {
     return (
-      <main className="auth-screen">
-        <section aria-busy="true" className="auth-card auth-status-card" role="status">
-          <span aria-hidden="true" className="auth-parrot-mark">
-            P
-          </span>
+      <AuthScreen>
+        <AuthCard
+          aria-busy="true"
+          className="grid justify-items-center gap-4 text-center font-extrabold text-brand-navy"
+          role="status"
+        >
+          <AuthParrotMark />
           <p>Checking your session…</p>
-        </section>
-      </main>
+        </AuthCard>
+      </AuthScreen>
     );
   }
 
   if (sessionError) {
     return (
-      <main className="auth-screen">
-        <section className="auth-card auth-status-card" role="alert">
-          <span aria-hidden="true" className="auth-parrot-mark">
-            P
-          </span>
-          <h1>Sign-in is temporarily unavailable</h1>
-          <p>Check your connection, then try again.</p>
-          <button className="auth-submit" onClick={onRetry} type="button">
+      <AuthScreen>
+        <AuthCard
+          className="grid justify-items-center gap-4 text-center font-extrabold text-brand-navy"
+          role="alert"
+        >
+          <AuthParrotMark />
+          <h1 className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl">
+            Sign-in is temporarily unavailable
+          </h1>
+          <p className="m-0 leading-relaxed">
+            Check your connection, then try again.
+          </p>
+          <ActionButton onClick={onRetry} type="button">
             Try again
-          </button>
-        </section>
-      </main>
+          </ActionButton>
+        </AuthCard>
+      </AuthScreen>
     );
   }
 
@@ -185,23 +232,34 @@ export function AuthGateView({
     const isSignUp = mode === "sign-up";
 
     return (
-      <main className="auth-screen">
-        <section className="auth-card" aria-labelledby="auth-title">
-          <header className="auth-heading">
-            <span aria-hidden="true" className="auth-parrot-mark">
-              P
-            </span>
-            <h1 id="auth-title">
+      <AuthScreen>
+        <AuthCard aria-labelledby="auth-title">
+          <header className="mb-6 flex items-start gap-4 sm:items-center">
+            <AuthParrotMark />
+            <h1
+              className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl"
+              id="auth-title"
+            >
               {isSignUp ? "Create a learning account" : "Welcome back"}
             </h1>
           </header>
 
           <form onSubmit={onSubmit}>
-            <fieldset className="auth-fieldset" disabled={isSubmitting}>
-              <div className="auth-mode-switch" aria-label="Choose sign in or sign up">
+            <fieldset
+              className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75"
+              disabled={isSubmitting}
+            >
+              <div
+                aria-label="Choose sign in or sign up"
+                className="grid grid-cols-1 gap-1.5 rounded-2xl bg-sky-100 p-1 sm:grid-cols-2"
+              >
                 <button
                   aria-pressed={!isSignUp}
-                  className={!isSignUp ? "is-active" : ""}
+                  className={cx(
+                    "min-h-12 cursor-pointer rounded-xl border-0 bg-transparent font-black text-brand-navy",
+                    !isSignUp &&
+                      "bg-brand-navy text-white shadow-control-navy",
+                  )}
                   onClick={() => onModeChange("sign-in")}
                   type="button"
                 >
@@ -209,7 +267,11 @@ export function AuthGateView({
                 </button>
                 <button
                   aria-pressed={isSignUp}
-                  className={isSignUp ? "is-active" : ""}
+                  className={cx(
+                    "min-h-12 cursor-pointer rounded-xl border-0 bg-transparent font-black text-brand-navy",
+                    isSignUp &&
+                      "bg-brand-navy text-white shadow-control-navy",
+                  )}
                   onClick={() => onModeChange("sign-up")}
                   type="button"
                 >
@@ -218,7 +280,10 @@ export function AuthGateView({
               </div>
 
               {isSignUp ? (
-                <label className="auth-field" htmlFor="auth-name">
+                <label
+                  className="grid gap-2 font-black text-brand-ink"
+                  htmlFor="auth-name"
+                >
                   <span>Name</span>
                   <input
                     autoComplete="name"
@@ -226,13 +291,17 @@ export function AuthGateView({
                     name="name"
                     onChange={(event) => onFieldChange("name", event.target.value)}
                     required
+                    className={fieldClassName("bg-sky-50")}
                     type="text"
                     value={fields.name}
                   />
                 </label>
               ) : null}
 
-              <label className="auth-field" htmlFor="auth-email">
+              <label
+                className="grid gap-2 font-black text-brand-ink"
+                htmlFor="auth-email"
+              >
                 <span>Email</span>
                 <input
                   autoComplete="email"
@@ -241,12 +310,16 @@ export function AuthGateView({
                   name="email"
                   onChange={(event) => onFieldChange("email", event.target.value)}
                   required
+                  className={fieldClassName("bg-sky-50")}
                   type="email"
                   value={fields.email}
                 />
               </label>
 
-              <label className="auth-field" htmlFor="auth-password">
+              <label
+                className="grid gap-2 font-black text-brand-ink"
+                htmlFor="auth-password"
+              >
                 <span>Password</span>
                 <input
                   autoComplete={isSignUp ? "new-password" : "current-password"}
@@ -255,19 +328,28 @@ export function AuthGateView({
                   name="password"
                   onChange={(event) => onFieldChange("password", event.target.value)}
                   required
+                  className={fieldClassName("bg-sky-50")}
                   type="password"
                   value={fields.password}
                 />
-                <small>At least 8 characters</small>
+                <small className="text-xs font-bold text-slate-500">
+                  At least 8 characters
+                </small>
               </label>
 
               {formError ? (
-                <p className="auth-error" role="alert">
+                <p
+                  className="m-0 rounded-xl bg-rose-50 px-3 py-2.5 font-extrabold leading-snug text-red-800"
+                  role="alert"
+                >
                   {formError}
                 </p>
               ) : null}
 
-              <button className="auth-submit" type="submit">
+              <ActionButton
+                className="w-full rounded-full border-4 border-white hover:-translate-y-px hover:brightness-95"
+                type="submit"
+              >
                 {isSubmitting
                   ? isSignUp
                     ? "Creating account…"
@@ -275,11 +357,11 @@ export function AuthGateView({
                   : isSignUp
                     ? "Create account"
                     : "Sign in and start"}
-              </button>
+              </ActionButton>
             </fieldset>
           </form>
-        </section>
-      </main>
+        </AuthCard>
+      </AuthScreen>
     );
   }
 
@@ -288,34 +370,14 @@ export function AuthGateView({
 
   return (
     <>
-      <aside className="app-header-account" aria-label="Current account">
-        <span className="app-header-account-label" title={session.user.email}>
-          {userLabel}
-        </span>
-        {onOpenProfile ? (
-          <button
-            aria-label="Edit learner profile"
-            className="app-button app-button--account app-button--surface"
-            onClick={onOpenProfile}
-            type="button"
-          >
-            Profile
-          </button>
-        ) : null}
-        <button
-          className="app-button app-button--account app-button--brand"
-          disabled={isSigningOut}
-          onClick={onSignOut}
-          type="button"
-        >
-          {isSigningOut ? "Signing out…" : "Log out"}
-        </button>
-        {accountError ? (
-          <span className="app-header-error" role="alert">
-            {accountError}
-          </span>
-        ) : null}
-      </aside>
+      <AccountHeader
+        error={accountError}
+        isSigningOut={isSigningOut}
+        onOpenProfile={onOpenProfile}
+        onSignOut={onSignOut}
+        userEmail={session.user.email}
+        userLabel={userLabel}
+      />
       {children}
     </>
   );

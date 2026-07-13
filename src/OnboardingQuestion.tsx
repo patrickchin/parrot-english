@@ -7,6 +7,13 @@ import {
   type OnboardingQuestion,
 } from "./onboarding-api";
 import { recordSpeechClip } from "./speech-recorder";
+import { OnboardingCard } from "./OnboardingLayout";
+import {
+  ActionButton,
+  fieldClassName,
+  IconButton,
+  TextButton,
+} from "./ui";
 
 export type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
 
@@ -48,47 +55,60 @@ export function OnboardingQuestionView({
   }
 
   return (
-    <section
-      className="onboarding-question-card"
+    <OnboardingCard
+      className="p-6 sm:p-10"
       aria-labelledby="onboarding-question-title"
     >
-      <header className="onboarding-question-heading">
-        <p className="onboarding-progress">
+      <header className="flex items-center justify-between gap-4">
+        <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-rose">
           Question {progress.current} of {progress.total}
         </p>
-        <button
+        <IconButton
           aria-label="Replay question"
-          className="onboarding-icon-button"
           disabled={disabled || !question.audio}
           onClick={onReplay}
           type="button"
         >
-          <Volume2 aria-hidden="true" />
-        </button>
+          <Volume2 aria-hidden="true" className="size-6" />
+        </IconButton>
       </header>
 
-      <div className="onboarding-character-row">
+      <div className="my-5 grid items-center gap-4 text-center sm:grid-cols-4 sm:gap-8 sm:text-left">
         <img
           alt="Peppa, your English host"
-          className="onboarding-peppa"
+          className="mx-auto max-h-40 w-24 animate-float object-contain motion-reduce:animate-none sm:col-span-1 sm:w-full"
           src="/assets/characters/peppa/peppa-happy.webp"
         />
-        <div>
-          <h1 className="onboarding-question-title" id="onboarding-question-title">
+        <div className="sm:col-span-3">
+          <h1
+            className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl"
+            id="onboarding-question-title"
+          >
             {question.promptEn}
           </h1>
           {question.promptZh ? (
-            <p className="onboarding-question-translation">{question.promptZh}</p>
+            <p className="mb-0 mt-2.5 font-bold text-slate-500">
+              {question.promptZh}
+            </p>
           ) : null}
         </div>
       </div>
 
-      <form className="onboarding-answer-form" onSubmit={submit}>
-        <fieldset disabled={disabled}>
-          <label className="onboarding-answer-field" htmlFor={inputId}>
+      <form onSubmit={submit}>
+        <fieldset
+          className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75"
+          disabled={disabled}
+        >
+          <label
+            className="grid gap-2 font-black text-brand-ink"
+            htmlFor={inputId}
+          >
             <span>Your answer</span>
-            <span className="onboarding-input-row">
+            <span className="flex items-stretch gap-2">
               <textarea
+                className={fieldClassName(
+                  "min-h-28 min-w-0 flex-1 resize-y px-4 py-3 font-extrabold leading-relaxed text-brand-ink",
+                )}
                 id={inputId}
                 maxLength={question.maxLength}
                 onChange={(event) => onValueChange(event.target.value)}
@@ -97,64 +117,59 @@ export function OnboardingQuestionView({
               />
               <button
                 aria-label="Speak your answer"
-                className="onboarding-input-action onboarding-mic-button"
+                className="grid w-13 shrink-0 cursor-pointer place-items-center rounded-2xl border-0 bg-brand-pink text-white focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink"
                 onClick={onTranscribe}
                 type="button"
               >
-                <Mic aria-hidden="true" />
+                <Mic aria-hidden="true" className="size-6" />
               </button>
             </span>
           </label>
 
           {status === "recording" ? (
-            <p className="onboarding-input-status" role="status">
+            <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
               Listening…
             </p>
           ) : status === "transcribing" ? (
-            <p className="onboarding-input-status" role="status">
+            <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
               Writing what I heard…
             </p>
           ) : status === "saving" ? (
-            <p className="onboarding-input-status" role="status">
+            <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
               Peppa is thinking…
             </p>
           ) : null}
           {fieldError ? (
-            <p className="onboarding-field-error" role="alert">
+            <p className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
               {fieldError}
             </p>
           ) : null}
 
-          <div className="onboarding-form-actions">
+          <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-sm:justify-between">
             {mode === "onboarding" && !question.required ? (
-              <button
-                className="onboarding-skip-button"
+              <TextButton
                 onClick={onSkipQuestion}
                 type="button"
               >
                 Skip question
-              </button>
+              </TextButton>
             ) : null}
             {mode === "onboarding" ? (
-              <button
-                className="onboarding-skip-button"
-                onClick={onSkip}
-                type="button"
-              >
+              <TextButton onClick={onSkip} type="button">
                 Skip for now
-              </button>
+              </TextButton>
             ) : null}
-            <button className="onboarding-next-button" type="submit">
+            <ActionButton type="submit">
               {status === "saving"
                 ? "Peppa is thinking…"
                 : mode === "profile"
                   ? "Save"
                   : "Next"}
-            </button>
+            </ActionButton>
           </div>
         </fieldset>
       </form>
-    </section>
+    </OnboardingCard>
   );
 }
 

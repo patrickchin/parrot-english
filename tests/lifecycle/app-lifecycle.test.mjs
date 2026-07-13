@@ -972,7 +972,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       applicationRoutesInMemory({ initialEntries: ["/lessons"] }),
     );
     text(/Choose a lesson/);
-    await click(document.querySelector(".lesson-card-action"));
+    await click(
+      document.querySelector('a[aria-label^="Start lesson:"]'),
+    );
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
     assert.ok(
       document.querySelector('[aria-label="Parrot English speaking lesson"]'),
@@ -981,7 +983,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(currentRoute().path, "/lessons"));
     text(/Choose a lesson/);
 
-    await click(document.querySelector(".lesson-card-action"));
+    await click(
+      document.querySelector('a[aria-label^="Start lesson:"]'),
+    );
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
     const popDestination = currentRoute();
     await click(button("Start lesson"));

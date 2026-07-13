@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import type { OnboardingAcknowledgment as Acknowledgment } from "./onboarding-api";
+import { OnboardingCard } from "./OnboardingLayout";
+import { ActionButton } from "./ui";
 
 type AudioLike = {
   addEventListener: (event: "ended" | "error", listener: () => void) => void;
@@ -91,16 +93,21 @@ export function OnboardingAcknowledgment({
   );
 
   return (
-    <section className="onboarding-acknowledgment-card" aria-live="polite">
+    <OnboardingCard
+      aria-live="polite"
+      className="grid justify-items-center gap-5 p-8 text-center sm:p-14"
+    >
       <img
         alt="Peppa smiling"
-        className="onboarding-acknowledgment-peppa"
+        className="max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-56"
         src="/assets/characters/peppa/peppa-happy.webp"
       />
-      <h1>{acknowledgment.text}</h1>
-      <button className="onboarding-next-button" onClick={onNext} type="button">
+      <h1 className="m-0 max-w-xl text-3xl leading-tight text-brand-ink sm:text-5xl">
+        {acknowledgment.text}
+      </h1>
+      <ActionButton onClick={onNext} type="button">
         Next
-      </button>
-    </section>
+      </ActionButton>
+    </OnboardingCard>
   );
 }

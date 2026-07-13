@@ -27,6 +27,11 @@ import {
 } from "./onboarding-api";
 import { OnboardingAcknowledgment } from "./OnboardingAcknowledgment";
 import {
+  OnboardingCard,
+  OnboardingScreen,
+  OnboardingStatusCard,
+} from "./OnboardingLayout";
+import {
   OnboardingQuestionView,
   captureOnboardingAnswer,
   playOnboardingStart,
@@ -39,6 +44,7 @@ import {
   selectOnboardingExperience,
   useConversationOnboarding,
 } from "./useConversationOnboarding";
+import { ActionButton, TextButton } from "./ui";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -116,64 +122,61 @@ export function OnboardingGateView({
 
   if (isLoading) {
     return (
-      <main className="onboarding-screen">
-        <section aria-busy="true" className="onboarding-status-card" role="status">
-          <p>
+      <OnboardingScreen>
+        <OnboardingStatusCard aria-busy="true" role="status">
+          <p className="m-0 font-bold leading-relaxed text-slate-600">
             {isConversationRoute
               ? "Getting Peppa ready…"
               : "Loading your questions…"}
           </p>
-        </section>
-      </main>
+        </OnboardingStatusCard>
+      </OnboardingScreen>
     );
   }
 
   if (loadError) {
     return (
-      <main className="onboarding-screen">
-        <section className="onboarding-status-card" role="alert">
-          <h1>
+      <OnboardingScreen>
+        <OnboardingStatusCard role="alert">
+          <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
             {isConversationRoute
               ? "Peppa is taking a break"
               : "Questions are taking a break"}
           </h1>
-          <p>{loadError}</p>
-          <div className="onboarding-form-actions">
+          <p className="m-0 font-bold leading-relaxed text-slate-600">
+            {loadError}
+          </p>
+          <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
             {isConversationRoute ? (
-              <button
-                className="onboarding-skip-button"
+              <TextButton
                 onClick={onCloseConversationRoute}
                 type="button"
               >
                 Back to main menu
-              </button>
+              </TextButton>
             ) : (
-              <button
-                className="onboarding-skip-button"
-                onClick={onSkip}
-                type="button"
-              >
+              <TextButton onClick={onSkip} type="button">
                 Skip for now
-              </button>
+              </TextButton>
             )}
-            <button className="onboarding-next-button" onClick={onRetry} type="button">
+            <ActionButton onClick={onRetry} type="button">
               Retry
-            </button>
+            </ActionButton>
           </div>
-        </section>
-      </main>
+        </OnboardingStatusCard>
+      </OnboardingScreen>
     );
   }
 
   if (acknowledgment) {
     return (
-      <main className="onboarding-screen">
+      <OnboardingScreen>
         <OnboardingAcknowledgment
           acknowledgment={acknowledgment.acknowledgment}
           onNext={onAcknowledgmentNext}
           operationId={acknowledgment.operationId}
         />
-      </main>
+      </OnboardingScreen>
     );
   }
 
@@ -192,53 +195,52 @@ export function OnboardingGateView({
   if (isProfileRoute && canEditProfile) {
     if (isProfileLoading) {
       return (
-        <main className="onboarding-screen">
-          <section
-            aria-busy="true"
-            className="onboarding-status-card"
-            role="status"
-          >
-            <p>Loading your profile…</p>
-          </section>
-        </main>
+        <OnboardingScreen>
+          <OnboardingStatusCard aria-busy="true" role="status">
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              Loading your profile…
+            </p>
+          </OnboardingStatusCard>
+        </OnboardingScreen>
       );
     }
 
     if (profileLoadError) {
       return (
-        <main className="onboarding-screen">
-          <section className="onboarding-status-card" role="alert">
-            <h1>Profile is taking a break</h1>
-            <p>{profileLoadError}</p>
-            <div className="onboarding-form-actions">
-              <button
-                className="onboarding-skip-button"
+        <OnboardingScreen>
+          <OnboardingStatusCard role="alert">
+            <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
+              Profile is taking a break
+            </h1>
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              {profileLoadError}
+            </p>
+            <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
+              <TextButton
                 onClick={onCloseProfileRoute}
                 type="button"
               >
                 Back to main menu
-              </button>
-              <button
-                className="onboarding-next-button"
-                onClick={onRetryProfile}
-                type="button"
-              >
+              </TextButton>
+              <ActionButton onClick={onRetryProfile} type="button">
                 Retry
-              </button>
+              </ActionButton>
             </div>
-          </section>
-        </main>
+          </OnboardingStatusCard>
+        </OnboardingScreen>
       );
     }
 
     if (profileEditor) return <ProfileEditorView {...profileEditor} />;
 
     return (
-      <main className="onboarding-screen">
-        <section aria-busy="true" className="onboarding-status-card" role="status">
-          <p>Loading your profile…</p>
-        </section>
-      </main>
+      <OnboardingScreen>
+        <OnboardingStatusCard aria-busy="true" role="status">
+          <p className="m-0 font-bold leading-relaxed text-slate-600">
+            Loading your profile…
+          </p>
+        </OnboardingStatusCard>
+      </OnboardingScreen>
     );
   }
 
@@ -265,43 +267,47 @@ export function OnboardingGateView({
 
   if (fullData && !started) {
     return (
-      <main className="onboarding-screen">
-        <section className="onboarding-start-card">
+      <OnboardingScreen>
+        <OnboardingCard className="grid justify-items-center gap-4 p-7 text-center sm:p-12">
           <img
             alt="Peppa waving hello"
-            className="onboarding-start-peppa"
+            className="max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-52"
             src="/assets/characters/peppa/peppa-happy.webp"
           />
-          <h1>Meet Peppa</h1>
-          <p>
+          <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
+            Meet Peppa
+          </h1>
+          <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
             Answer six quick questions so your English practice can feel more like
             you.
           </p>
-          <button className="onboarding-start-button" onClick={onStart} type="button">
+          <ActionButton className="mt-2 text-lg" onClick={onStart} type="button">
             Start
-          </button>
-          <button className="onboarding-skip-button" onClick={onSkip} type="button">
+          </ActionButton>
+          <TextButton onClick={onSkip} type="button">
             Skip for now
-          </button>
-        </section>
-      </main>
+          </TextButton>
+        </OnboardingCard>
+      </OnboardingScreen>
     );
   }
 
   if (questionProps) {
     return (
-      <main className="onboarding-screen">
+      <OnboardingScreen>
         <OnboardingQuestionView {...questionProps} />
-      </main>
+      </OnboardingScreen>
     );
   }
 
   return (
-    <main className="onboarding-screen">
-      <section aria-busy="true" className="onboarding-status-card" role="status">
-        <p>Finishing your profile…</p>
-      </section>
-    </main>
+    <OnboardingScreen>
+      <OnboardingStatusCard aria-busy="true" role="status">
+        <p className="m-0 font-bold leading-relaxed text-slate-600">
+          Finishing your profile…
+        </p>
+      </OnboardingStatusCard>
+    </OnboardingScreen>
   );
 }
 
