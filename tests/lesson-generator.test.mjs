@@ -24,6 +24,18 @@ describe("lesson script generation", () => {
     assert.equal(calls[0].url, "https://api.groq.com/openai/v1/chat/completions");
     assert.match(calls[0].init.headers.Authorization, /^Bearer test-key$/);
     assert.equal(calls[0].body.response_format.type, "json_schema");
+    assert.equal(calls[0].body.reasoning_effort, "low");
+    assert.equal(calls[0].body.max_completion_tokens, 4500);
+    const schema = calls[0].body.response_format.json_schema.schema;
+    assert.equal(schema.properties.scenes.minItems, 5);
+    assert.equal(schema.properties.scenes.maxItems, 5);
+    assert.equal(schema.properties.scenes.items.properties.steps.minItems, 2);
+    assert.equal(schema.properties.scenes.items.properties.steps.maxItems, 3);
+    assert.match(calls[0].body.messages[0].content, /exactly five scenes/i);
+    assert.match(
+      calls[0].body.messages[0].content,
+      /two steps.*model line.*user repetition.*final scene.*third narrator praise/i,
+    );
     assert.match(calls[0].body.messages[1].content, /ordering ice cream/);
     assert.match(calls[0].body.messages[1].content, /Mia/);
     assert.match(calls[0].body.messages[1].content, /episode-garden/);
