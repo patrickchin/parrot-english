@@ -119,6 +119,7 @@ describe("app route helpers", () => {
       ["/login", "/Login///", "login"],
       ["/onboarding", "/Onboarding//", "onboarding"],
       ["/profile", "/Profile//", "profile"],
+      ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/progress", "/Progress///", null],
       ["/lessons", "/Lessons//", null],
       ["/lessons/my/create", "/Lessons/My/Create///", null],
@@ -179,6 +180,21 @@ describe("app route helpers", () => {
       ),
       "/progress?period=week#today",
     );
+  });
+
+  it("recognizes the standalone Talk to Peppa route and keeps it as a safe return target", () => {
+    for (const pathname of [
+      "/talk-to-peppa",
+      "/Talk-To-Peppa//",
+      "/TALK-TO-PEPPA///",
+    ]) {
+      assert.equal(routes.isTalkToPeppaRoute(pathname), true);
+      assert.equal(
+        routes.getSafeReturnTo(returnToSearch(pathname)),
+        pathname,
+      );
+    }
+    assert.equal(routes.isTalkToPeppaRoute("/talk-to-peppa/extra"), false);
   });
 
   it("falls back home from an unsafe auth gate return target", () => {

@@ -89,6 +89,7 @@ function renderGate(overrides = {}) {
         completedOnboardingFallback: createElement("p", null, "COMPLETE"),
         conversationProps: null,
         data: fullState("form"),
+        isConversationRoute: false,
         isLoading: false,
         isOnboardingRoute: true,
         isProfileLoading: false,
@@ -161,6 +162,22 @@ describe("realtime onboarding gate integration", () => {
     });
     assert.match(redoVisit, /Chat with Peppa/);
     assert.doesNotMatch(redoVisit, /COMPLETE/);
+  });
+
+  it("renders the same conversation as a standalone feature for a completed learner", () => {
+    const completed = fullState("realtime");
+    completed.profile.onboardingStatus = "completed";
+    completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
+
+    const html = renderGate({
+      conversationProps: conversationProps(),
+      data: completed,
+      isConversationRoute: true,
+      isOnboardingRoute: false,
+    });
+
+    assert.match(html, /Chat with Peppa/);
+    assert.doesNotMatch(html, /LESSON|COMPLETE/);
   });
 
   it("refreshes the existing onboarding gate after successful review", async () => {
