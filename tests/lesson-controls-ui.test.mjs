@@ -128,7 +128,7 @@ describe("scene playback controls", () => {
     );
     assert.match(
       styles,
-      /\.hold-to-talk-button:focus-visible\s*\{[^}]*outline:\s*4px solid #173c67/,
+      /\.hold-to-talk-button:focus-visible\s*\{[^}]*outline:\s*4px solid var\(--color-brand-ink\)/,
     );
   });
 

@@ -143,7 +143,7 @@ test("home and placeholder routes have equal, responsive, keyboard-visible surfa
   );
   assert.match(
     styles,
-    /\.home-menu-card:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
+    /\.home-menu-card:focus-visible\s*\{[^}]*outline:\s*5px solid var\(--color-brand-navy\)[^}]*outline-offset:\s*4px/s,
   );
   assert.match(
     styles,
@@ -152,7 +152,7 @@ test("home and placeholder routes have equal, responsive, keyboard-visible surfa
   assert.match(styles, /\.feature-placeholder-card\s*\{/);
   assert.match(
     styles,
-    /\.main-menu-link:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
+    /\.main-menu-link:focus-visible\s*\{[^}]*outline:\s*5px solid var\(--color-brand-navy\)[^}]*outline-offset:\s*4px/s,
   );
   assert.match(
     styles,

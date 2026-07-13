@@ -105,8 +105,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
     assert.doesNotMatch(connecting, /conversation-microphone-button/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
-    assert.match(noticeClasses, /\bbg-\[#173c67\](?=\s|$)/);
-    assert.match(noticeClasses, /\btext-white\b/);
+    assert.equal(noticeClasses, "conversation-joining-notice");
   });
 
   it("keeps only the two clear conversation actions after Peppa opens", () => {

@@ -83,7 +83,10 @@ describe("catalog-driven stage layout", () => {
       /min-height:\s*var\(--lesson-pill-height\)/,
     );
     assert.doesNotMatch(app, /scene-control-dock/);
-    assert.match(navigationButton, /background:\s*#ff467b/);
+    assert.match(
+      navigationButton,
+      /background:\s*var\(--color-brand-pink\)/,
+    );
     assert.match(navigationButton, /color:\s*#fff/);
     assert.match(disabledNavigationButton, /opacity:\s*0\.68/);
   });

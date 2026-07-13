@@ -70,7 +70,7 @@ describe("lesson list integration contracts", () => {
     assert.match(styles, /\.lesson-card-action:hover\s*\{/);
     assert.match(
       styles,
-      /\.lesson-card-action:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
+      /\.lesson-card-action:focus-visible\s*\{[^}]*outline:\s*5px solid var\(--color-brand-navy\)[^}]*outline-offset:\s*4px/s,
     );
     assert.doesNotMatch(styles, /\.lesson-card-action:disabled/);
     assert.match(designSystem, /\.app-header-control\s*\{/);
@@ -86,7 +86,7 @@ describe("lesson list integration contracts", () => {
     assert.match(styles, /\.lesson-catalog-section\s*\{/);
     assert.match(
       styles,
-      /\.lesson-catalog-section\s+>\s+h2\s*\{[^}]*color:\s*#204c7f/s,
+      /\.lesson-catalog-section\s+>\s+h2\s*\{[^}]*color:\s*var\(--color-brand-navy\)/s,
     );
     assert.match(
       styles,

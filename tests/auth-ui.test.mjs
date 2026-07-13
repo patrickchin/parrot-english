@@ -645,7 +645,10 @@ test("auth layout is responsive, touch-friendly, and visually distinct", () => {
   assert.match(styles, /@media\s*\(max-width:\s*560px\)/);
   assert.match(styles, /\.auth-(?:field input|submit)[\s\S]*?min-height:\s*48px/);
   assert.match(styles, /\.auth-card[\s\S]*?background:\s*(?:#fff|white|rgb\(255)/);
-  assert.match(styles, /\.auth-submit[\s\S]*?background:\s*#ff467b/);
+  assert.match(
+    styles,
+    /\.auth-submit[\s\S]*?background:\s*var\(--color-brand-pink\)/,
+  );
   assert.equal(bar, "app-header-account");
   assert.match(designSystem, /\.app-header-account\s*\{/);
   assert.match(designSystem, /background:\s*var\(--color-brand-navy\)/);
