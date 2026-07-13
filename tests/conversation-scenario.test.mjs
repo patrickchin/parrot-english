@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   applyConversationObservation,
-  createOnboardingConversationState,
+  createLearnerProfileConversationState,
   isConversationTerminal,
   nextConversationPrompt,
 } from "../lib/conversation-scenario.js";
@@ -20,7 +20,7 @@ function answered(summary, learnedName, learnedAge, profileAge = 8) {
 
 describe("bounded onboarding conversation", () => {
   it("starts redo conversations from the confirmed saved profile", () => {
-    const state = createOnboardingConversationState({
+    const state = createLearnerProfileConversationState({
       profileAge: 30,
       profileName: "Mia",
       profileSummary: "Mia is thirty and loves fast red cars.",
@@ -41,7 +41,7 @@ describe("bounded onboarding conversation", () => {
   });
 
   it("tracks required details while storing only one cumulative prose summary", () => {
-    const initial = createOnboardingConversationState();
+    const initial = createLearnerProfileConversationState();
     assert.equal(initial.activeObjective, "name");
     assert.equal(initial.profileSummary, "");
     assert.equal(initial.learnedName, false);
@@ -65,7 +65,7 @@ describe("bounded onboarding conversation", () => {
 
   it("accepts adult ages without an upper age cap", () => {
     const state = applyConversationObservation(
-      createOnboardingConversationState(),
+      createLearnerProfileConversationState(),
       answered("Mia is thirty years old.", true, true, 30),
     );
 
@@ -74,7 +74,7 @@ describe("bounded onboarding conversation", () => {
   });
 
   it("allows only one rephrase and keeps the rescue turn English-only", () => {
-    const initial = createOnboardingConversationState();
+    const initial = createLearnerProfileConversationState();
     const rephrased = applyConversationObservation(initial, {
       outcome: "unclear",
     });
@@ -94,7 +94,7 @@ describe("bounded onboarding conversation", () => {
 
   it("follows a different relevant interest by updating the prose", () => {
     const optional = applyConversationObservation(
-      createOnboardingConversationState(),
+      createLearnerProfileConversationState(),
       answered("Mia is eight years old.", true, true),
     );
     const followedInterest = applyConversationObservation(
@@ -115,7 +115,7 @@ describe("bounded onboarding conversation", () => {
 
   it("accepts uncertainty without spending the rephrase", () => {
     const advanced = applyConversationObservation(
-      createOnboardingConversationState(),
+      createLearnerProfileConversationState(),
       { outcome: "unknown" },
     );
 
@@ -125,7 +125,7 @@ describe("bounded onboarding conversation", () => {
 
   it("closes after at most three optional prose updates", () => {
     let state = applyConversationObservation(
-      createOnboardingConversationState(),
+      createLearnerProfileConversationState(),
       answered("Mia is eight years old.", true, true),
     );
 
@@ -144,7 +144,7 @@ describe("bounded onboarding conversation", () => {
 
   it("ends warmly when the child asks to stop", () => {
     const stopped = applyConversationObservation(
-      createOnboardingConversationState(),
+      createLearnerProfileConversationState(),
       { outcome: "stop" },
     );
 
@@ -161,7 +161,7 @@ describe("bounded onboarding conversation", () => {
   });
 
   it("requires a bounded paragraph for answered turns", () => {
-    const state = createOnboardingConversationState();
+    const state = createLearnerProfileConversationState();
     assert.throws(
       () => applyConversationObservation(state, answered(" ", true, false)),
       /summary must be a non-empty paragraph/i,

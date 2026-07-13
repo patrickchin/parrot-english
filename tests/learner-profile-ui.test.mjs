@@ -12,23 +12,23 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const questionModule = await vite.ssrLoadModule("/src/OnboardingQuestion.tsx");
+const questionModule = await vite.ssrLoadModule("/src/LearnerProfileQuestion.tsx");
 const {
-  OnboardingQuestionView,
-  captureOnboardingAnswer,
-  playOnboardingStart,
-  replayOnboardingQuestion,
+  LearnerProfileQuestionView,
+  captureLearnerProfileAnswer,
+  playLearnerProfileStart,
+  replayLearnerProfileQuestion,
 } = questionModule;
 const acknowledgmentModule = await vite.ssrLoadModule(
-  "/src/OnboardingAcknowledgment.tsx",
+  "/src/LearnerProfileAcknowledgment.tsx",
 );
-const { OnboardingAcknowledgment, beginAcknowledgmentPlayback } =
+const { LearnerProfileAcknowledgment, beginAcknowledgmentPlayback } =
   acknowledgmentModule;
 const profileModule = await vite.ssrLoadModule("/src/ProfileEditor.tsx");
 const { ProfileEditorView } = profileModule;
-const gateModule = await vite.ssrLoadModule("/src/OnboardingGate.tsx");
+const gateModule = await vite.ssrLoadModule("/src/LearnerProfileGate.tsx");
 const {
-  OnboardingGateView,
+  LearnerProfileGateView,
   answerForQuestion,
   createProfileOperationBoundary,
   createProfileOperationOwnership,
@@ -42,11 +42,11 @@ const {
 } = gateModule;
 const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const questionSource = readFileSync(
-  new URL("../src/OnboardingQuestion.tsx", import.meta.url),
+  new URL("../src/LearnerProfileQuestion.tsx", import.meta.url),
   "utf8",
 );
 const gateSource = readFileSync(
-  new URL("../src/OnboardingGate.tsx", import.meta.url),
+  new URL("../src/LearnerProfileGate.tsx", import.meta.url),
   "utf8",
 );
 
@@ -63,8 +63,8 @@ function question(overrides = {}) {
     required: true,
     maxLength: 120,
     audio: {
-      id: "onboarding-v2-age",
-      src: "/assets/audio/onboarding-v2-age.mp3",
+      id: "learner-profile-v2-age",
+      src: "/assets/audio/learner-profile-v2-age.mp3",
       text: "How old are you?",
     },
     ...overrides,
@@ -74,7 +74,7 @@ function question(overrides = {}) {
 function questionProps(overrides = {}) {
   return {
     fieldError: "",
-    mode: "onboarding",
+    mode: "learner-profile",
     onReplay() {},
     onSkip() {},
     onSkipQuestion() {},
@@ -91,7 +91,7 @@ function questionProps(overrides = {}) {
 
 function renderQuestion(overrides = {}) {
   return renderToStaticMarkup(
-    createElement(OnboardingQuestionView, questionProps(overrides)),
+    createElement(LearnerProfileQuestionView, questionProps(overrides)),
   );
 }
 
@@ -112,7 +112,7 @@ describe("one-question prose onboarding view", () => {
     assert.match(html, />Skip for now</);
     assert.doesNotMatch(
       html,
-      /onboarding-chips|Answer suggestions|Add one answer|aria-label="Add answer"/,
+      /learner-profile-chips|Answer suggestions|Add one answer|aria-label="Add answer"/,
     );
   });
 
@@ -152,7 +152,7 @@ describe("one-question prose onboarding view", () => {
   it("contains no scalar-array branching helpers", () => {
     assert.doesNotMatch(
       questionSource,
-      /cardinality|answerType|onboarding-chips|onboarding-suggestions|onToggleOption|onAddPending/,
+      /cardinality|answerType|learner-profile-chips|learner-profile-suggestions|onToggleOption|onAddPending/,
     );
     assert.doesNotMatch(
       gateSource,
@@ -164,7 +164,7 @@ describe("one-question prose onboarding view", () => {
 describe("onboarding prompt and transcription helpers", () => {
   it("plays only the first simple question after Start", async () => {
     const calls = [];
-    await playOnboardingStart({
+    await playLearnerProfileStart({
       questionAudio: question().audio,
       async playLine(options) {
         calls.push(options);
@@ -172,8 +172,8 @@ describe("onboarding prompt and transcription helpers", () => {
     });
     assert.deepEqual(calls, [
       {
-        audioId: "onboarding-v2-age",
-        audioSrc: "/assets/audio/onboarding-v2-age.mp3",
+        audioId: "learner-profile-v2-age",
+        audioSrc: "/assets/audio/learner-profile-v2-age.mp3",
         text: "How old are you?",
       },
     ]);
@@ -181,19 +181,19 @@ describe("onboarding prompt and transcription helpers", () => {
 
   it("replays only the current question", async () => {
     const calls = [];
-    await replayOnboardingQuestion(question().audio, {
+    await replayLearnerProfileQuestion(question().audio, {
       async playLine(options) {
         calls.push(options);
       },
     });
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].audioSrc, "/assets/audio/onboarding-v2-age.mp3");
+    assert.equal(calls[0].audioSrc, "/assets/audio/learner-profile-v2-age.mp3");
   });
 
   it("forwards cancellation when replaying a profile question", async () => {
     const controller = new AbortController();
     let replaySignal;
-    await replayOnboardingQuestion(question().audio, {
+    await replayLearnerProfileQuestion(question().audio, {
       signal: controller.signal,
       async playLine(options) {
         replaySignal = options.signal;
@@ -205,7 +205,7 @@ describe("onboarding prompt and transcription helpers", () => {
   it("returns one editable transcript without persisting it", async () => {
     const audio = new Blob(["audio"], { type: "audio/webm" });
     let transcribedAudio;
-    const transcript = await captureOnboardingAnswer({
+    const transcript = await captureLearnerProfileAnswer({
       async record() {
         return audio;
       },
@@ -224,7 +224,7 @@ describe("onboarding prompt and transcription helpers", () => {
     let recordSignal;
     let transcribeSignal;
 
-    await captureOnboardingAnswer({
+    await captureLearnerProfileAnswer({
       signal: controller.signal,
       async record(options) {
         recordSignal = options?.signal;
@@ -244,7 +244,7 @@ describe("onboarding prompt and transcription helpers", () => {
 describe("Peppa acknowledgment", () => {
   it("shows one acknowledgment and an immediate Next action", () => {
     const html = renderToStaticMarkup(
-      createElement(OnboardingAcknowledgment, {
+      createElement(LearnerProfileAcknowledgment, {
         acknowledgment: { text: "Dinosaurs are very stompy!", audio: null },
         operationId: 1,
         onNext() {},
@@ -326,7 +326,7 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
-  it("renders name, age, and the conversational description with a realtime onboarding action", () => {
+  it("renders name, age, and the description with a profile-edit conversation action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
         drafts: {
@@ -339,7 +339,7 @@ describe("profile summary editor", () => {
         isSaving: false,
         onCancel() {},
         onClose() {},
-        onRedoOnboarding() {},
+        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
@@ -387,7 +387,7 @@ describe("profile summary editor", () => {
         isSaving: false,
         onCancel() {},
         onClose() {},
-        onRedoOnboarding() {},
+        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
@@ -417,7 +417,7 @@ describe("profile summary editor", () => {
         isSaving: true,
         onCancel() {},
         onClose() {},
-        onRedoOnboarding() {},
+        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
@@ -778,7 +778,7 @@ function fullState(overrides = {}) {
       answers: emptyAnswers(),
       questionnaireVersion: 2,
       currentQuestionKey: "name",
-      onboardingStatus: "not_started",
+      profileStatus: "not_started",
       completedAt: null,
     },
     questionnaire: { version: 2 },
@@ -788,8 +788,8 @@ function fullState(overrides = {}) {
       promptEn: "Hi! I'm Peppa. What's your name?",
       promptZh: "你好！我是佩奇。你叫什么名字？",
       audio: {
-        id: "onboarding-v2-name",
-        src: "/assets/audio/onboarding-v2-name.mp3",
+        id: "learner-profile-v2-name",
+        src: "/assets/audio/learner-profile-v2-name.mp3",
         text: "Hi! I'm Peppa. What's your name?",
       },
     }),
@@ -802,16 +802,16 @@ function fullState(overrides = {}) {
 function renderGate(overrides = {}) {
   return renderToStaticMarkup(
     createElement(
-      OnboardingGateView,
+      LearnerProfileGateView,
       {
         acknowledgment: null,
-        completedOnboardingFallback: createElement(
+        completedLearnerProfileFallback: createElement(
           "div",
           { "data-completed-redirect": true },
           "COMPLETED REDIRECT",
         ),
         data: null,
-        isOnboardingRoute: true,
+        isLearnerProfileRoute: true,
         isProfileLoading: false,
         isProfileRoute: false,
         isLoading: false,
@@ -822,15 +822,15 @@ function renderGate(overrides = {}) {
         onRetryProfile() {},
         onSkip() {},
         onStart() {},
-        onboardingFallback: createElement(
+        learnerProfileFallback: createElement(
           "div",
-          { "data-onboarding-redirect": true },
-          "ONBOARDING REDIRECT",
+          { "data-learner-profile-redirect": true },
+          "LEARNER_PROFILE REDIRECT",
         ),
         profileEditor: null,
         profileLoadError: "",
         questionProps: null,
-        redoOnboarding: false,
+        redoLearnerProfile: false,
         started: false,
         ...overrides,
       },
@@ -854,28 +854,28 @@ describe("onboarding and profile gate", () => {
   it("routes incomplete learners to onboarding and completed learners away from it", () => {
     const protectedPage = renderGate({
       data: fullState(),
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
     });
-    assert.match(protectedPage, /ONBOARDING REDIRECT/);
+    assert.match(protectedPage, /LEARNER_PROFILE REDIRECT/);
     assert.doesNotMatch(protectedPage, /LESSON CONTENT|Meet Peppa/);
 
-    const completedOnboarding = renderGate({
+    const completedLearnerProfile = renderGate({
       data: fullState({
         canBypass: false,
         profile: {
           ...fullState().profile,
-          onboardingStatus: "completed",
+          profileStatus: "completed",
         },
       }),
     });
-    assert.match(completedOnboarding, /COMPLETED REDIRECT/);
-    assert.doesNotMatch(completedOnboarding, /LESSON CONTENT|Meet Peppa/);
+    assert.match(completedLearnerProfile, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(completedLearnerProfile, /LESSON CONTENT|Meet Peppa/);
   });
 
   it("routes bypass-only sessions away from onboarding", () => {
     const html = renderGate({
       data: { mode: "bypass-only", canBypass: true },
-      isOnboardingRoute: true,
+      isLearnerProfileRoute: true,
     });
     assert.match(html, /COMPLETED REDIRECT/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
@@ -884,7 +884,7 @@ describe("onboarding and profile gate", () => {
   it("routes bypass-only sessions away from unavailable profile editing", () => {
     const html = renderGate({
       data: { mode: "bypass-only", canBypass: true },
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
       isProfileRoute: true,
     });
     assert.match(html, /COMPLETED REDIRECT/);
@@ -894,7 +894,7 @@ describe("onboarding and profile gate", () => {
   it("keeps profile loading and retry errors on the profile route", () => {
     const loading = renderGate({
       data: fullState({ canBypass: true }),
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
       isProfileLoading: true,
       isProfileRoute: true,
     });
@@ -904,7 +904,7 @@ describe("onboarding and profile gate", () => {
 
     const failed = renderGate({
       data: fullState({ canBypass: true }),
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
       isProfileRoute: true,
       profileLoadError: "Profile service is unavailable.",
     });
@@ -950,17 +950,17 @@ describe("onboarding and profile gate", () => {
         canBypass: true,
         profile: {
           ...fullState().profile,
-          onboardingStatus: "in_progress",
+          profileStatus: "in_progress",
         },
       }),
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
     });
     assert.match(html, /LESSON CONTENT/);
     assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
 
     const bypass = renderGate({
       data: { mode: "bypass-only", canBypass: true },
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
     });
     assert.match(bypass, /LESSON CONTENT/);
     assert.doesNotMatch(bypass, /Edit learner profile/);
@@ -969,7 +969,7 @@ describe("onboarding and profile gate", () => {
   it("renders the basic profile editor without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
       isProfileRoute: true,
       profileEditor: {
         drafts: { name: "Mia", age: "I am eight", description: "" },
@@ -977,7 +977,7 @@ describe("onboarding and profile gate", () => {
         isSaving: false,
         onCancel() {},
         onClose() {},
-        onRedoOnboarding() {},
+        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
@@ -1020,7 +1020,7 @@ describe("onboarding and profile gate", () => {
       question: null,
       profile: {
         ...fullState().profile,
-        onboardingStatus: "completed",
+        profileStatus: "completed",
       },
       acknowledgment: { text: "Lovely stories!", audio: null },
     });
@@ -1043,9 +1043,9 @@ describe("onboarding and profile gate", () => {
       /<AuthGate\s+signedOutFallback=\{/,
     );
     assert.doesNotMatch(appSource, /compactSessionBar/);
-    assert.match(appSource, /<OnboardingGate[\s\S]*?isOnboardingRoute=/);
-    assert.match(appSource, /completedOnboardingFallback=/);
-    assert.match(appSource, /onboardingFallback=/);
+    assert.match(appSource, /<LearnerProfileGate[\s\S]*?isLearnerProfileRoute=/);
+    assert.match(appSource, /completedLearnerProfileFallback=/);
+    assert.match(appSource, /learnerProfileFallback=/);
     assert.match(appSource, /isProfileRoute=/);
     assert.match(gateSource, /onOpen:\s*onOpenProfileRoute/);
     assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);

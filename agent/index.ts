@@ -12,6 +12,7 @@ import {
   COMMIT_USER_TURN_COMMAND,
   REPEAT_LAST_AUDIO_COMMAND,
 } from "../lib/conversation-audio.js";
+import { isConversationPurpose } from "../lib/conversation-purpose.ts";
 import type { AgentConfig } from "./config.ts";
 import { readAgentConfig } from "./config.ts";
 import {
@@ -22,10 +23,10 @@ import {
 import {
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
-  ONBOARDING_AGENT_INSTRUCTIONS,
-  createGettingToKnowYouTask,
-} from "./onboarding-scenario.ts";
-import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
+  createPeppaConversationTask,
+  getConversationSystemPrompt,
+} from "./peppa-conversation.ts";
+import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 
 export function parseConversationParticipantMetadata(metadata: string) {
   let value: unknown;
@@ -38,6 +39,7 @@ export function parseConversationParticipantMetadata(metadata: string) {
     throw new Error("Participant metadata must contain conversationId.");
   }
   const conversationId = (value as Record<string, unknown>).conversationId;
+  const purpose = (value as Record<string, unknown>).scenarioKey;
   if (
     typeof conversationId !== "string" ||
     !conversationId.trim() ||
@@ -45,13 +47,16 @@ export function parseConversationParticipantMetadata(metadata: string) {
   ) {
     throw new Error("Participant metadata must contain conversationId.");
   }
-  const profile = (value as Record<string, unknown>).onboardingProfile;
+  if (!isConversationPurpose(purpose)) {
+    throw new Error("Participant metadata must contain a valid scenarioKey.");
+  }
+  const profile = (value as Record<string, unknown>).learnerProfile;
   if (profile !== undefined && (
     profile === null ||
     typeof profile !== "object" ||
     Array.isArray(profile)
   )) {
-    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+    throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
   const profileRecord = (profile ?? {}) as Record<string, unknown>;
   const profileName = profileRecord.name;
@@ -62,28 +67,29 @@ export function parseConversationParticipantMetadata(metadata: string) {
     profileName !== null &&
     (typeof profileName !== "string" || !profileName.trim() || profileName.length > 120)
   ) {
-    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+    throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
   if (
     profileAge !== undefined &&
     profileAge !== null &&
     (!Number.isSafeInteger(profileAge) || Number(profileAge) < 0)
   ) {
-    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+    throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
   if (
     profileSummary !== undefined &&
     (typeof profileSummary !== "string" || profileSummary.length > 2_000)
   ) {
-    throw new Error("Participant metadata must contain a valid onboardingProfile.");
+    throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
   return {
     conversationId: conversationId.trim(),
-    initialState: createOnboardingConversationState({
+    initialState: createLearnerProfileConversationState({
       profileAge,
       profileName,
       profileSummary,
     }),
+    purpose,
   };
 }
 
@@ -269,21 +275,22 @@ export const agentDefinition = defineAgent({
 
     await ctx.connect();
     const participant = await ctx.waitForParticipant();
-    const { conversationId, initialState } = parseConversationParticipantMetadata(
+    const { conversationId, initialState, purpose } = parseConversationParticipantMetadata(
       participant.metadata,
     );
     const persistence = createTranscriptPersistence({ conversationId, ingest });
     let latestAssistantText = "";
 
-    const task = createGettingToKnowYouTask({
+    const task = createPeppaConversationTask({
       conversationId,
       ingest,
       initialState,
       onEnded: persistence.markEnded,
+      purpose,
     });
     const rootAgent = voice.Agent.create({
-      id: "onboarding_root",
-      instructions: ONBOARDING_AGENT_INSTRUCTIONS,
+      id: "peppa_conversation_root",
+      instructions: getConversationSystemPrompt(purpose),
       async onEnter(agentContext) {
         await task.run();
         await agentContext.session.say("Thanks for chatting with me!", {

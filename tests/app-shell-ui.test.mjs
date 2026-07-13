@@ -171,11 +171,11 @@ test("the application shell derives protected targets from the current URL", () 
     /const\s+gateRoute\s*=\s*getGateRouteKind\(location\.pathname\)/,
   );
   assert.match(app, /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/);
-  assert.match(app, /const\s+isOnboardingRoute\s*=\s*gateRoute\s*===\s*["']onboarding["']/);
+  assert.match(app, /const\s+isLearnerProfileRoute\s*=\s*gateRoute\s*===\s*["']learner-profile["']/);
   assert.match(app, /const\s+isProfileRoute\s*=\s*gateRoute\s*===\s*["']profile["']/);
   assert.doesNotMatch(
     app,
-    /location\.pathname\s*===\s*["']\/(?:login|onboarding|profile)["']/,
+    /location\.pathname\s*===\s*["']\/(?:login|profile(?:\/setup)?)["']/,
   );
   assert.match(
     app,
@@ -196,7 +196,7 @@ test("signed-out redirects reuse the safe requested protected target", () => {
   assert.match(app, /onLoginRoute\s*\?\s*null\s*:/);
 });
 
-test("the authenticated shell declares login, onboarding, profile, and wildcard routes", () => {
+test("the authenticated shell declares login, learner-profile, profile, and wildcard routes", () => {
   assert.match(app, /<Routes>/);
   for (const path of [
     "/",
@@ -210,7 +210,7 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
     "/progress",
     "/stories",
     "/login",
-    "/onboarding",
+    "/profile/setup",
     "/profile",
     "*",
   ]) {
@@ -222,7 +222,7 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
   );
   assert.match(app, /const\s+safeReturnTo\s*=\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/);
   assert.match(app, /const\s+requestedProtectedTarget\s*=/);
-  assert.match(app, /getOnboardingPath\(requestedProtectedTarget\)/);
+  assert.match(app, /getLearnerProfilePath\(requestedProtectedTarget\)/);
 });
 
 test("lesson route adapters render the executable route decisions", () => {

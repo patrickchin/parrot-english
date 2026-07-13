@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { handleOnboardingTranscription } from "../worker/groq.ts";
+import { handleLearnerProfileTranscription } from "../worker/groq.ts";
 
 const originalFetch = globalThis.fetch;
 
@@ -10,7 +10,7 @@ function transcriptionRequest({
 } = {}) {
   const formData = new FormData();
   if (audio !== null) formData.set("audio", audio);
-  return new Request("https://example.test/api/onboarding/transcribe", {
+  return new Request("https://example.test/api/learner-profile/transcribe", {
     method,
     body: method === "POST" ? formData : undefined,
   });
@@ -22,14 +22,14 @@ describe("onboarding transcription", () => {
   });
 
   it("accepts POST only and requires configured Groq transcription", async () => {
-    const wrongMethod = await handleOnboardingTranscription(
+    const wrongMethod = await handleLearnerProfileTranscription(
       transcriptionRequest({ method: "GET" }),
       { GROQ_API_KEY: "test-key" },
     );
     assert.equal(wrongMethod.status, 405);
     assert.deepEqual(await wrongMethod.json(), { error: "method_not_allowed" });
 
-    const missingKey = await handleOnboardingTranscription(
+    const missingKey = await handleLearnerProfileTranscription(
       transcriptionRequest(),
       {},
     );
@@ -46,14 +46,14 @@ describe("onboarding transcription", () => {
       return Response.json({ text: "unexpected" });
     };
 
-    const missing = await handleOnboardingTranscription(
+    const missing = await handleLearnerProfileTranscription(
       transcriptionRequest({ audio: null }),
       { GROQ_API_KEY: "test-key" },
     );
     assert.equal(missing.status, 400);
     assert.deepEqual(await missing.json(), { error: "audio_file_required" });
 
-    const unsupported = await handleOnboardingTranscription(
+    const unsupported = await handleLearnerProfileTranscription(
       transcriptionRequest({
         audio: new File(["audio"], "answer.txt", { type: "text/plain" }),
       }),
@@ -64,7 +64,7 @@ describe("onboarding transcription", () => {
       error: "unsupported_audio_type",
     });
 
-    const empty = await handleOnboardingTranscription(
+    const empty = await handleLearnerProfileTranscription(
       transcriptionRequest({
         audio: new File([], "answer.webm", { type: "audio/webm" }),
       }),
@@ -73,7 +73,7 @@ describe("onboarding transcription", () => {
     assert.equal(empty.status, 400);
     assert.deepEqual(await empty.json(), { error: "audio_file_required" });
 
-    const oversized = await handleOnboardingTranscription(
+    const oversized = await handleLearnerProfileTranscription(
       transcriptionRequest({
         audio: new File([new Uint8Array(512 * 1024 + 1)], "answer.webm", {
           type: "audio/webm",
@@ -87,9 +87,9 @@ describe("onboarding transcription", () => {
   });
 
   it("rejects an oversized multipart envelope before parsing it", async () => {
-    const boundary = "bounded-onboarding-audio";
+    const boundary = "bounded-learner-profile-audio";
     const request = new Request(
-      "https://example.test/api/onboarding/transcribe",
+      "https://example.test/api/learner-profile/transcribe",
       {
         method: "POST",
         headers: {
@@ -100,7 +100,7 @@ describe("onboarding transcription", () => {
       },
     );
 
-    const response = await handleOnboardingTranscription(request, {
+    const response = await handleLearnerProfileTranscription(request, {
       GROQ_API_KEY: "test-key",
     });
 
@@ -118,7 +118,7 @@ describe("onboarding transcription", () => {
       return Response.json({ text: "  Bluey  " });
     };
 
-    const response = await handleOnboardingTranscription(
+    const response = await handleLearnerProfileTranscription(
       transcriptionRequest({
         audio: new File(["audio"], "answer.mp4", { type: "audio/mp4" }),
       }),
@@ -137,7 +137,7 @@ describe("onboarding transcription", () => {
   it("maps provider failures and timeouts without leaking details", async () => {
     globalThis.fetch = async () =>
       new Response("secret provider trace", { status: 502 });
-    const failed = await handleOnboardingTranscription(
+    const failed = await handleLearnerProfileTranscription(
       transcriptionRequest(),
       { GROQ_API_KEY: "test-key" },
     );
@@ -148,7 +148,7 @@ describe("onboarding transcription", () => {
       init?.signal?.addEventListener("abort", () => {});
       return new Promise(() => {});
     };
-    const timedOut = await handleOnboardingTranscription(
+    const timedOut = await handleLearnerProfileTranscription(
       transcriptionRequest(),
       { GROQ_API_KEY: "test-key", GROQ_REQUEST_TIMEOUT_MS: "10" },
     );

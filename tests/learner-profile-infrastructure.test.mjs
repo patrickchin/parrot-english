@@ -3,8 +3,8 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import { describe, it } from "node:test";
-import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
-import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
+import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
+import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
 import * as schema from "../src/db/schema.ts";
 
 const EXPECTED_MODELS = {
@@ -19,7 +19,7 @@ const EXPECTED_MODELS = {
       "skippedQuestionKeysJson",
       "questionnaireVersion",
       "currentQuestionKey",
-      "onboardingStatus",
+      "profileStatus",
       "lastSkippedAt",
       "lastSkippedSessionId",
       "completedAt",
@@ -56,7 +56,7 @@ const EXPECTED_MODELS = {
       "audioId",
     ],
   },
-  onboardingSessionBypass: {
+  profileSessionBypass: {
     table: "onboarding_session_bypass",
     properties: ["sessionId", "authUserId", "skippedAt"],
   },
@@ -99,7 +99,7 @@ function indexDetails(database, table) {
     }));
 }
 
-describe("onboarding infrastructure", () => {
+describe("learner-profile infrastructure", () => {
   it("configures independent platform rate limits for speech endpoints", () => {
     const config = JSON.parse(
       readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
@@ -112,12 +112,12 @@ describe("onboarding infrastructure", () => {
         simple: { limit: 8, period: 60 },
       },
       {
-        name: "ONBOARDING_TRANSCRIPTION_RATE_LIMITER",
+        name: "LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER",
         namespace_id: "104202",
         simple: { limit: 6, period: 60 },
       },
       {
-        name: "ONBOARDING_ENRICHMENT_RATE_LIMITER",
+        name: "LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER",
         namespace_id: "104203",
         simple: { limit: 12, period: 60 },
       },
@@ -126,7 +126,7 @@ describe("onboarding infrastructure", () => {
 
   it("keeps deployed v2 profile persistence independent of questionnaire tables", () => {
     const repository = readFileSync(
-      new URL("../worker/onboarding-repository.ts", import.meta.url),
+      new URL("../worker/learner-profile-repository.ts", import.meta.url),
       "utf8",
     );
 
@@ -137,7 +137,7 @@ describe("onboarding infrastructure", () => {
   });
 
   it("validates the six simple v2 prose questions", () => {
-    const definition = validateOnboardingQuestionnaire(questionnaireV2);
+    const definition = validateLearnerProfileQuestionnaire(questionnaireV2);
 
     assert.deepEqual(
       definition.questions.map(({ promptEn }) => promptEn),
@@ -162,13 +162,13 @@ describe("onboarding infrastructure", () => {
   it("rejects duplicate positions and unknown definition fields", () => {
     assert.throws(
       () =>
-        validateOnboardingQuestionnaire({
+        validateLearnerProfileQuestionnaire({
           ...questionnaireV2,
           questions: questionnaireV2.questions.map((entry, index) =>
             index === 1 ? { ...entry, position: 1, mystery: true } : entry,
           ),
         }),
-      /Invalid onboarding questionnaire/,
+      /Invalid learner-profile questionnaire/,
     );
   });
 
@@ -181,7 +181,7 @@ describe("onboarding infrastructure", () => {
     }
 
     assert.ok(schema.learnerProfileRelations);
-    assert.ok(schema.onboardingSessionBypassRelations);
+    assert.ok(schema.profileSessionBypassRelations);
     assert.ok(schema.questionnaireRelations);
     assert.ok(schema.questionnaireQuestionRelations);
   });
@@ -368,7 +368,7 @@ describe("checked-in questionnaire deployment", () => {
     );
     assert.equal(
       existsSync(
-        new URL("../content/onboarding/questionnaire-v2.json", import.meta.url),
+        new URL("../content/learner-profile/questionnaire-v2.json", import.meta.url),
       ),
       true,
     );

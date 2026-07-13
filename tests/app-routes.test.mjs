@@ -75,28 +75,28 @@ describe("app route helpers", () => {
       "/login?returnTo=%2Fprogress%3Fperiod%3Dweek",
     );
     assert.equal(
-      routes.getOnboardingPath(
+      routes.getLearnerProfilePath(
         "/lessons/parrot/01-peppas-high-ball/scenes/2",
       ),
-      "/onboarding?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
+      "/profile/setup?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
     );
     assert.equal(
-      routes.getRedoOnboardingPath("/profile"),
-      "/onboarding?redo=1&returnTo=%2Fprofile",
+      routes.getRedoLearnerProfilePath("/profile"),
+      "/profile/setup?redo=1&returnTo=%2Fprofile",
     );
     assert.equal(
-      routes.isRedoOnboardingRequest("?redo=1&returnTo=%2Fprofile"),
+      routes.isRedoLearnerProfileRequest("?redo=1&returnTo=%2Fprofile"),
       true,
     );
-    assert.equal(routes.isRedoOnboardingRequest("?redo=0"), false);
+    assert.equal(routes.isRedoLearnerProfileRequest("?redo=0"), false);
   });
 
   it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {
     for (const [pathname, kind] of [
       ["/login", "login"],
       ["/Login///", "login"],
-      ["/ONBOARDING", "onboarding"],
-      ["/Onboarding//", "onboarding"],
+      ["/PROFILE/SETUP", "learner-profile"],
+      ["/Profile/Setup//", "learner-profile"],
       ["/profile", "profile"],
       ["/Profile//", "profile"],
     ]) {
@@ -117,7 +117,7 @@ describe("app route helpers", () => {
   it("stays aligned with React Router matching for declared route shapes", () => {
     for (const [pattern, pathname, gateKind] of [
       ["/login", "/Login///", "login"],
-      ["/onboarding", "/Onboarding//", "onboarding"],
+      ["/profile/setup", "/Profile/Setup//", "learner-profile"],
       ["/profile", "/Profile//", "profile"],
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/progress", "/Progress///", null],
@@ -147,8 +147,8 @@ describe("app route helpers", () => {
     }
   });
 
-  it("preserves an onboarding return target when reauthentication is required", () => {
-    for (const pathname of ["/onboarding", "/Onboarding//", "/ONBOARDING///"]) {
+  it("preserves a learner-profile return target when reauthentication is required", () => {
+    for (const pathname of ["/profile/setup", "/Profile/Setup//", "/PROFILE/SETUP///"]) {
       assert.equal(
         routes.getRequestedProtectedTarget(
           pathname,
@@ -200,7 +200,7 @@ describe("app route helpers", () => {
   it("falls back home from an unsafe auth gate return target", () => {
     assert.equal(
       routes.getRequestedProtectedTarget(
-        "/onboarding",
+        "/profile/setup",
         "?returnTo=https%3A%2F%2Fevil.example",
         "",
       ),
@@ -356,7 +356,7 @@ describe("app route helpers", () => {
       null,
     );
     assert.equal(routes.getSafeReturnTo("?returnTo=%2Flogin"), null);
-    assert.equal(routes.getSafeReturnTo("?returnTo=%2Fonboarding"), null);
+    assert.equal(routes.getSafeReturnTo("?returnTo=%2Fprofile%2Fsetup"), null);
     assert.equal(
       routes.getSafeReturnTo(
         returnToSearch("/Login/?returnTo=%2Fprogress"),
@@ -365,7 +365,7 @@ describe("app route helpers", () => {
     );
     assert.equal(
       routes.getSafeReturnTo(
-        returnToSearch("/ONBOARDING?returnTo=%2Fprogress"),
+        returnToSearch("/LEARNER_PROFILE?returnTo=%2Fprogress"),
       ),
       null,
     );
@@ -383,11 +383,11 @@ describe("app route helpers", () => {
   it("normalizes return destinations before checking durable routes", () => {
     for (const returnTo of [
       "/progress/../login",
-      "/lessons/../onboarding",
+      "/lessons/../profile/setup",
       "/stories/../admin",
       "/profile/../../outside",
       "/progress/%2e%2e/login",
-      "/lessons/%2E%2E/onboarding",
+      "/lessons/%2E%2E/profile/setup",
       "/stories/%2e%2e/admin",
       "/profile/%2e%2e/%2e%2e/outside",
     ]) {

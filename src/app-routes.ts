@@ -1,7 +1,7 @@
 import { LESSONS, type LessonCatalogEntry } from "./lesson-catalog";
 
 export type LessonSource = "parrot" | "my";
-export type GateRouteKind = "login" | "onboarding" | "profile";
+export type GateRouteKind = "login" | "learner-profile" | "profile";
 type ResolvedLessonScene = {
   entry: LessonCatalogEntry;
   sceneIndex: number;
@@ -10,7 +10,7 @@ export type LessonRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
   | ({ kind: "lesson" } & ResolvedLessonScene);
 
-const GATE_ROUTE_PATH = /^\/(login|onboarding|profile)\/*$/i;
+const GATE_ROUTE_PATH = /^\/(login|profile\/setup|profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const SAFE_RETURN_PATHS = [
   /^\/$/,
@@ -52,21 +52,23 @@ export function getLoginPath(returnTo: string) {
   return `/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-export function getOnboardingPath(returnTo: string) {
-  return `/onboarding?returnTo=${encodeURIComponent(returnTo)}`;
+export function getLearnerProfilePath(returnTo: string) {
+  return `/profile/setup?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-export function getRedoOnboardingPath(returnTo: string) {
-  return `/onboarding?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
+export function getRedoLearnerProfilePath(returnTo: string) {
+  return `/profile/setup?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-export function isRedoOnboardingRequest(search: string) {
+export function isRedoLearnerProfileRequest(search: string) {
   return new URLSearchParams(search).get("redo") === "1";
 }
 
 export function getGateRouteKind(pathname: string): GateRouteKind | null {
   const match = GATE_ROUTE_PATH.exec(pathname);
-  return match ? (match[1].toLowerCase() as GateRouteKind) : null;
+  if (!match) return null;
+  const route = match[1].toLowerCase();
+  return route === "profile/setup" ? "learner-profile" : (route as GateRouteKind);
 }
 
 export function isTalkToPeppaRoute(pathname: string) {
@@ -100,7 +102,7 @@ export function getRequestedProtectedTarget(
   hash: string,
 ) {
   const gateRoute = getGateRouteKind(pathname);
-  if (gateRoute === "login" || gateRoute === "onboarding") {
+  if (gateRoute === "login" || gateRoute === "learner-profile") {
     return getSafeReturnTo(search) ?? "/";
   }
 

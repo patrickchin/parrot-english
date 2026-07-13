@@ -1,6 +1,10 @@
 import type { AuthEnv } from "./auth.ts";
+import {
+  isConversationPurpose,
+  type ConversationPurpose,
+} from "../lib/conversation-purpose.ts";
 import type { Database } from "./database.ts";
-import type { OnboardingIdentity } from "./onboarding.ts";
+import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   ConversationRepositoryError,
   createConversationRepository,
@@ -12,24 +16,49 @@ import {
 import { readBoundedText, RequestBodyTooLargeError } from "./request-body.ts";
 
 const MAX_BODY_BYTES = 32 * 1024;
-const ONBOARDING_SCENARIO = {
-  key: "onboarding",
-  version: 1,
-  requiredDetails: ["name", "age"],
-  summaryMode: "prose",
-  maxOptionalExchanges: 3,
-} as const;
+const CONVERSATION_SCENARIOS = {
+  onboarding: {
+    key: "onboarding",
+    version: 1,
+    requiredDetails: ["name", "age"],
+    summaryMode: "prose",
+    maxOptionalExchanges: 3,
+  },
+  "profile-edit": {
+    key: "profile-edit",
+    version: 1,
+    requiredDetails: [],
+    summaryMode: "prose",
+    maxOptionalExchanges: 3,
+  },
+  "small-chat": {
+    key: "small-chat",
+    version: 1,
+    requiredDetails: [],
+    summaryMode: "none",
+    maxOptionalExchanges: null,
+  },
+} as const satisfies Record<
+  ConversationPurpose,
+  {
+    key: ConversationPurpose;
+    version: number;
+    requiredDetails: readonly ("name" | "age")[];
+    summaryMode: "none" | "prose";
+    maxOptionalExchanges: number | null;
+  }
+>;
 
 export interface ConversationEnv extends AuthEnv, LiveKitTokenEnv {
   CONVERSATION_AGENT_SECRET?: string;
   LIVEKIT_URL?: string;
-  REALTIME_ONBOARDING_ENABLED?: string;
+  REALTIME_CONVERSATIONS_ENABLED?: string;
 }
 
 export interface ConversationRequestInput {
   database: Database;
   env: ConversationEnv;
-  identity: OnboardingIdentity | null;
+  identity: LearnerProfileIdentity | null;
   request: Request;
 }
 
@@ -121,13 +150,19 @@ export async function handleConversationRequest(
   try {
     if (url.pathname === "/api/conversations" && input.request.method === "POST") {
       if (!input.identity) throw new ConversationApiError(401, "unauthorized");
-      if (input.env.REALTIME_ONBOARDING_ENABLED !== "1") {
+      if (input.env.REALTIME_CONVERSATIONS_ENABLED !== "1") {
         throw new ConversationApiError(404, "realtime_disabled");
       }
+      const body = input.request.body ? await readJson(input.request) : {};
+      const purpose = body.purpose ?? "onboarding";
+      if (!isConversationPurpose(purpose)) {
+        throw new ConversationApiError(400, "invalid_conversation_purpose");
+      }
+      const scenario = CONVERSATION_SCENARIOS[purpose];
       const livekitUrl = required(input.env.LIVEKIT_URL, "livekit_url");
       const conversation = await repository.createConversation(
         input.identity,
-        ONBOARDING_SCENARIO,
+        scenario,
       );
       const initialState = JSON.parse(conversation.controllerState) as Record<
         string,
@@ -147,7 +182,7 @@ export async function handleConversationRequest(
             controllerState: JSON.parse(conversation.controllerState),
           },
           livekit: { participantToken, url: livekitUrl },
-          scenario: ONBOARDING_SCENARIO,
+          scenario,
         },
         { status: 201 },
       );

@@ -1,14 +1,14 @@
 import {
   checkEvaluateSpeechRateLimit,
-  checkOnboardingEnrichmentRateLimit,
-  checkOnboardingTranscriptionRateLimit,
+  checkLearnerProfileEnrichmentRateLimit,
+  checkLearnerProfileTranscriptionRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
 import { createDatabase } from "./database.ts";
 import { handleEvaluateSpeech } from "./groq.ts";
-import { handleOnboardingRequest } from "./onboarding.ts";
+import { handleLearnerProfileRequest } from "./learner-profile.ts";
 import {
   handleConversationRequest,
   type ConversationEnv,
@@ -29,17 +29,17 @@ interface Env extends AuthEnv, RateLimitEnv, ConversationEnv {
 interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
-  checkOnboardingEnrichmentRateLimit: typeof checkOnboardingEnrichmentRateLimit;
-  checkOnboardingTranscriptionRateLimit: typeof checkOnboardingTranscriptionRateLimit;
+  checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
+  checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
-  handleOnboardingRequest: typeof handleOnboardingRequest;
+  handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
 }
 
-function isOnboardingPath(pathname: string) {
+function isLearnerProfilePath(pathname: string) {
   return (
-    pathname === "/api/onboarding" ||
-    pathname.startsWith("/api/onboarding/") ||
+    pathname === "/api/learner-profile" ||
+    pathname.startsWith("/api/learner-profile/") ||
     pathname === "/api/profile"
   );
 }
@@ -57,16 +57,16 @@ export function createWorker(
 ) {
   const rateLimit =
     dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
-  const onboardingTranscriptionRateLimit =
-    dependencies.checkOnboardingTranscriptionRateLimit ??
-    checkOnboardingTranscriptionRateLimit;
-  const onboardingEnrichmentRateLimit =
-    dependencies.checkOnboardingEnrichmentRateLimit ??
-    checkOnboardingEnrichmentRateLimit;
+  const learnerProfileTranscriptionRateLimit =
+    dependencies.checkLearnerProfileTranscriptionRateLimit ??
+    checkLearnerProfileTranscriptionRateLimit;
+  const learnerProfileEnrichmentRateLimit =
+    dependencies.checkLearnerProfileEnrichmentRateLimit ??
+    checkLearnerProfileEnrichmentRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
-  const onboardingRequest =
-    dependencies.handleOnboardingRequest ?? handleOnboardingRequest;
+  const learnerProfileRequest =
+    dependencies.handleLearnerProfileRequest ?? handleLearnerProfileRequest;
   const conversationRequest =
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
@@ -82,7 +82,7 @@ export function createWorker(
         return authFactory(env).handler(request);
       }
 
-      if (isOnboardingPath(url.pathname)) {
+      if (isLearnerProfilePath(url.pathname)) {
         const session = await authFactory(env).api.getSession({
           headers: request.headers,
         });
@@ -91,10 +91,10 @@ export function createWorker(
         }
 
         if (
-          url.pathname === "/api/onboarding/transcribe" &&
+          url.pathname === "/api/learner-profile/transcribe" &&
           request.method === "POST"
         ) {
-          const rateLimited = await onboardingTranscriptionRateLimit(
+          const rateLimited = await learnerProfileTranscriptionRateLimit(
             request,
             env,
             session.user.id
@@ -103,10 +103,10 @@ export function createWorker(
         }
         if (
           request.method === "PUT" &&
-          (url.pathname === "/api/onboarding/answer" ||
+          (url.pathname === "/api/learner-profile/answer" ||
             url.pathname === "/api/profile")
         ) {
-          const rateLimited = await onboardingEnrichmentRateLimit(
+          const rateLimited = await learnerProfileEnrichmentRateLimit(
             request,
             env,
             session.user.id
@@ -114,7 +114,7 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
 
-        return onboardingRequest({
+        return learnerProfileRequest({
           database: createDatabase(env.DB),
           env,
           identity: {

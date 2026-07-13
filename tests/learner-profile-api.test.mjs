@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import * as onboardingApi from "../src/onboarding-api.ts";
+import * as learnerProfileApi from "../src/learner-profile-api.ts";
 import {
-  OnboardingApiError,
-  completeOnboarding,
-  loadOnboarding,
+  LearnerProfileApiError,
+  completeLearnerProfile,
+  loadLearnerProfile,
   loadProfile,
-  saveOnboardingAnswer,
+  saveLearnerProfileAnswer,
   saveProfileAnswer,
-  skipOnboarding,
-  transcribeOnboardingAudio,
-} from "../src/onboarding-api.ts";
+  skipLearnerProfile,
+  transcribeLearnerProfileAudio,
+} from "../src/learner-profile-api.ts";
 
 function jsonFetch(payload = { ok: true }, status = 200) {
   const calls = [];
@@ -23,15 +23,15 @@ function jsonFetch(payload = { ok: true }, status = 200) {
   };
 }
 
-describe("onboarding browser API", () => {
-  it("loads onboarding and profile state from same-origin routes", async () => {
-    const onboarding = jsonFetch({ profile: { name: "Mia" } });
+describe("learnerProfile browser API", () => {
+  it("loads learnerProfile and profile state from same-origin routes", async () => {
+    const learnerProfile = jsonFetch({ profile: { name: "Mia" } });
     assert.deepEqual(
-      await loadOnboarding({ fetch: onboarding.fetch }),
+      await loadLearnerProfile({ fetch: learnerProfile.fetch }),
       { profile: { name: "Mia" } },
     );
-    assert.equal(onboarding.calls[0][0], "/api/onboarding");
-    assert.equal(onboarding.calls[0][1].method, "GET");
+    assert.equal(learnerProfile.calls[0][0], "/api/learner-profile");
+    assert.equal(learnerProfile.calls[0][1].method, "GET");
 
     const profile = jsonFetch({ questions: [] });
     assert.deepEqual(await loadProfile({ fetch: profile.fetch }), {
@@ -49,15 +49,15 @@ describe("onboarding browser API", () => {
         audio: { contentType: "audio/mpeg", base64: "AQID" },
       },
     };
-    const onboarding = jsonFetch(payload);
+    const learnerProfile = jsonFetch(payload);
     assert.deepEqual(
-      await saveOnboardingAnswer("favoriteAnimals", "I like dinosaurs", {
-        fetch: onboarding.fetch,
+      await saveLearnerProfileAnswer("favoriteAnimals", "I like dinosaurs", {
+        fetch: learnerProfile.fetch,
       }),
       payload,
     );
-    assert.equal(onboarding.calls[0][0], "/api/onboarding/answer");
-    assert.deepEqual(onboarding.calls[0][1], {
+    assert.equal(learnerProfile.calls[0][0], "/api/learner-profile/answer");
+    assert.deepEqual(learnerProfile.calls[0][1], {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: '{"questionKey":"favoriteAnimals","rawAnswer":"I like dinosaurs"}',
@@ -75,7 +75,7 @@ describe("onboarding browser API", () => {
   });
 
   it("submits all prose profile edits in one request", async () => {
-    assert.equal(typeof onboardingApi.saveProfileAnswers, "function");
+    assert.equal(typeof learnerProfileApi.saveProfileAnswers, "function");
     const payload = {
       profile: { name: "Maya" },
       acknowledgments: [
@@ -85,7 +85,7 @@ describe("onboarding browser API", () => {
     const request = jsonFetch(payload);
 
     assert.deepEqual(
-      await onboardingApi.saveProfileAnswers(
+      await learnerProfileApi.saveProfileAnswers(
         {
           name: "Maya",
           age: "I am nine",
@@ -109,25 +109,25 @@ describe("onboarding browser API", () => {
 
   it("posts skip and completion transitions", async () => {
     const skipped = jsonFetch({ canBypass: true });
-    await skipOnboarding({ fetch: skipped.fetch });
-    assert.equal(skipped.calls[0][0], "/api/onboarding/skip");
+    await skipLearnerProfile({ fetch: skipped.fetch });
+    assert.equal(skipped.calls[0][0], "/api/learner-profile/skip");
     assert.equal(skipped.calls[0][1].method, "POST");
 
     const completed = jsonFetch({ canBypass: true });
-    await completeOnboarding({ fetch: completed.fetch });
-    assert.equal(completed.calls[0][0], "/api/onboarding/complete");
+    await completeLearnerProfile({ fetch: completed.fetch });
+    assert.equal(completed.calls[0][0], "/api/learner-profile/complete");
     assert.equal(completed.calls[0][1].method, "POST");
   });
 
   it("posts an explicit optional-question skip", async () => {
-    assert.equal(typeof onboardingApi.skipOnboardingQuestion, "function");
+    assert.equal(typeof learnerProfileApi.skipLearnerProfileQuestion, "function");
     const request = jsonFetch({ mode: "full", question: null });
 
-    await onboardingApi.skipOnboardingQuestion("favoriteCartoons", {
+    await learnerProfileApi.skipLearnerProfileQuestion("favoriteCartoons", {
       fetch: request.fetch,
     });
 
-    assert.equal(request.calls[0][0], "/api/onboarding/question/skip");
+    assert.equal(request.calls[0][0], "/api/learner-profile/question/skip");
     assert.equal(request.calls[0][1].method, "POST");
     assert.equal(
       request.calls[0][1].body,
@@ -140,10 +140,10 @@ describe("onboarding browser API", () => {
     const audio = new Blob(["audio"], { type: "audio/webm" });
 
     assert.deepEqual(
-      await transcribeOnboardingAudio(audio, { fetch: request.fetch }),
+      await transcribeLearnerProfileAudio(audio, { fetch: request.fetch }),
       { transcript: "Bluey" },
     );
-    assert.equal(request.calls[0][0], "/api/onboarding/transcribe");
+    assert.equal(request.calls[0][0], "/api/learner-profile/transcribe");
     assert.equal(request.calls[0][1].method, "POST");
     assert.ok(request.calls[0][1].body instanceof FormData);
     assert.equal(request.calls[0][1].body.get("audio").size, audio.size);
@@ -156,9 +156,9 @@ describe("onboarding browser API", () => {
       400,
     );
     await assert.rejects(
-      saveOnboardingAnswer("age", "I am 99", { fetch: failed.fetch }),
+      saveLearnerProfileAnswer("age", "I am 99", { fetch: failed.fetch }),
       (error) => {
-        assert.ok(error instanceof OnboardingApiError);
+        assert.ok(error instanceof LearnerProfileApiError);
         assert.equal(error.status, 400);
         assert.equal(error.code, "invalid_answer");
         assert.equal(error.message, "Please enter a whole number.");
@@ -168,7 +168,7 @@ describe("onboarding browser API", () => {
 
     const controller = new AbortController();
     const request = jsonFetch({ ok: true });
-    await loadOnboarding({ fetch: request.fetch, signal: controller.signal });
+    await loadLearnerProfile({ fetch: request.fetch, signal: controller.signal });
     assert.equal(request.calls[0][1].signal, controller.signal);
   });
 
@@ -185,12 +185,12 @@ describe("onboarding browser API", () => {
     );
 
     await assert.rejects(
-      onboardingApi.saveProfileAnswers(
+      learnerProfileApi.saveProfileAnswers(
         { name: "Maya", age: "very old" },
         { fetch: failed.fetch },
       ),
       (error) => {
-        assert.ok(error instanceof OnboardingApiError);
+        assert.ok(error instanceof LearnerProfileApiError);
         assert.equal(error.code, "invalid_profile");
         assert.deepEqual(error.fieldErrors, {
           age: "Please tell me your age using a whole number.",
@@ -201,8 +201,8 @@ describe("onboarding browser API", () => {
   });
 
   it("models prose questions and self-contained v2 response snapshots", () => {
-    const source = onboardingApi;
-    assert.equal(typeof source.saveOnboardingAnswer, "function");
+    const source = learnerProfileApi;
+    assert.equal(typeof source.saveLearnerProfileAnswer, "function");
 
     const question = {
       answerKey: "favoriteAnimals",

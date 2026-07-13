@@ -15,7 +15,7 @@ Browser
   -> Cloudflare Worker
        -> /api/auth/* -> Better Auth -> Drizzle -> shared D1
        -> /api/evaluate-speech
-       -> /api/onboarding/* -> Groq -> learner_profile -> ElevenLabs
+       -> /api/learner-profile/* -> Groq -> learner_profile -> ElevenLabs
        -> static Vite assets through env.ASSETS
 ```
 
@@ -42,9 +42,11 @@ Important entrypoints:
 - `src/db/schema.ts`: complete Drizzle schema for the shared D1 database.
 - `worker/auth.ts`: Better Auth Worker configuration and Drizzle adapter.
 - `worker/index.ts`: Worker routing and static fallback.
-- `worker/onboarding.ts`: checked-in questionnaire orchestration and profile API.
-- `worker/onboarding-enrichment.ts`: strict Groq summary/acknowledgment boundary.
-- `worker/onboarding-acknowledgment-audio.ts`: server-only ElevenLabs TTS.
+- `worker/learner-profile.ts`: checked-in questionnaire orchestration and profile API.
+- `worker/learner-profile-enrichment.ts`: strict Groq summary/acknowledgment boundary.
+- `worker/learner-profile-acknowledgment-audio.ts`: server-only ElevenLabs TTS.
+- `worker/conversations.ts`: purpose-aware conversation creation and ingest API.
+- `agent/peppa-conversation.ts`: distinct onboarding, profile-edit, and small-chat prompts.
 
 ## Authentication
 
@@ -77,10 +79,10 @@ for an authenticated user. A protected request while signed out redirects to
 `/login?returnTo=...`; only validated same-origin application paths are
 accepted. Signing out returns the app to the login route.
 
-After authentication, `OnboardingGate` checks the learner profile. Incomplete
-learners remain at `/onboarding`; completed learners continue to the preserved
+After authentication, `LearnerProfileGate` checks the learner profile. Incomplete
+learners remain at `/profile/setup`; completed learners continue to the preserved
 destination. The normal completed sequence is therefore authentication →
-onboarding → the four-card home at `/`.
+learner introduction → the four-card home at `/`.
 
 ## Browser Route Ownership
 
@@ -96,7 +98,7 @@ The URL is authoritative for durable screens and lesson scenes:
 ├── /stories
 ├── /profile
 ├── /login
-└── /onboarding
+└── /profile/setup
 ```
 
 `/lessons` combines two presentation sections without combining their data
@@ -132,7 +134,7 @@ Lesson JSON never contains asset filenames. `src/lesson-catalog.ts` uses eager
 the picker automatically.
 
 Voice onboarding is a separate checked-in content boundary. The Worker imports
-and validates `content/onboarding/questionnaire-v2.json`; it does not fetch
+and validates `content/learner-profile/questionnaire-v2.json`; it does not fetch
 question definitions from D1. Fixed prompt IDs resolve through
 `lib/static-audio.js`, while each dynamic acknowledgment is synthesized by the
 Worker after its answer snapshot is durable.
@@ -238,15 +240,21 @@ require `GROQ_API_KEY`, reject audio over 6 MiB, and have a configurable upstrea
 timeout. `worker/api-security.ts` applies an in-memory per-client rate limit
 with defaults of eight requests per 60 seconds.
 
-## Voice Onboarding APIs
+## Voice Learner Profile APIs
 
-`AuthGate -> OnboardingGate -> ApplicationRoutes` is the browser gate order.
+`AuthGate -> LearnerProfileGate -> ApplicationRoutes` is the browser gate order.
 Authenticated onboarding accepts one editable prose answer at a time. The
 Worker derives all question metadata from the checked-in questionnaire, sends
 only the current question and raw answer to Groq, validates strict structured
 output, writes the complete snapshot to shared D1, and then sends only the saved
 acknowledgment to ElevenLabs. Provider failures use deterministic text fallback;
 TTS failure returns the saved acknowledgment with no audio.
+
+Realtime conversation creation requires an explicit purpose. `onboarding`
+collects the first profile, `profile-edit` updates remembered details, and
+`small-chat` provides ordinary Talk to Peppa conversation without profile
+writing tools or profile finalization. The purpose is stored as the conversation
+scenario key and carried in signed LiveKit participant metadata to the agent.
 
 Incomplete v1 profiles restart v2 with their original JSON under
 `legacyAnswers`; completed v1 users remain completed. Session bypass records

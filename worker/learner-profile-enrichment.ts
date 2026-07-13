@@ -3,6 +3,7 @@ import {
   getGroqRequestTimeoutMs,
   type ApiEnv,
 } from "./groq.ts";
+import { LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT } from "./prompts/learner-profile-enrichment.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
@@ -14,14 +15,14 @@ const OUTPUT_KEYS = new Set([
 ]);
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u;
 
-type OnboardingQuestion = {
+type LearnerProfileQuestion = {
   promptEn: string;
   canonicalField: "name" | "age" | null;
   maxLength: number;
   fallbackAcknowledgment: string;
 };
 
-export type OnboardingEnrichment = {
+export type LearnerProfileEnrichment = {
   summary: string;
   acknowledgment: string;
   canonicalName: string | null;
@@ -29,14 +30,14 @@ export type OnboardingEnrichment = {
   enrichmentStatus: "generated" | "fallback";
 };
 
-export type OnboardingEnrichmentResult =
-  | OnboardingEnrichment
+export type LearnerProfileEnrichmentResult =
+  | LearnerProfileEnrichment
   | { fieldError: string };
 
 type EnrichmentInput = {
   env: ApiEnv;
   fetch?: typeof globalThis.fetch;
-  question: OnboardingQuestion;
+  question: LearnerProfileQuestion;
   rawAnswer: string;
 };
 
@@ -78,9 +79,9 @@ function validAge(value: unknown): value is number {
 }
 
 function fallbackCanonical(
-  question: OnboardingQuestion,
+  question: LearnerProfileQuestion,
   rawAnswer: string
-): Pick<OnboardingEnrichment, "canonicalName" | "canonicalAge"> | {
+): Pick<LearnerProfileEnrichment, "canonicalName" | "canonicalAge"> | {
   fieldError: string;
 } {
   if (question.canonicalField === "name") {
@@ -103,9 +104,9 @@ function fallbackCanonical(
 }
 
 function fallback(
-  question: OnboardingQuestion,
+  question: LearnerProfileQuestion,
   rawAnswer: string
-): OnboardingEnrichmentResult {
+): LearnerProfileEnrichmentResult {
   const canonical = fallbackCanonical(question, rawAnswer);
   if ("fieldError" in canonical) return canonical;
   return {
@@ -118,8 +119,8 @@ function fallback(
 
 function parseGenerated(
   value: unknown,
-  question: OnboardingQuestion
-): Omit<OnboardingEnrichment, "enrichmentStatus"> | null {
+  question: LearnerProfileQuestion
+): Omit<LearnerProfileEnrichment, "enrichmentStatus"> | null {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }
@@ -168,12 +169,12 @@ function parseGenerated(
   };
 }
 
-export async function enrichOnboardingAnswer({
+export async function enrichLearnerProfileAnswer({
   env,
   fetch: fetchImplementation = globalThis.fetch,
   question,
   rawAnswer,
-}: EnrichmentInput): Promise<OnboardingEnrichmentResult> {
+}: EnrichmentInput): Promise<LearnerProfileEnrichmentResult> {
   const answer = typeof rawAnswer === "string" ? rawAnswer.trim() : "";
   if (answer.length === 0 || answer.length > Math.min(question.maxLength, 500)) {
     return { fieldError: `Please use ${Math.min(question.maxLength, 500)} characters or fewer.` };
@@ -195,8 +196,7 @@ export async function enrichOnboardingAnswer({
           messages: [
             {
               role: "system",
-              content:
-                "Summarize the child's answer factually in third person. Write one warm, playful acknowledgment for a child. Do not ask a question or invent details. Return only the requested JSON. Set canonicalName or canonicalAge only when the question asks for it; otherwise return null.",
+              content: LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT,
             },
             {
               role: "user",
@@ -206,7 +206,7 @@ export async function enrichOnboardingAnswer({
           response_format: {
             type: "json_schema",
             json_schema: {
-              name: "onboarding_enrichment",
+              name: "learner_profile_enrichment",
               strict: true,
               schema: RESPONSE_SCHEMA,
             },

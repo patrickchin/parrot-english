@@ -1,7 +1,7 @@
 {
-  "id": "voice-onboarding-v1",
+  "id": "learner-profile-v1",
   "version": 1,
-  "introductionAudioId": "onboarding-introduction",
+  "introductionAudioId": "learner-profile-introduction",
   "questions": [
     {
       "answerKey": "age",
@@ -14,7 +14,7 @@
       "options": null,
       "validation": { "min": 3, "max": 17 },
       "branching": null,
-      "audioId": "onboarding-age"
+      "audioId": "learner-profile-age"
     },
     {
       "answerKey": "favoriteCartoons",
@@ -27,7 +27,7 @@
       "options": ["Bluey", "Paw Patrol", "Peppa Pig", "Super Wings"],
       "validation": { "maxItems": 4, "maxLength": 50 },
       "branching": null,
-      "audioId": "onboarding-favourite-cartoons"
+      "audioId": "learner-profile-favourite-cartoons"
     },
     {
       "answerKey": "favoriteAnimals",
@@ -40,7 +40,7 @@
       "options": ["dog", "cat", "dinosaur", "rabbit"],
       "validation": { "maxItems": 4, "maxLength": 40 },
       "branching": null,
-      "audioId": "onboarding-favourite-animals"
+      "audioId": "learner-profile-favourite-animals"
     },
     {
       "answerKey": "favoriteActivities",
@@ -53,7 +53,7 @@
       "options": ["drawing", "football", "singing", "building"],
       "validation": { "maxItems": 4, "maxLength": 50 },
       "branching": null,
-      "audioId": "onboarding-favourite-activities"
+      "audioId": "learner-profile-favourite-activities"
     },
     {
       "answerKey": "favoriteStoryTopics",
@@ -66,7 +66,7 @@
       "options": ["space", "adventure", "friendship", "magic"],
       "validation": { "maxItems": 4, "maxLength": 60 },
       "branching": null,
-      "audioId": "onboarding-favourite-story-topics"
+      "audioId": "learner-profile-favourite-story-topics"
     }
   ]
 }

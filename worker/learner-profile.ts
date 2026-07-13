@@ -6,55 +6,55 @@ import {
   isV2Complete,
   readV2Answers,
   writeV2Response,
-} from "../lib/onboarding-profile.js";
-import { skipProfileQuestion } from "../lib/onboarding.js";
+} from "../lib/learner-profile-responses.js";
+import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
 import type { Database } from "./database.ts";
 import {
-  handleOnboardingTranscription,
+  handleLearnerProfileTranscription,
   type ApiEnv,
 } from "./groq.ts";
 import {
   synthesizeAcknowledgment,
   type ElevenLabsEnv,
-} from "./onboarding-acknowledgment-audio.ts";
-import { ONBOARDING_QUESTIONNAIRE } from "./onboarding-definition.ts";
+} from "./learner-profile-acknowledgment-audio.ts";
+import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
-  enrichOnboardingAnswer,
-  type OnboardingEnrichment,
-  type OnboardingEnrichmentResult,
-} from "./onboarding-enrichment.ts";
-import { createOnboardingRepository } from "./onboarding-repository.ts";
+  enrichLearnerProfileAnswer,
+  type LearnerProfileEnrichment,
+  type LearnerProfileEnrichmentResult,
+} from "./learner-profile-enrichment.ts";
+import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
 
-export interface OnboardingIdentity {
+export interface LearnerProfileIdentity {
   sessionId: string;
   userId: string;
   userName: string | null;
 }
 
-export interface OnboardingRequestInput {
+export interface LearnerProfileRequestInput {
   database: Database;
   env: AuthEnv &
     ApiEnv &
-    ElevenLabsEnv & { REALTIME_ONBOARDING_ENABLED?: string };
-  identity: OnboardingIdentity;
+    ElevenLabsEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
+  identity: LearnerProfileIdentity;
   request: Request;
 }
 
 type HandlerDependencies = {
-  enrichAnswer: typeof enrichOnboardingAnswer;
+  enrichAnswer: typeof enrichLearnerProfileAnswer;
   synthesizeAudio: typeof synthesizeAcknowledgment;
   now: () => Date;
 };
 
-type Repository = ReturnType<typeof createOnboardingRepository>;
+type Repository = ReturnType<typeof createLearnerProfileRepository>;
 type Profile = Awaited<ReturnType<Repository["loadProfile"]>>;
-type Question = (typeof ONBOARDING_QUESTIONNAIRE.questions)[number];
+type Question = (typeof LEARNER_PROFILE_QUESTIONNAIRE.questions)[number];
 
 const MAX_PROFILE_BODY_BYTES = 16 * 1024;
 
@@ -120,7 +120,7 @@ function isV2Profile(profile: Profile) {
 function clientProfile(profile: Profile) {
   const readable = isV2Profile(profile)
     ? profile
-    : ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+    : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
   const answers = readV2Answers(readable);
@@ -130,29 +130,29 @@ function clientProfile(profile: Profile) {
     description:
       typeof answers.description === "string" ? answers.description : null,
     answers,
-    questionnaireVersion: ONBOARDING_QUESTIONNAIRE.version,
+    questionnaireVersion: LEARNER_PROFILE_QUESTIONNAIRE.version,
     currentQuestionKey: profile.currentQuestionKey,
-    onboardingStatus: profile.onboardingStatus,
+    profileStatus: profile.profileStatus,
     completedAt: profile.completedAt,
   };
 }
 
-async function prepareOnboardingProfile(
+async function prepareLearnerProfile(
   repository: Repository,
-  identity: OnboardingIdentity
+  identity: LearnerProfileIdentity
 ) {
   const stored = await repository.loadProfile(identity);
-  const prepared = ensureV2Profile(stored, ONBOARDING_QUESTIONNAIRE);
+  const prepared = ensureV2Profile(stored, LEARNER_PROFILE_QUESTIONNAIRE);
   if (
     prepared.answersJson !== stored.answersJson ||
     prepared.currentQuestionKey !== stored.currentQuestionKey ||
-    prepared.onboardingStatus !== stored.onboardingStatus ||
+    prepared.profileStatus !== stored.profileStatus ||
     prepared.skippedQuestionKeysJson !== stored.skippedQuestionKeysJson
   ) {
     await repository.saveAnswer(stored.id, {
       answersJson: prepared.answersJson,
       currentQuestionKey: prepared.currentQuestionKey,
-      onboardingStatus: prepared.onboardingStatus,
+      profileStatus: prepared.profileStatus,
       skippedQuestionKeysJson: prepared.skippedQuestionKeysJson,
     });
     return repository.loadProfile(identity);
@@ -160,45 +160,45 @@ async function prepareOnboardingProfile(
   return stored;
 }
 
-function onboardingPayload(
+function learnerProfilePayload(
   profile: Profile,
   canBypass: boolean,
   experienceMode: "realtime" | "form",
 ) {
-  const completed = profile.onboardingStatus === "completed";
+  const completed = profile.profileStatus === "completed";
   const readable = isV2Profile(profile)
     ? profile
-    : ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+    : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
   const question = completed
     ? null
-    : getV2CurrentQuestion(readable, ONBOARDING_QUESTIONNAIRE);
+    : getV2CurrentQuestion(readable, LEARNER_PROFILE_QUESTIONNAIRE);
   return {
     mode: "full" as const,
     profile: clientProfile(profile),
-    questionnaire: { version: ONBOARDING_QUESTIONNAIRE.version },
+    questionnaire: { version: LEARNER_PROFILE_QUESTIONNAIRE.version },
     question: question ? serializeQuestion(question) : null,
     progress: completed
       ? {
-          answered: ONBOARDING_QUESTIONNAIRE.questions.length,
-          current: ONBOARDING_QUESTIONNAIRE.questions.length,
-          total: ONBOARDING_QUESTIONNAIRE.questions.length,
+          answered: LEARNER_PROFILE_QUESTIONNAIRE.questions.length,
+          current: LEARNER_PROFILE_QUESTIONNAIRE.questions.length,
+          total: LEARNER_PROFILE_QUESTIONNAIRE.questions.length,
         }
-      : getV2Progress(readable, ONBOARDING_QUESTIONNAIRE),
+      : getV2Progress(readable, LEARNER_PROFILE_QUESTIONNAIRE),
     canBypass,
     experienceMode,
   };
 }
 
-function onboardingExperienceMode(env: OnboardingRequestInput["env"]) {
-  return env.REALTIME_ONBOARDING_ENABLED === "1" ? "realtime" : "form";
+function learnerProfileExperienceMode(env: LearnerProfileRequestInput["env"]) {
+  return env.REALTIME_CONVERSATIONS_ENABLED === "1" ? "realtime" : "form";
 }
 
 function profilePayload(profile: Profile) {
   return {
     profile: clientProfile(profile),
-    questions: ONBOARDING_QUESTIONNAIRE.questions.map(serializeQuestion),
+    questions: LEARNER_PROFILE_QUESTIONNAIRE.questions.map(serializeQuestion),
   };
 }
 
@@ -297,7 +297,7 @@ async function readQuestionKeyBody(request: Request) {
 
 function findQuestion(answerKey: string) {
   return (
-    ONBOARDING_QUESTIONNAIRE.questions.find(
+    LEARNER_PROFILE_QUESTIONNAIRE.questions.find(
       (question) => question.answerKey === answerKey
     ) ?? null
   );
@@ -312,16 +312,16 @@ function savedEnrichment(profile: Profile, answerKey: string) {
     canonicalName: answerKey === "name" ? profile.name : null,
     canonicalAge: answerKey === "age" ? profile.age : null,
     enrichmentStatus: response.enrichmentStatus,
-  } satisfies OnboardingEnrichment;
+  } satisfies LearnerProfileEnrichment;
 }
 
 async function getEnrichment(
-  input: OnboardingRequestInput,
+  input: LearnerProfileRequestInput,
   dependencies: HandlerDependencies,
   profile: Profile,
   question: Question,
   rawAnswer: string
-): Promise<OnboardingEnrichmentResult> {
+): Promise<LearnerProfileEnrichmentResult> {
   if (isSameV2Answer(profile, question.answerKey, rawAnswer)) {
     const saved = savedEnrichment(profile, question.answerKey);
     if (saved) return saved;
@@ -342,7 +342,7 @@ async function saveAnswer({
   rawAnswer,
   profileEdit,
 }: {
-  input: OnboardingRequestInput;
+  input: LearnerProfileRequestInput;
   dependencies: HandlerDependencies;
   repository: Repository;
   profile: Profile;
@@ -359,7 +359,7 @@ async function saveAnswer({
   }
 
   const readable = profileEdit
-    ? ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+    ? ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
         forProfileEdit: true,
       })
     : profile;
@@ -398,10 +398,10 @@ async function saveAnswer({
         skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
       });
     } else {
-      const next = getV2CurrentQuestion(updated, ONBOARDING_QUESTIONNAIRE);
+      const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
       const completed = next === null && isV2Complete(
         updated,
-        ONBOARDING_QUESTIONNAIRE
+        LEARNER_PROFILE_QUESTIONNAIRE
       );
       await repository.saveTransition(profile.id, {
         age: updated.age,
@@ -429,19 +429,19 @@ async function saveProfileAnswers({
   profile,
   answers,
 }: {
-  input: OnboardingRequestInput;
+  input: LearnerProfileRequestInput;
   dependencies: HandlerDependencies;
   repository: Repository;
   profile: Profile;
   answers: Record<string, unknown>;
 }) {
-  let updated = ensureV2Profile(profile, ONBOARDING_QUESTIONNAIRE, {
+  let updated = ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
     forProfileEdit: true,
   });
   const fieldErrors: Record<string, string> = Object.create(null);
   const knownKeys = new Set(
     [
-      ...ONBOARDING_QUESTIONNAIRE.questions.map((question) => question.answerKey),
+      ...LEARNER_PROFILE_QUESTIONNAIRE.questions.map((question) => question.answerKey),
       "description",
     ]
   );
@@ -477,7 +477,7 @@ async function saveProfileAnswers({
   }
 
   const changed: Array<{ question: Question; acknowledgment: string }> = [];
-  for (const question of ONBOARDING_QUESTIONNAIRE.questions) {
+  for (const question of LEARNER_PROFILE_QUESTIONNAIRE.questions) {
     if (!(question.answerKey in answers)) continue;
     const submitted = answers[question.answerKey];
     if (typeof submitted !== "string") {
@@ -563,41 +563,41 @@ async function saveProfileAnswers({
   return { profile: storedProfile, acknowledgments };
 }
 
-export async function handleOnboardingRequest(
-  input: OnboardingRequestInput,
+export async function handleLearnerProfileRequest(
+  input: LearnerProfileRequestInput,
   dependencyOverrides: Partial<HandlerDependencies> = {}
 ): Promise<Response> {
   const dependencies: HandlerDependencies = {
-    enrichAnswer: enrichOnboardingAnswer,
+    enrichAnswer: enrichLearnerProfileAnswer,
     synthesizeAudio: synthesizeAcknowledgment,
     now: () => new Date(),
     ...dependencyOverrides,
   };
-  const repository = createOnboardingRepository(input.database);
+  const repository = createLearnerProfileRepository(input.database);
   const url = new URL(input.request.url);
 
   try {
-    if (url.pathname === "/api/onboarding/transcribe") {
-      return handleOnboardingTranscription(input.request, input.env);
+    if (url.pathname === "/api/learner-profile/transcribe") {
+      return handleLearnerProfileTranscription(input.request, input.env);
     }
 
-    if (url.pathname === "/api/onboarding" && input.request.method === "GET") {
-      const profile = await prepareOnboardingProfile(repository, input.identity);
+    if (url.pathname === "/api/learner-profile" && input.request.method === "GET") {
+      const profile = await prepareLearnerProfile(repository, input.identity);
       return jsonResponse(
-        onboardingPayload(
+        learnerProfilePayload(
           profile,
           await repository.canBypass(input.identity),
-          onboardingExperienceMode(input.env),
+          learnerProfileExperienceMode(input.env),
         )
       );
     }
 
     if (
-      url.pathname === "/api/onboarding/answer" &&
+      url.pathname === "/api/learner-profile/answer" &&
       input.request.method === "PUT"
     ) {
       const body = await readAnswerBody(input.request);
-      const profile = await prepareOnboardingProfile(repository, input.identity);
+      const profile = await prepareLearnerProfile(repository, input.identity);
       const question = findQuestion(body.questionKey);
       if (!question) {
         throw new ApiError(
@@ -611,7 +611,7 @@ export async function handleOnboardingRequest(
         question.answerKey,
         body.rawAnswer
       );
-      const current = getV2CurrentQuestion(profile, ONBOARDING_QUESTIONNAIRE);
+      const current = getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE);
       if (!repeated && current?.answerKey !== question.answerKey) {
         throw new ApiError(
           409,
@@ -630,21 +630,21 @@ export async function handleOnboardingRequest(
         profileEdit: false,
       });
       return jsonResponse({
-        ...onboardingPayload(
+        ...learnerProfilePayload(
           saved.profile,
           await repository.canBypass(input.identity),
-          onboardingExperienceMode(input.env),
+          learnerProfileExperienceMode(input.env),
         ),
         acknowledgment: saved.acknowledgment,
       });
     }
 
     if (
-      url.pathname === "/api/onboarding/question/skip" &&
+      url.pathname === "/api/learner-profile/question/skip" &&
       input.request.method === "POST"
     ) {
       const body = await readQuestionKeyBody(input.request);
-      const profile = await prepareOnboardingProfile(repository, input.identity);
+      const profile = await prepareLearnerProfile(repository, input.identity);
       const question = findQuestion(body.questionKey);
       if (!question) {
         throw new ApiError(
@@ -654,7 +654,7 @@ export async function handleOnboardingRequest(
         );
       }
       if (
-        getV2CurrentQuestion(profile, ONBOARDING_QUESTIONNAIRE)?.answerKey !==
+        getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE)?.answerKey !==
         question.answerKey
       ) {
         throw new ApiError(
@@ -668,35 +668,35 @@ export async function handleOnboardingRequest(
       }
 
       const updated = skipProfileQuestion(profile, question.answerKey);
-      const next = getV2CurrentQuestion(updated, ONBOARDING_QUESTIONNAIRE);
+      const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
       await repository.saveTransition(profile.id, {
         age: updated.age,
         answersJson: updated.answersJson,
-        completed: next === null && isV2Complete(updated, ONBOARDING_QUESTIONNAIRE),
+        completed: next === null && isV2Complete(updated, LEARNER_PROFILE_QUESTIONNAIRE),
         currentQuestionKey: next?.answerKey ?? null,
         name: updated.name,
         skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
       });
       const stored = await repository.loadProfile(input.identity);
       return jsonResponse(
-        onboardingPayload(
+        learnerProfilePayload(
           stored,
           await repository.canBypass(input.identity),
-          onboardingExperienceMode(input.env),
+          learnerProfileExperienceMode(input.env),
         )
       );
     }
 
     if (
-      url.pathname === "/api/onboarding/skip" &&
+      url.pathname === "/api/learner-profile/skip" &&
       input.request.method === "POST"
     ) {
       await repository.skipSession(input.identity);
       try {
-        const profile = await prepareOnboardingProfile(repository, input.identity);
+        const profile = await prepareLearnerProfile(repository, input.identity);
         await repository.skip(profile.id, input.identity.sessionId);
         return jsonResponse(
-          onboardingPayload(profile, true, onboardingExperienceMode(input.env)),
+          learnerProfilePayload(profile, true, learnerProfileExperienceMode(input.env)),
         );
       } catch {
         return jsonResponse(bypassOnlyPayload());
@@ -704,14 +704,14 @@ export async function handleOnboardingRequest(
     }
 
     if (
-      url.pathname === "/api/onboarding/complete" &&
+      url.pathname === "/api/learner-profile/complete" &&
       input.request.method === "POST"
     ) {
-      const profile = await prepareOnboardingProfile(repository, input.identity);
-      if (profile.onboardingStatus !== "completed") {
-        const missing = getV2CurrentQuestion(profile, ONBOARDING_QUESTIONNAIRE);
-        if (missing || !isV2Complete(profile, ONBOARDING_QUESTIONNAIRE)) {
-          throw new ApiError(409, "onboarding_incomplete", undefined, {
+      const profile = await prepareLearnerProfile(repository, input.identity);
+      if (profile.profileStatus !== "completed") {
+        const missing = getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE);
+        if (missing || !isV2Complete(profile, LEARNER_PROFILE_QUESTIONNAIRE)) {
+          throw new ApiError(409, "learner_profile_incomplete", undefined, {
             missingQuestionKey: missing?.answerKey ?? null,
           });
         }
@@ -719,7 +719,7 @@ export async function handleOnboardingRequest(
       }
       const completed = await repository.loadProfile(input.identity);
       return jsonResponse(
-        onboardingPayload(completed, true, onboardingExperienceMode(input.env)),
+        learnerProfilePayload(completed, true, learnerProfileExperienceMode(input.env)),
       );
     }
 
@@ -768,11 +768,11 @@ export async function handleOnboardingRequest(
     }
 
     const recognized =
-      url.pathname === "/api/onboarding" ||
-      url.pathname === "/api/onboarding/answer" ||
-      url.pathname === "/api/onboarding/question/skip" ||
-      url.pathname === "/api/onboarding/skip" ||
-      url.pathname === "/api/onboarding/complete" ||
+      url.pathname === "/api/learner-profile" ||
+      url.pathname === "/api/learner-profile/answer" ||
+      url.pathname === "/api/learner-profile/question/skip" ||
+      url.pathname === "/api/learner-profile/skip" ||
+      url.pathname === "/api/learner-profile/complete" ||
       url.pathname === "/api/profile";
     return jsonResponse(
       { error: recognized ? "method_not_allowed" : "not_found" },

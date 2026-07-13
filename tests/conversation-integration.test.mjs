@@ -11,13 +11,13 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const { OnboardingGateView } = await vite.ssrLoadModule(
-  "/src/OnboardingGate.tsx",
+const { LearnerProfileGateView } = await vite.ssrLoadModule(
+  "/src/LearnerProfileGate.tsx",
 );
 const {
   mergeConversationTurns,
-  selectOnboardingExperience,
-} = await vite.ssrLoadModule("/src/useConversationOnboarding.ts");
+  selectLearnerProfileExperience,
+} = await vite.ssrLoadModule("/src/usePeppaConversation.ts");
 
 after(async () => {
   await vite.close();
@@ -39,7 +39,7 @@ function fullState(experienceMode) {
       completedAt: null,
       currentQuestionKey: "name",
       name: null,
-      onboardingStatus: "not_started",
+      profileStatus: "not_started",
       questionnaireVersion: 2,
     },
     progress: { answered: 0, current: 1, total: 6 },
@@ -73,15 +73,15 @@ function conversationProps(overrides = {}) {
 function renderGate(overrides = {}) {
   return renderToStaticMarkup(
     createElement(
-      OnboardingGateView,
+      LearnerProfileGateView,
       {
         acknowledgment: null,
-        completedOnboardingFallback: createElement("p", null, "COMPLETE"),
+        completedLearnerProfileFallback: createElement("p", null, "COMPLETE"),
         conversationProps: null,
         data: fullState("form"),
         isConversationRoute: false,
         isLoading: false,
-        isOnboardingRoute: true,
+        isLearnerProfileRoute: true,
         isProfileLoading: false,
         isProfileRoute: false,
         loadError: "",
@@ -91,11 +91,11 @@ function renderGate(overrides = {}) {
         onRetryProfile() {},
         onSkip() {},
         onStart() {},
-        onboardingFallback: createElement("p", null, "ONBOARD"),
+        learnerProfileFallback: createElement("p", null, "ONBOARD"),
         profileEditor: null,
         profileLoadError: "",
         questionProps: null,
-        redoOnboarding: false,
+        redoLearnerProfile: false,
         started: false,
         ...overrides,
       },
@@ -104,11 +104,11 @@ function renderGate(overrides = {}) {
   );
 }
 
-describe("realtime onboarding gate integration", () => {
+describe("realtime learner-profile gate integration", () => {
   it("selects realtime from the server while keeping form fallback sticky", () => {
-    assert.equal(selectOnboardingExperience("realtime", false), "realtime");
-    assert.equal(selectOnboardingExperience("realtime", true), "form");
-    assert.equal(selectOnboardingExperience("form", false), "form");
+    assert.equal(selectLearnerProfileExperience("realtime", false), "realtime");
+    assert.equal(selectLearnerProfileExperience("realtime", true), "form");
+    assert.equal(selectLearnerProfileExperience("form", false), "form");
 
     const realtime = renderGate({
       conversationProps: conversationProps(),
@@ -137,9 +137,9 @@ describe("realtime onboarding gate integration", () => {
     assert.doesNotMatch(html, /Type instead|aria-label="Type your answer"/);
   });
 
-  it("lets a completed learner deliberately start a fresh realtime onboarding", () => {
+  it("lets a completed learner deliberately start a profile-edit conversation", () => {
     const completed = fullState("realtime");
-    completed.profile.onboardingStatus = "completed";
+    completed.profile.profileStatus = "completed";
     completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
 
     const ordinaryVisit = renderGate({ data: completed });
@@ -148,7 +148,7 @@ describe("realtime onboarding gate integration", () => {
     const redoVisit = renderGate({
       conversationProps: conversationProps(),
       data: completed,
-      redoOnboarding: true,
+      redoLearnerProfile: true,
     });
     assert.match(redoVisit, /Chat with Peppa/);
     assert.doesNotMatch(redoVisit, /COMPLETE/);
@@ -156,14 +156,14 @@ describe("realtime onboarding gate integration", () => {
 
   it("renders the same conversation as a standalone feature for a completed learner", () => {
     const completed = fullState("realtime");
-    completed.profile.onboardingStatus = "completed";
+    completed.profile.profileStatus = "completed";
     completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
 
     const html = renderGate({
       conversationProps: conversationProps(),
       data: completed,
       isConversationRoute: true,
-      isOnboardingRoute: false,
+      isLearnerProfileRoute: false,
     });
 
     assert.match(html, /Chat with Peppa/);

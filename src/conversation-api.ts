@@ -1,3 +1,5 @@
+import type { ConversationPurpose } from "../lib/conversation-purpose";
+
 export type ConversationTurn = {
   id: string;
   conversationId: string;
@@ -16,7 +18,7 @@ export type ConversationTurn = {
 export type ConversationSession = {
   id: string;
   authUserId: string;
-  scenarioKey: string;
+  scenarioKey: ConversationPurpose;
   scenarioVersion: number;
   roomName: string;
   status:
@@ -37,11 +39,11 @@ export type ConversationSession = {
 };
 
 export type ConversationScenarioDescriptor = {
-  key: "onboarding";
+  key: ConversationPurpose;
   version: number;
-  requiredDetails: readonly ["name", "age"];
-  summaryMode: "prose";
-  maxOptionalExchanges: 3;
+  requiredDetails: readonly ("name" | "age")[];
+  summaryMode: "none" | "prose";
+  maxOptionalExchanges: number | null;
 };
 
 export type ConversationStartResponse = {
@@ -112,10 +114,14 @@ function jsonRequest<Result>(
   );
 }
 
-export function startConversation(options?: ConversationRequestOptions) {
-  return requestJson<ConversationStartResponse>(
+export function startConversation(
+  purpose: ConversationPurpose,
+  options?: ConversationRequestOptions,
+) {
+  return jsonRequest<ConversationStartResponse>(
     "/api/conversations",
-    { method: "POST" },
+    "POST",
+    { purpose },
     options,
   );
 }

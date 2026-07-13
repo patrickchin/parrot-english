@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it } from "node:test";
-import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
-import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
-import { enrichOnboardingAnswer } from "../worker/onboarding-enrichment.ts";
+import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
+import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
+import { enrichLearnerProfileAnswer } from "../worker/learner-profile-enrichment.ts";
 
-const definition = validateOnboardingQuestionnaire(questionnaireV2);
+const definition = validateLearnerProfileQuestionnaire(questionnaireV2);
 const animalsQuestion = definition.questions.find(
   ({ answerKey }) => answerKey === "favoriteAnimals",
 );
@@ -18,9 +20,28 @@ function providerResponse(value) {
 }
 
 describe("onboarding answer enrichment", () => {
+  it("keeps its system prompt in a dedicated source file", () => {
+    const promptSource = readFileSync(
+      resolve(
+        import.meta.dirname,
+        "../worker/prompts/learner-profile-enrichment.ts",
+      ),
+      "utf8",
+    );
+    const runtimeSource = readFileSync(
+      resolve(import.meta.dirname, "../worker/learner-profile-enrichment.ts"),
+      "utf8",
+    );
+
+    assert.match(promptSource, /summarize the child's answer factually/i);
+    assert.match(promptSource, /not spoken directly to the child/i);
+    assert.match(promptSource, /edit only the large block of text below/i);
+    assert.doesNotMatch(runtimeSource, /summarize the child's answer factually/i);
+  });
+
   it("requests strict child-safe summary and acknowledgment JSON", async () => {
     let upstreamRequest;
-    const result = await enrichOnboardingAnswer({
+    const result = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async (url, init) => {
         upstreamRequest = {
@@ -48,6 +69,11 @@ describe("onboarding answer enrichment", () => {
       "Content-Type": "application/json",
     });
     assert.equal(upstreamRequest.body.model, "openai/gpt-oss-20b");
+    assert.equal(upstreamRequest.body.messages[0].role, "system");
+    assert.match(
+      upstreamRequest.body.messages[0].content,
+      /summarize the child's answer factually/i,
+    );
     assert.equal(
       upstreamRequest.body.response_format.json_schema.strict,
       true,
@@ -79,7 +105,7 @@ describe("onboarding answer enrichment", () => {
   });
 
   it("accepts only the canonical field targeted by the question", async () => {
-    const generatedName = await enrichOnboardingAnswer({
+    const generatedName = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
@@ -93,7 +119,7 @@ describe("onboarding answer enrichment", () => {
     });
     assert.equal(generatedName.canonicalName, "Mia");
 
-    const generatedAge = await enrichOnboardingAnswer({
+    const generatedAge = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
@@ -110,7 +136,7 @@ describe("onboarding answer enrichment", () => {
 
   it("falls back deterministically for missing keys and invalid provider output", async () => {
     let fetchCalls = 0;
-    const missingKey = await enrichOnboardingAnswer({
+    const missingKey = await enrichLearnerProfileAnswer({
       env: {},
       fetch: async () => {
         fetchCalls += 1;
@@ -127,7 +153,7 @@ describe("onboarding answer enrichment", () => {
       animalsQuestion.fallbackAcknowledgment,
     );
 
-    const invalid = await enrichOnboardingAnswer({
+    const invalid = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
@@ -150,14 +176,14 @@ describe("onboarding answer enrichment", () => {
   });
 
   it("extracts safe canonical fallbacks and returns field errors when impossible", async () => {
-    const nameFallback = await enrichOnboardingAnswer({
+    const nameFallback = await enrichLearnerProfileAnswer({
       env: {},
       question: nameQuestion,
       rawAnswer: "小明",
     });
     assert.equal(nameFallback.canonicalName, "小明");
 
-    const ageFallback = await enrichOnboardingAnswer({
+    const ageFallback = await enrichLearnerProfileAnswer({
       env: {},
       question: ageQuestion,
       rawAnswer: "I am 30 years old",
@@ -165,7 +191,7 @@ describe("onboarding answer enrichment", () => {
     assert.equal(ageFallback.canonicalAge, 30);
 
     assert.deepEqual(
-      await enrichOnboardingAnswer({
+      await enrichLearnerProfileAnswer({
         env: {},
         question: ageQuestion,
         rawAnswer: "I am very little",
@@ -180,7 +206,7 @@ describe("onboarding answer enrichment", () => {
       async () => Response.json({ choices: [{ message: { refusal: "no" } }] }),
       async () => new Promise(() => {}),
     ]) {
-      const result = await enrichOnboardingAnswer({
+      const result = await enrichLearnerProfileAnswer({
         env: {
           GROQ_API_KEY: "test-key",
           GROQ_REQUEST_TIMEOUT_MS: "10",
