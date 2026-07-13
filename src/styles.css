@@ -1,19 +1,17 @@
 @import "tailwindcss";
+@import "./design-system.css";
+@import "./conversation.css";
 
 :root {
-  --lesson-ui-font-size: clamp(1rem, 1.3vw, 1.2rem);
-  --lesson-pill-height: 64px;
-  --lesson-pill-padding: 20px;
-  --lesson-pill-border: 4px solid #fff;
-  --lesson-pill-radius: 999px;
+  --lesson-ui-font-size: var(--app-control-font-size);
+  --lesson-pill-height: var(--app-header-control-size);
+  --lesson-pill-padding: var(--app-control-inline-padding);
+  --lesson-pill-border: var(--app-control-border);
+  --lesson-pill-radius: var(--radius-control);
   --lesson-pill-shadow-depth: 5px;
-  --lesson-edge-gap: clamp(14px, 2vw, 30px);
+  --lesson-edge-gap: var(--app-header-edge);
   color: #241d2b;
-  font-family:
-    ui-rounded,
-    "Arial Rounded MT Bold",
-    system-ui,
-    sans-serif;
+  font-family: var(--font-ui);
   font-synthesis: none;
 }
 
@@ -34,19 +32,21 @@ body {
   background: #87d7f5;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
 
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 5px solid #204c7f;
-  outline-offset: 4px;
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 5px solid var(--color-brand-navy);
+    outline-offset: 4px;
+  }
 }
 
 .onboarding-screen {
@@ -94,7 +94,7 @@ select:focus-visible {
 .onboarding-acknowledgment-card h1 {
   max-width: 540px;
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(2rem, 6vw, 3.25rem);
   line-height: 1.08;
 }
@@ -111,7 +111,7 @@ select:focus-visible {
 .onboarding-status-card h1,
 .onboarding-profile-heading h1 {
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(2rem, 6vw, 3.25rem);
   line-height: 1;
 }
@@ -139,11 +139,11 @@ select:focus-visible {
   min-height: 52px;
   border: 0;
   border-radius: 18px;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   cursor: pointer;
   font-weight: 950;
-  box-shadow: 0 5px 0 #b92259;
+  box-shadow: 0 5px 0 var(--color-brand-pink-shadow);
 }
 
 .onboarding-start-button {
@@ -155,7 +155,7 @@ select:focus-visible {
   min-height: 46px;
   border: 0;
   background: transparent;
-  color: #315f89;
+  color: var(--color-brand-blue);
   cursor: pointer;
   font-weight: 900;
   text-decoration: underline;
@@ -171,7 +171,7 @@ select:focus-visible {
   border: 3px solid #b8dbea;
   border-radius: 50%;
   background: #fff;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   cursor: pointer;
   font-size: 1.8rem;
   font-weight: 900;
@@ -181,7 +181,7 @@ select:focus-visible {
 .onboarding-skip-button:focus-visible,
 .onboarding-icon-button:focus-visible,
 .onboarding-start-button:focus-visible {
-  outline: 5px solid #173c67;
+  outline: 5px solid var(--color-brand-ink);
   outline-offset: 4px;
 }
 
@@ -199,7 +199,7 @@ select:focus-visible {
 
 .onboarding-progress {
   margin: 0;
-  color: #d62f70;
+  color: var(--color-brand-rose);
   font-size: 0.82rem;
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -223,7 +223,7 @@ select:focus-visible {
 
 .onboarding-question-title {
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(1.65rem, 5vw, 2.65rem);
   line-height: 1.08;
 }
@@ -251,7 +251,7 @@ select:focus-visible {
 .onboarding-answer-field {
   display: grid;
   gap: 7px;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-weight: 900;
 }
 
@@ -270,7 +270,7 @@ select:focus-visible {
   border: 3px solid #a9d5e8;
   border-radius: 16px;
   background: #fff;
-  color: #173c67;
+  color: var(--color-brand-ink);
   padding: 13px 15px;
   font: inherit;
   font-weight: 800;
@@ -284,12 +284,12 @@ select:focus-visible {
   border: 0;
   border-radius: 16px;
   background: #e4f5fc;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   cursor: pointer;
 }
 
 .onboarding-mic-button {
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
 }
 
@@ -311,7 +311,7 @@ select:focus-visible {
   gap: 5px;
   border-radius: 999px;
   background: #dff4fc;
-  color: #173c67;
+  color: var(--color-brand-ink);
   padding: 4px 6px 4px 14px;
   font-weight: 900;
 }
@@ -324,7 +324,7 @@ select:focus-visible {
   border: 0;
   border-radius: 50%;
   background: #fff;
-  color: #b92259;
+  color: var(--color-brand-pink-shadow);
   cursor: pointer;
 }
 
@@ -340,15 +340,15 @@ select:focus-visible {
   border: 3px solid #b8dbea;
   border-radius: 999px;
   background: #fff;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   cursor: pointer;
   padding: 7px 14px;
   font-weight: 900;
 }
 
 .onboarding-suggestions button.is-selected {
-  border-color: #204c7f;
-  background: #204c7f;
+  border-color: var(--color-brand-navy);
+  background: var(--color-brand-navy);
   color: #fff;
 }
 
@@ -367,7 +367,7 @@ select:focus-visible {
 
 .onboarding-input-status {
   background: #e4f5fc;
-  color: #204c7f;
+  color: var(--color-brand-navy);
 }
 
 .onboarding-form-actions {
@@ -413,7 +413,7 @@ select:focus-visible {
 .profile-basic-field {
   display: grid;
   gap: 7px;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-weight: 900;
 }
 
@@ -424,7 +424,7 @@ select:focus-visible {
   border: 3px solid #a9d5e8;
   border-radius: 16px;
   background: #fff;
-  color: #173c67;
+  color: var(--color-brand-ink);
   padding: 11px 14px;
   font-weight: 800;
 }
@@ -454,12 +454,12 @@ select:focus-visible {
   min-height: 46px;
   border: 0;
   border-radius: 15px;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   cursor: pointer;
   padding: 9px 15px;
   font-weight: 950;
-  box-shadow: 0 4px 0 #b92259;
+  box-shadow: 0 4px 0 var(--color-brand-pink-shadow);
 }
 
 .profile-chat-button:disabled {
@@ -496,7 +496,7 @@ select:focus-visible {
 
 .profile-question-heading h2 {
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(1.25rem, 3vw, 1.65rem);
   line-height: 1.15;
 }
@@ -622,7 +622,7 @@ select:focus-visible {
 .auth-heading h1,
 .auth-status-card h1 {
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(1.7rem, 5vw, 2.35rem);
   line-height: 1.05;
 }
@@ -635,7 +635,7 @@ select:focus-visible {
   place-items: center;
   border: 4px solid #fff;
   border-radius: 50% 50% 46% 54%;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   font-size: 2rem;
   font-weight: 950;
@@ -670,13 +670,13 @@ select:focus-visible {
   border: 0;
   border-radius: 14px;
   background: transparent;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   cursor: pointer;
   font-weight: 900;
 }
 
 .auth-mode-switch button.is-active {
-  background: #204c7f;
+  background: var(--color-brand-navy);
   color: #fff;
   box-shadow: 0 3px 0 rgb(18 55 92 / 28%);
 }
@@ -684,7 +684,7 @@ select:focus-visible {
 .auth-field {
   display: grid;
   gap: 7px;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-weight: 900;
 }
 
@@ -723,7 +723,7 @@ select:focus-visible {
   min-height: 52px;
   border: 4px solid #fff;
   border-radius: 999px;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   cursor: pointer;
   padding: 10px 24px;
@@ -744,7 +744,7 @@ select:focus-visible {
   display: grid;
   justify-items: center;
   gap: 18px;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   text-align: center;
 }
 
@@ -774,7 +774,7 @@ select:focus-visible {
 
 .home-menu-header h1 {
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(2.4rem, 6vw, 4.8rem);
   letter-spacing: -0.04em;
   line-height: 0.98;
@@ -790,7 +790,7 @@ select:focus-visible {
 }
 
 .home-menu-card {
-  --home-card-accent: #204c7f;
+  --home-card-accent: var(--color-brand-navy);
   display: grid;
   min-height: 210px;
   grid-template-columns: 76px minmax(0, 1fr);
@@ -811,11 +811,11 @@ select:focus-visible {
 }
 
 .home-menu-card:nth-child(2) {
-  --home-card-accent: #d62f70;
+  --home-card-accent: var(--color-brand-rose);
 }
 
 .home-menu-card:nth-child(3) {
-  --home-card-accent: #087451;
+  --home-card-accent: var(--color-brand-green);
 }
 
 .home-menu-card:nth-child(4) {
@@ -828,7 +828,7 @@ select:focus-visible {
 }
 
 .home-menu-card:focus-visible {
-  outline: 5px solid #204c7f;
+  outline: 5px solid var(--color-brand-navy);
   outline-offset: 4px;
 }
 
@@ -893,7 +893,7 @@ select:focus-visible {
 
 .feature-placeholder-card h1 {
   margin: 0;
-  color: #173c67;
+  color: var(--color-brand-ink);
   font-size: clamp(2.5rem, 7vw, 4.5rem);
   line-height: 1;
 }
@@ -907,7 +907,7 @@ select:focus-visible {
   gap: 8px;
   border: 4px solid #fff;
   border-radius: 999px;
-  background: #204c7f;
+  background: var(--color-brand-navy);
   color: #fff;
   padding: 8px 20px;
   font-weight: 950;
@@ -921,18 +921,17 @@ select:focus-visible {
 }
 
 .main-menu-link:focus-visible {
-  outline: 5px solid #204c7f;
+  outline: 5px solid var(--color-brand-navy);
   outline-offset: 4px;
 }
 
 .my-lessons-empty a:focus-visible {
-  outline: 5px solid #204c7f;
+  outline: 5px solid var(--color-brand-navy);
   outline-offset: 4px;
 }
 
-.feature-placeholder-card .main-menu-link:focus-visible,
-.lesson-main-menu-link:focus-visible {
-  outline-color: #ff467b;
+.feature-placeholder-card .main-menu-link:focus-visible {
+  outline-color: var(--color-brand-pink);
 }
 
 .lesson-list-page {
@@ -976,20 +975,12 @@ select:focus-visible {
 
 .lesson-list-header h1 {
   margin: 0;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   font-size: clamp(2.8rem, 7vw, 5.7rem);
   letter-spacing: -0.04em;
   line-height: 0.95;
 }
 
-.lesson-main-menu-link {
-  position: absolute;
-  top: clamp(20px, 3vh, 34px);
-  left: clamp(18px, 3vw, 42px);
-  z-index: 20;
-}
-
-.lesson-main-menu-link svg,
 .my-lessons-empty svg {
   width: 1.2em;
   height: 1.2em;
@@ -1002,7 +993,7 @@ select:focus-visible {
 
 .lesson-catalog-section > h2 {
   margin: 0 0 18px;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   font-size: clamp(1.7rem, 3.4vw, 2.6rem);
   line-height: 1;
 }
@@ -1025,14 +1016,14 @@ select:focus-visible {
 
 .my-lessons-empty p {
   margin: 0;
-  color: #315f89;
+  color: var(--color-brand-blue);
   font-size: clamp(1.1rem, 2vw, 1.4rem);
   font-weight: 850;
 }
 
 .my-lessons-empty a {
   flex: none;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   box-shadow: 0 5px 0 rgb(171 38 83 / 42%);
 }
 
@@ -1092,7 +1083,7 @@ select:focus-visible {
   width: 54px;
   aspect-ratio: 1;
   place-items: center;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   font-size: 1.6rem;
   font-weight: 950;
   box-shadow: 0 5px 0 rgb(171 38 83 / 42%);
@@ -1101,7 +1092,7 @@ select:focus-visible {
 .coming-soon-badge {
   top: 16px;
   right: 16px;
-  background: #204c7f;
+  background: var(--color-brand-navy);
   padding: 9px 14px;
   box-shadow: 0 5px 0 rgb(18 55 92 / 38%);
 }
@@ -1125,7 +1116,7 @@ select:focus-visible {
 
 .lesson-card-content h3 {
   grid-area: title;
-  color: #204c7f;
+  color: var(--color-brand-navy);
   font-size: clamp(1.5rem, 2.4vw, 2.1rem);
   line-height: 1;
 }
@@ -1153,7 +1144,7 @@ select:focus-visible {
   gap: 8px;
   border: 4px solid #fff;
   border-radius: 999px;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   padding: 0 18px;
   box-shadow: 0 6px 0 rgb(171 38 83 / 42%);
@@ -1170,7 +1161,7 @@ select:focus-visible {
 }
 
 .lesson-card-action:focus-visible {
-  outline: 5px solid #204c7f;
+  outline: 5px solid var(--color-brand-navy);
   outline-offset: 4px;
 }
 
@@ -1226,7 +1217,7 @@ select:focus-visible {
   place-items: center;
   border: 4px solid rgb(255 255 255 / 94%);
   border-radius: 999px;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   font-size: clamp(1.35rem, 2.3vw, 2rem);
   font-weight: 950;
@@ -1266,7 +1257,7 @@ select:focus-visible {
 }
 
 .scene-progress span.is-complete {
-  background: #ff467b;
+  background: var(--color-brand-pink);
   box-shadow: 0 2px 0 rgb(171 38 83 / 35%);
 }
 
@@ -1279,7 +1270,7 @@ select:focus-visible {
   border: 2px solid rgba(255, 255, 255, 0.88);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.82);
-  color: #204c7f;
+  color: var(--color-brand-navy);
   padding: 5px 10px;
   font-size: clamp(0.68rem, 0.9vw, 0.86rem);
   font-weight: 900;
@@ -1287,74 +1278,6 @@ select:focus-visible {
   line-height: 1;
   white-space: nowrap;
   box-shadow: 0 3px 8px rgba(51, 123, 164, 0.14);
-}
-
-.lesson-list-back-button {
-  position: absolute;
-  top: clamp(14px, 2.2vh, 28px);
-  left: var(--lesson-edge-gap);
-  z-index: 20;
-  display: inline-flex;
-  min-height: var(--lesson-pill-height);
-  align-items: center;
-  gap: 5px;
-  border: var(--lesson-pill-border);
-  border-radius: var(--lesson-pill-radius);
-  background: #204c7f;
-  color: #fff;
-  padding: 0 var(--lesson-pill-padding) 0 12px;
-  box-shadow: 0 5px 0 rgb(18 55 92 / 45%);
-  cursor: pointer;
-  font-size: var(--lesson-ui-font-size);
-  font-weight: 950;
-  transition: filter 160ms ease, transform 160ms ease;
-}
-
-.lesson-list-back-button:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-}
-
-.lesson-list-back-button svg {
-  width: 28px;
-  height: 28px;
-}
-
-.lesson-home-button {
-  position: absolute;
-  top: clamp(14px, 2.2vh, 28px);
-  left: calc(var(--lesson-edge-gap) + clamp(188px, 18vw, 230px));
-  right: auto;
-  z-index: 20;
-  display: inline-flex;
-  min-height: var(--lesson-pill-height);
-  align-items: center;
-  gap: 8px;
-  border: var(--lesson-pill-border);
-  border-radius: var(--lesson-pill-radius);
-  background: rgb(255 255 255 / 94%);
-  color: #204c7f;
-  padding: 0 var(--lesson-pill-padding);
-  cursor: pointer;
-  font-size: var(--lesson-ui-font-size);
-  font-weight: 950;
-  box-shadow: 0 5px 0 rgb(39 93 127 / 24%);
-  transition: filter 160ms ease, transform 160ms ease;
-}
-
-.lesson-home-button:hover {
-  filter: brightness(1.04);
-  transform: translateY(-2px);
-}
-
-.lesson-home-button svg {
-  width: 24px;
-  height: 24px;
-}
-
-.lesson-home-button:focus-visible {
-  outline: 5px solid #ff467b;
-  outline-offset: 4px;
 }
 
 .lesson-start-layer {
@@ -1372,7 +1295,7 @@ select:focus-visible {
   min-height: clamp(108px, 18vh, 176px);
   border: 6px solid #fff;
   border-radius: 999px;
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   padding: 18px 34px;
   pointer-events: auto;
@@ -1392,7 +1315,7 @@ select:focus-visible {
 }
 
 .start-lesson-button:focus-visible {
-  outline: 5px solid #204c7f;
+  outline: 5px solid var(--color-brand-navy);
   outline-offset: 5px;
 }
 
@@ -1491,7 +1414,7 @@ select:focus-visible {
 .narrator-caption > span {
   display: block;
   margin-bottom: 5px;
-  color: #d62f70;
+  color: var(--color-brand-rose);
   font-size: clamp(0.875rem, 1vw, 1rem);
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -1576,7 +1499,7 @@ select:focus-visible {
   width: var(--lesson-pill-height);
   min-width: var(--lesson-pill-height);
   height: var(--lesson-pill-height);
-  background: #ff467b;
+  background: var(--color-brand-pink);
   color: #fff;
   padding: 0;
   box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(171 38 83 / 42%);
@@ -1597,7 +1520,7 @@ select:focus-visible {
   max-width: min(42vw, 520px);
   min-width: 0;
   overflow: hidden;
-  background: #173c67;
+  background: var(--color-brand-ink);
   color: #fff;
   text-align: center;
   text-overflow: ellipsis;
@@ -1609,7 +1532,7 @@ select:focus-visible {
   max-width: min(38vw, 500px);
   min-width: 0;
   background: rgb(255 255 255 / 97%);
-  color: #173c67;
+  color: var(--color-brand-ink);
   overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
@@ -1619,7 +1542,7 @@ select:focus-visible {
 
 .hold-to-talk-button {
   gap: 12px;
-  background: #087451;
+  background: var(--color-brand-green);
   color: #fff;
   cursor: pointer;
   touch-action: none;
@@ -1628,7 +1551,7 @@ select:focus-visible {
 }
 
 .hold-to-talk-button:focus-visible {
-  outline: 4px solid #173c67;
+  outline: 4px solid var(--color-brand-ink);
   outline-offset: 3px;
 }
 
@@ -1639,11 +1562,11 @@ select:focus-visible {
 
 .hold-to-talk-button.is-recording {
   animation: micPulse 820ms ease-in-out infinite;
-  background: #d62f70;
+  background: var(--color-brand-rose);
 }
 
 .checking-label {
-  background: #173c67;
+  background: var(--color-brand-ink);
   color: #fff;
   white-space: nowrap;
   box-shadow: 0 var(--lesson-pill-shadow-depth) 0 rgb(12 38 68 / 38%);
@@ -1704,32 +1627,6 @@ select:focus-visible {
   }
 }
 
-@media (max-width: 1360px) {
-  .lesson-list-back-button {
-    width: var(--lesson-pill-height);
-    min-width: var(--lesson-pill-height);
-    height: var(--lesson-pill-height);
-    justify-content: center;
-    padding: 0;
-  }
-
-  .lesson-list-back-button > span {
-    display: none;
-  }
-
-  .lesson-home-button {
-    left: calc(var(--lesson-edge-gap) + var(--lesson-pill-height) + 10px);
-    width: var(--lesson-pill-height);
-    min-width: var(--lesson-pill-height);
-    justify-content: center;
-    padding: 0;
-  }
-
-  .lesson-home-button > span {
-    display: none;
-  }
-}
-
 @media (max-width: 700px) {
   .home-menu-page {
     padding: 170px 16px 38px;
@@ -1771,11 +1668,6 @@ select:focus-visible {
 
   .lesson-list-page {
     padding: 170px 16px 44px;
-  }
-
-  .lesson-main-menu-link {
-    top: 20px;
-    left: 16px;
   }
 
   .lesson-catalog-section {
@@ -1843,8 +1735,6 @@ select:focus-visible {
 
 @media (max-width: 720px) {
   :root {
-    --lesson-pill-height: 52px;
-    --lesson-pill-padding: 14px;
     --lesson-pill-shadow-depth: 4px;
   }
 
@@ -1854,30 +1744,6 @@ select:focus-visible {
 
   .scene-title {
     max-width: min(48vw, 220px);
-  }
-
-  .lesson-list-back-button {
-    top: 18px;
-    width: var(--lesson-pill-height);
-    min-width: var(--lesson-pill-height);
-    height: var(--lesson-pill-height);
-    justify-content: center;
-    padding: 0;
-  }
-
-  .lesson-list-back-button > span {
-    display: none;
-  }
-
-  .lesson-home-button {
-    width: var(--lesson-pill-height);
-    min-width: var(--lesson-pill-height);
-    justify-content: center;
-    padding: 0;
-  }
-
-  .lesson-home-button > span {
-    display: none;
   }
 
   .build-version-badge {
@@ -1989,17 +1855,11 @@ select:focus-visible {
 
 @media (max-height: 620px) {
   :root {
-    --lesson-pill-height: 44px;
-    --lesson-pill-padding: 12px;
     --lesson-pill-shadow-depth: 4px;
   }
 
   .lesson-stage {
     --control-safe-area: clamp(78px, 23vh, 104px);
-  }
-
-  .lesson-list-back-button {
-    top: 14px;
   }
 
   .character-sprite {

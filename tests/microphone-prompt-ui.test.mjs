@@ -48,7 +48,10 @@ describe("hold-to-talk UI", () => {
       /background:\s*var\(--color-brand-green\)/,
     );
     assert.match(buttonRule, /touch-action:\s*none/);
-    assert.match(getRule(":root"), /--lesson-pill-radius:\s*999px/);
+    assert.match(
+      getRule(":root"),
+      /--lesson-pill-radius:\s*var\(--radius-control\)/,
+    );
     assert.match(recordingRule, /animation:\s*micPulse/);
     assert.doesNotMatch(styles, /\.user-turn-panel\s*\{/);
   });

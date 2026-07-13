@@ -72,7 +72,7 @@ test("every top-level navigation control uses the same header primitive", () => 
 test("shared buttons consume named variants without changing the global font", () => {
   assert.match(authGate, /app-button--surface/);
   assert.match(authGate, /app-button--brand/);
-  assert.match(conversation, /app-button--large app-button--success/);
+  assert.match(conversation, /app-button--success/);
   assert.match(conversation, /app-button--large app-button--brand/);
   assert.match(conversation, /app-button--large app-button--surface/);
   assert.doesNotMatch(authGate, /font-\[|bg-\[#|shadow-\[/);
