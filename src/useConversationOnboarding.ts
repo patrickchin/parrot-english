@@ -47,6 +47,24 @@ type UseConversationOnboardingOptions = {
   onCompleted: () => Promise<void>;
 };
 
+type ConversationRuntime = {
+  awaitingResponse: boolean;
+  completingConversationId: string | null;
+  learnerTurnOpen: boolean;
+  openingHeard: boolean;
+  transportReady: boolean;
+};
+
+function createConversationRuntime(): ConversationRuntime {
+  return {
+    awaitingResponse: false,
+    completingConversationId: null,
+    learnerTurnOpen: false,
+    openingHeard: false,
+    transportReady: false,
+  };
+}
+
 export function useConversationOnboarding({
   active,
   createTransport = createLiveKitConversation,
@@ -58,16 +76,11 @@ export function useConversationOnboarding({
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [error, setError] = useState("");
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
   const autoStartRef = useRef(false);
-  const completingConversationRef = useRef<string | null>(null);
-  const transportReadyRef = useRef(false);
-  const openingHeardRef = useRef(false);
-  const learnerTurnOpenRef = useRef(false);
-  const awaitingResponseRef = useRef(false);
+  const runtimeRef = useRef(createConversationRuntime());
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
@@ -75,8 +88,8 @@ export function useConversationOnboarding({
 
   const loadSummary = useCallback(
     async (id: string, operation = operationRef.current) => {
-      if (completingConversationRef.current === id) return;
-      completingConversationRef.current = id;
+      if (runtimeRef.current.completingConversationId === id) return;
+      runtimeRef.current.completingConversationId = id;
       try {
         const loaded = await loadConversation(id);
         if (!isCurrent(operation)) return;
@@ -87,11 +100,10 @@ export function useConversationOnboarding({
         await finalizeConversation(id);
         if (!isCurrent(operation)) return;
         conversationIdRef.current = null;
-        setConversationId(null);
         await onCompleted();
       } catch (summaryError) {
         if (!isCurrent(operation)) return;
-        completingConversationRef.current = null;
+        runtimeRef.current.completingConversationId = null;
         setError(readableError(summaryError));
         setStatus("error");
       }
@@ -103,15 +115,15 @@ export function useConversationOnboarding({
     async (operation: number) => {
       if (
         !isCurrent(operation) ||
-        !transportReadyRef.current ||
-        !openingHeardRef.current ||
-        learnerTurnOpenRef.current ||
+        !runtimeRef.current.transportReady ||
+        !runtimeRef.current.openingHeard ||
+        runtimeRef.current.learnerTurnOpen ||
         !transportRef.current
       ) {
         return;
       }
-      learnerTurnOpenRef.current = true;
-      awaitingResponseRef.current = false;
+      runtimeRef.current.learnerTurnOpen = true;
+      runtimeRef.current.awaitingResponse = false;
       setMicrophoneEnabled(false);
       setStatus("listening");
     },
@@ -124,8 +136,8 @@ export function useConversationOnboarding({
       if (event.type === "state") {
         setStatus(
           event.state === "connected"
-            ? learnerTurnOpenRef.current
-              ? awaitingResponseRef.current
+            ? runtimeRef.current.learnerTurnOpen
+              ? runtimeRef.current.awaitingResponse
                 ? "thinking"
                 : "listening"
               : "connecting"
@@ -150,19 +162,21 @@ export function useConversationOnboarding({
         );
       });
       if (event.role === "assistant") {
-        awaitingResponseRef.current = false;
+        runtimeRef.current.awaitingResponse = false;
         if (event.final) {
-          if (!learnerTurnOpenRef.current) {
-            openingHeardRef.current = true;
+          if (!runtimeRef.current.learnerTurnOpen) {
+            runtimeRef.current.openingHeard = true;
             void openLearnerTurn(operation);
           } else {
             setStatus("listening");
           }
-        } else if (learnerTurnOpenRef.current) {
+        } else if (runtimeRef.current.learnerTurnOpen) {
           setStatus("speaking");
         }
       } else if (event.final) {
-        setStatus(awaitingResponseRef.current ? "thinking" : "listening");
+        setStatus(
+          runtimeRef.current.awaitingResponse ? "thinking" : "listening",
+        );
       }
     },
     [isCurrent, loadSummary, openLearnerTurn],
@@ -175,15 +189,10 @@ export function useConversationOnboarding({
     setStatus("connecting");
     setTurns([]);
     setMicrophoneEnabled(false);
-    completingConversationRef.current = null;
-    transportReadyRef.current = false;
-    openingHeardRef.current = false;
-    learnerTurnOpenRef.current = false;
-    awaitingResponseRef.current = false;
+    runtimeRef.current = createConversationRuntime();
     try {
       const started = await startConversation();
       if (!isCurrent(operation)) return;
-      setConversationId(started.conversation.id);
       conversationIdRef.current = started.conversation.id;
       const transport = createTransport({
         token: started.livekit.participantToken,
@@ -200,7 +209,7 @@ export function useConversationOnboarding({
       }
       await transport.setMicrophoneEnabled(false);
       if (!isCurrent(operation)) return;
-      transportReadyRef.current = true;
+      runtimeRef.current.transportReady = true;
       setMicrophoneEnabled(false);
       setStatus("connecting");
       await openLearnerTurn(operation);
@@ -212,6 +221,7 @@ export function useConversationOnboarding({
   }, [createTransport, handleTransportEvent, isCurrent, openLearnerTurn]);
 
   const finish = useCallback(async () => {
+    const conversationId = conversationIdRef.current;
     if (!conversationId) return;
     const operation = operationRef.current;
     setError("");
@@ -225,38 +235,38 @@ export function useConversationOnboarding({
       setError(readableError(finishError));
       setStatus("error");
     }
-  }, [conversationId, isCurrent, loadSummary]);
+  }, [isCurrent, loadSummary]);
 
   const back = useCallback(() => {
     operationRef.current += 1;
-    const id = conversationId;
+    const id = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
     onBack();
     if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
-  }, [conversationId, onBack]);
+  }, [onBack]);
 
   const toggleMicrophone = useCallback(async () => {
     if (
       !transportRef.current ||
-      !learnerTurnOpenRef.current ||
-      awaitingResponseRef.current
+      !runtimeRef.current.learnerTurnOpen ||
+      runtimeRef.current.awaitingResponse
     ) {
       return;
     }
     const enabled = !microphoneEnabled;
     if (!enabled) {
-      awaitingResponseRef.current = true;
+      runtimeRef.current.awaitingResponse = true;
       setStatus("thinking");
     }
     try {
       await transportRef.current.setMicrophoneEnabled(enabled);
       setMicrophoneEnabled(enabled);
     } catch (microphoneError) {
-      if (!enabled && awaitingResponseRef.current) {
-        awaitingResponseRef.current = false;
+      if (!enabled && runtimeRef.current.awaitingResponse) {
+        runtimeRef.current.awaitingResponse = false;
         setStatus("listening");
       }
       setError(readableError(microphoneError));
@@ -273,16 +283,11 @@ export function useConversationOnboarding({
     if (active) return;
     operationRef.current += 1;
     autoStartRef.current = false;
-    completingConversationRef.current = null;
-    transportReadyRef.current = false;
-    openingHeardRef.current = false;
-    learnerTurnOpenRef.current = false;
-    awaitingResponseRef.current = false;
+    runtimeRef.current = createConversationRuntime();
     const activeConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
-    setConversationId(null);
     setStatus("ready");
     setTurns([]);
     setMicrophoneEnabled(false);
@@ -299,11 +304,7 @@ export function useConversationOnboarding({
     () => () => {
       operationRef.current += 1;
       autoStartRef.current = false;
-      completingConversationRef.current = null;
-      transportReadyRef.current = false;
-      openingHeardRef.current = false;
-      learnerTurnOpenRef.current = false;
-      awaitingResponseRef.current = false;
+      runtimeRef.current = createConversationRuntime();
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();

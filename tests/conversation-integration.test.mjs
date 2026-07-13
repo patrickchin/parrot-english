@@ -58,21 +58,14 @@ function fullState(experienceMode) {
 
 function conversationProps(overrides = {}) {
   return {
-    candidates: [],
     error: "",
     microphoneEnabled: true,
     onBack() {},
-    onCandidateChange() {},
-    onCandidateStatusChange() {},
     onFinish() {},
-    onSendText() {},
     onStart() {},
-    onSubmitReview() {},
     onToggleMicrophone() {},
-    onTypedValueChange() {},
     status: "ready",
     turns: [],
-    typedValue: "",
     ...overrides,
   };
 }

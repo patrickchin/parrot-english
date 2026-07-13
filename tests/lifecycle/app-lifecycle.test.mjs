@@ -731,7 +731,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             controllerState: {
               profileSummary: "Mia is eight and loves red racing cars.",
             },
-            facts: [],
             turns: [],
           },
         });

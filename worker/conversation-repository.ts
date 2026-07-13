@@ -344,7 +344,7 @@ export function createConversationRepository(
       .set({
         controllerState: serializeJson(
           profileSummary
-            ? { ...controllerState, profileSummary, summaryStatus: "accepted" }
+            ? { ...controllerState, profileSummary }
             : controllerState,
           MAX_CONTROLLER_STATE_BYTES,
           "invalid_controller_state",

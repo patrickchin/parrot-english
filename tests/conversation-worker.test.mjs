@@ -563,7 +563,6 @@ describe("conversation persistence and API", () => {
         .get(conversation.id);
       assert.deepEqual(JSON.parse(stored.controller_state), {
         ...controllerState,
-        summaryStatus: "accepted",
       });
     } finally {
       state.close();
