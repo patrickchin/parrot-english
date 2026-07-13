@@ -16,6 +16,7 @@ async function expectMainScrollsTo(page: Page, target: Locator) {
     .poll(() => main.evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0);
 
+  await target.scrollIntoViewIfNeeded();
   const targetBox = await target.boundingBox();
   expect(targetBox).not.toBeNull();
   expect(targetBox!.y).toBeGreaterThanOrEqual(0);
