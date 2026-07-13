@@ -72,4 +72,36 @@ describe("My Lessons Worker routing", () => {
       userName: "Parent",
     });
   });
+
+  it("rate limits generation before invoking its handler", async () => {
+    let handlerCalls = 0;
+    let limiterCalls = 0;
+    const session = {
+      session: { id: "session-1" },
+      user: { id: "user-1", name: "Parent", email: "parent@example.test" },
+    };
+    const worker = createWorker({
+      createAuth: () => authStub(session),
+      async checkLessonGenerationRateLimit(_request, _env, userId) {
+        limiterCalls += 1;
+        assert.equal(userId, "user-1");
+        return Response.json({ error: "rate_limited" }, { status: 429 });
+      },
+      async handleMyLessonRequest() {
+        handlerCalls += 1;
+        return Response.json({ ok: true });
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/lessons/my/generate", {
+        method: "POST",
+      }),
+      environment(),
+    );
+
+    assert.equal(response.status, 429);
+    assert.equal(limiterCalls, 1);
+    assert.equal(handlerCalls, 0);
+  });
 });

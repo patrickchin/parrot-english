@@ -98,4 +98,29 @@ describe("API security", () => {
       "user-1:203.0.113.42",
     ]);
   });
+
+  it("rate limits lesson generation by user and client address", async () => {
+    const limiter = fakeLimiter([true, false]);
+    const env = { LESSON_GENERATION_RATE_LIMITER: limiter };
+
+    assert.equal(
+      await apiSecurity.checkLessonGenerationRateLimit(
+        request("/api/lessons/my/generate"),
+        env,
+        "user-1",
+      ),
+      null,
+    );
+    const limited = await apiSecurity.checkLessonGenerationRateLimit(
+      request("/api/lessons/my/generate"),
+      env,
+      "user-1",
+    );
+
+    assert.equal(limited.status, 429);
+    assert.deepEqual(limiter.keys, [
+      "user-1:203.0.113.42",
+      "user-1:203.0.113.42",
+    ]);
+  });
 });

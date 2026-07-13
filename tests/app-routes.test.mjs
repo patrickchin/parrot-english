@@ -27,13 +27,13 @@ function getParrotLessonRouteDecision(lessonId, sceneNumber) {
   return routes.resolveParrotLessonRouteDecision(lessonId, sceneNumber);
 }
 
-function getMyLessonRouteDecision(lessonId, sceneNumber) {
+function getMyLessonRouteDecision(entry, lessonId, sceneNumber) {
   assert.equal(
     typeof routes.resolveMyLessonRouteDecision,
     "function",
     "Expected an executable My lesson route decision boundary",
   );
-  return routes.resolveMyLessonRouteDecision(lessonId, sceneNumber);
+  return routes.resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
 }
 
 describe("app route helpers", () => {
@@ -221,10 +221,17 @@ describe("app route helpers", () => {
     assert.equal(resolved.sceneIndex, 1);
   });
 
-  it("keeps My lesson scene resolution behind a future data boundary", () => {
+  it("resolves a loaded owner-scoped My lesson scene", () => {
     assert.equal(typeof routes.resolveMyLessonScene, "function");
-    assert.equal(routes.resolveMyLessonScene("same-id", "1"), null);
-    assert.equal(routes.resolveMyLessonScene(undefined, undefined), null);
+    const entry = {
+      id: "same-id",
+      lesson: routes.resolveParrotLesson("01-peppas-high-ball").lesson,
+    };
+    assert.deepEqual(routes.resolveMyLessonScene(entry, "same-id", "2"), {
+      entry,
+      sceneIndex: 1,
+    });
+    assert.equal(routes.resolveMyLessonScene(entry, "other-id", "1"), null);
   });
 
   it("redirects a short Parrot lesson URL to its canonical first scene", () => {
@@ -279,16 +286,24 @@ describe("app route helpers", () => {
     assert.equal(decision.sceneIndex, 1);
   });
 
-  it("redirects both My lesson route forms until authenticated loading exists", () => {
-    assert.deepEqual(getMyLessonRouteDecision("same-id", undefined), {
+  it("canonicalizes loaded My lesson routes and rejects invalid scenes", () => {
+    const entry = {
+      id: "same-id",
+      lesson: routes.resolveParrotLesson("01-peppas-high-ball").lesson,
+    };
+    assert.deepEqual(getMyLessonRouteDecision(entry, "same-id", undefined), {
       kind: "redirect",
       replace: true,
-      to: "/lessons",
+      to: "/lessons/my/same-id/scenes/1",
     });
-    assert.deepEqual(getMyLessonRouteDecision("same-id", "2"), {
+    const playable = getMyLessonRouteDecision(entry, "same-id", "2");
+    assert.equal(playable.kind, "lesson");
+    assert.equal(playable.entry, entry);
+    assert.equal(playable.sceneIndex, 1);
+    assert.deepEqual(getMyLessonRouteDecision(entry, "same-id", "99"), {
       kind: "redirect",
       replace: true,
-      to: "/lessons",
+      to: "/lessons/my/same-id/scenes/1",
     });
   });
 
