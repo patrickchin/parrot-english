@@ -48,13 +48,21 @@ function render(overrides = {}) {
   );
 }
 
+function classNamesFor(html, semanticClass) {
+  for (const match of html.matchAll(/class="([^"]*)"/g)) {
+    if (match[1].split(/\s+/).includes(semanticClass)) return match[1];
+  }
+
+  assert.fail(`Expected rendered class token ${semanticClass}`);
+}
+
 describe("accessible realtime conversation surface", () => {
   it("shows Peppa while the conversation starts automatically", () => {
     const html = render();
 
-    assert.match(html, /class="conversation-character-stage"/);
+    classNamesFor(html, "conversation-character-stage");
     assert.match(html, /Getting our chat ready/);
-    assert.match(html, /class="conversation-visually-hidden"/);
+    classNamesFor(html, "conversation-visually-hidden");
     assert.match(html, /peppa\/peppa-happy\.webp/);
     assert.doesNotMatch(html, /Start talking/);
     assert.doesNotMatch(html, /Use the form instead/);
@@ -74,7 +82,7 @@ describe("accessible realtime conversation surface", () => {
       const html = render({ status });
       assert.match(
         html,
-        /<button aria-label="Back" class="conversation-back-button"[^>]*>/,
+        /<button aria-label="Back" class="[^"]*\bconversation-back-button\b[^"]*"[^>]*>/,
         status,
       );
       assert.match(html, /lucide-arrow-left/, status);
@@ -83,15 +91,16 @@ describe("accessible realtime conversation surface", () => {
 
   it("makes joining unmistakable before Peppa enables learner input", () => {
     const connecting = render({ status: "connecting", microphoneEnabled: false });
-    assert.match(connecting, /class="conversation-joining-notice"/);
+    const noticeClasses = classNamesFor(
+      connecting,
+      "conversation-joining-notice",
+    );
     assert.match(connecting, /Joining Peppa/);
     assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
     assert.doesNotMatch(connecting, /conversation-microphone-button/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
-    assert.match(
-      styles,
-      /\.conversation-joining-notice\s*\{[^}]*background:\s*#173c67[^}]*color:\s*#fff/s,
-    );
+    assert.match(noticeClasses, /\bbg-\[#173c67\]\b/);
+    assert.match(noticeClasses, /\btext-white\b/);
   });
 
   it("keeps only the two clear conversation actions after Peppa opens", () => {
@@ -138,11 +147,11 @@ describe("accessible realtime conversation surface", () => {
     });
 
     const speechBubble = html.match(
-      /<p[^>]*class="conversation-speech-bubble"[^>]*>(.*?)<\/p>/,
+      /<p[^>]*class="[^"]*\bconversation-speech-bubble\b[^"]*"[^>]*>(.*?)<\/p>/,
     )?.[1];
     assert.match(speechBubble, /Ooh, drawing is brilliant!/);
     assert.doesNotMatch(speechBubble, /I like drawing/);
-    assert.match(html, /class="conversation-character-stage"/);
+    classNamesFor(html, "conversation-character-stage");
     assert.doesNotMatch(html, /conversation-debug-transcript|Debug transcript/);
     assert.match(html, /Start my turn/);
     assert.doesNotMatch(html, /class="conversation-state/);
@@ -187,57 +196,31 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /Debug transcript|I am seven\./);
   });
 
-  it("makes the screen scrollable and both remaining actions large", () => {
-    assert.match(styles, /\.conversation-shell/);
-    assert.match(styles, /\.conversation-character-stage/);
-    assert.match(styles, /\.conversation-speech-bubble::after/);
-    assert.match(
-      styles,
-      /\.conversation-screen\s*\{[^}]*height:\s*100dvh[^}]*overflow-y:\s*auto/s,
-    );
-    assert.match(
-      styles,
-      /\.conversation-turn-button\s*\{[^}]*width:\s*100%[^}]*min-height:\s*64px[^}]*background:\s*#087451[^}]*color:\s*#fff/s,
-    );
-    assert.match(
-      styles,
-      /\.conversation-finish-button\s*\{[^}]*width:\s*100%[^}]*min-height:\s*64px[^}]*background:\s*rgb\(255 255 255 \/ 88%\)[^}]*text-decoration:\s*none/s,
-    );
-    assert.match(
-      styles,
-      /\.conversation-back-button\s*\{[^}]*position:\s*absolute[^}]*top:[^;}]+;[^}]*left:[^;}]+;[^}]*min-height:\s*52px[^}]*background:\s*#204c7f[^}]*color:\s*#fff/s,
-    );
-    assert.doesNotMatch(styles, /\.conversation-type-panel/);
-    assert.doesNotMatch(styles, /\.conversation-debug-transcript/);
-    assert.match(styles, /\.conversation-[^{]+:focus-visible/);
-    assert.match(styles, /@media \(max-height:/);
-    assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
-  });
+  it("uses Tailwind utilities for responsive layout and large actions", () => {
+    const html = render({ microphoneEnabled: false, status: "listening" });
+    const screenClasses = classNamesFor(html, "conversation-screen");
+    const backClasses = classNamesFor(html, "conversation-back-button");
+    const turnClasses = classNamesFor(html, "conversation-turn-button");
+    const finishClasses = classNamesFor(html, "conversation-finish-button");
+    const bubbleClasses = classNamesFor(html, "conversation-speech-bubble");
 
-  it("keeps the mobile account actions beside Back without a large gap", () => {
+    assert.match(screenClasses, /\bh-dvh\b/);
+    assert.match(screenClasses, /\boverflow-y-auto\b/);
+    assert.match(screenClasses, /\bpt-\[112px\]\b/);
+    assert.match(screenClasses, /\bmax-\[720px\]:pt-\[92px\]\b/);
+    assert.match(backClasses, /\babsolute\b/);
+    assert.match(backClasses, /\bmin-h-\[52px\]\b/);
+    assert.match(backClasses, /\bbg-\[#204c7f\]\b/);
     assert.match(
-      styles,
-      /\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*112px[^}]*padding-top:\s*max\([^;]*var\(--conversation-account-inset\)[^;]*\)/s,
+      backClasses,
+      /\b\[@media\(max-height:620px\)\]:top-\[10px\]\b/,
     );
-    assert.match(
-      styles,
-      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*top:\s*clamp\(14px,\s*2\.2vh,\s*28px\)[^}]*max-width:\s*calc\(100vw\s*-\s*92px\)/s,
-    );
-    assert.match(
-      styles,
-      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*min-height:\s*52px[^}]*padding:\s*0\s+4px/s,
-    );
-    assert.match(
-      styles,
-      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*>\s*span:first-child\s*\{[^}]*display:\s*none/s,
-    );
-    assert.match(
-      styles,
-      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*92px/s,
-    );
-    assert.match(
-      styles,
-      /@media \(max-height:\s*620px\)[\s\S]*?\.conversation-back-button\s*\{[^}]*top:\s*10px[^}]*\}[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*top:\s*10px/s,
-    );
+    assert.match(turnClasses, /\bw-full\b/);
+    assert.match(turnClasses, /\bmin-h-16\b/);
+    assert.match(turnClasses, /\bbg-\[#087451\]\b/);
+    assert.match(finishClasses, /\bw-full\b/);
+    assert.match(finishClasses, /\bmin-h-16\b/);
+    assert.match(bubbleClasses, /after:content-\[''\]/);
+    assert.doesNotMatch(styles, /\.conversation-[a-z-]+\s*(?:[,{:]|::)/);
   });
 });

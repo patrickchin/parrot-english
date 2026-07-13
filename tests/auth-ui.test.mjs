@@ -46,7 +46,6 @@ function renderAuthGate(overrides = {}) {
   assert.equal(typeof AuthGateView, "function", "Expected an executable AuthGateView");
 
   const props = {
-    compactSessionBar: false,
     fields: { name: "", email: "", password: "" },
     formError: "",
     isPending: false,
@@ -244,7 +243,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   assert.equal(signOutCalls[0].refetch, refetch);
 });
 
-test("auth gate container forwards its layout context and optional fallback", () => {
+test("auth gate container forwards an optional signed-out fallback", () => {
   let capturedProps;
   const fallback = createElement("span", null, "REDIRECT");
   const client = createAuthClientStub({
@@ -265,13 +264,9 @@ test("auth gate container forwards its layout context and optional fallback", ()
 
   const TestAuthGate = createAuthGate({ client, View: CaptureView });
   renderToStaticMarkup(
-    createElement(TestAuthGate, {
-      compactSessionBar: true,
-      signedOutFallback: fallback,
-    }),
+    createElement(TestAuthGate, { signedOutFallback: fallback }),
   );
 
-  assert.equal(capturedProps.compactSessionBar, true);
   assert.equal(capturedProps.signedOutFallback, fallback);
 });
 
@@ -464,7 +459,7 @@ test("renders Profile and Log out together in the account bar", () => {
     session: { user: { email: "mia@example.test", name: "Mia" } },
   });
   const bar = html.match(
-    /<aside[^>]*class="user-session-bar"[\s\S]*?<\/aside>/,
+    /<aside[^>]*class="[^"]*\buser-session-bar\b[^"]*"[\s\S]*?<\/aside>/,
   )?.[0];
 
   assert.ok(bar);
@@ -473,16 +468,21 @@ test("renders Profile and Log out together in the account bar", () => {
   assert.doesNotMatch(html, /class="profile-edit-button"/);
 });
 
-test("marks the conversation account bar for compact mobile layout", () => {
+test("lets CSS compact the account bar beside a conversation screen", () => {
   const html = renderAuthGate({
-    compactSessionBar: true,
     onOpenProfile() {},
     session: { user: { email: "mia@example.test", name: "Mia" } },
   });
+  const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
 
+  assert.ok(bar);
+  assert.match(
+    bar,
+    /max-\[720px\]:\[&amp;:has\(\+_\.conversation-screen\)\]:min-h-\[52px\]/,
+  );
   assert.match(
     html,
-    /<aside[^>]*class="user-session-bar user-session-bar--conversation"/,
+    /group-has-\[\+_\.conversation-screen\]\/session:hidden/,
   );
   assert.match(html, />Mia</);
   assert.match(html, />Profile</);
@@ -635,20 +635,25 @@ test("App composes AuthGate, route-aware onboarding, and authenticated routes", 
 });
 
 test("auth layout is responsive, touch-friendly, and visually distinct", () => {
-  for (const selector of [
-    ".auth-screen",
-    ".auth-card",
-    ".auth-submit",
-    ".user-session-bar",
-  ]) {
+  for (const selector of [".auth-screen", ".auth-card", ".auth-submit"]) {
     getRule(selector);
   }
 
+  const html = renderAuthGate({
+    onOpenProfile() {},
+    session: { user: { email: "mia@example.test", name: "Mia" } },
+  });
+  const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
+
+  assert.ok(bar);
   assert.match(styles, /@media\s*\(max-width:\s*560px\)/);
   assert.match(styles, /\.auth-(?:field input|submit)[\s\S]*?min-height:\s*48px/);
   assert.match(styles, /\.auth-card[\s\S]*?background:\s*(?:#fff|white|rgb\(255)/);
   assert.match(styles, /\.auth-submit[\s\S]*?background:\s*#ff467b/);
-  assert.match(styles, /\.user-session-bar[\s\S]*?background:\s*#204c7f/);
+  assert.match(bar, /\bfixed\b/);
+  assert.match(bar, /\bbg-\[#204c7f\]\b/);
+  assert.match(bar, /\bmax-\[720px\]:top-\[94px\]\b/);
+  assert.doesNotMatch(styles, /\.user-session-bar/);
   assert.match(styles, /:focus-visible/);
 });
 
@@ -662,10 +667,15 @@ test("auth screen owns a reachable short-viewport scroll area", () => {
   assert.match(card, /margin-block:\s*auto/);
 });
 
-test("session controls relocate at the 720px lesson breakpoint", () => {
+test("session controls relocate with Tailwind at the 720px lesson breakpoint", () => {
   const tablet = getMaxWidthSection(720, 560);
+  const html = renderAuthGate({
+    session: { user: { email: "mia@example.test", name: "Mia" } },
+  });
+  const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
 
-  assert.match(tablet, /\.user-session-bar\s*\{[\s\S]*?top:\s*94px/);
-  assert.match(tablet, /\.user-session-bar\s*\{[\s\S]*?right:\s*12px/);
+  assert.ok(bar);
+  assert.match(bar, /\bmax-\[720px\]:top-\[94px\]\b/);
+  assert.match(bar, /\bmax-\[720px\]:right-3\b/);
   assert.match(tablet, /\.lesson-flow-banner\s*\{[\s\S]*?top:\s*144px/);
 });
