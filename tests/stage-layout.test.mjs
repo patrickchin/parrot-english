@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const designSystemUrl = new URL("../src/design-system.css", import.meta.url);
+const designSystem = existsSync(designSystemUrl)
+  ? readFileSync(designSystemUrl, "utf8")
+  : "";
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 
 function getRule(selector) {
@@ -10,6 +14,16 @@ function getRule(selector) {
   const match = styles.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
 
   assert.ok(match, `Expected to find CSS rule for ${selector}`);
+  return match[1];
+}
+
+function getDesignRule(selector) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = designSystem.match(
+    new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`),
+  );
+
+  assert.ok(match, `Expected to find design-system rule for ${selector}`);
   return match[1];
 }
 
@@ -75,11 +89,11 @@ describe("catalog-driven stage layout", () => {
   });
 
   it("anchors Back left and centers the title cluster", () => {
-    const backButton = getRule(".lesson-list-back-button");
+    const backButton = getDesignRule(".app-header-control");
     const titleCluster = getRule(".scene-hud");
     const buildBadge = getRule(".build-version-badge");
 
-    assert.match(backButton, /left:\s*var\(--lesson-edge-gap\)/);
+    assert.match(backButton, /left:\s*var\(--app-header-edge\)/);
     assert.doesNotMatch(backButton, /translateX/);
     assert.match(titleCluster, /left:\s*50%/);
     assert.match(titleCluster, /transform:\s*translateX\(-50%\)/);
@@ -119,24 +133,29 @@ describe("catalog-driven stage layout", () => {
 
   it("shares one normal type size and pill geometry", () => {
     const root = getRule(":root");
+    const themeRoot = getDesignRule(":root");
     const lessonPills = getRule(
       ".scene-control-button,\n.dock-status,\n.learner-target-pill,\n.hold-to-talk-button,\n.checking-label",
     );
 
     assert.match(
       root,
-      /--lesson-ui-font-size:\s*clamp\(1rem,\s*1\.3vw,\s*1\.2rem\)/,
+      /--lesson-ui-font-size:\s*var\(--app-control-font-size\)/,
     );
-    assert.match(root, /--lesson-pill-height:\s*64px/);
-    assert.match(root, /--lesson-pill-border:\s*4px solid #fff/);
-    assert.match(root, /--lesson-pill-radius:\s*999px/);
+    assert.match(
+      root,
+      /--lesson-pill-height:\s*var\(--app-header-control-size\)/,
+    );
+    assert.match(themeRoot, /--app-header-control-size:\s*64px/);
+    assert.match(root, /--lesson-pill-border:\s*var\(--app-control-border\)/);
+    assert.match(root, /--lesson-pill-radius:\s*var\(--radius-control\)/);
     assert.match(
       getRule(".scene-title"),
       /font-size:\s*var\(--lesson-ui-font-size\)/,
     );
     assert.match(
-      getRule(".lesson-list-back-button"),
-      /font-size:\s*var\(--lesson-ui-font-size\)/,
+      getDesignRule(".app-header-control"),
+      /font-size:\s*var\(--app-control-font-size\)/,
     );
     assert.match(
       getRule(".character-name"),
@@ -161,8 +180,8 @@ describe("catalog-driven stage layout", () => {
     assert.notEqual(compactStart, -1);
     assert.ok(compactEnd > compactStart);
     assert.match(
-      compactStyles,
-      /:root\s*\{[^}]*--lesson-pill-height:\s*52px/,
+      designSystem,
+      /@media\s*\(max-width:\s*720px\)[\s\S]*?--app-header-control-size:\s*52px/,
     );
     assert.match(
       compactStyles,
@@ -173,8 +192,8 @@ describe("catalog-driven stage layout", () => {
       /\.scene-controls\s*\{[^}]*display:\s*grid[^}]*width:\s*calc\(100vw - 20px\)[^}]*grid-template-areas:\s*"prompt prompt prompt"\s*"previous microphone next"/,
     );
     assert.match(
-      compactStyles,
-      /\.lesson-list-back-button > span\s*\{[^}]*display:\s*none/,
+      designSystem,
+      /@media\s*\(max-width:\s*1360px\)[\s\S]*?\.app-header-control > span\s*\{[^}]*display:\s*none/,
     );
     assert.doesNotMatch(
       compactStyles,
@@ -200,8 +219,8 @@ describe("catalog-driven stage layout", () => {
     assert.notEqual(shortStart, -1);
     assert.ok(shortEnd > shortStart);
     assert.match(
-      shortStyles,
-      /:root\s*\{[^}]*--lesson-pill-height:\s*44px/,
+      designSystem,
+      /@media\s*\(max-height:\s*620px\)[\s\S]*?--app-header-control-size:\s*44px/,
     );
     assert.match(
       shortStyles,
@@ -221,8 +240,8 @@ describe("catalog-driven stage layout", () => {
       /\.speech-bubble,\s*\.narrator-caption\s*\{[^}]*top:\s*112px/,
     );
     assert.match(
-      shortStyles,
-      /\.lesson-list-back-button\s*\{[^}]*top:\s*14px/,
+      designSystem,
+      /@media\s*\(max-height:\s*620px\)[\s\S]*?--app-header-top:\s*10px/,
     );
   });
 

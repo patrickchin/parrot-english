@@ -205,7 +205,10 @@ test("lesson routes expose distinct lesson-list and main-menu controls", () => {
   assert.match(html, /aria-label="Back to lesson list"/);
   assert.match(html, />Back to lessons<\/span>/);
   assert.match(html, /aria-label="Back to main menu"/);
-  assert.match(html, /class="lesson-home-button"/);
+  assert.match(
+    html,
+    /class="lesson-home-button app-header-control app-header-control--secondary app-header-control--surface"/,
+  );
   assert.match(html, />Back to main menu<\/span>/);
 });
 

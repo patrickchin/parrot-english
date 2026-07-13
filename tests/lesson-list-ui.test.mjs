@@ -22,7 +22,10 @@ describe("lesson list integration contracts", () => {
     const app = readProjectFile("src/App.tsx");
 
     assert.match(app, /aria-label="Back to lesson list"/);
-    assert.match(app, /className="lesson-list-back-button"/);
+    assert.match(
+      app,
+      /className="lesson-list-back-button app-header-control"/,
+    );
     assert.match(app, /onClick=\{handleBack\}/);
     assert.match(
       app,
@@ -59,6 +62,7 @@ describe("lesson list integration contracts", () => {
   });
 
   it("provides responsive catalog and Back-control styles", () => {
+    const designSystem = readProjectFile("src/design-system.css");
     const styles = readProjectFile("src/styles.css");
 
     assert.match(styles, /\.lesson-list-page\s*\{/);
@@ -69,12 +73,14 @@ describe("lesson list integration contracts", () => {
       /\.lesson-card-action:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
     );
     assert.doesNotMatch(styles, /\.lesson-card-action:disabled/);
-    assert.match(styles, /\.lesson-list-back-button\s*\{/);
+    assert.match(designSystem, /\.app-header-control\s*\{/);
     assert.match(styles, /@media \(max-width: 700px\)/);
     assert.doesNotMatch(styles, /\.lesson-picker/);
   });
 
   it("separates lesson sources and keeps navigation clear of fixed lesson chrome", () => {
+    const designSystem = readProjectFile("src/design-system.css");
+    const list = readProjectFile("src/LessonList.tsx");
     const styles = readProjectFile("src/styles.css");
 
     assert.match(styles, /\.lesson-catalog-section\s*\{/);
@@ -86,17 +92,14 @@ describe("lesson list integration contracts", () => {
       styles,
       /\.my-lessons-empty\s*\{[^}]*border:\s*4px dashed[^}]*background:/s,
     );
+    assert.match(list, /lesson-main-menu-link app-header-control/);
     assert.match(
-      styles,
-      /\.lesson-main-menu-link\s*\{[^}]*position:\s*absolute[^}]*top:[^;}]+;[^}]*left:/s,
+      designSystem,
+      /\.app-header-control\s*\{[^}]*position:\s*absolute[^}]*top:\s*var\(--app-header-top\)[^}]*left:\s*var\(--app-header-edge\)/s,
     );
     assert.match(
-      styles,
-      /\.lesson-home-button\s*\{[^}]*left:[^;}]+;[^}]*right:\s*auto/s,
-    );
-    assert.match(
-      styles,
-      /@media \(max-width: 700px\)[\s\S]*?\.lesson-main-menu-link\s*\{/s,
+      designSystem,
+      /\.app-header-control--secondary\s*\{[^}]*left:\s*calc\(/s,
     );
   });
 

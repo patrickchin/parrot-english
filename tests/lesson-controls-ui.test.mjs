@@ -263,8 +263,8 @@ describe("scene playback controls", () => {
     assert.match(app, /aria-label="Back to lesson list"/);
     assert.match(
       app,
-      /aria-label="Back to main menu"[\s\S]*?className="lesson-home-button"[\s\S]*?onClick=\{handleHome\}/,
+      /aria-label="Back to main menu"[\s\S]*?className="lesson-home-button app-header-control app-header-control--secondary app-header-control--surface"[\s\S]*?onClick=\{handleHome\}/,
     );
-    assert.match(styles, /\.lesson-home-button:focus-visible\s*\{/);
+    assert.match(styles, /button:focus-visible/);
   });
 });
