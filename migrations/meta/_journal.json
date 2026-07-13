@@ -36,6 +36,13 @@
       "when": 1783458872405,
       "tag": "0004_bumpy_hardball",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1783960832466,
+      "tag": "0005_learner_lessons",
+      "breakpoints": true
     }
   ]
 }

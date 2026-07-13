@@ -234,6 +234,34 @@ export const profileSessionBypass = sqliteTable(
   ]
 );
 
+export const learnerLesson = sqliteTable(
+  "learner_lesson",
+  {
+    id: text("id").primaryKey(),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    source: text("source").notNull(),
+    lessonJson: text("lesson_json").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("learner_lesson_user_updated_idx").on(
+      table.authUserId,
+      table.updatedAt,
+    ),
+    check(
+      "learner_lesson_source_check",
+      sql`${table.source} in ('generated', 'uploaded')`,
+    ),
+    check(
+      "learner_lesson_json_check",
+      sql`json_valid(${table.lessonJson})`,
+    ),
+  ],
+);
+
 export const conversationSession = sqliteTable(
   "conversation_session",
   {
@@ -349,9 +377,20 @@ export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
   learnerProfile: one(learnerProfile),
+  learnerLessons: many(learnerLesson),
   profileSessionBypasses: many(profileSessionBypass),
   sessions: many(session),
 }));
+
+export const learnerLessonRelations = relations(
+  learnerLesson,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [learnerLesson.authUserId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, { fields: [session.userId], references: [user.id] }),
