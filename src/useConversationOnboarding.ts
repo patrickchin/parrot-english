@@ -77,6 +77,7 @@ export function useConversationOnboarding({
   const [status, setStatus] =
     useState<ConversationSurfaceStatus>("ready");
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
+  const [liveTranscript, setLiveTranscript] = useState("");
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [responseLatencyMs, setResponseLatencyMs] = useState<number | null>(null);
   const [responseLatencyTimer] = useState(() =>
@@ -174,6 +175,7 @@ export function useConversationOnboarding({
         }
         return;
       }
+      if (event.role === "user") setLiveTranscript(event.text);
       setTurns((current) => {
         const turn: ConversationSurfaceTurn = {
           id: event.id,
@@ -214,6 +216,7 @@ export function useConversationOnboarding({
     setError("");
     setStatus("connecting");
     setTurns([]);
+    setLiveTranscript("");
     setMicrophoneEnabled(false);
     runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
@@ -277,6 +280,7 @@ export function useConversationOnboarding({
     const transport = transportRef.current;
     transportRef.current = null;
     resetResponseLatency();
+    setLiveTranscript("");
     onBack();
     if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
@@ -297,11 +301,13 @@ export function useConversationOnboarding({
       runtimeRef.current.awaitingResponse = true;
       setStatus("thinking");
     } else {
+      setLiveTranscript("");
       resetResponseLatency();
     }
     try {
       await transportRef.current.setMicrophoneEnabled(enabled);
       setMicrophoneEnabled(enabled);
+      if (!enabled) setLiveTranscript("");
     } catch (microphoneError) {
       if (!enabled && runtimeRef.current.awaitingResponse) {
         runtimeRef.current.awaitingResponse = false;
@@ -330,6 +336,7 @@ export function useConversationOnboarding({
     transportRef.current = null;
     setStatus("ready");
     setTurns([]);
+    setLiveTranscript("");
     setMicrophoneEnabled(false);
     setError("");
     void transport?.disconnect();
@@ -363,6 +370,7 @@ export function useConversationOnboarding({
   return useMemo(
     () => ({
       error,
+      liveTranscript,
       microphoneEnabled,
       onBack: back,
       onFinish: () => void finish(),
@@ -376,6 +384,7 @@ export function useConversationOnboarding({
       back,
       error,
       finish,
+      liveTranscript,
       microphoneEnabled,
       responseLatencyMs,
       start,

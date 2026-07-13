@@ -77,9 +77,33 @@ function segmentRecords(value: unknown) {
 
 function createE2eLiveKitConversation() {
   const listeners = new Set<Listener>();
+  const transcriptTimers = new Set<ReturnType<typeof setTimeout>>();
+  let learnerTurnId: string | null = null;
+  let learnerTurnSequence = 0;
 
   function publish(event: ConversationTransportEvent) {
     for (const listener of listeners) listener(event);
+  }
+
+  function clearTranscriptTimers() {
+    for (const timer of transcriptTimers) clearTimeout(timer);
+    transcriptTimers.clear();
+  }
+
+  function scheduleTranscript(text: string, delayMs: number) {
+    const timer = setTimeout(() => {
+      transcriptTimers.delete(timer);
+      if (!learnerTurnId) return;
+      publish({
+        type: "transcription",
+        id: learnerTurnId,
+        text,
+        final: false,
+        language: "en",
+        role: "user",
+      });
+    }, delayMs);
+    transcriptTimers.add(timer);
   }
 
   return {
@@ -97,7 +121,27 @@ function createE2eLiveKitConversation() {
       });
     },
 
-    async setMicrophoneEnabled() {},
+    async setMicrophoneEnabled(enabled: boolean) {
+      if (enabled) {
+        clearTranscriptTimers();
+        learnerTurnSequence += 1;
+        learnerTurnId = `e2e-learner-${learnerTurnSequence}`;
+        scheduleTranscript("My name", 40);
+        scheduleTranscript("My name is Mia", 80);
+        return;
+      }
+      if (!learnerTurnId) return;
+      clearTranscriptTimers();
+      publish({
+        type: "transcription",
+        id: learnerTurnId,
+        text: "My name is Mia",
+        final: true,
+        language: "en",
+        role: "user",
+      });
+      learnerTurnId = null;
+    },
 
     async sendText(text: string) {
       const trimmed = text.trim();
@@ -113,6 +157,8 @@ function createE2eLiveKitConversation() {
     },
 
     async disconnect() {
+      clearTranscriptTimers();
+      learnerTurnId = null;
       listeners.clear();
     },
 
