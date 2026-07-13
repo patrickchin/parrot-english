@@ -12,7 +12,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.json tsconfig.agent.json ./
 COPY agent ./agent
-COPY lib/conversation-scenario.js ./lib/conversation-scenario.js
+COPY lib ./lib
 RUN npm run build:agent
 
 FROM base AS runtime
