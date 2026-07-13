@@ -420,7 +420,7 @@ test("failed form state preserves values and disables controls while submitting"
   assert.match(html, /role="alert"/);
 });
 
-test("signed-in views render lesson children and disabled sign-out progress", () => {
+test("signed-in views keep signing-out progress on the collapsed account", () => {
   const html = renderAuthGate({
     isSigningOut: true,
     session: { user: { email: "learner@example.com", name: null } },
@@ -428,11 +428,12 @@ test("signed-in views render lesson children and disabled sign-out progress", ()
 
   assert.match(html, /LESSON CONTENT/);
   assert.match(html, /learner@example.com/);
-  assert.match(html, /Signing out…/);
-  assert.match(html, /<button[^>]*disabled/);
+  assert.match(html, /<aside[^>]*aria-busy="true"/);
+  assert.match(html, /aria-expanded="false"/);
+  assert.doesNotMatch(html, /Signing out…/);
 });
 
-test("renders Profile and Log out together in the account bar", () => {
+test("renders the learner name as the collapsed account menu trigger", () => {
   const html = renderAuthGate({
     onOpenProfile() {},
     session: { user: { email: "mia@example.test", name: "Mia" } },
@@ -442,8 +443,10 @@ test("renders Profile and Log out together in the account bar", () => {
   )?.[0];
 
   assert.ok(bar);
-  assert.match(bar, /aria-label="Edit learner profile"/);
-  assert.match(bar, />Log out</);
+  assert.match(bar, /<button[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/);
+  assert.match(bar, />Mia</);
+  assert.doesNotMatch(bar, /aria-label="Edit learner profile"/);
+  assert.doesNotMatch(bar, />Log out</);
 });
 
 test("auth submission validates before calling the client", async () => {
