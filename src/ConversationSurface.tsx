@@ -5,6 +5,7 @@ export type ConversationSurfaceStatus =
   | "ready"
   | "connecting"
   | "listening"
+  | "thinking"
   | "speaking"
   | "reconnecting"
   | "error"
@@ -51,6 +52,7 @@ const STATUS_LABELS: Record<
 > = {
   connecting: "Joining Peppa…",
   listening: "Listening — take your time",
+  thinking: "Peppa is thinking…",
   speaking: "Peppa is talking",
   reconnecting: "Reconnecting… your answers are safe",
   error: "The voice room took a break",
@@ -61,6 +63,7 @@ const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
   ready: "/assets/characters/peppa/peppa-happy.webp",
   connecting: "/assets/characters/peppa/peppa-happy.webp",
   listening: "/assets/characters/peppa/peppa-listening.webp",
+  thinking: "/assets/characters/peppa/peppa-listening.webp",
   speaking: "/assets/characters/peppa/peppa-talking.webp",
   reconnecting: "/assets/characters/peppa/peppa-surprised.webp",
   error: "/assets/characters/peppa/peppa-sad.webp",
@@ -83,6 +86,8 @@ const CHARACTER_CLASSES =
   "conversation-character w-[clamp(230px,42vw,390px)] max-h-[min(48vh,420px)] object-contain drop-shadow-[0_8px_0_rgb(32_76_127_/_16%)] animate-[onboarding-float_2.8s_ease-in-out_infinite] motion-reduce:animate-none max-[560px]:w-[clamp(210px,66vw,330px)] [@media(max-height:620px)]:w-[clamp(160px,40vw,230px)] [@media(max-height:620px)]:max-h-[38vh]";
 const JOINING_NOTICE_CLASSES =
   "conversation-joining-notice flex w-[min(100%,560px)] items-center justify-center gap-4 rounded-[22px] border-4 border-white bg-[#173c67] px-[22px] py-[18px] text-left text-white shadow-[0_8px_0_rgb(23_60_103_/_22%)] [&>span:last-child]:grid [&>span:last-child]:gap-[3px] [&_strong]:text-[clamp(1.2rem,4vw,1.5rem)] [&_strong]:leading-[1.15] [&_strong+span]:text-[0.95rem] [&_strong+span]:leading-[1.35] [&_strong+span]:font-bold";
+const RESPONSE_NOTICE_CLASSES =
+  "conversation-response-notice flex w-[min(100%,560px)] items-center justify-center gap-4 rounded-[22px] border-4 border-white bg-white/92 px-[22px] py-[16px] text-left text-[#173c67] shadow-[0_8px_0_rgb(23_60_103_/_18%)] [&>span:last-child]:grid [&>span:last-child]:gap-[3px] [&_strong]:text-[clamp(1.1rem,4vw,1.35rem)] [&_strong]:leading-[1.15] [&_strong+span]:text-[0.92rem] [&_strong+span]:leading-[1.35] [&_strong+span]:font-bold";
 const ACTION_BUTTON_FOCUS_CLASSES =
   "focus-visible:outline-5 focus-visible:outline-offset-3 focus-visible:outline-[#173c67]";
 
@@ -127,7 +132,9 @@ export function ConversationSurface({
 }: ConversationSurfaceProps) {
   const saving = status === "saving";
   const joining = status === "connecting";
-  const turnControlAvailable = !saving && !joining && status !== "error";
+  const thinking = status === "thinking";
+  const turnControlAvailable =
+    !saving && !joining && !thinking && status !== "error";
 
   useEffect(() => {
     if (!turnControlAvailable) return;
@@ -214,6 +221,21 @@ export function ConversationSurface({
               </span>
             </span>
           </div>
+        ) : thinking ? (
+          <div
+            aria-live="polite"
+            className={RESPONSE_NOTICE_CLASSES}
+            role="status"
+          >
+            <span
+              aria-hidden="true"
+              className="conversation-response-spinner aspect-square size-[38px] shrink-0 animate-spin rounded-full border-[5px] border-[#90dcf8] border-t-[#d62f70] motion-reduce:animate-none"
+            />
+            <span>
+              <strong>{STATUS_LABELS.thinking}</strong>
+              <span>Getting her reply ready.</span>
+            </span>
+          </div>
         ) : (
           <p
             aria-live="polite"
@@ -244,7 +266,7 @@ export function ConversationSurface({
                 <RotateCcw aria-hidden="true" />
                 Try again
               </button>
-            ) : (
+            ) : thinking ? null : (
               <button
                 aria-keyshortcuts="Space"
                 aria-pressed={microphoneEnabled}

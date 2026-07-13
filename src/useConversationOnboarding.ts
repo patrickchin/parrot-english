@@ -146,6 +146,7 @@ export function useConversationOnboarding({
   const transportReadyRef = useRef(false);
   const openingHeardRef = useRef(false);
   const learnerTurnOpenRef = useRef(false);
+  const awaitingResponseRef = useRef(false);
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
@@ -202,6 +203,7 @@ export function useConversationOnboarding({
         return;
       }
       learnerTurnOpenRef.current = true;
+      awaitingResponseRef.current = false;
       setMicrophoneEnabled(false);
       setStatus("listening");
     },
@@ -215,7 +217,9 @@ export function useConversationOnboarding({
         setStatus(
           event.state === "connected"
             ? learnerTurnOpenRef.current
-              ? "listening"
+              ? awaitingResponseRef.current
+                ? "thinking"
+                : "listening"
               : "connecting"
             : event.state,
         );
@@ -238,6 +242,7 @@ export function useConversationOnboarding({
         );
       });
       if (event.role === "assistant") {
+        awaitingResponseRef.current = false;
         if (event.final) {
           if (!learnerTurnOpenRef.current) {
             openingHeardRef.current = true;
@@ -249,7 +254,7 @@ export function useConversationOnboarding({
           setStatus("speaking");
         }
       } else if (event.final) {
-        setStatus("listening");
+        setStatus(awaitingResponseRef.current ? "thinking" : "listening");
       }
     },
     [isCurrent, loadSummary, openLearnerTurn],
@@ -267,6 +272,7 @@ export function useConversationOnboarding({
     transportReadyRef.current = false;
     openingHeardRef.current = false;
     learnerTurnOpenRef.current = false;
+    awaitingResponseRef.current = false;
     try {
       const started = await startConversation();
       if (!isCurrent(operation)) return;
@@ -330,24 +336,39 @@ export function useConversationOnboarding({
     if (!value || !transportRef.current || !learnerTurnOpenRef.current) return;
     try {
       await transportRef.current.sendText(value);
+      awaitingResponseRef.current = true;
       setTurns((current) => [
         ...current,
         { id: `typed-${Date.now()}`, role: "user", text: value },
       ]);
       setTypedValue("");
-      setStatus("listening");
+      setStatus("thinking");
     } catch (sendError) {
       setError(readableError(sendError));
     }
   }, [typedValue]);
 
   const toggleMicrophone = useCallback(async () => {
-    if (!transportRef.current || !learnerTurnOpenRef.current) return;
+    if (
+      !transportRef.current ||
+      !learnerTurnOpenRef.current ||
+      awaitingResponseRef.current
+    ) {
+      return;
+    }
     const enabled = !microphoneEnabled;
+    if (!enabled) {
+      awaitingResponseRef.current = true;
+      setStatus("thinking");
+    }
     try {
       await transportRef.current.setMicrophoneEnabled(enabled);
       setMicrophoneEnabled(enabled);
     } catch (microphoneError) {
+      if (!enabled && awaitingResponseRef.current) {
+        awaitingResponseRef.current = false;
+        setStatus("listening");
+      }
       setError(readableError(microphoneError));
     }
   }, [microphoneEnabled]);
@@ -426,6 +447,7 @@ export function useConversationOnboarding({
     transportReadyRef.current = false;
     openingHeardRef.current = false;
     learnerTurnOpenRef.current = false;
+    awaitingResponseRef.current = false;
     const activeConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
@@ -453,6 +475,7 @@ export function useConversationOnboarding({
       transportReadyRef.current = false;
       openingHeardRef.current = false;
       learnerTurnOpenRef.current = false;
+      awaitingResponseRef.current = false;
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();
