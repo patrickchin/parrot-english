@@ -130,11 +130,13 @@ test("account menu stays visible after scrolling a short lesson list", async ({
   await page.goto("/lessons");
 
   const main = page.getByRole("main");
-  const scrollRange = await main.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-  }));
-  expect(scrollRange.scrollHeight).toBeGreaterThan(scrollRange.clientHeight);
+  await expect
+    .poll(() =>
+      main.evaluate(
+        (element) => element.scrollHeight > element.clientHeight,
+      ),
+    )
+    .toBe(true);
 
   await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
   await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
