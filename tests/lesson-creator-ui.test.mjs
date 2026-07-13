@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test, { after, describe, it } from "node:test";
 import { createServer } from "vite";
+import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
 const vite = await createServer({
   appType: "custom",
@@ -19,7 +20,7 @@ const scriptModule = await vite
   .ssrLoadModule("/src/lesson-creator-script.ts")
   .catch(() => ({}));
 const { LessonCreator } = creatorModule;
-const { parseLessonScript } = scriptModule;
+const { formatLessonScript, parseLessonScript } = scriptModule;
 
 after(async () => vite.close());
 
@@ -55,10 +56,19 @@ test("Create Lesson defaults to an accessible Generate Script tab", () => {
     html,
     /<button[^>]*type="submit"[^>]*>[\s\S]*?Generate script<\/button>/,
   );
+  assert.match(
+    html,
+    /<label[^>]*for="lesson-script-editor"[^>]*>.*Editable lesson script.*JSON.*<\/label>/is,
+  );
+  assert.match(
+    html,
+    /<textarea[^>]*id="lesson-script-editor"[^>]*spellcheck="false"/i,
+  );
+  assert.match(html, /Review script/i);
   assert.doesNotMatch(html, /type="file"/);
 });
 
-test("the upload query selects a JSON upload panel", () => {
+test("the upload query selects an editable clipboard-paste panel", () => {
   const html = renderCreator("/lessons/my/create?tab=upload");
   const uploadTab = [...html.matchAll(/<button[^>]*>[\s\S]*?<\/button>/g)]
     .map(([button]) => button)
@@ -73,11 +83,14 @@ test("the upload query selects a JSON upload panel", () => {
   assert.ok(uploadPanel);
   assert.match(uploadPanel, /role="tabpanel"/);
   assert.match(uploadPanel, /aria-labelledby="upload-script-tab"/);
+  assert.match(html, /Paste from clipboard/i);
+  assert.match(html, /paste.*lesson JSON.*editor/i);
   assert.match(
     html,
-    /<input[^>]*type="file"[^>]*accept="\.json,application\/json"/,
+    /<textarea[^>]*id="lesson-script-editor"[^>]*spellcheck="false"/i,
   );
-  assert.match(html, /Choose a JSON lesson script/i);
+  assert.match(html, /Review script/i);
+  assert.doesNotMatch(html, /type="file"/);
   assert.doesNotMatch(html, /id="lesson-topic"/);
 });
 
@@ -151,6 +164,24 @@ describe("uploaded lesson parsing", () => {
     assert.throws(
       () => parseLessonScript('{"title":', "broken.json"),
       /broken\.json must contain valid JSON/i,
+    );
+  });
+
+  it("formats generated lessons as editable JSON that validates again", () => {
+    assert.equal(typeof formatLessonScript, "function");
+    const sourceLesson = createLessonScript();
+    const formatted = formatLessonScript(sourceLesson);
+
+    assert.match(formatted, /^\{\n  "title": "Garden Help",/);
+    assert.deepEqual(parseLessonScript(formatted, "edited script"), sourceLesson);
+  });
+
+  it("rejects pasted scripts larger than the editor limit", () => {
+    const oversized = JSON.stringify({ script: "x".repeat(256 * 1024) });
+
+    assert.throws(
+      () => parseLessonScript(oversized, "pasted script"),
+      /smaller than 256 KB/i,
     );
   });
 });
