@@ -112,7 +112,7 @@ function createE2eLiveKitConversation() {
           language: "en",
           role: "assistant",
         });
-      }, 100);
+      }, 1_000);
     },
 
     async sendText(text: string) {

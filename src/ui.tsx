@@ -110,12 +110,20 @@ export function TextButton({
 export function IconButton({
   children,
   className,
+  variant = "surface",
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: ReactNode;
+  variant?: "brand" | "surface";
+}) {
   return (
     <button
       className={cx(
-        "grid size-12 shrink-0 cursor-pointer place-items-center rounded-full border-3 border-sky-200 bg-white text-2xl font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink disabled:cursor-wait disabled:opacity-75",
+        "grid size-12 shrink-0 cursor-pointer place-items-center rounded-full border-3 text-2xl font-black focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink disabled:cursor-wait disabled:opacity-75",
+        variant === "brand" &&
+          "border-brand-pink bg-brand-pink text-white shadow-control-pink",
+        variant === "surface" &&
+          "border-sky-200 bg-white text-brand-navy",
         className,
       )}
       {...props}

@@ -131,10 +131,11 @@ function ConversationSpeech({
       {onRepeatAudio ? (
         <IconButton
           aria-label="Repeat Peppa's audio"
-          className="absolute bottom-2 right-2 border-brand-pink bg-brand-pink text-white shadow-control-pink"
+          className="absolute bottom-2 right-2"
           disabled={repeatDisabled}
           onClick={onRepeatAudio}
           type="button"
+          variant="brand"
         >
           <Volume2 aria-hidden="true" className="size-6" />
         </IconButton>
