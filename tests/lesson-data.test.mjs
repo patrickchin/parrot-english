@@ -170,14 +170,51 @@ describe("lesson data contract", () => {
     assert.ok(learnerTurnCount > 0);
   });
 
-  it("rejects invalid root content with its source path", { skip: !hasValidator }, () => {
+  it("accepts scripts without curriculum or authoring restrictions", { skip: !hasValidator }, () => {
+    const catalog = lessonData.createLessonCatalog(createCatalogInput());
+    const lesson = createLesson();
+    lesson.notes = "Extra author metadata is allowed.";
+    lesson.summary = "This can have two sentences. It is still valid.";
+    lesson.detailedSummary = "A short description is enough.";
+    lesson.goalPhrases = ["An optional phrase that does not need a user step."];
+    lesson.location.extra = "Extra location metadata";
+    lesson.scenes = [
+      {
+        ...lesson.scenes[0],
+        characters: ["dolly"],
+        extra: "Extra scene metadata",
+        steps: [
+          {
+            ...createStep({
+              speaker: "dolly",
+              dialogue: "你好！\nWelcome to the lesson.",
+              emotes: { dolly: "talking", unused: "idle" },
+            }),
+            extra: "Extra step metadata",
+          },
+          createStep({
+            speaker: "user",
+            dialogue: "I can answer freely.",
+            emotes: { dolly: "listening" },
+          }),
+        ],
+      },
+    ];
+
+    assert.equal(
+      lessonData.validateLesson(lesson, catalog, "flexible.json"),
+      lesson,
+    );
+  });
+
+  it("rejects missing runtime content with its source path", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const cases = [
       ["title", "", /bad\.json title/],
-      ["summary", "Two sentences here. This is extra.", /bad\.json summary/],
-      ["detailedSummary", "Only one sentence.", /bad\.json detailedSummary/],
-      ["goalPhrases", ["Only one"], /bad\.json goalPhrases/],
-      ["scenes", createLesson().scenes.slice(0, 4), /bad\.json scenes/],
+      ["summary", "", /bad\.json summary/],
+      ["detailedSummary", "", /bad\.json detailedSummary/],
+      ["goalPhrases", "not an array", /bad\.json goalPhrases/],
+      ["scenes", [], /bad\.json scenes/],
     ];
 
     for (const [field, value, pattern] of cases) {
@@ -207,7 +244,7 @@ describe("lesson data contract", () => {
     );
   });
 
-  it("rejects invalid speakers and Chinese dialogue", { skip: !hasValidator }, () => {
+  it("rejects speakers that cannot be played", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const speakerLesson = createLesson();
     speakerLesson.scenes[0].steps[0].speaker = "nobody";
@@ -216,11 +253,15 @@ describe("lesson data contract", () => {
       /bad\.json scenes\[0\]\.steps\[0\]\.speaker/
     );
 
-    const chineseLesson = createLesson();
-    chineseLesson.scenes[0].steps[0].dialogue = "轮到你了。";
-    assert.throws(
-      () => lessonData.validateLesson(chineseLesson, catalog, "bad.json"),
-      /bad\.json scenes\[0\]\.steps\[0\]\.dialogue/
+    const userLesson = createLesson();
+    userLesson.scenes[0].characters = ["peppa", "dolly"];
+    userLesson.scenes[0].steps[0] = createStep({
+      speaker: "user",
+      emotes: { peppa: "listening", dolly: "listening" },
+    });
+    assert.equal(
+      lessonData.validateLesson(userLesson, catalog, "user.json"),
+      userLesson,
     );
   });
 
@@ -242,26 +283,9 @@ describe("lesson data contract", () => {
 
     const extra = createLesson();
     extra.scenes[0].steps[0].emotes.narrator = "idle";
-    assert.throws(
-      () => lessonData.validateLesson(extra, catalog, "bad.json"),
-      /bad\.json scenes\[0\]\.steps\[0\]\.emotes/
-    );
-  });
-
-  it("requires modeled user lines and final narrator praise", { skip: !hasValidator }, () => {
-    const catalog = lessonData.createLessonCatalog(createCatalogInput());
-    const unmodeled = createLesson();
-    unmodeled.scenes[0].steps[0].dialogue = "A different model line.";
-    assert.throws(
-      () => lessonData.validateLesson(unmodeled, catalog, "bad.json"),
-      /bad\.json scenes\[0\]\.steps\[1\]\.dialogue/
-    );
-
-    const noPraise = createLesson();
-    noPraise.scenes.at(-1).steps.at(-1).dialogue = "Great job!";
-    assert.throws(
-      () => lessonData.validateLesson(noPraise, catalog, "bad.json"),
-      /bad\.json scenes\[4\]\.steps\[2\]\.dialogue/
+    assert.equal(
+      lessonData.validateLesson(extra, catalog, "extra.json"),
+      extra,
     );
   });
 

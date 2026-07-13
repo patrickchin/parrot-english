@@ -27,14 +27,18 @@ describe("lesson script generation", () => {
     assert.equal(calls[0].body.reasoning_effort, "low");
     assert.equal(calls[0].body.max_completion_tokens, 4500);
     const schema = calls[0].body.response_format.json_schema.schema;
-    assert.equal(schema.properties.scenes.minItems, 5);
-    assert.equal(schema.properties.scenes.maxItems, 5);
-    assert.equal(schema.properties.scenes.items.properties.steps.minItems, 2);
-    assert.equal(schema.properties.scenes.items.properties.steps.maxItems, 3);
-    assert.match(calls[0].body.messages[0].content, /exactly five scenes/i);
-    assert.match(
+    assert.equal(schema.properties.scenes.minItems, 1);
+    assert.equal("maxItems" in schema.properties.scenes, false);
+    assert.equal(schema.properties.scenes.items.properties.steps.minItems, 1);
+    assert.equal(
+      "maxItems" in schema.properties.scenes.items.properties.steps,
+      false,
+    );
+    assert.equal("minItems" in schema.properties.goalPhrases, false);
+    assert.equal("maxItems" in schema.properties.goalPhrases, false);
+    assert.doesNotMatch(
       calls[0].body.messages[0].content,
-      /two steps.*model line.*user repetition.*final scene.*third narrator praise/i,
+      /exactly|must.*repeat|English-only|narrator praise|two and seven words/i,
     );
     assert.match(calls[0].body.messages[1].content, /ordering ice cream/);
     assert.match(calls[0].body.messages[1].content, /Mia/);
