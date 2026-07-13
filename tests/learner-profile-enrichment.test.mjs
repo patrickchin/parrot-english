@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
 import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
@@ -18,6 +20,24 @@ function providerResponse(value) {
 }
 
 describe("onboarding answer enrichment", () => {
+  it("keeps its system prompt in a dedicated source file", () => {
+    const promptSource = readFileSync(
+      resolve(
+        import.meta.dirname,
+        "../worker/prompts/learner-profile-enrichment.ts",
+      ),
+      "utf8",
+    );
+    const runtimeSource = readFileSync(
+      resolve(import.meta.dirname, "../worker/learner-profile-enrichment.ts"),
+      "utf8",
+    );
+
+    assert.match(promptSource, /summarize the child's answer factually/i);
+    assert.match(promptSource, /used.*enrichLearnerProfileAnswer/i);
+    assert.doesNotMatch(runtimeSource, /summarize the child's answer factually/i);
+  });
+
   it("requests strict child-safe summary and acknowledgment JSON", async () => {
     let upstreamRequest;
     const result = await enrichLearnerProfileAnswer({
@@ -48,6 +68,11 @@ describe("onboarding answer enrichment", () => {
       "Content-Type": "application/json",
     });
     assert.equal(upstreamRequest.body.model, "openai/gpt-oss-20b");
+    assert.equal(upstreamRequest.body.messages[0].role, "system");
+    assert.match(
+      upstreamRequest.body.messages[0].content,
+      /summarize the child's answer factually/i,
+    );
     assert.equal(
       upstreamRequest.body.response_format.json_schema.strict,
       true,
