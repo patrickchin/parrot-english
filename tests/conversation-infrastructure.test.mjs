@@ -142,6 +142,11 @@ describe("conversation persistence infrastructure", () => {
     assert.match(workflow, /npm run build:agent/);
     assert.match(dockerfile, /COPY package\.json package-lock\.json/);
     assert.match(dockerfile, /npm ci/);
+    assert.match(
+      dockerfile,
+      /COPY lib \.\/lib/,
+      "The agent image must include every shared runtime module imported from lib.",
+    );
     assert.equal(deployDockerfile, dockerfile);
     assert.match(dockerfile, /ca-certificates/);
     assert.match(dockerfile, /USER node/);
