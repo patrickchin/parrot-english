@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
-import { initializeLogger, llm } from "@livekit/agents";
+import { initializeLogger } from "@livekit/agents";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import {
   DEFAULT_AGENT_MODELS,
@@ -13,7 +13,6 @@ import {
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
   CONVERSATION_SYSTEM_PROMPTS,
-  LEARNER_PROFILE_TOOL_NAMES,
   createGettingToKnowYouTask,
   createSmallChatTask,
 } from "../agent/peppa-conversation.ts";
@@ -245,7 +244,7 @@ describe("purpose-specific Peppa conversation prompts", () => {
   });
 });
 
-describe("bounded learner-profile agent contract", () => {
+describe("single-inference learner-profile agent contract", () => {
   function ingest(overrides = {}) {
     return {
       async appendTurn() {},
@@ -255,131 +254,15 @@ describe("bounded learner-profile agent contract", () => {
     };
   }
 
-  it("uses a structured learner-profile update tool without a fact schema", () => {
+  it("uses no tools during onboarding learner turns", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
     });
-    const schema = llm.toJsonSchema(
-      task.toolCtx.functionTools.updateLearnerProfile.parameters,
-      true,
-      true,
-    );
-    const properties = schema.properties ?? {};
-
-    assert.deepEqual(Object.keys(properties).sort(), [
-      "age",
-      "description",
-      "learnedAge",
-      "learnedName",
-      "name",
-      "outcome",
-    ]);
-    assert.equal(JSON.stringify(schema).includes('"oneOf"'), false);
-    assert.doesNotMatch(JSON.stringify(schema), /facts|topic|vehicles/);
-    assert.doesNotMatch(JSON.stringify(schema), /"maximum":17/);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
   });
 
-  it("persists one cumulative paragraph and no candidate fact rows", async () => {
-    const calls = [];
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest({
-        async updateState(...args) {
-          calls.push(args);
-        },
-      }),
-    });
-
-    const result = await task.toolCtx.functionTools.updateLearnerProfile.execute(
-      {
-        age: 30,
-        description: "Mia is thirty years old and loves fast red cars.",
-        learnedAge: true,
-        learnedName: true,
-        name: "Mia",
-        outcome: "answered",
-      },
-      {},
-    );
-
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0][0], "conversation-1");
-    assert.equal(calls[0][1].profileSummary, result.state.profileSummary);
-    assert.equal(calls[0][1].profileName, "Mia");
-    assert.equal(calls[0][1].profileAge, 30);
-    assert.equal("facts" in result.state, false);
-    assert.equal(result.nextPrompt.objective, "interest");
-  });
-
-  it("keeps the task completion callback bound to its hook context", async () => {
-    const completed = [];
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest(),
-    });
-    const hookContext = {
-      agent: { completed },
-      complete(result) {
-        this.agent.completed.push(result);
-      },
-      session: { generateReply() {} },
-    };
-
-    await task.hookAdapter.hooks.onEnter(hookContext);
-    await task.toolCtx.functionTools.finishConversation.execute(
-      { reason: "child_stopped" },
-      {},
-    );
-
-    assert.deepEqual(completed, [{ finishReason: "child_stopped" }]);
-  });
-
-  it("uses finishConversation as the only tool that ends a completed task", async () => {
-    const ended = [];
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest({
-        async endConversation(...args) {
-          ended.push(args);
-        },
-      }),
-      initialState: {
-        ...createLearnerProfileConversationState({
-          profileAge: 8,
-          profileName: "Mia",
-          profileSummary: "Mia is eight years old.",
-        }),
-        optionalExchangeCount: 2,
-      },
-    });
-
-    const updated = await task.toolCtx.functionTools.updateLearnerProfile.execute(
-      {
-        age: 9,
-        description: "Maya is nine years old and loves pandas.",
-        learnedAge: true,
-        learnedName: true,
-        name: "Maya",
-        outcome: "answered",
-      },
-      {},
-    );
-
-    assert.equal(updated.state.phase, "closing");
-    assert.deepEqual(ended, []);
-
-    await task.toolCtx.functionTools.finishConversation.execute(
-      { reason: "task_complete" },
-      {},
-    );
-
-    assert.deepEqual(ended, [
-      ["conversation-1", "completed", "task_complete"],
-    ]);
-  });
-
-  it("keeps opening behavior in the static profile-edit system prompt", async () => {
+  it("uses no tools during profile editing and preserves saved context", async () => {
     let opening;
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
@@ -402,6 +285,7 @@ describe("bounded learner-profile agent contract", () => {
     });
 
     assert.deepEqual(opening, { allowInterruptions: false });
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["profile-edit"], /speak first/i);
     assert.match(
       CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
@@ -415,37 +299,16 @@ describe("bounded learner-profile agent contract", () => {
     assert.match(task._instructions, /fast red cars/);
   });
 
-  it("uses four constrained tools and asks for a natural prose paragraph", () => {
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest(),
-    });
-
-    assert.deepEqual(LEARNER_PROFILE_TOOL_NAMES, [
-      "updateLearnerProfile",
-      "markObjectiveUnanswered",
-      "finishConversation",
-      "requestGentleRephrase",
-    ]);
-    assert.deepEqual(
-      Object.keys(task.toolCtx.functionTools).sort(),
-      [...LEARNER_PROFILE_TOOL_NAMES].sort(),
-    );
+  it("keeps profile persistence out of the live-turn prompts", () => {
     const instructions = CONVERSATION_SYSTEM_PROMPTS.onboarding;
     assert.match(instructions, /warm, playful pig friend/i);
-    assert.match(instructions, /one natural paragraph/i);
-    assert.match(instructions, /no labels, bullets, or field names/i);
     assert.match(instructions, /bright, bouncy energy/i);
     assert.match(instructions, /relevant answer|differs from the category/i);
-    assert.match(
-      instructions,
-      /updateLearnerProfile[\s\S]*finishConversation next/i,
-    );
+    assert.match(instructions, /never call a tool/i);
     assert.doesNotMatch(
       instructions,
-      /exactly one appropriate state tool/i,
+      /updateLearnerProfile|markObjectiveUnanswered|finishConversation|requestGentleRephrase/i,
     );
-    assert.doesNotMatch(instructions, /fact schema|candidate facts/i);
     assert.doesNotMatch(instructions, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
       instructions,
@@ -471,132 +334,6 @@ describe("bounded learner-profile agent contract", () => {
     assert.match(task._instructions, /ordinary small chat/i);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);
     assert.doesNotMatch(task._instructions, /call exactly one appropriate state tool/i);
-  });
-
-  it("advances only through tools and preserves the prose on a rephrase", async () => {
-    const calls = [];
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest({
-        async updateState(...args) {
-          calls.push(args);
-        },
-      }),
-    });
-    const tools = task.toolCtx.functionTools;
-
-    const recorded = await tools.updateLearnerProfile.execute(
-      {
-        age: null,
-        description: "The learner's name is Mia.",
-        learnedAge: false,
-        learnedName: true,
-        name: "Mia",
-        outcome: "answered",
-      },
-      {},
-    );
-    assert.equal(recorded.nextPrompt.objective, "age");
-    assert.equal(calls[0][1].profileSummary, "The learner's name is Mia.");
-
-    const rephrased = await tools.requestGentleRephrase.execute(
-      { reason: "unclear" },
-      {},
-    );
-    assert.equal(rephrased.nextPrompt.mode, "rephrase");
-    assert.equal(rephrased.state.profileSummary, "The learner's name is Mia.");
-  });
-
-  it("does not hold Peppa's next reply behind remote profile persistence", async () => {
-    let releasePersistence;
-    const persistenceBlocked = new Promise((resolve) => {
-      releasePersistence = resolve;
-    });
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest({
-        async updateState() {
-          await persistenceBlocked;
-        },
-      }),
-    });
-    const transition =
-      task.toolCtx.functionTools.updateLearnerProfile.execute(
-        {
-          age: null,
-          description: "The learner's name is Mia.",
-          learnedAge: false,
-          learnedName: true,
-          name: "Mia",
-          outcome: "answered",
-        },
-        {},
-      );
-
-    let outcome;
-    try {
-      outcome = await Promise.race([
-        transition.then(() => "completed"),
-        new Promise((resolve) =>
-          setTimeout(() => resolve("blocked-by-persistence"), 25),
-        ),
-      ]);
-    } finally {
-      releasePersistence();
-      await transition;
-    }
-
-    assert.equal(outcome, "completed");
-  });
-
-  it("lets session shutdown flush a write-behind profile update", async () => {
-    let releasePersistence;
-    const persistenceBlocked = new Promise((resolve) => {
-      releasePersistence = resolve;
-    });
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest({
-        async updateState() {
-          await persistenceBlocked;
-        },
-      }),
-    });
-    const transition =
-      task.toolCtx.functionTools.updateLearnerProfile.execute(
-        {
-          age: null,
-          description: "The learner's name is Mia.",
-          learnedAge: false,
-          learnedName: true,
-          name: "Mia",
-          outcome: "answered",
-        },
-        {},
-      );
-
-    const hasPersistenceWaiter =
-      typeof task.waitForPendingStatePersistence === "function";
-    let stateBeforeRelease;
-    if (hasPersistenceWaiter) {
-      const waiting = task.waitForPendingStatePersistence().then(
-        () => "flushed",
-      );
-      stateBeforeRelease = await Promise.race([
-        waiting,
-        new Promise((resolve) =>
-          setTimeout(() => resolve("still-pending"), 25),
-        ),
-      ]);
-      releasePersistence();
-      await waiting;
-    } else {
-      releasePersistence();
-    }
-    await transition;
-
-    assert.equal(hasPersistenceWaiter, true);
-    assert.equal(stateBeforeRelease, "still-pending");
   });
 
   it("leaves every learner turn boundary to the turn button", () => {

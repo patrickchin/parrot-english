@@ -1,23 +1,9 @@
-import { llm, voice } from "@livekit/agents";
-import { z } from "zod";
-import {
-  applyConversationObservation,
-  createLearnerProfileConversationState,
-  isConversationTerminal,
-  nextConversationPrompt,
-} from "../lib/conversation-scenario.js";
+import { voice } from "@livekit/agents";
+import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
-import type { ConversationIngestClient } from "./ingest-client.js";
 import { INTRODUCTION_SYSTEM_PROMPT } from "./prompts/introduction.ts";
 import { PROFILE_EDIT_SYSTEM_PROMPT } from "./prompts/profile-edit.ts";
 import { SMALL_CHAT_SYSTEM_PROMPT } from "./prompts/small-chat.ts";
-
-export const LEARNER_PROFILE_TOOL_NAMES = [
-  "updateLearnerProfile",
-  "markObjectiveUnanswered",
-  "finishConversation",
-  "requestGentleRephrase",
-] as const;
 
 export const CONVERSATION_SYSTEM_PROMPTS: Record<ConversationPurpose, string> = {
   onboarding: INTRODUCTION_SYSTEM_PROMPT,
@@ -47,11 +33,8 @@ type ControllerState = Omit<
 > & { finishReason: string | null };
 
 type CreateTaskOptions = {
-  conversationId: string;
-  ingest: ConversationIngestClient;
   initialState?: ControllerState;
-  onEnded?: () => void;
-  purpose?: Exclude<ConversationPurpose, "small-chat">;
+  purpose?: ConversationPurpose;
 };
 
 function savedProfileContext(state: ControllerState) {
@@ -64,177 +47,18 @@ function savedProfileContext(state: ControllerState) {
   return `<SAVED_PROFILE>\n${savedProfile}\n</SAVED_PROFILE>`;
 }
 
-export function createGettingToKnowYouTask({
-  conversationId,
-  ingest,
+function createConversationTask({
   initialState = createLearnerProfileConversationState() as ControllerState,
-  onEnded = () => {},
   purpose = "onboarding",
-}: CreateTaskOptions) {
-  let state = initialState;
-  let completeTask: ((result: { finishReason: string | null }) => void) | null = null;
-  let statePersistence = Promise.resolve();
-
-  function persistState(controllerState: ControllerState) {
-    const pendingUpdate = statePersistence
-      .catch(() => {})
-      .then(() => ingest.updateState(conversationId, controllerState));
-    statePersistence = pendingUpdate;
-    void pendingUpdate.catch((error: unknown) => {
-      console.error("Could not persist learner-profile state", error);
-    });
-    return pendingUpdate;
-  }
-
-  async function transition(
-    observation: {
-      learnedAge?: boolean;
-      learnedName?: boolean;
-      outcome: string;
-      profileAge?: number | null;
-      profileName?: string | null;
-      summary?: string;
-    },
-  ) {
-    state = applyConversationObservation(state, observation) as ControllerState;
-    persistState(state);
-    return { nextPrompt: nextConversationPrompt(state), state };
-  }
-
-  const tools = [
-    llm.tool({
-      name: "updateLearnerProfile",
-      description:
-        "Silently record the complete current learner name, age, and natural description without ending the conversation.",
-      parameters: z.object({
-        name: z
-          .string()
-          .trim()
-          .min(1)
-          .max(120)
-          .nullable()
-          .describe(
-            "The learner's directly shared current name, including any correction, or null until known.",
-          ),
-        age: z
-          .number()
-          .int()
-          .nonnegative()
-          .nullable()
-          .describe(
-            "The learner's directly shared current age, including any correction, or null until known.",
-          ),
-        description: z
-          .string()
-          .trim()
-          .min(1)
-          .max(2_000)
-          .describe(
-            "The complete current learner profile as one natural third-person paragraph, with no labels, bullets, or field names.",
-          ),
-        learnedName: z
-          .boolean()
-          .describe("True once the child has directly shared their name."),
-        learnedAge: z
-          .boolean()
-          .describe("True once the child has directly shared their age."),
-        outcome: z.literal("answered"),
-      }),
-      execute: async ({
-        age,
-        description,
-        learnedAge,
-        learnedName,
-        name,
-        outcome,
-      }) =>
-        transition({
-          learnedAge,
-          learnedName,
-          outcome,
-          profileAge: age,
-          profileName: name,
-          summary: description,
-        }),
-    }),
-    llm.tool({
-      name: "markObjectiveUnanswered",
-      description:
-        "Move on without pressure after uncertainty, refusal, silence, or a second failed clarification.",
-      parameters: z.object({
-        outcome: z.enum(["declined", "silence", "unknown", "unclear"]),
-      }),
-      execute: async ({ outcome }) => transition({ outcome }),
-    }),
-    llm.tool({
-      name: "finishConversation",
-      description: "Finish immediately when the child asks to stop or the bounded task is done.",
-      parameters: z.object({
-        reason: z.enum(["child_stopped", "finished_by_learner", "task_complete"]),
-      }),
-      execute: async ({ reason }) => {
-        if (!isConversationTerminal(state)) {
-          state = applyConversationObservation(state, {
-            outcome: "stop",
-          }) as ControllerState;
-        }
-        state = { ...state, finishReason: reason };
-        await persistState(state);
-        await ingest.endConversation(
-          conversationId,
-          reason === "task_complete" ? "completed" : "stopped",
-          reason,
-        );
-        onEnded();
-        completeTask?.({ finishReason: reason });
-        return { nextPrompt: nextConversationPrompt(state), state };
-      },
-    }),
-    llm.tool({
-      name: "requestGentleRephrase",
-      description:
-        "Use only for the first truly unclear or unrelated response; rephrase once in simple English.",
-      parameters: z.object({ reason: z.enum(["off_topic", "unclear"]) }),
-      execute: async ({ reason }) => transition({ outcome: reason }),
-    }),
-  ];
-
+}: CreateTaskOptions = {}) {
   const task = voice.AgentTask.create<{ finishReason: string | null }>({
-    id: purpose === "onboarding" ? "learner_introduction" : "profile_edit",
+    id:
+      purpose === "onboarding"
+        ? "learner_introduction"
+        : purpose === "profile-edit"
+          ? "profile_edit"
+          : "small_chat",
     instructions: [getConversationSystemPrompt(purpose), savedProfileContext(initialState)]
-      .filter(Boolean)
-      .join("\n\n"),
-    tools,
-    onEnter(ctx) {
-      completeTask = (result) => ctx.complete(result);
-      ctx.session.generateReply({
-        allowInterruptions: false,
-      });
-    },
-  });
-
-  return Object.assign(task, {
-    waitForPendingStatePersistence() {
-      return statePersistence.catch(() => {});
-    },
-  });
-}
-
-type CreatePeppaConversationTaskOptions = {
-  conversationId: string;
-  ingest: ConversationIngestClient;
-  initialState?: ControllerState;
-  onEnded?: () => void;
-  purpose: ConversationPurpose;
-};
-
-export function createSmallChatTask({
-  initialState = createLearnerProfileConversationState() as ControllerState,
-}: Pick<CreatePeppaConversationTaskOptions, "initialState"> = {}) {
-  const knownContext = savedProfileContext(initialState);
-  const task = voice.AgentTask.create<{ finishReason: string | null }>({
-    id: "small_chat",
-    instructions: [getConversationSystemPrompt("small-chat"), knownContext]
       .filter(Boolean)
       .join("\n\n"),
     tools: [],
@@ -244,19 +68,25 @@ export function createSmallChatTask({
       });
     },
   });
-
-  return Object.assign(task, {
-    waitForPendingStatePersistence() {
-      return Promise.resolve();
-    },
-  });
+  return task;
 }
 
-export function createPeppaConversationTask(
-  options: CreatePeppaConversationTaskOptions,
-) {
+export function createGettingToKnowYouTask(options: CreateTaskOptions = {}) {
+  return createConversationTask(options);
+}
+
+export function createSmallChatTask({
+  initialState = createLearnerProfileConversationState() as ControllerState,
+}: Pick<CreateTaskOptions, "initialState"> = {}) {
+  return createConversationTask({ initialState, purpose: "small-chat" });
+}
+
+export function createPeppaConversationTask(options: {
+  initialState?: ControllerState;
+  purpose: ConversationPurpose;
+}) {
   if (options.purpose === "small-chat") {
     return createSmallChatTask({ initialState: options.initialState });
   }
-  return createGettingToKnowYouTask({ ...options, purpose: options.purpose });
+  return createGettingToKnowYouTask(options);
 }

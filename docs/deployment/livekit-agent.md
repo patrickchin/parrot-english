@@ -68,8 +68,10 @@ Return it to `0` before committing. The browser must still offer Use the form
 instead at every realtime error or stop point.
 
 The Worker sends one of `onboarding`, `profile-edit`, or `small-chat` in the
-signed participant metadata. The agent must select the matching system prompt;
-small chat must start without profile-writing tools.
+signed participant metadata. The agent must select the matching system prompt.
+Every purpose starts without tools, keeping each live child turn to one LLM
+inference. Onboarding and profile editing derive their saved profile once from
+the completed transcript during Worker review.
 
 ## Cloudflare Worker and D1
 
@@ -152,8 +154,9 @@ Before enabling the flag, authenticate as a test user and verify:
    followed naturally instead of being treated as off-topic.
 5. “I don’t know”, silence, refusal, Finish conversation, and the form fallback
    all remain usable.
-6. Onboarding and profile editing finalize the saved prose summary; small chat
-   finishes without changing the learner profile.
+6. Each live child turn produces a reply without a tool-call round trip.
+   Onboarding and profile editing finalize the saved prose summary from the
+   transcript after Finish; small chat finishes without changing the profile.
 7. D1 contains finalized user and assistant turns for completed and abandoned
    sessions, but no raw-audio payload or structured fact rows. LiveKit starts
    with `record: false`.

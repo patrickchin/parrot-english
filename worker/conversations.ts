@@ -1,9 +1,15 @@
 import type { AuthEnv } from "./auth.ts";
 import {
   isConversationPurpose,
+  updatesLearnerProfile,
   type ConversationPurpose,
 } from "../lib/conversation-purpose.ts";
+import {
+  deriveConversationProfileState,
+  type ConversationProfileState,
+} from "./conversation-profile-finalization.ts";
 import type { Database } from "./database.ts";
+import type { ApiEnv } from "./groq.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   ConversationRepositoryError,
@@ -49,7 +55,7 @@ const CONVERSATION_SCENARIOS = {
   }
 >;
 
-export interface ConversationEnv extends AuthEnv, LiveKitTokenEnv {
+export interface ConversationEnv extends AuthEnv, LiveKitTokenEnv, ApiEnv {
   CONVERSATION_AGENT_SECRET?: string;
   LIVEKIT_URL?: string;
   REALTIME_CONVERSATIONS_ENABLED?: string;
@@ -65,6 +71,7 @@ export interface ConversationRequestInput {
 type HandlerDependencies = {
   createId: () => string;
   createParticipantToken: typeof createLiveKitParticipantToken;
+  deriveProfileState: typeof deriveConversationProfileState;
   now: () => Date;
 };
 
@@ -140,6 +147,8 @@ export async function handleConversationRequest(
     createParticipantToken: createLiveKitParticipantToken,
     now: () => new Date(),
     ...overrides,
+    deriveProfileState:
+      overrides.deriveProfileState ?? deriveConversationProfileState,
   };
   const repository = createConversationRepository(input.database, dependencies);
   const url = new URL(input.request.url);
@@ -261,6 +270,44 @@ export async function handleConversationRequest(
 
     if (action === "review" && input.request.method === "PUT") {
       await readJson(input.request);
+      const loaded = await repository.loadOwnedConversation(
+        conversationId,
+        input.identity!.userId,
+      );
+      if (!loaded) throw new ConversationApiError(404, "not_found");
+      if (!isConversationPurpose(loaded.conversation.scenarioKey)) {
+        throw new ConversationApiError(500, "invalid_stored_data");
+      }
+      if (
+        loaded.conversation.status !== "completed" &&
+        updatesLearnerProfile(loaded.conversation.scenarioKey)
+      ) {
+        let initialState: ConversationProfileState;
+        try {
+          const storedState = JSON.parse(
+            loaded.conversation.controllerState,
+          ) as unknown;
+          if (
+            storedState === null ||
+            typeof storedState !== "object" ||
+            Array.isArray(storedState)
+          ) {
+            throw new Error("invalid controller state");
+          }
+          initialState = storedState as ConversationProfileState;
+        } catch {
+          throw new ConversationApiError(500, "invalid_stored_data");
+        }
+        const derivedState = await dependencies.deriveProfileState({
+          env: input.env,
+          initialState,
+          purpose: loaded.conversation.scenarioKey,
+          turns: loaded.turns.map(({ role, text }) => ({ role, text })),
+        });
+        if (derivedState !== initialState) {
+          await repository.updateControllerState(conversationId, derivedState);
+        }
+      }
       const result = await repository.finalizeConversation(
         conversationId,
         input.identity!,

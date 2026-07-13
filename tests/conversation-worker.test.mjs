@@ -154,6 +154,7 @@ async function callConversation(
       createParticipantToken:
         options.createParticipantToken ??
         (async ({ conversation }) => `token-for-${conversation.id}`),
+      deriveProfileState: options.deriveProfileState,
       now: options.now ?? (() => new Date("2026-07-08T08:00:00.000Z")),
     },
   );
@@ -298,6 +299,87 @@ describe("conversation persistence and API", () => {
           .count,
         0,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("derives and saves the learner profile once during review", async () => {
+    const state = createSeededDatabase();
+    const derivations = [];
+    try {
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+      const conversation = (await started.json()).conversation;
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+      for (const [sequence, role, text] of [
+        [0, "assistant", "What is your name?"],
+        [1, "user", "My name is Mia and I am eight."],
+      ]) {
+        await callConversation(
+          state.database,
+          `/api/conversations/${conversation.id}/turns`,
+          "POST",
+          {
+            providerItemId: `turn-${sequence}`,
+            sequence,
+            role,
+            text,
+            language: "en",
+            inputMode: "voice",
+            interrupted: false,
+          },
+          agentOptions,
+        );
+      }
+
+      const review = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+        {
+          async deriveProfileState(input) {
+            derivations.push(input);
+            return {
+              ...input.initialState,
+              learnedAge: true,
+              learnedName: true,
+              profileAge: 8,
+              profileName: "Mia",
+              profileSummary: "Mia is eight years old.",
+            };
+          },
+        },
+      );
+
+      assert.equal(review.status, 200);
+      assert.equal(derivations.length, 1);
+      assert.deepEqual(
+        derivations[0].turns.map(({ role, text }) => ({ role, text })),
+        [
+          { role: "assistant", text: "What is your name?" },
+          { role: "user", text: "My name is Mia and I am eight." },
+        ],
+      );
+      assert.deepEqual(await review.json(), {
+        conversationId: conversation.id,
+        profileCompleted: true,
+        bypassed: false,
+      });
+      const profile = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(profile.name, "Mia");
+      assert.equal(profile.age, 8);
+      assert.equal(JSON.parse(profile.answers_json).description, "Mia is eight years old.");
     } finally {
       state.close();
     }

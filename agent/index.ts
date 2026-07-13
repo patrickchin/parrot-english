@@ -257,9 +257,6 @@ function createTranscriptPersistence({
 
   return {
     finish,
-    markEnded() {
-      ended = true;
-    },
     persistConversationItem,
     rememberUserTranscript,
   };
@@ -297,10 +294,7 @@ export const agentDefinition = defineAgent({
     let latestAssistantText = "";
 
     const task = createPeppaConversationTask({
-      conversationId,
-      ingest,
       initialState,
-      onEnded: persistence.markEnded,
       purpose,
     });
     const rootAgent = voice.Agent.create({
@@ -316,7 +310,6 @@ export const agentDefinition = defineAgent({
     });
     const session = new voice.AgentSession({
       llm: models.llm,
-      maxToolSteps: 2,
       stt: models.stt,
       tts: models.tts,
       turnHandling: createAgentTurnHandling(),
@@ -334,20 +327,16 @@ export const agentDefinition = defineAgent({
       }
     });
     session.on(AgentSessionEventTypes.Close, (event) => {
-      void task
-        .waitForPendingStatePersistence()
-        .then(() =>
-          persistence.finish(
-            event.error ? "failed" : "disconnected",
-            String(event.reason),
-          ),
+      void persistence
+        .finish(
+          event.error ? "failed" : "disconnected",
+          String(event.reason),
         )
         .catch((error: unknown) => {
           console.error("Could not finalize conversation transcript", error);
         });
     });
     ctx.addShutdownCallback(async () => {
-      await task.waitForPendingStatePersistence();
       await persistence.finish("abandoned", "agent_job_shutdown");
     });
 
