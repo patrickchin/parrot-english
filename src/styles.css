@@ -2695,10 +2695,10 @@ select:focus-visible {
   .user-session-bar--conversation {
     top: clamp(14px, 2.2vh, 28px);
     right: 12px;
-    min-height: 44px;
+    min-height: 52px;
     max-width: calc(100vw - 92px);
     gap: 6px;
-    padding: 3px 4px;
+    padding: 0 4px;
   }
 
   .user-session-bar--conversation > span:first-child {
@@ -2719,6 +2719,10 @@ select:focus-visible {
   .conversation-back-button {
     top: 10px;
     left: 10px;
+  }
+
+  .user-session-bar--conversation {
+    top: 10px;
   }
 
   .conversation-screen {
