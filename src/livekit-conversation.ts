@@ -1,6 +1,7 @@
 import { Room, RoomEvent } from "livekit-client";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
+  activeSpeakers: RoomEvent.ActiveSpeakersChanged,
   disconnected: RoomEvent.Disconnected,
   reconnected: RoomEvent.Reconnected,
   reconnecting: RoomEvent.Reconnecting,
@@ -10,6 +11,7 @@ export const LIVEKIT_CONVERSATION_EVENTS = {
 
 export type ConversationTransportEvent =
   | { type: "state"; state: "connecting" | "connected" | "reconnecting" }
+  | { type: "speech-started"; role: "assistant" }
   | {
       type: "transcription";
       id: string;
@@ -141,6 +143,23 @@ export function createLiveKitConversation({
   }
 
   const eventListeners = new Map<RoomEvent, EventListener>([
+    [
+      RoomEvent.ActiveSpeakersChanged,
+      (participants) => {
+        if (
+          !Array.isArray(participants) ||
+          !participants.some(
+            (participant) =>
+              participant !== null &&
+              typeof participant === "object" &&
+              (!("isLocal" in participant) || participant.isLocal !== true),
+          )
+        ) {
+          return;
+        }
+        publish({ type: "speech-started", role: "assistant" });
+      },
+    ],
     [RoomEvent.Reconnecting, () => publish({ type: "state", state: "reconnecting" })],
     [RoomEvent.Reconnected, () => publish({ type: "state", state: "connected" })],
     [

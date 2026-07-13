@@ -168,10 +168,15 @@ function onboardingRouteProps(completedOnboardingFallback) {
   };
 }
 
-function ConversationHookHarness({ createTransport, onCompleted = async () => {} }) {
+function ConversationHookHarness({
+  createTransport,
+  now,
+  onCompleted = async () => {},
+}) {
   const conversation = useConversationOnboarding({
     active: true,
     createTransport,
+    now,
     onBack() {},
     onCompleted,
   });
@@ -179,6 +184,11 @@ function ConversationHookHarness({ createTransport, onCompleted = async () => {}
     "section",
     null,
     createElement("output", { "aria-label": "Conversation status" }, conversation.status),
+    createElement(
+      "output",
+      { "aria-label": "Peppa response latency" },
+      conversation.responseLatencyMs ?? "",
+    ),
     createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
     createElement(
       "button",
@@ -202,6 +212,7 @@ function conversationSurfaceProps(overrides = {}) {
     onSubmitReview() {},
     onToggleMicrophone() {},
     onTypedValueChange() {},
+    responseLatencyMs: null,
     status: "listening",
     turns: [],
     typedValue: "",
@@ -549,6 +560,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
     let listener = () => {};
+    let now = 1_000;
     const microphoneCalls = [];
     const transport = {
       async connect() {},
@@ -584,6 +596,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(ConversationHookHarness, {
         createTransport: () => transport,
+        now: () => now,
       }),
     );
     await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
@@ -608,6 +621,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           .textContent,
         "thinking",
       ),
+    );
+
+    now = 2_254;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "speaking",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Peppa response latency"]')
+        .textContent,
+      "1254",
     );
 
     await act(async () => {
