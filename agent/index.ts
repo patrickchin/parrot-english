@@ -270,15 +270,22 @@ export const agentDefinition = defineAgent({
       }
     });
     session.on(AgentSessionEventTypes.Close, (event) => {
-      void persistence
-        .finish(event.error ? "failed" : "disconnected", String(event.reason))
+      void task
+        .waitForPendingStatePersistence()
+        .then(() =>
+          persistence.finish(
+            event.error ? "failed" : "disconnected",
+            String(event.reason),
+          ),
+        )
         .catch((error: unknown) => {
           console.error("Could not finalize conversation transcript", error);
         });
     });
-    ctx.addShutdownCallback(() =>
-      persistence.finish("abandoned", "agent_job_shutdown"),
-    );
+    ctx.addShutdownCallback(async () => {
+      await task.waitForPendingStatePersistence();
+      await persistence.finish("abandoned", "agent_job_shutdown");
+    });
 
     await session.start({
       agent: rootAgent,
