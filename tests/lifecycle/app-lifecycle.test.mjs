@@ -172,8 +172,8 @@ function ConversationHookHarness({ createTransport, onCompleted = async () => {}
   const conversation = useConversationOnboarding({
     active: true,
     createTransport,
+    onBack() {},
     onCompleted,
-    onUseForm() {},
   });
   return createElement(
     "section",
@@ -193,6 +193,7 @@ function conversationSurfaceProps(overrides = {}) {
     candidates: [],
     error: "",
     microphoneEnabled: false,
+    onBack() {},
     onCandidateChange() {},
     onCandidateStatusChange() {},
     onFinish() {},
@@ -201,7 +202,6 @@ function conversationSurfaceProps(overrides = {}) {
     onSubmitReview() {},
     onToggleMicrophone() {},
     onTypedValueChange() {},
-    onUseForm() {},
     status: "listening",
     turns: [],
     typedValue: "",
@@ -549,10 +549,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("toggles the learner turn with Space without hijacking focused controls", async () => {
     const toggles = [];
+    const backs = [];
     await mountStrict(
       createElement(
         ConversationSurface,
         conversationSurfaceProps({
+          onBack() {
+            backs.push("back");
+          },
           onToggleMicrophone() {
             toggles.push("toggle");
           },
@@ -592,6 +596,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         }),
       );
     });
+    assert.deepEqual(toggles, ["toggle"]);
+
+    await click(button("Back"));
+    assert.deepEqual(backs, ["back"]);
     assert.deepEqual(toggles, ["toggle"]);
   });
 

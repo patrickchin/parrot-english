@@ -591,10 +591,14 @@ export function OnboardingGate({
   const selectedExperience = fullData
     ? selectOnboardingExperience(fullData.experienceMode, useFormFallback)
     : "form";
-  const handleUseFormFallback = useCallback(() => {
+  const handleConversationBack = useCallback(() => {
+    if (redoOnboarding) {
+      onRedoCompleted();
+      return;
+    }
     setUseFormFallback(true);
     setStarted(false);
-  }, []);
+  }, [onRedoCompleted, redoOnboarding]);
   const handleConversationCompleted = useCallback(async () => {
     await refresh();
     if (redoOnboarding) onRedoCompleted();
@@ -608,8 +612,8 @@ export function OnboardingGate({
           (!fullData.canBypass &&
             fullData.profile.onboardingStatus !== "completed")),
     ),
+    onBack: handleConversationBack,
     onCompleted: handleConversationCompleted,
-    onUseForm: handleUseFormFallback,
   });
   const activeQuestion = fullData?.question ?? null;
   const activeProfile = fullData?.profile ?? null;

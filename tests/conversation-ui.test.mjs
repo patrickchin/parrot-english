@@ -26,6 +26,7 @@ function props(overrides = {}) {
     candidates: [],
     error: "",
     microphoneEnabled: true,
+    onBack() {},
     onCandidateChange() {},
     onCandidateStatusChange() {},
     onFinish() {},
@@ -34,7 +35,6 @@ function props(overrides = {}) {
     onSubmitReview() {},
     onToggleMicrophone() {},
     onTypedValueChange() {},
-    onUseForm() {},
     status: "ready",
     turns: [],
     typedValue: "",
@@ -59,6 +59,26 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /Start talking/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.doesNotMatch(html, /About this chat/);
+  });
+
+  it("keeps a consistent Back action on every conversation state", () => {
+    for (const status of [
+      "ready",
+      "connecting",
+      "listening",
+      "speaking",
+      "reconnecting",
+      "error",
+      "saving",
+    ]) {
+      const html = render({ status });
+      assert.match(
+        html,
+        /<button aria-label="Back" class="conversation-back-button"[^>]*>/,
+        status,
+      );
+      assert.match(html, /lucide-arrow-left/, status);
+    }
   });
 
   it("makes joining unmistakable before Peppa enables learner input", () => {
@@ -182,6 +202,10 @@ describe("accessible realtime conversation surface", () => {
     assert.match(
       styles,
       /\.conversation-finish-button\s*\{[^}]*width:\s*100%[^}]*min-height:\s*64px[^}]*background:\s*rgb\(255 255 255 \/ 88%\)[^}]*text-decoration:\s*none/s,
+    );
+    assert.match(
+      styles,
+      /\.conversation-back-button\s*\{[^}]*position:\s*absolute[^}]*top:[^;}]+;[^}]*left:[^;}]+;[^}]*min-height:\s*52px[^}]*background:\s*#204c7f[^}]*color:\s*#fff/s,
     );
     assert.doesNotMatch(styles, /\.conversation-type-panel/);
     assert.doesNotMatch(styles, /\.conversation-debug-transcript/);
