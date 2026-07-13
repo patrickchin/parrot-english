@@ -22,6 +22,7 @@
     "build:agent": "tsc -p tsconfig.agent.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply parrot-english --local",
+    "deploy:agent": "node scripts/deploy-livekit-agent.mjs",
     "generate:audio": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "start": "wrangler dev --local --port 3000",

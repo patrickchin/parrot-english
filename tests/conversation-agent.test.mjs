@@ -50,6 +50,8 @@ describe("LiveKit agent configuration", () => {
     assert.equal(config.llmModel, "openai/gpt-4.1-mini");
     assert.equal(config.ttsModel, "inworld/inworld-tts-2");
     assert.equal(config.ttsVoiceId, "Olivia");
+    assert.equal(config.buildVersion, "local");
+    assert.equal(config.commitSha, "local");
     assert.deepEqual(
       Object.values(DEFAULT_AGENT_MODELS).some((value) =>
         /(?:auto|latest)$/i.test(value),
@@ -626,6 +628,56 @@ describe("bounded learner-profile agent contract", () => {
 });
 
 describe("conversation ingest client", () => {
+  it("reports the exact running agent build and model versions", async () => {
+    const calls = [];
+    const client = createConversationIngestClient({
+      baseUrl: "https://app.example.test/",
+      build: {
+        commitSha: "abc1234",
+        details: {
+          models: {
+            llm: "openai/gpt-4.1-mini",
+            stt: "elevenlabs/scribe_v2_realtime",
+            tts: "inworld/inworld-tts-2",
+          },
+        },
+        version: "0.1.276",
+      },
+      fetch: async (...args) => {
+        calls.push(args);
+        return new Response(null, { status: 204 });
+      },
+      secret: "agent-secret",
+    });
+
+    await client.reportBuild("conversation-1", { phase: "optional" });
+
+    assert.equal(
+      calls[0][0],
+      "https://app.example.test/api/conversations/conversation-1/facts",
+    );
+    assert.equal(calls[0][1].headers.Authorization, "Bearer agent-secret");
+    const body = JSON.parse(calls[0][1].body);
+    assert.deepEqual(body.candidates, []);
+    assert.equal(body.controllerState.phase, "optional");
+    assert.deepEqual(body.controllerState._buildInfo.agent, {
+      commitSha: "abc1234",
+      details: {
+        models: {
+          llm: "openai/gpt-4.1-mini",
+          stt: "elevenlabs/scribe_v2_realtime",
+          tts: "inworld/inworld-tts-2",
+        },
+      },
+      reportedAt: body.controllerState._buildInfo.agent.reportedAt,
+      version: "0.1.276",
+    });
+    assert.equal(
+      new Date(body.controllerState._buildInfo.agent.reportedAt).toISOString(),
+      body.controllerState._buildInfo.agent.reportedAt,
+    );
+  });
+
   it("uses service auth, a timeout signal, and one retry for a 5xx response", async () => {
     const calls = [];
     const client = createConversationIngestClient({

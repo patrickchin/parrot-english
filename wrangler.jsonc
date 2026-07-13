@@ -6,7 +6,12 @@
   "compatibility_date": "2026-05-22",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
+    "PARROT_BACKEND_COMMIT_SHA": "local",
+    "PARROT_BACKEND_VERSION": "local",
     "REALTIME_CONVERSATIONS_ENABLED": "1"
+  },
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA"
   },
   "d1_databases": [
     {

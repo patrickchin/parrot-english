@@ -9,6 +9,7 @@ import {
 } from "react";
 import { Link, type LinkProps } from "react-router";
 import { ActionButton, cx, controlClassName } from "../shared/ui";
+import { AboutDialog } from "./AboutDialog";
 
 function headerControlClassName(variant: "navy" | "surface") {
   return controlClassName({
@@ -92,6 +93,7 @@ export function AccountHeader({
   userLabel: string;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
   const menuId = useId();
 
@@ -127,6 +129,13 @@ export function AccountHeader({
   function selectAction(action: () => void) {
     setIsMenuOpen(false);
     action();
+  }
+
+  function closeAbout() {
+    setIsAboutOpen(false);
+    accountRef.current
+      ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
+      ?.focus();
   }
 
   return (
@@ -178,6 +187,16 @@ export function AccountHeader({
           ) : null}
           <ActionButton
             className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+            onClick={() => selectAction(() => setIsAboutOpen(true))}
+            role="menuitem"
+            size="bare"
+            type="button"
+            variant="surface"
+          >
+            About
+          </ActionButton>
+          <ActionButton
+            className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
             disabled={isSigningOut}
             onClick={() => selectAction(onSignOut)}
             role="menuitem"
@@ -188,11 +207,12 @@ export function AccountHeader({
           </ActionButton>
         </div>
       ) : null}
+      {isAboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
       {error ? (
         <span
           className={cx(
             "absolute right-0 top-full mt-2 w-64 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md sm:w-80",
-            isMenuOpen && "mt-32",
+            isMenuOpen && "mt-44",
           )}
           role="alert"
         >

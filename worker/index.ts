@@ -8,6 +8,10 @@ import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
 import { createDatabase } from "./database.ts";
+import {
+  handleBuildInfoRequest,
+  type BuildInfoEnv,
+} from "./build-info.ts";
 import { handleEvaluateSpeech } from "./groq.ts";
 import { handleLearnerProfileRequest } from "./learner-profile.ts";
 import {
@@ -23,7 +27,7 @@ interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env extends AuthEnv, RateLimitEnv, ConversationEnv, MyLessonsEnv {
+interface Env extends AuthEnv, BuildInfoEnv, RateLimitEnv, ConversationEnv, MyLessonsEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
@@ -89,6 +93,17 @@ export function createWorker(
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
       const url = new URL(request.url);
+
+      if (
+        url.pathname === "/api/build-info" ||
+        url.pathname.startsWith("/api/build-info/")
+      ) {
+        return handleBuildInfoRequest({
+          database: createDatabase(env.DB),
+          env,
+          request,
+        });
+      }
 
       if (
         url.pathname === "/api/auth" ||

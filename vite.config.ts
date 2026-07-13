@@ -125,6 +125,9 @@ function readGitValue(command: string, fallback: string) {
 }
 
 function getBuildVersion() {
+  if (process.env.PARROT_FRONTEND_VERSION?.trim()) {
+    return process.env.PARROT_FRONTEND_VERSION.trim();
+  }
   const [major = "0", minor = "0"] = readPackageVersion().split(".");
   const commitCount = readGitValue("git rev-list --count HEAD", "0").replace(
     /\D/g,
@@ -136,7 +139,8 @@ function getBuildVersion() {
 
 function getShortCommitSha() {
   return (
-    process.env.GITHUB_SHA?.slice(0, 7) ??
+    process.env.PARROT_FRONTEND_COMMIT_SHA?.trim() ||
+    process.env.GITHUB_SHA?.slice(0, 7) ||
     readGitValue("git rev-parse --short=7 HEAD", "local")
   );
 }
@@ -184,6 +188,33 @@ function parrotE2eMockApi(): Plugin {
 
         if (pathname === "/api/profile" && request.method === "GET") {
           sendMockJson(response, { profile: E2E_PROFILE, questions: [] });
+          return;
+        }
+
+        if (pathname === "/api/build-info" && request.method === "GET") {
+          sendMockJson(response, {
+            backend: {
+              commitSha: "e2e-api",
+              deployedAt: "2026-07-14T01:02:03.000Z",
+              deploymentId: "e2e-deployment",
+              version: "0.1.e2e",
+            },
+            components: [
+              {
+                commitSha: "e2e-agent",
+                component: "conversation-agent",
+                details: {
+                  models: {
+                    llm: "openai/gpt-4.1-mini",
+                    stt: "elevenlabs/scribe_v2_realtime",
+                    tts: "inworld/inworld-tts-2",
+                  },
+                },
+                reportedAt: "2026-07-14T01:04:05.000Z",
+                version: "0.1.e2e",
+              },
+            ],
+          });
           return;
         }
 

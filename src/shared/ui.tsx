@@ -1,6 +1,7 @@
 import type {
   ButtonHTMLAttributes,
   ComponentProps,
+  Ref,
   ReactNode,
 } from "react";
 import { Link } from "react-router";
@@ -110,10 +111,12 @@ export function TextButton({
 export function IconButton({
   children,
   className,
+  ref,
   variant = "surface",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
   variant?: "brand" | "surface";
 }) {
   return (
@@ -126,6 +129,7 @@ export function IconButton({
           "border-sky-200 bg-white text-brand-navy",
         className,
       )}
+      ref={ref}
       {...props}
     >
       {children}

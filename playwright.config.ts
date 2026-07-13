@@ -22,6 +22,8 @@ export default defineConfig({
     env: {
       ...process.env,
       PARROT_E2E_MOCK_API: "1",
+      PARROT_FRONTEND_COMMIT_SHA: "e2e-web",
+      PARROT_FRONTEND_VERSION: "0.1.e2e",
       VITE_PARROT_E2E: "1",
     },
     reuseExistingServer: !process.env.CI,

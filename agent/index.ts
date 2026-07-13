@@ -270,6 +270,17 @@ export const agentDefinition = defineAgent({
     const config = readAgentConfig();
     const ingest = createConversationIngestClient({
       baseUrl: config.ingestUrl,
+      build: {
+        commitSha: config.commitSha,
+        details: {
+          models: {
+            llm: config.llmModel,
+            stt: config.sttModel,
+            tts: config.ttsModel,
+          },
+        },
+        version: config.buildVersion,
+      },
       secret: config.ingestSecret,
     });
     const models = createAgentModels(config);
@@ -279,6 +290,9 @@ export const agentDefinition = defineAgent({
     const { conversationId, initialState, purpose } = parseConversationParticipantMetadata(
       participant.metadata,
     );
+    void ingest.reportBuild(conversationId, initialState).catch((error: unknown) => {
+      console.error("Could not report conversation agent build", error);
+    });
     const persistence = createTranscriptPersistence({ conversationId, ingest });
     let latestAssistantText = "";
 
