@@ -34,6 +34,10 @@ test("the account About panel is wired to deployed component metadata", () => {
     new URL("../scripts/deploy-livekit-agent.mjs", import.meta.url),
     "utf8",
   );
+  const workerDeploy = readFileSync(
+    new URL("../scripts/deploy-cloudflare-worker.mjs", import.meta.url),
+    "utf8",
+  );
 
   assert.match(header, />\s*About\s*</s);
   assert.match(about, /About Parrot English/);
@@ -43,9 +47,9 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(agent, /await ingest\.reportBuild/);
   assert.equal(manifest.scripts["deploy:worker"], "node scripts/deploy-cloudflare-worker.mjs");
   assert.match(workflow, /npm run deploy:worker/);
-  assert.match(workflow, /PARROT_BACKEND_VERSION/);
-  assert.match(workflow, /PARROT_BACKEND_COMMIT_SHA/);
-  assert.match(workflow, /--var "REALTIME_CONVERSATIONS_ENABLED:1"/);
+  assert.match(workerDeploy, /PARROT_BACKEND_VERSION/);
+  assert.match(workerDeploy, /PARROT_BACKEND_COMMIT_SHA/);
+  assert.match(workerDeploy, /"REALTIME_CONVERSATIONS_ENABLED:1"/);
   assert.match(wrangler, /version_metadata/);
   assert.doesNotMatch(wrangler, /"PARROT_BACKEND_(?:COMMIT_SHA|VERSION)": "local"/);
   assert.match(agentDeploy, /PARROT_AGENT_VERSION/);

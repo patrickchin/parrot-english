@@ -345,7 +345,7 @@ describe("checked-in questionnaire deployment", () => {
     const migration = workflow.indexOf(
       "wrangler d1 migrations apply parrot-english --remote",
     );
-    const deploy = workflow.indexOf("wrangler deploy --config wrangler.jsonc");
+    const deploy = workflow.indexOf("npm run deploy:worker");
 
     assert.ok(migration >= 0, "Expected a remote D1 migration step");
     assert.ok(deploy > migration, "Expected Worker deploy after migrations");

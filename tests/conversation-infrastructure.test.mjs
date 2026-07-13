@@ -136,7 +136,7 @@ describe("conversation persistence infrastructure", () => {
     );
 
     assert.ok(
-      workflow.indexOf("d1 migrations apply") < workflow.indexOf("wrangler deploy"),
+      workflow.indexOf("d1 migrations apply") < workflow.indexOf("deploy:worker"),
       "D1 migrations must run before the Worker deploy.",
     );
     assert.match(workflow, /npm run build:agent/);

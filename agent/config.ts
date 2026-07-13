@@ -26,6 +26,19 @@ function required(env: NodeJS.ProcessEnv, name: string) {
   return value;
 }
 
+function buildMetadata(
+  env: NodeJS.ProcessEnv,
+  name: "PARROT_AGENT_COMMIT_SHA" | "PARROT_AGENT_VERSION",
+  pattern: RegExp,
+) {
+  const value = env[name]?.trim();
+  if (!value && env.NODE_ENV !== "production") return "local";
+  if (!value || !pattern.test(value)) {
+    throw new Error(`${name} must contain deployed build metadata.`);
+  }
+  return value;
+}
+
 function explicitModel(value: string, name: string) {
   if (/(?:^|[/:_-])(?:auto|latest)$/i.test(value)) {
     throw new Error(`${name} must use an explicit model version.`);
@@ -45,8 +58,16 @@ function optionalModel(
 export function readAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentConfig {
   return {
     agentName: required(env, "LIVEKIT_AGENT_NAME"),
-    buildVersion: env.PARROT_AGENT_VERSION?.trim() || "local",
-    commitSha: env.PARROT_AGENT_COMMIT_SHA?.trim() || "local",
+    buildVersion: buildMetadata(
+      env,
+      "PARROT_AGENT_VERSION",
+      /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/,
+    ),
+    commitSha: buildMetadata(
+      env,
+      "PARROT_AGENT_COMMIT_SHA",
+      /^[0-9a-f]{7,40}$/i,
+    ),
     ingestSecret: required(env, "CONVERSATION_AGENT_SECRET"),
     ingestUrl: required(env, "CONVERSATION_INGEST_URL").replace(/\/$/, ""),
     livekitApiKey: required(env, "LIVEKIT_API_KEY"),

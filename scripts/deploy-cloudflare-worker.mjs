@@ -4,16 +4,21 @@ import { spawnSync } from "node:child_process";
 import { readBuildMetadata } from "./build-metadata.mjs";
 
 const { commitSha, version } = readBuildMetadata();
-
 const result = spawnSync(
-  "lk",
+  "npx",
   [
-    "agent",
+    "wrangler",
     "deploy",
-    "--secrets",
-    `PARROT_AGENT_VERSION=${version}`,
-    "--secrets",
-    `PARROT_AGENT_COMMIT_SHA=${commitSha}`,
+    "--config",
+    "wrangler.jsonc",
+    "--tag",
+    `v${version}-${commitSha}`,
+    "--var",
+    `PARROT_BACKEND_VERSION:${version}`,
+    "--var",
+    `PARROT_BACKEND_COMMIT_SHA:${commitSha}`,
+    "--var",
+    "REALTIME_CONVERSATIONS_ENABLED:1",
     ...process.argv.slice(2),
   ],
   { stdio: "inherit" },
