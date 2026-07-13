@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
+import { Window } from "happy-dom";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { after, describe, it } from "node:test";
@@ -148,7 +149,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /Peppa is thinking/);
     assert.match(html, /Getting her reply ready/);
     assert.match(html, /Peppa response latency/);
-    assert.match(html, /Measuring reply time/);
+    assert.match(html, /Timing…/);
     assert.doesNotMatch(html, /Start my turn|End my turn/);
     assert.match(html, /Finish conversation/);
   });
@@ -161,8 +162,26 @@ describe("accessible realtime conversation surface", () => {
     });
 
     assert.match(html, /Peppa response latency/);
-    assert.match(html, /Reply time/);
+    assert.match(html, /Reply:/);
     assert.match(html, /1\.25 s/);
+  });
+
+  it("keeps response timing with Peppa instead of adding a layout row", () => {
+    const html = render({
+      microphoneEnabled: false,
+      responseLatencyMs: 1_254,
+      status: "speaking",
+    });
+    const document = new Window().document;
+    document.body.innerHTML = html;
+
+    const timer = document.querySelector(
+      'output[aria-label="Peppa response latency"]',
+    );
+    const figure = timer?.closest("figure");
+
+    assert.ok(figure);
+    assert.ok(figure.querySelector('img[alt="Peppa"]'));
   });
 
   it("centers the character, shows only her latest speech, and removes developer controls", () => {

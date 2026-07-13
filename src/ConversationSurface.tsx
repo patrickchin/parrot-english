@@ -232,10 +232,24 @@ export function ConversationSurface({
           >
             {speech}
           </ConversationSpeech>
-          <ConversationCharacter
-            alt="Peppa"
-            src={PEPPA_ASSETS[status]}
-          />
+          <figure className="relative m-0">
+            <ConversationCharacter
+              alt="Peppa"
+              src={PEPPA_ASSETS[status]}
+            />
+            {thinking || responseLatencyMs !== null ? (
+              <output
+                aria-label="Peppa response latency"
+                aria-live="polite"
+                className="pointer-events-none absolute bottom-2 right-2 whitespace-nowrap rounded-full border-2 border-white/80 bg-brand-ink/90 px-2.5 py-1 text-xs font-black text-white shadow-sm"
+                title="Time from ending your turn until Peppa starts speaking"
+              >
+                {responseLatencyMs === null
+                  ? "Timing…"
+                  : `Reply: ${formatResponseLatency(responseLatencyMs)}`}
+              </output>
+            ) : null}
+          </figure>
         </div>
 
         {joining ? (
@@ -300,19 +314,6 @@ export function ConversationSurface({
             </span>
           </output>
         ) : null}
-
-        {thinking || responseLatencyMs !== null ? (
-          <output
-            aria-label="Peppa response latency"
-            aria-live="polite"
-            className="rounded-full border-2 border-white/80 bg-brand-ink/85 px-4 py-2 text-sm font-black text-white shadow-control-navy"
-          >
-            {responseLatencyMs === null
-              ? "Measuring reply time…"
-              : `Reply time: ${formatResponseLatency(responseLatencyMs)}`}
-          </output>
-        ) : null}
-
         {error ? (
           <p
             className="m-0 w-full max-w-xl rounded-2xl bg-rose-100 px-4 py-2.5 text-center font-extrabold text-rose-900"
