@@ -31,6 +31,11 @@
       "name": "LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER",
       "namespace_id": "104203",
       "simple": { "limit": 12, "period": 60 }
+    },
+    {
+      "name": "LESSON_GENERATION_RATE_LIMITER",
+      "namespace_id": "104204",
+      "simple": { "limit": 4, "period": 60 }
     }
   ],
   "assets": {

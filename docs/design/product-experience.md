@@ -25,12 +25,10 @@ The durable entry sequence is:
    `/profile/setup` and return to the preserved destination after completion.
 3. Returning learners land on `/`, the authenticated home menu.
 
-The home menu uses four equal activity cards. Lessons opens the combined lesson
-catalog at `/lessons`. Create a Lesson, Progress, and Storytelling open
-intentional skeleton pages at `/lessons/my/create`, `/progress`, and `/stories`.
-Those routes are addressable now so links, refreshes, and browser history remain
-stable as their full features are added. Each non-home page provides a direct
-way back to the main menu.
+The home menu opens the combined lesson catalog at `/lessons`. Create a Lesson
+opens the implemented generator/uploader at `/lessons/my/create`; Progress and
+Storytelling retain intentional skeleton pages. Each non-home page provides a
+direct way back to the main menu or lesson catalog.
 
 ## Roles
 
@@ -48,10 +46,9 @@ never add a visible character or emote entry.
 
 `/lessons` is one catalog with two visibly separate sources. **Parrot Lessons**
 contains the built-in curriculum discovered from independent JSON files in
-`content/lessons`. **My Lessons** is reserved for lessons a learner creates;
-until creation and persistence are implemented, it shows a friendly empty state
-and a link to the creation skeleton. The two sources remain separate even when
-they eventually use the same card presentation.
+`content/lessons`. **My Lessons** lists scripts generated or uploaded by the
+authenticated learner; an empty account shows a link to Create a Lesson. Both
+sources share card and player presentation while retaining separate ownership.
 
 Parrot lesson URLs use `/lessons/parrot/:lessonId`, while learner-created lesson
 URLs use `/lessons/my/:lessonId`. The source namespace prevents identical IDs
@@ -59,6 +56,22 @@ from conflicting and preserves the different storage and ownership rules. A
 short Parrot lesson URL canonicalizes to scene 1. The catalog discovers built-in
 files automatically, so authors can add or remove Parrot lessons without
 changing application code.
+
+## Create a Lesson
+
+The Create Lesson page has two URL-restorable tabs. **Generate Script** accepts
+a bounded real-world topic, uses the canonical learner profile name, and asks
+Groq for strict structured lesson JSON. The generated JSON then appears in the
+main script editor and remains editable. **Upload Script** is clipboard-first:
+the learner pastes JSON into the same editor directly or with the Paste button.
+Both paths accept up to 256 KiB, validate the exact shared lesson contract, show
+a title, summary, goal-phrase, and scene-count preview, then save only after
+confirmation. Editing a validated script removes the stale preview until the
+JSON is reviewed again.
+
+Saved lessons are scoped to the authenticated user and appear under My Lessons.
+Their arbitrary English dialogue is spoken through browser on-device speech;
+built-in Parrot Lessons retain their authored ElevenLabs audio.
 
 A lesson contains five to eight scenes. Each scene provides:
 
@@ -104,7 +117,7 @@ The separate Home control exits the player and returns to the four-card menu.
 
 The active scene is durable navigation state. Its canonical address is
 `/lessons/parrot/:lessonId/scenes/:sceneNumber` for a built-in lesson, with the
-equivalent `/lessons/my/:lessonId/scenes/:sceneNumber` namespace reserved for a
+equivalent `/lessons/my/:lessonId/scenes/:sceneNumber` namespace for an owned
 learner-created lesson. Direct refreshes and browser Back/Forward restore the
 addressed scene.
 
@@ -155,4 +168,5 @@ Design constraints:
 
 Lesson JSON is text and catalog IDs only. It never stores image filenames,
 audio filenames, voice IDs, or generation settings. Global catalogs own visual
-asset paths, and the static audio manifest owns the optional saved-speech cache.
+asset paths. The static audio manifest owns built-in saved speech, while My
+Lessons select on-device speech at the player boundary.

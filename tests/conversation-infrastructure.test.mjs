@@ -181,8 +181,8 @@ describe("conversation persistence infrastructure", () => {
 
   it("migrates constrained conversation storage with cascading ownership", () => {
     const migrations = readMigrations();
-    assert.equal(migrations.length, 5);
-    assert.match(migrations.at(-1).name, /^0004_/);
+    assert.ok(migrations.length >= 5);
+    assert.ok(migrations.some(({ name }) => /^0004_/.test(name)));
 
     const database = migratedDatabase();
     try {

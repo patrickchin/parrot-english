@@ -118,9 +118,10 @@ test("authenticated application routes render durable home and activity pages", 
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a Lesson<\/h1>/);
-  assert.match(createLesson, /coming soon/i);
+  assert.match(createLesson, /Generate Script/);
+  assert.match(createLesson, /Upload Script/);
   assert.doesNotMatch(createLesson, /LEARN YOUR WAY/);
-  assert.doesNotMatch(createLesson, /<form|<input|<textarea/);
+  assert.match(createLesson, /<form|<textarea/);
 
   assert.match(renderApplicationRoute("/progress"), /<h1[^>]*>Progress<\/h1>/);
   assert.doesNotMatch(renderApplicationRoute("/progress"), /KEEP GROWING/);
@@ -203,6 +204,7 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     "/talk-to-peppa",
     "/lessons",
     "/lessons/my/create",
+    "/lessons/my/:lessonId/edit",
     "/lessons/parrot/:lessonId",
     "/lessons/parrot/:lessonId/scenes/:sceneNumber",
     "/lessons/my/:lessonId",
@@ -240,10 +242,9 @@ test("lesson route adapters render the executable route decisions", () => {
     app,
     /function\s+ParrotLessonSceneRoute\(\)[\s\S]*?resolveParrotLessonRouteDecision\(lessonId,\s*sceneNumber\)/,
   );
-  assert.match(
-    app,
-    /function\s+MyLessonRouteUnavailable\(\)[\s\S]*?resolveMyLessonRouteDecision\(lessonId,\s*sceneNumber\)/,
-  );
+  assert.match(app, /function\s+MyLessonRoute/);
+  assert.match(app, /loadMyLesson\(lessonId/);
+  assert.match(app, /resolveMyLessonRouteDecision\(entry,\s*lessonId,\s*sceneNumber\)/);
   assert.match(app, /key=\{`\$\{source\}:\$\{decision\.entry\.id\}`\}/);
   assert.match(app, /routedSceneIndex=\{decision\.sceneIndex\}/);
   assert.match(
@@ -274,9 +275,10 @@ test("global Profile navigation exits the active lesson before routing", () => {
   assert.match(app, /onOpenProfileRoute=\{openProfileRoute\}/);
 });
 
-test("My lesson routes stay unavailable while the create route stays statically ranked", () => {
+test("Create Lesson stays statically ranked ahead of dynamic My lesson routes", () => {
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a Lesson<\/h1>/);
-  assert.match(createLesson, /Lesson creation is coming soon/);
+  assert.match(createLesson, /Generate Script/);
+  assert.match(createLesson, /Upload Script/);
   assert.doesNotMatch(createLesson, /Parrot English speaking lesson/);
 });

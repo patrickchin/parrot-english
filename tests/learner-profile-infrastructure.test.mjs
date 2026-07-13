@@ -121,6 +121,11 @@ describe("learner-profile infrastructure", () => {
         namespace_id: "104203",
         simple: { limit: 12, period: 60 },
       },
+      {
+        name: "LESSON_GENERATION_RATE_LIMITER",
+        namespace_id: "104204",
+        simple: { limit: 4, period: 60 },
+      },
     ]);
   });
 
@@ -188,9 +193,8 @@ describe("learner-profile infrastructure", () => {
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
-    assert.equal(
-      migrations.length,
-      5,
+    assert.ok(
+      migrations.length >= 5 && migrations.some(({ name }) => /^0004_/.test(name)),
       "Expected the conversation persistence migration",
     );
     assert.doesNotMatch(

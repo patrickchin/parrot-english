@@ -100,6 +100,34 @@ describe("scene-script presentation", () => {
     assert.equal(scene.title, "Garden help");
   });
 
+  it("uses the idle visual when a step omits a visible character emote", () => {
+    const flexibleLesson = {
+      ...lesson,
+      scenes: [
+        {
+          ...lesson.scenes[0],
+          steps: [
+            {
+              speaker: "dolly",
+              dialogue: "你好！",
+              emotes: { dolly: "talking" },
+            },
+          ],
+        },
+      ],
+    };
+
+    const scene = getLessonScenePresentation(
+      { ...createInitialLessonState(), phase: LessonPhase.Speaking },
+      flexibleLesson,
+      catalog,
+    );
+
+    assert.equal(scene.characters[0].id, "peppa");
+    assert.equal(scene.characters[0].emote, "idle");
+    assert.equal(scene.characters[0].asset.src, "/assets/peppa-idle.webp");
+  });
+
   it("presents narrator steps without a visible narrator character", () => {
     const scene = getLessonScenePresentation(
       {

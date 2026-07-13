@@ -5,6 +5,8 @@ import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 const getLessonAudioLine =
   lessonAudio.getLessonAudioLine ?? (() => undefined);
+const getLessonSpeechLine =
+  lessonAudio.getLessonSpeechLine ?? (() => undefined);
 const lesson = {
   childName: "Bella",
   scenes: [
@@ -18,6 +20,27 @@ const lesson = {
 };
 
 describe("lesson audio", () => {
+  it("returns source-independent speech for on-device My Lesson playback", () => {
+    assert.deepEqual(
+      getLessonSpeechLine(
+        { ...createInitialLessonState(), phase: LessonPhase.Speaking },
+        lesson,
+      ),
+      { speaker: "dolly", text: "Here you are!" },
+    );
+    assert.deepEqual(
+      getLessonSpeechLine(
+        {
+          ...createInitialLessonState(),
+          phase: LessonPhase.Feedback,
+          feedback: "Almost! Try again, Bella.",
+        },
+        lesson,
+      ),
+      { speaker: "narrator", text: "Almost! Try again, Bella." },
+    );
+  });
+
   it("resolves the current scripted speaker by exact text", () => {
     const line = getLessonAudioLine(
       { ...createInitialLessonState(), phase: LessonPhase.Speaking },

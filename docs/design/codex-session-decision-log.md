@@ -19,7 +19,8 @@ transcript.
 | Restore narration while keeping immersion. | Use a voice-only English narrator for story text, instructions, feedback, and final praise. | lesson JSON, `lib/lesson-audio.js`, `lib/lesson-scene.js` |
 | Make the experience automatic. | Advance character, narrator, scene, retry, and completion steps automatically; wait only for hold-to-talk user input. | `lib/lesson-state.js`, `src/app/App.tsx` |
 | Turn on the microphone only when needed. | Request access on button hold, stop on release, and stop tracks before evaluation. | `src/media/speech-recorder.ts`, `src/app/App.tsx` |
-| Keep runtime speech reliable and predictable. | Play saved audio assets only; remove runtime TTS from the frontend and Worker. | `src/media/audio-playback.ts`, `worker/index.ts` |
+| Keep runtime speech reliable and predictable. | Play built-in lessons from saved assets; use cancellable browser on-device speech for arbitrary My Lesson dialogue without adding a billable TTS API. | `src/media/audio-playback.ts`, `src/media/device-speech.ts`, `src/app/App.tsx` |
+| Let families create their own lessons. | Generate or paste editable lesson JSON into one main form, normalize repairable issues into visible warnings and safe defaults, store playable drafts per authenticated user in D1, and reuse the existing player. | `src/lessons/LessonCreator.tsx`, `worker/my-lessons.ts`, `learner_lesson` |
 | Prepare for automatic speech generation later. | Keep audio outside lesson JSON and resolve the optional cache by speaker plus exact text. | `lib/static-audio.js`, `scripts/generate-static-audio.mjs` |
 | Use high-quality saved speech. | Generate cache files through ElevenLabs only, with speaker-selected voice defaults and `eleven_v3`. | `scripts/generate-static-audio.mjs` |
 | Keep evaluation server-side. | Use Groq STT behind `/api/evaluate-speech`, local transcript scoring, rate limiting, and request timeouts. | `worker/groq.ts`, `lib/speech-scoring.js`, `worker/api-security.ts` |
@@ -41,7 +42,8 @@ transcript.
 - Backgrounds and character states are pre-generated global assets.
 - The learner presses and holds the microphone only for user steps.
 - The rest of the lesson advances automatically.
-- Saved audio is a speaker-plus-text cache, not lesson content.
+- Built-in saved audio is a speaker-plus-text cache, not lesson content.
+- My Lesson dialogue uses local English browser speech and never a Worker TTS endpoint.
 - Groq is used for transcription/evaluation, not lesson narration.
 - Shared UI uses Tailwind's normal scales plus the small brand theme in
   `src/styles.css`; route-specific CSS systems are not added.
@@ -54,8 +56,9 @@ transcript.
 
 ## Risks and Follow-Ups
 
-- Saved audio must be generated whenever a new non-user speaker/text pair is
-  introduced; file-coverage tests guard this boundary.
+- Saved audio must be generated whenever a new built-in non-user speaker/text
+  pair is introduced; file-coverage tests guard this boundary.
+- On-device voice availability and quality vary by browser and operating system.
 - The current rate limiter is in-memory per Worker isolate rather than a durable
   global quota.
 - Browser E2E checks require a Playwright Chromium installation. Pull-request

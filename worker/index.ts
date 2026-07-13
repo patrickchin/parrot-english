@@ -2,6 +2,7 @@ import {
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
+  checkLessonGenerationRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
@@ -13,12 +14,16 @@ import {
   handleConversationRequest,
   type ConversationEnv,
 } from "./conversations.ts";
+import {
+  handleMyLessonRequest,
+  type MyLessonsEnv,
+} from "./my-lessons.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env extends AuthEnv, RateLimitEnv, ConversationEnv {
+interface Env extends AuthEnv, RateLimitEnv, ConversationEnv, MyLessonsEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
@@ -31,9 +36,11 @@ interface WorkerDependencies {
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
+  checkLessonGenerationRateLimit: typeof checkLessonGenerationRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
+  handleMyLessonRequest: typeof handleMyLessonRequest;
 }
 
 function isLearnerProfilePath(pathname: string) {
@@ -52,6 +59,10 @@ function isAgentConversationPath(pathname: string) {
   return /^\/api\/conversations\/[^/]+\/(turns|facts|end)$/.test(pathname);
 }
 
+function isMyLessonPath(pathname: string) {
+  return pathname === "/api/lessons/my" || pathname.startsWith("/api/lessons/my/");
+}
+
 export function createWorker(
   dependencies: Partial<WorkerDependencies> = {}
 ) {
@@ -63,12 +74,16 @@ export function createWorker(
   const learnerProfileEnrichmentRateLimit =
     dependencies.checkLearnerProfileEnrichmentRateLimit ??
     checkLearnerProfileEnrichmentRateLimit;
+  const lessonGenerationRateLimit =
+    dependencies.checkLessonGenerationRateLimit ?? checkLessonGenerationRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const learnerProfileRequest =
     dependencies.handleLearnerProfileRequest ?? handleLearnerProfileRequest;
   const conversationRequest =
     dependencies.handleConversationRequest ?? handleConversationRequest;
+  const myLessonRequest =
+    dependencies.handleMyLessonRequest ?? handleMyLessonRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
 
   return {
@@ -142,6 +157,36 @@ export function createWorker(
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
         return conversationRequest({
+          database: createDatabase(env.DB),
+          env,
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+            userName: session.user.name?.trim() || null,
+          },
+          request,
+        });
+      }
+
+      if (isMyLessonPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+        if (
+          url.pathname === "/api/lessons/my/generate" &&
+          request.method === "POST"
+        ) {
+          const rateLimited = await lessonGenerationRateLimit(
+            request,
+            env,
+            session.user.id,
+          );
+          if (rateLimited) return rateLimited;
+        }
+        return myLessonRequest({
           database: createDatabase(env.DB),
           env,
           identity: {
