@@ -637,13 +637,22 @@ export function OnboardingGate({
     ? selectOnboardingExperience(fullData.experienceMode, useFormFallback)
     : "form";
   const handleConversationBack = useCallback(() => {
+    if (isConversationRoute) {
+      onConversationCompleted();
+      return;
+    }
     if (redoOnboarding) {
       onRedoCompleted();
       return;
     }
     setUseFormFallback(true);
     setStarted(false);
-  }, [onRedoCompleted, redoOnboarding]);
+  }, [
+    isConversationRoute,
+    onConversationCompleted,
+    onRedoCompleted,
+    redoOnboarding,
+  ]);
   const handleConversationCompleted = useCallback(async () => {
     await refresh();
     if (isConversationRoute) {
