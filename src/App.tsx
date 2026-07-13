@@ -614,11 +614,10 @@ export function LessonPlayer({
 
         {showStartAction ? (
           <LessonStartAction
+            label={startActionLabel}
             onClick={handleStartAction}
             ref={startActionRef}
-          >
-            {startActionLabel}
-          </LessonStartAction>
+          />
         ) : null}
 
         <LessonCharacters characters={scene.characters} />

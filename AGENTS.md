@@ -6,11 +6,15 @@
   from `src/ui.tsx` and shared headers from `src/AppHeader.tsx`. Avoid large JS
   class constants and page-specific copies of global controls.
 - Keep `src/styles.css` limited to Tailwind configuration, global browser
-  behavior, and named background utilities. `src/lesson.css` is the temporary
-  exception for the dynamic scene player and should not grow.
+  behavior, and named background utilities. Keep `src/lesson.css` limited to
+  runtime character-slot positioning, the speech-tail polygon, and the
+  combined short-wide placement override.
 - `AuthGate` owns the account header through `AccountHeader`. Routes compose
   `RouteHeader` with `HeaderButton` or `HeaderLink`; they must not redefine
   header sizing, typography, colors, or shadows.
+- Build lesson-player presentation from `src/LessonPlayerUi.tsx`; its HUD,
+  characters, speech, start action, controls, and errors are domain components
+  that use Tailwind and the shared control primitives.
 
 ## UI Testing
 
@@ -19,6 +23,8 @@
 - Responsive header tests cover key routes at 280–390px, including short and
   scrolled viewports, and check visibility, alignment, wrapping, overlap, and
   overflow. Preserve accessible names when labels are hidden.
+- Lesson-player tests cover HUD, speech, start-action, and control containment
+  at ultra-narrow, short-landscape, and desktop sizes.
 - Run `npm run test:browser` for responsive UI changes.
 
 ## Audio Generation

@@ -105,19 +105,20 @@ export function LessonHud({
 export const LessonStartAction = forwardRef<
   HTMLButtonElement,
   {
-    children: ReactNode;
+    label: string;
     onClick: () => void;
   }
->(function LessonStartAction({ children, onClick }, ref) {
+>(function LessonStartAction({ label, onClick }, ref) {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center p-4">
       <button
+        aria-label={label}
         className="pointer-events-auto min-h-28 w-3/4 max-w-2xl translate-y-5 cursor-pointer rounded-full border-6 border-white bg-brand-pink px-8 py-4 font-ui text-4xl font-black leading-none text-white shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink short:min-h-24 short:text-3xl md:min-h-40 md:translate-y-0 md:text-7xl"
         onClick={onClick}
         ref={ref}
         type="button"
       >
-        {children}
+        {label}
       </button>
     </div>
   );
