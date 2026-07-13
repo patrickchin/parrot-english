@@ -107,6 +107,45 @@ describe("LiveKit agent configuration", () => {
     assert.equal(agentRuntime.conversationInputMode("assistant", false), "voice");
   });
 
+  it("repeats the latest assistant audio without adding a learner turn", () => {
+    const calls = [];
+    let latestAssistantText = "What animals do you like?";
+    const handleTextInput = agentRuntime.createConversationTextInputCallback(
+      () => latestAssistantText,
+    );
+    const session = {
+      generateReply(options) {
+        calls.push(["generateReply", options]);
+      },
+      interrupt() {
+        calls.push(["interrupt"]);
+      },
+      say(text, options) {
+        calls.push(["say", text, options]);
+      },
+    };
+
+    handleTextInput(session, { text: "__parrot_repeat_last_audio__" });
+    assert.deepEqual(calls, [
+      [
+        "say",
+        "What animals do you like?",
+        { addToChatCtx: false, allowInterruptions: true },
+      ],
+    ]);
+
+    calls.length = 0;
+    latestAssistantText = "";
+    handleTextInput(session, { text: "__parrot_repeat_last_audio__" });
+    assert.deepEqual(calls, []);
+
+    handleTextInput(session, { text: "I like pandas" });
+    assert.deepEqual(calls, [
+      ["interrupt"],
+      ["generateReply", { userInput: "I like pandas" }],
+    ]);
+  });
+
   it("rejects blank required settings and moving model aliases", () => {
     assert.throws(
       () => readAgentConfig(environment({ LIVEKIT_AGENT_NAME: " " })),

@@ -1,4 +1,5 @@
 import { Room, RoomEvent } from "livekit-client";
+import { REPEAT_LAST_AUDIO_COMMAND } from "../lib/conversation-audio.js";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
   activeSpeakers: RoomEvent.ActiveSpeakersChanged,
@@ -78,6 +79,7 @@ function segmentRecords(value: unknown) {
 function createE2eLiveKitConversation() {
   const listeners = new Set<Listener>();
   const transcriptTimers = new Set<ReturnType<typeof setTimeout>>();
+  const greeting = "Hello again! What's your name?";
   let learnerTurnId: string | null = null;
   let learnerTurnSequence = 0;
 
@@ -114,7 +116,7 @@ function createE2eLiveKitConversation() {
       publish({
         type: "transcription",
         id: "e2e-agent-greeting",
-        text: "Hello again! What's your name?",
+        text: greeting,
         final: true,
         language: "en",
         role: "assistant",
@@ -141,6 +143,20 @@ function createE2eLiveKitConversation() {
         role: "user",
       });
       learnerTurnId = null;
+    },
+
+    async repeatLastAudio() {
+      publish({ type: "speech-started", role: "assistant" });
+      globalThis.setTimeout(() => {
+        publish({
+          type: "transcription",
+          id: `e2e-agent-repeat-${Date.now()}`,
+          text: greeting,
+          final: true,
+          language: "en",
+          role: "assistant",
+        });
+      }, 1_000);
     },
 
     async sendText(text: string) {
@@ -265,6 +281,13 @@ export function createLiveKitConversation({
     async setMicrophoneEnabled(enabled: boolean) {
       if (!connected) throw new Error("Connect before changing the microphone.");
       await activeRoom.localParticipant.setMicrophoneEnabled(enabled);
+    },
+
+    async repeatLastAudio() {
+      if (!connected) throw new Error("Connect before repeating audio.");
+      await activeRoom.localParticipant.sendText(REPEAT_LAST_AUDIO_COMMAND, {
+        topic: "lk.chat",
+      });
     },
 
     async sendText(text: string) {

@@ -168,10 +168,12 @@ export function useConversationOnboarding({
         return;
       }
       if (event.type === "speech-started") {
-        if (event.role === "assistant" && runtimeRef.current.awaitingResponse) {
-          runtimeRef.current.awaitingResponse = false;
-          finishResponseLatency();
-          setStatus("speaking");
+        if (event.role === "assistant") {
+          if (runtimeRef.current.awaitingResponse) {
+            runtimeRef.current.awaitingResponse = false;
+            finishResponseLatency();
+          }
+          if (runtimeRef.current.learnerTurnOpen) setStatus("speaking");
         }
         return;
       }
@@ -318,6 +320,25 @@ export function useConversationOnboarding({
     }
   }, [microphoneEnabled, resetResponseLatency, responseLatencyTimer]);
 
+  const repeatAudio = useCallback(async () => {
+    if (
+      !transportRef.current ||
+      microphoneEnabled ||
+      status !== "listening" ||
+      !turns.some((turn) => turn.role === "assistant" && turn.text.trim())
+    ) {
+      return;
+    }
+    setError("");
+    setStatus("speaking");
+    try {
+      await transportRef.current.repeatLastAudio();
+    } catch (repeatError) {
+      setError(readableError(repeatError));
+      setStatus("listening");
+    }
+  }, [microphoneEnabled, status, turns]);
+
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;
     autoStartRef.current = true;
@@ -374,6 +395,7 @@ export function useConversationOnboarding({
       microphoneEnabled,
       onBack: back,
       onFinish: () => void finish(),
+      onRepeatAudio: () => void repeatAudio(),
       onStart: () => void start(),
       onToggleMicrophone: () => void toggleMicrophone(),
       responseLatencyMs,
@@ -386,6 +408,7 @@ export function useConversationOnboarding({
       finish,
       liveTranscript,
       microphoneEnabled,
+      repeatAudio,
       responseLatencyMs,
       start,
       status,
