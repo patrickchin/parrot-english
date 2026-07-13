@@ -2170,8 +2170,9 @@ select:focus-visible {
 .conversation-screen {
   display: grid;
   width: 100%;
-  min-height: 100dvh;
-  place-items: center;
+  height: 100dvh;
+  align-items: start;
+  justify-items: center;
   overflow-y: auto;
   background:
     radial-gradient(circle at 12% 14%, rgb(255 222 81 / 86%) 0 7%, transparent 7.3%),
@@ -2265,7 +2266,7 @@ select:focus-visible {
 .conversation-primary-button,
 .conversation-send-button,
 .conversation-secondary-button,
-.conversation-microphone-button,
+.conversation-turn-button,
 .conversation-retry-button,
 .conversation-finish-button {
   min-height: 48px;
@@ -2301,11 +2302,10 @@ select:focus-visible {
 .conversation-primary-button:focus-visible,
 .conversation-send-button:focus-visible,
 .conversation-secondary-button:focus-visible,
-.conversation-microphone-button:focus-visible,
+.conversation-turn-button:focus-visible,
 .conversation-retry-button:focus-visible,
 .conversation-finish-button:focus-visible,
 .conversation-link-button:focus-visible,
-.conversation-type-panel summary:focus-visible,
 .conversation-info-panel summary:focus-visible,
 .conversation-candidate input:focus-visible,
 .conversation-candidate textarea:focus-visible,
@@ -2321,6 +2321,7 @@ select:focus-visible {
   max-height: calc(100dvh - 32px);
   justify-items: center;
   gap: 10px;
+  margin-block: auto;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -2337,39 +2338,6 @@ select:focus-visible {
 .conversation-character-stage .conversation-character {
   width: clamp(230px, 42vw, 390px);
   max-height: min(48vh, 420px);
-}
-
-.conversation-state {
-  display: inline-flex;
-  margin: 0;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 82%);
-  color: #315f89;
-  padding: 6px 12px;
-  font-size: 0.88rem;
-  font-weight: 850;
-}
-
-.conversation-state > span {
-  width: 9px;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: #087451;
-  box-shadow: 0 0 0 4px rgb(8 116 81 / 14%);
-}
-
-.conversation-state--speaking > span,
-.conversation-state--connecting > span,
-.conversation-state--reconnecting > span {
-  background: #ffb800;
-  box-shadow: 0 0 0 4px rgb(255 184 0 / 16%);
-}
-
-.conversation-state--error > span {
-  background: #b92259;
-  box-shadow: 0 0 0 4px rgb(185 34 89 / 14%);
 }
 
 .conversation-joining-notice {
@@ -2470,40 +2438,6 @@ select:focus-visible {
   list-style: none;
 }
 
-.conversation-type-panel {
-  width: min(100%, 560px);
-  border: 2px solid rgb(255 255 255 / 72%);
-  border-radius: 15px;
-  background: rgb(255 255 255 / 72%);
-  padding: 9px 12px;
-  color: #315f89;
-}
-
-.conversation-type-panel summary {
-  display: flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 900;
-  text-align: center;
-}
-
-.conversation-type-panel summary svg {
-  width: 20px;
-  height: 20px;
-}
-
-.conversation-type-panel[open] {
-  background: rgb(255 255 255 / 96%);
-}
-
-.conversation-type-panel .conversation-text-form {
-  margin-top: 10px;
-}
-
 .conversation-turn {
   display: grid;
   width: min(86%, 560px);
@@ -2560,14 +2494,6 @@ select:focus-visible {
   padding: 0 20px;
 }
 
-.conversation-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .conversation-actions {
   display: grid;
   width: min(100%, 560px);
@@ -2575,52 +2501,73 @@ select:focus-visible {
   gap: 12px;
 }
 
-.conversation-microphone-button {
-  background: #ff467b;
+.conversation-turn-button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #087451;
   color: #fff;
+  padding: 8px 24px;
+  box-shadow: 0 6px 0 #045b3e;
+  font-size: 1.05rem;
+  touch-action: manipulation;
 }
 
-.conversation-microphone-button,
+.conversation-turn-button.is-active {
+  background: #d62f70;
+  box-shadow: 0 6px 0 #941c4d;
+}
+
+.conversation-turn-button-copy {
+  display: grid;
+  justify-items: start;
+  line-height: 1.1;
+}
+
+.conversation-turn-button-copy small {
+  margin-top: 3px;
+  font-size: 0.73rem;
+  font-weight: 750;
+  opacity: 0.86;
+}
+
 .conversation-retry-button {
   display: inline-flex;
-  min-width: min(100%, 280px);
-  min-height: 56px;
+  width: 100%;
+  min-height: 64px;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  background: #ff467b;
+  color: #fff;
   padding: 0 24px;
   box-shadow: 0 6px 0 #b92259;
   font-size: 1.05rem;
 }
 
-.conversation-retry-button {
-  background: #ff467b;
-  color: #fff;
-}
-
-.conversation-microphone-button svg,
+.conversation-turn-button svg,
 .conversation-retry-button svg,
 .conversation-finish-button svg {
   width: 22px;
   height: 22px;
 }
 
-.conversation-microphone-button:disabled {
-  cursor: wait;
-  filter: saturate(0.45);
-  opacity: 0.68;
-}
-
 .conversation-finish-button {
   display: inline-flex;
-  min-height: 44px;
+  width: 100%;
+  min-height: 64px;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  background: transparent;
+  background: rgb(255 255 255 / 88%);
   color: #315f89;
-  padding: 0 12px;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  padding: 0 24px;
+  box-shadow: 0 6px 0 rgb(31 76 126 / 22%);
+  font-size: 1.05rem;
+  text-decoration: none;
 }
 
 .conversation-secondary-button {
@@ -2692,16 +2639,15 @@ select:focus-visible {
     width: 100%;
   }
 
-  .conversation-microphone-button,
+  .conversation-turn-button,
   .conversation-retry-button,
-  .conversation-type-panel {
+  .conversation-finish-button {
     width: 100%;
   }
 }
 
 @media (max-height: 620px) {
   .conversation-screen {
-    place-items: start center;
     padding: 10px;
   }
 

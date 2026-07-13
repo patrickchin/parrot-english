@@ -1,5 +1,5 @@
-import { Keyboard, Mic, MicOff, RotateCcw, Square } from "lucide-react";
-import type { FormEvent } from "react";
+import { Flag, Mic, MicOff, RotateCcw } from "lucide-react";
+import { useEffect } from "react";
 
 export type ConversationSurfaceStatus =
   | "ready"
@@ -74,18 +74,46 @@ function latestAssistantSpeech(turns: ConversationSurfaceTurn[]) {
   return null;
 }
 
+function isInteractiveSpaceTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(
+    target.closest(
+      "button, input, textarea, select, [contenteditable='true'], [role='button']",
+    ),
+  );
+}
+
 export function ConversationSurface({
   error,
   microphoneEnabled,
   onFinish,
-  onSendText,
   onStart,
   onToggleMicrophone,
-  onTypedValueChange,
   status,
   turns,
-  typedValue,
 }: ConversationSurfaceProps) {
+  const saving = status === "saving";
+  const joining = status === "connecting";
+  const turnControlAvailable = !saving && !joining && status !== "error";
+
+  useEffect(() => {
+    if (!turnControlAvailable) return;
+
+    function toggleTurnWithSpace(event: KeyboardEvent) {
+      if (
+        event.repeat ||
+        (event.code !== "Space" && event.key !== " ") ||
+        isInteractiveSpaceTarget(event.target)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      onToggleMicrophone();
+    }
+
+    window.addEventListener("keydown", toggleTurnWithSpace);
+    return () => window.removeEventListener("keydown", toggleTurnWithSpace);
+  }, [onToggleMicrophone, turnControlAvailable]);
+
   if (status === "ready") {
     return (
       <main className="conversation-screen">
@@ -106,13 +134,6 @@ export function ConversationSurface({
     );
   }
 
-  function submitTypedAnswer(event: FormEvent) {
-    event.preventDefault();
-    onSendText();
-  }
-
-  const saving = status === "saving";
-  const joining = status === "connecting";
   const speech = latestAssistantSpeech(turns) ??
     (joining
       ? "Almost ready!"
@@ -152,10 +173,10 @@ export function ConversationSurface({
           </div>
         ) : (
           <p
-            className={`conversation-state conversation-state--${status}`}
+            aria-live="polite"
+            className="conversation-visually-hidden"
             role="status"
           >
-            <span aria-hidden="true" />
             {STATUS_LABELS[status]}
           </p>
         )}
@@ -164,61 +185,45 @@ export function ConversationSurface({
 
         {!saving && !joining ? (
           <div className="conversation-actions">
-            <div className="conversation-controls">
-              {status === "error" ? (
-                <button
-                  className="conversation-retry-button"
-                  onClick={onStart}
-                  type="button"
-                >
-                  <RotateCcw aria-hidden="true" />
-                  Try again
-                </button>
-              ) : (
-                <button
-                  aria-pressed={!microphoneEnabled}
-                  className="conversation-microphone-button"
-                  onClick={onToggleMicrophone}
-                  type="button"
-                >
-                  {microphoneEnabled ? (
-                    <MicOff aria-hidden="true" />
-                  ) : (
-                    <Mic aria-hidden="true" />
-                  )}
-                  {microphoneEnabled ? "Mute microphone" : "Turn microphone on"}
-                </button>
-              )}
-            </div>
-
-            <details className="conversation-type-panel">
-              <summary>
-                <Keyboard aria-hidden="true" />
-                <span>Type instead</span>
-              </summary>
-              <form className="conversation-text-form" onSubmit={submitTypedAnswer}>
-                <input
-                  aria-label="Type your answer"
-                  maxLength={1_000}
-                  onChange={(event) => onTypedValueChange(event.currentTarget.value)}
-                  placeholder="Type an answer here"
-                  value={typedValue}
-                />
-                <button
-                  className="conversation-send-button"
-                  type="submit"
-                >
-                  Send
-                </button>
-              </form>
-            </details>
+            {status === "error" ? (
+              <button
+                className="conversation-retry-button"
+                onClick={onStart}
+                type="button"
+              >
+                <RotateCcw aria-hidden="true" />
+                Try again
+              </button>
+            ) : (
+              <button
+                aria-keyshortcuts="Space"
+                aria-pressed={microphoneEnabled}
+                className={`conversation-turn-button ${
+                  microphoneEnabled ? "is-active" : ""
+                }`}
+                onClick={onToggleMicrophone}
+                type="button"
+              >
+                {microphoneEnabled ? (
+                  <MicOff aria-hidden="true" />
+                ) : (
+                  <Mic aria-hidden="true" />
+                )}
+                <span className="conversation-turn-button-copy">
+                  <strong>
+                    {microphoneEnabled ? "End my turn" : "Start my turn"}
+                  </strong>
+                  <small>Click or press Space</small>
+                </span>
+              </button>
+            )}
 
             <button
               className="conversation-finish-button"
               onClick={onFinish}
               type="button"
             >
-              <Square aria-hidden="true" />
+              <Flag aria-hidden="true" />
               Finish conversation
             </button>
           </div>
