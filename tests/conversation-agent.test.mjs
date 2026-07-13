@@ -114,6 +114,9 @@ describe("LiveKit agent configuration", () => {
       () => latestAssistantText,
     );
     const session = {
+      commitUserTurn() {
+        calls.push(["commitUserTurn"]);
+      },
       generateReply(options) {
         calls.push(["generateReply", options]);
       },
@@ -139,6 +142,10 @@ describe("LiveKit agent configuration", () => {
     handleTextInput(session, { text: "__parrot_repeat_last_audio__" });
     assert.deepEqual(calls, []);
 
+    handleTextInput(session, { text: "__parrot_commit_user_turn__" });
+    assert.deepEqual(calls, [["commitUserTurn"]]);
+
+    calls.length = 0;
     handleTextInput(session, { text: "I like pandas" });
     assert.deepEqual(calls, [
       ["interrupt"],
@@ -438,27 +445,20 @@ describe("bounded onboarding agent contract", () => {
     assert.equal(stateBeforeRelease, "still-pending");
   });
 
-  it("starts without recording and uses a sub-second-first low-latency turn budget", () => {
+  it("leaves every learner turn boundary to the turn button", () => {
     assert.deepEqual(AGENT_SESSION_START_OPTIONS, { record: false });
-    assert.equal(AGENT_TURN_HANDLING.interruption.enabled, true);
-    assert.equal(AGENT_TURN_HANDLING.interruption.mode, "adaptive");
-    assert.equal(AGENT_TURN_HANDLING.endpointing.mode, "dynamic");
-    assert.ok(AGENT_TURN_HANDLING.endpointing.minDelay <= 350);
-    assert.ok(AGENT_TURN_HANDLING.endpointing.maxDelay <= 1_200);
+    assert.equal(AGENT_TURN_HANDLING.interruption.enabled, false);
     assert.deepEqual(AGENT_TURN_HANDLING.preemptiveGeneration, {
-      enabled: true,
-      preemptiveTts: true,
+      enabled: false,
     });
-    assert.equal(AGENT_TURN_HANDLING.turnDetection, "inference");
+    assert.equal(AGENT_TURN_HANDLING.turnDetection, "manual");
+    assert.equal("endpointing" in AGENT_TURN_HANDLING, false);
+    assert.equal("userTurnLimit" in AGENT_TURN_HANDLING, false);
   });
 
-  it("passes the low-latency options into the running agent session", () => {
+  it("passes manual turn handling into the running agent session", () => {
     const turnHandling = createAgentTurnHandling();
 
-    assert.equal(
-      turnHandling.endpointing,
-      AGENT_TURN_HANDLING.endpointing,
-    );
     assert.equal(
       turnHandling.interruption,
       AGENT_TURN_HANDLING.interruption,
@@ -467,7 +467,9 @@ describe("bounded onboarding agent contract", () => {
       turnHandling.preemptiveGeneration,
       AGENT_TURN_HANDLING.preemptiveGeneration,
     );
-    assert.equal(turnHandling.turnDetection.constructor.name, "TurnDetector");
+    assert.equal(turnHandling.turnDetection, "manual");
+    assert.equal("endpointing" in turnHandling, false);
+    assert.equal("userTurnLimit" in turnHandling, false);
   });
 });
 
