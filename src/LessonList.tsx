@@ -41,8 +41,13 @@ export function LessonList() {
 
   return (
     <main className="lesson-list-page">
-      <Link className="main-menu-link lesson-main-menu-link" to="/">
-        <ArrowLeft aria-hidden="true" /> Back to main menu
+      <Link
+        aria-label="Back to main menu"
+        className="lesson-main-menu-link app-header-control"
+        to="/"
+      >
+        <ArrowLeft aria-hidden="true" />
+        <span>Back to main menu</span>
       </Link>
 
       <header className="lesson-list-header">

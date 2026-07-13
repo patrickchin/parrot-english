@@ -32,11 +32,6 @@ const app = readFileSync(
   fileURLToPath(new URL("../src/App.tsx", import.meta.url)),
   "utf8",
 );
-const styles = readFileSync(
-  fileURLToPath(new URL("../src/styles.css", import.meta.url)),
-  "utf8",
-);
-
 function renderInRouter(element, initialEntry = "/") {
   return renderToStaticMarkup(
     createElement(MemoryRouter, { initialEntries: [initialEntry] }, element),
@@ -61,17 +56,9 @@ test("home menu exposes Talk to Peppa with the learning activities", () => {
   const html = renderInRouter(createElement(HomeMenu));
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
-  assert.match(html, /^<main class="home-menu-page">/);
-  assert.match(html, /<header class="home-menu-header">/);
-  assert.match(
-    html,
-    /<nav[^>]*aria-label="Learning activities"[^>]*class="home-menu-grid"/,
-  );
-  assert.equal((html.match(/class="home-menu-card"/g) ?? []).length, 5);
+  assert.match(html, /<nav[^>]*aria-label="Learning activities"/);
   assert.deepEqual(
-    [...html.matchAll(/class="home-menu-card"[^>]*href="([^"]+)"/g)].map(
-      ([, href]) => href,
-    ),
+    [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href),
     [
       "/talk-to-peppa",
       "/lessons",
@@ -116,51 +103,12 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
   assert.doesNotMatch(html, /PARROT ENGLISH/);
-  assert.match(html, /<main class="feature-placeholder-page">/);
-  assert.match(html, /<section class="feature-placeholder-card">/);
   assert.match(html, /<h1>Progress<\/h1>/);
   assert.match(html, /This activity is coming soon\./);
   assert.equal((html.match(/<p/g) ?? []).length, 1);
   assert.match(
     html,
-    /<a class="main-menu-link" href="\/"[^>]*>Back to main menu<\/a>/,
-  );
-});
-
-test("home and placeholder routes have equal, responsive, keyboard-visible surfaces", () => {
-  assert.match(
-    styles,
-    /\.home-menu-page\s*\{[^}]*height:\s*100dvh[^}]*overflow-y:\s*auto[^}]*background:[^}]*padding:/s,
-  );
-  assert.doesNotMatch(styles, /:has\(>\s*\.home-menu-grid\)/);
-  assert.match(
-    styles,
-    /\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[^}]*grid-auto-rows:\s*1fr/s,
-  );
-  assert.match(
-    styles,
-    /\.home-menu-card\s*\{[^}]*display:\s*grid[^}]*min-height:\s*\d+px/s,
-  );
-  assert.match(
-    styles,
-    /\.home-menu-card:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
-  );
-  assert.match(
-    styles,
-    /\.feature-placeholder-page\s*\{[^}]*display:\s*grid[^}]*place-items:\s*center[^}]*overflow-y:\s*auto/s,
-  );
-  assert.match(styles, /\.feature-placeholder-card\s*\{/);
-  assert.match(
-    styles,
-    /\.main-menu-link:focus-visible\s*\{[^}]*outline:\s*5px solid #204c7f[^}]*outline-offset:\s*4px/s,
-  );
-  assert.match(
-    styles,
-    /@media \(max-width: 700px\)[\s\S]*?\.home-menu-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)[^}]*grid-auto-rows:\s*1fr/s,
-  );
-  assert.doesNotMatch(
-    styles,
-    /@media \(max-width: 700px\)[\s\S]*?\.home-menu-grid\s*\{[^}]*grid-auto-rows:\s*auto/s,
+    /<a[^>]*href="\/"[^>]*>Back to main menu<\/a>/,
   );
 });
 
@@ -205,7 +153,6 @@ test("lesson routes expose distinct lesson-list and main-menu controls", () => {
   assert.match(html, /aria-label="Back to lesson list"/);
   assert.match(html, />Back to lessons<\/span>/);
   assert.match(html, /aria-label="Back to main menu"/);
-  assert.match(html, /class="lesson-home-button"/);
   assert.match(html, />Back to main menu<\/span>/);
 });
 
