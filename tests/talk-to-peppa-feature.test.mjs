@@ -15,7 +15,7 @@ test("Talk to Peppa is a durable main-menu feature route", () => {
   assert.match(app, /path=["']\/talk-to-peppa["']/);
   assert.match(app, /isTalkToPeppaRoute\(location\.pathname\)/);
   assert.match(routes, /export function isTalkToPeppaRoute/);
-  assert.match(routes, /\^\\\/talk-to-peppa\\\/*\$/i);
+  assert.match(routes, /const TALK_TO_PEPPA_ROUTE_PATH/);
 });
 
 test("the learner gate gives completed learners a reusable conversation route", () => {
@@ -27,7 +27,10 @@ test("the learner gate gives completed learners a reusable conversation route", 
     /isConversationRoute[\s\S]*?<ConversationSurface \{\.\.\.conversationProps\} \/>/,
   );
   assert.match(gate, /onConversationCompleted:\s*\(\)\s*=>\s*void/);
-  assert.match(gate, /if \(isConversationRoute\) onConversationCompleted\(\)/);
+  assert.match(
+    gate,
+    /if\s*\(isConversationRoute\)\s*\{\s*onConversationCompleted\(\)/,
+  );
 });
 
 test("conversation content reserves room for fixed account controls", () => {

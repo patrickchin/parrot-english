@@ -1,7 +1,13 @@
-import { BookOpen, Play, Plus, Sparkles } from "lucide-react";
+import { BookOpen, MessageCircle, Play, Plus, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 
 const ACTIVITIES = [
+  {
+    description: "Have a friendly English conversation with Peppa.",
+    icon: MessageCircle,
+    label: "Talk to Peppa",
+    to: "/talk-to-peppa",
+  },
   {
     description: "Practice with Parrot lessons and learner-created lessons.",
     icon: Play,

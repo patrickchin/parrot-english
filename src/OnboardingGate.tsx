@@ -58,12 +58,14 @@ type OnboardingGateViewProps = {
   completedOnboardingFallback: ReactNode;
   conversationProps: ConversationProps | null;
   data: OnboardingState | null;
+  isConversationRoute: boolean;
   isOnboardingRoute: boolean;
   isProfileLoading: boolean;
   isProfileRoute: boolean;
   isLoading: boolean;
   loadError: string;
   onAcknowledgmentNext: () => void;
+  onCloseConversationRoute: () => void;
   onCloseProfileRoute: () => void;
   onRetry: () => void;
   onRetryProfile: () => void;
@@ -83,12 +85,14 @@ export function OnboardingGateView({
   completedOnboardingFallback,
   conversationProps,
   data,
+  isConversationRoute,
   isOnboardingRoute,
   isProfileLoading,
   isProfileRoute,
   isLoading,
   loadError,
   onAcknowledgmentNext,
+  onCloseConversationRoute,
   onCloseProfileRoute,
   onRetry,
   onRetryProfile,
@@ -114,7 +118,11 @@ export function OnboardingGateView({
     return (
       <main className="onboarding-screen">
         <section aria-busy="true" className="onboarding-status-card" role="status">
-          <p>Loading your questions…</p>
+          <p>
+            {isConversationRoute
+              ? "Getting Peppa ready…"
+              : "Loading your questions…"}
+          </p>
         </section>
       </main>
     );
@@ -124,12 +132,30 @@ export function OnboardingGateView({
     return (
       <main className="onboarding-screen">
         <section className="onboarding-status-card" role="alert">
-          <h1>Questions are taking a break</h1>
+          <h1>
+            {isConversationRoute
+              ? "Peppa is taking a break"
+              : "Questions are taking a break"}
+          </h1>
           <p>{loadError}</p>
           <div className="onboarding-form-actions">
-            <button className="onboarding-skip-button" onClick={onSkip} type="button">
-              Skip for now
-            </button>
+            {isConversationRoute ? (
+              <button
+                className="onboarding-skip-button"
+                onClick={onCloseConversationRoute}
+                type="button"
+              >
+                Back to main menu
+              </button>
+            ) : (
+              <button
+                className="onboarding-skip-button"
+                onClick={onSkip}
+                type="button"
+              >
+                Skip for now
+              </button>
+            )}
             <button className="onboarding-next-button" onClick={onRetry} type="button">
               Retry
             </button>
@@ -214,6 +240,15 @@ export function OnboardingGateView({
         </section>
       </main>
     );
+  }
+
+  if (
+    fullData &&
+    canAccessProtectedRoutes &&
+    isConversationRoute &&
+    conversationProps
+  ) {
+    return <ConversationSurface {...conversationProps} />;
   }
 
   if (fullData && redoOnboarding && conversationProps) {
@@ -454,10 +489,12 @@ export function createProfileRouteLifecycle(
 type OnboardingGateProps = {
   children: ReactNode;
   completedOnboardingFallback: ReactNode;
+  isConversationRoute: boolean;
   isOnboardingRoute: boolean;
   isProfileRoute: boolean;
   onboardingFallback: ReactNode;
   onCloseProfileRoute: () => void;
+  onConversationCompleted: () => void;
   onOpenProfileRoute: () => void;
   onRedoCompleted: () => void;
   onRedoOnboardingRoute: () => void;
@@ -467,10 +504,12 @@ type OnboardingGateProps = {
 export function OnboardingGate({
   children,
   completedOnboardingFallback,
+  isConversationRoute,
   isOnboardingRoute,
   isProfileRoute,
   onboardingFallback,
   onCloseProfileRoute,
+  onConversationCompleted,
   onOpenProfileRoute,
   onRedoCompleted,
   onRedoOnboardingRoute,
@@ -601,16 +640,33 @@ export function OnboardingGate({
   }, [onRedoCompleted, redoOnboarding]);
   const handleConversationCompleted = useCallback(async () => {
     await refresh();
+    if (isConversationRoute) {
+      onConversationCompleted();
+      return;
+    }
     if (redoOnboarding) onRedoCompleted();
-  }, [onRedoCompleted, redoOnboarding, refresh]);
+  }, [
+    isConversationRoute,
+    onConversationCompleted,
+    onRedoCompleted,
+    redoOnboarding,
+    refresh,
+  ]);
+  const conversationRouteAvailable = Boolean(
+    isConversationRoute &&
+      fullData &&
+      (fullData.canBypass ||
+        fullData.profile.onboardingStatus === "completed"),
+  );
   const conversationProps = useConversationOnboarding({
     active: Boolean(
-      isOnboardingRoute &&
-        selectedExperience === "realtime" &&
+      selectedExperience === "realtime" &&
         fullData &&
-        (redoOnboarding ||
-          (!fullData.canBypass &&
-            fullData.profile.onboardingStatus !== "completed")),
+        (conversationRouteAvailable ||
+          (isOnboardingRoute &&
+            (redoOnboarding ||
+              (!fullData.canBypass &&
+                fullData.profile.onboardingStatus !== "completed")))),
     ),
     onBack: handleConversationBack,
     onCompleted: handleConversationCompleted,
@@ -988,12 +1044,14 @@ export function OnboardingGate({
         selectedExperience === "realtime" ? conversationProps : null
       }
       data={data}
+      isConversationRoute={isConversationRoute}
       isOnboardingRoute={isOnboardingRoute}
       isProfileLoading={isProfileLoading}
       isProfileRoute={isProfileRoute}
       isLoading={isLoading}
       loadError={loadError}
       onAcknowledgmentNext={handleAcknowledgmentNext}
+      onCloseConversationRoute={onConversationCompleted}
       onCloseProfileRoute={closeProfileEditor}
       onRetry={() => void refresh()}
       onRetryProfile={() => void handleOpenProfile()}
