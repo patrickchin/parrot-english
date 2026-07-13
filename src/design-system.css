@@ -245,3 +245,17 @@
     --app-control-inline-padding: 12px;
   }
 }
+
+@media (max-width: 320px) {
+  :root {
+    --app-control-font-size: 0.875rem;
+  }
+
+  .app-header-account {
+    gap: 4px;
+  }
+
+  .app-button--account {
+    padding-inline: 8px;
+  }
+}
