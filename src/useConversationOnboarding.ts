@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  finalizeConversation,
   finishConversation,
   loadConversation,
-  reviewConversation,
   startConversation,
-  type ConversationFact,
-  type ConversationReviewDecision,
   type ConversationTurn,
 } from "./conversation-api";
 import type {
-  ConversationSurfaceCandidate,
   ConversationSurfaceStatus,
   ConversationSurfaceTurn,
 } from "./ConversationSurface";
@@ -37,84 +34,10 @@ export function mergeConversationTurns(
   ];
 }
 
-export function updateConversationCandidateStatus<
-  Candidate extends { id: string; status: "accepted" | "edited" | "rejected" },
->(
-  candidates: Candidate[],
-  id: string,
-  nextStatus: Candidate["status"],
-) {
-  return candidates.map((candidate) =>
-    candidate.id === id
-      ? {
-          ...candidate,
-          status: nextStatus === "accepted" ? "edited" : nextStatus,
-        }
-      : candidate,
-  );
-}
-
-export async function completeConversationReview({
-  conversationId,
-  decisions,
-  refresh,
-  review = reviewConversation,
-}: {
-  conversationId: string;
-  decisions: ConversationReviewDecision[];
-  refresh: () => Promise<void>;
-  review?: typeof reviewConversation;
-}) {
-  const result = await review(conversationId, decisions);
-  await refresh();
-  return result;
-}
-
 function readableError(error: unknown) {
   return error instanceof Error
     ? error.message
     : "The voice conversation could not continue.";
-}
-
-function candidateFromFact(fact: ConversationFact): ConversationSurfaceCandidate {
-  const topic = typeof fact.value.topic === "string" ? fact.value.topic : "interest";
-  return {
-    factKey: fact.factKey,
-    id: fact.id,
-    label:
-      fact.factKey === "name"
-        ? "Name"
-        : fact.factKey === "age"
-          ? "Age"
-          : `Likes — ${topic}`,
-    status:
-      fact.status === "edited"
-        ? "edited"
-        : fact.status === "rejected"
-          ? "rejected"
-          : "accepted",
-    value: String(fact.value.value),
-  };
-}
-
-export function candidateFromControllerState(
-  state: Record<string, unknown>,
-): ConversationSurfaceCandidate | null {
-  if (typeof state.profileSummary !== "string" || !state.profileSummary.trim()) {
-    return null;
-  }
-  const storedStatus = state.summaryStatus;
-  const status =
-    storedStatus === "edited" || storedStatus === "rejected"
-      ? storedStatus
-      : "accepted";
-  return {
-    factKey: "summary",
-    id: "profile-summary",
-    label: "About this learner",
-    status,
-    value: state.profileSummary.trim(),
-  };
 }
 
 type UseConversationOnboardingOptions = {
@@ -133,8 +56,6 @@ export function useConversationOnboarding({
   const [status, setStatus] =
     useState<ConversationSurfaceStatus>("ready");
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
-  const [candidates, setCandidates] = useState<ConversationSurfaceCandidate[]>([]);
-  const [typedValue, setTypedValue] = useState("");
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [error, setError] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -159,24 +80,11 @@ export function useConversationOnboarding({
       try {
         const loaded = await loadConversation(id);
         if (!isCurrent(operation)) return;
-        const proseProfile = candidateFromControllerState(
-          loaded.conversation.controllerState,
-        );
-        setCandidates(
-          proseProfile
-            ? [proseProfile]
-            : (loaded.conversation.facts ?? []).map(candidateFromFact),
-        );
         setTurns((current) =>
           mergeConversationTurns(current, loaded.conversation.turns ?? []),
         );
         setStatus("saving");
-        await reviewConversation(
-          id,
-          proseProfile
-            ? [{ factId: proseProfile.id, status: "accepted" }]
-            : [],
-        );
+        await finalizeConversation(id);
         if (!isCurrent(operation)) return;
         conversationIdRef.current = null;
         setConversationId(null);
@@ -266,7 +174,6 @@ export function useConversationOnboarding({
     setError("");
     setStatus("connecting");
     setTurns([]);
-    setCandidates([]);
     setMicrophoneEnabled(false);
     completingConversationRef.current = null;
     transportReadyRef.current = false;
@@ -331,23 +238,6 @@ export function useConversationOnboarding({
     void transport?.disconnect();
   }, [conversationId, onBack]);
 
-  const sendText = useCallback(async () => {
-    const value = typedValue.trim();
-    if (!value || !transportRef.current || !learnerTurnOpenRef.current) return;
-    try {
-      await transportRef.current.sendText(value);
-      awaitingResponseRef.current = true;
-      setTurns((current) => [
-        ...current,
-        { id: `typed-${Date.now()}`, role: "user", text: value },
-      ]);
-      setTypedValue("");
-      setStatus("thinking");
-    } catch (sendError) {
-      setError(readableError(sendError));
-    }
-  }, [typedValue]);
-
   const toggleMicrophone = useCallback(async () => {
     if (
       !transportRef.current ||
@@ -373,66 +263,6 @@ export function useConversationOnboarding({
     }
   }, [microphoneEnabled]);
 
-  const updateCandidate = useCallback((id: string, value: string) => {
-    setCandidates((current) =>
-      current.map((candidate) =>
-        candidate.id === id
-          ? {
-              ...candidate,
-              status: candidate.status === "rejected" ? "rejected" : "edited",
-              value,
-            }
-          : candidate,
-      ),
-    );
-  }, []);
-
-  const updateCandidateStatus = useCallback(
-    (id: string, nextStatus: ConversationSurfaceCandidate["status"]) => {
-      setCandidates((current) =>
-        updateConversationCandidateStatus(current, id, nextStatus),
-      );
-    },
-    [],
-  );
-
-  const submitReview = useCallback(async () => {
-    if (!conversationId) return;
-    setError("");
-    try {
-      const decisions: ConversationReviewDecision[] = candidates.map(
-        (candidate) => {
-          if (candidate.status === "rejected") {
-            return { factId: candidate.id, status: "rejected" };
-          }
-          const value =
-            candidate.factKey === "age"
-              ? Number.parseInt(candidate.value, 10)
-              : candidate.value.trim();
-          if (
-            (candidate.factKey === "age" && !Number.isInteger(value)) ||
-            value === ""
-          ) {
-            throw new Error(`Please check ${candidate.label.toLowerCase()}.`);
-          }
-          return {
-            factId: candidate.id,
-            status: candidate.status,
-            value,
-          };
-        },
-      );
-      await completeConversationReview({
-        conversationId,
-        decisions,
-        refresh: onCompleted,
-      });
-      conversationIdRef.current = null;
-    } catch (reviewError) {
-      setError(readableError(reviewError));
-    }
-  }, [candidates, conversationId, onCompleted]);
-
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;
     autoStartRef.current = true;
@@ -455,8 +285,6 @@ export function useConversationOnboarding({
     setConversationId(null);
     setStatus("ready");
     setTurns([]);
-    setCandidates([]);
-    setTypedValue("");
     setMicrophoneEnabled(false);
     setError("");
     void transport?.disconnect();
@@ -492,37 +320,24 @@ export function useConversationOnboarding({
 
   return useMemo(
     () => ({
-      candidates,
       error,
       microphoneEnabled,
       onBack: back,
-      onCandidateChange: updateCandidate,
-      onCandidateStatusChange: updateCandidateStatus,
       onFinish: () => void finish(),
-      onSendText: () => void sendText(),
       onStart: () => void start(),
-      onSubmitReview: () => void submitReview(),
       onToggleMicrophone: () => void toggleMicrophone(),
-      onTypedValueChange: setTypedValue,
       status,
       turns,
-      typedValue,
     }),
     [
-      candidates,
       back,
       error,
       finish,
       microphoneEnabled,
-      sendText,
       start,
       status,
-      submitReview,
       toggleMicrophone,
       turns,
-      typedValue,
-      updateCandidate,
-      updateCandidateStatus,
     ],
   );
 }
