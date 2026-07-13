@@ -80,7 +80,7 @@ character IDs, background IDs, and the six supported emotes are resolved
 through the global catalogs in `content/catalogs`. Built-in lessons resolve
 saved audio by speaker plus exact dialogue text in `lib/static-audio.js`.
 Authenticated My Lessons are stored in D1 and use the browser's on-device
-English speech synthesis, so generated and uploaded scripts can play without
+English speech synthesis, so generated and pasted scripts can play without
 creating audio assets.
 
 Character subjects must be opaque against a transparent sprite background.
@@ -97,8 +97,8 @@ EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
 The same key powers Create Lesson script generation. Generation is protected by
-the authenticated `LESSON_GENERATION_RATE_LIMITER` binding. Uploaded lesson
-scripts are validated and stored directly without an AI generation request.
+the authenticated `LESSON_GENERATION_RATE_LIMITER` binding. Pasted lesson
+scripts are editable, validated, and stored directly without an AI request.
 
 Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
 acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic

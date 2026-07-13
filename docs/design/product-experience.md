@@ -61,9 +61,13 @@ changing application code.
 
 The Create Lesson page has two URL-restorable tabs. **Generate Script** accepts
 a bounded real-world topic, uses the canonical learner profile name, and asks
-Groq for strict structured lesson JSON. **Upload Script** accepts a JSON file up
-to 256 KiB. Both paths validate the exact shared lesson contract, show a title,
-summary, goal-phrase, and scene-count preview, then save only after confirmation.
+Groq for strict structured lesson JSON. The generated JSON then appears in the
+main script editor and remains editable. **Upload Script** is clipboard-first:
+the learner pastes JSON into the same editor directly or with the Paste button.
+Both paths accept up to 256 KiB, validate the exact shared lesson contract, show
+a title, summary, goal-phrase, and scene-count preview, then save only after
+confirmation. Editing a validated script removes the stale preview until the
+JSON is reviewed again.
 
 Saved lessons are scoped to the authenticated user and appear under My Lessons.
 Their arbitrary English dialogue is spoken through browser on-device speech;

@@ -44,7 +44,7 @@ No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
 
 `src/media/audio-playback.ts` plays built-in static asset lines.
 `src/media/device-speech.ts`
-plays generated and uploaded My Lesson lines with the browser Web Speech API,
+plays generated and pasted My Lesson lines with the browser Web Speech API,
 preferring an available local English voice and applying modest character
 pitch/rate profiles. There is no `/api/tts` Worker route and no provider key is
 sent to the browser.

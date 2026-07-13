@@ -172,7 +172,7 @@ describe("uploaded lesson parsing", () => {
     const sourceLesson = createLessonScript();
     const formatted = formatLessonScript(sourceLesson);
 
-    assert.match(formatted, /^\{\n  "title": "Garden Help",/);
+    assert.match(formatted, /^\{\n {2}"title": "Garden Help",/);
     assert.deepEqual(parseLessonScript(formatted, "edited script"), sourceLesson);
   });
 
