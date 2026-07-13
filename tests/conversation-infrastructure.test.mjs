@@ -175,7 +175,7 @@ describe("conversation persistence infrastructure", () => {
       "npm run build",
       "npm run build:agent",
       "lk agent create",
-      "lk agent deploy",
+      "npm run deploy:agent",
     ]) {
       assert.match(deployment, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     }
