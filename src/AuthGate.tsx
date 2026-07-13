@@ -108,6 +108,7 @@ interface AuthSession {
 
 interface AuthGateViewProps {
   children: ReactNode;
+  compactSessionBar: boolean;
   fields: AuthFields;
   formError: string;
   isPending: boolean;
@@ -129,6 +130,7 @@ interface AuthGateViewProps {
 
 export function AuthGateView({
   children,
+  compactSessionBar,
   fields,
   formError,
   isPending,
@@ -288,7 +290,12 @@ export function AuthGateView({
 
   return (
     <>
-      <aside className="user-session-bar" aria-label="Current account">
+      <aside
+        className={`user-session-bar${
+          compactSessionBar ? " user-session-bar--conversation" : ""
+        }`}
+        aria-label="Current account"
+      >
         <span title={session.user.email}>{userLabel}</span>
         {onOpenProfile ? (
           <button
@@ -316,6 +323,7 @@ export function AuthGateView({
 
 interface AuthGateProps {
   children: ReactNode;
+  compactSessionBar?: boolean;
   signedOutFallback?: ReactNode;
 }
 
@@ -351,6 +359,7 @@ export function createAuthGate({
 }: CreateAuthGateOptions) {
   return function AuthGateContainer({
     children,
+    compactSessionBar = false,
     signedOutFallback,
   }: AuthGateProps) {
     const { data: session, isPending, error, refetch } = client.useSession();
@@ -417,6 +426,7 @@ export function createAuthGate({
     return (
       <AccountActionProvider setProfileAction={setProfileAction}>
         <View
+          compactSessionBar={compactSessionBar}
           fields={fields}
           formError={formError}
           isPending={isPending}
