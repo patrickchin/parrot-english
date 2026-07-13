@@ -550,6 +550,86 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("finalizes a corrected learner profile when the agent ends the conversation", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          "profile-1",
+          "user-1",
+          "Mia",
+          8,
+          JSON.stringify({
+            schemaVersion: 2,
+            questionnaireVersion: 2,
+            responses: {},
+            legacyAnswers: null,
+            description: "Mia is eight years old and loves pandas.",
+          }),
+          "completed",
+          2_000,
+          1_000,
+          2_000,
+        );
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+      );
+      const { conversation } = await started.json();
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+      const controllerState = {
+        phase: "closing",
+        activeObjective: null,
+        rephraseCount: { name: 0, age: 0, interest: 0 },
+        optionalExchangeCount: 1,
+        profileSummary: "Maya is nine years old and loves pandas.",
+        profileName: "Maya",
+        profileAge: 9,
+        learnedName: true,
+        learnedAge: true,
+        finishReason: "child_stopped",
+      };
+
+      const staged = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/facts`,
+        "POST",
+        { controllerState, candidates: [] },
+        agentOptions,
+      );
+      assert.equal(staged.status, 200);
+
+      const ended = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "child_stopped", status: "stopped" },
+        agentOptions,
+      );
+
+      assert.equal(ended.status, 200);
+      const profile = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(profile.name, "Maya");
+      assert.equal(profile.age, 9);
+      assert.equal(profile.onboarding_status, "completed");
+      assert.equal(
+        JSON.parse(profile.answers_json).description,
+        "Maya is nine years old and loves pandas.",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("rejects legacy structured fact candidates without storing them", async () => {
     const state = createSeededDatabase();
     try {

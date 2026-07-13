@@ -238,26 +238,29 @@ describe("bounded learner-profile agent contract", () => {
     };
   }
 
-  it("uses one gateway-safe prose update tool without a fact schema", () => {
+  it("uses a structured learner-profile update tool without a fact schema", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
     });
     const schema = llm.toJsonSchema(
-      task.toolCtx.functionTools.updateProfileSummary.parameters,
+      task.toolCtx.functionTools.updateLearnerProfile.parameters,
       true,
       true,
     );
-    const serialized = JSON.stringify(schema);
+    const properties = schema.properties ?? {};
 
-    assert.equal(serialized.includes('"oneOf"'), false);
-    assert.match(serialized, /summary/);
-    assert.match(serialized, /profileName/);
-    assert.match(serialized, /profileAge/);
-    assert.match(serialized, /learnedName/);
-    assert.match(serialized, /learnedAge/);
-    assert.doesNotMatch(serialized, /facts|topic|vehicles/);
-    assert.doesNotMatch(serialized, /"maximum":17/);
+    assert.deepEqual(Object.keys(properties).sort(), [
+      "age",
+      "description",
+      "learnedAge",
+      "learnedName",
+      "name",
+      "outcome",
+    ]);
+    assert.equal(JSON.stringify(schema).includes('"oneOf"'), false);
+    assert.doesNotMatch(JSON.stringify(schema), /facts|topic|vehicles/);
+    assert.doesNotMatch(JSON.stringify(schema), /"maximum":17/);
   });
 
   it("persists one cumulative paragraph and no candidate fact rows", async () => {
@@ -271,14 +274,14 @@ describe("bounded learner-profile agent contract", () => {
       }),
     });
 
-    const result = await task.toolCtx.functionTools.updateProfileSummary.execute(
+    const result = await task.toolCtx.functionTools.updateLearnerProfile.execute(
       {
+        age: 30,
+        description: "Mia is thirty years old and loves fast red cars.",
         learnedAge: true,
         learnedName: true,
+        name: "Mia",
         outcome: "answered",
-        profileAge: 30,
-        profileName: "Mia",
-        summary: "Mia is thirty years old and loves fast red cars.",
       },
       {},
     );
@@ -358,7 +361,7 @@ describe("bounded learner-profile agent contract", () => {
     });
 
     assert.deepEqual(LEARNER_PROFILE_TOOL_NAMES, [
-      "updateProfileSummary",
+      "updateLearnerProfile",
       "markObjectiveUnanswered",
       "finishConversation",
       "requestGentleRephrase",
@@ -413,14 +416,14 @@ describe("bounded learner-profile agent contract", () => {
     });
     const tools = task.toolCtx.functionTools;
 
-    const recorded = await tools.updateProfileSummary.execute(
+    const recorded = await tools.updateLearnerProfile.execute(
       {
+        age: null,
+        description: "The learner's name is Mia.",
         learnedAge: false,
         learnedName: true,
+        name: "Mia",
         outcome: "answered",
-        profileAge: null,
-        profileName: "Mia",
-        summary: "The learner's name is Mia.",
       },
       {},
     );
@@ -449,14 +452,14 @@ describe("bounded learner-profile agent contract", () => {
       }),
     });
     const transition =
-      task.toolCtx.functionTools.updateProfileSummary.execute(
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
         {
+          age: null,
+          description: "The learner's name is Mia.",
           learnedAge: false,
           learnedName: true,
+          name: "Mia",
           outcome: "answered",
-          profileAge: null,
-          profileName: "Mia",
-          summary: "The learner's name is Mia.",
         },
         {},
       );
@@ -491,14 +494,14 @@ describe("bounded learner-profile agent contract", () => {
       }),
     });
     const transition =
-      task.toolCtx.functionTools.updateProfileSummary.execute(
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
         {
+          age: null,
+          description: "The learner's name is Mia.",
           learnedAge: false,
           learnedName: true,
+          name: "Mia",
           outcome: "answered",
-          profileAge: null,
-          profileName: "Mia",
-          summary: "The learner's name is Mia.",
         },
         {},
       );
