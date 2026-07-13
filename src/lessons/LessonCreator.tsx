@@ -338,7 +338,7 @@ export function LessonCreator() {
   }
 
   return (
-    <main className="relative min-h-dvh w-screen overflow-x-hidden bg-lesson-list px-4 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32">
+    <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-lesson-list px-4 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32">
       <RouteHeader>
         <HeaderLink
           aria-label="Back to lessons"
