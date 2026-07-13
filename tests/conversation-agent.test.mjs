@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { initializeLogger, llm } from "@livekit/agents";
-import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
+import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import {
   DEFAULT_AGENT_MODELS,
   readAgentConfig,
@@ -10,10 +10,11 @@ import { createConversationIngestClient } from "../agent/ingest-client.ts";
 import {
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
-  ONBOARDING_AGENT_INSTRUCTIONS,
-  ONBOARDING_TOOL_NAMES,
+  LEARNER_PROFILE_AGENT_INSTRUCTIONS,
+  LEARNER_PROFILE_TOOL_NAMES,
   createGettingToKnowYouTask,
-} from "../agent/onboarding-scenario.ts";
+} from "../agent/learner-profile-scenario.ts";
+import * as conversationScenario from "../agent/learner-profile-scenario.ts";
 import {
   createAgentModels,
   createAgentTurnHandling,
@@ -27,7 +28,7 @@ function environment(overrides = {}) {
   return {
     CONVERSATION_AGENT_SECRET: "agent-secret",
     CONVERSATION_INGEST_URL: "https://app.example.test",
-    LIVEKIT_AGENT_NAME: "parrot-onboarding",
+    LIVEKIT_AGENT_NAME: "parrot-learner-profile",
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
@@ -41,7 +42,7 @@ describe("LiveKit agent configuration", () => {
 
     assert.equal(config.livekitUrl, "wss://livekit.example.test");
     assert.equal(config.ingestSecret, "agent-secret");
-    assert.equal(config.agentName, "parrot-onboarding");
+    assert.equal(config.agentName, "parrot-learner-profile");
     assert.equal(config.sttModel, "elevenlabs/scribe_v2_realtime");
     assert.equal(config.llmModel, "openai/gpt-4.1-mini");
     assert.equal(config.ttsModel, "inworld/inworld-tts-2");
@@ -72,7 +73,7 @@ describe("LiveKit agent configuration", () => {
       parseConversationParticipantMetadata(
         JSON.stringify({
           conversationId: "conversation-1",
-          onboardingProfile: {
+          learnerProfile: {
             age: 30,
             name: "Mia",
             summary: "Mia is thirty and loves fast red cars.",
@@ -166,7 +167,26 @@ describe("LiveKit agent configuration", () => {
   });
 });
 
-describe("bounded onboarding agent contract", () => {
+describe("purpose-specific Peppa conversation prompts", () => {
+  it("keeps onboarding, profile editing, and small chat as distinct contracts", () => {
+    const prompts = conversationScenario.CONVERSATION_SYSTEM_PROMPTS;
+
+    assert.deepEqual(Object.keys(prompts).sort(), [
+      "onboarding",
+      "profile-edit",
+      "small-chat",
+    ]);
+    assert.match(prompts.onboarding, /first introduction/i);
+    assert.match(prompts.onboarding, /learn.*name.*age/is);
+    assert.match(prompts["profile-edit"], /update.*profile/is);
+    assert.match(prompts["profile-edit"], /correct|change/i);
+    assert.match(prompts["small-chat"], /ordinary.*chat/is);
+    assert.match(prompts["small-chat"], /do not.*profile/i);
+    assert.equal(new Set(Object.values(prompts)).size, 3);
+  });
+});
+
+describe("bounded learner-profile agent contract", () => {
   function ingest(overrides = {}) {
     return {
       async appendTurn() {},
@@ -258,7 +278,7 @@ describe("bounded onboarding agent contract", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
-      initialState: createOnboardingConversationState({
+      initialState: createLearnerProfileConversationState({
         profileAge: 30,
         profileName: "Mia",
         profileSummary: "Mia is thirty and loves fast red cars.",
@@ -289,7 +309,7 @@ describe("bounded onboarding agent contract", () => {
       ingest: ingest(),
     });
 
-    assert.deepEqual(ONBOARDING_TOOL_NAMES, [
+    assert.deepEqual(LEARNER_PROFILE_TOOL_NAMES, [
       "updateProfileSummary",
       "markObjectiveUnanswered",
       "finishConversation",
@@ -297,17 +317,17 @@ describe("bounded onboarding agent contract", () => {
     ]);
     assert.deepEqual(
       Object.keys(task.toolCtx.functionTools).sort(),
-      [...ONBOARDING_TOOL_NAMES].sort(),
+      [...LEARNER_PROFILE_TOOL_NAMES].sort(),
     );
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /warm, playful pig friend/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /one natural paragraph/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /no labels, bullets, or field names/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /bright, bouncy energy/i);
-    assert.match(ONBOARDING_AGENT_INSTRUCTIONS, /different category/i);
-    assert.doesNotMatch(ONBOARDING_AGENT_INSTRUCTIONS, /fact schema|candidate facts/i);
-    assert.doesNotMatch(ONBOARDING_AGENT_INSTRUCTIONS, /Chinese|Mandarin|中文/i);
+    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /warm, playful pig friend/i);
+    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /one natural paragraph/i);
+    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /no labels, bullets, or field names/i);
+    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /bright, bouncy energy/i);
+    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /different category/i);
+    assert.doesNotMatch(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /fact schema|candidate facts/i);
+    assert.doesNotMatch(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
-      ONBOARDING_AGENT_INSTRUCTIONS,
+      LEARNER_PROFILE_AGENT_INSTRUCTIONS,
       /(?:I am|I'm|you are|you're) Peppa/i,
     );
   });
