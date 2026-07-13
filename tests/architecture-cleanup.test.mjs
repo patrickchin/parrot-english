@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, it } from "node:test";
 
 function readProjectFile(path) {
@@ -7,6 +7,39 @@ function readProjectFile(path) {
 }
 
 describe("architecture cleanup contracts", () => {
+  it("groups browser source by responsibility", () => {
+    const expectedModules = [
+      "src/app/App.tsx",
+      "src/auth/AuthGate.tsx",
+      "src/conversation/ConversationSurface.tsx",
+      "src/db/schema.ts",
+      "src/learner-profile/LearnerProfileGate.tsx",
+      "src/lessons/LessonPlayerUi.tsx",
+      "src/media/audio-playback.ts",
+      "src/shared/ui.tsx",
+      "src/testing/e2e-browser-mocks.ts",
+    ];
+
+    for (const path of expectedModules) {
+      assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), true, path);
+    }
+
+    const rootSourceFiles = readdirSync(
+      new URL("../src", import.meta.url),
+      { withFileTypes: true },
+    )
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort();
+
+    assert.deepEqual(rootSourceFiles, [
+      "lesson.css",
+      "main.tsx",
+      "styles.css",
+      "vite-env.d.ts",
+    ]);
+  });
+
   it("uses the discovered lesson catalog and current scene data", () => {
     const app = readProjectFile("src/App.tsx");
     const lessonList = readProjectFile("src/LessonList.tsx");
