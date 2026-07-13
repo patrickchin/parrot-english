@@ -68,7 +68,7 @@ test("lesson list exposes My Lessons empty and creation states plus main-menu na
 
   assert.match(
     html,
-    /<a class="lesson-main-menu-link app-header-control" href="\/"[^>]*>[^<]*<[^>]+>.*Back to main menu<\/a>/s,
+    /<a class="lesson-main-menu-link app-header-control" href="\/"[^>]*>[^<]*<svg[^>]*>.*<\/svg>[^<]*<span>Back to main menu<\/span>[^<]*<\/a>/s,
   );
   assert.match(html, /class="my-lessons-empty"/);
   assert.match(html, /You haven&#x27;t created any lessons yet\./);
