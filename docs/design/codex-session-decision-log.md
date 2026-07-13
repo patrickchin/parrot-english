@@ -24,6 +24,10 @@ transcript.
 | Use high-quality saved speech. | Generate cache files through ElevenLabs only, with speaker-selected voice defaults and `eleven_v3`. | `scripts/generate-static-audio.mjs` |
 | Keep evaluation server-side. | Use Groq STT behind `/api/evaluate-speech`, local transcript scoring, rate limiting, and request timeouts. | `worker/groq.ts`, `lib/speech-scoring.js`, `worker/api-security.ts` |
 | Preserve simple deployment. | Use the Worker-backed local server as the runtime source of truth; keep Vite-only mode for fast UI iteration. | `package.json`, `README.md` |
+| Make global controls consistent. | Keep the authenticated account bar global in `AuthGate` and render every top-level navigation control with the shared header primitives and design tokens. Route content must not redefine header geometry or typography. | `src/AuthGate.tsx`, `src/design-system.css` |
+| Keep styling out of component logic. | Put responsive presentation in CSS with semantic class names. Tailwind remains available, but do not rebuild long responsive utility constants in TypeScript. | `src/design-system.css`, `src/conversation.css`, `src/styles.css` |
+| Test what the browser renders. | Do not test CSS text or exact styling classes. Use Playwright with accessible locators for layout, visibility, overlap, scrolling, overflow, and computed-style behavior. | `tests/e2e/header.spec.ts`, `playwright.config.ts` |
+| Treat mobile headers as one row. | At supported narrow and short viewports, Profile, Log out, and page navigation must stay visible, aligned, non-overlapping, and horizontally contained; account actions remain fixed while page content scrolls. | `tests/e2e/header.spec.ts`, `src/design-system.css` |
 
 ## Current Design Contract
 
@@ -37,6 +41,12 @@ transcript.
 - The rest of the lesson advances automatically.
 - Saved audio is a speaker-plus-text cache, not lesson content.
 - Groq is used for transcription/evaluation, not lesson narration.
+- Shared UI colors, type, sizes, radii, spacing, and shadows come from the
+  design-system tokens rather than route-specific values.
+- Global header controls share one CSS implementation and preserve accessible
+  names when their visible labels are hidden.
+- UI layout claims are browser-tested; unit tests do not parse CSS or assert
+  styling class names.
 
 ## Risks and Follow-Ups
 
@@ -44,5 +54,5 @@ transcript.
   introduced; file-coverage tests guard this boundary.
 - The current rate limiter is in-memory per Worker isolate rather than a durable
   global quota.
-- Browser E2E checks depend on local browser tooling and remain separate from
-  the baseline unit, lint, and build commands.
+- Browser E2E checks require a Playwright Chromium installation. Pull-request
+  CI installs it explicitly and runs `npm run test:browser` as a separate step.

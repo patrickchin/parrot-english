@@ -1,7 +1,7 @@
 # Parrot English Docs
 
 These docs describe the current product and technical design as of
-2026-07-06. They are based on the implemented code, existing specs, and the
+2026-07-13. They are based on the implemented code, existing specs, and the
 prompt history from Codex sessions in this project.
 
 ## Design Docs
