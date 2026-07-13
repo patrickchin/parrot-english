@@ -11,8 +11,10 @@ export type LessonRouteDecision =
   | ({ kind: "lesson" } & ResolvedLessonScene);
 
 const GATE_ROUTE_PATH = /^\/(login|onboarding|profile)\/*$/i;
+const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const SAFE_RETURN_PATHS = [
   /^\/$/,
+  TALK_TO_PEPPA_ROUTE_PATH,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
@@ -65,6 +67,10 @@ export function isRedoOnboardingRequest(search: string) {
 export function getGateRouteKind(pathname: string): GateRouteKind | null {
   const match = GATE_ROUTE_PATH.exec(pathname);
   return match ? (match[1].toLowerCase() as GateRouteKind) : null;
+}
+
+export function isTalkToPeppaRoute(pathname: string) {
+  return TALK_TO_PEPPA_ROUTE_PATH.test(pathname);
 }
 
 export function getSafeReturnTo(search: string) {

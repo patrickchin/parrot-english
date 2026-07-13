@@ -55,7 +55,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu exposes four equal learning activity links", () => {
+test("home menu exposes Talk to Peppa with the learning activities", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -67,20 +67,34 @@ test("home menu exposes four equal learning activity links", () => {
     html,
     /<nav[^>]*aria-label="Learning activities"[^>]*class="home-menu-grid"/,
   );
-  assert.equal((html.match(/class="home-menu-card"/g) ?? []).length, 4);
+  assert.equal((html.match(/class="home-menu-card"/g) ?? []).length, 5);
   assert.deepEqual(
     [...html.matchAll(/class="home-menu-card"[^>]*href="([^"]+)"/g)].map(
       ([, href]) => href,
     ),
-    ["/lessons", "/lessons/my/create", "/progress", "/stories"],
+    [
+      "/talk-to-peppa",
+      "/lessons",
+      "/lessons/my/create",
+      "/progress",
+      "/stories",
+    ],
   );
+  assert.match(html, />Talk to Peppa</);
+  assert.match(html, /friendly English conversation/i);
   assert.match(html, />Lessons</);
   assert.match(html, /Parrot|learner-created/i);
   assert.match(html, />Create a Lesson</);
   assert.match(html, />Progress</);
   assert.match(html, />Storytelling</);
   assert.doesNotMatch(html, /PARROT ENGLISH/);
-  for (const icon of ["play", "plus", "sparkles", "book-open"]) {
+  for (const icon of [
+    "message-circle",
+    "play",
+    "plus",
+    "sparkles",
+    "book-open",
+  ]) {
     assert.match(html, new RegExp(`lucide-${icon}`));
   }
 });
@@ -152,6 +166,10 @@ test("home and placeholder routes have equal, responsive, keyboard-visible surfa
 
 test("authenticated application routes render durable home and activity pages", () => {
   assert.match(renderApplicationRoute("/"), /Learning activities/);
+  assert.match(
+    renderApplicationRoute("/talk-to-peppa"),
+    /Talk to Peppa/,
+  );
   assert.match(renderApplicationRoute("/lessons"), /Choose a lesson/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
@@ -235,6 +253,7 @@ test("the authenticated shell declares login, onboarding, profile, and wildcard 
   assert.match(app, /<Routes>/);
   for (const path of [
     "/",
+    "/talk-to-peppa",
     "/lessons",
     "/lessons/my/create",
     "/lessons/parrot/:lessonId",

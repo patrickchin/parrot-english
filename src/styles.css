@@ -2206,6 +2206,14 @@ select:focus-visible {
   height: 25px;
 }
 
+.user-session-bar + .conversation-screen {
+  --conversation-account-inset: 112px;
+  padding-top: max(
+    clamp(16px, 4vw, 44px),
+    var(--conversation-account-inset)
+  );
+}
+
 .conversation-start-card,
 .conversation-shell,
 .conversation-summary-card {
@@ -2680,6 +2688,12 @@ select:focus-visible {
   .conversation-retry-button,
   .conversation-finish-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .user-session-bar + .conversation-screen {
+    --conversation-account-inset: 174px;
   }
 }
 

@@ -213,4 +213,15 @@ describe("accessible realtime conversation surface", () => {
     assert.match(styles, /@media \(max-height:/);
     assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   });
+
+  it("reserves a collision-free account area on desktop and mobile", () => {
+    assert.match(
+      styles,
+      /\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*112px[^}]*padding-top:\s*max\([^;]*var\(--conversation-account-inset\)[^;]*\)/s,
+    );
+    assert.match(
+      styles,
+      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*174px/s,
+    );
+  });
 });

@@ -54,6 +54,7 @@ import {
   getRequestedProtectedTarget,
   getSafeReturnTo,
   isRedoOnboardingRequest,
+  isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
   type LessonRouteDecision,
@@ -844,6 +845,15 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
     <Routes>
       <Route element={<HomeMenu />} path="/" />
+      <Route
+        element={
+          <FeaturePlaceholder
+            description="Peppa's voice chat is unavailable right now. Please try again soon."
+            title="Talk to Peppa"
+          />
+        }
+        path="/talk-to-peppa"
+      />
       <Route element={<LessonList />} path="/lessons" />
       <Route
         element={
@@ -915,6 +925,7 @@ function RoutedApplication() {
   const onLoginRoute = gateRoute === "login";
   const isOnboardingRoute = gateRoute === "onboarding";
   const isProfileRoute = gateRoute === "profile";
+  const isConversationRoute = isTalkToPeppaRoute(location.pathname);
   const redoOnboarding =
     isOnboardingRoute && isRedoOnboardingRequest(location.search);
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
@@ -939,6 +950,7 @@ function RoutedApplication() {
           completedOnboardingFallback={
             <Navigate replace to={safeReturnTo} />
           }
+          isConversationRoute={isConversationRoute}
           isOnboardingRoute={isOnboardingRoute}
           isProfileRoute={isProfileRoute}
           onboardingFallback={
@@ -948,6 +960,7 @@ function RoutedApplication() {
             />
           }
           onCloseProfileRoute={() => navigate("/")}
+          onConversationCompleted={() => navigate("/", { replace: true })}
           onOpenProfileRoute={openProfileRoute}
           onRedoCompleted={() => navigate("/profile", { replace: true })}
           onRedoOnboardingRoute={() =>
