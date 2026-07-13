@@ -20,34 +20,16 @@ export type ConversationSurfaceTurn = {
   text: string;
 };
 
-export type ConversationSurfaceCandidate = {
-  id: string;
-  factKey: "name" | "age" | "interest" | "summary";
-  label: string;
-  status: "accepted" | "edited" | "rejected";
-  value: string;
-};
-
 type ConversationSurfaceProps = {
-  candidates: ConversationSurfaceCandidate[];
   error: string;
   microphoneEnabled: boolean;
   onBack: () => void;
-  onCandidateChange: (id: string, value: string) => void;
-  onCandidateStatusChange: (
-    id: string,
-    status: ConversationSurfaceCandidate["status"],
-  ) => void;
   onFinish: () => void;
-  onSendText: () => void;
   onStart: () => void;
-  onSubmitReview: () => void;
   onToggleMicrophone: () => void;
-  onTypedValueChange: (value: string) => void;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
   turns: ConversationSurfaceTurn[];
-  typedValue: string;
 };
 
 const STATUS_LABELS: Record<

@@ -200,22 +200,15 @@ function ConversationHookHarness({
 
 function conversationSurfaceProps(overrides = {}) {
   return {
-    candidates: [],
     error: "",
     microphoneEnabled: false,
     onBack() {},
-    onCandidateChange() {},
-    onCandidateStatusChange() {},
     onFinish() {},
-    onSendText() {},
     onStart() {},
-    onSubmitReview() {},
     onToggleMicrophone() {},
-    onTypedValueChange() {},
     responseLatencyMs: null,
     status: "listening",
     turns: [],
-    typedValue: "",
     ...overrides,
   };
 }
@@ -767,7 +760,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             controllerState: {
               profileSummary: "Mia is eight and loves red racing cars.",
             },
-            facts: [],
             turns: [],
           },
         });
@@ -816,11 +808,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     await waitFor(() => assert.equal(completions, 1));
 
-    assert.deepEqual(reviews, [
-      {
-        decisions: [{ factId: "profile-summary", status: "accepted" }],
-      },
-    ]);
+    assert.deepEqual(reviews, [{}]);
     assert.equal(
       document.querySelector('output[aria-label="Conversation status"]')
         .textContent,

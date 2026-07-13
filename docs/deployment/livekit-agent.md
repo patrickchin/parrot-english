@@ -136,12 +136,13 @@ Before enabling the flag, authenticate as a test user and verify:
 3. Every agent response stays in English, including the single gentle rephrase.
 4. A different child-safe preference than the category asked is recorded and
    followed naturally instead of being treated as off-topic.
-5. “I don’t know”, silence, refusal, typed input, Finish now, and the form
-   fallback all remain usable.
-6. The summary can edit, accept, or reject extracted facts and then reaches the
-   existing onboarding completion/bypass path.
+5. “I don’t know”, silence, refusal, Finish conversation, and the form fallback
+   all remain usable.
+6. The saved prose summary finalizes automatically and reaches either profile
+   completion or the existing session-scoped bypass path.
 7. D1 contains finalized user and assistant turns for completed and abandoned
-   sessions, but no raw-audio payload. LiveKit starts with `record: false`.
+   sessions, but no raw-audio payload or structured fact rows. LiveKit starts
+   with `record: false`.
 
 The production Worker deploys with `REALTIME_ONBOARDING_ENABLED=1`. After each
 deployment, watch LiveKit agent logs, Worker errors, token issuance failures,

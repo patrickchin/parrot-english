@@ -3,6 +3,11 @@
 **Date:** 2026-07-08
 **Status:** Approved for implementation
 
+> **Implementation note (2026-07-14):** The later automatic-onboarding decision
+> supersedes the manual summary-review and typed-input portions of this original
+> design. The current contract is recorded in the repository decision log and
+> README; the original sections below remain as design history.
+
 ## Supersedes
 
 This design supersedes the primary experience decisions in:
@@ -385,7 +390,8 @@ client flag.
 - `POST /api/conversations/:id/turns` appends one idempotent finalized turn.
 - `POST /api/conversations/:id/facts` retains its deployed route name but the
   active agent sends an empty candidate array and a bounded controller state.
-  The legacy candidate upsert remains available only for historical compatibility.
+  Non-empty structured candidate arrays are rejected; the legacy table remains
+  dormant for rollback safety.
 - `POST /api/conversations/:id/end` records the terminal status and finish
   reason.
 

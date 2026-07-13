@@ -20,22 +20,15 @@ after(async () => {
 
 function props(overrides = {}) {
   return {
-    candidates: [],
     error: "",
     microphoneEnabled: true,
     onBack() {},
-    onCandidateChange() {},
-    onCandidateStatusChange() {},
     onFinish() {},
-    onSendText() {},
     onStart() {},
-    onSubmitReview() {},
     onToggleMicrophone() {},
-    onTypedValueChange() {},
     responseLatencyMs: null,
     status: "ready",
     turns: [],
-    typedValue: "",
     ...overrides,
   };
 }

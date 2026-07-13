@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  finalizeConversation,
   finishConversation,
   loadConversation,
-  reviewConversation,
   startConversation,
-  type ConversationFact,
-  type ConversationReviewDecision,
   type ConversationTurn,
 } from "./conversation-api";
 import type {
-  ConversationSurfaceCandidate,
   ConversationSurfaceStatus,
   ConversationSurfaceTurn,
 } from "./ConversationSurface";
@@ -38,84 +35,10 @@ export function mergeConversationTurns(
   ];
 }
 
-export function updateConversationCandidateStatus<
-  Candidate extends { id: string; status: "accepted" | "edited" | "rejected" },
->(
-  candidates: Candidate[],
-  id: string,
-  nextStatus: Candidate["status"],
-) {
-  return candidates.map((candidate) =>
-    candidate.id === id
-      ? {
-          ...candidate,
-          status: nextStatus === "accepted" ? "edited" : nextStatus,
-        }
-      : candidate,
-  );
-}
-
-export async function completeConversationReview({
-  conversationId,
-  decisions,
-  refresh,
-  review = reviewConversation,
-}: {
-  conversationId: string;
-  decisions: ConversationReviewDecision[];
-  refresh: () => Promise<void>;
-  review?: typeof reviewConversation;
-}) {
-  const result = await review(conversationId, decisions);
-  await refresh();
-  return result;
-}
-
 function readableError(error: unknown) {
   return error instanceof Error
     ? error.message
     : "The voice conversation could not continue.";
-}
-
-function candidateFromFact(fact: ConversationFact): ConversationSurfaceCandidate {
-  const topic = typeof fact.value.topic === "string" ? fact.value.topic : "interest";
-  return {
-    factKey: fact.factKey,
-    id: fact.id,
-    label:
-      fact.factKey === "name"
-        ? "Name"
-        : fact.factKey === "age"
-          ? "Age"
-          : `Likes — ${topic}`,
-    status:
-      fact.status === "edited"
-        ? "edited"
-        : fact.status === "rejected"
-          ? "rejected"
-          : "accepted",
-    value: String(fact.value.value),
-  };
-}
-
-export function candidateFromControllerState(
-  state: Record<string, unknown>,
-): ConversationSurfaceCandidate | null {
-  if (typeof state.profileSummary !== "string" || !state.profileSummary.trim()) {
-    return null;
-  }
-  const storedStatus = state.summaryStatus;
-  const status =
-    storedStatus === "edited" || storedStatus === "rejected"
-      ? storedStatus
-      : "accepted";
-  return {
-    factKey: "summary",
-    id: "profile-summary",
-    label: "About this learner",
-    status,
-    value: state.profileSummary.trim(),
-  };
 }
 
 type UseConversationOnboardingOptions = {
@@ -125,6 +48,24 @@ type UseConversationOnboardingOptions = {
   onBack: () => void;
   onCompleted: () => Promise<void>;
 };
+
+type ConversationRuntime = {
+  awaitingResponse: boolean;
+  completingConversationId: string | null;
+  learnerTurnOpen: boolean;
+  openingHeard: boolean;
+  transportReady: boolean;
+};
+
+function createConversationRuntime(): ConversationRuntime {
+  return {
+    awaitingResponse: false,
+    completingConversationId: null,
+    learnerTurnOpen: false,
+    openingHeard: false,
+    transportReady: false,
+  };
+}
 
 export function useConversationOnboarding({
   active,
@@ -136,24 +77,17 @@ export function useConversationOnboarding({
   const [status, setStatus] =
     useState<ConversationSurfaceStatus>("ready");
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
-  const [candidates, setCandidates] = useState<ConversationSurfaceCandidate[]>([]);
-  const [typedValue, setTypedValue] = useState("");
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [responseLatencyMs, setResponseLatencyMs] = useState<number | null>(null);
   const [responseLatencyTimer] = useState(() =>
     createResponseLatencyTimer(now),
   );
   const [error, setError] = useState("");
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
   const autoStartRef = useRef(false);
-  const completingConversationRef = useRef<string | null>(null);
-  const transportReadyRef = useRef(false);
-  const openingHeardRef = useRef(false);
-  const learnerTurnOpenRef = useRef(false);
-  const awaitingResponseRef = useRef(false);
+  const runtimeRef = useRef(createConversationRuntime());
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
@@ -171,36 +105,22 @@ export function useConversationOnboarding({
 
   const loadSummary = useCallback(
     async (id: string, operation = operationRef.current) => {
-      if (completingConversationRef.current === id) return;
-      completingConversationRef.current = id;
+      if (runtimeRef.current.completingConversationId === id) return;
+      runtimeRef.current.completingConversationId = id;
       try {
         const loaded = await loadConversation(id);
         if (!isCurrent(operation)) return;
-        const proseProfile = candidateFromControllerState(
-          loaded.conversation.controllerState,
-        );
-        setCandidates(
-          proseProfile
-            ? [proseProfile]
-            : (loaded.conversation.facts ?? []).map(candidateFromFact),
-        );
         setTurns((current) =>
           mergeConversationTurns(current, loaded.conversation.turns ?? []),
         );
         setStatus("saving");
-        await reviewConversation(
-          id,
-          proseProfile
-            ? [{ factId: proseProfile.id, status: "accepted" }]
-            : [],
-        );
+        await finalizeConversation(id);
         if (!isCurrent(operation)) return;
         conversationIdRef.current = null;
-        setConversationId(null);
         await onCompleted();
       } catch (summaryError) {
         if (!isCurrent(operation)) return;
-        completingConversationRef.current = null;
+        runtimeRef.current.completingConversationId = null;
         setError(readableError(summaryError));
         setStatus("error");
       }
@@ -212,15 +132,15 @@ export function useConversationOnboarding({
     async (operation: number) => {
       if (
         !isCurrent(operation) ||
-        !transportReadyRef.current ||
-        !openingHeardRef.current ||
-        learnerTurnOpenRef.current ||
+        !runtimeRef.current.transportReady ||
+        !runtimeRef.current.openingHeard ||
+        runtimeRef.current.learnerTurnOpen ||
         !transportRef.current
       ) {
         return;
       }
-      learnerTurnOpenRef.current = true;
-      awaitingResponseRef.current = false;
+      runtimeRef.current.learnerTurnOpen = true;
+      runtimeRef.current.awaitingResponse = false;
       setMicrophoneEnabled(false);
       setStatus("listening");
     },
@@ -233,8 +153,8 @@ export function useConversationOnboarding({
       if (event.type === "state") {
         setStatus(
           event.state === "connected"
-            ? learnerTurnOpenRef.current
-              ? awaitingResponseRef.current
+            ? runtimeRef.current.learnerTurnOpen
+              ? runtimeRef.current.awaitingResponse
                 ? "thinking"
                 : "listening"
               : "connecting"
@@ -247,8 +167,8 @@ export function useConversationOnboarding({
         return;
       }
       if (event.type === "speech-started") {
-        if (event.role === "assistant" && awaitingResponseRef.current) {
-          awaitingResponseRef.current = false;
+        if (event.role === "assistant" && runtimeRef.current.awaitingResponse) {
+          runtimeRef.current.awaitingResponse = false;
           finishResponseLatency();
           setStatus("speaking");
         }
@@ -267,20 +187,22 @@ export function useConversationOnboarding({
         );
       });
       if (event.role === "assistant") {
-        if (awaitingResponseRef.current) finishResponseLatency();
-        awaitingResponseRef.current = false;
+        if (runtimeRef.current.awaitingResponse) finishResponseLatency();
+        runtimeRef.current.awaitingResponse = false;
         if (event.final) {
-          if (!learnerTurnOpenRef.current) {
-            openingHeardRef.current = true;
+          if (!runtimeRef.current.learnerTurnOpen) {
+            runtimeRef.current.openingHeard = true;
             void openLearnerTurn(operation);
           } else {
             setStatus("listening");
           }
-        } else if (learnerTurnOpenRef.current) {
+        } else if (runtimeRef.current.learnerTurnOpen) {
           setStatus("speaking");
         }
       } else if (event.final) {
-        setStatus(awaitingResponseRef.current ? "thinking" : "listening");
+        setStatus(
+          runtimeRef.current.awaitingResponse ? "thinking" : "listening",
+        );
       }
     },
     [finishResponseLatency, isCurrent, loadSummary, openLearnerTurn],
@@ -292,18 +214,12 @@ export function useConversationOnboarding({
     setError("");
     setStatus("connecting");
     setTurns([]);
-    setCandidates([]);
     setMicrophoneEnabled(false);
-    completingConversationRef.current = null;
-    transportReadyRef.current = false;
-    openingHeardRef.current = false;
-    learnerTurnOpenRef.current = false;
-    awaitingResponseRef.current = false;
+    runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
     try {
       const started = await startConversation();
       if (!isCurrent(operation)) return;
-      setConversationId(started.conversation.id);
       conversationIdRef.current = started.conversation.id;
       const transport = createTransport({
         token: started.livekit.participantToken,
@@ -320,7 +236,7 @@ export function useConversationOnboarding({
       }
       await transport.setMicrophoneEnabled(false);
       if (!isCurrent(operation)) return;
-      transportReadyRef.current = true;
+      runtimeRef.current.transportReady = true;
       setMicrophoneEnabled(false);
       setStatus("connecting");
       await openLearnerTurn(operation);
@@ -338,6 +254,7 @@ export function useConversationOnboarding({
   ]);
 
   const finish = useCallback(async () => {
+    const conversationId = conversationIdRef.current;
     if (!conversationId) return;
     const operation = operationRef.current;
     setError("");
@@ -351,11 +268,11 @@ export function useConversationOnboarding({
       setError(readableError(finishError));
       setStatus("error");
     }
-  }, [conversationId, isCurrent, loadSummary]);
+  }, [isCurrent, loadSummary]);
 
   const back = useCallback(() => {
     operationRef.current += 1;
-    const id = conversationId;
+    const id = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
@@ -363,30 +280,13 @@ export function useConversationOnboarding({
     onBack();
     if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
-  }, [conversationId, onBack, resetResponseLatency]);
-
-  const sendText = useCallback(async () => {
-    const value = typedValue.trim();
-    if (!value || !transportRef.current || !learnerTurnOpenRef.current) return;
-    try {
-      await transportRef.current.sendText(value);
-      awaitingResponseRef.current = true;
-      setTurns((current) => [
-        ...current,
-        { id: `typed-${Date.now()}`, role: "user", text: value },
-      ]);
-      setTypedValue("");
-      setStatus("thinking");
-    } catch (sendError) {
-      setError(readableError(sendError));
-    }
-  }, [typedValue]);
+  }, [onBack, resetResponseLatency]);
 
   const toggleMicrophone = useCallback(async () => {
     if (
       !transportRef.current ||
-      !learnerTurnOpenRef.current ||
-      awaitingResponseRef.current
+      !runtimeRef.current.learnerTurnOpen ||
+      runtimeRef.current.awaitingResponse
     ) {
       return;
     }
@@ -394,7 +294,7 @@ export function useConversationOnboarding({
     if (!enabled) {
       responseLatencyTimer.start();
       setResponseLatencyMs(null);
-      awaitingResponseRef.current = true;
+      runtimeRef.current.awaitingResponse = true;
       setStatus("thinking");
     } else {
       resetResponseLatency();
@@ -403,74 +303,14 @@ export function useConversationOnboarding({
       await transportRef.current.setMicrophoneEnabled(enabled);
       setMicrophoneEnabled(enabled);
     } catch (microphoneError) {
-      if (!enabled && awaitingResponseRef.current) {
-        awaitingResponseRef.current = false;
+      if (!enabled && runtimeRef.current.awaitingResponse) {
+        runtimeRef.current.awaitingResponse = false;
         resetResponseLatency();
         setStatus("listening");
       }
       setError(readableError(microphoneError));
     }
   }, [microphoneEnabled, resetResponseLatency, responseLatencyTimer]);
-
-  const updateCandidate = useCallback((id: string, value: string) => {
-    setCandidates((current) =>
-      current.map((candidate) =>
-        candidate.id === id
-          ? {
-              ...candidate,
-              status: candidate.status === "rejected" ? "rejected" : "edited",
-              value,
-            }
-          : candidate,
-      ),
-    );
-  }, []);
-
-  const updateCandidateStatus = useCallback(
-    (id: string, nextStatus: ConversationSurfaceCandidate["status"]) => {
-      setCandidates((current) =>
-        updateConversationCandidateStatus(current, id, nextStatus),
-      );
-    },
-    [],
-  );
-
-  const submitReview = useCallback(async () => {
-    if (!conversationId) return;
-    setError("");
-    try {
-      const decisions: ConversationReviewDecision[] = candidates.map(
-        (candidate) => {
-          if (candidate.status === "rejected") {
-            return { factId: candidate.id, status: "rejected" };
-          }
-          const value =
-            candidate.factKey === "age"
-              ? Number.parseInt(candidate.value, 10)
-              : candidate.value.trim();
-          if (
-            (candidate.factKey === "age" && !Number.isInteger(value)) ||
-            value === ""
-          ) {
-            throw new Error(`Please check ${candidate.label.toLowerCase()}.`);
-          }
-          return {
-            factId: candidate.id,
-            status: candidate.status,
-            value,
-          };
-        },
-      );
-      await completeConversationReview({
-        conversationId,
-        decisions,
-        refresh: onCompleted,
-      });
-      conversationIdRef.current = null;
-    } catch (reviewError) {
-      setError(readableError(reviewError));
-    }
-  }, [candidates, conversationId, onCompleted]);
 
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;
@@ -482,21 +322,14 @@ export function useConversationOnboarding({
     if (active) return;
     operationRef.current += 1;
     autoStartRef.current = false;
-    completingConversationRef.current = null;
-    transportReadyRef.current = false;
-    openingHeardRef.current = false;
-    learnerTurnOpenRef.current = false;
-    awaitingResponseRef.current = false;
+    runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
     const activeConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
-    setConversationId(null);
     setStatus("ready");
     setTurns([]);
-    setCandidates([]);
-    setTypedValue("");
     setMicrophoneEnabled(false);
     setError("");
     void transport?.disconnect();
@@ -511,11 +344,7 @@ export function useConversationOnboarding({
     () => () => {
       operationRef.current += 1;
       autoStartRef.current = false;
-      completingConversationRef.current = null;
-      transportReadyRef.current = false;
-      openingHeardRef.current = false;
-      learnerTurnOpenRef.current = false;
-      awaitingResponseRef.current = false;
+      runtimeRef.current = createConversationRuntime();
       responseLatencyTimer.reset();
       const transport = transportRef.current;
       transportRef.current = null;
@@ -533,39 +362,26 @@ export function useConversationOnboarding({
 
   return useMemo(
     () => ({
-      candidates,
       error,
       microphoneEnabled,
       onBack: back,
-      onCandidateChange: updateCandidate,
-      onCandidateStatusChange: updateCandidateStatus,
       onFinish: () => void finish(),
-      onSendText: () => void sendText(),
       onStart: () => void start(),
-      onSubmitReview: () => void submitReview(),
       onToggleMicrophone: () => void toggleMicrophone(),
-      onTypedValueChange: setTypedValue,
       responseLatencyMs,
       status,
       turns,
-      typedValue,
     }),
     [
-      candidates,
       back,
       error,
       finish,
       microphoneEnabled,
       responseLatencyMs,
-      sendText,
       start,
       status,
-      submitReview,
       toggleMicrophone,
       turns,
-      typedValue,
-      updateCandidate,
-      updateCandidateStatus,
     ],
   );
 }

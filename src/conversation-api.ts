@@ -13,17 +13,6 @@ export type ConversationTurn = {
   createdAt: string;
 };
 
-export type ConversationFact = {
-  id: string;
-  conversationId: string;
-  factKey: "name" | "age" | "interest";
-  value: { value: string | number; topic?: string };
-  sourceTurnIds: string[];
-  status: "candidate" | "accepted" | "edited" | "rejected";
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type ConversationSession = {
   id: string;
   authUserId: string;
@@ -44,7 +33,6 @@ export type ConversationSession = {
   endedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  facts?: ConversationFact[];
   turns?: ConversationTurn[];
 };
 
@@ -60,13 +48,6 @@ export type ConversationStartResponse = {
   conversation: ConversationSession;
   livekit: { participantToken: string; url: string };
   scenario: ConversationScenarioDescriptor;
-};
-
-export type ConversationReviewDecision = {
-  factId: string;
-  status: "accepted" | "edited" | "rejected";
-  value?: string | number;
-  topic?: string;
 };
 
 export type ConversationRequestOptions = {
@@ -163,9 +144,8 @@ export function finishConversation(
   );
 }
 
-export function reviewConversation(
+export function finalizeConversation(
   conversationId: string,
-  decisions: ConversationReviewDecision[],
   options?: ConversationRequestOptions,
 ) {
   return jsonRequest<{
@@ -175,7 +155,7 @@ export function reviewConversation(
   }>(
     `/api/conversations/${encodeURIComponent(conversationId)}/review`,
     "PUT",
-    { decisions },
+    {},
     options,
   );
 }
