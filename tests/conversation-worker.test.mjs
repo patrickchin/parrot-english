@@ -665,13 +665,15 @@ describe("conversation persistence and API", () => {
 
       assert.notEqual(secondPayload.conversation.id, firstPayload.conversation.id);
       assert.equal(secondPayload.conversation.status, "starting");
-      assert.deepEqual(
-        state.sqlite
-          .prepare(
-            "SELECT status, finish_reason FROM conversation_session WHERE id = ?",
-          )
-          .get(firstPayload.conversation.id),
-        { status: "abandoned", finish_reason: "participant_token_expired" },
+      const expired = state.sqlite
+        .prepare(
+          "SELECT status, finish_reason FROM conversation_session WHERE id = ?",
+        )
+        .get(firstPayload.conversation.id);
+      assert.equal(expired.status, "abandoned");
+      assert.equal(
+        expired.finish_reason,
+        "participant_token_expired",
       );
       assert.equal(
         state.sqlite
