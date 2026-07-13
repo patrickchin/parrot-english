@@ -46,34 +46,28 @@ describe("Groq speech evaluation", () => {
     globalThis.fetch = originalFetch;
   });
 
-  it("passes a correct child transcript and returns success feedback", async () => {
+  it("classifies a correct child transcript", async () => {
     const payload = await evaluateStubbedTranscript("Hello Peppa");
 
     assert.equal(payload.transcript, "Hello Peppa");
-    assert.equal(payload.passed, true);
+    assert.equal(payload.outcome, "correct");
     assert.equal(payload.similarity, 1);
-    assert.equal(payload.feedbackText, "Great job!");
-    assert.equal(payload.retryAllowed, false);
   });
 
-  it("returns retry feedback for an incorrect transcript", async () => {
+  it("classifies an incorrect transcript", async () => {
     const payload = await evaluateStubbedTranscript("yellow ball");
 
     assert.equal(payload.transcript, "yellow ball");
-    assert.equal(payload.passed, false);
-    assert.equal(payload.feedbackText, "Almost! Try again.");
-    assert.equal(payload.retryAllowed, true);
+    assert.equal(payload.outcome, "incorrect");
     assert.ok(payload.similarity < 0.74);
   });
 
-  it("returns no-speech retry feedback for an empty transcript", async () => {
+  it("classifies an empty transcript as no input", async () => {
     const payload = await evaluateStubbedTranscript("");
 
     assert.equal(payload.transcript, "");
-    assert.equal(payload.passed, false);
+    assert.equal(payload.outcome, "noInput");
     assert.equal(payload.similarity, 0);
-    assert.equal(payload.feedbackText, "I couldn't hear you. Please try again.");
-    assert.equal(payload.retryAllowed, true);
   });
 
   it("rejects an oversized evaluation envelope before parsing it", async () => {

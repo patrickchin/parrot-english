@@ -112,9 +112,13 @@ type LessonEvent =
   | { type: "MIC_STARTED" }
   | { type: "MIC_RELEASED" }
   | { type: "RECORDING_CANCELLED" }
-  | { type: "EVALUATED"; passed: boolean; transcript: string }
+  | {
+      type: "EVALUATED";
+      outcome: "correct" | "incorrect" | "noInput";
+      transcript: string;
+    }
   | { type: "EVALUATION_FAILED" }
-  | { type: "FEEDBACK_DONE" }
+  | { type: "RESPONSE_DONE" }
   | { type: "RESET" };
 
 type LessonPlayerProps = {
@@ -338,20 +342,23 @@ export function LessonPlayer({
     () => getLessonScenePresentation(state, currentLesson, VISUAL_CATALOG),
     [currentLesson, state]
   );
-  const progressLabel = getLessonProgressLabel(state, currentStep);
+  const progressLabel = getLessonProgressLabel(
+    state,
+    state.response ?? currentStep,
+  );
 
   useEffect(() => {
     if (state.sceneIndex !== routedSceneRef.current) return;
     if (
       state.phase !== LessonPhase.Speaking &&
-      state.phase !== LessonPhase.Feedback
+      state.phase !== LessonPhase.Responding
     ) {
       return;
     }
 
     const completionEvent: LessonEvent =
-      state.phase === LessonPhase.Feedback
-        ? { type: "FEEDBACK_DONE" }
+      state.phase === LessonPhase.Responding
+        ? { type: "RESPONSE_DONE" }
         : { type: "LINE_DONE" };
     let startPlayback: (signal: AbortSignal) => Promise<void>;
     try {
@@ -417,8 +424,8 @@ export function LessonPlayer({
     currentLesson,
     dispatchLessonEvent,
     routedSceneIndex,
-    state.feedback,
     state.phase,
+    state.response,
     state.sceneIndex,
     state.stepIndex,
   ]);
@@ -514,7 +521,7 @@ export function LessonPlayer({
     }
 
     await finishSpeechOperation({
-      evaluate: evaluateSpeech,
+      evaluate: currentStep.check ? evaluateSpeech : null,
       evaluationControllerRef,
       generation,
       getCurrentGeneration: () => pressSequenceRef.current,
@@ -522,24 +529,32 @@ export function LessonPlayer({
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         dispatch({
           type: "EVALUATED",
-          passed: result.passed,
+          outcome: result.outcome,
           transcript: result.transcript,
         });
       },
       onFailed: (caughtError) => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        setError(
-          caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
-            ? "Speech checking is not configured."
-            : `Speech check failed: ${
-                caughtError instanceof Error ? caughtError.message : "Unknown error."
-              }`
-        );
-        dispatch({ type: "EVALUATION_FAILED" });
+        if (currentStep.check) {
+          setError(
+            caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
+              ? "Speech checking is not configured."
+              : `Speech check failed: ${
+                  caughtError instanceof Error ? caughtError.message : "Unknown error."
+                }`
+          );
+          dispatch({ type: "EVALUATION_FAILED" });
+        } else {
+          setError(
+            `Recording failed: ${
+              caughtError instanceof Error ? caughtError.message : "Unknown error."
+            }`,
+          );
+        }
       },
       onReleased: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatch({ type: "MIC_RELEASED" });
+        dispatchLessonEvent({ type: "MIC_RELEASED" });
       },
       recordingController,
       recordingControllerRef,

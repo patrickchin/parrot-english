@@ -48,6 +48,27 @@ function createStep(overrides = {}) {
   };
 }
 
+function createResponse(overrides = {}) {
+  return {
+    speaker: "dolly",
+    dialogue: "Well done!",
+    after: "continue",
+    ...overrides,
+  };
+}
+
+function createCheck() {
+  return {
+    maxAttempts: 2,
+    correct: createResponse(),
+    incorrect: createResponse({
+      dialogue: "Almost! Try again.",
+      after: "retry",
+    }),
+    incorrectFinal: createResponse({ dialogue: "Good try! Let's continue." }),
+  };
+}
+
 function createScene(index) {
   const dialogue = index === 4 ? "Thank you!" : "Can you help me, please?";
   return {
@@ -207,6 +228,42 @@ describe("lesson data contract", () => {
     );
   });
 
+  it("accepts optional checks and inherited or partial emotes", { skip: !hasValidator }, () => {
+    const catalog = lessonData.createLessonCatalog(createCatalogInput());
+    const lesson = createLesson();
+    const firstStep = lesson.scenes[0].steps[0];
+    const userStep = lesson.scenes[0].steps[1];
+
+    delete firstStep.emotes;
+    userStep.emotes = { dolly: "listening" };
+    userStep.check = {
+      ...createCheck(),
+      correct: createResponse({
+        speaker: "peppa",
+        emotes: { peppa: "happy" },
+      }),
+      noInput: createResponse({
+        speaker: "narrator",
+        dialogue: "I couldn't hear you. Try again.",
+        after: "retry",
+      }),
+      noInputFinal: createResponse({
+        speaker: "narrator",
+        dialogue: "Let's continue.",
+      }),
+    };
+
+    assert.strictEqual(
+      lessonData.validateLesson(lesson, catalog, "valid.json"),
+      lesson,
+    );
+    const prepared = lessonData.prepareLesson(lesson, catalog, "draft.json");
+    assert.deepEqual(prepared.lesson.scenes[0].steps[1].emotes, {
+      dolly: "listening",
+    });
+    assert.deepEqual(prepared.lesson.scenes[0].steps[1].check, userStep.check);
+  });
+
   it("normalizes recoverable draft problems into warnings and safe defaults", () => {
     assert.equal(typeof lessonData.prepareLesson, "function");
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
@@ -243,9 +300,7 @@ describe("lesson data contract", () => {
     assert.deepEqual(prepared.lesson.scenes[0].characters, ["dolly"]);
     assert.equal(prepared.lesson.scenes[0].steps.length, 1);
     assert.equal(prepared.lesson.scenes[0].steps[0].speaker, "narrator");
-    assert.deepEqual(prepared.lesson.scenes[0].steps[0].emotes, {
-      dolly: "idle",
-    });
+    assert.deepEqual(prepared.lesson.scenes[0].steps[0].emotes, {});
     assert.ok(prepared.warnings.length >= 8);
     assert.ok(prepared.warnings.length <= 15);
     assert.match(prepared.warnings.at(-1), /additional repairs were applied/i);
@@ -346,13 +401,40 @@ describe("lesson data contract", () => {
       lessonData.validateLesson(missing, catalog, "missing.json"),
       missing,
     );
-
     const extra = createLesson();
     extra.scenes[0].steps[0].emotes.narrator = "idle";
     assert.equal(
       lessonData.validateLesson(extra, catalog, "extra.json"),
       extra,
     );
+  });
+
+  it("rejects invalid scripted speech checks", { skip: !hasValidator }, () => {
+    const catalog = lessonData.createLessonCatalog(createCatalogInput());
+
+    const characterCheck = createLesson();
+    characterCheck.scenes[0].steps[0].check = createCheck();
+    assert.throws(
+      () => lessonData.validateLesson(characterCheck, catalog, "bad.json"),
+      /scenes\[0\]\.steps\[0\]\.check.*user step/i,
+    );
+
+    const missingFinal = createLesson();
+    missingFinal.scenes[0].steps[1].check = createCheck();
+    delete missingFinal.scenes[0].steps[1].check.incorrectFinal;
+    assert.throws(
+      () => lessonData.validateLesson(missingFinal, catalog, "bad.json"),
+      /incorrectFinal/,
+    );
+
+    const loopingFinal = createLesson();
+    loopingFinal.scenes[0].steps[1].check = createCheck();
+    loopingFinal.scenes[0].steps[1].check.incorrectFinal.after = "retry";
+    assert.throws(
+      () => lessonData.validateLesson(loopingFinal, catalog, "bad.json"),
+      /incorrectFinal\.after.*continue/,
+    );
+
   });
 
   it("validates every checked-in lesson against the checked-in catalogs", () => {

@@ -1273,9 +1273,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       json({
         transcript: "It is up high!",
         similarity: 1,
-        passed: true,
-        feedbackText: "Great job!",
-        retryAllowed: false,
+        outcome: "correct",
       }),
     );
     await waitFor(() => text(/Great job!/));
@@ -1329,9 +1327,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         json({
           transcript: "It is up high!",
           similarity: 1,
-          passed: true,
-          feedbackText: "Great job!",
-          retryAllowed: false,
+          outcome: "correct",
         }),
       );
       await evaluation.promise;

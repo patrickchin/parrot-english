@@ -96,6 +96,24 @@
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
+          },
+          "check": {
+            "maxAttempts": 2,
+            "correct": {
+              "speaker": "narrator",
+              "dialogue": "Great job!",
+              "after": "continue"
+            },
+            "incorrect": {
+              "speaker": "narrator",
+              "dialogue": "Almost! Try again, Bella.",
+              "after": "retry"
+            },
+            "incorrectFinal": {
+              "speaker": "narrator",
+              "dialogue": "Almost! Let's keep going.",
+              "after": "continue"
+            }
           }
         }
       ]
@@ -136,6 +154,24 @@
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
+          },
+          "check": {
+            "maxAttempts": 2,
+            "correct": {
+              "speaker": "narrator",
+              "dialogue": "Great job!",
+              "after": "continue"
+            },
+            "incorrect": {
+              "speaker": "narrator",
+              "dialogue": "Almost! Try again, Bella.",
+              "after": "retry"
+            },
+            "incorrectFinal": {
+              "speaker": "narrator",
+              "dialogue": "Almost! Let's keep going.",
+              "after": "continue"
+            }
           }
         }
       ]

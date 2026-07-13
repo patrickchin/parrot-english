@@ -6,14 +6,15 @@ Parrot English is an English speaking experience for young children. After
 authentication and the one-time onboarding flow, the learner arrives at a
 four-card home menu for Lessons, Create a Lesson, Progress, and Storytelling.
 A lesson plays like a short interactive episode: characters act out a
-situation, a character models a useful line, the learner repeats it, and a
-voice-only narrator gives brief feedback.
+situation, a character models a useful line, the learner repeats it, and the
+script chooses a character or narrator response when evaluation is enabled.
 
-All child-facing dialogue and narration is in English. Steps within the current
-scene advance automatically except when the learner must press and hold the
-microphone button to speak, and playback advances automatically across scene
-boundaries. Start begins the current scene, while Previous and Next restart
-adjacent scenes from their first steps.
+Bundled lesson dialogue and narration is in English; learner-created scripts
+may use another language. Steps within the current scene advance automatically
+except when the learner must press and hold the microphone button to speak, and
+playback advances automatically across scene boundaries. Start begins the
+current scene, while Previous and Next restart adjacent scenes from their first
+steps.
 
 ## Entry and Navigation
 
@@ -61,19 +62,19 @@ changing application code.
 
 The Create Lesson page has two URL-restorable tabs. **Generate Script** accepts
 a bounded real-world topic, uses the canonical learner profile name, and asks
-Groq for strict structured lesson JSON. The generated JSON then appears in the
+Groq for playable lesson JSON. The generated JSON then appears in the
 main script editor and remains editable. **Upload Script** is clipboard-first:
 the learner pastes JSON into the same editor directly or with the Paste button.
-Both paths accept up to 256 KiB, validate the exact shared lesson contract, show
-a title, summary, goal-phrase, and scene-count preview, then save only after
-confirmation. Editing a validated script removes the stale preview until the
-JSON is reviewed again.
+Both paths accept up to 256 KiB, normalize the shared runtime fields with
+warnings for repairs, show a title, summary, goal-phrase, and scene-count
+preview, then save only after confirmation. Editing a reviewed script removes
+the stale preview until the JSON is reviewed again.
 
 Saved lessons are scoped to the authenticated user and appear under My Lessons.
-Their arbitrary English dialogue is spoken through browser on-device speech;
+Their arbitrary-language dialogue is spoken through browser on-device speech;
 built-in Parrot Lessons retain their authored ElevenLabs audio.
 
-A lesson contains five to eight scenes. Each scene provides:
+A lesson contains one or more scenes. Each scene provides:
 
 - a title;
 - a free-form setting description;
@@ -81,9 +82,9 @@ A lesson contains five to eight scenes. Each scene provides:
 - the scripted scene character IDs;
 - an ordered list of steps.
 
-Each step has one speaker and exactly one line of dialogue. It also selects one
-pre-generated emote for every scripted scene character, including `user`. User
-emote data remains complete even though the learner asset is not rendered. The
+Each step has one speaker and a dialogue string. It may also select partial
+emote changes for visible Peppa and Dolly characters. The learner uses the
+non-visual `user` speaker ID and never appears in character or emote maps. The
 global emote set is intentionally small: `idle`, `talking`, `listening`,
 `happy`, `sad`, and `surprised`.
 
@@ -95,13 +96,15 @@ The implemented loop is:
 2. Character and narrator steps play automatically in script order.
 3. A user step waits with an obvious hold-to-talk control.
 4. The learner holds the microphone button, speaks, and releases it.
-5. The app evaluates the recording after the microphone stops.
-6. The narrator gives audible English feedback.
-7. Success advances automatically.
-8. The first unsuccessful attempt replays the preceding character model, then
-   returns to the same user step.
-9. A second unsuccessful attempt receives feedback and continues the story.
-10. Final narrator praise completes the lesson and offers Replay Lesson.
+5. If the user step contains `check`, the app evaluates the recording after the
+   microphone stops; otherwise it continues without evaluation.
+6. A checked turn plays the response speaker, dialogue, and emote changes
+   selected by the script.
+7. The response's `after` action retries or continues.
+8. Retry replays the preceding character model, then returns to the same user
+   step.
+9. Reaching `maxAttempts` selects the script's final response and continues.
+10. The final scripted line completes the lesson and offers Replay Lesson.
 
 No character or narrator audio plays while recording or evaluating.
 Previous and Next restart the adjacent scene from its first step. Once started,
@@ -122,8 +125,9 @@ learner-created lesson. Direct refreshes and browser Back/Forward restore the
 addressed scene.
 
 Playback phase, step progress within the scene, microphone permission,
-recording, evaluation, and feedback are transient interaction state. They are
-reset when the routed scene changes and are never encoded into the URL. Any
+recording, evaluation, and scripted responses are transient interaction state.
+They are reset when the routed scene changes and are never encoded into the
+URL. Any
 asynchronous work captured for an old route is invalidated before the new scene
 becomes active, preventing stale audio, recording, or evaluation results from
 advancing the restored scene.

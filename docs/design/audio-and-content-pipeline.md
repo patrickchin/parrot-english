@@ -26,16 +26,18 @@ Do not edit `dist` directly.
 ## Lesson Authoring
 
 Each lesson file contains only text and catalog IDs. Every step has one English
-line, one speaker, and a complete scripted-scene-character emote map. The app
-discovers all lesson files eagerly, validates them, and builds the picker
-automatically.
+line and one speaker. An optional partial emote map changes listed characters;
+omitted characters inherit their current emotes. A user step may add a `check`
+whose responses select the speaker, dialogue, optional emote changes, and
+retry-or-continue action. Omitting `check` skips speech evaluation.
 
 When adding a lesson:
 
 1. Add one valid JSON file under `content/lessons`.
 2. Reuse global character, emote, and background IDs.
 3. Add any genuinely new visual definitions to the global catalogs first.
-4. Add saved-audio metadata for each unique non-user speaker/text pair.
+4. Add saved-audio metadata for each unique non-user step and check-response
+   speaker/text pair.
 5. Generate only the missing audio IDs.
 
 No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
@@ -52,6 +54,8 @@ sent to the browser.
 `lib/static-audio.js` resolves a cache entry by both `speaker` and exact `text`.
 The speaker is required because the same sentence may be spoken by Peppa and
 Dolly with different cached voices. User steps never require saved playback.
+Built-in scripted check responses use saved audio; My Lesson responses use the
+same device-speech path as their other lines.
 
 A missing built-in metadata entry or file should fail tests during development
 instead of silently falling back to device speech. Device speech is selected
@@ -117,7 +121,8 @@ be confined to antialiased subject edges.
 
 - Validate every checked-in lesson and catalog.
 - Confirm each character/emote catalog path exists.
-- Confirm each built-in scripted non-user line resolves by speaker plus text.
+- Confirm each built-in scripted non-user line and check response resolves by
+  speaker plus text.
 - Confirm My Lesson device speech completes, fails clearly when unsupported,
   and cancels on navigation.
 - Confirm each audio metadata path exists under `public`.
