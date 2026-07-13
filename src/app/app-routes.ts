@@ -127,12 +127,21 @@ export function resolveParrotLessonScene(
 }
 
 export function resolveMyLessonScene(
-  _lessonId: string | undefined,
-  _sceneNumberValue: string | undefined,
+  entry: LessonCatalogEntry | null,
+  lessonId: string | undefined,
+  sceneNumberValue: string | undefined,
 ): ResolvedLessonScene | null {
-  void _lessonId;
-  void _sceneNumberValue;
-  return null;
+  const sceneNumber = parseSceneNumber(sceneNumberValue);
+  if (
+    !entry ||
+    !lessonId ||
+    entry.id !== lessonId ||
+    sceneNumber === null ||
+    sceneNumber > entry.lesson.scenes.length
+  ) {
+    return null;
+  }
+  return { entry, sceneIndex: sceneNumber - 1 };
 }
 
 function redirectTo(to: string): LessonRouteDecision {
@@ -155,11 +164,15 @@ export function resolveParrotLessonRouteDecision(
 }
 
 export function resolveMyLessonRouteDecision(
+  entry: LessonCatalogEntry | null,
   lessonId: string | undefined,
   sceneNumberValue: string | undefined,
 ): LessonRouteDecision {
-  const resolved = resolveMyLessonScene(lessonId, sceneNumberValue);
+  if (!entry || !lessonId || entry.id !== lessonId) {
+    return redirectTo("/lessons");
+  }
+  const resolved = resolveMyLessonScene(entry, lessonId, sceneNumberValue);
   return resolved
     ? { kind: "lesson", ...resolved }
-    : redirectTo("/lessons");
+    : redirectTo(getLessonScenePath("my", entry.id, 0));
 }

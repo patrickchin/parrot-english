@@ -22,7 +22,10 @@ import {
   useNavigate,
   useParams,
 } from "react-router";
-import { getLessonAudioLine } from "../../lib/lesson-audio";
+import {
+  getLessonAudioLine,
+  getLessonSpeechLine,
+} from "../../lib/lesson-audio";
 import { getLessonProgressLabel } from "../../lib/lesson-progress";
 import {
   createLessonRouteActivityGuard,
@@ -65,7 +68,11 @@ import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { evaluateSpeech } from "../lessons/evaluation-request";
-import { VISUAL_CATALOG, type Lesson } from "../lessons/lesson-catalog";
+import {
+  VISUAL_CATALOG,
+  type Lesson,
+  type LessonCatalogEntry,
+} from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import {
   LessonCharacters,
@@ -76,6 +83,9 @@ import {
   LessonStage,
   LessonStartAction,
 } from "../lessons/LessonPlayerUi";
+import { LessonCreator } from "../LessonCreator";
+import { playDeviceSpeech } from "../device-speech";
+import { loadMyLesson } from "../my-lessons-api";
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
@@ -107,6 +117,7 @@ type LessonEvent =
   | { type: "RESET" };
 
 type LessonPlayerProps = {
+  audioMode: "device" | "static";
   lesson: Lesson;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
@@ -138,6 +149,7 @@ function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
 }
 
 export function LessonPlayer({
+  audioMode,
   lesson: currentLesson,
   onBack,
   onNavigateScene,
@@ -340,17 +352,24 @@ export function LessonPlayer({
       state.phase === LessonPhase.Feedback
         ? { type: "FEEDBACK_DONE" }
         : { type: "LINE_DONE" };
-    let audioLine;
+    let startPlayback: (signal: AbortSignal) => Promise<void>;
     try {
-      audioLine = getLessonAudioLine(state, currentLesson);
+      if (audioMode === "device") {
+        const speechLine = getLessonSpeechLine(state, currentLesson);
+        if (!speechLine) return;
+        startPlayback = (signal) =>
+          playDeviceSpeech({ ...speechLine, signal });
+      } else {
+        const audioLine = getLessonAudioLine(state, currentLesson);
+        if (!audioLine) return;
+        startPlayback = (signal) => playAudioLine({ ...audioLine, signal });
+      }
     } catch (caughtError) {
       const message =
         caughtError instanceof Error ? caughtError.message : "Audio is unavailable.";
       setError(`Audio unavailable: ${message}`);
       return;
     }
-    if (!audioLine) return;
-
     const generation = playbackGenerationRef.current + 1;
     playbackGenerationRef.current = generation;
     const routeGeneration = routeActivityGuardRef.current.capture();
@@ -373,7 +392,7 @@ export function LessonPlayer({
     const controller = new AbortController();
     playbackControllerRef.current = controller;
     setError("");
-    void playAudioLine({ ...audioLine, signal: controller.signal })
+    void startPlayback(controller.signal)
       .then(() => playbackOperation.complete())
       .catch((caughtError: unknown) => {
         if (cancelled || isAbortError(caughtError)) return;
@@ -393,6 +412,7 @@ export function LessonPlayer({
       }
     };
   }, [
+    audioMode,
     currentLesson,
     dispatchLessonEvent,
     routedSceneIndex,
@@ -659,6 +679,7 @@ function LessonRouteDecisionView({
 
   return (
     <LessonPlayer
+      audioMode={source === "my" ? "device" : "static"}
       key={`${source}:${decision.entry.id}`}
       lesson={decision.entry.lesson}
       onBack={() => navigate("/lessons")}
@@ -683,9 +704,42 @@ function ParrotLessonSceneRoute() {
   return <LessonRouteDecisionView decision={decision} source="parrot" />;
 }
 
-function MyLessonRouteUnavailable() {
+function MyLessonRoute() {
   const { lessonId, sceneNumber } = useParams();
-  const decision = resolveMyLessonRouteDecision(lessonId, sceneNumber);
+  const [entry, setEntry] = useState<LessonCatalogEntry | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (!lessonId) {
+      setIsLoading(false);
+      return () => controller.abort();
+    }
+    setIsLoading(true);
+    void loadMyLesson(lessonId, { signal: controller.signal })
+      .then((descriptor) => {
+        setEntry({ id: descriptor.id, lesson: descriptor.lesson });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setEntry(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+    return () => controller.abort();
+  }, [lessonId]);
+
+  if (isLoading) {
+    return (
+      <main className="feature-placeholder-page">
+        <section className="feature-placeholder-card" role="status">
+          <h1>Loading lesson...</h1>
+        </section>
+      </main>
+    );
+  }
+  if (!entry) return <Navigate replace to="/lessons" />;
+  const decision = resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
   return <LessonRouteDecisionView decision={decision} source="my" />;
 }
 
@@ -704,12 +758,7 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
       />
       <Route element={<LessonList />} path="/lessons" />
       <Route
-        element={
-          <FeaturePlaceholder
-            description="Lesson creation is coming soon. You will be able to build practice around your own interests."
-            title="Create a Lesson"
-          />
-        }
+        element={<LessonCreator />}
         path="/lessons/my/create"
       />
       <Route
@@ -721,11 +770,11 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
       />
       <Route
-        element={<MyLessonRouteUnavailable />}
+        element={<MyLessonRoute />}
         path="/lessons/my/:lessonId"
       />
       <Route
-        element={<MyLessonRouteUnavailable />}
+        element={<MyLessonRoute />}
         path="/lessons/my/:lessonId/scenes/:sceneNumber"
       />
       <Route

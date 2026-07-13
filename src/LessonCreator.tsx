@@ -1,8 +1,14 @@
 import { ArrowLeft, FileJson, Sparkles } from "lucide-react";
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
+import { getLessonScenePath } from "./app-routes";
 import type { Lesson } from "./lesson-catalog";
 import { parseLessonScript } from "./lesson-creator-script";
+import {
+  generateMyLesson,
+  saveMyLesson,
+  type MyLessonSource,
+} from "./my-lessons-api";
 
 const MAX_SCRIPT_BYTES = 256 * 1024;
 type CreatorTab = "generate" | "upload";
@@ -11,7 +17,15 @@ function selectedTab(value: string | null): CreatorTab {
   return value === "upload" ? "upload" : "generate";
 }
 
-function LessonPreview({ lesson }: { lesson: Lesson }) {
+function LessonPreview({
+  isSaving,
+  lesson,
+  onSave,
+}: {
+  isSaving: boolean;
+  lesson: Lesson;
+  onSave: () => void;
+}) {
   return (
     <section aria-live="polite" className="lesson-creator-preview">
       <span>Script ready</span>
@@ -27,17 +41,22 @@ function LessonPreview({ lesson }: { lesson: Lesson }) {
           <dd>{lesson.scenes.length}</dd>
         </div>
       </dl>
-      <button type="button">Save and play lesson</button>
+      <button disabled={isSaving} onClick={onSave} type="button">
+        {isSaving ? "Saving lesson..." : "Save and play lesson"}
+      </button>
     </section>
   );
 }
 
 export function LessonCreator() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = selectedTab(searchParams.get("tab"));
   const [topic, setTopic] = useState("");
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [lessonSource, setLessonSource] = useState<MyLessonSource>("generated");
   const [error, setError] = useState("");
+  const [busyAction, setBusyAction] = useState<"generate" | "save" | null>(null);
 
   function chooseTab(tab: CreatorTab) {
     setLesson(null);
@@ -45,13 +64,28 @@ export function LessonCreator() {
     setSearchParams(tab === "generate" ? {} : { tab });
   }
 
-  function handleGenerate(event: FormEvent) {
+  async function handleGenerate(event: FormEvent) {
     event.preventDefault();
-    setError(
-      topic.trim()
-        ? "Script generation is not connected yet."
-        : "Please describe what the lesson should be about.",
-    );
+    const requestedTopic = topic.trim();
+    if (!requestedTopic) {
+      setError("Please describe what the lesson should be about.");
+      return;
+    }
+    setBusyAction("generate");
+    setLesson(null);
+    setError("");
+    try {
+      setLesson(await generateMyLesson(requestedTopic));
+      setLessonSource("generated");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "The script could not be generated.",
+      );
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -66,12 +100,30 @@ export function LessonCreator() {
 
     try {
       setLesson(parseLessonScript(await file.text(), file.name));
+      setLessonSource("uploaded");
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
           ? caughtError.message
           : "The lesson script is invalid.",
       );
+    }
+  }
+
+  async function handleSave() {
+    if (!lesson || busyAction) return;
+    setBusyAction("save");
+    setError("");
+    try {
+      const saved = await saveMyLesson(lesson, lessonSource);
+      navigate(getLessonScenePath("my", saved.id, 0));
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "The lesson could not be saved.",
+      );
+      setBusyAction(null);
     }
   }
 
@@ -123,7 +175,7 @@ export function LessonCreator() {
             id="generate-script-panel"
             role="tabpanel"
           >
-            <form onSubmit={handleGenerate}>
+            <form aria-busy={busyAction === "generate"} onSubmit={(event) => void handleGenerate(event)}>
               <label htmlFor="lesson-topic">
                 What should this lesson be about?
               </label>
@@ -135,8 +187,9 @@ export function LessonCreator() {
                 rows={5}
                 value={topic}
               />
-              <button type="submit">
-                <Sparkles aria-hidden="true" /> Generate script
+              <button disabled={Boolean(busyAction)} type="submit">
+                <Sparkles aria-hidden="true" />{" "}
+                {busyAction === "generate" ? "Generating script..." : "Generate script"}
               </button>
             </form>
           </section>
@@ -166,7 +219,13 @@ export function LessonCreator() {
             {error}
           </p>
         ) : null}
-        {lesson ? <LessonPreview lesson={lesson} /> : null}
+        {lesson ? (
+          <LessonPreview
+            isSaving={busyAction === "save"}
+            lesson={lesson}
+            onSave={() => void handleSave()}
+          />
+        ) : null}
       </section>
     </main>
   );

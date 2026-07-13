@@ -2,6 +2,7 @@ import {
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
+  checkLessonGenerationRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
@@ -35,6 +36,7 @@ interface WorkerDependencies {
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
+  checkLessonGenerationRateLimit: typeof checkLessonGenerationRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
@@ -72,6 +74,8 @@ export function createWorker(
   const learnerProfileEnrichmentRateLimit =
     dependencies.checkLearnerProfileEnrichmentRateLimit ??
     checkLearnerProfileEnrichmentRateLimit;
+  const lessonGenerationRateLimit =
+    dependencies.checkLessonGenerationRateLimit ?? checkLessonGenerationRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const learnerProfileRequest =
@@ -170,6 +174,17 @@ export function createWorker(
         });
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+        if (
+          url.pathname === "/api/lessons/my/generate" &&
+          request.method === "POST"
+        ) {
+          const rateLimited = await lessonGenerationRateLimit(
+            request,
+            env,
+            session.user.id,
+          );
+          if (rateLimited) return rateLimited;
         }
         return myLessonRequest({
           database: createDatabase(env.DB),
