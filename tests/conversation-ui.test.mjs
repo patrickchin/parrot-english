@@ -22,6 +22,7 @@ after(async () => {
 function props(overrides = {}) {
   return {
     error: "",
+    liveTranscript: "",
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},
@@ -110,6 +111,27 @@ describe("accessible realtime conversation surface", () => {
     assert.match(activeTurn, /aria-pressed="true"/);
     assert.match(activeTurn, /End my turn/);
     assert.match(activeTurn, /Click or press Space/);
+  });
+
+  it("streams the learner transcript only while their turn is active", () => {
+    const activeTurn = render({
+      liveTranscript: "My name is Mia",
+      microphoneEnabled: true,
+      status: "listening",
+    });
+
+    assert.match(activeTurn, /aria-label="Live transcript"/);
+    assert.match(activeTurn, /aria-live="polite"/);
+    assert.match(activeTurn, /You(?:’|&#x27;)re saying/);
+    assert.match(activeTurn, /My name is Mia/);
+
+    const endedTurn = render({
+      liveTranscript: "My name is Mia",
+      microphoneEnabled: false,
+      status: "thinking",
+    });
+    assert.doesNotMatch(endedTurn, /aria-label="Live transcript"/);
+    assert.doesNotMatch(endedTurn, /My name is Mia/);
   });
 
   it("shows that Peppa is preparing a reply after the learner ends their turn", () => {

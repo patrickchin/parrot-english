@@ -29,6 +29,7 @@ export type ConversationSurfaceTurn = {
 
 type ConversationSurfaceProps = {
   error: string;
+  liveTranscript: string;
   microphoneEnabled: boolean;
   onBack: () => void;
   onFinish: () => void;
@@ -156,6 +157,7 @@ function ConversationCharacter({ alt, src }: { alt: string; src: string }) {
 
 export function ConversationSurface({
   error,
+  liveTranscript,
   microphoneEnabled,
   onBack,
   onFinish,
@@ -298,6 +300,20 @@ export function ConversationSurface({
           </p>
         )}
 
+        {microphoneEnabled ? (
+          <output
+            aria-label="Live transcript"
+            aria-live="polite"
+            className="grid w-full max-w-xl gap-1 rounded-3xl border-4 border-white bg-brand-yellow px-5 py-3 text-center text-brand-ink shadow-control-surface"
+          >
+            <span className="text-sm font-black uppercase tracking-wide opacity-75">
+              You’re saying
+            </span>
+            <span className="min-h-7 text-lg font-black leading-snug sm:text-xl">
+              {liveTranscript || "Listening for your words…"}
+            </span>
+          </output>
+        ) : null}
         {error ? (
           <p
             className="m-0 w-full max-w-xl rounded-2xl bg-rose-100 px-4 py-2.5 text-center font-extrabold text-rose-900"
