@@ -3,6 +3,11 @@ import { conversationSession } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 
 const MAX_BUILD_VALUE_LENGTH = 120;
+const GIT_SHA_PATTERN = /^[0-9a-f]{7,40}$/i;
+const SEMVER_PATTERN =
+  /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+const VERSION_TAG_PATTERN =
+  /^v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))-([0-9a-f]{7,40})$/i;
 
 export interface BuildInfoEnv {
   CF_VERSION_METADATA?: WorkerVersionMetadata;
@@ -96,6 +101,24 @@ function noStoreJson(value: unknown, status = 200) {
   });
 }
 
+function deployedBackendBuild(env: BuildInfoEnv) {
+  const configuredCommit = env.PARROT_BACKEND_COMMIT_SHA?.trim() ?? "";
+  const configuredVersion = env.PARROT_BACKEND_VERSION?.trim() ?? "";
+  const tag = env.CF_VERSION_METADATA?.tag?.trim() ?? "";
+  const tagMatch = tag.match(VERSION_TAG_PATTERN);
+  const tagVersion = tagMatch?.[1] ?? "";
+  const tagCommit = tagMatch?.[2]?.toLowerCase() ?? "";
+
+  return {
+    commitSha: GIT_SHA_PATTERN.test(configuredCommit)
+      ? configuredCommit.toLowerCase()
+      : tagCommit || (GIT_SHA_PATTERN.test(tag) ? tag.toLowerCase() : "local"),
+    version: SEMVER_PATTERN.test(configuredVersion)
+      ? configuredVersion
+      : tagVersion || "local",
+  };
+}
+
 export async function handleBuildInfoRequest({
   database,
   env,
@@ -108,6 +131,7 @@ export async function handleBuildInfoRequest({
   const url = new URL(request.url);
 
   if (url.pathname === "/api/build-info" && request.method === "GET") {
+    const backendBuild = deployedBackendBuild(env);
     const [latestAgentState] = await database
       .select({ controllerState: conversationSession.controllerState })
       .from(conversationSession)
@@ -121,10 +145,10 @@ export async function handleBuildInfoRequest({
       : null;
     return noStoreJson({
       backend: {
-        commitSha: env.PARROT_BACKEND_COMMIT_SHA?.trim() || "local",
+        commitSha: backendBuild.commitSha,
         deploymentId: env.CF_VERSION_METADATA?.id ?? "local",
         deployedAt: env.CF_VERSION_METADATA?.timestamp ?? null,
-        version: env.PARROT_BACKEND_VERSION?.trim() || "local",
+        version: backendBuild.version,
       },
       components: agent
         ? [{ ...agent, component: "conversation-agent" }]

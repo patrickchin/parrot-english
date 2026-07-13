@@ -40,7 +40,7 @@ test("main deployment does not repeat the pull-request verification sequence", (
   assert.match(workflow, /run: npm ci/);
   assert.match(workflow, /Verify Cloudflare credentials/);
   assert.match(workflow, /wrangler d1 migrations apply/);
-  assert.match(workflow, /wrangler deploy/);
+  assert.match(workflow, /npm run deploy:worker/);
   assert.doesNotMatch(workflow, /run: npm test/);
   assert.doesNotMatch(workflow, /run: npm run lint/);
   assert.match(workflow, /run: npm run build/);

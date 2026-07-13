@@ -13,8 +13,6 @@ declare namespace Cloudflare {
 		LESSON_GENERATION_RATE_LIMITER: RateLimit;
 		CF_VERSION_METADATA: WorkerVersionMetadata;
 		ASSETS: Fetcher;
-		PARROT_BACKEND_COMMIT_SHA: "local";
-		PARROT_BACKEND_VERSION: "local";
 		REALTIME_CONVERSATIONS_ENABLED: "1";
 	}
 }
@@ -23,7 +21,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PARROT_BACKEND_COMMIT_SHA" | "PARROT_BACKEND_VERSION" | "REALTIME_CONVERSATIONS_ENABLED">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "REALTIME_CONVERSATIONS_ENABLED">> {}
 }
 
 // Begin runtime types

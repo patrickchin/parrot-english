@@ -81,7 +81,7 @@ Apply the additive conversation migration before deploying the Worker:
 npx wrangler d1 migrations apply parrot-english --remote
 npm run build
 npm run build:agent
-npx wrangler deploy --config wrangler.jsonc
+npm run deploy:worker
 ```
 
 Configure these Worker values without committing their real values:
@@ -117,10 +117,11 @@ lk agent create --region us-east --secrets-file=.env.livekit
 npm run deploy:agent -- --secrets-file=.env.livekit
 ```
 
-The deploy wrapper runs `lk agent deploy` with the repository's commit-count
-version and short Git SHA. The running agent reports those values and its pinned
-model IDs back to the Worker whenever it starts a conversation, so the account
-menu's About panel reflects the agent build that actually ran.
+The Worker and agent deploy wrappers use the same repository commit-count semver
+and short Git SHA. The running agent waits for those values and its pinned model
+IDs to be stored whenever it starts a conversation, so the account menu's About
+panel reflects the builds that actually ran. Production agent images reject
+missing or placeholder build metadata.
 
 Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 `LIVEKIT_API_SECRET` into `.env.livekit`. The agent secrets file needs only:

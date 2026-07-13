@@ -11,12 +11,12 @@ function buildEnvironment() {
       ASSETS: { fetch: async () => new Response("asset") },
       CF_VERSION_METADATA: {
         id: "worker-deployment-123",
-        tag: "api1234",
+        tag: "v0.1.276-abc1234",
         timestamp: "2026-07-14T01:02:03.000Z",
       },
       DB: state.d1,
-      PARROT_BACKEND_COMMIT_SHA: "api1234",
-      PARROT_BACKEND_VERSION: "0.1.276",
+      PARROT_BACKEND_COMMIT_SHA: "local",
+      PARROT_BACKEND_VERSION: "local",
     },
   };
 }
@@ -43,7 +43,7 @@ describe("deployment build information", () => {
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
       backend: {
-        commitSha: "api1234",
+        commitSha: "abc1234",
         deploymentId: "worker-deployment-123",
         deployedAt: "2026-07-14T01:02:03.000Z",
         version: "0.1.276",
