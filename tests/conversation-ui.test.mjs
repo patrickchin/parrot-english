@@ -13,7 +13,7 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const { ConversationSurface } = await vite.ssrLoadModule(
-  "/src/ConversationSurface.tsx",
+  "/src/conversation/ConversationSurface.tsx",
 );
 after(async () => {
   await vite.close();

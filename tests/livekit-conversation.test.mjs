@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
   createLiveKitConversation,
   LIVEKIT_CONVERSATION_EVENTS,
-} from "../src/livekit-conversation.ts";
+} from "../src/conversation/livekit-conversation.ts";
 
 class FakeRoom {
   constructor(log) {

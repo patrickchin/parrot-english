@@ -1,4 +1,4 @@
-import { LESSONS, type LessonCatalogEntry } from "./lesson-catalog";
+import { LESSONS, type LessonCatalogEntry } from "../lessons/lesson-catalog";
 
 export type LessonSource = "parrot" | "my";
 export type GateRouteKind = "login" | "learner-profile" | "profile";

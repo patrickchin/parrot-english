@@ -40,7 +40,7 @@ No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
 
 ## Runtime Playback Rules
 
-`src/audio-playback.ts` plays static asset lines only. There is no runtime TTS
+`src/media/audio-playback.ts` plays static asset lines only. There is no runtime TTS
 branch and no `/api/tts` Worker route.
 
 `lib/static-audio.js` resolves a cache entry by both `speaker` and exact `text`.

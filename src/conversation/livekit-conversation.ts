@@ -1,5 +1,5 @@
 import { Room, RoomEvent } from "livekit-client";
-import { REPEAT_LAST_AUDIO_COMMAND } from "../lib/conversation-audio.js";
+import { REPEAT_LAST_AUDIO_COMMAND } from "../../lib/conversation-audio.js";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
   activeSpeakers: RoomEvent.ActiveSpeakersChanged,

@@ -8,7 +8,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { AccountHeader } from "./AppHeader";
+import { AccountHeader } from "../app/AppHeader";
 import {
   getAuthErrorMessage,
   validateAuthForm,
@@ -20,7 +20,7 @@ import {
   type ProfileAccountAction,
 } from "./account-actions";
 import { authClient } from "./auth-client";
-import { ActionButton, cx, fieldClassName } from "./ui";
+import { ActionButton, cx, fieldClassName } from "../shared/ui";
 
 interface AuthActionResult {
   error?: unknown | null;

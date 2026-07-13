@@ -24,21 +24,26 @@ The React Better Auth client talks to Better Auth on the Worker at
 records through Drizzle in the same `parrot-english` D1 database used for all
 future application data. Browser sessions use HTTP cookies.
 
+Browser code is grouped by responsibility under `src/app`, `src/auth`,
+`src/conversation`, `src/learner-profile`, `src/lessons`, `src/media`,
+`src/shared`, and `src/testing`. Only the browser entrypoint, global CSS,
+lesson CSS, and Vite declarations remain as files directly under `src`.
+
 Important entrypoints:
 
 - `src/main.tsx`: mounts the single browser router around the application.
-- `src/App.tsx`: route guards and adapters, lesson rendering, audio sequencing,
+- `src/app/App.tsx`: route guards and adapters, lesson rendering, audio sequencing,
   hold-to-talk, and evaluation effects.
-- `src/app-routes.ts`: canonical path builders, safe return-path parsing, and
+- `src/app/app-routes.ts`: canonical path builders, safe return-path parsing, and
   source-specific route decisions.
-- `src/HomeMenu.tsx` and `src/FeaturePlaceholder.tsx`: the authenticated home
+- `src/app/HomeMenu.tsx` and `src/app/FeaturePlaceholder.tsx`: the authenticated home
   and intentional future-feature skeletons.
-- `src/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
+- `src/lessons/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
 - `lib/lesson-state.js`: pure automatic scene/step runner and scene controls.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
 - `lib/lesson-audio.js`: speaker-plus-text saved-audio resolution.
-- `src/AuthGate.tsx`: session-aware sign-in/sign-up UI and lesson gating.
-- `src/auth-client.ts`: same-origin Better Auth React client.
+- `src/auth/AuthGate.tsx`: session-aware sign-in/sign-up UI and lesson gating.
+- `src/auth/auth-client.ts`: same-origin Better Auth React client.
 - `src/db/schema.ts`: complete Drizzle schema for the shared D1 database.
 - `worker/auth.ts`: Better Auth Worker configuration and Drizzle adapter.
 - `worker/index.ts`: Worker routing and static fallback.
@@ -73,7 +78,7 @@ configured. The server applies Better Auth endpoint rate limiting and trusts
 `cf-connecting-ip` for the client address. `BETTER_AUTH_SECRET` must contain at
 least 32 characters, and `BETTER_AUTH_URL` must exactly match the Worker origin.
 
-`src/AuthGate.tsx` uses the session state to show loading and failure states,
+`src/auth/AuthGate.tsx` uses the session state to show loading and failure states,
 render sign-in/sign-up controls at `/login`, and render protected routes only
 for an authenticated user. A protected request while signed out redirects to
 `/login?returnTo=...`; only validated same-origin application paths are
@@ -129,7 +134,7 @@ Learner-created lessons will form a fourth, database-backed boundary. They must
 not be written into `content/lessons` or mixed into the built-in Parrot content
 namespace.
 
-Lesson JSON never contains asset filenames. `src/lesson-catalog.ts` uses eager
+Lesson JSON never contains asset filenames. `src/lessons/lesson-catalog.ts` uses eager
 `import.meta.glob` discovery, so adding or removing a valid lesson file changes
 the picker automatically.
 
@@ -205,14 +210,14 @@ not contain character-specific rendering branches.
 `getStaticAudioLineForSpeech(speaker, text)`. This supports identical dialogue
 spoken by different characters with different voices and cache files.
 
-`src/audio-playback.ts` accepts static assets only. There is no `/api/tts`
+`src/media/audio-playback.ts` accepts static assets only. There is no `/api/tts`
 Worker route. A missing cache entry or file is a development error and must not
 silently trigger billable runtime generation.
 
 ## Speech Recording
 
-`src/speech-recorder.ts` exposes a recording session with `stop()` and
-`cancel()`. `src/App.tsx` starts it on pointer/keyboard press and stops it on
+`src/media/speech-recorder.ts` exposes a recording session with `stop()` and
+`cancel()`. `src/app/App.tsx` starts it on pointer/keyboard press and stops it on
 release.
 
 Rules:

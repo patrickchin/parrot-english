@@ -4,7 +4,7 @@ import {
   createInitialLessonState,
   reduceLessonState,
 } from "../lib/lesson-state.js";
-import { createPlaybackOperation } from "../src/playback-operation.ts";
+import { createPlaybackOperation } from "../src/lessons/playback-operation.ts";
 
 const lesson = {
   childName: "Bella",

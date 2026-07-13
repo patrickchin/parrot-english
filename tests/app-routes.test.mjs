@@ -10,7 +10,7 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const routes = await vite.ssrLoadModule("/src/app-routes.ts").catch(() => ({}));
+const routes = await vite.ssrLoadModule("/src/app/app-routes.ts").catch(() => ({}));
 
 after(async () => vite.close());
 

@@ -1,14 +1,14 @@
 /// <reference types="vite/client" />
 
-import backgrounds from "../content/catalogs/backgrounds.json";
-import characters from "../content/catalogs/characters.json";
-import emotes from "../content/catalogs/emotes.json";
+import backgrounds from "../../content/catalogs/backgrounds.json";
+import characters from "../../content/catalogs/characters.json";
+import emotes from "../../content/catalogs/emotes.json";
 import {
   createLessonCatalog,
   validateLesson,
-} from "../lib/lesson-data";
+} from "../../lib/lesson-data";
 
-const lessonModules = import.meta.glob("../content/lessons/*.json", {
+const lessonModules = import.meta.glob("../../content/lessons/*.json", {
   eager: true,
   import: "default",
 }) as Record<string, unknown>;

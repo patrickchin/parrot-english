@@ -16,7 +16,7 @@ import {
   type LiveKitConversation,
 } from "./livekit-conversation";
 import { createResponseLatencyTimer } from "./response-latency";
-import type { ConversationPurpose } from "../lib/conversation-purpose";
+import type { ConversationPurpose } from "../../lib/conversation-purpose";
 
 export function selectLearnerProfileExperience(
   serverMode: "realtime" | "form",

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Link, type LinkProps } from "react-router";
-import { ActionButton, cx, controlClassName } from "./ui";
+import { ActionButton, cx, controlClassName } from "../shared/ui";
 
 function headerControlClassName(variant: "navy" | "surface") {
   return controlClassName({

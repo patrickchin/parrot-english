@@ -12,7 +12,7 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const questionModule = await vite.ssrLoadModule("/src/LearnerProfileQuestion.tsx");
+const questionModule = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileQuestion.tsx");
 const {
   LearnerProfileQuestionView,
   captureLearnerProfileAnswer,
@@ -20,13 +20,13 @@ const {
   replayLearnerProfileQuestion,
 } = questionModule;
 const acknowledgmentModule = await vite.ssrLoadModule(
-  "/src/LearnerProfileAcknowledgment.tsx",
+  "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
 );
 const { LearnerProfileAcknowledgment, beginAcknowledgmentPlayback } =
   acknowledgmentModule;
-const profileModule = await vite.ssrLoadModule("/src/ProfileEditor.tsx");
+const profileModule = await vite.ssrLoadModule("/src/learner-profile/ProfileEditor.tsx");
 const { ProfileEditorView } = profileModule;
-const gateModule = await vite.ssrLoadModule("/src/LearnerProfileGate.tsx");
+const gateModule = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx");
 const {
   LearnerProfileGateView,
   answerForQuestion,
@@ -40,13 +40,13 @@ const {
   teardownProfileOperationResources,
   updateProfileDraft,
 } = gateModule;
-const appSource = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const appSource = readFileSync(new URL("../src/app/App.tsx", import.meta.url), "utf8");
 const questionSource = readFileSync(
-  new URL("../src/LearnerProfileQuestion.tsx", import.meta.url),
+  new URL("../src/learner-profile/LearnerProfileQuestion.tsx", import.meta.url),
   "utf8",
 );
 const gateSource = readFileSync(
-  new URL("../src/LearnerProfileGate.tsx", import.meta.url),
+  new URL("../src/learner-profile/LearnerProfileGate.tsx", import.meta.url),
   "utf8",
 );
 

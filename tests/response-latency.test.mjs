@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
   createResponseLatencyTimer,
   formatResponseLatency,
-} from "../src/response-latency.ts";
+} from "../src/conversation/response-latency.ts";
 
 describe("client response latency timer", () => {
   it("measures from the learner ending their turn until Peppa starts speaking", () => {

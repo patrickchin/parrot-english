@@ -6,7 +6,7 @@ import {
   finishConversation,
   loadConversation,
   startConversation,
-} from "../src/conversation-api.ts";
+} from "../src/conversation/conversation-api.ts";
 
 function createJsonFetch(payload = { ok: true }, status = 200) {
   const calls = [];

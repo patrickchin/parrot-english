@@ -14,12 +14,12 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const homeModule = await vite
-  .ssrLoadModule("/src/HomeMenu.tsx")
+  .ssrLoadModule("/src/app/HomeMenu.tsx")
   .catch(() => ({}));
 const placeholderModule = await vite
-  .ssrLoadModule("/src/FeaturePlaceholder.tsx")
+  .ssrLoadModule("/src/app/FeaturePlaceholder.tsx")
   .catch(() => ({}));
-const appModule = await vite.ssrLoadModule("/src/App.tsx").catch(() => ({}));
+const appModule = await vite.ssrLoadModule("/src/app/App.tsx").catch(() => ({}));
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
 const { ApplicationRoutes } = appModule;
@@ -29,7 +29,7 @@ after(async () => {
 });
 
 const app = readFileSync(
-  fileURLToPath(new URL("../src/App.tsx", import.meta.url)),
+  fileURLToPath(new URL("../src/app/App.tsx", import.meta.url)),
   "utf8",
 );
 function renderInRouter(element, initialEntry = "/") {

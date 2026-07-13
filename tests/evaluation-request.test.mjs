@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { evaluateSpeech } from "../src/evaluation-request.ts";
+import { evaluateSpeech } from "../src/lessons/evaluation-request.ts";
 
 describe("speech evaluation request", () => {
   it("times out requests that do not finish", async () => {

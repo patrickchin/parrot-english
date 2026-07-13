@@ -1,19 +1,19 @@
 import { Mic, Volume2 } from "lucide-react";
 import type { FormEvent } from "react";
-import { playAudioLine } from "./audio-playback";
+import { playAudioLine } from "../media/audio-playback";
 import {
   transcribeLearnerProfileAudio,
   type LearnerProfileAudio,
   type LearnerProfileQuestion,
 } from "./learner-profile-api";
-import { recordSpeechClip } from "./speech-recorder";
+import { recordSpeechClip } from "../media/speech-recorder";
 import { LearnerProfileCard } from "./LearnerProfileLayout";
 import {
   ActionButton,
   fieldClassName,
   IconButton,
   TextButton,
-} from "./ui";
+} from "../shared/ui";
 
 export type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
 
