@@ -14,6 +14,11 @@ export type AgentConversationTurn = {
 
 type IngestClientOptions = {
   baseUrl: string;
+  build?: {
+    commitSha: string;
+    details: { models: { llm: string; stt: string; tts: string } };
+    version: string;
+  };
   fetch?: typeof globalThis.fetch;
   retryDelayMs?: number;
   secret: string;
@@ -27,6 +32,7 @@ function delay(milliseconds: number) {
 
 export function createConversationIngestClient({
   baseUrl,
+  build,
   fetch: request = globalThis.fetch,
   retryDelayMs = 100,
   secret,
@@ -34,13 +40,30 @@ export function createConversationIngestClient({
 }: IngestClientOptions) {
   const root = baseUrl.replace(/\/$/, "");
   if (!root || !secret.trim()) throw new Error("Ingest URL and secret are required.");
+  const agentBuild = build
+    ? { ...build, reportedAt: new Date().toISOString() }
+    : null;
 
-  async function post(conversationId: string, action: string, body: unknown) {
+  function withBuildInfo(controllerState: unknown) {
+    if (
+      !agentBuild ||
+      controllerState === null ||
+      typeof controllerState !== "object" ||
+      Array.isArray(controllerState)
+    ) {
+      return controllerState;
+    }
+    return {
+      ...controllerState,
+      _buildInfo: { agent: agentBuild },
+    };
+  }
+
+  async function postUrl(url: string, body: unknown) {
     const serialized = JSON.stringify(body);
     if (new TextEncoder().encode(serialized).byteLength > MAX_INGEST_BODY_BYTES) {
       throw new Error("Conversation ingest payload is too large.");
     }
-    const url = `${root}/api/conversations/${encodeURIComponent(conversationId)}/${action}`;
     let lastError: unknown;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
@@ -67,7 +90,21 @@ export function createConversationIngestClient({
     throw lastError instanceof Error ? lastError : new Error("Conversation ingest failed.");
   }
 
+  function post(conversationId: string, action: string, body: unknown) {
+    return postUrl(
+      `${root}/api/conversations/${encodeURIComponent(conversationId)}/${action}`,
+      body,
+    );
+  }
+
   return {
+    reportBuild(conversationId: string, controllerState: unknown) {
+      return post(conversationId, "facts", {
+        candidates: [],
+        controllerState: withBuildInfo(controllerState),
+      });
+    },
+
     appendTurn(conversationId: string, turn: AgentConversationTurn) {
       return post(conversationId, "turns", turn);
     },
@@ -81,7 +118,10 @@ export function createConversationIngestClient({
     },
 
     updateState(conversationId: string, controllerState: unknown) {
-      return post(conversationId, "facts", { candidates: [], controllerState });
+      return post(conversationId, "facts", {
+        candidates: [],
+        controllerState: withBuildInfo(controllerState),
+      });
     },
   };
 }

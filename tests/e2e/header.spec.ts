@@ -127,12 +127,14 @@ test("the learner name opens the account actions dropdown", async ({ page }) => 
 });
 
 test("About shows independently deployed component versions", async ({ page }) => {
+  const viewport = mobileViewports.find(({ name }) => name === "small phone")!;
+  await page.setViewportSize(viewport);
   await page.goto("/lessons");
   await page.getByRole("button", { exact: true, name: "Mia" }).click();
   await page.getByRole("menuitem", { name: "About" }).click();
 
   const about = page.getByRole("dialog", { name: "About Parrot English" });
-  await expect(about).toBeVisible();
+  await expectInsideViewport(about, viewport);
   await expect(about.getByRole("heading", { name: "Web app" })).toBeVisible();
   await expect(
     about.getByRole("heading", { name: "Cloudflare Worker" }),

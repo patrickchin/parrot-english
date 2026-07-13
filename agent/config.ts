@@ -7,6 +7,8 @@ export const DEFAULT_AGENT_MODELS = {
 
 export type AgentConfig = {
   agentName: string;
+  buildVersion: string;
+  commitSha: string;
   ingestSecret: string;
   ingestUrl: string;
   livekitApiKey: string;
@@ -43,6 +45,8 @@ function optionalModel(
 export function readAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentConfig {
   return {
     agentName: required(env, "LIVEKIT_AGENT_NAME"),
+    buildVersion: env.PARROT_AGENT_VERSION?.trim() || "local",
+    commitSha: env.PARROT_AGENT_COMMIT_SHA?.trim() || "local",
     ingestSecret: required(env, "CONVERSATION_AGENT_SECRET"),
     ingestUrl: required(env, "CONVERSATION_INGEST_URL").replace(/\/$/, ""),
     livekitApiKey: required(env, "LIVEKIT_API_KEY"),

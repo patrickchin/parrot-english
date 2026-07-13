@@ -112,8 +112,13 @@ later versions from the repository root:
 ```bash
 lk cloud auth
 lk agent create --region us-east --secrets-file=.env.livekit
-lk agent deploy
+npm run deploy:agent -- --secrets-file=.env.livekit
 ```
+
+The deploy wrapper runs `lk agent deploy` with the repository's commit-count
+version and short Git SHA. The running agent reports those values and its pinned
+model IDs back to the Worker whenever it starts a conversation, so the account
+menu's About panel reflects the agent build that actually ran.
 
 Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 `LIVEKIT_API_SECRET` into `.env.livekit`. The agent secrets file needs only:
