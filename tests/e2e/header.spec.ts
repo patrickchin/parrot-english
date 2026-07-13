@@ -123,7 +123,7 @@ test("the learner name opens the account actions dropdown", async ({ page }) => 
   await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
 });
 
-test("account actions stay visible after scrolling a short lesson list", async ({
+test("account menu stays visible after scrolling a short lesson list", async ({
   page,
 }) => {
   const viewport = mobileViewports.find(({ name }) => name === "small phone")!;

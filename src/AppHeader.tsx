@@ -1,4 +1,12 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { Link, type LinkProps } from "react-router";
 import { ActionButton, cx, controlClassName } from "./ui";
 
@@ -83,41 +91,109 @@ export function AccountHeader({
   userEmail: string;
   userLabel: string;
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const accountRef = useRef<HTMLElement>(null);
+  const menuId = useId();
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    accountRef.current
+      ?.querySelector<HTMLButtonElement>("[role='menuitem']:not(:disabled)")
+      ?.focus();
+
+    function closeFromOutside(event: PointerEvent) {
+      if (!accountRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    function closeFromEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setIsMenuOpen(false);
+      accountRef.current?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
+        ?.focus();
+    }
+
+    document.addEventListener("pointerdown", closeFromOutside);
+    document.addEventListener("keydown", closeFromEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeFromOutside);
+      document.removeEventListener("keydown", closeFromEscape);
+    };
+  }, [isMenuOpen]);
+
+  function selectAction(action: () => void) {
+    setIsMenuOpen(false);
+    action();
+  }
+
   return (
     <aside
+      aria-busy={isSigningOut}
       aria-label="Current account"
-      className="fixed right-3.5 top-3.5 z-40 flex min-h-13 max-w-xl items-center gap-1.5 rounded-full border-4 border-white bg-brand-navy px-1 font-ui text-base font-black leading-none text-white shadow-control-navy short:right-2.5 short:top-2.5 short:min-h-11 short:gap-1 md:right-7 md:top-6 md:min-h-16 md:gap-2.5 md:pl-4"
+      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-7 md:top-6 md:max-w-xl"
+      ref={accountRef}
     >
-      <span
-        className="hidden min-w-0 overflow-hidden text-ellipsis whitespace-nowrap md:inline"
-        title={userEmail}
-      >
-        {userLabel}
-      </span>
-      {onOpenProfile ? (
-        <ActionButton
-          aria-label="Edit learner profile"
-          className="min-h-11 min-w-0 rounded-full px-2 shadow-none short:min-h-9 short:px-1 short:text-sm md:min-h-14 md:px-3 md:text-base"
-          onClick={onOpenProfile}
-          size="bare"
-          type="button"
-          variant="surface"
-        >
-          Profile
-        </ActionButton>
-      ) : null}
       <ActionButton
-        className="min-h-11 min-w-0 rounded-full px-2 shadow-none short:min-h-9 short:px-1 short:text-sm md:min-h-14 md:px-3 md:text-base"
-        disabled={isSigningOut}
-        onClick={onSignOut}
+        aria-controls={menuId}
+        aria-expanded={isMenuOpen}
+        aria-haspopup="menu"
+        className="min-h-13 max-w-full min-w-0 gap-1.5 rounded-full border-4 border-white px-3 py-0 shadow-control-navy short:min-h-11 short:px-2 short:text-sm md:min-h-16 md:gap-2 md:px-5 md:text-base"
+        onClick={() => setIsMenuOpen((current) => !current)}
         size="bare"
+        title={userEmail}
         type="button"
+        variant="navy"
       >
-        {isSigningOut ? "Signing out…" : "Log out"}
+        <span className="min-w-0 truncate">{userLabel}</span>
+        <ChevronDown
+          aria-hidden="true"
+          className={cx(
+            "size-5 shrink-0 transition-transform",
+            isMenuOpen && "rotate-180",
+          )}
+          strokeWidth={3}
+        />
       </ActionButton>
+      {isMenuOpen ? (
+        <div
+          aria-label="Account actions"
+          className="absolute right-0 top-full mt-2 grid min-w-40 gap-1 rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy"
+          id={menuId}
+          role="menu"
+        >
+          {onOpenProfile ? (
+            <ActionButton
+              className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+              onClick={() => selectAction(onOpenProfile)}
+              role="menuitem"
+              size="bare"
+              type="button"
+              variant="surface"
+            >
+              Profile
+            </ActionButton>
+          ) : null}
+          <ActionButton
+            className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+            disabled={isSigningOut}
+            onClick={() => selectAction(onSignOut)}
+            role="menuitem"
+            size="bare"
+            type="button"
+          >
+            {isSigningOut ? "Signing out…" : "Log out"}
+          </ActionButton>
+        </div>
+      ) : null}
       {error ? (
         <span
-          className="absolute right-0 top-full mt-2 w-64 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md sm:w-80"
+          className={cx(
+            "absolute right-0 top-full mt-2 w-64 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md sm:w-80",
+            isMenuOpen && "mt-32",
+          )}
           role="alert"
         >
           {error}

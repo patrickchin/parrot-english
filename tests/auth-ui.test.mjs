@@ -420,7 +420,7 @@ test("failed form state preserves values and disables controls while submitting"
   assert.match(html, /role="alert"/);
 });
 
-test("signed-in views render lesson children and disabled sign-out progress", () => {
+test("signed-in views keep signing-out progress on the collapsed account", () => {
   const html = renderAuthGate({
     isSigningOut: true,
     session: { user: { email: "learner@example.com", name: null } },
@@ -428,8 +428,9 @@ test("signed-in views render lesson children and disabled sign-out progress", ()
 
   assert.match(html, /LESSON CONTENT/);
   assert.match(html, /learner@example.com/);
-  assert.match(html, /Signing out…/);
-  assert.match(html, /<button[^>]*disabled/);
+  assert.match(html, /<aside[^>]*aria-busy="true"/);
+  assert.match(html, /aria-expanded="false"/);
+  assert.doesNotMatch(html, /Signing out…/);
 });
 
 test("renders the learner name as the collapsed account menu trigger", () => {

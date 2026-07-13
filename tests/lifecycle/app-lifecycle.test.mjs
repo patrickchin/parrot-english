@@ -829,6 +829,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
+    await click(button("Mia"));
     await click(button("Log out"));
     await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
@@ -943,8 +944,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/PROFILE LESSONS/));
-    await waitFor(() => button("Edit learner profile"));
-    await click(button("Edit learner profile"));
+    await click(button("Mia"));
+    await click(button("Profile"));
     await waitFor(() => text(/Edit profile/));
     await input(document.querySelector("#profile-name"), "Maya");
     await input(document.querySelector("#profile-age"), "almost nine");
