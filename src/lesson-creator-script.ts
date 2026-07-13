@@ -1,5 +1,9 @@
 import { prepareLesson } from "../lib/lesson-data";
-import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
+import {
+  VISUAL_CATALOG,
+  type Lesson,
+  type LessonDraft,
+} from "./lesson-catalog";
 
 export const MAX_LESSON_SCRIPT_BYTES = 256 * 1024;
 
@@ -14,7 +18,7 @@ export function formatLessonScript(lesson: Lesson) {
 export function parseLessonScript(
   source: string,
   sourceName = "lesson.json",
-): Lesson {
+): LessonDraft {
   if (getLessonScriptByteLength(source) > MAX_LESSON_SCRIPT_BYTES) {
     throw new Error(`${sourceName} must be smaller than 256 KB.`);
   }

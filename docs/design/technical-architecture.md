@@ -158,13 +158,16 @@ question, raw prose, summary, acknowledgment, enrichment status, and timestamp.
 The old normalized `questionnaire` and `questionnaire_question` tables remain
 dormant for rollback safety and are not part of the v2 runtime path.
 
-`lib/lesson-data.js` validates both catalogs and lessons. Learner scripts keep
-only the runtime contract: the player-facing core fields, at least one scene
-with one step, and catalog-backed backgrounds, characters, speakers, and any
-supplied visual emotes. Scripts may use any language, flexible scene and phrase
-counts, extra metadata, partial emote maps, independent user lines, and any
-supported speaker for the ending. Missing visible-character emotes render as
-`idle`.
+`lib/lesson-data.js` strictly validates built-in catalogs and lessons, while
+learner drafts pass through a warning-based normalization boundary. Missing
+display fields receive defaults, unsupported backgrounds fall back to the first
+catalog background, unsupported speakers become narrator, invalid or duplicate
+characters are removed, and missing emotes become `idle`. Scripts may use any
+language, flexible scene and phrase counts, extra metadata, independent user
+lines, and any ending. Only malformed JSON, oversized input, or a draft with no
+playable dialogue remains fatal. Generate uses Groq JSON Object Mode so
+repairable output reaches this boundary instead of failing provider-side schema
+validation.
 
 ## Lesson State Machine
 

@@ -9,7 +9,7 @@ request.
 Return valid JSON only.
 
 - Use no Markdown fences and no commentary outside the JSON.
-- Include the core fields listed below. Extra metadata fields are allowed.
+- Prefer the core fields listed below. Extra metadata fields are allowed.
 - Use non-empty text for fields that the lesson picker and player display.
 
 The root fields are:
@@ -42,6 +42,9 @@ and `steps`. Each scene needs one or more steps. Each step includes `speaker`,
 
 These ID rules are runtime compatibility requirements: the player can only
 render assets that exist in its catalog. They do not impose curriculum rules.
+If a draft omits a display field or supplies an unsupported ID, the app applies
+a safe default and shows a warning instead of rejecting the draft. Only invalid
+JSON or a draft with no playable dialogue is blocked.
 
 ## Flexible Authoring
 
