@@ -6,12 +6,14 @@ Lesson scripts are editable JSON text. Visual and audio files live outside the
 lesson so authors can add or remove story content without managing filenames.
 All active lesson dialogue, instructions, and feedback are in English.
 
-Runtime playback uses saved audio in `public/assets/audio`. That directory is an
-optimization cache and deployment source, not the lesson-authoring format.
+Built-in Parrot Lesson playback uses saved audio in `public/assets/audio`.
+Authenticated My Lessons use browser on-device English speech synthesis.
+Neither playback mode adds audio fields to the lesson-authoring format.
 
 ## Sources of Truth
 
 - Lessons: `content/lessons/*.json`
+- My Lessons: validated JSON in the D1 `learner_lesson` table
 - Global emotes: `content/catalogs/emotes.json`
 - Global characters and sprite paths: `content/catalogs/characters.json`
 - Global backgrounds: `content/catalogs/backgrounds.json`
@@ -40,15 +42,20 @@ No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
 
 ## Runtime Playback Rules
 
-`src/media/audio-playback.ts` plays static asset lines only. There is no runtime TTS
-branch and no `/api/tts` Worker route.
+`src/media/audio-playback.ts` plays built-in static asset lines.
+`src/media/device-speech.ts`
+plays generated and uploaded My Lesson lines with the browser Web Speech API,
+preferring an available local English voice and applying modest character
+pitch/rate profiles. There is no `/api/tts` Worker route and no provider key is
+sent to the browser.
 
 `lib/static-audio.js` resolves a cache entry by both `speaker` and exact `text`.
 The speaker is required because the same sentence may be spoken by Peppa and
 Dolly with different cached voices. User steps never require saved playback.
 
-A missing metadata entry or file should fail tests during development instead
-of generating speech during a live lesson.
+A missing built-in metadata entry or file should fail tests during development
+instead of silently falling back to device speech. Device speech is selected
+only by the `my` lesson source and is cancelled on scene or route changes.
 
 ## ElevenLabs Generation
 
@@ -87,8 +94,8 @@ defaults are:
 These are character-directed voices, not exact protected-character clones.
 
 Use `--only=<audio-id>` to avoid regenerating existing assets or spending
-credits unnecessarily. Never substitute local or macOS system speech for
-missing saved lesson audio.
+credits unnecessarily. Never substitute local or macOS system speech for a
+missing built-in saved asset; My Lessons are the explicit on-device exception.
 
 ## Visual Generation
 
@@ -110,7 +117,9 @@ be confined to antialiased subject edges.
 
 - Validate every checked-in lesson and catalog.
 - Confirm each character/emote catalog path exists.
-- Confirm each scripted non-user line resolves by speaker plus text.
+- Confirm each built-in scripted non-user line resolves by speaker plus text.
+- Confirm My Lesson device speech completes, fails clearly when unsupported,
+  and cancels on navigation.
 - Confirm each audio metadata path exists under `public`.
 - Run focused lesson/audio tests.
 - Run `npm run build` so Vite copies the source assets into `dist`.

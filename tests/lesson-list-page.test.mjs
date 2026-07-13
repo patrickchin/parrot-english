@@ -17,7 +17,9 @@ const vite = await createServer({
 
 const { ApplicationRoutes } = await vite.ssrLoadModule("/src/app/App.tsx");
 const { LESSONS } = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
-const { LessonList } = await vite.ssrLoadModule("/src/lessons/LessonList.tsx");
+const { LessonList, LessonListView } = await vite.ssrLoadModule(
+  "/src/lessons/LessonList.tsx",
+);
 
 test.after(async () => {
   await vite.close();
@@ -68,8 +70,14 @@ test("lesson list separates all discovered Parrot lessons from My Lessons", () =
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
-test("lesson list exposes My Lessons empty and creation states", () => {
-  const html = renderLessonList();
+test("lesson list exposes My Lessons empty and creation states plus main-menu navigation", () => {
+  const html = renderInRouter(
+    createElement(LessonListView, {
+      isLoadingMyLessons: false,
+      myLessons: [],
+      myLessonsError: "",
+    }),
+  );
 
   assert.match(html, /You haven&#x27;t created any lessons yet\./);
   assert.match(

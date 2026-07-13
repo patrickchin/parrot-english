@@ -10,7 +10,7 @@ List-first, scene-based English speaking practice for young learners.
 - Cloudflare Worker TypeScript REST API
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
-- Groq speech evaluation, onboarding transcription, and answer enrichment
+- Groq lesson generation, speech evaluation, onboarding transcription, and answer enrichment
 - ElevenLabs saved prompt audio and runtime onboarding acknowledgments
 - LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
@@ -77,8 +77,11 @@ every scripted scene character.
 
 Lesson JSON deliberately contains no image or audio filenames. Scripted
 character IDs, background IDs, and the six supported emotes are resolved
-through the global catalogs in `content/catalogs`. Saved audio is an optimization
-cache resolved by speaker plus exact dialogue text in `lib/static-audio.js`.
+through the global catalogs in `content/catalogs`. Built-in lessons resolve
+saved audio by speaker plus exact dialogue text in `lib/static-audio.js`.
+Authenticated My Lessons are stored in D1 and use the browser's on-device
+English speech synthesis, so generated and uploaded scripts can play without
+creating audio assets.
 
 Character subjects must be opaque against a transparent sprite background.
 Partial alpha is reserved for antialiased subject edges.
@@ -92,6 +95,10 @@ of source control. Optional evaluation limits are:
 EVALUATE_RATE_LIMIT_MAX=8
 EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 ```
+
+The same key powers Create Lesson script generation. Generation is protected by
+the authenticated `LESSON_GENERATION_RATE_LIMITER` binding. Uploaded lesson
+scripts are validated and stored directly without an AI generation request.
 
 Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
 acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic
@@ -124,9 +131,10 @@ The URL is not sensitive and can be moved to a Wrangler environment variable
 later; it is stored as a secret here to match the current deployment procedure.
 
 Set `ELEVENLABS_API_KEY` to generate missing saved lesson audio. Use
-`--only=<audio-id>` to avoid spending credits on unrelated lines. Saved audio
-must be generated with ElevenLabs; do not substitute local or macOS system
-speech.
+`--only=<audio-id>` to avoid spending credits on unrelated lines. Built-in
+saved audio must be generated with ElevenLabs; do not substitute local or macOS
+system speech for missing built-in assets. My Lessons deliberately use browser
+on-device speech and do not require `ELEVENLABS_API_KEY`.
 
 The default generator uses ElevenLabs `eleven_v3` and selects a voice from the
 manifest speaker:

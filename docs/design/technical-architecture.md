@@ -5,8 +5,9 @@
 Parrot English is a Vite React single-page app served by a Cloudflare Worker.
 The Worker serves built assets from `dist` and owns the REST API surface under
 `/api/*`. React Router owns durable browser navigation below one
-`BrowserRouter`. Runtime lesson playback uses saved static audio; the only live
-speech service in a lesson is speech evaluation.
+`BrowserRouter`. Built-in lesson playback uses saved static audio; My Lessons
+use browser on-device English speech. The only remote live speech service in a
+lesson remains speech evaluation.
 
 ## Runtime Shape
 
@@ -16,6 +17,7 @@ Browser
        -> /api/auth/* -> Better Auth -> Drizzle -> shared D1
        -> /api/evaluate-speech
        -> /api/learner-profile/* -> Groq -> learner_profile -> ElevenLabs
+       -> /api/lessons/my/* -> Groq -> learner_lesson
        -> static Vite assets through env.ASSETS
 ```
 
@@ -38,6 +40,9 @@ Important entrypoints:
   source-specific route decisions.
 - `src/app/HomeMenu.tsx` and `src/app/FeaturePlaceholder.tsx`: the authenticated home
   and intentional future-feature skeletons.
+- `src/lessons/LessonCreator.tsx`, `src/lessons/LessonEditor.tsx`, and
+  `src/lessons/my-lessons-api.ts`: generate/upload/edit preview, persistence,
+  and same-origin learner lesson requests.
 - `src/lessons/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
 - `lib/lesson-state.js`: pure automatic scene/step runner and scene controls.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
@@ -52,6 +57,9 @@ Important entrypoints:
 - `worker/learner-profile-acknowledgment-audio.ts`: server-only ElevenLabs TTS.
 - `worker/conversations.ts`: purpose-aware conversation creation and ingest API.
 - `agent/peppa-conversation.ts`: distinct onboarding, profile-edit, and small-chat prompts.
+- `src/media/device-speech.ts`: cancellable local English speech for My Lessons.
+- `worker/my-lessons.ts` and `worker/lesson-generator.ts`: owner-scoped lesson
+  persistence, warning-based normalization, and structured Groq generation.
 
 ## Authentication
 
@@ -107,11 +115,11 @@ The URL is authoritative for durable screens and lesson scenes:
 ```
 
 `/lessons` combines two presentation sections without combining their data
-ownership. Parrot lessons are checked-in JSON. Future learner-created lessons
-belong in separate D1 application tables and use the `/lessons/my/*` namespace;
+ownership. Parrot lessons are checked-in JSON. Learner-created lessons belong
+to the D1 `learner_lesson` table and use the `/lessons/my/*` namespace;
 the built-in catalog has no D1 lesson rows, and the route namespace prevents an
-identical ID from conflicting. The create, progress, and storytelling routes
-intentionally render skeleton pages until those features are implemented.
+identical ID from conflicting. Create Lesson is implemented; Progress and
+Storytelling remain skeleton routes.
 
 Scene URLs are one-based and durable. Button-driven scene changes navigate
 first and reconcile reducer state to the new route. Browser Back/Forward and a
@@ -130,9 +138,9 @@ Three boundaries keep lesson authoring simple:
 3. `lib/static-audio.js` owns the saved-speech cache keyed by speaker plus exact
    dialogue.
 
-Learner-created lessons will form a fourth, database-backed boundary. They must
-not be written into `content/lessons` or mixed into the built-in Parrot content
-namespace.
+Learner-created lessons form a fourth, database-backed boundary. They are
+validated against the same contract, scoped by `auth_user_id`, and never written
+into `content/lessons` or mixed into the built-in Parrot content namespace.
 
 Lesson JSON never contains asset filenames. `src/lessons/lesson-catalog.ts` uses eager
 `import.meta.glob` discovery, so adding or removing a valid lesson file changes
@@ -210,9 +218,11 @@ not contain character-specific rendering branches.
 `getStaticAudioLineForSpeech(speaker, text)`. This supports identical dialogue
 spoken by different characters with different voices and cache files.
 
-`src/media/audio-playback.ts` accepts static assets only. There is no `/api/tts`
-Worker route. A missing cache entry or file is a development error and must not
-silently trigger billable runtime generation.
+For Parrot Lessons, `src/media/audio-playback.ts` accepts those static assets only. For
+My Lessons, the same state machine yields source-independent speaker/text and
+`src/media/device-speech.ts` uses the local Web Speech API. Both paths share the same
+AbortSignal lifecycle. There is no `/api/tts` Worker route; missing built-in
+audio never silently falls back to device or billable runtime generation.
 
 ## Speech Recording
 

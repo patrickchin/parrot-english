@@ -1,7 +1,7 @@
 # Parrot English Docs
 
 These docs describe the current product and technical design as of
-2026-07-13. They are based on the implemented code, existing specs, and the
+2026-07-14. They are based on the implemented code, existing specs, and the
 prompt history from Codex sessions in this project.
 
 ## Design Docs
@@ -12,8 +12,8 @@ prompt history from Codex sessions in this project.
   Worker API, lesson state machine, speech evaluation path, and local/dev
   runtime modes.
 - [Audio and Content Pipeline](./design/audio-and-content-pipeline.md) explains
-  static lesson audio, voice direction, regeneration rules, and why runtime TTS
-  is disabled.
+  built-in static lesson audio, My Lesson on-device speech, voice direction,
+  and regeneration rules.
 - [Codex Session Decision Log](./design/codex-session-decision-log.md) records
   the major decisions that came from the project Codex prompts.
 
