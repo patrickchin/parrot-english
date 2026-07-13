@@ -547,6 +547,104 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(disconnectCalls, 0);
   });
 
+  it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
+    let listener = () => {};
+    const microphoneCalls = [];
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/conversations");
+      assert.equal(init.method, "POST");
+      return json({
+        conversation: { id: "conversation-response-loading" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "onboarding",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello! What do you like to do?",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+
+    await click(button("Start my turn"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
+    await click(button("End my turn"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "thinking",
+      ),
+    );
+
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-reply",
+        text: "Drawing",
+        final: false,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "speaking",
+    );
+
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-reply",
+        text: "Drawing is brilliant!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "listening",
+    );
+  });
+
   it("toggles the learner turn with Space without hijacking focused controls", async () => {
     const toggles = [];
     const backs = [];

@@ -74,6 +74,7 @@ describe("accessible realtime conversation surface", () => {
       "ready",
       "connecting",
       "listening",
+      "thinking",
       "speaking",
       "reconnecting",
       "error",
@@ -133,6 +134,29 @@ describe("accessible realtime conversation surface", () => {
     assert.match(activeTurn, /aria-pressed="true"/);
     assert.match(activeTurn, /End my turn/);
     assert.match(activeTurn, /Click or press Space/);
+  });
+
+  it("shows that Peppa is preparing a reply after the learner ends their turn", () => {
+    const html = render({
+      microphoneEnabled: false,
+      status: "thinking",
+      turns: [
+        { id: "one", role: "assistant", text: "What do you like to do?" },
+        { id: "two", role: "user", text: "I like drawing." },
+      ],
+    });
+
+    const noticeClasses = classNamesFor(
+      html,
+      "conversation-response-notice",
+    );
+    assert.match(html, /role="status"/);
+    assert.match(html, /Peppa is thinking/);
+    assert.match(html, /Getting her reply ready/);
+    assert.match(html, /conversation-response-spinner/);
+    assert.match(noticeClasses, /\bbg-white\/92\b/);
+    assert.doesNotMatch(html, /Start my turn|End my turn/);
+    assert.match(html, /Finish conversation/);
   });
 
   it("centers the character, shows only her latest speech, and removes developer controls", () => {
