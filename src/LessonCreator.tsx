@@ -1,16 +1,20 @@
-import { ArrowLeft, FileJson, Sparkles } from "lucide-react";
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { ArrowLeft, ClipboardPaste, FileJson, Sparkles } from "lucide-react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { getLessonScenePath } from "./app-routes";
 import type { Lesson } from "./lesson-catalog";
-import { parseLessonScript } from "./lesson-creator-script";
+import {
+  formatLessonScript,
+  getLessonScriptByteLength,
+  MAX_LESSON_SCRIPT_BYTES,
+  parseLessonScript,
+} from "./lesson-creator-script";
 import {
   generateMyLesson,
   saveMyLesson,
   type MyLessonSource,
 } from "./my-lessons-api";
 
-const MAX_SCRIPT_BYTES = 256 * 1024;
 type CreatorTab = "generate" | "upload";
 
 function selectedTab(value: string | null): CreatorTab {
@@ -48,20 +52,113 @@ function LessonPreview({
   );
 }
 
+function ScriptEditor({
+  activeTab,
+  busyAction,
+  onPaste,
+  onReview,
+  onScriptChange,
+  scriptText,
+}: {
+  activeTab: CreatorTab;
+  busyAction: "generate" | "paste" | "save" | null;
+  onPaste: () => void;
+  onReview: () => void;
+  onScriptChange: (value: string) => void;
+  scriptText: string;
+}) {
+  const scriptBytes = getLessonScriptByteLength(scriptText);
+
+  return (
+    <section className="lesson-script-editor">
+      <div className="lesson-script-editor-header">
+        <div>
+          <label htmlFor="lesson-script-editor">
+            Editable lesson script (JSON)
+          </label>
+          <p>
+            {activeTab === "generate"
+              ? "Generate a draft, then change any JSON before saving."
+              : "Paste your lesson JSON into the editor, then change anything you need."}
+          </p>
+        </div>
+        {activeTab === "upload" ? (
+          <button
+            className="lesson-clipboard-button"
+            disabled={Boolean(busyAction)}
+            onClick={onPaste}
+            type="button"
+          >
+            <ClipboardPaste aria-hidden="true" />
+            {busyAction === "paste" ? "Pasting..." : "Paste from clipboard"}
+          </button>
+        ) : null}
+      </div>
+      <textarea
+        aria-describedby="lesson-script-size"
+        disabled={busyAction === "save"}
+        id="lesson-script-editor"
+        onChange={(event) => onScriptChange(event.currentTarget.value)}
+        placeholder={
+          activeTab === "generate"
+            ? "Your generated lesson JSON will appear here."
+            : "Paste a complete Parrot English lesson JSON script here."
+        }
+        rows={18}
+        spellCheck={false}
+        value={scriptText}
+      />
+      <div className="lesson-script-editor-actions">
+        <span
+          className={
+            scriptBytes > MAX_LESSON_SCRIPT_BYTES ? "is-over-limit" : ""
+          }
+          id="lesson-script-size"
+        >
+          {Math.ceil(scriptBytes / 1024)} KB of 256 KB
+        </span>
+        <button
+          disabled={Boolean(busyAction) || !scriptText.trim()}
+          onClick={onReview}
+          type="button"
+        >
+          Review script
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function LessonCreator() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = selectedTab(searchParams.get("tab"));
   const [topic, setTopic] = useState("");
+  const [scripts, setScripts] = useState<Record<CreatorTab, string>>({
+    generate: "",
+    upload: "",
+  });
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [lessonSource, setLessonSource] = useState<MyLessonSource>("generated");
   const [error, setError] = useState("");
-  const [busyAction, setBusyAction] = useState<"generate" | "save" | null>(null);
+  const [notice, setNotice] = useState("");
+  const [busyAction, setBusyAction] = useState<
+    "generate" | "paste" | "save" | null
+  >(null);
+  const scriptText = scripts[activeTab];
 
   function chooseTab(tab: CreatorTab) {
     setLesson(null);
     setError("");
+    setNotice("");
     setSearchParams(tab === "generate" ? {} : { tab });
+  }
+
+  function updateScript(value: string) {
+    setScripts((current) => ({ ...current, [activeTab]: value }));
+    setLesson(null);
+    setError("");
+    setNotice("");
   }
 
   async function handleGenerate(event: FormEvent) {
@@ -74,9 +171,16 @@ export function LessonCreator() {
     setBusyAction("generate");
     setLesson(null);
     setError("");
+    setNotice("");
     try {
-      setLesson(await generateMyLesson(requestedTopic));
+      const generatedLesson = await generateMyLesson(requestedTopic);
+      setScripts((current) => ({
+        ...current,
+        generate: formatLessonScript(generatedLesson),
+      }));
+      setLesson(generatedLesson);
       setLessonSource("generated");
+      setNotice("Generated script ready. You can edit the JSON before saving.");
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -88,19 +192,49 @@ export function LessonCreator() {
     }
   }
 
-  async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
+  async function handlePaste() {
     setLesson(null);
     setError("");
-    if (!file) return;
-    if (file.size > MAX_SCRIPT_BYTES) {
-      setError("Please choose a JSON script smaller than 256 KB.");
+    setNotice("");
+    if (!navigator.clipboard?.readText) {
+      setError(
+        "Clipboard access is unavailable. Paste directly into the script editor instead.",
+      );
       return;
     }
 
+    setBusyAction("paste");
     try {
-      setLesson(parseLessonScript(await file.text(), file.name));
-      setLessonSource("uploaded");
+      const pastedScript = await navigator.clipboard.readText();
+      if (!pastedScript.trim()) {
+        setError("The clipboard does not contain a lesson script.");
+        return;
+      }
+      setScripts((current) => ({ ...current, upload: pastedScript }));
+      setNotice("Script pasted. Edit it if needed, then review it.");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "The clipboard could not be read. Paste directly into the editor instead.",
+      );
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  function handleReview() {
+    setLesson(null);
+    setError("");
+    setNotice("");
+    try {
+      const reviewedLesson = parseLessonScript(
+        scriptText,
+        activeTab === "generate" ? "edited generated script" : "pasted script",
+      );
+      setLesson(reviewedLesson);
+      setLessonSource(activeTab === "generate" ? "generated" : "uploaded");
+      setNotice("Script validated. Review the lesson summary before saving.");
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -192,6 +326,14 @@ export function LessonCreator() {
                 {busyAction === "generate" ? "Generating script..." : "Generate script"}
               </button>
             </form>
+            <ScriptEditor
+              activeTab={activeTab}
+              busyAction={busyAction}
+              onPaste={() => void handlePaste()}
+              onReview={handleReview}
+              onScriptChange={updateScript}
+              scriptText={scriptText}
+            />
           </section>
         ) : (
           <section
@@ -200,20 +342,22 @@ export function LessonCreator() {
             id="upload-script-panel"
             role="tabpanel"
           >
-            <label className="lesson-script-upload" htmlFor="lesson-script-file">
-              <FileJson aria-hidden="true" />
-              <strong>Choose a JSON lesson script</strong>
-              <span>Use the Parrot English lesson JSON format, up to 256 KB.</span>
-              <input
-                id="lesson-script-file"
-                type="file"
-                accept=".json,application/json"
-                onChange={(event) => void handleUpload(event)}
-              />
-            </label>
+            <ScriptEditor
+              activeTab={activeTab}
+              busyAction={busyAction}
+              onPaste={() => void handlePaste()}
+              onReview={handleReview}
+              onScriptChange={updateScript}
+              scriptText={scriptText}
+            />
           </section>
         )}
 
+        {notice ? (
+          <p className="lesson-creator-notice" role="status">
+            {notice}
+          </p>
+        ) : null}
         {error ? (
           <p className="lesson-creator-error" role="alert">
             {error}
