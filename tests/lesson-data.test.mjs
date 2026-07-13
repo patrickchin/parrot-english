@@ -216,17 +216,6 @@ describe("lesson data contract", () => {
       /bad\.json scenes\[0\]\.steps\[0\]\.speaker/
     );
 
-    const userLesson = createLesson();
-    userLesson.scenes[0].characters = ["peppa", "dolly"];
-    userLesson.scenes[0].steps[0] = createStep({
-      speaker: "user",
-      emotes: { peppa: "listening", dolly: "listening" },
-    });
-    assert.throws(
-      () => lessonData.validateLesson(userLesson, catalog, "bad.json"),
-      /bad\.json scenes\[0\]\.steps\[0\]\.speaker/
-    );
-
     const chineseLesson = createLesson();
     chineseLesson.scenes[0].steps[0].dialogue = "轮到你了。";
     assert.throws(

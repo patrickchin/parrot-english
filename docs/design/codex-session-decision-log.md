@@ -14,7 +14,7 @@ transcript.
 | Avoid a framework-heavy frontend. | Use Vite React plus a Cloudflare Worker with static assets and REST routes. | `vite.config.ts`, `worker/index.ts`, `wrangler.jsonc` |
 | Make lessons easy to add and remove. | Store each lesson in `content/lessons/*.json` and discover files automatically for the picker. | `src/lesson-catalog.ts`, `content/lessons` |
 | Break lessons into scenes and steps. | Give every scene setting metadata, a chosen background, visible characters, and ordered one-line dialogue steps. | `lib/lesson-data.js`, lesson JSON |
-| Treat the learner like a character. | Use the global `user` character with the same emote map and rendering path as Peppa and Dolly. | `content/catalogs/characters.json`, `lib/lesson-scene.js` |
+| Keep the learner off-stage. | Treat `user` as a non-visual speaking turn while Peppa and Dolly remain the visible scene characters. | `content/lessons`, `lib/lesson-data.js`, `lib/lesson-scene.js` |
 | Keep expressions manageable. | Use six global pre-generated emotes: idle, talking, listening, happy, sad, and surprised. | `content/catalogs/emotes.json`, `public/assets/characters` |
 | Restore narration while keeping immersion. | Use a voice-only English narrator for story text, instructions, feedback, and final praise. | lesson JSON, `lib/lesson-audio.js`, `lib/lesson-scene.js` |
 | Make the experience automatic. | Advance character, narrator, scene, retry, and completion steps automatically; wait only for hold-to-talk user input. | `lib/lesson-state.js`, `src/App.tsx` |
@@ -32,8 +32,8 @@ transcript.
 ## Current Design Contract
 
 - All child-facing lesson content is English.
-- Peppa, Dolly, and `user` are visible catalog characters.
-- Narrator is voice-only and has no emote entry.
+- Peppa and Dolly are visible catalog characters.
+- `user` is a non-visual learner turn, and narrator is voice-only; neither has an emote entry.
 - Lesson JSON contains text and catalog IDs, never asset filenames.
 - Each step contains one line from one speaker and all visible emotes.
 - Backgrounds and character states are pre-generated global assets.
