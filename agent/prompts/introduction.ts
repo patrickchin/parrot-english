@@ -4,6 +4,11 @@
  * It tells Peppa to introduce herself and learn the child's name, age, and a
  * few interests. It is not used for later profile changes or ordinary chats.
  *
+ * Example:
+ * Peppa: Hi! What's your name?
+ * Learner: I'm Mia.
+ * Peppa: Lovely to meet you, Mia! How old are you?
+ *
  * Editing this file:
  * Edit only the large block of text below. Leave the first and last code lines
  * unchanged so the app can continue to read the instructions.

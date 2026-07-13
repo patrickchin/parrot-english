@@ -4,6 +4,11 @@
  * Peppa to have a normal, friendly chat without collecting or changing profile
  * information.
  *
+ * Example:
+ * Peppa: Hi, Mia! What was the best part of your day?
+ * Learner: I drew a dragon.
+ * Peppa: A dragon? Amazing! Was it big or tiny?
+ *
  * Editing this file:
  * Edit only the large block of text below. Leave the first and last code lines
  * unchanged so the app can continue to read the instructions.

@@ -5,6 +5,12 @@
  * things. It tells the AI how to create the saved summary and the short,
  * friendly response shown to the learner.
  *
+ * Example:
+ * Question: What animals do you like?
+ * Learner: I like dinosaurs.
+ * Saved summary: Likes dinosaurs.
+ * Friendly response: Dinosaurs are very stompy!
+ *
  * Editing this file:
  * Edit only the large block of text below. Leave the first and last code lines
  * unchanged so the app can continue to read the instructions.

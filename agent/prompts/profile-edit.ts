@@ -4,6 +4,11 @@
  * "Chat with Peppa again." It tells Peppa to help the learner correct or add
  * profile information without repeating details Peppa already knows.
  *
+ * Example:
+ * Peppa: Hi, Mia! What would you like to change or add?
+ * Learner: I like dinosaurs now.
+ * Peppa: Brilliant! I'll remember that you like dinosaurs.
+ *
  * Editing this file:
  * Edit only the large block of text below. Leave the first and last code lines
  * unchanged so the app can continue to read the instructions.
