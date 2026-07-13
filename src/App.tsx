@@ -61,6 +61,7 @@ import {
   type LessonSource,
 } from "./app-routes";
 import { AuthGate } from "./AuthGate";
+import { HeaderButton, RouteHeader } from "./AppHeader";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { OnboardingGate } from "./OnboardingGate";
@@ -607,25 +608,25 @@ export function LessonPlayer({
           </div>
         </header>
 
-        <button
-          aria-label="Back to lesson list"
-          className="lesson-list-back-button app-header-control"
-          onClick={handleBack}
-          type="button"
-        >
-          <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
-          <span>Back to lessons</span>
-        </button>
-
-        <button
-          aria-label="Back to main menu"
-          className="lesson-home-button app-header-control app-header-control--secondary app-header-control--surface"
-          onClick={handleHome}
-          type="button"
-        >
-          <House aria-hidden="true" strokeWidth={3.2} />
-          <span>Back to main menu</span>
-        </button>
+        <RouteHeader>
+          <HeaderButton
+            aria-label="Back to lesson list"
+            icon={<ChevronLeft strokeWidth={3.2} />}
+            onClick={handleBack}
+            type="button"
+          >
+            Back to lessons
+          </HeaderButton>
+          <HeaderButton
+            aria-label="Back to main menu"
+            icon={<House strokeWidth={3.2} />}
+            onClick={handleHome}
+            type="button"
+            variant="surface"
+          >
+            Back to main menu
+          </HeaderButton>
+        </RouteHeader>
 
         <span
           aria-label={`Build version ${versionLabel}`}

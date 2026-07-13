@@ -40,7 +40,7 @@ test("ending a learner turn immediately exposes Peppa's response-loading state",
   const surface = source("../src/ConversationSurface.tsx");
 
   assert.match(controller, /setStatus\(["']thinking["']\)/);
-  assert.match(surface, /conversation-response-notice/);
+  assert.match(surface, /status === ["']thinking["']/);
   assert.match(surface, /Peppa is thinking/);
   assert.match(surface, /Getting her reply ready/);
 });

@@ -10,7 +10,7 @@ transcript.
 
 | Prompt Theme | Decision | Current Surface |
 | --- | --- | --- |
-| Build a one-page interactive speaking experience. | Keep the first screen as a full-screen lesson stage with character-led scenes, microphone recording, evaluation, and audible feedback. | `src/App.tsx`, `src/styles.css` |
+| Build a one-page interactive speaking experience. | Keep the first screen as a full-screen lesson stage with character-led scenes, microphone recording, evaluation, and audible feedback. | `src/App.tsx`, `src/lesson.css` |
 | Avoid a framework-heavy frontend. | Use Vite React plus a Cloudflare Worker with static assets and REST routes. | `vite.config.ts`, `worker/index.ts`, `wrangler.jsonc` |
 | Make lessons easy to add and remove. | Store each lesson in `content/lessons/*.json` and discover files automatically for the picker. | `src/lesson-catalog.ts`, `content/lessons` |
 | Break lessons into scenes and steps. | Give every scene setting metadata, a chosen background, visible characters, and ordered one-line dialogue steps. | `lib/lesson-data.js`, lesson JSON |
@@ -24,10 +24,11 @@ transcript.
 | Use high-quality saved speech. | Generate cache files through ElevenLabs only, with speaker-selected voice defaults and `eleven_v3`. | `scripts/generate-static-audio.mjs` |
 | Keep evaluation server-side. | Use Groq STT behind `/api/evaluate-speech`, local transcript scoring, rate limiting, and request timeouts. | `worker/groq.ts`, `lib/speech-scoring.js`, `worker/api-security.ts` |
 | Preserve simple deployment. | Use the Worker-backed local server as the runtime source of truth; keep Vite-only mode for fast UI iteration. | `package.json`, `README.md` |
-| Make global controls consistent. | Keep the authenticated account bar global in `AuthGate` and render every top-level navigation control with the shared header primitives and design tokens. Route content must not redefine header geometry or typography. | `src/AuthGate.tsx`, `src/design-system.css` |
-| Keep styling out of component logic. | Put responsive presentation in CSS with semantic class names. Tailwind remains available, but do not rebuild long responsive utility constants in TypeScript. | `src/design-system.css`, `src/conversation.css`, `src/styles.css` |
+| Make global controls consistent. | Keep the authenticated account bar global in `AuthGate` and render every top-level navigation control with shared React header primitives. Route content must not redefine header geometry or typography. | `src/AuthGate.tsx`, `src/AppHeader.tsx` |
+| Use one frontend styling architecture. | Use Tailwind 4 utilities directly in components, centralize repeated controls in small React primitives, and keep the CSS entrypoint to Tailwind configuration and browser-level behavior. Do not hide long utility strings in TypeScript constants. | `src/ui.tsx`, `src/AppHeader.tsx`, `src/styles.css` |
+| Isolate the remaining scene-player migration. | Keep the dynamic character-slot, speech-bubble, and short-viewport scene choreography in one bounded stylesheet until it can be migrated and browser-verified as a separate slice. It must not absorb general route styling. | `src/lesson.css`, `src/App.tsx` |
 | Test what the browser renders. | Do not test CSS text or exact styling classes. Use Playwright with accessible locators for layout, visibility, overlap, scrolling, overflow, and computed-style behavior. | `tests/e2e/header.spec.ts`, `playwright.config.ts` |
-| Treat mobile headers as one row. | At supported narrow and short viewports, Profile, Log out, and page navigation must stay visible, aligned, non-overlapping, and horizontally contained; account actions remain fixed while page content scrolls. | `tests/e2e/header.spec.ts`, `src/design-system.css` |
+| Treat mobile headers as one row. | At supported narrow and short viewports, Profile, Log out, and page navigation must stay visible, aligned, non-overlapping, and horizontally contained; account actions remain fixed while page content scrolls. | `tests/e2e/header.spec.ts`, `src/AppHeader.tsx` |
 
 ## Current Design Contract
 
@@ -41,9 +42,9 @@ transcript.
 - The rest of the lesson advances automatically.
 - Saved audio is a speaker-plus-text cache, not lesson content.
 - Groq is used for transcription/evaluation, not lesson narration.
-- Shared UI colors, type, sizes, radii, spacing, and shadows come from the
-  design-system tokens rather than route-specific values.
-- Global header controls share one CSS implementation and preserve accessible
+- Shared UI uses Tailwind's normal scales plus the small brand theme in
+  `src/styles.css`; route-specific CSS systems are not added.
+- Global header controls share React implementations and preserve accessible
   names when their visible labels are hidden.
 - UI layout claims are browser-tested; unit tests do not parse CSS or assert
   styling class names.
@@ -56,3 +57,7 @@ transcript.
   global quota.
 - Browser E2E checks require a Playwright Chromium installation. Pull-request
   CI installs it explicitly and runs `npm run test:browser` as a separate step.
+- The lesson scene player still has a bounded standalone stylesheet because its
+  dynamic slots and combined width/height breakpoints are the highest-risk part
+  of the migration. A follow-up should move those rules to Tailwind without
+  changing the scene behavior or adding CSS-source tests.

@@ -74,7 +74,6 @@ describe("accessible realtime conversation surface", () => {
         /<button aria-label="Back"[^>]*>/,
         status,
       );
-      assert.match(html, /lucide-arrow-left/, status);
     }
   });
 
@@ -82,7 +81,7 @@ describe("accessible realtime conversation surface", () => {
     const connecting = render({ status: "connecting", microphoneEnabled: false });
     assert.match(connecting, /Joining Peppa/);
     assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
-    assert.doesNotMatch(connecting, /conversation-microphone-button/);
+    assert.doesNotMatch(connecting, /Start my turn|End my turn/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
   });
 
@@ -128,10 +127,9 @@ describe("accessible realtime conversation surface", () => {
     });
 
     assert.match(html, /role="status"/);
-    assert.match(html, /class="conversation-response-notice"/);
+    assert.match(html, /aria-live="polite"/);
     assert.match(html, /Peppa is thinking/);
     assert.match(html, /Getting her reply ready/);
-    assert.match(html, /conversation-response-spinner/);
     assert.doesNotMatch(html, /Start my turn|End my turn/);
     assert.match(html, /Finish conversation/);
   });
@@ -149,7 +147,7 @@ describe("accessible realtime conversation surface", () => {
 
     assert.match(html, /Ooh, drawing is brilliant!/);
     assert.doesNotMatch(html, /I like drawing/);
-    assert.doesNotMatch(html, /conversation-debug-transcript|Debug transcript/);
+    assert.doesNotMatch(html, /Debug transcript/);
     assert.match(html, /Start my turn/);
     assert.doesNotMatch(html, /Chat with your pig pal/);
   });

@@ -2,11 +2,15 @@
 
 ## Frontend UI
 
-- Keep presentation in CSS using tokens and shared primitives from
-  `src/design-system.css`; avoid JS class constants and page-specific copies of
-  global controls.
-- `AuthGate` owns the account header. Routes may position it but must not
-  redefine its sizing, typography, colors, or shadows.
+- Use Tailwind 4 utilities directly in React components, with shared controls
+  from `src/ui.tsx` and shared headers from `src/AppHeader.tsx`. Avoid large JS
+  class constants and page-specific copies of global controls.
+- Keep `src/styles.css` limited to Tailwind configuration, global browser
+  behavior, and named background utilities. `src/lesson.css` is the temporary
+  exception for the dynamic scene player and should not grow.
+- `AuthGate` owns the account header through `AccountHeader`. Routes compose
+  `RouteHeader` with `HeaderButton` or `HeaderLink`; they must not redefine
+  header sizing, typography, colors, or shadows.
 
 ## UI Testing
 
