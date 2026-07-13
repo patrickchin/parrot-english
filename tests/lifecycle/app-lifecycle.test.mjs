@@ -193,6 +193,7 @@ function conversationSurfaceProps(overrides = {}) {
     candidates: [],
     error: "",
     microphoneEnabled: false,
+    onBack() {},
     onCandidateChange() {},
     onCandidateStatusChange() {},
     onFinish() {},
@@ -549,10 +550,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("toggles the learner turn with Space without hijacking focused controls", async () => {
     const toggles = [];
+    const backs = [];
     await mountStrict(
       createElement(
         ConversationSurface,
         conversationSurfaceProps({
+          onBack() {
+            backs.push("back");
+          },
           onToggleMicrophone() {
             toggles.push("toggle");
           },
@@ -592,6 +597,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         }),
       );
     });
+    assert.deepEqual(toggles, ["toggle"]);
+
+    await click(button("Back"));
+    assert.deepEqual(backs, ["back"]);
     assert.deepEqual(toggles, ["toggle"]);
   });
 
