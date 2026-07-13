@@ -273,7 +273,7 @@ describe("scene-script lesson state", () => {
       dialogue: "I couldn't hear you. Try again.",
       after: "retry",
     };
-    const explicitLesson = structuredClone(lesson);
+    const explicitLesson = JSON.parse(JSON.stringify(lesson));
     explicitLesson.scenes[0].steps[1].check.noInput = noInputResponse;
     const explicit = reduce(
       releaseRecording(startAtUser()),
@@ -293,7 +293,7 @@ describe("scene-script lesson state", () => {
   });
 
   it("advances an unchecked user step without entering evaluation", () => {
-    const uncheckedLesson = structuredClone(lesson);
+    const uncheckedLesson = JSON.parse(JSON.stringify(lesson));
     delete uncheckedLesson.scenes[0].steps[1].check;
     const waiting = startAtUser();
     const recording = reduce(waiting, { type: "MIC_STARTED" }, uncheckedLesson);

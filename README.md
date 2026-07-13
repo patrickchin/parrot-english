@@ -69,11 +69,11 @@ as a playable card on the lesson list. Adding or removing a lesson requires no
 registry edit. Disabled preview cards demonstrate upcoming lesson topics
 without creating placeholder scripts or audio.
 
-A lesson contains a story summary, a three-sentence detailed summary, two goal
-phrases, and five to eight scenes. Every scene chooses a pre-generated
-background while also describing its setting in free-form text. Each scene step
-contains exactly one line of English dialogue, one speaker, and one emote for
-every scripted scene character.
+A lesson contains display summaries, zero or more goal phrases, and one or more
+scenes. Every scene chooses a supported background while also describing its
+setting in free-form text. Each scene step contains dialogue and one speaker.
+Optional partial emote maps change only the listed characters, and optional
+`check` objects on user steps define pronunciation responses and retry behavior.
 
 Lesson JSON deliberately contains no image or audio filenames. Scripted
 character IDs, background IDs, and the six supported emotes are resolved

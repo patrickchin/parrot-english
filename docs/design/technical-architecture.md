@@ -124,8 +124,8 @@ Storytelling remain skeleton routes.
 Scene URLs are one-based and durable. Button-driven scene changes navigate
 first and reconcile reducer state to the new route. Browser Back/Forward and a
 direct refresh select the routed scene and reset its player state. Playback,
-recording, evaluation, feedback, and step position remain transient React state
-and never become URL parameters.
+recording, evaluation, scripted response, and step position remain transient
+React state and never become URL parameters.
 
 ## Content Boundaries
 
@@ -162,12 +162,14 @@ dormant for rollback safety and are not part of the v2 runtime path.
 learner drafts pass through a warning-based normalization boundary. Missing
 display fields receive defaults, unsupported backgrounds fall back to the first
 catalog background, unsupported speakers become narrator, invalid or duplicate
-characters are removed, and missing emotes become `idle`. Scripts may use any
-language, flexible scene and phrase counts, extra metadata, independent user
-lines, and any ending. Only malformed JSON, oversized input, or a draft with no
-playable dialogue remains fatal. Generate uses Groq JSON Object Mode so
-repairable output reaches this boundary instead of failing provider-side schema
-validation.
+characters are removed, and invalid supplied emotes become `idle`. Partial
+emote maps inherit prior scene state. Optional user-step checks validate safe
+scripted responses; invalid draft checks are omitted with a warning. Scripts
+may use any language, flexible scene and phrase counts, extra metadata,
+independent user lines, and any ending. Only malformed JSON, oversized input,
+or a draft with no playable dialogue remains fatal. Generate uses Groq JSON
+Object Mode so repairable output reaches this boundary instead of failing
+provider-side schema validation.
 
 ## Lesson State Machine
 
@@ -179,7 +181,7 @@ Implemented phases:
 - `waiting-for-user`
 - `recording`
 - `evaluating`
-- `feedback`
+- `responding`
 - `finished`
 
 Core transitions:
@@ -193,10 +195,11 @@ SELECT_SCENE -> clean state at the scene selected by the browser URL
 REPLAY_LESSON -> first step of the first scene
 LINE_DONE -> next scripted step
 MIC_STARTED -> recording
-MIC_RELEASED -> evaluating
-EVALUATED passed -> narrator feedback -> next step
-EVALUATED first miss -> narrator feedback -> previous model -> same user step
-EVALUATED second miss -> narrator feedback -> next step
+MIC_RELEASED without check -> next scripted step
+MIC_RELEASED with check -> evaluating
+EVALUATED -> authored correct/incorrect/noInput response
+RESPONSE_DONE with retry -> previous model -> same user step
+RESPONSE_DONE with continue -> next scripted step
 final LINE_DONE -> finished
 ```
 
@@ -211,16 +214,17 @@ recording, and evaluation completions captured before a routed scene change.
 
 ## Scene Presentation
 
-`lib/lesson-scene.js` resolves the current background and selected emotes through
-the global catalog. It filters `user` only at the presentation boundary, so the
-learner remains complete in validated script data but is not returned as a
+`lib/lesson-scene.js` resolves the current background and inherited partial
+emote changes through the global catalog. It filters `user` only at the
+presentation boundary, so the learner remains complete in validated script
+data but is not returned as a
 visible character. It returns generic character objects, active-speaker state,
 setting metadata, and either character speech or narrator speech. React does
 not contain character-specific rendering branches.
 
 ## Audio Sequencing
 
-`lib/lesson-audio.js` resolves speaking and feedback phases through
+`lib/lesson-audio.js` resolves speaking and responding phases through
 `getStaticAudioLineForSpeech(speaker, text)`. This supports identical dialogue
 spoken by different characters with different voices and cache files.
 

@@ -554,7 +554,7 @@ export function LessonPlayer({
       },
       onReleased: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatch({ type: "MIC_RELEASED" });
+        dispatchLessonEvent({ type: "MIC_RELEASED" });
       },
       recordingController,
       recordingControllerRef,
