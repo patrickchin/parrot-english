@@ -79,6 +79,9 @@ for (const route of routes) {
         page.getByRole("menuitem", { name: "Profile" }),
       ).toBeHidden();
       await expect(
+        page.getByRole("menuitem", { name: "About" }),
+      ).toBeHidden();
+      await expect(
         page.getByRole("menuitem", { name: "Log out" }),
       ).toBeHidden();
 
@@ -119,7 +122,32 @@ test("the learner name opens the account actions dropdown", async ({ page }) => 
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByRole("menu", { name: "Account actions" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Profile" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "About" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
+});
+
+test("About shows independently deployed component versions", async ({ page }) => {
+  await page.goto("/lessons");
+  await page.getByRole("button", { exact: true, name: "Mia" }).click();
+  await page.getByRole("menuitem", { name: "About" }).click();
+
+  const about = page.getByRole("dialog", { name: "About Parrot English" });
+  await expect(about).toBeVisible();
+  await expect(about.getByRole("heading", { name: "Web app" })).toBeVisible();
+  await expect(
+    about.getByRole("heading", { name: "Cloudflare Worker" }),
+  ).toBeVisible();
+  await expect(
+    about.getByRole("heading", { name: "Conversation agent" }),
+  ).toBeVisible();
+  await expect(about.getByText("e2e-web", { exact: true })).toBeVisible();
+  await expect(about.getByText("e2e-api", { exact: true })).toBeVisible();
+  await expect(about.getByText("e2e-agent", { exact: true })).toBeVisible();
+  await expect(about.getByText("Worker deployment e2e-deployment")).toBeVisible();
+  await expect(about.getByText("openai/gpt-4.1-mini")).toBeVisible();
+
+  await page.getByRole("button", { name: "Close About" }).click();
+  await expect(about).toBeHidden();
 });
 
 test("account menu stays visible after scrolling a short lesson list", async ({
