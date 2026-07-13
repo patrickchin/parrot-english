@@ -97,32 +97,32 @@ This example assumes episode-garden is an available background ID.
 
 \`\`\`json
 {
-  "title": "花园里的颜色",
+  "title": "\u82b1\u56ed\u91cc\u7684\u989c\u8272",
   "childName": "Mia",
   "goalPhrases": [],
   "summary": "Dolly and Mia choose a flower color together.",
   "detailedSummary": "A short multilingual activity.",
   "location": {
-    "name": "花园",
+    "name": "\u82b1\u56ed",
     "description": "A sunny garden."
   },
   "scenes": [
     {
-      "title": "选一朵花",
+      "title": "\u9009\u4e00\u6735\u82b1",
       "settingDescription": "Dolly stands beside the flowers.",
       "background": "episode-garden",
       "characters": ["dolly"],
       "steps": [
         {
           "speaker": "dolly",
-          "dialogue": "你喜欢什么颜色？",
+          "dialogue": "\u4f60\u559c\u6b22\u4ec0\u4e48\u989c\u8272\uff1f",
           "emotes": {
             "dolly": "talking"
           }
         },
         {
           "speaker": "user",
-          "dialogue": "我喜欢红色。",
+          "dialogue": "\u6211\u559c\u6b22\u7ea2\u8272\u3002",
           "emotes": {
             "dolly": "listening"
           },
@@ -130,7 +130,7 @@ This example assumes episode-garden is an available background ID.
             "maxAttempts": 2,
             "correct": {
               "speaker": "dolly",
-              "dialogue": "说得好！",
+              "dialogue": "\u8bf4\u5f97\u597d\uff01",
               "emotes": {
                 "dolly": "happy"
               },
@@ -138,12 +138,12 @@ This example assumes episode-garden is an available background ID.
             },
             "incorrect": {
               "speaker": "dolly",
-              "dialogue": "再试一次。",
+              "dialogue": "\u518d\u8bd5\u4e00\u6b21\u3002",
               "after": "retry"
             },
             "incorrectFinal": {
               "speaker": "dolly",
-              "dialogue": "我们继续吧。",
+              "dialogue": "\u6211\u4eec\u7ee7\u7eed\u5427\u3002",
               "after": "continue"
             }
           }
