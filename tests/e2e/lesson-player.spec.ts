@@ -49,6 +49,7 @@ for (const viewport of viewports) {
     });
     const start = page.getByRole("button", { name: "Start lesson" });
     const controls = page.getByRole("navigation", { name: "Lesson controls" });
+    const stage = page.getByRole("main");
 
     const hudBox = await expectInsideViewport(hud, viewport);
     await expectInsideViewport(title, viewport);
@@ -59,6 +60,13 @@ for (const viewport of viewports) {
 
     expect(hudBox.y + hudBox.height).toBeLessThanOrEqual(speechBox.y);
     expect(speechBox.y + speechBox.height).toBeLessThanOrEqual(startBox.y);
+    const stageScrollRange = await stage.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(stageScrollRange.scrollHeight).toBeLessThanOrEqual(
+      stageScrollRange.clientHeight,
+    );
     await expect.poll(() => hasHorizontalOverflow(page)).toBe(false);
   });
 }
