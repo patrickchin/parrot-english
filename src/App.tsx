@@ -940,7 +940,7 @@ function RoutedApplication() {
       value={registerLessonRouteExitBarrier}
     >
       <AuthGate
-        compactSessionBar={isConversationRoute}
+        compactSessionBar={isConversationRoute || isOnboardingRoute}
         signedOutFallback={
           onLoginRoute ? null : (
             <Navigate replace to={getLoginPath(requestedProtectedTarget)} />
