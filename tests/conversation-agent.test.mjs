@@ -10,11 +10,12 @@ import { createConversationIngestClient } from "../agent/ingest-client.ts";
 import {
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
-  LEARNER_PROFILE_AGENT_INSTRUCTIONS,
+  CONVERSATION_SYSTEM_PROMPTS,
   LEARNER_PROFILE_TOOL_NAMES,
   createGettingToKnowYouTask,
-} from "../agent/learner-profile-scenario.ts";
-import * as conversationScenario from "../agent/learner-profile-scenario.ts";
+  createSmallChatTask,
+} from "../agent/peppa-conversation.ts";
+import * as conversationScenario from "../agent/peppa-conversation.ts";
 import {
   createAgentModels,
   createAgentTurnHandling,
@@ -28,7 +29,7 @@ function environment(overrides = {}) {
   return {
     CONVERSATION_AGENT_SECRET: "agent-secret",
     CONVERSATION_INGEST_URL: "https://app.example.test",
-    LIVEKIT_AGENT_NAME: "parrot-learner-profile",
+    LIVEKIT_AGENT_NAME: "parrot-conversation",
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
@@ -42,7 +43,7 @@ describe("LiveKit agent configuration", () => {
 
     assert.equal(config.livekitUrl, "wss://livekit.example.test");
     assert.equal(config.ingestSecret, "agent-secret");
-    assert.equal(config.agentName, "parrot-learner-profile");
+    assert.equal(config.agentName, "parrot-conversation");
     assert.equal(config.sttModel, "elevenlabs/scribe_v2_realtime");
     assert.equal(config.llmModel, "openai/gpt-4.1-mini");
     assert.equal(config.ttsModel, "inworld/inworld-tts-2");
@@ -73,6 +74,7 @@ describe("LiveKit agent configuration", () => {
       parseConversationParticipantMetadata(
         JSON.stringify({
           conversationId: "conversation-1",
+          scenarioKey: "profile-edit",
           learnerProfile: {
             age: 30,
             name: "Mia",
@@ -94,6 +96,7 @@ describe("LiveKit agent configuration", () => {
           learnedAge: true,
           finishReason: null,
         },
+        purpose: "profile-edit",
       },
     );
     assert.throws(
@@ -273,11 +276,12 @@ describe("bounded learner-profile agent contract", () => {
     assert.deepEqual(completed, [{ finishReason: "child_stopped" }]);
   });
 
-  it("speaks first without interruption and greets a returning learner from saved context", async () => {
+  it("keeps opening behavior in the static profile-edit system prompt", async () => {
     let opening;
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
+      purpose: "profile-edit",
       initialState: createLearnerProfileConversationState({
         profileAge: 30,
         profileName: "Mia",
@@ -294,11 +298,16 @@ describe("bounded learner-profile agent contract", () => {
       },
     });
 
-    assert.equal(opening.allowInterruptions, false);
-    assert.match(opening.instructions, /Mia/);
-    assert.match(opening.instructions, /fast red cars/);
-    assert.match(opening.instructions, /already know|remember/i);
-    assert.match(opening.instructions, /Do not ask their name or age/i);
+    assert.deepEqual(opening, { allowInterruptions: false });
+    assert.match(CONVERSATION_SYSTEM_PROMPTS["profile-edit"], /speak first/i);
+    assert.match(
+      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
+      /saved profile|saved learner details/i,
+    );
+    assert.match(
+      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
+      /do not ask.*known.*name.*age|do not ask.*name.*age.*known/i,
+    );
     assert.match(task._instructions, /Mia/);
     assert.match(task._instructions, /fast red cars/);
   });
@@ -319,17 +328,38 @@ describe("bounded learner-profile agent contract", () => {
       Object.keys(task.toolCtx.functionTools).sort(),
       [...LEARNER_PROFILE_TOOL_NAMES].sort(),
     );
-    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /warm, playful pig friend/i);
-    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /one natural paragraph/i);
-    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /no labels, bullets, or field names/i);
-    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /bright, bouncy energy/i);
-    assert.match(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /different category/i);
-    assert.doesNotMatch(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /fact schema|candidate facts/i);
-    assert.doesNotMatch(LEARNER_PROFILE_AGENT_INSTRUCTIONS, /Chinese|Mandarin|中文/i);
+    const instructions = CONVERSATION_SYSTEM_PROMPTS.onboarding;
+    assert.match(instructions, /warm, playful pig friend/i);
+    assert.match(instructions, /one natural paragraph/i);
+    assert.match(instructions, /no labels, bullets, or field names/i);
+    assert.match(instructions, /bright, bouncy energy/i);
+    assert.match(instructions, /relevant answer|differs from the category/i);
+    assert.doesNotMatch(instructions, /fact schema|candidate facts/i);
+    assert.doesNotMatch(instructions, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
-      LEARNER_PROFILE_AGENT_INSTRUCTIONS,
+      instructions,
       /(?:I am|I'm|you are|you're) Peppa/i,
     );
+  });
+
+  it("gives ordinary small chat a static opening prompt and no profile-writing tools", async () => {
+    const task = createSmallChatTask();
+    let opening;
+
+    await task.hookAdapter.hooks.onEnter({
+      complete() {},
+      session: {
+        generateReply(options) {
+          opening = options;
+        },
+      },
+    });
+
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(opening, { allowInterruptions: false });
+    assert.match(task._instructions, /ordinary small chat/i);
+    assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);
+    assert.doesNotMatch(task._instructions, /call exactly one appropriate state tool/i);
   });
 
   it("advances only through tools and preserves the prose on a rephrase", async () => {
