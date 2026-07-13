@@ -52,20 +52,13 @@ general open-ended chat.
 export const AGENT_SESSION_START_OPTIONS = { record: false } as const;
 
 export const AGENT_TURN_HANDLING = {
-  endpointing: {
-    maxDelay: 1_200,
-    minDelay: 300,
-    mode: "dynamic",
-  },
   interruption: {
-    enabled: true,
-    mode: "adaptive",
+    enabled: false,
   },
   preemptiveGeneration: {
-    enabled: true,
-    preemptiveTts: true,
+    enabled: false,
   },
-  turnDetection: "inference",
+  turnDetection: "manual",
 } as const;
 
 type ControllerState = Omit<

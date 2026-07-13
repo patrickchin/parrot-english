@@ -8,7 +8,10 @@ import {
   voice,
   type ChatMessage,
 } from "@livekit/agents";
-import { REPEAT_LAST_AUDIO_COMMAND } from "../lib/conversation-audio.js";
+import {
+  COMMIT_USER_TURN_COMMAND,
+  REPEAT_LAST_AUDIO_COMMAND,
+} from "../lib/conversation-audio.js";
 import type { AgentConfig } from "./config.ts";
 import { readAgentConfig } from "./config.ts";
 import {
@@ -120,7 +123,7 @@ export function conversationInputMode(
 
 type ConversationTextSession = Pick<
   voice.AgentSession,
-  "generateReply" | "interrupt" | "say"
+  "commitUserTurn" | "generateReply" | "interrupt" | "say"
 >;
 
 export function createConversationTextInputCallback(
@@ -130,6 +133,10 @@ export function createConversationTextInputCallback(
     session: ConversationTextSession,
     event: { text: string },
   ) => {
+    if (event.text.trim() === COMMIT_USER_TURN_COMMAND) {
+      session.commitUserTurn();
+      return;
+    }
     if (event.text.trim() === REPEAT_LAST_AUDIO_COMMAND) {
       const text = latestAssistantText().trim();
       if (text) {
@@ -147,11 +154,9 @@ export function createConversationTextInputCallback(
 
 export function createAgentTurnHandling() {
   return {
-    endpointing: AGENT_TURN_HANDLING.endpointing,
     interruption: AGENT_TURN_HANDLING.interruption,
     preemptiveGeneration: AGENT_TURN_HANDLING.preemptiveGeneration,
-    turnDetection: new inference.TurnDetector(),
-    userTurnLimit: { maxDuration: 30_000, maxWords: 40 },
+    turnDetection: AGENT_TURN_HANDLING.turnDetection,
   };
 }
 
