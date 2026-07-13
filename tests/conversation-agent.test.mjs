@@ -59,6 +59,34 @@ describe("LiveKit agent configuration", () => {
     );
   });
 
+  it("requires real semver and Git metadata in the production image", () => {
+    assert.throws(
+      () => readAgentConfig(environment({ NODE_ENV: "production" })),
+      /PARROT_AGENT_VERSION/,
+    );
+    assert.throws(
+      () =>
+        readAgentConfig(
+          environment({
+            NODE_ENV: "production",
+            PARROT_AGENT_COMMIT_SHA: "local",
+            PARROT_AGENT_VERSION: "0.1.315",
+          }),
+        ),
+      /PARROT_AGENT_COMMIT_SHA/,
+    );
+
+    const config = readAgentConfig(
+      environment({
+        NODE_ENV: "production",
+        PARROT_AGENT_COMMIT_SHA: "abcdef1",
+        PARROT_AGENT_VERSION: "0.1.315",
+      }),
+    );
+    assert.equal(config.buildVersion, "0.1.315");
+    assert.equal(config.commitSha, "abcdef1");
+  });
+
   it("constructs the configured inference models and validates participant metadata", () => {
     const config = readAgentConfig(environment());
     const models = createAgentModels(config);
