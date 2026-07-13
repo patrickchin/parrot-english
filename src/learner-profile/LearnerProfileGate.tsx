@@ -638,13 +638,22 @@ export function LearnerProfileGate({
     ? selectLearnerProfileExperience(fullData.experienceMode, useFormFallback)
     : "form";
   const handleConversationBack = useCallback(() => {
+    if (isConversationRoute) {
+      onConversationCompleted();
+      return;
+    }
     if (redoLearnerProfile) {
       onRedoCompleted();
       return;
     }
     setUseFormFallback(true);
     setStarted(false);
-  }, [onRedoCompleted, redoLearnerProfile]);
+  }, [
+    isConversationRoute,
+    onConversationCompleted,
+    onRedoCompleted,
+    redoLearnerProfile,
+  ]);
   const handleConversationCompleted = useCallback(async () => {
     await refresh();
     if (isConversationRoute) {

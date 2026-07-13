@@ -1,5 +1,8 @@
 import { Room, RoomEvent } from "livekit-client";
-import { REPEAT_LAST_AUDIO_COMMAND } from "../../lib/conversation-audio.js";
+import {
+  COMMIT_USER_TURN_COMMAND,
+  REPEAT_LAST_AUDIO_COMMAND,
+} from "../../lib/conversation-audio.js";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
   activeSpeakers: RoomEvent.ActiveSpeakersChanged,
@@ -109,6 +112,20 @@ function createE2eLiveKitConversation() {
   }
 
   return {
+    async commitUserTurn() {
+      if (!learnerTurnId) return;
+      clearTranscriptTimers();
+      publish({
+        type: "transcription",
+        id: learnerTurnId,
+        text: "My name is Mia",
+        final: true,
+        language: "en",
+        role: "user",
+      });
+      learnerTurnId = null;
+    },
+
     async connect() {
       publish({ type: "state", state: "connecting" });
       await Promise.resolve();
@@ -132,17 +149,7 @@ function createE2eLiveKitConversation() {
         scheduleTranscript("My name is Mia", 80);
         return;
       }
-      if (!learnerTurnId) return;
       clearTranscriptTimers();
-      publish({
-        type: "transcription",
-        id: learnerTurnId,
-        text: "My name is Mia",
-        final: true,
-        language: "en",
-        role: "user",
-      });
-      learnerTurnId = null;
     },
 
     async repeatLastAudio() {
@@ -270,6 +277,13 @@ export function createLiveKitConversation({
   for (const [event, listener] of eventListeners) activeRoom.on(event, listener);
 
   return {
+    async commitUserTurn() {
+      if (!connected) throw new Error("Connect before ending a turn.");
+      await activeRoom.localParticipant.sendText(COMMIT_USER_TURN_COMMAND, {
+        topic: "lk.chat",
+      });
+    },
+
     async connect() {
       if (connected) return;
       publish({ type: "state", state: "connecting" });

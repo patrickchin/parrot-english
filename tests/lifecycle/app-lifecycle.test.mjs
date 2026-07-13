@@ -240,6 +240,40 @@ function ProfileRouteHarness({ children }) {
   );
 }
 
+function StandaloneConversationRouteHarness() {
+  const [route, setRoute] = useState("/talk-to-peppa");
+  const isConversationRoute = route === "/talk-to-peppa";
+
+  return createElement(
+    LearnerProfileGate,
+    {
+      completedLearnerProfileFallback: createElement("p", null, "MAIN MENU"),
+      isConversationRoute,
+      isLearnerProfileRoute: false,
+      isProfileRoute: false,
+      learnerProfileFallback: createElement("p", null, "LEARNER PROFILE ROUTE"),
+      onCloseProfileRoute() {},
+      onConversationCompleted: () => setRoute("/"),
+      onOpenProfileRoute() {},
+      onRedoCompleted() {},
+      onRedoLearnerProfileRoute() {},
+      redoLearnerProfile: false,
+    },
+    isConversationRoute
+      ? createElement("p", null, "VOICE CHAT UNAVAILABLE")
+      : createElement(
+          "main",
+          null,
+          createElement("p", null, "MAIN MENU"),
+          createElement(
+            "button",
+            { onClick: () => setRoute("/talk-to-peppa"), type: "button" },
+            "Talk to Peppa",
+          ),
+        ),
+  );
+}
+
 function RouterHistoryControls() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -561,9 +595,52 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(disconnectCalls, 0);
   });
 
+  it("returns a standalone conversation to the main menu and allows reopening it", async () => {
+    let conversationStarts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          experienceMode: "realtime",
+        });
+      }
+      if (path === "/api/conversations" && init.method === "POST") {
+        conversationStarts += 1;
+        return json({
+          conversation: { id: `conversation-route-${conversationStarts}` },
+          livekit: {
+            participantToken: "parrot-e2e-participant-token",
+            url: "wss://parrot-e2e.invalid",
+          },
+          scenario: {
+            key: "onboarding",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(createElement(StandaloneConversationRouteHarness));
+    await waitFor(() => text(/Start my turn/));
+
+    await click(button("Back"));
+
+    await waitFor(() => text(/MAIN MENU/));
+    noText(/VOICE CHAT UNAVAILABLE/);
+
+    await click(button("Talk to Peppa"));
+    await waitFor(() => text(/Start my turn/));
+    assert.equal(conversationStarts, 2);
+  });
+
   it("updates and clears the live learner transcript during a microphone turn", async () => {
     let listener = () => {};
     const transport = {
+      async commitUserTurn() {},
       async connect() {},
       async disconnect() {},
       async sendText() {},
@@ -655,8 +732,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
     let listener = () => {};
     let now = 1_000;
+    let turnCommits = 0;
     const microphoneCalls = [];
     const transport = {
+      async commitUserTurn() {
+        turnCommits += 1;
+      },
       async connect() {},
       async disconnect() {},
       async sendText() {},
@@ -709,6 +790,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 1));
     await waitFor(() =>
       assert.equal(
         document.querySelector('output[aria-label="Conversation status"]')

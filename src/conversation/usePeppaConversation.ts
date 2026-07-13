@@ -313,7 +313,10 @@ export function usePeppaConversation({
     try {
       await transportRef.current.setMicrophoneEnabled(enabled);
       setMicrophoneEnabled(enabled);
-      if (!enabled) setLiveTranscript("");
+      if (!enabled) {
+        setLiveTranscript("");
+        await transportRef.current.commitUserTurn();
+      }
     } catch (microphoneError) {
       if (!enabled && runtimeRef.current.awaitingResponse) {
         runtimeRef.current.awaitingResponse = false;

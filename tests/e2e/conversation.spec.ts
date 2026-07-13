@@ -1,5 +1,32 @@
 import { expect, test } from "@playwright/test";
 
+test("Back returns home and Talk to Peppa can be opened again", async ({
+  page,
+}) => {
+  await page.goto("/talk-to-peppa");
+  await expect(page.getByRole("button", { name: "Start my turn" })).toBeVisible();
+
+  await page.getByRole("button", { exact: true, name: "Back" }).click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Peppa's voice chat is unavailable right now."),
+  ).toBeHidden();
+
+  await page.getByRole("link", { name: /^Talk to Peppa/ }).click();
+
+  await expect(page).toHaveURL("/talk-to-peppa");
+  const turnButton = page.getByRole("button", { name: "Start my turn" });
+  await expect(turnButton).toBeVisible();
+  await turnButton.click();
+  await expect(
+    page.getByRole("button", { name: "End my turn" }),
+  ).toBeVisible();
+});
+
 test("the learner sees a streamed transcript while speaking", async ({ page }) => {
   await page.goto("/talk-to-peppa");
 
