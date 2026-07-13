@@ -458,7 +458,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("reviews bounded facts, updates the canonical profile, and completes onboarding", async () => {
+  it("rejects legacy structured fact candidates without storing them", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -467,34 +467,14 @@ describe("conversation persistence and API", () => {
         "POST",
       );
       const { conversation } = await started.json();
-      const controllerState = {
-        phase: "closing",
-        activeObjective: null,
-        rephraseCount: { name: 0, age: 0, interest: 0 },
-        optionalExchangeCount: 1,
-        facts: [
-          { key: "name", value: "Mia" },
-          { key: "age", value: 30 },
-          { key: "interest", topic: "animals", value: "pandas" },
-        ],
-        finishReason: "child_stopped",
-      };
       const factsResponse = await callConversation(
         state.database,
         `/api/conversations/${conversation.id}/facts`,
         "POST",
         {
-          controllerState,
+          controllerState: { profileSummary: "Mia likes pandas." },
           candidates: [
             { id: "fact-name", key: "name", value: "Mia", sourceTurnIds: [] },
-            { id: "fact-age", key: "age", value: 30, sourceTurnIds: [] },
-            {
-              id: "fact-interest",
-              key: "interest",
-              topic: "animals",
-              value: "pandas",
-              sourceTurnIds: [],
-            },
           ],
         },
         {
@@ -502,47 +482,20 @@ describe("conversation persistence and API", () => {
           headers: { Authorization: "Bearer agent-secret" },
         },
       );
-      assert.equal(factsResponse.status, 200);
-
-      const review = await callConversation(
-        state.database,
-        `/api/conversations/${conversation.id}/review`,
-        "PUT",
-        {
-          decisions: [
-            { factId: "fact-name", status: "accepted" },
-            { factId: "fact-age", status: "accepted" },
-            {
-              factId: "fact-interest",
-              status: "edited",
-              value: "giant pandas",
-            },
-          ],
-        },
-      );
-
-      assert.equal(review.status, 200);
-      const payload = await review.json();
-      assert.equal(payload.profileCompleted, true);
-      assert.equal(payload.bypassed, false);
-      const profile = state.sqlite
-        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
-        .get("user-1");
-      assert.equal(profile.name, "Mia");
-      assert.equal(profile.age, 30);
-      assert.equal(profile.onboarding_status, "completed");
+      assert.equal(factsResponse.status, 400);
+      assert.deepEqual(await factsResponse.json(), { error: "invalid_facts" });
       assert.equal(
         state.sqlite
-          .prepare("SELECT status FROM conversation_fact WHERE id = ?")
-          .get("fact-interest").status,
-        "edited",
+          .prepare("SELECT count(*) AS count FROM conversation_fact")
+          .get().count,
+        0,
       );
     } finally {
       state.close();
     }
   });
 
-  it("reviews one prose profile without creating structured fact rows", async () => {
+  it("finalizes the saved prose profile without a client review payload", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -579,15 +532,7 @@ describe("conversation persistence and API", () => {
         state.database,
         `/api/conversations/${conversation.id}/review`,
         "PUT",
-        {
-          decisions: [
-            {
-              factId: "profile-summary",
-              status: "edited",
-              value: "Mia is thirty years old and loves giant pandas.",
-            },
-          ],
-        },
+        {},
       );
 
       assert.equal(review.status, 200);
@@ -605,7 +550,7 @@ describe("conversation persistence and API", () => {
       const answers = JSON.parse(profile.answers_json);
       assert.equal(
         answers.description,
-        "Mia is thirty years old and loves giant pandas.",
+        "Mia is thirty years old and likes pandas.",
       );
       assert.equal(
         state.sqlite
@@ -618,15 +563,14 @@ describe("conversation persistence and API", () => {
         .get(conversation.id);
       assert.deepEqual(JSON.parse(stored.controller_state), {
         ...controllerState,
-        profileSummary: "Mia is thirty years old and loves giant pandas.",
-        summaryStatus: "edited",
+        summaryStatus: "accepted",
       });
     } finally {
       state.close();
     }
   });
 
-  it("creates an exact-session bypass when review omits a required fact", async () => {
+  it("creates an exact-session bypass when finalization lacks a required detail", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -645,12 +589,14 @@ describe("conversation persistence and API", () => {
             activeObjective: null,
             rephraseCount: { name: 1, age: 1, interest: 0 },
             optionalExchangeCount: 0,
-            facts: [{ key: "name", value: "Mia" }],
+            profileSummary: "Mia shared her name.",
+            profileName: "Mia",
+            profileAge: null,
+            learnedName: true,
+            learnedAge: false,
             finishReason: "child_stopped",
           },
-          candidates: [
-            { id: "only-name", key: "name", value: "Mia", sourceTurnIds: [] },
-          ],
+          candidates: [],
         },
         {
           identity: null,
@@ -662,7 +608,7 @@ describe("conversation persistence and API", () => {
         state.database,
         `/api/conversations/${conversation.id}/review`,
         "PUT",
-        { decisions: [{ factId: "only-name", status: "accepted" }] },
+        {},
       );
 
       assert.equal(review.status, 200);
@@ -679,6 +625,12 @@ describe("conversation persistence and API", () => {
           .get("session-1", "user-1").count,
         1,
       );
+      const profile = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(profile.name, "Mia");
+      assert.equal(profile.onboarding_status, "not_started");
+      assert.equal(JSON.parse(profile.answers_json).description, "Mia shared her name.");
     } finally {
       state.close();
     }

@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   ConversationApiError,
+  finalizeConversation,
   finishConversation,
   loadConversation,
-  reviewConversation,
   startConversation,
 } from "../src/conversation-api.ts";
 
@@ -20,7 +20,7 @@ function createJsonFetch(payload = { ok: true }, status = 200) {
 }
 
 describe("conversation browser API", () => {
-  it("uses exact same-origin routes for start, load, finish, and review", async () => {
+  it("uses exact same-origin routes for start, load, finish, and finalization", async () => {
     const fake = createJsonFetch();
 
     await startConversation({ fetch: fake.fetch });
@@ -28,11 +28,7 @@ describe("conversation browser API", () => {
     await finishConversation("conversation-1", "finished_by_learner", {
       fetch: fake.fetch,
     });
-    await reviewConversation(
-      "conversation-1",
-      [{ factId: "fact-name", status: "accepted" }],
-      { fetch: fake.fetch },
-    );
+    await finalizeConversation("conversation-1", { fetch: fake.fetch });
 
     assert.deepEqual(
       fake.calls.map(([path, init]) => [path, init.method]),
@@ -46,9 +42,7 @@ describe("conversation browser API", () => {
     assert.deepEqual(JSON.parse(fake.calls[2][1].body), {
       reason: "finished_by_learner",
     });
-    assert.deepEqual(JSON.parse(fake.calls[3][1].body), {
-      decisions: [{ factId: "fact-name", status: "accepted" }],
-    });
+    assert.deepEqual(JSON.parse(fake.calls[3][1].body), {});
   });
 
   it("forwards cancellation and safely parses failed responses", async () => {

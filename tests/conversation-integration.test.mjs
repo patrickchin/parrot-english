@@ -15,11 +15,8 @@ const { OnboardingGateView } = await vite.ssrLoadModule(
   "/src/OnboardingGate.tsx",
 );
 const {
-  candidateFromControllerState,
-  completeConversationReview,
   mergeConversationTurns,
   selectOnboardingExperience,
-  updateConversationCandidateStatus,
 } = await vite.ssrLoadModule("/src/useConversationOnboarding.ts");
 
 after(async () => {
@@ -180,50 +177,7 @@ describe("realtime onboarding gate integration", () => {
     assert.doesNotMatch(html, /LESSON|COMPLETE/);
   });
 
-  it("refreshes the existing onboarding gate after successful review", async () => {
-    const calls = [];
-    const result = await completeConversationReview({
-      conversationId: "conversation-1",
-      decisions: [{ factId: "name", status: "accepted" }],
-      async refresh() {
-        calls.push("refresh");
-      },
-      async review(conversationId, decisions) {
-        calls.push([conversationId, decisions]);
-        return {
-          bypassed: true,
-          conversationId,
-          profileCompleted: false,
-        };
-      },
-    });
-
-    assert.equal(result.bypassed, true);
-    assert.deepEqual(calls, [
-      ["conversation-1", [{ factId: "name", status: "accepted" }]],
-      "refresh",
-    ]);
-  });
-
-  it("maps the cumulative controller prose to one virtual review item", () => {
-    assert.deepEqual(
-      candidateFromControllerState({
-        learnedAge: true,
-        learnedName: true,
-        profileSummary: "Mia is seven and loves giant pandas.",
-      }),
-      {
-        factKey: "summary",
-        id: "profile-summary",
-        label: "About this learner",
-        status: "accepted",
-        value: "Mia is seven and loves giant pandas.",
-      },
-    );
-    assert.equal(candidateFromControllerState({ profileSummary: " " }), null);
-  });
-
-  it("merges the durable transcript and preserves edits after reject-then-keep", () => {
+  it("merges the durable transcript without duplicating live turns", () => {
     assert.deepEqual(
       mergeConversationTurns(
         [{ id: "live", role: "assistant", text: "Hi there!" }],
@@ -236,15 +190,6 @@ describe("realtime onboarding gate integration", () => {
         { id: "saved", role: "user", text: "My name is Mia." },
         { id: "live", role: "assistant", text: "Hi there!" },
       ],
-    );
-
-    assert.deepEqual(
-      updateConversationCandidateStatus(
-        [{ id: "name", status: "rejected", value: "Maya" }],
-        "name",
-        "accepted",
-      ),
-      [{ id: "name", status: "edited", value: "Maya" }],
     );
   });
 });
