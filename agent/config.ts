@@ -6,6 +6,7 @@ export const DEFAULT_AGENT_MODELS = {
 } as const;
 
 export type AgentConfig = {
+  agentName: string;
   ingestSecret: string;
   ingestUrl: string;
   livekitApiKey: string;
@@ -41,6 +42,7 @@ function optionalModel(
 
 export function readAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentConfig {
   return {
+    agentName: required(env, "LIVEKIT_AGENT_NAME"),
     ingestSecret: required(env, "CONVERSATION_AGENT_SECRET"),
     ingestUrl: required(env, "CONVERSATION_INGEST_URL").replace(/\/$/, ""),
     livekitApiKey: required(env, "LIVEKIT_API_KEY"),
