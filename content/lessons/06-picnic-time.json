@@ -14,17 +14,16 @@
   "scenes": [
     {
       "title": "The Picnic Blanket",
-      "settingDescription": "Peppa, Dolly, and the user sit around the checked blanket with the open picnic basket between them.",
+      "settingDescription": "Peppa and Dolly sit around the checked blanket with the open picnic basket between them.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Our picnic looks lovely!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -32,25 +31,23 @@
           "dialogue": "The cups are ready.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         }
       ]
     },
     {
       "title": "Dolly Offers Juice",
-      "settingDescription": "Dolly holds the juice bottle beside the cups while Peppa and the user listen across the blanket.",
+      "settingDescription": "Dolly holds the juice bottle beside the cups while Peppa listens across the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Would you like some juice?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -58,8 +55,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -67,8 +63,7 @@
           "dialogue": "Would you like some juice?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -76,25 +71,23 @@
           "dialogue": "Would you like some juice?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Peppa Says Yes",
-      "settingDescription": "Peppa looks at the empty cup while Dolly holds the juice and the user sits beside the fruit basket.",
+      "settingDescription": "Peppa looks at the empty cup while Dolly holds the juice beside the fruit basket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -102,8 +95,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -111,8 +103,7 @@
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -120,25 +111,23 @@
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "A Cup of Juice",
-      "settingDescription": "Dolly places a cup of juice in front of Peppa while the user watches from the other side of the blanket.",
+      "settingDescription": "Dolly places a cup of juice in front of Peppa across the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Here is your juice.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -146,25 +135,23 @@
           "dialogue": "Thank you, Dolly!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         }
       ]
     },
     {
       "title": "Picnic Time Together",
-      "settingDescription": "Peppa holds her juice as Dolly and the user sit with her beside the food on the blanket.",
+      "settingDescription": "Peppa holds her juice as Dolly sits with her beside the food on the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "The picnic is ready!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -172,8 +159,7 @@
           "dialogue": "Let's eat together!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -181,8 +167,7 @@
           "dialogue": "Great job, Bella! Peppa has her picnic juice!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]

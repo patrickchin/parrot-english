@@ -14,17 +14,16 @@
   "scenes": [
     {
       "title": "The Ball Up High",
-      "settingDescription": "Peppa stands under the tall tree and looks up at her red ball while Dolly and the user watch beside her.",
+      "settingDescription": "Peppa stands under the tall tree and looks up at her red ball while Dolly watches beside her.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Look! My ball!",
           "emotes": {
             "peppa": "surprised",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -32,8 +31,7 @@
           "dialogue": "It is up high!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -41,8 +39,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -50,8 +47,7 @@
           "dialogue": "It is up high!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -59,25 +55,23 @@
           "dialogue": "It is up high!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Peppa Cannot Reach",
-      "settingDescription": "Peppa stretches toward the branch, but the ball stays above her while Dolly and the user stand nearby.",
+      "settingDescription": "Peppa stretches toward the branch, but the ball stays above her while Dolly stands nearby.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Oh! I can't reach it.",
           "emotes": {
             "peppa": "sad",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -85,8 +79,7 @@
           "dialogue": "Let's copy Peppa!",
           "emotes": {
             "peppa": "sad",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -94,8 +87,7 @@
           "dialogue": "Oh! I can't reach it.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -103,25 +95,23 @@
           "dialogue": "Oh! I can't reach it.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Asking for Help",
-      "settingDescription": "Peppa turns toward Dolly beneath the tree while the user stands ready to help.",
+      "settingDescription": "Peppa turns toward Dolly beneath the tree, ready to ask for help.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Can you help me, please?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -129,8 +119,7 @@
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -138,8 +127,7 @@
           "dialogue": "Can you help me, please?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -147,25 +135,23 @@
           "dialogue": "Can you help me, please?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Dolly Flies Up",
-      "settingDescription": "Dolly rises toward the branch as Peppa and the user look up from the grass.",
+      "settingDescription": "Dolly rises toward the branch as Peppa looks up from the grass.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -173,8 +159,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -182,8 +167,7 @@
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -191,25 +175,23 @@
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "The Ball Comes Down",
-      "settingDescription": "Dolly gives the red ball to Peppa under the tree while the user watches them smile.",
+      "settingDescription": "Dolly gives the red ball to Peppa under the tree while they smile.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -217,8 +199,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -226,8 +207,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -235,8 +215,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         },
         {
@@ -244,8 +223,7 @@
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -253,8 +231,7 @@
           "dialogue": "Let's thank Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -262,8 +239,7 @@
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -271,8 +247,7 @@
           "dialogue": "Thank you!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         },
         {
@@ -280,8 +255,7 @@
           "dialogue": "Great job, Bella! Peppa has her ball!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]

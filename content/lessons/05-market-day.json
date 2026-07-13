@@ -14,17 +14,16 @@
   "scenes": [
     {
       "title": "The Fruit Stand",
-      "settingDescription": "Dolly stands behind the fruit counter while Peppa and the user look at baskets of red apples.",
+      "settingDescription": "Dolly stands behind the fruit counter while Peppa looks at baskets of red apples.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Welcome to my fruit stand!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -32,25 +31,23 @@
           "dialogue": "I see red apples.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Asking the Price",
-      "settingDescription": "Peppa points to the apple basket as Dolly waits behind the counter and the user looks at the price sign.",
+      "settingDescription": "Peppa points to the apple basket and price sign as Dolly waits behind the counter.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "How much is it?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -58,8 +55,7 @@
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -67,8 +63,7 @@
           "dialogue": "How much is it?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -76,25 +71,23 @@
           "dialogue": "How much is it?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Two Coins",
-      "settingDescription": "Dolly points to the two-coin sign while Peppa holds two coins and the user watches beside her.",
+      "settingDescription": "Dolly points to the two-coin sign while Peppa holds two coins beside her.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "It is two coins.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -102,25 +95,23 @@
           "dialogue": "I have two coins.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "Choosing Apples",
-      "settingDescription": "Peppa looks at two apples on the counter while Dolly and the user listen to her choice.",
+      "settingDescription": "Peppa looks at two apples on the counter while Dolly listens to her choice.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "I'd like two apples, please.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening",
-            "user": "listening"
+            "dolly": "listening"
           }
         },
         {
@@ -128,8 +119,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -137,8 +127,7 @@
           "dialogue": "I'd like two apples, please.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -146,25 +135,23 @@
           "dialogue": "I'd like two apples, please.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening",
-            "user": "talking"
+            "dolly": "listening"
           }
         }
       ]
     },
     {
       "title": "The Apples Are Ready",
-      "settingDescription": "Dolly gives Peppa two red apples across the counter while the user smiles beside them.",
+      "settingDescription": "Dolly gives Peppa two red apples across the counter while they smile.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly", "user"],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
           "dialogue": "Here are two apples.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking",
-            "user": "listening"
+            "dolly": "talking"
           }
         },
         {
@@ -172,8 +159,7 @@
           "dialogue": "Thank you, Dolly!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy",
-            "user": "listening"
+            "dolly": "happy"
           }
         },
         {
@@ -181,8 +167,7 @@
           "dialogue": "Great job, Bella! Peppa bought two red apples!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy",
-            "user": "happy"
+            "dolly": "happy"
           }
         }
       ]
