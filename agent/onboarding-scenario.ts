@@ -53,13 +53,17 @@ export const AGENT_SESSION_START_OPTIONS = { record: false } as const;
 
 export const AGENT_TURN_HANDLING = {
   endpointing: {
-    maxDelay: 2_500,
-    minDelay: 500,
+    maxDelay: 1_200,
+    minDelay: 300,
     mode: "dynamic",
   },
   interruption: {
     enabled: true,
     mode: "adaptive",
+  },
+  preemptiveGeneration: {
+    enabled: true,
+    preemptiveTts: true,
   },
   turnDetection: "inference",
 } as const;
@@ -114,6 +118,18 @@ export function createGettingToKnowYouTask({
 }: CreateTaskOptions) {
   let state = initialState;
   let completeTask: ((result: { finishReason: string | null }) => void) | null = null;
+  let statePersistence = Promise.resolve();
+
+  function persistState(controllerState: ControllerState) {
+    const pendingUpdate = statePersistence
+      .catch(() => {})
+      .then(() => ingest.updateState(conversationId, controllerState));
+    statePersistence = pendingUpdate;
+    void pendingUpdate.catch((error: unknown) => {
+      console.error("Could not persist onboarding state", error);
+    });
+    return pendingUpdate;
+  }
 
   async function transition(
     observation: {
@@ -126,8 +142,9 @@ export function createGettingToKnowYouTask({
     },
   ) {
     state = applyConversationObservation(state, observation) as ControllerState;
-    await ingest.updateState(conversationId, state);
+    const pendingStateUpdate = persistState(state);
     if (isConversationTerminal(state)) {
+      await pendingStateUpdate;
       await ingest.endConversation(
         conversationId,
         state.finishReason === "child_stopped" ? "stopped" : "completed",
@@ -213,7 +230,7 @@ export function createGettingToKnowYouTask({
           }) as ControllerState;
         }
         state = { ...state, finishReason: reason };
-        await ingest.updateState(conversationId, state);
+        await persistState(state);
         await ingest.endConversation(
           conversationId,
           reason === "task_complete" ? "completed" : "stopped",
@@ -233,7 +250,7 @@ export function createGettingToKnowYouTask({
     }),
   ];
 
-  return voice.AgentTask.create<{ finishReason: string | null }>({
+  const task = voice.AgentTask.create<{ finishReason: string | null }>({
     id: "getting_to_know_you",
     instructions: [ONBOARDING_AGENT_INSTRUCTIONS, savedProfileInstructions(initialState)]
       .filter(Boolean)
@@ -245,6 +262,12 @@ export function createGettingToKnowYouTask({
         allowInterruptions: false,
         instructions: openingInstructions(state),
       });
+    },
+  });
+
+  return Object.assign(task, {
+    waitForPendingStatePersistence() {
+      return statePersistence.catch(() => {});
     },
   });
 }

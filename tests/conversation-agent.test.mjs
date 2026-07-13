@@ -16,6 +16,7 @@ import {
 } from "../agent/onboarding-scenario.ts";
 import {
   createAgentModels,
+  createAgentTurnHandling,
   parseConversationParticipantMetadata,
 } from "../agent/index.ts";
 import * as agentRuntime from "../agent/index.ts";
@@ -300,14 +301,128 @@ describe("bounded onboarding agent contract", () => {
     assert.equal(rephrased.state.profileSummary, "The learner's name is Mia.");
   });
 
-  it("starts without recording and configures acoustic endpointing and barge-in", () => {
+  it("does not hold Peppa's next reply behind remote profile persistence", async () => {
+    let releasePersistence;
+    const persistenceBlocked = new Promise((resolve) => {
+      releasePersistence = resolve;
+    });
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState() {
+          await persistenceBlocked;
+        },
+      }),
+    });
+    const transition =
+      task.toolCtx.functionTools.updateProfileSummary.execute(
+        {
+          learnedAge: false,
+          learnedName: true,
+          outcome: "answered",
+          profileAge: null,
+          profileName: "Mia",
+          summary: "The learner's name is Mia.",
+        },
+        {},
+      );
+
+    let outcome;
+    try {
+      outcome = await Promise.race([
+        transition.then(() => "completed"),
+        new Promise((resolve) =>
+          setTimeout(() => resolve("blocked-by-persistence"), 25),
+        ),
+      ]);
+    } finally {
+      releasePersistence();
+      await transition;
+    }
+
+    assert.equal(outcome, "completed");
+  });
+
+  it("lets session shutdown flush a write-behind profile update", async () => {
+    let releasePersistence;
+    const persistenceBlocked = new Promise((resolve) => {
+      releasePersistence = resolve;
+    });
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState() {
+          await persistenceBlocked;
+        },
+      }),
+    });
+    const transition =
+      task.toolCtx.functionTools.updateProfileSummary.execute(
+        {
+          learnedAge: false,
+          learnedName: true,
+          outcome: "answered",
+          profileAge: null,
+          profileName: "Mia",
+          summary: "The learner's name is Mia.",
+        },
+        {},
+      );
+
+    const hasPersistenceWaiter =
+      typeof task.waitForPendingStatePersistence === "function";
+    let stateBeforeRelease;
+    if (hasPersistenceWaiter) {
+      const waiting = task.waitForPendingStatePersistence().then(
+        () => "flushed",
+      );
+      stateBeforeRelease = await Promise.race([
+        waiting,
+        new Promise((resolve) =>
+          setTimeout(() => resolve("still-pending"), 25),
+        ),
+      ]);
+      releasePersistence();
+      await waiting;
+    } else {
+      releasePersistence();
+    }
+    await transition;
+
+    assert.equal(hasPersistenceWaiter, true);
+    assert.equal(stateBeforeRelease, "still-pending");
+  });
+
+  it("starts without recording and uses a sub-second-first low-latency turn budget", () => {
     assert.deepEqual(AGENT_SESSION_START_OPTIONS, { record: false });
     assert.equal(AGENT_TURN_HANDLING.interruption.enabled, true);
     assert.equal(AGENT_TURN_HANDLING.interruption.mode, "adaptive");
     assert.equal(AGENT_TURN_HANDLING.endpointing.mode, "dynamic");
-    assert.ok(AGENT_TURN_HANDLING.endpointing.minDelay >= 400);
-    assert.ok(AGENT_TURN_HANDLING.endpointing.maxDelay <= 3000);
+    assert.ok(AGENT_TURN_HANDLING.endpointing.minDelay <= 350);
+    assert.ok(AGENT_TURN_HANDLING.endpointing.maxDelay <= 1_200);
+    assert.deepEqual(AGENT_TURN_HANDLING.preemptiveGeneration, {
+      enabled: true,
+      preemptiveTts: true,
+    });
     assert.equal(AGENT_TURN_HANDLING.turnDetection, "inference");
+  });
+
+  it("passes the low-latency options into the running agent session", () => {
+    const turnHandling = createAgentTurnHandling();
+
+    assert.equal(
+      turnHandling.endpointing,
+      AGENT_TURN_HANDLING.endpointing,
+    );
+    assert.equal(
+      turnHandling.interruption,
+      AGENT_TURN_HANDLING.interruption,
+    );
+    assert.equal(
+      turnHandling.preemptiveGeneration,
+      AGENT_TURN_HANDLING.preemptiveGeneration,
+    );
+    assert.equal(turnHandling.turnDetection.constructor.name, "TurnDetector");
   });
 });
 
