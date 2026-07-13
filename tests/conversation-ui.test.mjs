@@ -26,6 +26,7 @@ function props(overrides = {}) {
     onFinish() {},
     onStart() {},
     onToggleMicrophone() {},
+    responseLatencyMs: null,
     status: "ready",
     turns: [],
     ...overrides,
@@ -123,8 +124,22 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /aria-live="polite"/);
     assert.match(html, /Peppa is thinking/);
     assert.match(html, /Getting her reply ready/);
+    assert.match(html, /Peppa response latency/);
+    assert.match(html, /Measuring reply time/);
     assert.doesNotMatch(html, /Start my turn|End my turn/);
     assert.match(html, /Finish conversation/);
+  });
+
+  it("shows the completed client-side latency when Peppa starts talking", () => {
+    const html = render({
+      microphoneEnabled: false,
+      responseLatencyMs: 1_254,
+      status: "speaking",
+    });
+
+    assert.match(html, /Peppa response latency/);
+    assert.match(html, /Reply time/);
+    assert.match(html, /1\.25 s/);
   });
 
   it("centers the character, shows only her latest speech, and removes developer controls", () => {

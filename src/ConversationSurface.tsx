@@ -1,6 +1,7 @@
 import { ArrowLeft, Flag, Mic, MicOff, RotateCcw } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { HeaderButton, RouteHeader } from "./AppHeader";
+import { formatResponseLatency } from "./response-latency";
 import { ActionButton } from "./ui";
 
 export type ConversationSurfaceStatus =
@@ -26,6 +27,7 @@ type ConversationSurfaceProps = {
   onFinish: () => void;
   onStart: () => void;
   onToggleMicrophone: () => void;
+  responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
   turns: ConversationSurfaceTurn[];
 };
@@ -126,6 +128,7 @@ export function ConversationSurface({
   onFinish,
   onStart,
   onToggleMicrophone,
+  responseLatencyMs = null,
   status,
   turns,
 }: ConversationSurfaceProps) {
@@ -237,6 +240,18 @@ export function ConversationSurface({
             {STATUS_LABELS[status]}
           </p>
         )}
+
+        {thinking || responseLatencyMs !== null ? (
+          <output
+            aria-label="Peppa response latency"
+            aria-live="polite"
+            className="rounded-full border-2 border-white/80 bg-brand-ink/85 px-4 py-2 text-sm font-black text-white shadow-control-navy"
+          >
+            {responseLatencyMs === null
+              ? "Measuring reply time…"
+              : `Reply time: ${formatResponseLatency(responseLatencyMs)}`}
+          </output>
+        ) : null}
 
         {error ? (
           <p

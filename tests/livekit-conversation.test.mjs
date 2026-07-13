@@ -106,6 +106,12 @@ describe("LiveKit conversation adapter", () => {
 
     room.emit(LIVEKIT_CONVERSATION_EVENTS.reconnecting);
     room.emit(LIVEKIT_CONVERSATION_EVENTS.reconnected);
+    room.emit(LIVEKIT_CONVERSATION_EVENTS.activeSpeakers, [
+      { isLocal: true },
+    ]);
+    room.emit(LIVEKIT_CONVERSATION_EVENTS.activeSpeakers, [
+      { isLocal: false },
+    ]);
     room.emit(
       LIVEKIT_CONVERSATION_EVENTS.transcription,
       [
@@ -119,6 +125,7 @@ describe("LiveKit conversation adapter", () => {
     assert.deepEqual(events, [
       { type: "state", state: "reconnecting" },
       { type: "state", state: "connected" },
+      { type: "speech-started", role: "assistant" },
       {
         type: "transcription",
         id: "partial",
@@ -170,7 +177,7 @@ describe("LiveKit conversation adapter", () => {
     assert.deepEqual(removed, ["detached", "audio"]);
     assert.deepEqual(
       [...room.listeners.values()].map((listeners) => listeners.size),
-      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
     );
     assert.deepEqual(room.log, [["disconnect"]]);
   });

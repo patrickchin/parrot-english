@@ -15,6 +15,7 @@ import {
   type ConversationTransportEvent,
   type LiveKitConversation,
 } from "./livekit-conversation";
+import { createResponseLatencyTimer } from "./response-latency";
 
 export function selectOnboardingExperience(
   serverMode: "realtime" | "form",
@@ -43,6 +44,7 @@ function readableError(error: unknown) {
 type UseConversationOnboardingOptions = {
   active: boolean;
   createTransport?: typeof createLiveKitConversation;
+  now?: () => number;
   onBack: () => void;
   onCompleted: () => Promise<void>;
 };
@@ -68,6 +70,7 @@ function createConversationRuntime(): ConversationRuntime {
 export function useConversationOnboarding({
   active,
   createTransport = createLiveKitConversation,
+  now,
   onBack,
   onCompleted,
 }: UseConversationOnboardingOptions) {
@@ -75,6 +78,10 @@ export function useConversationOnboarding({
     useState<ConversationSurfaceStatus>("ready");
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+  const [responseLatencyMs, setResponseLatencyMs] = useState<number | null>(null);
+  const [responseLatencyTimer] = useState(() =>
+    createResponseLatencyTimer(now),
+  );
   const [error, setError] = useState("");
   const conversationIdRef = useRef<string | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
@@ -85,6 +92,16 @@ export function useConversationOnboarding({
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
   }, []);
+
+  const resetResponseLatency = useCallback(() => {
+    responseLatencyTimer.reset();
+    setResponseLatencyMs(null);
+  }, [responseLatencyTimer]);
+
+  const finishResponseLatency = useCallback(() => {
+    const elapsedMs = responseLatencyTimer.finish();
+    if (elapsedMs !== null) setResponseLatencyMs(elapsedMs);
+  }, [responseLatencyTimer]);
 
   const loadSummary = useCallback(
     async (id: string, operation = operationRef.current) => {
@@ -149,6 +166,14 @@ export function useConversationOnboarding({
         void loadSummary(id, operation);
         return;
       }
+      if (event.type === "speech-started") {
+        if (event.role === "assistant" && runtimeRef.current.awaitingResponse) {
+          runtimeRef.current.awaitingResponse = false;
+          finishResponseLatency();
+          setStatus("speaking");
+        }
+        return;
+      }
       setTurns((current) => {
         const turn: ConversationSurfaceTurn = {
           id: event.id,
@@ -162,6 +187,7 @@ export function useConversationOnboarding({
         );
       });
       if (event.role === "assistant") {
+        if (runtimeRef.current.awaitingResponse) finishResponseLatency();
         runtimeRef.current.awaitingResponse = false;
         if (event.final) {
           if (!runtimeRef.current.learnerTurnOpen) {
@@ -179,7 +205,7 @@ export function useConversationOnboarding({
         );
       }
     },
-    [isCurrent, loadSummary, openLearnerTurn],
+    [finishResponseLatency, isCurrent, loadSummary, openLearnerTurn],
   );
 
   const start = useCallback(async () => {
@@ -190,6 +216,7 @@ export function useConversationOnboarding({
     setTurns([]);
     setMicrophoneEnabled(false);
     runtimeRef.current = createConversationRuntime();
+    resetResponseLatency();
     try {
       const started = await startConversation();
       if (!isCurrent(operation)) return;
@@ -218,7 +245,13 @@ export function useConversationOnboarding({
       setError(readableError(startError));
       setStatus("error");
     }
-  }, [createTransport, handleTransportEvent, isCurrent, openLearnerTurn]);
+  }, [
+    createTransport,
+    handleTransportEvent,
+    isCurrent,
+    openLearnerTurn,
+    resetResponseLatency,
+  ]);
 
   const finish = useCallback(async () => {
     const conversationId = conversationIdRef.current;
@@ -243,10 +276,11 @@ export function useConversationOnboarding({
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
+    resetResponseLatency();
     onBack();
     if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
-  }, [onBack]);
+  }, [onBack, resetResponseLatency]);
 
   const toggleMicrophone = useCallback(async () => {
     if (
@@ -258,8 +292,12 @@ export function useConversationOnboarding({
     }
     const enabled = !microphoneEnabled;
     if (!enabled) {
+      responseLatencyTimer.start();
+      setResponseLatencyMs(null);
       runtimeRef.current.awaitingResponse = true;
       setStatus("thinking");
+    } else {
+      resetResponseLatency();
     }
     try {
       await transportRef.current.setMicrophoneEnabled(enabled);
@@ -267,11 +305,12 @@ export function useConversationOnboarding({
     } catch (microphoneError) {
       if (!enabled && runtimeRef.current.awaitingResponse) {
         runtimeRef.current.awaitingResponse = false;
+        resetResponseLatency();
         setStatus("listening");
       }
       setError(readableError(microphoneError));
     }
-  }, [microphoneEnabled]);
+  }, [microphoneEnabled, resetResponseLatency, responseLatencyTimer]);
 
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;
@@ -284,6 +323,7 @@ export function useConversationOnboarding({
     operationRef.current += 1;
     autoStartRef.current = false;
     runtimeRef.current = createConversationRuntime();
+    resetResponseLatency();
     const activeConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
@@ -298,13 +338,14 @@ export function useConversationOnboarding({
         () => {},
       );
     }
-  }, [active]);
+  }, [active, resetResponseLatency]);
 
   useEffect(
     () => () => {
       operationRef.current += 1;
       autoStartRef.current = false;
       runtimeRef.current = createConversationRuntime();
+      responseLatencyTimer.reset();
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();
@@ -316,7 +357,7 @@ export function useConversationOnboarding({
         );
       }
     },
-    [],
+    [responseLatencyTimer],
   );
 
   return useMemo(
@@ -327,6 +368,7 @@ export function useConversationOnboarding({
       onFinish: () => void finish(),
       onStart: () => void start(),
       onToggleMicrophone: () => void toggleMicrophone(),
+      responseLatencyMs,
       status,
       turns,
     }),
@@ -335,6 +377,7 @@ export function useConversationOnboarding({
       error,
       finish,
       microphoneEnabled,
+      responseLatencyMs,
       start,
       status,
       toggleMicrophone,
