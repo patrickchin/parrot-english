@@ -46,6 +46,7 @@ describe("LiveKit agent configuration", () => {
     assert.equal(config.livekitUrl, "wss://livekit.example.test");
     assert.equal(config.ingestSecret, "agent-secret");
     assert.equal(config.agentName, "parrot-conversation");
+    assert.equal(config.sttLanguage, "en");
     assert.equal(config.sttModel, "elevenlabs/scribe_v2_realtime");
     assert.equal(config.llmModel, "openai/gpt-4.1-mini");
     assert.equal(config.ttsModel, "inworld/inworld-tts-2");
@@ -63,6 +64,7 @@ describe("LiveKit agent configuration", () => {
     const models = createAgentModels(config);
 
     assert.equal(models.stt.model, config.sttModel);
+    assert.equal(models.stt.opts.language, config.sttLanguage);
     assert.equal(models.llm.model, config.llmModel);
     assert.equal(models.tts.model, config.ttsModel);
     assert.deepEqual(models.tts.opts.fallback, [
@@ -175,6 +177,17 @@ describe("LiveKit agent configuration", () => {
     assert.throws(
       () => readAgentConfig(environment({ AGENT_STT_MODEL: "auto" })),
       /explicit model version/,
+    );
+  });
+
+  it("allows English or Chinese STT hints and rejects unrelated languages", () => {
+    assert.equal(
+      readAgentConfig(environment({ AGENT_STT_LANGUAGE: "zh" })).sttLanguage,
+      "zh",
+    );
+    assert.throws(
+      () => readAgentConfig(environment({ AGENT_STT_LANGUAGE: "ru" })),
+      /AGENT_STT_LANGUAGE must be en or zh/,
     );
   });
 });
