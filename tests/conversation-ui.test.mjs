@@ -214,14 +214,22 @@ describe("accessible realtime conversation surface", () => {
     assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   });
 
-  it("reserves a collision-free account area on desktop and mobile", () => {
+  it("keeps the mobile account actions beside Back without a large gap", () => {
     assert.match(
       styles,
       /\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*112px[^}]*padding-top:\s*max\([^;]*var\(--conversation-account-inset\)[^;]*\)/s,
     );
     assert.match(
       styles,
-      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*174px/s,
+      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*top:\s*clamp\(14px,\s*2\.2vh,\s*28px\)[^}]*max-width:\s*calc\(100vw\s*-\s*92px\)/s,
+    );
+    assert.match(
+      styles,
+      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*>\s*span:first-child\s*\{[^}]*display:\s*none/s,
+    );
+    assert.match(
+      styles,
+      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*92px/s,
     );
   });
 });
