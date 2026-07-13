@@ -115,6 +115,30 @@ describe("lesson data contract", () => {
     );
   });
 
+  it("accepts learner speaking turns without a learner visual character", { skip: !hasValidator }, () => {
+    const catalogInput = createCatalogInput();
+    catalogInput.characters = catalogInput.characters.filter(
+      (character) => character.id !== "user"
+    );
+    const catalog = lessonData.createLessonCatalog(catalogInput);
+    const lesson = createLesson();
+
+    for (const scene of lesson.scenes) {
+      scene.characters = scene.characters.filter((id) => id !== "user");
+      for (const step of scene.steps) delete step.emotes.user;
+    }
+
+    assert.equal(
+      lessonData.validateLesson(lesson, catalog, "non-visual-learner.json"),
+      lesson
+    );
+    assert.ok(
+      lesson.scenes.some((scene) =>
+        scene.steps.some((step) => step.speaker === "user")
+      )
+    );
+  });
+
   it("rejects invalid root content with its source path", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const cases = [
