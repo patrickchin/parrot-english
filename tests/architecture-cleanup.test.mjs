@@ -19,11 +19,13 @@ describe("architecture cleanup contracts", () => {
 
   it("renders generic story characters with scene controls", () => {
     const app = readProjectFile("src/App.tsx");
+    const playerUi = readProjectFile("src/LessonPlayerUi.tsx");
 
     assert.match(app, /<LessonList/);
     assert.match(app, /Back to lessons/);
     assert.doesNotMatch(app, /<select|Lesson picker/);
-    assert.match(app, /scene\.characters\.map/);
+    assert.match(app, /<LessonCharacters/);
+    assert.match(playerUi, /characters\.map/);
     assert.match(app, /ChevronLeft|ChevronRight/);
     assert.match(app, /SCENE_NEXT|SCENE_PREVIOUS/);
   });

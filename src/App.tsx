@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, House, Mic } from "lucide-react";
+import { ChevronLeft, House } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -11,7 +11,6 @@ import {
   useReducer,
   useRef,
   useState,
-  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -69,6 +68,15 @@ import { evaluateSpeech } from "./evaluation-request";
 import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
 import { LessonList } from "./LessonList";
 import {
+  LessonCharacters,
+  LessonControls,
+  LessonErrorBanner,
+  LessonHud,
+  LessonSpeech,
+  LessonStage,
+  LessonStartAction,
+} from "./LessonPlayerUi";
+import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
   startSpeechRecording,
@@ -97,11 +105,6 @@ type LessonEvent =
   | { type: "EVALUATION_FAILED" }
   | { type: "FEEDBACK_DONE" }
   | { type: "RESET" };
-
-type CharacterStyle = CSSProperties & {
-  "--character-count": number;
-  "--character-index": number;
-};
 
 type LessonPlayerProps = {
   lesson: Lesson;
@@ -581,32 +584,13 @@ export function LessonPlayer({
   const versionLabel = `v${import.meta.env.VITE_PARROT_APP_VERSION} @ ${import.meta.env.VITE_PARROT_COMMIT_SHA}`;
 
   return (
-    <main className="lesson-shell">
-      <section
-        aria-label="Parrot English speaking lesson"
-        className="lesson-stage"
-      >
-        <img
-          src={scene.backgroundAsset.src}
-          alt={scene.backgroundAsset.alt}
-          className="scene-background"
-          draggable="false"
+    <LessonStage background={scene.backgroundAsset}>
+        <LessonHud
+          currentScene={state.sceneIndex + 1}
+          sceneCount={currentLesson.scenes.length}
+          title={scene.title}
+          versionLabel={versionLabel}
         />
-
-        <header className="scene-hud">
-          <div className="scene-title-card">
-            <span className="scene-number">{state.sceneIndex + 1}</span>
-            <span className="scene-title">{scene.title}</span>
-          </div>
-          <div className="scene-progress" aria-label="Scene progress">
-            {Array.from({ length: currentLesson.scenes.length }, (_, index) => (
-              <span
-                className={index <= state.sceneIndex ? "is-complete" : ""}
-                key={index}
-              />
-            ))}
-          </div>
-        </header>
 
         <RouteHeader>
           <HeaderButton
@@ -628,156 +612,37 @@ export function LessonPlayer({
           </HeaderButton>
         </RouteHeader>
 
-        <span
-          aria-label={`Build version ${versionLabel}`}
-          className="build-version-badge"
-        >
-          {versionLabel}
-        </span>
-
         {showStartAction ? (
-          <div className="lesson-start-layer">
-            <button
-              aria-label={startActionLabel}
-              className="start-lesson-button"
-              onClick={handleStartAction}
-              ref={startActionRef}
-              type="button"
-            >
-              <span>{startActionLabel}</span>
-            </button>
-          </div>
+          <LessonStartAction
+            label={startActionLabel}
+            onClick={handleStartAction}
+            ref={startActionRef}
+          />
         ) : null}
 
-        <div className="character-layer">
-          {scene.characters.map((character, index) => (
-            <div
-              className={`character-sprite ${
-                character.isActive ? "is-active" : ""
-              }`}
-              data-character={character.id}
-              data-emote={character.emote}
-              key={character.id}
-              style={
-                {
-                  "--character-count": scene.characters.length,
-                  "--character-index": index,
-                } as CharacterStyle
-              }
-            >
-              <img
-                src={character.asset.src}
-                alt={character.asset.alt}
-                draggable="false"
-              />
-              <span className="character-name">{character.name}</span>
-            </div>
-          ))}
-        </div>
-
-        {scene.speech.kind === "user" ? null : scene.speech.kind === "narration" ||
-          scene.speech.kind === "feedback" ||
-          scene.speech.kind === "finished" ? (
-          <div
-            aria-live="polite"
-            className={`narrator-caption is-${scene.speech.kind}`}
-            role="status"
-          >
-            <span>Narrator</span>
-            <p>{scene.speech.text}</p>
-          </div>
-        ) : (
-          <div
-            aria-live="polite"
-            className={`speech-bubble is-${scene.speech.kind}`}
-            data-speaker={scene.speech.speaker}
-            role="status"
-            style={
-              {
-                "--character-count": scene.characters.length,
-                "--character-index": Math.max(0, speechCharacterIndex),
-              } as CharacterStyle
-            }
-          >
-            <span>{scene.speech.speaker}</span>
-            <p>{scene.speech.text}</p>
-          </div>
-        )}
-
-        <nav aria-label="Lesson controls" className="scene-controls">
-          <button
-            aria-label="Previous scene"
-            className="scene-control-button"
-            disabled={atFirstScene}
-            onClick={() => dispatchSceneControl("SCENE_PREVIOUS")}
-            type="button"
-          >
-            <ChevronLeft aria-hidden="true" strokeWidth={3.2} />
-          </button>
-
-          {showUserTurn ? (
-            <>
-              <strong
-                aria-live="assertive"
-                className="learner-target-pill"
-                role="status"
-              >
-                {currentStep.dialogue}
-              </strong>
-              {isEvaluating ? (
-                <span
-                  aria-live="assertive"
-                  className="checking-label"
-                  role="status"
-                >
-                  Checking your speech...
-                </span>
-              ) : (
-                <button
-                  aria-label={
-                    isRecording
-                      ? "Release when you finish"
-                      : "Press and hold to speak"
-                  }
-                  className={`hold-to-talk-button ${
-                    isRecording ? "is-recording" : ""
-                  }`}
-                  onKeyDown={handleKeyDown}
-                  onKeyUp={handleKeyUp}
-                  onPointerCancel={cancelRecording}
-                  onPointerDown={handlePointerDown}
-                  onPointerUp={handlePointerUp}
-                  type="button"
-                >
-                  <Mic aria-hidden="true" strokeWidth={3.6} />
-                  <span>
-                    {isRecording
-                      ? "Release when you finish"
-                      : "Press and hold to speak"}
-                  </span>
-                </button>
-              )}
-            </>
-          ) : (
-            <span className="dock-status">{progressLabel}</span>
-          )}
-
-          <button
-            aria-label="Next scene"
-            className="scene-control-button"
-            disabled={atFinalScene}
-            onClick={() => dispatchSceneControl("SCENE_NEXT")}
-            type="button"
-          >
-            <ChevronRight aria-hidden="true" strokeWidth={3.2} />
-          </button>
-        </nav>
-
-        {error ? (
-          <div className="error-banner" role="alert">
-            {error}
-          </div>
-        ) : null}
+        <LessonCharacters characters={scene.characters} />
+        <LessonSpeech
+          characterCount={scene.characters.length}
+          characterIndex={speechCharacterIndex}
+          speech={scene.speech}
+        />
+        <LessonControls
+          atFinalScene={atFinalScene}
+          atFirstScene={atFirstScene}
+          dialogue={currentStep.dialogue}
+          isEvaluating={isEvaluating}
+          isRecording={isRecording}
+          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
+          onNext={() => dispatchSceneControl("SCENE_NEXT")}
+          onPointerCancel={cancelRecording}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
+          progressLabel={progressLabel}
+          showUserTurn={showUserTurn}
+        />
+        <LessonErrorBanner error={error} />
 
         <div className="sr-only" aria-live="polite">
           {progressLabel}. Scene {state.sceneIndex + 1} of{" "}
@@ -785,8 +650,7 @@ export function LessonPlayer({
           {state.transcript ? ` Heard: ${state.transcript}.` : ""}
           {error ? ` ${error}` : ""}
         </div>
-      </section>
-    </main>
+    </LessonStage>
   );
 }
 
