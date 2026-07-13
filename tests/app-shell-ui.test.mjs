@@ -204,6 +204,7 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     "/talk-to-peppa",
     "/lessons",
     "/lessons/my/create",
+    "/lessons/my/:lessonId/edit",
     "/lessons/parrot/:lessonId",
     "/lessons/parrot/:lessonId/scenes/:sceneNumber",
     "/lessons/my/:lessonId",

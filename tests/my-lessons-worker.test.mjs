@@ -145,6 +145,78 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
+  it("updates an owned lesson with lenient repairs while preserving its source", async () => {
+    const state = seedDatabase();
+    try {
+      await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: createLessonScript(),
+      });
+
+      const response = await call(state, "/api/lessons/my/lesson-1", "PUT", {
+        lesson: {
+          title: "Edited Garden Help",
+          scenes: [
+            {
+              background: "unknown-background",
+              steps: [{ speaker: "mystery", dialogue: "Edited dialogue" }],
+            },
+          ],
+        },
+      });
+
+      assert.equal(response.status, 200);
+      const payload = await response.json();
+      assert.equal(payload.lesson.id, "lesson-1");
+      assert.equal(payload.lesson.source, "uploaded");
+      assert.equal(payload.lesson.lesson.title, "Edited Garden Help");
+      assert.equal(payload.lesson.lesson.scenes[0].background, "episode-garden");
+      assert.equal(payload.lesson.lesson.scenes[0].steps[0].speaker, "narrator");
+      assert.ok(payload.warnings.some((warning) => /background/i.test(warning)));
+      assert.equal(
+        JSON.parse(
+          state.sqlite
+            .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
+            .get("lesson-1").lesson_json,
+        ).title,
+        "Edited Garden Help",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not update a lesson owned by another user", async () => {
+    const state = seedDatabase();
+    try {
+      await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: createLessonScript(),
+      });
+
+      const response = await call(
+        state,
+        "/api/lessons/my/lesson-1",
+        "PUT",
+        { lesson: createLessonScript({ title: "Stolen edit" }) },
+        { userId: "user-2" },
+      );
+
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      assert.equal(
+        JSON.parse(
+          state.sqlite
+            .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
+            .get("lesson-1").lesson_json,
+        ).title,
+        "Garden Help",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("generates a validated preview with the canonical learner name without saving", async () => {
     const state = seedDatabase();
     const calls = [];

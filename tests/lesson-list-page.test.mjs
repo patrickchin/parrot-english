@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test from "node:test";
 import { createServer } from "vite";
+import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -84,6 +85,27 @@ test("lesson list exposes My Lessons empty and creation states plus main-menu na
     html,
     /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create a lesson<\/a>/s,
   );
+});
+
+test("each saved lesson exposes distinct play and edit actions", () => {
+  const html = renderInRouter(
+    createElement(LessonListView, {
+      isLoadingMyLessons: false,
+      myLessons: [
+        {
+          id: "lesson/id",
+          lesson: createLessonScript({ title: "Editable Garden" }),
+          source: "uploaded",
+        },
+      ],
+      myLessonsError: "",
+    }),
+  );
+
+  assert.match(html, /aria-label="Start lesson: Editable Garden"/);
+  assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
+  assert.match(html, /aria-label="Edit lesson: Editable Garden"/);
+  assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/edit"/);
 });
 
 test("a canonical Parrot catalog href renders its directly matched lesson route", () => {

@@ -6,6 +6,7 @@ import {
   loadMyLesson,
   loadMyLessons,
   saveMyLesson,
+  updateMyLesson,
 } from "../src/my-lessons-api.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
@@ -66,6 +67,24 @@ describe("My Lessons browser API", () => {
       descriptor,
     );
     assert.equal(detail.calls[0][0], "/api/lessons/my/lesson%2Fid");
+  });
+
+  it("updates an encoded learner lesson ID with a same-origin PUT request", async () => {
+    const lesson = createLessonScript({ title: "Edited Garden Help" });
+    const descriptor = { id: "lesson/id", lesson, source: "uploaded" };
+    const update = jsonFetch({ lesson: descriptor, warnings: ["Draft warning"] });
+
+    assert.deepEqual(
+      await updateMyLesson("lesson/id", lesson, { fetch: update.fetch }),
+      { lesson: descriptor, warnings: ["Draft warning"] },
+    );
+    assert.equal(update.calls[0][0], "/api/lessons/my/lesson%2Fid");
+    assert.deepEqual(update.calls[0][1], {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lesson }),
+      signal: undefined,
+    });
   });
 
   it("exposes safe server errors to the creator", async () => {

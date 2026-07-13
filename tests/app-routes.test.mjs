@@ -58,6 +58,10 @@ describe("app route helpers", () => {
       routes.getLessonScenePath("my", "same-id", 2),
       "/lessons/my/same-id/scenes/3",
     );
+    assert.equal(
+      routes.getMyLessonEditPath("lesson/id"),
+      "/lessons/my/lesson%2Fid/edit",
+    );
   });
 
   it("rejects empty and dot-segment lesson IDs", () => {
@@ -123,6 +127,7 @@ describe("app route helpers", () => {
       ["/progress", "/Progress///", null],
       ["/lessons", "/Lessons//", null],
       ["/lessons/my/create", "/Lessons/My/Create///", null],
+      ["/lessons/my/:lessonId/edit", "/Lessons/My/demo/Edit///", null],
       ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],
       [
         "/lessons/parrot/:lessonId/scenes/:sceneNumber",
