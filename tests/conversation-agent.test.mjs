@@ -63,6 +63,7 @@ describe("LiveKit agent configuration", () => {
     const models = createAgentModels(config);
 
     assert.equal(models.stt.model, config.sttModel);
+    assert.equal(models.stt.opts.language, "en");
     assert.equal(models.llm.model, config.llmModel);
     assert.equal(models.tts.model, config.ttsModel);
     assert.deepEqual(models.tts.opts.fallback, [
@@ -176,6 +177,13 @@ describe("LiveKit agent configuration", () => {
       () => readAgentConfig(environment({ AGENT_STT_MODEL: "auto" })),
       /explicit model version/,
     );
+  });
+
+  it("keeps realtime STT in English when a legacy language override remains", () => {
+    const config = readAgentConfig(environment({ AGENT_STT_LANGUAGE: "zh" }));
+    const models = createAgentModels(config);
+
+    assert.equal(models.stt.opts.language, "en");
   });
 });
 

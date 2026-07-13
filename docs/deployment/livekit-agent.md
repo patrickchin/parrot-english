@@ -128,6 +128,9 @@ AGENT_TTS_MODEL=inworld/inworld-tts-2
 AGENT_TTS_VOICE_ID=Olivia
 ```
 
+The realtime agent pins speech recognition to English instead of using
+automatic language detection.
+
 LiveKit excludes environment files from the build context and injects secrets
 at runtime. Keep `.env.livekit` untracked.
 
