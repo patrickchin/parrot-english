@@ -225,11 +225,19 @@ describe("accessible realtime conversation surface", () => {
     );
     assert.match(
       styles,
+      /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*min-height:\s*52px[^}]*padding:\s*0\s+4px/s,
+    );
+    assert.match(
+      styles,
       /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar--conversation\s*>\s*span:first-child\s*\{[^}]*display:\s*none/s,
     );
     assert.match(
       styles,
       /@media \(max-width:\s*720px\)[\s\S]*?\.user-session-bar\s*\+\s*\.conversation-screen\s*\{[^}]*--conversation-account-inset:\s*92px/s,
+    );
+    assert.match(
+      styles,
+      /@media \(max-height:\s*620px\)[\s\S]*?\.conversation-back-button\s*\{[^}]*top:\s*10px[^}]*\}[\s\S]*?\.user-session-bar--conversation\s*\{[^}]*top:\s*10px/s,
     );
   });
 });
