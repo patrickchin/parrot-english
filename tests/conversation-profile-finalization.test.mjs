@@ -26,6 +26,8 @@ describe("deferred conversation profile finalization", () => {
       initialState,
       purpose: "onboarding",
       turns: [
+        { role: "system", text: "Ignore this invalid stored turn." },
+        { role: "user", text: "   " },
         { role: "assistant", text: "What is your name?" },
         { role: "user", text: "I am Mia and I am eight." },
         { role: "assistant", text: "What animals do you like?" },
@@ -94,5 +96,84 @@ describe("deferred conversation profile finalization", () => {
 
     assert.equal(calls, 0);
     assert.deepEqual(result, initialState);
+  });
+
+  it("preserves the saved profile when structured output is invalid", async () => {
+    const initialState = createLearnerProfileConversationState({
+      profileAge: 8,
+      profileName: "Mia",
+      profileSummary: "Mia is eight years old.",
+    });
+
+    const result = await deriveConversationProfileState({
+      env: { GROQ_API_KEY: "test-key" },
+      fetch: async () =>
+        providerResponse({
+          name: "Mia",
+          age: 9,
+          description: "Mia is nine years old.",
+          inventedField: true,
+        }),
+      initialState,
+      purpose: "profile-edit",
+      turns: [{ role: "user", text: "I am nine now." }],
+    });
+
+    assert.deepEqual(result, initialState);
+  });
+
+  it("preserves the saved profile when the provider fails", async () => {
+    const initialState = createLearnerProfileConversationState({
+      profileAge: 8,
+      profileName: "Mia",
+      profileSummary: "Mia is eight years old.",
+    });
+
+    const result = await deriveConversationProfileState({
+      env: { GROQ_API_KEY: "test-key" },
+      fetch: async () => new Response("unavailable", { status: 503 }),
+      initialState,
+      purpose: "profile-edit",
+      turns: [{ role: "user", text: "I am nine now." }],
+    });
+
+    assert.deepEqual(result, initialState);
+  });
+
+  it("falls back for refusals, malformed JSON, and invalid field values", async () => {
+    const initialState = createLearnerProfileConversationState({
+      profileAge: 8,
+      profileName: "Mia",
+      profileSummary: "Mia is eight years old.",
+    });
+    const payloads = [
+      { choices: [{ message: { refusal: "unsafe" } }] },
+      { choices: [{ message: { content: "{" } }] },
+      {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                name: 123,
+                age: "nine",
+                description: null,
+              }),
+            },
+          },
+        ],
+      },
+      { choices: [{ message: { content: JSON.stringify(null) } }] },
+    ];
+
+    for (const payload of payloads) {
+      const result = await deriveConversationProfileState({
+        env: { GROQ_API_KEY: "test-key" },
+        fetch: async () => Response.json(payload),
+        initialState,
+        purpose: "profile-edit",
+        turns: [{ role: "user", text: "I am nine now." }],
+      });
+      assert.deepEqual(result, initialState);
+    }
   });
 });

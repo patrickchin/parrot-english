@@ -196,7 +196,7 @@ Useful locations:
 - Available characters: `content/catalogs/characters.json`
 - Available expressions: `content/catalogs/emotes.json`
 - Full technical reference: `docs/lesson-json-schema.md`
-- Lesson generator instructions: `docs/lesson-creator-system-prompt.md`
+- Lesson generator instructions: `worker/prompts/lesson-generator.ts`
 
 ## Final Check
 

@@ -463,7 +463,8 @@ saved audio metadata and assets. This requirement does not apply to My Lessons.
 - For built-in lessons, ensure every automatic line and response has saved
   audio.
 
-The concise generation instructions live in
-[`lesson-creator-system-prompt.md`](./lesson-creator-system-prompt.md). The
-catalog files under `content/catalogs` are the source of truth for currently
-available background, character, and emote IDs.
+The generation instructions live in
+[`worker/prompts/lesson-generator.ts`](../worker/prompts/lesson-generator.ts).
+That exported text is the prompt used at runtime. The catalog files under
+`content/catalogs` are the source of truth for currently available background,
+character, and emote IDs.
