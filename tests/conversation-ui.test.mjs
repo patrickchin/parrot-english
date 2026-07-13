@@ -125,7 +125,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /class="conversation-character-stage"/);
     assert.doesNotMatch(html, /conversation-debug-transcript|Debug transcript/);
     assert.match(html, /Start my turn/);
-    assert.doesNotMatch(html, />Reconnecting[^<]*</);
+    assert.doesNotMatch(html, /class="conversation-state/);
     assert.doesNotMatch(html, /Chat with your pig pal/);
   });
 

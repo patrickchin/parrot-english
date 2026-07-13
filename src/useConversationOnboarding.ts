@@ -202,17 +202,8 @@ export function useConversationOnboarding({
         return;
       }
       learnerTurnOpenRef.current = true;
-      try {
-        await transportRef.current.setMicrophoneEnabled(true);
-        if (!isCurrent(operation)) return;
-        setMicrophoneEnabled(true);
-        setStatus("listening");
-      } catch (microphoneError) {
-        learnerTurnOpenRef.current = false;
-        if (!isCurrent(operation)) return;
-        setError(readableError(microphoneError));
-        setStatus("error");
-      }
+      setMicrophoneEnabled(false);
+      setStatus("listening");
     },
     [isCurrent],
   );
@@ -247,11 +238,16 @@ export function useConversationOnboarding({
         );
       });
       if (event.role === "assistant") {
-        if (!learnerTurnOpenRef.current && event.final) {
-          openingHeardRef.current = true;
-          void openLearnerTurn(operation);
+        if (event.final) {
+          if (!learnerTurnOpenRef.current) {
+            openingHeardRef.current = true;
+            void openLearnerTurn(operation);
+          } else {
+            setStatus("listening");
+          }
+        } else if (learnerTurnOpenRef.current) {
+          setStatus("speaking");
         }
-        if (learnerTurnOpenRef.current) setStatus("speaking");
       } else if (event.final) {
         setStatus("listening");
       }
