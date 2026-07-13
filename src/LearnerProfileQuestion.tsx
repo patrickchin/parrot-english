@@ -2,12 +2,12 @@ import { Mic, Volume2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { playAudioLine } from "./audio-playback";
 import {
-  transcribeOnboardingAudio,
-  type OnboardingAudio,
-  type OnboardingQuestion,
-} from "./onboarding-api";
+  transcribeLearnerProfileAudio,
+  type LearnerProfileAudio,
+  type LearnerProfileQuestion,
+} from "./learner-profile-api";
 import { recordSpeechClip } from "./speech-recorder";
-import { OnboardingCard } from "./OnboardingLayout";
+import { LearnerProfileCard } from "./LearnerProfileLayout";
 import {
   ActionButton,
   fieldClassName,
@@ -17,9 +17,9 @@ import {
 
 export type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
 
-type OnboardingQuestionViewProps = {
+type LearnerProfileQuestionViewProps = {
   fieldError: string;
-  mode: "onboarding" | "profile";
+  mode: "learner-profile" | "profile";
   onReplay: () => void;
   onSkip: () => void;
   onSkipQuestion: () => void;
@@ -27,12 +27,12 @@ type OnboardingQuestionViewProps = {
   onTranscribe: () => void;
   onValueChange: (value: string) => void;
   progress: { answered: number; current: number; total: number };
-  question: OnboardingQuestion;
+  question: LearnerProfileQuestion;
   status: QuestionStatus;
   value: string;
 };
 
-export function OnboardingQuestionView({
+export function LearnerProfileQuestionView({
   fieldError,
   mode,
   onReplay,
@@ -45,9 +45,9 @@ export function OnboardingQuestionView({
   question,
   status,
   value,
-}: OnboardingQuestionViewProps) {
+}: LearnerProfileQuestionViewProps) {
   const disabled = status !== "idle";
-  const inputId = `onboarding-answer-${question.answerKey}`;
+  const inputId = `learner-profile-answer-${question.answerKey}`;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,9 +55,9 @@ export function OnboardingQuestionView({
   }
 
   return (
-    <OnboardingCard
+    <LearnerProfileCard
       className="p-6 sm:p-10"
-      aria-labelledby="onboarding-question-title"
+      aria-labelledby="learner-profile-question-title"
     >
       <header className="flex items-center justify-between gap-4">
         <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-rose">
@@ -82,7 +82,7 @@ export function OnboardingQuestionView({
         <div className="sm:col-span-3">
           <h1
             className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl"
-            id="onboarding-question-title"
+            id="learner-profile-question-title"
           >
             {question.promptEn}
           </h1>
@@ -146,7 +146,7 @@ export function OnboardingQuestionView({
           ) : null}
 
           <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-sm:justify-between">
-            {mode === "onboarding" && !question.required ? (
+            {mode === "learner-profile" && !question.required ? (
               <TextButton
                 onClick={onSkipQuestion}
                 type="button"
@@ -154,7 +154,7 @@ export function OnboardingQuestionView({
                 Skip question
               </TextButton>
             ) : null}
-            {mode === "onboarding" ? (
+            {mode === "learner-profile" ? (
               <TextButton onClick={onSkip} type="button">
                 Skip for now
               </TextButton>
@@ -169,28 +169,28 @@ export function OnboardingQuestionView({
           </div>
         </fieldset>
       </form>
-    </OnboardingCard>
+    </LearnerProfileCard>
   );
 }
 
 type PlayLine = typeof playAudioLine;
 
-function playbackLine(audio: OnboardingAudio) {
+function playbackLine(audio: LearnerProfileAudio) {
   return { audioId: audio.id, audioSrc: audio.src, text: audio.text };
 }
 
-export async function playOnboardingStart({
+export async function playLearnerProfileStart({
   playLine = playAudioLine,
   questionAudio,
 }: {
   playLine?: PlayLine;
-  questionAudio: OnboardingAudio;
+  questionAudio: LearnerProfileAudio;
 }) {
   await playLine(playbackLine(questionAudio));
 }
 
-export async function replayOnboardingQuestion(
-  audio: OnboardingAudio,
+export async function replayLearnerProfileQuestion(
+  audio: LearnerProfileAudio,
   {
     playLine = playAudioLine,
     signal,
@@ -202,10 +202,10 @@ export async function replayOnboardingQuestion(
   });
 }
 
-export async function captureOnboardingAnswer({
+export async function captureLearnerProfileAnswer({
   record = recordSpeechClip,
   signal,
-  transcribe = transcribeOnboardingAudio,
+  transcribe = transcribeLearnerProfileAudio,
 }: {
   record?: (options?: { signal?: AbortSignal }) => Promise<Blob>;
   signal?: AbortSignal;

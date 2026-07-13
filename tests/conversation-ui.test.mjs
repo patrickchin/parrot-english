@@ -27,6 +27,7 @@ function props(overrides = {}) {
     onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
+    purpose: "small-chat",
     responseLatencyMs: null,
     status: "ready",
     turns: [],
@@ -70,6 +71,13 @@ describe("accessible realtime conversation surface", () => {
         status,
       );
     }
+  });
+
+  it("finishes ordinary chat without claiming to save the profile", () => {
+    const html = render({ purpose: "small-chat", status: "saving" });
+
+    assert.match(html, /That was fun|Finishing your chat/);
+    assert.doesNotMatch(html, /remember that|Saving your profile/);
   });
 
   it("makes joining unmistakable before Peppa enables learner input", () => {
@@ -207,6 +215,7 @@ describe("accessible realtime conversation surface", () => {
 
   it("saves the prose profile without showing a review page", () => {
     const html = render({
+      purpose: "profile-edit",
       status: "saving",
       candidates: [
         {

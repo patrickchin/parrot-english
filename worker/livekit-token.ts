@@ -3,7 +3,8 @@ import {
   RoomAgentDispatch,
   RoomConfiguration,
 } from "livekit-server-sdk";
-import type { OnboardingIdentity } from "./onboarding.ts";
+import { isConversationPurpose } from "../lib/conversation-purpose.ts";
+import type { LearnerProfileIdentity } from "./learner-profile.ts";
 
 export interface LiveKitTokenEnv {
   LIVEKIT_AGENT_NAME?: string;
@@ -13,8 +14,8 @@ export interface LiveKitTokenEnv {
 
 type TokenInput = {
   env: LiveKitTokenEnv;
-  conversation: { id: string; roomName: string };
-  identity: OnboardingIdentity;
+  conversation: { id: string; roomName: string; scenarioKey: string };
+  identity: LearnerProfileIdentity;
   initialState?: Record<string, unknown>;
   now?: Date;
 };
@@ -30,6 +31,9 @@ export async function createLiveKitParticipantToken({
   identity,
   initialState,
 }: TokenInput) {
+  if (!isConversationPurpose(conversation.scenarioKey)) {
+    throw new Error("Conversation purpose is invalid.");
+  }
   const token = new AccessToken(
     required(env.LIVEKIT_API_KEY, "LIVEKIT_API_KEY"),
     required(env.LIVEKIT_API_SECRET, "LIVEKIT_API_SECRET"),
@@ -37,12 +41,12 @@ export async function createLiveKitParticipantToken({
       identity: `learner:${identity.userId}:${conversation.id}`,
       metadata: JSON.stringify({
         conversationId: conversation.id,
-        onboardingProfile: {
+        learnerProfile: {
           age: initialState?.profileAge ?? null,
           name: initialState?.profileName ?? null,
           summary: initialState?.profileSummary ?? "",
         },
-        scenarioKey: "onboarding",
+        scenarioKey: conversation.scenarioKey,
       }),
       ttl: "10m",
     },

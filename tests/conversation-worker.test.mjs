@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { describe, it } from "node:test";
-import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
+import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import { createDatabase } from "../worker/database.ts";
 import {
   handleConversationRequest,
@@ -36,7 +36,7 @@ function createEnvironment(overrides = {}) {
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
-    REALTIME_ONBOARDING_ENABLED: "1",
+    REALTIME_CONVERSATIONS_ENABLED: "1",
     ...overrides,
   };
 }
@@ -139,7 +139,7 @@ async function callConversation(
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
-    REALTIME_ONBOARDING_ENABLED: "1",
+    REALTIME_CONVERSATIONS_ENABLED: "1",
     ...options.env,
   };
   return handleConversationRequest(
@@ -168,7 +168,7 @@ describe("conversation persistence and API", () => {
         "/api/conversations",
         "POST",
         undefined,
-        { env: { REALTIME_ONBOARDING_ENABLED: "0" } },
+        { env: { REALTIME_CONVERSATIONS_ENABLED: "0" } },
       );
 
       assert.equal(response.status, 404);
@@ -230,6 +230,98 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("stores and hands off the requested conversation purpose", async () => {
+    const state = createSeededDatabase();
+    const tokenPurposes = [];
+    try {
+      for (const purpose of ["onboarding", "profile-edit", "small-chat"]) {
+        const response = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { purpose },
+          {
+            async createParticipantToken({ conversation }) {
+              tokenPurposes.push(conversation.scenarioKey);
+              return `token-for-${purpose}`;
+            },
+          },
+        );
+        const payload = await response.json();
+
+        assert.equal(response.status, 201);
+        assert.equal(payload.conversation.scenarioKey, purpose);
+        assert.equal(payload.scenario.key, purpose);
+      }
+
+      assert.deepEqual(tokenPurposes, [
+        "onboarding",
+        "profile-edit",
+        "small-chat",
+      ]);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        3,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("finishes small chat without creating or changing a learner profile", async () => {
+    const state = createSeededDatabase();
+    try {
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const conversation = (await started.json()).conversation;
+      const review = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+
+      assert.equal(review.status, 200);
+      assert.deepEqual(await review.json(), {
+        conversationId: conversation.id,
+        profileCompleted: false,
+        bypassed: false,
+      });
+      assert.equal(
+        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
+          .count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects an unknown conversation purpose", async () => {
+    const state = createSeededDatabase();
+    try {
+      const response = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "everything-at-once" },
+      );
+
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), {
+        error: "invalid_conversation_purpose",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
   it("reuses the learner's active conversation instead of creating parallel rooms", async () => {
     const state = createSeededDatabase();
     try {
@@ -259,7 +351,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("seeds redo onboarding and its signed agent handoff from the saved profile", async () => {
+  it("seeds profile editing and its signed agent handoff from the saved profile", async () => {
     const state = createSeededDatabase();
     const tokenCalls = [];
     try {
@@ -643,9 +735,13 @@ describe("LiveKit participant tokens", () => {
         LIVEKIT_API_KEY: "api-key",
         LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
       },
-      conversation: { id: "conversation-1", roomName: "onboarding-room-1" },
+      conversation: {
+        id: "conversation-1",
+        roomName: "learner-profile-room-1",
+        scenarioKey: "profile-edit",
+      },
       identity,
-      initialState: createOnboardingConversationState({
+      initialState: createLearnerProfileConversationState({
         profileAge: 30,
         profileName: "Mia",
         profileSummary: "Mia is thirty and loves fast red cars.",
@@ -658,14 +754,14 @@ describe("LiveKit participant tokens", () => {
     assert.equal(payload.sub, "learner:user-1:conversation-1");
     assert.deepEqual(JSON.parse(payload.metadata), {
       conversationId: "conversation-1",
-      onboardingProfile: {
+      learnerProfile: {
         age: 30,
         name: "Mia",
         summary: "Mia is thirty and loves fast red cars.",
       },
-      scenarioKey: "onboarding",
+      scenarioKey: "profile-edit",
     });
-    assert.equal(payload.video.room, "onboarding-room-1");
+    assert.equal(payload.video.room, "learner-profile-room-1");
     assert.equal(payload.video.roomJoin, true);
     assert.equal(payload.roomConfig, undefined);
     assert.equal(payload.exp - payload.nbf, 600);
@@ -679,7 +775,11 @@ describe("LiveKit participant tokens", () => {
         LIVEKIT_API_KEY: "api-key",
         LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
       },
-      conversation: { id: "conversation-2", roomName: "onboarding-room-2" },
+      conversation: {
+        id: "conversation-2",
+        roomName: "learner-profile-room-2",
+        scenarioKey: "small-chat",
+      },
       identity,
     });
     const [, encodedPayload] = token.split(".");

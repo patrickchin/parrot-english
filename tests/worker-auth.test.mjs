@@ -286,21 +286,21 @@ describe("Worker authentication", () => {
     });
     const { env } = createEnvironment();
     let rateLimitIdentity = "";
-    let onboardingCalls = 0;
+    let learnerProfileCalls = 0;
     const worker = createTestWorker({
       createAuth: () => authStub.auth,
-      checkOnboardingTranscriptionRateLimit(_request, _env, userId) {
+      checkLearnerProfileTranscriptionRateLimit(_request, _env, userId) {
         rateLimitIdentity = userId;
         return Response.json({ error: "rate_limited" }, { status: 429 });
       },
-      async handleOnboardingRequest() {
-        onboardingCalls += 1;
+      async handleLearnerProfileRequest() {
+        learnerProfileCalls += 1;
         return Response.json({ transcribed: true });
       },
     });
 
     const response = await worker.fetch(
-      new Request("https://example.test/api/onboarding/transcribe", {
+      new Request("https://example.test/api/learner-profile/transcribe", {
         method: "POST",
       }),
       env,
@@ -308,7 +308,7 @@ describe("Worker authentication", () => {
 
     assert.equal(response.status, 429);
     assert.equal(rateLimitIdentity, "user-1");
-    assert.equal(onboardingCalls, 0);
+    assert.equal(learnerProfileCalls, 0);
   });
 
   it("rate limits authenticated answer and profile enrichment before handlers", async () => {
@@ -317,20 +317,20 @@ describe("Worker authentication", () => {
     });
     const { env } = createEnvironment();
     const limitedPaths = [];
-    let onboardingCalls = 0;
+    let learnerProfileCalls = 0;
     const worker = createTestWorker({
       createAuth: () => authStub.auth,
-      checkOnboardingEnrichmentRateLimit(request, _env, userId) {
+      checkLearnerProfileEnrichmentRateLimit(request, _env, userId) {
         limitedPaths.push([new URL(request.url).pathname, userId]);
         return Response.json({ error: "rate_limited" }, { status: 429 });
       },
-      async handleOnboardingRequest() {
-        onboardingCalls += 1;
+      async handleLearnerProfileRequest() {
+        learnerProfileCalls += 1;
         return Response.json({ saved: true });
       },
     });
 
-    for (const path of ["/api/onboarding/answer", "/api/profile"]) {
+    for (const path of ["/api/learner-profile/answer", "/api/profile"]) {
       const response = await worker.fetch(
         new Request(`https://example.test${path}`, { method: "PUT" }),
         env,
@@ -338,10 +338,10 @@ describe("Worker authentication", () => {
       assert.equal(response.status, 429, path);
     }
     assert.deepEqual(limitedPaths, [
-      ["/api/onboarding/answer", "user-1"],
+      ["/api/learner-profile/answer", "user-1"],
       ["/api/profile", "user-1"],
     ]);
-    assert.equal(onboardingCalls, 0);
+    assert.equal(learnerProfileCalls, 0);
   });
 
   it("keeps non-auth and non-speech requests on the static asset fallback", async () => {

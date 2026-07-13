@@ -28,11 +28,11 @@ const E2E_PROFILE = {
   },
   questionnaireVersion: 2,
   currentQuestionKey: null,
-  onboardingStatus: "completed",
+  profileStatus: "completed",
   completedAt: E2E_TIMESTAMP,
 };
 
-const E2E_ONBOARDING_STATE = {
+const E2E_LEARNER_PROFILE_STATE = {
   mode: "full",
   experienceMode: "realtime",
   profile: E2E_PROFILE,
@@ -177,8 +177,8 @@ function parrotE2eMockApi(): Plugin {
           return;
         }
 
-        if (pathname === "/api/onboarding" && request.method === "GET") {
-          sendMockJson(response, E2E_ONBOARDING_STATE);
+        if (pathname === "/api/learner-profile" && request.method === "GET") {
+          sendMockJson(response, E2E_LEARNER_PROFILE_STATE);
           return;
         }
 

@@ -9,6 +9,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import { formatResponseLatency } from "./response-latency";
+import type { ConversationPurpose } from "../lib/conversation-purpose";
 import { ActionButton, cx, IconButton } from "./ui";
 
 export type ConversationSurfaceStatus =
@@ -35,6 +36,7 @@ type ConversationSurfaceProps = {
   onRepeatAudio: () => void;
   onStart: () => void;
   onToggleMicrophone: () => void;
+  purpose: ConversationPurpose;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
   turns: ConversationSurfaceTurn[];
@@ -162,6 +164,7 @@ export function ConversationSurface({
   onRepeatAudio,
   onStart,
   onToggleMicrophone,
+  purpose,
   responseLatencyMs = null,
   status,
   turns,
@@ -210,11 +213,15 @@ export function ConversationSurface({
   }
 
   const assistantSpeech = latestAssistantSpeech(turns);
+  const savingMessage =
+    purpose === "small-chat"
+      ? "That was fun! See you next time."
+      : "Lovely chat! I'll remember that.";
   const speech = assistantSpeech ??
     (joining
       ? "Almost ready!"
       : saving
-        ? "Lovely chat! I'll remember that."
+        ? savingMessage
         : "I'm listening!");
   return (
     <ConversationScreen>
@@ -280,7 +287,9 @@ export function ConversationSurface({
             className="sr-only"
             role="status"
           >
-            {STATUS_LABELS[status]}
+            {saving && purpose === "small-chat"
+              ? "Finishing your chat…"
+              : STATUS_LABELS[status]}
           </p>
         )}
 

@@ -22,7 +22,7 @@ The durable entry sequence is:
 1. Anonymous visitors are sent to `/login`, with their original protected URL
    preserved as a safe `returnTo` value.
 2. Authenticated learners who have not finished onboarding are sent to
-   `/onboarding` and return to the preserved destination after completion.
+   `/profile/setup` and return to the preserved destination after completion.
 3. Returning learners land on `/`, the authenticated home menu.
 
 The home menu uses four equal activity cards. Lessons opens the combined lesson

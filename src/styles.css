@@ -17,9 +17,9 @@
   --shadow-control-green: 0 6px 0 #045b3e;
   --shadow-control-surface: 0 6px 0 rgb(31 76 126 / 22%);
   --breakpoint-wide: 85rem;
-  --animate-float: onboarding-float 2.8s ease-in-out infinite;
+  --animate-float: learner-profile-float 2.8s ease-in-out infinite;
 
-  @keyframes onboarding-float {
+  @keyframes learner-profile-float {
     0%,
     100% {
       transform: translateY(0);
@@ -92,7 +92,7 @@
     linear-gradient(180deg, #8bd5fa 0 42%, #a8df7e 42% 100%);
 }
 
-@utility bg-onboarding {
+@utility bg-learner-profile {
   background-image:
     radial-gradient(
       circle at 15% 16%,

@@ -1,20 +1,20 @@
-export type OnboardingAudio = {
+export type LearnerProfileAudio = {
   id: string;
   src: string;
   text: string;
 };
 
-export type OnboardingQuestion = {
+export type LearnerProfileQuestion = {
   answerKey: string;
   position: number;
   promptEn: string;
   promptZh: string | null;
   required: boolean;
   maxLength: number;
-  audio: OnboardingAudio | null;
+  audio: LearnerProfileAudio | null;
 };
 
-export type OnboardingResponseSnapshot = {
+export type LearnerProfileResponseSnapshot = {
   question: string;
   rawAnswer: string;
   summary: string;
@@ -23,15 +23,15 @@ export type OnboardingResponseSnapshot = {
   answeredAt: string;
 };
 
-export type OnboardingAnswers = {
+export type LearnerProfileAnswers = {
   schemaVersion: 2;
   questionnaireVersion: number;
-  responses: Record<string, OnboardingResponseSnapshot>;
+  responses: Record<string, LearnerProfileResponseSnapshot>;
   legacyAnswers: Record<string, unknown> | null;
   description?: string | null;
 };
 
-export type OnboardingAcknowledgment = {
+export type LearnerProfileAcknowledgment = {
   text: string;
   audio: {
     contentType: "audio/mpeg";
@@ -43,48 +43,48 @@ export type LearnerProfileSummary = {
   name: string | null;
   age: number | null;
   description: string | null;
-  answers: OnboardingAnswers;
+  answers: LearnerProfileAnswers;
   questionnaireVersion: number;
   currentQuestionKey: string | null;
-  onboardingStatus: "not_started" | "in_progress" | "completed";
+  profileStatus: "not_started" | "in_progress" | "completed";
   completedAt: string | null;
 };
 
-export type FullOnboardingState = {
+export type FullLearnerProfileState = {
   mode: "full";
   experienceMode: "realtime" | "form";
   profile: LearnerProfileSummary;
   questionnaire: {
     version: number;
   };
-  question: OnboardingQuestion | null;
+  question: LearnerProfileQuestion | null;
   progress: { answered: number; current: number; total: number };
   canBypass: boolean;
-  acknowledgment?: OnboardingAcknowledgment;
+  acknowledgment?: LearnerProfileAcknowledgment;
 };
 
-export type BypassOnlyOnboardingState = {
+export type BypassOnlyLearnerProfileState = {
   mode: "bypass-only";
   canBypass: true;
 };
 
-export type OnboardingState =
-  | FullOnboardingState
-  | BypassOnlyOnboardingState;
+export type LearnerProfileState =
+  | FullLearnerProfileState
+  | BypassOnlyLearnerProfileState;
 
 export type ProfileState = {
   profile: LearnerProfileSummary;
-  questions: OnboardingQuestion[];
-  acknowledgment?: OnboardingAcknowledgment;
-  acknowledgments?: OnboardingAcknowledgment[];
+  questions: LearnerProfileQuestion[];
+  acknowledgment?: LearnerProfileAcknowledgment;
+  acknowledgments?: LearnerProfileAcknowledgment[];
 };
 
-export type OnboardingRequestOptions = {
+export type LearnerProfileRequestOptions = {
   fetch?: typeof globalThis.fetch;
   signal?: AbortSignal;
 };
 
-export class OnboardingApiError extends Error {
+export class LearnerProfileApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly fieldErrors: Record<string, string>;
@@ -96,7 +96,7 @@ export class OnboardingApiError extends Error {
     fieldErrors: Record<string, string> = {},
   ) {
     super(message);
-    this.name = "OnboardingApiError";
+    this.name = "LearnerProfileApiError";
     this.status = status;
     this.code = code;
     this.fieldErrors = fieldErrors;
@@ -117,7 +117,7 @@ function stringRecord(value: unknown) {
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
-  { fetch: request = globalThis.fetch, signal }: OnboardingRequestOptions = {}
+  { fetch: request = globalThis.fetch, signal }: LearnerProfileRequestOptions = {}
 ): Promise<Result> {
   const response = await request(path, { ...init, signal });
   let payload: unknown;
@@ -147,7 +147,7 @@ async function requestJson<Result>(
         : typeof errorPayload.message === "string"
           ? errorPayload.message
           : "The request could not be completed.";
-    throw new OnboardingApiError(
+    throw new LearnerProfileApiError(
       response.status,
       code,
       message,
@@ -163,7 +163,7 @@ function jsonRequest<Result>(
   method: "PUT",
   questionKey: string,
   rawAnswer: string,
-  options?: OnboardingRequestOptions
+  options?: LearnerProfileRequestOptions
 ) {
   return requestJson<Result>(
     path,
@@ -176,21 +176,21 @@ function jsonRequest<Result>(
   );
 }
 
-export function loadOnboarding(options?: OnboardingRequestOptions) {
-  return requestJson<OnboardingState>(
-    "/api/onboarding",
+export function loadLearnerProfile(options?: LearnerProfileRequestOptions) {
+  return requestJson<LearnerProfileState>(
+    "/api/learner-profile",
     { method: "GET" },
     options
   );
 }
 
-export function saveOnboardingAnswer(
+export function saveLearnerProfileAnswer(
   questionKey: string,
   rawAnswer: string,
-  options?: OnboardingRequestOptions
+  options?: LearnerProfileRequestOptions
 ) {
-  return jsonRequest<OnboardingState>(
-    "/api/onboarding/answer",
+  return jsonRequest<LearnerProfileState>(
+    "/api/learner-profile/answer",
     "PUT",
     questionKey,
     rawAnswer,
@@ -198,20 +198,20 @@ export function saveOnboardingAnswer(
   );
 }
 
-export function skipOnboarding(options?: OnboardingRequestOptions) {
-  return requestJson<OnboardingState>(
-    "/api/onboarding/skip",
+export function skipLearnerProfile(options?: LearnerProfileRequestOptions) {
+  return requestJson<LearnerProfileState>(
+    "/api/learner-profile/skip",
     { method: "POST" },
     options
   );
 }
 
-export function skipOnboardingQuestion(
+export function skipLearnerProfileQuestion(
   questionKey: string,
-  options?: OnboardingRequestOptions
+  options?: LearnerProfileRequestOptions
 ) {
-  return requestJson<OnboardingState>(
-    "/api/onboarding/question/skip",
+  return requestJson<LearnerProfileState>(
+    "/api/learner-profile/question/skip",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -221,15 +221,15 @@ export function skipOnboardingQuestion(
   );
 }
 
-export function completeOnboarding(options?: OnboardingRequestOptions) {
-  return requestJson<OnboardingState>(
-    "/api/onboarding/complete",
+export function completeLearnerProfile(options?: LearnerProfileRequestOptions) {
+  return requestJson<LearnerProfileState>(
+    "/api/learner-profile/complete",
     { method: "POST" },
     options
   );
 }
 
-export function loadProfile(options?: OnboardingRequestOptions) {
+export function loadProfile(options?: LearnerProfileRequestOptions) {
   return requestJson<ProfileState>(
     "/api/profile",
     { method: "GET" },
@@ -240,7 +240,7 @@ export function loadProfile(options?: OnboardingRequestOptions) {
 export function saveProfileAnswer(
   questionKey: string,
   rawAnswer: string,
-  options?: OnboardingRequestOptions
+  options?: LearnerProfileRequestOptions
 ) {
   return jsonRequest<ProfileState>(
     "/api/profile",
@@ -253,7 +253,7 @@ export function saveProfileAnswer(
 
 export function saveProfileAnswers(
   answers: Record<string, string>,
-  options?: OnboardingRequestOptions,
+  options?: LearnerProfileRequestOptions,
 ) {
   return requestJson<ProfileState>(
     "/api/profile",
@@ -266,14 +266,14 @@ export function saveProfileAnswers(
   );
 }
 
-export function transcribeOnboardingAudio(
+export function transcribeLearnerProfileAudio(
   audio: Blob,
-  options?: OnboardingRequestOptions
+  options?: LearnerProfileRequestOptions
 ) {
   const formData = new FormData();
-  formData.set("audio", audio, "onboarding-answer.webm");
+  formData.set("audio", audio, "learner-profile-answer.webm");
   return requestJson<{ transcript: string }>(
-    "/api/onboarding/transcribe",
+    "/api/learner-profile/transcribe",
     { method: "POST", body: formData },
     options
   );

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import questionnaireV2 from "../content/onboarding/questionnaire-v2.json" with { type: "json" };
-import { validateOnboardingQuestionnaire } from "../lib/onboarding-questionnaire.js";
-import { enrichOnboardingAnswer } from "../worker/onboarding-enrichment.ts";
+import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
+import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
+import { enrichLearnerProfileAnswer } from "../worker/learner-profile-enrichment.ts";
 
-const definition = validateOnboardingQuestionnaire(questionnaireV2);
+const definition = validateLearnerProfileQuestionnaire(questionnaireV2);
 const animalsQuestion = definition.questions.find(
   ({ answerKey }) => answerKey === "favoriteAnimals",
 );
@@ -20,7 +20,7 @@ function providerResponse(value) {
 describe("onboarding answer enrichment", () => {
   it("requests strict child-safe summary and acknowledgment JSON", async () => {
     let upstreamRequest;
-    const result = await enrichOnboardingAnswer({
+    const result = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async (url, init) => {
         upstreamRequest = {
@@ -79,7 +79,7 @@ describe("onboarding answer enrichment", () => {
   });
 
   it("accepts only the canonical field targeted by the question", async () => {
-    const generatedName = await enrichOnboardingAnswer({
+    const generatedName = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
@@ -93,7 +93,7 @@ describe("onboarding answer enrichment", () => {
     });
     assert.equal(generatedName.canonicalName, "Mia");
 
-    const generatedAge = await enrichOnboardingAnswer({
+    const generatedAge = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
@@ -110,7 +110,7 @@ describe("onboarding answer enrichment", () => {
 
   it("falls back deterministically for missing keys and invalid provider output", async () => {
     let fetchCalls = 0;
-    const missingKey = await enrichOnboardingAnswer({
+    const missingKey = await enrichLearnerProfileAnswer({
       env: {},
       fetch: async () => {
         fetchCalls += 1;
@@ -127,7 +127,7 @@ describe("onboarding answer enrichment", () => {
       animalsQuestion.fallbackAcknowledgment,
     );
 
-    const invalid = await enrichOnboardingAnswer({
+    const invalid = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
@@ -150,14 +150,14 @@ describe("onboarding answer enrichment", () => {
   });
 
   it("extracts safe canonical fallbacks and returns field errors when impossible", async () => {
-    const nameFallback = await enrichOnboardingAnswer({
+    const nameFallback = await enrichLearnerProfileAnswer({
       env: {},
       question: nameQuestion,
       rawAnswer: "小明",
     });
     assert.equal(nameFallback.canonicalName, "小明");
 
-    const ageFallback = await enrichOnboardingAnswer({
+    const ageFallback = await enrichLearnerProfileAnswer({
       env: {},
       question: ageQuestion,
       rawAnswer: "I am 30 years old",
@@ -165,7 +165,7 @@ describe("onboarding answer enrichment", () => {
     assert.equal(ageFallback.canonicalAge, 30);
 
     assert.deepEqual(
-      await enrichOnboardingAnswer({
+      await enrichLearnerProfileAnswer({
         env: {},
         question: ageQuestion,
         rawAnswer: "I am very little",
@@ -180,7 +180,7 @@ describe("onboarding answer enrichment", () => {
       async () => Response.json({ choices: [{ message: { refusal: "no" } }] }),
       async () => new Promise(() => {}),
     ]) {
-      const result = await enrichOnboardingAnswer({
+      const result = await enrichLearnerProfileAnswer({
         env: {
           GROQ_API_KEY: "test-key",
           GROQ_REQUEST_TIMEOUT_MS: "10",

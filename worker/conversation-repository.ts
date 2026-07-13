@@ -4,15 +4,19 @@ import {
   conversationTurn,
   learnerProfile,
 } from "../src/db/schema.ts";
-import { createOnboardingConversationState } from "../lib/conversation-scenario.js";
+import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
+import {
+  isConversationPurpose,
+  updatesLearnerProfile,
+} from "../lib/conversation-purpose.ts";
 import {
   ensureV2Profile,
   readV2Answers,
-} from "../lib/onboarding-profile.js";
+} from "../lib/learner-profile-responses.js";
 import type { Database } from "./database.ts";
-import type { OnboardingIdentity } from "./onboarding.ts";
-import { ONBOARDING_QUESTIONNAIRE } from "./onboarding-definition.ts";
-import { createOnboardingRepository } from "./onboarding-repository.ts";
+import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
+import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 
 const MAX_CONTROLLER_STATE_BYTES = 16 * 1024;
 
@@ -73,7 +77,7 @@ export function createConversationRepository(
   }
 
   async function createConversation(
-    identity: OnboardingIdentity,
+    identity: LearnerProfileIdentity,
     scenario: { key: string; version: number },
   ) {
     const [active] = await database
@@ -98,16 +102,16 @@ export function createConversationRepository(
       .from(learnerProfile)
       .where(eq(learnerProfile.authUserId, identity.userId))
       .limit(1);
-    let controllerState = createOnboardingConversationState();
+    let controllerState = createLearnerProfileConversationState();
     if (storedProfile) {
       const readableProfile = ensureV2Profile(
         storedProfile,
-        ONBOARDING_QUESTIONNAIRE,
+        LEARNER_PROFILE_QUESTIONNAIRE,
         { forProfileEdit: true },
       );
       const answers = readV2Answers(readableProfile);
-      const completed = storedProfile.onboardingStatus === "completed";
-      controllerState = createOnboardingConversationState({
+      const completed = storedProfile.profileStatus === "completed";
+      controllerState = createLearnerProfileConversationState({
         profileName:
           completed || Object.hasOwn(answers.responses, "name")
             ? storedProfile.name
@@ -288,10 +292,30 @@ export function createConversationRepository(
 
   async function finalizeConversation(
     conversationId: string,
-    identity: OnboardingIdentity,
+    identity: LearnerProfileIdentity,
   ) {
     const owned = await loadOwnedConversation(conversationId, identity.userId);
     if (!owned) throw new ConversationRepositoryError(404, "not_found");
+    if (!isConversationPurpose(owned.conversation.scenarioKey)) {
+      throw new ConversationRepositoryError(500, "invalid_stored_data");
+    }
+    if (!updatesLearnerProfile(owned.conversation.scenarioKey)) {
+      const timestamp = now();
+      await database
+        .update(conversationSession)
+        .set({
+          status: "completed",
+          finishReason: owned.conversation.finishReason ?? "chat_finished",
+          endedAt: owned.conversation.endedAt ?? timestamp,
+          updatedAt: timestamp,
+        })
+        .where(eq(conversationSession.id, conversationId));
+      return {
+        conversationId,
+        profileCompleted: false,
+        bypassed: false,
+      };
+    }
     const storedState = parseJson(owned.conversation.controllerState);
     if (
       storedState === null ||
@@ -327,11 +351,11 @@ export function createConversationRepository(
         profileName &&
         Number.isSafeInteger(profileAge),
     );
-    const onboarding = createOnboardingRepository(database, { createId, now });
-    const profile = await onboarding.ensureProfile(identity);
+    const profileRepository = createLearnerProfileRepository(database, { createId, now });
+    const profile = await profileRepository.ensureProfile(identity);
     const readableProfile = ensureV2Profile(
       profile,
-      ONBOARDING_QUESTIONNAIRE,
+      LEARNER_PROFILE_QUESTIONNAIRE,
       { forProfileEdit: true },
     );
     const answers = readV2Answers(readableProfile);
@@ -362,7 +386,7 @@ export function createConversationRepository(
           name: profileName,
           age: profileAge as number,
           answersJson,
-          onboardingStatus: "completed",
+          profileStatus: "completed",
           currentQuestionKey: null,
           completedAt: timestamp,
           updatedAt: timestamp,
@@ -382,7 +406,7 @@ export function createConversationRepository(
         })
         .where(eq(learnerProfile.id, profile.id));
       await database.batch([profileUpdate, sessionUpdate] as const);
-      await onboarding.skipSession(identity);
+      await profileRepository.skipSession(identity);
     }
     return {
       conversationId,

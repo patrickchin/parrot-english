@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { synthesizeAcknowledgment } from "../worker/onboarding-acknowledgment-audio.ts";
+import { synthesizeAcknowledgment } from "../worker/learner-profile-acknowledgment-audio.ts";
 
 describe("onboarding acknowledgment audio", () => {
   it("documents the local Worker secret name without a real credential", () => {

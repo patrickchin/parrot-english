@@ -48,11 +48,11 @@ import {
   getGateRouteKind,
   getLessonScenePath,
   getLoginPath,
-  getOnboardingPath,
-  getRedoOnboardingPath,
+  getLearnerProfilePath,
+  getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
   getSafeReturnTo,
-  isRedoOnboardingRequest,
+  isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
@@ -63,7 +63,7 @@ import { AuthGate } from "./AuthGate";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
-import { OnboardingGate } from "./OnboardingGate";
+import { LearnerProfileGate } from "./LearnerProfileGate";
 import { evaluateSpeech } from "./evaluation-request";
 import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
 import { LessonList } from "./LessonList";
@@ -747,7 +747,7 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         path="/stories"
       />
       <Route element={<Navigate replace to={loginTarget} />} path="/login" />
-      <Route element={null} path="/onboarding" />
+      <Route element={null} path="/profile/setup" />
       <Route element={null} path="/profile" />
       <Route element={<Navigate replace to="/" />} path="*" />
     </Routes>
@@ -771,11 +771,11 @@ function RoutedApplication() {
   }, [navigate]);
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
-  const isOnboardingRoute = gateRoute === "onboarding";
+  const isLearnerProfileRoute = gateRoute === "learner-profile";
   const isProfileRoute = gateRoute === "profile";
   const isConversationRoute = isTalkToPeppaRoute(location.pathname);
-  const redoOnboarding =
-    isOnboardingRoute && isRedoOnboardingRequest(location.search);
+  const redoLearnerProfile =
+    isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
@@ -794,30 +794,30 @@ function RoutedApplication() {
           )
         }
       >
-        <OnboardingGate
-          completedOnboardingFallback={
+        <LearnerProfileGate
+          completedLearnerProfileFallback={
             <Navigate replace to={safeReturnTo} />
           }
           isConversationRoute={isConversationRoute}
-          isOnboardingRoute={isOnboardingRoute}
+          isLearnerProfileRoute={isLearnerProfileRoute}
           isProfileRoute={isProfileRoute}
-          onboardingFallback={
+          learnerProfileFallback={
             <Navigate
               replace
-              to={getOnboardingPath(requestedProtectedTarget)}
+              to={getLearnerProfilePath(requestedProtectedTarget)}
             />
           }
           onCloseProfileRoute={() => navigate("/")}
           onConversationCompleted={() => navigate("/", { replace: true })}
           onOpenProfileRoute={openProfileRoute}
           onRedoCompleted={() => navigate("/profile", { replace: true })}
-          onRedoOnboardingRoute={() =>
-            navigate(getRedoOnboardingPath("/profile"))
+          onRedoLearnerProfileRoute={() =>
+            navigate(getRedoLearnerProfilePath("/profile"))
           }
-          redoOnboarding={redoOnboarding}
+          redoLearnerProfile={redoLearnerProfile}
         >
           <ApplicationRoutes loginTarget={safeReturnTo} />
-        </OnboardingGate>
+        </LearnerProfileGate>
       </AuthGate>
     </LessonRouteExitBarrierContext.Provider>
   );

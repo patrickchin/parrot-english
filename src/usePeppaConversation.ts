@@ -16,8 +16,9 @@ import {
   type LiveKitConversation,
 } from "./livekit-conversation";
 import { createResponseLatencyTimer } from "./response-latency";
+import type { ConversationPurpose } from "../lib/conversation-purpose";
 
-export function selectOnboardingExperience(
+export function selectLearnerProfileExperience(
   serverMode: "realtime" | "form",
   userSelectedForm: boolean,
 ) {
@@ -41,12 +42,13 @@ function readableError(error: unknown) {
     : "The voice conversation could not continue.";
 }
 
-type UseConversationOnboardingOptions = {
+type UsePeppaConversationOptions = {
   active: boolean;
   createTransport?: typeof createLiveKitConversation;
   now?: () => number;
   onBack: () => void;
   onCompleted: () => Promise<void>;
+  purpose: ConversationPurpose;
 };
 
 type ConversationRuntime = {
@@ -67,13 +69,14 @@ function createConversationRuntime(): ConversationRuntime {
   };
 }
 
-export function useConversationOnboarding({
+export function usePeppaConversation({
   active,
   createTransport = createLiveKitConversation,
   now,
   onBack,
   onCompleted,
-}: UseConversationOnboardingOptions) {
+  purpose,
+}: UsePeppaConversationOptions) {
   const [status, setStatus] =
     useState<ConversationSurfaceStatus>("ready");
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
@@ -220,7 +223,7 @@ export function useConversationOnboarding({
     runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
     try {
-      const started = await startConversation();
+      const started = await startConversation(purpose);
       if (!isCurrent(operation)) return;
       conversationIdRef.current = started.conversation.id;
       const transport = createTransport({
@@ -252,6 +255,7 @@ export function useConversationOnboarding({
     handleTransportEvent,
     isCurrent,
     openLearnerTurn,
+    purpose,
     resetResponseLatency,
   ]);
 
@@ -391,6 +395,7 @@ export function useConversationOnboarding({
       onStart: () => void start(),
       onToggleMicrophone: () => void toggleMicrophone(),
       responseLatencyMs,
+      purpose,
       status,
       turns,
     }),
@@ -401,6 +406,7 @@ export function useConversationOnboarding({
       microphoneEnabled,
       repeatAudio,
       responseLatencyMs,
+      purpose,
       start,
       status,
       toggleMicrophone,

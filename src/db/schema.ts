@@ -188,7 +188,7 @@ export const learnerProfile = sqliteTable(
       () => questionnaire.version
     ),
     currentQuestionKey: text("current_question_key"),
-    onboardingStatus: text("onboarding_status")
+    profileStatus: text("onboarding_status")
       .default("not_started")
       .notNull(),
     lastSkippedAt: integer("last_skipped_at", { mode: "timestamp_ms" }),
@@ -201,7 +201,7 @@ export const learnerProfile = sqliteTable(
     uniqueIndex("learner_profile_auth_user_id_unique").on(table.authUserId),
     index("learner_profile_questionnaire_status_idx").on(
       table.questionnaireVersion,
-      table.onboardingStatus
+      table.profileStatus
     ),
     check(
       "learner_profile_answers_json_check",
@@ -213,12 +213,12 @@ export const learnerProfile = sqliteTable(
     ),
     check(
       "learner_profile_onboarding_status_check",
-      sql`${table.onboardingStatus} in ('not_started', 'in_progress', 'completed')`
+      sql`${table.profileStatus} in ('not_started', 'in_progress', 'completed')`
     ),
   ]
 );
 
-export const onboardingSessionBypass = sqliteTable(
+export const profileSessionBypass = sqliteTable(
   "onboarding_session_bypass",
   {
     sessionId: text("session_id")
@@ -349,7 +349,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
   learnerProfile: one(learnerProfile),
-  onboardingSessionBypasses: many(onboardingSessionBypass),
+  profileSessionBypasses: many(profileSessionBypass),
   sessions: many(session),
 }));
 
@@ -375,15 +375,15 @@ export const learnerProfileRelations = relations(
   })
 );
 
-export const onboardingSessionBypassRelations = relations(
-  onboardingSessionBypass,
+export const profileSessionBypassRelations = relations(
+  profileSessionBypass,
   ({ one }) => ({
     session: one(session, {
-      fields: [onboardingSessionBypass.sessionId],
+      fields: [profileSessionBypass.sessionId],
       references: [session.id],
     }),
     user: one(user, {
-      fields: [onboardingSessionBypass.authUserId],
+      fields: [profileSessionBypass.authUserId],
       references: [user.id],
     }),
   })

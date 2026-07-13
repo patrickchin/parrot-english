@@ -416,9 +416,9 @@ describe("authentication infrastructure", () => {
         "LIVEKIT_URL=wss://your-project.livekit.cloud\n" +
         "LIVEKIT_API_KEY=your_livekit_api_key\n" +
         "LIVEKIT_API_SECRET=your_livekit_api_secret\n" +
-        "LIVEKIT_AGENT_NAME=parrot-onboarding\n" +
+        "LIVEKIT_AGENT_NAME=parrot-conversation\n" +
         "CONVERSATION_AGENT_SECRET=replace_with_a_separate_random_secret\n" +
-        "REALTIME_ONBOARDING_ENABLED=0\n"
+        "REALTIME_CONVERSATIONS_ENABLED=0\n"
     );
     assert.match(workerTypes, /\bDB:\s*D1Database;/);
     assert.match(workerTypes, /\bdeclare abstract class D1Database\b/);

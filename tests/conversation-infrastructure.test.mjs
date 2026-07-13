@@ -145,7 +145,7 @@ describe("conversation persistence infrastructure", () => {
     assert.equal(deployDockerfile, dockerfile);
     assert.match(dockerfile, /ca-certificates/);
     assert.match(dockerfile, /USER node/);
-    assert.match(wrangler, /"REALTIME_ONBOARDING_ENABLED": "1"/);
+    assert.match(wrangler, /"REALTIME_CONVERSATIONS_ENABLED": "1"/);
     for (const name of [
       "LIVEKIT_URL",
       "LIVEKIT_API_KEY",
@@ -174,7 +174,7 @@ describe("conversation persistence infrastructure", () => {
     ]) {
       assert.match(deployment, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     }
-    assert.match(deployment, /REALTIME_ONBOARDING_ENABLED/);
+    assert.match(deployment, /REALTIME_CONVERSATIONS_ENABLED/);
     assert.match(deployment, /record: false/);
     assert.match(deployment, /form fallback/i);
   });
@@ -221,7 +221,7 @@ describe("conversation persistence infrastructure", () => {
         INSERT INTO user (id, name, email) VALUES ('user-1', 'Mia', 'mia@example.test');
         INSERT INTO conversation_session
           (id, auth_user_id, scenario_key, scenario_version, room_name, status, controller_state, started_at)
-          VALUES ('conversation-1', 'user-1', 'onboarding.get-to-know-you', 1, 'room-1', 'active', '{}', 1);
+          VALUES ('conversation-1', 'user-1', 'learner-profile.get-to-know-you', 1, 'room-1', 'active', '{}', 1);
         INSERT INTO conversation_turn
           (id, conversation_id, provider_item_id, sequence, role, text, input_mode)
           VALUES ('turn-1', 'conversation-1', 'provider-1', 1, 'user', 'Hello', 'voice');

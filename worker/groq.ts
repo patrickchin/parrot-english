@@ -7,7 +7,7 @@ import {
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const STT_MODEL = "whisper-large-v3-turbo";
 const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
-const MAX_ONBOARDING_AUDIO_BYTES = 512 * 1024;
+const MAX_LEARNER_PROFILE_AUDIO_BYTES = 512 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
 const SUPPORTED_AUDIO_TYPES = new Set([
   "audio/mp4",
@@ -92,7 +92,7 @@ export async function fetchWithTimeout(
   }
 }
 
-export async function handleOnboardingTranscription(
+export async function handleLearnerProfileTranscription(
   request: Request,
   env: ApiEnv
 ) {
@@ -112,7 +112,7 @@ export async function handleOnboardingTranscription(
   try {
     formData = await readBoundedFormData(
       request,
-      MAX_ONBOARDING_AUDIO_BYTES + MULTIPART_OVERHEAD_BYTES,
+      MAX_LEARNER_PROFILE_AUDIO_BYTES + MULTIPART_OVERHEAD_BYTES,
     );
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
@@ -133,7 +133,7 @@ export async function handleOnboardingTranscription(
   if (audio.size === 0) {
     return jsonResponse({ error: "audio_file_required" }, { status: 400 });
   }
-  if (audio.size > MAX_ONBOARDING_AUDIO_BYTES) {
+  if (audio.size > MAX_LEARNER_PROFILE_AUDIO_BYTES) {
     return jsonResponse({ error: "audio_too_large" }, { status: 413 });
   }
 
@@ -141,7 +141,7 @@ export async function handleOnboardingTranscription(
   groqForm.set("model", STT_MODEL);
   groqForm.set("language", "en");
   groqForm.set("response_format", "json");
-  groqForm.set("file", audio, audio.name || "onboarding-answer.webm");
+  groqForm.set("file", audio, audio.name || "learner-profile-answer.webm");
 
   let upstream: Response;
   try {

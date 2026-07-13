@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { OnboardingCard, OnboardingScreen } from "./OnboardingLayout";
+import { LearnerProfileCard, LearnerProfileScreen } from "./LearnerProfileLayout";
 import {
   ActionButton,
   fieldClassName,
@@ -13,7 +13,7 @@ type ProfileEditorViewProps = {
   isSaving: boolean;
   onCancel: () => void;
   onClose: () => void;
-  onRedoOnboarding: () => void;
+  onRedoLearnerProfile: () => void;
   onSave: () => void;
   onValueChange: (answerKey: string, value: string) => void;
   pageError: string;
@@ -25,7 +25,7 @@ export function ProfileEditorView({
   isSaving,
   onCancel,
   onClose,
-  onRedoOnboarding,
+  onRedoLearnerProfile,
   onSave,
   onValueChange,
   pageError,
@@ -36,8 +36,8 @@ export function ProfileEditorView({
   }
 
   return (
-    <OnboardingScreen profile>
-      <OnboardingCard
+    <LearnerProfileScreen profile>
+      <LearnerProfileCard
         aria-labelledby="profile-title"
         className="p-5 sm:p-8"
         width="narrow"
@@ -145,7 +145,7 @@ export function ProfileEditorView({
             <ActionButton
               className="w-full min-w-0"
               disabled={isSaving}
-              onClick={onRedoOnboarding}
+              onClick={onRedoLearnerProfile}
               type="button"
             >
               Chat with Peppa again
@@ -174,7 +174,7 @@ export function ProfileEditorView({
             </ActionButton>
           </footer>
         </form>
-      </OnboardingCard>
-    </OnboardingScreen>
+      </LearnerProfileCard>
+    </LearnerProfileScreen>
   );
 }

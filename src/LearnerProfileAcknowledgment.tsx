@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import type { OnboardingAcknowledgment as Acknowledgment } from "./onboarding-api";
-import { OnboardingCard } from "./OnboardingLayout";
+import type { LearnerProfileAcknowledgment as Acknowledgment } from "./learner-profile-api";
+import { LearnerProfileCard } from "./LearnerProfileLayout";
 import { ActionButton } from "./ui";
 
 type AudioLike = {
@@ -74,7 +74,7 @@ export function beginAcknowledgmentPlayback({
   };
 }
 
-export function OnboardingAcknowledgment({
+export function LearnerProfileAcknowledgment({
   acknowledgment,
   onNext,
   operationId,
@@ -93,7 +93,7 @@ export function OnboardingAcknowledgment({
   );
 
   return (
-    <OnboardingCard
+    <LearnerProfileCard
       aria-live="polite"
       className="grid justify-items-center gap-5 p-8 text-center sm:p-14"
     >
@@ -108,6 +108,6 @@ export function OnboardingAcknowledgment({
       <ActionButton onClick={onNext} type="button">
         Next
       </ActionButton>
-    </OnboardingCard>
+    </LearnerProfileCard>
   );
 }

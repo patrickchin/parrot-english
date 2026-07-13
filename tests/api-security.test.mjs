@@ -47,19 +47,19 @@ describe("API security", () => {
 
   it("rate limits onboarding transcription by user and client address", async () => {
     const limiter = fakeLimiter([true, false]);
-    const env = { ONBOARDING_TRANSCRIPTION_RATE_LIMITER: limiter };
+    const env = { LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER: limiter };
 
     assert.equal(
-      await apiSecurity.checkOnboardingTranscriptionRateLimit(
-        request("/api/onboarding/transcribe"),
+      await apiSecurity.checkLearnerProfileTranscriptionRateLimit(
+        request("/api/learner-profile/transcribe"),
         env,
         "user-1",
       ),
       null,
     );
 
-    const limited = await apiSecurity.checkOnboardingTranscriptionRateLimit(
-      request("/api/onboarding/transcribe"),
+    const limited = await apiSecurity.checkLearnerProfileTranscriptionRateLimit(
+      request("/api/learner-profile/transcribe"),
       env,
       "user-1",
     );
@@ -74,18 +74,18 @@ describe("API security", () => {
 
   it("shares one enrichment bucket across onboarding answers and profile edits", async () => {
     const limiter = fakeLimiter([true, false]);
-    const env = { ONBOARDING_ENRICHMENT_RATE_LIMITER: limiter };
+    const env = { LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: limiter };
 
     assert.equal(
-      await apiSecurity.checkOnboardingEnrichmentRateLimit(
-        request("/api/onboarding/answer"),
+      await apiSecurity.checkLearnerProfileEnrichmentRateLimit(
+        request("/api/learner-profile/answer"),
         env,
         "user-1",
       ),
       null,
     );
 
-    const limited = await apiSecurity.checkOnboardingEnrichmentRateLimit(
+    const limited = await apiSecurity.checkLearnerProfileEnrichmentRateLimit(
       request("/api/profile"),
       env,
       "user-1",
