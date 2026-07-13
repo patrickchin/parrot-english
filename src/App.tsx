@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, House } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -109,7 +109,6 @@ type LessonEvent =
 type LessonPlayerProps = {
   lesson: Lesson;
   onBack: () => void;
-  onHome: () => void;
   onNavigateScene: (sceneIndex: number) => void;
   routedLocationKey: string;
   routedSceneIndex: number;
@@ -141,7 +140,6 @@ function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
 export function LessonPlayer({
   lesson: currentLesson,
   onBack,
-  onHome,
   onNavigateScene,
   routedLocationKey,
   routedSceneIndex,
@@ -242,11 +240,6 @@ export function LessonPlayer({
     exitRouteActivity();
     onBack();
   }, [exitRouteActivity, onBack]);
-
-  const handleHome = useCallback(() => {
-    exitRouteActivity();
-    onHome();
-  }, [exitRouteActivity, onHome]);
 
   const dispatchLessonEvent = useCallback(
     (event: LessonEvent, { cancel = false }: { cancel?: boolean } = {}) => {
@@ -601,15 +594,6 @@ export function LessonPlayer({
           >
             Back to lessons
           </HeaderButton>
-          <HeaderButton
-            aria-label="Back to main menu"
-            icon={<House strokeWidth={3.2} />}
-            onClick={handleHome}
-            type="button"
-            variant="surface"
-          >
-            Back to main menu
-          </HeaderButton>
         </RouteHeader>
 
         {showStartAction ? (
@@ -678,7 +662,6 @@ function LessonRouteDecisionView({
       key={`${source}:${decision.entry.id}`}
       lesson={decision.entry.lesson}
       onBack={() => navigate("/lessons")}
-      onHome={() => navigate("/")}
       onNavigateScene={(sceneIndex) =>
         navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
       }

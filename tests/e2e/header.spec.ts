@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 interface HeaderRoute {
   name: string;
   path: string;
-  controls: Array<{ name: string; role: "button" | "link" }>;
+  control: { name: string; role: "button" | "link" };
 }
 
 interface Viewport {
@@ -16,20 +16,17 @@ const routes: HeaderRoute[] = [
   {
     name: "conversation",
     path: "/talk-to-peppa",
-    controls: [{ name: "Back", role: "button" }],
+    control: { name: "Back", role: "button" },
   },
   {
     name: "lesson list",
     path: "/lessons",
-    controls: [{ name: "Back to main menu", role: "link" }],
+    control: { name: "Back to main menu", role: "link" },
   },
   {
     name: "lesson player",
     path: "/lessons/parrot/01-peppas-high-ball/scenes/1",
-    controls: [
-      { name: "Back to lesson list", role: "button" },
-      { name: "Back to main menu", role: "button" },
-    ],
+    control: { name: "Back to lesson list", role: "button" },
   },
 ];
 
@@ -57,7 +54,7 @@ async function expectInsideViewport(locator: Locator, viewport: Viewport) {
   return box;
 }
 
-function headerControl(page: Page, control: HeaderRoute["controls"][number]) {
+function headerControl(page: Page, control: HeaderRoute["control"]) {
   return page.getByRole(control.role, { exact: true, name: control.name });
 }
 
@@ -85,18 +82,20 @@ for (const route of routes) {
         page.getByRole("menuitem", { name: "Log out" }),
       ).toBeHidden();
 
-      for (const control of route.controls) {
-        const controlBox = await expectInsideViewport(
-          headerControl(page, control),
-          viewport,
-        );
+      const pageNavigation = page.getByRole("navigation", {
+        name: "Page navigation",
+      });
+      await expect(
+        pageNavigation.getByRole("button").or(pageNavigation.getByRole("link")),
+      ).toHaveCount(1);
+      const controlBox = await expectInsideViewport(
+        headerControl(page, route.control),
+        viewport,
+      );
 
-        expect(Math.abs(controlBox.y - accountBox.y)).toBeLessThanOrEqual(1);
-        expect(Math.abs(controlBox.height - accountBox.height)).toBeLessThanOrEqual(1);
-        expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(
-          accountBox.x,
-        );
-      }
+      expect(Math.abs(controlBox.y - accountBox.y)).toBeLessThanOrEqual(1);
+      expect(Math.abs(controlBox.height - accountBox.height)).toBeLessThanOrEqual(1);
+      expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(accountBox.x);
 
       await expect
         .poll(() =>
@@ -151,7 +150,6 @@ test("all visible header controls use the same typography", async ({ page }) => 
   const controls = [
     page.getByRole("button", { exact: true, name: "Mia" }),
     page.getByRole("button", { name: "Back to lesson list" }),
-    page.getByRole("button", { name: "Back to main menu" }),
   ];
   const typography = await Promise.all(
     controls.map(async (control) => {
