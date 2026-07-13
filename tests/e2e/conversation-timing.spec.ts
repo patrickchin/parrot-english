@@ -23,6 +23,34 @@ function expectSameBox(
 }
 
 for (const viewport of viewports) {
+  test(`the bottom actions stay in place after ending a turn on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/talk-to-peppa");
+
+    await page.getByRole("button", { name: "Start my turn" }).click();
+    await expect(page.getByLabel("Live transcript")).toContainText(
+      "My name is Mia",
+    );
+
+    const endTurn = page.getByRole("button", { name: "End my turn" });
+    const finish = page.getByRole("button", { name: "Finish conversation" });
+    const before = await Promise.all([box(endTurn), box(finish)]);
+
+    await endTurn.click();
+
+    const waiting = page.getByRole("button", {
+      name: "Waiting for Peppa's reply",
+    });
+    await expect(waiting).toBeDisabled();
+    const after = await Promise.all([box(waiting), box(finish)]);
+
+    for (let index = 0; index < before.length; index += 1) {
+      expectSameBox(before[index], after[index]);
+    }
+  });
+
   test(`the response timer does not move conversation content on a ${viewport.name}`, async ({
     page,
   }) => {
