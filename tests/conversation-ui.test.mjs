@@ -121,7 +121,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(activeTurn, /Click or press Space/);
   });
 
-  it("streams the learner transcript only while their turn is active", () => {
+  it("streams the learner transcript and keeps the latest words after the turn", () => {
     const activeTurn = render({
       liveTranscript: "My name is Mia",
       microphoneEnabled: true,
@@ -138,8 +138,9 @@ describe("accessible realtime conversation surface", () => {
       microphoneEnabled: false,
       status: "thinking",
     });
-    assert.doesNotMatch(endedTurn, /aria-label="Live transcript"/);
-    assert.doesNotMatch(endedTurn, /My name is Mia/);
+    assert.match(endedTurn, /aria-label="Live transcript"/);
+    assert.match(endedTurn, /You said/);
+    assert.match(endedTurn, /My name is Mia/);
   });
 
   it("shows that Peppa is preparing a reply after the learner ends their turn", () => {

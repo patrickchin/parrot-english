@@ -37,7 +37,9 @@ test("the learner sees a streamed transcript while speaking", async ({ page }) =
   await expect(transcript).toContainText("My name is Mia");
 
   await page.getByRole("button", { name: "End my turn" }).click();
-  await expect(transcript).toBeHidden();
+  await expect(transcript).toBeVisible();
+  await expect(transcript).toContainText("You said");
+  await expect(transcript).toContainText("My name is Mia");
 });
 
 test("the latest Peppa message repeats from its bottom-right audio control", async ({
