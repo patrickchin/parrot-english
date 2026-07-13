@@ -13,7 +13,7 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const editorModule = await vite
-  .ssrLoadModule("/src/LessonEditor.tsx")
+  .ssrLoadModule("/src/lessons/LessonEditor.tsx")
   .catch(() => ({}));
 const { LessonEditor } = editorModule;
 
@@ -36,7 +36,7 @@ test("saved lesson edit route starts with an accessible loading state", () => {
     ),
   );
 
-  assert.match(html, /<h1>Edit Lesson<\/h1>/);
+  assert.match(html, /<h1[^>]*>Edit Lesson<\/h1>/);
   assert.match(html, /role="status"/);
   assert.match(html, /Loading lesson script/);
   assert.match(html, /href="\/lessons"/);

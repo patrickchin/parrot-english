@@ -1,7 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
-import { getLessonScenePath } from "./app-routes";
+import { useNavigate, useParams } from "react-router";
+import { getLessonScenePath } from "../app/app-routes";
+import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import type { Lesson } from "./lesson-catalog";
 import {
   formatLessonScript,
@@ -105,25 +106,35 @@ export function LessonEditor() {
   }
 
   return (
-    <main className="lesson-creator-page">
-      <Link className="main-menu-link lesson-creator-back" to="/lessons">
-        <ArrowLeft aria-hidden="true" /> Back to lessons
-      </Link>
+    <main className="relative min-h-dvh w-screen overflow-x-hidden bg-lesson-list px-4 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32">
+      <RouteHeader>
+        <HeaderLink
+          aria-label="Back to lessons"
+          icon={<ArrowLeft />}
+          to="/lessons"
+        >
+          Back to lessons
+        </HeaderLink>
+      </RouteHeader>
 
-      <section className="lesson-creator-card">
-        <header>
-          <h1>Edit Lesson</h1>
-          <p>Update the script, review any repairs, and save it again.</p>
+      <section className="mx-auto grid w-full max-w-4xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
+        <header className="text-center">
+          <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
+            Edit Lesson
+          </h1>
+          <p className="mb-0 mt-3 text-lg font-bold text-slate-600">
+            Update the script, review any repairs, and save it again.
+          </p>
         </header>
 
         {isLoading ? (
-          <p className="lesson-editor-status" role="status">
+          <p className="m-0 text-center font-black text-brand-blue" role="status">
             Loading lesson script...
           </p>
         ) : null}
 
         {!isLoading && descriptor ? (
-          <section className="lesson-creator-panel">
+          <section className="grid gap-6">
             <ScriptEditor
               activeTab="edit"
               busyAction={isSaving ? "save" : null}
@@ -136,12 +147,18 @@ export function LessonEditor() {
         ) : null}
 
         {notice ? (
-          <p className="lesson-creator-notice" role="status">
+          <p
+            className="m-0 rounded-2xl border-3 border-sky-200 bg-sky-50 p-4 font-bold text-sky-950"
+            role="status"
+          >
             {notice}
           </p>
         ) : null}
         {error ? (
-          <p className="lesson-creator-error" role="alert">
+          <p
+            className="m-0 rounded-2xl border-3 border-red-300 bg-red-50 p-4 font-bold text-red-800"
+            role="alert"
+          >
             {error}
           </p>
         ) : null}

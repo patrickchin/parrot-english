@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
   playDeviceSpeech,
   selectEnglishDeviceVoice,
-} from "../src/device-speech.ts";
+} from "../src/media/device-speech.ts";
 
 describe("on-device lesson speech", () => {
   it("prefers a local English voice deterministically", () => {

@@ -15,7 +15,7 @@ export function createLessonScript({ childName = "Mia", title = "Garden Help" } 
       settingDescription:
         "Peppa and Dolly stand together beside the garden flowers.",
       background: "episode-garden",
-      characters: ["peppa", "dolly", "user"],
+      characters: ["peppa", "dolly"],
       steps: [
         {
           speaker: "dolly",
@@ -23,7 +23,6 @@ export function createLessonScript({ childName = "Mia", title = "Garden Help" } 
           emotes: {
             peppa: "listening",
             dolly: "talking",
-            user: "listening",
           },
         },
         {
@@ -32,7 +31,6 @@ export function createLessonScript({ childName = "Mia", title = "Garden Help" } 
           emotes: {
             peppa: "listening",
             dolly: "listening",
-            user: "talking",
           },
         },
         ...(index === 4
@@ -43,7 +41,6 @@ export function createLessonScript({ childName = "Mia", title = "Garden Help" } 
                 emotes: {
                   peppa: "happy",
                   dolly: "happy",
-                  user: "happy",
                 },
               },
             ]

@@ -14,10 +14,10 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const creatorModule = await vite
-  .ssrLoadModule("/src/LessonCreator.tsx")
+  .ssrLoadModule("/src/lessons/LessonCreator.tsx")
   .catch(() => ({}));
 const scriptModule = await vite
-  .ssrLoadModule("/src/lesson-creator-script.ts")
+  .ssrLoadModule("/src/lessons/lesson-creator-script.ts")
   .catch(() => ({}));
 const { LessonCreator, LessonWarnings } = creatorModule;
 const { formatLessonScript, parseLessonScript } = scriptModule;
@@ -37,12 +37,12 @@ function renderCreator(initialEntry) {
 
 test("Create Lesson defaults to an accessible Generate Script tab", () => {
   const html = renderCreator("/lessons/my/create");
-  const tabList = html.match(/<div[^>]*class="lesson-creator-tabs"[^>]*>/)?.[0];
+  const tabList = html.match(/<div[^>]*role="tablist"[^>]*>/)?.[0];
   const generateTab = html.match(
     /<button[^>]*>[\s\S]*?Generate Script<\/button>/,
   )?.[0];
 
-  assert.match(html, /<h1>Create a Lesson<\/h1>/);
+  assert.match(html, /<h1[^>]*>Create a Lesson<\/h1>/);
   assert.ok(tabList);
   assert.match(tabList, /role="tablist"/);
   assert.match(tabList, /aria-label="Create lesson methods"/);
@@ -117,7 +117,7 @@ describe("uploaded lesson parsing", () => {
         settingDescription:
           "Peppa and Dolly stand together beside the garden flowers.",
         background: "episode-garden",
-        characters: ["peppa", "dolly", "user"],
+        characters: ["peppa", "dolly"],
         steps: [
           {
             speaker: "dolly",
@@ -125,7 +125,6 @@ describe("uploaded lesson parsing", () => {
             emotes: {
               peppa: "listening",
               dolly: "talking",
-              user: "listening",
             },
           },
           {
@@ -134,7 +133,6 @@ describe("uploaded lesson parsing", () => {
             emotes: {
               peppa: "listening",
               dolly: "listening",
-              user: "talking",
             },
           },
           ...(index === 4
@@ -145,7 +143,6 @@ describe("uploaded lesson parsing", () => {
                   emotes: {
                     peppa: "happy",
                     dolly: "happy",
-                    user: "happy",
                   },
                 },
               ]

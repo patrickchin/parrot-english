@@ -11,7 +11,7 @@ import { ActionLink } from "../shared/ui";
 import {
   loadMyLessons,
   type MyLessonDescriptor,
-} from "../my-lessons-api";
+} from "./my-lessons-api";
 
 type LessonCard = {
   id: string;

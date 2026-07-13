@@ -1,4 +1,4 @@
-import { prepareLesson } from "../lib/lesson-data";
+import { prepareLesson } from "../../lib/lesson-data";
 import {
   VISUAL_CATALOG,
   type Lesson,

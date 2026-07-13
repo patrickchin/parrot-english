@@ -83,10 +83,10 @@ import {
   LessonStage,
   LessonStartAction,
 } from "../lessons/LessonPlayerUi";
-import { LessonCreator } from "../LessonCreator";
-import { LessonEditor } from "../LessonEditor";
-import { playDeviceSpeech } from "../device-speech";
-import { loadMyLesson } from "../my-lessons-api";
+import { LessonCreator } from "../lessons/LessonCreator";
+import { LessonEditor } from "../lessons/LessonEditor";
+import { playDeviceSpeech } from "../media/device-speech";
+import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,

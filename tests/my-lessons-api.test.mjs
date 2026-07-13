@@ -7,7 +7,7 @@ import {
   loadMyLessons,
   saveMyLesson,
   updateMyLesson,
-} from "../src/my-lessons-api.ts";
+} from "../src/lessons/my-lessons-api.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
 function jsonFetch(payload, status = 200) {

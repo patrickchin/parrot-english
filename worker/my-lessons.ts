@@ -1,5 +1,5 @@
 import { prepareLesson } from "../lib/lesson-data.js";
-import type { Lesson } from "../src/lesson-catalog.ts";
+import type { Lesson } from "../src/lessons/lesson-catalog.ts";
 import type { Database } from "./database.ts";
 import {
   generateLessonScript,
@@ -7,7 +7,7 @@ import {
 } from "./lesson-generator.ts";
 import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
 import { createMyLessonRepository } from "./my-lessons-repository.ts";
-import type { OnboardingIdentity } from "./onboarding.ts";
+import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
@@ -20,7 +20,7 @@ export type MyLessonsEnv = ApiEnv & { DB: D1Database };
 export type MyLessonRequestInput = {
   database: Database;
   env: MyLessonsEnv;
-  identity: OnboardingIdentity;
+  identity: LearnerProfileIdentity;
   request: Request;
 };
 
