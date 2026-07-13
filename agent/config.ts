@@ -13,10 +13,19 @@ export type AgentConfig = {
   livekitApiSecret: string;
   livekitUrl: string;
   llmModel: string;
+  sttLanguage: "en" | "zh";
   sttModel: string;
   ttsModel: string;
   ttsVoiceId: string;
 };
+
+function optionalSttLanguage(env: NodeJS.ProcessEnv): "en" | "zh" {
+  const language = env.AGENT_STT_LANGUAGE?.trim().toLowerCase() || "en";
+  if (language !== "en" && language !== "zh") {
+    throw new Error("AGENT_STT_LANGUAGE must be en or zh.");
+  }
+  return language;
+}
 
 function required(env: NodeJS.ProcessEnv, name: string) {
   const value = env[name]?.trim();
@@ -49,6 +58,7 @@ export function readAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentConf
     livekitApiSecret: required(env, "LIVEKIT_API_SECRET"),
     livekitUrl: required(env, "LIVEKIT_URL"),
     llmModel: optionalModel(env, "AGENT_LLM_MODEL", DEFAULT_AGENT_MODELS.llm),
+    sttLanguage: optionalSttLanguage(env),
     sttModel: optionalModel(env, "AGENT_STT_MODEL", DEFAULT_AGENT_MODELS.stt),
     ttsModel: optionalModel(env, "AGENT_TTS_MODEL", DEFAULT_AGENT_MODELS.tts),
     ttsVoiceId: optionalModel(

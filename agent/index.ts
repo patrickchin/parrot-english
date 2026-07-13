@@ -104,6 +104,7 @@ export function createAgentModels(config: AgentConfig) {
     stt: new inference.STT({
       apiKey: config.livekitApiKey,
       apiSecret: config.livekitApiSecret,
+      language: config.sttLanguage,
       model: config.sttModel,
     }),
     tts: new inference.TTS({
