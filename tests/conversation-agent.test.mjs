@@ -420,6 +420,14 @@ describe("bounded learner-profile agent contract", () => {
     assert.match(instructions, /no labels, bullets, or field names/i);
     assert.match(instructions, /bright, bouncy energy/i);
     assert.match(instructions, /relevant answer|differs from the category/i);
+    assert.match(
+      instructions,
+      /updateLearnerProfile[\s\S]*finishConversation next/i,
+    );
+    assert.doesNotMatch(
+      instructions,
+      /exactly one appropriate state tool/i,
+    );
     assert.doesNotMatch(instructions, /fact schema|candidate facts/i);
     assert.doesNotMatch(instructions, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
