@@ -8,6 +8,7 @@ import {
   voice,
   type ChatMessage,
 } from "@livekit/agents";
+import { REPEAT_LAST_AUDIO_COMMAND } from "../lib/conversation-audio.js";
 import type { AgentConfig } from "./config.ts";
 import { readAgentConfig } from "./config.ts";
 import {
@@ -115,6 +116,33 @@ export function conversationInputMode(
   hasVoiceTranscript: boolean,
 ) {
   return role === "user" && !hasVoiceTranscript ? "text" : "voice";
+}
+
+type ConversationTextSession = Pick<
+  voice.AgentSession,
+  "generateReply" | "interrupt" | "say"
+>;
+
+export function createConversationTextInputCallback(
+  latestAssistantText: () => string,
+) {
+  return (
+    session: ConversationTextSession,
+    event: { text: string },
+  ) => {
+    if (event.text.trim() === REPEAT_LAST_AUDIO_COMMAND) {
+      const text = latestAssistantText().trim();
+      if (text) {
+        session.say(text, {
+          addToChatCtx: false,
+          allowInterruptions: true,
+        });
+      }
+      return;
+    }
+    session.interrupt();
+    session.generateReply({ userInput: event.text });
+  };
 }
 
 export function createAgentTurnHandling() {
@@ -240,6 +268,7 @@ export const agentDefinition = defineAgent({
       participant.metadata,
     );
     const persistence = createTranscriptPersistence({ conversationId, ingest });
+    let latestAssistantText = "";
 
     const task = createGettingToKnowYouTask({
       conversationId,
@@ -271,6 +300,9 @@ export const agentDefinition = defineAgent({
     });
     session.on(AgentSessionEventTypes.ConversationItemAdded, (event) => {
       if (event.item.type === "message") {
+        if (event.item.role === "assistant" && event.item.textContent?.trim()) {
+          latestAssistantText = event.item.textContent.trim();
+        }
         persistence.persistConversationItem(event.item);
       }
     });
@@ -298,6 +330,9 @@ export const agentDefinition = defineAgent({
         audioEnabled: true,
         closeOnDisconnect: true,
         textEnabled: true,
+        textInputCallback: createConversationTextInputCallback(
+          () => latestAssistantText,
+        ),
       },
       outputOptions: {
         audioEnabled: true,

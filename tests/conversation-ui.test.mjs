@@ -24,6 +24,7 @@ function props(overrides = {}) {
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},
+    onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
     responseLatencyMs: null,
@@ -158,6 +159,38 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /Debug transcript/);
     assert.match(html, /Start my turn/);
     assert.doesNotMatch(html, /Chat with your pig pal/);
+  });
+
+  it("offers an accessible repeat action for Peppa's latest completed line", () => {
+    const ready = render();
+    assert.doesNotMatch(ready, /Repeat Peppa's audio/);
+
+    const listening = render({
+      microphoneEnabled: false,
+      status: "listening",
+      turns: [
+        { id: "one", role: "assistant", text: "What do you like to do?" },
+      ],
+    });
+    assert.match(listening, /role="group"/);
+    assert.match(listening, /aria-label="Peppa(?:'|&#x27;)s message"/);
+    assert.match(listening, /aria-label="Repeat Peppa(?:'|&#x27;)s audio"/);
+    assert.doesNotMatch(
+      listening,
+      /aria-label="Repeat Peppa(?:'|&#x27;)s audio"[^>]*disabled/,
+    );
+
+    const speaking = render({
+      microphoneEnabled: false,
+      status: "speaking",
+      turns: [
+        { id: "one", role: "assistant", text: "What do you like to do?" },
+      ],
+    });
+    assert.match(
+      speaking,
+      /aria-label="Repeat Peppa(?:'|&#x27;)s audio"[^>]*disabled/,
+    );
   });
 
   it("keeps retry and finish available without bringing back typed input", () => {

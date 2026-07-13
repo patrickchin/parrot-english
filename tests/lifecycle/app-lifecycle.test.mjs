@@ -204,6 +204,7 @@ function conversationSurfaceProps(overrides = {}) {
     microphoneEnabled: false,
     onBack() {},
     onFinish() {},
+    onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
     responseLatencyMs: null,
@@ -721,6 +722,30 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Back"));
     assert.deepEqual(backs, ["back"]);
     assert.deepEqual(toggles, ["toggle"]);
+  });
+
+  it("repeats Peppa's latest line from the speech box", async () => {
+    const repeats = [];
+    await mountStrict(
+      createElement(
+        ConversationSurface,
+        conversationSurfaceProps({
+          onRepeatAudio() {
+            repeats.push("repeat");
+          },
+          turns: [
+            {
+              id: "peppa-latest",
+              role: "assistant",
+              text: "What animals do you like?",
+            },
+          ],
+        }),
+      ),
+    );
+
+    await click(button("Repeat Peppa's audio"));
+    assert.deepEqual(repeats, ["repeat"]);
   });
 
   it("accepts the prose profile automatically when the room ends", async () => {

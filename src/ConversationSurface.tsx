@@ -1,8 +1,15 @@
-import { ArrowLeft, Flag, Mic, MicOff, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  Flag,
+  Mic,
+  MicOff,
+  RotateCcw,
+  Volume2,
+} from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import { formatResponseLatency } from "./response-latency";
-import { ActionButton } from "./ui";
+import { ActionButton, cx, IconButton } from "./ui";
 
 export type ConversationSurfaceStatus =
   | "ready"
@@ -25,6 +32,7 @@ type ConversationSurfaceProps = {
   microphoneEnabled: boolean;
   onBack: () => void;
   onFinish: () => void;
+  onRepeatAudio: () => void;
   onStart: () => void;
   onToggleMicrophone: () => void;
   responseLatencyMs: number | null;
@@ -97,17 +105,42 @@ function ConversationScreen({ children }: { children: ReactNode }) {
 function ConversationSpeech({
   children,
   live = false,
+  onRepeatAudio,
+  repeatDisabled = false,
 }: {
   children: ReactNode;
   live?: boolean;
+  onRepeatAudio?: () => void;
+  repeatDisabled?: boolean;
 }) {
   return (
-    <p
-      aria-live={live ? "polite" : undefined}
-      className="relative m-0 w-11/12 max-w-lg rounded-3xl border-4 border-white bg-white p-4 text-center text-xl font-black leading-snug text-brand-ink shadow-control-surface after:absolute after:-bottom-3 after:left-1/2 after:size-6 after:-translate-x-1/2 after:rotate-45 after:bg-white short:p-3 short:text-base sm:p-5 sm:text-2xl"
+    <div
+      aria-label={onRepeatAudio ? "Peppa's message" : undefined}
+      className={cx(
+        "relative w-11/12 max-w-lg rounded-3xl border-4 border-white bg-white p-4 text-center text-xl font-black leading-snug text-brand-ink shadow-control-surface after:absolute after:-bottom-3 after:left-1/2 after:size-6 after:-translate-x-1/2 after:rotate-45 after:bg-white short:p-3 short:text-base sm:p-5 sm:text-2xl",
+        onRepeatAudio && "min-h-16",
+      )}
+      role={onRepeatAudio ? "group" : undefined}
     >
-      {children}
-    </p>
+      <p
+        aria-live={live ? "polite" : undefined}
+        className={cx("m-0", onRepeatAudio && "mr-14")}
+      >
+        {children}
+      </p>
+      {onRepeatAudio ? (
+        <IconButton
+          aria-label="Repeat Peppa's audio"
+          className="absolute bottom-2 right-2"
+          disabled={repeatDisabled}
+          onClick={onRepeatAudio}
+          type="button"
+          variant="brand"
+        >
+          <Volume2 aria-hidden="true" className="size-6" />
+        </IconButton>
+      ) : null}
+    </div>
   );
 }
 
@@ -126,6 +159,7 @@ export function ConversationSurface({
   microphoneEnabled,
   onBack,
   onFinish,
+  onRepeatAudio,
   onStart,
   onToggleMicrophone,
   responseLatencyMs = null,
@@ -175,7 +209,8 @@ export function ConversationSurface({
     );
   }
 
-  const speech = latestAssistantSpeech(turns) ??
+  const assistantSpeech = latestAssistantSpeech(turns);
+  const speech = assistantSpeech ??
     (joining
       ? "Almost ready!"
       : saving
@@ -186,7 +221,15 @@ export function ConversationSurface({
       <ConversationHeader onBack={onBack} />
       <section className="my-auto grid w-full max-w-3xl justify-items-center gap-3 bg-transparent p-2 short:p-3 md:p-5">
         <div className="grid w-full place-items-center gap-4 short:gap-3 md:gap-6">
-          <ConversationSpeech live>{speech}</ConversationSpeech>
+          <ConversationSpeech
+            live
+            onRepeatAudio={assistantSpeech ? onRepeatAudio : undefined}
+            repeatDisabled={
+              status !== "listening" || microphoneEnabled
+            }
+          >
+            {speech}
+          </ConversationSpeech>
           <ConversationCharacter
             alt="Peppa"
             src={PEPPA_ASSETS[status]}
