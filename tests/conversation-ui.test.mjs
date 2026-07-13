@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,7 +15,13 @@ const vite = await createServer({
 const { ConversationSurface } = await vite.ssrLoadModule(
   "/src/ConversationSurface.tsx",
 );
-const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const conversationStylesUrl = new URL(
+  "../src/conversation.css",
+  import.meta.url,
+);
+const conversationStyles = existsSync(conversationStylesUrl)
+  ? readFileSync(conversationStylesUrl, "utf8")
+  : "";
 
 after(async () => {
   await vite.close();
@@ -196,7 +202,7 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /Debug transcript|I am seven\./);
   });
 
-  it("uses Tailwind utilities for responsive layout and large actions", () => {
+  it("uses the shared CSS design system for responsive layout and actions", () => {
     const html = render({ microphoneEnabled: false, status: "listening" });
     const screenClasses = classNamesFor(html, "conversation-screen");
     const backClasses = classNamesFor(html, "conversation-back-button");
@@ -204,26 +210,19 @@ describe("accessible realtime conversation surface", () => {
     const finishClasses = classNamesFor(html, "conversation-finish-button");
     const bubbleClasses = classNamesFor(html, "conversation-speech-bubble");
 
-    assert.match(screenClasses, /\bh-dvh\b/);
-    assert.match(screenClasses, /\boverflow-y-auto\b/);
-    assert.match(screenClasses, /\bpt-\[112px\](?=\s|$)/);
-    assert.match(screenClasses, /\bmax-\[720px\]:pt-\[92px\](?=\s|$)/);
-    assert.match(backClasses, /\babsolute\b/);
-    assert.match(backClasses, /\bmin-h-\[52px\](?=\s|$)/);
-    assert.match(backClasses, /\bbg-\[#204c7f\](?=\s|$)/);
+    assert.equal(screenClasses, "conversation-screen");
+    assert.match(backClasses, /\bapp-header-control\b/);
+    assert.match(turnClasses, /\bapp-button\b/);
+    assert.match(turnClasses, /\bapp-button--large\b/);
+    assert.match(turnClasses, /\bapp-button--success\b/);
+    assert.match(finishClasses, /\bapp-button--surface\b/);
+    assert.equal(bubbleClasses, "conversation-speech-bubble");
+    assert.match(conversationStyles, /height:\s*100dvh/);
+    assert.match(conversationStyles, /overflow-y:\s*auto/);
     assert.match(
-      backClasses,
-      /\[@media\(max-height:620px\)\]:top-\[10px\](?=\s|$)/,
+      conversationStyles,
+      /padding-top:\s*var\(--app-header-clearance\)/,
     );
-    assert.match(turnClasses, /\bw-full\b/);
-    assert.match(turnClasses, /\bmin-h-16\b/);
-    assert.match(turnClasses, /\bbg-\[#087451\](?=\s|$)/);
-    assert.match(finishClasses, /\bw-full\b/);
-    assert.match(finishClasses, /\bmin-h-16\b/);
-    assert.match(
-      bubbleClasses,
-      /after:content-\[(?:''|&#x27;&#x27;)\]/,
-    );
-    assert.doesNotMatch(styles, /\.conversation-[a-z-]+\s*(?:[,{:]|::)/);
+    assert.match(conversationStyles, /\.conversation-speech-bubble::after/);
   });
 });

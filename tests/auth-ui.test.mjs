@@ -13,6 +13,7 @@ function readSource(path) {
 
 const authClient = readSource("../src/auth-client.ts");
 const app = readSource("../src/App.tsx");
+const designSystem = readSource("../src/design-system.css");
 const styles = readSource("../src/styles.css");
 
 const vite = await createServer({
@@ -459,7 +460,7 @@ test("renders Profile and Log out together in the account bar", () => {
     session: { user: { email: "mia@example.test", name: "Mia" } },
   });
   const bar = html.match(
-    /<aside[^>]*class="[^"]*\buser-session-bar\b[^"]*"[\s\S]*?<\/aside>/,
+    /<aside[^>]*class="[^"]*\bapp-header-account\b[^"]*"[\s\S]*?<\/aside>/,
   )?.[0];
 
   assert.ok(bar);
@@ -468,7 +469,7 @@ test("renders Profile and Log out together in the account bar", () => {
   assert.doesNotMatch(html, /class="profile-edit-button"/);
 });
 
-test("lets CSS compact the account bar beside a conversation screen", () => {
+test("uses the same account header classes on every authenticated route", () => {
   const html = renderAuthGate({
     onOpenProfile() {},
     session: { user: { email: "mia@example.test", name: "Mia" } },
@@ -476,14 +477,9 @@ test("lets CSS compact the account bar beside a conversation screen", () => {
   const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
 
   assert.ok(bar);
-  assert.match(
-    bar,
-    /max-\[720px\]:\[&amp;:has\(\+_\.conversation-screen\)\]:min-h-\[52px\]/,
-  );
-  assert.match(
-    html,
-    /group-has-\[\+_\.conversation-screen\]\/session:hidden/,
-  );
+  assert.equal(bar, "app-header-account");
+  assert.doesNotMatch(html, /:has|group-has|conversation-screen/);
+  assert.match(html, /class="app-header-account-label"/);
   assert.match(html, />Mia</);
   assert.match(html, />Profile</);
   assert.match(html, />Log out</);
@@ -650,10 +646,10 @@ test("auth layout is responsive, touch-friendly, and visually distinct", () => {
   assert.match(styles, /\.auth-(?:field input|submit)[\s\S]*?min-height:\s*48px/);
   assert.match(styles, /\.auth-card[\s\S]*?background:\s*(?:#fff|white|rgb\(255)/);
   assert.match(styles, /\.auth-submit[\s\S]*?background:\s*#ff467b/);
-  assert.match(bar, /\bfixed\b/);
-  assert.match(bar, /\bbg-\[#204c7f\](?=\s|$)/);
-  assert.match(bar, /\bmax-\[720px\]:top-\[94px\](?=\s|$)/);
-  assert.doesNotMatch(styles, /\.user-session-bar/);
+  assert.equal(bar, "app-header-account");
+  assert.match(designSystem, /\.app-header-account\s*\{/);
+  assert.match(designSystem, /background:\s*var\(--color-brand-navy\)/);
+  assert.match(designSystem, /top:\s*var\(--app-header-top\)/);
   assert.match(styles, /:focus-visible/);
 });
 
@@ -667,7 +663,7 @@ test("auth screen owns a reachable short-viewport scroll area", () => {
   assert.match(card, /margin-block:\s*auto/);
 });
 
-test("session controls relocate with Tailwind at the 720px lesson breakpoint", () => {
+test("session controls use the global mobile header breakpoint", () => {
   const tablet = getMaxWidthSection(720, 560);
   const html = renderAuthGate({
     session: { user: { email: "mia@example.test", name: "Mia" } },
@@ -675,7 +671,14 @@ test("session controls relocate with Tailwind at the 720px lesson breakpoint", (
   const bar = html.match(/<aside[^>]*class="([^"]*)"/)?.[1];
 
   assert.ok(bar);
-  assert.match(bar, /\bmax-\[720px\]:top-\[94px\](?=\s|$)/);
-  assert.match(bar, /\bmax-\[720px\]:right-3\b/);
+  assert.equal(bar, "app-header-account");
+  assert.match(
+    designSystem,
+    /@media\s*\(max-width:\s*720px\)[\s\S]*?--app-header-control-size:\s*52px/,
+  );
+  assert.match(
+    designSystem,
+    /\.app-header-account-label\s*\{[\s\S]*?display:\s*none/,
+  );
   assert.match(tablet, /\.lesson-flow-banner\s*\{[\s\S]*?top:\s*144px/);
 });
