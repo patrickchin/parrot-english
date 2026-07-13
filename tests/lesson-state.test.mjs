@@ -267,6 +267,47 @@ describe("scene-script lesson state", () => {
     assert.equal(nextScene.phase, LessonPhase.Speaking);
   });
 
+  it("retries a checked user-first step without waiting for model playback", () => {
+    const userFirstLesson = {
+      childName: "Bella",
+      scenes: [
+        {
+          title: "User",
+          steps: [{ speaker: "user", dialogue: "Hello!", check }],
+        },
+      ],
+    };
+    const waiting = reduce(
+      createInitialLessonState(),
+      { type: "PLAY_SCENE" },
+      userFirstLesson,
+    );
+    const recording = reduce(
+      waiting,
+      { type: "MIC_STARTED" },
+      userFirstLesson,
+    );
+    const evaluating = reduce(
+      recording,
+      { type: "MIC_RELEASED" },
+      userFirstLesson,
+    );
+    const responding = reduce(
+      evaluating,
+      { type: "EVALUATED", outcome: "incorrect", transcript: "" },
+      userFirstLesson,
+    );
+    const retrying = reduce(
+      responding,
+      { type: "RESPONSE_DONE" },
+      userFirstLesson,
+    );
+
+    assert.equal(retrying.phase, LessonPhase.WaitingForUser);
+    assert.equal(retrying.stepIndex, 0);
+    assert.equal(retrying.attemptCount, 1);
+  });
+
   it("uses no-input handlers when present and incorrect handlers as fallbacks", () => {
     const noInputResponse = {
       speaker: "narrator",
