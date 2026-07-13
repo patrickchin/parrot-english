@@ -207,6 +207,69 @@ describe("lesson data contract", () => {
     );
   });
 
+  it("normalizes recoverable draft problems into warnings and safe defaults", () => {
+    assert.equal(typeof lessonData.prepareLesson, "function");
+    const catalog = lessonData.createLessonCatalog(createCatalogInput());
+    const prepared = lessonData.prepareLesson(
+      {
+        scenes: [
+          {
+            background: "invented-place",
+            characters: ["dolly", "ghost", "dolly"],
+            steps: [
+              { speaker: "ghost", dialogue: "Hello from a draft." },
+              { speaker: "user", dialogue: "   " },
+            ],
+          },
+        ],
+      },
+      catalog,
+      "draft.json",
+      { childName: "Mia" },
+    );
+
+    assert.equal(prepared.lesson.title, "Untitled lesson");
+    assert.equal(prepared.lesson.childName, "Mia");
+    assert.deepEqual(prepared.lesson.goalPhrases, []);
+    assert.equal(prepared.lesson.summary, "Untitled lesson");
+    assert.equal(prepared.lesson.detailedSummary, "Untitled lesson");
+    assert.deepEqual(prepared.lesson.location, {
+      name: "Lesson location",
+      description: "Lesson location",
+    });
+    assert.equal(prepared.lesson.scenes.length, 1);
+    assert.equal(prepared.lesson.scenes[0].title, "Scene 1");
+    assert.equal(prepared.lesson.scenes[0].background, "episode-garden");
+    assert.deepEqual(prepared.lesson.scenes[0].characters, ["dolly"]);
+    assert.equal(prepared.lesson.scenes[0].steps.length, 1);
+    assert.equal(prepared.lesson.scenes[0].steps[0].speaker, "narrator");
+    assert.deepEqual(prepared.lesson.scenes[0].steps[0].emotes, {
+      dolly: "idle",
+    });
+    assert.ok(prepared.warnings.length >= 8);
+    assert.ok(prepared.warnings.some((warning) => /title/i.test(warning)));
+    assert.ok(prepared.warnings.some((warning) => /background/i.test(warning)));
+    assert.ok(prepared.warnings.some((warning) => /speaker/i.test(warning)));
+    assert.equal(
+      lessonData.validateLesson(prepared.lesson, catalog, "normalized.json"),
+      prepared.lesson,
+    );
+  });
+
+  it("keeps drafts without playable dialogue fatal", () => {
+    assert.equal(typeof lessonData.prepareLesson, "function");
+    const catalog = lessonData.createLessonCatalog(createCatalogInput());
+    assert.throws(
+      () =>
+        lessonData.prepareLesson(
+          { scenes: [{ steps: [{ speaker: "user", dialogue: "" }] }] },
+          catalog,
+          "empty.json",
+        ),
+      /empty\.json must contain at least one playable dialogue step/i,
+    );
+  });
+
   it("rejects missing runtime content with its source path", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const cases = [

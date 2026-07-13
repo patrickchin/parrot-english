@@ -19,7 +19,7 @@ const creatorModule = await vite
 const scriptModule = await vite
   .ssrLoadModule("/src/lesson-creator-script.ts")
   .catch(() => ({}));
-const { LessonCreator } = creatorModule;
+const { LessonCreator, LessonWarnings } = creatorModule;
 const { formatLessonScript, parseLessonScript } = scriptModule;
 
 after(async () => vite.close());
@@ -95,7 +95,7 @@ test("the upload query selects an editable clipboard-paste panel", () => {
 });
 
 describe("uploaded lesson parsing", () => {
-  it("accepts the same strict JSON contract as built-in lessons", () => {
+  it("accepts a complete lesson without warnings", () => {
     assert.equal(
       typeof parseLessonScript,
       "function",
@@ -154,9 +154,10 @@ describe("uploaded lesson parsing", () => {
       })),
     });
 
-    const lesson = parseLessonScript(source, "garden-help.json");
-    assert.equal(lesson.title, "Garden Help");
-    assert.equal(lesson.scenes.length, 5);
+    const draft = parseLessonScript(source, "garden-help.json");
+    assert.equal(draft.lesson.title, "Garden Help");
+    assert.equal(draft.lesson.scenes.length, 5);
+    assert.deepEqual(draft.warnings, []);
   });
 
   it("reports malformed JSON without accepting a partial script", () => {
@@ -173,7 +174,10 @@ describe("uploaded lesson parsing", () => {
     const formatted = formatLessonScript(sourceLesson);
 
     assert.match(formatted, /^\{\n {2}"title": "Garden Help",/);
-    assert.deepEqual(parseLessonScript(formatted, "edited script"), sourceLesson);
+    assert.deepEqual(parseLessonScript(formatted, "edited script"), {
+      lesson: sourceLesson,
+      warnings: [],
+    });
   });
 
   it("rejects pasted scripts larger than the editor limit", () => {
@@ -184,4 +188,22 @@ describe("uploaded lesson parsing", () => {
       /smaller than 256 KB/i,
     );
   });
+});
+
+test("draft warnings are visible without blocking save", () => {
+  assert.equal(typeof LessonWarnings, "function", "Expected LessonWarnings");
+  const html = renderToStaticMarkup(
+    createElement(LessonWarnings, {
+      warnings: [
+        "Missing title; using Untitled lesson.",
+        "Unknown background; using episode-garden.",
+      ],
+    }),
+  );
+
+  assert.match(html, /role="status"/);
+  assert.match(html, /Draft warnings/);
+  assert.match(html, /Missing title/);
+  assert.match(html, /Unknown background/);
+  assert.doesNotMatch(html, /disabled/);
 });

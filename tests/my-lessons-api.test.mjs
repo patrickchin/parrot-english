@@ -23,11 +23,12 @@ function jsonFetch(payload, status = 200) {
 describe("My Lessons browser API", () => {
   it("generates a preview and saves it through same-origin JSON requests", async () => {
     const lesson = createLessonScript();
-    const generation = jsonFetch({ lesson });
-    assert.equal(
-      (await generateMyLesson("ordering ice cream", { fetch: generation.fetch })).title,
-      "Garden Help",
-    );
+    const generation = jsonFetch({ lesson, warnings: ["Draft warning"] });
+    const draft = await generateMyLesson("ordering ice cream", {
+      fetch: generation.fetch,
+    });
+    assert.equal(draft.lesson.title, "Garden Help");
+    assert.deepEqual(draft.warnings, ["Draft warning"]);
     assert.equal(generation.calls[0][0], "/api/lessons/my/generate");
     assert.deepEqual(generation.calls[0][1], {
       method: "POST",

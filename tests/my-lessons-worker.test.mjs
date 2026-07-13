@@ -72,22 +72,43 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
-  it("rejects scripts outside the strict lesson contract", async () => {
+  it("normalizes recoverable uploaded script problems and returns warnings", async () => {
     const state = seedDatabase();
     try {
-      const lesson = createLessonScript();
-      lesson.scenes[0].background = "unknown-background";
       const response = await call(state, "/api/lessons/my", "POST", {
         source: "uploaded",
-        lesson,
+        lesson: {
+          scenes: [
+            {
+              background: "unknown-background",
+              steps: [{ speaker: "mystery", dialogue: "Hello!" }],
+            },
+          ],
+        },
+      });
+
+      assert.equal(response.status, 201);
+      const payload = await response.json();
+      assert.equal(payload.lesson.lesson.title, "Untitled lesson");
+      assert.equal(payload.lesson.lesson.scenes[0].background, "episode-garden");
+      assert.equal(payload.lesson.lesson.scenes[0].steps[0].speaker, "narrator");
+      assert.ok(payload.warnings.some((warning) => /background/i.test(warning)));
+      assert.ok(payload.warnings.some((warning) => /speaker/i.test(warning)));
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects uploaded scripts with no playable dialogue", async () => {
+    const state = seedDatabase();
+    try {
+      const response = await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: { scenes: [{ steps: [] }] },
       });
 
       assert.equal(response.status, 400);
-      assert.deepEqual(await response.json(), {
-        error: "invalid_lesson",
-        message:
-          "lesson scenes[0].background is not in the background catalog",
-      });
+      assert.equal((await response.json()).error, "invalid_lesson");
     } finally {
       state.close();
     }
@@ -136,13 +157,18 @@ describe("My Lessons persistence and API", () => {
         {
           generateLesson(input) {
             calls.push(input);
-            return Promise.resolve(createLessonScript({ childName: input.childName }));
+            return Promise.resolve({
+              lesson: createLessonScript({ childName: input.childName }),
+              warnings: ["Generated warning"],
+            });
           },
         },
       );
 
       assert.equal(response.status, 200);
-      assert.equal((await response.json()).lesson.childName, "Mia");
+      const payload = await response.json();
+      assert.equal(payload.lesson.childName, "Mia");
+      assert.deepEqual(payload.warnings, ["Generated warning"]);
       assert.equal(calls[0].topic, "buying a train ticket");
       assert.equal(calls[0].childName, "Mia");
       assert.equal(
