@@ -41,19 +41,24 @@ for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await page.goto(lessonPath);
 
-    const hud = page.getByRole("banner", { name: "Lesson progress" });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
     const title = page.getByText("The Ball Up High", { exact: true });
     const sceneProgress = page.getByLabel("Scene progress");
+    const speech = page.getByRole("status").filter({
+      hasText: "Look! My ball!",
+    });
     const start = page.getByRole("button", { name: "Start lesson" });
     const controls = page.getByRole("navigation", { name: "Lesson controls" });
 
     const hudBox = await expectInsideViewport(hud, viewport);
     await expectInsideViewport(title, viewport);
     await expectInsideViewport(sceneProgress, viewport);
+    const speechBox = await expectInsideViewport(speech, viewport);
     const startBox = await expectInsideViewport(start, viewport);
     await expectInsideViewport(controls, viewport);
 
-    expect(hudBox.y + hudBox.height).toBeLessThan(startBox.y);
+    expect(hudBox.y + hudBox.height).toBeLessThanOrEqual(speechBox.y);
+    expect(speechBox.y + speechBox.height).toBeLessThanOrEqual(startBox.y);
     await expect.poll(() => hasHorizontalOverflow(page)).toBe(false);
   });
 }
