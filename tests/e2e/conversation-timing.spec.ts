@@ -55,6 +55,7 @@ for (const viewport of viewports) {
     page,
   }) => {
     await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/talk-to-peppa");
 
     await page.getByRole("button", { name: "Start my turn" }).click();
