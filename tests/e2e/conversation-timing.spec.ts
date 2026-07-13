@@ -52,7 +52,7 @@ for (const viewport of viewports) {
     );
 
     await timer.evaluate((element) => {
-      element.hidden = true;
+      (element as HTMLElement).hidden = true;
     });
     const after = await Promise.all([box(peppa), box(status), box(finish)]);
 
