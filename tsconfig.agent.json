@@ -8,5 +8,9 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["agent/**/*.ts", "lib/conversation-scenario.js"]
+  "include": [
+    "agent/**/*.ts",
+    "lib/conversation-audio.js",
+    "lib/conversation-scenario.js"
+  ]
 }

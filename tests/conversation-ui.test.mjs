@@ -173,11 +173,11 @@ describe("accessible realtime conversation surface", () => {
       ],
     });
     assert.match(listening, /role="group"/);
-    assert.match(listening, /aria-label="Peppa's message"/);
-    assert.match(listening, /aria-label="Repeat Peppa's audio"/);
+    assert.match(listening, /aria-label="Peppa(?:'|&#x27;)s message"/);
+    assert.match(listening, /aria-label="Repeat Peppa(?:'|&#x27;)s audio"/);
     assert.doesNotMatch(
       listening,
-      /aria-label="Repeat Peppa's audio"[^>]*disabled/,
+      /aria-label="Repeat Peppa(?:'|&#x27;)s audio"[^>]*disabled/,
     );
 
     const speaking = render({
@@ -189,7 +189,7 @@ describe("accessible realtime conversation surface", () => {
     });
     assert.match(
       speaking,
-      /aria-label="Repeat Peppa's audio"[^>]*disabled/,
+      /aria-label="Repeat Peppa(?:'|&#x27;)s audio"[^>]*disabled/,
     );
   });
 
