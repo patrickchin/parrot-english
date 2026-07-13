@@ -22,28 +22,28 @@ import {
   useNavigate,
   useParams,
 } from "react-router";
-import { getLessonAudioLine } from "../lib/lesson-audio";
-import { getLessonProgressLabel } from "../lib/lesson-progress";
+import { getLessonAudioLine } from "../../lib/lesson-audio";
+import { getLessonProgressLabel } from "../../lib/lesson-progress";
 import {
   createLessonRouteActivityGuard,
   createLessonRouteExitRegistry,
   exitLessonRouteActivity,
   invalidateLessonRouteActivity,
-} from "../lib/lesson-route-activity";
+} from "../../lib/lesson-route-activity";
 import {
   consumeLessonHistoryPopToken,
   createLessonHistoryPopToken,
   getLessonEventTargetSceneIndex,
   getLessonRouteReconciliationEvent,
-} from "../lib/lesson-route-transition";
-import { getLessonScenePresentation } from "../lib/lesson-scene";
+} from "../../lib/lesson-route-transition";
+import { getLessonScenePresentation } from "../../lib/lesson-scene";
 import {
   LessonPhase,
   createInitialLessonState,
   getCurrentStep,
   reduceLessonState,
-} from "../lib/lesson-state";
-import { isAbortError, playAudioLine } from "./audio-playback";
+} from "../../lib/lesson-state";
+import { isAbortError, playAudioLine } from "../media/audio-playback";
 import {
   getGateRouteKind,
   getLessonScenePath,
@@ -59,14 +59,14 @@ import {
   type LessonRouteDecision,
   type LessonSource,
 } from "./app-routes";
-import { AuthGate } from "./AuthGate";
+import { AuthGate } from "../auth/AuthGate";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
-import { LearnerProfileGate } from "./LearnerProfileGate";
-import { evaluateSpeech } from "./evaluation-request";
-import { VISUAL_CATALOG, type Lesson } from "./lesson-catalog";
-import { LessonList } from "./LessonList";
+import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
+import { evaluateSpeech } from "../lessons/evaluation-request";
+import { VISUAL_CATALOG, type Lesson } from "../lessons/lesson-catalog";
+import { LessonList } from "../lessons/LessonList";
 import {
   LessonCharacters,
   LessonControls,
@@ -75,15 +75,15 @@ import {
   LessonSpeech,
   LessonStage,
   LessonStartAction,
-} from "./LessonPlayerUi";
+} from "../lessons/LessonPlayerUi";
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
   startSpeechRecording,
   type SpeechRecordingSession,
-} from "./speech-recorder";
-import { createPlaybackOperation } from "./playback-operation";
-import { finishSpeechOperation } from "./speech-operation";
+} from "../media/speech-recorder";
+import { createPlaybackOperation } from "../lessons/playback-operation";
+import { finishSpeechOperation } from "../lessons/speech-operation";
 
 const RECORDING_UNSUPPORTED_MESSAGE =
   "This browser does not support audio recording. Try the latest Chrome or Safari.";

@@ -1,12 +1,12 @@
 import { ArrowLeft, BookOpen, Play, Plus } from "lucide-react";
-import { getLessonScenePath } from "./app-routes";
-import { HeaderLink, RouteHeader } from "./AppHeader";
+import { getLessonScenePath } from "../app/app-routes";
+import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   LESSONS,
   VISUAL_CATALOG,
   type LessonCatalogEntry,
 } from "./lesson-catalog";
-import { ActionLink } from "./ui";
+import { ActionLink } from "../shared/ui";
 
 type LessonCard = {
   id: string;

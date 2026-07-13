@@ -5,7 +5,7 @@ import {
   fieldClassName,
   IconButton,
   TextButton,
-} from "./ui";
+} from "../shared/ui";
 
 type ProfileEditorViewProps = {
   drafts: Record<string, string>;

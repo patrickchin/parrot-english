@@ -11,8 +11,8 @@ function readSource(path) {
   return existsSync(url) ? readFileSync(url, "utf8") : "";
 }
 
-const authClient = readSource("../src/auth-client.ts");
-const app = readSource("../src/App.tsx");
+const authClient = readSource("../src/auth/auth-client.ts");
+const app = readSource("../src/app/App.tsx");
 
 const vite = await createServer({
   appType: "custom",
@@ -20,7 +20,7 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const authGateModule = await vite.ssrLoadModule("/src/AuthGate.tsx");
+const authGateModule = await vite.ssrLoadModule("/src/auth/AuthGate.tsx");
 const {
   AuthGateView,
   createAuthGate,
@@ -578,10 +578,10 @@ test("sign-out maps failures without refetching and refetches success", async ()
 });
 
 test("App composes AuthGate, route-aware onboarding, and authenticated routes", () => {
-  assert.match(app, /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\/AuthGate["']/);
+  assert.match(app, /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\.\/auth\/AuthGate["']/);
   assert.match(
     app,
-    /import\s+\{\s*LearnerProfileGate\s*\}\s+from\s+["']\.\/LearnerProfileGate["']/,
+    /import\s+\{\s*LearnerProfileGate\s*\}\s+from\s+["']\.\.\/learner-profile\/LearnerProfileGate["']/,
   );
   assert.match(app, /export function ApplicationRoutes\(/);
   assert.match(

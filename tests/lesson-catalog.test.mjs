@@ -15,13 +15,13 @@ function readJson(path) {
 
 describe("lesson catalog", () => {
   it("discovers lesson JSON modules eagerly with Vite", () => {
-    const sourceUrl = new URL("src/lesson-catalog.ts", projectUrl);
-    assert.equal(existsSync(sourceUrl), true, "src/lesson-catalog.ts must exist");
+    const sourceUrl = new URL("src/lessons/lesson-catalog.ts", projectUrl);
+    assert.equal(existsSync(sourceUrl), true, "src/lessons/lesson-catalog.ts must exist");
 
     const source = readFileSync(sourceUrl, "utf8");
     assert.match(
       source,
-      /import\.meta\.glob\("\.\.\/content\/lessons\/\*\.json",\s*\{\s*eager:\s*true,\s*import:\s*"default",?\s*\}\)/s
+      /import\.meta\.glob\("\.\.\/\.\.\/content\/lessons\/\*\.json",\s*\{\s*eager:\s*true,\s*import:\s*"default",?\s*\}\)/s
     );
     assert.match(source, /localeCompare/);
     assert.match(source, /validateLesson/);

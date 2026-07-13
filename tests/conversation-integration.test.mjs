@@ -12,12 +12,12 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const { LearnerProfileGateView } = await vite.ssrLoadModule(
-  "/src/LearnerProfileGate.tsx",
+  "/src/learner-profile/LearnerProfileGate.tsx",
 );
 const {
   mergeConversationTurns,
   selectLearnerProfileExperience,
-} = await vite.ssrLoadModule("/src/usePeppaConversation.ts");
+} = await vite.ssrLoadModule("/src/conversation/usePeppaConversation.ts");
 
 after(async () => {
   await vite.close();

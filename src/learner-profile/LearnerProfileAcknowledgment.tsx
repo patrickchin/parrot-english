@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { LearnerProfileAcknowledgment as Acknowledgment } from "./learner-profile-api";
 import { LearnerProfileCard } from "./LearnerProfileLayout";
-import { ActionButton } from "./ui";
+import { ActionButton } from "../shared/ui";
 
 type AudioLike = {
   addEventListener: (event: "ended" | "error", listener: () => void) => void;

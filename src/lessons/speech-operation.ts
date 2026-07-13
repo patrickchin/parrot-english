@@ -1,5 +1,5 @@
 import type { EvaluationResult } from "./evaluation-request";
-import type { SpeechRecordingSession } from "./speech-recorder";
+import type { SpeechRecordingSession } from "../media/speech-recorder";
 
 type MutableRef<T> = {
   current: T;

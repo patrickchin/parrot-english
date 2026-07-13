@@ -15,9 +15,9 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-const { ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx");
-const { LESSONS } = await vite.ssrLoadModule("/src/lesson-catalog.ts");
-const { LessonList } = await vite.ssrLoadModule("/src/LessonList.tsx");
+const { ApplicationRoutes } = await vite.ssrLoadModule("/src/app/App.tsx");
+const { LESSONS } = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
+const { LessonList } = await vite.ssrLoadModule("/src/lessons/LessonList.tsx");
 
 test.after(async () => {
   await vite.close();

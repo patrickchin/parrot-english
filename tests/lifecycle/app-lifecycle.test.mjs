@@ -47,15 +47,15 @@ let firstLessonId;
 
 before(async () => {
   ({ ConversationSurface } = await vite.ssrLoadModule(
-    "/src/ConversationSurface.tsx",
+    "/src/conversation/ConversationSurface.tsx",
   ));
-  ({ createAuthGate } = await vite.ssrLoadModule("/src/AuthGate.tsx"));
-  ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/LearnerProfileGate.tsx"));
+  ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
+  ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx"));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
-    "/src/usePeppaConversation.ts",
+    "/src/conversation/usePeppaConversation.ts",
   ));
-  ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/App.tsx"));
-  const catalog = await vite.ssrLoadModule("/src/lesson-catalog.ts");
+  ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/app/App.tsx"));
+  const catalog = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
   firstLessonId = catalog.LESSONS[0].id;
 });

@@ -5,7 +5,7 @@ import {
   createInitialLessonState,
   reduceLessonState,
 } from "../lib/lesson-state.js";
-import { finishSpeechOperation } from "../src/speech-operation.ts";
+import { finishSpeechOperation } from "../src/lessons/speech-operation.ts";
 
 function createDeferred() {
   let resolve;

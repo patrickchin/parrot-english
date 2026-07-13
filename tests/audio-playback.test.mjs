@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { playAudioLine, playAudioSequence } from "../src/audio-playback.ts";
+import { playAudioLine, playAudioSequence } from "../src/media/audio-playback.ts";
 
 describe("audio playback", () => {
   it("plays saved audio assets directly", async () => {

@@ -2,7 +2,7 @@ import { Room, RoomEvent } from "livekit-client";
 import {
   COMMIT_USER_TURN_COMMAND,
   REPEAT_LAST_AUDIO_COMMAND,
-} from "../lib/conversation-audio.js";
+} from "../../lib/conversation-audio.js";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
   activeSpeakers: RoomEvent.ActiveSpeakersChanged,

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { describe, it } from "node:test";
 
 function readProjectFile(path) {
@@ -7,9 +7,42 @@ function readProjectFile(path) {
 }
 
 describe("architecture cleanup contracts", () => {
+  it("groups browser source by responsibility", () => {
+    const expectedModules = [
+      "src/app/App.tsx",
+      "src/auth/AuthGate.tsx",
+      "src/conversation/ConversationSurface.tsx",
+      "src/db/schema.ts",
+      "src/learner-profile/LearnerProfileGate.tsx",
+      "src/lessons/LessonPlayerUi.tsx",
+      "src/media/audio-playback.ts",
+      "src/shared/ui.tsx",
+      "src/testing/e2e-browser-mocks.ts",
+    ];
+
+    for (const path of expectedModules) {
+      assert.equal(existsSync(new URL(`../${path}`, import.meta.url)), true, path);
+    }
+
+    const rootSourceFiles = readdirSync(
+      new URL("../src", import.meta.url),
+      { withFileTypes: true },
+    )
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort();
+
+    assert.deepEqual(rootSourceFiles, [
+      "lesson.css",
+      "main.tsx",
+      "styles.css",
+      "vite-env.d.ts",
+    ]);
+  });
+
   it("uses the discovered lesson catalog and current scene data", () => {
-    const app = readProjectFile("src/App.tsx");
-    const lessonList = readProjectFile("src/LessonList.tsx");
+    const app = readProjectFile("src/app/App.tsx");
+    const lessonList = readProjectFile("src/lessons/LessonList.tsx");
 
     assert.match(lessonList, /LESSONS/);
     assert.match(app, /VISUAL_CATALOG/);
@@ -18,8 +51,8 @@ describe("architecture cleanup contracts", () => {
   });
 
   it("renders generic story characters with scene controls", () => {
-    const app = readProjectFile("src/App.tsx");
-    const playerUi = readProjectFile("src/LessonPlayerUi.tsx");
+    const app = readProjectFile("src/app/App.tsx");
+    const playerUi = readProjectFile("src/lessons/LessonPlayerUi.tsx");
 
     assert.match(app, /<LessonList/);
     assert.match(app, /Back to lessons/);
@@ -32,7 +65,7 @@ describe("architecture cleanup contracts", () => {
 
   it("keeps the active lesson experience English-only", () => {
     const runtimeFiles = [
-      "src/App.tsx",
+      "src/app/App.tsx",
       "lib/lesson-audio.js",
       "lib/lesson-progress.js",
       "lib/lesson-scene.js",
@@ -47,11 +80,11 @@ describe("architecture cleanup contracts", () => {
   });
 
   it("keeps browser lesson playback asset-only", () => {
-    const app = readProjectFile("src/App.tsx");
+    const app = readProjectFile("src/app/App.tsx");
     const lessonAudio = readProjectFile("lib/lesson-audio.js");
     const playbackPath = new URL("../src/tts-playback.ts", import.meta.url);
 
-    assert.match(app, /from "\.\/audio-playback"/);
+    assert.match(app, /from "\.\.\/media\/audio-playback"/);
     assert.doesNotMatch(app, /tts-playback|TTS|previousAudioUrl|revokeObjectURL/);
     assert.doesNotMatch(lessonAudio, /\bengine\b|\bslow\b|character[:,]/);
     assert.equal(existsSync(playbackPath), false);

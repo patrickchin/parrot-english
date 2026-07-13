@@ -3,8 +3,8 @@
 ## Frontend UI
 
 - Use Tailwind 4 utilities directly in React components, with shared controls
-  from `src/ui.tsx` and shared headers from `src/AppHeader.tsx`. Avoid large JS
-  class constants and page-specific copies of global controls.
+  from `src/shared/ui.tsx` and shared headers from `src/app/AppHeader.tsx`.
+  Avoid large JS class constants and page-specific copies of global controls.
 - Keep `src/styles.css` limited to Tailwind configuration, global browser
   behavior, and named background utilities. Keep `src/lesson.css` limited to
   runtime character-slot positioning, the speech-tail polygon, and the
@@ -12,7 +12,7 @@
 - `AuthGate` owns the account header through `AccountHeader`. Routes compose
   `RouteHeader` with `HeaderButton` or `HeaderLink`; they must not redefine
   header sizing, typography, colors, or shadows.
-- Build lesson-player presentation from `src/LessonPlayerUi.tsx`; its HUD,
+- Build lesson-player presentation from `src/lessons/LessonPlayerUi.tsx`; its HUD,
   characters, speech, start action, controls, and errors are domain components
   that use Tailwind and the shared control primitives.
 

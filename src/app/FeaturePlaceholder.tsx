@@ -1,4 +1,4 @@
-import { ActionLink } from "./ui";
+import { ActionLink } from "../shared/ui";
 
 export function FeaturePlaceholder({
   description,

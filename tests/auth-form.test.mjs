@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   getAuthErrorMessage,
   validateAuthForm,
-} from "../src/auth-form.ts";
+} from "../src/auth/auth-form.ts";
 
 const validFields = {
   name: "小明",

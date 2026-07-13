@@ -1,4 +1,4 @@
-import type { ConversationPurpose } from "../lib/conversation-purpose";
+import type { ConversationPurpose } from "../../lib/conversation-purpose";
 
 export type ConversationTurn = {
   id: string;

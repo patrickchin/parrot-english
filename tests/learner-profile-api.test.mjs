@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import * as learnerProfileApi from "../src/learner-profile-api.ts";
+import * as learnerProfileApi from "../src/learner-profile/learner-profile-api.ts";
 import {
   LearnerProfileApiError,
   completeLearnerProfile,
@@ -10,7 +10,7 @@ import {
   saveProfileAnswer,
   skipLearnerProfile,
   transcribeLearnerProfileAudio,
-} from "../src/learner-profile-api.ts";
+} from "../src/learner-profile/learner-profile-api.ts";
 
 function jsonFetch(payload = { ok: true }, status = 200) {
   const calls = [];

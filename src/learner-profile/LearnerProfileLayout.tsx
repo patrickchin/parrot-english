@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { cx } from "./ui";
+import { cx } from "../shared/ui";
 
 export function LearnerProfileScreen({
   children,

@@ -7,10 +7,10 @@ import {
   Volume2,
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
-import { HeaderButton, RouteHeader } from "./AppHeader";
+import { HeaderButton, RouteHeader } from "../app/AppHeader";
 import { formatResponseLatency } from "./response-latency";
-import type { ConversationPurpose } from "../lib/conversation-purpose";
-import { ActionButton, cx, IconButton } from "./ui";
+import type { ConversationPurpose } from "../../lib/conversation-purpose";
+import { ActionButton, cx, IconButton } from "../shared/ui";
 
 export type ConversationSurfaceStatus =
   | "ready"

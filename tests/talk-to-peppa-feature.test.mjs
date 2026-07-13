@@ -8,9 +8,9 @@ const source = (path) => {
 };
 
 test("Talk to Peppa is a durable main-menu feature route", () => {
-  const home = source("../src/HomeMenu.tsx");
-  const app = source("../src/App.tsx");
-  const routes = source("../src/app-routes.ts");
+  const home = source("../src/app/HomeMenu.tsx");
+  const app = source("../src/app/App.tsx");
+  const routes = source("../src/app/app-routes.ts");
 
   assert.match(home, /MessageCircle/);
   assert.match(home, /label:\s*["']Talk to Peppa["']/);
@@ -22,7 +22,7 @@ test("Talk to Peppa is a durable main-menu feature route", () => {
 });
 
 test("the learner gate gives completed learners a reusable conversation route", () => {
-  const gate = source("../src/LearnerProfileGate.tsx");
+  const gate = source("../src/learner-profile/LearnerProfileGate.tsx");
 
   assert.match(gate, /isConversationRoute:\s*boolean/);
   assert.match(
@@ -36,8 +36,8 @@ test("the learner gate gives completed learners a reusable conversation route", 
   );
 });
 test("ending a learner turn immediately exposes Peppa's response-loading state", () => {
-  const controller = source("../src/usePeppaConversation.ts");
-  const surface = source("../src/ConversationSurface.tsx");
+  const controller = source("../src/conversation/usePeppaConversation.ts");
+  const surface = source("../src/conversation/ConversationSurface.tsx");
 
   assert.match(controller, /setStatus\(["']thinking["']\)/);
   assert.match(surface, /status === ["']thinking["']/);

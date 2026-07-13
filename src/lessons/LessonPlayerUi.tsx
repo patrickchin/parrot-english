@@ -5,7 +5,7 @@ import {
   type PointerEventHandler,
   type ReactNode,
 } from "react";
-import { ActionButton, cx } from "./ui";
+import { ActionButton, cx } from "../shared/ui";
 
 type LessonBackgroundAsset = {
   alt: string;

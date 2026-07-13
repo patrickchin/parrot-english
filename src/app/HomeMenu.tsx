@@ -1,6 +1,6 @@
 import { BookOpen, MessageCircle, Play, Plus, Sparkles } from "lucide-react";
 import { Link } from "react-router";
-import { cx } from "./ui";
+import { cx } from "../shared/ui";
 
 const ACTIVITIES = [
   {

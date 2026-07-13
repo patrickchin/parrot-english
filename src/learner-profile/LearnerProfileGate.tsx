@@ -8,8 +8,8 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react";
-import { useProfileAccountAction } from "./account-actions";
-import { selectConversationPurpose } from "../lib/conversation-purpose";
+import { useProfileAccountAction } from "../auth/account-actions";
+import { selectConversationPurpose } from "../../lib/conversation-purpose";
 import {
   loadLearnerProfile,
   loadProfile,
@@ -39,13 +39,13 @@ import {
   replayLearnerProfileQuestion,
 } from "./LearnerProfileQuestion";
 import { ProfileEditorView } from "./ProfileEditor";
-import { recordSpeechClip } from "./speech-recorder";
-import { ConversationSurface } from "./ConversationSurface";
+import { recordSpeechClip } from "../media/speech-recorder";
+import { ConversationSurface } from "../conversation/ConversationSurface";
 import {
   selectLearnerProfileExperience,
   usePeppaConversation,
-} from "./usePeppaConversation";
-import { ActionButton, TextButton } from "./ui";
+} from "../conversation/usePeppaConversation";
+import { ActionButton, TextButton } from "../shared/ui";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;

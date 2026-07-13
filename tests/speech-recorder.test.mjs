@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import * as speechRecorder from "../src/speech-recorder.ts";
+import * as speechRecorder from "../src/media/speech-recorder.ts";
 
 const startSpeechRecording =
   speechRecorder.startSpeechRecording ??
