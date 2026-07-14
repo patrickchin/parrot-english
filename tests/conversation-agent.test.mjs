@@ -34,6 +34,7 @@ function environment(overrides = {}) {
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
+    OPENAI_API_KEY: "openai-key",
     ...overrides,
   };
 }
@@ -45,10 +46,10 @@ describe("LiveKit agent configuration", () => {
     assert.equal(config.livekitUrl, "wss://livekit.example.test");
     assert.equal(config.ingestSecret, "agent-secret");
     assert.equal(config.agentName, "parrot-conversation");
-    assert.equal(config.sttModel, "elevenlabs/scribe_v2_realtime");
-    assert.equal(config.llmModel, "openai/gpt-4.1-mini");
-    assert.equal(config.ttsModel, "inworld/inworld-tts-2");
-    assert.equal(config.ttsVoiceId, "Olivia");
+    assert.equal(config.openaiApiKey, "openai-key");
+    assert.equal(config.realtimeModel, "gpt-realtime-2.1-mini");
+    assert.equal(config.realtimeVoice, "marin");
+    assert.equal(config.transcriptionModel, "gpt-4o-mini-transcribe");
     assert.equal(config.buildVersion, "local");
     assert.equal(config.commitSha, "local");
     assert.deepEqual(
@@ -87,21 +88,20 @@ describe("LiveKit agent configuration", () => {
     assert.equal(config.commitSha, "abcdef1");
   });
 
-  it("constructs the configured inference models and validates participant metadata", () => {
+  it("constructs one low-latency realtime voice model and validates participant metadata", () => {
     const config = readAgentConfig(environment());
     const models = createAgentModels(config);
 
-    assert.equal(models.stt.model, config.sttModel);
-    assert.equal(models.stt.opts.language, "en");
-    assert.equal(models.llm.model, config.llmModel);
-    assert.equal(models.tts.model, config.ttsModel);
-    assert.deepEqual(models.tts.opts.fallback, [
-      {
-        extraKwargs: { emotion: "excited", speed: 1.05 },
-        model: "cartesia/sonic-3",
-        voice: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
-      },
-    ]);
+    assert.deepEqual(Object.keys(models), ["realtime"]);
+    assert.equal(models.realtime.model, config.realtimeModel);
+    assert.equal(models.realtime._options.apiKey, config.openaiApiKey);
+    assert.equal(models.realtime._options.voice, config.realtimeVoice);
+    assert.deepEqual(models.realtime._options.reasoning, { effort: "low" });
+    assert.deepEqual(models.realtime._options.inputAudioTranscription, {
+      language: "en",
+      model: config.transcriptionModel,
+    });
+    assert.equal(models.realtime._options.turnDetection, null);
     assert.deepEqual(
       parseConversationParticipantMetadata(
         JSON.stringify({
@@ -165,13 +165,11 @@ describe("LiveKit agent configuration", () => {
     };
 
     handleTextInput(session, { text: "__parrot_repeat_last_audio__" });
-    assert.deepEqual(calls, [
-      [
-        "say",
-        "What animals do you like?",
-        { addToChatCtx: false, allowInterruptions: true },
-      ],
-    ]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][0], "generateReply");
+    assert.equal(calls[0][1].allowInterruptions, true);
+    assert.match(calls[0][1].instructions, /repeat exactly/i);
+    assert.match(calls[0][1].instructions, /What animals do you like\?/);
 
     calls.length = 0;
     latestAssistantText = "";
@@ -199,20 +197,50 @@ describe("LiveKit agent configuration", () => {
       /LIVEKIT_API_SECRET/,
     );
     assert.throws(
-      () => readAgentConfig(environment({ AGENT_LLM_MODEL: "openai/chat-latest" })),
+      () =>
+        readAgentConfig(
+          environment({ AGENT_REALTIME_MODEL: "gpt-realtime-latest" }),
+        ),
       /explicit model version/,
     );
     assert.throws(
-      () => readAgentConfig(environment({ AGENT_STT_MODEL: "auto" })),
+      () => readAgentConfig(environment({ AGENT_TRANSCRIPTION_MODEL: "auto" })),
       /explicit model version/,
     );
   });
 
-  it("keeps realtime STT in English when a legacy language override remains", () => {
+  it("keeps asynchronous realtime transcripts in English when a legacy override remains", () => {
     const config = readAgentConfig(environment({ AGENT_STT_LANGUAGE: "zh" }));
     const models = createAgentModels(config);
 
-    assert.equal(models.stt.opts.language, "en");
+    assert.equal(
+      models.realtime._options.inputAudioTranscription.language,
+      "en",
+    );
+  });
+
+  it("generates and finishes the realtime goodbye before closing the session", async () => {
+    const calls = [];
+    const session = {
+      async close() {
+        calls.push(["close"]);
+      },
+      generateReply(options) {
+        calls.push(["generateReply", options]);
+        return {
+          async waitForPlayout() {
+            calls.push(["waitForPlayout"]);
+          },
+        };
+      },
+    };
+
+    await agentRuntime.playConversationGoodbyeAndClose(session);
+
+    assert.equal(calls[0][0], "generateReply");
+    assert.equal(calls[0][1].allowInterruptions, true);
+    assert.match(calls[0][1].instructions, /Thanks for chatting with me!/);
+    assert.deepEqual(calls.slice(1), [["waitForPlayout"], ["close"]]);
   });
 });
 
@@ -401,9 +429,8 @@ describe("conversation ingest client", () => {
         commitSha: "abc1234",
         details: {
           models: {
-            llm: "openai/gpt-4.1-mini",
-            stt: "elevenlabs/scribe_v2_realtime",
-            tts: "inworld/inworld-tts-2",
+            realtime: "gpt-realtime-2.1-mini",
+            transcription: "gpt-4o-mini-transcribe",
           },
         },
         version: "0.1.276",
@@ -429,9 +456,8 @@ describe("conversation ingest client", () => {
       commitSha: "abc1234",
       details: {
         models: {
-          llm: "openai/gpt-4.1-mini",
-          stt: "elevenlabs/scribe_v2_realtime",
-          tts: "inworld/inworld-tts-2",
+          realtime: "gpt-realtime-2.1-mini",
+          transcription: "gpt-4o-mini-transcribe",
         },
       },
       reportedAt: body.controllerState._buildInfo.agent.reportedAt,

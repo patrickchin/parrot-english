@@ -161,10 +161,10 @@ describe("conversation persistence infrastructure", () => {
     }
     for (const name of [
       "CONVERSATION_INGEST_URL",
-      "AGENT_STT_MODEL",
-      "AGENT_LLM_MODEL",
-      "AGENT_TTS_MODEL",
-      "AGENT_TTS_VOICE_ID",
+      "OPENAI_API_KEY",
+      "AGENT_REALTIME_MODEL",
+      "AGENT_REALTIME_VOICE",
+      "AGENT_TRANSCRIPTION_MODEL",
     ]) {
       assert.match(agentExample, new RegExp(`^${name}=`, "m"));
     }

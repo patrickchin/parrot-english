@@ -211,9 +211,8 @@ function parrotE2eMockApi(): Plugin {
                 component: "conversation-agent",
                 details: {
                   models: {
-                    llm: "openai/gpt-4.1-mini",
-                    stt: "elevenlabs/scribe_v2_realtime",
-                    tts: "inworld/inworld-tts-2",
+                    realtime: "gpt-realtime-2.1-mini",
+                    transcription: "gpt-4o-mini-transcribe",
                   },
                 },
                 reportedAt: "2026-07-14T01:04:05.000Z",

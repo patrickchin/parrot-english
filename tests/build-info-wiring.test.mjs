@@ -55,6 +55,8 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(about, /About Parrot English/);
   assert.match(about, /\/api\/build-info/);
   assert.match(about, /Lesson script LLM/);
+  assert.match(about, /Realtime voice model/);
+  assert.match(about, /Input transcription/);
   assert.match(worker, /\/api\/build-info/);
   assert.match(buildInfo, /LESSON_GENERATOR_MODEL/);
   assert.match(lessonGenerator, /LESSON_GENERATOR_MODEL/);

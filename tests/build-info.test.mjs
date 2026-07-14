@@ -31,7 +31,7 @@ describe("deployment build information", () => {
         (id, auth_user_id, scenario_key, scenario_version, room_name, status, controller_state)
        VALUES
         ('conversation-1', 'user-1', 'small-chat', 1, 'room-1', 'active',
-         '{"_buildInfo":{"agent":{"commitSha":"agent12","details":{"models":{"llm":"openai/gpt-4.1-mini","stt":"elevenlabs/scribe_v2_realtime","tts":"inworld/inworld-tts-2"}},"reportedAt":"2026-07-14T01:04:05.000Z","version":"0.1.275"}}}')`,
+         '{"_buildInfo":{"agent":{"commitSha":"agent12","details":{"models":{"realtime":"gpt-realtime-2.1-mini","transcription":"gpt-4o-mini-transcribe"}},"reportedAt":"2026-07-14T01:04:05.000Z","version":"0.1.275"}}}')`,
     );
     const worker = createWorker();
 
@@ -59,9 +59,8 @@ describe("deployment build information", () => {
           component: "conversation-agent",
           details: {
             models: {
-              llm: "openai/gpt-4.1-mini",
-              stt: "elevenlabs/scribe_v2_realtime",
-              tts: "inworld/inworld-tts-2",
+              realtime: "gpt-realtime-2.1-mini",
+              transcription: "gpt-4o-mini-transcribe",
             },
           },
           reportedAt: "2026-07-14T01:04:05.000Z",
