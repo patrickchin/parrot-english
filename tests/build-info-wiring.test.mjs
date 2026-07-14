@@ -15,6 +15,14 @@ test("the account About panel is wired to deployed component metadata", () => {
     new URL("../worker/index.ts", import.meta.url),
     "utf8",
   );
+  const buildInfo = readFileSync(
+    new URL("../worker/build-info.ts", import.meta.url),
+    "utf8",
+  );
+  const lessonGenerator = readFileSync(
+    new URL("../worker/lesson-generator.ts", import.meta.url),
+    "utf8",
+  );
   const agent = readFileSync(
     new URL("../agent/index.ts", import.meta.url),
     "utf8",
@@ -46,7 +54,10 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(header, />\s*About\s*</s);
   assert.match(about, /About Parrot English/);
   assert.match(about, /\/api\/build-info/);
+  assert.match(about, /Lesson script LLM/);
   assert.match(worker, /\/api\/build-info/);
+  assert.match(buildInfo, /LESSON_GENERATOR_MODEL/);
+  assert.match(lessonGenerator, /LESSON_GENERATOR_MODEL/);
   assert.match(agent, /reportBuild/);
   assert.match(agent, /await ingest\.reportBuild/);
   assert.equal(manifest.scripts["deploy:worker"], "node scripts/deploy-cloudflare-worker.mjs");

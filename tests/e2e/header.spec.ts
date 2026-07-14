@@ -146,6 +146,8 @@ test("About shows independently deployed component versions", async ({ page }) =
   await expect(about.getByText("e2e-api", { exact: true })).toBeVisible();
   await expect(about.getByText("e2e-agent", { exact: true })).toBeVisible();
   await expect(about.getByText("Worker deployment e2e-deployment")).toBeVisible();
+  await expect(about.getByText("Lesson script LLM")).toBeVisible();
+  await expect(about.getByText("openai/gpt-oss-20b")).toBeVisible();
   await expect(about.getByText("openai/gpt-4.1-mini")).toBeVisible();
 
   await page.getByRole("button", { name: "Close About" }).click();
