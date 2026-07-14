@@ -18,6 +18,7 @@
   "scripts": {
     "dev": "npm run build && wrangler dev --local --port 3000",
     "dev:vite": "vite --host 0.0.0.0",
+    "prebuild": "node scripts/prepare-workers-ci-metadata.mjs",
     "build": "tsc --noEmit && vite build",
     "build:agent": "tsc -p tsconfig.agent.json",
     "db:generate": "drizzle-kit generate",
