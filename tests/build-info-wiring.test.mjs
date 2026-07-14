@@ -38,6 +38,10 @@ test("the account About panel is wired to deployed component metadata", () => {
     new URL("../scripts/deploy-cloudflare-worker.mjs", import.meta.url),
     "utf8",
   );
+  const workersCiPrepare = readFileSync(
+    new URL("../scripts/prepare-workers-ci-metadata.mjs", import.meta.url),
+    "utf8",
+  );
 
   assert.match(header, />\s*About\s*</s);
   assert.match(about, /About Parrot English/);
@@ -46,9 +50,11 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(agent, /reportBuild/);
   assert.match(agent, /await ingest\.reportBuild/);
   assert.equal(manifest.scripts["deploy:worker"], "node scripts/deploy-cloudflare-worker.mjs");
+  assert.equal(manifest.scripts.prebuild, "node scripts/prepare-workers-ci-metadata.mjs");
   assert.match(workflow, /npm run deploy:worker/);
   assert.match(workerDeploy, /PARROT_BACKEND_VERSION/);
   assert.match(workerDeploy, /PARROT_BACKEND_COMMIT_SHA/);
+  assert.match(workersCiPrepare, /WORKERS_CI/);
   assert.match(workerDeploy, /"REALTIME_CONVERSATIONS_ENABLED:1"/);
   assert.match(wrangler, /version_metadata/);
   assert.doesNotMatch(wrangler, /"PARROT_BACKEND_(?:COMMIT_SHA|VERSION)": "local"/);
