@@ -1,8 +1,7 @@
 export const DEFAULT_AGENT_MODELS = {
-  llm: "openai/gpt-4.1-mini",
-  stt: "elevenlabs/scribe_v2_realtime",
-  tts: "inworld/inworld-tts-2",
-  ttsVoiceId: "Olivia",
+  realtime: "gpt-realtime-2.1-mini",
+  transcription: "gpt-4o-mini-transcribe",
+  voice: "marin",
 } as const;
 
 export type AgentConfig = {
@@ -14,10 +13,10 @@ export type AgentConfig = {
   livekitApiKey: string;
   livekitApiSecret: string;
   livekitUrl: string;
-  llmModel: string;
-  sttModel: string;
-  ttsModel: string;
-  ttsVoiceId: string;
+  openaiApiKey: string;
+  realtimeModel: string;
+  realtimeVoice: string;
+  transcriptionModel: string;
 };
 
 function required(env: NodeJS.ProcessEnv, name: string) {
@@ -73,13 +72,18 @@ export function readAgentConfig(env: NodeJS.ProcessEnv = process.env): AgentConf
     livekitApiKey: required(env, "LIVEKIT_API_KEY"),
     livekitApiSecret: required(env, "LIVEKIT_API_SECRET"),
     livekitUrl: required(env, "LIVEKIT_URL"),
-    llmModel: optionalModel(env, "AGENT_LLM_MODEL", DEFAULT_AGENT_MODELS.llm),
-    sttModel: optionalModel(env, "AGENT_STT_MODEL", DEFAULT_AGENT_MODELS.stt),
-    ttsModel: optionalModel(env, "AGENT_TTS_MODEL", DEFAULT_AGENT_MODELS.tts),
-    ttsVoiceId: optionalModel(
+    openaiApiKey: required(env, "OPENAI_API_KEY"),
+    realtimeModel: optionalModel(
       env,
-      "AGENT_TTS_VOICE_ID",
-      DEFAULT_AGENT_MODELS.ttsVoiceId,
+      "AGENT_REALTIME_MODEL",
+      DEFAULT_AGENT_MODELS.realtime,
+    ),
+    realtimeVoice:
+      env.AGENT_REALTIME_VOICE?.trim() || DEFAULT_AGENT_MODELS.voice,
+    transcriptionModel: optionalModel(
+      env,
+      "AGENT_TRANSCRIPTION_MODEL",
+      DEFAULT_AGENT_MODELS.transcription,
     ),
   };
 }

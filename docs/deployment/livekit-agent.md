@@ -3,8 +3,8 @@
 This runbook deploys the purpose-specific Peppa conversations as two cooperating
 services: the existing Cloudflare Worker/D1 application and a LiveKit Node.js
 agent. The Worker owns Better Auth, D1 persistence, review, and short-lived room
-tokens. The agent owns speech recognition, the constrained conversation loop,
-speech synthesis, and finalized transcript ingest.
+tokens. The agent owns the realtime voice conversation and finalized transcript
+ingest.
 
 Realtime conversations are enabled in the production Worker configuration.
 Keep the onboarding form fallback available throughout production operation
@@ -12,28 +12,25 @@ and rollback.
 
 ## Provider and cost dependencies
 
-The runtime uses LiveKit Cloud/WebRTC and LiveKit Agents 1.5 with LiveKit
-Inference. Each conversation can incur agent compute plus usage for:
+The runtime uses LiveKit Cloud/WebRTC, LiveKit Agents 1.5, and OpenAI Realtime.
+Each conversation can incur agent compute plus usage for:
 
-- `elevenlabs/scribe_v2_realtime` speech recognition;
-- `openai/gpt-4.1-mini` language-model tokens; and
-- `inworld/inworld-tts-2` speech synthesis with the upbeat British voice
-  `Olivia`, with `cartesia/sonic-3` as a managed cross-provider fallback.
+- `gpt-realtime-2.1-mini` audio input, reasoning, and audio output with the
+  `marin` voice; and
+- `gpt-4o-mini-transcribe` asynchronous English input transcription for live
+  captions and saved conversation turns.
 
-Confirm that all three model/voice combinations are enabled in the target
-LiveKit project before enabling the flag. The voice is character-directed; do
-not replace it with an exact protected-character voice clone.
+The transcription companion is not part of the reply's critical path: Realtime
+Mini listens, reasons, and speaks over one realtime model connection. Keep the
+companion enabled because profile finalization and conversation review require
+user text. The agent leaves server VAD disabled so the existing turn button
+continues to commit each learner turn manually.
 
-The first production smoke test rejected ElevenLabs v3 for realtime use: the
-model is deprecated in LiveKit Inference and its WebSocket stream repeatedly
-errored after partial audio. Saved Chinese assets still follow the repository's
-ElevenLabs rule; the realtime agent uses Inworld through LiveKit Inference and
-falls back to Cartesia when a provider stream is unavailable.
-
-The current agent is deployed in `ap-south` for a renewed provider-path test
-from Asia. The same managed TTS models failed inside the initial `ap-south`
-Cloud agent even though a direct project-credential check worked, so return to
-`us-east` if the realtime smoke test reproduces those streaming errors.
+The OpenAI Realtime API supports function tools, but these purpose-specific
+conversations intentionally register no tools. Onboarding and profile editing
+derive their saved profile once from the completed transcript during Worker
+review. The `marin` voice is character-directed; do not replace it with an exact
+protected-character voice clone.
 
 ## Local verification
 
@@ -70,7 +67,7 @@ instead at every realtime error or stop point.
 The Worker sends one of `onboarding`, `profile-edit`, or `small-chat` in the
 signed participant metadata. The agent must select the matching system prompt.
 Every purpose starts without tools, keeping each live child turn to one LLM
-inference. Onboarding and profile editing derive their saved profile once from
+response. Onboarding and profile editing derive their saved profile once from
 the completed transcript during Worker review.
 
 ## Cloudflare Worker and D1
@@ -130,14 +127,15 @@ Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 LIVEKIT_AGENT_NAME=parrot-conversation
 CONVERSATION_INGEST_URL=https://your-worker.example.com
 CONVERSATION_AGENT_SECRET=the-same-random-worker-secret
-AGENT_STT_MODEL=elevenlabs/scribe_v2_realtime
-AGENT_LLM_MODEL=openai/gpt-4.1-mini
-AGENT_TTS_MODEL=inworld/inworld-tts-2
-AGENT_TTS_VOICE_ID=Olivia
+OPENAI_API_KEY=your-openai-api-key
+AGENT_REALTIME_MODEL=gpt-realtime-2.1-mini
+AGENT_REALTIME_VOICE=marin
+AGENT_TRANSCRIPTION_MODEL=gpt-4o-mini-transcribe
 ```
 
-The realtime agent pins speech recognition to English instead of using
-automatic language detection.
+The asynchronous transcription companion is pinned to English instead of using
+automatic language detection. All model IDs are explicit; production must not
+use moving `auto` or `latest` aliases.
 
 LiveKit excludes environment files from the build context and injects secrets
 at runtime. Keep `.env.livekit` untracked.
@@ -155,7 +153,8 @@ Before enabling the flag, authenticate as a test user and verify:
    followed naturally instead of being treated as off-topic.
 5. “I don’t know”, silence, refusal, Finish conversation, and the form fallback
    all remain usable.
-6. Each live child turn produces a reply without a tool-call round trip.
+6. Each live child turn produces a Realtime Mini reply without a separate
+   STT-to-LLM-to-TTS chain or a tool-call round trip.
    Onboarding and profile editing finalize the saved prose summary from the
    transcript after Finish; small chat finishes without changing the profile.
 7. D1 contains finalized user and assistant turns for completed and abandoned

@@ -20,9 +20,8 @@ type StoredAgentBuild = {
   commitSha: string;
   details: {
     models: {
-      llm: string;
-      stt: string;
-      tts: string;
+      realtime: string;
+      transcription: string;
     };
   };
   reportedAt: string;
@@ -74,9 +73,8 @@ function parseAgentBuild(serialized: string): StoredAgentBuild | null {
     !isBoundedString(report.version) ||
     !isBoundedString(report.commitSha) ||
     !isBoundedString(report.reportedAt) ||
-    !isBoundedString(modelValues.llm) ||
-    !isBoundedString(modelValues.stt) ||
-    !isBoundedString(modelValues.tts)
+    !isBoundedString(modelValues.realtime) ||
+    !isBoundedString(modelValues.transcription)
   ) {
     return null;
   }
@@ -85,9 +83,8 @@ function parseAgentBuild(serialized: string): StoredAgentBuild | null {
     commitSha: (report.commitSha as string).trim(),
     details: {
       models: {
-        llm: (modelValues.llm as string).trim(),
-        stt: (modelValues.stt as string).trim(),
-        tts: (modelValues.tts as string).trim(),
+        realtime: (modelValues.realtime as string).trim(),
+        transcription: (modelValues.transcription as string).trim(),
       },
     },
     reportedAt: (report.reportedAt as string).trim(),
