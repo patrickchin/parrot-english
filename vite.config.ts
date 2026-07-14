@@ -140,6 +140,7 @@ function getBuildVersion() {
 function getShortCommitSha() {
   return (
     process.env.PARROT_FRONTEND_COMMIT_SHA?.trim() ||
+    process.env.WORKERS_CI_COMMIT_SHA?.slice(0, 7) ||
     process.env.GITHUB_SHA?.slice(0, 7) ||
     readGitValue("git rev-parse --short=7 HEAD", "local")
   );

@@ -43,13 +43,17 @@ export function createBuildMetadata({
   };
 }
 
-export function readBuildMetadata() {
+export function resolveBuildCommitSha(env, gitSha) {
+  return env.WORKERS_CI_COMMIT_SHA || env.GITHUB_SHA || gitSha;
+}
+
+export function readBuildMetadata({ env = process.env } = {}) {
   const manifest = JSON.parse(
     readFileSync(new URL("../package.json", import.meta.url), "utf8"),
   );
   return createBuildMetadata({
     commitCount: gitValue(["rev-list", "--count", "HEAD"]),
-    commitSha: process.env.GITHUB_SHA || gitValue(["rev-parse", "HEAD"]),
+    commitSha: resolveBuildCommitSha(env, gitValue(["rev-parse", "HEAD"])),
     packageVersion: manifest.version,
   });
 }
