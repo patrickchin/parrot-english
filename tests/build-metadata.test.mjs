@@ -155,6 +155,13 @@ describe("deployment build metadata", () => {
       }).trim(),
       "3",
     );
+    assert.match(
+      execFileSync("git", ["rev-list", "--objects", "--missing=print", "HEAD"], {
+        cwd: checkout,
+        encoding: "utf8",
+      }),
+      /^\?/m,
+    );
   });
 
   it("does not fetch history outside a shallow Workers CI checkout", () => {
@@ -173,5 +180,16 @@ describe("deployment build metadata", () => {
       false,
     );
     assert.equal(gitCallCount, 1);
+  });
+
+  it("fails a shallow Workers build without an explicit branch", () => {
+    assert.throws(
+      () =>
+        ensureWorkersCiHistory({
+          env: { WORKERS_CI: "1" },
+          runGit: () => "true",
+        }),
+      /Workers CI branch/,
+    );
   });
 });
