@@ -17,7 +17,7 @@ Browser
        -> /api/auth/* -> Better Auth -> Drizzle -> shared D1
        -> /api/evaluate-speech
        -> /api/learner-profile/* -> Groq -> learner_profile -> ElevenLabs
-       -> /api/lessons/my/* -> Groq -> learner_lesson
+       -> /api/lessons/my/* -> OpenAI -> learner_lesson
        -> static Vite assets through env.ASSETS
 ```
 
@@ -59,7 +59,7 @@ Important entrypoints:
 - `agent/peppa-conversation.ts`: distinct onboarding, profile-edit, and small-chat prompts.
 - `src/media/device-speech.ts`: cancellable local English speech for My Lessons.
 - `worker/my-lessons.ts` and `worker/lesson-generator.ts`: owner-scoped lesson
-  persistence, warning-based normalization, and structured Groq generation.
+  persistence, warning-based normalization, and structured OpenAI generation.
 
 ## Authentication
 
@@ -167,7 +167,7 @@ emote maps inherit prior scene state. Optional user-step checks validate safe
 scripted responses; invalid draft checks are omitted with a warning. Scripts
 may use any language, flexible scene and phrase counts, extra metadata,
 independent user lines, and any ending. Only malformed JSON, oversized input,
-or a draft with no playable dialogue remains fatal. Generate uses Groq JSON
+or a draft with no playable dialogue remains fatal. Generate uses OpenAI JSON
 Object Mode so repairable output reaches this boundary instead of failing
 provider-side schema validation.
 

@@ -1,18 +1,32 @@
 import { prepareLesson } from "../lib/lesson-data.js";
 import type { LessonDraft } from "../src/lessons/lesson-catalog.ts";
-import {
-  fetchWithTimeout,
-  getGroqRequestTimeoutMs,
-  type ApiEnv,
-} from "./groq.ts";
+import { fetchWithTimeout } from "./groq.ts";
 import {
   LESSON_BACKGROUNDS,
   LESSON_VISUAL_CATALOG,
 } from "./lesson-catalog.ts";
-import { LESSON_GENERATOR_MODEL } from "./model-config.ts";
+import { LESSON_GENERATOR_MODEL_ID } from "./model-config.ts";
 import { LESSON_GENERATOR_SYSTEM_PROMPT } from "./prompts/lesson-generator.ts";
 
-const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
+const OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions";
+const DEFAULT_OPENAI_REQUEST_TIMEOUT_MS = 30_000;
+const MAX_OPENAI_REQUEST_TIMEOUT_MS = 120_000;
+
+export interface LessonGenerationEnv {
+  OPENAI_API_KEY?: string;
+  OPENAI_REQUEST_TIMEOUT_MS?: string;
+}
+
+function getOpenAIRequestTimeoutMs(env: LessonGenerationEnv) {
+  const configuredTimeout = Number.parseInt(
+    env.OPENAI_REQUEST_TIMEOUT_MS ?? "",
+    10,
+  );
+  if (!Number.isFinite(configuredTimeout) || configuredTimeout <= 0) {
+    return DEFAULT_OPENAI_REQUEST_TIMEOUT_MS;
+  }
+  return Math.min(configuredTimeout, MAX_OPENAI_REQUEST_TIMEOUT_MS);
+}
 
 export class LessonGenerationError extends Error {
   readonly code: string;
@@ -28,7 +42,7 @@ export class LessonGenerationError extends Error {
 
 type GenerateLessonInput = {
   childName: string;
-  env: ApiEnv;
+  env: LessonGenerationEnv;
   fetch?: typeof globalThis.fetch;
   topic: string;
 };
@@ -39,7 +53,7 @@ export async function generateLessonScript({
   fetch: fetchImplementation = globalThis.fetch,
   topic,
 }: GenerateLessonInput): Promise<LessonDraft> {
-  if (!env.GROQ_API_KEY?.trim()) {
+  if (!env.OPENAI_API_KEY?.trim()) {
     throw new LessonGenerationError(
       503,
       "generation_unavailable",
@@ -51,15 +65,15 @@ export async function generateLessonScript({
   try {
     upstream = await fetchWithTimeout(
       fetchImplementation,
-      GROQ_CHAT_URL,
+      OPENAI_CHAT_URL,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.GROQ_API_KEY.trim()}`,
+          Authorization: `Bearer ${env.OPENAI_API_KEY.trim()}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: LESSON_GENERATOR_MODEL,
+          model: LESSON_GENERATOR_MODEL_ID,
           max_completion_tokens: 4500,
           messages: [
             { role: "system", content: LESSON_GENERATOR_SYSTEM_PROMPT },
@@ -76,7 +90,7 @@ export async function generateLessonScript({
           reasoning_effort: "low",
         }),
       },
-      getGroqRequestTimeoutMs(env),
+      getOpenAIRequestTimeoutMs(env),
     );
   } catch (caughtError) {
     if (caughtError instanceof LessonGenerationError) throw caughtError;
