@@ -66,6 +66,7 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(workerDeploy, /PARROT_BACKEND_VERSION/);
   assert.match(workerDeploy, /PARROT_BACKEND_COMMIT_SHA/);
   assert.match(workersCiPrepare, /WORKERS_CI/);
+  assert.match(workersCiPrepare, /ensureWorkersCiHistory\(\{ env \}\)/);
   assert.match(workerDeploy, /"REALTIME_CONVERSATIONS_ENABLED:1"/);
   assert.match(wrangler, /version_metadata/);
   assert.doesNotMatch(wrangler, /"PARROT_BACKEND_(?:COMMIT_SHA|VERSION)": "local"/);
