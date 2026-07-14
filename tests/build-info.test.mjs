@@ -44,6 +44,11 @@ describe("deployment build information", () => {
     assert.deepEqual(await response.json(), {
       backend: {
         commitSha: "abc1234",
+        details: {
+          models: {
+            lessonScript: "openai/gpt-oss-20b",
+          },
+        },
         deploymentId: "worker-deployment-123",
         deployedAt: "2026-07-14T01:02:03.000Z",
         version: "0.1.276",

@@ -196,6 +196,11 @@ function parrotE2eMockApi(): Plugin {
           sendMockJson(response, {
             backend: {
               commitSha: "e2e-api",
+              details: {
+                models: {
+                  lessonScript: "openai/gpt-oss-20b",
+                },
+              },
               deployedAt: "2026-07-14T01:02:03.000Z",
               deploymentId: "e2e-deployment",
               version: "0.1.e2e",

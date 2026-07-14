@@ -4,6 +4,11 @@ import { ActionButton, cx, IconButton } from "../shared/ui";
 
 type BackendBuild = {
   commitSha: string;
+  details: {
+    models: {
+      lessonScript: string;
+    };
+  };
   deployedAt: string | null;
   deploymentId: string;
   version: string;
@@ -199,6 +204,10 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
           <BuildCard
             commitSha={buildInfo.backend.commitSha}
             fields={[
+              {
+                label: "Lesson script LLM",
+                value: buildInfo.backend.details.models.lessonScript,
+              },
               {
                 label: "Deployment",
                 value: buildInfo.backend.deploymentId,

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { generateLessonScript } from "../worker/lesson-generator.ts";
+import { LESSON_GENERATOR_MODEL } from "../worker/model-config.ts";
 import { LESSON_GENERATOR_SYSTEM_PROMPT } from "../worker/prompts/lesson-generator.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
@@ -27,6 +28,7 @@ describe("lesson script generation", () => {
     assert.match(calls[0].init.headers.Authorization, /^Bearer test-key$/);
     assert.deepEqual(calls[0].body.response_format, { type: "json_object" });
     assert.equal(calls[0].body.reasoning_effort, "low");
+    assert.equal(calls[0].body.model, LESSON_GENERATOR_MODEL);
     assert.equal(calls[0].body.max_completion_tokens, 4500);
     assert.equal("json_schema" in calls[0].body.response_format, false);
     assert.equal(
