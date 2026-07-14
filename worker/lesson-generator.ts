@@ -9,10 +9,10 @@ import {
   LESSON_BACKGROUNDS,
   LESSON_VISUAL_CATALOG,
 } from "./lesson-catalog.ts";
+import { LESSON_GENERATOR_MODEL } from "./model-config.ts";
 import { LESSON_GENERATOR_SYSTEM_PROMPT } from "./prompts/lesson-generator.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
 
 export class LessonGenerationError extends Error {
   readonly code: string;
@@ -59,7 +59,7 @@ export async function generateLessonScript({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: GROQ_CHAT_MODEL,
+          model: LESSON_GENERATOR_MODEL,
           max_completion_tokens: 4500,
           messages: [
             { role: "system", content: LESSON_GENERATOR_SYSTEM_PROMPT },
