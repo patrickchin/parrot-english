@@ -58,6 +58,7 @@ test("the account About panel is wired to deployed component metadata", () => {
   assert.match(worker, /\/api\/build-info/);
   assert.match(buildInfo, /LESSON_GENERATOR_MODEL/);
   assert.match(lessonGenerator, /LESSON_GENERATOR_MODEL/);
+  assert.match(lessonGenerator, /OPENAI_API_KEY/);
   assert.match(agent, /reportBuild/);
   assert.match(agent, /await ingest\.reportBuild/);
   assert.equal(manifest.scripts["deploy:worker"], "node scripts/deploy-cloudflare-worker.mjs");

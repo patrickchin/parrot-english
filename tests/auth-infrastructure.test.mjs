@@ -410,6 +410,7 @@ describe("authentication infrastructure", () => {
     assert.equal(
       devVars,
       "GROQ_API_KEY=your_groq_api_key_here\n" +
+        "OPENAI_API_KEY=your_openai_api_key_here\n" +
         "ELEVENLABS_API_KEY=your_elevenlabs_api_key_here\n" +
         "BETTER_AUTH_SECRET=replace_with_at_least_32_random_characters\n" +
         "BETTER_AUTH_URL=http://localhost:3000\n" +

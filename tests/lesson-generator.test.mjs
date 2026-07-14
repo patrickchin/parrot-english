@@ -6,12 +6,12 @@ import { LESSON_GENERATOR_SYSTEM_PROMPT } from "../worker/prompts/lesson-generat
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
 describe("lesson script generation", () => {
-  it("sends bounded parent input and validates structured Groq output", async () => {
+  it("sends bounded parent input to OpenAI GPT-5.6 Luna", async () => {
     const calls = [];
     const lesson = createLessonScript();
     const generated = await generateLessonScript({
       childName: "Mia",
-      env: { GROQ_API_KEY: "test-key" },
+      env: { OPENAI_API_KEY: "test-key" },
       topic: "ordering ice cream",
       async fetch(url, init) {
         calls.push({ url, init, body: JSON.parse(init.body) });
@@ -24,11 +24,12 @@ describe("lesson script generation", () => {
     assert.equal(generated.lesson.title, "Garden Help");
     assert.deepEqual(generated.warnings, []);
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].url, "https://api.groq.com/openai/v1/chat/completions");
+    assert.equal(calls[0].url, "https://api.openai.com/v1/chat/completions");
     assert.match(calls[0].init.headers.Authorization, /^Bearer test-key$/);
     assert.deepEqual(calls[0].body.response_format, { type: "json_object" });
     assert.equal(calls[0].body.reasoning_effort, "low");
-    assert.equal(calls[0].body.model, LESSON_GENERATOR_MODEL);
+    assert.equal(LESSON_GENERATOR_MODEL, "openai/gpt-5.6-luna");
+    assert.equal(calls[0].body.model, "gpt-5.6-luna");
     assert.equal(calls[0].body.max_completion_tokens, 4500);
     assert.equal("json_schema" in calls[0].body.response_format, false);
     assert.equal(
@@ -45,11 +46,11 @@ describe("lesson script generation", () => {
     assert.match(calls[0].body.messages[1].content, /episode-garden/);
   });
 
-  it("normalizes an incomplete Groq draft and returns its warnings", async () => {
+  it("normalizes an incomplete OpenAI draft and returns its warnings", async () => {
     const calls = [];
     const generated = await generateLessonScript({
       childName: "Mia",
-      env: { GROQ_API_KEY: "test-key" },
+      env: { OPENAI_API_KEY: "test-key" },
       topic: "ordering ice cream",
       async fetch(url, init) {
         calls.push({ url, body: JSON.parse(init.body) });
@@ -88,7 +89,7 @@ describe("lesson script generation", () => {
     await assert.rejects(
       generateLessonScript({
         childName: "Mia",
-        env: { GROQ_API_KEY: "test-key" },
+        env: { OPENAI_API_KEY: "test-key" },
         topic: "ordering ice cream",
         async fetch() {
           callCount += 1;
@@ -107,7 +108,7 @@ describe("lesson script generation", () => {
     await assert.rejects(
       generateLessonScript({
         childName: "Mia",
-        env: { GROQ_API_KEY: "test-key" },
+        env: { OPENAI_API_KEY: "test-key" },
         topic: "at the library",
         async fetch() {
           return Response.json({
@@ -116,6 +117,20 @@ describe("lesson script generation", () => {
         },
       }),
       /generated lesson is invalid/i,
+    );
+  });
+
+  it("requires a dedicated OpenAI key instead of reusing the Groq key", async () => {
+    await assert.rejects(
+      generateLessonScript({
+        childName: "Mia",
+        env: { GROQ_API_KEY: "groq-key" },
+        topic: "at the library",
+        async fetch() {
+          throw new Error("The provider must not be called without an OpenAI key.");
+        },
+      }),
+      /lesson generation is not configured/i,
     );
   });
 });
