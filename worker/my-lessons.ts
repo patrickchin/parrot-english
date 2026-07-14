@@ -4,6 +4,7 @@ import type { Database } from "./database.ts";
 import {
   generateLessonScript,
   LessonGenerationError,
+  type LessonGenerationEnv,
 } from "./lesson-generator.ts";
 import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
 import { createMyLessonRepository } from "./my-lessons-repository.ts";
@@ -16,7 +17,7 @@ import type { ApiEnv } from "./groq.ts";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
-export type MyLessonsEnv = ApiEnv & { DB: D1Database };
+export type MyLessonsEnv = ApiEnv & LessonGenerationEnv & { DB: D1Database };
 export type MyLessonRequestInput = {
   database: Database;
   env: MyLessonsEnv;

@@ -198,7 +198,7 @@ function parrotE2eMockApi(): Plugin {
               commitSha: "e2e-api",
               details: {
                 models: {
-                  lessonScript: "openai/gpt-oss-20b",
+                  lessonScript: "openai/gpt-5.6-luna",
                 },
               },
               deployedAt: "2026-07-14T01:02:03.000Z",

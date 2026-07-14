@@ -62,8 +62,8 @@ changing application code.
 
 The Create Lesson page has two URL-restorable tabs. **Generate Script** accepts
 a bounded real-world topic, uses the canonical learner profile name, and asks
-Groq for playable lesson JSON. The generated JSON then appears in the
-main script editor and remains editable. **Upload Script** is clipboard-first:
+OpenAI `gpt-5.6-luna` for playable lesson JSON. The generated JSON then appears
+in the main script editor and remains editable. **Upload Script** is clipboard-first:
 the learner pastes JSON into the same editor directly or with the Paste button.
 Both paths accept up to 256 KiB, normalize the shared runtime fields with
 warnings for repairs, show a title, summary, goal-phrase, and scene-count

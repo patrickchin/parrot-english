@@ -46,7 +46,7 @@ describe("deployment build information", () => {
         commitSha: "abc1234",
         details: {
           models: {
-            lessonScript: "openai/gpt-oss-20b",
+            lessonScript: "openai/gpt-5.6-luna",
           },
         },
         deploymentId: "worker-deployment-123",

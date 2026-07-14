@@ -10,7 +10,7 @@ List-first, scene-based English speaking practice for young learners.
 - Cloudflare Worker TypeScript REST API
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
-- Groq lesson generation, speech evaluation, onboarding transcription, and answer enrichment
+- OpenAI lesson generation plus Groq speech evaluation, onboarding transcription, and answer enrichment
 - ElevenLabs saved prompt audio and runtime onboarding acknowledgments
 - LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
@@ -88,17 +88,18 @@ Partial alpha is reserved for antialiased subject edges.
 
 ## Environment
 
-Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation. Keep real keys out
-of source control. Optional evaluation limits are:
+Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation and profile
+enrichment. Set `OPENAI_API_KEY` for Create Lesson script generation. Keep real
+keys out of source control. Optional evaluation limits are:
 
 ```bash
 EVALUATE_RATE_LIMIT_MAX=8
 EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 ```
 
-The same key powers Create Lesson script generation. Generation is protected by
-the authenticated `LESSON_GENERATION_RATE_LIMITER` binding. Pasted lesson
-scripts are editable, validated, and stored directly without an AI request.
+Create Lesson uses OpenAI `gpt-5.6-luna` and is protected by the authenticated
+`LESSON_GENERATION_RATE_LIMITER` binding. Pasted lesson scripts are editable,
+validated, and stored directly without an AI request.
 
 Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
 acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic

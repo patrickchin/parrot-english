@@ -147,7 +147,7 @@ test("About shows independently deployed component versions", async ({ page }) =
   await expect(about.getByText("e2e-agent", { exact: true })).toBeVisible();
   await expect(about.getByText("Worker deployment e2e-deployment")).toBeVisible();
   await expect(about.getByText("Lesson script LLM")).toBeVisible();
-  await expect(about.getByText("openai/gpt-oss-20b")).toBeVisible();
+  await expect(about.getByText("openai/gpt-5.6-luna")).toBeVisible();
   await expect(about.getByText("Realtime voice model")).toBeVisible();
   await expect(about.getByText("gpt-realtime-2.1-mini")).toBeVisible();
   await expect(about.getByText("Input transcription")).toBeVisible();
