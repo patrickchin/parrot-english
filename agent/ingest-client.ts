@@ -16,7 +16,9 @@ type IngestClientOptions = {
   baseUrl: string;
   build?: {
     commitSha: string;
-    details: { models: { llm: string; stt: string; tts: string } };
+    details: {
+      models: { realtime: string; transcription: string };
+    };
     version: string;
   };
   fetch?: typeof globalThis.fetch;

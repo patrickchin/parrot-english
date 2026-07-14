@@ -19,9 +19,8 @@ type ComponentBuild = {
   component: string;
   details?: {
     models?: {
-      llm?: string;
-      stt?: string;
-      tts?: string;
+      realtime?: string;
+      transcription?: string;
     };
   };
   reportedAt: string;
@@ -236,14 +235,21 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
             commitSha={agent.commitSha}
             fields={[
               { label: "Last reported", value: displayDate(agent.reportedAt) },
-              ...(agentModels?.llm
-                ? [{ label: "LLM", value: agentModels.llm }]
+              ...(agentModels?.realtime
+                ? [
+                    {
+                      label: "Realtime voice model",
+                      value: agentModels.realtime,
+                    },
+                  ]
                 : []),
-              ...(agentModels?.stt
-                ? [{ label: "Speech to text", value: agentModels.stt }]
-                : []),
-              ...(agentModels?.tts
-                ? [{ label: "Text to speech", value: agentModels.tts }]
+              ...(agentModels?.transcription
+                ? [
+                    {
+                      label: "Input transcription",
+                      value: agentModels.transcription,
+                    },
+                  ]
                 : []),
             ]}
             title="Conversation agent"

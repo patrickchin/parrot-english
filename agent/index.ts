@@ -4,10 +4,10 @@ import {
   ServerOptions,
   cli,
   defineAgent,
-  inference,
   voice,
   type ChatMessage,
 } from "@livekit/agents";
+import * as openai from "@livekit/agents-plugin-openai";
 import {
   COMMIT_USER_TURN_COMMAND,
   REPEAT_LAST_AUDIO_COMMAND,
@@ -95,28 +95,16 @@ export function parseConversationParticipantMetadata(metadata: string) {
 
 export function createAgentModels(config: AgentConfig) {
   return {
-    llm: new inference.LLM({
-      apiKey: config.livekitApiKey,
-      apiSecret: config.livekitApiSecret,
-      model: config.llmModel,
-      strictToolSchema: true,
-    }),
-    stt: new inference.STT({
-      apiKey: config.livekitApiKey,
-      apiSecret: config.livekitApiSecret,
-      language: "en",
-      model: config.sttModel,
-    }),
-    tts: new inference.TTS({
-      apiKey: config.livekitApiKey,
-      apiSecret: config.livekitApiSecret,
-      fallback: {
-        extraKwargs: { emotion: "excited", speed: 1.05 },
-        model: "cartesia/sonic-3",
-        voice: "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+    realtime: new openai.realtime.RealtimeModel({
+      apiKey: config.openaiApiKey,
+      inputAudioTranscription: {
+        language: "en",
+        model: config.transcriptionModel,
       },
-      model: config.ttsModel,
-      voice: config.ttsVoiceId,
+      model: config.realtimeModel,
+      reasoning: { effort: "low" },
+      turnDetection: null,
+      voice: config.realtimeVoice,
     }),
   };
 }
@@ -130,7 +118,7 @@ export function conversationInputMode(
 
 type ConversationTextSession = Pick<
   voice.AgentSession,
-  "commitUserTurn" | "generateReply" | "interrupt" | "say"
+  "commitUserTurn" | "generateReply" | "interrupt"
 >;
 
 export function createConversationTextInputCallback(
@@ -147,9 +135,9 @@ export function createConversationTextInputCallback(
     if (event.text.trim() === REPEAT_LAST_AUDIO_COMMAND) {
       const text = latestAssistantText().trim();
       if (text) {
-        session.say(text, {
-          addToChatCtx: false,
+        session.generateReply({
           allowInterruptions: true,
+          instructions: `Repeat exactly this previous assistant sentence with no extra words: ${JSON.stringify(text)}`,
         });
       }
       return;
@@ -157,6 +145,22 @@ export function createConversationTextInputCallback(
     session.interrupt();
     session.generateReply({ userInput: event.text });
   };
+}
+
+type ConversationClosingSession = Pick<
+  voice.AgentSession,
+  "close" | "generateReply"
+>;
+
+export async function playConversationGoodbyeAndClose(
+  session: ConversationClosingSession,
+) {
+  const goodbye = session.generateReply({
+    allowInterruptions: true,
+    instructions: 'Say exactly: "Thanks for chatting with me!"',
+  });
+  await goodbye.waitForPlayout();
+  await session.close();
 }
 
 export function createAgentTurnHandling() {
@@ -271,9 +275,8 @@ export const agentDefinition = defineAgent({
         commitSha: config.commitSha,
         details: {
           models: {
-            llm: config.llmModel,
-            stt: config.sttModel,
-            tts: config.ttsModel,
+            realtime: config.realtimeModel,
+            transcription: config.transcriptionModel,
           },
         },
         version: config.buildVersion,
@@ -302,16 +305,11 @@ export const agentDefinition = defineAgent({
       instructions: getConversationSystemPrompt(purpose),
       async onEnter(agentContext) {
         await task.run();
-        await agentContext.session.say("Thanks for chatting with me!", {
-          allowInterruptions: true,
-        });
-        await agentContext.session.close();
+        await playConversationGoodbyeAndClose(agentContext.session);
       },
     });
     const session = new voice.AgentSession({
-      llm: models.llm,
-      stt: models.stt,
-      tts: models.tts,
+      llm: models.realtime,
       turnHandling: createAgentTurnHandling(),
     });
 
