@@ -206,7 +206,7 @@ describe("scene-script lesson state", () => {
     );
   });
 
-  it("moves from a model line into held recording and evaluation", () => {
+  it("moves from a model line into active recording and evaluation", () => {
     const waiting = startAtUser();
     const recording = reduce(waiting, { type: "MIC_STARTED" });
     const evaluating = reduce(recording, { type: "MIC_RELEASED" });

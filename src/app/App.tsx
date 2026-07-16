@@ -11,8 +11,6 @@ import {
   useReducer,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
   Navigate,
@@ -99,7 +97,7 @@ import { finishSpeechOperation } from "../lessons/speech-operation";
 const RECORDING_UNSUPPORTED_MESSAGE =
   "This browser does not support audio recording. Try the latest Chrome or Safari.";
 const MICROPHONE_ACCESS_MESSAGE =
-  "Please allow microphone access, then press and hold the button again.";
+  "Please allow microphone access, then tap the microphone again.";
 
 type LessonEvent =
   | { type: "PLAY_SCENE" }
@@ -149,10 +147,6 @@ function getMicrophoneErrorMessage(caughtError: unknown) {
     : "The microphone could not start.";
 }
 
-function isActivationKey(event: ReactKeyboardEvent<HTMLButtonElement>) {
-  return event.key === " " || event.key === "Enter";
-}
-
 export function LessonPlayer({
   audioMode,
   lesson: currentLesson,
@@ -178,8 +172,8 @@ export function LessonPlayer({
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const evaluationControllerRef = useRef<AbortController | null>(null);
-  const pressSequenceRef = useRef(0);
-  const pressedRef = useRef(false);
+  const recordingSequenceRef = useRef(0);
+  const recordingActiveRef = useRef(false);
   const startActionRef = useRef<HTMLButtonElement | null>(null);
   const routeActivityGuardRef = useRef(createLessonRouteActivityGuard());
   const routedSceneRef = useRef(routedSceneIndex);
@@ -194,8 +188,8 @@ export function LessonPlayer({
   } | null>(null);
 
   const cancelPendingWork = useCallback(() => {
-    pressedRef.current = false;
-    pressSequenceRef.current += 1;
+    recordingActiveRef.current = false;
+    recordingSequenceRef.current += 1;
     playbackGenerationRef.current += 1;
     playbackControllerRef.current?.abort();
     playbackControllerRef.current = null;
@@ -433,8 +427,8 @@ export function LessonPlayer({
   useEffect(
     () => () => {
       routeActivityGuardRef.current.invalidate();
-      pressedRef.current = false;
-      pressSequenceRef.current += 1;
+      recordingActiveRef.current = false;
+      recordingSequenceRef.current += 1;
       playbackGenerationRef.current += 1;
       playbackControllerRef.current?.abort();
       recordingControllerRef.current?.abort();
@@ -467,15 +461,15 @@ export function LessonPlayer({
   async function beginRecording() {
     if (
       state.phase !== LessonPhase.WaitingForUser ||
-      pressedRef.current ||
+      recordingActiveRef.current ||
       recordingRef.current
     ) {
       return;
     }
 
-    pressedRef.current = true;
-    const sequence = pressSequenceRef.current + 1;
-    pressSequenceRef.current = sequence;
+    recordingActiveRef.current = true;
+    const sequence = recordingSequenceRef.current + 1;
+    recordingSequenceRef.current = sequence;
     const routeGeneration = routeActivityGuardRef.current.capture();
     const controller = new AbortController();
     recordingControllerRef.current = controller;
@@ -485,8 +479,8 @@ export function LessonPlayer({
       const session = await startSpeechRecording({ signal: controller.signal });
       if (
         !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
-        !pressedRef.current ||
-        pressSequenceRef.current !== sequence
+        !recordingActiveRef.current ||
+        recordingSequenceRef.current !== sequence
       ) {
         session.cancel();
         return;
@@ -496,16 +490,16 @@ export function LessonPlayer({
     } catch (caughtError) {
       if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
       if (isAbortError(caughtError)) return;
-      pressedRef.current = false;
+      recordingActiveRef.current = false;
       setError(getMicrophoneErrorMessage(caughtError));
     }
   }
 
   async function finishRecording() {
-    if (!pressedRef.current) return;
+    if (!recordingActiveRef.current) return;
     const routeGeneration = routeActivityGuardRef.current.capture();
-    pressedRef.current = false;
-    const generation = pressSequenceRef.current;
+    recordingActiveRef.current = false;
+    const generation = recordingSequenceRef.current;
     const session = recordingRef.current;
     const recordingController = recordingControllerRef.current;
     if (recordingRef.current === session) {
@@ -524,7 +518,7 @@ export function LessonPlayer({
       evaluate: currentStep.check ? evaluateSpeech : null,
       evaluationControllerRef,
       generation,
-      getCurrentGeneration: () => pressSequenceRef.current,
+      getCurrentGeneration: () => recordingSequenceRef.current,
       onEvaluated: (result) => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         dispatch({
@@ -563,37 +557,12 @@ export function LessonPlayer({
     });
   }
 
-  function cancelRecording() {
-    cancelPendingWork();
-    if (state.phase === LessonPhase.Recording) {
-      dispatch({ type: "RECORDING_CANCELLED" });
+  function handleToggleRecording() {
+    if (recordingActiveRef.current) {
+      void finishRecording();
+      return;
     }
-  }
-
-  function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
     void beginRecording();
-  }
-
-  function handlePointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    void finishRecording();
-  }
-
-  function handleKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
-    if (!isActivationKey(event) || event.repeat) return;
-    event.preventDefault();
-    void beginRecording();
-  }
-
-  function handleKeyUp(event: ReactKeyboardEvent<HTMLButtonElement>) {
-    if (!isActivationKey(event)) return;
-    event.preventDefault();
-    void finishRecording();
   }
 
   const isRecording = state.phase === LessonPhase.Recording;
@@ -652,13 +621,9 @@ export function LessonPlayer({
           dialogue={currentStep.dialogue}
           isEvaluating={isEvaluating}
           isRecording={isRecording}
-          onKeyDown={handleKeyDown}
-          onKeyUp={handleKeyUp}
           onNext={() => dispatchSceneControl("SCENE_NEXT")}
-          onPointerCancel={cancelRecording}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
           onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
+          onToggleRecording={handleToggleRecording}
           progressLabel={progressLabel}
           showUserTurn={showUserTurn}
         />

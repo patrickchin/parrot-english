@@ -237,14 +237,14 @@ audio never silently falls back to device or billable runtime generation.
 ## Speech Recording
 
 `src/media/speech-recorder.ts` exposes a recording session with `stop()` and
-`cancel()`. `src/app/App.tsx` starts it on pointer/keyboard press and stops it on
-release.
+`cancel()`. `src/app/App.tsx` starts it on the first pointer/keyboard activation
+and stops it on the next activation.
 
 Rules:
 
 - Lesson start does not request microphone access.
 - MediaRecorder support is checked before permission is requested.
-- Releasing before permission resolves cancels the pending turn safely.
+- Toggling off before permission resolves cancels the pending turn safely.
 - Tracks stop before evaluation starts.
 - Scene controls cancel active playback, recording, and evaluation before they
   pause or change scenes.
