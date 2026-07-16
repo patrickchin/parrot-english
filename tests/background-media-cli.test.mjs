@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { runBackgroundPublisher } from "../scripts/publish-backgrounds.mjs";
+import { runBackgroundVerifier } from "../scripts/verify-background-media.mjs";
 
 const temporaryDirectories = [];
 
@@ -196,5 +197,49 @@ describe("background publisher CLI", () => {
       }),
       /PARROT_MEDIA_ORIGIN must be set/,
     );
+  });
+});
+
+describe("background verifier CLI", () => {
+  it("succeeds without network access while the catalog is repository-local", async () => {
+    let output = "";
+    const result = await runBackgroundVerifier({
+      backgrounds: [
+        {
+          alt: "A local meadow",
+          id: "meadow-day",
+          src: "/assets/backgrounds/meadow-day.webp",
+        },
+      ],
+      fetch() {
+        throw new Error("Local assets must not use the network");
+      },
+      writeOutput(value) {
+        output += value;
+      },
+    });
+
+    assert.deepEqual(result, { skipped: ["meadow-day"], verified: [] });
+    assert.match(output, /No remote background assets to verify/);
+  });
+
+  it("infers the media origin and verifies remote catalog entries", async () => {
+    let output = "";
+    const result = await runBackgroundVerifier({
+      backgrounds: [
+        {
+          alt: "A sunny playground",
+          id: "playground-day",
+          src: "https://media.example.com/backgrounds/playground-day/v1/landscape.webp",
+        },
+      ],
+      fetch: async () => createSuccessfulHeadResponse(),
+      writeOutput(value) {
+        output += value;
+      },
+    });
+
+    assert.equal(result.verified.length, 1);
+    assert.match(output, /Verified 1 remote background assets/);
   });
 });
