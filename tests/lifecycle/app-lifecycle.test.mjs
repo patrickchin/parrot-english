@@ -395,23 +395,22 @@ async function advanceToLearnerTurn(ControlledAudio) {
     );
     await act(async () => ControlledAudio.instances[index].finish());
   }
-  await waitFor(() => button("Press and hold to speak"));
+  await waitFor(() => {
+    const microphone = button("Microphone");
+    assert.equal(microphone.getAttribute("aria-pressed"), "false");
+    assert.match(microphone.textContent, /Start speaking/);
+  });
 }
 
 async function recordLearnerTurn() {
-  const microphone = button("Press and hold to speak");
-  await act(async () => {
-    microphone.dispatchEvent(
-      new window.KeyboardEvent("keydown", { bubbles: true, key: "Enter" }),
-    );
+  const microphone = button("Microphone");
+  await click(microphone);
+  await waitFor(() => {
+    assert.equal(microphone.getAttribute("aria-pressed"), "true");
+    assert.match(microphone.textContent, /Stop speaking/);
   });
-  await waitFor(() => button("Release when you finish"));
 
-  await act(async () => {
-    microphone.dispatchEvent(
-      new window.KeyboardEvent("keyup", { bubbles: true, key: "Enter" }),
-    );
-  });
+  await click(microphone);
   await waitFor(() => text(/Checking your speech/));
 }
 

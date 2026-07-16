@@ -1,8 +1,6 @@
 import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
 import {
   forwardRef,
-  type KeyboardEventHandler,
-  type PointerEventHandler,
   type ReactNode,
 } from "react";
 import { ActionButton, cx } from "../shared/ui";
@@ -269,13 +267,9 @@ export function LessonControls({
   dialogue,
   isEvaluating,
   isRecording,
-  onKeyDown,
-  onKeyUp,
   onNext,
-  onPointerCancel,
-  onPointerDown,
-  onPointerUp,
   onPrevious,
+  onToggleRecording,
   progressLabel,
   showUserTurn,
 }: {
@@ -284,13 +278,9 @@ export function LessonControls({
   dialogue: string;
   isEvaluating: boolean;
   isRecording: boolean;
-  onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
-  onKeyUp: KeyboardEventHandler<HTMLButtonElement>;
   onNext: () => void;
-  onPointerCancel: PointerEventHandler<HTMLButtonElement>;
-  onPointerDown: PointerEventHandler<HTMLButtonElement>;
-  onPointerUp: PointerEventHandler<HTMLButtonElement>;
   onPrevious: () => void;
+  onToggleRecording: () => void;
   progressLabel: string;
   showUserTurn: boolean;
 }) {
@@ -329,30 +319,21 @@ export function LessonControls({
             </LessonPill>
           ) : (
             <ActionButton
-              aria-label={
-                isRecording
-                  ? "Release when you finish"
-                  : "Press and hold to speak"
-              }
+              aria-label="Microphone"
+              aria-pressed={isRecording}
               className={cx(
-                "min-h-13 min-w-13 touch-none select-none gap-2 rounded-full border-4 border-white px-3 short:min-h-11 short:min-w-11 short:px-2 short:text-sm md:min-h-16 md:px-5 md:text-base",
+                "min-h-13 min-w-13 select-none gap-2 rounded-full border-4 border-white px-3 short:min-h-11 short:min-w-11 short:px-2 short:text-sm md:min-h-16 md:px-5 md:text-base",
                 isRecording &&
                   "animate-pulse motion-reduce:animate-none",
               )}
-              onKeyDown={onKeyDown}
-              onKeyUp={onKeyUp}
-              onPointerCancel={onPointerCancel}
-              onPointerDown={onPointerDown}
-              onPointerUp={onPointerUp}
+              onClick={onToggleRecording}
               size="bare"
               type="button"
               variant={isRecording ? "brand" : "success"}
             >
               <Mic aria-hidden="true" className="size-6 md:size-8" />
               <span className="short:hidden">
-                {isRecording
-                  ? "Release when you finish"
-                  : "Press and hold to speak"}
+                {isRecording ? "Stop speaking" : "Start speaking"}
               </span>
             </ActionButton>
           )

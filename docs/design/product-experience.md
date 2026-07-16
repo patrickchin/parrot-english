@@ -132,18 +132,18 @@ asynchronous work captured for an old route is invalidated before the new scene
 becomes active, preventing stale audio, recording, or evaluation results from
 advancing the restored scene.
 
-## Hold-to-Talk State
+## Microphone Toggle State
 
 Microphone access is not requested when the lesson starts. It is requested only
-when the learner presses and holds the speaking button.
+when the learner activates the speaking button.
 
 The user turn must:
 
 - show the exact target line prominently;
-- label the idle action as “Press and hold to speak”;
-- label the active action as “Release when you finish”;
-- support pointer and keyboard press-and-hold interaction;
-- show a clear checking state after release;
+- label the idle action as “Start speaking”;
+- label the active action as “Stop speaking”;
+- support pointer and keyboard toggle interaction;
+- show a clear checking state after the learner stops recording;
 - announce the turn and errors through accessible live regions;
 - stop all media tracks before speech evaluation begins.
 

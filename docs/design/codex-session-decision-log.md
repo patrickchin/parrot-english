@@ -40,7 +40,7 @@ transcript.
 - Lesson JSON contains text and catalog IDs, never asset filenames.
 - Each step contains one line from one speaker and all visible emotes.
 - Backgrounds and character states are pre-generated global assets.
-- The learner presses and holds the microphone only for user steps.
+- The learner toggles the microphone on and off only for user steps.
 - The rest of the lesson advances automatically.
 - Built-in saved audio is a speaker-plus-text cache, not lesson content.
 - My Lesson dialogue uses local English browser speech and never a Worker TTS endpoint.
