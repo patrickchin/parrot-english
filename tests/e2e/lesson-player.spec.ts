@@ -70,3 +70,23 @@ for (const viewport of viewports) {
     await expect.poll(() => hasHorizontalOverflow(page)).toBe(false);
   });
 }
+
+test("lesson microphone toggles recording with separate activations", async ({
+  page,
+}) => {
+  await page.goto(lessonPath);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const microphone = page.getByRole("button", { name: "Microphone" });
+  await expect(microphone).toHaveAttribute("aria-pressed", "false");
+  await expect(microphone).toContainText("Start speaking");
+
+  await microphone.click();
+  await expect(microphone).toHaveAttribute("aria-pressed", "true");
+  await expect(microphone).toContainText("Stop speaking");
+
+  await microphone.click();
+  await expect(
+    page.getByText("Checking your speech...", { exact: true }),
+  ).toBeVisible();
+});
