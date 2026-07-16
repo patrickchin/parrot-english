@@ -25,6 +25,7 @@ npm run build
 npm run build:agent
 npm run lint
 npm test
+npm run verify:backgrounds
 npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force
 ```
 
@@ -85,6 +86,11 @@ creating audio assets.
 
 Character subjects must be opaque against a transparent sprite background.
 Partial alpha is reserved for antialiased subject edges.
+
+Approved lesson backgrounds are published outside Git to Cloudflare R2. The
+catalog keeps stable background IDs, descriptive alt text, and versioned media
+URLs. See [the R2 background-media runbook](docs/deployment/background-media-r2.md)
+for bucket setup, staging, dry-run publishing, verification, and rollback.
 
 ## Environment
 

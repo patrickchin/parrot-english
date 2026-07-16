@@ -140,7 +140,11 @@ export async function runBackgroundPublisher({
   }
 
   for (const upload of plan.uploads) {
-    const result = runCommand("npx", createGetArguments(upload), { cwd });
+    const result = runCommand(
+      "npm",
+      ["exec", "--offline", "--", ...createGetArguments(upload)],
+      { cwd },
+    );
     if (result.status === 0) {
       throw new Error(
         `${upload.bucket}/${upload.key} already exists; increment the asset version`,
@@ -154,7 +158,11 @@ export async function runBackgroundPublisher({
   }
 
   for (const upload of plan.uploads) {
-    const result = runCommand("npx", createPutArguments(upload, cwd), { cwd });
+    const result = runCommand(
+      "npm",
+      ["exec", "--offline", "--", ...createPutArguments(upload, cwd)],
+      { cwd },
+    );
     if (result.status !== 0) {
       throw new Error(
         `Could not upload ${upload.bucket}/${upload.key}: ${result.stderr.trim() || `exit ${result.status}`}`,
