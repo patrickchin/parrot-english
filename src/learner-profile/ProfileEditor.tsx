@@ -1,9 +1,10 @@
+import { ArrowLeft } from "lucide-react";
 import type { FormEvent } from "react";
+import { HeaderButton, RouteHeader } from "../app/AppHeader";
 import { LearnerProfileCard, LearnerProfileScreen } from "./LearnerProfileLayout";
 import {
   ActionButton,
   fieldClassName,
-  IconButton,
   TextButton,
 } from "../shared/ui";
 
@@ -37,26 +38,33 @@ export function ProfileEditorView({
 
   return (
     <LearnerProfileScreen profile>
+      <RouteHeader>
+        <HeaderButton
+          aria-label="Back"
+          disabled={isSaving}
+          icon={<ArrowLeft />}
+          onClick={onClose}
+          type="button"
+        >
+          Back
+        </HeaderButton>
+      </RouteHeader>
+
       <LearnerProfileCard
         aria-labelledby="profile-title"
         className="p-5 sm:p-8"
         width="narrow"
       >
-        <header className="flex items-center justify-between gap-4">
+        <header>
           <h1
             className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl"
             id="profile-title"
           >
-            Edit profile
+            Learner profile
           </h1>
-          <IconButton
-            aria-label="Close profile editor"
-            disabled={isSaving}
-            onClick={onClose}
-            type="button"
-          >
-            ×
-          </IconButton>
+          <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-600">
+            These details personalize chats and lessons.
+          </p>
         </header>
 
         <form className="mt-6" onSubmit={submit}>
@@ -136,21 +144,38 @@ export function ProfileEditorView({
             ) : null}
           </fieldset>
 
-          <div className="mt-5 flex items-center gap-4">
+          <section
+            aria-labelledby="redo-learner-setup-title"
+            className="mt-5 grid gap-4 rounded-3xl bg-sky-50 p-4 sm:grid-cols-[auto_1fr] sm:items-center"
+          >
             <img
               alt="Peppa smiling"
-              className="size-20 shrink-0 object-contain"
+              className="mx-auto size-20 shrink-0 object-contain"
               src="/assets/characters/peppa/peppa-happy.webp"
             />
-            <ActionButton
-              className="w-full min-w-0"
-              disabled={isSaving}
-              onClick={onRedoLearnerProfile}
-              type="button"
-            >
-              Chat with Peppa again
-            </ActionButton>
-          </div>
+            <div className="grid gap-2">
+              <h2
+                className="m-0 text-xl text-brand-ink"
+                id="redo-learner-setup-title"
+              >
+                Redo learner setup
+              </h2>
+              <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
+                Answer Peppa’s setup questions again. For a normal chat, go
+                Home and choose Talk to Peppa.
+              </p>
+              <ActionButton
+                className="mt-1 w-full min-w-0"
+                disabled={isSaving}
+                onClick={onRedoLearnerProfile}
+                size="compact"
+                type="button"
+                variant="navy"
+              >
+                Redo setup questions
+              </ActionButton>
+            </div>
+          </section>
 
           {pageError ? (
             <p className="mt-4 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
@@ -158,7 +183,13 @@ export function ProfileEditorView({
             </p>
           ) : null}
 
-          <footer className="mt-6 flex items-center justify-between gap-4 border-t-3 border-sky-100 bg-white/95 pb-1 pt-4 max-sm:flex-col-reverse max-sm:items-stretch">
+          <footer className="mt-6 flex items-center justify-between gap-4 border-t-3 border-sky-100 bg-white/95 pb-1 pt-4 max-sm:flex-col max-sm:items-stretch">
+            <ActionButton
+              disabled={isSaving}
+              type="submit"
+            >
+              {isSaving ? "Saving…" : "Save changes"}
+            </ActionButton>
             <TextButton
               disabled={isSaving}
               onClick={onCancel}
@@ -166,12 +197,6 @@ export function ProfileEditorView({
             >
               Cancel
             </TextButton>
-            <ActionButton
-              disabled={isSaving}
-              type="submit"
-            >
-              {isSaving ? "Saving…" : "Save changes"}
-            </ActionButton>
           </footer>
         </form>
       </LearnerProfileCard>

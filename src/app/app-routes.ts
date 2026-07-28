@@ -61,6 +61,10 @@ export function getLearnerProfilePath(returnTo: string) {
   return `/profile/setup?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
+export function getProfilePath(returnTo: string) {
+  return `/profile?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
 export function getRedoLearnerProfilePath(returnTo: string) {
   return `/profile/setup?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
 }

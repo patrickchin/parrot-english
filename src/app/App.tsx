@@ -54,6 +54,7 @@ import {
   getLessonScenePath,
   getLoginPath,
   getLearnerProfilePath,
+  getProfilePath,
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
   getSafeReturnTo,
@@ -779,38 +780,63 @@ function ParrotLessonSceneRoute() {
 function MyLessonRoute() {
   const { lessonId, sceneNumber } = useParams();
   const [entry, setEntry] = useState<LessonCatalogEntry | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [loadSequence, setLoadSequence] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     if (!lessonId) {
+      setLoadError("This lesson link is incomplete.");
       setIsLoading(false);
       return () => controller.abort();
     }
     setIsLoading(true);
+    setLoadError("");
     void loadMyLesson(lessonId, { signal: controller.signal })
       .then((descriptor) => {
         setEntry({ id: descriptor.id, lesson: descriptor.lesson });
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setEntry(null);
+      .catch((caughtError: unknown) => {
+        if (controller.signal.aborted) return;
+        setEntry(null);
+        setLoadError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Your lesson could not be loaded.",
+        );
       })
       .finally(() => {
         if (!controller.signal.aborted) setIsLoading(false);
-      });
+    });
     return () => controller.abort();
-  }, [lessonId]);
+  }, [lessonId, loadSequence]);
 
   if (isLoading) {
     return (
-      <main className="feature-placeholder-page">
-        <section className="feature-placeholder-card" role="status">
-          <h1>Loading lesson...</h1>
-        </section>
-      </main>
+      <FeaturePlaceholder
+        actionLabel="Back to lessons"
+        actionTo="/lessons"
+        busy
+        description="Getting the story and speaking practice ready."
+        title="Loading your lesson…"
+      />
     );
   }
-  if (!entry) return <Navigate replace to="/lessons" />;
+  if (!entry) {
+    return (
+      <FeaturePlaceholder
+        actionLabel="Back to lessons"
+        actionTo="/lessons"
+        description={
+          loadError ||
+          "It may have been removed, or your lessons may still be loading."
+        }
+        onRetry={() => setLoadSequence((current) => current + 1)}
+        title="We couldn’t open that lesson"
+      />
+    );
+  }
   const decision = resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
   return <LessonRouteDecisionView decision={decision} source="my" />;
 }
@@ -822,8 +848,12 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
       <Route
         element={
           <FeaturePlaceholder
-            description="Peppa's voice chat is unavailable right now. Please try again soon."
-            title="Talk to Peppa"
+            actionLabel="Choose a lesson"
+            actionTo="/lessons"
+            description="Voice chat isn't available right now. You can choose a lesson or try again soon."
+            secondaryActionLabel="Back to home"
+            secondaryActionTo="/"
+            title="Peppa is taking a break"
           />
         }
         path="/talk-to-peppa"
@@ -854,21 +884,11 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         path="/lessons/my/:lessonId/scenes/:sceneNumber"
       />
       <Route
-        element={
-          <FeaturePlaceholder
-            description="Progress tracking is coming soon."
-            title="Progress"
-          />
-        }
+        element={<Navigate replace to="/" />}
         path="/progress"
       />
       <Route
-        element={
-          <FeaturePlaceholder
-            description="Storytelling practice is coming soon."
-            title="Storytelling"
-          />
-        }
+        element={<Navigate replace to="/" />}
         path="/stories"
       />
       <Route element={<Navigate replace to={loginTarget} />} path="/login" />
@@ -890,10 +910,6 @@ function RoutedApplication() {
       lessonRouteExitRegistryRef.current.register(barrier),
     [],
   );
-  const openProfileRoute = useCallback(() => {
-    lessonRouteExitRegistryRef.current.exit();
-    navigate("/profile");
-  }, [navigate]);
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
   const isLearnerProfileRoute = gateRoute === "learner-profile";
@@ -907,6 +923,10 @@ function RoutedApplication() {
     location.search,
     location.hash,
   );
+  const openProfileRoute = useCallback(() => {
+    lessonRouteExitRegistryRef.current.exit();
+    navigate(getProfilePath(requestedProtectedTarget));
+  }, [navigate, requestedProtectedTarget]);
 
   return (
     <LessonRouteExitBarrierContext.Provider
@@ -932,12 +952,18 @@ function RoutedApplication() {
               to={getLearnerProfilePath(requestedProtectedTarget)}
             />
           }
-          onCloseProfileRoute={() => navigate("/")}
+          onCloseProfileRoute={() =>
+            navigate(safeReturnTo, { replace: true })
+          }
           onConversationCompleted={() => navigate("/", { replace: true })}
           onOpenProfileRoute={openProfileRoute}
-          onRedoCompleted={() => navigate("/profile", { replace: true })}
+          onRedoCompleted={() =>
+            navigate(safeReturnTo, { replace: true })
+          }
           onRedoLearnerProfileRoute={() =>
-            navigate(getRedoLearnerProfilePath("/profile"))
+            navigate(
+              getRedoLearnerProfilePath(getProfilePath(safeReturnTo)),
+            )
           }
           redoLearnerProfile={redoLearnerProfile}
         >

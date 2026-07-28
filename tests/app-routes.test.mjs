@@ -85,6 +85,10 @@ describe("app route helpers", () => {
       "/profile/setup?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
     );
     assert.equal(
+      routes.getProfilePath("/lessons?source=home#ready-made"),
+      "/profile?returnTo=%2Flessons%3Fsource%3Dhome%23ready-made",
+    );
+    assert.equal(
       routes.getRedoLearnerProfilePath("/profile"),
       "/profile/setup?redo=1&returnTo=%2Fprofile",
     );

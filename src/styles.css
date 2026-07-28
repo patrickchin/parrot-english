@@ -37,6 +37,12 @@
   }
 }
 
+@custom-variant short-wide {
+  @media (max-height: 620px) and (min-width: 560px) {
+    @slot;
+  }
+}
+
 @utility bg-auth {
   background-image:
     radial-gradient(

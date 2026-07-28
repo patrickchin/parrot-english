@@ -126,9 +126,9 @@ export function ScriptEditor({
           </label>
           <p className="mb-0 mt-1 font-bold leading-relaxed text-slate-600">
             {activeTab === "generate"
-              ? "Generate a draft, then change any JSON before saving."
+              ? "Optional: change the generated JSON, then review it again."
               : activeTab === "upload"
-                ? "Paste your lesson JSON into the editor, then change anything you need."
+                ? "Paste lesson JSON into the editor, then change anything you need."
                 : "Change any part of the saved lesson JSON, then review your edits."}
           </p>
         </div>
@@ -156,7 +156,7 @@ export function ScriptEditor({
         onChange={(event) => onScriptChange(event.currentTarget.value)}
         placeholder={
           activeTab === "generate"
-            ? "Your generated lesson JSON will appear here."
+            ? "Your generated lesson JSON appears here."
             : activeTab === "upload"
               ? "Paste a complete Parrot English lesson JSON script here."
               : "The saved lesson JSON will appear here."
@@ -247,8 +247,8 @@ export function LessonCreator() {
       setLessonSource("generated");
       setNotice(
         generatedDraft.warnings.length > 0
-          ? "Generated script ready with safe defaults. Review the warnings or save it as-is."
-          : "Generated script ready. You can edit the JSON before saving.",
+          ? "Your lesson is ready with safe defaults. Review the warnings or save it as-is."
+          : "Your lesson is ready to review and save.",
       );
     } catch (caughtError) {
       setError(
@@ -352,15 +352,16 @@ export function LessonCreator() {
       <section className="mx-auto grid w-full max-w-4xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
         <header className="text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
-            Create a Lesson
+            Create a custom lesson
           </h1>
           <p className="mb-0 mt-3 text-lg font-bold text-slate-600">
-            Make a new speaking adventure for your learner.
+            Grown-up tools: turn a topic into a speaking lesson, or import
+            lesson JSON.
           </p>
         </header>
 
         <div
-          aria-label="Create lesson methods"
+          aria-label="Choose how to create a custom lesson"
           className="grid grid-cols-2 gap-2 rounded-3xl bg-sky-100 p-2"
           role="tablist"
         >
@@ -374,7 +375,7 @@ export function LessonCreator() {
             type="button"
             variant={activeTab === "generate" ? "navy" : "surface"}
           >
-            <Sparkles aria-hidden="true" className="size-5" /> Generate Script
+            <Sparkles aria-hidden="true" className="size-5" /> Make with AI
           </ActionButton>
           <ActionButton
             role="tab"
@@ -386,7 +387,7 @@ export function LessonCreator() {
             type="button"
             variant={activeTab === "upload" ? "navy" : "surface"}
           >
-            <FileJson aria-hidden="true" className="size-5" /> Upload Script
+            <FileJson aria-hidden="true" className="size-5" /> Import JSON
           </ActionButton>
         </div>
 
@@ -423,17 +424,26 @@ export function LessonCreator() {
                 type="submit"
               >
                 <Sparkles aria-hidden="true" className="size-5" />
-                {busyAction === "generate" ? "Generating script..." : "Generate script"}
+                {busyAction === "generate" ? "Making lesson…" : "Make lesson"}
               </ActionButton>
             </form>
-            <ScriptEditor
-              activeTab={activeTab}
-              busyAction={busyAction}
-              onPaste={() => void handlePaste()}
-              onReview={handleReview}
-              onScriptChange={updateScript}
-              scriptText={scriptText}
-            />
+            {scriptText ? (
+              <details className="rounded-3xl border-3 border-sky-200 bg-sky-50 p-4 md:p-6">
+                <summary className="cursor-pointer font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink">
+                  Advanced: edit lesson JSON
+                </summary>
+                <div className="mt-5">
+                  <ScriptEditor
+                    activeTab={activeTab}
+                    busyAction={busyAction}
+                    onPaste={() => void handlePaste()}
+                    onReview={handleReview}
+                    onScriptChange={updateScript}
+                    scriptText={scriptText}
+                  />
+                </div>
+              </details>
+            ) : null}
           </section>
         ) : (
           <section

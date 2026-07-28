@@ -95,7 +95,8 @@ accepted. Signing out returns the app to the login route.
 After authentication, `LearnerProfileGate` checks the learner profile. Incomplete
 learners remain at `/profile/setup`; completed learners continue to the preserved
 destination. The normal completed sequence is therefore authentication →
-learner introduction → the four-card home at `/`.
+learner introduction → the two-primary-choice learner home at `/`. Progress and
+Storytelling are rendered there only as disabled previews.
 
 ## Browser Route Ownership
 
@@ -103,12 +104,14 @@ The URL is authoritative for durable screens and lesson scenes:
 
 ```text
 /
+├── /talk-to-peppa
 ├── /lessons
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/:lessonId/scenes/:sceneNumber
-│   └── /lessons/my/create
-├── /progress
-├── /stories
+│   ├── /lessons/my/create
+│   └── /lessons/my/:lessonId/edit
+├── /progress (legacy redirect to /)
+├── /stories (legacy redirect to /)
 ├── /profile
 ├── /login
 └── /profile/setup
@@ -119,7 +122,8 @@ ownership. Parrot lessons are checked-in JSON. Learner-created lessons belong
 to the D1 `learner_lesson` table and use the `/lessons/my/*` namespace;
 the built-in catalog has no D1 lesson rows, and the route namespace prevents an
 identical ID from conflicting. Create Lesson is implemented; Progress and
-Storytelling remain skeleton routes.
+Storytelling are retained only as backward-compatible redirects until they
+provide real product outcomes.
 
 Scene URLs are one-based and durable. Button-driven scene changes navigate
 first and reconcile reducer state to the new route. Browser Back/Forward and a

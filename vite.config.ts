@@ -262,6 +262,37 @@ function parrotE2eMockApi(): Plugin {
           return;
         }
 
+        if (
+          pathname === "/api/conversations/e2e-conversation" &&
+          request.method === "GET"
+        ) {
+          sendMockJson(response, {
+            conversation: {
+              id: "e2e-conversation",
+              turns: [
+                {
+                  id: "e2e-agent-greeting",
+                  role: "assistant",
+                  text: "Lovely chat! I'll remember that.",
+                },
+              ],
+            },
+          });
+          return;
+        }
+
+        if (
+          pathname === "/api/conversations/e2e-conversation/review" &&
+          request.method === "PUT"
+        ) {
+          sendMockJson(response, {
+            bypassed: false,
+            conversationId: "e2e-conversation",
+            profileCompleted: true,
+          });
+          return;
+        }
+
         next();
       });
 

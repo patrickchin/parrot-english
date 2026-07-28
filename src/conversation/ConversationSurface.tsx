@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Flag,
   LoaderCircle,
   Mic,
   MicOff,
@@ -8,10 +7,9 @@ import {
   Volume2,
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
-import { HeaderButton, RouteHeader } from "../app/AppHeader";
-import { formatResponseLatency } from "./response-latency";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
-import { ActionButton, cx, IconButton } from "../shared/ui";
+import { HeaderButton, RouteHeader } from "../app/AppHeader";
+import { ActionButton, cx, IconButton, TextButton } from "../shared/ui";
 
 export type ConversationSurfaceStatus =
   | "ready"
@@ -41,20 +39,8 @@ type ConversationSurfaceProps = {
   purpose: ConversationPurpose;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
+  turnReady: boolean;
   turns: ConversationSurfaceTurn[];
-};
-
-const STATUS_LABELS: Record<
-  Exclude<ConversationSurfaceStatus, "ready">,
-  string
-> = {
-  connecting: "Joining Peppa…",
-  listening: "Listening — take your time",
-  thinking: "Peppa is thinking…",
-  speaking: "Peppa is talking",
-  reconnecting: "Reconnecting… your answers are safe",
-  error: "The voice room took a break",
-  saving: "Saving your profile…",
 };
 
 const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
@@ -68,9 +54,29 @@ const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
   saving: "/assets/characters/peppa/peppa-happy.webp",
 };
 
+const PURPOSE_COPY: Record<
+  ConversationPurpose,
+  { finishLabel: string | null; title: string }
+> = {
+  "small-chat": {
+    finishLabel: null,
+    title: "Chat with Peppa",
+  },
+  onboarding: {
+    finishLabel: "Save and finish",
+    title: "Help Peppa know you",
+  },
+  "profile-edit": {
+    finishLabel: "Save changes",
+    title: "Update my profile",
+  },
+};
+
 function latestAssistantSpeech(turns: ConversationSurfaceTurn[]) {
   for (let index = turns.length - 1; index >= 0; index -= 1) {
-    if (turns[index].role === "assistant") return turns[index].text;
+    if (turns[index].role === "assistant" && turns[index].text.trim()) {
+      return turns[index].text;
+    }
   }
   return null;
 }
@@ -100,61 +106,278 @@ function ConversationHeader({ onBack }: { onBack: () => void }) {
 
 function ConversationScreen({ children }: { children: ReactNode }) {
   return (
-    <main className="relative grid h-dvh w-full justify-items-center overflow-y-auto bg-conversation px-4 pb-4 pt-24 short:px-2.5 short:pb-2.5 short:pt-20 md:px-11 md:pb-11 md:pt-28">
+    <main className="relative h-dvh min-h-0 w-full overflow-hidden bg-conversation px-3 pb-3 pt-20 short:px-2 short:pb-2 short:pt-16 md:px-8 md:pb-6 md:pt-24">
       {children}
     </main>
   );
 }
 
-function ConversationSpeech({
-  children,
-  live = false,
-  onRepeatAudio,
-  repeatDisabled = false,
+function statusLabel(
+  status: ConversationSurfaceStatus,
+  microphoneEnabled: boolean,
+  purpose: ConversationPurpose,
+) {
+  if (status === "ready" || status === "connecting") {
+    return "Peppa is getting ready";
+  }
+  if (status === "listening") {
+    return microphoneEnabled ? "Listening to you" : "Your turn";
+  }
+  if (status === "thinking") return "Peppa is thinking";
+  if (status === "speaking") return "Peppa is talking";
+  if (status === "reconnecting") return "Reconnecting";
+  if (status === "error") return "Chat paused";
+  return purpose === "small-chat"
+    ? "Finishing your chat"
+    : "Saving your profile";
+}
+
+function ConversationStatus({
+  className,
+  microphoneEnabled,
+  purpose,
+  status,
 }: {
-  children: ReactNode;
-  live?: boolean;
-  onRepeatAudio?: () => void;
-  repeatDisabled?: boolean;
+  className?: string;
+  microphoneEnabled: boolean;
+  purpose: ConversationPurpose;
+  status: ConversationSurfaceStatus;
+}) {
+  const busy = [
+    "ready",
+    "connecting",
+    "thinking",
+    "reconnecting",
+    "saving",
+  ].includes(status);
+
+  return (
+    <p
+      aria-live="polite"
+      className={cx(
+        "m-0 inline-flex min-h-7 items-center gap-2 rounded-full bg-brand-ink/90 px-3 py-1 text-center text-sm font-black leading-tight text-white shadow-sm short:min-h-6 short:text-xs sm:text-base",
+        className,
+      )}
+      role="status"
+    >
+      {busy ? (
+        <LoaderCircle
+          aria-hidden="true"
+          className="size-4 shrink-0 animate-spin motion-reduce:animate-none"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={cx(
+            "size-2.5 shrink-0 rounded-full",
+            status === "error"
+              ? "bg-rose-300"
+              : microphoneEnabled
+                ? "animate-pulse bg-brand-yellow motion-reduce:animate-none"
+                : "bg-white",
+          )}
+        />
+      )}
+      {statusLabel(status, microphoneEnabled, purpose)}
+    </p>
+  );
+}
+
+type Caption = {
+  label: string;
+  liveTranscript: boolean;
+  role: "alert" | undefined;
+  text: string;
+};
+
+function selectCaption({
+  assistantSpeech,
+  error,
+  liveTranscript,
+  microphoneEnabled,
+  purpose,
+  status,
+}: {
+  assistantSpeech: string | null;
+  error: string;
+  liveTranscript: string;
+  microphoneEnabled: boolean;
+  purpose: ConversationPurpose;
+  status: ConversationSurfaceStatus;
+}): Caption {
+  if (status === "error") {
+    return {
+      label: "Something went wrong",
+      liveTranscript: false,
+      role: "alert",
+      text: error || "The voice room took a break. Try again.",
+    };
+  }
+  if (status === "ready") {
+    return {
+      label: "Peppa",
+      liveTranscript: false,
+      role: undefined,
+      text: "Getting our chat ready…",
+    };
+  }
+  if (status === "connecting") {
+    return {
+      label: "Almost there",
+      liveTranscript: false,
+      role: undefined,
+      text: "Peppa is getting ready. This can take about 25 seconds.",
+    };
+  }
+  if (status === "reconnecting") {
+    return {
+      label: "Connection update",
+      liveTranscript: false,
+      role: undefined,
+      text: "The connection wobbled. Your answers are safe.",
+    };
+  }
+  if (status === "saving") {
+    return {
+      label: "All done",
+      liveTranscript: false,
+      role: undefined,
+      text:
+        purpose === "small-chat"
+          ? "That was fun! See you next time."
+          : "Lovely chat! I'll remember that.",
+    };
+  }
+  if (microphoneEnabled) {
+    return {
+      label: "You’re saying",
+      liveTranscript: true,
+      role: undefined,
+      text: liveTranscript || "Listening for your words…",
+    };
+  }
+  if (status === "thinking" && liveTranscript) {
+    return {
+      label: "You said",
+      liveTranscript: true,
+      role: undefined,
+      text: liveTranscript,
+    };
+  }
+  if (assistantSpeech) {
+    return {
+      label: "Peppa",
+      liveTranscript: false,
+      role: undefined,
+      text: assistantSpeech,
+    };
+  }
+  return {
+    label: "Peppa",
+    liveTranscript: false,
+    role: undefined,
+    text:
+      status === "thinking"
+        ? "I'm getting my reply ready…"
+        : status === "speaking"
+          ? "I'm talking…"
+          : "I'm listening!",
+  };
+}
+
+function ConversationCaptions({
+  caption,
+  className,
+  onRepeatAudio,
+  showRepeat,
+}: {
+  caption: Caption;
+  className?: string;
+  onRepeatAudio: () => void;
+  showRepeat: boolean;
 }) {
   return (
     <div
-      aria-label={onRepeatAudio ? "Peppa's message" : undefined}
       className={cx(
-        "relative w-11/12 max-w-lg rounded-3xl border-4 border-white bg-white p-4 text-center text-xl font-black leading-snug text-brand-ink shadow-control-surface after:absolute after:-bottom-3 after:left-1/2 after:size-6 after:-translate-x-1/2 after:rotate-45 after:bg-white short:p-3 short:text-base sm:p-5 sm:text-2xl",
-        onRepeatAudio && "min-h-16",
+        "relative h-24 w-full max-w-xl short:h-18",
+        className,
       )}
-      role={onRepeatAudio ? "group" : undefined}
     >
-      <p
-        aria-live={live ? "polite" : undefined}
-        className={cx("m-0", onRepeatAudio && "mr-14")}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-2.5 left-1/2 z-0 size-6 -translate-x-1/2 rotate-45 border-l-4 border-t-4 border-white bg-white short-wide:-left-2.5 short-wide:top-1/2 short-wide:-translate-y-1/2 short-wide:translate-x-0 short-wide:border-b-4 short-wide:border-l-4 short-wide:border-t-0"
+      />
+      <div
+        aria-label="Conversation captions"
+        className="relative z-10 h-full w-full overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-white/95 px-4 py-3 text-center text-brand-ink shadow-control-surface short:rounded-2xl short:px-3 short:py-2 sm:px-5 sm:py-4"
+        role="region"
+        tabIndex={0}
       >
-        {children}
-      </p>
-      {onRepeatAudio ? (
-        <IconButton
-          aria-label="Repeat Peppa's audio"
-          className="absolute bottom-2 right-2"
-          disabled={repeatDisabled}
-          onClick={onRepeatAudio}
-          type="button"
-          variant="brand"
+        <div
+          aria-label={
+            caption.liveTranscript ? "Live transcript" : "Peppa's message"
+          }
+          className={cx(
+            "relative grid min-h-full items-center",
+            showRepeat && "grid-cols-[minmax(0,1fr)_auto] gap-x-2",
+          )}
+          role={caption.liveTranscript ? undefined : "group"}
         >
-          <Volume2 aria-hidden="true" className="size-6" />
-        </IconButton>
-      ) : null}
+          <div
+            aria-label={
+              caption.label === "Peppa" ? "Peppa's speech" : undefined
+            }
+            className="min-w-0"
+            role={caption.label === "Peppa" ? "blockquote" : undefined}
+          >
+            <span className="text-xs font-black uppercase tracking-wide opacity-65 short:text-[0.65rem] sm:text-sm">
+              {caption.label}
+            </span>
+            <p
+              aria-live="polite"
+              className="m-0 mt-1 text-base font-black leading-snug sm:text-xl"
+              role={caption.role}
+            >
+              {caption.text}
+            </p>
+          </div>
+          {showRepeat ? (
+            <IconButton
+              aria-label="Repeat Peppa's audio"
+              className="sticky -bottom-2 col-start-2 row-start-1 size-10 translate-y-2 self-end shadow-none short:size-9"
+              onClick={onRepeatAudio}
+              type="button"
+              variant="brand"
+            >
+              <Volume2 aria-hidden="true" className="size-5" />
+            </IconButton>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
 
-function ConversationCharacter({ alt, src }: { alt: string; src: string }) {
+function WaitingTurnControl({ status }: { status: ConversationSurfaceStatus }) {
   return (
-    <img
-      alt={alt}
-      className="max-h-96 w-64 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-h-52 short:w-40 sm:w-80 lg:w-96"
-      src={src}
-    />
+    <ActionButton
+      aria-label="Waiting for Peppa"
+      className="min-h-14 short:min-h-12 short:px-3"
+      disabled
+      size="large"
+      type="button"
+      variant="surface"
+    >
+      <LoaderCircle
+        aria-hidden="true"
+        className="animate-spin motion-reduce:animate-none"
+      />
+      {status === "reconnecting"
+        ? "Reconnecting"
+        : status === "speaking"
+          ? "Peppa is talking"
+          : "Peppa is thinking"}
+    </ActionButton>
   );
 }
 
@@ -168,18 +391,34 @@ export function ConversationSurface({
   onStart,
   onToggleMicrophone,
   purpose,
-  responseLatencyMs = null,
   status,
+  turnReady,
   turns,
 }: ConversationSurfaceProps) {
-  const saving = status === "saving";
-  const joining = status === "connecting";
-  const thinking = status === "thinking";
-  const turnControlAvailable =
-    !saving && !joining && !thinking && status !== "error";
+  const turnInteractive = status === "listening" && turnReady;
+  const assistantSpeech = latestAssistantSpeech(turns);
+  const caption = selectCaption({
+    assistantSpeech,
+    error,
+    liveTranscript,
+    microphoneEnabled,
+    purpose,
+    status,
+  });
+  const showRepeat = Boolean(
+    assistantSpeech &&
+      status === "listening" &&
+      turnReady &&
+      !microphoneEnabled,
+  );
+  const expandLandscapeCaption = caption.text.length > 100;
+  const { finishLabel, title } = PURPOSE_COPY[purpose];
+  const showFinish =
+    finishLabel &&
+    !["ready", "connecting", "saving"].includes(status);
 
   useEffect(() => {
-    if (!turnControlAvailable) return;
+    if (!turnInteractive) return;
 
     function toggleTurnWithSpace(event: KeyboardEvent) {
       if (
@@ -195,195 +434,102 @@ export function ConversationSurface({
 
     window.addEventListener("keydown", toggleTurnWithSpace);
     return () => window.removeEventListener("keydown", toggleTurnWithSpace);
-  }, [onToggleMicrophone, turnControlAvailable]);
+  }, [onToggleMicrophone, turnInteractive]);
 
-  if (status === "ready") {
-    return (
-      <ConversationScreen>
-        <ConversationHeader onBack={onBack} />
-        <section className="grid w-full max-w-3xl justify-items-center gap-3 bg-transparent p-2 text-center md:p-5">
-          <h1 className="sr-only">Chat with Peppa</h1>
-          <div className="grid w-full place-items-center gap-4 short:gap-3 md:gap-6">
-            <ConversationSpeech>Getting our chat ready…</ConversationSpeech>
-            <ConversationCharacter
-              alt="Peppa smiling"
-              src={PEPPA_ASSETS.ready}
-            />
-          </div>
-        </section>
-      </ConversationScreen>
-    );
-  }
-
-  const assistantSpeech = latestAssistantSpeech(turns);
-  const savingMessage =
-    purpose === "small-chat"
-      ? "That was fun! See you next time."
-      : "Lovely chat! I'll remember that.";
-  const speech = assistantSpeech ??
-    (joining
-      ? "Almost ready!"
-      : saving
-        ? savingMessage
-        : "I'm listening!");
   return (
     <ConversationScreen>
       <ConversationHeader onBack={onBack} />
-      <section className="my-auto grid w-full max-w-3xl justify-items-center gap-3 bg-transparent p-2 short:p-3 md:p-5">
-        <div className="grid w-full place-items-center gap-4 short:gap-3 md:gap-6">
-          <ConversationSpeech
-            live
-            onRepeatAudio={assistantSpeech ? onRepeatAudio : undefined}
-            repeatDisabled={
-              status !== "listening" || microphoneEnabled
-            }
-          >
-            {speech}
-          </ConversationSpeech>
-          <figure className="relative m-0">
-            <ConversationCharacter
-              alt="Peppa"
-              src={PEPPA_ASSETS[status]}
-            />
-            {thinking || responseLatencyMs !== null ? (
-              <output
-                aria-label="Peppa response latency"
-                aria-live="polite"
-                className="pointer-events-none absolute bottom-2 right-2 whitespace-nowrap rounded-full border-2 border-white/80 bg-brand-ink/90 px-2.5 py-1 text-xs font-black text-white shadow-sm"
-                title="Time from ending your turn until Peppa starts speaking"
-              >
-                {responseLatencyMs === null
-                  ? "Timing…"
-                  : `Reply: ${formatResponseLatency(responseLatencyMs)}`}
-              </output>
-            ) : null}
-          </figure>
-        </div>
+      <section className="mx-auto grid h-full min-h-0 w-full max-w-3xl grid-rows-[auto_auto_minmax(0,1fr)_auto_auto] justify-items-center gap-2 text-center short:gap-1.5 short-wide:max-w-5xl short-wide:grid-cols-[minmax(12rem,2fr)_minmax(20rem,3fr)] short-wide:grid-rows-[auto_auto_minmax(0,1fr)_auto] short-wide:gap-x-4 md:gap-3">
+        <h1 className="m-0 text-lg font-black leading-tight text-brand-ink short:text-base short-wide:col-start-2 short-wide:row-start-1 short-wide:self-end sm:text-2xl">
+          {title}
+        </h1>
 
-        {joining ? (
-          <div
-            aria-live="assertive"
-            className="flex w-full max-w-xl items-center justify-center gap-4 rounded-3xl border-4 border-white bg-brand-ink px-5 py-4 text-left text-white shadow-control-navy"
-            role="status"
-          >
-            <span
-              aria-hidden="true"
-              className="size-10 shrink-0 animate-spin rounded-full border-4 border-white/35 border-t-brand-yellow motion-reduce:animate-none"
-            />
-            <span className="grid gap-1">
-              <strong className="text-xl leading-tight sm:text-2xl">
-                {STATUS_LABELS.connecting}
-              </strong>
-              <span className="text-sm font-bold leading-snug sm:text-base">
-                Please wait until Peppa says hello before you start talking.
-              </span>
-            </span>
-          </div>
-        ) : !thinking ? (
-          <p
-            aria-live="polite"
-            className="sr-only"
-            role="status"
-          >
-            {saving && purpose === "small-chat"
-              ? "Finishing your chat…"
-              : STATUS_LABELS[status]}
-          </p>
-        ) : null}
+        <ConversationStatus
+          className="short-wide:col-start-2 short-wide:row-start-2 short-wide:self-start"
+          microphoneEnabled={microphoneEnabled}
+          purpose={purpose}
+          status={status}
+        />
 
-        {microphoneEnabled || liveTranscript ? (
-          <output
-            aria-label="Live transcript"
-            aria-live="polite"
-            className="grid w-full max-w-xl gap-1 rounded-3xl border-4 border-white/80 bg-white/80 px-5 py-3 text-center text-brand-ink shadow-control-surface"
-          >
-            <span className="text-sm font-black uppercase tracking-wide opacity-75">
-              {microphoneEnabled ? "You’re saying" : "You said"}
-            </span>
-            <span className="min-h-7 text-lg font-black leading-snug sm:text-xl">
-              {liveTranscript || "Listening for your words…"}
-            </span>
-          </output>
-        ) : null}
-        {error ? (
-          <p
-            className="m-0 w-full max-w-xl rounded-2xl bg-rose-100 px-4 py-2.5 text-center font-extrabold text-rose-900"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+        <figure className="m-0 grid h-full min-h-0 w-full place-items-center short-wide:col-start-1 short-wide:row-span-4 short-wide:row-start-1">
+          <img
+            alt="Peppa"
+            className="h-full min-h-0 w-full max-w-sm animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-w-32 short-wide:max-w-56 sm:max-w-md"
+            src={PEPPA_ASSETS[status]}
+          />
+        </figure>
 
-        {!saving && !joining ? (
-          <div className="grid w-full max-w-xl justify-items-center gap-3">
-            {status === "error" ? (
-              <ActionButton
-                onClick={onStart}
-                size="large"
-                type="button"
-              >
-                <RotateCcw aria-hidden="true" />
-                Try again
-              </ActionButton>
-            ) : thinking ? (
-              <ActionButton
-                aria-label="Waiting for Peppa's reply"
-                disabled
-                size="large"
-                type="button"
-                variant="surface"
-              >
-                <LoaderCircle
-                  aria-hidden="true"
-                  className="animate-spin motion-reduce:animate-none"
-                />
-                <span
-                  aria-live="polite"
-                  className="grid justify-items-start leading-tight"
-                  role="status"
-                >
-                  <strong>{STATUS_LABELS.thinking}</strong>
-                  <small className="mt-1 text-xs font-bold opacity-85">
-                    Getting her reply ready
-                  </small>
-                </span>
-              </ActionButton>
-            ) : (
-              <ActionButton
-                aria-keyshortcuts="Space"
-                aria-pressed={microphoneEnabled}
-                onClick={onToggleMicrophone}
-                size="large"
-                type="button"
-                variant={microphoneEnabled ? "brand" : "success"}
-              >
-                {microphoneEnabled ? (
-                  <MicOff aria-hidden="true" />
-                ) : (
-                  <Mic aria-hidden="true" />
-                )}
-                <span className="grid justify-items-start leading-tight">
-                  <strong>
-                    {microphoneEnabled ? "End my turn" : "Start my turn"}
-                  </strong>
-                  <small className="mt-1 text-xs font-bold opacity-85">
-                    Click or press Space
-                  </small>
-                </span>
-              </ActionButton>
-            )}
+        <ConversationCaptions
+          caption={caption}
+          className={cx(
+            "short-wide:col-start-2 short-wide:row-start-3",
+            expandLandscapeCaption
+              ? "short-wide:h-full short-wide:self-stretch"
+              : "short-wide:h-28 short-wide:self-end",
+          )}
+          onRepeatAudio={onRepeatAudio}
+          showRepeat={showRepeat}
+        />
 
+        <div
+          aria-label="Conversation controls"
+          className={cx(
+            "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12",
+            showFinish && "grid-cols-[minmax(0,1fr)_auto]",
+            "short-wide:col-start-2 short-wide:row-start-4",
+          )}
+          role="group"
+        >
+          {status === "error" ? (
             <ActionButton
-              onClick={onFinish}
+              className="min-h-14 short:min-h-12 short:px-3"
+              onClick={onStart}
               size="large"
               type="button"
-              variant="surface"
             >
-              <Flag aria-hidden="true" />
-              Finish conversation
+              <RotateCcw aria-hidden="true" />
+              Try again
             </ActionButton>
-          </div>
-        ) : null}
+          ) : turnInteractive ? (
+            <ActionButton
+              aria-keyshortcuts="Space"
+              aria-pressed={microphoneEnabled}
+              className="min-h-14 short:min-h-12 short:px-3 short:text-sm"
+              onClick={onToggleMicrophone}
+              size="large"
+              type="button"
+              variant={microphoneEnabled ? "brand" : "success"}
+            >
+              {microphoneEnabled ? (
+                <MicOff aria-hidden="true" />
+              ) : (
+                <Mic aria-hidden="true" />
+              )}
+              <span className="grid justify-items-start leading-tight">
+                <strong>
+                  {microphoneEnabled ? "End my turn" : "Start my turn"}
+                </strong>
+                <small className="mt-1 text-xs font-bold opacity-85 short:hidden">
+                  Click or press Space
+                </small>
+              </span>
+            </ActionButton>
+          ) : ["thinking", "speaking", "reconnecting"].includes(status) ? (
+            <WaitingTurnControl status={status} />
+          ) : (
+            <span aria-hidden="true" className="block h-14 short:h-12" />
+          )}
+
+          {showFinish ? (
+            <TextButton
+              className="whitespace-nowrap px-2 text-sm sm:px-3 sm:text-base"
+              onClick={onFinish}
+              type="button"
+            >
+              {finishLabel}
+            </TextButton>
+          ) : null}
+        </div>
       </section>
     </ConversationScreen>
   );

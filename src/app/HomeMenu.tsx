@@ -1,123 +1,119 @@
-import { BookOpen, MessageCircle, Play, Plus, Sparkles } from "lucide-react";
+import { BookOpen, MessageCircle, Play, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 import { cx } from "../shared/ui";
 
-const ACTIVITIES = [
+const PRIMARY_ACTIVITIES = [
   {
-    description: "Have a friendly English conversation with Peppa.",
-    disabled: false,
+    description: "Chat freely about things you like.",
     icon: MessageCircle,
     label: "Talk to Peppa",
     tone: "navy",
     to: "/talk-to-peppa",
   },
   {
-    description: "Practice with Parrot lessons and learner-created lessons.",
-    disabled: false,
+    description: "Follow a story and practice speaking step by step.",
     icon: Play,
     label: "Lessons",
     tone: "rose",
     to: "/lessons",
   },
+] as const;
+
+const UPCOMING_ACTIVITIES = [
   {
-    description: "Build a new lesson around what you want to practice.",
-    disabled: false,
-    icon: Plus,
-    label: "Create a Lesson",
-    tone: "green",
-    to: "/lessons/my/create",
-  },
-  {
-    description: "See how your English practice is growing.",
-    disabled: true,
     icon: Sparkles,
     label: "Progress",
     tone: "amber",
-    to: "/progress",
   },
   {
-    description: "Practice English by making and telling stories.",
-    disabled: true,
     icon: BookOpen,
     label: "Storytelling",
-    tone: "navy",
-    to: "/stories",
+    tone: "blue",
   },
 ] as const;
 
 export function HomeMenu() {
   return (
-    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto bg-home px-4 pb-10 pt-40 md:px-8 md:pb-14 md:pt-32 lg:px-16">
+    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto bg-home px-4 pb-10 pt-24 short:pt-20 md:px-8 md:pb-14 md:pt-32 lg:px-16">
       <header className="mx-auto mb-6 w-full max-w-5xl text-center md:mb-10">
         <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-5xl lg:text-7xl">
-          What would you like to practice?
+          What do you want to do today?
         </h1>
       </header>
       <nav
         aria-label="Learning activities"
-        className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 md:grid-cols-2 md:gap-6"
+        className="mx-auto w-full max-w-5xl"
       >
-        {ACTIVITIES.map(
-          ({ description, disabled, icon: Icon, label, to, tone }) => {
-            const content = (
-              <>
-                <Icon
-                  aria-hidden="true"
-                  className={cx(
-                    "size-14 shrink-0 rounded-2xl p-3 text-white shadow-control-navy md:size-18 md:p-4",
-                    disabled
-                      ? "bg-slate-500"
-                      : tone === "navy" && "bg-brand-navy",
-                    !disabled && tone === "rose" && "bg-brand-rose",
-                    !disabled && tone === "green" && "bg-brand-green",
-                  )}
-                />
-                <span className="grid gap-2">
-                  <strong
-                    className={cx(
-                      "text-2xl leading-tight md:text-3xl",
-                      disabled
-                        ? "text-slate-600"
-                        : tone === "navy" && "text-brand-navy",
-                      !disabled && tone === "rose" && "text-brand-rose",
-                      !disabled && tone === "green" && "text-brand-green",
-                    )}
-                  >
-                    {label}
-                  </strong>
-                  <span className="font-bold leading-relaxed">
-                    {description}
-                  </span>
-                  {disabled ? (
-                    <small className="w-fit rounded-full bg-brand-navy px-3 py-1 text-xs font-black uppercase tracking-wider text-white">
-                      Coming soon
-                    </small>
-                  ) : null}
-                </span>
-              </>
-            );
-
-            return disabled ? (
-              <button
-                aria-label={label + ", coming soon"}
-                className="flex min-h-36 w-full cursor-not-allowed items-center gap-4 rounded-3xl border-4 border-white bg-slate-200/95 p-5 text-left text-slate-900 opacity-70 shadow-card grayscale focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-52 md:gap-5 md:p-8"
-                disabled
-                key={to}
-                type="button"
-              >
-                {content}
-              </button>
-            ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+          {PRIMARY_ACTIVITIES.map(
+            ({ description, icon: Icon, label, to, tone }) => (
               <Link
-                className="flex min-h-36 items-center gap-4 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-52 md:gap-5 md:p-8"
+                className="grid min-h-40 grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-4 gap-y-3 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-56 md:gap-x-6 md:p-8"
                 key={to}
                 to={to}
               >
-                {content}
+                <Icon
+                  aria-hidden="true"
+                  className={cx(
+                    "size-13 shrink-0 rounded-2xl p-3 text-white shadow-control-navy sm:size-14 md:size-18 md:p-4",
+                    tone === "navy" && "bg-brand-navy",
+                    tone === "rose" && "bg-brand-rose",
+                  )}
+                />
+                <strong
+                  className={cx(
+                    "text-2xl leading-tight md:text-3xl",
+                    tone === "navy" && "text-brand-navy",
+                    tone === "rose" && "text-brand-rose",
+                  )}
+                >
+                  {label}
+                </strong>
+                <span className="col-span-2 w-full font-bold leading-relaxed md:col-span-1 md:col-start-2">
+                  {description}
+                </span>
               </Link>
-            );
-          },
-        )}
+            ),
+          )}
+        </div>
+
+        <section
+          aria-labelledby="upcoming-activities-title"
+          className="mt-7 md:mt-9"
+        >
+          <h2
+            className="mb-3 mt-0 text-center text-xl leading-tight text-brand-navy md:mb-4 md:text-2xl"
+            id="upcoming-activities-title"
+          >
+            More to explore
+          </h2>
+          <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-5">
+            {UPCOMING_ACTIVITIES.map(({ icon: Icon, label, tone }) => (
+              <button
+                aria-label={`${label}, coming soon`}
+                className="flex min-h-24 w-full cursor-not-allowed items-center gap-4 rounded-2xl border-4 border-white bg-white/75 p-4 text-left text-slate-700 opacity-80 shadow-card min-[360px]:min-h-36 min-[360px]:flex-col min-[360px]:justify-center min-[360px]:gap-2 min-[360px]:text-center md:min-h-40 md:rounded-3xl"
+                disabled
+                key={label}
+                type="button"
+              >
+                <Icon
+                  aria-hidden="true"
+                  className={cx(
+                    "size-11 shrink-0 rounded-xl p-2.5 text-white shadow-control-navy",
+                    tone === "amber" && "bg-amber-500",
+                    tone === "blue" && "bg-brand-blue",
+                  )}
+                />
+                <span className="grid gap-1">
+                  <strong className="text-xl leading-tight">{label}</strong>
+                  <small className="w-fit rounded-full bg-brand-navy px-2.5 py-1 text-[0.65rem] font-black uppercase tracking-wider text-white min-[360px]:mx-auto">
+                    Coming soon
+                  </small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       </nav>
     </main>
   );
