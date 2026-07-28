@@ -128,7 +128,7 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
   });
 
-  it("offers the turn action only when it is really the learner's turn", () => {
+  it("keeps the turn action available while Peppa is talking", () => {
     const learnerTurn = render({
       microphoneEnabled: false,
       status: "listening",
@@ -152,14 +152,14 @@ describe("accessible realtime conversation surface", () => {
     const openingSpeech = render({
       microphoneEnabled: false,
       status: "speaking",
-      turnReady: false,
+      turnReady: true,
       turns: [
         { id: "opening", role: "assistant", text: "Hello! I am Peppa." },
       ],
     });
     assert.match(openingSpeech, /Peppa is talking/);
-    assert.match(openingSpeech, /Waiting for Peppa/);
-    assert.doesNotMatch(openingSpeech, /Start my turn|End my turn/);
+    assert.match(openingSpeech, /Start my turn/);
+    assert.doesNotMatch(openingSpeech, /Waiting for Peppa/);
 
     const reconnecting = render({
       microphoneEnabled: false,

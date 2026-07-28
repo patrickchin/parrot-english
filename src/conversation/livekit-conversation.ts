@@ -7,6 +7,7 @@ import {
 export const LIVEKIT_CONVERSATION_EVENTS = {
   activeSpeakers: RoomEvent.ActiveSpeakersChanged,
   disconnected: RoomEvent.Disconnected,
+  participantAttributes: RoomEvent.ParticipantAttributesChanged,
   reconnected: RoomEvent.Reconnected,
   reconnecting: RoomEvent.Reconnecting,
   trackSubscribed: RoomEvent.TrackSubscribed,
@@ -287,12 +288,39 @@ export function createLiveKitConversation({
               typeof participant === "object" &&
               (!("isLocal" in participant) || participant.isLocal !== true),
           );
-        if (remoteAssistantSpeaking === assistantSpeaking) return;
-        assistantSpeaking = remoteAssistantSpeaking;
-        publish({
-          type: remoteAssistantSpeaking ? "speech-started" : "speech-ended",
-          role: "assistant",
-        });
+        if (!remoteAssistantSpeaking || assistantSpeaking) return;
+        assistantSpeaking = true;
+        publish({ type: "speech-started", role: "assistant" });
+      },
+    ],
+    [
+      RoomEvent.ParticipantAttributesChanged,
+      (changedAttributes, participant) => {
+        const local =
+          participant !== null &&
+          typeof participant === "object" &&
+          "isLocal" in participant &&
+          participant.isLocal === true;
+        if (
+          local ||
+          changedAttributes === null ||
+          typeof changedAttributes !== "object"
+        ) {
+          return;
+        }
+        const state = (changedAttributes as Record<string, unknown>)[
+          "lk.agent.state"
+        ];
+        if (state === "speaking" && !assistantSpeaking) {
+          assistantSpeaking = true;
+          publish({ type: "speech-started", role: "assistant" });
+        } else if (
+          (state === "idle" || state === "listening") &&
+          assistantSpeaking
+        ) {
+          assistantSpeaking = false;
+          publish({ type: "speech-ended", role: "assistant" });
+        }
       },
     ],
     [RoomEvent.Reconnecting, () => publish({ type: "state", state: "reconnecting" })],

@@ -298,6 +298,16 @@ describe("purpose-specific Peppa conversation prompts", () => {
     assert.match(prompts["small-chat"], /do not.*profile/i);
     assert.equal(new Set(Object.values(prompts)).size, 3);
   });
+
+  it("keeps Peppa's speech brief and easy for a beginner child", () => {
+    for (const prompt of Object.values(CONVERSATION_SYSTEM_PROMPTS)) {
+      assert.match(prompt, /beginner English/i);
+      assert.match(prompt, /one short sentence/i);
+      assert.match(prompt, /3[-–]8 words/i);
+      assert.match(prompt, /one question/i);
+      assert.match(prompt, /opening.*10 words/is);
+    }
+  });
 });
 
 describe("single-inference learner-profile agent contract", () => {
