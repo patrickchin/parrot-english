@@ -395,7 +395,8 @@ export function ConversationSurface({
   turnReady,
   turns,
 }: ConversationSurfaceProps) {
-  const turnInteractive = status === "listening" && turnReady;
+  const turnInteractive =
+    turnReady && (status === "listening" || status === "speaking");
   const assistantSpeech = latestAssistantSpeech(turns);
   const caption = selectCaption({
     assistantSpeech,
