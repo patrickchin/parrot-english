@@ -32,6 +32,7 @@ function props(overrides = {}) {
     purpose: "small-chat",
     responseLatencyMs: null,
     status: "ready",
+    turnReady: true,
     turns: [],
     ...overrides,
   };
@@ -44,7 +45,7 @@ function render(overrides = {}) {
 }
 
 describe("accessible realtime conversation surface", () => {
-  it("shows Peppa while the conversation starts automatically", () => {
+  it("shows one focused Peppa call stage while starting automatically", () => {
     const html = render();
 
     assert.match(html, /Getting our chat ready/);
@@ -53,6 +54,7 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /Start talking/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.doesNotMatch(html, /About this chat/);
+    assert.doesNotMatch(html, /Finish conversation|Response latency|Timing…/);
   });
 
   it("keeps a consistent Back action on every conversation state", () => {
@@ -75,6 +77,37 @@ describe("accessible realtime conversation surface", () => {
     }
   });
 
+  it("uses purpose-specific framing and completion behavior", () => {
+    const smallChat = render({
+      microphoneEnabled: false,
+      purpose: "small-chat",
+      status: "listening",
+    });
+    assert.match(smallChat, /Chat with Peppa/);
+    assert.doesNotMatch(
+      smallChat,
+      /Help Peppa know you|Update my profile|Save and finish|Save changes/,
+    );
+
+    const onboarding = render({
+      microphoneEnabled: false,
+      purpose: "onboarding",
+      status: "listening",
+    });
+    assert.match(onboarding, /Help Peppa know you/);
+    assert.match(onboarding, /Save and finish/);
+    assert.doesNotMatch(onboarding, /Update my profile|Finish conversation/);
+
+    const profileEdit = render({
+      microphoneEnabled: false,
+      purpose: "profile-edit",
+      status: "listening",
+    });
+    assert.match(profileEdit, /Update my profile/);
+    assert.match(profileEdit, /Save changes/);
+    assert.doesNotMatch(profileEdit, /Help Peppa know you|Finish conversation/);
+  });
+
   it("finishes ordinary chat without claiming to save the profile", () => {
     const html = render({ purpose: "small-chat", status: "saving" });
 
@@ -82,35 +115,31 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(html, /remember that|Saving your profile/);
   });
 
-  it("makes joining unmistakable before Peppa enables learner input", () => {
-    const connecting = render({ status: "connecting", microphoneEnabled: false });
-    assert.match(connecting, /Joining Peppa/);
-    assert.match(connecting, /Please wait[^<]*Peppa says hello/i);
+  it("makes a genuine cold-start wait calm, honest, and non-interactive", () => {
+    const connecting = render({
+      status: "connecting",
+      microphoneEnabled: false,
+      turnReady: false,
+    });
+    assert.match(connecting, /Peppa is getting ready/);
+    assert.match(connecting, /about 25 seconds/i);
     assert.doesNotMatch(connecting, /Start my turn|End my turn/);
+    assert.doesNotMatch(connecting, /Repeat Peppa|Response latency|Timing…/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
   });
 
-  it("keeps only the two clear conversation actions after Peppa opens", () => {
-    for (const status of [
-      "listening",
-      "speaking",
-      "reconnecting",
-    ]) {
-      const html = render({
-        microphoneEnabled: false,
-        status,
-      });
-      assert.match(html, /aria-pressed="false"/, status);
-      assert.match(html, /Start my turn/, status);
-      assert.match(html, /Finish conversation/, status);
-      assert.doesNotMatch(
-        html,
-        /Type instead|Type your answer|>Send<|Mute microphone|Turn microphone on/,
-        status,
-      );
-      assert.match(html, /aria-live="polite"/, status);
-      assert.match(html, /peppa\/peppa-[a-z]+\.webp/, status);
-    }
+  it("offers the turn action only when it is really the learner's turn", () => {
+    const learnerTurn = render({
+      microphoneEnabled: false,
+      status: "listening",
+    });
+    assert.match(learnerTurn, /aria-pressed="false"/);
+    assert.match(learnerTurn, /Start my turn/);
+    assert.match(learnerTurn, /Your turn/);
+    assert.doesNotMatch(
+      learnerTurn,
+      /Type instead|Type your answer|>Send<|Mute microphone|Turn microphone on/,
+    );
 
     const activeTurn = render({
       microphoneEnabled: true,
@@ -119,15 +148,49 @@ describe("accessible realtime conversation surface", () => {
     assert.match(activeTurn, /aria-pressed="true"/);
     assert.match(activeTurn, /End my turn/);
     assert.match(activeTurn, /Click or press Space/);
+
+    const openingSpeech = render({
+      microphoneEnabled: false,
+      status: "speaking",
+      turnReady: false,
+      turns: [
+        { id: "opening", role: "assistant", text: "Hello! I am Peppa." },
+      ],
+    });
+    assert.match(openingSpeech, /Peppa is talking/);
+    assert.match(openingSpeech, /Waiting for Peppa/);
+    assert.doesNotMatch(openingSpeech, /Start my turn|End my turn/);
+
+    const reconnecting = render({
+      microphoneEnabled: false,
+      status: "reconnecting",
+    });
+    assert.match(reconnecting, /Reconnecting/);
+    assert.doesNotMatch(reconnecting, /Start my turn|End my turn/);
   });
 
-  it("streams the learner transcript and keeps the latest words after the turn", () => {
+  it("uses one caption region for Peppa and the live learner transcript", () => {
+    const peppa = render({
+      microphoneEnabled: false,
+      status: "listening",
+      turns: [
+        { id: "one", role: "assistant", text: "What do you like to do?" },
+      ],
+    });
     const activeTurn = render({
       liveTranscript: "My name is Mia",
       microphoneEnabled: true,
       status: "listening",
     });
+    const document = new Window().document;
+    document.body.innerHTML = peppa;
+    const captions = document.querySelector(
+      '[aria-label="Conversation captions"]',
+    );
+    assert.ok(captions);
+    assert.match(captions.textContent, /What do you like to do/);
 
+    assert.match(activeTurn, /aria-label="Conversation captions"/);
     assert.match(activeTurn, /aria-label="Live transcript"/);
     assert.match(activeTurn, /aria-live="polite"/);
     assert.match(activeTurn, /You(?:’|&#x27;)re saying/);
@@ -143,7 +206,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(endedTurn, /My name is Mia/);
   });
 
-  it("shows that Peppa is preparing a reply after the learner ends their turn", () => {
+  it("shows a quiet thinking state without exposing a latency badge", () => {
     const html = render({
       microphoneEnabled: false,
       status: "thinking",
@@ -156,47 +219,15 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /role="status"/);
     assert.match(html, /aria-live="polite"/);
     assert.match(html, /Peppa is thinking/);
-    assert.match(html, /Getting her reply ready/);
-    assert.match(html, /Peppa response latency/);
-    assert.match(html, /Timing…/);
+    assert.match(html, /Waiting for Peppa/);
+    assert.doesNotMatch(html, /response latency|Reply:|Timing…/i);
     assert.doesNotMatch(html, /Start my turn|End my turn/);
-    assert.match(html, /Finish conversation/);
   });
 
-  it("shows the completed client-side latency when Peppa starts talking", () => {
+  it("shows only Peppa's latest speech and removes transcript history and developer controls", () => {
     const html = render({
       microphoneEnabled: false,
-      responseLatencyMs: 1_254,
-      status: "speaking",
-    });
-
-    assert.match(html, /Peppa response latency/);
-    assert.match(html, /Reply:/);
-    assert.match(html, /1\.25 s/);
-  });
-
-  it("keeps response timing with Peppa instead of adding a layout row", () => {
-    const html = render({
-      microphoneEnabled: false,
-      responseLatencyMs: 1_254,
-      status: "speaking",
-    });
-    const document = new Window().document;
-    document.body.innerHTML = html;
-
-    const timer = document.querySelector(
-      'output[aria-label="Peppa response latency"]',
-    );
-    const figure = timer?.closest("figure");
-
-    assert.ok(figure);
-    assert.ok(figure.querySelector('img[alt="Peppa"]'));
-  });
-
-  it("centers the character, shows only her latest speech, and removes developer controls", () => {
-    const html = render({
-      microphoneEnabled: false,
-      status: "reconnecting",
+      status: "listening",
       turns: [
         { id: "one", role: "assistant", text: "What do you like to do?" },
         { id: "two", role: "user", text: "I like drawing." },
@@ -237,13 +268,10 @@ describe("accessible realtime conversation surface", () => {
         { id: "one", role: "assistant", text: "What do you like to do?" },
       ],
     });
-    assert.match(
-      speaking,
-      /aria-label="Repeat Peppa(?:'|&#x27;)s audio"[^>]*disabled/,
-    );
+    assert.doesNotMatch(speaking, /Repeat Peppa(?:'|&#x27;)s audio/);
   });
 
-  it("keeps retry and finish available without bringing back typed input", () => {
+  it("keeps recovery clear without bringing back typed input or a second large action", () => {
     const html = render({
       error: "The voice room took a break.",
       status: "error",
@@ -251,7 +279,7 @@ describe("accessible realtime conversation surface", () => {
 
     assert.match(html, /The voice room took a break/);
     assert.match(html, /Try again/);
-    assert.match(html, /Finish conversation/);
+    assert.doesNotMatch(html, /Finish conversation|Start my turn|End my turn/);
     assert.doesNotMatch(html, /Type instead|Type your answer|>Send</);
   });
 

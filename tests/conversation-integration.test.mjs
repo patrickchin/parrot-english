@@ -59,12 +59,17 @@ function fullState(experienceMode) {
 function conversationProps(overrides = {}) {
   return {
     error: "",
+    liveTranscript: "",
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},
+    onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
+    purpose: "onboarding",
+    responseLatencyMs: null,
     status: "ready",
+    turnReady: true,
     turns: [],
     ...overrides,
   };
@@ -114,14 +119,14 @@ describe("realtime learner-profile gate integration", () => {
       conversationProps: conversationProps(),
       data: fullState("realtime"),
     });
-    assert.match(realtime, /Chat with Peppa/);
+    assert.match(realtime, /Help Peppa know you/);
 
     const fallback = renderGate({ data: fullState("form") });
     assert.match(fallback, /Meet Peppa/);
     assert.doesNotMatch(fallback, /Chat with Peppa/);
   });
 
-  it("keeps retry and a large finish action visible after a voice-room failure", () => {
+  it("keeps retry and profile completion visible after a voice-room failure", () => {
     const html = renderGate({
       conversationProps: conversationProps({
         error: "The voice room took a break.",
@@ -133,7 +138,8 @@ describe("realtime learner-profile gate integration", () => {
     assert.match(html, /The voice room took a break/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.match(html, /Try again/);
-    assert.match(html, /Finish conversation/);
+    assert.match(html, /Save and finish/);
+    assert.doesNotMatch(html, /Finish conversation/);
     assert.doesNotMatch(html, /Type instead|aria-label="Type your answer"/);
   });
 
@@ -146,11 +152,11 @@ describe("realtime learner-profile gate integration", () => {
     assert.match(ordinaryVisit, /COMPLETE/);
 
     const redoVisit = renderGate({
-      conversationProps: conversationProps(),
+      conversationProps: conversationProps({ purpose: "profile-edit" }),
       data: completed,
       redoLearnerProfile: true,
     });
-    assert.match(redoVisit, /Chat with Peppa/);
+    assert.match(redoVisit, /Update my profile/);
     assert.doesNotMatch(redoVisit, /COMPLETE/);
   });
 
@@ -160,7 +166,7 @@ describe("realtime learner-profile gate integration", () => {
     completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
 
     const html = renderGate({
-      conversationProps: conversationProps(),
+      conversationProps: conversationProps({ purpose: "small-chat" }),
       data: completed,
       isConversationRoute: true,
       isLearnerProfileRoute: false,
