@@ -5,7 +5,7 @@ import { createLearnerProfileConversationState } from "../lib/conversation-scena
 import {
   CONVERSATION_SYSTEM_PROMPTS,
   createGettingToKnowYouTask,
-  createSmallChatTask,
+  createPeppaConversationTask,
 } from "../agent/peppa-conversation.ts";
 
 initializeLogger({ level: "silent", pretty: false });
@@ -81,8 +81,18 @@ describe("Peppa profile-edit tool", () => {
       [],
     );
     assert.deepEqual(
-      Object.keys(createSmallChatTask().toolCtx.functionTools),
+      Object.keys(
+        createPeppaConversationTask({
+          conversationId: "conversation-1",
+          ingest: ingest(),
+          purpose: "small-chat",
+        }).toolCtx.functionTools,
+      ),
       [],
+    );
+    assert.throws(
+      () => createGettingToKnowYouTask({ purpose: "profile-edit" }),
+      /requires conversation persistence/i,
     );
   });
 
