@@ -83,17 +83,86 @@ describe("lesson catalog", () => {
         ["I'm sleepy.", "Good night!"],
       ],
     ];
+    const expectedVisuals = new Map([
+      [
+        "01-peppas-high-ball",
+        {
+          background: "high-ball-garden",
+          actions: ["peppa:reaching", "dolly:flying"],
+        },
+      ],
+      [
+        "02-garden-colors",
+        {
+          background: "red-flower-garden",
+          actions: ["peppa:choosing-flower"],
+        },
+      ],
+      [
+        "03-snack-time",
+        {
+          background: "apple-snack-meadow",
+          actions: ["dolly:offering-apple"],
+        },
+      ],
+      [
+        "04-playground-words",
+        {
+          background: "swing-playground",
+          actions: ["dolly:swinging"],
+        },
+      ],
+      [
+        "05-market-day",
+        {
+          background: "fruit-stand-garden",
+          actions: ["dolly:selling-apples"],
+        },
+      ],
+      [
+        "06-picnic-time",
+        {
+          background: "juice-picnic-meadow",
+          actions: ["dolly:pouring-juice"],
+        },
+      ],
+      [
+        "07-bedtime-story",
+        {
+          background: "bedtime-story-meadow",
+          actions: ["peppa:sleepy", "dolly:reading"],
+        },
+      ],
+    ]);
 
     assert.deepEqual(
       entries.map(({ id }) => id),
       expectedLessons.map(([id]) => id)
     );
-    entries.forEach(({ lesson }, index) => {
+    entries.forEach(({ id, lesson }, index) => {
       const [, title, goalPhrases] = expectedLessons[index];
+      const expectedVisual = expectedVisuals.get(id);
       assert.equal(lesson.title, title);
       assert.equal(lesson.childName, "Bella");
       assert.deepEqual(lesson.goalPhrases, goalPhrases);
       assert.match(lesson.scenes.at(-1).steps.at(-1).dialogue, /Bella/);
+      assert.deepEqual(
+        [...new Set(lesson.scenes.map(({ background }) => background))],
+        [expectedVisual.background],
+      );
+
+      const usedActions = new Set(
+        lesson.scenes.flatMap(({ steps }) =>
+          steps.flatMap(({ emotes = {} }) =>
+            Object.entries(emotes).map(
+              ([character, emote]) => `${character}:${emote}`,
+            ),
+          ),
+        ),
+      );
+      for (const action of expectedVisual.actions) {
+        assert.equal(usedActions.has(action), true, `${id} uses ${action}`);
+      }
     });
   });
 });

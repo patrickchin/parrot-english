@@ -4,6 +4,17 @@ import { describe, it } from "node:test";
 import * as lessonData from "../lib/lesson-data.js";
 
 const EMOTES = ["idle", "talking", "listening", "happy", "sad", "surprised"];
+const ACTION_EMOTES = {
+  peppa: ["choosing-flower", "reaching", "sleepy"],
+  dolly: [
+    "flying",
+    "offering-apple",
+    "pouring-juice",
+    "reading",
+    "selling-apples",
+    "swinging",
+  ],
+};
 
 function createAssets(id) {
   return Object.fromEntries(
@@ -264,6 +275,42 @@ describe("lesson data contract", () => {
     assert.deepEqual(prepared.lesson.scenes[0].steps[1].check, userStep.check);
   });
 
+  it("supports character-specific action poses without requiring them for every character", { skip: !hasValidator }, () => {
+    const catalogInput = createCatalogInput();
+    catalogInput.emotes = [...catalogInput.emotes, "reaching", "flying"];
+    catalogInput.characters[0].assets.reaching = {
+      src: "/assets/characters/peppa/peppa-reaching.webp",
+      alt: "Peppa reaching up",
+    };
+    catalogInput.characters[1].assets.flying = {
+      src: "/assets/characters/dolly/dolly-flying.webp",
+      alt: "Dolly flying up",
+    };
+    const catalog = lessonData.createLessonCatalog(catalogInput);
+    const lesson = createLesson();
+    lesson.scenes[0].steps[0].emotes = {
+      peppa: "reaching",
+      dolly: "flying",
+    };
+
+    assert.equal(
+      lessonData.validateLesson(lesson, catalog, "action-poses.json"),
+      lesson,
+    );
+
+    const wrongCharacter = createLesson();
+    wrongCharacter.scenes[0].steps[0].emotes.peppa = "flying";
+    assert.throws(
+      () =>
+        lessonData.validateLesson(
+          wrongCharacter,
+          catalog,
+          "wrong-character.json",
+        ),
+      /wrong-character\.json.*emotes\.peppa.*visual asset/,
+    );
+  });
+
   it("normalizes recoverable draft problems into warnings and safe defaults", () => {
     assert.equal(typeof lessonData.prepareLesson, "function");
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
@@ -476,11 +523,25 @@ describe("lesson data contract", () => {
         "utf8"
       )
     );
+    const emotes = JSON.parse(
+      readFileSync(
+        new URL("../content/catalogs/emotes.json", import.meta.url),
+        "utf8",
+      ),
+    );
 
     for (const character of characters) {
-      assert.deepEqual(Object.keys(character.assets).sort(), [...EMOTES].sort());
-      for (const emote of EMOTES) {
+      const expectedEmotes = [
+        ...EMOTES,
+        ...(ACTION_EMOTES[character.id] ?? []),
+      ];
+      assert.deepEqual(
+        Object.keys(character.assets).sort(),
+        expectedEmotes.sort(),
+      );
+      for (const emote of expectedEmotes) {
         const asset = character.assets[emote];
+        assert.ok(emotes.includes(emote), `${character.id}.${emote} catalog`);
         assert.equal(
           asset.src,
           `/assets/characters/${character.id}/${character.id}-${emote}.webp`

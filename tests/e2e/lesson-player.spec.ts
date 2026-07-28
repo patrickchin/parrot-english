@@ -197,7 +197,9 @@ test("the start state introduces the lesson without premature scene UI", async (
 
   const start = page.getByRole("button", { name: "Start lesson" });
   await expect(start).toBeFocused();
-  await expect(page.getByAltText("A sunny garden with flowers and a tall tree")).toBeVisible();
+  await expect(
+    page.getByAltText("A sunny garden with a red ball caught high in a leafy tree"),
+  ).toBeVisible();
   await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeHidden();
   await expect(page.getByAltText(/Peppa/)).toBeHidden();
@@ -217,6 +219,12 @@ for (const viewport of viewports) {
     await page.goto(lessonPath);
     await installAudioDelay(page, 5_000);
     await page.getByRole("button", { name: "Start lesson" }).click();
+    await expect(
+      page.getByAltText("Peppa reaching up toward a red ball"),
+    ).toBeVisible();
+    await expect(
+      page.getByAltText("Dolly flying up toward a red ball"),
+    ).toBeVisible();
 
     const hud = page.getByRole("region", { name: "Lesson progress" });
     const progress = page.getByRole("progressbar", { name: "Scene progress" });

@@ -123,6 +123,17 @@ const expectedAssets = {
     sourceGrayTail: { x: 600, y: 600, width: 488, height: 500 },
   },
 };
+const expectedActionAssets = {
+  "peppa-choosing-flower.webp": "peppa",
+  "peppa-reaching.webp": "peppa",
+  "peppa-sleepy.webp": "peppa",
+  "dolly-flying.webp": "dolly",
+  "dolly-offering-apple.webp": "dolly",
+  "dolly-pouring-juice.webp": "dolly",
+  "dolly-reading.webp": "dolly",
+  "dolly-selling-apples.webp": "dolly",
+  "dolly-swinging.webp": "dolly",
+};
 
 function assetPath(fileName, character) {
   return join(charactersDir, character, fileName);
@@ -317,6 +328,30 @@ function hasTransparentNeighbor(decoded, x, y, radius = 2) {
 }
 
 describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
+  it("provides transparent full-canvas artwork for every action pose", () => {
+    for (const [fileName, character] of Object.entries(expectedActionAssets)) {
+      const decoded = decodePam(fileName, { character });
+      const cornerAlphas = [
+        decoded.rgba[3],
+        decoded.rgba[(decoded.width - 1) * 4 + 3],
+        decoded.rgba[(decoded.height - 1) * decoded.width * 4 + 3],
+        decoded.rgba[(decoded.width * decoded.height - 1) * 4 + 3],
+      ];
+      let visiblePixels = 0;
+      for (let offset = 3; offset < decoded.rgba.length; offset += 4) {
+        if (decoded.rgba[offset] >= 128) visiblePixels += 1;
+      }
+
+      assert.equal(decoded.width, 1024, `${fileName} width`);
+      assert.equal(decoded.height, 1024, `${fileName} height`);
+      assert.deepEqual(cornerAlphas, [0, 0, 0, 0], `${fileName} corners`);
+      assert.ok(
+        visiblePixels > decoded.width * decoded.height * 0.025,
+        `${fileName} visible artwork`,
+      );
+    }
+  });
+
   it("normalizes every asset to one transparent canvas", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
       const decoded = decodePam(fileName, expected);
