@@ -226,7 +226,10 @@ for (const viewport of viewports) {
     const peppa = page.getByAltText(/Peppa/);
     const dolly = page.getByAltText(/Dolly/);
     const back = page.getByRole("button", { name: "Back to lesson list" });
-    const account = page.getByRole("button", { exact: true, name: "Mia" });
+    const account = page.getByRole("button", {
+      exact: true,
+      name: "Account for Mia",
+    });
 
     await expect(hud).toContainText("The Ball Up High");
     await expect(progress).toHaveAttribute("aria-valuenow", "1");
