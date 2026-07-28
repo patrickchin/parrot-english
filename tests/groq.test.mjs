@@ -88,6 +88,32 @@ describe("Groq speech evaluation", () => {
     assert.deepEqual(await response.json(), { error: "audio_too_large" });
   });
 
+  it("rejects an empty recording before calling Groq", async () => {
+    const formData = new FormData();
+    formData.set("targetText", "Hello, Peppa!");
+    formData.set(
+      "audio",
+      new File([], "child-response.webm", { type: "audio/webm" }),
+    );
+    globalThis.fetch = async () => {
+      throw new Error("Groq should not be called for an empty recording.");
+    };
+
+    const response = await handleEvaluateSpeech(
+      new Request("https://example.test/api/evaluate-speech", {
+        method: "POST",
+        body: formData,
+      }),
+      { GROQ_API_KEY: "test-key" },
+    );
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), {
+      error: "audio_file_required",
+      message: "No audio was recorded. Please try again.",
+    });
+  });
+
   it("returns a timeout response when speech transcription does not finish", async () => {
     let upstreamAborted = false;
     let resolveFetchCalled;
