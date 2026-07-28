@@ -529,7 +529,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Loading your questions…/);
   });
 
-  it("keeps a newly connected conversation transport alive when its ID is stored", async () => {
+  it("enables the learner's turn while Peppa says her opening", async () => {
     let disconnectCalls = 0;
     let listener = () => {};
     const microphoneCalls = [];
@@ -592,8 +592,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(
       document.querySelector('output[aria-label="Learner turn ready"]')
         .textContent,
-      "false",
+      "true",
     );
+    await click(button("Start my turn"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
 
     await act(async () => {
       listener({
@@ -628,9 +630,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "true",
     );
-    assert.deepEqual(microphoneCalls, [false]);
-
-    await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
   });

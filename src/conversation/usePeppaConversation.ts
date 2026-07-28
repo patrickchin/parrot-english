@@ -184,6 +184,10 @@ export function usePeppaConversation({
             runtimeRef.current.awaitingResponse = false;
             finishResponseLatency();
           }
+          if (!runtimeRef.current.learnerTurnOpen) {
+            runtimeRef.current.openingHeard = true;
+            void openLearnerTurn(operation);
+          }
           setStatus("speaking");
         }
         return;
@@ -274,10 +278,12 @@ export function usePeppaConversation({
       if (!isCurrent(operation)) return;
       runtimeRef.current.transportReady = true;
       setMicrophoneEnabled(false);
-      setStatus(
-        runtimeRef.current.assistantSpeaking ? "speaking" : "connecting",
-      );
-      await openLearnerTurn(operation);
+      if (runtimeRef.current.openingHeard) {
+        await openLearnerTurn(operation);
+      } else {
+        setStatus("connecting");
+      }
+      if (runtimeRef.current.assistantSpeaking) setStatus("speaking");
     } catch (startError) {
       if (!isCurrent(operation)) return;
       setError(readableError(startError));

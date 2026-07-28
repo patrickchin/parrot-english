@@ -91,11 +91,8 @@ test("opening audio changes the visible state to speaking before its transcript 
 
   await expect(page.getByRole("status")).toContainText("Peppa is talking");
   await expect(
-    page.getByRole("button", { name: "Waiting for Peppa" }),
-  ).toBeDisabled();
-  await expect(
     page.getByRole("button", { name: "Start my turn" }),
-  ).toHaveCount(0);
+  ).toBeEnabled();
 });
 
 test("reconnecting and error states keep recovery language in the same stage", async ({
