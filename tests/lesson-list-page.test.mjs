@@ -106,10 +106,11 @@ test("ready-made lessons use distinct story-specific artwork", () => {
   const html = renderLessonList();
 
   for (const [src, alt] of expectedReadyMadeArtwork) {
+    const renderedAlt = alt.replaceAll("'", "&#x27;");
     assert.match(
       html,
       new RegExp(
-        `<img[^>]*alt="${alt.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*src="${src.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
+        `<img[^>]*alt="${renderedAlt.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*src="${src.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
       ),
     );
   }
