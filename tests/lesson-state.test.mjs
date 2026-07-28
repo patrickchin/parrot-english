@@ -88,13 +88,13 @@ describe("scene-script lesson state", () => {
     assert.equal(state.phase, LessonPhase.WaitingForUser);
   });
 
-  it("pauses the current scene at its beginning and clears interaction state", () => {
+  it("pauses and resumes the current response without losing its position", () => {
     const paused = reduce(
       {
         ...createInitialLessonState(),
         phase: LessonPhase.Responding,
-        sceneIndex: 1,
-        stepIndex: 4,
+        sceneIndex: 0,
+        stepIndex: 1,
         attemptCount: 1,
         response: check.incorrect,
         transcript: "partial response",
@@ -104,28 +104,21 @@ describe("scene-script lesson state", () => {
     );
 
     assert.equal(paused.phase, LessonPhase.Paused);
-    assert.equal(paused.sceneIndex, 1);
-    assert.equal(paused.stepIndex, 0);
-    assert.equal(paused.attemptCount, 0);
-    assert.equal(paused.response, null);
-    assert.equal(paused.transcript, "");
-    assert.equal(paused.responseOutcome, null);
-  });
+    assert.equal(paused.resumePhase, LessonPhase.Responding);
+    assert.equal(paused.sceneIndex, 0);
+    assert.equal(paused.stepIndex, 1);
+    assert.equal(paused.attemptCount, 1);
+    assert.strictEqual(paused.response, check.incorrect);
+    assert.equal(paused.transcript, "partial response");
+    assert.equal(paused.responseOutcome, "incorrect");
 
-  it("restarts a paused scene from its first scripted speaker", () => {
-    const state = reduce(
-      {
-        ...createInitialLessonState(),
-        phase: LessonPhase.Paused,
-        sceneIndex: 1,
-        stepIndex: 4,
-      },
-      { type: "PLAY_SCENE" }
-    );
+    const resumed = reduce(paused, { type: "PLAY_SCENE" });
 
-    assert.equal(state.phase, LessonPhase.Speaking);
-    assert.equal(state.sceneIndex, 1);
-    assert.equal(state.stepIndex, 0);
+    assert.equal(resumed.phase, LessonPhase.Responding);
+    assert.equal(resumed.resumePhase, null);
+    assert.equal(resumed.sceneIndex, 0);
+    assert.equal(resumed.stepIndex, 1);
+    assert.strictEqual(resumed.response, check.incorrect);
   });
 
   it("starts adjacent scenes from their first step", () => {
@@ -343,6 +336,21 @@ describe("scene-script lesson state", () => {
     assert.equal(advanced.phase, LessonPhase.Speaking);
     assert.equal(advanced.sceneIndex, 1);
     assert.equal(advanced.stepIndex, 0);
+  });
+
+  it("skips a waiting or recording learner line without evaluation", () => {
+    const waiting = startAtUser();
+    const skippedWaiting = reduce(waiting, { type: "SKIP_USER" });
+    const recording = reduce(waiting, { type: "MIC_STARTED" });
+    const skippedRecording = reduce(recording, { type: "SKIP_USER" });
+
+    for (const skipped of [skippedWaiting, skippedRecording]) {
+      assert.equal(skipped.phase, LessonPhase.Speaking);
+      assert.equal(skipped.sceneIndex, 1);
+      assert.equal(skipped.stepIndex, 0);
+      assert.equal(skipped.response, null);
+      assert.equal(skipped.transcript, "");
+    }
   });
 
   it("returns to the same user step when recording is cancelled", () => {

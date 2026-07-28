@@ -14,7 +14,7 @@ describe("lesson progress label", () => {
         ...createInitialLessonState(),
         phase: LessonPhase.Paused,
       }),
-      "Scene paused — press Play to restart"
+      "Story paused — press Play to resume"
     );
   });
 

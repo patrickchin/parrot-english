@@ -159,14 +159,17 @@ test("authenticated application routes keep working activities and retire legacy
   );
 });
 
-test("canonical Parrot scene routes render the addressed one-based scene", () => {
+test("canonical Parrot scene routes start without premature scene content", () => {
   const html = renderApplicationRoute(
     "/lessons/parrot/01-peppas-high-ball/scenes/2",
   );
 
-  assert.match(html, /Peppa Cannot Reach/);
+  assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.match(html, /5 scenes/);
+  assert.match(html, /aria-label="Start lesson"/);
+  assert.doesNotMatch(html, /Peppa Cannot Reach/);
   assert.doesNotMatch(html, /The Ball Up High/);
-  assert.match(html, /Scene 2 of 5/);
+  assert.doesNotMatch(html, /Scene 2 of 5/);
 });
 
 test("lesson routes expose one back control to the lesson list", () => {

@@ -1,6 +1,18 @@
-import { ChevronLeft, ChevronRight, Mic } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleCheckBig,
+  Ear,
+  LoaderCircle,
+  Mic,
+  Pause,
+  Play,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import {
   forwardRef,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { ActionButton, cx } from "../shared/ui";
@@ -24,6 +36,14 @@ type LessonSpeechPresentation = {
   text: string;
 };
 
+type LessonFeedbackOutcome =
+  | "correct"
+  | "incorrect"
+  | "incorrectFinal"
+  | "noInput"
+  | "noInputFinal"
+  | null;
+
 export function LessonStage({
   background,
   children,
@@ -43,6 +63,10 @@ export function LessonStage({
           draggable="false"
           src={background.src}
         />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
+        />
         {children}
       </section>
     </main>
@@ -53,72 +77,143 @@ export function LessonHud({
   currentScene,
   sceneCount,
   title,
-  versionLabel,
 }: {
   currentScene: number;
   sceneCount: number;
   title: string;
-  versionLabel: string;
 }) {
-  return (
-    <>
-      <header
-        aria-label="Lesson progress"
-        className="lesson-hud absolute left-1/2 top-20 z-30 grid -translate-x-1/2 justify-items-center gap-2 short:top-16 md:top-6"
-        role="region"
-      >
-        <div className="flex items-center gap-2.5">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full border-4 border-white bg-brand-pink text-xl font-black text-white shadow-control-pink md:size-16 md:text-3xl">
-            {currentScene}
-          </span>
-          <h1 className="m-0 flex min-h-13 max-w-40 items-center overflow-hidden text-ellipsis whitespace-nowrap rounded-full border-4 border-white bg-white/90 px-3 text-base font-black leading-none text-brand-ink shadow-md short:min-h-11 short:text-sm md:min-h-16 md:max-w-sm md:px-5 md:text-xl">
-            {title}
-          </h1>
-        </div>
-        <div aria-label="Scene progress" className="flex gap-1.5 pl-1">
-          {Array.from({ length: sceneCount }, (_, index) => (
-            <span
-              aria-hidden="true"
-              className={cx(
-                "size-3.5 rounded-full border-2 border-white/90 bg-white/55 md:size-5",
-                index < currentScene &&
-                  "bg-brand-pink shadow-control-pink",
-              )}
-              key={index}
-            />
-          ))}
-        </div>
-      </header>
+  const progress = `${(currentScene / sceneCount) * 100}%`;
 
-      <span
-        aria-label={`Build version ${versionLabel}`}
-        className="absolute left-4 top-24 z-30 hidden max-w-full whitespace-nowrap rounded-full border-2 border-white/90 bg-white/80 px-2.5 py-1 text-xs font-black leading-none text-brand-navy shadow-md md:block lg:left-7"
+  return (
+    <header
+      aria-label="Lesson progress"
+      className="lesson-hud absolute left-1/2 top-20 z-30 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 short:top-16 md:top-5 md:max-w-xl"
+      role="region"
+    >
+      <div className="flex min-h-11 min-w-0 items-center gap-2 rounded-full border-3 border-white bg-white/95 px-3 py-1.5 text-brand-ink shadow-md md:min-h-14 md:gap-3 md:px-4">
+        <span className="shrink-0 text-xs font-black uppercase tracking-wide text-brand-rose md:text-sm">
+          Scene {currentScene} of {sceneCount}
+        </span>
+        <span aria-hidden="true" className="h-5 w-px shrink-0 bg-sky-200" />
+        <h1 className="m-0 min-w-0 flex-1 truncate text-base font-black leading-tight md:text-xl">
+          {title}
+        </h1>
+      </div>
+      <div
+        aria-label="Scene progress"
+        aria-valuemax={sceneCount}
+        aria-valuemin={1}
+        aria-valuenow={currentScene}
+        className="mx-5 mt-1.5 h-2 overflow-hidden rounded-full border border-white/90 bg-white/65 shadow-sm md:mx-7 md:h-2.5"
+        role="progressbar"
       >
-        {versionLabel}
-      </span>
-    </>
+        <span
+          aria-hidden="true"
+          className="block h-full rounded-full bg-brand-pink transition-[width]"
+          style={{ width: progress }}
+        />
+      </div>
+    </header>
   );
 }
 
-export const LessonStartAction = forwardRef<
+export const LessonIntroduction = forwardRef<
   HTMLButtonElement,
   {
-    label: string;
-    onClick: () => void;
+    lessonTitle: string;
+    onStart: () => void;
+    sceneCount: number;
   }
->(function LessonStartAction({ label, onClick }, ref) {
+>(function LessonIntroduction(
+  { lessonTitle, onStart, sceneCount },
+  ref,
+) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center p-4">
-      <button
-        aria-label={label}
-        className="pointer-events-auto min-h-28 w-3/4 max-w-2xl translate-y-5 cursor-pointer rounded-full border-6 border-white bg-brand-pink px-8 py-4 font-ui text-4xl font-black leading-none text-white shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink short:min-h-24 short:text-3xl md:min-h-40 md:translate-y-0 md:text-7xl"
-        onClick={onClick}
-        ref={ref}
-        type="button"
-      >
-        {label}
-      </button>
-    </div>
+    <section
+      aria-label="Lesson introduction"
+      className="absolute inset-0 z-10 grid place-items-center bg-brand-navy/30 px-4 pb-5 pt-20 backdrop-blur-[2px]"
+      role="region"
+    >
+      <div className="w-full max-w-xl rounded-[2rem] border-4 border-white bg-white/95 px-5 py-6 text-center shadow-card short:py-5 md:rounded-[2.5rem] md:px-10 md:py-9">
+        <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black uppercase tracking-wider text-brand-blue">
+          <Sparkles aria-hidden="true" className="size-4" />
+          Story lesson
+        </span>
+        <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
+          {lessonTitle}
+        </h1>
+        <p className="mb-0 mt-3 text-base font-black text-brand-rose md:text-xl">
+          {sceneCount} scenes
+        </p>
+        <p className="mx-auto mb-5 mt-2 max-w-md text-base font-bold leading-snug text-slate-600 md:mb-7 md:text-xl">
+          Listen to the story, then speak when it is your turn.
+        </p>
+        <ActionButton
+          aria-label="Start lesson"
+          className="min-h-16 w-full max-w-sm gap-2 rounded-full border-4 border-white text-xl shadow-control-pink transition hover:-translate-y-0.5 hover:brightness-105 md:min-h-20 md:text-2xl"
+          onClick={onStart}
+          ref={ref}
+          size="bare"
+          type="button"
+        >
+          Start lesson
+        </ActionButton>
+      </div>
+    </section>
+  );
+});
+
+export const LessonCompletion = forwardRef<
+  HTMLButtonElement,
+  {
+    lessonTitle: string;
+    onBack: () => void;
+    onReplay: () => void;
+  }
+>(function LessonCompletion(
+  { lessonTitle, onBack, onReplay },
+  ref,
+) {
+  return (
+    <section
+      aria-label="Lesson completion"
+      className="absolute inset-0 z-10 grid place-items-center bg-brand-navy/35 px-4 pb-5 pt-20 backdrop-blur-[2px]"
+      role="region"
+    >
+      <div className="w-full max-w-xl rounded-[2rem] border-4 border-white bg-white/95 px-5 py-6 text-center shadow-card short:py-5 md:rounded-[2.5rem] md:px-10 md:py-9">
+        <span className="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-amber-100 text-brand-rose md:size-20">
+          <Sparkles aria-hidden="true" className="size-8 md:size-11" />
+        </span>
+        <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
+          Story complete!
+        </h1>
+        <p className="mb-5 mt-3 text-lg font-bold leading-snug text-slate-600 md:mb-7 md:text-2xl">
+          You finished {lessonTitle}!
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ActionButton
+            aria-label="Replay lesson"
+            className="min-h-14 gap-2 rounded-full border-4 border-white px-5 text-lg md:min-h-16 md:text-xl"
+            onClick={onReplay}
+            ref={ref}
+            size="bare"
+            type="button"
+          >
+            <RotateCcw aria-hidden="true" className="size-6" />
+            Replay lesson
+          </ActionButton>
+          <ActionButton
+            className="min-h-14 rounded-full border-4 border-white px-5 text-lg md:min-h-16 md:text-xl"
+            onClick={onBack}
+            size="bare"
+            type="button"
+            variant="navy"
+          >
+            Back to lessons
+          </ActionButton>
+        </div>
+      </div>
+    </section>
   );
 });
 
@@ -132,7 +227,7 @@ export function LessonCharacters({
       {characters.map((character, index) => (
         <div
           className={cx(
-            "lesson-character-slot absolute bottom-44 z-10 flex h-2/5 min-w-30 w-1/3 max-w-56 -translate-x-1/2 flex-col items-center justify-end drop-shadow-xl transition short:bottom-24 short:h-1/2 md:bottom-36 md:h-1/2 md:w-1/4 md:max-w-80",
+            "lesson-character-slot absolute bottom-24 z-10 flex h-[20dvh] w-1/3 min-w-24 max-w-44 -translate-x-1/2 items-end justify-center drop-shadow-xl transition short:bottom-22 min-[340px]:h-[28dvh] min-[340px]:w-2/5 md:bottom-30 md:h-[44dvh] md:w-1/4 md:max-w-80",
             character.isActive &&
               "z-20 -translate-y-1 scale-105 drop-shadow-2xl",
           )}
@@ -142,17 +237,14 @@ export function LessonCharacters({
           style={{
             "--character-count": characters.length,
             "--character-index": index,
-          } as React.CSSProperties}
+          } as CSSProperties}
         >
           <img
             alt={character.asset.alt}
-            className="block h-full min-h-0 w-full flex-1 select-none object-contain object-bottom"
+            className="block size-full select-none object-contain object-bottom"
             draggable="false"
             src={character.asset.src}
           />
-          <span className="inline-block min-w-20 rounded-full border-3 border-white bg-brand-navy/90 px-3 py-1 text-center text-base font-black leading-none capitalize text-white shadow-control-navy short:min-w-16 short:text-sm">
-            {character.name}
-          </span>
         </div>
       ))}
     </div>
@@ -168,183 +260,233 @@ export function LessonSpeech({
   characterIndex: number;
   speech: LessonSpeechPresentation;
 }) {
-  if (speech.kind === "user") return null;
+  if (speech.kind === "user" || speech.kind === "feedback") return null;
 
-  if (
-    speech.kind === "narration" ||
-    (speech.kind === "feedback" && speech.speaker === "narrator") ||
-    speech.kind === "finished"
-  ) {
-    return (
-      <div
-        aria-live="polite"
-        className={cx(
-          "lesson-speech-overlay absolute left-1/2 top-40 z-20 w-11/12 max-w-3xl -translate-x-1/2 rounded-3xl border-5 border-white bg-brand-navy/95 px-5 py-4 text-center text-white shadow-control-navy short:top-34 md:top-56 md:px-7 lg:top-48",
-          speech.kind === "feedback" && "bg-emerald-700/95",
-          speech.kind === "finished" && "bg-brand-rose/95",
-        )}
-        role="status"
-      >
-        <span className="mb-1 block text-sm font-black uppercase tracking-widest text-brand-yellow">
-          Narrator
-        </span>
-        <p className="m-0 text-2xl font-black leading-tight short:text-xl md:text-4xl">
-          {speech.text}
-        </p>
-      </div>
-    );
-  }
+  const isNarration = speech.kind === "narration";
+  const speakerName =
+    speech.speaker[0]?.toUpperCase() + speech.speaker.slice(1);
+  const tailPosition = `${
+    ((Math.max(0, characterIndex) + 1) * 100) / (characterCount + 1)
+  }%`;
 
   return (
     <div
+      aria-label={isNarration ? "Story narration" : `${speakerName} is speaking`}
       aria-live="polite"
-      className="lesson-character-slot lesson-speech-overlay lesson-speech-tail absolute top-40 z-20 w-3/5 max-w-xs -translate-x-1/2 rounded-3xl border-4 border-white bg-white/95 px-4 py-3 text-center shadow-control-surface short:top-34 md:top-56 md:w-2/5 md:max-w-sm md:px-6 md:py-4 lg:top-48 lg:w-1/3"
-      data-speaker={speech.speaker}
+      className={cx(
+        "lesson-dialogue-overlay absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface short:top-32 md:top-28 md:px-7 md:py-4",
+        isNarration
+          ? "bg-brand-navy/95 text-white shadow-control-navy"
+          : "lesson-speech-tail bg-white/95 text-brand-ink",
+      )}
       role="status"
-      style={{
-        "--character-count": characterCount,
-        "--character-index": Math.max(0, characterIndex),
-      } as React.CSSProperties}
+      style={{ "--speech-tail-position": tailPosition } as CSSProperties}
     >
-      <span className="mb-1 block text-sm font-black uppercase tracking-widest text-brand-rose">
-        {speech.speaker}
+      <span
+        className={cx(
+          "mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest md:text-sm",
+          isNarration ? "text-brand-yellow" : "text-brand-rose",
+        )}
+      >
+        {isNarration ? (
+          <>
+            <Sparkles aria-hidden="true" className="size-4" />
+            Story
+          </>
+        ) : (
+          <>
+            <Ear aria-hidden="true" className="size-4" />
+            Listen · {speakerName}
+          </>
+        )}
       </span>
-      <p className="m-0 text-2xl font-black leading-tight short:text-xl md:text-4xl">
+      <p className="m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight md:max-h-40">
         {speech.text}
       </p>
     </div>
   );
 }
 
-function LessonSceneButton({
-  direction,
-  ...props
-}: {
-  direction: "next" | "previous";
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  const label = direction === "previous" ? "Previous scene" : "Next scene";
+export function LessonUserPrompt({ dialogue }: { dialogue: string }) {
   return (
-    <ActionButton
-      aria-label={label}
-      className="size-13 min-h-0 min-w-0 shrink-0 rounded-full border-4 border-white p-0 short:size-11 md:size-16"
-      size="bare"
-      type="button"
-      {...props}
+    <section
+      aria-label="Your turn"
+      className="lesson-dialogue-overlay lesson-user-prompt absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface short:top-32 min-[340px]:px-4 min-[340px]:py-3 md:top-28 md:px-7 md:py-4"
+      role="region"
     >
-      {direction === "previous" ? (
-        <ChevronLeft aria-hidden="true" className="size-7 md:size-9" />
-      ) : (
-        <ChevronRight aria-hidden="true" className="size-7 md:size-9" />
-      )}
-    </ActionButton>
+      <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
+        <Mic aria-hidden="true" className="size-4" />
+        Your turn
+      </span>
+      <p className="m-0 text-base font-black leading-[1.15] min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]">
+        {dialogue}
+      </p>
+    </section>
   );
 }
 
-function LessonPill({
-  children,
-  className,
+export function LessonFeedback({
+  outcome,
+  speech,
 }: {
-  children: ReactNode;
-  className?: string;
+  outcome: LessonFeedbackOutcome;
+  speech: LessonSpeechPresentation;
 }) {
+  const isCorrect = outcome === "correct";
+  const isRetry = outcome === "incorrect" || outcome === "noInput";
+  const heading = isCorrect
+    ? "You did it!"
+    : isRetry
+      ? "Try once more"
+      : "Keep going!";
+
   return (
-    <span
+    <section
+      aria-label="Speaking feedback"
       className={cx(
-        "inline-flex min-h-13 max-w-full min-w-0 items-center justify-center overflow-hidden rounded-full border-4 border-white px-3 font-ui text-base font-black leading-none short:min-h-11 short:text-sm md:min-h-16 md:px-5 md:text-base",
-        className,
+        "lesson-dialogue-overlay absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white px-4 py-3 text-center text-white shadow-control-navy short:top-32 md:top-28 md:px-7 md:py-4",
+        isCorrect
+          ? "bg-emerald-700/95"
+          : isRetry
+            ? "bg-amber-700/95"
+            : "bg-brand-navy/95",
       )}
+      role="region"
     >
-      {children}
-    </span>
+      <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-white/85 md:text-sm">
+        <CircleCheckBig aria-hidden="true" className="size-4" />
+        {heading}
+      </span>
+      <p
+        aria-live="polite"
+        className="m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight"
+        role="status"
+      >
+        {speech.text}
+      </p>
+    </section>
   );
 }
 
-export function LessonControls({
+export function LessonPlaybackControls({
   atFinalScene,
   atFirstScene,
-  dialogue,
-  isEvaluating,
-  isRecording,
+  isPaused,
   onNext,
+  onPauseResume,
   onPrevious,
-  onToggleRecording,
-  progressLabel,
-  showUserTurn,
 }: {
   atFinalScene: boolean;
   atFirstScene: boolean;
-  dialogue: string;
+  isPaused: boolean;
+  onNext: () => void;
+  onPauseResume: () => void;
+  onPrevious: () => void;
+}) {
+  const pauseLabel = isPaused ? "Resume story" : "Pause story";
+
+  return (
+    <nav
+      aria-label="Story playback controls"
+      className="absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 md:bottom-6 md:gap-3"
+    >
+      <ActionButton
+        aria-label="Previous scene"
+        className="size-14 min-h-0 min-w-0 rounded-full border-4 border-white p-0 md:size-17"
+        disabled={atFirstScene}
+        onClick={onPrevious}
+        size="bare"
+        type="button"
+        variant="navy"
+      >
+        <ChevronLeft aria-hidden="true" className="size-7 md:size-9" />
+      </ActionButton>
+      <ActionButton
+        aria-label={pauseLabel}
+        className="size-14 min-h-0 min-w-0 rounded-full border-4 border-white p-0 md:size-17"
+        onClick={onPauseResume}
+        size="bare"
+        type="button"
+        variant="brand"
+      >
+        {isPaused ? (
+          <Play aria-hidden="true" className="size-6 fill-current md:size-8" />
+        ) : (
+          <Pause aria-hidden="true" className="size-6 fill-current md:size-8" />
+        )}
+      </ActionButton>
+      <ActionButton
+        aria-label="Next scene"
+        className="size-14 min-h-0 min-w-0 rounded-full border-4 border-white p-0 md:size-17"
+        disabled={atFinalScene}
+        onClick={onNext}
+        size="bare"
+        type="button"
+        variant="navy"
+      >
+        <ChevronRight aria-hidden="true" className="size-7 md:size-9" />
+      </ActionButton>
+    </nav>
+  );
+}
+
+export function LessonSpeakingControls({
+  isEvaluating,
+  isRecording,
+  onSkip,
+  onToggleRecording,
+}: {
   isEvaluating: boolean;
   isRecording: boolean;
-  onNext: () => void;
-  onPrevious: () => void;
+  onSkip: () => void;
   onToggleRecording: () => void;
-  progressLabel: string;
-  showUserTurn: boolean;
 }) {
   return (
     <nav
-      aria-label="Lesson controls"
-      className="absolute bottom-3 left-1/2 z-40 flex w-full max-w-6xl -translate-x-1/2 flex-wrap items-center justify-center gap-2 px-2 short:bottom-1.5 short:flex-nowrap short:gap-1.5 md:bottom-6 md:flex-nowrap md:gap-3 md:px-6"
+      aria-label="Speaking controls"
+      className="absolute bottom-3 left-1/2 z-40 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 justify-center gap-2 md:bottom-6 md:max-w-lg md:gap-2.5"
     >
-      <div className="order-first flex w-full min-w-0 justify-center short:order-none short:w-auto md:order-none md:w-auto">
-        {showUserTurn ? (
-          <strong
-            aria-live="assertive"
-            className="inline-flex min-h-13 w-full max-w-sm min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-full border-4 border-white bg-white/95 px-3 text-center font-ui text-base font-black leading-none text-brand-ink shadow-control-surface short:min-h-11 short:max-w-64 short:text-sm md:min-h-16 md:max-w-lg md:px-5 md:text-base"
-            role="status"
+      {isEvaluating ? (
+        <span
+          aria-live="assertive"
+          className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full border-4 border-white bg-brand-navy px-4 text-center text-base font-black text-white shadow-control-navy md:min-h-16 md:text-lg"
+          role="status"
+        >
+          <LoaderCircle
+            aria-hidden="true"
+            className="size-6 animate-spin motion-reduce:animate-none"
+          />
+          Checking your words…
+        </span>
+      ) : (
+        <>
+          <ActionButton
+            aria-label="Microphone"
+            aria-pressed={isRecording}
+            className={cx(
+              "min-h-14 min-w-0 flex-1 select-none gap-2 rounded-full border-4 border-white px-3 text-lg md:min-h-16 md:px-4 md:text-xl",
+              isRecording && "animate-pulse motion-reduce:animate-none",
+            )}
+            onClick={onToggleRecording}
+            size="bare"
+            type="button"
+            variant={isRecording ? "brand" : "success"}
           >
-            {dialogue}
-          </strong>
-        ) : (
-          <LessonPill className="w-full max-w-sm bg-brand-ink text-center text-white shadow-control-navy short:max-w-64 md:max-w-lg">
-            {progressLabel}
-          </LessonPill>
-        )}
-      </div>
-
-      <div className="flex w-full max-w-sm items-center justify-between gap-2 short:contents md:contents">
-        <LessonSceneButton
-          direction="previous"
-          disabled={atFirstScene}
-          onClick={onPrevious}
-        />
-
-        {showUserTurn ? (
-          isEvaluating ? (
-            <LessonPill className="bg-brand-ink text-white shadow-control-navy">
-              Checking your speech...
-            </LessonPill>
-          ) : (
-            <ActionButton
-              aria-label="Microphone"
-              aria-pressed={isRecording}
-              className={cx(
-                "min-h-13 min-w-13 select-none gap-2 rounded-full border-4 border-white px-3 short:min-h-11 short:min-w-11 short:px-2 short:text-sm md:min-h-16 md:px-5 md:text-base",
-                isRecording &&
-                  "animate-pulse motion-reduce:animate-none",
-              )}
-              onClick={onToggleRecording}
-              size="bare"
-              type="button"
-              variant={isRecording ? "brand" : "success"}
-            >
-              <Mic aria-hidden="true" className="size-6 md:size-8" />
-              <span className="short:hidden">
-                {isRecording ? "Stop speaking" : "Start speaking"}
-              </span>
-            </ActionButton>
-          )
-        ) : null}
-
-        <LessonSceneButton
-          direction="next"
-          disabled={atFinalScene}
-          onClick={onNext}
-        />
-      </div>
+            <Mic aria-hidden="true" className="size-7 md:size-8" />
+            {isRecording ? "Tap when done" : "Tap to talk"}
+          </ActionButton>
+          <ActionButton
+            aria-label="Skip speaking turn"
+            className="min-h-14 w-[4.75rem] shrink-0 rounded-full border-4 border-white px-2 text-base md:min-h-16 md:w-[5.75rem] md:text-lg"
+            onClick={onSkip}
+            size="bare"
+            type="button"
+            variant="navy"
+          >
+            Skip
+          </ActionButton>
+        </>
+      )}
     </nav>
   );
 }
@@ -354,7 +496,7 @@ export function LessonErrorBanner({ error }: { error: string }) {
 
   return (
     <div
-      className="absolute bottom-36 right-4 z-50 w-11/12 max-w-md rounded-2xl border-4 border-white bg-red-800 px-4 py-3 font-extrabold text-white shadow-md short:bottom-24 sm:w-auto"
+      className="absolute bottom-24 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl border-4 border-white bg-red-800 px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base"
       role="alert"
     >
       {error}

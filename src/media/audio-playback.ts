@@ -9,6 +9,11 @@ export type AudioPlaybackEnvironment = {
   createAudio: (url: string) => AudioLike;
 };
 
+export type PlaybackControl = {
+  pause: () => void;
+  resume: () => void;
+};
+
 export type AssetAudioLine = {
   audioId?: string;
   audioSrc: string;
@@ -20,6 +25,7 @@ export type AssetAudioLine = {
 
 export type PlayAudioLineOptions = AssetAudioLine & {
   env?: AudioPlaybackEnvironment;
+  onPlaybackControl?: (control: PlaybackControl | null) => void;
   signal?: AbortSignal;
 };
 
@@ -82,7 +88,8 @@ async function waitForPlaybackPause(durationMs: number, signal?: AbortSignal) {
 async function playAudioUrl(
   env: AudioPlaybackEnvironment,
   audioUrl: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onPlaybackControl?: (control: PlaybackControl | null) => void,
 ) {
   const audio = env.createAudio(audioUrl);
 
@@ -92,45 +99,70 @@ async function playAudioUrl(
       return;
     }
 
+    let settled = false;
     const cleanup = () => {
       signal?.removeEventListener("abort", handleAbort);
       audio.onended = null;
       audio.onerror = null;
+      onPlaybackControl?.(null);
+    };
+    const settle = (action: () => void) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      action();
+    };
+    const handlePlayError = (error: unknown) => {
+      settle(() =>
+        reject(
+          error instanceof Error ? error : new Error("Audio playback failed."),
+        ),
+      );
     };
 
     const handleAbort = () => {
-      cleanup();
       audio.pause?.();
-      reject(createAbortError());
+      settle(() => reject(createAbortError()));
     };
 
     audio.onended = () => {
-      cleanup();
-      resolve();
+      settle(resolve);
     };
     audio.onerror = () => {
-      cleanup();
-      reject(new Error("Audio playback failed."));
+      settle(() => reject(new Error("Audio playback failed.")));
+    };
+
+    const playbackControl: PlaybackControl = {
+      pause: () => {
+        if (!settled) audio.pause?.();
+      },
+      resume: () => {
+        if (settled) return;
+        try {
+          void audio.play().catch(handlePlayError);
+        } catch (error) {
+          handlePlayError(error);
+        }
+      },
     };
 
     signal?.addEventListener("abort", handleAbort, { once: true });
-    audio.play().catch((error: unknown) => {
-      cleanup();
-      reject(error instanceof Error ? error : new Error("Audio playback failed."));
-    });
+    onPlaybackControl?.(playbackControl);
+    playbackControl.resume();
   });
 }
 
 export async function playAudioLine({
   audioSrc,
   env = getBrowserEnvironment(),
+  onPlaybackControl,
   signal,
 }: PlayAudioLineOptions): Promise<void> {
   if (!audioSrc) {
     throw new Error("Static audio source is missing.");
   }
 
-  await playAudioUrl(env, audioSrc, signal);
+  await playAudioUrl(env, audioSrc, signal, onPlaybackControl);
 }
 
 export async function playAudioSequence({

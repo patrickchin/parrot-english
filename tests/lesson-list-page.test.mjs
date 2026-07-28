@@ -137,7 +137,8 @@ test("a canonical Parrot catalog href renders its directly matched lesson route"
   );
 
   assert.match(html, /Parrot English speaking lesson/);
-  assert.match(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
+  assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.doesNotMatch(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
   assert.match(html, /aria-label="Start lesson"/);
   assert.match(html, />Back to lessons</);
 });

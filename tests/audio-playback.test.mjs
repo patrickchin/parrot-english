@@ -27,6 +27,45 @@ describe("audio playback", () => {
     assert.deepEqual(playedUrls, ["/assets/audio/turn-hello.mp3"]);
   });
 
+  it("pauses and resumes the same saved-audio instance", async () => {
+    const events = [];
+    let controls;
+    let finish;
+    let createdCount = 0;
+
+    const operation = playAudioLine({
+      audioSrc: "/assets/audio/story-line.mp3",
+      text: "A story line.",
+      env: {
+        createAudio() {
+          createdCount += 1;
+          return {
+            pause() {
+              events.push("pause");
+            },
+            play() {
+              events.push("play");
+              finish = () => this.onended?.();
+              return Promise.resolve();
+            },
+          };
+        },
+      },
+      onPlaybackControl(control) {
+        if (control) controls = control;
+      },
+    });
+
+    await Promise.resolve();
+    controls.pause();
+    controls.resume();
+    finish();
+    await operation;
+
+    assert.equal(createdCount, 1);
+    assert.deepEqual(events, ["play", "pause", "play"]);
+  });
+
   it("requires a saved audio source", async () => {
     await assert.rejects(
       playAudioLine({

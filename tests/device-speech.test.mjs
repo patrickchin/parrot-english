@@ -56,6 +56,8 @@ describe("on-device lesson speech", () => {
           finish = () => utterance.onend?.();
         },
         cancel() {},
+        pause() {},
+        resume() {},
       },
     });
 
@@ -87,12 +89,53 @@ describe("on-device lesson speech", () => {
         cancel() {
           cancelCount += 1;
         },
+        pause() {},
+        resume() {},
       },
     });
 
     controller.abort();
     await assert.rejects(operation, { name: "AbortError" });
     assert.equal(cancelCount, 1);
+  });
+
+  it("pauses and resumes one active device utterance", async () => {
+    const events = [];
+    let controls;
+    let finish;
+    const operation = playDeviceSpeech({
+      speaker: "dolly",
+      text: "Keep listening.",
+      env: {
+        cancel() {},
+        createUtterance(text) {
+          return { text };
+        },
+        getVoices() {
+          return [];
+        },
+        pause() {
+          events.push("pause");
+        },
+        resume() {
+          events.push("resume");
+        },
+        speak(utterance) {
+          events.push("speak");
+          finish = () => utterance.onend?.();
+        },
+      },
+      onPlaybackControl(control) {
+        if (control) controls = control;
+      },
+    });
+
+    controls.pause();
+    controls.resume();
+    finish();
+    await operation;
+
+    assert.deepEqual(events, ["speak", "pause", "resume"]);
   });
 
   it("reports browsers without speech synthesis support", async () => {
