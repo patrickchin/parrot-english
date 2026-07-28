@@ -43,21 +43,21 @@ function getParrotLessonHrefs(html) {
     .filter((href) => /^\/lessons\/parrot\/[^/]+\/scenes\/1$/.test(href));
 }
 
-test("lesson list separates all discovered Parrot lessons from My Lessons", () => {
+test("lesson list separates ready-made lessons from custom lessons", () => {
   const html = renderLessonList();
   const expectedHrefs = LESSONS.map(
     (entry) => `/lessons/parrot/${encodeURIComponent(entry.id)}/scenes/1`,
   );
 
-  assert.match(html, /<h1[^>]*>Choose a lesson<\/h1>/);
-  assert.doesNotMatch(html, /Pick a story and start speaking English/);
+  assert.match(html, /<h1[^>]*>Lessons<\/h1>/);
+  assert.match(html, /Choose a story and start speaking/i);
   assert.match(
     html,
-    /<h2[^>]*id="parrot-lessons-title"[^>]*>Parrot Lessons<\/h2>/,
+    /<h2[^>]*id="parrot-lessons-title"[^>]*>Ready-made lessons<\/h2>/,
   );
   assert.match(
     html,
-    /<h2[^>]*id="my-lessons-title"[^>]*>My Lessons<\/h2>/,
+    /<h2[^>]*id="my-lessons-title"[^>]*>My lessons<\/h2>/,
   );
   assert.equal((html.match(/<h2/g) ?? []).length, 2);
   assert.equal((html.match(/<h3/g) ?? []).length, 7);
@@ -71,20 +71,38 @@ test("lesson list separates all discovered Parrot lessons from My Lessons", () =
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
-test("lesson list exposes My Lessons empty and creation states plus main-menu navigation", () => {
+test("lesson list keeps custom creation secondary and explains who it is for", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
       isLoadingMyLessons: false,
       myLessons: [],
       myLessonsError: "",
+      onRetryMyLessons() {},
     }),
   );
 
-  assert.match(html, /You haven&#x27;t created any lessons yet\./);
+  assert.match(html, /No custom lessons yet\./);
+  assert.match(html, /grown-up/i);
   assert.match(
     html,
-    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create a lesson<\/a>/s,
+    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create custom lesson<\/a>/s,
   );
+});
+
+test("a failed custom-lesson list offers retry without hiding ready-made lessons", () => {
+  const html = renderInRouter(
+    createElement(LessonListView, {
+      isLoadingMyLessons: false,
+      myLessons: [],
+      myLessonsError: "Your custom lessons could not be loaded.",
+      onRetryMyLessons() {},
+    }),
+  );
+
+  assert.match(html, /role="alert"/);
+  assert.match(html, /Your custom lessons could not be loaded\./);
+  assert.match(html, /<button[^>]*>Try again<\/button>/);
+  assert.match(html, /Peppa&#x27;s High Ball/);
 });
 
 test("each saved lesson exposes distinct play and edit actions", () => {
@@ -99,6 +117,7 @@ test("each saved lesson exposes distinct play and edit actions", () => {
         },
       ],
       myLessonsError: "",
+      onRetryMyLessons() {},
     }),
   );
 

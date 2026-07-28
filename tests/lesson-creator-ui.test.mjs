@@ -35,44 +35,37 @@ function renderCreator(initialEntry) {
   );
 }
 
-test("Create Lesson defaults to an accessible Generate Script tab", () => {
+test("custom lesson creation defaults to a simple AI path", () => {
   const html = renderCreator("/lessons/my/create");
   const tabList = html.match(/<div[^>]*role="tablist"[^>]*>/)?.[0];
   const generateTab = html.match(
-    /<button[^>]*>[\s\S]*?Generate Script<\/button>/,
+    /<button[^>]*>[\s\S]*?Make with AI<\/button>/,
   )?.[0];
 
-  assert.match(html, /<h1[^>]*>Create a Lesson<\/h1>/);
+  assert.match(html, /<h1[^>]*>Create a custom lesson<\/h1>/);
+  assert.match(html, /grown-up/i);
   assert.ok(tabList);
   assert.match(tabList, /role="tablist"/);
-  assert.match(tabList, /aria-label="Create lesson methods"/);
+  assert.match(tabList, /aria-label="Choose how to create a custom lesson"/);
   assert.ok(generateTab);
   assert.match(generateTab, /role="tab"/);
   assert.match(generateTab, /aria-selected="true"/);
-  assert.match(html, /role="tab"[\s\S]*?Upload Script<\/button>/);
+  assert.match(html, /role="tab"[\s\S]*?Import JSON<\/button>/);
   assert.match(html, /<label[^>]*for="lesson-topic"[^>]*>.*lesson.*about/is);
   assert.match(html, /<textarea[^>]*id="lesson-topic"[^>]*maxlength="500"/i);
   assert.match(
     html,
-    /<button[^>]*type="submit"[^>]*>[\s\S]*?Generate script<\/button>/,
+    /<button[^>]*type="submit"[^>]*>[\s\S]*?Make lesson<\/button>/,
   );
-  assert.match(
-    html,
-    /<label[^>]*for="lesson-script-editor"[^>]*>.*Editable lesson script.*JSON.*<\/label>/is,
-  );
-  assert.match(
-    html,
-    /<textarea[^>]*id="lesson-script-editor"[^>]*spellcheck="false"/i,
-  );
-  assert.match(html, /Review script/i);
+  assert.doesNotMatch(html, /id="lesson-script-editor"|Review script/i);
   assert.doesNotMatch(html, /type="file"/);
 });
 
-test("the upload query selects an editable clipboard-paste panel", () => {
+test("the import query reveals the advanced clipboard-paste panel", () => {
   const html = renderCreator("/lessons/my/create?tab=upload");
   const uploadTab = [...html.matchAll(/<button[^>]*>[\s\S]*?<\/button>/g)]
     .map(([button]) => button)
-    .find((button) => button.includes("Upload Script"));
+    .find((button) => button.includes("Import JSON"));
   const uploadPanel = html.match(
     /<section[^>]*id="upload-script-panel"[^>]*>/,
   )?.[0];

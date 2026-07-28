@@ -517,10 +517,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await waitFor(() => assert.equal(requests, 2));
     text(/Loading your questions…/);
-    noText(/Meet Peppa/);
+    noText(/Help Peppa get to know you/);
 
     response.resolve(json(fullLearnerProfileState()));
-    await waitFor(() => text(/Meet Peppa/));
+    await waitFor(() => text(/Help Peppa get to know you/));
     noText(/Loading your questions…/);
   });
 
@@ -1098,8 +1098,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
-    await click(button("Mia"));
-    await click(button("Log out"));
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
     await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
   });
@@ -1128,7 +1128,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Questions are taking a break/));
     await click(button("Retry"));
-    await waitFor(() => text(/Meet Peppa/));
+    await waitFor(() => text(/Help Peppa get to know you/));
     await click(button("Skip for now"));
     await waitFor(() => text(/BYPASSED LESSONS/));
 
@@ -1155,8 +1155,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "COMPLETED LESSONS"),
       ),
     );
-    await waitFor(() => text(/Meet Peppa/));
-    await click(button("Start"));
+    await waitFor(() => text(/Help Peppa get to know you/));
+    await click(button("Set up profile"));
     await waitFor(() => text(/What's your name/));
     await input(document.querySelector("#learner-profile-answer-name"), "Mia");
     await click(button("Next"));
@@ -1213,9 +1213,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/PROFILE LESSONS/));
-    await click(button("Mia"));
-    await click(button("Profile"));
-    await waitFor(() => text(/Edit profile/));
+    await click(button("Account for Mia"));
+    await click(button("Learner profile"));
+    await waitFor(() => text(/Learner profile/));
     await input(document.querySelector("#profile-name"), "Maya");
     await input(document.querySelector("#profile-age"), "almost nine");
     await input(
@@ -1241,7 +1241,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       applicationRoutesInMemory({ initialEntries: ["/lessons"] }),
     );
-    text(/Choose a lesson/);
+    text(/Choose a story and start speaking/);
     await click(
       document.querySelector('a[aria-label^="Start lesson:"]'),
     );
@@ -1251,7 +1251,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await click(button("Back to lesson list"));
     await waitFor(() => assert.equal(currentRoute().path, "/lessons"));
-    text(/Choose a lesson/);
+    text(/Choose a story and start speaking/);
 
     await click(
       document.querySelector('a[aria-label^="Start lesson:"]'),

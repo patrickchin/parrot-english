@@ -179,9 +179,10 @@ Correct and final replies must use `"after": "continue"`.
 
 ### My Lesson
 
-Use **Create a Lesson** in the app. Generate a script or paste the JSON into the
-editor, review any warnings, and save it. My Lessons use the device's available
-speech voice, so no audio files are needed.
+Open **Lessons → My lessons → Create custom lesson** in the app. Use **Make with
+AI** for the simple topic flow, or **Import JSON** to paste a complete script.
+Review any warnings and save it. My lessons use the device's available speech
+voice, so no audio files are needed.
 
 ### Built-in Parrot Lesson
 

@@ -122,7 +122,7 @@ describe("realtime learner-profile gate integration", () => {
     assert.match(realtime, /Help Peppa know you/);
 
     const fallback = renderGate({ data: fullState("form") });
-    assert.match(fallback, /Meet Peppa/);
+    assert.match(fallback, /Help Peppa get to know you/);
     assert.doesNotMatch(fallback, /Chat with Peppa/);
   });
 

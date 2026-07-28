@@ -21,12 +21,22 @@ const routes: HeaderRoute[] = [
   {
     name: "lesson list",
     path: "/lessons",
-    control: { name: "Back to main menu", role: "link" },
+    control: { name: "Back to home", role: "link" },
   },
   {
     name: "lesson player",
     path: "/lessons/parrot/01-peppas-high-ball/scenes/1",
     control: { name: "Back to lesson list", role: "button" },
+  },
+  {
+    name: "custom lesson creator",
+    path: "/lessons/my/create",
+    control: { name: "Back to lessons", role: "link" },
+  },
+  {
+    name: "learner profile",
+    path: "/profile",
+    control: { name: "Back", role: "button" },
   },
 ];
 
@@ -67,22 +77,22 @@ for (const route of routes) {
       await page.goto(route.path);
 
       const account = page.getByRole("complementary", {
-        name: "Current account",
+        name: "Account",
       });
       const accountMenu = page.getByRole("button", {
         exact: true,
-        name: "Mia",
+        name: "Account for Mia",
       });
       const accountBox = await expectInsideViewport(account, viewport);
       await expectInsideViewport(accountMenu, viewport);
       await expect(
-        page.getByRole("menuitem", { name: "Profile" }),
+        page.getByRole("menuitem", { name: "Learner profile" }),
       ).toBeHidden();
       await expect(
         page.getByRole("menuitem", { name: "About" }),
       ).toBeHidden();
       await expect(
-        page.getByRole("menuitem", { name: "Log out" }),
+        page.getByRole("menuitem", { name: "Sign out" }),
       ).toBeHidden();
 
       const pageNavigation = page.getByRole("navigation", {
@@ -111,26 +121,35 @@ for (const route of routes) {
   }
 }
 
-test("the learner name opens the account actions dropdown", async ({ page }) => {
+test("the learner name opens the account menu", async ({ page }) => {
   await page.goto("/lessons");
 
-  const accountMenu = page.getByRole("button", { exact: true, name: "Mia" });
+  const accountMenu = page.getByRole("button", {
+    exact: true,
+    name: "Account for Mia",
+  });
   await expect(accountMenu).toHaveAttribute("aria-expanded", "false");
 
   await accountMenu.click();
 
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("menu", { name: "Account actions" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Profile" })).toBeVisible();
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu).toBeVisible();
+  await expect(menu.locator(":scope > :not([role='menuitem'])")).toHaveCount(0);
+  await expect(
+    page.getByRole("menuitem", { name: "Learner profile" }),
+  ).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "About" })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "Log out" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
 });
 
 test("About shows independently deployed component versions", async ({ page }) => {
   const viewport = mobileViewports.find(({ name }) => name === "small phone")!;
   await page.setViewportSize(viewport);
   await page.goto("/lessons");
-  await page.getByRole("button", { exact: true, name: "Mia" }).click();
+  await page
+    .getByRole("button", { exact: true, name: "Account for Mia" })
+    .click();
   await page.getByRole("menuitem", { name: "About" }).click();
 
   const about = page.getByRole("dialog", { name: "About Parrot English" });
@@ -176,7 +195,10 @@ test("account menu stays visible after scrolling a short lesson list", async ({
   await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
   await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
-  const accountMenu = page.getByRole("button", { exact: true, name: "Mia" });
+  const accountMenu = page.getByRole("button", {
+    exact: true,
+    name: "Account for Mia",
+  });
   await expectInsideViewport(accountMenu, viewport);
 });
 
@@ -185,7 +207,7 @@ test("all visible header controls use the same typography", async ({ page }) => 
   await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
 
   const controls = [
-    page.getByRole("button", { exact: true, name: "Mia" }),
+    page.getByRole("button", { exact: true, name: "Account for Mia" }),
     page.getByRole("button", { name: "Back to lesson list" }),
   ];
   const typography = await Promise.all(
