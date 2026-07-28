@@ -49,6 +49,9 @@ test("the latest Peppa message repeats from its bottom-right audio control", asy
   await page.goto("/talk-to-peppa");
 
   const message = page.getByRole("group", { name: "Peppa's message" });
+  const quotedSpeech = message.getByRole("blockquote", {
+    name: "Peppa's speech",
+  });
   const text = message.getByText("Hello again! What's your name?", {
     exact: true,
   });
@@ -57,6 +60,7 @@ test("the latest Peppa message repeats from its bottom-right audio control", asy
   });
 
   await expect(message).toBeVisible();
+  await expect(quotedSpeech).toBeVisible();
   await expect(text).toBeVisible();
   await expect(repeat).toBeEnabled();
 
@@ -74,7 +78,7 @@ test("the latest Peppa message repeats from its bottom-right audio control", asy
   expect(textBox!.x + textBox!.width).toBeLessThanOrEqual(repeatBox!.x);
 
   await repeat.click();
-  await expect(repeat).toBeDisabled();
+  await expect(repeat).toBeHidden();
   await expect(page.getByRole("status")).toContainText("Peppa is talking");
-  await expect(repeat).toBeEnabled();
+  await expect(repeat).toBeVisible();
 });

@@ -1,7 +1,8 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const viewports = [
-  { height: 844, name: "phone", width: 390 },
+  { height: 568, name: "narrow phone", width: 280 },
+  { height: 360, name: "short landscape", width: 640 },
   { height: 900, name: "desktop", width: 1440 },
 ];
 
@@ -22,71 +23,132 @@ function expectSameBox(
   expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(1);
 }
 
+async function expectNoPageScroll(page: Page) {
+  await expect
+    .poll(() =>
+      page.getByRole("main").evaluate((element) => ({
+        horizontal: element.scrollWidth > element.clientWidth,
+        vertical: element.scrollHeight > element.clientHeight,
+      })),
+    )
+    .toEqual({ horizontal: false, vertical: false });
+}
+
 for (const viewport of viewports) {
-  test(`the bottom actions stay in place after ending a turn on a ${viewport.name}`, async ({
+  test(`long Peppa text stays inside the caption viewport on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/talk-to-peppa");
+    await page.goto("/talk-to-peppa?parrotE2eConversation=long");
 
-    await page.getByRole("button", { name: "Start my turn" }).click();
-    await expect(page.getByLabel("Live transcript")).toContainText(
-      "My name is Mia",
-    );
-
-    const endTurn = page.getByRole("button", { name: "End my turn" });
-    const finish = page.getByRole("button", { name: "Finish conversation" });
-    const before = await Promise.all([box(endTurn), box(finish)]);
-
-    await endTurn.click();
-
-    const waiting = page.getByRole("button", {
-      name: "Waiting for Peppa's reply",
+    const captions = page.getByRole("region", {
+      name: "Conversation captions",
     });
-    await expect(waiting).toBeDisabled();
-    const after = await Promise.all([box(waiting), box(finish)]);
+    const turn = page.getByRole("button", { name: "Start my turn" });
+    const peppa = page.getByRole("img", { exact: true, name: "Peppa" });
 
-    for (let index = 0; index < before.length; index += 1) {
-      expectSameBox(before[index], after[index]);
+    await expect(turn).toBeVisible();
+    await expect(captions).toContainText("muddy puddles");
+    await expect(peppa).toBeVisible();
+    await expectNoPageScroll(page);
+
+    await expect
+      .poll(() =>
+        captions.evaluate(
+          (element) => element.scrollHeight > element.clientHeight,
+        ),
+      )
+      .toBe(true);
+
+    for (const locator of [captions, turn, peppa]) {
+      const value = await box(locator);
+      expect(value.x).toBeGreaterThanOrEqual(0);
+      expect(value.y).toBeGreaterThanOrEqual(0);
+      expect(value.x + value.width).toBeLessThanOrEqual(viewport.width);
+      expect(value.y + value.height).toBeLessThanOrEqual(viewport.height);
     }
   });
 
-  test(`the response timer does not move conversation content on a ${viewport.name}`, async ({
+  test(`transcript growth does not move the turn control on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/talk-to-peppa");
 
-    await page.getByRole("button", { name: "Start my turn" }).click();
-    await page.getByRole("button", { name: "End my turn" }).click();
+    const start = page.getByRole("button", { name: "Start my turn" });
+    const before = await box(start);
+    await start.click();
 
-    const peppa = page.getByRole("img", { exact: true, name: "Peppa" });
-    const status = page.getByRole("status").filter({
-      hasText: "Peppa is thinking",
-    });
-    const finish = page.getByRole("button", { name: "Finish conversation" });
-    const timer = page.getByLabel("Peppa response latency");
-    const before = await Promise.all([box(peppa), box(status), box(finish)]);
-    const peppaBox = before[0];
-    const timerBox = await box(timer);
+    const end = page.getByRole("button", { name: "End my turn" });
+    const afterStart = await box(end);
+    expectSameBox(before, afterStart);
 
-    expect(timerBox.x).toBeGreaterThanOrEqual(peppaBox.x - 1);
-    expect(timerBox.y).toBeGreaterThanOrEqual(peppaBox.y - 1);
-    expect(timerBox.x + timerBox.width).toBeLessThanOrEqual(
-      peppaBox.x + peppaBox.width + 1,
-    );
-    expect(timerBox.y + timerBox.height).toBeLessThanOrEqual(
-      peppaBox.y + peppaBox.height + 1,
-    );
+    const transcript = page.getByLabel("Live transcript");
+    await expect(transcript).toContainText("My name is Mia");
+    const afterTranscript = await box(end);
+    expectSameBox(before, afterTranscript);
+    await expectNoPageScroll(page);
 
-    await timer.evaluate((element) => {
-      (element as HTMLElement).hidden = true;
-    });
-    const after = await Promise.all([box(peppa), box(status), box(finish)]);
-
-    for (let index = 0; index < before.length; index += 1) {
-      expectSameBox(before[index], after[index]);
-    }
+    await end.click();
+    const waiting = page.getByRole("button", { name: "Waiting for Peppa" });
+    const afterEnd = await box(waiting);
+    expectSameBox(before, afterEnd);
+    await expectNoPageScroll(page);
   });
 }
+
+test("short landscape gives Peppa and the conversation their own columns", async ({
+  page,
+}) => {
+  const viewport = { height: 360, width: 640 };
+  await page.setViewportSize(viewport);
+  await page.goto("/talk-to-peppa");
+
+  const peppa = await box(
+    page.getByRole("img", { exact: true, name: "Peppa" }),
+  );
+  const captions = await box(
+    page.getByRole("region", { name: "Conversation captions" }),
+  );
+  const turn = await box(page.getByRole("button", { name: "Start my turn" }));
+
+  expect(peppa.height).toBeGreaterThanOrEqual(150);
+  expect(peppa.x + peppa.width).toBeLessThanOrEqual(captions.x);
+  expect(Math.abs(captions.x - turn.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(captions.width - turn.width)).toBeLessThanOrEqual(1);
+  await expectNoPageScroll(page);
+});
+
+test("a long landscape reply grows upward without moving the turn control", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/talk-to-peppa");
+
+  const normalBubble = await box(
+    page.getByRole("region", { name: "Conversation captions" }),
+  );
+  const normalTurn = await box(
+    page.getByRole("button", { name: "Start my turn" }),
+  );
+
+  await page.goto("/talk-to-peppa?parrotE2eConversation=long");
+
+  const longBubble = await box(
+    page.getByRole("region", { name: "Conversation captions" }),
+  );
+  const longTurn = await box(
+    page.getByRole("button", { name: "Start my turn" }),
+  );
+
+  expect(longBubble.height).toBeGreaterThanOrEqual(normalBubble.height + 40);
+  expect(
+    Math.abs(
+      longBubble.y +
+        longBubble.height -
+        (normalBubble.y + normalBubble.height),
+    ),
+  ).toBeLessThanOrEqual(1);
+  expectSameBox(normalTurn, longTurn);
+  await expectNoPageScroll(page);
+});

@@ -16,6 +16,7 @@ export const LIVEKIT_CONVERSATION_EVENTS = {
 export type ConversationTransportEvent =
   | { type: "state"; state: "connecting" | "connected" | "reconnecting" }
   | { type: "speech-started"; role: "assistant" }
+  | { type: "speech-ended"; role: "assistant" }
   | {
       type: "transcription";
       id: string;
@@ -56,6 +57,22 @@ type CreateLiveKitConversationOptions = {
 
 const E2E_PARTICIPANT_TOKEN = "parrot-e2e-participant-token";
 const E2E_LIVEKIT_URL = "wss://parrot-e2e.invalid";
+const E2E_CONVERSATION_SCENARIOS = new Set([
+  "connecting",
+  "error",
+  "long",
+  "opening-speaking",
+  "reconnecting",
+  "saving",
+]);
+
+function getE2eConversationScenario() {
+  if (typeof window === "undefined") return "";
+  const value = new URL(window.location.href).searchParams.get(
+    "parrotE2eConversation",
+  );
+  return value && E2E_CONVERSATION_SCENARIOS.has(value) ? value : "";
+}
 
 function defaultMountAudio(element: AudioElementLike) {
   if (element instanceof HTMLMediaElement) {
@@ -80,9 +97,18 @@ function segmentRecords(value: unknown) {
 }
 
 function createE2eLiveKitConversation() {
+  const eventTimers = new Set<ReturnType<typeof setTimeout>>();
   const listeners = new Set<Listener>();
   const transcriptTimers = new Set<ReturnType<typeof setTimeout>>();
-  const greeting = "Hello again! What's your name?";
+  const scenario = getE2eConversationScenario();
+  const greeting =
+    scenario === "long"
+      ? Array.from(
+          { length: 24 },
+          () =>
+            "I love muddy puddles, red boots, treasure hunts, drawing, and hearing all about your favourite things.",
+        ).join(" ")
+      : "Hello again! What's your name?";
   let learnerTurnId: string | null = null;
   let learnerTurnSequence = 0;
 
@@ -111,6 +137,14 @@ function createE2eLiveKitConversation() {
     transcriptTimers.add(timer);
   }
 
+  function scheduleEvent(event: ConversationTransportEvent, delayMs: number) {
+    const timer = setTimeout(() => {
+      eventTimers.delete(timer);
+      publish(event);
+    }, delayMs);
+    eventTimers.add(timer);
+  }
+
   return {
     async commitUserTurn() {
       if (!learnerTurnId) return;
@@ -129,7 +163,23 @@ function createE2eLiveKitConversation() {
     async connect() {
       publish({ type: "state", state: "connecting" });
       await Promise.resolve();
+      if (scenario === "error") {
+        throw new Error("The voice room took a break.");
+      }
       publish({ type: "state", state: "connected" });
+      if (scenario === "connecting") return;
+      if (scenario === "opening-speaking") {
+        publish({ type: "speech-started", role: "assistant" });
+        publish({
+          type: "transcription",
+          id: "e2e-agent-greeting",
+          text: "Hello again!",
+          final: false,
+          language: "en",
+          role: "assistant",
+        });
+        return;
+      }
       publish({
         type: "transcription",
         id: "e2e-agent-greeting",
@@ -138,6 +188,15 @@ function createE2eLiveKitConversation() {
         language: "en",
         role: "assistant",
       });
+      if (scenario === "reconnecting") {
+        scheduleEvent({ type: "state", state: "reconnecting" }, 50);
+      }
+      if (scenario === "saving") {
+        scheduleEvent(
+          { type: "disconnected", reason: "task_complete" },
+          50,
+        );
+      }
     },
 
     async setMicrophoneEnabled(enabled: boolean) {
@@ -154,16 +213,18 @@ function createE2eLiveKitConversation() {
 
     async repeatLastAudio() {
       publish({ type: "speech-started", role: "assistant" });
-      globalThis.setTimeout(() => {
-        publish({
+      scheduleEvent(
+        {
           type: "transcription",
           id: `e2e-agent-repeat-${Date.now()}`,
           text: greeting,
           final: true,
           language: "en",
           role: "assistant",
-        });
-      }, 1_000);
+        },
+        1_000,
+      );
+      scheduleEvent({ type: "speech-ended", role: "assistant" }, 1_010);
     },
 
     async sendText(text: string) {
@@ -181,6 +242,8 @@ function createE2eLiveKitConversation() {
 
     async disconnect() {
       clearTranscriptTimers();
+      for (const timer of eventTimers) clearTimeout(timer);
+      eventTimers.clear();
       learnerTurnId = null;
       listeners.clear();
     },
@@ -206,6 +269,7 @@ export function createLiveKitConversation({
   const attachments = new Map<TrackLike, AudioElementLike>();
   let connected = false;
   let disconnected = false;
+  let assistantSpeaking = false;
 
   function publish(event: ConversationTransportEvent) {
     for (const listener of listeners) listener(event);
@@ -215,18 +279,20 @@ export function createLiveKitConversation({
     [
       RoomEvent.ActiveSpeakersChanged,
       (participants) => {
-        if (
-          !Array.isArray(participants) ||
-          !participants.some(
+        const remoteAssistantSpeaking =
+          Array.isArray(participants) &&
+          participants.some(
             (participant) =>
               participant !== null &&
               typeof participant === "object" &&
               (!("isLocal" in participant) || participant.isLocal !== true),
-          )
-        ) {
-          return;
-        }
-        publish({ type: "speech-started", role: "assistant" });
+          );
+        if (remoteAssistantSpeaking === assistantSpeaking) return;
+        assistantSpeaking = remoteAssistantSpeaking;
+        publish({
+          type: remoteAssistantSpeaking ? "speech-started" : "speech-ended",
+          role: "assistant",
+        });
       },
     ],
     [RoomEvent.Reconnecting, () => publish({ type: "state", state: "reconnecting" })],

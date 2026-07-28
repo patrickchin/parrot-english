@@ -188,6 +188,11 @@ function ConversationHookHarness({
     createElement("output", { "aria-label": "Conversation status" }, conversation.status),
     createElement(
       "output",
+      { "aria-label": "Learner turn ready" },
+      String(conversation.turnReady),
+    ),
+    createElement(
+      "output",
       { "aria-label": "Peppa response latency" },
       conversation.responseLatencyMs ?? "",
     ),
@@ -218,6 +223,7 @@ function conversationSurfaceProps(overrides = {}) {
     purpose: "small-chat",
     responseLatencyMs: null,
     status: "listening",
+    turnReady: true,
     turns: [],
     ...overrides,
   };
@@ -570,6 +576,21 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     assert.deepEqual(microphoneCalls, [false]);
     await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "speaking",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
+    );
+
+    await act(async () => {
       listener({
         type: "transcription",
         id: "peppa-opening",
@@ -580,12 +601,27 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
       await flush();
     });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "speaking",
+    );
+
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
     await waitFor(() =>
       assert.equal(
         document.querySelector('output[aria-label="Conversation status"]')
           .textContent,
         "listening",
       ),
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "true",
     );
     assert.deepEqual(microphoneCalls, [false]);
 
@@ -845,6 +881,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(
       document.querySelector('output[aria-label="Conversation status"]')
         .textContent,
+      "speaking",
+    );
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
       "listening",
     );
   });
@@ -888,7 +933,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     assert.deepEqual(toggles, ["toggle"]);
 
-    const finish = button("Finish conversation");
+    const finish = button("Back");
     await act(async () => {
       finish.dispatchEvent(
         new window.KeyboardEvent("keydown", {
