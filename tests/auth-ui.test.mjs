@@ -389,6 +389,7 @@ test("signed-out views switch between sign-in and sign-up fields", () => {
   const signIn = renderAuthGate();
   const signUp = renderAuthGate({ mode: "sign-up" });
 
+  assert.match(signIn, /<h1[^>]*>Welcome back<\/h1>/);
   assert.match(signIn, /name="email"/);
   assert.match(signIn, /name="password"/);
   assert.doesNotMatch(signIn, /name="name"/);
@@ -397,6 +398,9 @@ test("signed-out views switch between sign-in and sign-up fields", () => {
   assert.match(signUp, /name="name"/);
   assert.match(signUp, /name="email"/);
   assert.match(signUp, /name="password"/);
+  assert.match(signUp, /<h1[^>]*>Create your account<\/h1>/);
+  assert.match(signUp, /set up the learner profile next/i);
+  assert.match(signUp, /<label[^>]*for="auth-name"[^>]*>.*Account name/is);
   assert.doesNotMatch(signUp, /LESSON CONTENT/);
   assert.doesNotMatch(signUp, /PARROT ENGLISH|注册后就可以开始英语口语练习/);
 });
@@ -433,20 +437,23 @@ test("signed-in views keep signing-out progress on the collapsed account", () =>
   assert.doesNotMatch(html, /Signing out…/);
 });
 
-test("renders the learner name as the collapsed account menu trigger", () => {
+test("renders a clearly labeled account trigger without conflating learner profile", () => {
   const html = renderAuthGate({
     onOpenProfile() {},
     session: { user: { email: "mia@example.test", name: "Mia" } },
   });
   const bar = html.match(
-    /<aside[^>]*aria-label="Current account"[^>]*>[\s\S]*?<\/aside>/,
+    /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
   )?.[0];
 
   assert.ok(bar);
-  assert.match(bar, /<button[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/);
+  assert.match(
+    bar,
+    /<button[^>]*aria-label="Account for Mia"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
+  );
   assert.match(bar, />Mia</);
   assert.doesNotMatch(bar, /aria-label="Edit learner profile"/);
-  assert.doesNotMatch(bar, />Log out</);
+  assert.doesNotMatch(bar, />Sign out|>Log out</);
 });
 
 test("auth submission validates before calling the client", async () => {
@@ -555,7 +562,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     }),
     refetch,
   });
-  assert.equal(failure, "Unable to log you out. Please try again.");
+  assert.equal(failure, "Unable to sign you out. Please try again.");
   assert.equal(refetchCalls, 0);
 
   const thrownFailure = await signOutSession({
@@ -566,7 +573,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     }),
     refetch,
   });
-  assert.equal(thrownFailure, "Unable to log you out. Please try again.");
+  assert.equal(thrownFailure, "Unable to sign you out. Please try again.");
   assert.equal(refetchCalls, 0);
 
   const success = await signOutSession({

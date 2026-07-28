@@ -153,7 +153,7 @@ export function LearnerProfileGateView({
                 onClick={onCloseConversationRoute}
                 type="button"
               >
-                Back to main menu
+                Back to home
               </TextButton>
             ) : (
               <TextButton onClick={onSkip} type="button">
@@ -221,7 +221,7 @@ export function LearnerProfileGateView({
                 onClick={onCloseProfileRoute}
                 type="button"
               >
-                Back to main menu
+                Back to home
               </TextButton>
               <ActionButton onClick={onRetryProfile} type="button">
                 Retry
@@ -276,14 +276,14 @@ export function LearnerProfileGateView({
             src="/assets/characters/peppa/peppa-happy.webp"
           />
           <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
-            Meet Peppa
+            Help Peppa get to know you
           </h1>
           <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
-            Answer six quick questions so your English practice can feel more like
-            you.
+            Answer a few quick questions to personalize chats and lessons. You
+            can change these later in Learner profile.
           </p>
           <ActionButton className="mt-2 text-lg" onClick={onStart} type="button">
-            Start
+            Set up profile
           </ActionButton>
           <TextButton onClick={onSkip} type="button">
             Skip for now
@@ -1015,13 +1015,13 @@ export function LearnerProfileGate({
 
   const profileAction = useMemo(
     () =>
-      canEditProfile
+      canEditProfile && !isProfileRoute
         ? {
             error: "",
             onOpen: onOpenProfileRoute,
           }
         : null,
-    [canEditProfile, onOpenProfileRoute],
+    [canEditProfile, isProfileRoute, onOpenProfileRoute],
   );
   useProfileAccountAction(profileAction);
 

@@ -32,14 +32,14 @@ test("lesson creator scrolls to its review controls on a short phone", async ({
   await page.goto("/lessons/my/create");
 
   await expect(
-    page.getByRole("heading", { name: "Create a Lesson" }),
+    page.getByRole("heading", { name: "Create a custom lesson" }),
   ).toBeVisible();
 
-  const reviewButton = page.getByRole("button", {
+  const makeLessonButton = page.getByRole("button", {
     exact: true,
-    name: "Review script",
+    name: "Make lesson",
   });
-  await expectMainScrollsTo(page, reviewButton);
+  await expectMainScrollsTo(page, makeLessonButton);
 });
 
 test("lesson editor scrolls to its review controls on a short phone", async ({

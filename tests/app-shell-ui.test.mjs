@@ -50,7 +50,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu exposes Talk to Peppa with the learning activities", () => {
+test("home menu prioritizes two working activities and previews two disabled activities", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -59,26 +59,19 @@ test("home menu exposes Talk to Peppa with the learning activities", () => {
   assert.match(html, /<nav[^>]*aria-label="Learning activities"/);
   assert.deepEqual(
     [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href),
-    [
-      "/talk-to-peppa",
-      "/lessons",
-      "/lessons/my/create",
-    ],
+    ["/talk-to-peppa", "/lessons"],
   );
-  assert.deepEqual(
-    [...html.matchAll(/<button[^>]*aria-label="([^"]+)"[^>]*disabled/g)].map(
-      ([, label]) => label,
-    ),
-    ["Progress, coming soon", "Storytelling, coming soon"],
-  );
+  assert.equal((html.match(/<button/g) ?? []).length, 2);
+  assert.equal((html.match(/disabled=""/g) ?? []).length, 2);
   assert.equal((html.match(/>Coming soon</g) ?? []).length, 2);
+  assert.match(html, /What do you want to do today\?/);
   assert.match(html, />Talk to Peppa</);
-  assert.match(html, /friendly English conversation/i);
+  assert.match(html, /chat freely/i);
   assert.match(html, />Lessons</);
-  assert.match(html, /Parrot|learner-created/i);
-  assert.match(html, />Create a Lesson</);
-  assert.match(html, />Progress</);
-  assert.match(html, />Storytelling</);
+  assert.match(html, /story.*speaking|speaking.*story/i);
+  assert.match(html, /aria-label="Progress, coming soon"/);
+  assert.match(html, /aria-label="Storytelling, coming soon"/);
+  assert.doesNotMatch(html, /Create a Lesson/);
   assert.doesNotMatch(html, /PARROT ENGLISH/);
 });
 
@@ -102,34 +95,68 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
   assert.match(html, /<h1[^>]*>Progress<\/h1>/);
   assert.match(html, /This activity is coming soon\./);
   assert.equal((html.match(/<p/g) ?? []).length, 1);
-  assert.match(
-    html,
-    /<a[^>]*href="\/"[^>]*>Back to main menu<\/a>/,
+  assert.match(html, /<a[^>]*href="\/"[^>]*>Back to home<\/a>/);
+});
+
+test("feature placeholder keeps visual actions in keyboard order", () => {
+  const retryHtml = renderInRouter(
+    createElement(FeaturePlaceholder, {
+      actionLabel: "Back to lessons",
+      actionTo: "/lessons",
+      description: "Please try loading this lesson again.",
+      onRetry() {},
+      title: "We couldn’t open that lesson",
+    }),
+  );
+  assert.ok(
+    retryHtml.indexOf("Try again") < retryHtml.indexOf("Back to lessons"),
+    "Retry should precede the fallback link in DOM and visual order.",
+  );
+
+  const alternateHtml = renderInRouter(
+    createElement(FeaturePlaceholder, {
+      actionLabel: "Choose a lesson",
+      actionTo: "/lessons",
+      description: "Voice chat is unavailable.",
+      secondaryActionLabel: "Back to home",
+      secondaryActionTo: "/",
+      title: "Peppa is taking a break",
+    }),
+  );
+  assert.ok(
+    alternateHtml.indexOf("Choose a lesson") <
+      alternateHtml.indexOf("Back to home"),
+    "The primary action should precede the secondary action in DOM and visual order.",
   );
 });
 
-test("authenticated application routes render durable home and activity pages", () => {
+test("authenticated application routes keep working activities and retire legacy placeholders", () => {
   assert.match(renderApplicationRoute("/"), /Learning activities/);
   assert.match(
     renderApplicationRoute("/talk-to-peppa"),
-    /Talk to Peppa/,
+    /Peppa is taking a break/,
   );
-  assert.match(renderApplicationRoute("/lessons"), /Choose a lesson/);
+  assert.match(renderApplicationRoute("/lessons"), /<h1[^>]*>Lessons<\/h1>/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
-  assert.match(createLesson, /<h1[^>]*>Create a Lesson<\/h1>/);
-  assert.match(createLesson, /Generate Script/);
-  assert.match(createLesson, /Upload Script/);
+  assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
+  assert.match(createLesson, /Make with AI/);
+  assert.match(createLesson, /Import JSON/);
   assert.doesNotMatch(createLesson, /LEARN YOUR WAY/);
   assert.match(createLesson, /<form|<textarea/);
 
-  assert.match(renderApplicationRoute("/progress"), /<h1[^>]*>Progress<\/h1>/);
-  assert.doesNotMatch(renderApplicationRoute("/progress"), /KEEP GROWING/);
+  for (const retiredPath of ["/progress", "/stories"]) {
+    const html = renderApplicationRoute(retiredPath);
+    assert.doesNotMatch(html, /Progress|Storytelling|coming soon/i);
+  }
   assert.match(
-    renderApplicationRoute("/stories"),
-    /<h1[^>]*>Storytelling<\/h1>/,
+    app,
+    /<Route\s+element=\{<Navigate\s+replace\s+to=["']\/["']\s*\/>\}\s+path=["']\/progress["']\s*\/>/,
   );
-  assert.doesNotMatch(renderApplicationRoute("/stories"), /TELL A STORY/);
+  assert.match(
+    app,
+    /<Route\s+element=\{<Navigate\s+replace\s+to=["']\/["']\s*\/>\}\s+path=["']\/stories["']\s*\/>/,
+  );
 });
 
 test("canonical Parrot scene routes render the addressed one-based scene", () => {
@@ -266,7 +293,7 @@ test("global Profile navigation exits the active lesson before routing", () => {
   );
   assert.match(
     app,
-    /const openProfileRoute = useCallback\(\(\) => \{\s*lessonRouteExitRegistryRef\.current\.exit\(\);\s*navigate\("\/profile"\);\s*\}, \[navigate\]\)/,
+    /const openProfileRoute = useCallback\(\(\) => \{\s*lessonRouteExitRegistryRef\.current\.exit\(\);\s*navigate\(getProfilePath\(requestedProtectedTarget\)\);\s*\}, \[navigate,\s*requestedProtectedTarget\]\)/,
   );
   assert.match(
     app,
@@ -277,8 +304,8 @@ test("global Profile navigation exits the active lesson before routing", () => {
 
 test("Create Lesson stays statically ranked ahead of dynamic My lesson routes", () => {
   const createLesson = renderApplicationRoute("/lessons/my/create");
-  assert.match(createLesson, /<h1[^>]*>Create a Lesson<\/h1>/);
-  assert.match(createLesson, /Generate Script/);
-  assert.match(createLesson, /Upload Script/);
+  assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
+  assert.match(createLesson, /Make with AI/);
+  assert.match(createLesson, /Import JSON/);
   assert.doesNotMatch(createLesson, /Parrot English speaking lesson/);
 });

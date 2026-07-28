@@ -326,7 +326,7 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
-  it("renders name, age, and the description with a profile-edit conversation action", () => {
+  it("renders learner details separately from the profile-setup action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
         drafts: {
@@ -346,10 +346,8 @@ describe("profile summary editor", () => {
       }),
     );
 
-    assert.doesNotMatch(
-      html,
-      /Your profile|Keep the basics up to date|Want another little chat|Redo the short onboarding conversation/,
-    );
+    assert.match(html, /<h1[^>]*>Learner profile<\/h1>/);
+    assert.match(html, /personalize.*chats and lessons/i);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
@@ -370,7 +368,10 @@ describe("profile summary editor", () => {
         html.indexOf('id="profile-age"'),
     );
     assert.match(html, /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy\.webp/);
-    assert.match(html, />Chat with Peppa again</);
+    assert.match(html, /Redo learner setup/);
+    assert.match(html, />Redo setup questions</);
+    assert.match(html, /normal chat.*Home.*Talk to Peppa/is);
+    assert.doesNotMatch(html, />Chat with Peppa again</);
     assert.doesNotMatch(html, /pig pal/i);
     assert.match(html, />Save changes</);
     assert.doesNotMatch(
@@ -394,12 +395,12 @@ describe("profile summary editor", () => {
       }),
     );
     const close = html.match(
-      /<button[^>]*aria-label="Close profile editor"[^>]*>/,
+      /<button[^>]*aria-label="Back"[^>]*>/,
     )?.[0];
     const cancel = html.match(/<button[^>]*>Cancel<\/button>/)?.[0];
     const save = html.match(/<button[^>]*>Save changes<\/button>/)?.[0];
     const redo = html.match(
-      /<button[^>]*>Chat with Peppa again<\/button>/,
+      /<button[^>]*>Redo setup questions<\/button>/,
     )?.[0];
 
     assert.doesNotMatch(html, /<fieldset disabled="">/);
@@ -407,6 +408,10 @@ describe("profile summary editor", () => {
     assert.doesNotMatch(cancel, /\sdisabled(?:=""|(?=[ >]))/);
     assert.doesNotMatch(redo, /\sdisabled(?:=""|(?=[ >]))/);
     assert.doesNotMatch(save, /\sdisabled(?:=""|(?=[ >]))/);
+    assert.ok(
+      html.indexOf("Save changes") < html.indexOf("Cancel"),
+      "The primary mobile action should precede Cancel in DOM and visual order.",
+    );
   });
 
   it("blocks closing, canceling, and saving while a save is active", () => {
@@ -424,10 +429,10 @@ describe("profile summary editor", () => {
       }),
     );
     const buttons = [
-      html.match(/<button[^>]*aria-label="Close profile editor"[^>]*>/)?.[0],
+      html.match(/<button[^>]*aria-label="Back"[^>]*>/)?.[0],
       html.match(/<button[^>]*>Cancel<\/button>/)?.[0],
       html.match(
-        /<button[^>]*>Chat with Peppa again<\/button>/,
+        /<button[^>]*>Redo setup questions<\/button>/,
       )?.[0],
       html.match(/<button[^>]*>Saving…<\/button>/)?.[0],
     ];
@@ -911,7 +916,7 @@ describe("onboarding and profile gate", () => {
     assert.match(failed, /role="alert"/);
     assert.match(failed, /Profile service is unavailable\./);
     assert.match(failed, />Retry</);
-    assert.match(failed, />Back to main menu</);
+    assert.match(failed, />Back to home</);
     assert.doesNotMatch(failed, /LESSON CONTENT/);
   });
 
@@ -923,8 +928,10 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(failed, /LESSON CONTENT/);
 
     const start = renderGate({ data: fullState() });
-    assert.match(start, /Meet Peppa/);
-    assert.match(start, /six quick questions/i);
+    assert.match(start, /Help Peppa get to know you/);
+    assert.match(start, /a few quick questions/i);
+    assert.match(start, /change these later.*Learner profile/is);
+    assert.match(start, />Set up profile</);
     assert.doesNotMatch(start, /PARROT ENGLISH/);
     assert.doesNotMatch(start, /What&#x27;s your name\?/);
     assert.doesNotMatch(start, /LESSON CONTENT/);
@@ -983,10 +990,11 @@ describe("onboarding and profile gate", () => {
         pageError: "",
       },
     });
-    assert.match(html, /Edit profile/);
+    assert.match(html, /Learner profile/);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
-    assert.match(html, /Chat with Peppa again/);
+    assert.match(html, /Redo setup questions/);
+    assert.doesNotMatch(html, /Chat with Peppa again/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
   });

@@ -52,7 +52,7 @@ interface SignOutSessionOptions {
   refetch: () => Promise<unknown>;
 }
 
-const SIGN_OUT_ERROR_MESSAGE = "Unable to log you out. Please try again.";
+const SIGN_OUT_ERROR_MESSAGE = "Unable to sign you out. Please try again.";
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
@@ -234,15 +234,26 @@ export function AuthGateView({
     return (
       <AuthScreen>
         <AuthCard aria-labelledby="auth-title">
-          <header className="mb-6 flex items-start gap-4 sm:items-center">
+          <header
+            className={cx(
+              "flex items-start gap-4 sm:items-center",
+              isSignUp ? "mb-3" : "mb-6",
+            )}
+          >
             <AuthParrotMark />
             <h1
               className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl"
               id="auth-title"
             >
-              {isSignUp ? "Create a learning account" : "Welcome back"}
+              {isSignUp ? "Create your account" : "Welcome back"}
             </h1>
           </header>
+          {isSignUp ? (
+            <p className="mb-6 mt-0 font-bold leading-relaxed text-slate-600">
+              Use an adult or learner account name. You’ll set up the learner
+              profile next.
+            </p>
+          ) : null}
 
           <form onSubmit={onSubmit}>
             <fieldset
@@ -284,7 +295,7 @@ export function AuthGateView({
                   className="grid gap-2 font-black text-brand-ink"
                   htmlFor="auth-name"
                 >
-                  <span>Name</span>
+                  <span>Account name</span>
                   <input
                     autoComplete="name"
                     id="auth-name"

@@ -141,11 +141,12 @@ export function AccountHeader({
   return (
     <aside
       aria-busy={isSigningOut}
-      aria-label="Current account"
+      aria-label="Account"
       className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-7 md:top-6 md:max-w-xl"
       ref={accountRef}
     >
       <ActionButton
+        aria-label={`Account for ${userLabel}`}
         aria-controls={menuId}
         aria-expanded={isMenuOpen}
         aria-haspopup="menu"
@@ -168,43 +169,53 @@ export function AccountHeader({
       </ActionButton>
       {isMenuOpen ? (
         <div
-          aria-label="Account actions"
-          className="absolute right-0 top-full mt-2 grid min-w-40 gap-1 rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy"
-          id={menuId}
-          role="menu"
+          className="absolute right-0 top-full mt-2 grid min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy"
         >
-          {onOpenProfile ? (
+          <p
+            className="m-0 truncate px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
+            title={userEmail}
+          >
+            {userEmail}
+          </p>
+          <div
+            aria-label="Account menu"
+            className="grid gap-1"
+            id={menuId}
+            role="menu"
+          >
+            {onOpenProfile ? (
+              <ActionButton
+                className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+                onClick={() => selectAction(onOpenProfile)}
+                role="menuitem"
+                size="bare"
+                type="button"
+                variant="surface"
+              >
+                Learner profile
+              </ActionButton>
+            ) : null}
             <ActionButton
               className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
-              onClick={() => selectAction(onOpenProfile)}
+              onClick={() => selectAction(() => setIsAboutOpen(true))}
               role="menuitem"
               size="bare"
               type="button"
               variant="surface"
             >
-              Profile
+              About
             </ActionButton>
-          ) : null}
-          <ActionButton
-            className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
-            onClick={() => selectAction(() => setIsAboutOpen(true))}
-            role="menuitem"
-            size="bare"
-            type="button"
-            variant="surface"
-          >
-            About
-          </ActionButton>
-          <ActionButton
-            className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
-            disabled={isSigningOut}
-            onClick={() => selectAction(onSignOut)}
-            role="menuitem"
-            size="bare"
-            type="button"
-          >
-            {isSigningOut ? "Signing out…" : "Log out"}
-          </ActionButton>
+            <ActionButton
+              className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+              disabled={isSigningOut}
+              onClick={() => selectAction(onSignOut)}
+              role="menuitem"
+              size="bare"
+              type="button"
+            >
+              {isSigningOut ? "Signing out…" : "Sign out"}
+            </ActionButton>
+          </div>
         </div>
       ) : null}
       {isAboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
