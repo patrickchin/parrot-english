@@ -1,6 +1,8 @@
-import { voice } from "@livekit/agents";
+import { llm, voice } from "@livekit/agents";
+import { z } from "zod";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
+import type { ConversationIngestClient } from "./ingest-client.ts";
 import { INTRODUCTION_SYSTEM_PROMPT } from "./prompts/introduction.ts";
 import { PROFILE_EDIT_SYSTEM_PROMPT } from "./prompts/profile-edit.ts";
 import { SMALL_CHAT_SYSTEM_PROMPT } from "./prompts/small-chat.ts";
@@ -33,6 +35,8 @@ type ControllerState = Omit<
 > & { finishReason: string | null };
 
 type CreateTaskOptions = {
+  conversationId?: string;
+  ingest?: ConversationIngestClient;
   initialState?: ControllerState;
   purpose?: ConversationPurpose;
 };
@@ -47,10 +51,76 @@ function savedProfileContext(state: ControllerState) {
   return `<SAVED_PROFILE>\n${savedProfile}\n</SAVED_PROFILE>`;
 }
 
+function createProfileEditTool({
+  conversationId,
+  ingest,
+  initialState,
+}: {
+  conversationId: string;
+  ingest: ConversationIngestClient;
+  initialState: ControllerState;
+}) {
+  let state = initialState;
+
+  return llm.tool({
+    name: "updateLearnerProfile",
+    description:
+      "Save the learner's complete current name, age, and About paragraph after they clearly change or add profile information.",
+    parameters: z.object({
+      name: z
+        .string()
+        .trim()
+        .min(1)
+        .max(120)
+        .describe("The learner's complete current name."),
+      age: z
+        .number()
+        .int()
+        .nonnegative()
+        .describe("The learner's complete current age in whole years."),
+      about: z
+        .string()
+        .trim()
+        .min(1)
+        .max(2_000)
+        .describe(
+          "The complete current About profile as one natural third-person paragraph.",
+        ),
+    }),
+    execute: async ({ about, age, name }) => {
+      state = {
+        ...state,
+        learnedAge: true,
+        learnedName: true,
+        profileAge: age,
+        profileName: name,
+        profileSummary: about,
+      };
+      await ingest.updateState(conversationId, state);
+      return { saved: true };
+    },
+  });
+}
+
 function createConversationTask({
+  conversationId,
+  ingest,
   initialState = createLearnerProfileConversationState() as ControllerState,
   purpose = "onboarding",
 }: CreateTaskOptions = {}) {
+  if (purpose === "profile-edit" && (!conversationId || !ingest)) {
+    throw new Error("Profile editing requires conversation persistence.");
+  }
+  const tools =
+    purpose === "profile-edit"
+      ? [
+          createProfileEditTool({
+            conversationId: conversationId!,
+            ingest: ingest!,
+            initialState,
+          }),
+        ]
+      : [];
   const task = voice.AgentTask.create<{ finishReason: string | null }>({
     id:
       purpose === "onboarding"
@@ -61,7 +131,7 @@ function createConversationTask({
     instructions: [getConversationSystemPrompt(purpose), savedProfileContext(initialState)]
       .filter(Boolean)
       .join("\n\n"),
-    tools: [],
+    tools,
     onEnter(ctx) {
       ctx.session.generateReply({
         allowInterruptions: false,
@@ -82,6 +152,8 @@ export function createSmallChatTask({
 }
 
 export function createPeppaConversationTask(options: {
+  conversationId: string;
+  ingest: ConversationIngestClient;
   initialState?: ControllerState;
   purpose: ConversationPurpose;
 }) {

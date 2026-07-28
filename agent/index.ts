@@ -297,6 +297,8 @@ export const agentDefinition = defineAgent({
     let latestAssistantText = "";
 
     const task = createPeppaConversationTask({
+      conversationId,
+      ingest,
       initialState,
       purpose,
     });

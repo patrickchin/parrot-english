@@ -85,4 +85,43 @@ describe("Peppa profile-edit tool", () => {
       [],
     );
   });
+
+  it("does not report success before the profile write finishes", async () => {
+    let releaseWrite;
+    const pendingWrite = new Promise((resolve) => {
+      releaseWrite = resolve;
+    });
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState() {
+          await pendingWrite;
+        },
+      }),
+      purpose: "profile-edit",
+      initialState: createLearnerProfileConversationState({
+        profileAge: 8,
+        profileName: "Mia",
+        profileSummary: "Mia is eight and likes pandas.",
+      }),
+    });
+
+    const execution =
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
+        {
+          about: "Mia is nine and likes pandas.",
+          age: 9,
+          name: "Mia",
+        },
+        {},
+      );
+    const beforeWrite = await Promise.race([
+      execution.then(() => "saved"),
+      new Promise((resolve) => setTimeout(() => resolve("pending"), 20)),
+    ]);
+
+    assert.equal(beforeWrite, "pending");
+    releaseWrite();
+    assert.deepEqual(await execution, { saved: true });
+  });
 });
