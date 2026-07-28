@@ -320,15 +320,17 @@ describe("single-inference learner-profile agent contract", () => {
     };
   }
 
-  it("uses no tools during onboarding learner turns", () => {
+  it("uses only the end-conversation tool during onboarding learner turns", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
     });
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
   });
 
-  it("uses no tools during profile editing and preserves saved context", async () => {
+  it("uses only the ending tool during profile editing and preserves saved context", async () => {
     let opening;
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
@@ -351,7 +353,9 @@ describe("single-inference learner-profile agent contract", () => {
     });
 
     assert.deepEqual(opening, { allowInterruptions: false });
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["profile-edit"], /speak first/i);
     assert.match(
       CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
@@ -370,10 +374,10 @@ describe("single-inference learner-profile agent contract", () => {
     assert.match(instructions, /warm, playful pig friend/i);
     assert.match(instructions, /bright, bouncy energy/i);
     assert.match(instructions, /relevant answer|differs from the category/i);
-    assert.match(instructions, /never call a tool/i);
+    assert.match(instructions, /endConversation/);
     assert.doesNotMatch(
       instructions,
-      /updateLearnerProfile|markObjectiveUnanswered|finishConversation|requestGentleRephrase/i,
+      /updateLearnerProfile|markObjectiveUnanswered|requestGentleRephrase/i,
     );
     assert.doesNotMatch(instructions, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
@@ -382,7 +386,7 @@ describe("single-inference learner-profile agent contract", () => {
     );
   });
 
-  it("gives ordinary small chat a static opening prompt and no profile-writing tools", async () => {
+  it("gives ordinary small chat a static opening prompt and only the ending tool", async () => {
     const task = createSmallChatTask();
     let opening;
 
@@ -395,7 +399,9 @@ describe("single-inference learner-profile agent contract", () => {
       },
     });
 
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
     assert.deepEqual(opening, { allowInterruptions: false });
     assert.match(task._instructions, /ordinary small chat/i);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);
