@@ -55,6 +55,7 @@ const MOCK_EVALUATIONS: Record<
   {
     transcript: string;
     similarity: number;
+    outcome: "correct" | "incorrect" | "noInput";
     passed: boolean;
     feedbackText: string;
     retryAllowed: boolean;
@@ -63,6 +64,7 @@ const MOCK_EVALUATIONS: Record<
   correct: {
     transcript: "Hello, Peppa!",
     similarity: 1,
+    outcome: "correct",
     passed: true,
     feedbackText: "Great job! Let's continue.",
     retryAllowed: false,
@@ -70,6 +72,7 @@ const MOCK_EVALUATIONS: Record<
   incorrect: {
     transcript: "yellow ball",
     similarity: 0.25,
+    outcome: "incorrect",
     passed: false,
     feedbackText: "Almost! Listen to Dolly and try again.",
     retryAllowed: true,
@@ -77,6 +80,7 @@ const MOCK_EVALUATIONS: Record<
   "no-speech": {
     transcript: "",
     similarity: 0,
+    outcome: "noInput",
     passed: false,
     feedbackText: "I couldn't hear you. Let's slow down and try again.",
     retryAllowed: true,

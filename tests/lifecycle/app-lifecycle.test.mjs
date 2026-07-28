@@ -294,6 +294,11 @@ function RouterHistoryControls() {
       { onClick: () => navigate(-1), type: "button" },
       "History back",
     ),
+    createElement(
+      "button",
+      { onClick: () => navigate(lessonScenePath(2)), type: "button" },
+      "Open scene 2",
+    ),
   );
 }
 
@@ -398,7 +403,7 @@ async function advanceToLearnerTurn(ControlledAudio) {
   await waitFor(() => {
     const microphone = button("Microphone");
     assert.equal(microphone.getAttribute("aria-pressed"), "false");
-    assert.match(microphone.textContent, /Start speaking/);
+    assert.match(microphone.textContent, /Tap to talk/);
   });
 }
 
@@ -407,11 +412,11 @@ async function recordLearnerTurn() {
   await click(microphone);
   await waitFor(() => {
     assert.equal(microphone.getAttribute("aria-pressed"), "true");
-    assert.match(microphone.textContent, /Stop speaking/);
+    assert.match(microphone.textContent, /Tap when done/);
   });
 
   await click(microphone);
-  await waitFor(() => text(/Checking your speech/));
+  await waitFor(() => text(/Checking your words/));
 }
 
 function text(value) {
@@ -1219,15 +1224,20 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const staleFirstCompletion = firstPlayback.onended;
     assert.equal(typeof staleFirstCompletion, "function");
 
-    await click(button("Next scene"));
+    await click(button("Open scene 2"));
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(2)));
-    await waitFor(() => text(new RegExp(firstLesson.scenes[1].title)));
+    await waitFor(() =>
+      assert.equal(document.activeElement, button("Start lesson")),
+    );
+    noText(new RegExp(firstLesson.scenes[1].title));
     assert.equal(firstPlayback.paused, true);
     await act(async () => staleFirstCompletion(new window.Event("ended")));
-    text(new RegExp(firstLesson.scenes[1].title));
+    noText(new RegExp(firstLesson.scenes[1].title));
     assert.equal(currentRoute().path, lessonScenePath(2));
 
+    await click(button("Start lesson"));
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 2));
+    await waitFor(() => text(new RegExp(firstLesson.scenes[1].title)));
     const secondPlayback = ControlledAudio.instances[1];
     const staleSecondCompletion = secondPlayback.onended;
     assert.equal(typeof staleSecondCompletion, "function");
@@ -1241,10 +1251,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("History back"));
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
     assert.equal(currentRoute().key, popDestination.key);
-    await waitFor(() => text(new RegExp(firstLesson.scenes[0].title)));
+    await waitFor(() =>
+      assert.equal(document.activeElement, button("Start lesson")),
+    );
+    noText(new RegExp(firstLesson.scenes[0].title));
     assert.equal(secondPlayback.paused, true);
     await act(async () => staleSecondCompletion(new window.Event("ended")));
-    text(new RegExp(firstLesson.scenes[0].title));
+    noText(new RegExp(firstLesson.scenes[0].title));
     assert.equal(currentRoute().path, lessonScenePath(1));
     await waitFor(() =>
       assert.equal(document.activeElement, button("Start lesson")),
@@ -1334,8 +1347,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await flush();
 
     assert.equal(currentRoute().path, lessonScenePath(2));
-    text(new RegExp(firstLesson.scenes[1].title));
-    noText(/Checking your speech|Great job!|Speech check failed|Audio unavailable/);
+    noText(new RegExp(firstLesson.scenes[1].title));
+    noText(/Checking your words|Great job!|Speech check failed|Audio unavailable/);
     assert.equal(document.activeElement, button("Start lesson"));
   });
 });

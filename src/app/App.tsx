@@ -44,7 +44,11 @@ import {
   getCurrentStep,
   reduceLessonState,
 } from "../../lib/lesson-state";
-import { isAbortError, playAudioLine } from "../media/audio-playback";
+import {
+  isAbortError,
+  playAudioLine,
+  type PlaybackControl,
+} from "../media/audio-playback";
 import {
   getGateRouteKind,
   getLessonScenePath,
@@ -74,12 +78,16 @@ import {
 import { LessonList } from "../lessons/LessonList";
 import {
   LessonCharacters,
-  LessonControls,
+  LessonCompletion,
   LessonErrorBanner,
+  LessonFeedback,
   LessonHud,
+  LessonIntroduction,
+  LessonPlaybackControls,
+  LessonSpeakingControls,
   LessonSpeech,
   LessonStage,
-  LessonStartAction,
+  LessonUserPrompt,
 } from "../lessons/LessonPlayerUi";
 import { LessonCreator } from "../lessons/LessonCreator";
 import { LessonEditor } from "../lessons/LessonEditor";
@@ -109,6 +117,7 @@ type LessonEvent =
   | { type: "LINE_DONE" }
   | { type: "MIC_STARTED" }
   | { type: "MIC_RELEASED" }
+  | { type: "SKIP_USER" }
   | { type: "RECORDING_CANCELLED" }
   | {
       type: "EVALUATED";
@@ -167,7 +176,9 @@ export function LessonPlayer({
   );
   const [error, setError] = useState("");
   const [historyPopSequence, setHistoryPopSequence] = useState(0);
+  const stateRef = useRef(state);
   const playbackControllerRef = useRef<AbortController | null>(null);
+  const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
@@ -187,12 +198,17 @@ export function LessonPlayer({
     sceneIndex: number;
   } | null>(null);
 
+  useLayoutEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   const cancelPendingWork = useCallback(() => {
     recordingActiveRef.current = false;
     recordingSequenceRef.current += 1;
     playbackGenerationRef.current += 1;
     playbackControllerRef.current?.abort();
     playbackControllerRef.current = null;
+    playbackControlRef.current = null;
     recordingControllerRef.current?.abort();
     recordingControllerRef.current = null;
     recordingRef.current?.cancel();
@@ -254,8 +270,9 @@ export function LessonPlayer({
 
   const dispatchLessonEvent = useCallback(
     (event: LessonEvent, { cancel = false }: { cancel?: boolean } = {}) => {
+      const currentState = stateRef.current;
       const targetSceneIndex = getLessonEventTargetSceneIndex(
-        state,
+        currentState,
         event,
         currentLesson,
       );
@@ -282,7 +299,6 @@ export function LessonPlayer({
       currentLesson,
       invalidateRouteActivity,
       onNavigateScene,
-      state,
     ],
   );
 
@@ -318,7 +334,8 @@ export function LessonPlayer({
   useEffect(() => {
     if (
       state.sceneIndex === routedSceneIndex &&
-      state.phase === LessonPhase.Idle
+      (state.phase === LessonPhase.Idle ||
+        state.phase === LessonPhase.Finished)
     ) {
       startActionRef.current?.focus({ preventScroll: true });
     }
@@ -340,31 +357,37 @@ export function LessonPlayer({
     state,
     state.response ?? currentStep,
   );
+  const playbackPhase =
+    state.phase === LessonPhase.Paused
+      ? state.resumePhase
+      : state.phase === LessonPhase.Speaking ||
+          state.phase === LessonPhase.Responding
+        ? state.phase
+        : null;
 
   useEffect(() => {
     if (state.sceneIndex !== routedSceneRef.current) return;
-    if (
-      state.phase !== LessonPhase.Speaking &&
-      state.phase !== LessonPhase.Responding
-    ) {
-      return;
-    }
+    if (!playbackPhase) return;
 
     const completionEvent: LessonEvent =
-      state.phase === LessonPhase.Responding
+      playbackPhase === LessonPhase.Responding
         ? { type: "RESPONSE_DONE" }
         : { type: "LINE_DONE" };
-    let startPlayback: (signal: AbortSignal) => Promise<void>;
+    let startPlayback: (
+      signal: AbortSignal,
+      onPlaybackControl: (control: PlaybackControl | null) => void,
+    ) => Promise<void>;
     try {
       if (audioMode === "device") {
         const speechLine = getLessonSpeechLine(state, currentLesson);
         if (!speechLine) return;
-        startPlayback = (signal) =>
-          playDeviceSpeech({ ...speechLine, signal });
+        startPlayback = (signal, onPlaybackControl) =>
+          playDeviceSpeech({ ...speechLine, onPlaybackControl, signal });
       } else {
         const audioLine = getLessonAudioLine(state, currentLesson);
         if (!audioLine) return;
-        startPlayback = (signal) => playAudioLine({ ...audioLine, signal });
+        startPlayback = (signal, onPlaybackControl) =>
+          playAudioLine({ ...audioLine, onPlaybackControl, signal });
       }
     } catch (caughtError) {
       const message =
@@ -394,7 +417,11 @@ export function LessonPlayer({
     const controller = new AbortController();
     playbackControllerRef.current = controller;
     setError("");
-    void startPlayback(controller.signal)
+    void startPlayback(controller.signal, (control) => {
+      if (playbackGenerationRef.current === generation) {
+        playbackControlRef.current = control;
+      }
+    })
       .then(() => playbackOperation.complete())
       .catch((caughtError: unknown) => {
         if (cancelled || isAbortError(caughtError)) return;
@@ -411,14 +438,15 @@ export function LessonPlayer({
       controller.abort();
       if (playbackControllerRef.current === controller) {
         playbackControllerRef.current = null;
+        playbackControlRef.current = null;
       }
     };
   }, [
     audioMode,
     currentLesson,
     dispatchLessonEvent,
+    playbackPhase,
     routedSceneIndex,
-    state.phase,
     state.response,
     state.sceneIndex,
     state.stepIndex,
@@ -431,6 +459,7 @@ export function LessonPlayer({
       recordingSequenceRef.current += 1;
       playbackGenerationRef.current += 1;
       playbackControllerRef.current?.abort();
+      playbackControlRef.current = null;
       recordingControllerRef.current?.abort();
       recordingRef.current?.cancel();
       evaluationControllerRef.current?.abort();
@@ -456,6 +485,24 @@ export function LessonPlayer({
     }
 
     dispatchSceneControl("PLAY_SCENE");
+  }
+
+  function handlePauseResume() {
+    const playbackControl = playbackControlRef.current;
+    if (!playbackControl) return;
+
+    if (state.phase === LessonPhase.Paused) {
+      playbackControl.resume();
+      dispatchLessonEvent({ type: "PLAY_SCENE" });
+      return;
+    }
+
+    playbackControl.pause();
+    dispatchLessonEvent({ type: "PAUSE_SCENE" });
+  }
+
+  function handleSkipUser() {
+    dispatchLessonEvent({ type: "SKIP_USER" }, { cancel: true });
   }
 
   async function beginRecording() {
@@ -569,72 +616,116 @@ export function LessonPlayer({
   const isEvaluating = state.phase === LessonPhase.Evaluating;
   const showUserTurn =
     state.phase === LessonPhase.WaitingForUser || isRecording || isEvaluating;
-  const showStartAction =
-    state.phase === LessonPhase.Idle ||
-    state.phase === LessonPhase.Finished;
-  const startActionLabel =
-    state.phase === LessonPhase.Finished ? "Replay lesson" : "Start lesson";
+  const isIdle = state.phase === LessonPhase.Idle;
+  const isFinished = state.phase === LessonPhase.Finished;
+  const isPaused = state.phase === LessonPhase.Paused;
+  const isResponding =
+    state.phase === LessonPhase.Responding ||
+    (isPaused && state.resumePhase === LessonPhase.Responding);
+  const showActiveScene = !isIdle && !isFinished;
+  const showPlaybackControls =
+    state.phase === LessonPhase.Speaking ||
+    state.phase === LessonPhase.Responding ||
+    isPaused;
   const atFirstScene = state.sceneIndex === 0;
   const atFinalScene = state.sceneIndex === currentLesson.scenes.length - 1;
   const speechCharacterIndex = scene.characters.findIndex(
     (character) => character.id === scene.speech.speaker
   );
-  const versionLabel = `v${import.meta.env.VITE_PARROT_APP_VERSION} @ ${import.meta.env.VITE_PARROT_COMMIT_SHA}`;
 
   return (
     <LessonStage background={scene.backgroundAsset}>
-        <LessonHud
-          currentScene={state.sceneIndex + 1}
+      <RouteHeader>
+        <HeaderButton
+          aria-label="Back to lesson list"
+          icon={<ChevronLeft strokeWidth={3.2} />}
+          onClick={handleBack}
+          type="button"
+        >
+          Back to lessons
+        </HeaderButton>
+      </RouteHeader>
+
+      {isIdle ? (
+        <LessonIntroduction
+          lessonTitle={currentLesson.title}
+          onStart={handleStartAction}
+          ref={startActionRef}
           sceneCount={currentLesson.scenes.length}
-          title={scene.title}
-          versionLabel={versionLabel}
         />
+      ) : null}
 
-        <RouteHeader>
-          <HeaderButton
-            aria-label="Back to lesson list"
-            icon={<ChevronLeft strokeWidth={3.2} />}
-            onClick={handleBack}
-            type="button"
-          >
-            Back to lessons
-          </HeaderButton>
-        </RouteHeader>
+      {isFinished ? (
+        <LessonCompletion
+          lessonTitle={currentLesson.title}
+          onBack={handleBack}
+          onReplay={handleStartAction}
+          ref={startActionRef}
+        />
+      ) : null}
 
-        {showStartAction ? (
-          <LessonStartAction
-            label={startActionLabel}
-            onClick={handleStartAction}
-            ref={startActionRef}
+      {showActiveScene ? (
+        <>
+          <LessonHud
+            currentScene={state.sceneIndex + 1}
+            sceneCount={currentLesson.scenes.length}
+            title={scene.title}
           />
-        ) : null}
+          <LessonCharacters characters={scene.characters} />
 
-        <LessonCharacters characters={scene.characters} />
-        <LessonSpeech
-          characterCount={scene.characters.length}
-          characterIndex={speechCharacterIndex}
-          speech={scene.speech}
-        />
-        <LessonControls
-          atFinalScene={atFinalScene}
-          atFirstScene={atFirstScene}
-          dialogue={currentStep.dialogue}
-          isEvaluating={isEvaluating}
-          isRecording={isRecording}
-          onNext={() => dispatchSceneControl("SCENE_NEXT")}
-          onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
-          onToggleRecording={handleToggleRecording}
-          progressLabel={progressLabel}
-          showUserTurn={showUserTurn}
-        />
-        <LessonErrorBanner error={error} />
+          {showUserTurn ? (
+            <LessonUserPrompt dialogue={currentStep.dialogue} />
+          ) : isResponding ? (
+            <LessonFeedback
+              outcome={state.responseOutcome}
+              speech={scene.speech}
+            />
+          ) : (
+            <LessonSpeech
+              characterCount={scene.characters.length}
+              characterIndex={speechCharacterIndex}
+              speech={scene.speech}
+            />
+          )}
 
-        <div className="sr-only" aria-live="polite">
-          {progressLabel}. Scene {state.sceneIndex + 1} of{" "}
-          {currentLesson.scenes.length}. {scene.settingDescription}
-          {state.transcript ? ` Heard: ${state.transcript}.` : ""}
-          {error ? ` ${error}` : ""}
-        </div>
+          {showUserTurn ? (
+            <LessonSpeakingControls
+              isEvaluating={isEvaluating}
+              isRecording={isRecording}
+              onSkip={handleSkipUser}
+              onToggleRecording={handleToggleRecording}
+            />
+          ) : null}
+          {showPlaybackControls ? (
+            <LessonPlaybackControls
+              atFinalScene={atFinalScene}
+              atFirstScene={atFirstScene}
+              isPaused={isPaused}
+              onNext={() => dispatchSceneControl("SCENE_NEXT")}
+              onPauseResume={handlePauseResume}
+              onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
+            />
+          ) : null}
+          <LessonErrorBanner error={error} />
+        </>
+      ) : null}
+
+      <div
+        aria-label="Lesson updates"
+        aria-live="polite"
+        className="sr-only"
+        role="status"
+      >
+        {isIdle || isFinished
+          ? progressLabel
+          : `${progressLabel}.${
+              showUserTurn ? ` Say: ${currentStep.dialogue}.` : ""
+            } Scene ${state.sceneIndex + 1} of ${
+              currentLesson.scenes.length
+            }. ${scene.settingDescription}`}
+        {state.transcript ? ` Heard: ${state.transcript}.` : ""}
+        {error ? ` ${error}` : ""}
+      </div>
     </LessonStage>
   );
 }

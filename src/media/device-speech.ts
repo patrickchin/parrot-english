@@ -1,3 +1,5 @@
+import type { PlaybackControl } from "./audio-playback";
+
 export type DeviceSpeechSpeaker = "peppa" | "dolly" | "narrator";
 
 export type DeviceVoice = {
@@ -22,11 +24,14 @@ export type DeviceSpeechEnvironment = {
   cancel(): void;
   createUtterance(text: string): DeviceUtterance;
   getVoices(): DeviceVoice[];
+  pause(): void;
+  resume(): void;
   speak(utterance: DeviceUtterance): void;
 };
 
 type PlayDeviceSpeechOptions = {
   env?: DeviceSpeechEnvironment | null;
+  onPlaybackControl?: (control: PlaybackControl | null) => void;
   signal?: AbortSignal;
   speaker: DeviceSpeechSpeaker;
   text: string;
@@ -51,6 +56,8 @@ function browserDeviceSpeechEnvironment(): DeviceSpeechEnvironment | null {
     createUtterance: (text) =>
       new SpeechSynthesisUtterance(text) as unknown as DeviceUtterance,
     getVoices: () => globalThis.speechSynthesis.getVoices(),
+    pause: () => globalThis.speechSynthesis.pause(),
+    resume: () => globalThis.speechSynthesis.resume(),
     speak: (utterance) =>
       globalThis.speechSynthesis.speak(utterance as SpeechSynthesisUtterance),
   };
@@ -88,6 +95,7 @@ function speakerPerformance(speaker: DeviceSpeechSpeaker) {
 
 export function playDeviceSpeech({
   env = browserDeviceSpeechEnvironment(),
+  onPlaybackControl,
   signal,
   speaker,
   text,
@@ -114,6 +122,7 @@ export function playDeviceSpeech({
       signal?.removeEventListener("abort", handleAbort);
       utterance.onend = null;
       utterance.onerror = null;
+      onPlaybackControl?.(null);
     };
     const settle = (action: () => void) => {
       if (settled) return;
@@ -130,6 +139,14 @@ export function playDeviceSpeech({
     utterance.onerror = () =>
       settle(() => reject(new Error("On-device speech playback failed.")));
     signal?.addEventListener("abort", handleAbort, { once: true });
+    onPlaybackControl?.({
+      pause: () => {
+        if (!settled) env.pause();
+      },
+      resume: () => {
+        if (!settled) env.resume();
+      },
+    });
 
     try {
       env.speak(utterance);

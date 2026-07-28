@@ -51,17 +51,20 @@ export function controlClassName({
 export function ActionButton({
   children,
   className,
+  ref,
   size,
   variant,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
   size?: ControlSize;
   variant?: ControlVariant;
 }) {
   return (
     <button
       className={controlClassName({ className, size, variant })}
+      ref={ref}
       {...props}
     >
       {children}
