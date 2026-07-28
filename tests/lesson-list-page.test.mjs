@@ -43,6 +43,37 @@ function getParrotLessonHrefs(html) {
     .filter((href) => /^\/lessons\/parrot\/[^/]+\/scenes\/1$/.test(href));
 }
 
+const expectedReadyMadeArtwork = [
+  [
+    "/assets/lesson-covers/01-peppas-high-ball.webp",
+    "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
+  ],
+  [
+    "/assets/lesson-covers/02-garden-colors.webp",
+    "Peppa and Dolly choosing a red flower for their basket",
+  ],
+  [
+    "/assets/lesson-covers/03-snack-time.webp",
+    "Dolly handing Peppa an apple from a snack basket",
+  ],
+  [
+    "/assets/lesson-covers/04-playground-words.webp",
+    "Peppa waiting beside a swing while Dolly takes her turn",
+  ],
+  [
+    "/assets/lesson-covers/05-market-day.webp",
+    "Peppa buying two red apples from Dolly's fruit stand",
+  ],
+  [
+    "/assets/lesson-covers/06-picnic-time.webp",
+    "Dolly pouring juice for Peppa on a picnic blanket",
+  ],
+  [
+    "/assets/lesson-covers/07-bedtime-story.webp",
+    "Peppa tucked under a blanket while Dolly reads beside a lantern",
+  ],
+];
+
 test("lesson list separates ready-made lessons from custom lessons", () => {
   const html = renderLessonList();
   const expectedHrefs = LESSONS.map(
@@ -69,6 +100,21 @@ test("lesson list separates ready-made lessons from custom lessons", () => {
     7,
   );
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
+});
+
+test("ready-made lessons use distinct story-specific artwork", () => {
+  const html = renderLessonList();
+
+  for (const [src, alt] of expectedReadyMadeArtwork) {
+    assert.match(
+      html,
+      new RegExp(
+        `<img[^>]*alt="${alt.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}"[^>]*src="${src.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`,
+      ),
+    );
+  }
+
+  assert.equal(new Set(expectedReadyMadeArtwork.map(([src]) => src)).size, 7);
 });
 
 test("lesson list keeps custom creation secondary and explains who it is for", () => {
