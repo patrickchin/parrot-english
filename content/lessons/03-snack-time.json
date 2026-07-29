@@ -15,7 +15,7 @@
     {
       "title": "The Snack Basket",
       "settingDescription": "Dolly opens the snack basket on the blanket while Peppa sits beside her.",
-      "background": "meadow-day",
+      "background": "apple-snack-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -39,7 +39,7 @@
     {
       "title": "Fruit for Snack",
       "settingDescription": "Apples and bananas are visible inside the open basket as Peppa and Dolly look down at them.",
-      "background": "meadow-day",
+      "background": "apple-snack-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -63,7 +63,7 @@
     {
       "title": "Peppa Asks Politely",
       "settingDescription": "Peppa looks toward Dolly and the apple basket beside the blanket.",
-      "background": "meadow-day",
+      "background": "apple-snack-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -121,7 +121,7 @@
     {
       "title": "An Apple for Peppa",
       "settingDescription": "Dolly holds an apple out to Peppa at the edge of the blanket.",
-      "background": "meadow-day",
+      "background": "apple-snack-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -129,7 +129,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking"
+            "dolly": "offering-apple"
           }
         },
         {
@@ -179,7 +179,7 @@
     {
       "title": "A Happy Snack",
       "settingDescription": "Peppa holds the apple as Dolly closes the basket beside her on the blanket.",
-      "background": "meadow-day",
+      "background": "apple-snack-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {

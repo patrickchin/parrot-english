@@ -15,7 +15,7 @@
     {
       "title": "The Picnic Blanket",
       "settingDescription": "Peppa and Dolly sit around the checked blanket with the open picnic basket between them.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -39,7 +39,7 @@
     {
       "title": "Dolly Offers Juice",
       "settingDescription": "Dolly holds the juice bottle beside the cups while Peppa listens across the blanket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -97,7 +97,7 @@
     {
       "title": "Peppa Says Yes",
       "settingDescription": "Peppa looks at the empty cup while Dolly holds the juice beside the fruit basket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -155,7 +155,7 @@
     {
       "title": "A Cup of Juice",
       "settingDescription": "Dolly places a cup of juice in front of Peppa across the blanket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow-pouring",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -163,7 +163,7 @@
           "dialogue": "Here is your juice.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking"
+            "dolly": "pouring-juice"
           }
         },
         {
@@ -179,7 +179,7 @@
     {
       "title": "Picnic Time Together",
       "settingDescription": "Peppa holds her juice as Dolly sits with her beside the food on the blanket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {

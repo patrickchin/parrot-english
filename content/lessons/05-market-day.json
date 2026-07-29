@@ -15,7 +15,7 @@
     {
       "title": "The Fruit Stand",
       "settingDescription": "Dolly stands behind the fruit counter while Peppa looks at baskets of red apples.",
-      "background": "episode-garden",
+      "background": "fruit-stand-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -39,7 +39,7 @@
     {
       "title": "Asking the Price",
       "settingDescription": "Peppa points to the apple basket and price sign as Dolly waits behind the counter.",
-      "background": "episode-garden",
+      "background": "fruit-stand-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -97,7 +97,7 @@
     {
       "title": "Two Coins",
       "settingDescription": "Dolly points to the two-coin sign while Peppa holds two coins beside her.",
-      "background": "episode-garden",
+      "background": "fruit-stand-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -121,7 +121,7 @@
     {
       "title": "Choosing Apples",
       "settingDescription": "Peppa looks at two apples on the counter while Dolly listens to her choice.",
-      "background": "episode-garden",
+      "background": "fruit-stand-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -179,7 +179,7 @@
     {
       "title": "The Apples Are Ready",
       "settingDescription": "Dolly gives Peppa two red apples across the counter while they smile.",
-      "background": "episode-garden",
+      "background": "fruit-stand-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -187,7 +187,7 @@
           "dialogue": "Here are two apples.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking"
+            "dolly": "selling-apples"
           }
         },
         {

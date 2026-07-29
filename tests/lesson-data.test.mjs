@@ -5,12 +5,13 @@ import * as lessonData from "../lib/lesson-data.js";
 
 const EMOTES = ["idle", "talking", "listening", "happy", "sad", "surprised"];
 const ACTION_EMOTES = {
-  peppa: ["choosing-flower", "reaching", "sleepy"],
+  peppa: ["choosing-flower", "holding-ball", "reaching", "sleepy"],
   dolly: [
+    "closing-book",
     "flying",
     "offering-apple",
     "pouring-juice",
-    "reading",
+    "returning-ball",
     "selling-apples",
     "swinging",
   ],
@@ -512,6 +513,25 @@ describe("lesson data contract", () => {
       assert.equal(
         lessonData.validateLesson(lesson, catalog, filename),
         lesson
+      );
+    }
+  });
+
+  it("registers an existing WebP asset for every lesson background", () => {
+    const backgrounds = JSON.parse(
+      readFileSync(
+        new URL("../content/catalogs/backgrounds.json", import.meta.url),
+        "utf8",
+      ),
+    );
+
+    for (const background of backgrounds) {
+      assert.match(background.src, /^\/assets\/backgrounds\/.+\.webp$/);
+      assert.ok(background.alt, `${background.id} alt text`);
+      assert.equal(
+        existsSync(new URL(`../public${background.src}`, import.meta.url)),
+        true,
+        `${background.id} file`,
       );
     }
   });

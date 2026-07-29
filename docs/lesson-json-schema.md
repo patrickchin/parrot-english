@@ -79,7 +79,18 @@ type Emote =
   | "listening"
   | "happy"
   | "sad"
-  | "surprised";
+  | "surprised"
+  | "choosing-flower"
+  | "holding-ball"
+  | "reaching"
+  | "sleepy"
+  | "closing-book"
+  | "flying"
+  | "offering-apple"
+  | "pouring-juice"
+  | "returning-ball"
+  | "selling-apples"
+  | "swinging";
 ```
 
 All required text fields must contain non-whitespace text. The runtime permits
@@ -126,6 +137,19 @@ The currently supported background IDs are:
 - `meadow-day`
 - `meadow-evening`
 - `reward`
+- `high-ball-garden`
+- `high-ball-garden-cleared`
+- `red-flower-garden`
+- `red-flower-garden-picked`
+- `red-flower-basket-garden`
+- `apple-snack-meadow`
+- `swing-playground`
+- `swing-playground-active`
+- `fruit-stand-garden`
+- `juice-picnic-meadow`
+- `juice-picnic-meadow-pouring`
+- `bedtime-story-meadow`
+- `bedtime-story-meadow-closing`
 
 The currently supported visible character IDs are:
 
@@ -188,7 +212,7 @@ An `emotes` object maps visible character IDs to supported emote IDs:
 }
 ```
 
-Supported emotes are:
+Every visible character supports these universal emotes:
 
 - `idle`
 - `talking`
@@ -196,6 +220,16 @@ Supported emotes are:
 - `happy`
 - `sad`
 - `surprised`
+
+Built-in story scenes can also use character-specific action poses:
+
+- Peppa: `choosing-flower`, `holding-ball`, `reaching`, `sleepy`
+- Dolly: `closing-book`, `flying`, `offering-apple`, `pouring-juice`,
+  `returning-ball`, `selling-apples`, `swinging`
+
+An action pose is valid only for a character whose entry in
+`content/catalogs/characters.json` includes that asset. For example, Dolly can
+use `flying`, but Peppa cannot.
 
 Emote resolution follows these rules:
 

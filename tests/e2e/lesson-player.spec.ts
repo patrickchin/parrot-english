@@ -222,9 +222,7 @@ for (const viewport of viewports) {
     await expect(
       page.getByAltText("Peppa reaching up toward a red ball"),
     ).toBeVisible();
-    await expect(
-      page.getByAltText("Dolly flying up toward a red ball"),
-    ).toBeVisible();
+    await expect(page.getByAltText("Dolly listening")).toBeVisible();
 
     const hud = page.getByRole("region", { name: "Lesson progress" });
     const progress = page.getByRole("progressbar", { name: "Scene progress" });

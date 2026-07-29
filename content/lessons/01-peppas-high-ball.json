@@ -15,14 +15,14 @@
     {
       "title": "The Ball Up High",
       "settingDescription": "Peppa stands under the tall tree and looks up at her red ball while Dolly watches beside her.",
-      "background": "episode-garden",
+      "background": "high-ball-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Look! My ball!",
           "emotes": {
-            "peppa": "surprised",
+            "peppa": "reaching",
             "dolly": "listening"
           }
         },
@@ -81,7 +81,7 @@
     {
       "title": "Peppa Cannot Reach",
       "settingDescription": "Peppa stretches toward the branch, but the ball stays above her while Dolly stands nearby.",
-      "background": "episode-garden",
+      "background": "high-ball-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -139,7 +139,7 @@
     {
       "title": "Asking for Help",
       "settingDescription": "Peppa turns toward Dolly beneath the tree, ready to ask for help.",
-      "background": "episode-garden",
+      "background": "high-ball-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -197,7 +197,7 @@
     {
       "title": "Dolly Flies Up",
       "settingDescription": "Dolly rises toward the branch as Peppa looks up from the grass.",
-      "background": "episode-garden",
+      "background": "high-ball-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -205,7 +205,7 @@
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking"
+            "dolly": "flying"
           }
         },
         {
@@ -255,7 +255,7 @@
     {
       "title": "The Ball Comes Down",
       "settingDescription": "Dolly gives the red ball to Peppa under the tree while they smile.",
-      "background": "episode-garden",
+      "background": "high-ball-garden-cleared",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -263,7 +263,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking"
+            "dolly": "returning-ball"
           }
         },
         {
@@ -271,7 +271,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy"
+            "dolly": "returning-ball"
           }
         },
         {
@@ -279,7 +279,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "returning-ball"
           }
         },
         {
@@ -287,7 +287,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening"
+            "dolly": "returning-ball"
           },
           "check": {
             "maxAttempts": 2,
@@ -312,7 +312,7 @@
           "speaker": "peppa",
           "dialogue": "Thank you!",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "holding-ball",
             "dolly": "happy"
           }
         },
@@ -320,7 +320,7 @@
           "speaker": "narrator",
           "dialogue": "Let's thank Dolly!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-ball",
             "dolly": "happy"
           }
         },
@@ -328,7 +328,7 @@
           "speaker": "dolly",
           "dialogue": "Thank you!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "holding-ball",
             "dolly": "talking"
           }
         },
@@ -336,7 +336,7 @@
           "speaker": "user",
           "dialogue": "Thank you!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "holding-ball",
             "dolly": "listening"
           },
           "check": {
@@ -362,7 +362,7 @@
           "speaker": "narrator",
           "dialogue": "Great job, Bella! Peppa has her ball!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-ball",
             "dolly": "happy"
           }
         }

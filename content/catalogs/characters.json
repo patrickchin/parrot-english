@@ -26,6 +26,22 @@
       "surprised": {
         "src": "/assets/characters/peppa/peppa-surprised.webp",
         "alt": "Peppa feeling surprised"
+      },
+      "choosing-flower": {
+        "src": "/assets/characters/peppa/peppa-choosing-flower.webp",
+        "alt": "Peppa choosing a red flower"
+      },
+      "holding-ball": {
+        "src": "/assets/characters/peppa/peppa-holding-ball.webp",
+        "alt": "Peppa holding her red ball"
+      },
+      "reaching": {
+        "src": "/assets/characters/peppa/peppa-reaching.webp",
+        "alt": "Peppa reaching up toward a red ball"
+      },
+      "sleepy": {
+        "src": "/assets/characters/peppa/peppa-sleepy.webp",
+        "alt": "Peppa resting sleepily under a blanket"
       }
     }
   },
@@ -56,6 +72,34 @@
       "surprised": {
         "src": "/assets/characters/dolly/dolly-surprised.webp",
         "alt": "Dolly feeling surprised"
+      },
+      "closing-book": {
+        "src": "/assets/characters/dolly/dolly-closing-book.webp",
+        "alt": "Dolly closing the storybook"
+      },
+      "flying": {
+        "src": "/assets/characters/dolly/dolly-flying.webp",
+        "alt": "Dolly flying up toward a red ball"
+      },
+      "offering-apple": {
+        "src": "/assets/characters/dolly/dolly-offering-apple.webp",
+        "alt": "Dolly offering Peppa a red apple"
+      },
+      "pouring-juice": {
+        "src": "/assets/characters/dolly/dolly-pouring-juice.webp",
+        "alt": "Dolly pouring juice into a cup"
+      },
+      "returning-ball": {
+        "src": "/assets/characters/dolly/dolly-returning-ball.webp",
+        "alt": "Dolly returning the red ball to Peppa"
+      },
+      "selling-apples": {
+        "src": "/assets/characters/dolly/dolly-selling-apples.webp",
+        "alt": "Dolly holding two red apples for Peppa"
+      },
+      "swinging": {
+        "src": "/assets/characters/dolly/dolly-swinging.webp",
+        "alt": "Dolly sitting on a playground swing"
       }
     }
   }

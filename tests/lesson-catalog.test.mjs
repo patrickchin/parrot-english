@@ -87,50 +87,65 @@ describe("lesson catalog", () => {
       [
         "01-peppas-high-ball",
         {
-          background: "high-ball-garden",
-          actions: ["peppa:reaching", "dolly:flying"],
+          backgrounds: ["high-ball-garden", "high-ball-garden-cleared"],
+          actions: [
+            "peppa:reaching",
+            "peppa:holding-ball",
+            "dolly:flying",
+            "dolly:returning-ball",
+          ],
         },
       ],
       [
         "02-garden-colors",
         {
-          background: "red-flower-garden",
+          backgrounds: [
+            "red-flower-garden",
+            "red-flower-garden-picked",
+            "red-flower-basket-garden",
+          ],
           actions: ["peppa:choosing-flower"],
         },
       ],
       [
         "03-snack-time",
         {
-          background: "apple-snack-meadow",
+          backgrounds: ["apple-snack-meadow"],
           actions: ["dolly:offering-apple"],
         },
       ],
       [
         "04-playground-words",
         {
-          background: "swing-playground",
+          backgrounds: ["swing-playground-active", "swing-playground"],
           actions: ["dolly:swinging"],
         },
       ],
       [
         "05-market-day",
         {
-          background: "fruit-stand-garden",
+          backgrounds: ["fruit-stand-garden"],
           actions: ["dolly:selling-apples"],
         },
       ],
       [
         "06-picnic-time",
         {
-          background: "juice-picnic-meadow",
+          backgrounds: [
+            "juice-picnic-meadow",
+            "juice-picnic-meadow-pouring",
+          ],
           actions: ["dolly:pouring-juice"],
         },
       ],
       [
         "07-bedtime-story",
         {
-          background: "bedtime-story-meadow",
-          actions: ["peppa:sleepy", "dolly:reading"],
+          backgrounds: [
+            "bedtime-story-meadow-closing",
+            "bedtime-story-meadow",
+          ],
+          actions: ["peppa:sleepy", "dolly:closing-book"],
         },
       ],
     ]);
@@ -148,7 +163,7 @@ describe("lesson catalog", () => {
       assert.match(lesson.scenes.at(-1).steps.at(-1).dialogue, /Bella/);
       assert.deepEqual(
         [...new Set(lesson.scenes.map(({ background }) => background))],
-        [expectedVisual.background],
+        expectedVisual.backgrounds,
       );
 
       const usedActions = new Set(

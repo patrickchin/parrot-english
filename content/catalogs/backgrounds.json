@@ -18,5 +18,70 @@
     "id": "reward",
     "src": "https://media.parrotbook.com/backgrounds/reward/v1/landscape.webp",
     "alt": "A cheerful celebration background"
+  },
+  {
+    "id": "high-ball-garden",
+    "src": "/assets/backgrounds/high-ball-garden.webp",
+    "alt": "A sunny garden with a red ball caught high in a leafy tree"
+  },
+  {
+    "id": "high-ball-garden-cleared",
+    "src": "/assets/backgrounds/high-ball-garden-cleared.webp",
+    "alt": "A sunny garden beneath a leafy tree after the red ball has come down"
+  },
+  {
+    "id": "red-flower-garden",
+    "src": "/assets/backgrounds/red-flower-garden.webp",
+    "alt": "A colorful garden with one bright red flower beside a winding path"
+  },
+  {
+    "id": "red-flower-garden-picked",
+    "src": "/assets/backgrounds/red-flower-garden-picked.webp",
+    "alt": "A colorful garden with an empty soil patch where the red flower was picked"
+  },
+  {
+    "id": "red-flower-basket-garden",
+    "src": "/assets/backgrounds/red-flower-basket-garden.webp",
+    "alt": "A colorful garden with one red flower resting in a woven basket"
+  },
+  {
+    "id": "apple-snack-meadow",
+    "src": "/assets/backgrounds/apple-snack-meadow.webp",
+    "alt": "A sunny meadow picnic beneath an apple tree full of red apples"
+  },
+  {
+    "id": "swing-playground",
+    "src": "/assets/backgrounds/swing-playground.webp",
+    "alt": "A cheerful playground with an empty swing in the sunshine"
+  },
+  {
+    "id": "swing-playground-active",
+    "src": "/assets/backgrounds/swing-playground-active.webp",
+    "alt": "A cheerful open playground clearing in the sunshine"
+  },
+  {
+    "id": "fruit-stand-garden",
+    "src": "/assets/backgrounds/fruit-stand-garden.webp",
+    "alt": "A garden market stand with baskets of shiny red apples"
+  },
+  {
+    "id": "juice-picnic-meadow",
+    "src": "/assets/backgrounds/juice-picnic-meadow.webp",
+    "alt": "A sunny meadow picnic with a juice pitcher, cups, and a blanket"
+  },
+  {
+    "id": "juice-picnic-meadow-pouring",
+    "src": "/assets/backgrounds/juice-picnic-meadow-pouring.webp",
+    "alt": "A sunny meadow picnic with an open blanket and basket"
+  },
+  {
+    "id": "bedtime-story-meadow",
+    "src": "/assets/backgrounds/bedtime-story-meadow.webp",
+    "alt": "A cozy twilight meadow with a storybook, blanket, moon, and stars"
+  },
+  {
+    "id": "bedtime-story-meadow-closing",
+    "src": "/assets/backgrounds/bedtime-story-meadow-closing.webp",
+    "alt": "A cozy twilight meadow with cushions, a blanket, moon, and stars"
   }
 ]

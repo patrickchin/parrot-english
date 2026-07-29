@@ -15,7 +15,7 @@
     {
       "title": "The Story Ends",
       "settingDescription": "Dolly closes the storybook while Peppa rests on the soft blanket.",
-      "background": "meadow-evening",
+      "background": "bedtime-story-meadow-closing",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -23,7 +23,7 @@
           "dialogue": "The story is finished.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "closing-book"
           }
         },
         {
@@ -39,7 +39,7 @@
     {
       "title": "A Quiet Evening",
       "settingDescription": "The moon shines over the blanket as Peppa and Dolly sit near the warm lantern.",
-      "background": "meadow-evening",
+      "background": "bedtime-story-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -63,14 +63,14 @@
     {
       "title": "Peppa Feels Sleepy",
       "settingDescription": "Peppa rests her head near the pillow while Dolly listens beside her.",
-      "background": "meadow-evening",
+      "background": "bedtime-story-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "I'm sleepy.",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "sleepy",
             "dolly": "listening"
           }
         },
@@ -121,7 +121,7 @@
     {
       "title": "The Blanket Is Ready",
       "settingDescription": "Peppa lies beneath the soft blanket while Dolly sits quietly beside the storybook.",
-      "background": "meadow-evening",
+      "background": "bedtime-story-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -145,7 +145,7 @@
     {
       "title": "Good Night",
       "settingDescription": "Peppa closes her eyes under the blanket while Dolly sits beside her in the lantern light.",
-      "background": "meadow-evening",
+      "background": "bedtime-story-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
