@@ -76,9 +76,27 @@ test("ready-made lessons show distinct story-specific artwork", async ({
 });
 
 for (const viewport of [
-  { height: 568, width: 280 },
-  { height: 640, width: 360 },
-  { height: 844, width: 390 },
+  {
+    artworkSize: 76,
+    height: 568,
+    maxCardHeight: 106,
+    maxStartWidth: 52,
+    width: 280,
+  },
+  {
+    artworkSize: 86,
+    height: 640,
+    maxCardHeight: 116,
+    maxStartWidth: 84,
+    width: 360,
+  },
+  {
+    artworkSize: 86,
+    height: 844,
+    maxCardHeight: 116,
+    maxStartWidth: 84,
+    width: 390,
+  },
 ]) {
   test(`lesson discovery stays compact and readable at ${viewport.width}px`, async ({
     page,
@@ -120,7 +138,13 @@ for (const viewport of [
     );
 
     expect(Math.max(...cardBoxes.map((box) => box.height))).toBeLessThanOrEqual(
-      112,
+      viewport.maxCardHeight,
+    );
+    expect(artworkBox.width).toBeGreaterThanOrEqual(
+      viewport.artworkSize - 1,
+    );
+    expect(artworkBox.height).toBeGreaterThanOrEqual(
+      viewport.artworkSize - 1,
     );
     expect(artworkBox.x + artworkBox.width).toBeLessThanOrEqual(titleBox.x);
     expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(startBox.x);
@@ -133,6 +157,7 @@ for (const viewport of [
     expect(startBox.width).toBeGreaterThanOrEqual(
       viewport.width < 360 ? 48 : 80,
     );
+    expect(startBox.width).toBeLessThanOrEqual(viewport.maxStartWidth);
     expect(thirdCardBox.y).toBeLessThan(viewport.height);
 
     if (viewport.width < 360) {
@@ -160,8 +185,18 @@ for (const viewport of [
 }
 
 for (const viewport of [
-  { height: 900, width: 687 },
-  { height: 900, width: 1440 },
+  {
+    artworkWidth: 128,
+    height: 900,
+    maxCardHeight: 124,
+    width: 687,
+  },
+  {
+    artworkWidth: 160,
+    height: 900,
+    maxCardHeight: 124,
+    width: 1440,
+  },
 ]) {
   test(`lesson discovery remains one compact vertical list at ${viewport.width}px`, async ({
     page,
@@ -186,6 +221,7 @@ for (const viewport of [
     const titleBox = await visibleBox(
       firstCard.getByRole("heading", { name: "Peppa's High Ball" }),
     );
+    const artworkBox = await visibleBox(firstCard.getByRole("img"));
     const startBox = await visibleBox(
       firstCard.getByRole("link", {
         name: "Start lesson: Peppa's High Ball",
@@ -199,8 +235,14 @@ for (const viewport of [
     expect(secondCardBox.y).toBeGreaterThanOrEqual(
       firstCardBox.y + firstCardBox.height,
     );
-    expect(firstCardBox.height).toBeLessThanOrEqual(120);
+    expect(firstCardBox.height).toBeLessThanOrEqual(viewport.maxCardHeight);
+    expect(artworkBox.width).toBeGreaterThanOrEqual(
+      viewport.artworkWidth - 1,
+    );
+    expect(artworkBox.height).toBeGreaterThanOrEqual(95);
     expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(startBox.x);
+    expect(startBox.width).toBeGreaterThanOrEqual(80);
+    expect(startBox.width).toBeLessThanOrEqual(88);
     expect(fifthCardBox.y).toBeLessThan(viewport.height);
     await expectNoHorizontalOverflow(page);
   });
