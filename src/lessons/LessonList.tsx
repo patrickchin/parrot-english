@@ -74,8 +74,8 @@ function LessonCardView({
   source: "my" | "parrot";
 }) {
   return (
-    <article className="flex min-w-0 items-center gap-2 overflow-hidden rounded-2xl border-4 border-white/95 bg-white/95 p-2 shadow-card sm:gap-3 sm:rounded-3xl sm:p-3">
-      <div className="relative size-14 shrink-0 overflow-hidden rounded-xl min-[360px]:size-16 sm:size-18 lg:size-20">
+    <article className="flex min-w-0 items-center gap-2 overflow-hidden rounded-2xl border-4 border-white/95 bg-white/95 p-2 shadow-card sm:gap-3 sm:rounded-3xl">
+      <div className="relative size-19 shrink-0 overflow-hidden rounded-xl min-[360px]:size-[5.375rem] sm:h-24 sm:w-32 lg:w-40">
         <img
           alt={lesson.artworkAlt}
           className="h-full w-full object-cover"
@@ -114,7 +114,7 @@ function LessonCardView({
 
       <ActionLink
         aria-label={`Start lesson: ${lesson.title}`}
-        className="size-12 shrink-0 gap-1 rounded-full border-3 border-white p-0 min-[360px]:w-24 min-[360px]:px-3 sm:w-28"
+        className="size-12 shrink-0 gap-1 rounded-full border-3 border-white p-0 min-[360px]:w-auto min-[360px]:min-w-20 min-[360px]:px-1 sm:min-w-21"
         size="bare"
         to={getLessonScenePath(source, lesson.id, 0)}
       >
