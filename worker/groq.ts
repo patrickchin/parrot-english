@@ -223,6 +223,16 @@ export async function handleEvaluateSpeech(request: Request, env: ApiEnv) {
     return jsonResponse({ error: "audio_file_required" }, { status: 400 });
   }
 
+  if (audio.size === 0) {
+    return jsonResponse(
+      {
+        error: "audio_file_required",
+        message: "No audio was recorded. Please try again.",
+      },
+      { status: 400 },
+    );
+  }
+
   if (audio.size > MAX_AUDIO_BYTES) {
     return jsonResponse({ error: "audio_too_large" }, { status: 413 });
   }
