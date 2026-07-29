@@ -14,12 +14,25 @@ initializeLogger({ level: "silent", pretty: false });
 
 describe("Peppa conversation ending", () => {
   it("gives every conversation mode one bounded endConversation tool", () => {
-    for (const task of [
-      createGettingToKnowYouTask(),
-      createGettingToKnowYouTask({ purpose: "profile-edit" }),
-      createSmallChatTask(),
-    ]) {
+    const tasks = [
+      ["onboarding", createGettingToKnowYouTask()],
+      [
+        "profile-edit",
+        createGettingToKnowYouTask({
+          conversationId: "conversation-1",
+          ingest: {
+            async appendTurn() {},
+            async endConversation() {},
+            async updateState() {},
+          },
+          purpose: "profile-edit",
+        }),
+      ],
+      ["small-chat", createSmallChatTask()],
+    ];
+    for (const [purpose, task] of tasks) {
       assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+        ...(purpose === "profile-edit" ? ["updateLearnerProfile"] : []),
         "endConversation",
       ]);
       const schema = llm.toJsonSchema(
@@ -30,6 +43,18 @@ describe("Peppa conversation ending", () => {
       assert.deepEqual(schema.properties.reason.enum, [
         ...CONVERSATION_END_REASONS,
       ]);
+    }
+  });
+
+  it("does not expose profile writing outside profile editing", () => {
+    for (const task of [
+      createGettingToKnowYouTask(),
+      createSmallChatTask(),
+    ]) {
+      assert.equal(
+        Object.hasOwn(task.toolCtx.functionTools, "updateLearnerProfile"),
+        false,
+      );
     }
   });
 
@@ -96,10 +121,19 @@ describe("Peppa conversation ending", () => {
       assert.match(prompt, /endConversation/);
       assert.match(prompt, /child.*(?:stop|goodbye)/is);
       assert.match(prompt, /conversation_complete/);
-      assert.doesNotMatch(
-        prompt,
-        /updateLearnerProfile|markObjectiveUnanswered|requestGentleRephrase/,
-      );
+      assert.doesNotMatch(prompt, /markObjectiveUnanswered|requestGentleRephrase/);
     }
+    assert.match(
+      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
+      /updateLearnerProfile/,
+    );
+    assert.doesNotMatch(
+      CONVERSATION_SYSTEM_PROMPTS.onboarding,
+      /updateLearnerProfile/,
+    );
+    assert.doesNotMatch(
+      CONVERSATION_SYSTEM_PROMPTS["small-chat"],
+      /updateLearnerProfile/,
+    );
   });
 });

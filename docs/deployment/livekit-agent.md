@@ -26,11 +26,13 @@ companion enabled because profile finalization and conversation review require
 user text. The agent leaves server VAD disabled so the existing turn button
 continues to commit each learner turn manually.
 
-The OpenAI Realtime API supports function tools, but these purpose-specific
-conversations intentionally register no tools. Onboarding and profile editing
-derive their saved profile once from the completed transcript during Worker
-review. The `marin` voice is character-directed; do not replace it with an exact
-protected-character voice clone.
+The OpenAI Realtime API supports function tools. Every purpose registers
+`endConversation` for bounded natural endings. Profile editing also registers
+`updateLearnerProfile`, which saves the complete current name, age, and About
+paragraph before Peppa acknowledges a change. Worker review still derives
+onboarding profiles and provides a transcript-based fallback for profile
+editing. The `marin` voice is character-directed; do not replace it with an
+exact protected-character voice clone.
 
 ## Local verification
 
@@ -66,9 +68,10 @@ instead at every realtime error or stop point.
 
 The Worker sends one of `onboarding`, `profile-edit`, or `small-chat` in the
 signed participant metadata. The agent must select the matching system prompt.
-Every purpose starts without tools, keeping each live child turn to one LLM
-response. Onboarding and profile editing derive their saved profile once from
-the completed transcript during Worker review.
+Every purpose receives `endConversation`; only `profile-edit` also receives the
+authenticated `updateLearnerProfile` tool. Profile-edit writes are persisted
+before the spoken acknowledgment, and Worker review retains transcript-based
+finalization as a fallback.
 
 ## Cloudflare Worker and D1
 
