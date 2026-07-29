@@ -1,5 +1,6 @@
 import { ArrowLeft, BookOpen, Pencil, Play, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+import lessonCovers from "../../content/catalogs/lesson-covers.json";
 import { getLessonScenePath, getMyLessonEditPath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
@@ -22,11 +23,25 @@ type LessonCard = {
   artworkAlt: string;
 };
 
-function createAvailableLessonCard(entry: LessonCatalogEntry): LessonCard {
+type LessonArtwork = {
+  alt: string;
+  src: string;
+};
+
+const readyMadeArtwork = new Map<string, LessonArtwork>(
+  lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
+);
+
+function createAvailableLessonCard(
+  entry: LessonCatalogEntry,
+  preferredArtwork?: LessonArtwork,
+): LessonCard {
   const firstScene = entry.lesson.scenes[0];
-  const artwork = firstScene
-    ? VISUAL_CATALOG.backgrounds.get(firstScene.background)
-    : undefined;
+  const artwork =
+    preferredArtwork ??
+    (firstScene
+      ? VISUAL_CATALOG.backgrounds.get(firstScene.background)
+      : undefined);
 
   if (!artwork) {
     throw new Error(`Lesson ${entry.id} does not have catalog artwork.`);
@@ -66,7 +81,7 @@ function LessonCardView({
           className="h-full w-full object-cover"
           src={lesson.artworkSrc}
         />
-        <span className="absolute left-1 top-1 grid size-7 place-items-center rounded-full border-2 border-white bg-brand-pink text-xs font-black text-white shadow-control-pink sm:size-8 sm:text-sm">
+        <span className="absolute bottom-1 left-1 grid size-5 place-items-center rounded-full border-2 border-white bg-brand-pink text-[0.625rem] font-black text-white shadow-control-pink sm:size-6 sm:text-xs">
           {index + 1}
         </span>
       </div>
@@ -116,8 +131,10 @@ export function LessonListView({
   myLessonsError,
   onRetryMyLessons,
 }: LessonListViewProps) {
-  const cards = LESSONS.map(createAvailableLessonCard);
-  const myCards = myLessons.map(createAvailableLessonCard);
+  const cards = LESSONS.map((entry) =>
+    createAvailableLessonCard(entry, readyMadeArtwork.get(entry.id)),
+  );
+  const myCards = myLessons.map((entry) => createAvailableLessonCard(entry));
 
   return (
     <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-lesson-list px-3 pb-12 pt-24 short:pt-20 sm:px-4 md:px-8 md:pb-16 md:pt-32 lg:px-16">

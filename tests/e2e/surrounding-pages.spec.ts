@@ -17,6 +17,64 @@ async function visibleBox(locator: Locator) {
   return box!;
 }
 
+const readyMadeArtwork = [
+  {
+    alt: "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
+    src: "/assets/lesson-covers/01-peppas-high-ball.webp",
+  },
+  {
+    alt: "Peppa and Dolly choosing a red flower for their basket",
+    src: "/assets/lesson-covers/02-garden-colors.webp",
+  },
+  {
+    alt: "Dolly handing Peppa an apple from a snack basket",
+    src: "/assets/lesson-covers/03-snack-time.webp",
+  },
+  {
+    alt: "Peppa waiting beside a swing while Dolly takes her turn",
+    src: "/assets/lesson-covers/04-playground-words.webp",
+  },
+  {
+    alt: "Peppa buying two red apples from Dolly's fruit stand",
+    src: "/assets/lesson-covers/05-market-day.webp",
+  },
+  {
+    alt: "Dolly pouring juice for Peppa on a picnic blanket",
+    src: "/assets/lesson-covers/06-picnic-time.webp",
+  },
+  {
+    alt: "Peppa tucked under a blanket while Dolly reads beside a lantern",
+    src: "/assets/lesson-covers/07-bedtime-story.webp",
+  },
+];
+
+test("ready-made lessons show distinct story-specific artwork", async ({
+  page,
+}) => {
+  await page.route("**/api/lessons/my", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ lessons: [] }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.goto("/lessons");
+
+  const readyMadeLessons = page
+    .getByRole("region", { name: "Ready-made lessons" })
+    .getByRole("article");
+
+  for (const [index, artwork] of readyMadeArtwork.entries()) {
+    const image = readyMadeLessons
+      .nth(index)
+      .getByRole("img", { name: artwork.alt });
+    await expect(image).toHaveAttribute("src", artwork.src);
+    await expect
+      .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+      .toBeGreaterThan(0);
+  }
+});
+
 for (const viewport of [
   { height: 568, width: 280 },
   { height: 640, width: 360 },

@@ -39,6 +39,7 @@ describe("Peppa profile-edit tool", () => {
 
     assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
       "updateLearnerProfile",
+      "endConversation",
     ]);
     const updateTool = task.toolCtx.functionTools.updateLearnerProfile;
     const schema = llm.toJsonSchema(updateTool.parameters, true, true);
@@ -75,10 +76,10 @@ describe("Peppa profile-edit tool", () => {
     );
   });
 
-  it("keeps onboarding and ordinary chat tool-free", () => {
+  it("keeps profile writing out of onboarding and ordinary chat", () => {
     assert.deepEqual(
       Object.keys(createGettingToKnowYouTask().toolCtx.functionTools),
-      [],
+      ["endConversation"],
     );
     assert.deepEqual(
       Object.keys(
@@ -88,7 +89,7 @@ describe("Peppa profile-edit tool", () => {
           purpose: "small-chat",
         }).toolCtx.functionTools,
       ),
-      [],
+      ["endConversation"],
     );
     assert.throws(
       () => createGettingToKnowYouTask({ purpose: "profile-edit" }),

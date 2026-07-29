@@ -320,15 +320,17 @@ describe("purpose-scoped learner-profile agent tools", () => {
     };
   }
 
-  it("uses no tools during onboarding learner turns", () => {
+  it("uses only the end-conversation tool during onboarding learner turns", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
     });
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
   });
 
-  it("persists name, age, and About changes through one profile-edit tool", async () => {
+  it("persists name, age, and About changes alongside the ending tool", async () => {
     const stateUpdates = [];
     let opening;
     const task = createGettingToKnowYouTask({
@@ -358,6 +360,7 @@ describe("purpose-scoped learner-profile agent tools", () => {
     assert.deepEqual(opening, { allowInterruptions: false });
     assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
       "updateLearnerProfile",
+      "endConversation",
     ]);
     const updateTool = task.toolCtx.functionTools.updateLearnerProfile;
     const schema = llm.toJsonSchema(updateTool.parameters, true, true);
@@ -409,10 +412,10 @@ describe("purpose-scoped learner-profile agent tools", () => {
     assert.match(instructions, /warm, playful pig friend/i);
     assert.match(instructions, /bright, bouncy energy/i);
     assert.match(instructions, /relevant answer|differs from the category/i);
-    assert.match(instructions, /never call a tool/i);
+    assert.match(instructions, /endConversation/);
     assert.doesNotMatch(
       instructions,
-      /updateLearnerProfile|markObjectiveUnanswered|finishConversation|requestGentleRephrase/i,
+      /updateLearnerProfile|markObjectiveUnanswered|requestGentleRephrase/i,
     );
     assert.doesNotMatch(instructions, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
@@ -421,7 +424,7 @@ describe("purpose-scoped learner-profile agent tools", () => {
     );
   });
 
-  it("gives ordinary small chat a static opening prompt and no profile-writing tools", async () => {
+  it("gives ordinary small chat a static opening prompt and only the ending tool", async () => {
     const task = createSmallChatTask();
     let opening;
 
@@ -434,7 +437,9 @@ describe("purpose-scoped learner-profile agent tools", () => {
       },
     });
 
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
     assert.deepEqual(opening, { allowInterruptions: false });
     assert.match(task._instructions, /ordinary small chat/i);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);
