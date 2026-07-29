@@ -30,7 +30,7 @@
           "speaker": "dolly",
           "dialogue": "It is up high!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "reaching",
             "dolly": "talking"
           }
         },
@@ -38,7 +38,7 @@
           "speaker": "narrator",
           "dialogue": "Let's copy Dolly!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "reaching",
             "dolly": "happy"
           }
         },
@@ -46,7 +46,7 @@
           "speaker": "dolly",
           "dialogue": "It is up high!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "reaching",
             "dolly": "talking"
           }
         },
@@ -54,7 +54,7 @@
           "speaker": "user",
           "dialogue": "It is up high!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "reaching",
             "dolly": "listening"
           },
           "check": {
@@ -213,7 +213,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy"
+            "dolly": "flying"
           }
         },
         {
@@ -221,7 +221,7 @@
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "flying"
           }
         },
         {
@@ -229,7 +229,7 @@
           "dialogue": "Yes! I can help!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening"
+            "dolly": "flying"
           },
           "check": {
             "maxAttempts": 2,

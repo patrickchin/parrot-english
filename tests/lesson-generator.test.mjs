@@ -84,6 +84,31 @@ describe("lesson script generation", () => {
     assert.ok(generated.warnings.some((warning) => /title/i.test(warning)));
   });
 
+  it("normalizes a generated story-only action pose to idle", async () => {
+    const lesson = createLessonScript();
+    lesson.scenes[0].steps[0].emotes.peppa = "reaching";
+    const generated = await generateLessonScript({
+      childName: "Mia",
+      env: { OPENAI_API_KEY: "test-key" },
+      topic: "finding a ball",
+      async fetch() {
+        return Response.json({
+          choices: [{ message: { content: JSON.stringify(lesson) } }],
+        });
+      },
+    });
+
+    assert.equal(
+      generated.lesson.scenes[0].steps[0].emotes.peppa,
+      "idle",
+    );
+    assert.ok(
+      generated.warnings.some((warning) =>
+        /emotes\.peppa.*using idle visual/i.test(warning),
+      ),
+    );
+  });
+
   it("does not retry unrelated upstream failures", async () => {
     let callCount = 0;
     await assert.rejects(

@@ -32,12 +32,12 @@
   {
     "id": "red-flower-garden",
     "src": "/assets/backgrounds/red-flower-garden.webp",
-    "alt": "A colorful garden with one bright red flower beside a winding path"
+    "alt": "A colorful garden with one bright red flower and an empty woven basket"
   },
   {
     "id": "red-flower-garden-picked",
     "src": "/assets/backgrounds/red-flower-garden-picked.webp",
-    "alt": "A colorful garden with an empty soil patch where the red flower was picked"
+    "alt": "A colorful garden with an empty basket beside the soil patch where the red flower was picked"
   },
   {
     "id": "red-flower-basket-garden",
@@ -47,7 +47,12 @@
   {
     "id": "apple-snack-meadow",
     "src": "/assets/backgrounds/apple-snack-meadow.webp",
-    "alt": "A sunny meadow picnic beneath an apple tree full of red apples"
+    "alt": "A sunny meadow picnic with apples and bananas inside an open snack basket"
+  },
+  {
+    "id": "apple-snack-meadow-finished",
+    "src": "/assets/backgrounds/apple-snack-meadow-finished.webp",
+    "alt": "A sunny meadow picnic with a closed snack basket on the blanket"
   },
   {
     "id": "swing-playground",
@@ -57,7 +62,7 @@
   {
     "id": "swing-playground-active",
     "src": "/assets/backgrounds/swing-playground-active.webp",
-    "alt": "A cheerful open playground clearing in the sunshine"
+    "alt": "A cheerful open playground clearing with a small slide in the sunshine"
   },
   {
     "id": "fruit-stand-garden",
@@ -70,6 +75,11 @@
     "alt": "A sunny meadow picnic with a juice pitcher, cups, and a blanket"
   },
   {
+    "id": "juice-picnic-meadow-offering",
+    "src": "/assets/backgrounds/juice-picnic-meadow-offering.webp",
+    "alt": "A sunny meadow picnic with empty cups, food, a basket, and a blanket"
+  },
+  {
     "id": "juice-picnic-meadow-pouring",
     "src": "/assets/backgrounds/juice-picnic-meadow-pouring.webp",
     "alt": "A sunny meadow picnic with an open blanket and basket"
@@ -77,11 +87,16 @@
   {
     "id": "bedtime-story-meadow",
     "src": "/assets/backgrounds/bedtime-story-meadow.webp",
-    "alt": "A cozy twilight meadow with a storybook, blanket, moon, and stars"
+    "alt": "A cozy twilight meadow with a storybook, blanket, crescent moon, and stars"
   },
   {
     "id": "bedtime-story-meadow-closing",
     "src": "/assets/backgrounds/bedtime-story-meadow-closing.webp",
-    "alt": "A cozy twilight meadow with cushions, a blanket, moon, and stars"
+    "alt": "A cozy twilight meadow with cushions, a blanket, crescent moon, and stars"
+  },
+  {
+    "id": "bedtime-story-meadow-sleeping",
+    "src": "/assets/backgrounds/bedtime-story-meadow-sleeping.webp",
+    "alt": "A quiet twilight meadow beneath a crescent moon beside a warm lantern"
   }
 ]

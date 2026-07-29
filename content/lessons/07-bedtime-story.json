@@ -14,7 +14,7 @@
   "scenes": [
     {
       "title": "The Story Ends",
-      "settingDescription": "Dolly closes the storybook while Peppa rests on the soft blanket.",
+      "settingDescription": "Dolly holds the closed storybook while Peppa rests on the soft blanket.",
       "background": "bedtime-story-meadow-closing",
       "characters": ["peppa", "dolly"],
       "steps": [
@@ -31,7 +31,7 @@
           "dialogue": "I liked the story.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy"
+            "dolly": "closing-book"
           }
         }
       ]
@@ -63,7 +63,7 @@
     {
       "title": "Peppa Feels Sleepy",
       "settingDescription": "Peppa rests her head near the pillow while Dolly listens beside her.",
-      "background": "bedtime-story-meadow",
+      "background": "bedtime-story-meadow-sleeping",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -78,7 +78,7 @@
           "speaker": "narrator",
           "dialogue": "Let's copy Dolly!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "sleepy",
             "dolly": "happy"
           }
         },
@@ -86,7 +86,7 @@
           "speaker": "dolly",
           "dialogue": "I'm sleepy.",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "sleepy",
             "dolly": "talking"
           }
         },
@@ -94,7 +94,7 @@
           "speaker": "user",
           "dialogue": "I'm sleepy.",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "sleepy",
             "dolly": "listening"
           },
           "check": {
@@ -120,15 +120,15 @@
     },
     {
       "title": "The Blanket Is Ready",
-      "settingDescription": "Peppa lies beneath the soft blanket while Dolly sits quietly beside the storybook.",
-      "background": "bedtime-story-meadow",
+      "settingDescription": "Peppa lies beneath the soft blanket while Dolly sits quietly beside her.",
+      "background": "bedtime-story-meadow-sleeping",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "My blanket is ready.",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "sleepy",
             "dolly": "listening"
           }
         },
@@ -136,7 +136,7 @@
           "speaker": "dolly",
           "dialogue": "Close your eyes.",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "sleepy",
             "dolly": "talking"
           }
         }
@@ -145,14 +145,14 @@
     {
       "title": "Good Night",
       "settingDescription": "Peppa closes her eyes under the blanket while Dolly sits beside her in the lantern light.",
-      "background": "bedtime-story-meadow",
+      "background": "bedtime-story-meadow-sleeping",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Good night!",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "sleepy",
             "dolly": "listening"
           }
         },
@@ -160,7 +160,7 @@
           "speaker": "narrator",
           "dialogue": "Let's copy Dolly!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "sleepy",
             "dolly": "happy"
           }
         },
@@ -168,7 +168,7 @@
           "speaker": "dolly",
           "dialogue": "Good night!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "sleepy",
             "dolly": "talking"
           }
         },
@@ -176,7 +176,7 @@
           "speaker": "user",
           "dialogue": "Good night!",
           "emotes": {
-            "peppa": "listening",
+            "peppa": "sleepy",
             "dolly": "listening"
           },
           "check": {
@@ -202,7 +202,7 @@
           "speaker": "narrator",
           "dialogue": "Great job, Bella! Peppa is ready to sleep!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "sleepy",
             "dolly": "happy"
           }
         }

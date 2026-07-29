@@ -125,11 +125,15 @@ const expectedAssets = {
 };
 const expectedActionAssets = {
   "peppa-choosing-flower.webp": "peppa",
+  "peppa-holding-apples.webp": "peppa",
   "peppa-holding-ball.webp": "peppa",
+  "peppa-holding-juice.webp": "peppa",
+  "peppa-holding-snack-apple.webp": "peppa",
   "peppa-reaching.webp": "peppa",
   "peppa-sleepy.webp": "peppa",
   "dolly-closing-book.webp": "dolly",
   "dolly-flying.webp": "dolly",
+  "dolly-holding-juice.webp": "dolly",
   "dolly-offering-apple.webp": "dolly",
   "dolly-pouring-juice.webp": "dolly",
   "dolly-returning-ball.webp": "dolly",

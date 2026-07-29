@@ -194,7 +194,7 @@
           "speaker": "peppa",
           "dialogue": "Thank you, Dolly!",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "holding-apples",
             "dolly": "happy"
           }
         },
@@ -202,7 +202,7 @@
           "speaker": "narrator",
           "dialogue": "Great job, Bella! Peppa bought two red apples!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-apples",
             "dolly": "happy"
           }
         }

@@ -110,8 +110,14 @@ describe("lesson catalog", () => {
       [
         "03-snack-time",
         {
-          backgrounds: ["apple-snack-meadow"],
-          actions: ["dolly:offering-apple"],
+          backgrounds: [
+            "apple-snack-meadow",
+            "apple-snack-meadow-finished",
+          ],
+          actions: [
+            "peppa:holding-snack-apple",
+            "dolly:offering-apple",
+          ],
         },
       ],
       [
@@ -125,7 +131,7 @@ describe("lesson catalog", () => {
         "05-market-day",
         {
           backgrounds: ["fruit-stand-garden"],
-          actions: ["dolly:selling-apples"],
+          actions: ["peppa:holding-apples", "dolly:selling-apples"],
         },
       ],
       [
@@ -133,9 +139,14 @@ describe("lesson catalog", () => {
         {
           backgrounds: [
             "juice-picnic-meadow",
+            "juice-picnic-meadow-offering",
             "juice-picnic-meadow-pouring",
           ],
-          actions: ["dolly:pouring-juice"],
+          actions: [
+            "peppa:holding-juice",
+            "dolly:holding-juice",
+            "dolly:pouring-juice",
+          ],
         },
       ],
       [
@@ -144,6 +155,7 @@ describe("lesson catalog", () => {
           backgrounds: [
             "bedtime-story-meadow-closing",
             "bedtime-story-meadow",
+            "bedtime-story-meadow-sleeping",
           ],
           actions: ["peppa:sleepy", "dolly:closing-book"],
         },
@@ -179,5 +191,47 @@ describe("lesson catalog", () => {
         assert.equal(usedActions.has(action), true, `${id} uses ${action}`);
       }
     });
+  });
+
+  it("keeps story-specific props and actions visible for the full scene state", () => {
+    const lesson = (id) => readJson(`content/lessons/${id}.json`);
+    const expectEveryStep = (scene, character, emote) => {
+      assert.deepEqual(
+        [...new Set(scene.steps.map((step) => step.emotes[character]))],
+        [emote],
+        `${scene.title} keeps ${character}:${emote}`,
+      );
+    };
+
+    const highBall = lesson("01-peppas-high-ball");
+    expectEveryStep(highBall.scenes[0], "peppa", "reaching");
+    expectEveryStep(highBall.scenes[3], "dolly", "flying");
+
+    const snack = lesson("03-snack-time");
+    expectEveryStep(snack.scenes[3], "dolly", "offering-apple");
+    expectEveryStep(snack.scenes[4], "peppa", "holding-snack-apple");
+    assert.equal(snack.scenes[4].background, "apple-snack-meadow-finished");
+
+    const market = lesson("05-market-day");
+    assert.deepEqual(
+      market.scenes[4].steps.slice(1).map((step) => step.emotes.peppa),
+      ["holding-apples", "holding-apples"],
+    );
+
+    const picnic = lesson("06-picnic-time");
+    expectEveryStep(picnic.scenes[1], "dolly", "holding-juice");
+    expectEveryStep(picnic.scenes[2], "dolly", "holding-juice");
+    assert.equal(picnic.scenes[1].background, "juice-picnic-meadow-offering");
+    assert.equal(picnic.scenes[2].background, "juice-picnic-meadow-offering");
+    assert.equal(picnic.scenes[3].steps[1].emotes.peppa, "holding-juice");
+    expectEveryStep(picnic.scenes[4], "peppa", "holding-juice");
+    assert.equal(picnic.scenes[4].background, "juice-picnic-meadow-pouring");
+
+    const bedtime = lesson("07-bedtime-story");
+    expectEveryStep(bedtime.scenes[0], "dolly", "closing-book");
+    for (const scene of bedtime.scenes.slice(2)) {
+      expectEveryStep(scene, "peppa", "sleepy");
+      assert.equal(scene.background, "bedtime-story-meadow-sleeping");
+    }
   });
 });

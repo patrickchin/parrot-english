@@ -137,7 +137,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy"
+            "dolly": "offering-apple"
           }
         },
         {
@@ -145,7 +145,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "offering-apple"
           }
         },
         {
@@ -153,7 +153,7 @@
           "dialogue": "Here you are!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening"
+            "dolly": "offering-apple"
           },
           "check": {
             "maxAttempts": 2,
@@ -178,15 +178,15 @@
     },
     {
       "title": "A Happy Snack",
-      "settingDescription": "Peppa holds the apple as Dolly closes the basket beside her on the blanket.",
-      "background": "apple-snack-meadow",
+      "settingDescription": "Peppa holds her apple beside the closed snack basket while Dolly smiles.",
+      "background": "apple-snack-meadow-finished",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "Thank you, Dolly!",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "holding-snack-apple",
             "dolly": "happy"
           }
         },
@@ -194,7 +194,7 @@
           "speaker": "dolly",
           "dialogue": "Enjoy your apple!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-snack-apple",
             "dolly": "talking"
           }
         },
@@ -202,7 +202,7 @@
           "speaker": "narrator",
           "dialogue": "Great job, Bella! Peppa has her apple snack!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-snack-apple",
             "dolly": "happy"
           }
         }

@@ -31,9 +31,21 @@
         "src": "/assets/characters/peppa/peppa-choosing-flower.webp",
         "alt": "Peppa choosing a red flower"
       },
+      "holding-apples": {
+        "src": "/assets/characters/peppa/peppa-holding-apples.webp",
+        "alt": "Peppa holding two red apples"
+      },
       "holding-ball": {
         "src": "/assets/characters/peppa/peppa-holding-ball.webp",
         "alt": "Peppa holding her red ball"
+      },
+      "holding-juice": {
+        "src": "/assets/characters/peppa/peppa-holding-juice.webp",
+        "alt": "Peppa holding a cup of juice"
+      },
+      "holding-snack-apple": {
+        "src": "/assets/characters/peppa/peppa-holding-snack-apple.webp",
+        "alt": "Peppa holding her snack apple"
       },
       "reaching": {
         "src": "/assets/characters/peppa/peppa-reaching.webp",
@@ -75,11 +87,15 @@
       },
       "closing-book": {
         "src": "/assets/characters/dolly/dolly-closing-book.webp",
-        "alt": "Dolly closing the storybook"
+        "alt": "Dolly holding the closed storybook"
       },
       "flying": {
         "src": "/assets/characters/dolly/dolly-flying.webp",
         "alt": "Dolly flying up toward a red ball"
+      },
+      "holding-juice": {
+        "src": "/assets/characters/dolly/dolly-holding-juice.webp",
+        "alt": "Dolly holding the juice pitcher"
       },
       "offering-apple": {
         "src": "/assets/characters/dolly/dolly-offering-apple.webp",
