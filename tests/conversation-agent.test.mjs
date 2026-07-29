@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
-import { initializeLogger } from "@livekit/agents";
+import { initializeLogger, llm } from "@livekit/agents";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import {
   DEFAULT_AGENT_MODELS,
@@ -310,7 +310,7 @@ describe("purpose-specific Peppa conversation prompts", () => {
   });
 });
 
-describe("single-inference learner-profile agent contract", () => {
+describe("purpose-scoped learner-profile agent tools", () => {
   function ingest(overrides = {}) {
     return {
       async appendTurn() {},
@@ -320,19 +320,26 @@ describe("single-inference learner-profile agent contract", () => {
     };
   }
 
-  it("uses no tools during onboarding learner turns", () => {
+  it("uses only the end-conversation tool during onboarding learner turns", () => {
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest(),
     });
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
   });
 
-  it("uses no tools during profile editing and preserves saved context", async () => {
+  it("persists name, age, and About changes alongside the ending tool", async () => {
+    const stateUpdates = [];
     let opening;
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
-      ingest: ingest(),
+      ingest: ingest({
+        async updateState(...args) {
+          stateUpdates.push(args);
+        },
+      }),
       purpose: "profile-edit",
       initialState: createLearnerProfileConversationState({
         profileAge: 30,
@@ -351,7 +358,38 @@ describe("single-inference learner-profile agent contract", () => {
     });
 
     assert.deepEqual(opening, { allowInterruptions: false });
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "updateLearnerProfile",
+      "endConversation",
+    ]);
+    const updateTool = task.toolCtx.functionTools.updateLearnerProfile;
+    const schema = llm.toJsonSchema(updateTool.parameters, true, true);
+    assert.deepEqual(Object.keys(schema.properties ?? {}).sort(), [
+      "about",
+      "age",
+      "name",
+    ]);
+
+    const result = await updateTool.execute(
+      {
+        about: "Maya is nine and loves drawing dragons.",
+        age: 9,
+        name: "Maya",
+      },
+      {},
+    );
+
+    assert.deepEqual(result, { saved: true });
+    assert.equal(stateUpdates.length, 1);
+    assert.equal(stateUpdates[0][0], "conversation-1");
+    assert.equal(stateUpdates[0][1].profileName, "Maya");
+    assert.equal(stateUpdates[0][1].profileAge, 9);
+    assert.equal(
+      stateUpdates[0][1].profileSummary,
+      "Maya is nine and loves drawing dragons.",
+    );
+    assert.equal(stateUpdates[0][1].learnedName, true);
+    assert.equal(stateUpdates[0][1].learnedAge, true);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["profile-edit"], /speak first/i);
     assert.match(
       CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
@@ -361,19 +399,23 @@ describe("single-inference learner-profile agent contract", () => {
       CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
       /do not ask.*known.*name.*age|do not ask.*name.*age.*known/i,
     );
+    assert.match(
+      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
+      /updateLearnerProfile[\s\S]*name[\s\S]*age[\s\S]*about/i,
+    );
     assert.match(task._instructions, /Mia/);
     assert.match(task._instructions, /fast red cars/);
   });
 
-  it("keeps profile persistence out of the live-turn prompts", () => {
+  it("keeps profile persistence out of onboarding live turns", () => {
     const instructions = CONVERSATION_SYSTEM_PROMPTS.onboarding;
     assert.match(instructions, /warm, playful pig friend/i);
     assert.match(instructions, /bright, bouncy energy/i);
     assert.match(instructions, /relevant answer|differs from the category/i);
-    assert.match(instructions, /never call a tool/i);
+    assert.match(instructions, /endConversation/);
     assert.doesNotMatch(
       instructions,
-      /updateLearnerProfile|markObjectiveUnanswered|finishConversation|requestGentleRephrase/i,
+      /updateLearnerProfile|markObjectiveUnanswered|requestGentleRephrase/i,
     );
     assert.doesNotMatch(instructions, /Chinese|Mandarin|中文/i);
     assert.doesNotMatch(
@@ -382,7 +424,7 @@ describe("single-inference learner-profile agent contract", () => {
     );
   });
 
-  it("gives ordinary small chat a static opening prompt and no profile-writing tools", async () => {
+  it("gives ordinary small chat a static opening prompt and only the ending tool", async () => {
     const task = createSmallChatTask();
     let opening;
 
@@ -395,7 +437,9 @@ describe("single-inference learner-profile agent contract", () => {
       },
     });
 
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), []);
+    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
+      "endConversation",
+    ]);
     assert.deepEqual(opening, { allowInterruptions: false });
     assert.match(task._instructions, /ordinary small chat/i);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);

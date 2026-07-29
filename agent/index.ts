@@ -23,8 +23,10 @@ import {
 import {
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
+  conversationEndStatus,
   createPeppaConversationTask,
   getConversationSystemPrompt,
+  playConversationGoodbyeAndClose,
 } from "./peppa-conversation.ts";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 
@@ -147,21 +149,7 @@ export function createConversationTextInputCallback(
   };
 }
 
-type ConversationClosingSession = Pick<
-  voice.AgentSession,
-  "close" | "generateReply"
->;
-
-export async function playConversationGoodbyeAndClose(
-  session: ConversationClosingSession,
-) {
-  const goodbye = session.generateReply({
-    allowInterruptions: true,
-    instructions: 'Say exactly: "Thanks for chatting with me!"',
-  });
-  await goodbye.waitForPlayout();
-  await session.close();
-}
+export { playConversationGoodbyeAndClose };
 
 export function createAgentTurnHandling() {
   return {
@@ -236,7 +224,12 @@ function createTranscriptPersistence({
   }
 
   async function finish(
-    status: "disconnected" | "failed" | "abandoned",
+    status:
+      | "completed"
+      | "stopped"
+      | "disconnected"
+      | "failed"
+      | "abandoned",
     reason: string,
   ) {
     for (const [providerItemId, pending] of pendingUserTranscripts) {
@@ -297,6 +290,8 @@ export const agentDefinition = defineAgent({
     let latestAssistantText = "";
 
     const task = createPeppaConversationTask({
+      conversationId,
+      ingest,
       initialState,
       purpose,
     });
@@ -304,8 +299,20 @@ export const agentDefinition = defineAgent({
       id: "peppa_conversation_root",
       instructions: getConversationSystemPrompt(purpose),
       async onEnter(agentContext) {
-        await task.run();
-        await playConversationGoodbyeAndClose(agentContext.session);
+        const result = await task.run();
+        await playConversationGoodbyeAndClose(
+          agentContext.session,
+          async () => {
+            await persistence
+              .finish(
+                conversationEndStatus(result.finishReason),
+                result.finishReason,
+              )
+              .catch((error: unknown) => {
+                console.error("Could not persist conversation ending", error);
+              });
+          },
+        );
       },
     });
     const session = new voice.AgentSession({

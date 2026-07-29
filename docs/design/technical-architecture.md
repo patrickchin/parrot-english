@@ -282,12 +282,14 @@ TTS failure returns the saved acknowledgment with no audio.
 Realtime conversation creation requires an explicit purpose. `onboarding`
 collects the first profile, `profile-edit` updates remembered details, and
 `small-chat` provides ordinary Talk to Peppa conversation without profile
-finalization. All three live tasks are tool-free so each child turn needs one LLM
-inference. The purpose is stored as the conversation scenario key and carried in
-signed LiveKit participant metadata to the agent. When onboarding or profile
-editing finishes, the Worker derives the profile once from the persisted
-transcript with strict structured output; that finalization call is outside the
-live response path.
+finalization. Every purpose registers `endConversation`; only `profile-edit`
+also registers `updateLearnerProfile`, which writes the complete current name,
+age, and About paragraph before Peppa acknowledges a change. The purpose is
+stored as the conversation scenario key and carried in signed LiveKit
+participant metadata to the agent. When onboarding or profile editing finishes,
+the Worker still derives the profile from the persisted transcript with strict
+structured output, so review remains a fallback for missed or failed live
+updates.
 
 Incomplete v1 profiles restart v2 with their original JSON under
 `legacyAnswers`; completed v1 users remain completed. Session bypass records
