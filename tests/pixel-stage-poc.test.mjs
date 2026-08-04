@@ -313,6 +313,32 @@ describe("Phaser pixel stage", () => {
     const lawnGreens = greenColors(
       "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
     );
+    const { pixels: groundPixels } = readPngPixels(
+      "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
+    );
+    const groundColorCounts = new Map();
+
+    for (let offset = 0; offset < groundPixels.length; offset += 4) {
+      if (groundPixels[offset + 3] !== 255) continue;
+      const color = [
+        groundPixels[offset],
+        groundPixels[offset + 1],
+        groundPixels[offset + 2],
+      ];
+      const key = color.join(",");
+      groundColorCounts.set(key, {
+        color,
+        count: (groundColorCounts.get(key)?.count ?? 0) + 1,
+      });
+    }
+
+    const dominantGroundColor = [...groundColorCounts.values()].sort(
+      (left, right) => right.count - left.count,
+    )[0].color;
+    assert.ok(
+      dominantGroundColor[0] >= dominantGroundColor[1],
+      `the background should not read green when the sprites already carry green: rgb(${dominantGroundColor.join(", ")})`,
+    );
 
     assert.deepEqual(
       greenColors(
