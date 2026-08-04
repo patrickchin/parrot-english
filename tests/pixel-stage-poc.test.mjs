@@ -288,7 +288,7 @@ describe("Phaser pixel stage", () => {
     );
   });
 
-  it("keeps natural foliage colors and moves contrast into the lawn palette", () => {
+  it("keeps the green lawn while transparency uses a neutral backdrop", () => {
     const greenColors = (path) => {
       const { pixels } = readPngPixels(path);
       const colors = new Map();
@@ -304,15 +304,6 @@ describe("Phaser pixel stage", () => {
 
       return [...colors.values()];
     };
-    const colorDistance = (left, right) =>
-      Math.hypot(
-        left[0] - right[0],
-        left[1] - right[1],
-        left[2] - right[2],
-      );
-    const lawnGreens = greenColors(
-      "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
-    );
     const { pixels: groundPixels } = readPngPixels(
       "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
     );
@@ -335,9 +326,10 @@ describe("Phaser pixel stage", () => {
     const dominantGroundColor = [...groundColorCounts.values()].sort(
       (left, right) => right.count - left.count,
     )[0].color;
-    assert.ok(
-      dominantGroundColor[0] >= dominantGroundColor[1],
-      `the background should not read green when the sprites already carry green: rgb(${dominantGroundColor.join(", ")})`,
+    assert.deepEqual(
+      dominantGroundColor,
+      [141, 206, 23],
+      "the lesson grass should keep its original bright green",
     );
 
     assert.deepEqual(
@@ -364,23 +356,9 @@ describe("Phaser pixel stage", () => {
       "the flowers should keep their natural green palette",
     );
 
-    for (const path of [
-      "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
-      "public/prototypes/pixel-stage/assets/garden-flowers.png",
-    ]) {
-      const foliageGreens = greenColors(path);
-      assert.ok(foliageGreens.length > 0, `${path} has no foliage colors`);
-
-      for (const color of foliageGreens) {
-        const nearestLawnColor = Math.min(
-          ...lawnGreens.map((lawnColor) => colorDistance(color, lawnColor)),
-        );
-        assert.ok(
-          nearestLawnColor >= 40,
-          `${path} foliage color rgb(${color.join(", ")}) disappears into the lawn`,
-        );
-      }
-    }
+    const main = projectFile("prototypes/pixel-stage/main.ts");
+    assert.match(main, /transparent:\s*true/);
+    assert.doesNotMatch(main, /backgroundColor:\s*"#8ad51b"/);
   });
 
   it("builds the prototype as a Vite HTML entry instead of an unbundled public script", () => {

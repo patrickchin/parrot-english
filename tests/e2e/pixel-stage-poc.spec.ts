@@ -12,6 +12,9 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
 
   const world = page.getByRole("group", { name: "Peppa lesson garden game world" });
   const canvas = page.getByRole("img", { name: "Peppa lesson garden pixel game world" });
+  const stage = page.getByRole("region", {
+    name: "Peppa lesson garden exploration stage",
+  });
   await expect(world).toHaveAttribute("data-engine", "phaser");
   await expect(world).toHaveAttribute("data-ready", "true");
   await expect(world).toHaveAttribute("data-art-pixel-size", "2");
@@ -27,6 +30,10 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   await expect(canvas).toHaveAttribute("width", "388");
   await expect(canvas).toHaveAttribute("height", "240");
   await expect(canvas).toHaveCSS("image-rendering", "pixelated");
+  await expect(stage).toHaveCSS("background-color", "rgb(215, 215, 215)");
+  expect(
+    await stage.evaluate((element) => getComputedStyle(element).backgroundImage),
+  ).not.toBe("none");
   expect(Number(await world.getAttribute("data-depth"))).toBeLessThan(
     Number(await world.getAttribute("data-landmark-depth")),
   );
@@ -69,7 +76,6 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
     await expect(world).toHaveAttribute("data-state", state);
   }
 
-  const stage = page.getByRole("region", { name: "Peppa lesson garden exploration stage" });
   const stageBox = await stage.boundingBox();
   const canvasBox = await canvas.boundingBox();
 
