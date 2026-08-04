@@ -16,6 +16,15 @@ test("the pixel stage demonstrates one sprite sheet across four states", async (
   await expect(sprite).toHaveCSS("image-rendering", "pixelated");
   await expect(world).toHaveAttribute("data-scale", "1");
 
+  const actor = page.getByTestId("player-actor");
+  await expect(actor).toHaveAttribute("data-x", "120");
+  await expect(actor).toHaveAttribute("data-y", "112");
+  await page.getByRole("button", { name: "Move right" }).click();
+  await expect(actor).toHaveAttribute("data-x", "122");
+  await page.keyboard.press("ArrowDown");
+  await expect(actor).toHaveAttribute("data-y", "114");
+  await expect(page.getByText("x 122 · y 114", { exact: true })).toBeVisible();
+
   for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
     await page.getByRole("button", { name: state }).click();
     await expect(sprite).toHaveAttribute("data-state", state.toLowerCase());
