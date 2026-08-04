@@ -130,14 +130,14 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   await expectAppToFitViewport(page);
 
   await page.setViewportSize({ width: 900, height: 900 });
-  await expect(world).toHaveAttribute("data-presentation-scale", "2");
-  await expect(canvas).toHaveAttribute("width", "448");
+  await expect(world).toHaveAttribute("data-presentation-scale", "1");
+  await expect(canvas).toHaveAttribute("width", "898");
   const desktopStageBox = await stage.boundingBox();
   const desktopCanvasBox = await canvas.boundingBox();
   expect(desktopStageBox).not.toBeNull();
   expect(desktopCanvasBox).not.toBeNull();
-  expect(desktopStageBox!.width).toBe(896);
-  expect(desktopCanvasBox!.width).toBe(896);
+  expect(desktopStageBox!.width).toBe(898);
+  expect(desktopCanvasBox!.width).toBe(898);
   expect(desktopStageBox!.height).toBeGreaterThan(200);
   expect(
     Math.abs(desktopCanvasBox!.height - desktopStageBox!.height),
@@ -150,14 +150,14 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(world).toHaveAttribute("data-presentation-scale", "2");
-  await expect(canvas).toHaveAttribute("width", "638");
+  await expect(world).toHaveAttribute("data-presentation-scale", "1");
+  await expect(canvas).toHaveAttribute("width", "1278");
   const wideStageBox = await stage.boundingBox();
   const wideCanvasBox = await canvas.boundingBox();
   expect(wideStageBox).not.toBeNull();
   expect(wideCanvasBox).not.toBeNull();
-  expect(wideStageBox!.width).toBe(1276);
-  expect(wideCanvasBox!.width).toBe(1276);
+  expect(wideStageBox!.width).toBe(1278);
+  expect(wideCanvasBox!.width).toBe(1278);
   expect(wideStageBox!.height).toBeGreaterThan(200);
   expect(Math.abs(wideCanvasBox!.height - wideStageBox!.height)).toBeLessThanOrEqual(
     4,
@@ -171,8 +171,8 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
 
   await page.setViewportSize({ width: 722, height: 966 });
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(world).toHaveAttribute("data-presentation-scale", "2");
-  await expect(canvas).toHaveAttribute("width", "360");
+  await expect(world).toHaveAttribute("data-presentation-scale", "1");
+  await expect(canvas).toHaveAttribute("width", "720");
   const tallStageBox = await stage.boundingBox();
   const tallCanvasBox = await canvas.boundingBox();
   expect(tallStageBox).not.toBeNull();
@@ -190,14 +190,14 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
 
   await page.setViewportSize({ width: 672, height: 966 });
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(world).toHaveAttribute("data-presentation-scale", "2");
-  await expect(canvas).toHaveAttribute("width", "334");
+  await expect(world).toHaveAttribute("data-presentation-scale", "1");
+  await expect(canvas).toHaveAttribute("width", "670");
   const splitPaneStageBox = await stage.boundingBox();
   const splitPaneCanvasBox = await canvas.boundingBox();
   expect(splitPaneStageBox).not.toBeNull();
   expect(splitPaneCanvasBox).not.toBeNull();
-  expect(splitPaneStageBox!.width).toBe(668);
-  expect(splitPaneCanvasBox!.width).toBe(668);
+  expect(splitPaneStageBox!.width).toBe(670);
+  expect(splitPaneCanvasBox!.width).toBe(670);
   expect(splitPaneStageBox!.height).toBeGreaterThan(200);
   expect(
     Math.abs(splitPaneCanvasBox!.height - splitPaneStageBox!.height),
@@ -218,9 +218,13 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(narrowStageBox!.width).toBe(278);
   expect(narrowCanvasBox!.width).toBe(278);
   expect(narrowStageBox!.height).toBeGreaterThan(120);
-  expect(
-    Math.abs(narrowCanvasBox!.height - narrowStageBox!.height),
-  ).toBeLessThanOrEqual(4);
+  await expect
+    .poll(async () => {
+      const settledStageBox = await stage.boundingBox();
+      const settledCanvasBox = await canvas.boundingBox();
+      return Math.abs(settledCanvasBox!.height - settledStageBox!.height);
+    })
+    .toBeLessThanOrEqual(4);
   await expectAppToFitViewport(page);
 });
 

@@ -20,14 +20,13 @@ const DIRECTION_EVENT = "pixel-stage:direction";
 const CLEAR_DIRECTIONS_EVENT = "pixel-stage:clear-directions";
 const EMOTE_EVENT = "pixel-stage:emote";
 const NUDGE_EVENT = "pixel-stage:nudge";
+const VIEWPORT_RESIZE_EVENT = "pixel-stage:viewport-resize";
 const ASSET_ROOT = "/prototypes/pixel-stage/assets";
 const EMOTE_STATES: EmoteState[] = ["idle", "talking", "happy", "surprised"];
-const MAX_PRESENTATION_SCALE = 3;
+const GRASS_BACKGROUND_COLOR = 0x8dce17;
 const MIN_VIEWPORT_WIDTH = 240;
-const PRESENTATION_SCALE_WIDTH = 320;
 const GAME_HORIZONTAL_GUTTER = 2;
 const GAME_SHELL_WIDTH = 30;
-const MIN_VIEWPORT_HEIGHT = 180;
 
 type ResponsiveViewport = {
   displayHeight: number;
@@ -61,47 +60,21 @@ const rootElement = document.documentElement;
 
 function getResponsiveViewport(): ResponsiveViewport {
   const layoutWidth = rootElement.clientWidth;
-  const widthScale = Math.max(
-    1,
-    Math.min(
-      MAX_PRESENTATION_SCALE,
-      Math.floor(layoutWidth / PRESENTATION_SCALE_WIDTH),
-    ),
-  );
   const stageDisplayHeight = Math.max(
     ART_PIXEL_SIZE,
     stageElement.clientHeight,
   );
-  const heightScale = Math.max(
-    1,
-    Math.min(
-      MAX_PRESENTATION_SCALE,
-      Math.floor(stageDisplayHeight / MIN_VIEWPORT_HEIGHT),
-    ),
-  );
-  const presentationScale = Math.min(widthScale, heightScale);
-  const availableWidth = Math.floor(
-    (layoutWidth - GAME_HORIZONTAL_GUTTER) / presentationScale,
-  );
+  const presentationScale = 1;
+  const availableWidth = layoutWidth - GAME_HORIZONTAL_GUTTER;
   const snappedWidth =
     Math.floor(availableWidth / ART_PIXEL_SIZE) * ART_PIXEL_SIZE;
-  const width = Phaser.Math.Clamp(
-    snappedWidth,
-    MIN_VIEWPORT_WIDTH,
-    WORLD_SIZE.width,
-  );
-  const availableHeight = Math.floor(
-    stageDisplayHeight / presentationScale,
-  );
+  const width = Math.max(MIN_VIEWPORT_WIDTH, snappedWidth);
+  const availableHeight = stageDisplayHeight;
   const snappedHeight =
     Math.floor(availableHeight / ART_PIXEL_SIZE) * ART_PIXEL_SIZE;
-  const height = Phaser.Math.Clamp(
-    snappedHeight,
-    ART_PIXEL_SIZE,
-    WORLD_SIZE.height,
-  );
-  const displayHeight = height * presentationScale;
-  const displayWidth = width * presentationScale;
+  const height = Math.max(ART_PIXEL_SIZE, snappedHeight);
+  const displayHeight = height;
+  const displayWidth = width;
 
   return {
     displayHeight,
@@ -305,11 +278,44 @@ class PixelStageScene extends Phaser.Scene {
 
   private configureCamera() {
     const camera = this.cameras.main;
+    camera.setBackgroundColor(GRASS_BACKGROUND_COLOR);
     camera.setZoom(CAMERA_ZOOM);
-    camera.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
     camera.startFollow(this.player, true, 0.35, 0.35);
     camera.setDeadzone(120, 84);
     camera.roundPixels = true;
+    this.fitCameraBoundsToViewport();
+
+    this.game.events.on(
+      VIEWPORT_RESIZE_EVENT,
+      this.fitCameraBoundsToViewport,
+      this,
+    );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(
+        VIEWPORT_RESIZE_EVENT,
+        this.fitCameraBoundsToViewport,
+        this,
+      );
+    });
+  }
+
+  private fitCameraBoundsToViewport() {
+    const camera = this.cameras.main;
+    const horizontalMargin = Math.max(
+      0,
+      Math.floor((camera.width - WORLD_SIZE.width) / 2),
+    );
+    const verticalMargin = Math.max(
+      0,
+      Math.floor((camera.height - WORLD_SIZE.height) / 2),
+    );
+
+    camera.setBounds(
+      -horizontalMargin,
+      -verticalMargin,
+      WORLD_SIZE.width + horizontalMargin * 2,
+      WORLD_SIZE.height + verticalMargin * 2,
+    );
   }
 
   private configureInput() {
@@ -434,7 +440,7 @@ const game = new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
     autoRound: true,
     mode: Phaser.Scale.NONE,
-    zoom: responsiveViewport.presentationScale,
+    zoom: 1,
   },
   scene: PixelStageScene,
   type: Phaser.CANVAS,
@@ -446,16 +452,11 @@ const resizeGame = () => {
   applyResponsiveViewport(nextViewport);
 
   if (
-    nextViewport.presentationScale !== responsiveViewport.presentationScale
-  ) {
-    game.scale.setZoom(nextViewport.presentationScale);
-  }
-
-  if (
     nextViewport.width !== responsiveViewport.width ||
     nextViewport.height !== responsiveViewport.height
   ) {
     game.scale.resize(nextViewport.width, nextViewport.height);
+    game.events.emit(VIEWPORT_RESIZE_EVENT);
   }
 
   game.canvas.style.removeProperty("width");

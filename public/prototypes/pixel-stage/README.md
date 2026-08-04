@@ -21,13 +21,12 @@ The game uses a three-times-finer render grid than the earlier 16/32-pixel
 prototype. A logical tile is now 48 source pixels and Peppa remains at her
 native 96-pixel frame size. No world image calls `setScale` or `setDisplaySize`:
 Phaser renders each source pixel to exactly one intrinsic canvas pixel at camera
-zoom 1. The camera viewport adapts to the browser pane on the same 2-pixel art
-grid, then Phaser magnifies the complete canvas at an integer 1×, 2×, or 3×.
-For example, a 672 × 966 split pane gets a 334 × 450 intrinsic viewport shown
-at exactly 668 × 900, while a 1280 × 720 window gets a 426 × 240 viewport shown
-at 1278 × 720. Every asset is magnified together, pointer coordinates stay in
-sync with Phaser, and the game fills the window without fractional pixels. Idle
-is one stable frame, while movement and emotes use centered, foot-aligned cycles.
+zoom 1. The canvas backing size now follows its displayed CSS size on the same
+2-pixel art grid, so the complete scene is never enlarged after Phaser renders
+it. Larger panes reveal more grass around the compact 720 × 480 playable map
+instead of scaling its sprites; smaller panes use the camera to move through the
+same native-size world. Idle is one stable frame, while movement and emotes use
+centered, foot-aligned cycles.
 
 Phaser owns movement, Arcade Physics, camera following, animation, and render
 ordering. Each prop declares one collision footprint and foot line, and both
