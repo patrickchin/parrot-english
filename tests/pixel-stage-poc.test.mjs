@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { inflateSync } from "node:zlib";
 
 const projectFile = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -13,6 +14,101 @@ const pngDimensions = (path) => {
     width: png.readUInt32BE(16),
   };
 };
+
+const paeth = (left, above, upperLeft) => {
+  const estimate = left + above - upperLeft;
+  const leftDistance = Math.abs(estimate - left);
+  const aboveDistance = Math.abs(estimate - above);
+  const upperLeftDistance = Math.abs(estimate - upperLeft);
+
+  if (leftDistance <= aboveDistance && leftDistance <= upperLeftDistance) {
+    return left;
+  }
+  return aboveDistance <= upperLeftDistance ? above : upperLeft;
+};
+
+const readPngPixels = (path) => {
+  const png = readFileSync(new URL(`../${path}`, import.meta.url));
+  const chunks = [];
+  let width;
+  let height;
+  let colorType;
+
+  for (let offset = 8; offset < png.length; ) {
+    const length = png.readUInt32BE(offset);
+    const type = png.subarray(offset + 4, offset + 8).toString("ascii");
+    const data = png.subarray(offset + 8, offset + 8 + length);
+    offset += length + 12;
+
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      assert.equal(data[8], 8, `${path} must use 8-bit color channels`);
+      colorType = data[9];
+      assert.ok(
+        colorType === 2 || colorType === 6,
+        `${path} must be saved as RGB or RGBA, not an indexed PNG`,
+      );
+      assert.equal(data[12], 0, `${path} must not be interlaced`);
+    } else if (type === "IDAT") {
+      chunks.push(data);
+    } else if (type === "IEND") {
+      break;
+    }
+  }
+
+  const channels = colorType === 6 ? 4 : 3;
+  const packed = inflateSync(Buffer.concat(chunks));
+  const stride = width * channels;
+  const decoded = Buffer.alloc(height * stride);
+
+  for (let y = 0; y < height; y += 1) {
+    const packedRow = y * (stride + 1);
+    const filter = packed[packedRow];
+    const row = y * stride;
+
+    for (let x = 0; x < stride; x += 1) {
+      const raw = packed[packedRow + x + 1];
+      const left = x >= channels ? decoded[row + x - channels] : 0;
+      const above = y > 0 ? decoded[row + x - stride] : 0;
+      const upperLeft = y > 0 && x >= channels
+        ? decoded[row + x - stride - channels]
+        : 0;
+      const predictor =
+        filter === 0
+          ? 0
+          : filter === 1
+            ? left
+            : filter === 2
+              ? above
+              : filter === 3
+                ? Math.floor((left + above) / 2)
+                : paeth(left, above, upperLeft);
+      assert.ok(filter >= 0 && filter <= 4, `${path} uses an unknown PNG filter`);
+      decoded[row + x] = (raw + predictor) & 0xff;
+    }
+  }
+
+  const pixels = Buffer.alloc(width * height * 4);
+  for (let source = 0, target = 0; source < decoded.length; source += channels) {
+    pixels[target] = decoded[source];
+    pixels[target + 1] = decoded[source + 1];
+    pixels[target + 2] = decoded[source + 2];
+    pixels[target + 3] = channels === 4 ? decoded[source + 3] : 255;
+    target += 4;
+  }
+
+  return { height, pixels, width };
+};
+
+const PIXEL_ASSETS = [
+  "public/prototypes/pixel-stage/assets/peppa-town-sheet-96.png",
+  "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
+  "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
+  "public/prototypes/pixel-stage/assets/garden-flowers.png",
+  "public/prototypes/pixel-stage/assets/garden-basket.png",
+  "public/prototypes/pixel-stage/assets/garden-market.png",
+];
 
 const packageManifest = JSON.parse(projectFile("package.json"));
 const worldConfig = await import(
@@ -33,8 +129,8 @@ describe("Phaser pixel stage", () => {
     assert.deepEqual(worldConfig.WORLD_GRID, { columns: 15, rows: 10 });
     assert.deepEqual(worldConfig.WORLD_SIZE, { height: 480, width: 720 });
     assert.deepEqual(worldConfig.PLAYER_START, { x: 450, y: 192 });
+    assert.equal(worldConfig.ART_PIXEL_SIZE, 2);
     assert.equal(worldConfig.SPRITE_FRAME_SIZE, 96);
-    assert.equal(worldConfig.PLAYER_SCALE, 1);
     assert.equal(worldConfig.PLAYER_SPEED, 144);
     assert.deepEqual(worldConfig.PLAYER_BODY, {
       height: 18,
@@ -93,7 +189,6 @@ describe("Phaser pixel stage", () => {
     const stage = projectFile("prototypes/pixel-stage/main.ts");
 
     assert.match(stage, /new Phaser\.Game\(/);
-    assert.match(stage, /Phaser\.Scale\.MAX_ZOOM/);
     assert.match(stage, /lesson-garden-ground\.png/);
     assert.match(stage, /garden-tree-ball\.png/);
     assert.match(stage, /garden-flowers\.png/);
@@ -107,6 +202,8 @@ describe("Phaser pixel stage", () => {
     assert.match(stage, /setDeadzone\(/);
     assert.match(stage, /setZoom\(CAMERA_ZOOM\)/);
     assert.match(stage, /peppa-town-sheet-96\.png/);
+    assert.doesNotMatch(stage, /\.set(?:DisplaySize|Scale)\(/);
+    assert.doesNotMatch(stage, /Phaser\.Scale\.MAX_ZOOM/);
     assert.doesNotMatch(stage, /tiny-town\.png|peppa-sheet\.png/);
     assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH|make\.tilemap/);
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
@@ -129,7 +226,62 @@ describe("Phaser pixel stage", () => {
       pngDimensions(
         "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
       ),
-      { height: 192, width: 168 },
+      { height: 192, width: 144 },
+    );
+    assert.deepEqual(
+      pngDimensions(
+        "public/prototypes/pixel-stage/assets/garden-flowers.png",
+      ),
+      { height: 72, width: 96 },
+    );
+    assert.deepEqual(
+      pngDimensions(
+        "public/prototypes/pixel-stage/assets/garden-basket.png",
+      ),
+      { height: 48, width: 72 },
+    );
+    assert.deepEqual(
+      pngDimensions(
+        "public/prototypes/pixel-stage/assets/garden-market.png",
+      ),
+      { height: 96, width: 144 },
+    );
+  });
+
+  it("keeps every visible art pixel on one shared native grid and palette", () => {
+    const palette = new Set();
+
+    for (const path of PIXEL_ASSETS) {
+      const { height, pixels, width } = readPngPixels(path);
+      assert.equal(width % worldConfig.ART_PIXEL_SIZE, 0);
+      assert.equal(height % worldConfig.ART_PIXEL_SIZE, 0);
+
+      for (let y = 0; y < height; y += worldConfig.ART_PIXEL_SIZE) {
+        for (let x = 0; x < width; x += worldConfig.ART_PIXEL_SIZE) {
+          const first = (y * width + x) * 4;
+          const expected = pixels.subarray(first, first + 4).toString("hex");
+
+          for (let cellY = 0; cellY < worldConfig.ART_PIXEL_SIZE; cellY += 1) {
+            for (let cellX = 0; cellX < worldConfig.ART_PIXEL_SIZE; cellX += 1) {
+              const pixel = ((y + cellY) * width + x + cellX) * 4;
+              assert.equal(
+                pixels.subarray(pixel, pixel + 4).toString("hex"),
+                expected,
+                `${path} has a pixel outside the shared art grid at ${x + cellX},${y + cellY}`,
+              );
+            }
+          }
+
+          const alpha = pixels[first + 3];
+          assert.ok(alpha === 0 || alpha === 255, `${path} uses soft alpha`);
+          if (alpha === 255) palette.add(expected.slice(0, 6));
+        }
+      }
+    }
+
+    assert.ok(
+      palette.size <= 64,
+      `lesson assets use ${palette.size} colors instead of one 64-color palette`,
     );
   });
 
