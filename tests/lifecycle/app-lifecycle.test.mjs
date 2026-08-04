@@ -201,6 +201,11 @@ function ConversationHookHarness({
       { "aria-label": "Live transcript" },
       conversation.liveTranscript ?? "",
     ),
+    createElement(
+      "output",
+      { "aria-label": "Conversation error" },
+      conversation.error,
+    ),
     createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
     createElement(
       "button",
@@ -982,6 +987,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     let listener = () => {};
     let completions = 0;
     const reviews = [];
+    const summaryResponse = deferred();
     const transport = {
       async connect() {},
       async disconnect() {},
@@ -1010,14 +1016,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         });
       }
       if (path === "/api/conversations/conversation-2") {
-        return json({
-          conversation: {
-            controllerState: {
-              profileSummary: "Mia is eight and loves red racing cars.",
-            },
-            turns: [],
-          },
-        });
+        return summaryResponse.promise;
       }
       if (path === "/api/conversations/conversation-2/review") {
         reviews.push(JSON.parse(init.body));
@@ -1062,6 +1061,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       listener({ type: "disconnected", reason: "task_complete" });
       await flush();
     });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+
+    summaryResponse.resolve(
+      json({
+        conversation: {
+          controllerState: {
+            profileSummary: "Mia is eight and loves red racing cars.",
+          },
+          turns: [],
+        },
+      }),
+    );
     await waitFor(() => assert.equal(completions, 1));
 
     assert.deepEqual(reviews, [{}]);
@@ -1069,6 +1084,66 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       document.querySelector('output[aria-label="Conversation status"]')
         .textContent,
       "saving",
+    );
+  });
+
+  it("does not present an unexpected room drop as a completed chat", async () => {
+    let listener = () => {};
+    let summaryLoads = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations") {
+        assert.equal(init.method, "POST");
+        return json({
+          conversation: { id: "conversation-disconnected" },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "small-chat",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "none",
+            version: 1,
+          },
+        });
+      }
+      if (path === "/api/conversations/conversation-disconnected") {
+        summaryLoads += 1;
+        return json({ conversation: { turns: [] } });
+      }
+      throw new Error(`Unexpected request: ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await act(async () => {
+      listener({ type: "disconnected", reason: "SERVER_SHUTDOWN" });
+      await flush();
+    });
+
+    assert.equal(summaryLoads, 0);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "error",
+    );
+    assert.match(
+      document.querySelector('output[aria-label="Conversation error"]')
+        .textContent,
+      /disconnected before the conversation finished/i,
     );
   });
 

@@ -48,16 +48,16 @@ saved, use a friendly general greeting. Do not ask for a known name or age again
 unless the learner wants to correct it.
 
 Keep track of changes within the conversation context so you do not repeat a
-question. Whenever the learner clearly changes or adds profile information,
-call updateLearnerProfile before speaking again. Pass the complete current name,
-age, and About paragraph, preserving saved details the learner did not change.
-Write About as one natural third-person paragraph with no labels or bullets.
-Do not call the tool for uncertainty, refusal, silence, or unrelated chat, and
-never claim a change was saved unless the tool succeeds.
+question. When the learner clearly changes or adds profile information, call
+updateLearnerProfile. Pass the complete current name, age, and About paragraph,
+preserving saved details the learner did not change. Write About as one natural
+third-person paragraph with no labels or bullets. The tool saves the profile
+and ends the conversation, so do not speak again or call endConversation after
+it succeeds. Do not call the tool for uncertainty, refusal, silence, or
+unrelated chat, and never claim a change was saved unless the tool succeeds.
 
-After up to three focused exchanges, call endConversation with
-conversation_complete. If the child asks to stop or says goodbye sooner, call
-endConversation with child_requested. The application will say goodbye after
-the tool call. If the final child answer changes the profile, call
-updateLearnerProfile and wait for it to succeed before calling endConversation.
+If no profile change is made after up to three focused exchanges, call
+endConversation with conversation_complete. If the child asks to stop or says
+goodbye sooner, call endConversation with child_requested. The application will
+say goodbye after either ending tool call.
 `.trim();

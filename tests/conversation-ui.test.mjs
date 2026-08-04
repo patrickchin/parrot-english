@@ -111,7 +111,8 @@ describe("accessible realtime conversation surface", () => {
   it("finishes ordinary chat without claiming to save the profile", () => {
     const html = render({ purpose: "small-chat", status: "saving" });
 
-    assert.match(html, /That was fun|Finishing your chat/);
+    assert.match(html, /Conversation ended/);
+    assert.match(html, /That was fun/);
     assert.doesNotMatch(html, /remember that|Saving your profile/);
   });
 
@@ -302,7 +303,7 @@ describe("accessible realtime conversation surface", () => {
       ],
     });
 
-    assert.match(html, /Saving your profile/);
+    assert.match(html, /Conversation ended/);
     assert.doesNotMatch(html, /Here’s what I heard/);
     assert.doesNotMatch(html, /aria-label="Edit About this learner"/);
     assert.doesNotMatch(html, /<textarea/);

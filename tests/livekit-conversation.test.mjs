@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { DisconnectReason } from "livekit-client";
 import {
   createLiveKitConversation,
   LIVEKIT_CONVERSATION_EVENTS,
@@ -55,8 +56,12 @@ describe("LiveKit conversation adapter", () => {
 
     await conversation.connect();
     await conversation.setMicrophoneEnabled(true);
+    await conversation.commitUserTurn();
+    await conversation.sendText("I like pandas");
+    await conversation.repeatLastAudio();
+    await conversation.disconnect();
 
-    assert.deepEqual(events, [
+    assert.deepEqual(events.slice(0, 3), [
       { type: "state", state: "connecting" },
       { type: "state", state: "connected" },
       {
@@ -67,6 +72,11 @@ describe("LiveKit conversation adapter", () => {
         language: "en",
         role: "assistant",
       },
+    ]);
+    assert.deepEqual(events.slice(3).map((event) => event.type), [
+      "transcription",
+      "transcription",
+      "speech-started",
     ]);
   });
 
@@ -146,7 +156,14 @@ describe("LiveKit conversation adapter", () => {
       ],
       { isLocal: true },
     );
-    room.emit(LIVEKIT_CONVERSATION_EVENTS.disconnected, "server_shutdown");
+    room.emit(
+      LIVEKIT_CONVERSATION_EVENTS.disconnected,
+      DisconnectReason.SERVER_SHUTDOWN,
+    );
+    room.emit(
+      LIVEKIT_CONVERSATION_EVENTS.disconnected,
+      DisconnectReason.ROOM_DELETED,
+    );
 
     assert.deepEqual(events, [
       { type: "state", state: "reconnecting" },
@@ -169,7 +186,8 @@ describe("LiveKit conversation adapter", () => {
         language: "en",
         role: "user",
       },
-      { type: "disconnected", reason: "server_shutdown" },
+      { type: "disconnected", reason: "SERVER_SHUTDOWN" },
+      { type: "disconnected", reason: "ROOM_DELETED" },
     ]);
   });
 

@@ -18,6 +18,11 @@ import {
 import { createResponseLatencyTimer } from "./response-latency";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
 
+const COMPLETED_DISCONNECT_REASONS = new Set([
+  "ROOM_DELETED",
+  "task_complete",
+]);
+
 export function selectLearnerProfileExperience(
   serverMode: "realtime" | "form",
   userSelectedForm: boolean,
@@ -174,6 +179,23 @@ export function usePeppaConversation({
         return;
       }
       if (event.type === "disconnected") {
+        runtimeRef.current.awaitingResponse = false;
+        runtimeRef.current.learnerTurnOpen = false;
+        runtimeRef.current.transportReady = false;
+        setMicrophoneEnabled(false);
+        setTurnReady(false);
+        const transport = transportRef.current;
+        transportRef.current = null;
+        void transport?.disconnect();
+        if (!COMPLETED_DISCONNECT_REASONS.has(event.reason)) {
+          setError(
+            "The voice room disconnected before the conversation finished.",
+          );
+          setStatus("error");
+          return;
+        }
+        setError("");
+        setStatus("saving");
         void loadSummary(id, operation);
         return;
       }

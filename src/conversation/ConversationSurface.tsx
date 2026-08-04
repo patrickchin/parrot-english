@@ -115,7 +115,6 @@ function ConversationScreen({ children }: { children: ReactNode }) {
 function statusLabel(
   status: ConversationSurfaceStatus,
   microphoneEnabled: boolean,
-  purpose: ConversationPurpose,
 ) {
   if (status === "ready" || status === "connecting") {
     return "Peppa is getting ready";
@@ -127,20 +126,16 @@ function statusLabel(
   if (status === "speaking") return "Peppa is talking";
   if (status === "reconnecting") return "Reconnecting";
   if (status === "error") return "Chat paused";
-  return purpose === "small-chat"
-    ? "Finishing your chat"
-    : "Saving your profile";
+  return "Conversation ended";
 }
 
 function ConversationStatus({
   className,
   microphoneEnabled,
-  purpose,
   status,
 }: {
   className?: string;
   microphoneEnabled: boolean;
-  purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
 }) {
   const busy = [
@@ -178,7 +173,7 @@ function ConversationStatus({
           )}
         />
       )}
-      {statusLabel(status, microphoneEnabled, purpose)}
+      {statusLabel(status, microphoneEnabled)}
     </p>
   );
 }
@@ -448,7 +443,6 @@ export function ConversationSurface({
         <ConversationStatus
           className="short-wide:col-start-2 short-wide:row-start-2 short-wide:self-start"
           microphoneEnabled={microphoneEnabled}
-          purpose={purpose}
           status={status}
         />
 
