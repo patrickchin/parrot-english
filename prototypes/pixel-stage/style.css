@@ -310,6 +310,7 @@ main {
 }
 
 html[data-game-edge="true"] main {
+  width: 100%;
   padding-inline: 1px;
 }
 
@@ -344,32 +345,8 @@ html[data-game-edge="true"] .stage {
 }
 
 @media (max-width: 389px) {
-  main {
-    padding-inline: 6px;
-  }
-
-  .game-card {
-    width: 264px;
-  }
-
-  .stage {
-    width: 246px;
-    height: 166px;
-  }
-
   .engine-chip {
     display: none;
-  }
-
-  html[data-game-edge="true"] .game-card {
-    width: 264px;
-  }
-
-  html[data-game-edge="true"] .stage {
-    left: auto;
-    width: 246px;
-    height: 166px;
-    translate: none;
   }
 }
 

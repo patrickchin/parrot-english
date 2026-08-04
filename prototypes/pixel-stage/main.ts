@@ -24,6 +24,9 @@ const NUDGE_EVENT = "pixel-stage:nudge";
 const ASSET_ROOT = "/prototypes/pixel-stage/assets";
 const EMOTE_STATES: EmoteState[] = ["idle", "talking", "happy", "surprised"];
 const MAX_PRESENTATION_SCALE = 3;
+const MIN_VIEWPORT_WIDTH = 240;
+const PRESENTATION_SCALE_WIDTH = 320;
+const GAME_HORIZONTAL_GUTTER = 2;
 const GAME_SHELL_WIDTH = 30;
 const GAME_VERTICAL_CHROME = 64;
 
@@ -61,8 +64,18 @@ function getResponsiveViewport(): ResponsiveViewport {
     1,
     Math.min(
       MAX_PRESENTATION_SCALE,
-      Math.floor(window.innerWidth / VIEWPORT_SIZE.width),
+      Math.floor(window.innerWidth / PRESENTATION_SCALE_WIDTH),
     ),
+  );
+  const availableWidth = Math.floor(
+    (window.innerWidth - GAME_HORIZONTAL_GUTTER) / presentationScale,
+  );
+  const snappedWidth =
+    Math.floor(availableWidth / ART_PIXEL_SIZE) * ART_PIXEL_SIZE;
+  const width = Phaser.Math.Clamp(
+    snappedWidth,
+    MIN_VIEWPORT_WIDTH,
+    WORLD_SIZE.width,
   );
   const availableHeight = Math.floor(
     (window.innerHeight - GAME_VERTICAL_CHROME) / presentationScale,
@@ -78,7 +91,7 @@ function getResponsiveViewport(): ResponsiveViewport {
           WORLD_SIZE.height,
         );
   const displayHeight = height * presentationScale;
-  const displayWidth = VIEWPORT_SIZE.width * presentationScale;
+  const displayWidth = width * presentationScale;
 
   return {
     displayHeight,
@@ -86,7 +99,7 @@ function getResponsiveViewport(): ResponsiveViewport {
     edgeToEdge: window.innerWidth < displayWidth + GAME_SHELL_WIDTH,
     height,
     presentationScale,
-    width: VIEWPORT_SIZE.width,
+    width,
   };
 }
 
@@ -422,30 +435,26 @@ const game = new Phaser.Game({
   width: responsiveViewport.width,
 });
 
-let resizeRequest = 0;
 const resizeGame = () => {
-  window.cancelAnimationFrame(resizeRequest);
-  resizeRequest = window.requestAnimationFrame(() => {
-    const nextViewport = getResponsiveViewport();
-    applyResponsiveViewport(nextViewport);
+  const nextViewport = getResponsiveViewport();
+  applyResponsiveViewport(nextViewport);
 
-    if (
-      nextViewport.presentationScale !== responsiveViewport.presentationScale
-    ) {
-      game.scale.setZoom(nextViewport.presentationScale);
-    }
+  if (
+    nextViewport.presentationScale !== responsiveViewport.presentationScale
+  ) {
+    game.scale.setZoom(nextViewport.presentationScale);
+  }
 
-    if (
-      nextViewport.width !== responsiveViewport.width ||
-      nextViewport.height !== responsiveViewport.height
-    ) {
-      game.scale.resize(nextViewport.width, nextViewport.height);
-    }
+  if (
+    nextViewport.width !== responsiveViewport.width ||
+    nextViewport.height !== responsiveViewport.height
+  ) {
+    game.scale.resize(nextViewport.width, nextViewport.height);
+  }
 
-    game.canvas.style.removeProperty("width");
-    game.canvas.style.removeProperty("height");
-    responsiveViewport = nextViewport;
-  });
+  game.canvas.style.removeProperty("width");
+  game.canvas.style.removeProperty("height");
+  responsiveViewport = nextViewport;
 };
 
 window.addEventListener("resize", resizeGame);
@@ -500,7 +509,6 @@ window.addEventListener("pointerup", () =>
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    window.cancelAnimationFrame(resizeRequest);
     window.removeEventListener("resize", resizeGame);
     game.destroy(true);
   });
