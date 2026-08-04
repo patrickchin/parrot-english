@@ -54,8 +54,8 @@ In the Cloudflare dashboard:
 
 1. Keep `parrot-english-art-source` private. Do not enable `r2.dev` or connect a
    domain to it.
-2. Connect `parrot-english-media` to a Cloudflare-managed hostname such as
-   `media.example.com`.
+2. Connect `parrot-english-media` to the Cloudflare-managed hostname
+   `media.parrotbook.com`.
 3. Do not use the public `r2.dev` development URL for production delivery.
 4. Enable cache rules and Smart Tiered Cache for the media hostname.
 
@@ -75,7 +75,7 @@ them to a canvas.
 Export the non-secret deployment values in the shell that runs the publisher:
 
 ```bash
-export PARROT_MEDIA_ORIGIN=https://media.example.com
+export PARROT_MEDIA_ORIGIN=https://media.parrotbook.com
 export PARROT_MEDIA_PUBLIC_BUCKET=parrot-english-media
 export PARROT_MEDIA_SOURCE_BUCKET=parrot-english-art-source
 ```
@@ -174,25 +174,22 @@ Run the non-mutating verifier after any background catalog change:
 npm run verify:backgrounds
 ```
 
-Repository-local background paths are reported as skipped during the migration.
-Remote paths are requested and checked. The command makes no network requests
-while the catalog contains only repository-local backgrounds.
+Remote paths are requested and checked. Repository-local paths are still
+reported as skipped so older branches remain diagnosable, but the main catalog
+must contain only versioned `media.parrotbook.com` URLs.
 
 Do not put this network check in the default unit-test suite. Run it explicitly
 during media publishing and deployment verification.
 
-## Rollout Order
+## Publishing Order
 
-1. Create the buckets and production media hostname.
-2. Publish the three pilot backgrounds.
-3. Add their catalog entries and update the matching lessons.
+1. Generate and review candidates locally.
+2. Publish the approved private source records and public delivery WebPs.
+3. Add the emitted catalog entries only after remote verification succeeds.
 4. Run focused tests, `npm run build`, `npm run test:browser`, and
    `npm run verify:backgrounds`.
-5. Publish and catalog the remaining backgrounds.
-6. Upload the four current repository backgrounds to versioned R2 keys.
-7. Change their existing catalog entries to R2 URLs.
-8. Verify production, then remove the old files from
-   `public/assets/backgrounds` in a separately approved cleanup.
+5. Deploy the catalog change while leaving previous R2 versions available for
+   rollback.
 
 Always upload before deploying a catalog reference. Keep previous R2 versions
 available so rollback requires only restoring the earlier catalog URL.

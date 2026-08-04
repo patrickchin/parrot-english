@@ -1,22 +1,22 @@
 [
   {
     "id": "episode-garden",
-    "src": "/assets/backgrounds/episode-garden.webp",
+    "src": "https://media.parrotbook.com/backgrounds/episode-garden/v1/landscape.webp",
     "alt": "A sunny garden with flowers and a tall tree"
   },
   {
     "id": "meadow-day",
-    "src": "/assets/backgrounds/meadow-day.webp",
+    "src": "https://media.parrotbook.com/backgrounds/meadow-day/v1/landscape.webp",
     "alt": "A sunny meadow during the day"
   },
   {
     "id": "meadow-evening",
-    "src": "/assets/backgrounds/meadow-evening.webp",
+    "src": "https://media.parrotbook.com/backgrounds/meadow-evening/v1/landscape.webp",
     "alt": "A peaceful meadow in the evening"
   },
   {
     "id": "reward",
-    "src": "/assets/backgrounds/reward-bg.webp",
+    "src": "https://media.parrotbook.com/backgrounds/reward/v1/landscape.webp",
     "alt": "A cheerful celebration background"
   }
 ]
