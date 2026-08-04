@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A Phaser-powered pixel game proof of concept for Parrot English."
+    />
+    <title>Pixel stage proof of concept</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header class="intro">
+        <p class="eyebrow">Parrot English · engine test</p>
+        <h1>Pixel stage proof of concept</h1>
+        <p class="summary">
+          Peppa is now a Phaser actor in a real 240 × 160 game world, not a DOM
+          image positioned over a background.
+        </p>
+        <p class="engine-chip">Phaser 4 · Arcade Physics · 24-color world</p>
+      </header>
+
+      <section class="stage" aria-label="Animated pixel lesson stage">
+        <div
+          id="pixel-game"
+          class="game-world"
+          role="group"
+          aria-label="Original pixel game world"
+          data-depth="212"
+          data-engine="phaser"
+          data-ready="false"
+          data-state="idle"
+          data-x="120"
+          data-y="112"
+        >
+          <p class="loading-status" data-engine-status>Loading Phaser…</p>
+        </div>
+        <div class="hud">
+          <span>240 × 160 world · Phaser Arcade Physics</span>
+          <span class="coordinates" data-coordinates>x 120 · y 112</span>
+        </div>
+        <p class="speech" aria-live="polite">
+          <span class="speaker">Peppa:</span>
+          <span data-speech-copy>Ready for an English adventure?</span>
+        </p>
+      </section>
+
+      <nav class="controls" aria-label="Pixel world controls">
+        <div class="emote-controls" aria-label="Peppa animations" role="group">
+          <button type="button" aria-pressed="true" data-state="idle">Idle</button>
+          <button type="button" aria-pressed="false" data-state="talking">
+            Talking
+          </button>
+          <button type="button" aria-pressed="false" data-state="happy">Happy</button>
+          <button type="button" aria-pressed="false" data-state="surprised">
+            Surprised
+          </button>
+        </div>
+
+        <div class="movement-panel">
+          <p class="move-label">Move with arrow keys, WASD, or the pad</p>
+          <div class="move-pad" role="group" aria-label="Move Peppa">
+            <button
+              class="move-button"
+              type="button"
+              data-move="up"
+              aria-label="Move up"
+            >
+              ↑
+            </button>
+            <button
+              class="move-button"
+              type="button"
+              data-move="left"
+              aria-label="Move left"
+            >
+              ←
+            </button>
+            <button
+              class="move-button"
+              type="button"
+              data-move="down"
+              aria-label="Move down"
+            >
+              ↓
+            </button>
+            <button
+              class="move-button"
+              type="button"
+              data-move="right"
+              aria-label="Move right"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        <p class="tech-note">
+          Phaser scene · sprite animation · physics collisions · y-depth ·
+          integer zoom
+        </p>
+      </nav>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

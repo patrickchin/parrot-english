@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 import { Buffer } from "node:buffer";
 import type { ServerResponse } from "node:http";
+import { resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 
 type MockEvaluationScenario = "correct" | "incorrect" | "no-speech";
@@ -333,5 +334,14 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    rollupOptions: {
+      input: {
+        main: resolve(import.meta.dirname, "index.html"),
+        pixelStage: resolve(
+          import.meta.dirname,
+          "prototypes/pixel-stage/index.html",
+        ),
+      },
+    },
   },
 });

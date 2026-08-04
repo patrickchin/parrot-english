@@ -28,6 +28,16 @@ test("the Phaser pixel stage behaves like a small game world", async ({
     .poll(async () => Number(await world.getAttribute("data-x")))
     .toBeGreaterThan(120);
 
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(1_000);
+  await page.keyboard.up("ArrowRight");
+  const xAtTree = Number(await world.getAttribute("data-x"));
+  expect(xAtTree).toBeGreaterThanOrEqual(158);
+  expect(xAtTree).toBeLessThanOrEqual(162);
+
+  await page.reload();
+  await expect(world).toHaveAttribute("data-ready", "true");
+
   const yBeforeKeyboard = Number(await world.getAttribute("data-y"));
   await page.keyboard.down("ArrowDown");
   await page.waitForTimeout(120);
