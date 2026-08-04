@@ -11,8 +11,10 @@ test("the pixel stage demonstrates one sprite sheet across four states", async (
   ).toBeVisible();
 
   const sprite = page.getByRole("img", { name: "Animated pixel Peppa" });
+  const world = page.getByRole("group", { name: "Original pixel game world" });
   await expect(sprite).toHaveAttribute("data-state", "idle");
   await expect(sprite).toHaveCSS("image-rendering", "pixelated");
+  await expect(world).toHaveAttribute("data-scale", "3");
 
   for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
     await page.getByRole("button", { name: state }).click();
@@ -21,18 +23,20 @@ test("the pixel stage demonstrates one sprite sheet across four states", async (
 
   const stage = page.getByRole("region", { name: "Animated pixel lesson stage" });
   const stageBox = await stage.boundingBox();
+  const worldBox = await world.boundingBox();
   const spriteBox = await sprite.boundingBox();
 
   expect(stageBox).not.toBeNull();
+  expect(worldBox).not.toBeNull();
   expect(spriteBox).not.toBeNull();
-  expect(spriteBox!.x).toBeGreaterThanOrEqual(stageBox!.x);
-  expect(spriteBox!.y).toBeGreaterThanOrEqual(stageBox!.y);
-  expect(spriteBox!.x + spriteBox!.width).toBeLessThanOrEqual(
-    stageBox!.x + stageBox!.width,
-  );
-  expect(spriteBox!.y + spriteBox!.height).toBeLessThanOrEqual(
-    stageBox!.y + stageBox!.height,
-  );
+  expect(worldBox!.width).toBe(360);
+  expect(worldBox!.height).toBe(240);
+  expect(spriteBox!.width).toBe(96);
+  expect(spriteBox!.height).toBe(96);
+  expect(worldBox!.x).toBeGreaterThanOrEqual(stageBox!.x);
+  expect(worldBox!.y).toBeGreaterThanOrEqual(stageBox!.y);
+  expect(worldBox!.x + worldBox!.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width);
+  expect(worldBox!.y + worldBox!.height).toBeLessThanOrEqual(stageBox!.y + stageBox!.height);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(390);
