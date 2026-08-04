@@ -14,7 +14,9 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   const canvas = page.getByRole("img", { name: "Peppa lesson garden pixel game world" });
   await expect(world).toHaveAttribute("data-engine", "phaser");
   await expect(world).toHaveAttribute("data-ready", "true");
+  await expect(world).toHaveAttribute("data-art-pixel-size", "2");
   await expect(world).toHaveAttribute("data-camera-zoom", "1");
+  await expect(world).toHaveAttribute("data-native-scale", "1");
   await expect(world).toHaveAttribute("data-map-width", "720");
   await expect(world).toHaveAttribute("data-map-height", "480");
   await expect(world).toHaveAttribute("data-x", "450");
@@ -93,6 +95,18 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(desktopCanvasBox!.height).toBe(480);
   expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x + 3);
   expect(desktopCanvasBox!.y).toBe(desktopStageBox!.y + 3);
+
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  const wideStageBox = await stage.boundingBox();
+  const wideCanvasBox = await canvas.boundingBox();
+  expect(wideStageBox).not.toBeNull();
+  expect(wideCanvasBox).not.toBeNull();
+  expect(wideStageBox!.width).toBe(1086);
+  expect(wideStageBox!.height).toBe(726);
+  expect(wideCanvasBox!.width).toBe(1080);
+  expect(wideCanvasBox!.height).toBe(720);
+  expect(wideCanvasBox!.x).toBe(wideStageBox!.x + 3);
+  expect(wideCanvasBox!.y).toBe(wideStageBox!.y + 3);
 
   await page.setViewportSize({ width: 280, height: 700 });
   const narrowStageBox = await stage.boundingBox();

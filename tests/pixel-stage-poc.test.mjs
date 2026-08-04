@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { inflateSync } from "node:zlib";
@@ -189,6 +190,8 @@ describe("Phaser pixel stage", () => {
     const stage = projectFile("prototypes/pixel-stage/main.ts");
 
     assert.match(stage, /new Phaser\.Game\(/);
+    assert.match(stage, /antialias:\s*false/);
+    assert.match(stage, /pixelArt:\s*true/);
     assert.match(stage, /lesson-garden-ground\.png/);
     assert.match(stage, /garden-tree-ball\.png/);
     assert.match(stage, /garden-flowers\.png/);
@@ -232,19 +235,19 @@ describe("Phaser pixel stage", () => {
       pngDimensions(
         "public/prototypes/pixel-stage/assets/garden-flowers.png",
       ),
-      { height: 72, width: 96 },
+      { height: 56, width: 80 },
     );
     assert.deepEqual(
       pngDimensions(
         "public/prototypes/pixel-stage/assets/garden-basket.png",
       ),
-      { height: 48, width: 72 },
+      { height: 32, width: 48 },
     );
     assert.deepEqual(
       pngDimensions(
         "public/prototypes/pixel-stage/assets/garden-market.png",
       ),
-      { height: 96, width: 144 },
+      { height: 80, width: 120 },
     );
   });
 
