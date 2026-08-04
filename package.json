@@ -27,6 +27,7 @@
     "deploy:worker": "node scripts/deploy-cloudflare-worker.mjs",
     "publish:backgrounds": "node scripts/publish-backgrounds.mjs",
     "verify:backgrounds": "node scripts/verify-background-media.mjs",
+    "verify:pixel-stage-media": "node scripts/verify-pixel-stage-media.mjs",
     "generate:audio": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "start": "wrangler dev --local --port 3000",
