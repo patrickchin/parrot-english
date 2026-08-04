@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("the pixel stage demonstrates one sprite sheet across four states", async ({
+test("the Phaser pixel stage behaves like a small game world", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -10,42 +10,53 @@ test("the pixel stage demonstrates one sprite sheet across four states", async (
     page.getByRole("heading", { name: "Pixel stage proof of concept" }),
   ).toBeVisible();
 
-  const sprite = page.getByRole("img", { name: "Animated pixel Peppa" });
   const world = page.getByRole("group", { name: "Original pixel game world" });
-  await expect(sprite).toHaveAttribute("data-state", "idle");
-  await expect(sprite).toHaveCSS("image-rendering", "pixelated");
-  await expect(world).toHaveAttribute("data-scale", "1");
+  const canvas = page.getByRole("img", { name: "Phaser pixel game world" });
+  await expect(world).toHaveAttribute("data-engine", "phaser");
+  await expect(world).toHaveAttribute("data-ready", "true");
+  await expect(world).toHaveAttribute("data-x", "120");
+  await expect(world).toHaveAttribute("data-y", "112");
+  await expect(canvas).toHaveAttribute("width", "240");
+  await expect(canvas).toHaveAttribute("height", "160");
+  await expect(canvas).toHaveCSS("image-rendering", "pixelated");
 
-  const actor = page.getByTestId("player-actor");
-  await expect(actor).toHaveAttribute("data-x", "120");
-  await expect(actor).toHaveAttribute("data-y", "112");
-  await page.getByRole("button", { name: "Move right" }).click();
-  await expect(actor).toHaveAttribute("data-x", "122");
-  await page.keyboard.press("ArrowDown");
-  await expect(actor).toHaveAttribute("data-y", "114");
-  await expect(page.getByText("x 122 · y 114", { exact: true })).toBeVisible();
+  const moveRight = page.getByRole("button", { name: "Move right" });
+  await moveRight.dispatchEvent("pointerdown", { pointerId: 1 });
+  await page.waitForTimeout(120);
+  await moveRight.dispatchEvent("pointerup", { pointerId: 1 });
+  await expect
+    .poll(async () => Number(await world.getAttribute("data-x")))
+    .toBeGreaterThan(120);
+
+  const yBeforeKeyboard = Number(await world.getAttribute("data-y"));
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(120);
+  await page.keyboard.up("ArrowDown");
+  await expect
+    .poll(async () => Number(await world.getAttribute("data-y")))
+    .toBeGreaterThan(yBeforeKeyboard);
 
   for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
     await page.getByRole("button", { name: state }).click();
-    await expect(sprite).toHaveAttribute("data-state", state.toLowerCase());
+    await expect(world).toHaveAttribute("data-state", state.toLowerCase());
   }
 
   const stage = page.getByRole("region", { name: "Animated pixel lesson stage" });
   const stageBox = await stage.boundingBox();
-  const worldBox = await world.boundingBox();
-  const spriteBox = await sprite.boundingBox();
+  const canvasBox = await canvas.boundingBox();
 
   expect(stageBox).not.toBeNull();
-  expect(worldBox).not.toBeNull();
-  expect(spriteBox).not.toBeNull();
-  expect(worldBox!.width).toBe(240);
-  expect(worldBox!.height).toBe(160);
-  expect(spriteBox!.width).toBe(64);
-  expect(spriteBox!.height).toBe(64);
-  expect(worldBox!.x).toBeGreaterThanOrEqual(stageBox!.x);
-  expect(worldBox!.y).toBeGreaterThanOrEqual(stageBox!.y);
-  expect(worldBox!.x + worldBox!.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width);
-  expect(worldBox!.y + worldBox!.height).toBeLessThanOrEqual(stageBox!.y + stageBox!.height);
+  expect(canvasBox).not.toBeNull();
+  expect(canvasBox!.width).toBe(240);
+  expect(canvasBox!.height).toBe(160);
+  expect(canvasBox!.x).toBeGreaterThanOrEqual(stageBox!.x);
+  expect(canvasBox!.y).toBeGreaterThanOrEqual(stageBox!.y);
+  expect(canvasBox!.x + canvasBox!.width).toBeLessThanOrEqual(
+    stageBox!.x + stageBox!.width,
+  );
+  expect(canvasBox!.y + canvasBox!.height).toBeLessThanOrEqual(
+    stageBox!.y + stageBox!.height,
+  );
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(390);
