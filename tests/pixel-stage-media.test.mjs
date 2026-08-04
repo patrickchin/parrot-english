@@ -50,7 +50,12 @@ describe("pixel-stage media verification", () => {
     const png = createPngHeader(144, 192);
 
     const result = await verifyPixelStageMedia(createCatalog(png), {
-      fetch: async () => createResponse(png),
+      fetch: async (_src, init) => {
+        assert.deepEqual(init, {
+          headers: { origin: "https://parrotbook.com" },
+        });
+        return createResponse(png);
+      },
     });
 
     assert.deepEqual(result, {
