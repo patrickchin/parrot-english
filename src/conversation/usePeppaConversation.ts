@@ -174,6 +174,11 @@ export function usePeppaConversation({
         return;
       }
       if (event.type === "disconnected") {
+        runtimeRef.current.awaitingResponse = false;
+        runtimeRef.current.learnerTurnOpen = false;
+        setMicrophoneEnabled(false);
+        setTurnReady(false);
+        setStatus("saving");
         void loadSummary(id, operation);
         return;
       }

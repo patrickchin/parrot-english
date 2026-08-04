@@ -68,10 +68,12 @@ function savedProfileContext(state: ControllerState) {
 
 function createProfileEditTool({
   conversationId,
+  getCompleteTask,
   ingest,
   initialState,
 }: {
   conversationId: string;
+  getCompleteTask: () => (result: ConversationTaskResult) => void;
   ingest: ConversationIngestClient;
   initialState: ControllerState;
 }) {
@@ -80,7 +82,7 @@ function createProfileEditTool({
   return llm.tool({
     name: "updateLearnerProfile",
     description:
-      "Save the learner's complete current name, age, and About paragraph after they clearly change or add profile information.",
+      "Save the learner's complete current name, age, and About paragraph, then end the profile-edit conversation.",
     parameters: z.object({
       name: z
         .string()
@@ -103,6 +105,7 @@ function createProfileEditTool({
         ),
     }),
     execute: async ({ about, age, name }) => {
+      const completeTask = getCompleteTask();
       state = {
         ...state,
         learnedAge: true,
@@ -112,8 +115,10 @@ function createProfileEditTool({
         profileSummary: about,
       };
       await ingest.updateState(conversationId, state);
-      return { saved: true };
+      completeTask({ finishReason: "conversation_complete" });
+      return { ending: true, saved: true };
     },
+    onDuplicate: "reject",
   });
 }
 
@@ -127,11 +132,18 @@ function createConversationTask({
     throw new Error("Profile editing requires conversation persistence.");
   }
   let completeTask: ((result: ConversationTaskResult) => void) | null = null;
+  const getCompleteTask = () => {
+    if (!completeTask) {
+      throw new Error("The conversation task has not started.");
+    }
+    return completeTask;
+  };
   const profileEditTools =
     purpose === "profile-edit"
       ? [
           createProfileEditTool({
             conversationId: conversationId!,
+            getCompleteTask,
             ingest: ingest!,
             initialState,
           }),
@@ -151,10 +163,7 @@ function createConversationTask({
           ),
       }),
       execute: async ({ reason }) => {
-        if (!completeTask) {
-          throw new Error("The conversation task has not started.");
-        }
-        completeTask({ finishReason: reason });
+        getCompleteTask()({ finishReason: reason });
         return { ending: true };
       },
       onDuplicate: "reject",
