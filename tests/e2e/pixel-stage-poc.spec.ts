@@ -96,7 +96,8 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x + 3);
   expect(desktopCanvasBox!.y).toBe(desktopStageBox!.y + 3);
 
-  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.evaluate(() => window.scrollTo(0, 0));
   const wideStageBox = await stage.boundingBox();
   const wideCanvasBox = await canvas.boundingBox();
   expect(wideStageBox).not.toBeNull();
@@ -107,6 +108,13 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(wideCanvasBox!.height).toBe(720);
   expect(wideCanvasBox!.x).toBe(wideStageBox!.x + 3);
   expect(wideCanvasBox!.y).toBe(wideStageBox!.y + 3);
+  expect(wideStageBox!.y).toBeLessThanOrEqual(64);
+  const visibleStageHeight =
+    Math.min(720, wideStageBox!.y + wideStageBox!.height) -
+    Math.max(0, wideStageBox!.y);
+  expect((wideStageBox!.width * visibleStageHeight) / (1280 * 720)).toBeGreaterThan(
+    0.75,
+  );
 
   await page.setViewportSize({ width: 280, height: 700 });
   const narrowStageBox = await stage.boundingBox();
