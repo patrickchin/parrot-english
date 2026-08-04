@@ -77,11 +77,11 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 120px;
-        height: 80px;
+        width: 240px;
+        height: 160px;
         transform: translate(-50%, -50%) scale(var(--scale));
         transform-origin: center;
-        background: url("./assets/garden.png") 0 0 / 120px 80px no-repeat;
+        background: url("./assets/garden.png") 0 0 / 240px 160px no-repeat;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
       }
@@ -90,10 +90,10 @@
         --column: 0;
         --row: 0;
         position: absolute;
-        bottom: 28px;
-        left: 44px;
-        width: 32px;
-        height: 32px;
+        bottom: 56px;
+        left: 88px;
+        width: 64px;
+        height: 64px;
         background-image: url("./assets/peppa-sheet.png");
         background-position:
           calc(var(--column) * 100% / 3)
@@ -244,7 +244,7 @@
             aria-label="Animated pixel Peppa"
           ></div>
         </div>
-        <div class="hud">120 × 80 world · 24 colors</div>
+        <div class="hud">240 × 160 world · 24 colors</div>
         <p class="speech" aria-live="polite">
           <span class="speaker">Peppa:</span>
           <span class="speech-copy">Ready for an English adventure?</span>
@@ -256,7 +256,7 @@
         <button type="button" aria-pressed="false" data-state="talking">Talking</button>
         <button type="button" aria-pressed="false" data-state="happy">Happy</button>
         <button type="button" aria-pressed="false" data-state="surprised">Surprised</button>
-        <p class="tech-note">32px frames · integer scaling · one shared pixel lattice</p>
+        <p class="tech-note">64px frames · integer scaling · one shared pixel lattice</p>
       </nav>
     </main>
 

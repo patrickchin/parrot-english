@@ -1,6 +1,6 @@
-export const WORLD_WIDTH = 120;
-export const WORLD_HEIGHT = 80;
-export const FRAME_SIZE = 32;
+export const WORLD_WIDTH = 240;
+export const WORLD_HEIGHT = 160;
+export const FRAME_SIZE = 64;
 export const SPRITE_COLUMNS = 4;
 export const SPRITE_ROWS = 4;
 
