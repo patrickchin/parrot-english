@@ -288,6 +288,51 @@ describe("Phaser pixel stage", () => {
     );
   });
 
+  it("keeps foreground foliage distinct from the lawn palette", () => {
+    const greenColors = (path) => {
+      const { pixels } = readPngPixels(path);
+      const colors = new Map();
+
+      for (let offset = 0; offset < pixels.length; offset += 4) {
+        if (pixels[offset + 3] !== 255) continue;
+        const red = pixels[offset];
+        const green = pixels[offset + 1];
+        const blue = pixels[offset + 2];
+        if (green < red * 1.25 || green < blue * 1.5) continue;
+        colors.set(`${red},${green},${blue}`, [red, green, blue]);
+      }
+
+      return [...colors.values()];
+    };
+    const colorDistance = (left, right) =>
+      Math.hypot(
+        left[0] - right[0],
+        left[1] - right[1],
+        left[2] - right[2],
+      );
+    const lawnGreens = greenColors(
+      "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
+    );
+
+    for (const path of [
+      "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
+      "public/prototypes/pixel-stage/assets/garden-flowers.png",
+    ]) {
+      const foliageGreens = greenColors(path);
+      assert.ok(foliageGreens.length > 0, `${path} has no foliage colors`);
+
+      for (const color of foliageGreens) {
+        const nearestLawnColor = Math.min(
+          ...lawnGreens.map((lawnColor) => colorDistance(color, lawnColor)),
+        );
+        assert.ok(
+          nearestLawnColor >= 40,
+          `${path} foliage color rgb(${color.join(", ")}) disappears into the lawn`,
+        );
+      }
+    }
+  });
+
   it("builds the prototype as a Vite HTML entry instead of an unbundled public script", () => {
     const html = projectFile("prototypes/pixel-stage/index.html");
     const viteConfig = projectFile("vite.config.ts");
