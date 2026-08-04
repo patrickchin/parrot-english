@@ -13,18 +13,18 @@ import {
 
 describe("pixel stage sprite state", () => {
   it("uses one low-resolution grid for the world and character frames", () => {
-    assert.equal(WORLD_WIDTH, 120);
-    assert.equal(WORLD_HEIGHT, 80);
-    assert.equal(FRAME_SIZE, 32);
+    assert.equal(WORLD_WIDTH, 240);
+    assert.equal(WORLD_HEIGHT, 160);
+    assert.equal(FRAME_SIZE, 64);
     assert.equal(SPRITE_COLUMNS, 4);
     assert.equal(SPRITE_ROWS, 4);
   });
 
   it("only enlarges the virtual world by whole-number pixel scales", () => {
-    assert.equal(getIntegerScale(366, 244), 3);
-    assert.equal(getIntegerScale(280, 200), 2);
-    assert.equal(getIntegerScale(1_080, 680), 8);
-    assert.equal(getIntegerScale(80, 60), 1);
+    assert.equal(getIntegerScale(366, 244), 1);
+    assert.equal(getIntegerScale(480, 320), 2);
+    assert.equal(getIntegerScale(1_080, 680), 4);
+    assert.equal(getIntegerScale(160, 120), 1);
   });
 
   it("maps each demonstration state to its own animation row", () => {

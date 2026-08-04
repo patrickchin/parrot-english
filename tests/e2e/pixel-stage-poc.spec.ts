@@ -14,7 +14,7 @@ test("the pixel stage demonstrates one sprite sheet across four states", async (
   const world = page.getByRole("group", { name: "Original pixel game world" });
   await expect(sprite).toHaveAttribute("data-state", "idle");
   await expect(sprite).toHaveCSS("image-rendering", "pixelated");
-  await expect(world).toHaveAttribute("data-scale", "3");
+  await expect(world).toHaveAttribute("data-scale", "1");
 
   for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
     await page.getByRole("button", { name: state }).click();
@@ -29,10 +29,10 @@ test("the pixel stage demonstrates one sprite sheet across four states", async (
   expect(stageBox).not.toBeNull();
   expect(worldBox).not.toBeNull();
   expect(spriteBox).not.toBeNull();
-  expect(worldBox!.width).toBe(360);
-  expect(worldBox!.height).toBe(240);
-  expect(spriteBox!.width).toBe(96);
-  expect(spriteBox!.height).toBe(96);
+  expect(worldBox!.width).toBe(240);
+  expect(worldBox!.height).toBe(160);
+  expect(spriteBox!.width).toBe(64);
+  expect(spriteBox!.height).toBe(64);
   expect(worldBox!.x).toBeGreaterThanOrEqual(stageBox!.x);
   expect(worldBox!.y).toBeGreaterThanOrEqual(stageBox!.y);
   expect(worldBox!.x + worldBox!.width).toBeLessThanOrEqual(stageBox!.x + stageBox!.width);
