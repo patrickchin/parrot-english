@@ -5,6 +5,15 @@ import { describe, it } from "node:test";
 const projectFile = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
+const pngDimensions = (path) => {
+  const png = readFileSync(new URL(`../${path}`, import.meta.url));
+  assert.equal(png.subarray(1, 4).toString("ascii"), "PNG");
+  return {
+    height: png.readUInt32BE(20),
+    width: png.readUInt32BE(16),
+  };
+};
+
 const packageManifest = JSON.parse(projectFile("package.json"));
 const worldConfig = await import(
   "../prototypes/pixel-stage/world-config.js"
@@ -23,7 +32,8 @@ describe("Phaser pixel stage", () => {
     assert.deepEqual(worldConfig.WORLD_GRID, { columns: 15, rows: 10 });
     assert.deepEqual(worldConfig.WORLD_SIZE, { height: 160, width: 240 });
     assert.deepEqual(worldConfig.PLAYER_START, { x: 128, y: 64 });
-    assert.equal(worldConfig.SPRITE_FRAME_SIZE, 64);
+    assert.equal(worldConfig.SPRITE_FRAME_SIZE, 32);
+    assert.equal(worldConfig.PLAYER_SCALE, 1);
     assert.equal(
       worldConfig.WORLD_SIZE.width,
       worldConfig.WORLD_GRID.columns * worldConfig.TILE_SIZE,
@@ -35,7 +45,7 @@ describe("Phaser pixel stage", () => {
     assert.deepEqual(
       worldConfig.ANIMATIONS.map(({ key, start, end }) => ({ key, start, end })),
       [
-        { key: "idle", start: 0, end: 3 },
+        { key: "idle", start: 0, end: 0 },
         { key: "walking", start: 0, end: 3 },
         { key: "talking", start: 4, end: 7 },
         { key: "happy", start: 8, end: 11 },
@@ -89,8 +99,19 @@ describe("Phaser pixel stage", () => {
     assert.match(stage, /setDeadzone\(/);
     assert.match(stage, /setZoom\(CAMERA_ZOOM\)/);
     assert.match(stage, /tiny-town\.png/);
+    assert.match(stage, /peppa-town-sheet\.png/);
+    assert.doesNotMatch(stage, /peppa-sheet\.png/);
     assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH/);
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
+  });
+
+  it("uses a compact four-by-four character sheet on the town art grid", () => {
+    assert.deepEqual(
+      pngDimensions(
+        "public/prototypes/pixel-stage/assets/peppa-town-sheet.png",
+      ),
+      { height: 128, width: 128 },
+    );
   });
 
   it("builds the prototype as a Vite HTML entry instead of an unbundled public script", () => {

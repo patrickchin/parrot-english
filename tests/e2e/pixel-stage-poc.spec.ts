@@ -69,14 +69,12 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
   expect(canvasBox).not.toBeNull();
   expect(canvasBox!.width).toBe(240);
   expect(canvasBox!.height).toBe(160);
-  expect(canvasBox!.x).toBeGreaterThanOrEqual(stageBox!.x);
-  expect(canvasBox!.y).toBeGreaterThanOrEqual(stageBox!.y);
-  expect(canvasBox!.x + canvasBox!.width).toBeLessThanOrEqual(
-    stageBox!.x + stageBox!.width,
-  );
-  expect(canvasBox!.y + canvasBox!.height).toBeLessThanOrEqual(
-    stageBox!.y + stageBox!.height,
-  );
+  expect(stageBox!.width).toBe(246);
+  expect(stageBox!.height).toBe(166);
+  expect(canvasBox!.x).toBe(stageBox!.x + 3);
+  expect(canvasBox!.y).toBe(stageBox!.y + 3);
+  expect(canvasBox!.width).toBe(stageBox!.width - 6);
+  expect(canvasBox!.height).toBe(stageBox!.height - 6);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(390);
