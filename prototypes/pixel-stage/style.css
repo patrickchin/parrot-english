@@ -55,7 +55,7 @@ button[aria-pressed="true"] {
 main {
   display: grid;
   gap: 18px;
-  width: min(100%, 840px);
+  width: min(100%, 1200px);
   margin: 0 auto;
   padding: 26px 12px 40px;
 }
@@ -101,7 +101,7 @@ h1 {
 }
 
 .game-card {
-  width: 750px;
+  width: 1110px;
   max-width: 100%;
   margin: auto;
   border: 4px solid #332438;
@@ -135,8 +135,8 @@ h1 {
 
 .stage {
   position: relative;
-  width: 726px;
-  height: 486px;
+  width: 1086px;
+  height: 726px;
   margin: auto;
   overflow: hidden;
   border: 3px solid #332438;
@@ -154,8 +154,8 @@ h1 {
 
 .game-world canvas {
   display: block;
-  width: 720px;
-  height: 480px;
+  width: 1080px;
+  height: 720px;
   image-rendering: crisp-edges;
   image-rendering: pixelated;
 }
@@ -307,6 +307,22 @@ h1 {
   letter-spacing: 0.08em;
   text-align: center;
   text-transform: uppercase;
+}
+
+@media (max-width: 1133px) {
+  .game-card {
+    width: 750px;
+  }
+
+  .stage {
+    width: 726px;
+    height: 486px;
+  }
+
+  .game-world canvas {
+    width: 720px;
+    height: 480px;
+  }
 }
 
 @media (max-width: 773px) {

@@ -1,4 +1,5 @@
 export const RENDER_SCALE = 3;
+export const ART_PIXEL_SIZE = 2;
 export const TILE_SIZE = 16 * RENDER_SCALE;
 export const CAMERA_ZOOM = 1;
 export const VIEWPORT_SIZE = Object.freeze({ height: 240, width: 360 });
@@ -14,7 +15,6 @@ export const WORLD_SIZE = Object.freeze({
 
 export const PLAYER_START = Object.freeze({ x: 450, y: 192 });
 export const SPRITE_FRAME_SIZE = 96;
-export const PLAYER_SCALE = 1;
 export const PLAYER_SPEED = 144;
 export const PLAYER_BODY = Object.freeze({
   height: 18,
@@ -38,7 +38,7 @@ export const WORLD_OBJECTS = Object.freeze([
   },
   {
     asset: "garden-flowers",
-    collision: { height: 18, offsetX: -57, offsetY: -18, width: 114 },
+    collision: { height: 14, offsetX: -32, offsetY: -14, width: 64 },
     footY: 156,
     id: "flower-patch",
     x: 540,
@@ -46,7 +46,7 @@ export const WORLD_OBJECTS = Object.freeze([
   },
   {
     asset: "garden-basket",
-    collision: { height: 21, offsetX: -33, offsetY: -21, width: 66 },
+    collision: { height: 12, offsetX: -18, offsetY: -12, width: 36 },
     footY: 330,
     id: "lesson-basket",
     x: 480,
@@ -54,7 +54,7 @@ export const WORLD_OBJECTS = Object.freeze([
   },
   {
     asset: "garden-market",
-    collision: { height: 30, offsetX: -60, offsetY: -30, width: 120 },
+    collision: { height: 24, offsetX: -48, offsetY: -24, width: 96 },
     footY: 408,
     id: "apple-counter",
     x: 600,

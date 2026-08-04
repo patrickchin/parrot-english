@@ -1,9 +1,9 @@
 import Phaser from "phaser";
 import {
   ANIMATIONS,
+  ART_PIXEL_SIZE,
   CAMERA_ZOOM,
   PLAYER_BODY,
-  PLAYER_SCALE,
   PLAYER_SPEED,
   PLAYER_START,
   SPRITE_FRAME_SIZE,
@@ -99,8 +99,8 @@ class PixelStageScene extends Phaser.Scene {
     this.player
       .setCollideWorldBounds(true)
       .setDepth(getDepthForFootY(PLAYER_START.y))
-      .setOrigin(0.5, 1)
-      .setScale(PLAYER_SCALE);
+      .setOrigin(0.5, 1);
+    this.requireNativeScale(this.player, "Peppa");
 
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setSize(PLAYER_BODY.width, PLAYER_BODY.height, false);
@@ -118,7 +118,9 @@ class PixelStageScene extends Phaser.Scene {
 
     worldElement.dataset.mapHeight = String(WORLD_SIZE.height);
     worldElement.dataset.mapWidth = String(WORLD_SIZE.width);
+    worldElement.dataset.artPixelSize = String(ART_PIXEL_SIZE);
     worldElement.dataset.cameraZoom = String(CAMERA_ZOOM);
+    worldElement.dataset.nativeScale = "1";
     worldElement.dataset.landmarkDepth = String(
       getDepthForFootY(this.landmark?.footY ?? 0),
     );
@@ -167,11 +169,12 @@ class PixelStageScene extends Phaser.Scene {
     const scenery = this.physics.add.staticGroup();
 
     for (const object of WORLD_OBJECTS) {
-      this.add
+      const visual = this.add
         .image(object.x, object.y, object.asset)
         .setDepth(getDepthForFootY(object.footY))
         .setName(object.id)
         .setOrigin(0.5, 1);
+      this.requireNativeScale(visual, object.id);
 
       const { collision } = object;
       const body = this.add
@@ -188,6 +191,20 @@ class PixelStageScene extends Phaser.Scene {
     }
 
     return scenery;
+  }
+
+  private requireNativeScale(
+    visual: Phaser.GameObjects.Image | Phaser.Physics.Arcade.Sprite,
+    name: string,
+  ) {
+    if (
+      visual.scaleX !== 1 ||
+      visual.scaleY !== 1 ||
+      visual.displayWidth !== visual.frame.realWidth ||
+      visual.displayHeight !== visual.frame.realHeight
+    ) {
+      throw new Error(`${name} must render one source pixel per world pixel.`);
+    }
   }
 
   private configureCamera() {
@@ -318,7 +335,6 @@ const game = new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
     autoRound: true,
     mode: Phaser.Scale.NONE,
-    zoom: Phaser.Scale.MAX_ZOOM,
   },
   scene: PixelStageScene,
   type: Phaser.CANVAS,
