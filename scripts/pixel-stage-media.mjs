@@ -1,6 +1,7 @@
 /* global URL */
 
 import { createHash } from "node:crypto";
+import { Buffer } from "node:buffer";
 
 function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
