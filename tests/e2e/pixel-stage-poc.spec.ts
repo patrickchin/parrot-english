@@ -182,3 +182,34 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(280);
 });
+
+test("the game uses the usable page width when browser chrome takes space", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/prototypes/pixel-stage/");
+
+  const world = page.getByRole("group", {
+    name: "Peppa lesson garden game world",
+  });
+  const stage = page.getByRole("region", {
+    name: "Peppa lesson garden exploration stage",
+  });
+  await expect(world).toHaveAttribute("data-ready", "true");
+
+  await page.evaluate(() => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1310,
+    });
+    window.dispatchEvent(new Event("resize"));
+  });
+
+  const stageBox = await stage.boundingBox();
+  expect(stageBox).not.toBeNull();
+  expect(stageBox!.x).toBeGreaterThanOrEqual(0);
+  expect(stageBox!.x + stageBox!.width).toBeLessThanOrEqual(1280);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(1280);
+});
