@@ -1,4 +1,6 @@
-export const FRAME_SIZE = 64;
+export const WORLD_WIDTH = 120;
+export const WORLD_HEIGHT = 80;
+export const FRAME_SIZE = 32;
 export const SPRITE_COLUMNS = 4;
 export const SPRITE_ROWS = 4;
 
@@ -8,6 +10,13 @@ const animations = Object.freeze({
   happy: { duration: 180, row: 2 },
   surprised: { duration: 260, row: 3 },
 });
+
+export function getIntegerScale(availableWidth, availableHeight) {
+  const horizontalScale = Math.floor(Math.max(0, availableWidth) / WORLD_WIDTH);
+  const verticalScale = Math.floor(Math.max(0, availableHeight) / WORLD_HEIGHT);
+
+  return Math.max(1, Math.min(horizontalScale, verticalScale));
+}
 
 export function getSpriteFrame(state, elapsedMs, { reducedMotion = false } = {}) {
   const animation = animations[state] ?? animations.idle;

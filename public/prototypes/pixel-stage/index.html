@@ -26,13 +26,14 @@
       .page {
         display: grid;
         min-height: 100vh;
-        grid-template-rows: auto minmax(420px, 1fr) auto;
+        align-content: center;
         gap: 16px;
         padding: 20px;
       }
 
       .intro {
         display: grid;
+        min-width: 0;
         justify-items: center;
         text-align: center;
       }
@@ -43,11 +44,13 @@
       }
 
       h1 {
+        width: 100%;
         font-size: clamp(1.45rem, 5vw, 2.5rem);
         line-height: 1.05;
       }
 
       .intro p {
+        width: 100%;
         max-width: 44rem;
         margin-top: 8px;
         color: #4d607b;
@@ -58,110 +61,100 @@
         position: relative;
         isolation: isolate;
         width: min(100%, 1080px);
-        min-height: 420px;
-        max-height: 680px;
+        aspect-ratio: 3 / 2;
         margin: auto;
         overflow: hidden;
-        border: 6px solid #fff;
-        border-radius: 20px;
-        background: #75d7ff url("./assets/garden.png") center / cover no-repeat;
+        border: 2px solid #fff;
+        border-radius: 4px;
+        background: #142039;
         box-shadow:
           0 0 0 4px #183153,
-          0 16px 0 #18315333;
+          0 12px 0 #18315333;
+      }
+
+      .world {
+        --scale: 1;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 120px;
+        height: 80px;
+        transform: translate(-50%, -50%) scale(var(--scale));
+        transform-origin: center;
+        background: url("./assets/garden.png") 0 0 / 120px 80px no-repeat;
+        image-rendering: crisp-edges;
         image-rendering: pixelated;
-      }
-
-      .hud {
-        position: absolute;
-        z-index: 3;
-        top: 14px;
-        left: 14px;
-        padding: 8px 12px;
-        border: 4px solid #fff;
-        border-radius: 8px;
-        background: #183153;
-        color: #fff;
-        font-size: 0.78rem;
-        font-weight: 900;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        box-shadow: 4px 4px 0 #18315366;
-      }
-
-      .speech {
-        position: absolute;
-        z-index: 3;
-        top: 13%;
-        left: 50%;
-        width: min(78%, 390px);
-        min-height: 64px;
-        translate: -50% 0;
-        padding: 12px 16px;
-        border: 5px solid #183153;
-        border-radius: 10px;
-        background: #fff;
-        font-size: clamp(1rem, 4vw, 1.4rem);
-        font-weight: 900;
-        line-height: 1.15;
-        text-align: center;
-        box-shadow: 6px 6px 0 #18315344;
-      }
-
-      .speech::after {
-        position: absolute;
-        bottom: -21px;
-        left: 50%;
-        width: 22px;
-        height: 22px;
-        border-right: 5px solid #183153;
-        border-bottom: 5px solid #183153;
-        background: #fff;
-        content: "";
-        rotate: 45deg;
-        translate: -50% 0;
-      }
-
-      .sprite-wrap {
-        position: absolute;
-        z-index: 2;
-        bottom: 2%;
-        left: 50%;
-        display: grid;
-        justify-items: center;
-        translate: -50% 0;
       }
 
       .sprite {
         --column: 0;
         --row: 0;
-        width: clamp(224px, 42vw, 320px);
-        aspect-ratio: 1;
+        position: absolute;
+        bottom: 28px;
+        left: 44px;
+        width: 32px;
+        height: 32px;
         background-image: url("./assets/peppa-sheet.png");
         background-position:
           calc(var(--column) * 100% / 3)
           calc(var(--row) * 100% / 3);
         background-repeat: no-repeat;
         background-size: 400% 400%;
-        image-rendering: pixelated;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
-        filter: drop-shadow(8px 10px 0 #1831533b);
       }
 
-      .nameplate {
-        margin-top: -30px;
-        padding: 7px 16px;
-        border: 4px solid #fff;
-        border-radius: 8px;
-        background: #183153;
-        color: #fff;
+      .hud {
+        position: absolute;
+        z-index: 3;
+        top: 10px;
+        left: 10px;
+        padding: 6px 9px;
+        border: 3px solid #183153;
+        border-radius: 2px;
+        background: #fffbe8;
+        color: #183153;
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: 0.72rem;
         font-weight: 900;
-        box-shadow: 4px 4px 0 #18315355;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        box-shadow: 3px 3px 0 #183153;
+      }
+
+      .speech {
+        position: absolute;
+        z-index: 3;
+        bottom: 10px;
+        left: 50%;
+        display: grid;
+        width: min(calc(100% - 24px), 560px);
+        min-height: 62px;
+        align-content: center;
+        translate: -50% 0;
+        padding: 9px 13px;
+        border: 4px solid #183153;
+        border-radius: 2px;
+        outline: 2px solid #fffbe8;
+        outline-offset: -7px;
+        background: #fffbe8;
+        color: #183153;
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: clamp(0.8rem, 3.2vw, 1.05rem);
+        font-weight: 900;
+        line-height: 1.2;
+        text-align: left;
+        box-shadow: 4px 4px 0 #18315366;
+      }
+
+      .speaker {
+        color: #c64155;
+        text-transform: uppercase;
       }
 
       .controls {
         display: flex;
-        max-width: 720px;
+        width: min(100%, 720px);
         flex-wrap: wrap;
         justify-content: center;
         gap: 10px;
@@ -170,10 +163,10 @@
 
       button {
         min-width: 94px;
-        min-height: 48px;
-        padding: 10px 16px;
-        border: 4px solid #183153;
-        border-radius: 9px;
+        min-height: 46px;
+        padding: 9px 15px;
+        border: 3px solid #183153;
+        border-radius: 3px;
         background: #fff;
         color: #183153;
         font: inherit;
@@ -193,36 +186,26 @@
       .tech-note {
         flex-basis: 100%;
         color: #4d607b;
-        font-size: 0.85rem;
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: 0.78rem;
         font-weight: 800;
         text-align: center;
       }
 
       @media (max-width: 520px) {
         .page {
-          grid-template-rows: auto minmax(420px, 64vh) auto;
           gap: 12px;
           padding: 12px;
         }
 
-        .stage {
-          min-height: 420px;
-          border-width: 4px;
-          border-radius: 14px;
-        }
-
         .hud {
-          top: 8px;
-          left: 8px;
+          top: 6px;
+          left: 6px;
         }
 
         .speech {
-          top: 18%;
-          width: 88%;
-        }
-
-        .sprite {
-          width: min(78vw, 284px);
+          bottom: 6px;
+          min-height: 58px;
         }
 
         button {
@@ -244,21 +227,28 @@
     <main class="page">
       <header class="intro">
         <h1>Pixel stage proof of concept</h1>
-        <p>One tiny sprite sheet, four expressive states, and no game engine.</p>
+        <p>A real low-resolution game world, enlarged only in whole pixels.</p>
       </header>
 
       <section class="stage" aria-label="Animated pixel lesson stage">
-        <div class="hud">Lesson scene · 01</div>
-        <p class="speech" aria-live="polite">Ready for an English adventure?</p>
-        <div class="sprite-wrap">
+        <div
+          class="world"
+          data-scale="1"
+          role="group"
+          aria-label="Original pixel game world"
+        >
           <div
             class="sprite"
             data-state="idle"
             role="img"
             aria-label="Animated pixel Peppa"
           ></div>
-          <div class="nameplate">Peppa</div>
         </div>
+        <div class="hud">120 × 80 world · 24 colors</div>
+        <p class="speech" aria-live="polite">
+          <span class="speaker">Peppa:</span>
+          <span class="speech-copy">Ready for an English adventure?</span>
+        </p>
       </section>
 
       <nav class="controls" aria-label="Sprite animation controls">
@@ -266,12 +256,12 @@
         <button type="button" aria-pressed="false" data-state="talking">Talking</button>
         <button type="button" aria-pressed="false" data-state="happy">Happy</button>
         <button type="button" aria-pressed="false" data-state="surprised">Surprised</button>
-        <p class="tech-note">256 × 256 PNG · 16 frames · each frame is 64 × 64</p>
+        <p class="tech-note">32px frames · integer scaling · one shared pixel lattice</p>
       </nav>
     </main>
 
     <script type="module">
-      import { getSpriteFrame } from "./sprite-state.js";
+      import { getIntegerScale, getSpriteFrame } from "./sprite-state.js";
 
       const copy = {
         idle: "Ready for an English adventure?",
@@ -279,12 +269,20 @@
         happy: "You did it! Great speaking!",
         surprised: "Oh! What did you find?",
       };
+      const stage = document.querySelector(".stage");
+      const world = document.querySelector(".world");
       const sprite = document.querySelector(".sprite");
-      const speech = document.querySelector(".speech");
+      const speech = document.querySelector(".speech-copy");
       const buttons = [...document.querySelectorAll("button[data-state]")];
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       let state = "idle";
       let stateStartedAt = performance.now();
+
+      function resizeWorld() {
+        const scale = getIntegerScale(stage.clientWidth, stage.clientHeight);
+        world.dataset.scale = String(scale);
+        world.style.setProperty("--scale", scale);
+      }
 
       function selectState(nextState) {
         state = nextState;
@@ -313,6 +311,8 @@
         button.addEventListener("click", () => selectState(button.dataset.state));
       }
 
+      new ResizeObserver(resizeWorld).observe(stage);
+      resizeWorld();
       requestAnimationFrame(render);
     </script>
   </body>
