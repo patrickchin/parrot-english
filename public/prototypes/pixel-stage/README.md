@@ -7,8 +7,10 @@ foreground image:
 
 - Phaser 4 owns the tilemap, Arcade Physics, input, animation, camera, and
   render ordering;
-- the viewport is a GBA-sized 240 × 160 pixels, while the explorable map is a
-  larger 480 × 320 pixels;
+- the canvas is a GBA-sized 240 × 160 pixels, while the compact map is only
+  240 × 160 world pixels (15 × 10 tiles);
+- a 2× integer camera zoom makes every character, building, path, and prop
+  uniformly larger without changing their proportions or collision geometry;
 - every ground and scenery asset uses a 16 × 16 source-pixel grid;
 - each tall object declares its visual tiles, collision footprint, and foot
   line together; and

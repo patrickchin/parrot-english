@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import {
   ANIMATIONS,
+  CAMERA_ZOOM,
   GROUND_DETAILS,
   PATH_AREAS,
   PLAYER_BODY,
@@ -140,6 +141,7 @@ class PixelStageScene extends Phaser.Scene {
 
     worldElement.dataset.mapHeight = String(WORLD_SIZE.height);
     worldElement.dataset.mapWidth = String(WORLD_SIZE.width);
+    worldElement.dataset.cameraZoom = String(CAMERA_ZOOM);
     worldElement.dataset.mapleDepth = String(
       getDepthForFootY(this.maple?.footY ?? 0),
     );
@@ -266,9 +268,10 @@ class PixelStageScene extends Phaser.Scene {
 
   private configureCamera() {
     const camera = this.cameras.main;
+    camera.setZoom(CAMERA_ZOOM);
     camera.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
-    camera.startFollow(this.player, true, 0.18, 0.18);
-    camera.setDeadzone(72, 48);
+    camera.startFollow(this.player, true, 0.35, 0.35);
+    camera.setDeadzone(40, 28);
     camera.roundPixels = true;
   }
 

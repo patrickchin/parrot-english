@@ -24,7 +24,7 @@
       <article class="game-card">
         <header class="game-card__bar">
           <span>Willowbrook Village</span>
-          <span class="engine-chip">Phaser 4 · 16 px grid</span>
+          <span class="engine-chip">Phaser 4 · 2× world zoom</span>
         </header>
 
         <section class="stage" aria-label="Willowbrook exploration stage">
@@ -33,18 +33,19 @@
             class="game-world"
             role="group"
             aria-label="Willowbrook village game world"
-            data-camera-x="72"
-            data-camera-y="48"
-            data-depth="1128"
+            data-camera-x="68"
+            data-camera-y="24"
+            data-camera-zoom="2"
+            data-depth="1064"
             data-engine="phaser"
-            data-map-height="320"
-            data-map-width="480"
-            data-maple-depth="1160"
+            data-map-height="160"
+            data-map-width="240"
+            data-maple-depth="1096"
             data-occlusion="behind-maple"
             data-ready="false"
             data-state="idle"
-            data-x="192"
-            data-y="128"
+            data-x="128"
+            data-y="64"
           >
             <p class="loading-status" data-engine-status>Building Willowbrook…</p>
           </div>
@@ -52,7 +53,7 @@
           <div class="hud" aria-label="Game status">
             <span class="hud__place">Willowbrook</span>
             <span data-depth-status>Behind the maple</span>
-            <span class="coordinates" data-coordinates>x 192 · y 128</span>
+            <span class="coordinates" data-coordinates>x 128 · y 64</span>
           </div>
         </section>
 
@@ -122,7 +123,7 @@
       </article>
 
       <footer class="tech-note">
-        30 × 20 tile world · foot-box physics · y-sorted scenery · following camera
+        15 × 10 tile world · uniform 2× zoom · foot-box physics · y-sorted scenery
       </footer>
     </main>
 
