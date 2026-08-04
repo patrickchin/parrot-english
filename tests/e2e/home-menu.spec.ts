@@ -33,11 +33,14 @@ for (const viewport of phoneViewports) {
     const activities = page.getByRole("navigation", {
       name: "Learning activities",
     });
-    await expect(activities.getByRole("link")).toHaveCount(2);
+    await expect(activities.getByRole("link")).toHaveCount(3);
     const talk = activities.getByRole("link", { name: /^Talk to Peppa/ });
     await expect(talk).toBeVisible();
     await expect(
       activities.getByRole("link", { name: /^Lessons/ }),
+    ).toBeVisible();
+    await expect(
+      activities.getByRole("link", { name: /^Game/ }),
     ).toBeVisible();
     await expect(page.getByText("Create a Lesson", { exact: true })).toBeHidden();
     const progress = activities.getByRole("button", {

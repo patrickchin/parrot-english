@@ -1,21 +1,34 @@
-import { BookOpen, MessageCircle, Play, Sparkles } from "lucide-react";
+import { BookOpen, Gamepad2, MessageCircle, Play, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 import { cx } from "../shared/ui";
 
 const PRIMARY_ACTIVITIES = [
   {
+    badge: null,
     description: "Chat freely about things you like.",
     icon: MessageCircle,
     label: "Talk to Peppa",
+    reloadDocument: false,
     tone: "navy",
     to: "/talk-to-peppa",
   },
   {
+    badge: null,
     description: "Follow a story and practice speaking step by step.",
     icon: Play,
     label: "Lessons",
+    reloadDocument: false,
     tone: "rose",
     to: "/lessons",
+  },
+  {
+    badge: "Proof of concept",
+    description: "Explore the pixel garden and move Peppa around.",
+    icon: Gamepad2,
+    label: "Game",
+    reloadDocument: true,
+    tone: "navy",
+    to: "/prototypes/pixel-stage/",
   },
 ] as const;
 
@@ -46,10 +59,19 @@ export function HomeMenu() {
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
           {PRIMARY_ACTIVITIES.map(
-            ({ description, icon: Icon, label, to, tone }) => (
+            ({
+              badge,
+              description,
+              icon: Icon,
+              label,
+              reloadDocument,
+              to,
+              tone,
+            }) => (
               <Link
                 className="grid min-h-40 grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-4 gap-y-3 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-56 md:gap-x-6 md:p-8"
                 key={to}
+                reloadDocument={reloadDocument}
                 to={to}
               >
                 <Icon
@@ -72,6 +94,11 @@ export function HomeMenu() {
                 <span className="col-span-2 w-full font-bold leading-relaxed md:col-span-1 md:col-start-2">
                   {description}
                 </span>
+                {badge ? (
+                  <small className="col-span-2 w-fit rounded-full bg-brand-navy px-3 py-1 text-xs font-black uppercase tracking-wider text-white md:col-start-2">
+                    {badge}
+                  </small>
+                ) : null}
               </Link>
             ),
           )}
