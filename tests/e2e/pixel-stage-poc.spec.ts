@@ -34,15 +34,15 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
   expect(Number(await world.getAttribute("data-y"))).toBeLessThan(96);
 
   // Walk around it. The same sprite now sorts in front, and the camera follows.
-  await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(600);
-  await page.keyboard.up("ArrowLeft");
-  await page.keyboard.down("ArrowDown");
-  await page.waitForTimeout(900);
-  await page.keyboard.up("ArrowDown");
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(600);
   await page.keyboard.up("ArrowRight");
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(900);
+  await page.keyboard.up("ArrowDown");
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(600);
+  await page.keyboard.up("ArrowLeft");
 
   await expect
     .poll(async () => Number(await world.getAttribute("data-depth")))
@@ -51,9 +51,14 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
     .poll(async () => Number(await world.getAttribute("data-camera-y")))
     .toBeGreaterThan(initialCameraY);
 
-  for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
-    await page.getByRole("button", { name: state }).click();
-    await expect(world).toHaveAttribute("data-state", state.toLowerCase());
+  for (const { button, state } of [
+    { button: "Talk", state: "talking" },
+    { button: "Happy", state: "happy" },
+    { button: "Surprise", state: "surprised" },
+    { button: "Idle", state: "idle" },
+  ]) {
+    await page.getByRole("button", { name: button }).click();
+    await expect(world).toHaveAttribute("data-state", state);
   }
 
   const stage = page.getByRole("region", { name: "Willowbrook exploration stage" });
