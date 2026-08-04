@@ -292,3 +292,30 @@ test("the canvas follows app-shell reflow without a window resize", async ({
   ).toBeLessThanOrEqual(4);
   await expectAppToFitViewport(page);
 });
+
+test("Peppa's sprite-sheet pixels render at one CSS pixel each", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 943, height: 966 });
+  await page.goto("/prototypes/pixel-stage/");
+
+  const world = page.getByRole("group", {
+    name: "Peppa lesson garden game world",
+  });
+  const canvas = page.getByRole("img", {
+    name: "Peppa lesson garden pixel game world",
+  });
+  await expect(world).toHaveAttribute("data-ready", "true");
+  await expect(world).toHaveAttribute("data-native-scale", "1");
+  await expect(world).toHaveAttribute("data-camera-zoom", "1");
+  await expect(world).toHaveAttribute("data-presentation-scale", "1");
+
+  const canvasPixels = await canvas.evaluate((element: HTMLCanvasElement) => ({
+    height: element.height,
+    width: element.width,
+  }));
+  const canvasBox = await canvas.boundingBox();
+  expect(canvasBox).not.toBeNull();
+  expect(canvasBox!.width).toBe(canvasPixels.width);
+  expect(canvasBox!.height).toBe(canvasPixels.height);
+});
