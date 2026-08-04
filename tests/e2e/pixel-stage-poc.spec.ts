@@ -14,22 +14,24 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
   const canvas = page.getByRole("img", { name: "Willowbrook pixel game world" });
   await expect(world).toHaveAttribute("data-engine", "phaser");
   await expect(world).toHaveAttribute("data-ready", "true");
-  await expect(world).toHaveAttribute("data-map-width", "480");
-  await expect(world).toHaveAttribute("data-map-height", "320");
-  await expect(world).toHaveAttribute("data-x", "192");
-  await expect(world).toHaveAttribute("data-y", "128");
+  await expect(world).toHaveAttribute("data-camera-zoom", "2");
+  await expect(world).toHaveAttribute("data-map-width", "240");
+  await expect(world).toHaveAttribute("data-map-height", "160");
+  await expect(world).toHaveAttribute("data-x", "128");
+  await expect(world).toHaveAttribute("data-y", "64");
   await expect(canvas).toHaveAttribute("width", "240");
   await expect(canvas).toHaveAttribute("height", "160");
   await expect(canvas).toHaveCSS("image-rendering", "pixelated");
   expect(Number(await world.getAttribute("data-depth"))).toBeLessThan(
     Number(await world.getAttribute("data-maple-depth")),
   );
+  const initialCameraY = Number(await world.getAttribute("data-camera-y"));
 
   // The maple's visible trunk and physical footprint share the same foot line.
   await page.keyboard.down("ArrowDown");
   await page.waitForTimeout(700);
   await page.keyboard.up("ArrowDown");
-  expect(Number(await world.getAttribute("data-y"))).toBeLessThan(160);
+  expect(Number(await world.getAttribute("data-y"))).toBeLessThan(96);
 
   // Walk around it. The same sprite now sorts in front, and the camera follows.
   await page.keyboard.down("ArrowLeft");
@@ -47,7 +49,7 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
     .toBeGreaterThan(Number(await world.getAttribute("data-maple-depth")));
   await expect
     .poll(async () => Number(await world.getAttribute("data-camera-y")))
-    .toBeGreaterThan(0);
+    .toBeGreaterThan(initialCameraY);
 
   for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
     await page.getByRole("button", { name: state }).click();

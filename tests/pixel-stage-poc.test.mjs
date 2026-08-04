@@ -15,12 +15,14 @@ describe("Phaser pixel stage", () => {
     assert.equal(packageManifest.dependencies.phaser, "4.2.1");
   });
 
-  it("builds a scrolling village from one consistent 16-pixel grid", () => {
+  it("builds a compact village and magnifies every world pixel uniformly", () => {
     assert.equal(worldConfig.TILE_SIZE, 16);
+    assert.equal(worldConfig.CAMERA_ZOOM, 2);
     assert.deepEqual(worldConfig.VIEWPORT_SIZE, { height: 160, width: 240 });
-    assert.deepEqual(worldConfig.WORLD_GRID, { columns: 30, rows: 20 });
-    assert.deepEqual(worldConfig.WORLD_SIZE, { height: 320, width: 480 });
-    assert.deepEqual(worldConfig.PLAYER_START, { x: 192, y: 128 });
+    assert.deepEqual(worldConfig.VISIBLE_WORLD_SIZE, { height: 80, width: 120 });
+    assert.deepEqual(worldConfig.WORLD_GRID, { columns: 15, rows: 10 });
+    assert.deepEqual(worldConfig.WORLD_SIZE, { height: 160, width: 240 });
+    assert.deepEqual(worldConfig.PLAYER_START, { x: 128, y: 64 });
     assert.equal(worldConfig.SPRITE_FRAME_SIZE, 64);
     assert.equal(
       worldConfig.WORLD_SIZE.width,
@@ -85,6 +87,7 @@ describe("Phaser pixel stage", () => {
     assert.match(stage, /this\.anims\.create\(/);
     assert.match(stage, /startFollow\(/);
     assert.match(stage, /setDeadzone\(/);
+    assert.match(stage, /setZoom\(CAMERA_ZOOM\)/);
     assert.match(stage, /tiny-town\.png/);
     assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH/);
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
