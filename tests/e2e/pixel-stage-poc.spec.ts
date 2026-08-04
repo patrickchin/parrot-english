@@ -112,6 +112,8 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(wideCanvasBox!.height).toBe(720);
   expect(wideCanvasBox!.x).toBe(wideStageBox!.x);
   expect(wideCanvasBox!.y).toBe(wideStageBox!.y);
+  expect(wideStageBox!.x).toBeGreaterThanOrEqual(0);
+  expect(wideStageBox!.x + wideStageBox!.width).toBeLessThanOrEqual(1280);
   expect(wideStageBox!.y).toBeLessThanOrEqual(64);
   const visibleStageHeight =
     Math.min(720, wideStageBox!.y + wideStageBox!.height) -
@@ -119,6 +121,9 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect((wideStageBox!.width * visibleStageHeight) / (1280 * 720)).toBeGreaterThan(
     0.9,
   );
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(1280);
 
   await page.setViewportSize({ width: 722, height: 966 });
   await page.evaluate(() => window.scrollTo(0, 0));
