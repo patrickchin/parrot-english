@@ -127,7 +127,9 @@ export async function verifyPixelStageMedia(catalogValue, options = {}) {
       const src = `${mediaRoot}/${asset.filename}`;
       let response;
       try {
-        response = await fetchImplementation(src);
+        response = await fetchImplementation(src, {
+          headers: { origin: "https://parrotbook.com" },
+        });
       } catch (error) {
         errors.push(`${asset.filename} could not be requested: ${error.message}`);
         return;
