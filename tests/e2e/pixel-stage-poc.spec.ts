@@ -254,3 +254,41 @@ test("the game uses the usable page width when browser chrome takes space", asyn
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
     .toBeLessThanOrEqual(1280);
 });
+
+test("the canvas follows app-shell reflow without a window resize", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 900 });
+  await page.goto("/prototypes/pixel-stage/");
+
+  const world = page.getByRole("group", {
+    name: "Peppa lesson garden game world",
+  });
+  const stage = page.getByRole("region", {
+    name: "Peppa lesson garden exploration stage",
+  });
+  const canvas = page.getByRole("img", {
+    name: "Peppa lesson garden pixel game world",
+  });
+  await expect(world).toHaveAttribute("data-ready", "true");
+
+  const initialStageBox = await stage.boundingBox();
+  expect(initialStageBox).not.toBeNull();
+
+  await page.locator(".speech").evaluate((element) => {
+    (element as HTMLElement).style.paddingBlock = "40px";
+  });
+
+  await expect
+    .poll(async () => (await stage.boundingBox())?.height)
+    .toBeLessThan(initialStageBox!.height - 40);
+
+  const reflowedStageBox = await stage.boundingBox();
+  const reflowedCanvasBox = await canvas.boundingBox();
+  expect(reflowedStageBox).not.toBeNull();
+  expect(reflowedCanvasBox).not.toBeNull();
+  expect(
+    Math.abs(reflowedCanvasBox!.height - reflowedStageBox!.height),
+  ).toBeLessThanOrEqual(4);
+  await expectAppToFitViewport(page);
+});
