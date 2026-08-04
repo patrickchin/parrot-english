@@ -361,6 +361,55 @@ describe("Phaser pixel stage", () => {
     assert.doesNotMatch(main, /backgroundColor:\s*"#8ad51b"/);
   });
 
+  it("keeps the tree artwork in one connected opaque silhouette", () => {
+    const { height, pixels, width } = readPngPixels(
+      "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
+    );
+    const visited = new Uint8Array(width * height);
+    const componentSizes = [];
+
+    for (let start = 0; start < width * height; start += 1) {
+      if (visited[start] || pixels[start * 4 + 3] === 0) continue;
+
+      let size = 0;
+      const pending = [start];
+      visited[start] = 1;
+
+      while (pending.length > 0) {
+        const pixel = pending.pop();
+        const x = pixel % width;
+        const y = Math.floor(pixel / width);
+        size += 1;
+
+        for (const neighbor of [
+          x > 0 ? pixel - 1 : -1,
+          x + 1 < width ? pixel + 1 : -1,
+          y > 0 ? pixel - width : -1,
+          y + 1 < height ? pixel + width : -1,
+        ]) {
+          if (
+            neighbor < 0 ||
+            visited[neighbor] ||
+            pixels[neighbor * 4 + 3] === 0
+          ) {
+            continue;
+          }
+          visited[neighbor] = 1;
+          pending.push(neighbor);
+        }
+      }
+
+      componentSizes.push(size);
+    }
+
+    componentSizes.sort((left, right) => right - left);
+    assert.deepEqual(
+      componentSizes,
+      [componentSizes[0]],
+      `the tree contains detached opaque pixel islands: ${componentSizes.join(", ")}`,
+    );
+  });
+
   it("builds the prototype as a Vite HTML entry instead of an unbundled public script", () => {
     const html = projectFile("prototypes/pixel-stage/index.html");
     const viteConfig = projectFile("vite.config.ts");
