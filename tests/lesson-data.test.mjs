@@ -321,25 +321,38 @@ describe("lesson data contract", () => {
     );
   });
 
-  it("limits custom lessons to the six universal emotes", () => {
+  it("limits custom lessons to reusable backgrounds and universal emotes", () => {
     const catalogInput = createCatalogInput();
     catalogInput.emotes = [...catalogInput.emotes, "reaching"];
+    catalogInput.backgrounds.push({
+      id: "high-ball-garden",
+      src: "/assets/backgrounds/high-ball-garden.webp",
+      alt: "A story-specific garden",
+    });
     catalogInput.characters[0].assets.reaching = {
       src: "/assets/characters/peppa/peppa-reaching.webp",
       alt: "Peppa reaching up",
     };
     const catalog = lessonData.createCustomLessonCatalog(catalogInput);
     const lesson = createLesson();
+    lesson.scenes[0].background = "high-ball-garden";
     lesson.scenes[0].steps[0].emotes.peppa = "reaching";
 
     assert.deepEqual([...catalog.emotes.keys()], EMOTES);
+    assert.deepEqual([...catalog.backgrounds.keys()], ["episode-garden"]);
     assert.deepEqual(
       Object.keys(catalog.characters.get("peppa").assets).sort(),
       [...EMOTES].sort(),
     );
 
     const prepared = lessonData.prepareLesson(lesson, catalog, "custom.json");
+    assert.equal(prepared.lesson.scenes[0].background, "episode-garden");
     assert.equal(prepared.lesson.scenes[0].steps[0].emotes.peppa, "idle");
+    assert.ok(
+      prepared.warnings.some((warning) =>
+        /background.*using episode-garden/i.test(warning),
+      ),
+    );
     assert.ok(
       prepared.warnings.some((warning) =>
         /emotes\.peppa.*using idle visual/i.test(warning),

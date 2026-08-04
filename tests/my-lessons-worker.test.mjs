@@ -99,10 +99,11 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
-  it("normalizes story-only action poses before saving a custom lesson", async () => {
+  it("normalizes story-only artwork before saving a custom lesson", async () => {
     const state = seedDatabase();
     try {
       const lesson = createLessonScript();
+      lesson.scenes[0].background = "high-ball-garden";
       lesson.scenes[0].steps[0].emotes.peppa = "reaching";
       const response = await call(state, "/api/lessons/my", "POST", {
         source: "uploaded",
@@ -111,9 +112,15 @@ describe("My Lessons persistence and API", () => {
 
       assert.equal(response.status, 201);
       const payload = await response.json();
+      assert.equal(payload.lesson.lesson.scenes[0].background, "episode-garden");
       assert.equal(
         payload.lesson.lesson.scenes[0].steps[0].emotes.peppa,
         "idle",
+      );
+      assert.ok(
+        payload.warnings.some((warning) =>
+          /background.*using episode-garden/i.test(warning),
+        ),
       );
       assert.ok(
         payload.warnings.some((warning) =>

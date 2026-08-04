@@ -44,6 +44,7 @@ describe("lesson script generation", () => {
     assert.match(calls[0].body.messages[1].content, /ordering ice cream/);
     assert.match(calls[0].body.messages[1].content, /Mia/);
     assert.match(calls[0].body.messages[1].content, /episode-garden/);
+    assert.doesNotMatch(calls[0].body.messages[1].content, /high-ball-garden/);
   });
 
   it("normalizes an incomplete OpenAI draft and returns its warnings", async () => {
@@ -84,8 +85,9 @@ describe("lesson script generation", () => {
     assert.ok(generated.warnings.some((warning) => /title/i.test(warning)));
   });
 
-  it("normalizes a generated story-only action pose to idle", async () => {
+  it("normalizes generated story-only artwork to reusable visuals", async () => {
     const lesson = createLessonScript();
+    lesson.scenes[0].background = "high-ball-garden";
     lesson.scenes[0].steps[0].emotes.peppa = "reaching";
     const generated = await generateLessonScript({
       childName: "Mia",
@@ -98,9 +100,15 @@ describe("lesson script generation", () => {
       },
     });
 
+    assert.equal(generated.lesson.scenes[0].background, "episode-garden");
     assert.equal(
       generated.lesson.scenes[0].steps[0].emotes.peppa,
       "idle",
+    );
+    assert.ok(
+      generated.warnings.some((warning) =>
+        /background.*using episode-garden/i.test(warning),
+      ),
     );
     assert.ok(
       generated.warnings.some((warning) =>
