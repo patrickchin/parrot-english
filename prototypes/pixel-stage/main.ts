@@ -23,6 +23,18 @@ const EMOTE_EVENT = "pixel-stage:emote";
 const NUDGE_EVENT = "pixel-stage:nudge";
 const ASSET_ROOT = "/prototypes/pixel-stage/assets";
 const EMOTE_STATES: EmoteState[] = ["idle", "talking", "happy", "surprised"];
+const MAX_PRESENTATION_SCALE = 3;
+const GAME_SHELL_WIDTH = 30;
+const GAME_VERTICAL_CHROME = 64;
+
+type ResponsiveViewport = {
+  displayHeight: number;
+  displayWidth: number;
+  edgeToEdge: boolean;
+  height: number;
+  presentationScale: number;
+  width: number;
+};
 
 const speechCopy: Record<EmoteState, string> = {
   happy: "Hooray! We found the red ball!",
@@ -42,6 +54,71 @@ const coordinatesElement = requireElement<HTMLElement>("[data-coordinates]");
 const engineStatusElement = requireElement<HTMLElement>("[data-engine-status]");
 const depthStatusElement = requireElement<HTMLElement>("[data-depth-status]");
 const speechElement = requireElement<HTMLElement>("[data-speech-copy]");
+const rootElement = document.documentElement;
+
+function getResponsiveViewport(): ResponsiveViewport {
+  const presentationScale = Math.max(
+    1,
+    Math.min(
+      MAX_PRESENTATION_SCALE,
+      Math.floor(window.innerWidth / VIEWPORT_SIZE.width),
+    ),
+  );
+  const availableHeight = Math.floor(
+    (window.innerHeight - GAME_VERTICAL_CHROME) / presentationScale,
+  );
+  const snappedHeight =
+    Math.floor(availableHeight / ART_PIXEL_SIZE) * ART_PIXEL_SIZE;
+  const height =
+    presentationScale === 1
+      ? VIEWPORT_SIZE.height
+      : Phaser.Math.Clamp(
+          snappedHeight,
+          VIEWPORT_SIZE.height,
+          WORLD_SIZE.height,
+        );
+  const displayHeight = height * presentationScale;
+  const displayWidth = VIEWPORT_SIZE.width * presentationScale;
+
+  return {
+    displayHeight,
+    displayWidth,
+    edgeToEdge: window.innerWidth < displayWidth + GAME_SHELL_WIDTH,
+    height,
+    presentationScale,
+    width: VIEWPORT_SIZE.width,
+  };
+}
+
+function applyResponsiveViewport(viewport: ResponsiveViewport) {
+  rootElement.dataset.gameEdge = String(viewport.edgeToEdge);
+  rootElement.style.setProperty(
+    "--game-canvas-width",
+    `${viewport.displayWidth}px`,
+  );
+  rootElement.style.setProperty(
+    "--game-canvas-height",
+    `${viewport.displayHeight}px`,
+  );
+  rootElement.style.setProperty(
+    "--game-stage-width",
+    `${viewport.displayWidth + 6}px`,
+  );
+  rootElement.style.setProperty(
+    "--game-stage-height",
+    `${viewport.displayHeight + 6}px`,
+  );
+  rootElement.style.setProperty(
+    "--game-card-width",
+    `${viewport.displayWidth + GAME_SHELL_WIDTH}px`,
+  );
+  worldElement.dataset.presentationScale = String(viewport.presentationScale);
+  worldElement.dataset.viewportHeight = String(viewport.height);
+  worldElement.dataset.viewportWidth = String(viewport.width);
+}
+
+let responsiveViewport = getResponsiveViewport();
+applyResponsiveViewport(responsiveViewport);
 
 class PixelStageScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -286,6 +363,7 @@ class PixelStageScene extends Phaser.Scene {
   }
 
   private syncStatus() {
+    const camera = this.cameras.main;
     const x = Math.round(this.player.x);
     const y = Math.round(this.player.y);
     const depth = getDepthForFootY(y);
@@ -301,8 +379,10 @@ class PixelStageScene extends Phaser.Scene {
         : "in-front-of-tree"
       : "open";
 
-    worldElement.dataset.cameraX = String(Math.round(this.cameras.main.scrollX));
-    worldElement.dataset.cameraY = String(Math.round(this.cameras.main.scrollY));
+    worldElement.dataset.cameraHeight = String(Math.round(camera.height));
+    worldElement.dataset.cameraWidth = String(Math.round(camera.width));
+    worldElement.dataset.cameraX = String(Math.round(camera.scrollX));
+    worldElement.dataset.cameraY = String(Math.round(camera.scrollY));
     worldElement.dataset.depth = String(depth);
     worldElement.dataset.frame = String(this.player.frame.name);
     worldElement.dataset.occlusion = occlusion;
@@ -321,7 +401,7 @@ class PixelStageScene extends Phaser.Scene {
 const game = new Phaser.Game({
   antialias: false,
   backgroundColor: "#8ad51b",
-  height: VIEWPORT_SIZE.height,
+  height: responsiveViewport.height,
   parent: worldElement,
   physics: {
     arcade: {
@@ -335,11 +415,40 @@ const game = new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
     autoRound: true,
     mode: Phaser.Scale.NONE,
+    zoom: responsiveViewport.presentationScale,
   },
   scene: PixelStageScene,
   type: Phaser.CANVAS,
-  width: VIEWPORT_SIZE.width,
+  width: responsiveViewport.width,
 });
+
+let resizeRequest = 0;
+const resizeGame = () => {
+  window.cancelAnimationFrame(resizeRequest);
+  resizeRequest = window.requestAnimationFrame(() => {
+    const nextViewport = getResponsiveViewport();
+    applyResponsiveViewport(nextViewport);
+
+    if (
+      nextViewport.presentationScale !== responsiveViewport.presentationScale
+    ) {
+      game.scale.setZoom(nextViewport.presentationScale);
+    }
+
+    if (
+      nextViewport.width !== responsiveViewport.width ||
+      nextViewport.height !== responsiveViewport.height
+    ) {
+      game.scale.resize(nextViewport.width, nextViewport.height);
+    }
+
+    game.canvas.style.removeProperty("width");
+    game.canvas.style.removeProperty("height");
+    responsiveViewport = nextViewport;
+  });
+};
+
+window.addEventListener("resize", resizeGame);
 
 for (const button of document.querySelectorAll<HTMLButtonElement>(
   "button[data-move]",
@@ -390,5 +499,9 @@ window.addEventListener("pointerup", () =>
 );
 
 if (import.meta.hot) {
-  import.meta.hot.dispose(() => game.destroy(true));
+  import.meta.hot.dispose(() => {
+    window.cancelAnimationFrame(resizeRequest);
+    window.removeEventListener("resize", resizeGame);
+    game.destroy(true);
+  });
 }
