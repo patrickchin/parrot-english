@@ -60,15 +60,16 @@ const speechElement = requireElement<HTMLElement>("[data-speech-copy]");
 const rootElement = document.documentElement;
 
 function getResponsiveViewport(): ResponsiveViewport {
+  const layoutWidth = rootElement.clientWidth;
   const presentationScale = Math.max(
     1,
     Math.min(
       MAX_PRESENTATION_SCALE,
-      Math.floor(window.innerWidth / PRESENTATION_SCALE_WIDTH),
+      Math.floor(layoutWidth / PRESENTATION_SCALE_WIDTH),
     ),
   );
   const availableWidth = Math.floor(
-    (window.innerWidth - GAME_HORIZONTAL_GUTTER) / presentationScale,
+    (layoutWidth - GAME_HORIZONTAL_GUTTER) / presentationScale,
   );
   const snappedWidth =
     Math.floor(availableWidth / ART_PIXEL_SIZE) * ART_PIXEL_SIZE;
@@ -96,7 +97,7 @@ function getResponsiveViewport(): ResponsiveViewport {
   return {
     displayHeight,
     displayWidth,
-    edgeToEdge: window.innerWidth < displayWidth + GAME_SHELL_WIDTH,
+    edgeToEdge: layoutWidth < displayWidth + GAME_SHELL_WIDTH,
     height,
     presentationScale,
     width,
