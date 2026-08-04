@@ -15,10 +15,21 @@ describe("Phaser pixel stage", () => {
     assert.equal(packageManifest.dependencies.phaser, "4.2.1");
   });
 
-  it("keeps project-specific world data declarative", () => {
-    assert.deepEqual(worldConfig.WORLD_SIZE, { height: 160, width: 240 });
-    assert.deepEqual(worldConfig.PLAYER_START, { x: 120, y: 112 });
+  it("builds a scrolling village from one consistent 16-pixel grid", () => {
+    assert.equal(worldConfig.TILE_SIZE, 16);
+    assert.deepEqual(worldConfig.VIEWPORT_SIZE, { height: 160, width: 240 });
+    assert.deepEqual(worldConfig.WORLD_GRID, { columns: 30, rows: 20 });
+    assert.deepEqual(worldConfig.WORLD_SIZE, { height: 320, width: 480 });
+    assert.deepEqual(worldConfig.PLAYER_START, { x: 192, y: 128 });
     assert.equal(worldConfig.SPRITE_FRAME_SIZE, 64);
+    assert.equal(
+      worldConfig.WORLD_SIZE.width,
+      worldConfig.WORLD_GRID.columns * worldConfig.TILE_SIZE,
+    );
+    assert.equal(
+      worldConfig.WORLD_SIZE.height,
+      worldConfig.WORLD_GRID.rows * worldConfig.TILE_SIZE,
+    );
     assert.deepEqual(
       worldConfig.ANIMATIONS.map(({ key, start, end }) => ({ key, start, end })),
       [
@@ -29,21 +40,53 @@ describe("Phaser pixel stage", () => {
         { key: "surprised", start: 12, end: 15 },
       ],
     );
-    assert.deepEqual(
-      worldConfig.SCENERY_COLLIDERS.map(({ name }) => name),
-      ["schoolhouse", "tree", "sign", "left fence", "right fence"],
+    assert.ok(worldConfig.PATH_AREAS.length >= 3);
+    assert.ok(worldConfig.GROUND_DETAILS.length >= 12);
+  });
+
+  it("authors collision and occlusion from the same world objects", () => {
+    const maple = worldConfig.WORLD_OBJECTS.find(
+      ({ id }) => id === "village-maple",
+    );
+    const schoolhouse = worldConfig.WORLD_OBJECTS.find(
+      ({ id }) => id === "schoolhouse",
+    );
+
+    assert.ok(maple);
+    assert.ok(schoolhouse);
+    assert.equal(maple.footY, maple.y);
+    assert.ok(maple.tiles.length >= 9);
+    assert.ok(maple.collision.width > 0);
+    assert.ok(maple.collision.height > 0);
+    assert.ok(schoolhouse.tiles.length >= 12);
+    assert.ok(
+      worldConfig.WORLD_OBJECTS.every(
+        ({ collision, footY, tiles }) =>
+          Number.isFinite(footY) && tiles.length > 0 && collision,
+      ),
+    );
+    assert.equal(worldConfig.getDepthForFootY(160), 1_160);
+    assert.ok(
+      worldConfig.getDepthForFootY(176) >
+        worldConfig.getDepthForFootY(160),
     );
   });
 
-  it("delegates the game loop, input, animation, scaling, and collision to Phaser", () => {
+  it("delegates its tilemap, camera, input, animation, and collision to Phaser", () => {
     const stage = projectFile("prototypes/pixel-stage/main.ts");
 
     assert.match(stage, /new Phaser\.Game\(/);
     assert.match(stage, /Phaser\.Scale\.MAX_ZOOM/);
+    assert.match(stage, /this\.make\.tilemap\(/);
+    assert.match(stage, /createBlankLayer\(/);
     assert.match(stage, /this\.physics\.add\.sprite\(/);
     assert.match(stage, /createCursorKeys\(\)/);
     assert.match(stage, /this\.physics\.add\.collider\(/);
     assert.match(stage, /this\.anims\.create\(/);
+    assert.match(stage, /startFollow\(/);
+    assert.match(stage, /setDeadzone\(/);
+    assert.match(stage, /tiny-town\.png/);
+    assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH/);
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
   });
 

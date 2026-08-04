@@ -1,57 +1,60 @@
 import { expect, test } from "@playwright/test";
 
-test("the Phaser pixel stage behaves like a small game world", async ({
+test("Peppa can explore a scrolling tile world with physical depth", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/prototypes/pixel-stage/");
 
   await expect(
-    page.getByRole("heading", { name: "Pixel stage proof of concept" }),
+    page.getByRole("heading", { name: "Walk Peppa through Willowbrook" }),
   ).toBeVisible();
 
-  const world = page.getByRole("group", { name: "Original pixel game world" });
-  const canvas = page.getByRole("img", { name: "Phaser pixel game world" });
+  const world = page.getByRole("group", { name: "Willowbrook village game world" });
+  const canvas = page.getByRole("img", { name: "Willowbrook pixel game world" });
   await expect(world).toHaveAttribute("data-engine", "phaser");
   await expect(world).toHaveAttribute("data-ready", "true");
-  await expect(world).toHaveAttribute("data-x", "120");
-  await expect(world).toHaveAttribute("data-y", "112");
+  await expect(world).toHaveAttribute("data-map-width", "480");
+  await expect(world).toHaveAttribute("data-map-height", "320");
+  await expect(world).toHaveAttribute("data-x", "192");
+  await expect(world).toHaveAttribute("data-y", "128");
   await expect(canvas).toHaveAttribute("width", "240");
   await expect(canvas).toHaveAttribute("height", "160");
   await expect(canvas).toHaveCSS("image-rendering", "pixelated");
+  expect(Number(await world.getAttribute("data-depth"))).toBeLessThan(
+    Number(await world.getAttribute("data-maple-depth")),
+  );
 
-  const moveRight = page.getByRole("button", { name: "Move right" });
-  await moveRight.dispatchEvent("pointerdown", { pointerId: 1 });
-  await page.waitForTimeout(120);
-  await moveRight.dispatchEvent("pointerup", { pointerId: 1 });
-  await expect
-    .poll(async () => Number(await world.getAttribute("data-x")))
-    .toBeGreaterThan(120);
-
-  await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(1_000);
-  await page.keyboard.up("ArrowRight");
-  const xAtTree = Number(await world.getAttribute("data-x"));
-  expect(xAtTree).toBeGreaterThanOrEqual(158);
-  expect(xAtTree).toBeLessThanOrEqual(162);
-
-  await page.reload();
-  await expect(world).toHaveAttribute("data-ready", "true");
-
-  const yBeforeKeyboard = Number(await world.getAttribute("data-y"));
+  // The maple's visible trunk and physical footprint share the same foot line.
   await page.keyboard.down("ArrowDown");
-  await page.waitForTimeout(120);
+  await page.waitForTimeout(700);
   await page.keyboard.up("ArrowDown");
+  expect(Number(await world.getAttribute("data-y"))).toBeLessThan(160);
+
+  // Walk around it. The same sprite now sorts in front, and the camera follows.
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(600);
+  await page.keyboard.up("ArrowLeft");
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(900);
+  await page.keyboard.up("ArrowDown");
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(600);
+  await page.keyboard.up("ArrowRight");
+
   await expect
-    .poll(async () => Number(await world.getAttribute("data-y")))
-    .toBeGreaterThan(yBeforeKeyboard);
+    .poll(async () => Number(await world.getAttribute("data-depth")))
+    .toBeGreaterThan(Number(await world.getAttribute("data-maple-depth")));
+  await expect
+    .poll(async () => Number(await world.getAttribute("data-camera-y")))
+    .toBeGreaterThan(0);
 
   for (const state of ["Talking", "Happy", "Surprised", "Idle"]) {
     await page.getByRole("button", { name: state }).click();
     await expect(world).toHaveAttribute("data-state", state.toLowerCase());
   }
 
-  const stage = page.getByRole("region", { name: "Animated pixel lesson stage" });
+  const stage = page.getByRole("region", { name: "Willowbrook exploration stage" });
   const stageBox = await stage.boundingBox();
   const canvasBox = await canvas.boundingBox();
 
