@@ -124,9 +124,9 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(canvasBox!.width).toBe(388);
   expect(stageBox!.width).toBe(388);
   expect(stageBox!.height).toBeGreaterThan(160);
-  expect(canvasBox!.height).toBe(stageBox!.height);
+  expect(Math.abs(canvasBox!.height - stageBox!.height)).toBeLessThanOrEqual(4);
   expect(canvasBox!.x).toBe(stageBox!.x);
-  expect(canvasBox!.y).toBe(stageBox!.y);
+  expect(Math.abs(canvasBox!.y - stageBox!.y)).toBeLessThanOrEqual(2);
   await expectAppToFitViewport(page);
 
   await page.setViewportSize({ width: 900, height: 900 });
@@ -139,9 +139,13 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(desktopStageBox!.width).toBe(896);
   expect(desktopCanvasBox!.width).toBe(896);
   expect(desktopStageBox!.height).toBeGreaterThan(200);
-  expect(desktopCanvasBox!.height).toBe(desktopStageBox!.height);
+  expect(
+    Math.abs(desktopCanvasBox!.height - desktopStageBox!.height),
+  ).toBeLessThanOrEqual(4);
   expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x);
-  expect(desktopCanvasBox!.y).toBe(desktopStageBox!.y);
+  expect(
+    Math.abs(desktopCanvasBox!.y - desktopStageBox!.y),
+  ).toBeLessThanOrEqual(2);
   await expectAppToFitViewport(page);
 
   await page.setViewportSize({ width: 1280, height: 720 });
@@ -155,9 +159,11 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(wideStageBox!.width).toBe(1276);
   expect(wideCanvasBox!.width).toBe(1276);
   expect(wideStageBox!.height).toBeGreaterThan(200);
-  expect(wideCanvasBox!.height).toBe(wideStageBox!.height);
+  expect(Math.abs(wideCanvasBox!.height - wideStageBox!.height)).toBeLessThanOrEqual(
+    4,
+  );
   expect(wideCanvasBox!.x).toBe(wideStageBox!.x);
-  expect(wideCanvasBox!.y).toBe(wideStageBox!.y);
+  expect(Math.abs(wideCanvasBox!.y - wideStageBox!.y)).toBeLessThanOrEqual(2);
   expect(wideStageBox!.x).toBeGreaterThanOrEqual(0);
   expect(wideStageBox!.x + wideStageBox!.width).toBeLessThanOrEqual(1280);
   expect(wideStageBox!.y).toBeLessThanOrEqual(64);
@@ -174,9 +180,11 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(tallStageBox!.width).toBe(720);
   expect(tallCanvasBox!.width).toBe(720);
   expect(tallStageBox!.height).toBeGreaterThan(200);
-  expect(tallCanvasBox!.height).toBe(tallStageBox!.height);
+  expect(Math.abs(tallCanvasBox!.height - tallStageBox!.height)).toBeLessThanOrEqual(
+    4,
+  );
   expect(tallCanvasBox!.x).toBe(tallStageBox!.x);
-  expect(tallCanvasBox!.y).toBe(tallStageBox!.y);
+  expect(Math.abs(tallCanvasBox!.y - tallStageBox!.y)).toBeLessThanOrEqual(2);
   expect(tallStageBox!.y).toBeLessThanOrEqual(50);
   await expectAppToFitViewport(page);
 
@@ -191,9 +199,13 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(splitPaneStageBox!.width).toBe(668);
   expect(splitPaneCanvasBox!.width).toBe(668);
   expect(splitPaneStageBox!.height).toBeGreaterThan(200);
-  expect(splitPaneCanvasBox!.height).toBe(splitPaneStageBox!.height);
+  expect(
+    Math.abs(splitPaneCanvasBox!.height - splitPaneStageBox!.height),
+  ).toBeLessThanOrEqual(4);
   expect(splitPaneCanvasBox!.x).toBe(splitPaneStageBox!.x);
-  expect(splitPaneCanvasBox!.y).toBe(splitPaneStageBox!.y);
+  expect(
+    Math.abs(splitPaneCanvasBox!.y - splitPaneStageBox!.y),
+  ).toBeLessThanOrEqual(2);
   await expectAppToFitViewport(page);
 
   await page.setViewportSize({ width: 280, height: 700 });
@@ -206,7 +218,9 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   expect(narrowStageBox!.width).toBe(278);
   expect(narrowCanvasBox!.width).toBe(278);
   expect(narrowStageBox!.height).toBeGreaterThan(120);
-  expect(narrowCanvasBox!.height).toBe(narrowStageBox!.height);
+  expect(
+    Math.abs(narrowCanvasBox!.height - narrowStageBox!.height),
+  ).toBeLessThanOrEqual(4);
   await expectAppToFitViewport(page);
 });
 

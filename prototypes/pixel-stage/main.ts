@@ -7,7 +7,6 @@ import {
   PLAYER_SPEED,
   PLAYER_START,
   SPRITE_FRAME_SIZE,
-  VIEWPORT_SIZE,
   WORLD_OBJECTS,
   WORLD_SIZE,
   getDepthForFootY,
@@ -28,7 +27,7 @@ const MIN_VIEWPORT_WIDTH = 240;
 const PRESENTATION_SCALE_WIDTH = 320;
 const GAME_HORIZONTAL_GUTTER = 2;
 const GAME_SHELL_WIDTH = 30;
-const GAME_VERTICAL_CHROME = 64;
+const MIN_VIEWPORT_HEIGHT = 180;
 
 type ResponsiveViewport = {
   displayHeight: number;
@@ -53,6 +52,7 @@ function requireElement<T extends Element>(selector: string) {
 }
 
 const worldElement = requireElement<HTMLElement>("#pixel-game");
+const stageElement = requireElement<HTMLElement>(".stage");
 const coordinatesElement = requireElement<HTMLElement>("[data-coordinates]");
 const engineStatusElement = requireElement<HTMLElement>("[data-engine-status]");
 const depthStatusElement = requireElement<HTMLElement>("[data-depth-status]");
@@ -61,13 +61,25 @@ const rootElement = document.documentElement;
 
 function getResponsiveViewport(): ResponsiveViewport {
   const layoutWidth = rootElement.clientWidth;
-  const presentationScale = Math.max(
+  const widthScale = Math.max(
     1,
     Math.min(
       MAX_PRESENTATION_SCALE,
       Math.floor(layoutWidth / PRESENTATION_SCALE_WIDTH),
     ),
   );
+  const stageDisplayHeight = Math.max(
+    ART_PIXEL_SIZE,
+    stageElement.clientHeight,
+  );
+  const heightScale = Math.max(
+    1,
+    Math.min(
+      MAX_PRESENTATION_SCALE,
+      Math.floor(stageDisplayHeight / MIN_VIEWPORT_HEIGHT),
+    ),
+  );
+  const presentationScale = Math.min(widthScale, heightScale);
   const availableWidth = Math.floor(
     (layoutWidth - GAME_HORIZONTAL_GUTTER) / presentationScale,
   );
@@ -79,18 +91,15 @@ function getResponsiveViewport(): ResponsiveViewport {
     WORLD_SIZE.width,
   );
   const availableHeight = Math.floor(
-    (window.innerHeight - GAME_VERTICAL_CHROME) / presentationScale,
+    stageDisplayHeight / presentationScale,
   );
   const snappedHeight =
     Math.floor(availableHeight / ART_PIXEL_SIZE) * ART_PIXEL_SIZE;
-  const height =
-    presentationScale === 1
-      ? VIEWPORT_SIZE.height
-      : Phaser.Math.Clamp(
-          snappedHeight,
-          VIEWPORT_SIZE.height,
-          WORLD_SIZE.height,
-        );
+  const height = Phaser.Math.Clamp(
+    snappedHeight,
+    ART_PIXEL_SIZE,
+    WORLD_SIZE.height,
+  );
   const displayHeight = height * presentationScale;
   const displayWidth = width * presentationScale;
 
@@ -117,10 +126,6 @@ function applyResponsiveViewport(viewport: ResponsiveViewport) {
   rootElement.style.setProperty(
     "--game-stage-width",
     `${viewport.displayWidth + 6}px`,
-  );
-  rootElement.style.setProperty(
-    "--game-stage-height",
-    `${viewport.displayHeight + 6}px`,
   );
   rootElement.style.setProperty(
     "--game-card-width",
@@ -458,7 +463,17 @@ const resizeGame = () => {
   responsiveViewport = nextViewport;
 };
 
-window.addEventListener("resize", resizeGame);
+let resizeTimer: number | undefined;
+const scheduleResize = () => {
+  if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(() => {
+    resizeTimer = undefined;
+    resizeGame();
+  }, 0);
+};
+const stageResizeObserver = new ResizeObserver(scheduleResize);
+stageResizeObserver.observe(stageElement);
+window.addEventListener("resize", scheduleResize);
 
 for (const button of document.querySelectorAll<HTMLButtonElement>(
   "button[data-move]",
@@ -510,7 +525,9 @@ window.addEventListener("pointerup", () =>
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    window.removeEventListener("resize", resizeGame);
+    if (resizeTimer !== undefined) window.clearTimeout(resizeTimer);
+    stageResizeObserver.disconnect();
+    window.removeEventListener("resize", scheduleResize);
     game.destroy(true);
   });
 }
