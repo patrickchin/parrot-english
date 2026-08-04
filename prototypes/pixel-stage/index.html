@@ -5,64 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A Phaser-powered, tile-based pixel village proof of concept for Parrot English."
+      content="A Phaser-powered, high-resolution pixel lesson garden proof of concept for Parrot English."
     />
-    <title>Walk Peppa through Willowbrook</title>
+    <title>Explore Peppa's lesson garden</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main>
       <header class="intro">
         <p class="eyebrow">Parrot English · playable scene</p>
-        <h1>Walk Peppa through Willowbrook</h1>
+        <h1>Explore Peppa's lesson garden</h1>
         <p class="summary">
-          A real scrolling tile world with object-level collision and depth —
-          built like a small GBA game, not two layered pictures.
+          One small reusable game space for the ball, flower, and market
+          lessons — with only the props those lessons need.
         </p>
       </header>
 
       <article class="game-card">
         <header class="game-card__bar">
-          <span>Willowbrook Village</span>
-          <span class="engine-chip">Phaser 4 · 2× world zoom</span>
+          <span>Sunny Lesson Garden</span>
+          <span class="engine-chip">Phaser 4 · native 3× detail</span>
         </header>
 
-        <section class="stage" aria-label="Willowbrook exploration stage">
+        <section class="stage" aria-label="Peppa lesson garden exploration stage">
           <div
             id="pixel-game"
             class="game-world"
             role="group"
-            aria-label="Willowbrook village game world"
-            data-camera-x="68"
-            data-camera-y="24"
-            data-camera-zoom="2"
-            data-depth="1064"
+            aria-label="Peppa lesson garden game world"
+            data-camera-x="270"
+            data-camera-y="72"
+            data-camera-zoom="1"
+            data-depth="1192"
             data-engine="phaser"
-            data-map-height="160"
-            data-map-width="240"
-            data-maple-depth="1096"
-            data-occlusion="behind-maple"
+            data-frame="0"
+            data-landmark-depth="1240"
+            data-map-height="480"
+            data-map-width="720"
+            data-occlusion="open"
             data-ready="false"
             data-state="idle"
-            data-x="128"
-            data-y="64"
+            data-x="450"
+            data-y="192"
           >
-            <p class="loading-status" data-engine-status>Building Willowbrook…</p>
+            <p class="loading-status" data-engine-status>Growing the lesson garden…</p>
           </div>
 
           <div class="hud" aria-label="Game status">
-            <span class="hud__place">Willowbrook</span>
-            <span data-depth-status>Behind the maple</span>
-            <span class="coordinates" data-coordinates>x 128 · y 64</span>
+            <span class="hud__place">Lesson garden</span>
+            <span data-depth-status>Exploring the lesson garden</span>
+            <span class="coordinates" data-coordinates>x 450 · y 192</span>
           </div>
         </section>
 
         <p class="speech" aria-live="polite">
           <span class="speaker">Peppa</span>
-          <span data-speech-copy>Come on — let's explore Willowbrook!</span>
+          <span data-speech-copy>Come on — let's explore the lesson garden!</span>
         </p>
 
-        <nav class="controls" aria-label="Willowbrook game controls">
+        <nav class="controls" aria-label="Lesson garden game controls">
           <div class="movement-panel">
             <p class="control-label">Move</p>
             <div class="move-pad" role="group" aria-label="Move Peppa">
@@ -123,7 +124,7 @@
       </article>
 
       <footer class="tech-note">
-        15 × 10 tile world · uniform 2× zoom · foot-box physics · y-sorted scenery
+        3× source detail · 96px character frames · foot-box physics · y-sorted lesson props
       </footer>
     </main>
 

@@ -89,7 +89,7 @@ describe("Phaser pixel stage", () => {
     );
   });
 
-  it("delegates its tilemap, camera, input, animation, and collision to Phaser", () => {
+  it("delegates rendering, camera, input, animation, and collision to Phaser", () => {
     const stage = projectFile("prototypes/pixel-stage/main.ts");
 
     assert.match(stage, /new Phaser\.Game\(/);

@@ -1,17 +1,17 @@
 import { expect, test } from "@playwright/test";
 
-test("Peppa can explore a scrolling tile world with physical depth", async ({
+test("Peppa can explore a generated lesson garden with physical depth", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/prototypes/pixel-stage/");
 
   await expect(
-    page.getByRole("heading", { name: "Walk Peppa through Willowbrook" }),
+    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
   ).toBeVisible();
 
-  const world = page.getByRole("group", { name: "Willowbrook village game world" });
-  const canvas = page.getByRole("img", { name: "Willowbrook pixel game world" });
+  const world = page.getByRole("group", { name: "Peppa lesson garden game world" });
+  const canvas = page.getByRole("img", { name: "Peppa lesson garden pixel game world" });
   await expect(world).toHaveAttribute("data-engine", "phaser");
   await expect(world).toHaveAttribute("data-ready", "true");
   await expect(world).toHaveAttribute("data-camera-zoom", "1");
@@ -19,6 +19,9 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
   await expect(world).toHaveAttribute("data-map-height", "480");
   await expect(world).toHaveAttribute("data-x", "450");
   await expect(world).toHaveAttribute("data-y", "192");
+  await expect(world).toHaveAttribute("data-frame", "0");
+  await page.waitForTimeout(700);
+  await expect(world).toHaveAttribute("data-frame", "0");
   await expect(canvas).toHaveAttribute("width", "360");
   await expect(canvas).toHaveAttribute("height", "240");
   await expect(canvas).toHaveCSS("image-rendering", "pixelated");
@@ -64,7 +67,7 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
     await expect(world).toHaveAttribute("data-state", state);
   }
 
-  const stage = page.getByRole("region", { name: "Willowbrook exploration stage" });
+  const stage = page.getByRole("region", { name: "Peppa lesson garden exploration stage" });
   const stageBox = await stage.boundingBox();
   const canvasBox = await canvas.boundingBox();
 
@@ -78,7 +81,29 @@ test("Peppa can explore a scrolling tile world with physical depth", async ({
   expect(canvasBox!.y).toBe(stageBox!.y + 3);
   expect(canvasBox!.width).toBe(stageBox!.width - 6);
   expect(canvasBox!.height).toBe(stageBox!.height - 6);
+
+  await page.setViewportSize({ width: 900, height: 900 });
+  const desktopStageBox = await stage.boundingBox();
+  const desktopCanvasBox = await canvas.boundingBox();
+  expect(desktopStageBox).not.toBeNull();
+  expect(desktopCanvasBox).not.toBeNull();
+  expect(desktopStageBox!.width).toBe(726);
+  expect(desktopStageBox!.height).toBe(486);
+  expect(desktopCanvasBox!.width).toBe(720);
+  expect(desktopCanvasBox!.height).toBe(480);
+  expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x + 3);
+  expect(desktopCanvasBox!.y).toBe(desktopStageBox!.y + 3);
+
+  await page.setViewportSize({ width: 280, height: 700 });
+  const narrowStageBox = await stage.boundingBox();
+  const narrowCanvasBox = await canvas.boundingBox();
+  expect(narrowStageBox).not.toBeNull();
+  expect(narrowCanvasBox).not.toBeNull();
+  expect(narrowStageBox!.width).toBe(246);
+  expect(narrowStageBox!.height).toBe(166);
+  expect(narrowCanvasBox!.width).toBe(360);
+  expect(narrowCanvasBox!.height).toBe(240);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-    .toBeLessThanOrEqual(390);
+    .toBeLessThanOrEqual(280);
 });

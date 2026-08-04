@@ -2,17 +2,12 @@ import Phaser from "phaser";
 import {
   ANIMATIONS,
   CAMERA_ZOOM,
-  GROUND_DETAILS,
-  PATH_AREAS,
   PLAYER_BODY,
   PLAYER_SCALE,
   PLAYER_SPEED,
   PLAYER_START,
   SPRITE_FRAME_SIZE,
-  TILE_FRAMES,
-  TILE_SIZE,
   VIEWPORT_SIZE,
-  WORLD_GRID,
   WORLD_OBJECTS,
   WORLD_SIZE,
   getDepthForFootY,
@@ -30,10 +25,10 @@ const ASSET_ROOT = "/prototypes/pixel-stage/assets";
 const EMOTE_STATES: EmoteState[] = ["idle", "talking", "happy", "surprised"];
 
 const speechCopy: Record<EmoteState, string> = {
-  happy: "Hooray! I found the village path!",
-  idle: "Come on — let's explore Willowbrook!",
-  surprised: "Oh! What's behind that old maple?",
-  talking: "Follow the path to the schoolhouse.",
+  happy: "Hooray! We found the red ball!",
+  idle: "Come on — let's explore the lesson garden!",
+  surprised: "Oh! The ball is up in the tree!",
+  talking: "Let's look by the flowers and basket.",
 };
 
 function requireElement<T extends Element>(selector: string) {
@@ -48,42 +43,14 @@ const engineStatusElement = requireElement<HTMLElement>("[data-engine-status]");
 const depthStatusElement = requireElement<HTMLElement>("[data-depth-status]");
 const speechElement = requireElement<HTMLElement>("[data-speech-copy]");
 
-const pathCells = new Set<string>();
-for (const area of PATH_AREAS) {
-  for (let y = area.y; y < area.y + area.height; y += 1) {
-    for (let x = area.x; x < area.x + area.width; x += 1) {
-      pathCells.add(`${x},${y}`);
-    }
-  }
-}
-
-const isPathCell = (x: number, y: number) => pathCells.has(`${x},${y}`);
-
-function getPathFrame(x: number, y: number) {
-  const top = isPathCell(x, y - 1);
-  const right = isPathCell(x + 1, y);
-  const bottom = isPathCell(x, y + 1);
-  const left = isPathCell(x - 1, y);
-
-  if (!top && !left) return TILE_FRAMES.pathTopLeft;
-  if (!top && !right) return TILE_FRAMES.pathTopRight;
-  if (!bottom && !left) return TILE_FRAMES.pathBottomLeft;
-  if (!bottom && !right) return TILE_FRAMES.pathBottomRight;
-  if (!top) return TILE_FRAMES.pathTop;
-  if (!bottom) return TILE_FRAMES.pathBottom;
-  if (!left) return TILE_FRAMES.pathLeft;
-  if (!right) return TILE_FRAMES.pathRight;
-  return TILE_FRAMES.pathCenter;
-}
-
 class PixelStageScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private player!: Phaser.Physics.Arcade.Sprite;
   private selectedEmote: EmoteState = "idle";
   private readonly touchDirections = new Set<Direction>();
   private wasd!: MovementKeys;
-  private readonly maple = WORLD_OBJECTS.find(
-    ({ id }) => id === "village-maple",
+  private readonly landmark = WORLD_OBJECTS.find(
+    ({ id }) => id === "lesson-tree",
   );
   private readonly reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -94,22 +61,32 @@ class PixelStageScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet("tiny-town", `${ASSET_ROOT}/tiny-town.png`, {
-      frameHeight: TILE_SIZE,
-      frameWidth: TILE_SIZE,
-    });
-    this.load.spritesheet("peppa", `${ASSET_ROOT}/peppa-sheet.png`, {
+    this.load.image(
+      "lesson-garden-ground",
+      `${ASSET_ROOT}/lesson-garden-ground.png`,
+    );
+    this.load.image(
+      "garden-tree-ball",
+      `${ASSET_ROOT}/garden-tree-ball.png`,
+    );
+    this.load.image("garden-flowers", `${ASSET_ROOT}/garden-flowers.png`);
+    this.load.image("garden-basket", `${ASSET_ROOT}/garden-basket.png`);
+    this.load.image("garden-market", `${ASSET_ROOT}/garden-market.png`);
+    this.load.spritesheet("peppa", `${ASSET_ROOT}/peppa-town-sheet-96.png`, {
       frameHeight: SPRITE_FRAME_SIZE,
       frameWidth: SPRITE_FRAME_SIZE,
     });
 
     this.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => {
-      engineStatusElement.textContent = "The village art could not load.";
+      engineStatusElement.textContent = "The lesson garden art could not load.";
     });
   }
 
   create() {
-    this.createTileWorld();
+    this.add
+      .image(0, 0, "lesson-garden-ground")
+      .setDepth(0)
+      .setOrigin(0);
     const scenery = this.createWorldObjects();
 
     this.physics.world.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
@@ -135,15 +112,15 @@ class PixelStageScene extends Phaser.Scene {
     this.configureInput();
 
     const canvas = this.game.canvas;
-    canvas.setAttribute("aria-label", "Willowbrook pixel game world");
+    canvas.setAttribute("aria-label", "Peppa lesson garden pixel game world");
     canvas.setAttribute("role", "img");
     canvas.style.imageRendering = "pixelated";
 
     worldElement.dataset.mapHeight = String(WORLD_SIZE.height);
     worldElement.dataset.mapWidth = String(WORLD_SIZE.width);
     worldElement.dataset.cameraZoom = String(CAMERA_ZOOM);
-    worldElement.dataset.mapleDepth = String(
-      getDepthForFootY(this.maple?.footY ?? 0),
+    worldElement.dataset.landmarkDepth = String(
+      getDepthForFootY(this.landmark?.footY ?? 0),
     );
     worldElement.dataset.ready = "true";
     this.playAnimation("idle");
@@ -186,68 +163,15 @@ class PixelStageScene extends Phaser.Scene {
     this.syncStatus();
   }
 
-  private createTileWorld() {
-    const map = this.make.tilemap({
-      height: WORLD_GRID.rows,
-      tileHeight: TILE_SIZE,
-      tileWidth: TILE_SIZE,
-      width: WORLD_GRID.columns,
-    });
-    const tileset = map.addTilesetImage(
-      "tiny-town",
-      "tiny-town",
-      TILE_SIZE,
-      TILE_SIZE,
-      0,
-      0,
-    );
-    if (!tileset) throw new Error("The Tiny Town tileset is unavailable.");
-
-    const ground = map.createBlankLayer("ground", tileset);
-    const paths = map.createBlankLayer("paths", tileset);
-    const details = map.createBlankLayer("ground-details", tileset);
-    if (!ground || !paths || !details) {
-      throw new Error("The Willowbrook tile layers could not be created.");
-    }
-
-    ground.fill(
-      TILE_FRAMES.grass,
-      0,
-      0,
-      WORLD_GRID.columns,
-      WORLD_GRID.rows,
-    );
-    ground.setDepth(0);
-    paths.setDepth(10);
-    details.setDepth(20);
-
-    for (const cell of pathCells) {
-      const [x, y] = cell.split(",").map(Number);
-      paths.putTileAt(getPathFrame(x, y), x, y);
-    }
-    for (const detail of GROUND_DETAILS) {
-      if (!isPathCell(detail.x, detail.y)) {
-        details.putTileAt(detail.frame, detail.x, detail.y);
-      }
-    }
-  }
-
   private createWorldObjects() {
     const scenery = this.physics.add.staticGroup();
 
     for (const object of WORLD_OBJECTS) {
-      const visual = this.add
-        .container(object.x, object.y)
+      this.add
+        .image(object.x, object.y, object.asset)
         .setDepth(getDepthForFootY(object.footY))
-        .setName(object.id);
-
-      for (const tile of object.tiles) {
-        visual.add(
-          this.add
-            .image(tile.x, tile.y, "tiny-town", tile.frame)
-            .setOrigin(0.5),
-        );
-      }
+        .setName(object.id)
+        .setOrigin(0.5, 1);
 
       const { collision } = object;
       const body = this.add
@@ -271,7 +195,7 @@ class PixelStageScene extends Phaser.Scene {
     camera.setZoom(CAMERA_ZOOM);
     camera.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
     camera.startFollow(this.player, true, 0.35, 0.35);
-    camera.setDeadzone(40, 28);
+    camera.setDeadzone(120, 84);
     camera.roundPixels = true;
   }
 
@@ -348,36 +272,38 @@ class PixelStageScene extends Phaser.Scene {
     const x = Math.round(this.player.x);
     const y = Math.round(this.player.y);
     const depth = getDepthForFootY(y);
-    const mapleDepth = getDepthForFootY(this.maple?.footY ?? 0);
-    const nearMaple =
-      this.maple &&
-      Math.abs(x - this.maple.x) < 28 &&
-      y > this.maple.y - 52 &&
-      y < this.maple.y + 40;
-    const occlusion = nearMaple
-      ? depth < mapleDepth
-        ? "behind-maple"
-        : "in-front-of-maple"
+    const landmarkDepth = getDepthForFootY(this.landmark?.footY ?? 0);
+    const nearLandmark =
+      this.landmark &&
+      Math.abs(x - this.landmark.x) < 108 &&
+      y > this.landmark.y - 180 &&
+      y < this.landmark.y + 90;
+    const occlusion = nearLandmark
+      ? depth < landmarkDepth
+        ? "behind-tree"
+        : "in-front-of-tree"
       : "open";
 
     worldElement.dataset.cameraX = String(Math.round(this.cameras.main.scrollX));
     worldElement.dataset.cameraY = String(Math.round(this.cameras.main.scrollY));
     worldElement.dataset.depth = String(depth);
+    worldElement.dataset.frame = String(this.player.frame.name);
     worldElement.dataset.occlusion = occlusion;
     worldElement.dataset.x = String(x);
     worldElement.dataset.y = String(y);
     coordinatesElement.textContent = `x ${x} · y ${y}`;
     depthStatusElement.textContent =
-      occlusion === "behind-maple"
-        ? "Behind the maple"
-        : occlusion === "in-front-of-maple"
-          ? "In front of the maple"
-          : "Exploring Willowbrook";
+      occlusion === "behind-tree"
+        ? "Behind the lesson tree"
+        : occlusion === "in-front-of-tree"
+          ? "In front of the lesson tree"
+          : "Exploring the lesson garden";
   }
 }
 
 const game = new Phaser.Game({
-  backgroundColor: "#81c96c",
+  antialias: false,
+  backgroundColor: "#8ad51b",
   height: VIEWPORT_SIZE.height,
   parent: worldElement,
   physics: {
