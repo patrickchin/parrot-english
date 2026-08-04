@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel stage proof of concept</title>
+    <style>
+      :root {
+        color: #183153;
+        font-family: ui-rounded, "Nunito", system-ui, sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 280px;
+        min-height: 100vh;
+        margin: 0;
+        overflow-x: hidden;
+        background: #fff3d7;
+      }
+
+      .page {
+        display: grid;
+        min-height: 100vh;
+        grid-template-rows: auto minmax(420px, 1fr) auto;
+        gap: 16px;
+        padding: 20px;
+      }
+
+      .intro {
+        display: grid;
+        justify-items: center;
+        text-align: center;
+      }
+
+      h1,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(1.45rem, 5vw, 2.5rem);
+        line-height: 1.05;
+      }
+
+      .intro p {
+        max-width: 44rem;
+        margin-top: 8px;
+        color: #4d607b;
+        font-weight: 700;
+      }
+
+      .stage {
+        position: relative;
+        isolation: isolate;
+        width: min(100%, 1080px);
+        min-height: 420px;
+        max-height: 680px;
+        margin: auto;
+        overflow: hidden;
+        border: 6px solid #fff;
+        border-radius: 20px;
+        background: #75d7ff url("./assets/garden.png") center / cover no-repeat;
+        box-shadow:
+          0 0 0 4px #183153,
+          0 16px 0 #18315333;
+        image-rendering: pixelated;
+      }
+
+      .hud {
+        position: absolute;
+        z-index: 3;
+        top: 14px;
+        left: 14px;
+        padding: 8px 12px;
+        border: 4px solid #fff;
+        border-radius: 8px;
+        background: #183153;
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        box-shadow: 4px 4px 0 #18315366;
+      }
+
+      .speech {
+        position: absolute;
+        z-index: 3;
+        top: 13%;
+        left: 50%;
+        width: min(78%, 390px);
+        min-height: 64px;
+        translate: -50% 0;
+        padding: 12px 16px;
+        border: 5px solid #183153;
+        border-radius: 10px;
+        background: #fff;
+        font-size: clamp(1rem, 4vw, 1.4rem);
+        font-weight: 900;
+        line-height: 1.15;
+        text-align: center;
+        box-shadow: 6px 6px 0 #18315344;
+      }
+
+      .speech::after {
+        position: absolute;
+        bottom: -21px;
+        left: 50%;
+        width: 22px;
+        height: 22px;
+        border-right: 5px solid #183153;
+        border-bottom: 5px solid #183153;
+        background: #fff;
+        content: "";
+        rotate: 45deg;
+        translate: -50% 0;
+      }
+
+      .sprite-wrap {
+        position: absolute;
+        z-index: 2;
+        bottom: 2%;
+        left: 50%;
+        display: grid;
+        justify-items: center;
+        translate: -50% 0;
+      }
+
+      .sprite {
+        --column: 0;
+        --row: 0;
+        width: clamp(224px, 42vw, 320px);
+        aspect-ratio: 1;
+        background-image: url("./assets/peppa-sheet.png");
+        background-position:
+          calc(var(--column) * 100% / 3)
+          calc(var(--row) * 100% / 3);
+        background-repeat: no-repeat;
+        background-size: 400% 400%;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        filter: drop-shadow(8px 10px 0 #1831533b);
+      }
+
+      .nameplate {
+        margin-top: -30px;
+        padding: 7px 16px;
+        border: 4px solid #fff;
+        border-radius: 8px;
+        background: #183153;
+        color: #fff;
+        font-weight: 900;
+        box-shadow: 4px 4px 0 #18315355;
+      }
+
+      .controls {
+        display: flex;
+        max-width: 720px;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: auto;
+      }
+
+      button {
+        min-width: 94px;
+        min-height: 48px;
+        padding: 10px 16px;
+        border: 4px solid #183153;
+        border-radius: 9px;
+        background: #fff;
+        color: #183153;
+        font: inherit;
+        font-weight: 900;
+        box-shadow: 4px 4px 0 #183153;
+        cursor: pointer;
+      }
+
+      button:hover,
+      button:focus-visible,
+      button[aria-pressed="true"] {
+        background: #ffcf38;
+        translate: 2px 2px;
+        box-shadow: 2px 2px 0 #183153;
+      }
+
+      .tech-note {
+        flex-basis: 100%;
+        color: #4d607b;
+        font-size: 0.85rem;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      @media (max-width: 520px) {
+        .page {
+          grid-template-rows: auto minmax(420px, 64vh) auto;
+          gap: 12px;
+          padding: 12px;
+        }
+
+        .stage {
+          min-height: 420px;
+          border-width: 4px;
+          border-radius: 14px;
+        }
+
+        .hud {
+          top: 8px;
+          left: 8px;
+        }
+
+        .speech {
+          top: 18%;
+          width: 88%;
+        }
+
+        .sprite {
+          width: min(78vw, 284px);
+        }
+
+        button {
+          min-width: 42%;
+          flex: 1 1 42%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="intro">
+        <h1>Pixel stage proof of concept</h1>
+        <p>One tiny sprite sheet, four expressive states, and no game engine.</p>
+      </header>
+
+      <section class="stage" aria-label="Animated pixel lesson stage">
+        <div class="hud">Lesson scene · 01</div>
+        <p class="speech" aria-live="polite">Ready for an English adventure?</p>
+        <div class="sprite-wrap">
+          <div
+            class="sprite"
+            data-state="idle"
+            role="img"
+            aria-label="Animated pixel Peppa"
+          ></div>
+          <div class="nameplate">Peppa</div>
+        </div>
+      </section>
+
+      <nav class="controls" aria-label="Sprite animation controls">
+        <button type="button" aria-pressed="true" data-state="idle">Idle</button>
+        <button type="button" aria-pressed="false" data-state="talking">Talking</button>
+        <button type="button" aria-pressed="false" data-state="happy">Happy</button>
+        <button type="button" aria-pressed="false" data-state="surprised">Surprised</button>
+        <p class="tech-note">256 × 256 PNG · 16 frames · each frame is 64 × 64</p>
+      </nav>
+    </main>
+
+    <script type="module">
+      import { getSpriteFrame } from "./sprite-state.js";
+
+      const copy = {
+        idle: "Ready for an English adventure?",
+        talking: "Let’s practise together!",
+        happy: "You did it! Great speaking!",
+        surprised: "Oh! What did you find?",
+      };
+      const sprite = document.querySelector(".sprite");
+      const speech = document.querySelector(".speech");
+      const buttons = [...document.querySelectorAll("button[data-state]")];
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let state = "idle";
+      let stateStartedAt = performance.now();
+
+      function selectState(nextState) {
+        state = nextState;
+        stateStartedAt = performance.now();
+        sprite.dataset.state = state;
+        speech.textContent = copy[state];
+
+        for (const button of buttons) {
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.state === state),
+          );
+        }
+      }
+
+      function render(now) {
+        const frame = getSpriteFrame(state, now - stateStartedAt, {
+          reducedMotion: reducedMotion.matches,
+        });
+        sprite.style.setProperty("--column", frame.column);
+        sprite.style.setProperty("--row", frame.row);
+        requestAnimationFrame(render);
+      }
+
+      for (const button of buttons) {
+        button.addEventListener("click", () => selectState(button.dataset.state));
+      }
+
+      requestAnimationFrame(render);
+    </script>
+  </body>
+</html>
