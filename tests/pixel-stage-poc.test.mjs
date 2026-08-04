@@ -133,6 +133,25 @@ describe("Phaser pixel stage", () => {
     );
   });
 
+  it("loads immutable game art from R2 without bundling image files", () => {
+    const stage = projectFile("prototypes/pixel-stage/main.ts");
+
+    assert.match(
+      stage,
+      /const ASSET_ROOT = "https:\/\/media\.parrotbook\.com\/prototypes\/pixel-stage\/v1";/,
+    );
+    assert.throws(
+      () =>
+        readdirSync(
+          new URL(
+            "../public/prototypes/pixel-stage/assets/",
+            import.meta.url,
+          ),
+        ),
+      { code: "ENOENT" },
+    );
+  });
+
   it("builds a compact lesson garden on a three-times-finer render grid", () => {
     assert.equal(worldConfig.RENDER_SCALE, 3);
     assert.equal(worldConfig.TILE_SIZE, 48);
