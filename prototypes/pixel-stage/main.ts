@@ -414,7 +414,6 @@ class PixelStageScene extends Phaser.Scene {
 
 const game = new Phaser.Game({
   antialias: false,
-  backgroundColor: "#8ad51b",
   height: responsiveViewport.height,
   parent: worldElement,
   physics: {
@@ -425,6 +424,7 @@ const game = new Phaser.Game({
     default: "arcade",
   },
   pixelArt: true,
+  transparent: true,
   scale: {
     autoCenter: Phaser.Scale.CENTER_BOTH,
     autoRound: true,

@@ -119,7 +119,14 @@ main {
   margin: auto;
   overflow: hidden;
   border: 3px solid #332438;
-  background: #8ad51b;
+  background-color: #d7d7d7;
+  background-image: conic-gradient(
+    #d7d7d7 25%,
+    #bfc0c2 0 50%,
+    #d7d7d7 0 75%,
+    #bfc0c2 0
+  );
+  background-size: 16px 16px;
   box-shadow: inset 0 0 0 3px rgb(255 248 216 / 22%);
 }
 
