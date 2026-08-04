@@ -1,23 +1,25 @@
 import Phaser from "phaser";
 import {
   ANIMATIONS,
-  FOREGROUND_DEPTH,
+  GROUND_DETAILS,
+  PATH_AREAS,
   PLAYER_BODY,
-  PLAYER_DEPTH_BASE,
+  PLAYER_SCALE,
   PLAYER_SPEED,
   PLAYER_START,
-  SCENERY_COLLIDERS,
   SPRITE_FRAME_SIZE,
-  WALKABLE_BOUNDS,
+  TILE_FRAMES,
+  TILE_SIZE,
+  VIEWPORT_SIZE,
+  WORLD_GRID,
+  WORLD_OBJECTS,
   WORLD_SIZE,
+  getDepthForFootY,
 } from "./world-config.js";
 
 type Direction = "down" | "left" | "right" | "up";
 type EmoteState = "happy" | "idle" | "surprised" | "talking";
-type MovementKeys = Record<
-  "down" | "left" | "right" | "up",
-  Phaser.Input.Keyboard.Key
->;
+type MovementKeys = Record<Direction, Phaser.Input.Keyboard.Key>;
 
 const DIRECTION_EVENT = "pixel-stage:direction";
 const CLEAR_DIRECTIONS_EVENT = "pixel-stage:clear-directions";
@@ -27,10 +29,10 @@ const ASSET_ROOT = "/prototypes/pixel-stage/assets";
 const EMOTE_STATES: EmoteState[] = ["idle", "talking", "happy", "surprised"];
 
 const speechCopy: Record<EmoteState, string> = {
-  happy: "Hooray! You said it brilliantly!",
-  idle: "Ready for an English adventure?",
-  surprised: "Oh! A brand-new word!",
-  talking: "Repeat after me: muddy puddles!",
+  happy: "Hooray! I found the village path!",
+  idle: "Come on — let's explore Willowbrook!",
+  surprised: "Oh! What's behind that old maple?",
+  talking: "Follow the path to the schoolhouse.",
 };
 
 function requireElement<T extends Element>(selector: string) {
@@ -40,11 +42,38 @@ function requireElement<T extends Element>(selector: string) {
 }
 
 const worldElement = requireElement<HTMLElement>("#pixel-game");
-const coordinatesElement =
-  requireElement<HTMLElement>("[data-coordinates]");
-const engineStatusElement =
-  requireElement<HTMLElement>("[data-engine-status]");
+const coordinatesElement = requireElement<HTMLElement>("[data-coordinates]");
+const engineStatusElement = requireElement<HTMLElement>("[data-engine-status]");
+const depthStatusElement = requireElement<HTMLElement>("[data-depth-status]");
 const speechElement = requireElement<HTMLElement>("[data-speech-copy]");
+
+const pathCells = new Set<string>();
+for (const area of PATH_AREAS) {
+  for (let y = area.y; y < area.y + area.height; y += 1) {
+    for (let x = area.x; x < area.x + area.width; x += 1) {
+      pathCells.add(`${x},${y}`);
+    }
+  }
+}
+
+const isPathCell = (x: number, y: number) => pathCells.has(`${x},${y}`);
+
+function getPathFrame(x: number, y: number) {
+  const top = isPathCell(x, y - 1);
+  const right = isPathCell(x + 1, y);
+  const bottom = isPathCell(x, y + 1);
+  const left = isPathCell(x - 1, y);
+
+  if (!top && !left) return TILE_FRAMES.pathTopLeft;
+  if (!top && !right) return TILE_FRAMES.pathTopRight;
+  if (!bottom && !left) return TILE_FRAMES.pathBottomLeft;
+  if (!bottom && !right) return TILE_FRAMES.pathBottomRight;
+  if (!top) return TILE_FRAMES.pathTop;
+  if (!bottom) return TILE_FRAMES.pathBottom;
+  if (!left) return TILE_FRAMES.pathLeft;
+  if (!right) return TILE_FRAMES.pathRight;
+  return TILE_FRAMES.pathCenter;
+}
 
 class PixelStageScene extends Phaser.Scene {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -52,6 +81,9 @@ class PixelStageScene extends Phaser.Scene {
   private selectedEmote: EmoteState = "idle";
   private readonly touchDirections = new Set<Direction>();
   private wasd!: MovementKeys;
+  private readonly maple = WORLD_OBJECTS.find(
+    ({ id }) => id === "village-maple",
+  );
   private readonly reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   );
@@ -61,28 +93,25 @@ class PixelStageScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("garden", `${ASSET_ROOT}/garden.png`);
-    this.load.image("foreground", `${ASSET_ROOT}/foreground.png`);
+    this.load.spritesheet("tiny-town", `${ASSET_ROOT}/tiny-town.png`, {
+      frameHeight: TILE_SIZE,
+      frameWidth: TILE_SIZE,
+    });
     this.load.spritesheet("peppa", `${ASSET_ROOT}/peppa-sheet.png`, {
       frameHeight: SPRITE_FRAME_SIZE,
       frameWidth: SPRITE_FRAME_SIZE,
     });
 
     this.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => {
-      engineStatusElement.textContent = "The game art could not load.";
+      engineStatusElement.textContent = "The village art could not load.";
     });
   }
 
   create() {
-    this.add.image(0, 0, "garden").setDepth(0).setOrigin(0);
+    this.createTileWorld();
+    const scenery = this.createWorldObjects();
 
-    this.physics.world.setBounds(
-      WALKABLE_BOUNDS.x,
-      WALKABLE_BOUNDS.y,
-      WALKABLE_BOUNDS.width,
-      WALKABLE_BOUNDS.height,
-    );
-
+    this.physics.world.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
     this.player = this.physics.add.sprite(
       PLAYER_START.x,
       PLAYER_START.y,
@@ -91,61 +120,29 @@ class PixelStageScene extends Phaser.Scene {
     );
     this.player
       .setCollideWorldBounds(true)
-      .setDepth(PLAYER_DEPTH_BASE + PLAYER_START.y)
-      .setOrigin(0.5, 1);
+      .setDepth(getDepthForFootY(PLAYER_START.y))
+      .setOrigin(0.5, 1)
+      .setScale(PLAYER_SCALE);
 
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     playerBody.setSize(PLAYER_BODY.width, PLAYER_BODY.height, false);
     playerBody.setOffset(PLAYER_BODY.offsetX, PLAYER_BODY.offsetY);
-
-    const scenery = this.physics.add.staticGroup();
-    for (const collider of SCENERY_COLLIDERS) {
-      const body = this.add
-        .rectangle(
-          collider.x,
-          collider.y,
-          collider.width,
-          collider.height,
-          0x000000,
-          0,
-        )
-        .setName(collider.name);
-      scenery.add(body);
-    }
     this.physics.add.collider(this.player, scenery);
 
     this.createAnimations();
-    this.add
-      .image(0, 0, "foreground")
-      .setDepth(FOREGROUND_DEPTH)
-      .setOrigin(0);
-
-    const keyboard = this.input.keyboard;
-    if (!keyboard) throw new Error("Phaser keyboard input is unavailable.");
-    this.cursors = keyboard.createCursorKeys();
-    this.wasd = keyboard.addKeys({
-      down: Phaser.Input.Keyboard.KeyCodes.S,
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
-      up: Phaser.Input.Keyboard.KeyCodes.W,
-    }) as MovementKeys;
-
-    this.game.events.on(DIRECTION_EVENT, this.setDirection, this);
-    this.game.events.on(CLEAR_DIRECTIONS_EVENT, this.clearDirections, this);
-    this.game.events.on(EMOTE_EVENT, this.setEmote, this);
-    this.game.events.on(NUDGE_EVENT, this.nudge, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.game.events.off(DIRECTION_EVENT, this.setDirection, this);
-      this.game.events.off(CLEAR_DIRECTIONS_EVENT, this.clearDirections, this);
-      this.game.events.off(EMOTE_EVENT, this.setEmote, this);
-      this.game.events.off(NUDGE_EVENT, this.nudge, this);
-    });
+    this.configureCamera();
+    this.configureInput();
 
     const canvas = this.game.canvas;
-    canvas.setAttribute("aria-label", "Phaser pixel game world");
+    canvas.setAttribute("aria-label", "Willowbrook pixel game world");
     canvas.setAttribute("role", "img");
     canvas.style.imageRendering = "pixelated";
 
+    worldElement.dataset.mapHeight = String(WORLD_SIZE.height);
+    worldElement.dataset.mapWidth = String(WORLD_SIZE.width);
+    worldElement.dataset.mapleDepth = String(
+      getDepthForFootY(this.maple?.footY ?? 0),
+    );
     worldElement.dataset.ready = "true";
     this.playAnimation("idle");
     this.syncStatus();
@@ -183,8 +180,119 @@ class PixelStageScene extends Phaser.Scene {
       this.playAnimation(this.selectedEmote);
     }
 
-    this.player.setDepth(PLAYER_DEPTH_BASE + Math.round(this.player.y));
+    this.player.setDepth(getDepthForFootY(this.player.y));
     this.syncStatus();
+  }
+
+  private createTileWorld() {
+    const map = this.make.tilemap({
+      height: WORLD_GRID.rows,
+      tileHeight: TILE_SIZE,
+      tileWidth: TILE_SIZE,
+      width: WORLD_GRID.columns,
+    });
+    const tileset = map.addTilesetImage(
+      "tiny-town",
+      "tiny-town",
+      TILE_SIZE,
+      TILE_SIZE,
+      0,
+      0,
+    );
+    if (!tileset) throw new Error("The Tiny Town tileset is unavailable.");
+
+    const ground = map.createBlankLayer("ground", tileset);
+    const paths = map.createBlankLayer("paths", tileset);
+    const details = map.createBlankLayer("ground-details", tileset);
+    if (!ground || !paths || !details) {
+      throw new Error("The Willowbrook tile layers could not be created.");
+    }
+
+    ground.fill(
+      TILE_FRAMES.grass,
+      0,
+      0,
+      WORLD_GRID.columns,
+      WORLD_GRID.rows,
+    );
+    ground.setDepth(0);
+    paths.setDepth(10);
+    details.setDepth(20);
+
+    for (const cell of pathCells) {
+      const [x, y] = cell.split(",").map(Number);
+      paths.putTileAt(getPathFrame(x, y), x, y);
+    }
+    for (const detail of GROUND_DETAILS) {
+      if (!isPathCell(detail.x, detail.y)) {
+        details.putTileAt(detail.frame, detail.x, detail.y);
+      }
+    }
+  }
+
+  private createWorldObjects() {
+    const scenery = this.physics.add.staticGroup();
+
+    for (const object of WORLD_OBJECTS) {
+      const visual = this.add
+        .container(object.x, object.y)
+        .setDepth(getDepthForFootY(object.footY))
+        .setName(object.id);
+
+      for (const tile of object.tiles) {
+        visual.add(
+          this.add
+            .image(tile.x, tile.y, "tiny-town", tile.frame)
+            .setOrigin(0.5),
+        );
+      }
+
+      const { collision } = object;
+      const body = this.add
+        .rectangle(
+          object.x + collision.offsetX + collision.width / 2,
+          object.y + collision.offsetY + collision.height / 2,
+          collision.width,
+          collision.height,
+          0x000000,
+          0,
+        )
+        .setName(`${object.id}-footprint`);
+      scenery.add(body);
+    }
+
+    return scenery;
+  }
+
+  private configureCamera() {
+    const camera = this.cameras.main;
+    camera.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
+    camera.startFollow(this.player, true, 0.18, 0.18);
+    camera.setDeadzone(72, 48);
+    camera.roundPixels = true;
+  }
+
+  private configureInput() {
+    const keyboard = this.input.keyboard;
+    if (!keyboard) throw new Error("Phaser keyboard input is unavailable.");
+    this.cursors = keyboard.createCursorKeys();
+    this.wasd = keyboard.addKeys({
+      down: Phaser.Input.Keyboard.KeyCodes.S,
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D,
+      up: Phaser.Input.Keyboard.KeyCodes.W,
+    }) as MovementKeys;
+
+    this.game.events.on(DIRECTION_EVENT, this.setDirection, this);
+    this.game.events.on(CLEAR_DIRECTIONS_EVENT, this.clearDirections, this);
+    this.game.events.on(EMOTE_EVENT, this.setEmote, this);
+    this.game.events.on(NUDGE_EVENT, this.nudge, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(DIRECTION_EVENT, this.setDirection, this);
+      this.game.events.off(CLEAR_DIRECTIONS_EVENT, this.clearDirections, this);
+      this.game.events.off(EMOTE_EVENT, this.setEmote, this);
+      this.game.events.off(NUDGE_EVENT, this.nudge, this);
+    });
   }
 
   private createAnimations() {
@@ -236,17 +344,38 @@ class PixelStageScene extends Phaser.Scene {
   private syncStatus() {
     const x = Math.round(this.player.x);
     const y = Math.round(this.player.y);
-    const depth = PLAYER_DEPTH_BASE + y;
+    const depth = getDepthForFootY(y);
+    const mapleDepth = getDepthForFootY(this.maple?.footY ?? 0);
+    const nearMaple =
+      this.maple &&
+      Math.abs(x - this.maple.x) < 28 &&
+      y > this.maple.y - 52 &&
+      y < this.maple.y + 40;
+    const occlusion = nearMaple
+      ? depth < mapleDepth
+        ? "behind-maple"
+        : "in-front-of-maple"
+      : "open";
+
+    worldElement.dataset.cameraX = String(Math.round(this.cameras.main.scrollX));
+    worldElement.dataset.cameraY = String(Math.round(this.cameras.main.scrollY));
     worldElement.dataset.depth = String(depth);
+    worldElement.dataset.occlusion = occlusion;
     worldElement.dataset.x = String(x);
     worldElement.dataset.y = String(y);
     coordinatesElement.textContent = `x ${x} · y ${y}`;
+    depthStatusElement.textContent =
+      occlusion === "behind-maple"
+        ? "Behind the maple"
+        : occlusion === "in-front-of-maple"
+          ? "In front of the maple"
+          : "Exploring Willowbrook";
   }
 }
 
 const game = new Phaser.Game({
-  backgroundColor: "#8fcae8",
-  height: WORLD_SIZE.height,
+  backgroundColor: "#81c96c",
+  height: VIEWPORT_SIZE.height,
   parent: worldElement,
   physics: {
     arcade: {
@@ -264,7 +393,7 @@ const game = new Phaser.Game({
   },
   scene: PixelStageScene,
   type: Phaser.CANVAS,
-  width: WORLD_SIZE.width,
+  width: VIEWPORT_SIZE.width,
 });
 
 for (const button of document.querySelectorAll<HTMLButtonElement>(

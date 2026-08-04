@@ -5,103 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A Phaser-powered pixel game proof of concept for Parrot English."
+      content="A Phaser-powered, tile-based pixel village proof of concept for Parrot English."
     />
-    <title>Pixel stage proof of concept</title>
+    <title>Walk Peppa through Willowbrook</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main>
       <header class="intro">
-        <p class="eyebrow">Parrot English · engine test</p>
-        <h1>Pixel stage proof of concept</h1>
+        <p class="eyebrow">Parrot English · playable scene</p>
+        <h1>Walk Peppa through Willowbrook</h1>
         <p class="summary">
-          Peppa is now a Phaser actor in a real 240 × 160 game world, not a DOM
-          image positioned over a background.
+          A real scrolling tile world with object-level collision and depth —
+          built like a small GBA game, not two layered pictures.
         </p>
-        <p class="engine-chip">Phaser 4 · Arcade Physics · 24-color world</p>
       </header>
 
-      <section class="stage" aria-label="Animated pixel lesson stage">
-        <div
-          id="pixel-game"
-          class="game-world"
-          role="group"
-          aria-label="Original pixel game world"
-          data-depth="212"
-          data-engine="phaser"
-          data-ready="false"
-          data-state="idle"
-          data-x="120"
-          data-y="112"
-        >
-          <p class="loading-status" data-engine-status>Loading Phaser…</p>
-        </div>
-        <div class="hud">
-          <span>240 × 160 world · Phaser Arcade Physics</span>
-          <span class="coordinates" data-coordinates>x 120 · y 112</span>
-        </div>
-        <p class="speech" aria-live="polite">
-          <span class="speaker">Peppa:</span>
-          <span data-speech-copy>Ready for an English adventure?</span>
-        </p>
-      </section>
+      <article class="game-card">
+        <header class="game-card__bar">
+          <span>Willowbrook Village</span>
+          <span class="engine-chip">Phaser 4 · 16 px grid</span>
+        </header>
 
-      <nav class="controls" aria-label="Pixel world controls">
-        <div class="emote-controls" aria-label="Peppa animations" role="group">
-          <button type="button" aria-pressed="true" data-state="idle">Idle</button>
-          <button type="button" aria-pressed="false" data-state="talking">
-            Talking
-          </button>
-          <button type="button" aria-pressed="false" data-state="happy">Happy</button>
-          <button type="button" aria-pressed="false" data-state="surprised">
-            Surprised
-          </button>
-        </div>
-
-        <div class="movement-panel">
-          <p class="move-label">Move with arrow keys, WASD, or the pad</p>
-          <div class="move-pad" role="group" aria-label="Move Peppa">
-            <button
-              class="move-button"
-              type="button"
-              data-move="up"
-              aria-label="Move up"
-            >
-              ↑
-            </button>
-            <button
-              class="move-button"
-              type="button"
-              data-move="left"
-              aria-label="Move left"
-            >
-              ←
-            </button>
-            <button
-              class="move-button"
-              type="button"
-              data-move="down"
-              aria-label="Move down"
-            >
-              ↓
-            </button>
-            <button
-              class="move-button"
-              type="button"
-              data-move="right"
-              aria-label="Move right"
-            >
-              →
-            </button>
+        <section class="stage" aria-label="Willowbrook exploration stage">
+          <div
+            id="pixel-game"
+            class="game-world"
+            role="group"
+            aria-label="Willowbrook village game world"
+            data-camera-x="72"
+            data-camera-y="48"
+            data-depth="1128"
+            data-engine="phaser"
+            data-map-height="320"
+            data-map-width="480"
+            data-maple-depth="1160"
+            data-occlusion="behind-maple"
+            data-ready="false"
+            data-state="idle"
+            data-x="192"
+            data-y="128"
+          >
+            <p class="loading-status" data-engine-status>Building Willowbrook…</p>
           </div>
-        </div>
 
-        <p class="tech-note">
-          Phaser scene · sprite animation · physics collisions · y-depth ·
-          integer zoom
+          <div class="hud" aria-label="Game status">
+            <span class="hud__place">Willowbrook</span>
+            <span data-depth-status>Behind the maple</span>
+            <span class="coordinates" data-coordinates>x 192 · y 128</span>
+          </div>
+        </section>
+
+        <p class="speech" aria-live="polite">
+          <span class="speaker">Peppa</span>
+          <span data-speech-copy>Come on — let's explore Willowbrook!</span>
         </p>
-      </nav>
+
+        <nav class="controls" aria-label="Willowbrook game controls">
+          <div class="movement-panel">
+            <p class="control-label">Move</p>
+            <div class="move-pad" role="group" aria-label="Move Peppa">
+              <button
+                class="move-button"
+                type="button"
+                data-move="up"
+                aria-label="Move up"
+              >
+                ↑
+              </button>
+              <button
+                class="move-button"
+                type="button"
+                data-move="left"
+                aria-label="Move left"
+              >
+                ←
+              </button>
+              <button
+                class="move-button"
+                type="button"
+                data-move="down"
+                aria-label="Move down"
+              >
+                ↓
+              </button>
+              <button
+                class="move-button"
+                type="button"
+                data-move="right"
+                aria-label="Move right"
+              >
+                →
+              </button>
+            </div>
+          </div>
+
+          <div class="emote-panel">
+            <p class="control-label">Peppa's mood</p>
+            <div class="emote-controls" aria-label="Peppa animations" role="group">
+              <button type="button" aria-pressed="true" data-state="idle">
+                Idle
+              </button>
+              <button type="button" aria-pressed="false" data-state="talking">
+                Talk
+              </button>
+              <button type="button" aria-pressed="false" data-state="happy">
+                Happy
+              </button>
+              <button type="button" aria-pressed="false" data-state="surprised">
+                Surprise
+              </button>
+            </div>
+            <p class="key-hint">Arrow keys or WASD also work</p>
+          </div>
+        </nav>
+      </article>
+
+      <footer class="tech-note">
+        30 × 20 tile world · foot-box physics · y-sorted scenery · following camera
+      </footer>
     </main>
 
     <script type="module" src="./main.ts"></script>

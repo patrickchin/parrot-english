@@ -1,26 +1,23 @@
-# Pixel stage proof of concept
+# Willowbrook pixel-stage proof of concept
 
 Open `/prototypes/pixel-stage/` from the Vite development server.
 
-The revised prototype deliberately uses one real virtual resolution:
+This version is built as a small game world rather than a background and a
+foreground image:
 
-- one original 240 × 160 game world with a 24-color palette;
-- one 256 × 256 sprite sheet with sixteen 64 × 64 frames;
-- one foreground occlusion layer extracted from the same world art;
-- Phaser 4 sprite animation and Arcade Physics; and
-- Phaser's integer-only `MAX_ZOOM` scaling with pixel-art rendering.
+- Phaser 4 owns the tilemap, Arcade Physics, input, animation, camera, and
+  render ordering;
+- the viewport is a GBA-sized 240 × 160 pixels, while the explorable map is a
+  larger 480 × 320 pixels;
+- every ground and scenery asset uses a 16 × 16 source-pixel grid;
+- each tall object declares its visual tiles, collision footprint, and foot
+  line together; and
+- Peppa and scenery share the same `1000 + footY` depth rule, so Peppa passes
+  behind or in front of an object according to where her feet are.
 
-The browser never stretches a source pixel by a fractional amount. On a
-390-pixel-wide phone, for example, the whole world renders at exactly 1×:
-240 × 160 screen pixels. Wider displays use the largest whole-number scale that
-fits, such as 4× for a 960 × 640 world.
+The world uses Kenney's **Tiny Town** 16 × 16 tileset under CC0. The bundled
+license is in `assets/tiny-town-license.txt`. Peppa's 64 × 64 animation sheet is
+rendered at 0.5 scale so her visible pixels align with the environment's scale.
 
-Peppa is a `Phaser.Physics.Arcade.Sprite` and can move with arrow keys, WASD, or
-the on-screen direction pad. Phaser owns velocity, world bounds, collision
-bodies, sprite-sheet animation, and render ordering. The only local game data
-is the world size, character start point, animation ranges, and scenery shapes
-in `prototypes/pixel-stage/world-config.js`.
-
-It is isolated from the lesson player. The purpose is to judge the visual
-direction and the asset-production consistency before changing lesson data or
-runtime code.
+This remains isolated from the lesson player. Its purpose is to validate the
+gameplay and art direction before any lesson schema or runtime integration.
