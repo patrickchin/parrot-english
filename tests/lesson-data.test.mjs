@@ -552,7 +552,7 @@ describe("lesson data contract", () => {
     }
   });
 
-  it("registers an existing WebP asset for every lesson background", () => {
+  it("registers a versioned R2 asset for every lesson background", () => {
     const backgrounds = JSON.parse(
       readFileSync(
         new URL("../content/catalogs/backgrounds.json", import.meta.url),
@@ -561,13 +561,14 @@ describe("lesson data contract", () => {
     );
 
     for (const background of backgrounds) {
-      assert.match(background.src, /^\/assets\/backgrounds\/.+\.webp$/);
-      assert.ok(background.alt, `${background.id} alt text`);
-      assert.equal(
-        existsSync(new URL(`../public${background.src}`, import.meta.url)),
-        true,
-        `${background.id} file`,
+      assert.match(
+        background.src,
+        new RegExp(
+          `^https://media\\.parrotbook\\.com/backgrounds/${background.id}/v[1-9]\\d*/landscape\\.webp$`,
+        ),
+        `${background.id} versioned media URL`,
       );
+      assert.ok(background.alt, `${background.id} alt text`);
     }
   });
 
