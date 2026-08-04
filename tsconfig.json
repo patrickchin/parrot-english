@@ -18,6 +18,7 @@
   "include": [
     "src",
     "lib",
+    "prototypes",
     "worker",
     "tests",
     "worker-configuration.d.ts",

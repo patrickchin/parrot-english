@@ -33,11 +33,14 @@ for (const viewport of phoneViewports) {
     const activities = page.getByRole("navigation", {
       name: "Learning activities",
     });
-    await expect(activities.getByRole("link")).toHaveCount(2);
+    await expect(activities.getByRole("link")).toHaveCount(3);
     const talk = activities.getByRole("link", { name: /^Talk to Peppa/ });
     await expect(talk).toBeVisible();
     await expect(
       activities.getByRole("link", { name: /^Lessons/ }),
+    ).toBeVisible();
+    await expect(
+      activities.getByRole("link", { name: /^Game/ }),
     ).toBeVisible();
     await expect(page.getByText("Create a Lesson", { exact: true })).toBeHidden();
     const progress = activities.getByRole("button", {
@@ -101,4 +104,34 @@ test("retired feature URLs return to the useful home hub", async ({ page }) => {
       page.getByRole("navigation", { name: "Learning activities" }),
     ).toBeVisible();
   }
+});
+
+test("Game opens the pixel garden proof of concept", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/");
+
+  const game = page.getByRole("link", { name: /^Game/ });
+  const talk = page.getByRole("link", { name: /^Talk to Peppa/ });
+  const lessons = page.getByRole("link", { name: /^Lessons/ });
+  await expect(game).toBeVisible();
+  await expect(game).toHaveAttribute("href", "/prototypes/pixel-stage/");
+  await expect(game.getByText("Proof of concept", { exact: true })).toBeVisible();
+
+  const [gameBox, lessonsBox, talkBox] = await Promise.all([
+    game.boundingBox(),
+    lessons.boundingBox(),
+    talk.boundingBox(),
+  ]);
+  expect(gameBox).not.toBeNull();
+  expect(lessonsBox).not.toBeNull();
+  expect(talkBox).not.toBeNull();
+  expect(gameBox!.y).toBe(talkBox!.y);
+  expect(lessonsBox!.y).toBe(talkBox!.y);
+
+  await game.click();
+
+  await expect(page).toHaveURL(/\/prototypes\/pixel-stage\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
+  ).toBeVisible();
 });
