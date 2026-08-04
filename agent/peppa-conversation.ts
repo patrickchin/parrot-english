@@ -19,6 +19,11 @@ export function getConversationSystemPrompt(purpose: ConversationPurpose) {
 
 export const AGENT_SESSION_START_OPTIONS = { record: false } as const;
 
+export const AGENT_ROOM_LIFECYCLE_OPTIONS = {
+  closeOnDisconnect: true,
+  deleteRoomOnClose: true,
+} as const;
+
 export const AGENT_TURN_HANDLING = {
   interruption: {
     enabled: false,

@@ -167,4 +167,44 @@ describe("Peppa profile-edit tool", () => {
       "conversation-completed",
     ]);
   });
+
+  it("keeps the conversation open when the profile write fails", async () => {
+    let completed;
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState() {
+          throw new Error("profile write failed");
+        },
+      }),
+      purpose: "profile-edit",
+      initialState: createLearnerProfileConversationState({
+        profileAge: 8,
+        profileName: "Mia",
+        profileSummary: "Mia is eight and likes pandas.",
+      }),
+    });
+
+    await task.hookAdapter.hooks.onEnter({
+      complete(result) {
+        completed = result;
+      },
+      session: {
+        generateReply() {},
+      },
+    });
+
+    await assert.rejects(
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
+        {
+          about: "Mia is nine and likes pandas.",
+          age: 9,
+          name: "Mia",
+        },
+        {},
+      ),
+      /profile write failed/,
+    );
+    assert.equal(completed, undefined);
+  });
 });

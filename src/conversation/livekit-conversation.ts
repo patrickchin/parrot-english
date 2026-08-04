@@ -1,4 +1,4 @@
-import { Room, RoomEvent } from "livekit-client";
+import { DisconnectReason, Room, RoomEvent } from "livekit-client";
 import {
   COMMIT_USER_TURN_COMMAND,
   REPEAT_LAST_AUDIO_COMMAND,
@@ -95,6 +95,13 @@ function segmentRecords(value: unknown) {
           segment !== null && typeof segment === "object" && !Array.isArray(segment),
       )
     : [];
+}
+
+function readableDisconnectReason(reason: unknown) {
+  if (typeof reason === "number") {
+    return DisconnectReason[reason] ?? String(reason);
+  }
+  return typeof reason === "string" ? reason : String(reason ?? "unknown");
 }
 
 function createE2eLiveKitConversation() {
@@ -330,7 +337,7 @@ export function createLiveKitConversation({
       (reason) =>
         publish({
           type: "disconnected",
-          reason: typeof reason === "string" ? reason : String(reason ?? "unknown"),
+          reason: readableDisconnectReason(reason),
         }),
     ],
     [

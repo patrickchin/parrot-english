@@ -56,8 +56,12 @@ describe("LiveKit conversation adapter", () => {
 
     await conversation.connect();
     await conversation.setMicrophoneEnabled(true);
+    await conversation.commitUserTurn();
+    await conversation.sendText("I like pandas");
+    await conversation.repeatLastAudio();
+    await conversation.disconnect();
 
-    assert.deepEqual(events, [
+    assert.deepEqual(events.slice(0, 3), [
       { type: "state", state: "connecting" },
       { type: "state", state: "connected" },
       {
@@ -68,6 +72,11 @@ describe("LiveKit conversation adapter", () => {
         language: "en",
         role: "assistant",
       },
+    ]);
+    assert.deepEqual(events.slice(3).map((event) => event.type), [
+      "transcription",
+      "transcription",
+      "speech-started",
     ]);
   });
 

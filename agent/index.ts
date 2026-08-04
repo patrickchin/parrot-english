@@ -21,6 +21,7 @@ import {
   type ConversationIngestClient,
 } from "./ingest-client.ts";
 import {
+  AGENT_ROOM_LIFECYCLE_OPTIONS,
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
   conversationEndStatus,
@@ -348,8 +349,8 @@ export const agentDefinition = defineAgent({
     await session.start({
       agent: rootAgent,
       inputOptions: {
+        ...AGENT_ROOM_LIFECYCLE_OPTIONS,
         audioEnabled: true,
-        closeOnDisconnect: true,
         textEnabled: true,
         textInputCallback: createConversationTextInputCallback(
           () => latestAssistantText,
