@@ -24,16 +24,24 @@ describe("Phaser pixel stage", () => {
     assert.equal(packageManifest.dependencies.phaser, "4.2.1");
   });
 
-  it("builds a compact village and magnifies every world pixel uniformly", () => {
-    assert.equal(worldConfig.TILE_SIZE, 16);
-    assert.equal(worldConfig.CAMERA_ZOOM, 2);
-    assert.deepEqual(worldConfig.VIEWPORT_SIZE, { height: 160, width: 240 });
-    assert.deepEqual(worldConfig.VISIBLE_WORLD_SIZE, { height: 80, width: 120 });
+  it("builds a compact lesson garden on a three-times-finer render grid", () => {
+    assert.equal(worldConfig.RENDER_SCALE, 3);
+    assert.equal(worldConfig.TILE_SIZE, 48);
+    assert.equal(worldConfig.CAMERA_ZOOM, 1);
+    assert.deepEqual(worldConfig.VIEWPORT_SIZE, { height: 240, width: 360 });
+    assert.deepEqual(worldConfig.VISIBLE_WORLD_SIZE, { height: 240, width: 360 });
     assert.deepEqual(worldConfig.WORLD_GRID, { columns: 15, rows: 10 });
-    assert.deepEqual(worldConfig.WORLD_SIZE, { height: 160, width: 240 });
-    assert.deepEqual(worldConfig.PLAYER_START, { x: 128, y: 64 });
-    assert.equal(worldConfig.SPRITE_FRAME_SIZE, 32);
+    assert.deepEqual(worldConfig.WORLD_SIZE, { height: 480, width: 720 });
+    assert.deepEqual(worldConfig.PLAYER_START, { x: 450, y: 192 });
+    assert.equal(worldConfig.SPRITE_FRAME_SIZE, 96);
     assert.equal(worldConfig.PLAYER_SCALE, 1);
+    assert.equal(worldConfig.PLAYER_SPEED, 144);
+    assert.deepEqual(worldConfig.PLAYER_BODY, {
+      height: 18,
+      offsetX: 30,
+      offsetY: 78,
+      width: 36,
+    });
     assert.equal(
       worldConfig.WORLD_SIZE.width,
       worldConfig.WORLD_GRID.columns * worldConfig.TILE_SIZE,
@@ -52,35 +60,32 @@ describe("Phaser pixel stage", () => {
         { key: "surprised", start: 12, end: 15 },
       ],
     );
-    assert.ok(worldConfig.PATH_AREAS.length >= 3);
-    assert.ok(worldConfig.GROUND_DETAILS.length >= 12);
   });
 
   it("authors collision and occlusion from the same world objects", () => {
-    const maple = worldConfig.WORLD_OBJECTS.find(
-      ({ id }) => id === "village-maple",
-    );
-    const schoolhouse = worldConfig.WORLD_OBJECTS.find(
-      ({ id }) => id === "schoolhouse",
+    const tree = worldConfig.WORLD_OBJECTS.find(
+      ({ id }) => id === "lesson-tree",
     );
 
-    assert.ok(maple);
-    assert.ok(schoolhouse);
-    assert.equal(maple.footY, maple.y);
-    assert.ok(maple.tiles.length >= 9);
-    assert.ok(maple.collision.width > 0);
-    assert.ok(maple.collision.height > 0);
-    assert.ok(schoolhouse.tiles.length >= 12);
+    assert.deepEqual(
+      worldConfig.WORLD_OBJECTS.map(({ id }) => id),
+      ["lesson-tree", "flower-patch", "lesson-basket", "apple-counter"],
+    );
+    assert.ok(tree);
+    assert.equal(tree.footY, tree.y);
+    assert.equal(tree.asset, "garden-tree-ball");
+    assert.ok(tree.collision.width > 0);
+    assert.ok(tree.collision.height > 0);
     assert.ok(
       worldConfig.WORLD_OBJECTS.every(
-        ({ collision, footY, tiles }) =>
-          Number.isFinite(footY) && tiles.length > 0 && collision,
+        ({ asset, collision, footY }) =>
+          Number.isFinite(footY) && asset.length > 0 && collision,
       ),
     );
-    assert.equal(worldConfig.getDepthForFootY(160), 1_160);
+    assert.equal(worldConfig.getDepthForFootY(480), 1_480);
     assert.ok(
-      worldConfig.getDepthForFootY(176) >
-        worldConfig.getDepthForFootY(160),
+      worldConfig.getDepthForFootY(528) >
+        worldConfig.getDepthForFootY(480),
     );
   });
 
@@ -89,8 +94,11 @@ describe("Phaser pixel stage", () => {
 
     assert.match(stage, /new Phaser\.Game\(/);
     assert.match(stage, /Phaser\.Scale\.MAX_ZOOM/);
-    assert.match(stage, /this\.make\.tilemap\(/);
-    assert.match(stage, /createBlankLayer\(/);
+    assert.match(stage, /lesson-garden-ground\.png/);
+    assert.match(stage, /garden-tree-ball\.png/);
+    assert.match(stage, /garden-flowers\.png/);
+    assert.match(stage, /garden-basket\.png/);
+    assert.match(stage, /garden-market\.png/);
     assert.match(stage, /this\.physics\.add\.sprite\(/);
     assert.match(stage, /createCursorKeys\(\)/);
     assert.match(stage, /this\.physics\.add\.collider\(/);
@@ -98,19 +106,30 @@ describe("Phaser pixel stage", () => {
     assert.match(stage, /startFollow\(/);
     assert.match(stage, /setDeadzone\(/);
     assert.match(stage, /setZoom\(CAMERA_ZOOM\)/);
-    assert.match(stage, /tiny-town\.png/);
-    assert.match(stage, /peppa-town-sheet\.png/);
-    assert.doesNotMatch(stage, /peppa-sheet\.png/);
-    assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH/);
+    assert.match(stage, /peppa-town-sheet-96\.png/);
+    assert.doesNotMatch(stage, /tiny-town\.png|peppa-sheet\.png/);
+    assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH|make\.tilemap/);
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
   });
 
-  it("uses a compact four-by-four character sheet on the town art grid", () => {
+  it("uses generated lesson assets at the native high-resolution game grid", () => {
     assert.deepEqual(
       pngDimensions(
-        "public/prototypes/pixel-stage/assets/peppa-town-sheet.png",
+        "public/prototypes/pixel-stage/assets/peppa-town-sheet-96.png",
       ),
-      { height: 128, width: 128 },
+      { height: 384, width: 384 },
+    );
+    assert.deepEqual(
+      pngDimensions(
+        "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
+      ),
+      { height: 480, width: 720 },
+    );
+    assert.deepEqual(
+      pngDimensions(
+        "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
+      ),
+      { height: 192, width: 168 },
     );
   });
 
