@@ -119,7 +119,7 @@ describe("My Lessons persistence and API", () => {
       );
       assert.ok(
         payload.warnings.some((warning) =>
-          /background.*using episode-garden/i.test(warning),
+          /background.*using.*episode-garden/i.test(warning),
         ),
       );
       assert.ok(

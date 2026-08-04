@@ -350,7 +350,7 @@ describe("lesson data contract", () => {
     assert.equal(prepared.lesson.scenes[0].steps[0].emotes.peppa, "idle");
     assert.ok(
       prepared.warnings.some((warning) =>
-        /background.*using episode-garden/i.test(warning),
+        /background.*using.*episode-garden/i.test(warning),
       ),
     );
     assert.ok(

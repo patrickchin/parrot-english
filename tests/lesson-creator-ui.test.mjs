@@ -184,7 +184,7 @@ describe("uploaded lesson parsing", () => {
     assert.equal(draft.lesson.scenes[0].steps[0].emotes.peppa, "idle");
     assert.ok(
       draft.warnings.some((warning) =>
-        /background.*using episode-garden/i.test(warning),
+        /background.*using.*episode-garden/i.test(warning),
       ),
     );
     assert.ok(

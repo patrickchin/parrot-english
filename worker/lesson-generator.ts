@@ -2,8 +2,8 @@ import { prepareLesson } from "../lib/lesson-data.js";
 import type { LessonDraft } from "../src/lessons/lesson-catalog.ts";
 import { fetchWithTimeout } from "./groq.ts";
 import {
+  CUSTOM_LESSON_BACKGROUNDS,
   CUSTOM_LESSON_VISUAL_CATALOG,
-  LESSON_BACKGROUNDS,
 } from "./lesson-catalog.ts";
 import { LESSON_GENERATOR_MODEL_ID } from "./model-config.ts";
 import { LESSON_GENERATOR_SYSTEM_PROMPT } from "./prompts/lesson-generator.ts";
@@ -82,7 +82,7 @@ export async function generateLessonScript({
               content: JSON.stringify({
                 topic,
                 childName,
-                availableBackgrounds: LESSON_BACKGROUNDS,
+                availableBackgrounds: CUSTOM_LESSON_BACKGROUNDS,
               }),
             },
           ],

@@ -21,3 +21,7 @@ export const CUSTOM_LESSON_VISUAL_CATALOG = createCustomLessonCatalog({
   backgrounds,
   characters,
 });
+
+export const CUSTOM_LESSON_BACKGROUNDS = [
+  ...CUSTOM_LESSON_VISUAL_CATALOG.backgrounds.values(),
+].map(({ alt, id }) => ({ description: alt, id }));
