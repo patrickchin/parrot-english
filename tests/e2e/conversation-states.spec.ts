@@ -116,7 +116,7 @@ test("profile completion uses the stable saving stage", async ({ page }) => {
   await useIncompleteProfile(page);
   await page.goto("/profile/setup?parrotE2eConversation=saving");
 
-  await expect(page.getByRole("status")).toContainText("Saving your profile");
+  await expect(page.getByRole("status")).toContainText("Conversation ended");
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
   ).toContainText("remember");

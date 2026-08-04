@@ -22,6 +22,7 @@ function ingest(overrides = {}) {
 describe("Peppa profile-edit tool", () => {
   it("persists the complete name, age, and About profile before acknowledging it", async () => {
     const stateUpdates = [];
+    let completed;
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
       ingest: ingest({
@@ -35,6 +36,15 @@ describe("Peppa profile-edit tool", () => {
         profileName: "Mia",
         profileSummary: "Mia is thirty and loves fast red cars.",
       }),
+    });
+
+    await task.hookAdapter.hooks.onEnter({
+      complete(result) {
+        completed = result;
+      },
+      session: {
+        generateReply() {},
+      },
     });
 
     assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
@@ -58,8 +68,9 @@ describe("Peppa profile-edit tool", () => {
         },
         {},
       ),
-      { saved: true },
+      { ending: true, saved: true },
     );
+    assert.deepEqual(completed, { finishReason: "conversation_complete" });
     assert.equal(stateUpdates.length, 1);
     assert.equal(stateUpdates[0][0], "conversation-1");
     assert.equal(stateUpdates[0][1].profileName, "Maya");
@@ -98,6 +109,8 @@ describe("Peppa profile-edit tool", () => {
   });
 
   it("does not report success before the profile write finishes", async () => {
+    const calls = [];
+    let completed;
     let releaseWrite;
     const pendingWrite = new Promise((resolve) => {
       releaseWrite = resolve;
@@ -106,7 +119,9 @@ describe("Peppa profile-edit tool", () => {
       conversationId: "conversation-1",
       ingest: ingest({
         async updateState() {
+          calls.push("write-started");
           await pendingWrite;
+          calls.push("write-finished");
         },
       }),
       purpose: "profile-edit",
@@ -115,6 +130,16 @@ describe("Peppa profile-edit tool", () => {
         profileName: "Mia",
         profileSummary: "Mia is eight and likes pandas.",
       }),
+    });
+
+    await task.hookAdapter.hooks.onEnter({
+      complete(result) {
+        completed = result;
+        calls.push("conversation-completed");
+      },
+      session: {
+        generateReply() {},
+      },
     });
 
     const execution =
@@ -132,7 +157,14 @@ describe("Peppa profile-edit tool", () => {
     ]);
 
     assert.equal(beforeWrite, "pending");
+    assert.equal(completed, undefined);
     releaseWrite();
-    assert.deepEqual(await execution, { saved: true });
+    assert.deepEqual(await execution, { ending: true, saved: true });
+    assert.deepEqual(completed, { finishReason: "conversation_complete" });
+    assert.deepEqual(calls, [
+      "write-started",
+      "write-finished",
+      "conversation-completed",
+    ]);
   });
 });

@@ -332,6 +332,7 @@ describe("purpose-scoped learner-profile agent tools", () => {
 
   it("persists name, age, and About changes alongside the ending tool", async () => {
     const stateUpdates = [];
+    let completed;
     let opening;
     const task = createGettingToKnowYouTask({
       conversationId: "conversation-1",
@@ -349,7 +350,9 @@ describe("purpose-scoped learner-profile agent tools", () => {
     });
 
     await task.hookAdapter.hooks.onEnter({
-      complete() {},
+      complete(result) {
+        completed = result;
+      },
       session: {
         generateReply(options) {
           opening = options;
@@ -379,7 +382,8 @@ describe("purpose-scoped learner-profile agent tools", () => {
       {},
     );
 
-    assert.deepEqual(result, { saved: true });
+    assert.deepEqual(result, { ending: true, saved: true });
+    assert.deepEqual(completed, { finishReason: "conversation_complete" });
     assert.equal(stateUpdates.length, 1);
     assert.equal(stateUpdates[0][0], "conversation-1");
     assert.equal(stateUpdates[0][1].profileName, "Maya");

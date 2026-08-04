@@ -982,6 +982,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     let listener = () => {};
     let completions = 0;
     const reviews = [];
+    const summaryResponse = deferred();
     const transport = {
       async connect() {},
       async disconnect() {},
@@ -1010,14 +1011,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         });
       }
       if (path === "/api/conversations/conversation-2") {
-        return json({
-          conversation: {
-            controllerState: {
-              profileSummary: "Mia is eight and loves red racing cars.",
-            },
-            turns: [],
-          },
-        });
+        return summaryResponse.promise;
       }
       if (path === "/api/conversations/conversation-2/review") {
         reviews.push(JSON.parse(init.body));
@@ -1062,6 +1056,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       listener({ type: "disconnected", reason: "task_complete" });
       await flush();
     });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+
+    summaryResponse.resolve(
+      json({
+        conversation: {
+          controllerState: {
+            profileSummary: "Mia is eight and loves red racing cars.",
+          },
+          turns: [],
+        },
+      }),
+    );
     await waitFor(() => assert.equal(completions, 1));
 
     assert.deepEqual(reviews, [{}]);
