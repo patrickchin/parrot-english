@@ -57,7 +57,7 @@ export function HomeMenu() {
         aria-label="Learning activities"
         className="mx-auto w-full max-w-5xl"
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {PRIMARY_ACTIVITIES.map(
             ({
               badge,
