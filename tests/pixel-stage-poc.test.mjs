@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { inflateSync } from "node:zlib";
 
@@ -119,6 +119,18 @@ const worldConfig = await import(
 describe("Phaser pixel stage", () => {
   it("uses the maintained Phaser package as its game engine", () => {
     assert.equal(packageManifest.dependencies.phaser, "4.2.1");
+  });
+
+  it("ships only the assets used by the current proof of concept", () => {
+    assert.deepEqual(
+      readdirSync(
+        new URL(
+          "../public/prototypes/pixel-stage/assets/",
+          import.meta.url,
+        ),
+      ).sort(),
+      PIXEL_ASSETS.map((path) => path.split("/").at(-1)).sort(),
+    );
   });
 
   it("builds a compact lesson garden on a three-times-finer render grid", () => {
