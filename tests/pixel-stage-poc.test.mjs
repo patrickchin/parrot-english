@@ -288,7 +288,7 @@ describe("Phaser pixel stage", () => {
     );
   });
 
-  it("keeps foreground foliage distinct from the lawn palette", () => {
+  it("keeps natural foliage colors and moves contrast into the lawn palette", () => {
     const greenColors = (path) => {
       const { pixels } = readPngPixels(path);
       const colors = new Map();
@@ -312,6 +312,30 @@ describe("Phaser pixel stage", () => {
       );
     const lawnGreens = greenColors(
       "public/prototypes/pixel-stage/assets/lesson-garden-ground.png",
+    );
+
+    assert.deepEqual(
+      greenColors(
+        "public/prototypes/pixel-stage/assets/garden-tree-ball.png",
+      ).sort(),
+      [
+        [59, 165, 24],
+        [97, 179, 21],
+        [103, 181, 22],
+      ].sort(),
+      "the tree should keep its natural green palette",
+    );
+    assert.deepEqual(
+      greenColors(
+        "public/prototypes/pixel-stage/assets/garden-flowers.png",
+      ).sort(),
+      [
+        [59, 165, 24],
+        [78, 172, 24],
+        [97, 179, 21],
+        [103, 181, 22],
+      ].sort(),
+      "the flowers should keep their natural green palette",
     );
 
     for (const path of [
