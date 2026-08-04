@@ -102,3 +102,19 @@ test("retired feature URLs return to the useful home hub", async ({ page }) => {
     ).toBeVisible();
   }
 });
+
+test("Game opens the pixel garden proof of concept", async ({ page }) => {
+  await page.goto("/");
+
+  const game = page.getByRole("link", { name: /^Game/ });
+  await expect(game).toBeVisible();
+  await expect(game).toHaveAttribute("href", "/prototypes/pixel-stage/");
+  await expect(game.getByText("Proof of concept", { exact: true })).toBeVisible();
+
+  await game.click();
+
+  await expect(page).toHaveURL(/\/prototypes\/pixel-stage\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
+  ).toBeVisible();
+});
