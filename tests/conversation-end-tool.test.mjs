@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { initializeLogger, llm } from "@livekit/agents";
 import {
+  AGENT_ROOM_LIFECYCLE_OPTIONS,
   CONVERSATION_END_REASONS,
   CONVERSATION_SYSTEM_PROMPTS,
   conversationEndStatus,
@@ -13,6 +14,13 @@ import {
 initializeLogger({ level: "silent", pretty: false });
 
 describe("Peppa conversation ending", () => {
+  it("ends the LiveKit room when the conversation task closes", () => {
+    assert.deepEqual(AGENT_ROOM_LIFECYCLE_OPTIONS, {
+      closeOnDisconnect: true,
+      deleteRoomOnClose: true,
+    });
+  });
+
   it("gives every conversation mode one bounded endConversation tool", () => {
     const tasks = [
       ["onboarding", createGettingToKnowYouTask()],
