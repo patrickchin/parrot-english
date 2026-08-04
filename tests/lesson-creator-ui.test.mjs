@@ -170,6 +170,30 @@ describe("uploaded lesson parsing", () => {
     });
   });
 
+  it("normalizes story-only artwork to reusable custom visuals", () => {
+    const lesson = createLessonScript();
+    lesson.scenes[0].background = "high-ball-garden";
+    lesson.scenes[0].steps[0].emotes.peppa = "reaching";
+
+    const draft = parseLessonScript(
+      JSON.stringify(lesson),
+      "story-action.json",
+    );
+
+    assert.equal(draft.lesson.scenes[0].background, "episode-garden");
+    assert.equal(draft.lesson.scenes[0].steps[0].emotes.peppa, "idle");
+    assert.ok(
+      draft.warnings.some((warning) =>
+        /background.*using.*episode-garden/i.test(warning),
+      ),
+    );
+    assert.ok(
+      draft.warnings.some((warning) =>
+        /emotes\.peppa.*using idle visual/i.test(warning),
+      ),
+    );
+  });
+
   it("rejects pasted scripts larger than the editor limit", () => {
     const oversized = JSON.stringify({ script: "x".repeat(256 * 1024) });
 

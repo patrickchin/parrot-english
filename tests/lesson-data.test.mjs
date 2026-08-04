@@ -4,6 +4,27 @@ import { describe, it } from "node:test";
 import * as lessonData from "../lib/lesson-data.js";
 
 const EMOTES = ["idle", "talking", "listening", "happy", "sad", "surprised"];
+const ACTION_EMOTES = {
+  peppa: [
+    "choosing-flower",
+    "holding-apples",
+    "holding-ball",
+    "holding-juice",
+    "holding-snack-apple",
+    "reaching",
+    "sleepy",
+  ],
+  dolly: [
+    "closing-book",
+    "flying",
+    "holding-juice",
+    "offering-apple",
+    "pouring-juice",
+    "returning-ball",
+    "selling-apples",
+    "swinging",
+  ],
+};
 
 function createAssets(id) {
   return Object.fromEntries(
@@ -264,6 +285,81 @@ describe("lesson data contract", () => {
     assert.deepEqual(prepared.lesson.scenes[0].steps[1].check, userStep.check);
   });
 
+  it("supports character-specific action poses without requiring them for every character", { skip: !hasValidator }, () => {
+    const catalogInput = createCatalogInput();
+    catalogInput.emotes = [...catalogInput.emotes, "reaching", "flying"];
+    catalogInput.characters[0].assets.reaching = {
+      src: "/assets/characters/peppa/peppa-reaching.webp",
+      alt: "Peppa reaching up",
+    };
+    catalogInput.characters[1].assets.flying = {
+      src: "/assets/characters/dolly/dolly-flying.webp",
+      alt: "Dolly flying up",
+    };
+    const catalog = lessonData.createLessonCatalog(catalogInput);
+    const lesson = createLesson();
+    lesson.scenes[0].steps[0].emotes = {
+      peppa: "reaching",
+      dolly: "flying",
+    };
+
+    assert.equal(
+      lessonData.validateLesson(lesson, catalog, "action-poses.json"),
+      lesson,
+    );
+
+    const wrongCharacter = createLesson();
+    wrongCharacter.scenes[0].steps[0].emotes.peppa = "flying";
+    assert.throws(
+      () =>
+        lessonData.validateLesson(
+          wrongCharacter,
+          catalog,
+          "wrong-character.json",
+        ),
+      /wrong-character\.json.*emotes\.peppa.*visual asset/,
+    );
+  });
+
+  it("limits custom lessons to reusable backgrounds and universal emotes", () => {
+    const catalogInput = createCatalogInput();
+    catalogInput.emotes = [...catalogInput.emotes, "reaching"];
+    catalogInput.backgrounds.push({
+      id: "high-ball-garden",
+      src: "/assets/backgrounds/high-ball-garden.webp",
+      alt: "A story-specific garden",
+    });
+    catalogInput.characters[0].assets.reaching = {
+      src: "/assets/characters/peppa/peppa-reaching.webp",
+      alt: "Peppa reaching up",
+    };
+    const catalog = lessonData.createCustomLessonCatalog(catalogInput);
+    const lesson = createLesson();
+    lesson.scenes[0].background = "high-ball-garden";
+    lesson.scenes[0].steps[0].emotes.peppa = "reaching";
+
+    assert.deepEqual([...catalog.emotes.keys()], EMOTES);
+    assert.deepEqual([...catalog.backgrounds.keys()], ["episode-garden"]);
+    assert.deepEqual(
+      Object.keys(catalog.characters.get("peppa").assets).sort(),
+      [...EMOTES].sort(),
+    );
+
+    const prepared = lessonData.prepareLesson(lesson, catalog, "custom.json");
+    assert.equal(prepared.lesson.scenes[0].background, "episode-garden");
+    assert.equal(prepared.lesson.scenes[0].steps[0].emotes.peppa, "idle");
+    assert.ok(
+      prepared.warnings.some((warning) =>
+        /background.*using.*episode-garden/i.test(warning),
+      ),
+    );
+    assert.ok(
+      prepared.warnings.some((warning) =>
+        /emotes\.peppa.*using idle visual/i.test(warning),
+      ),
+    );
+  });
+
   it("normalizes recoverable draft problems into warnings and safe defaults", () => {
     assert.equal(typeof lessonData.prepareLesson, "function");
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
@@ -469,6 +565,26 @@ describe("lesson data contract", () => {
     }
   });
 
+  it("registers a versioned R2 asset for every lesson background", () => {
+    const backgrounds = JSON.parse(
+      readFileSync(
+        new URL("../content/catalogs/backgrounds.json", import.meta.url),
+        "utf8",
+      ),
+    );
+
+    for (const background of backgrounds) {
+      assert.match(
+        background.src,
+        new RegExp(
+          `^https://media\\.parrotbook\\.com/backgrounds/${background.id}/v[1-9]\\d*/landscape\\.webp$`,
+        ),
+        `${background.id} versioned media URL`,
+      );
+      assert.ok(background.alt, `${background.id} alt text`);
+    }
+  });
+
   it("registers one existing pre-generated asset for every character emote", () => {
     const characters = JSON.parse(
       readFileSync(
@@ -476,11 +592,25 @@ describe("lesson data contract", () => {
         "utf8"
       )
     );
+    const emotes = JSON.parse(
+      readFileSync(
+        new URL("../content/catalogs/emotes.json", import.meta.url),
+        "utf8",
+      ),
+    );
 
     for (const character of characters) {
-      assert.deepEqual(Object.keys(character.assets).sort(), [...EMOTES].sort());
-      for (const emote of EMOTES) {
+      const expectedEmotes = [
+        ...EMOTES,
+        ...(ACTION_EMOTES[character.id] ?? []),
+      ];
+      assert.deepEqual(
+        Object.keys(character.assets).sort(),
+        expectedEmotes.sort(),
+      );
+      for (const emote of expectedEmotes) {
         const asset = character.assets[emote];
+        assert.ok(emotes.includes(emote), `${character.id}.${emote} catalog`);
         assert.equal(
           asset.src,
           `/assets/characters/${character.id}/${character.id}-${emote}.webp`

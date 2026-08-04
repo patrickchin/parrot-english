@@ -15,7 +15,7 @@
     {
       "title": "Colorful Flowers",
       "settingDescription": "Peppa stands beside the flower beds while Dolly looks at the colorful blooms near the basket.",
-      "background": "episode-garden",
+      "background": "red-flower-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -39,7 +39,7 @@
     {
       "title": "A Color Question",
       "settingDescription": "Peppa points toward one flower while Dolly looks closely from beside the basket.",
-      "background": "episode-garden",
+      "background": "red-flower-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -97,7 +97,7 @@
     {
       "title": "The Red One",
       "settingDescription": "Dolly hovers beside the red flower while Peppa watches near the flower bed.",
-      "background": "episode-garden",
+      "background": "red-flower-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -155,14 +155,14 @@
     {
       "title": "The Flower Is Found",
       "settingDescription": "Peppa holds the red flower above the basket while Dolly smiles beside her.",
-      "background": "episode-garden",
+      "background": "red-flower-garden-picked",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "A red flower!",
           "emotes": {
-            "peppa": "surprised",
+            "peppa": "choosing-flower",
             "dolly": "listening"
           }
         },
@@ -170,7 +170,7 @@
           "speaker": "dolly",
           "dialogue": "We found it!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "choosing-flower",
             "dolly": "happy"
           }
         }
@@ -179,7 +179,7 @@
     {
       "title": "The Finished Basket",
       "settingDescription": "The red flower sits in the finished basket as Peppa and Dolly gather around it.",
-      "background": "episode-garden",
+      "background": "red-flower-basket-garden",
       "characters": ["peppa", "dolly"],
       "steps": [
         {

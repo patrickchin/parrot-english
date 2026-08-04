@@ -4,6 +4,7 @@ import backgrounds from "../../content/catalogs/backgrounds.json";
 import characters from "../../content/catalogs/characters.json";
 import emotes from "../../content/catalogs/emotes.json";
 import {
+  createCustomLessonCatalog,
   createLessonCatalog,
   prepareLesson,
   validateLesson,
@@ -16,6 +17,11 @@ const lessonModules = import.meta.glob("../../content/lessons/*.json", {
 
 export const VISUAL_CATALOG = createLessonCatalog({
   emotes,
+  characters,
+  backgrounds,
+});
+
+export const CUSTOM_VISUAL_CATALOG = createCustomLessonCatalog({
   characters,
   backgrounds,
 });

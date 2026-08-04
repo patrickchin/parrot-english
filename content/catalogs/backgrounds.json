@@ -18,5 +18,85 @@
     "id": "reward",
     "src": "https://media.parrotbook.com/backgrounds/reward/v1/landscape.webp",
     "alt": "A cheerful celebration background"
+  },
+  {
+    "id": "high-ball-garden",
+    "src": "https://media.parrotbook.com/backgrounds/high-ball-garden/v1/landscape.webp",
+    "alt": "A sunny garden with a red ball caught high in a leafy tree"
+  },
+  {
+    "id": "high-ball-garden-cleared",
+    "src": "https://media.parrotbook.com/backgrounds/high-ball-garden-cleared/v1/landscape.webp",
+    "alt": "A sunny garden beneath a leafy tree after the red ball has come down"
+  },
+  {
+    "id": "red-flower-garden",
+    "src": "https://media.parrotbook.com/backgrounds/red-flower-garden/v1/landscape.webp",
+    "alt": "A colorful garden with one bright red flower and an empty woven basket"
+  },
+  {
+    "id": "red-flower-garden-picked",
+    "src": "https://media.parrotbook.com/backgrounds/red-flower-garden-picked/v1/landscape.webp",
+    "alt": "A colorful garden with an empty basket beside the soil patch where the red flower was picked"
+  },
+  {
+    "id": "red-flower-basket-garden",
+    "src": "https://media.parrotbook.com/backgrounds/red-flower-basket-garden/v1/landscape.webp",
+    "alt": "A colorful garden with one red flower resting in a woven basket"
+  },
+  {
+    "id": "apple-snack-meadow",
+    "src": "https://media.parrotbook.com/backgrounds/apple-snack-meadow/v1/landscape.webp",
+    "alt": "A sunny meadow picnic with apples and bananas inside an open snack basket"
+  },
+  {
+    "id": "apple-snack-meadow-finished",
+    "src": "https://media.parrotbook.com/backgrounds/apple-snack-meadow-finished/v1/landscape.webp",
+    "alt": "A sunny meadow picnic with a closed snack basket on the blanket"
+  },
+  {
+    "id": "swing-playground",
+    "src": "https://media.parrotbook.com/backgrounds/swing-playground/v1/landscape.webp",
+    "alt": "A cheerful playground with an empty swing in the sunshine"
+  },
+  {
+    "id": "swing-playground-active",
+    "src": "https://media.parrotbook.com/backgrounds/swing-playground-active/v1/landscape.webp",
+    "alt": "A cheerful open playground clearing with a small slide in the sunshine"
+  },
+  {
+    "id": "fruit-stand-garden",
+    "src": "https://media.parrotbook.com/backgrounds/fruit-stand-garden/v1/landscape.webp",
+    "alt": "A garden market stand with baskets of shiny red apples"
+  },
+  {
+    "id": "juice-picnic-meadow",
+    "src": "https://media.parrotbook.com/backgrounds/juice-picnic-meadow/v1/landscape.webp",
+    "alt": "A sunny meadow picnic with a juice pitcher, cups, and a blanket"
+  },
+  {
+    "id": "juice-picnic-meadow-offering",
+    "src": "https://media.parrotbook.com/backgrounds/juice-picnic-meadow-offering/v1/landscape.webp",
+    "alt": "A sunny meadow picnic with empty cups, food, a basket, and a blanket"
+  },
+  {
+    "id": "juice-picnic-meadow-pouring",
+    "src": "https://media.parrotbook.com/backgrounds/juice-picnic-meadow-pouring/v1/landscape.webp",
+    "alt": "A sunny meadow picnic with an open blanket and basket"
+  },
+  {
+    "id": "bedtime-story-meadow",
+    "src": "https://media.parrotbook.com/backgrounds/bedtime-story-meadow/v1/landscape.webp",
+    "alt": "A cozy twilight meadow with a storybook, blanket, crescent moon, and stars"
+  },
+  {
+    "id": "bedtime-story-meadow-closing",
+    "src": "https://media.parrotbook.com/backgrounds/bedtime-story-meadow-closing/v1/landscape.webp",
+    "alt": "A cozy twilight meadow with cushions, a blanket, crescent moon, and stars"
+  },
+  {
+    "id": "bedtime-story-meadow-sleeping",
+    "src": "https://media.parrotbook.com/backgrounds/bedtime-story-meadow-sleeping/v1/landscape.webp",
+    "alt": "A quiet twilight meadow beneath a crescent moon beside a warm lantern"
   }
 ]

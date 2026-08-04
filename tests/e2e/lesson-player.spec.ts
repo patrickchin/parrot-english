@@ -11,6 +11,61 @@ const viewports = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
+const storySpecificVisuals = [
+  {
+    name: "Dolly flies toward the high ball",
+    path: "/lessons/parrot/01-peppas-high-ball/scenes/4",
+    background: "A sunny garden with a red ball caught high in a leafy tree",
+    character: "Dolly flying up toward a red ball",
+  },
+  {
+    name: "Peppa holds the picked flower above the basket",
+    path: "/lessons/parrot/02-garden-colors/scenes/4",
+    background:
+      "A colorful garden with an empty basket beside the soil patch where the red flower was picked",
+    character: "Peppa choosing a red flower",
+  },
+  {
+    name: "Peppa keeps her apple beside the closed snack basket",
+    path: "/lessons/parrot/03-snack-time/scenes/5",
+    background: "A sunny meadow picnic with a closed snack basket on the blanket",
+    character: "Peppa holding her snack apple",
+  },
+  {
+    name: "Dolly swings beside the playground slide",
+    path: "/lessons/parrot/04-playground-words/scenes/2",
+    background:
+      "A cheerful open playground clearing with a small slide in the sunshine",
+    character: "Dolly sitting on a playground swing",
+  },
+  {
+    name: "Dolly presents two market apples",
+    path: "/lessons/parrot/05-market-day/scenes/5",
+    background: "A garden market stand with baskets of shiny red apples",
+    character: "Dolly holding two red apples for Peppa",
+  },
+  {
+    name: "Dolly holds the picnic juice beside the cups",
+    path: "/lessons/parrot/06-picnic-time/scenes/2",
+    background:
+      "A sunny meadow picnic with empty cups, food, a basket, and a blanket",
+    character: "Dolly holding the juice pitcher",
+  },
+  {
+    name: "Peppa keeps her served picnic juice",
+    path: "/lessons/parrot/06-picnic-time/scenes/5",
+    background: "A sunny meadow picnic with an open blanket and basket",
+    character: "Peppa holding a cup of juice",
+  },
+  {
+    name: "Peppa stays tucked in for bedtime",
+    path: "/lessons/parrot/07-bedtime-story/scenes/4",
+    background:
+      "A quiet twilight meadow beneath a crescent moon beside a warm lantern",
+    character: "Peppa resting sleepily under a blanket",
+  },
+];
+
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
@@ -197,7 +252,9 @@ test("the start state introduces the lesson without premature scene UI", async (
 
   const start = page.getByRole("button", { name: "Start lesson" });
   await expect(start).toBeFocused();
-  await expect(page.getByAltText("A sunny garden with flowers and a tall tree")).toBeVisible();
+  await expect(
+    page.getByAltText("A sunny garden with a red ball caught high in a leafy tree"),
+  ).toBeVisible();
   await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeHidden();
   await expect(page.getByAltText(/Peppa/)).toBeHidden();
@@ -209,6 +266,19 @@ test("the start state introduces the lesson without premature scene UI", async (
   await expectNoPageOverflow(page);
 });
 
+for (const visual of storySpecificVisuals) {
+  test(`${visual.name} on a phone`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(visual.path);
+    await installAudioDelay(page, 5_000);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    await expect(page.getByAltText(visual.background)).toBeVisible();
+    await expect(page.getByAltText(visual.character)).toBeVisible();
+    await expectNoPageOverflow(page);
+  });
+}
+
 for (const viewport of viewports) {
   test(`listening and learner turns stay composed on a ${viewport.name}`, async ({
     page,
@@ -217,6 +287,10 @@ for (const viewport of viewports) {
     await page.goto(lessonPath);
     await installAudioDelay(page, 5_000);
     await page.getByRole("button", { name: "Start lesson" }).click();
+    await expect(
+      page.getByAltText("Peppa reaching up toward a red ball"),
+    ).toBeVisible();
+    await expect(page.getByAltText("Dolly listening")).toBeVisible();
 
     const hud = page.getByRole("region", { name: "Lesson progress" });
     const progress = page.getByRole("progressbar", { name: "Scene progress" });

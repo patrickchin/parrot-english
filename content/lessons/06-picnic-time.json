@@ -15,7 +15,7 @@
     {
       "title": "The Picnic Blanket",
       "settingDescription": "Peppa and Dolly sit around the checked blanket with the open picnic basket between them.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -39,7 +39,7 @@
     {
       "title": "Dolly Offers Juice",
       "settingDescription": "Dolly holds the juice bottle beside the cups while Peppa listens across the blanket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow-offering",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -47,7 +47,7 @@
           "dialogue": "Would you like some juice?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "holding-juice"
           }
         },
         {
@@ -55,7 +55,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy"
+            "dolly": "holding-juice"
           }
         },
         {
@@ -63,7 +63,7 @@
           "dialogue": "Would you like some juice?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "holding-juice"
           }
         },
         {
@@ -71,7 +71,7 @@
           "dialogue": "Would you like some juice?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening"
+            "dolly": "holding-juice"
           },
           "check": {
             "maxAttempts": 2,
@@ -97,7 +97,7 @@
     {
       "title": "Peppa Says Yes",
       "settingDescription": "Peppa looks at the empty cup while Dolly holds the juice beside the fruit basket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow-offering",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -105,7 +105,7 @@
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening"
+            "dolly": "holding-juice"
           }
         },
         {
@@ -113,7 +113,7 @@
           "dialogue": "Let's copy Dolly!",
           "emotes": {
             "peppa": "happy",
-            "dolly": "happy"
+            "dolly": "holding-juice"
           }
         },
         {
@@ -121,7 +121,7 @@
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "holding-juice"
           }
         },
         {
@@ -129,7 +129,7 @@
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening"
+            "dolly": "holding-juice"
           },
           "check": {
             "maxAttempts": 2,
@@ -155,7 +155,7 @@
     {
       "title": "A Cup of Juice",
       "settingDescription": "Dolly places a cup of juice in front of Peppa across the blanket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow-pouring",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -163,14 +163,14 @@
           "dialogue": "Here is your juice.",
           "emotes": {
             "peppa": "happy",
-            "dolly": "talking"
+            "dolly": "pouring-juice"
           }
         },
         {
           "speaker": "peppa",
           "dialogue": "Thank you, Dolly!",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "holding-juice",
             "dolly": "happy"
           }
         }
@@ -179,14 +179,14 @@
     {
       "title": "Picnic Time Together",
       "settingDescription": "Peppa holds her juice as Dolly sits with her beside the food on the blanket.",
-      "background": "meadow-day",
+      "background": "juice-picnic-meadow-pouring",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
           "dialogue": "The picnic is ready!",
           "emotes": {
-            "peppa": "talking",
+            "peppa": "holding-juice",
             "dolly": "happy"
           }
         },
@@ -194,7 +194,7 @@
           "speaker": "dolly",
           "dialogue": "Let's eat together!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-juice",
             "dolly": "talking"
           }
         },
@@ -202,7 +202,7 @@
           "speaker": "narrator",
           "dialogue": "Great job, Bella! Peppa has her picnic juice!",
           "emotes": {
-            "peppa": "happy",
+            "peppa": "holding-juice",
             "dolly": "happy"
           }
         }

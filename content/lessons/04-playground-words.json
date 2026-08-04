@@ -15,7 +15,7 @@
     {
       "title": "Dolly on the Swing",
       "settingDescription": "Dolly sits on the swing while Peppa waits on the grass nearby.",
-      "background": "meadow-day",
+      "background": "swing-playground-active",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -23,7 +23,7 @@
           "dialogue": "The swing is busy.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening"
+            "dolly": "swinging"
           }
         },
         {
@@ -31,7 +31,7 @@
           "dialogue": "I am swinging!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "swinging"
           }
         }
       ]
@@ -39,7 +39,7 @@
     {
       "title": "Peppa Waits",
       "settingDescription": "Peppa watches from beside the slide while Dolly swings.",
-      "background": "meadow-day",
+      "background": "swing-playground-active",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -47,7 +47,7 @@
           "dialogue": "I want a turn.",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening"
+            "dolly": "swinging"
           }
         },
         {
@@ -55,7 +55,7 @@
           "dialogue": "You can ask me.",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "swinging"
           }
         }
       ]
@@ -63,7 +63,7 @@
     {
       "title": "Asking for a Turn",
       "settingDescription": "Peppa faces Dolly beside the swing on the soft grass.",
-      "background": "meadow-day",
+      "background": "swing-playground-active",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -71,7 +71,7 @@
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "talking",
-            "dolly": "listening"
+            "dolly": "swinging"
           }
         },
         {
@@ -79,7 +79,7 @@
           "dialogue": "Let's ask with Dolly!",
           "emotes": {
             "peppa": "listening",
-            "dolly": "happy"
+            "dolly": "swinging"
           }
         },
         {
@@ -87,7 +87,7 @@
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "talking"
+            "dolly": "swinging"
           }
         },
         {
@@ -95,7 +95,7 @@
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "listening",
-            "dolly": "listening"
+            "dolly": "swinging"
           },
           "check": {
             "maxAttempts": 2,
@@ -121,7 +121,7 @@
     {
       "title": "Peppa's Turn",
       "settingDescription": "Dolly steps away from the swing as Peppa moves toward it.",
-      "background": "meadow-day",
+      "background": "swing-playground",
       "characters": ["peppa", "dolly"],
       "steps": [
         {
@@ -145,7 +145,7 @@
     {
       "title": "Playing Together",
       "settingDescription": "Peppa stands by the swing and invites Dolly to continue playing around the playground.",
-      "background": "meadow-day",
+      "background": "swing-playground",
       "characters": ["peppa", "dolly"],
       "steps": [
         {

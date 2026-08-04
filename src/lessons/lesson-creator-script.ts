@@ -1,6 +1,6 @@
 import { prepareLesson } from "../../lib/lesson-data";
 import {
-  VISUAL_CATALOG,
+  CUSTOM_VISUAL_CATALOG,
   type Lesson,
   type LessonDraft,
 } from "./lesson-catalog";
@@ -30,5 +30,5 @@ export function parseLessonScript(
     throw new Error(`${sourceName} must contain valid JSON.`);
   }
 
-  return prepareLesson(value, VISUAL_CATALOG, sourceName);
+  return prepareLesson(value, CUSTOM_VISUAL_CATALOG, sourceName);
 }

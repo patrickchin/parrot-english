@@ -6,7 +6,7 @@ import {
   LessonGenerationError,
   type LessonGenerationEnv,
 } from "./lesson-generator.ts";
-import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
+import { CUSTOM_LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
 import { createMyLessonRepository } from "./my-lessons-repository.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
@@ -93,7 +93,12 @@ function preparedLesson(
   defaults?: { childName?: string },
 ) {
   try {
-    return prepareLesson(value, LESSON_VISUAL_CATALOG, sourceName, defaults);
+    return prepareLesson(
+      value,
+      CUSTOM_LESSON_VISUAL_CATALOG,
+      sourceName,
+      defaults,
+    );
   } catch (caughtError) {
     throw new MyLessonApiError(
       400,

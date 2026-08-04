@@ -50,7 +50,9 @@ Playable IDs
   speaker ID user, which must not appear in characters or emotes.
 - Speaker IDs are peppa, dolly, user, and narrator. A supported speaker does
   not have to be visible in the scene.
-- Supported emotes are idle, talking, listening, happy, sad, and surprised.
+- Generated lessons must use only the universal emotes idle, talking,
+  listening, happy, sad, and surprised. Character-specific action poses are
+  reserved for checked-in built-in stories and must not be generated.
 - An emote map may be partial or contain extra metadata. At the start of a
   scene, visible characters are idle; later omitted emotes keep their current
   value.

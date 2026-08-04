@@ -44,6 +44,13 @@ describe("lesson script generation", () => {
     assert.match(calls[0].body.messages[1].content, /ordering ice cream/);
     assert.match(calls[0].body.messages[1].content, /Mia/);
     assert.match(calls[0].body.messages[1].content, /episode-garden/);
+    assert.doesNotMatch(calls[0].body.messages[1].content, /high-ball-garden/);
+    assert.deepEqual(
+      JSON.parse(calls[0].body.messages[1].content).availableBackgrounds.map(
+        ({ id }) => id,
+      ),
+      ["episode-garden", "meadow-day", "meadow-evening", "reward"],
+    );
   });
 
   it("normalizes an incomplete OpenAI draft and returns its warnings", async () => {
@@ -82,6 +89,38 @@ describe("lesson script generation", () => {
     assert.equal(generated.lesson.scenes[0].title, "Scene 1");
     assert.equal(generated.lesson.scenes[0].steps[0].speaker, "user");
     assert.ok(generated.warnings.some((warning) => /title/i.test(warning)));
+  });
+
+  it("normalizes generated story-only artwork to reusable visuals", async () => {
+    const lesson = createLessonScript();
+    lesson.scenes[0].background = "high-ball-garden";
+    lesson.scenes[0].steps[0].emotes.peppa = "reaching";
+    const generated = await generateLessonScript({
+      childName: "Mia",
+      env: { OPENAI_API_KEY: "test-key" },
+      topic: "finding a ball",
+      async fetch() {
+        return Response.json({
+          choices: [{ message: { content: JSON.stringify(lesson) } }],
+        });
+      },
+    });
+
+    assert.equal(generated.lesson.scenes[0].background, "episode-garden");
+    assert.equal(
+      generated.lesson.scenes[0].steps[0].emotes.peppa,
+      "idle",
+    );
+    assert.ok(
+      generated.warnings.some((warning) =>
+        /background.*using.*episode-garden/i.test(warning),
+      ),
+    );
+    assert.ok(
+      generated.warnings.some((warning) =>
+        /emotes\.peppa.*using idle visual/i.test(warning),
+      ),
+    );
   });
 
   it("does not retry unrelated upstream failures", async () => {

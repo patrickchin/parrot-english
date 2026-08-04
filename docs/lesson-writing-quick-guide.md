@@ -53,16 +53,38 @@ Only Peppa and Dolly are visible. Put the visible characters for a scene in its
 
 ## Background Choices
 
-Choose one background for each scene:
+Choose one background for each scene. Reusable backgrounds are:
 
 - `episode-garden`
 - `meadow-day`
 - `meadow-evening`
 - `reward`
 
-## Character Expressions
+The built-in stories also have specific backgrounds:
 
-You can optionally change a visible character's expression with `emotes`:
+- `high-ball-garden`
+- `high-ball-garden-cleared`
+- `red-flower-garden`
+- `red-flower-garden-picked`
+- `red-flower-basket-garden`
+- `apple-snack-meadow`
+- `apple-snack-meadow-finished`
+- `swing-playground`
+- `swing-playground-active`
+- `fruit-stand-garden`
+- `juice-picnic-meadow`
+- `juice-picnic-meadow-offering`
+- `juice-picnic-meadow-pouring`
+- `bedtime-story-meadow`
+- `bedtime-story-meadow-closing`
+- `bedtime-story-meadow-sleeping`
+
+Check `content/catalogs/backgrounds.json` for the current source of truth.
+
+## Character Expressions and Actions
+
+You can optionally change a visible character's pose with `emotes`. Both
+characters support:
 
 - `idle`
 - `talking`
@@ -71,9 +93,22 @@ You can optionally change a visible character's expression with `emotes`:
 - `sad`
 - `surprised`
 
-Only list expressions that change. If `emotes` is omitted, the characters keep
-their current expressions. At the beginning of a new scene, everyone starts as
-`idle`.
+Built-in story scenes can also use these character-specific action poses:
+
+- Peppa: `choosing-flower`, `holding-apples`, `holding-ball`, `holding-juice`,
+  `holding-snack-apple`, `reaching`, `sleepy`
+- Dolly: `closing-book`, `flying`, `holding-juice`, `offering-apple`,
+  `pouring-juice`, `returning-ball`, `selling-apples`, `swinging`
+
+Only use an action with the character that owns it in
+`content/catalogs/characters.json`. Only list poses that change. If `emotes` is
+omitted, the characters keep their current poses. At the beginning of a new
+scene, everyone starts as `idle`.
+
+Custom lessons may use only the four reusable backgrounds and the six
+universal emotes. Story-specific backgrounds and action poses are reserved for
+the checked-in stories and are replaced with safe reusable visuals when found
+in imported, edited, or generated custom lessons.
 
 ## When the Child Speaks
 
