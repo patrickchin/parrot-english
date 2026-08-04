@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "version": 1,
+  "mediaRoot": "https://media.parrotbook.com/prototypes/pixel-stage/v1",
+  "quality": {
+    "alpha": "hard",
+    "artPixelSize": 2,
+    "paletteColors": 56
+  },
+  "assets": [
+    {
+      "filename": "peppa-town-sheet-96.png",
+      "bytes": 19498,
+      "width": 384,
+      "height": 384,
+      "sha256": "e9a80ee4a79b548a4f604aac5734f6b98d75f3c20a794ce936e36a40f1fd0e6f"
+    },
+    {
+      "filename": "lesson-garden-ground.png",
+      "bytes": 14769,
+      "width": 720,
+      "height": 480,
+      "sha256": "7c13b852abbf2bc62bd5425d6b584b9e34e94d736a379a53317307ee45506e0c"
+    },
+    {
+      "filename": "garden-tree-ball.png",
+      "bytes": 6002,
+      "width": 144,
+      "height": 192,
+      "sha256": "034e47c712327e8b1fae9b764aad270f5bc40da165d32066f33d77561379e78b"
+    },
+    {
+      "filename": "garden-flowers.png",
+      "bytes": 2305,
+      "width": 80,
+      "height": 56,
+      "sha256": "97af50edb61f0cf9574731ee9ed989a74fe00d982b3dc0c625a96d0e9d8707a3"
+    },
+    {
+      "filename": "garden-basket.png",
+      "bytes": 1011,
+      "width": 48,
+      "height": 32,
+      "sha256": "c45a2da36fc330d4e623f0136971951ab14feb67225c7d39a9788d26e5cd0309"
+    },
+    {
+      "filename": "garden-market.png",
+      "bytes": 2772,
+      "width": 120,
+      "height": 80,
+      "sha256": "7ee61bcb3f8d4f47bbafb2b62432c5785dd3acff74c4a9520a1a4be23ccad049"
+    }
+  ],
+  "provenance": {
+    "kind": "project-owned-generated-pixel-art",
+    "originalPromptAvailable": false,
+    "migrationDate": "2026-08-05",
+    "sourcePullRequest": 83
+  }
+}

@@ -7,9 +7,13 @@ lessons actually use. The first vertical slice is the daytime garden shared by
 the ball, flower, and market lessons. It contains only a path, open lawn, a
 tree with the lesson ball, flowers, a basket, and a small apple counter.
 
-The art is project-owned and generated for this prototype. Every live asset is
-normalized to the same 2 × 2 art-cell grid, hard alpha, and shared 64-color
-palette:
+The art is project-owned and generated for this prototype. Approved PNGs are
+served from the versioned R2 root
+`https://media.parrotbook.com/prototypes/pixel-stage/v1`; their dimensions and
+SHA-256 hashes are recorded in `prototypes/pixel-stage/assets.json`. Private
+source copies and provenance stay in `parrot-english-art-source`. Every live
+asset is normalized to the same 2 × 2 art-cell grid, hard alpha, and shared
+64-color palette:
 
 - `lesson-garden-ground.png` is an opaque 720 × 480 walkable garden map;
 - the four `garden-*.png` files are transparent, bottom-anchored lesson props

@@ -16,7 +16,11 @@ Neither playback mode adds audio fields to the lesson-authoring format.
 - My Lessons: validated JSON in the D1 `learner_lesson` table
 - Global emotes: `content/catalogs/emotes.json`
 - Global characters and sprite paths: `content/catalogs/characters.json`
-- Global backgrounds: `content/catalogs/backgrounds.json`
+- Global background IDs, alt text, and delivery URLs:
+  `content/catalogs/backgrounds.json`
+- Approved background WebPs: public Cloudflare R2 media bucket
+- Background generation masters and prompt records: private Cloudflare R2
+  source bucket
 - Saved-audio metadata: `lib/static-audio.js`
 - Source audio files: `public/assets/audio`
 - Build output: `dist/assets/audio`
@@ -117,6 +121,21 @@ every registered file exists before using it in a lesson. The character subject
 must be opaque while its background remains transparent; partial alpha should
 be confined to antialiased subject edges.
 
+Approved lesson backgrounds do not live in Git. Stage generated originals,
+prompt records, and final 2048x1152 WebPs under the gitignored
+`tmp/imagegen/backgrounds` directory. Publish them with the guarded R2 workflow
+described in `docs/deployment/background-media-r2.md`. Public object keys are
+versioned and immutable; changing artwork requires a new version and catalog
+URL rather than overwriting an existing object.
+
+Approved pixel-stage art also lives outside Git. The public PNGs use immutable
+keys under `prototypes/pixel-stage/v<version>` in `parrot-english-media`, while
+source PNGs and the provenance manifest stay private in
+`parrot-english-art-source`. The committed
+`prototypes/pixel-stage/assets.json` file records delivery URLs, dimensions,
+and SHA-256 hashes without storing image bytes. The public bucket's read-only
+CORS rule lets Phaser load those textures from the media hostname.
+
 ## QA Checklist
 
 - Validate every checked-in lesson and catalog.
@@ -126,5 +145,7 @@ be confined to antialiased subject edges.
 - Confirm My Lesson device speech completes, fails clearly when unsupported,
   and cancels on navigation.
 - Confirm each audio metadata path exists under `public`.
+- Run `npm run verify:backgrounds` after any background catalog change.
+- Run `npm run verify:pixel-stage-media` after any pixel-stage catalog change.
 - Run focused lesson/audio tests.
 - Run `npm run build` so Vite copies the source assets into `dist`.
