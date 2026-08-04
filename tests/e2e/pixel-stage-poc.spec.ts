@@ -24,7 +24,7 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
   await expect(world).toHaveAttribute("data-frame", "0");
   await page.waitForTimeout(700);
   await expect(world).toHaveAttribute("data-frame", "0");
-  await expect(canvas).toHaveAttribute("width", "360");
+  await expect(canvas).toHaveAttribute("width", "388");
   await expect(canvas).toHaveAttribute("height", "240");
   await expect(canvas).toHaveCSS("image-rendering", "pixelated");
   expect(Number(await world.getAttribute("data-depth"))).toBeLessThan(
@@ -75,49 +75,49 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
 
   expect(stageBox).not.toBeNull();
   expect(canvasBox).not.toBeNull();
-  expect(canvasBox!.width).toBe(360);
+  expect(canvasBox!.width).toBe(388);
   expect(canvasBox!.height).toBe(240);
-  expect(stageBox!.width).toBe(366);
-  expect(stageBox!.height).toBe(246);
-  expect(canvasBox!.x).toBe(stageBox!.x + 3);
-  expect(canvasBox!.y).toBe(stageBox!.y + 3);
-  expect(canvasBox!.width).toBe(stageBox!.width - 6);
-  expect(canvasBox!.height).toBe(stageBox!.height - 6);
+  expect(stageBox!.width).toBe(388);
+  expect(stageBox!.height).toBe(240);
+  expect(canvasBox!.x).toBe(stageBox!.x);
+  expect(canvasBox!.y).toBe(stageBox!.y);
 
   await page.setViewportSize({ width: 900, height: 900 });
   await expect(world).toHaveAttribute("data-presentation-scale", "2");
+  await expect(canvas).toHaveAttribute("width", "448");
   await expect(canvas).toHaveAttribute("height", "418");
   const desktopStageBox = await stage.boundingBox();
   const desktopCanvasBox = await canvas.boundingBox();
   expect(desktopStageBox).not.toBeNull();
   expect(desktopCanvasBox).not.toBeNull();
-  expect(desktopStageBox!.width).toBe(726);
-  expect(desktopStageBox!.height).toBe(842);
-  expect(desktopCanvasBox!.width).toBe(720);
+  expect(desktopStageBox!.width).toBe(896);
+  expect(desktopStageBox!.height).toBe(836);
+  expect(desktopCanvasBox!.width).toBe(896);
   expect(desktopCanvasBox!.height).toBe(836);
-  expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x + 3);
-  expect(desktopCanvasBox!.y).toBe(desktopStageBox!.y + 3);
+  expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x);
+  expect(desktopCanvasBox!.y).toBe(desktopStageBox!.y);
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(world).toHaveAttribute("data-presentation-scale", "3");
+  await expect(canvas).toHaveAttribute("width", "426");
   await expect(canvas).toHaveAttribute("height", "240");
   const wideStageBox = await stage.boundingBox();
   const wideCanvasBox = await canvas.boundingBox();
   expect(wideStageBox).not.toBeNull();
   expect(wideCanvasBox).not.toBeNull();
-  expect(wideStageBox!.width).toBe(1086);
-  expect(wideStageBox!.height).toBe(726);
-  expect(wideCanvasBox!.width).toBe(1080);
+  expect(wideStageBox!.width).toBe(1278);
+  expect(wideStageBox!.height).toBe(720);
+  expect(wideCanvasBox!.width).toBe(1278);
   expect(wideCanvasBox!.height).toBe(720);
-  expect(wideCanvasBox!.x).toBe(wideStageBox!.x + 3);
-  expect(wideCanvasBox!.y).toBe(wideStageBox!.y + 3);
+  expect(wideCanvasBox!.x).toBe(wideStageBox!.x);
+  expect(wideCanvasBox!.y).toBe(wideStageBox!.y);
   expect(wideStageBox!.y).toBeLessThanOrEqual(64);
   const visibleStageHeight =
     Math.min(720, wideStageBox!.y + wideStageBox!.height) -
     Math.max(0, wideStageBox!.y);
   expect((wideStageBox!.width * visibleStageHeight) / (1280 * 720)).toBeGreaterThan(
-    0.75,
+    0.9,
   );
 
   await page.setViewportSize({ width: 722, height: 966 });
@@ -140,15 +140,38 @@ test("Peppa can explore a generated lesson garden with physical depth", async ({
     0.9,
   );
 
+  await page.setViewportSize({ width: 672, height: 966 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(world).toHaveAttribute("data-presentation-scale", "2");
+  await expect(canvas).toHaveAttribute("width", "334");
+  await expect(canvas).toHaveAttribute("height", "450");
+  const splitPaneStageBox = await stage.boundingBox();
+  const splitPaneCanvasBox = await canvas.boundingBox();
+  expect(splitPaneStageBox).not.toBeNull();
+  expect(splitPaneCanvasBox).not.toBeNull();
+  expect(splitPaneStageBox!.width).toBe(668);
+  expect(splitPaneStageBox!.height).toBe(900);
+  expect(splitPaneCanvasBox!.width).toBe(668);
+  expect(splitPaneCanvasBox!.height).toBe(900);
+  expect(splitPaneCanvasBox!.x).toBe(splitPaneStageBox!.x);
+  expect(splitPaneCanvasBox!.y).toBe(splitPaneStageBox!.y);
+  expect((splitPaneStageBox!.width * splitPaneStageBox!.height) / (672 * 966)).toBeGreaterThan(
+    0.9,
+  );
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBeLessThanOrEqual(672);
+
   await page.setViewportSize({ width: 280, height: 700 });
   await expect(world).toHaveAttribute("data-presentation-scale", "1");
+  await expect(canvas).toHaveAttribute("width", "278");
   const narrowStageBox = await stage.boundingBox();
   const narrowCanvasBox = await canvas.boundingBox();
   expect(narrowStageBox).not.toBeNull();
   expect(narrowCanvasBox).not.toBeNull();
-  expect(narrowStageBox!.width).toBe(246);
-  expect(narrowStageBox!.height).toBe(166);
-  expect(narrowCanvasBox!.width).toBe(360);
+  expect(narrowStageBox!.width).toBe(278);
+  expect(narrowStageBox!.height).toBe(240);
+  expect(narrowCanvasBox!.width).toBe(278);
   expect(narrowCanvasBox!.height).toBe(240);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
