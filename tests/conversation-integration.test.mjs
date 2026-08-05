@@ -58,15 +58,18 @@ function fullState(experienceMode) {
 
 function conversationProps(overrides = {}) {
   return {
+    canFinish: true,
     error: "",
     liveTranscript: "",
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},
+    onPromptStyleChange() {},
     onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
     purpose: "onboarding",
+    promptStyle: "tiny-turns",
     responseLatencyMs: null,
     status: "ready",
     turnReady: true,

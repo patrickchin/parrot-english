@@ -8,8 +8,20 @@ import {
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
+import {
+  isTalkToPeppaPromptStyle,
+  TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS,
+  talkToPeppaPromptStyleOption,
+  type TalkToPeppaPromptStyle,
+} from "../../lib/talk-to-peppa-prompt-style";
 import { HeaderButton, RouteHeader } from "../app/AppHeader";
-import { ActionButton, cx, IconButton, TextButton } from "../shared/ui";
+import {
+  ActionButton,
+  cx,
+  fieldClassName,
+  IconButton,
+  TextButton,
+} from "../shared/ui";
 
 export type ConversationSurfaceStatus =
   | "ready"
@@ -28,15 +40,18 @@ export type ConversationSurfaceTurn = {
 };
 
 type ConversationSurfaceProps = {
+  canFinish: boolean;
   error: string;
   liveTranscript: string;
   microphoneEnabled: boolean;
   onBack: () => void;
   onFinish: () => void;
+  onPromptStyleChange: (style: TalkToPeppaPromptStyle) => void;
   onRepeatAudio: () => void;
   onStart: () => void;
   onToggleMicrophone: () => void;
   purpose: ConversationPurpose;
+  promptStyle: TalkToPeppaPromptStyle;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
   turnReady: boolean;
@@ -59,7 +74,7 @@ const PURPOSE_COPY: Record<
   { finishLabel: string | null; title: string }
 > = {
   "small-chat": {
-    finishLabel: null,
+    finishLabel: "Finish chat",
     title: "Chat with Peppa",
   },
   onboarding: {
@@ -115,7 +130,11 @@ function ConversationScreen({ children }: { children: ReactNode }) {
 function statusLabel(
   status: ConversationSurfaceStatus,
   microphoneEnabled: boolean,
+  purpose: ConversationPurpose,
 ) {
+  if (status === "ready" && purpose === "small-chat") {
+    return "Choose how Peppa talks";
+  }
   if (status === "ready" || status === "connecting") {
     return "Peppa is getting ready";
   }
@@ -132,19 +151,19 @@ function statusLabel(
 function ConversationStatus({
   className,
   microphoneEnabled,
+  purpose,
   status,
 }: {
   className?: string;
   microphoneEnabled: boolean;
+  purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
 }) {
-  const busy = [
-    "ready",
-    "connecting",
-    "thinking",
-    "reconnecting",
-    "saving",
-  ].includes(status);
+  const busy =
+    !(status === "ready" && purpose === "small-chat") &&
+    ["ready", "connecting", "thinking", "reconnecting", "saving"].includes(
+      status,
+    );
 
   return (
     <p
@@ -173,7 +192,7 @@ function ConversationStatus({
           )}
         />
       )}
-      {statusLabel(status, microphoneEnabled)}
+      {statusLabel(status, microphoneEnabled, purpose)}
     </p>
   );
 }
@@ -190,6 +209,7 @@ function selectCaption({
   error,
   liveTranscript,
   microphoneEnabled,
+  promptStyle,
   purpose,
   status,
 }: {
@@ -197,6 +217,7 @@ function selectCaption({
   error: string;
   liveTranscript: string;
   microphoneEnabled: boolean;
+  promptStyle: TalkToPeppaPromptStyle;
   purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
 }): Caption {
@@ -210,10 +231,13 @@ function selectCaption({
   }
   if (status === "ready") {
     return {
-      label: "Peppa",
+      label: purpose === "small-chat" ? "Your choice" : "Peppa",
       liveTranscript: false,
       role: undefined,
-      text: "Getting our chat ready…",
+      text:
+        purpose === "small-chat"
+          ? talkToPeppaPromptStyleOption(promptStyle).description
+          : "Getting our chat ready…",
     };
   }
   if (status === "connecting") {
@@ -377,15 +401,18 @@ function WaitingTurnControl({ status }: { status: ConversationSurfaceStatus }) {
 }
 
 export function ConversationSurface({
+  canFinish,
   error,
   liveTranscript,
   microphoneEnabled,
   onBack,
   onFinish,
+  onPromptStyleChange,
   onRepeatAudio,
   onStart,
   onToggleMicrophone,
   purpose,
+  promptStyle,
   status,
   turnReady,
   turns,
@@ -398,6 +425,7 @@ export function ConversationSurface({
     error,
     liveTranscript,
     microphoneEnabled,
+    promptStyle,
     purpose,
     status,
   });
@@ -409,7 +437,9 @@ export function ConversationSurface({
   );
   const expandLandscapeCaption = caption.text.length > 100;
   const { finishLabel, title } = PURPOSE_COPY[purpose];
+  const showPromptStyleSetup = purpose === "small-chat" && status === "ready";
   const showFinish =
+    canFinish &&
     finishLabel &&
     !["ready", "connecting", "saving"].includes(status);
 
@@ -443,6 +473,7 @@ export function ConversationSurface({
         <ConversationStatus
           className="short-wide:col-start-2 short-wide:row-start-2 short-wide:self-start"
           microphoneEnabled={microphoneEnabled}
+          purpose={purpose}
           status={status}
         />
 
@@ -470,12 +501,45 @@ export function ConversationSurface({
           aria-label="Conversation controls"
           className={cx(
             "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12",
-            showFinish && "grid-cols-[minmax(0,1fr)_auto]",
+            (showFinish || showPromptStyleSetup) &&
+              "grid-cols-[minmax(0,1fr)_auto]",
             "short-wide:col-start-2 short-wide:row-start-4",
           )}
           role="group"
         >
-          {status === "error" ? (
+          {showPromptStyleSetup ? (
+            <>
+              <label className="min-w-0 text-left" htmlFor="peppa-prompt-style">
+                <span className="sr-only">Chat style</span>
+                <select
+                  className={fieldClassName(
+                    "min-h-14 truncate short:min-h-12 short:rounded-xl short:px-2 short:py-1 short:text-sm",
+                  )}
+                  id="peppa-prompt-style"
+                  onChange={(event) => {
+                    if (isTalkToPeppaPromptStyle(event.target.value)) {
+                      onPromptStyleChange(event.target.value);
+                    }
+                  }}
+                  value={promptStyle}
+                >
+                  {TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <ActionButton
+                className="min-h-14 min-w-24 px-3 short:min-h-12 short:min-w-20 short:rounded-xl short:px-2 short:text-sm"
+                onClick={onStart}
+                size="compact"
+                type="button"
+              >
+                Start chat
+              </ActionButton>
+            </>
+          ) : status === "error" ? (
             <ActionButton
               className="min-h-14 short:min-h-12 short:px-3"
               onClick={onStart}

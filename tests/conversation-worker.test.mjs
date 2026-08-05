@@ -210,6 +210,7 @@ describe("conversation persistence and API", () => {
       const payload = await response.json();
       assert.equal(payload.conversation.id, "conversation-1");
       assert.equal(payload.conversation.scenarioKey, "onboarding");
+      assert.equal(payload.conversation.promptStyle, null);
       assert.equal(payload.conversation.status, "starting");
       assert.equal(payload.livekit.url, "wss://livekit.example.test");
       assert.equal(payload.livekit.participantToken, "participant-token");
@@ -266,6 +267,91 @@ describe("conversation persistence and API", () => {
           .get().count,
         3,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("stores and hands off each Talk to Peppa prompt style", async () => {
+    const state = createSeededDatabase();
+    const tokenStyles = [];
+    const ids = ["tiny-session", "guide-session", "play-session"];
+    try {
+      for (const promptStyle of [
+        "tiny-turns",
+        "gentle-guide",
+        "playful-pal",
+      ]) {
+        const response = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { promptStyle, purpose: "small-chat" },
+          {
+            createId: () => ids.shift() ?? "generated-id",
+            async createParticipantToken(input) {
+              tokenStyles.push(input.promptStyle);
+              return `token-for-${promptStyle}`;
+            },
+          },
+        );
+        const payload = await response.json();
+
+        assert.equal(response.status, 201);
+        assert.equal(payload.conversation.promptStyle, promptStyle);
+        assert.equal(payload.conversation.scenarioVersion, 2);
+        assert.equal(payload.scenario.version, 2);
+        assert.equal(payload.scenario.maxOptionalExchanges, 8);
+      }
+
+      assert.deepEqual(tokenStyles, [
+        "tiny-turns",
+        "gentle-guide",
+        "playful-pal",
+      ]);
+      const rows = state.sqlite
+        .prepare(
+          "SELECT prompt_style FROM conversation_session ORDER BY created_at, id",
+        )
+        .all();
+      assert.deepEqual(
+        new Set(rows.map((row) => row.prompt_style)),
+        new Set(["tiny-turns", "gentle-guide", "playful-pal"]),
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("defaults old clients and rejects invalid prompt-style combinations", async () => {
+    const state = createSeededDatabase();
+    try {
+      const compatible = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      assert.equal(
+        (await compatible.json()).conversation.promptStyle,
+        "tiny-turns",
+      );
+
+      for (const body of [
+        { promptStyle: "wordy", purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "onboarding" },
+      ]) {
+        const response = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          body,
+        );
+        assert.equal(response.status, 400);
+        assert.deepEqual(await response.json(), {
+          error: "invalid_prompt_style",
+        });
+      }
     } finally {
       state.close();
     }
@@ -427,6 +513,54 @@ describe("conversation persistence and API", () => {
           .prepare("SELECT count(*) AS count FROM conversation_session")
           .get().count,
         1,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("reuses the same style but retires an active room when its style changes", async () => {
+    const state = createSeededDatabase();
+    const ids = ["conversation-tiny", "conversation-guide"];
+    const createId = () => ids.shift() ?? "generated-id";
+    try {
+      const first = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
+        { createId },
+      );
+      const retry = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
+        { createId },
+      );
+      const changed = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { promptStyle: "gentle-guide", purpose: "small-chat" },
+        { createId },
+      );
+      const firstPayload = await first.json();
+      const retryPayload = await retry.json();
+      const changedPayload = await changed.json();
+
+      assert.equal(retryPayload.conversation.id, firstPayload.conversation.id);
+      assert.notEqual(changedPayload.conversation.id, firstPayload.conversation.id);
+      assert.equal(changedPayload.conversation.promptStyle, "gentle-guide");
+      const retired = state.sqlite
+        .prepare(
+          "SELECT status, finish_reason FROM conversation_session WHERE id = ?",
+        )
+        .get(firstPayload.conversation.id);
+      assert.equal(retired.status, "abandoned");
+      assert.equal(
+        retired.finish_reason,
+        "conversation_configuration_changed",
       );
     } finally {
       state.close();
@@ -1054,11 +1188,13 @@ describe("LiveKit participant tokens", () => {
         scenarioKey: "small-chat",
       },
       identity,
+      promptStyle: "playful-pal",
     });
     const [, encodedPayload] = token.split(".");
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());
 
     assert.equal(payload.roomConfig.agents.length, 1);
     assert.equal(payload.roomConfig.agents[0].agentName, "parrot-local");
+    assert.equal(JSON.parse(payload.metadata).promptStyle, "playful-pal");
   });
 });

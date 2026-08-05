@@ -21,15 +21,18 @@ after(async () => {
 
 function props(overrides = {}) {
   return {
+    canFinish: true,
     error: "",
     liveTranscript: "",
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},
+    onPromptStyleChange() {},
     onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
+    promptStyle: "tiny-turns",
     responseLatencyMs: null,
     status: "ready",
     turnReady: true,
@@ -45,13 +48,18 @@ function render(overrides = {}) {
 }
 
 describe("accessible realtime conversation surface", () => {
-  it("shows one focused Peppa call stage while starting automatically", () => {
+  it("lets a learner choose a prompt style before starting small chat", () => {
     const html = render();
 
-    assert.match(html, /Getting our chat ready/);
+    assert.match(html, /Choose how Peppa talks/);
     assert.match(html, /Chat with Peppa/);
     assert.match(html, /peppa\/peppa-happy\.webp/);
-    assert.doesNotMatch(html, /Start talking/);
+    assert.match(html, /<select[^>]*id="peppa-prompt-style"/);
+    assert.match(html, /Tiny turns/);
+    assert.match(html, /Gentle guide/);
+    assert.match(html, /Playful pal/);
+    assert.match(html, /Start chat/);
+    assert.match(html, /fewest words/i);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.doesNotMatch(html, /About this chat/);
     assert.doesNotMatch(html, /Finish conversation|Response latency|Timing…/);
@@ -84,6 +92,7 @@ describe("accessible realtime conversation surface", () => {
       status: "listening",
     });
     assert.match(smallChat, /Chat with Peppa/);
+    assert.match(smallChat, /Finish chat/);
     assert.doesNotMatch(
       smallChat,
       /Help Peppa know you|Update my profile|Save and finish|Save changes/,
@@ -106,6 +115,16 @@ describe("accessible realtime conversation surface", () => {
     assert.match(profileEdit, /Update my profile/);
     assert.match(profileEdit, /Save changes/);
     assert.doesNotMatch(profileEdit, /Help Peppa know you|Finish conversation/);
+  });
+
+  it("describes the selected style without showing setup in profile flows", () => {
+    const guide = render({ promptStyle: "gentle-guide" });
+    assert.match(guide, /Simple sentence help and two easy choices/);
+    assert.match(guide, /<option value="gentle-guide" selected=""/);
+
+    const onboarding = render({ purpose: "onboarding" });
+    assert.match(onboarding, /Getting our chat ready/);
+    assert.doesNotMatch(onboarding, /Chat style|Start chat|Gentle guide/);
   });
 
   it("finishes ordinary chat without claiming to save the profile", () => {
@@ -274,13 +293,14 @@ describe("accessible realtime conversation surface", () => {
 
   it("keeps recovery clear without bringing back typed input or a second large action", () => {
     const html = render({
+      canFinish: false,
       error: "The voice room took a break.",
       status: "error",
     });
 
     assert.match(html, /The voice room took a break/);
     assert.match(html, /Try again/);
-    assert.doesNotMatch(html, /Finish conversation|Start my turn|End my turn/);
+    assert.doesNotMatch(html, /Finish chat|Start my turn|End my turn/);
     assert.doesNotMatch(html, /Type instead|Type your answer|>Send</);
   });
 

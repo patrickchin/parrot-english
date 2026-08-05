@@ -17,6 +17,10 @@ import {
 } from "./livekit-conversation";
 import { createResponseLatencyTimer } from "./response-latency";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
+import {
+  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  type TalkToPeppaPromptStyle,
+} from "../../lib/talk-to-peppa-prompt-style";
 
 const COMPLETED_DISCONNECT_REASONS = new Set([
   "ROOM_DELETED",
@@ -95,6 +99,9 @@ export function usePeppaConversation({
     createResponseLatencyTimer(now),
   );
   const [error, setError] = useState("");
+  const [promptStyle, setPromptStyle] = useState<TalkToPeppaPromptStyle>(
+    DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  );
   const conversationIdRef = useRef<string | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
@@ -280,7 +287,11 @@ export function usePeppaConversation({
     runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
     try {
-      const started = await startConversation(purpose);
+      const started = await startConversation(
+        purpose === "small-chat"
+          ? { promptStyle, purpose }
+          : { purpose },
+      );
       if (!isCurrent(operation)) return;
       conversationIdRef.current = started.conversation.id;
       const transport = createTransport({
@@ -316,6 +327,7 @@ export function usePeppaConversation({
     handleTransportEvent,
     isCurrent,
     openLearnerTurn,
+    promptStyle,
     purpose,
     resetResponseLatency,
   ]);
@@ -406,9 +418,10 @@ export function usePeppaConversation({
 
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;
+    if (purpose === "small-chat") return;
     autoStartRef.current = true;
     void start();
-  }, [active, start, status]);
+  }, [active, purpose, start, status]);
 
   useEffect(() => {
     if (active) return;
@@ -456,16 +469,19 @@ export function usePeppaConversation({
 
   return useMemo(
     () => ({
+      canFinish: conversationIdRef.current !== null,
       error,
       liveTranscript,
       microphoneEnabled,
       onBack: back,
       onFinish: () => void finish(),
+      onPromptStyleChange: setPromptStyle,
       onRepeatAudio: () => void repeatAudio(),
       onStart: () => void start(),
       onToggleMicrophone: () => void toggleMicrophone(),
       responseLatencyMs,
       purpose,
+      promptStyle,
       status,
       turnReady,
       turns,
@@ -479,6 +495,7 @@ export function usePeppaConversation({
       repeatAudio,
       responseLatencyMs,
       purpose,
+      promptStyle,
       start,
       status,
       toggleMicrophone,

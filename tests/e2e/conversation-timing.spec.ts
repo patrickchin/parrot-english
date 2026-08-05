@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { startSmallChat } from "./conversation-helpers";
 
 const viewports = [
   { height: 568, name: "narrow phone", width: 280 },
@@ -40,6 +41,7 @@ for (const viewport of viewports) {
   }) => {
     await page.setViewportSize(viewport);
     await page.goto("/talk-to-peppa?parrotE2eConversation=long");
+    await startSmallChat(page);
 
     const captions = page.getByRole("region", {
       name: "Conversation captions",
@@ -74,6 +76,7 @@ for (const viewport of viewports) {
   }) => {
     await page.setViewportSize(viewport);
     await page.goto("/talk-to-peppa");
+    await startSmallChat(page);
 
     const start = page.getByRole("button", { name: "Start my turn" });
     const before = await box(start);
@@ -103,6 +106,7 @@ test("short landscape gives Peppa and the conversation their own columns", async
   const viewport = { height: 360, width: 640 };
   await page.setViewportSize(viewport);
   await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
 
   const peppa = await box(
     page.getByRole("img", { exact: true, name: "Peppa" }),
@@ -110,12 +114,17 @@ test("short landscape gives Peppa and the conversation their own columns", async
   const captions = await box(
     page.getByRole("region", { name: "Conversation captions" }),
   );
+  const controls = await box(
+    page.getByRole("group", { name: "Conversation controls" }),
+  );
   const turn = await box(page.getByRole("button", { name: "Start my turn" }));
 
   expect(peppa.height).toBeGreaterThanOrEqual(150);
   expect(peppa.x + peppa.width).toBeLessThanOrEqual(captions.x);
-  expect(Math.abs(captions.x - turn.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(captions.width - turn.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(captions.x - controls.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(captions.width - controls.width)).toBeLessThanOrEqual(1);
+  expect(turn.x).toBeGreaterThanOrEqual(controls.x);
+  expect(turn.x + turn.width).toBeLessThanOrEqual(controls.x + controls.width);
   await expectNoPageScroll(page);
 });
 
@@ -124,6 +133,7 @@ test("a long landscape reply grows upward without moving the turn control", asyn
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
 
   const normalBubble = await box(
     page.getByRole("region", { name: "Conversation captions" }),
@@ -133,6 +143,7 @@ test("a long landscape reply grows upward without moving the turn control", asyn
   );
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=long");
+  await startSmallChat(page);
 
   const longBubble = await box(
     page.getByRole("region", { name: "Conversation captions" }),

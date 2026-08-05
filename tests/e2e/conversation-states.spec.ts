@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { startSmallChat } from "./conversation-helpers";
 
 const incompleteProfile = {
   canBypass: false,
@@ -48,6 +49,7 @@ test("each purpose has its own framing and only profile flows offer save complet
   await expect(
     page.getByRole("button", { name: /Save and finish|Save changes/ }),
   ).toHaveCount(0);
+  await expect(page.getByLabel("Chat style")).toHaveValue("tiny-turns");
 
   await useIncompleteProfile(page);
   await page.goto("/profile/setup");
@@ -72,6 +74,7 @@ test("the cold-start state gives an honest wait without showing turn controls", 
   page,
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
+  await startSmallChat(page);
 
   await expect(page.getByRole("status")).toContainText(
     "Peppa is getting ready",
@@ -88,6 +91,7 @@ test("opening audio changes the visible state to speaking before its transcript 
   page,
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=opening-speaking");
+  await startSmallChat(page);
 
   await expect(page.getByRole("status")).toContainText("Peppa is talking");
   await expect(
@@ -99,12 +103,14 @@ test("reconnecting and error states keep recovery language in the same stage", a
   page,
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
+  await startSmallChat(page);
   await expect(page.getByRole("status")).toContainText("Reconnecting");
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
   ).toContainText("Your answers are safe");
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
+  await startSmallChat(page);
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(

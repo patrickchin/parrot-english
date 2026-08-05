@@ -2,10 +2,17 @@ import { llm, voice } from "@livekit/agents";
 import { z } from "zod";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
+import {
+  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  type TalkToPeppaPromptStyle,
+} from "../lib/talk-to-peppa-prompt-style.ts";
 import type { ConversationIngestClient } from "./ingest-client.ts";
 import { INTRODUCTION_SYSTEM_PROMPT } from "./prompts/introduction.ts";
 import { PROFILE_EDIT_SYSTEM_PROMPT } from "./prompts/profile-edit.ts";
-import { SMALL_CHAT_SYSTEM_PROMPT } from "./prompts/small-chat.ts";
+import {
+  getSmallChatSystemPrompt,
+  SMALL_CHAT_SYSTEM_PROMPT,
+} from "./prompts/small-chat.ts";
 
 export const CONVERSATION_SYSTEM_PROMPTS: Record<ConversationPurpose, string> = {
   onboarding: INTRODUCTION_SYSTEM_PROMPT,
@@ -13,8 +20,13 @@ export const CONVERSATION_SYSTEM_PROMPTS: Record<ConversationPurpose, string> = 
   "small-chat": SMALL_CHAT_SYSTEM_PROMPT,
 };
 
-export function getConversationSystemPrompt(purpose: ConversationPurpose) {
-  return CONVERSATION_SYSTEM_PROMPTS[purpose];
+export function getConversationSystemPrompt(
+  purpose: ConversationPurpose,
+  promptStyle: TalkToPeppaPromptStyle = DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+) {
+  return purpose === "small-chat"
+    ? getSmallChatSystemPrompt(promptStyle)
+    : CONVERSATION_SYSTEM_PROMPTS[purpose];
 }
 
 export const AGENT_SESSION_START_OPTIONS = { record: false } as const;
@@ -58,6 +70,7 @@ type CreateTaskOptions = {
   conversationId?: string;
   ingest?: ConversationIngestClient;
   initialState?: ControllerState;
+  promptStyle?: TalkToPeppaPromptStyle;
   purpose?: ConversationPurpose;
 };
 
@@ -131,6 +144,7 @@ function createConversationTask({
   conversationId,
   ingest,
   initialState = createLearnerProfileConversationState() as ControllerState,
+  promptStyle = DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   purpose = "onboarding",
 }: CreateTaskOptions = {}) {
   if (purpose === "profile-edit" && (!conversationId || !ingest)) {
@@ -181,7 +195,10 @@ function createConversationTask({
         : purpose === "profile-edit"
           ? "profile_edit"
           : "small_chat",
-    instructions: [getConversationSystemPrompt(purpose), savedProfileContext(initialState)]
+    instructions: [
+      getConversationSystemPrompt(purpose, promptStyle),
+      savedProfileContext(initialState),
+    ]
       .filter(Boolean)
       .join("\n\n"),
     tools,
@@ -201,18 +218,27 @@ export function createGettingToKnowYouTask(options: CreateTaskOptions = {}) {
 
 export function createSmallChatTask({
   initialState = createLearnerProfileConversationState() as ControllerState,
-}: Pick<CreateTaskOptions, "initialState"> = {}) {
-  return createConversationTask({ initialState, purpose: "small-chat" });
+  promptStyle = DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+}: Pick<CreateTaskOptions, "initialState" | "promptStyle"> = {}) {
+  return createConversationTask({
+    initialState,
+    promptStyle,
+    purpose: "small-chat",
+  });
 }
 
 export function createPeppaConversationTask(options: {
   conversationId: string;
   ingest: ConversationIngestClient;
   initialState?: ControllerState;
+  promptStyle?: TalkToPeppaPromptStyle;
   purpose: ConversationPurpose;
 }) {
   if (options.purpose === "small-chat") {
-    return createSmallChatTask({ initialState: options.initialState });
+    return createSmallChatTask({
+      initialState: options.initialState,
+      promptStyle: options.promptStyle,
+    });
   }
   return createGettingToKnowYouTask(options);
 }

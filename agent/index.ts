@@ -13,6 +13,10 @@ import {
   REPEAT_LAST_AUDIO_COMMAND,
 } from "../lib/conversation-audio.js";
 import { isConversationPurpose } from "../lib/conversation-purpose.ts";
+import {
+  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  isTalkToPeppaPromptStyle,
+} from "../lib/talk-to-peppa-prompt-style.ts";
 import type { AgentConfig } from "./config.ts";
 import { readAgentConfig } from "./config.ts";
 import {
@@ -43,6 +47,7 @@ export function parseConversationParticipantMetadata(metadata: string) {
   }
   const conversationId = (value as Record<string, unknown>).conversationId;
   const purpose = (value as Record<string, unknown>).scenarioKey;
+  const suppliedPromptStyle = (value as Record<string, unknown>).promptStyle;
   if (
     typeof conversationId !== "string" ||
     !conversationId.trim() ||
@@ -52,6 +57,19 @@ export function parseConversationParticipantMetadata(metadata: string) {
   }
   if (!isConversationPurpose(purpose)) {
     throw new Error("Participant metadata must contain a valid scenarioKey.");
+  }
+  const promptStyle =
+    purpose === "small-chat"
+      ? suppliedPromptStyle === undefined
+        ? DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE
+        : isTalkToPeppaPromptStyle(suppliedPromptStyle)
+          ? suppliedPromptStyle
+          : null
+      : suppliedPromptStyle === undefined
+        ? undefined
+        : null;
+  if (promptStyle === null) {
+    throw new Error("Participant metadata must contain a valid promptStyle.");
   }
   const profile = (value as Record<string, unknown>).learnerProfile;
   if (profile !== undefined && (
@@ -92,6 +110,7 @@ export function parseConversationParticipantMetadata(metadata: string) {
       profileName,
       profileSummary,
     }),
+    promptStyle,
     purpose,
   };
 }
@@ -281,9 +300,8 @@ export const agentDefinition = defineAgent({
 
     await ctx.connect();
     const participant = await ctx.waitForParticipant();
-    const { conversationId, initialState, purpose } = parseConversationParticipantMetadata(
-      participant.metadata,
-    );
+    const { conversationId, initialState, promptStyle, purpose } =
+      parseConversationParticipantMetadata(participant.metadata);
     await ingest.reportBuild(conversationId, initialState).catch((error: unknown) => {
       console.error("Could not report conversation agent build", error);
     });
@@ -294,11 +312,12 @@ export const agentDefinition = defineAgent({
       conversationId,
       ingest,
       initialState,
+      promptStyle,
       purpose,
     });
     const rootAgent = voice.Agent.create({
       id: "peppa_conversation_root",
-      instructions: getConversationSystemPrompt(purpose),
+      instructions: getConversationSystemPrompt(purpose, promptStyle),
       async onEnter(agentContext) {
         const result = await task.run();
         await playConversationGoodbyeAndClose(

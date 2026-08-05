@@ -9,6 +9,7 @@ import {
   isConversationPurpose,
   updatesLearnerProfile,
 } from "../lib/conversation-purpose.ts";
+import type { TalkToPeppaPromptStyle } from "../lib/talk-to-peppa-prompt-style.ts";
 import {
   ensureV2Profile,
   readV2Answers,
@@ -116,8 +117,10 @@ export function createConversationRepository(
   async function createConversation(
     identity: LearnerProfileIdentity,
     scenario: { key: string; version: number },
+    configuration: { promptStyle?: TalkToPeppaPromptStyle } = {},
   ) {
     const timestamp = now();
+    const promptStyle = configuration.promptStyle ?? null;
     const [active] = await database
       .select()
       .from(conversationSession)
@@ -130,11 +133,17 @@ export function createConversationRepository(
       )
       .orderBy(desc(conversationSession.updatedAt))
       .limit(1);
-    if (
+    const activeTokenIsFresh = Boolean(
       active &&
-      timestamp.getTime() - active.updatedAt.getTime() <
-        LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS
-    ) {
+        timestamp.getTime() - active.updatedAt.getTime() <
+          LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS,
+    );
+    const activeConfigurationMatches = Boolean(
+      active &&
+        active.scenarioVersion === scenario.version &&
+        active.promptStyle === promptStyle,
+    );
+    if (active && activeTokenIsFresh && activeConfigurationMatches) {
       return active;
     }
     if (active) {
@@ -142,7 +151,9 @@ export function createConversationRepository(
         .update(conversationSession)
         .set({
           status: "abandoned",
-          finishReason: "participant_token_expired",
+          finishReason: activeTokenIsFresh
+            ? "conversation_configuration_changed"
+            : "participant_token_expired",
           endedAt: timestamp,
           updatedAt: timestamp,
         })
@@ -188,6 +199,7 @@ export function createConversationRepository(
       authUserId: identity.userId,
       scenarioKey: scenario.key,
       scenarioVersion: scenario.version,
+      promptStyle,
       roomName,
       status: "starting",
       controllerState: JSON.stringify(controllerState),
