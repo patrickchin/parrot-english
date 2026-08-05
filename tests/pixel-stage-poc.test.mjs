@@ -6,7 +6,7 @@ const projectFile = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 const PIXEL_ASSET_FILENAMES = [
-  "peppa-town-sheet-96.png",
+  "peppa-town-sheet-320.png",
   "lesson-garden-ground.png",
   "garden-tree-ball.png",
   "garden-flowers.png",
@@ -55,23 +55,31 @@ describe("Phaser pixel stage", () => {
     );
   });
 
-  it("builds a compact lesson garden on a three-times-finer render grid", () => {
+  it("builds a compact lesson garden with detailed sprites and a two-times camera presentation", () => {
     assert.equal(worldConfig.RENDER_SCALE, 3);
     assert.equal(worldConfig.TILE_SIZE, 48);
-    assert.equal(worldConfig.CAMERA_ZOOM, 1);
+    assert.equal(worldConfig.CAMERA_ZOOM, 2);
     assert.deepEqual(worldConfig.VIEWPORT_SIZE, { height: 240, width: 360 });
-    assert.deepEqual(worldConfig.VISIBLE_WORLD_SIZE, { height: 240, width: 360 });
+    assert.deepEqual(worldConfig.VISIBLE_WORLD_SIZE, { height: 120, width: 180 });
     assert.deepEqual(worldConfig.WORLD_GRID, { columns: 15, rows: 10 });
     assert.deepEqual(worldConfig.WORLD_SIZE, { height: 480, width: 720 });
     assert.deepEqual(worldConfig.PLAYER_START, { x: 450, y: 192 });
-    assert.equal(worldConfig.ART_PIXEL_SIZE, 2);
-    assert.equal(worldConfig.SPRITE_FRAME_SIZE, 96);
+    assert.equal(worldConfig.ART_PIXEL_SIZE, 1);
+    assert.equal(worldConfig.GROUND_SOURCE_SCALE, 2);
+    assert.equal(worldConfig.TEXTURE_TO_WORLD_SCALE, 0.5);
+    assert.equal(worldConfig.SPRITE_FRAME_SIZE, 320);
+    assert.equal(worldConfig.SPRITE_WORLD_FRAME_SIZE, 160);
+    assert.equal(worldConfig.SPRITE_SCREEN_FRAME_SIZE, 320);
+    assert.equal(
+      worldConfig.SPRITE_SCREEN_FRAME_SIZE,
+      worldConfig.SPRITE_WORLD_FRAME_SIZE * worldConfig.CAMERA_ZOOM,
+    );
     assert.equal(worldConfig.PLAYER_SPEED, 144);
     assert.deepEqual(worldConfig.PLAYER_BODY, {
-      height: 18,
-      offsetX: 30,
-      offsetY: 78,
-      width: 36,
+      height: 24,
+      offsetX: 56,
+      offsetY: 136,
+      width: 48,
     });
     assert.equal(
       worldConfig.WORLD_SIZE.width,
@@ -104,6 +112,7 @@ describe("Phaser pixel stage", () => {
     );
     assert.ok(tree);
     assert.equal(tree.footY, tree.y);
+    assert.equal(tree.y, 300);
     assert.equal(tree.asset, "garden-tree-ball");
     assert.ok(tree.collision.width > 0);
     assert.ok(tree.collision.height > 0);
@@ -138,49 +147,64 @@ describe("Phaser pixel stage", () => {
     assert.match(stage, /startFollow\(/);
     assert.match(stage, /setDeadzone\(/);
     assert.match(stage, /setZoom\(CAMERA_ZOOM\)/);
-    assert.match(stage, /peppa-town-sheet-96\.png/);
-    assert.doesNotMatch(stage, /\.set(?:DisplaySize|Scale)\(/);
+    assert.match(stage, /peppa-town-sheet-320\.png/);
+    assert.match(
+      stage,
+      /ART_CACHE_QUERY = "\?art-revision=20260806-detailed-redraw"/,
+    );
+    assert.match(
+      stage,
+      /this\.load\.image\(\s*"lesson-garden-ground",\s*assetSource\("lesson-garden-ground\.png"\)/,
+    );
+    assert.match(stage, /\.setScale\(TEXTURE_TO_WORLD_SCALE\)/);
+    assert.doesNotMatch(stage, /\.setDisplaySize\(/);
     assert.doesNotMatch(stage, /Phaser\.Scale\.MAX_ZOOM/);
     assert.doesNotMatch(stage, /tiny-town\.png|peppa-sheet\.png/);
     assert.doesNotMatch(stage, /foreground\.png|SCENERY_COLLIDERS|FOREGROUND_DEPTH|make\.tilemap/);
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
   });
 
-  it("uses generated lesson assets at the native high-resolution game grid", () => {
-    assert.deepEqual(pixelAsset("peppa-town-sheet-96.png"), {
-      bytes: 19498,
-      filename: "peppa-town-sheet-96.png",
-      height: 384,
-      sha256: "e9a80ee4a79b548a4f604aac5734f6b98d75f3c20a794ce936e36a40f1fd0e6f",
-      width: 384,
+  it("uses genuine detailed redraws while preserving the 720x480 world", () => {
+    assert.deepEqual(pixelAsset("peppa-town-sheet-320.png"), {
+      bytes: 524100,
+      filename: "peppa-town-sheet-320.png",
+      height: 1280,
+      sha256: "b2ac4824a83c5172e0501d415b9fda559dcf2b4ebc133676734bf80502d8dbb2",
+      width: 1280,
     });
     assert.deepEqual(pixelAsset("lesson-garden-ground.png"), {
-      bytes: 14769,
+      bytes: 23342,
       filename: "lesson-garden-ground.png",
-      height: 480,
-      sha256: "7c13b852abbf2bc62bd5425d6b584b9e34e94d736a379a53317307ee45506e0c",
-      width: 720,
+      height: 960,
+      sha256: "6cc2414da7e96e63ab7562675073d94e8f6f4f5045be0a5558c1ed66b0a020e6",
+      width: 1440,
     });
     assert.deepEqual(
       pixelAssetCatalog.assets
         .filter(({ filename }) => filename.startsWith("garden-"))
         .map(({ filename, height, width }) => ({ filename, height, width })),
       [
-        { filename: "garden-tree-ball.png", height: 192, width: 144 },
-        { filename: "garden-flowers.png", height: 56, width: 80 },
-        { filename: "garden-basket.png", height: 32, width: 48 },
-        { filename: "garden-market.png", height: 80, width: 120 },
+        { filename: "garden-tree-ball.png", height: 576, width: 432 },
+        { filename: "garden-flowers.png", height: 168, width: 240 },
+        { filename: "garden-basket.png", height: 96, width: 144 },
+        { filename: "garden-market.png", height: 240, width: 360 },
       ],
     );
   });
 
-  it("records the verified shared native grid, palette, and asset hashes", () => {
+  it("records the authored detail grid, screen mapping, palette, and hashes", () => {
     assert.deepEqual(pixelAssetCatalog.quality, {
       alpha: "hard",
-      artPixelSize: worldConfig.ART_PIXEL_SIZE,
-      paletteColors: 56,
+      groundSourceScale: worldConfig.GROUND_SOURCE_SCALE,
+      paletteColors: 141,
+      spriteDetailPixelSize: worldConfig.ART_PIXEL_SIZE,
+      spriteFrameScreenSize: worldConfig.SPRITE_SCREEN_FRAME_SIZE,
+      spriteFrameSourceSize: worldConfig.SPRITE_FRAME_SIZE,
+      spriteRenderScale: worldConfig.TEXTURE_TO_WORLD_SCALE,
+      spriteScreenTexelScale:
+        worldConfig.TEXTURE_TO_WORLD_SCALE * worldConfig.CAMERA_ZOOM,
     });
-    assert.ok(pixelAssetCatalog.quality.paletteColors <= 64);
+    assert.ok(pixelAssetCatalog.quality.paletteColors <= 160);
     assert.ok(
       pixelAssetCatalog.assets.every(
         ({ height, sha256, width }) =>
@@ -198,10 +222,10 @@ describe("Phaser pixel stage", () => {
     assert.doesNotMatch(main, /backgroundColor:\s*"#8ad51b"/);
   });
 
-  it("pins the verified tree bytes that preserve the approved canopy gaps", () => {
+  it("pins the redrawn tree bytes that preserve its authored canopy gaps", () => {
     assert.equal(
       pixelAsset("garden-tree-ball.png").sha256,
-      "034e47c712327e8b1fae9b764aad270f5bc40da165d32066f33d77561379e78b",
+      "25bb33fd5829ea6a1f6ade658a176d42d7f5a1d75c641e902e337b65673139db",
     );
   });
 

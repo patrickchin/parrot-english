@@ -1,325 +1,303 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
-async function expectAppToFitViewport(page: Page) {
-  const viewport = page.viewportSize();
-  expect(viewport).not.toBeNull();
+type ElementBox = NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>;
 
+const BUTTON_NAMES = [
+  "Move up",
+  "Move left",
+  "Move down",
+  "Move right",
+  "Idle animation",
+  "Talking animation",
+  "Happy animation",
+  "Surprised animation",
+] as const;
+
+function boxesOverlap(left: ElementBox, right: ElementBox) {
+  return !(
+    left.x + left.width <= right.x ||
+    right.x + right.width <= left.x ||
+    left.y + left.height <= right.y ||
+    right.y + right.height <= left.y
+  );
+}
+
+async function expectDocumentToFitViewport(page: Page) {
   const documentSize = await page.evaluate(() => ({
     clientHeight: document.documentElement.clientHeight,
     clientWidth: document.documentElement.clientWidth,
     scrollHeight: document.documentElement.scrollHeight,
     scrollWidth: document.documentElement.scrollWidth,
   }));
+
   expect(documentSize.scrollWidth).toBeLessThanOrEqual(documentSize.clientWidth);
   expect(documentSize.scrollHeight).toBeLessThanOrEqual(
     documentSize.clientHeight,
   );
-
-  for (const element of [
-    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
-    page.getByRole("region", {
-      name: "Peppa lesson garden exploration stage",
-    }),
-    page.getByText("Come on — let's explore the lesson garden!", {
-      exact: true,
-    }),
-    page.getByRole("navigation", { name: "Lesson garden game controls" }),
-    page.getByRole("button", { name: "Move up" }),
-    page.getByRole("button", { name: "Surprise" }),
-    page.getByText(
-      "1:1 textures · shared 2px art grid · 64-color palette · y-sorted props",
-      { exact: true },
-    ),
-  ]) {
-    await expect(element).toBeVisible();
-    const box = await element.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.x).toBeGreaterThanOrEqual(0);
-    expect(box!.y).toBeGreaterThanOrEqual(0);
-    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
-    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
-  }
 }
 
-test("Peppa can explore a generated lesson garden with physical depth", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/prototypes/pixel-stage/");
-
-  await expect(
-    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
-  ).toBeVisible();
-
-  const world = page.getByRole("group", { name: "Peppa lesson garden game world" });
-  const canvas = page.getByRole("img", { name: "Peppa lesson garden pixel game world" });
+async function expectFullscreenGame(page: Page, width: number, height: number) {
+  const world = page.getByRole("group", {
+    name: "Peppa lesson garden game world",
+  });
+  const canvas = page.getByRole("img", {
+    name: "Peppa lesson garden pixel game world",
+  });
   const stage = page.getByRole("region", {
     name: "Peppa lesson garden exploration stage",
   });
+
+  await expect(world).toHaveAttribute("data-viewport-width", String(width));
+  await expect(world).toHaveAttribute("data-viewport-height", String(height));
+  await expect(canvas).toHaveAttribute("width", String(width));
+  await expect(canvas).toHaveAttribute("height", String(height));
+
+  const stageBox = await stage.boundingBox();
+  const canvasBox = await canvas.boundingBox();
+  expect(stageBox).not.toBeNull();
+  expect(canvasBox).not.toBeNull();
+  expect(stageBox!.x).toBe(0);
+  expect(stageBox!.y).toBe(0);
+  expect(stageBox!.width).toBe(width);
+  expect(stageBox!.height).toBe(height);
+  expect(canvasBox!.x).toBe(0);
+  expect(canvasBox!.y).toBe(0);
+  expect(canvasBox!.width).toBe(width);
+  expect(canvasBox!.height).toBe(height);
+  await expectDocumentToFitViewport(page);
+}
+
+async function expectCompactOverlayControls(page: Page) {
+  const canvas = page.getByRole("img", {
+    name: "Peppa lesson garden pixel game world",
+  });
+  const canvasBox = await canvas.boundingBox();
+  expect(canvasBox).not.toBeNull();
+
+  for (const name of BUTTON_NAMES) {
+    const button = page.getByRole("button", { name });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.width).toBeLessThanOrEqual(48);
+    expect(box!.height).toBeLessThanOrEqual(48);
+    expect(box!.x).toBeGreaterThanOrEqual(canvasBox!.x);
+    expect(box!.y).toBeGreaterThanOrEqual(canvasBox!.y);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(
+      canvasBox!.x + canvasBox!.width,
+    );
+    expect(box!.y + box!.height).toBeLessThanOrEqual(
+      canvasBox!.y + canvasBox!.height,
+    );
+    expect(
+      await button.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        const topElement = document.elementFromPoint(
+          box.left + box.width / 2,
+          box.top + box.height / 2,
+        );
+        return topElement === element || element.contains(topElement);
+      }),
+    ).toBe(true);
+  }
+
+  const overlays = [
+    page.getByRole("group", { name: "Move Peppa" }),
+    page.getByRole("group", { name: "Peppa animations" }),
+    page.getByRole("group", { name: "Game status" }),
+    page.getByRole("group", { name: "Peppa speech" }),
+  ];
+  const overlayBoxes: ElementBox[] = [];
+  for (const overlay of overlays) {
+    await expect(overlay).toBeVisible();
+    const box = await overlay.boundingBox();
+    expect(box).not.toBeNull();
+    overlayBoxes.push(box!);
+  }
+
+  for (let leftIndex = 0; leftIndex < overlayBoxes.length; leftIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < overlayBoxes.length;
+      rightIndex += 1
+    ) {
+      expect(boxesOverlap(overlayBoxes[leftIndex], overlayBoxes[rightIndex])).toBe(
+        false,
+      );
+    }
+  }
+}
+
+test("Peppa explores a fullscreen lesson garden with genuinely detailed large sprites", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/prototypes/pixel-stage/");
+
+  await expect(page).toHaveTitle("Explore Peppa's lesson garden");
+  await expect(
+    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
+  ).toBeAttached();
+
+  const world = page.getByRole("group", {
+    name: "Peppa lesson garden game world",
+  });
+  const canvas = page.getByRole("img", {
+    name: "Peppa lesson garden pixel game world",
+  });
   await expect(world).toHaveAttribute("data-engine", "phaser");
   await expect(world).toHaveAttribute("data-ready", "true");
-  await expect(world).toHaveAttribute("data-art-pixel-size", "2");
-  await expect(world).toHaveAttribute("data-camera-zoom", "1");
-  await expect(world).toHaveAttribute("data-native-scale", "1");
-  await expect(world).toHaveAttribute("data-map-width", "720");
-  await expect(world).toHaveAttribute("data-map-height", "480");
+  await expect(world).toHaveAttribute("data-camera-zoom", "2");
+  await expect(world).toHaveAttribute("data-sprite-detail-pixel-size", "1");
+  await expect(world).toHaveAttribute("data-sprite-render-scale", "0.5");
+  await expect(world).toHaveAttribute("data-sprite-frame-size", "320");
+  await expect(world).toHaveAttribute("data-sprite-world-frame-size", "160");
+  await expect(world).toHaveAttribute("data-sprite-screen-frame-size", "320");
+  await expect(world).toHaveAttribute("data-ground-source-width", "1440");
+  await expect(world).toHaveAttribute("data-ground-source-height", "960");
+  await expect(world).toHaveAttribute("data-ground-world-width", "720");
+  await expect(world).toHaveAttribute("data-ground-world-height", "480");
+  await expect(world).toHaveAttribute("data-player-body-width", "48");
+  await expect(world).toHaveAttribute("data-player-body-height", "24");
   await expect(world).toHaveAttribute("data-x", "450");
   await expect(world).toHaveAttribute("data-y", "192");
   await expect(world).toHaveAttribute("data-frame", "0");
   await page.waitForTimeout(700);
   await expect(world).toHaveAttribute("data-frame", "0");
-  await expect(canvas).toHaveAttribute("width", "388");
   await expect(canvas).toHaveCSS("image-rendering", "pixelated");
-  await expect(stage).toHaveCSS("background-color", "rgb(215, 215, 215)");
-  expect(
-    await stage.evaluate((element) => getComputedStyle(element).backgroundImage),
-  ).not.toBe("none");
+  await expectFullscreenGame(page, 390, 844);
+  await expectCompactOverlayControls(page);
+
   expect(Number(await world.getAttribute("data-depth"))).toBeLessThan(
     Number(await world.getAttribute("data-landmark-depth")),
   );
   const initialCameraY = Number(await world.getAttribute("data-camera-y"));
+  const moveLeft = page.getByRole("button", { name: "Move left" });
+  const moveRight = page.getByRole("button", { name: "Move right" });
+  const moveDown = page.getByRole("button", { name: "Move down" });
 
-  // Return to the lesson tree, whose visible trunk and footprint share one foot line.
-  await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(1250);
-  await page.keyboard.up("ArrowLeft");
-  await page.keyboard.down("ArrowDown");
-  await page.waitForTimeout(500);
-  await page.keyboard.up("ArrowDown");
-  expect(Number(await world.getAttribute("data-y"))).toBeLessThan(240);
+  await moveLeft.dispatchEvent("pointerdown");
+  try {
+    await expect
+      .poll(async () => Number(await world.getAttribute("data-x")), {
+        timeout: 10_000,
+      })
+      .toBeLessThanOrEqual(315);
+  } finally {
+    await moveLeft.dispatchEvent("pointerup");
+  }
+  await moveDown.dispatchEvent("pointerdown");
+  try {
+    await expect
+      .poll(async () => Number(await world.getAttribute("data-y")), {
+        timeout: 10_000,
+      })
+      .toBeGreaterThanOrEqual(220);
+  } finally {
+    await moveDown.dispatchEvent("pointerup");
+  }
+  expect(Number(await world.getAttribute("data-y"))).toBeLessThan(300);
+  await expect(world).toHaveAttribute("data-occlusion", "behind-tree");
 
-  // Walk around it. The same sprite now sorts in front, and the camera follows.
-  await page.keyboard.down("ArrowRight");
-  await page.waitForTimeout(700);
-  await page.keyboard.up("ArrowRight");
-  await page.keyboard.down("ArrowDown");
-  await page.waitForTimeout(900);
-  await page.keyboard.up("ArrowDown");
-  await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(700);
-  await page.keyboard.up("ArrowLeft");
+  await moveRight.dispatchEvent("pointerdown");
+  try {
+    await expect
+      .poll(async () => Number(await world.getAttribute("data-x")), {
+        timeout: 10_000,
+      })
+      .toBeGreaterThanOrEqual(390);
+  } finally {
+    await moveRight.dispatchEvent("pointerup");
+  }
+  await moveDown.dispatchEvent("pointerdown");
+  try {
+    await expect
+      .poll(async () => Number(await world.getAttribute("data-y")), {
+        timeout: 10_000,
+      })
+      .toBeGreaterThanOrEqual(305);
+  } finally {
+    await moveDown.dispatchEvent("pointerup");
+  }
+  await moveLeft.dispatchEvent("pointerdown");
+  try {
+    await expect
+      .poll(async () => Number(await world.getAttribute("data-x")), {
+        timeout: 10_000,
+      })
+      .toBeLessThanOrEqual(350);
+  } finally {
+    await moveLeft.dispatchEvent("pointerup");
+  }
 
-  await expect
-    .poll(async () => Number(await world.getAttribute("data-depth")))
-    .toBeGreaterThan(Number(await world.getAttribute("data-landmark-depth")));
+  await expect(world).toHaveAttribute("data-occlusion", "in-front-of-tree");
   await expect
     .poll(async () => Number(await world.getAttribute("data-camera-y")))
     .toBeGreaterThan(initialCameraY);
 
   for (const { button, state } of [
-    { button: "Talk", state: "talking" },
-    { button: "Happy", state: "happy" },
-    { button: "Surprise", state: "surprised" },
-    { button: "Idle", state: "idle" },
+    { button: "Talking animation", state: "talking" },
+    { button: "Happy animation", state: "happy" },
+    { button: "Surprised animation", state: "surprised" },
+    { button: "Idle animation", state: "idle" },
   ]) {
     await page.getByRole("button", { name: button }).click();
     await expect(world).toHaveAttribute("data-state", state);
   }
-
-  const stageBox = await stage.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-
-  expect(stageBox).not.toBeNull();
-  expect(canvasBox).not.toBeNull();
-  expect(canvasBox!.width).toBe(388);
-  expect(stageBox!.width).toBe(388);
-  expect(stageBox!.height).toBeGreaterThan(160);
-  expect(Math.abs(canvasBox!.height - stageBox!.height)).toBeLessThanOrEqual(4);
-  expect(canvasBox!.x).toBe(stageBox!.x);
-  expect(Math.abs(canvasBox!.y - stageBox!.y)).toBeLessThanOrEqual(2);
-  await expectAppToFitViewport(page);
-
-  await page.setViewportSize({ width: 900, height: 900 });
-  await expect(world).toHaveAttribute("data-presentation-scale", "1");
-  await expect(canvas).toHaveAttribute("width", "898");
-  const desktopStageBox = await stage.boundingBox();
-  const desktopCanvasBox = await canvas.boundingBox();
-  expect(desktopStageBox).not.toBeNull();
-  expect(desktopCanvasBox).not.toBeNull();
-  expect(desktopStageBox!.width).toBe(898);
-  expect(desktopCanvasBox!.width).toBe(898);
-  expect(desktopStageBox!.height).toBeGreaterThan(200);
-  expect(
-    Math.abs(desktopCanvasBox!.height - desktopStageBox!.height),
-  ).toBeLessThanOrEqual(4);
-  expect(desktopCanvasBox!.x).toBe(desktopStageBox!.x);
-  expect(
-    Math.abs(desktopCanvasBox!.y - desktopStageBox!.y),
-  ).toBeLessThanOrEqual(2);
-  await expectAppToFitViewport(page);
-
-  await page.setViewportSize({ width: 1280, height: 720 });
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(world).toHaveAttribute("data-presentation-scale", "1");
-  await expect(canvas).toHaveAttribute("width", "1278");
-  const wideStageBox = await stage.boundingBox();
-  const wideCanvasBox = await canvas.boundingBox();
-  expect(wideStageBox).not.toBeNull();
-  expect(wideCanvasBox).not.toBeNull();
-  expect(wideStageBox!.width).toBe(1278);
-  expect(wideCanvasBox!.width).toBe(1278);
-  expect(wideStageBox!.height).toBeGreaterThan(200);
-  expect(Math.abs(wideCanvasBox!.height - wideStageBox!.height)).toBeLessThanOrEqual(
-    4,
-  );
-  expect(wideCanvasBox!.x).toBe(wideStageBox!.x);
-  expect(Math.abs(wideCanvasBox!.y - wideStageBox!.y)).toBeLessThanOrEqual(2);
-  expect(wideStageBox!.x).toBeGreaterThanOrEqual(0);
-  expect(wideStageBox!.x + wideStageBox!.width).toBeLessThanOrEqual(1280);
-  expect(wideStageBox!.y).toBeLessThanOrEqual(64);
-  await expectAppToFitViewport(page);
-
-  await page.setViewportSize({ width: 722, height: 966 });
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(world).toHaveAttribute("data-presentation-scale", "1");
-  await expect(canvas).toHaveAttribute("width", "720");
-  const tallStageBox = await stage.boundingBox();
-  const tallCanvasBox = await canvas.boundingBox();
-  expect(tallStageBox).not.toBeNull();
-  expect(tallCanvasBox).not.toBeNull();
-  expect(tallStageBox!.width).toBe(720);
-  expect(tallCanvasBox!.width).toBe(720);
-  expect(tallStageBox!.height).toBeGreaterThan(200);
-  expect(Math.abs(tallCanvasBox!.height - tallStageBox!.height)).toBeLessThanOrEqual(
-    4,
-  );
-  expect(tallCanvasBox!.x).toBe(tallStageBox!.x);
-  expect(Math.abs(tallCanvasBox!.y - tallStageBox!.y)).toBeLessThanOrEqual(2);
-  expect(tallStageBox!.y).toBeLessThanOrEqual(50);
-  await expectAppToFitViewport(page);
-
-  await page.setViewportSize({ width: 672, height: 966 });
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(world).toHaveAttribute("data-presentation-scale", "1");
-  await expect(canvas).toHaveAttribute("width", "670");
-  const splitPaneStageBox = await stage.boundingBox();
-  const splitPaneCanvasBox = await canvas.boundingBox();
-  expect(splitPaneStageBox).not.toBeNull();
-  expect(splitPaneCanvasBox).not.toBeNull();
-  expect(splitPaneStageBox!.width).toBe(670);
-  expect(splitPaneCanvasBox!.width).toBe(670);
-  expect(splitPaneStageBox!.height).toBeGreaterThan(200);
-  expect(
-    Math.abs(splitPaneCanvasBox!.height - splitPaneStageBox!.height),
-  ).toBeLessThanOrEqual(4);
-  expect(splitPaneCanvasBox!.x).toBe(splitPaneStageBox!.x);
-  expect(
-    Math.abs(splitPaneCanvasBox!.y - splitPaneStageBox!.y),
-  ).toBeLessThanOrEqual(2);
-  await expectAppToFitViewport(page);
-
-  await page.setViewportSize({ width: 280, height: 700 });
-  await expect(world).toHaveAttribute("data-presentation-scale", "1");
-  await expect(canvas).toHaveAttribute("width", "278");
-  const narrowStageBox = await stage.boundingBox();
-  const narrowCanvasBox = await canvas.boundingBox();
-  expect(narrowStageBox).not.toBeNull();
-  expect(narrowCanvasBox).not.toBeNull();
-  expect(narrowStageBox!.width).toBe(278);
-  expect(narrowCanvasBox!.width).toBe(278);
-  expect(narrowStageBox!.height).toBeGreaterThan(120);
-  await expect
-    .poll(async () => {
-      const settledStageBox = await stage.boundingBox();
-      const settledCanvasBox = await canvas.boundingBox();
-      return Math.abs(settledCanvasBox!.height - settledStageBox!.height);
-    })
-    .toBeLessThanOrEqual(4);
-  await expectAppToFitViewport(page);
 });
 
-test("the game uses the usable page width when browser chrome takes space", async ({
+test("the canvas remains edge-to-edge across narrow, odd, tall, and wide viewports", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/prototypes/pixel-stage/");
-
   const world = page.getByRole("group", {
     name: "Peppa lesson garden game world",
   });
-  const stage = page.getByRole("region", {
-    name: "Peppa lesson garden exploration stage",
-  });
   await expect(world).toHaveAttribute("data-ready", "true");
 
-  await page.evaluate(() => {
-    Object.defineProperty(window, "innerWidth", {
-      configurable: true,
-      value: 1310,
-    });
-    window.dispatchEvent(new Event("resize"));
-  });
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 943, height: 966 },
+    { width: 722, height: 966 },
+    { width: 672, height: 966 },
+    { width: 375, height: 667 },
+    { width: 280, height: 700 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expectFullscreenGame(page, viewport.width, viewport.height);
+    if (viewport.width === 280 || viewport.height === 390) {
+      await expectCompactOverlayControls(page);
+    }
+  }
 
-  const stageBox = await stage.boundingBox();
-  expect(stageBox).not.toBeNull();
-  expect(stageBox!.x).toBeGreaterThanOrEqual(0);
-  expect(stageBox!.x + stageBox!.width).toBeLessThanOrEqual(1280);
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.scrollWidth))
-    .toBeLessThanOrEqual(1280);
+  await page.setViewportSize({ width: 1920, height: 1200 });
+  await expectFullscreenGame(page, 1920, 1200);
+  await expect(world).toHaveAttribute("data-camera-visible-width", "960");
+  await expect(world).toHaveAttribute("data-camera-visible-height", "600");
+  await expect(world).toHaveAttribute("data-camera-x", "-120");
+  await expect(world).toHaveAttribute("data-camera-y", "-60");
 });
 
-test("the canvas follows app-shell reflow without a window resize", async ({
-  page,
-}) => {
+test("overlaid speech never reduces the playable canvas", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.setViewportSize({ width: 900, height: 900 });
   await page.goto("/prototypes/pixel-stage/");
-
   const world = page.getByRole("group", {
     name: "Peppa lesson garden game world",
   });
-  const stage = page.getByRole("region", {
-    name: "Peppa lesson garden exploration stage",
-  });
-  const canvas = page.getByRole("img", {
-    name: "Peppa lesson garden pixel game world",
-  });
+  const speech = page.getByRole("group", { name: "Peppa speech" });
   await expect(world).toHaveAttribute("data-ready", "true");
+  await expectFullscreenGame(page, 900, 900);
 
-  const initialStageBox = await stage.boundingBox();
-  expect(initialStageBox).not.toBeNull();
-
-  await page.locator(".speech").evaluate((element) => {
+  await speech.evaluate((element) => {
     (element as HTMLElement).style.paddingBlock = "40px";
   });
 
-  await expect
-    .poll(async () => (await stage.boundingBox())?.height)
-    .toBeLessThan(initialStageBox!.height - 40);
-
-  const reflowedStageBox = await stage.boundingBox();
-  const reflowedCanvasBox = await canvas.boundingBox();
-  expect(reflowedStageBox).not.toBeNull();
-  expect(reflowedCanvasBox).not.toBeNull();
-  expect(
-    Math.abs(reflowedCanvasBox!.height - reflowedStageBox!.height),
-  ).toBeLessThanOrEqual(4);
-  await expectAppToFitViewport(page);
-});
-
-test("Peppa's sprite-sheet pixels render at one CSS pixel each", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 943, height: 966 });
-  await page.goto("/prototypes/pixel-stage/");
-
-  const world = page.getByRole("group", {
-    name: "Peppa lesson garden game world",
-  });
-  const canvas = page.getByRole("img", {
-    name: "Peppa lesson garden pixel game world",
-  });
-  await expect(world).toHaveAttribute("data-ready", "true");
-  await expect(world).toHaveAttribute("data-native-scale", "1");
-  await expect(world).toHaveAttribute("data-camera-zoom", "1");
-  await expect(world).toHaveAttribute("data-presentation-scale", "1");
-
-  const canvasPixels = await canvas.evaluate((element: HTMLCanvasElement) => ({
-    height: element.height,
-    width: element.width,
-  }));
-  const canvasBox = await canvas.boundingBox();
-  expect(canvasBox).not.toBeNull();
-  expect(canvasBox!.width).toBe(canvasPixels.width);
-  expect(canvasBox!.height).toBe(canvasPixels.height);
+  await expectFullscreenGame(page, 900, 900);
 });

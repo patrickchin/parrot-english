@@ -259,7 +259,10 @@ test("Game opens the pixel garden proof of concept", async ({ page }) => {
   await game.click();
 
   await expect(page).toHaveURL(/\/prototypes\/pixel-stage\/$/);
+  await expect(page).toHaveTitle("Explore Peppa's lesson garden");
   await expect(
-    page.getByRole("heading", { name: "Explore Peppa's lesson garden" }),
+    page.getByRole("region", {
+      name: "Peppa lesson garden exploration stage",
+    }),
   ).toBeVisible();
 });

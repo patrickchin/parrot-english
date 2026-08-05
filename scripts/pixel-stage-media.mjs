@@ -98,6 +98,10 @@ function parseCatalog(catalogValue) {
       throw new Error(`catalog.assets[${index}].sha256 must be a SHA-256 hash`);
     }
     return {
+      bytes: requirePositiveInteger(
+        asset.bytes,
+        `catalog.assets[${index}].bytes`,
+      ),
       filename,
       height: requirePositiveInteger(
         asset.height,
@@ -125,7 +129,7 @@ export async function verifyPixelStageMedia(catalogValue, options = {}) {
   const verified = [];
   await Promise.all(
     assets.map(async (asset) => {
-      const src = `${mediaRoot}/${asset.filename}`;
+      const src = `${mediaRoot}/${asset.filename}?sha256=${asset.sha256}`;
       let response;
       try {
         response = await fetchImplementation(src, {
@@ -177,6 +181,11 @@ export async function verifyPixelStageMedia(catalogValue, options = {}) {
       if (declaredBytes !== buffer.length || buffer.length < 1) {
         errors.push(`${asset.filename} must return its exact positive content-length`);
       }
+      if (buffer.length !== asset.bytes || declaredBytes !== asset.bytes) {
+        errors.push(
+          `${asset.filename} must match its catalog byte count of ${asset.bytes}`,
+        );
+      }
 
       if (
         contentType.split(";", 1)[0].trim().toLowerCase() === "image/png" &&
@@ -186,7 +195,7 @@ export async function verifyPixelStageMedia(catalogValue, options = {}) {
         dimensions.height === asset.height &&
         sha256 === asset.sha256 &&
         declaredBytes === buffer.length &&
-        buffer.length > 0
+        buffer.length === asset.bytes
       ) {
         verified.push({ bytes: buffer.length, filename: asset.filename, src });
       }

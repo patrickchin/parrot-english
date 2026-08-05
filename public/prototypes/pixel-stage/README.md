@@ -12,25 +12,31 @@ served from the versioned R2 root
 `https://media.parrotbook.com/prototypes/pixel-stage/v1`; their dimensions and
 SHA-256 hashes are recorded in `prototypes/pixel-stage/assets.json`. Private
 source copies and provenance stay in `parrot-english-art-source`. Every live
-asset is normalized to the same 2 × 2 art-cell grid, hard alpha, and shared
-64-color palette:
+transparent sprite uses hard alpha and newly authored one-pixel detail rather
+than duplicated pixels:
 
-- `lesson-garden-ground.png` is an opaque 720 × 480 walkable garden map;
-- the four `garden-*.png` files are transparent, bottom-anchored lesson props
-  sized relative to Peppa: 144 × 192 tree, 80 × 56 flowers, 48 × 32 basket,
-  and 120 × 80 market counter;
-- `peppa-town-sheet-96.png` is a 4 × 4 animation sheet with 96 × 96 frames.
+- `lesson-garden-ground.png` is an opaque 1440 × 960 source for the 720 × 480
+  walkable garden map;
+- the four `garden-*.png` files are newly redrawn, transparent, bottom-anchored
+  lesson props: 432 × 576 tree, 240 × 168 flowers, 144 × 96 basket, and
+  360 × 240 market counter;
+- `peppa-town-sheet-320.png` is a newly redrawn 1280 × 1280, 4 × 4 animation
+  sheet with 320 × 320 authored frames and substantially denser facial,
+  clothing, limb, and expression detail.
 
 The game uses a three-times-finer render grid than the earlier 16/32-pixel
-prototype. A logical tile is now 48 source pixels and Peppa remains at her
-native 96-pixel frame size. No world image calls `setScale` or `setDisplaySize`:
-Phaser renders each source pixel to exactly one intrinsic canvas pixel at camera
-zoom 1. The canvas backing size now follows its displayed CSS size on the same
-2-pixel art grid, so the complete scene is never enlarged after Phaser renders
-it. Larger panes reveal more grass around the compact 720 × 480 playable map
-instead of scaling its sprites; smaller panes use the camera to move through the
-same native-size world. Idle is one stable frame, while movement and emotes use
-centered, foot-aligned cycles.
+prototype. A logical tile remains 48 world pixels. The ground's independent 2×
+source scale still maps its 1440 × 960 texture onto the 720 × 480 world. Phaser
+renders the newly authored sprites at 0.5 world scale, while the camera presents
+the world at 2×. That maps each authored sprite texel one-for-one to the screen
+without pretending duplicated pixels are additional detail. Peppa now occupies
+a 320 × 320 screen frame and the visible character is about 300 pixels tall,
+nearly twice the previous visible height. The props are also 50% larger than
+their previous on-screen footprints. Their collision footprints grow with the
+art. The canvas and its backing buffer fill the viewport without CSS resampling.
+The HUD, speech, movement buttons, and emote buttons remain compact overlays on
+the canvas, so no separate controls panel reduces the playable area. Idle is one
+stable frame, while movement and emotes use centered, foot-aligned cycles.
 
 Phaser owns movement, Arcade Physics, camera following, animation, and render
 ordering. Each prop declares one collision footprint and foot line, and both
