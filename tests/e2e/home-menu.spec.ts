@@ -19,6 +19,62 @@ async function expectInsidePage(locator: Locator, page: Page) {
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
 }
 
+async function focusWithKeyboard(page: Page, locator: Locator) {
+  if (await locator.evaluate((element) => element === document.activeElement)) {
+    return;
+  }
+
+  for (let index = 0; index < 20; index += 1) {
+    await page.keyboard.press("Tab");
+    if (await locator.evaluate((element) => element === document.activeElement)) {
+      return;
+    }
+  }
+
+  expect(
+    await locator.evaluate((element) => element === document.activeElement),
+  ).toBe(true);
+}
+
+async function renderedCardChrome(locator: Locator) {
+  return locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      borderBottomColor: style.borderBottomColor,
+      borderBottomStyle: style.borderBottomStyle,
+      borderBottomWidth: style.borderBottomWidth,
+      borderLeftColor: style.borderLeftColor,
+      borderLeftStyle: style.borderLeftStyle,
+      borderLeftWidth: style.borderLeftWidth,
+      borderRadius: style.borderRadius,
+      borderRightColor: style.borderRightColor,
+      borderRightStyle: style.borderRightStyle,
+      borderRightWidth: style.borderRightWidth,
+      borderTopColor: style.borderTopColor,
+      borderTopStyle: style.borderTopStyle,
+      borderTopWidth: style.borderTopWidth,
+      boxShadow: style.boxShadow,
+      paddingBottom: style.paddingBottom,
+      paddingLeft: style.paddingLeft,
+      paddingRight: style.paddingRight,
+      paddingTop: style.paddingTop,
+    };
+  });
+}
+
+async function renderedFocusOutline(locator: Locator) {
+  return locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.outlineColor,
+      offset: style.outlineOffset,
+      style: style.outlineStyle,
+      width: style.outlineWidth,
+    };
+  });
+}
+
 for (const viewport of phoneViewports) {
   test(`home separates primary and upcoming activities on a ${viewport.name} phone`, async ({
     page,
@@ -94,6 +150,55 @@ test("home routes into and back out of a guided lesson", async ({ page }) => {
   await expect(
     page.getByRole("heading", { exact: true, name: "Lessons" }),
   ).toBeVisible();
+});
+
+test("primary home activities share one rendered card chrome and focus outline", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/");
+
+  const activities = page.getByRole("navigation", {
+    name: "Learning activities",
+  });
+  const cards = [
+    activities.getByRole("link", { name: /^Talk to Peppa/ }),
+    activities.getByRole("link", { name: /^Lessons/ }),
+    activities.getByRole("link", { name: /^Game/ }),
+  ];
+  const boxes = await Promise.all(
+    cards.map(async (card) => {
+      await expect(card).toBeVisible();
+      const box = await card.boundingBox();
+      expect(box).not.toBeNull();
+      return box!;
+    }),
+  );
+
+  expect(
+    Math.max(...boxes.map(({ width }) => width)) -
+      Math.min(...boxes.map(({ width }) => width)),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.max(...boxes.map(({ height }) => height)) -
+      Math.min(...boxes.map(({ height }) => height)),
+  ).toBeLessThanOrEqual(1);
+
+  const chrome = await Promise.all(cards.map(renderedCardChrome));
+  expect(chrome[1]).toEqual(chrome[0]);
+  expect(chrome[2]).toEqual(chrome[0]);
+
+  const outlines = [];
+  for (const card of cards) {
+    await focusWithKeyboard(page, card);
+    const outline = await renderedFocusOutline(card);
+    expect(outline.style).not.toBe("none");
+    expect(Number.parseFloat(outline.width)).toBeGreaterThan(0);
+    outlines.push(outline);
+  }
+
+  expect(outlines[1]).toEqual(outlines[0]);
+  expect(outlines[2]).toEqual(outlines[0]);
 });
 
 test("retired feature URLs return to the useful home hub", async ({ page }) => {

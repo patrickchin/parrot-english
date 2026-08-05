@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ActionButton, cx, IconButton } from "../shared/ui";
+import { ActionButton, Card, cx, IconButton } from "../shared/ui";
 
 type BackendBuild = {
   commitSha: string;
@@ -87,7 +87,7 @@ function BuildCard({
   version: string;
 }) {
   return (
-    <section className="grid gap-3 rounded-2xl border-3 border-sky-200 bg-white p-3 shadow-sm">
+    <Card className="grid gap-3 p-3" elevation="soft" tone="inset">
       <div className="flex items-center justify-between gap-3">
         <h3 className="m-0 text-base font-black leading-tight text-brand-navy">
           {title}
@@ -111,7 +111,7 @@ function BuildCard({
         ))}
       </dl>
       {title === "Web app" ? null : <BuildMatch commitSha={commitSha} />}
-    </section>
+    </Card>
   );
 }
 
@@ -220,14 +220,14 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
             version={buildInfo.backend.version}
           />
         ) : (
-          <section className="rounded-2xl border-3 border-sky-200 bg-white p-3">
+          <Card className="p-3" elevation="soft" tone="inset">
             <h3 className="m-0 text-base font-black text-brand-navy">
               Cloudflare Worker
             </h3>
             <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
               {error || "Loading deployed service details…"}
             </p>
-          </section>
+          </Card>
         )}
 
         {agent ? (
@@ -256,7 +256,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
             version={agent.version}
           />
         ) : (
-          <section className="rounded-2xl border-3 border-sky-200 bg-white p-3">
+          <Card className="p-3" elevation="soft" tone="inset">
             <h3 className="m-0 text-base font-black text-brand-navy">
               Conversation agent
             </h3>
@@ -266,7 +266,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
                   ? "Not reported yet. It reports its build when it starts a conversation."
                   : "Loading deployed service details…")}
             </p>
-          </section>
+          </Card>
         )}
 
         {buildInfo ? (
@@ -275,7 +275,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
           </p>
         ) : null}
         <ActionButton
-          className="w-full rounded-full"
+          fullWidth
           onClick={onClose}
           type="button"
           variant="navy"

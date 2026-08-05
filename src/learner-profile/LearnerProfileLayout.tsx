@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { cx } from "../shared/ui";
+import { Card, cx } from "../shared/ui";
 
 export function LearnerProfileScreen({
   children,
@@ -31,9 +31,9 @@ export function LearnerProfileCard({
   width?: "narrow" | "standard" | "wide";
 }) {
   return (
-    <section
+    <Card
       className={cx(
-        "my-auto w-full rounded-3xl border-4 border-white bg-white/95 shadow-card",
+        "my-auto w-full",
         width === "narrow" && "max-w-xl",
         width === "standard" && "max-w-2xl",
         width === "wide" && "max-w-4xl",
@@ -42,7 +42,7 @@ export function LearnerProfileCard({
       {...props}
     >
       {children}
-    </section>
+    </Card>
   );
 }
 

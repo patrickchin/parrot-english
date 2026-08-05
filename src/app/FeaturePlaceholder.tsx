@@ -1,4 +1,4 @@
-import { ActionButton, ActionLink } from "../shared/ui";
+import { ActionButton, ActionLink, Card } from "../shared/ui";
 
 export function FeaturePlaceholder({
   actionLabel = "Back to home",
@@ -21,9 +21,9 @@ export function FeaturePlaceholder({
 }) {
   return (
     <main className="grid h-dvh w-screen place-items-start overflow-y-auto bg-placeholder px-4 pb-10 pt-28 md:place-items-center md:px-6 md:pb-12 md:pt-32">
-      <section
+      <Card
         aria-busy={busy || undefined}
-        className="my-auto grid w-full max-w-2xl justify-items-center gap-4 rounded-3xl border-4 border-white bg-white/95 p-8 text-center shadow-card sm:p-12"
+        className="my-auto grid w-full max-w-2xl justify-items-center gap-4 p-8 text-center sm:p-12"
         role={busy ? "status" : onRetry ? "alert" : undefined}
       >
         <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-6xl">
@@ -34,41 +34,26 @@ export function FeaturePlaceholder({
         </p>
         <div className="mt-2 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
           {onRetry ? (
-            <ActionButton
-              className="rounded-full border-4 border-white"
-              onClick={onRetry}
-              type="button"
-            >
+            <ActionButton onClick={onRetry} type="button">
               Try again
             </ActionButton>
           ) : (
-            <ActionLink
-              className="rounded-full border-4 border-white"
-              to={actionTo}
-            >
+            <ActionLink to={actionTo}>
               {actionLabel}
             </ActionLink>
           )}
           {onRetry ? (
-            <ActionLink
-              className="rounded-full border-4 border-white"
-              to={actionTo}
-              variant="surface"
-            >
+            <ActionLink to={actionTo} variant="surface">
               {actionLabel}
             </ActionLink>
           ) : null}
           {secondaryActionLabel && secondaryActionTo ? (
-            <ActionLink
-              className="rounded-full border-4 border-white"
-              to={secondaryActionTo}
-              variant="surface"
-            >
+            <ActionLink to={secondaryActionTo} variant="surface">
               {secondaryActionLabel}
             </ActionLink>
           ) : null}
         </div>
-      </section>
+      </Card>
     </main>
   );
 }

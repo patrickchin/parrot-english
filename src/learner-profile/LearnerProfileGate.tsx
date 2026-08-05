@@ -282,7 +282,7 @@ export function LearnerProfileGateView({
             Answer a few quick questions to personalize chats and lessons. You
             can change these later in Learner profile.
           </p>
-          <ActionButton className="mt-2 text-lg" onClick={onStart} type="button">
+          <ActionButton className="mt-2" onClick={onStart} type="button">
             Set up profile
           </ActionButton>
           <TextButton onClick={onSkip} type="button">

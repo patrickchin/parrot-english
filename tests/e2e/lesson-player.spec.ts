@@ -251,15 +251,33 @@ for (const viewport of viewports) {
       name: "Story playback controls",
     });
     await expectInsideViewport(playbackControls, viewport);
-    await expect(
-      playbackControls.getByRole("button", { name: "Previous scene" }),
-    ).toBeDisabled();
-    await expect(
-      playbackControls.getByRole("button", { name: "Pause story" }),
-    ).toBeVisible();
-    await expect(
-      playbackControls.getByRole("button", { name: "Next scene" }),
-    ).toBeEnabled();
+    const previous = playbackControls.getByRole("button", {
+      name: "Previous scene",
+    });
+    const pause = playbackControls.getByRole("button", {
+      name: "Pause story",
+    });
+    const next = playbackControls.getByRole("button", { name: "Next scene" });
+    await expect(previous).toBeDisabled();
+    await expect(pause).toBeVisible();
+    await expect(next).toBeEnabled();
+    const playbackBoxes = await Promise.all(
+      [previous, pause, next].map((control) =>
+        expectInsideViewport(control, viewport),
+      ),
+    );
+    for (const box of playbackBoxes) {
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(
+      Math.max(...playbackBoxes.map(({ width }) => width)) -
+        Math.min(...playbackBoxes.map(({ width }) => width)),
+    ).toBeLessThanOrEqual(1);
+    expect(
+      Math.max(...playbackBoxes.map(({ height }) => height)) -
+        Math.min(...playbackBoxes.map(({ height }) => height)),
+    ).toBeLessThanOrEqual(1);
 
     await page.goto(lessonPath);
     await page.getByRole("button", { name: "Start lesson" }).click();
@@ -282,7 +300,17 @@ for (const viewport of viewports) {
     await expect(skip).toContainText("Skip");
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(controls, viewport);
-    await expectInsideViewport(skip, viewport);
+    const [microphoneBox, skipBox] = await Promise.all([
+      expectInsideViewport(microphone, viewport),
+      expectInsideViewport(skip, viewport),
+    ]);
+    expect(microphoneBox.width).toBeGreaterThanOrEqual(44);
+    expect(microphoneBox.height).toBeGreaterThanOrEqual(44);
+    expect(skipBox.width).toBeGreaterThanOrEqual(44);
+    expect(skipBox.height).toBeGreaterThanOrEqual(44);
+    expect(Math.abs(microphoneBox.height - skipBox.height)).toBeLessThanOrEqual(
+      1,
+    );
     await expectInsideViewport(peppa, viewport);
     await expectInsideViewport(dolly, viewport);
     await expectBefore(hud, prompt);
