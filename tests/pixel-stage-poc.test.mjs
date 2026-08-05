@@ -164,6 +164,35 @@ describe("Phaser pixel stage", () => {
     assert.doesNotMatch(stage, /requestAnimationFrame|setInterval|moveActor|getSpriteFrame/);
   });
 
+  it("keeps the generated lesson engine aligned with the detailed redraw contract", () => {
+    const engine = projectFile("src/games/pixel-stage-engine.ts");
+
+    assert.match(engine, /peppa-town-sheet-320\.png/);
+    assert.doesNotMatch(engine, /peppa-town-sheet-96\.png/);
+    assert.match(
+      engine,
+      /ART_CACHE_QUERY = "\?art-revision=20260806-detailed-redraw"/,
+    );
+    assert.match(
+      engine,
+      /assetSource\("lesson-garden-ground\.png"\)/,
+    );
+    assert.match(engine, /ground\.frame\.realWidth !== WORLD_SIZE\.width \* GROUND_SOURCE_SCALE/);
+    assert.match(engine, /ground\.displayWidth !== WORLD_SIZE\.width/);
+    assert.match(engine, /\.setScale\(TEXTURE_TO_WORLD_SCALE\)/);
+    assert.match(engine, /playerBody\.updateBounds\(\)/);
+    assert.match(engine, /PLAYER_BODY\.width \/ TEXTURE_TO_WORLD_SCALE/);
+    assert.match(engine, /PLAYER_BODY\.offsetY \/ TEXTURE_TO_WORLD_SCALE/);
+    assert.match(
+      engine,
+      /setDeadzone\(120 \/ CAMERA_ZOOM, 84 \/ CAMERA_ZOOM\)/,
+    );
+    assert.match(engine, /visibleWidth = camera\.width \/ CAMERA_ZOOM/);
+    assert.match(engine, /visibleHeight = camera\.height \/ CAMERA_ZOOM/);
+    assert.match(engine, /\.setScale\(1 \/ CAMERA_ZOOM\)/);
+    assert.doesNotMatch(engine, /requireNativeScale/);
+  });
+
   it("uses genuine detailed redraws while preserving the 720x480 world", () => {
     assert.deepEqual(pixelAsset("peppa-town-sheet-320.png"), {
       bytes: 524100,

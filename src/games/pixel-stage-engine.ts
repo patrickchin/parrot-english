@@ -7,10 +7,12 @@ import {
   ANIMATIONS,
   ART_PIXEL_SIZE,
   CAMERA_ZOOM,
+  GROUND_SOURCE_SCALE,
   PLAYER_BODY,
   PLAYER_SPEED,
   PLAYER_START,
   SPRITE_FRAME_SIZE,
+  TEXTURE_TO_WORLD_SCALE,
   VIEWPORT_SIZE,
   WORLD_OBJECTS,
   WORLD_SIZE,
@@ -38,9 +40,13 @@ type MovementKeys = Record<PixelStageDirection, PhaserType.Input.Keyboard.Key>;
 type WorldObject = (typeof WORLD_OBJECTS)[number];
 
 const ASSET_ROOT = "https://media.parrotbook.com/prototypes/pixel-stage/v1";
+const ART_CACHE_QUERY = "?art-revision=20260806-detailed-redraw";
 const GRASS_BACKGROUND_COLOR = 0x8dce17;
 const TARGET_REACH_DISTANCE = 88;
 const TARGET_MARKER_DEPTH = 100_000;
+const TARGET_MARKER_SCREEN_OFFSET = 14;
+const TARGET_MARKER_SCREEN_RADIUS = 10;
+const TARGET_MARKER_BOB_SCREEN_DISTANCE = 4;
 const NUDGE_DURATION_MS = 140;
 const SCENE_KEY = "react-pixel-lesson-stage";
 const MOVEMENT_KEYS = new Set([
@@ -56,6 +62,10 @@ const MOVEMENT_KEYS = new Set([
 
 function toError(value: unknown, fallback: string) {
   return value instanceof Error ? value : new Error(fallback);
+}
+
+function assetSource(filename: string) {
+  return `${ASSET_ROOT}/${filename}${ART_CACHE_QUERY}`;
 }
 
 function getViewport(host: HTMLElement) {
@@ -131,18 +141,18 @@ export function createPixelStageEngine(
     preload() {
       this.load.image(
         "lesson-garden-ground",
-        `${ASSET_ROOT}/lesson-garden-ground.png`,
+        assetSource("lesson-garden-ground.png"),
       );
       this.load.image(
         "garden-tree-ball",
-        `${ASSET_ROOT}/garden-tree-ball.png`,
+        assetSource("garden-tree-ball.png"),
       );
-      this.load.image("garden-flowers", `${ASSET_ROOT}/garden-flowers.png`);
-      this.load.image("garden-basket", `${ASSET_ROOT}/garden-basket.png`);
-      this.load.image("garden-market", `${ASSET_ROOT}/garden-market.png`);
+      this.load.image("garden-flowers", assetSource("garden-flowers.png"));
+      this.load.image("garden-basket", assetSource("garden-basket.png"));
+      this.load.image("garden-market", assetSource("garden-market.png"));
       this.load.spritesheet(
         "peppa",
-        `${ASSET_ROOT}/peppa-town-sheet-96.png`,
+        assetSource("peppa-town-sheet-320.png"),
         {
           frameHeight: SPRITE_FRAME_SIZE,
           frameWidth: SPRITE_FRAME_SIZE,
@@ -160,7 +170,22 @@ export function createPixelStageEngine(
     create() {
       try {
         registerScene(this);
-        this.add.image(0, 0, "lesson-garden-ground").setDepth(0).setOrigin(0);
+        const ground = this.add
+          .image(0, 0, "lesson-garden-ground")
+          .setDepth(0)
+          .setOrigin(0)
+          .setScale(TEXTURE_TO_WORLD_SCALE);
+        this.requireDetailedTexture(ground, "Lesson garden ground");
+        if (
+          ground.frame.realWidth !== WORLD_SIZE.width * GROUND_SOURCE_SCALE ||
+          ground.frame.realHeight !== WORLD_SIZE.height * GROUND_SOURCE_SCALE ||
+          ground.displayWidth !== WORLD_SIZE.width ||
+          ground.displayHeight !== WORLD_SIZE.height
+        ) {
+          throw new Error(
+            "The lesson garden ground must cover the complete world.",
+          );
+        }
         const scenery = this.createWorldObjects();
 
         this.physics.world.setBounds(0, 0, WORLD_SIZE.width, WORLD_SIZE.height);
@@ -173,12 +198,23 @@ export function createPixelStageEngine(
         this.player
           .setCollideWorldBounds(true)
           .setDepth(getDepthForFootY(PLAYER_START.y))
-          .setOrigin(0.5, 1);
-        this.requireNativeScale(this.player, "Peppa");
+          .setOrigin(0.5, 1)
+          .setScale(TEXTURE_TO_WORLD_SCALE);
+        this.requireDetailedTexture(this.player, "Peppa");
 
         const playerBody = this.player.body as PhaserType.Physics.Arcade.Body;
-        playerBody.setSize(PLAYER_BODY.width, PLAYER_BODY.height, false);
-        playerBody.setOffset(PLAYER_BODY.offsetX, PLAYER_BODY.offsetY);
+        // Phaser creates the body before the display scale is applied. Sync it,
+        // then express the trusted world-space collider in source pixels.
+        playerBody.updateBounds();
+        playerBody.setSize(
+          PLAYER_BODY.width / TEXTURE_TO_WORLD_SCALE,
+          PLAYER_BODY.height / TEXTURE_TO_WORLD_SCALE,
+          false,
+        );
+        playerBody.setOffset(
+          PLAYER_BODY.offsetX / TEXTURE_TO_WORLD_SCALE,
+          PLAYER_BODY.offsetY / TEXTURE_TO_WORLD_SCALE,
+        );
         this.physics.add.collider(this.player, scenery);
 
         this.createAnimations();
@@ -249,8 +285,12 @@ export function createPixelStageEngine(
       }
 
       const targetVisual = this.targetVisuals.get(selectedTarget);
-      this.markerBaseY =
-        this.targetObject.y - (targetVisual?.displayHeight ?? 48) - 14;
+      const targetTop =
+        this.targetObject.y - (targetVisual?.displayHeight ?? 48);
+      this.markerBaseY = Math.max(
+        TARGET_MARKER_SCREEN_RADIUS / CAMERA_ZOOM,
+        targetTop - TARGET_MARKER_SCREEN_OFFSET / CAMERA_ZOOM,
+      );
       this.marker
         .setPosition(this.targetObject.x, this.markerBaseY)
         .setVisible(true);
@@ -276,8 +316,9 @@ export function createPixelStageEngine(
           .image(object.x, object.y, object.asset)
           .setDepth(getDepthForFootY(object.footY))
           .setName(object.id)
-          .setOrigin(0.5, 1);
-        this.requireNativeScale(visual, object.id);
+          .setOrigin(0.5, 1)
+          .setScale(TEXTURE_TO_WORLD_SCALE);
+        this.requireDetailedTexture(visual, object.id);
         this.targetVisuals.set(object.id as PixelLessonTargetId, visual);
 
         const { collision } = object;
@@ -310,6 +351,7 @@ export function createPixelStageEngine(
         .container(0, 0, [markerArt])
         .setDepth(TARGET_MARKER_DEPTH)
         .setName("active-lesson-target")
+        .setScale(1 / CAMERA_ZOOM)
         .setVisible(false);
     }
 
@@ -338,7 +380,7 @@ export function createPixelStageEngine(
         reducedMotion?.matches ? 1 : 0.35,
         reducedMotion?.matches ? 1 : 0.35,
       );
-      camera.setDeadzone(120, 84);
+      camera.setDeadzone(120 / CAMERA_ZOOM, 84 / CAMERA_ZOOM);
       camera.roundPixels = true;
       this.fitCameraBoundsToViewport();
 
@@ -354,13 +396,15 @@ export function createPixelStageEngine(
 
     private fitCameraBoundsToViewport() {
       const camera = this.cameras.main;
+      const visibleWidth = camera.width / CAMERA_ZOOM;
+      const visibleHeight = camera.height / CAMERA_ZOOM;
       const horizontalMargin = Math.max(
         0,
-        Math.floor((camera.width - WORLD_SIZE.width) / 2),
+        Math.ceil((visibleWidth - WORLD_SIZE.width) / 2),
       );
       const verticalMargin = Math.max(
         0,
-        Math.floor((camera.height - WORLD_SIZE.height) / 2),
+        Math.ceil((visibleHeight - WORLD_SIZE.height) / 2),
       );
 
       camera.setBounds(
@@ -427,17 +471,21 @@ export function createPixelStageEngine(
       });
     }
 
-    private requireNativeScale(
+    private requireDetailedTexture(
       visual: PhaserType.GameObjects.Image | PhaserType.Physics.Arcade.Sprite,
       name: string,
     ) {
       if (
-        visual.scaleX !== 1 ||
-        visual.scaleY !== 1 ||
-        visual.displayWidth !== visual.frame.realWidth ||
-        visual.displayHeight !== visual.frame.realHeight
+        visual.scaleX !== TEXTURE_TO_WORLD_SCALE ||
+        visual.scaleY !== TEXTURE_TO_WORLD_SCALE ||
+        visual.displayWidth !==
+          visual.frame.realWidth * TEXTURE_TO_WORLD_SCALE ||
+        visual.displayHeight !==
+          visual.frame.realHeight * TEXTURE_TO_WORLD_SCALE
       ) {
-        throw new Error(`${name} must render one source pixel per world pixel.`);
+        throw new Error(
+          `${name} must render its authored texture at ${TEXTURE_TO_WORLD_SCALE} world scale.`,
+        );
       }
     }
 
@@ -457,7 +505,10 @@ export function createPixelStageEngine(
       if (!this.marker.visible) return;
       const offset = reducedMotion?.matches
         ? 0
-        : Math.round(Math.sin(this.time.now / 180) * 4);
+        : Math.round(
+            Math.sin(this.time.now / 180) *
+              TARGET_MARKER_BOB_SCREEN_DISTANCE,
+          ) / CAMERA_ZOOM;
       this.marker.y = this.markerBaseY + offset;
     }
 
