@@ -106,23 +106,28 @@ export function LearnerProfileQuestionView({
             <span>Your answer</span>
             <span className="flex items-stretch gap-2">
               <textarea
-                className={fieldClassName(
-                  "min-h-28 min-w-0 flex-1 resize-y px-4 py-3 font-extrabold leading-relaxed text-brand-ink",
-                )}
+                className={fieldClassName({
+                  className:
+                    "min-h-28 min-w-0 flex-1 resize-y leading-relaxed",
+                })}
                 id={inputId}
                 maxLength={question.maxLength}
                 onChange={(event) => onValueChange(event.target.value)}
                 rows={4}
                 value={value}
               />
-              <button
+              <IconButton
                 aria-label="Speak your answer"
-                className="grid w-13 shrink-0 cursor-pointer place-items-center rounded-2xl border-0 bg-brand-pink text-white focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink"
+                className="shrink-0"
+                frame="none"
                 onClick={onTranscribe}
+                shape="rounded"
+                size="field"
                 type="button"
+                variant="brand"
               >
                 <Mic aria-hidden="true" className="size-6" />
-              </button>
+              </IconButton>
             </span>
           </label>
 

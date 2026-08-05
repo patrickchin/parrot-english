@@ -20,7 +20,14 @@ import {
   type ProfileAccountAction,
 } from "./account-actions";
 import { authClient } from "./auth-client";
-import { ActionButton, cx, fieldClassName } from "../shared/ui";
+import {
+  ActionButton,
+  Card,
+  cx,
+  fieldClassName,
+  SegmentedButton,
+  SegmentedControl,
+} from "../shared/ui";
 
 interface AuthActionResult {
   error?: unknown | null;
@@ -68,15 +75,13 @@ function AuthCard({
   ...props
 }: ComponentProps<"section">) {
   return (
-    <section
-      className={cx(
-        "my-auto w-full max-w-lg rounded-3xl border-4 border-white bg-white p-6 shadow-card sm:p-10",
-        className,
-      )}
+    <Card
+      className={cx("my-auto w-full max-w-lg p-6 sm:p-10", className)}
+      tone="solid"
       {...props}
     >
       {children}
-    </section>
+    </Card>
   );
 }
 
@@ -260,35 +265,25 @@ export function AuthGateView({
               className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75"
               disabled={isSubmitting}
             >
-              <div
+              <SegmentedControl
                 aria-label="Choose sign in or sign up"
-                className="grid grid-cols-1 gap-1.5 rounded-2xl bg-sky-100 p-1 sm:grid-cols-2"
+                className="grid-cols-1 sm:grid-cols-2"
               >
-                <button
-                  aria-pressed={!isSignUp}
-                  className={cx(
-                    "min-h-12 cursor-pointer rounded-xl border-0 bg-transparent font-black text-brand-navy",
-                    !isSignUp &&
-                      "bg-brand-navy text-white shadow-control-navy",
-                  )}
+                <SegmentedButton
                   onClick={() => onModeChange("sign-in")}
+                  selected={!isSignUp}
                   type="button"
                 >
                   Sign in
-                </button>
-                <button
-                  aria-pressed={isSignUp}
-                  className={cx(
-                    "min-h-12 cursor-pointer rounded-xl border-0 bg-transparent font-black text-brand-navy",
-                    isSignUp &&
-                      "bg-brand-navy text-white shadow-control-navy",
-                  )}
+                </SegmentedButton>
+                <SegmentedButton
                   onClick={() => onModeChange("sign-up")}
+                  selected={isSignUp}
                   type="button"
                 >
                   Sign up
-                </button>
-              </div>
+                </SegmentedButton>
+              </SegmentedControl>
 
               {isSignUp ? (
                 <label
@@ -302,7 +297,7 @@ export function AuthGateView({
                     name="name"
                     onChange={(event) => onFieldChange("name", event.target.value)}
                     required
-                    className={fieldClassName("bg-sky-50")}
+                    className={fieldClassName({ tone: "tinted" })}
                     type="text"
                     value={fields.name}
                   />
@@ -321,7 +316,7 @@ export function AuthGateView({
                   name="email"
                   onChange={(event) => onFieldChange("email", event.target.value)}
                   required
-                  className={fieldClassName("bg-sky-50")}
+                  className={fieldClassName({ tone: "tinted" })}
                   type="email"
                   value={fields.email}
                 />
@@ -339,7 +334,7 @@ export function AuthGateView({
                   name="password"
                   onChange={(event) => onFieldChange("password", event.target.value)}
                   required
-                  className={fieldClassName("bg-sky-50")}
+                  className={fieldClassName({ tone: "tinted" })}
                   type="password"
                   value={fields.password}
                 />
@@ -357,10 +352,7 @@ export function AuthGateView({
                 </p>
               ) : null}
 
-              <ActionButton
-                className="w-full rounded-full border-4 border-white hover:-translate-y-px hover:brightness-95"
-                type="submit"
-              >
+              <ActionButton fullWidth type="submit">
                 {isSubmitting
                   ? isSignUp
                     ? "Creating account…"

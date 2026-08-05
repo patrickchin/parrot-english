@@ -12,7 +12,7 @@
   --color-brand-yellow: #ffcf40;
   --shadow-card:
     0 8px 0 rgb(31 76 126 / 22%), 0 22px 48px rgb(27 83 123 / 20%);
-  --shadow-control-navy: 0 5px 0 rgb(18 55 92 / 45%);
+  --shadow-control-navy: 0 6px 0 rgb(18 55 92 / 45%);
   --shadow-control-pink: 0 6px 0 #b92259;
   --shadow-control-green: 0 6px 0 #045b3e;
   --shadow-control-surface: 0 6px 0 rgb(31 76 126 / 22%);
@@ -154,7 +154,7 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: 5px solid var(--color-brand-navy);
+    outline: 4px solid var(--color-brand-ink);
     outline-offset: 4px;
   }
 }

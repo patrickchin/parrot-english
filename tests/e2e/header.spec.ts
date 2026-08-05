@@ -68,6 +68,69 @@ function headerControl(page: Page, control: HeaderRoute["control"]) {
   return page.getByRole(control.role, { exact: true, name: control.name });
 }
 
+async function focusWithKeyboard(page: Page, locator: Locator) {
+  if (await locator.evaluate((element) => element === document.activeElement)) {
+    return;
+  }
+
+  for (let index = 0; index < 20; index += 1) {
+    await page.keyboard.press("Tab");
+    if (await locator.evaluate((element) => element === document.activeElement)) {
+      return;
+    }
+  }
+
+  expect(
+    await locator.evaluate((element) => element === document.activeElement),
+  ).toBe(true);
+}
+
+async function renderedControlChrome(locator: Locator) {
+  const box = await visibleBox(locator);
+  const style = await locator.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return {
+      backgroundColor: computed.backgroundColor,
+      borderBottomColor: computed.borderBottomColor,
+      borderBottomStyle: computed.borderBottomStyle,
+      borderBottomWidth: computed.borderBottomWidth,
+      borderLeftColor: computed.borderLeftColor,
+      borderLeftStyle: computed.borderLeftStyle,
+      borderLeftWidth: computed.borderLeftWidth,
+      borderRadius: computed.borderRadius,
+      borderRightColor: computed.borderRightColor,
+      borderRightStyle: computed.borderRightStyle,
+      borderRightWidth: computed.borderRightWidth,
+      borderTopColor: computed.borderTopColor,
+      borderTopStyle: computed.borderTopStyle,
+      borderTopWidth: computed.borderTopWidth,
+      boxShadow: computed.boxShadow,
+      color: computed.color,
+      family: computed.fontFamily,
+      paddingBottom: computed.paddingBottom,
+      paddingLeft: computed.paddingLeft,
+      paddingRight: computed.paddingRight,
+      paddingTop: computed.paddingTop,
+      size: computed.fontSize,
+      weight: computed.fontWeight,
+    };
+  });
+
+  return { height: box.height, ...style };
+}
+
+async function renderedFocusOutline(locator: Locator) {
+  return locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      color: style.outlineColor,
+      offset: style.outlineOffset,
+      style: style.outlineStyle,
+      width: style.outlineWidth,
+    };
+  });
+}
+
 for (const route of routes) {
   for (const viewport of mobileViewports) {
     test(`${route.name} header stays in one unobstructed row on a ${viewport.name}`, async ({
@@ -172,7 +235,11 @@ test("About shows independently deployed component versions", async ({ page }) =
   await expect(about.getByText("Input transcription")).toBeVisible();
   await expect(about.getByText("gpt-4o-mini-transcribe")).toBeVisible();
 
-  await page.getByRole("button", { name: "Close About" }).click();
+  const closeAbout = page.getByRole("button", { name: "Close About" });
+  const closeBox = await visibleBox(closeAbout);
+  expect(closeBox.width).toBeGreaterThanOrEqual(44);
+  expect(closeBox.height).toBeGreaterThanOrEqual(44);
+  await closeAbout.click();
   await expect(about).toBeHidden();
 });
 
@@ -202,7 +269,9 @@ test("account menu stays visible after scrolling a short lesson list", async ({
   await expectInsideViewport(accountMenu, viewport);
 });
 
-test("all visible header controls use the same typography", async ({ page }) => {
+test("desktop header controls share one rendered chrome and focus outline", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
 
@@ -210,21 +279,19 @@ test("all visible header controls use the same typography", async ({ page }) => 
     page.getByRole("button", { exact: true, name: "Account for Mia" }),
     page.getByRole("button", { name: "Back to lesson list" }),
   ];
-  const typography = await Promise.all(
-    controls.map(async (control) => {
-      await expect(control).toBeVisible();
-      return control.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          family: style.fontFamily,
-          size: style.fontSize,
-          weight: style.fontWeight,
-        };
-      });
-    }),
-  );
+  const chrome = await Promise.all(controls.map(renderedControlChrome));
 
-  expect(new Set(typography.map(({ family }) => family)).size).toBe(1);
-  expect(new Set(typography.map(({ size }) => size)).size).toBe(1);
-  expect(new Set(typography.map(({ weight }) => weight)).size).toBe(1);
+  expect(Math.abs(chrome[0].height - chrome[1].height)).toBeLessThanOrEqual(1);
+  expect({ ...chrome[0], height: 0 }).toEqual({ ...chrome[1], height: 0 });
+
+  const outlines = [];
+  for (const control of controls) {
+    await focusWithKeyboard(page, control);
+    const outline = await renderedFocusOutline(control);
+    expect(outline.style).not.toBe("none");
+    expect(Number.parseFloat(outline.width)).toBeGreaterThan(0);
+    outlines.push(outline);
+  }
+
+  expect(outlines[0]).toEqual(outlines[1]);
 });

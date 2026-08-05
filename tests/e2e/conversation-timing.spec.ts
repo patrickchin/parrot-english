@@ -23,6 +23,16 @@ function expectSameBox(
   expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(1);
 }
 
+async function waitForControlMotion(locator: Locator) {
+  await locator.evaluate(async (element) => {
+    await Promise.all(
+      element
+        .getAnimations()
+        .map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
+}
+
 async function expectNoPageScroll(page: Page) {
   await expect
     .poll(() =>
@@ -78,8 +88,10 @@ for (const viewport of viewports) {
     const start = page.getByRole("button", { name: "Start my turn" });
     const before = await box(start);
     await start.click();
+    await page.mouse.move(1, 1);
 
     const end = page.getByRole("button", { name: "End my turn" });
+    await waitForControlMotion(end);
     const afterStart = await box(end);
     expectSameBox(before, afterStart);
 
@@ -90,7 +102,9 @@ for (const viewport of viewports) {
     await expectNoPageScroll(page);
 
     await end.click();
+    await page.mouse.move(1, 1);
     const waiting = page.getByRole("button", { name: "Waiting for Peppa" });
+    await waitForControlMotion(waiting);
     const afterEnd = await box(waiting);
     expectSameBox(before, afterEnd);
     await expectNoPageScroll(page);

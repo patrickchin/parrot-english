@@ -1,13 +1,36 @@
 import type {
   ButtonHTMLAttributes,
   ComponentProps,
+  KeyboardEvent,
   Ref,
   ReactNode,
 } from "react";
 import { Link } from "react-router";
 
-type ControlVariant = "brand" | "navy" | "success" | "surface";
-type ControlSize = "bare" | "compact" | "default" | "large";
+export type ControlVariant = "brand" | "navy" | "success" | "surface";
+export type ControlSize =
+  | "compact"
+  | "default"
+  | "large"
+  | "hero"
+  | "header"
+  | "headerAccount"
+  | "cardAction"
+  | "inline"
+  | "menu";
+export type ControlShape = "pill" | "rounded";
+export type ControlFrame = "none" | "soft" | "white";
+export type ControlElevation = "flat" | "raised";
+
+type ControlVisualProps = {
+  align?: "center" | "start";
+  elevation?: ControlElevation;
+  frame?: ControlFrame;
+  fullWidth?: boolean;
+  shape?: ControlShape;
+  size?: ControlSize;
+  variant?: ControlVariant;
+};
 
 export function cx(
   ...classes: Array<string | false | null | undefined>
@@ -15,55 +38,118 @@ export function cx(
   return classes.filter(Boolean).join(" ");
 }
 
-export function fieldClassName(className?: string) {
+const focusClassName =
+  "focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink";
+
+export function fieldClassName({
+  className,
+  tone = "surface",
+}: {
+  className?: string;
+  tone?: "surface" | "tinted";
+} = {}) {
   return cx(
-    "min-h-12 w-full rounded-2xl border-3 border-sky-200 bg-white px-3.5 py-2.5 font-bold text-slate-900 hover:border-sky-400",
+    "min-h-12 w-full rounded-2xl border-3 border-sky-200 px-3.5 py-2.5 font-bold text-slate-900 transition-colors duration-150 hover:border-sky-400 disabled:cursor-not-allowed disabled:opacity-60",
+    tone === "surface" ? "bg-white" : "bg-sky-50",
     className,
   );
 }
 
 export function controlClassName({
+  align = "center",
   className,
+  elevation = "raised",
+  frame = "white",
+  fullWidth = false,
+  interaction = "button",
+  shape = "pill",
   size = "default",
   variant = "brand",
-}: {
+}: Omit<ControlVisualProps, "size"> & {
   className?: string;
-  size?: ControlSize;
-  variant?: ControlVariant;
+  interaction?: "button" | "link" | "static";
+  size?: ControlSize | "none";
 } = {}) {
   return cx(
-    "inline-flex cursor-pointer items-center justify-center rounded-2xl border-0 font-ui text-base font-black leading-none no-underline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink disabled:cursor-wait disabled:opacity-75",
-    size === "compact" && "min-h-12 min-w-20 gap-1 px-2 py-1",
-    size === "default" && "min-h-13 min-w-36 px-6 py-2",
-    size === "large" && "min-h-16 w-full gap-3 px-6 py-2",
-    variant === "brand" &&
-      "bg-brand-pink text-white shadow-control-pink",
-    variant === "navy" &&
-      "bg-brand-navy text-white shadow-control-navy",
-    variant === "success" &&
-      "bg-brand-green text-white shadow-control-green",
-    variant === "surface" &&
-      "bg-white/90 text-brand-blue shadow-control-surface",
+    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter,box-shadow] duration-150 ease-out motion-reduce:transition-none",
+    focusClassName,
+    interaction === "button" &&
+      "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:hover:brightness-105 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
+    interaction === "link" &&
+      "cursor-pointer hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+    "disabled:cursor-not-allowed disabled:opacity-60",
+    align === "center" && "justify-center text-center",
+    align === "start" && "justify-start text-left",
+    shape === "pill" && "rounded-full",
+    shape === "rounded" && "rounded-2xl",
+    frame === "none" && "border-0",
+    frame === "soft" && "border-3 border-sky-200",
+    frame === "white" && "border-4 border-white",
+    fullWidth && "w-full",
+    size === "compact" && "min-h-12 min-w-20 gap-1.5 px-3 py-1 text-sm",
+    size === "default" && "min-h-13 min-w-36 gap-2 px-6 py-2 text-base",
+    size === "large" &&
+      "h-14 gap-2 px-5 py-2 text-lg short:h-12 short:px-3 short:text-base md:h-16 md:text-xl",
+    size === "hero" &&
+      "min-h-16 gap-2 px-6 py-2 text-xl md:min-h-20 md:text-2xl",
+    size === "header" &&
+      "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-11 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5",
+    size === "headerAccount" &&
+      "min-h-13 min-w-0 gap-1.5 px-3 py-0 text-base short:min-h-11 short:px-2 short:text-sm md:min-h-16 md:gap-2 md:px-5 md:text-base",
+    size === "cardAction" &&
+      "size-12 min-h-0 min-w-0 shrink-0 gap-1 p-0 text-sm min-[360px]:w-auto min-[360px]:min-w-20 sm:min-w-21",
+    size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
+    size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
+    variant === "brand" && "bg-brand-pink text-white",
+    variant === "navy" && "bg-brand-navy text-white",
+    variant === "success" && "bg-brand-green text-white",
+    variant === "surface" && "bg-white/90 text-brand-blue",
+    elevation === "flat" && "shadow-none",
+    elevation === "raised" &&
+      variant === "brand" &&
+      "shadow-control-pink",
+    elevation === "raised" &&
+      variant === "navy" &&
+      "shadow-control-navy",
+    elevation === "raised" &&
+      variant === "success" &&
+      "shadow-control-green",
+    elevation === "raised" &&
+      variant === "surface" &&
+      "shadow-control-surface",
     className,
   );
 }
 
 export function ActionButton({
+  align,
   children,
   className,
+  elevation,
+  frame,
+  fullWidth,
   ref,
+  shape,
   size,
   variant,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  children: ReactNode;
-  ref?: Ref<HTMLButtonElement>;
-  size?: ControlSize;
-  variant?: ControlVariant;
-}) {
+}: ButtonHTMLAttributes<HTMLButtonElement> &
+  ControlVisualProps & {
+    children: ReactNode;
+    ref?: Ref<HTMLButtonElement>;
+  }) {
   return (
     <button
-      className={controlClassName({ className, size, variant })}
+      className={controlClassName({
+        align,
+        className,
+        elevation,
+        frame,
+        fullWidth,
+        shape,
+        size,
+        variant,
+      })}
       ref={ref}
       {...props}
     >
@@ -72,24 +158,69 @@ export function ActionButton({
   );
 }
 
-export function ActionLink({
+export function MenuButton({
   children,
-  className,
-  size,
-  variant,
+  variant = "surface",
   ...props
-}: ComponentProps<typeof Link> & {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
-  size?: ControlSize;
   variant?: ControlVariant;
 }) {
   return (
+    <ActionButton
+      align="start"
+      elevation="flat"
+      frame="none"
+      shape="rounded"
+      size="menu"
+      variant={variant}
+      {...props}
+    >
+      {children}
+    </ActionButton>
+  );
+}
+
+export function ActionLink({
+  align,
+  children,
+  className,
+  elevation,
+  frame,
+  fullWidth,
+  shape,
+  size,
+  variant,
+  ...props
+}: ComponentProps<typeof Link> &
+  ControlVisualProps & {
+    children: ReactNode;
+  }) {
+  return (
     <Link
-      className={controlClassName({ className, size, variant })}
+      className={controlClassName({
+        align,
+        className,
+        elevation,
+        frame,
+        fullWidth,
+        interaction: "link",
+        shape,
+        size,
+        variant,
+      })}
       {...props}
     >
       {children}
     </Link>
+  );
+}
+
+function textControlClassName(className?: string) {
+  return cx(
+    "inline-flex min-h-11 touch-manipulation items-center justify-center border-0 bg-transparent px-1 font-ui font-black text-brand-blue underline underline-offset-4 transition-colors duration-150 hover:text-brand-navy disabled:cursor-not-allowed disabled:opacity-60",
+    focusClassName,
+    className,
   );
 }
 
@@ -99,11 +230,63 @@ export function TextButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
   return (
+    <button className={textControlClassName(className)} {...props}>
+      {children}
+    </button>
+  );
+}
+
+export function TextLink({
+  children,
+  className,
+  ...props
+}: ComponentProps<typeof Link> & { children: ReactNode }) {
+  return (
+    <Link className={textControlClassName(className)} {...props}>
+      {children}
+    </Link>
+  );
+}
+
+type IconButtonSize = "compact" | "default" | "field" | "large";
+
+export function IconButton({
+  children,
+  className,
+  elevation = "flat",
+  frame = "soft",
+  ref,
+  shape = "pill",
+  size = "default",
+  variant = "surface",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: ReactNode;
+  elevation?: ControlElevation;
+  frame?: ControlFrame;
+  ref?: Ref<HTMLButtonElement>;
+  shape?: ControlShape;
+  size?: IconButtonSize;
+  variant?: ControlVariant;
+}) {
+  return (
     <button
       className={cx(
-        "min-h-11 cursor-pointer border-0 bg-transparent font-ui font-black text-brand-blue underline underline-offset-4 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink disabled:cursor-wait disabled:opacity-75",
+        controlClassName({
+          className: "shrink-0 p-0 text-2xl",
+          elevation,
+          frame,
+          shape,
+          size: "none",
+          variant,
+        }),
+        size === "compact" && "size-11",
+        size === "default" && "size-12",
+        size === "field" && "min-h-12 w-13 self-stretch",
+        size === "large" && "size-14 md:size-17",
         className,
       )}
+      ref={ref}
       {...props}
     >
       {children}
@@ -111,28 +294,187 @@ export function TextButton({
   );
 }
 
-export function IconButton({
+export function SegmentedControl({
+  className,
+  onKeyDown,
+  role = "group",
+  ...props
+}: ComponentProps<"div">) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    onKeyDown?.(event);
+    if (
+      event.defaultPrevented ||
+      role !== "tablist" ||
+      !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+    ) {
+      return;
+    }
+
+    const tabs = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>(
+        '[role="tab"]:not(:disabled)',
+      ),
+    );
+    const currentIndex = tabs.findIndex(
+      (tab) => tab === document.activeElement,
+    );
+    if (currentIndex === -1 || tabs.length === 0) {
+      return;
+    }
+
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? tabs.length - 1
+          : event.key === "ArrowRight"
+            ? (currentIndex + 1) % tabs.length
+            : (currentIndex - 1 + tabs.length) % tabs.length;
+
+    event.preventDefault();
+    tabs[nextIndex].focus();
+    tabs[nextIndex].click();
+  }
+
+  return (
+    <div
+      className={cx("grid gap-1.5 rounded-2xl bg-sky-100 p-1", className)}
+      onKeyDown={handleKeyDown}
+      role={role}
+      {...props}
+    />
+  );
+}
+
+export function SegmentedButton({
   children,
   className,
-  ref,
-  variant = "surface",
+  role,
+  selected,
+  tabIndex,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+}: Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "aria-pressed" | "aria-selected"
+> & {
   children: ReactNode;
-  ref?: Ref<HTMLButtonElement>;
-  variant?: "brand" | "surface";
+  selected: boolean;
 }) {
   return (
     <button
+      aria-pressed={role === "tab" ? undefined : selected}
+      aria-selected={role === "tab" ? selected : undefined}
       className={cx(
-        "grid size-12 shrink-0 cursor-pointer place-items-center rounded-full border-3 text-2xl font-black focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink disabled:cursor-wait disabled:opacity-75",
-        variant === "brand" &&
-          "border-brand-pink bg-brand-pink text-white shadow-control-pink",
-        variant === "surface" &&
-          "border-sky-200 bg-white text-brand-navy",
+        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[translate,filter,box-shadow] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
+        focusClassName,
+        selected
+          ? "bg-brand-navy text-white shadow-control-navy"
+          : "bg-transparent text-brand-navy shadow-none",
         className,
       )}
-      ref={ref}
+      role={role}
+      tabIndex={role === "tab" ? (selected ? 0 : -1) : tabIndex}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+type CardTone = "glass" | "inset" | "muted" | "solid";
+type CardElevation = "flat" | "raised" | "soft";
+
+export function cardClassName({
+  className,
+  elevation = "raised",
+  tone = "glass",
+}: {
+  className?: string;
+  elevation?: CardElevation;
+  tone?: CardTone;
+} = {}) {
+  return cx(
+    tone === "glass" &&
+      "rounded-3xl border-4 border-white bg-white/95",
+    tone === "solid" && "rounded-3xl border-4 border-white bg-white",
+    tone === "muted" &&
+      "rounded-3xl border-4 border-white bg-white/75",
+    tone === "inset" &&
+      "rounded-2xl border-3 border-sky-200 bg-white",
+    elevation === "flat" && "shadow-none",
+    elevation === "soft" && "shadow-sm",
+    elevation === "raised" && "shadow-card",
+    className,
+  );
+}
+
+export function Card({
+  children,
+  className,
+  elevation,
+  tone,
+  ...props
+}: ComponentProps<"section"> & {
+  elevation?: CardElevation;
+  tone?: CardTone;
+}) {
+  return (
+    <section
+      className={cardClassName({ className, elevation, tone })}
+      {...props}
+    >
+      {children}
+    </section>
+  );
+}
+
+function interactiveCardClassName({
+  className,
+  button = false,
+  tone = "glass",
+}: {
+  className?: string;
+  button?: boolean;
+  tone?: CardTone;
+} = {}) {
+  return cx(
+    cardClassName({ tone }),
+    "touch-manipulation no-underline transition-[translate,filter] duration-150 ease-out motion-reduce:transition-none",
+    tone === "muted" ? "text-slate-700" : "text-slate-900",
+    !button &&
+      "cursor-pointer hover:-translate-y-1 hover:brightness-105 active:translate-y-0.5 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+    button &&
+      "enabled:cursor-pointer enabled:hover:-translate-y-1 enabled:hover:brightness-105 enabled:active:translate-y-0.5 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-80",
+    focusClassName,
+    className,
+  );
+}
+
+export function InteractiveCardLink({
+  children,
+  className,
+  tone,
+  ...props
+}: ComponentProps<typeof Link> & { children: ReactNode; tone?: CardTone }) {
+  return (
+    <Link className={interactiveCardClassName({ className, tone })} {...props}>
+      {children}
+    </Link>
+  );
+}
+
+export function InteractiveCardButton({
+  children,
+  className,
+  tone,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: ReactNode;
+  tone?: CardTone;
+}) {
+  return (
+    <button
+      className={interactiveCardClassName({ button: true, className, tone })}
       {...props}
     >
       {children}

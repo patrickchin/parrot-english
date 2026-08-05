@@ -42,6 +42,40 @@ test("lesson creator scrolls to its review controls on a short phone", async ({
   await expectMainScrollsTo(page, makeLessonButton);
 });
 
+test("lesson creator tabs expose selection and support arrow keys", async ({
+  page,
+}) => {
+  await page.goto("/lessons/my/create");
+
+  const makeWithAi = page.getByRole("tab", { name: "Make with AI" });
+  const importJson = page.getByRole("tab", { name: "Import JSON" });
+
+  await expect(makeWithAi).toHaveAttribute("aria-selected", "true");
+  await expect(makeWithAi).toHaveAttribute(
+    "aria-controls",
+    "lesson-creator-panel",
+  );
+  await expect(makeWithAi).toHaveAttribute("tabindex", "0");
+  await expect(importJson).toHaveAttribute("aria-selected", "false");
+  await expect(importJson).toHaveAttribute(
+    "aria-controls",
+    "lesson-creator-panel",
+  );
+  await expect(importJson).toHaveAttribute("tabindex", "-1");
+  await expect(page.locator("#lesson-creator-panel")).toHaveCount(1);
+
+  await makeWithAi.focus();
+  await page.keyboard.press("ArrowRight");
+
+  await expect(importJson).toBeFocused();
+  await expect(importJson).toHaveAttribute("aria-selected", "true");
+  await expect(importJson).toHaveAttribute("tabindex", "0");
+  await expect(makeWithAi).toHaveAttribute("aria-selected", "false");
+  await expect(makeWithAi).toHaveAttribute("tabindex", "-1");
+  await expect(page.locator("#lesson-creator-panel")).toHaveCount(1);
+  await expect(page.getByRole("tabpanel")).toHaveAccessibleName("Import JSON");
+});
+
 test("lesson editor scrolls to its review controls on a short phone", async ({
   page,
 }) => {

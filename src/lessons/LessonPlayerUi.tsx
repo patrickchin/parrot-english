@@ -15,7 +15,13 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { ActionButton, cx } from "../shared/ui";
+import {
+  ActionButton,
+  controlClassName,
+  cx,
+  IconButton,
+  Card,
+} from "../shared/ui";
 
 type LessonBackgroundAsset = {
   alt: string;
@@ -134,7 +140,7 @@ export const LessonIntroduction = forwardRef<
       className="absolute inset-0 z-10 grid place-items-center bg-brand-navy/30 px-4 pb-5 pt-20 backdrop-blur-[2px]"
       role="region"
     >
-      <div className="w-full max-w-xl rounded-[2rem] border-4 border-white bg-white/95 px-5 py-6 text-center shadow-card short:py-5 md:rounded-[2.5rem] md:px-10 md:py-9">
+      <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9">
         <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black uppercase tracking-wider text-brand-blue">
           <Sparkles aria-hidden="true" className="size-4" />
           Story lesson
@@ -150,15 +156,16 @@ export const LessonIntroduction = forwardRef<
         </p>
         <ActionButton
           aria-label="Start lesson"
-          className="min-h-16 w-full max-w-sm gap-2 rounded-full border-4 border-white text-xl shadow-control-pink transition hover:-translate-y-0.5 hover:brightness-105 md:min-h-20 md:text-2xl"
+          className="max-w-sm"
+          fullWidth
           onClick={onStart}
           ref={ref}
-          size="bare"
+          size="hero"
           type="button"
         >
           Start lesson
         </ActionButton>
-      </div>
+      </Card>
     </section>
   );
 });
@@ -180,7 +187,7 @@ export const LessonCompletion = forwardRef<
       className="absolute inset-0 z-10 grid place-items-center bg-brand-navy/35 px-4 pb-5 pt-20 backdrop-blur-[2px]"
       role="region"
     >
-      <div className="w-full max-w-xl rounded-[2rem] border-4 border-white bg-white/95 px-5 py-6 text-center shadow-card short:py-5 md:rounded-[2.5rem] md:px-10 md:py-9">
+      <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9">
         <span className="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-amber-100 text-brand-rose md:size-20">
           <Sparkles aria-hidden="true" className="size-8 md:size-11" />
         </span>
@@ -193,26 +200,24 @@ export const LessonCompletion = forwardRef<
         <div className="grid gap-3 sm:grid-cols-2">
           <ActionButton
             aria-label="Replay lesson"
-            className="min-h-14 gap-2 rounded-full border-4 border-white px-5 text-lg md:min-h-16 md:text-xl"
             onClick={onReplay}
             ref={ref}
-            size="bare"
+            size="large"
             type="button"
           >
             <RotateCcw aria-hidden="true" className="size-6" />
             Replay lesson
           </ActionButton>
           <ActionButton
-            className="min-h-14 rounded-full border-4 border-white px-5 text-lg md:min-h-16 md:text-xl"
             onClick={onBack}
-            size="bare"
+            size="large"
             type="button"
             variant="navy"
           >
             Back to lessons
           </ActionButton>
         </div>
-      </div>
+      </Card>
     </section>
   );
 });
@@ -390,22 +395,24 @@ export function LessonPlaybackControls({
       aria-label="Story playback controls"
       className="absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 md:bottom-6 md:gap-3"
     >
-      <ActionButton
+      <IconButton
         aria-label="Previous scene"
-        className="size-14 min-h-0 min-w-0 rounded-full border-4 border-white p-0 md:size-17"
         disabled={atFirstScene}
+        elevation="raised"
+        frame="white"
         onClick={onPrevious}
-        size="bare"
+        size="large"
         type="button"
         variant="navy"
       >
         <ChevronLeft aria-hidden="true" className="size-7 md:size-9" />
-      </ActionButton>
-      <ActionButton
+      </IconButton>
+      <IconButton
         aria-label={pauseLabel}
-        className="size-14 min-h-0 min-w-0 rounded-full border-4 border-white p-0 md:size-17"
+        elevation="raised"
+        frame="white"
         onClick={onPauseResume}
-        size="bare"
+        size="large"
         type="button"
         variant="brand"
       >
@@ -414,18 +421,19 @@ export function LessonPlaybackControls({
         ) : (
           <Pause aria-hidden="true" className="size-6 fill-current md:size-8" />
         )}
-      </ActionButton>
-      <ActionButton
+      </IconButton>
+      <IconButton
         aria-label="Next scene"
-        className="size-14 min-h-0 min-w-0 rounded-full border-4 border-white p-0 md:size-17"
         disabled={atFinalScene}
+        elevation="raised"
+        frame="white"
         onClick={onNext}
-        size="bare"
+        size="large"
         type="button"
         variant="navy"
       >
         <ChevronRight aria-hidden="true" className="size-7 md:size-9" />
-      </ActionButton>
+      </IconButton>
     </nav>
   );
 }
@@ -449,7 +457,12 @@ export function LessonSpeakingControls({
       {isEvaluating ? (
         <span
           aria-live="assertive"
-          className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full border-4 border-white bg-brand-navy px-4 text-center text-base font-black text-white shadow-control-navy md:min-h-16 md:text-lg"
+          className={controlClassName({
+            fullWidth: true,
+            interaction: "static",
+            size: "large",
+            variant: "navy",
+          })}
           role="status"
         >
           <LoaderCircle
@@ -464,11 +477,11 @@ export function LessonSpeakingControls({
             aria-label="Microphone"
             aria-pressed={isRecording}
             className={cx(
-              "min-h-14 min-w-0 flex-1 select-none gap-2 rounded-full border-4 border-white px-3 text-lg md:min-h-16 md:px-4 md:text-xl",
+              "min-w-0 flex-1",
               isRecording && "animate-pulse motion-reduce:animate-none",
             )}
             onClick={onToggleRecording}
-            size="bare"
+            size="large"
             type="button"
             variant={isRecording ? "brand" : "success"}
           >
@@ -477,9 +490,9 @@ export function LessonSpeakingControls({
           </ActionButton>
           <ActionButton
             aria-label="Skip speaking turn"
-            className="min-h-14 w-[4.75rem] shrink-0 rounded-full border-4 border-white px-2 text-base md:min-h-16 md:w-[5.75rem] md:text-lg"
+            className="shrink-0"
             onClick={onSkip}
-            size="bare"
+            size="large"
             type="button"
             variant="navy"
           >

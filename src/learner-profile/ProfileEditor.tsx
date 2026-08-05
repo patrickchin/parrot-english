@@ -124,9 +124,9 @@ export function ProfileEditorView({
                 About {(drafts.name ?? "").trim() || "this learner"}
               </span>
               <textarea
-                className={fieldClassName(
-                  "min-h-28 resize-y leading-relaxed",
-                )}
+                className={fieldClassName({
+                  className: "min-h-28 resize-y leading-relaxed",
+                })}
                 id="profile-description"
                 maxLength={2_000}
                 onChange={(event) =>
@@ -165,8 +165,9 @@ export function ProfileEditorView({
                 Home and choose Talk to Peppa.
               </p>
               <ActionButton
-                className="mt-1 w-full min-w-0"
+                className="mt-1 min-w-0"
                 disabled={isSaving}
+                fullWidth
                 onClick={onRedoLearnerProfile}
                 size="compact"
                 type="button"
