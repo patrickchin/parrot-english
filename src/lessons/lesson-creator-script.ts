@@ -15,6 +15,13 @@ export function formatLessonScript(lesson: Lesson) {
   return JSON.stringify(lesson, null, 2);
 }
 
+export function prepareLessonDraft(
+  value: unknown,
+  sourceName = "lesson",
+): LessonDraft {
+  return prepareLesson(value, VISUAL_CATALOG, sourceName);
+}
+
 export function parseLessonScript(
   source: string,
   sourceName = "lesson.json",
@@ -30,5 +37,5 @@ export function parseLessonScript(
     throw new Error(`${sourceName} must contain valid JSON.`);
   }
 
-  return prepareLesson(value, VISUAL_CATALOG, sourceName);
+  return prepareLessonDraft(value, sourceName);
 }

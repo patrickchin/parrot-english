@@ -41,8 +41,12 @@ Important entrypoints:
 - `src/app/HomeMenu.tsx` and `src/app/FeaturePlaceholder.tsx`: the authenticated home
   and intentional future-feature skeletons.
 - `src/lessons/LessonCreator.tsx`, `src/lessons/LessonEditor.tsx`, and
-  `src/lessons/my-lessons-api.ts`: generate/upload/edit preview, persistence,
-  and same-origin learner lesson requests.
+  `src/lessons/my-lessons-api.ts`: generate/import, authoring route state,
+  persistence, and same-origin learner lesson requests.
+- `src/lessons/LessonGuiEditor.tsx` and
+  `src/lessons/LessonScenePreview.tsx`: the visual-first storyboard editor,
+  catalog-backed scene preview, image choices, dialogue timeline, and
+  progressively disclosed metadata controls.
 - `src/lessons/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
 - `lib/lesson-state.js`: pure automatic scene/step runner and scene controls.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
@@ -95,8 +99,9 @@ accepted. Signing out returns the app to the login route.
 After authentication, `LearnerProfileGate` checks the learner profile. Incomplete
 learners remain at `/profile/setup`; completed learners continue to the preserved
 destination. The normal completed sequence is therefore authentication →
-learner introduction → the two-primary-choice learner home at `/`. Progress and
-Storytelling are rendered there only as disabled previews.
+learner introduction → the activity home at `/`, where Talk to Peppa, Lessons,
+Create a Lesson, and the Game are top-level choices. Progress and Storytelling
+are rendered there only as disabled previews.
 
 ## Browser Route Ownership
 
@@ -108,8 +113,9 @@ The URL is authoritative for durable screens and lesson scenes:
 ├── /lessons
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/:lessonId/scenes/:sceneNumber
-│   ├── /lessons/my/create
+│   ├── /lessons/my/create (linked from Home and My lessons)
 │   └── /lessons/my/:lessonId/edit
+├── /prototypes/pixel-stage/ (separate Game document)
 ├── /progress (legacy redirect to /)
 ├── /stories (legacy redirect to /)
 ├── /profile
@@ -121,9 +127,21 @@ The URL is authoritative for durable screens and lesson scenes:
 ownership. Parrot lessons are checked-in JSON. Learner-created lessons belong
 to the D1 `learner_lesson` table and use the `/lessons/my/*` namespace;
 the built-in catalog has no D1 lesson rows, and the route namespace prevents an
-identical ID from conflicting. Create Lesson is implemented; Progress and
-Storytelling are retained only as backward-compatible redirects until they
-provide real product outcomes.
+identical ID from conflicting. Create a Lesson is a top-level Home activity and
+may also be linked from My lessons. Generation and import hydrate the same GUI
+editor used for saved-lesson editing; JSON remains the persistence and import
+contract, not the required authoring interface. Progress and Storytelling are
+retained only as backward-compatible redirects until they provide real product
+outcomes.
+
+The editor keeps the complete lesson draft as React state while exposing one
+selected scene and one selected dialogue step at a time. Storyboard thumbnails,
+the live scene preview, and the image-based background, character, and mood
+controls resolve assets through `VISUAL_CATALOG`; they do not copy asset paths
+into the draft. The dialogue timeline changes selection and ordering without
+changing the underlying scene/step schema. Expandable lesson setup, scene
+notes, and speaking-feedback sections provide progressive disclosure without
+creating a second persistence format.
 
 Scene URLs are one-based and durable. Button-driven scene changes navigate
 first and reconcile reducer state to the new route. Browser Back/Forward and a

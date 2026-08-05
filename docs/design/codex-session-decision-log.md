@@ -20,7 +20,7 @@ transcript.
 | Make the experience automatic. | Advance character, narrator, scene, retry, and completion steps automatically; wait only for hold-to-talk user input. | `lib/lesson-state.js`, `src/app/App.tsx` |
 | Turn on the microphone only when needed. | Request access on button hold, stop on release, and stop tracks before evaluation. | `src/media/speech-recorder.ts`, `src/app/App.tsx` |
 | Keep runtime speech reliable and predictable. | Play built-in lessons from saved assets; use cancellable browser on-device speech for arbitrary My Lesson dialogue without adding a billable TTS API. | `src/media/audio-playback.ts`, `src/media/device-speech.ts`, `src/app/App.tsx` |
-| Let families create their own lessons. | Generate or paste editable lesson JSON into one main form, normalize repairable issues into visible warnings and safe defaults, store playable drafts per authenticated user in D1, and reuse the existing player. | `src/lessons/LessonCreator.tsx`, `worker/my-lessons.ts`, `learner_lesson` |
+| Let families create their own lessons. | Make Create a Lesson a top-level Home activity. Generate or import a draft, then continue in a visual-first studio with storyboard scene thumbnails, a live scene preview, illustrated background, character, and mood choices, and an ordered dialogue timeline. Progressively disclose text metadata and advanced speaking feedback instead of leading with form fields. Normalize repairable issues into visible warnings and safe defaults, store playable drafts per authenticated user in D1, and reuse the existing player. Keep JSON as an optional import and persistence contract rather than the required editing interface. | `src/app/HomeMenu.tsx`, `src/lessons/LessonCreator.tsx`, `src/lessons/LessonEditor.tsx`, `src/lessons/LessonGuiEditor.tsx`, `src/lessons/LessonScenePreview.tsx`, `worker/my-lessons.ts`, `learner_lesson` |
 | Prepare for automatic speech generation later. | Keep audio outside lesson JSON and resolve the optional cache by speaker plus exact text. | `lib/static-audio.js`, `scripts/generate-static-audio.mjs` |
 | Use high-quality saved speech. | Generate cache files through ElevenLabs only, with speaker-selected voice defaults and `eleven_v3`. | `scripts/generate-static-audio.mjs` |
 | Keep evaluation server-side. | Use Groq STT behind `/api/evaluate-speech`, local transcript scoring, rate limiting, and request timeouts. | `worker/groq.ts`, `lib/speech-scoring.js`, `worker/api-security.ts` |
@@ -38,6 +38,13 @@ transcript.
 - Peppa and Dolly are visible catalog characters.
 - `user` is a non-visual learner turn, and narrator is voice-only; neither has an emote entry.
 - Lesson JSON contains text and catalog IDs, never asset filenames.
+- Custom lesson creation is a top-level Home activity, and generated, imported,
+  and saved lessons use the shared GUI editor rather than requiring raw JSON
+  editing.
+- The lesson studio leads with a visual storyboard and live preview. Background,
+  character, and mood controls show their artwork; dialogue is selected from an
+  ordered timeline; text-heavy setup, scene notes, and optional feedback are
+  progressively disclosed.
 - Each step contains one line from one speaker and all visible emotes.
 - Backgrounds and character states are pre-generated global assets.
 - The learner toggles the microphone on and off only for user steps.
