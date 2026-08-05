@@ -232,7 +232,7 @@ export function LessonScenePreview({
                   disabled={disabled}
                   key={`${step.speaker}-${index}`}
                   onClick={() => onSelectStep(index)}
-                  size="bare"
+                  size="compact"
                   type="button"
                   variant="surface"
                 >

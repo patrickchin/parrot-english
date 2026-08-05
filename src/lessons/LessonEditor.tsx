@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
-import { ActionButton } from "../shared/ui";
+import { ActionButton, Card } from "../shared/ui";
 import type { Lesson } from "./lesson-catalog";
 import { prepareLessonDraft } from "./lesson-creator-script";
 import { LessonWarnings } from "./LessonCreator";
@@ -93,7 +93,7 @@ export function LessonEditor() {
         </HeaderLink>
       </RouteHeader>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
+      <Card className="mx-auto grid w-full max-w-6xl gap-6 p-5 md:p-9">
         <header className="text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
             Edit Lesson
@@ -149,7 +149,7 @@ export function LessonEditor() {
             </ActionButton>
           </form>
         ) : null}
-      </section>
+      </Card>
     </main>
   );
 }

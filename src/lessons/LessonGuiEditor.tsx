@@ -487,7 +487,7 @@ function DialogueEditor({
           className="size-12 min-w-0 p-0 shadow-none"
           disabled={disabled || index === 0}
           onClick={() => onMove(-1)}
-          size="bare"
+          size="compact"
           title="Move up"
           type="button"
           variant="surface"
@@ -499,7 +499,7 @@ function DialogueEditor({
           className="size-12 min-w-0 p-0 shadow-none"
           disabled={disabled || index === scene.steps.length - 1}
           onClick={() => onMove(1)}
-          size="bare"
+          size="compact"
           title="Move down"
           type="button"
           variant="surface"
@@ -591,9 +591,10 @@ function DialogueEditor({
         </span>
         <textarea
           aria-label="Dialogue"
-          className={fieldClassName(
-            "min-h-28 resize-y rounded-3xl border-3 bg-sky-50 px-5 py-4 text-lg font-black leading-relaxed",
-          )}
+          className={fieldClassName({
+            className:
+              "min-h-28 resize-y rounded-3xl border-3 bg-sky-50 px-5 py-4 text-lg font-black leading-relaxed",
+          })}
           disabled={disabled}
           id={`${idPrefix}-text`}
           onChange={(event) =>
@@ -721,7 +722,7 @@ function SceneEditor({
             });
             onSelectIndex(index - 1);
           }}
-          size="bare"
+          size="compact"
           title="Move scene up"
           type="button"
           variant="surface"
@@ -739,7 +740,7 @@ function SceneEditor({
             });
             onSelectIndex(index + 1);
           }}
-          size="bare"
+          size="compact"
           title="Move scene down"
           type="button"
           variant="surface"
@@ -756,7 +757,7 @@ function SceneEditor({
             onChange({ ...lesson, scenes: next });
             onSelectIndex(index + 1);
           }}
-          size="bare"
+          size="compact"
           title="Duplicate scene"
           type="button"
           variant="surface"
@@ -934,7 +935,9 @@ function SceneEditor({
           <label className="grid gap-1 font-bold text-slate-700">
             <span>What does this scene look like?</span>
             <textarea
-              className={fieldClassName("min-h-24 resize-y")}
+              className={fieldClassName({
+                className: "min-h-24 resize-y",
+              })}
               disabled={disabled}
               id={`${idPrefix}-setting`}
               onChange={(event) =>
@@ -1141,7 +1144,9 @@ export function LessonGuiEditor({
           <label className="grid gap-1 font-bold text-slate-700">
             <span>Full story summary</span>
             <textarea
-              className={fieldClassName("min-h-28 resize-y")}
+              className={fieldClassName({
+                className: "min-h-28 resize-y",
+              })}
               disabled={disabled}
               id="lesson-detailed-summary"
               onChange={(event) =>

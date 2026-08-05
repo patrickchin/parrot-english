@@ -9,7 +9,14 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
-import { ActionButton, cx, fieldClassName } from "../shared/ui";
+import {
+  ActionButton,
+  Card,
+  cx,
+  fieldClassName,
+  SegmentedButton,
+  SegmentedControl,
+} from "../shared/ui";
 import type { Lesson } from "./lesson-catalog";
 import {
   getLessonScriptByteLength,
@@ -71,9 +78,10 @@ export function LessonPreview({
       </dl>
       <LessonWarnings warnings={warnings} />
       <ActionButton
-        className="w-full sm:w-fit"
         disabled={isSaving}
+        fullWidth
         onClick={onSave}
+        className="sm:w-fit"
         type="button"
         variant="success"
       >
@@ -142,7 +150,7 @@ export function ScriptEditor({
         </div>
         {activeTab === "upload" ? (
           <ActionButton
-            className="shrink-0 gap-2"
+            className="shrink-0"
             disabled={Boolean(busyAction)}
             onClick={onPaste}
             size="compact"
@@ -156,9 +164,9 @@ export function ScriptEditor({
       </div>
       <textarea
         aria-describedby="lesson-script-size"
-        className={fieldClassName(
-          "min-h-80 resize-y font-mono text-sm leading-relaxed",
-        )}
+        className={fieldClassName({
+          className: "min-h-80 resize-y font-mono text-sm leading-relaxed",
+        })}
         disabled={busyAction === "save"}
         id="lesson-script-editor"
         onChange={(event) => onScriptChange(event.currentTarget.value)}
@@ -184,8 +192,9 @@ export function ScriptEditor({
           {Math.ceil(scriptBytes / 1024)} KB of 256 KB
         </span>
         <ActionButton
-          className="w-full sm:w-auto"
+          className="sm:w-auto"
           disabled={Boolean(busyAction) || !scriptText.trim()}
+          fullWidth
           onClick={onReview}
           type="button"
           variant="navy"
@@ -365,7 +374,7 @@ export function LessonCreator() {
         </HeaderLink>
       </RouteHeader>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
+      <Card className="mx-auto grid w-full max-w-6xl gap-6 p-5 md:p-9">
         <header className="text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
             Create a custom lesson
@@ -378,42 +387,38 @@ export function LessonCreator() {
 
         {!lesson ? (
           <>
-            <div
+            <SegmentedControl
               aria-label="Choose how to create a custom lesson"
-              className="grid grid-cols-2 gap-2 rounded-3xl bg-sky-100 p-2"
+              className="grid-cols-2"
               role="tablist"
             >
-          <ActionButton
-            role="tab"
-            aria-selected={activeTab === "generate"}
-            aria-controls="generate-script-panel"
-            className="min-w-0 gap-2 rounded-2xl px-3 shadow-none"
-            id="generate-script-tab"
-            onClick={() => chooseTab("generate")}
-            type="button"
-            variant={activeTab === "generate" ? "navy" : "surface"}
-          >
-            <Sparkles aria-hidden="true" className="size-5" /> Make with AI
-          </ActionButton>
-          <ActionButton
-            role="tab"
-            aria-selected={activeTab === "upload"}
-            aria-controls="upload-script-panel"
-            className="min-w-0 gap-2 rounded-2xl px-3 shadow-none"
-            id="upload-script-tab"
-            onClick={() => chooseTab("upload")}
-            type="button"
-            variant={activeTab === "upload" ? "navy" : "surface"}
-          >
-            <FileJson aria-hidden="true" className="size-5" /> Import JSON
-          </ActionButton>
-            </div>
+              <SegmentedButton
+                aria-controls="lesson-creator-panel"
+                id="generate-script-tab"
+                onClick={() => chooseTab("generate")}
+                role="tab"
+                selected={activeTab === "generate"}
+                type="button"
+              >
+                <Sparkles aria-hidden="true" className="size-5" /> Make with AI
+              </SegmentedButton>
+              <SegmentedButton
+                aria-controls="lesson-creator-panel"
+                id="upload-script-tab"
+                onClick={() => chooseTab("upload")}
+                role="tab"
+                selected={activeTab === "upload"}
+                type="button"
+              >
+                <FileJson aria-hidden="true" className="size-5" /> Import JSON
+              </SegmentedButton>
+            </SegmentedControl>
 
             {activeTab === "generate" ? (
               <section
                 aria-labelledby="generate-script-tab"
                 className="grid gap-6"
-                id="generate-script-panel"
+                id="lesson-creator-panel"
                 role="tabpanel"
               >
                 <form
@@ -428,7 +433,9 @@ export function LessonCreator() {
                     What should this lesson be about?
                   </label>
                   <textarea
-                    className={fieldClassName("min-h-28 resize-y")}
+                    className={fieldClassName({
+                      className: "min-h-28 resize-y",
+                    })}
                     id="lesson-topic"
                     maxLength={500}
                     onChange={(event) => setTopic(event.currentTarget.value)}
@@ -437,8 +444,9 @@ export function LessonCreator() {
                     value={topic}
                   />
                   <ActionButton
-                    className="w-full gap-2 sm:w-fit"
+                    className="sm:w-fit"
                     disabled={Boolean(busyAction)}
+                    fullWidth
                     type="submit"
                   >
                     <Sparkles aria-hidden="true" className="size-5" />
@@ -450,7 +458,7 @@ export function LessonCreator() {
               <section
                 aria-labelledby="upload-script-tab"
                 className="grid gap-6"
-                id="upload-script-panel"
+                id="lesson-creator-panel"
                 role="tabpanel"
               >
                 <ScriptEditor
@@ -465,7 +473,11 @@ export function LessonCreator() {
             )}
           </>
         ) : (
-          <div className="flex flex-col gap-3 rounded-2xl border-3 border-sky-200 bg-sky-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <Card
+            className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+            elevation="flat"
+            tone="inset"
+          >
             <p className="m-0 font-bold text-sky-950">
               You are editing the visual lesson. The original starting method is
               tucked away.
@@ -485,7 +497,7 @@ export function LessonCreator() {
             >
               <RotateCcw aria-hidden="true" className="size-5" /> Start over
             </ActionButton>
-          </div>
+          </Card>
         )}
 
         {notice ? (
@@ -528,7 +540,7 @@ export function LessonCreator() {
             </ActionButton>
           </form>
         ) : null}
-      </section>
+      </Card>
     </main>
   );
 }

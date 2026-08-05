@@ -6,8 +6,11 @@ import {
   Plus,
   Sparkles,
 } from "lucide-react";
-import { Link } from "react-router";
-import { cx } from "../shared/ui";
+import {
+  cx,
+  InteractiveCardButton,
+  InteractiveCardLink,
+} from "../shared/ui";
 
 const PRIMARY_ACTIVITIES = [
   {
@@ -84,8 +87,8 @@ export function HomeMenu() {
               to,
               tone,
             }) => (
-              <Link
-                className="grid min-h-40 grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-4 gap-y-3 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-56 md:gap-x-6 md:p-8 lg:grid-cols-1 lg:justify-items-center lg:text-center"
+              <InteractiveCardLink
+                className="grid min-h-40 grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-4 gap-y-3 p-5 md:min-h-56 md:gap-x-6 md:p-8 lg:grid-cols-1 lg:justify-items-center lg:text-center"
                 key={to}
                 reloadDocument={reloadDocument}
                 to={to}
@@ -117,7 +120,7 @@ export function HomeMenu() {
                     {badge}
                   </small>
                 ) : null}
-              </Link>
+              </InteractiveCardLink>
             ),
           )}
         </div>
@@ -134,11 +137,12 @@ export function HomeMenu() {
           </h2>
           <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-5">
             {UPCOMING_ACTIVITIES.map(({ icon: Icon, label, tone }) => (
-              <button
+              <InteractiveCardButton
                 aria-label={`${label}, coming soon`}
-                className="flex min-h-24 w-full cursor-not-allowed items-center gap-4 rounded-2xl border-4 border-white bg-white/75 p-4 text-left text-slate-700 opacity-80 shadow-card min-[360px]:min-h-36 min-[360px]:flex-col min-[360px]:justify-center min-[360px]:gap-2 min-[360px]:text-center md:min-h-40 md:rounded-3xl"
+                className="flex min-h-24 w-full items-center gap-4 p-4 text-left min-[360px]:min-h-36 min-[360px]:flex-col min-[360px]:justify-center min-[360px]:gap-2 min-[360px]:text-center md:min-h-40"
                 disabled
                 key={label}
+                tone="muted"
                 type="button"
               >
                 <Icon
@@ -155,7 +159,7 @@ export function HomeMenu() {
                     Coming soon
                   </small>
                 </span>
-              </button>
+              </InteractiveCardButton>
             ))}
           </div>
         </section>
