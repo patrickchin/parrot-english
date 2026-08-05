@@ -24,6 +24,16 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to home", role: "link" },
   },
   {
+    name: "story library",
+    path: "/stories",
+    control: { name: "Back to home", role: "link" },
+  },
+  {
+    name: "story reader",
+    path: "/stories/the-lantern-trail/pages/1",
+    control: { name: "Back to stories", role: "link" },
+  },
+  {
     name: "lesson player",
     path: "/lessons/parrot/01-peppas-high-ball/scenes/1",
     control: { name: "Back to lesson list", role: "button" },

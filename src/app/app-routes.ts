@@ -1,4 +1,8 @@
 import { LESSONS, type LessonCatalogEntry } from "../lessons/lesson-catalog";
+import {
+  resolveStory as resolveCatalogStory,
+  type Story,
+} from "../stories/story-catalog";
 
 export type LessonSource = "parrot" | "my";
 export type GateRouteKind = "login" | "learner-profile" | "profile";
@@ -9,6 +13,9 @@ type ResolvedLessonScene = {
 export type LessonRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
   | ({ kind: "lesson" } & ResolvedLessonScene);
+export type StoryRouteDecision =
+  | { kind: "redirect"; replace: true; to: string }
+  | { kind: "story"; pageIndex: number; story: Story };
 
 const GATE_ROUTE_PATH = /^\/(login|profile\/setup|profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
@@ -21,7 +28,10 @@ const SAFE_RETURN_PATHS = [
   /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
-  /^\/(?:progress|stories)\/*$/i,
+  /^\/progress\/*$/i,
+  /^\/stories\/*$/i,
+  /^\/stories\/[^/]+\/*$/i,
+  /^\/stories\/[^/]+\/pages\/[^/]+\/*$/i,
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
@@ -39,6 +49,18 @@ export function getLessonPath(source: LessonSource, lessonId: string) {
   }
 
   return `/lessons/${source}/${encodeURIComponent(lessonId)}`;
+}
+
+export function getStoryPath(storyId: string) {
+  if (!storyId.trim() || storyId === "." || storyId === "..") {
+    throw new TypeError("Story ID must be non-empty and cannot be a dot segment.");
+  }
+
+  return `/stories/${encodeURIComponent(storyId)}`;
+}
+
+export function getStoryPagePath(storyId: string, pageIndex: number) {
+  return `${getStoryPath(storyId)}/pages/${pageIndex + 1}`;
 }
 
 export function getLessonScenePath(
@@ -122,6 +144,23 @@ export function resolveParrotLesson(lessonId: string | undefined) {
   return lessonId ? (PARROT_LESSONS.get(lessonId) ?? null) : null;
 }
 
+export function resolveStory(storyId: string | undefined) {
+  return storyId ? resolveCatalogStory(storyId) : null;
+}
+
+export function resolveStoryPage(
+  storyId: string | undefined,
+  pageNumberValue: string | undefined,
+) {
+  const story = resolveStory(storyId);
+  const pageNumber = parseSceneNumber(pageNumberValue);
+  if (!story || pageNumber === null || pageNumber > story.pages.length) {
+    return null;
+  }
+
+  return { pageIndex: pageNumber - 1, story };
+}
+
 export function resolveParrotLessonScene(
   lessonId: string | undefined,
   sceneNumberValue: string | undefined,
@@ -155,6 +194,25 @@ export function resolveMyLessonScene(
 
 function redirectTo(to: string): LessonRouteDecision {
   return { kind: "redirect", replace: true, to };
+}
+
+function redirectStoryTo(to: string): StoryRouteDecision {
+  return { kind: "redirect", replace: true, to };
+}
+
+export function resolveStoryRouteDecision(
+  storyId: string | undefined,
+  pageNumberValue: string | undefined,
+): StoryRouteDecision {
+  const story = resolveStory(storyId);
+  if (!story) return redirectStoryTo("/stories");
+
+  const resolved = resolveStoryPage(storyId, pageNumberValue);
+  if (!resolved) {
+    return redirectStoryTo(getStoryPagePath(story.id, 0));
+  }
+
+  return { kind: "story", ...resolved };
 }
 
 export function resolveParrotLessonRouteDecision(
