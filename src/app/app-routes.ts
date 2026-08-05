@@ -24,6 +24,7 @@ const SAFE_RETURN_PATHS = [
   TALK_TO_PEPPA_ROUTE_PATH,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
+  /^\/games\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
   /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,

@@ -50,6 +50,15 @@ const PRIMARY_ACTIVITIES = [
     to: "/prototypes/pixel-stage/",
   },
   {
+    badge: "Experiment",
+    description: "Generate a speaking adventure and try it in the pixel garden.",
+    icon: Sparkles,
+    label: "Pixel Lesson Lab",
+    reloadDocument: false,
+    tone: "rose",
+    to: "/games",
+  },
+  {
     badge: "Grown-up tools",
     description: "Build a custom speaking lesson with a visual editor.",
     icon: Plus,
@@ -80,7 +89,7 @@ export function HomeMenu() {
         aria-label="Learning activities"
         className="mx-auto w-full max-w-7xl"
       >
-        <div className="grid grid-cols-1 gap-4 md:auto-rows-fr md:grid-cols-2 md:gap-6 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:auto-rows-fr md:grid-cols-2 md:gap-6 lg:grid-cols-3">
           {PRIMARY_ACTIVITIES.map(
             ({
               badge,

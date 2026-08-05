@@ -44,6 +44,11 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to lessons", role: "link" },
   },
   {
+    name: "pixel lesson lab",
+    path: "/games",
+    control: { name: "Back to home", role: "link" },
+  },
+  {
     name: "learner profile",
     path: "/profile",
     control: { name: "Back", role: "button" },

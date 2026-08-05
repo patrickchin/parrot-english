@@ -45,5 +45,9 @@ movement without a monolithic foreground overlay.
 
 The next two reusable environment families, if the POC direction holds, are a
 daytime meadow for snack/playground/picnic lessons and an evening palette of
-that meadow for the bedtime lesson. This prototype remains isolated from the
-lesson player until the gameplay and art direction are approved.
+that meadow for the bedtime lesson. The standalone page remains the fixed
+regression harness for this proof of concept. The authenticated `/games` Pixel
+Lesson Lab uses the same approved garden configuration and art in a separate
+React-owned Phaser runtime, where generated mission text and allowlisted target
+IDs can be investigated without allowing generation to control assets,
+coordinates, or physics.

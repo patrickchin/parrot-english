@@ -50,7 +50,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu prioritizes five working activities and previews Progress", () => {
+test("home menu prioritizes six working activities and previews Progress", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -60,7 +60,7 @@ test("home menu prioritizes five working activities and previews Progress", () =
   const activityHrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
   );
-  assert.equal(activityHrefs.length, 5);
+  assert.equal(activityHrefs.length, 6);
   assert.deepEqual(
     new Set(activityHrefs),
     new Set([
@@ -68,6 +68,7 @@ test("home menu prioritizes five working activities and previews Progress", () =
       "/lessons",
       "/stories",
       "/prototypes/pixel-stage/",
+      "/games",
       "/lessons/my/create",
     ]),
   );
@@ -88,6 +89,9 @@ test("home menu prioritizes five working activities and previews Progress", () =
   );
   assert.match(html, />Storytelling</);
   assert.match(html, /href="\/stories"/);
+  assert.match(html, />Pixel Lesson Lab</);
+  assert.match(html, />Experiment</i);
+  assert.match(html, /speaking adventure/i);
   assert.match(html, /aria-label="Progress, coming soon"/);
   assert.doesNotMatch(html, /aria-label="Storytelling, coming soon"/);
   assert.doesNotMatch(html, /PARROT ENGLISH/);
@@ -158,6 +162,10 @@ test("authenticated application routes include Storytelling and retire Progress"
   assert.match(
     renderApplicationRoute("/stories"),
     /<h1[^>]*>Storytelling<\/h1>/,
+  );
+  assert.match(
+    renderApplicationRoute("/games"),
+    /<h1[^>]*>Pixel Lesson Lab<\/h1>/,
   );
 
   const createLesson = renderApplicationRoute("/lessons/my/create");

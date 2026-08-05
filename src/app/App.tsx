@@ -95,6 +95,7 @@ import {
 } from "../lessons/LessonPlayerUi";
 import { LessonCreator } from "../lessons/LessonCreator";
 import { LessonEditor } from "../lessons/LessonEditor";
+import { PixelLessonLab } from "../games/PixelLessonLab";
 import { playDeviceSpeech } from "../media/device-speech";
 import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
@@ -906,6 +907,7 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         path="/talk-to-peppa"
       />
       <Route element={<LessonList />} path="/lessons" />
+      <Route element={<PixelLessonLab />} path="/games" />
       <Route
         element={<LessonCreator />}
         path="/lessons/my/create"
