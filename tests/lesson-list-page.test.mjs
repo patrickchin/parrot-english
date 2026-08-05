@@ -152,7 +152,7 @@ test("a failed custom-lesson list offers retry without hiding ready-made lessons
   assert.match(html, /Peppa&#x27;s High Ball/);
 });
 
-test("each saved lesson exposes distinct play and edit actions", () => {
+test("saved lessons keep distinct play, edit, and create actions", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
       isLoadingMyLessons: false,
@@ -172,6 +172,10 @@ test("each saved lesson exposes distinct play and edit actions", () => {
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
   assert.match(html, /aria-label="Edit lesson: Editable Garden"/);
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/edit"/);
+  assert.match(
+    html,
+    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create custom lesson<\/a>/s,
+  );
 });
 
 test("a canonical Parrot catalog href renders its directly matched lesson route", () => {

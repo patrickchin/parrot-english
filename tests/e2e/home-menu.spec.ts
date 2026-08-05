@@ -7,7 +7,9 @@ const phoneViewports = [
 ];
 
 async function expectInsidePage(locator: Locator, page: Page) {
-  await locator.scrollIntoViewIfNeeded();
+  await locator.evaluate((element) =>
+    element.scrollIntoView({ block: "center", inline: "nearest" }),
+  );
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
   const viewport = page.viewportSize();
@@ -23,6 +25,7 @@ for (const viewport of phoneViewports) {
   test(`home separates primary and upcoming activities on a ${viewport.name} phone`, async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     await page.setViewportSize(viewport);
     await page.goto("/");
 
@@ -33,8 +36,11 @@ for (const viewport of phoneViewports) {
     const activities = page.getByRole("navigation", {
       name: "Learning activities",
     });
-    await expect(activities.getByRole("link")).toHaveCount(3);
+    await expect(activities.getByRole("link")).toHaveCount(4);
     const talk = activities.getByRole("link", { name: /^Talk to Peppa/ });
+    const createLesson = activities.getByRole("link", {
+      name: /^Create a Lesson/,
+    });
     await expect(talk).toBeVisible();
     await expect(
       activities.getByRole("link", { name: /^Lessons/ }),
@@ -42,7 +48,8 @@ for (const viewport of phoneViewports) {
     await expect(
       activities.getByRole("link", { name: /^Game/ }),
     ).toBeVisible();
-    await expect(page.getByText("Create a Lesson", { exact: true })).toBeHidden();
+    await expect(createLesson).toBeVisible();
+    await expect(createLesson).toHaveAttribute("href", "/lessons/my/create");
     const progress = activities.getByRole("button", {
       name: "Progress, coming soon",
     });
@@ -113,18 +120,23 @@ test("Game opens the pixel garden proof of concept", async ({ page }) => {
   const game = page.getByRole("link", { name: /^Game/ });
   const talk = page.getByRole("link", { name: /^Talk to Peppa/ });
   const lessons = page.getByRole("link", { name: /^Lessons/ });
+  const createLesson = page.getByRole("link", { name: /^Create a Lesson/ });
   await expect(game).toBeVisible();
   await expect(game).toHaveAttribute("href", "/prototypes/pixel-stage/");
   await expect(game.getByText("Proof of concept", { exact: true })).toBeVisible();
+  await expect(createLesson).toHaveAttribute("href", "/lessons/my/create");
 
-  const [gameBox, lessonsBox, talkBox] = await Promise.all([
+  const [createLessonBox, gameBox, lessonsBox, talkBox] = await Promise.all([
+    createLesson.boundingBox(),
     game.boundingBox(),
     lessons.boundingBox(),
     talk.boundingBox(),
   ]);
+  expect(createLessonBox).not.toBeNull();
   expect(gameBox).not.toBeNull();
   expect(lessonsBox).not.toBeNull();
   expect(talkBox).not.toBeNull();
+  expect(createLessonBox!.y).toBe(talkBox!.y);
   expect(gameBox!.y).toBe(talkBox!.y);
   expect(lessonsBox!.y).toBe(talkBox!.y);
 

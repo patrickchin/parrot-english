@@ -183,12 +183,20 @@ export function LessonListView({
         aria-labelledby="my-lessons-title"
         className="mx-auto w-full max-w-6xl"
       >
-        <h2
-          className="mb-4 mt-0 text-2xl leading-none text-brand-navy sm:text-3xl md:mb-5 md:text-4xl"
-          id="my-lessons-title"
-        >
-          My lessons
-        </h2>
+        <div className="mb-4 flex flex-col gap-3 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between md:mb-5">
+          <h2
+            className="m-0 text-2xl leading-none text-brand-navy sm:text-3xl md:text-4xl"
+            id="my-lessons-title"
+          >
+            My lessons
+          </h2>
+          <ActionLink
+            className="w-full shrink-0 gap-2 rounded-full border-4 border-white min-[360px]:w-auto"
+            to="/lessons/my/create"
+          >
+            <Plus aria-hidden="true" /> Create custom lesson
+          </ActionLink>
+        </div>
         {myCards.length > 0 ? (
           <div className="grid gap-2 sm:gap-3">
             {myCards.map((lesson, index) => (
@@ -229,12 +237,6 @@ export function LessonListView({
                 </ActionButton>
               ) : null}
             </div>
-            <ActionLink
-              className="w-full shrink-0 gap-2 rounded-full border-4 border-white md:w-auto"
-              to="/lessons/my/create"
-            >
-              <Plus aria-hidden="true" /> Create custom lesson
-            </ActionLink>
           </div>
         )}
       </section>

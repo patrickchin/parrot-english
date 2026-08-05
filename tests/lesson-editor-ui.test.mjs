@@ -19,7 +19,7 @@ const { LessonEditor } = editorModule;
 
 after(async () => vite.close());
 
-test("saved lesson edit route starts with an accessible loading state", () => {
+test("saved lesson edit route starts with an accessible GUI loading state", () => {
   assert.equal(typeof LessonEditor, "function", "Expected LessonEditor");
   const html = renderToStaticMarkup(
     createElement(
@@ -38,6 +38,10 @@ test("saved lesson edit route starts with an accessible loading state", () => {
 
   assert.match(html, /<h1[^>]*>Edit Lesson<\/h1>/);
   assert.match(html, /role="status"/);
-  assert.match(html, /Loading lesson script/);
+  assert.match(html, /Loading lesson/);
   assert.match(html, /href="\/lessons"/);
+  assert.doesNotMatch(
+    html,
+    /lesson-script-editor|Editable lesson script|Review script/i,
+  );
 });

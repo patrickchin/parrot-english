@@ -1,25 +1,18 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
 import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import { ActionButton } from "../shared/ui";
 import type { Lesson } from "./lesson-catalog";
-import {
-  formatLessonScript,
-  parseLessonScript,
-} from "./lesson-creator-script";
-import { LessonPreview, ScriptEditor } from "./LessonCreator";
-import {
-  loadMyLesson,
-  updateMyLesson,
-  type MyLessonDescriptor,
-} from "./my-lessons-api";
+import { prepareLessonDraft } from "./lesson-creator-script";
+import { LessonWarnings } from "./LessonCreator";
+import { LessonGuiEditor } from "./LessonGuiEditor";
+import { loadMyLesson, updateMyLesson } from "./my-lessons-api";
 
 export function LessonEditor() {
   const navigate = useNavigate();
   const { lessonId } = useParams();
-  const [descriptor, setDescriptor] = useState<MyLessonDescriptor | null>(null);
-  const [scriptText, setScriptText] = useState("");
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
@@ -36,12 +29,13 @@ export function LessonEditor() {
     }
 
     setIsLoading(true);
+    setError("");
     void loadMyLesson(lessonId, { signal: controller.signal })
       .then((loaded) => {
-        setDescriptor(loaded);
-        setScriptText(formatLessonScript(loaded.lesson));
         setLesson(loaded.lesson);
-        setNotice("Lesson loaded. Edit the JSON, then review and save your changes.");
+        setNotice(
+          "Lesson loaded. Use the visual editor below, then save when it looks right.",
+        );
       })
       .catch((caughtError: unknown) => {
         if (controller.signal.aborted) return;
@@ -57,43 +51,25 @@ export function LessonEditor() {
     return () => controller.abort();
   }, [lessonId]);
 
-  function updateScript(value: string) {
-    setScriptText(value);
-    setLesson(null);
+  function updateLesson(nextLesson: Lesson) {
+    setLesson(nextLesson);
     setWarnings([]);
     setError("");
     setNotice("");
   }
 
-  function reviewScript() {
-    setLesson(null);
-    setWarnings([]);
-    setError("");
-    setNotice("");
-    try {
-      const draft = parseLessonScript(scriptText, "edited lesson");
-      setLesson(draft.lesson);
-      setWarnings(draft.warnings);
-      setNotice(
-        draft.warnings.length > 0
-          ? "Your edits are playable with safe defaults. Review the warnings or save them as-is."
-          : "Your edits are ready to save.",
-      );
-    } catch (caughtError) {
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "The edited lesson script is invalid.",
-      );
-    }
-  }
-
-  async function saveChanges() {
+  async function saveChanges(event: FormEvent) {
+    event.preventDefault();
     if (!lessonId || !lesson || isSaving) return;
+
     setIsSaving(true);
     setError("");
+    setNotice("");
     try {
-      const updated = await updateMyLesson(lessonId, lesson);
+      const prepared = prepareLessonDraft(lesson, "edited lesson");
+      setLesson(prepared.lesson);
+      setWarnings(prepared.warnings);
+      const updated = await updateMyLesson(lessonId, prepared.lesson);
       navigate(getLessonScenePath("my", updated.lesson.id, 0));
     } catch (caughtError) {
       setError(
@@ -117,33 +93,21 @@ export function LessonEditor() {
         </HeaderLink>
       </RouteHeader>
 
-      <section className="mx-auto grid w-full max-w-4xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
+      <section className="mx-auto grid w-full max-w-6xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
         <header className="text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
             Edit Lesson
           </h1>
           <p className="mb-0 mt-3 text-lg font-bold text-slate-600">
-            Update the script, review any repairs, and save it again.
+            Shape the story, scenes, dialogue, and speaking practice with
+            simple visual controls.
           </p>
         </header>
 
         {isLoading ? (
           <p className="m-0 text-center font-black text-brand-blue" role="status">
-            Loading lesson script...
+            Loading lesson...
           </p>
-        ) : null}
-
-        {!isLoading && descriptor ? (
-          <section className="grid gap-6">
-            <ScriptEditor
-              activeTab="edit"
-              busyAction={isSaving ? "save" : null}
-              onPaste={() => {}}
-              onReview={reviewScript}
-              onScriptChange={updateScript}
-              scriptText={scriptText}
-            />
-          </section>
         ) : null}
 
         {notice ? (
@@ -162,15 +126,28 @@ export function LessonEditor() {
             {error}
           </p>
         ) : null}
-        {lesson && descriptor ? (
-          <LessonPreview
-            isSaving={isSaving}
-            lesson={lesson}
-            onSave={() => void saveChanges()}
-            saveLabel="Save changes and play"
-            savingLabel="Saving changes..."
-            warnings={warnings}
-          />
+
+        {!isLoading && lesson ? (
+          <form
+            aria-busy={isSaving}
+            className="grid gap-6"
+            onSubmit={(event) => void saveChanges(event)}
+          >
+            <LessonGuiEditor
+              disabled={isSaving}
+              lesson={lesson}
+              onChange={updateLesson}
+            />
+            <LessonWarnings warnings={warnings} />
+            <ActionButton
+              className="w-full justify-self-stretch sm:w-auto sm:justify-self-end"
+              disabled={isSaving}
+              type="submit"
+              variant="success"
+            >
+              {isSaving ? "Saving changes..." : "Save changes and play"}
+            </ActionButton>
+          </form>
         ) : null}
       </section>
     </main>

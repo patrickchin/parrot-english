@@ -50,7 +50,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu prioritizes working activities and previews two disabled activities", () => {
+test("home menu exposes lesson creation with the working activities", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -59,7 +59,12 @@ test("home menu prioritizes working activities and previews two disabled activit
   assert.match(html, /<nav[^>]*aria-label="Learning activities"/);
   assert.deepEqual(
     [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href),
-    ["/talk-to-peppa", "/lessons", "/prototypes/pixel-stage/"],
+    [
+      "/talk-to-peppa",
+      "/lessons",
+      "/prototypes/pixel-stage/",
+      "/lessons/my/create",
+    ],
   );
   assert.equal((html.match(/<button/g) ?? []).length, 2);
   assert.equal((html.match(/disabled=""/g) ?? []).length, 2);
@@ -71,9 +76,13 @@ test("home menu prioritizes working activities and previews two disabled activit
   assert.match(html, /story.*speaking|speaking.*story/i);
   assert.match(html, />Game</);
   assert.match(html, />Proof of concept</);
+  assert.match(html, />Create a Lesson</);
+  assert.match(
+    html,
+    /<a[^>]*href="\/lessons\/my\/create"[^>]*>[\s\S]*Create a Lesson[\s\S]*<\/a>/,
+  );
   assert.match(html, /aria-label="Progress, coming soon"/);
   assert.match(html, /aria-label="Storytelling, coming soon"/);
-  assert.doesNotMatch(html, /Create a Lesson/);
   assert.doesNotMatch(html, /PARROT ENGLISH/);
 });
 

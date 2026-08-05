@@ -4,12 +4,13 @@
 
 Parrot English is an English speaking experience for young children. After
 authentication and the one-time onboarding flow, the learner arrives at a
-home hub with two primary choices, Talk to Peppa and Lessons. Progress and
-Storytelling appear underneath as smaller disabled previews, not destinations.
-Custom lesson creation stays inside My lessons as a supervising-adult tool.
-A lesson plays like a short interactive episode: characters act out a
-situation, a character models a useful line, the learner repeats it, and the
-script chooses a character or narrator response when evaluation is enabled.
+home hub with Talk to Peppa, Lessons, Create a Lesson, and the Game as top-level
+activities. Progress and Storytelling appear underneath as smaller disabled
+previews, not destinations. Create a Lesson opens the custom lesson authoring
+flow directly; the same flow can also remain reachable from My lessons. A
+lesson plays like a short interactive episode: characters act out a situation,
+a character models a useful line, the learner repeats it, and the script chooses
+a character or narrator response when evaluation is enabled.
 
 Bundled lesson dialogue and narration is in English; learner-created scripts
 may use another language. Steps within the current scene advance automatically
@@ -28,12 +29,13 @@ The durable entry sequence is:
    `/profile/setup` and return to the preserved destination after completion.
 3. Returning learners land on `/`, the authenticated home menu.
 
-The home hub opens free conversation at `/talk-to-peppa` and the combined
-lesson catalog at `/lessons`. The catalog owns the custom lesson entry at
-`/lessons/my/create`. Legacy `/progress` and `/stories` links safely redirect
-home. Home names those areas only in disabled “Coming soon” tiles, so they add
-context without creating dead-end navigation. Each non-home page provides a
-direct way back to Home or the lesson catalog.
+The home hub opens free conversation at `/talk-to-peppa`, the combined lesson
+catalog at `/lessons`, custom lesson authoring at `/lessons/my/create`, and the
+Game at `/prototypes/pixel-stage/`. The My lessons section may provide another
+Create a Lesson link, but it is not the sole entry point. Legacy `/progress` and
+`/stories` links safely redirect home. Home names those areas only in disabled
+“Coming soon” tiles, so they add context without creating dead-end navigation.
+Each non-home page provides a direct way back to Home or the lesson catalog.
 
 ## Roles
 
@@ -51,10 +53,10 @@ never add a visible character or emote entry.
 
 `/lessons` is one catalog with two visibly separate sources. **Ready-made
 lessons** contains the built-in curriculum discovered from independent JSON
-files in `content/lessons`. **My lessons** lists scripts generated or imported
-by the authenticated learner; its empty state gives a supervising adult a link
-to Create custom lesson. Both sources share card and player presentation while
-retaining separate ownership.
+files in `content/lessons`. **My lessons** lists lessons generated, imported, or
+edited by the authenticated learner and may expose another Create a Lesson
+action whether the list is empty or populated. Both sources share card and
+player presentation while retaining separate ownership.
 
 Parrot lesson URLs use `/lessons/parrot/:lessonId`, while learner-created lesson
 URLs use `/lessons/my/:lessonId`. The source namespace prevents identical IDs
@@ -65,16 +67,39 @@ changing application code.
 
 ## Create a Custom Lesson
 
-The Create custom lesson page is explicitly labeled as a grown-up tool and has
-two URL-restorable tabs. **Make with AI** accepts a bounded real-world topic,
-uses the canonical learner profile name, and asks OpenAI `gpt-5.6-luna` for
-playable lesson JSON. The default path moves directly from topic to review; the
-generated JSON remains available in a collapsed Advanced editor. **Import
-JSON** is clipboard-first: an adult pastes JSON into the editor directly or
-with the Paste button. Both paths accept up to 256 KiB, normalize the shared
-runtime fields with warnings for repairs, show a title, summary, goal phrase,
-and scene-count preview, then save only after confirmation. Editing a reviewed
-script removes the stale preview until the JSON is reviewed again.
+Create a Lesson is a top-level Home activity that opens
+`/lessons/my/create`. **Make with AI** accepts a bounded real-world topic, uses
+the canonical learner profile name, and asks OpenAI `gpt-5.6-luna` for a
+playable draft. **Import JSON** accepts an existing script for the same draft
+workflow. Generation and import both lead into a GUI editor; authors do not need
+to edit raw JSON to finish a lesson.
+
+The editor is a visual lesson studio rather than a long form. Its primary
+workspace is a horizontally scrollable storyboard: every scene thumbnail shows
+the selected background and on-stage characters, and selecting a thumbnail
+opens that scene for editing. A live scene preview combines the real catalog
+background, character artwork, accumulated moods, active speaker, and current
+dialogue so changes can be judged in context before the lesson is saved.
+
+Backgrounds are chosen from image cards, characters from illustrated on-stage
+cards, and character moods from portrait choices instead of text-only selects.
+Dialogue is an ordered visual timeline: selecting a line updates the preview
+and opens only that line's speaker, words, mood changes, ordering, and optional
+speaking-check controls. Adding, removing, duplicating, and reordering scenes
+or lines remains explicit.
+
+Text-heavy metadata uses progressive disclosure. Lesson setup and goals, scene
+titles and notes, and detailed speaking feedback remain available in expandable
+sections without competing with the storyboard and preview. On narrow screens,
+the storyboard scrolls horizontally and the preview stacks above the current
+scene controls. Existing saved lessons use the same studio at
+`/lessons/my/:lessonId/edit`. JSON import remains an advanced interoperability
+path, not the primary authoring interface.
+
+Generated and imported drafts still pass through the shared normalization and
+validation boundary. Repairable issues appear as warnings beside the relevant
+GUI review state, and save remains an explicit confirmation. Changing the form
+invalidates any stale review until the updated draft has been validated again.
 
 Saved lessons are scoped to the authenticated user and appear under My Lessons.
 Their arbitrary-language dialogue is spoken through browser on-device speech;

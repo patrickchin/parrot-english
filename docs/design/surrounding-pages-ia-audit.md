@@ -2,6 +2,19 @@
 
 Date: 2026-07-28
 
+## Status and superseding direction
+
+This document preserves the findings and recommendation made on 2026-07-28.
+The lesson-creation placement and editor recommendations were superseded on
+2026-08-06: Create a Lesson is now a top-level Home activity, alongside Lessons
+and the Game, and generated or imported drafts continue in a GUI editor rather
+than requiring raw JSON editing. That editor is visual-first: scene thumbnails
+form a storyboard, a live preview shows the selected scene, and image choices
+replace text-only background, character, and mood controls. Dialogue is edited
+as an ordered timeline, while text metadata is progressively disclosed. My
+lessons may keep a secondary creation link, but it is no longer the only
+intended entry point.
+
 ## Product jobs
 
 Parrot English currently has two learner jobs:
@@ -19,7 +32,7 @@ Progress and storytelling do not yet support a job. They must not compete with
 today's usable choices or navigate to dead ends. The revised presentation keeps
 them as smaller disabled previews below the two primary activities.
 
-## Current-state sitemap and journey audit
+## Audited sitemap and journey (2026-07-28)
 
 ```text
 /login
@@ -123,7 +136,11 @@ working learner modes and seven built-in lessons. The applicable pattern is:
 - if unavailable features are previewed, keep them disabled and visually
   subordinate to working activities.
 
-## Keep, change, remove, merge, split
+## Historical recommendation (superseded for lesson creation)
+
+The table below records the recommendation made by the original audit. Its
+direction to remove the Home creation card and confine creation to My lessons is
+retained as historical context and is not the current product contract.
 
 | Decision | Recommendation |
 | --- | --- |
@@ -133,17 +150,20 @@ working learner modes and seven built-in lessons. The applicable pattern is:
 | Merge | Custom lesson creation into the My Lessons section as its secondary adult-oriented action. |
 | Split | Account identity (email/sign-out/about) from learner personalization (name/age/about); simple custom-lesson generation from advanced JSON import/editing. |
 
-## Implemented target IA
+## Current target IA
 
 ```text
 /login                         Account access
   -> /profile/setup            Optional learner personalization gate
-    -> /                       Primary: Talk to Peppa | Lessons
+    -> /                       Talk to Peppa | Lessons | Create a Lesson | Game
                                Disabled previews: Progress | Storytelling
       -> /talk-to-peppa        Open conversation
       -> /lessons              Ready-made lessons | My lessons
         -> lesson player       Back to Lessons
-        -> create/edit custom  Clearly labeled grown-up tool
+        -> create/edit custom  Secondary route into the same GUI editor
+      -> /lessons/my/create    Generate/import, then use the visual lesson studio
+      -> /prototypes/pixel-stage/
+                               Pixel garden proof of concept
 
 Account menu
   -> /profile?returnTo=…       Learner profile; Back/Cancel/Save returns to source
@@ -154,6 +174,12 @@ Account menu
 unknown routes                 Redirect to Home
 ```
 
-This intentionally does not add a fake Parent Area, global tab bar, progress
-dashboard, or resume system without data. Those become appropriate only when
-the corresponding product behavior exists.
+The superseding direction changes discoverability and authoring presentation,
+not lesson ownership: saved custom lessons remain user-scoped under My lessons.
+The current studio leads with a scrollable scene storyboard and live preview;
+it uses image-based background, character, and mood choices, an ordered
+dialogue timeline, and expandable text metadata. This superseding description
+does not alter the historical findings or recommendation table above.
+It also does not add a fake Parent Area, global tab bar, progress dashboard, or
+resume system without data. Those become appropriate only when the
+corresponding product behavior exists.
