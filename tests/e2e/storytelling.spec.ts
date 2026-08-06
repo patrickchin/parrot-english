@@ -16,7 +16,7 @@ type StoryPlaybackMockState = {
   spokenTexts: string[];
 };
 
-async function installStoryPlaybackMock(page: Page) {
+async function installStorySpeechGuard(page: Page) {
   await page.addInitScript(() => {
     const state: StoryPlaybackMockState = {
       audioPauseCount: 0,
@@ -24,23 +24,6 @@ async function installStoryPlaybackMock(page: Page) {
       audioSources: [],
       spokenTexts: [],
     };
-
-    class MockStoryAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-
-      constructor(readonly src = "") {
-        state.audioSources.push(src);
-      }
-
-      pause() {
-        state.audioPauseCount += 1;
-      }
-
-      async play() {
-        state.audioPlayCount += 1;
-      }
-    }
 
     class MockSpeechSynthesisUtterance {
       lang = "";
@@ -57,10 +40,6 @@ async function installStoryPlaybackMock(page: Page) {
     let activeUtterance: MockSpeechSynthesisUtterance | null = null;
     let paused = false;
 
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: MockStoryAudio,
-    });
     Object.defineProperty(window, "SpeechSynthesisUtterance", {
       configurable: true,
       value: MockSpeechSynthesisUtterance,
@@ -112,6 +91,38 @@ async function installStoryPlaybackMock(page: Page) {
   });
 }
 
+async function installStoryAudioMock(page: Page) {
+  await page.evaluate(() => {
+    const state = (
+      window as unknown as Window & {
+        __storyPlaybackMock: { state: StoryPlaybackMockState };
+      }
+    ).__storyPlaybackMock.state;
+
+    class MockStoryAudio {
+      onended: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      constructor(readonly src = "") {
+        state.audioSources.push(src);
+      }
+
+      pause() {
+        state.audioPauseCount += 1;
+      }
+
+      async play() {
+        state.audioPlayCount += 1;
+      }
+    }
+
+    Object.defineProperty(window, "Audio", {
+      configurable: true,
+      value: MockStoryAudio,
+    });
+  });
+}
+
 async function playbackMockState(page: Page) {
   return page.evaluate(
     () =>
@@ -145,7 +156,7 @@ async function expectInsideViewportHorizontally(locator: Locator, page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await installStoryPlaybackMock(page);
+  await installStorySpeechGuard(page);
 });
 
 test("the story shelf opens The Lantern Trail in its reader", async ({
@@ -226,7 +237,10 @@ test("page 6 Read to me pauses and resumes one saved narration", async ({
   const controls = page.getByRole("navigation", {
     name: "Story playback controls",
   });
-  await controls.getByRole("button", { name: "Read to me" }).click();
+  const readToMe = controls.getByRole("button", { name: "Read to me" });
+  await readToMe.waitFor();
+  await installStoryAudioMock(page);
+  await readToMe.click();
 
   await expect(
     controls.getByRole("button", { name: "Pause story" }),
