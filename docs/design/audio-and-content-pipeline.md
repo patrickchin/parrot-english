@@ -136,6 +136,11 @@ source PNGs and the provenance manifest stay private in
 and SHA-256 hashes without storing image bytes. The public bucket's read-only
 CORS rule lets Phaser load those textures from the media hostname.
 
+During the current proof-of-concept iteration, the `v1` pixel-art objects may be
+replaced in place. Runtime art requests include a revisioned art cache key so a
+genuinely redrawn sprite cannot reuse an earlier duplicated-pixel browser/CDN
+response.
+
 ## QA Checklist
 
 - Validate every checked-in lesson and catalog.

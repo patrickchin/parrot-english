@@ -23,6 +23,7 @@ function createCatalog(png) {
       "https://media.parrotbook.com/prototypes/pixel-stage/v1",
     assets: [
       {
+        bytes: png.length,
         filename: "garden-tree-ball.png",
         height: 192,
         sha256: createHash("sha256").update(png).digest("hex"),
@@ -63,7 +64,7 @@ describe("pixel-stage media verification", () => {
         {
           bytes: png.length,
           filename: "garden-tree-ball.png",
-          src: "https://media.parrotbook.com/prototypes/pixel-stage/v1/garden-tree-ball.png",
+          src: `https://media.parrotbook.com/prototypes/pixel-stage/v1/garden-tree-ball.png?sha256=${createHash("sha256").update(png).digest("hex")}`,
         },
       ],
     });
@@ -90,6 +91,19 @@ describe("pixel-stage media verification", () => {
         assert.match(error.message, /does not match its catalog SHA-256/);
         return true;
       },
+    );
+  });
+
+  it("rejects media that does not match the catalog byte count", async () => {
+    const png = createPngHeader(144, 192);
+    const catalog = createCatalog(png);
+    catalog.assets[0].bytes += 1;
+
+    await assert.rejects(
+      verifyPixelStageMedia(catalog, {
+        fetch: async () => createResponse(png),
+      }),
+      /must match its catalog byte count/,
     );
   });
 });
