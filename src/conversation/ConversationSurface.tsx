@@ -381,7 +381,7 @@ function WaitingTurnControl({ status }: { status: ConversationSurfaceStatus }) {
   return (
     <ActionButton
       aria-label="Waiting for Peppa"
-      className="min-h-14 short:min-h-12 short:px-3"
+      className="min-h-14 whitespace-nowrap short:min-h-12 short:gap-2 short:px-2 short:text-sm"
       disabled
       size="large"
       type="button"
@@ -553,7 +553,7 @@ export function ConversationSurface({
             <ActionButton
               aria-keyshortcuts="Space"
               aria-pressed={microphoneEnabled}
-              className="min-h-14 short:min-h-12 short:px-3 short:text-sm"
+              className="min-h-14 whitespace-nowrap short:min-h-12 short:gap-2 short:px-2 short:text-sm"
               onClick={onToggleMicrophone}
               size="large"
               type="button"
