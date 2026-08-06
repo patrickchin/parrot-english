@@ -183,6 +183,7 @@ describe("app route helpers", () => {
         null,
       ],
       ["/lessons", "/Lessons//", null],
+      ["/games", "/Games//", null],
       ["/lessons/my/create", "/Lessons/My/Create///", null],
       ["/lessons/my/:lessonId/edit", "/Lessons/My/demo/Edit///", null],
       ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],

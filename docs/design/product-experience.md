@@ -4,13 +4,16 @@
 
 Parrot English is an English speaking experience for young children. After
 authentication and the one-time onboarding flow, the learner arrives at a
-home hub with Talk to Peppa, Lessons, Create a Lesson, and the Game as top-level
-activities. Progress and Storytelling appear underneath as smaller disabled
-previews, not destinations. Create a Lesson opens the custom lesson authoring
-flow directly; the same flow can also remain reachable from My lessons. A
-lesson plays like a short interactive episode: characters act out a situation,
-a character models a useful line, the learner repeats it, and the script chooses
-a character or narrator response when evaluation is enabled.
+home hub with Talk to Peppa, Lessons, Storytelling, Game, Create a Lesson, and
+Pixel Lesson Lab as top-level activities. Progress appears underneath as a
+smaller disabled preview. Create a Lesson opens the custom lesson authoring
+flow directly; the same flow can also remain reachable from My lessons.
+Storytelling opens an illustrated read-aloud shelf. Game keeps the standalone
+pixel-garden experience, while Pixel Lesson Lab generates a transient speaking
+mission and runs it in the same pixel-art engine. A lesson plays like a short
+interactive episode: characters act out a situation, a character models a
+useful line, the learner repeats it, and the script chooses a character or
+narrator response when evaluation is enabled.
 
 Bundled lesson dialogue and narration is in English; learner-created scripts
 may use another language. Steps within the current scene advance automatically
@@ -30,11 +33,13 @@ The durable entry sequence is:
 3. Returning learners land on `/`, the authenticated home menu.
 
 The home hub opens free conversation at `/talk-to-peppa`, the combined lesson
-catalog at `/lessons`, custom lesson authoring at `/lessons/my/create`, and the
-Game at `/prototypes/pixel-stage/`. The My lessons section may provide another
-Create a Lesson link, but it is not the sole entry point. Legacy `/progress` and
-`/stories` links safely redirect home. Home names those areas only in disabled
-“Coming soon” tiles, so they add context without creating dead-end navigation.
+catalog at `/lessons`, Storytelling at `/stories`, custom lesson authoring at
+`/lessons/my/create`, the standalone pixel garden at
+`/prototypes/pixel-stage/`, and the Pixel Lesson Lab at `/games`. The My lessons
+section may provide another Create a Lesson link, but it is not the sole entry
+point. Legacy `/progress` links safely redirect home. Home names Progress only
+in a disabled “Coming soon” tile, so it adds context without creating dead-end
+navigation.
 Each non-home page provides a direct way back to Home or the lesson catalog.
 
 ## Roles
@@ -104,6 +109,24 @@ invalidates any stale review until the updated draft has been validated again.
 Saved lessons are scoped to the authenticated user and appear under My Lessons.
 Their arbitrary-language dialogue is spoken through browser on-device speech;
 built-in Parrot Lessons retain their authored ElevenLabs audio.
+
+## Pixel Lesson Lab
+
+The Pixel Lesson Lab activity opens `/games`, an intentionally transient
+generation lab. A supervising adult describes an English practice idea, then
+the app generates a short ordered mission and immediately loads it into a
+React-owned Phaser preview. The sample mission remains playable before the
+first generation, and the generated JSON is available behind an Advanced
+disclosure for inspection and editing. Generating or editing a preview never
+creates a saved lesson.
+
+Pixel lesson JSON contains only bounded text and catalog IDs. The model can
+choose among the four authored garden targets and four supported Peppa emotes;
+the engine owns asset URLs, coordinates, collision bodies, camera behavior,
+movement speed, and target proximity. A mission asks the learner to find one
+target, reveals a phrase to practice, gives a scripted success response, and
+then advances to the next target. Unsupported or incomplete generated values
+receive safe defaults and visible warnings before the engine sees them.
 
 A lesson contains one or more scenes. Each scene provides:
 
@@ -203,7 +226,7 @@ Design constraints:
 
 ## Content Boundaries
 
-Lesson JSON is text and catalog IDs only. It never stores image filenames,
+Lesson and pixel-lesson JSON are text and catalog IDs only. They never store image filenames,
 audio filenames, voice IDs, or generation settings. Global catalogs own visual
 asset paths. The static audio manifest owns built-in saved speech, while My
 Lessons select on-device speech at the player boundary.

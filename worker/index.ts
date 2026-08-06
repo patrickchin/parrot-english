@@ -22,12 +22,22 @@ import {
   handleMyLessonRequest,
   type MyLessonsEnv,
 } from "./my-lessons.ts";
+import {
+  handlePixelLessonRequest,
+  type PixelLessonsEnv,
+} from "./pixel-lessons.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
 }
 
-interface Env extends AuthEnv, BuildInfoEnv, RateLimitEnv, ConversationEnv, MyLessonsEnv {
+interface Env
+  extends AuthEnv,
+    BuildInfoEnv,
+    RateLimitEnv,
+    ConversationEnv,
+    MyLessonsEnv,
+    PixelLessonsEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
@@ -45,6 +55,7 @@ interface WorkerDependencies {
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
+  handlePixelLessonRequest: typeof handlePixelLessonRequest;
 }
 
 function isLearnerProfilePath(pathname: string) {
@@ -65,6 +76,10 @@ function isAgentConversationPath(pathname: string) {
 
 function isMyLessonPath(pathname: string) {
   return pathname === "/api/lessons/my" || pathname.startsWith("/api/lessons/my/");
+}
+
+function isPixelLessonPath(pathname: string) {
+  return pathname === "/api/pixel-lessons/generate";
 }
 
 export function createWorker(
@@ -88,6 +103,8 @@ export function createWorker(
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const myLessonRequest =
     dependencies.handleMyLessonRequest ?? handleMyLessonRequest;
+  const pixelLessonRequest =
+    dependencies.handlePixelLessonRequest ?? handlePixelLessonRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
 
   return {
@@ -202,6 +219,33 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
         return myLessonRequest({
+          database: createDatabase(env.DB),
+          env,
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+            userName: session.user.name?.trim() || null,
+          },
+          request,
+        });
+      }
+
+      if (isPixelLessonPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+        if (request.method === "POST") {
+          const rateLimited = await lessonGenerationRateLimit(
+            request,
+            env,
+            session.user.id,
+          );
+          if (rateLimited) return rateLimited;
+        }
+        return pixelLessonRequest({
           database: createDatabase(env.DB),
           env,
           identity: {

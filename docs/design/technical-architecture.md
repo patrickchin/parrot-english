@@ -18,6 +18,7 @@ Browser
        -> /api/evaluate-speech
        -> /api/learner-profile/* -> Groq -> learner_profile -> ElevenLabs
        -> /api/lessons/my/* -> OpenAI -> learner_lesson
+       -> /api/pixel-lessons/generate -> OpenAI -> transient validated preview
        -> static Vite assets through env.ASSETS
 ```
 
@@ -27,7 +28,7 @@ records through Drizzle in the same `parrot-english` D1 database used for all
 future application data. Browser sessions use HTTP cookies.
 
 Browser code is grouped by responsibility under `src/app`, `src/auth`,
-`src/conversation`, `src/learner-profile`, `src/lessons`, `src/media`,
+`src/conversation`, `src/learner-profile`, `src/lessons`, `src/games`, `src/media`,
 `src/shared`, and `src/testing`. Only the browser entrypoint, global CSS,
 lesson CSS, and Vite declarations remain as files directly under `src`.
 
@@ -48,6 +49,11 @@ Important entrypoints:
   catalog-backed scene preview, image choices, dialogue timeline, and
   progressively disclosed metadata controls.
 - `src/lessons/lesson-catalog.ts`: eager Vite discovery and validation of lesson JSON.
+- `src/games/PixelLessonLab.tsx`, `src/games/PixelStage.tsx`, and
+  `src/games/pixel-stage-engine.ts`: transient game generation, accessible
+  controls, and a lazy-loaded React-owned Phaser runtime.
+- `lib/pixel-lesson-data.ts`: the warning-based text-and-catalog-ID boundary
+  shared by the Worker, JSON inspector, and game preview.
 - `lib/lesson-state.js`: pure automatic scene/step runner and scene controls.
 - `lib/lesson-scene.js`: catalog-backed presentation data.
 - `lib/lesson-audio.js`: speaker-plus-text saved-audio resolution.
@@ -64,6 +70,8 @@ Important entrypoints:
 - `src/media/device-speech.ts`: cancellable local English speech for My Lessons.
 - `worker/my-lessons.ts` and `worker/lesson-generator.ts`: owner-scoped lesson
   persistence, warning-based normalization, and structured OpenAI generation.
+- `worker/pixel-lessons.ts` and `worker/pixel-lesson-generator.ts`: authenticated,
+  rate-limited, preview-only pixel mission generation.
 
 ## Authentication
 
@@ -100,8 +108,8 @@ After authentication, `LearnerProfileGate` checks the learner profile. Incomplet
 learners remain at `/profile/setup`; completed learners continue to the preserved
 destination. The normal completed sequence is therefore authentication →
 learner introduction → the activity home at `/`, where Talk to Peppa, Lessons,
-Create a Lesson, and the Game are top-level choices. Progress and Storytelling
-are rendered there only as disabled previews.
+Storytelling, Game, Create a Lesson, and Pixel Lesson Lab are top-level choices.
+Progress is rendered there only as a disabled preview.
 
 ## Browser Route Ownership
 
@@ -110,6 +118,7 @@ The URL is authoritative for durable screens and lesson scenes:
 ```text
 /
 ├── /talk-to-peppa
+├── /games
 ├── /lessons
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/:lessonId/scenes/:sceneNumber
@@ -117,7 +126,8 @@ The URL is authoritative for durable screens and lesson scenes:
 │   └── /lessons/my/:lessonId/edit
 ├── /prototypes/pixel-stage/ (separate Game document)
 ├── /progress (legacy redirect to /)
-├── /stories (legacy redirect to /)
+├── /stories
+│   └── /stories/:storyId/pages/:pageNumber
 ├── /profile
 ├── /login
 └── /profile/setup
@@ -163,6 +173,12 @@ Three boundaries keep lesson authoring simple:
 Learner-created lessons form a fourth, database-backed boundary. They are
 validated against the same contract, scoped by `auth_user_id`, and never written
 into `content/lessons` or mixed into the built-in Parrot content namespace.
+
+Pixel lessons form a separate transient boundary. `lib/pixel-lesson-data.ts`
+accepts only the `lesson-garden` world, authored target IDs, supported Peppa
+emotes, and bounded text. The generation endpoint returns a validated preview
+without writing D1. Phaser receives the prepared mission while its trusted
+engine code retains all geometry, asset URLs, collisions, and physics tuning.
 
 Lesson JSON never contains asset filenames. `src/lessons/lesson-catalog.ts` uses eager
 `import.meta.glob` discovery, so adding or removing a valid lesson file changes
