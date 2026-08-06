@@ -104,6 +104,7 @@ async function expectCompactOverlayControls(page: Page) {
   }
 
   const overlays = [
+    page.getByRole("link", { name: "Back to home" }),
     page.getByRole("group", { name: "Move Peppa" }),
     page.getByRole("group", { name: "Peppa animations" }),
     page.getByRole("group", { name: "Game status" }),
@@ -129,6 +130,27 @@ async function expectCompactOverlayControls(page: Page) {
     }
   }
 }
+
+test("the game back control returns to the home hub", async ({ page }) => {
+  await page.setViewportSize({ width: 280, height: 700 });
+  await page.goto("/prototypes/pixel-stage/");
+
+  const back = page.getByRole("link", { name: "Back to home" });
+  await expect(back).toBeVisible();
+  await expect(back).toHaveAttribute("href", "/");
+
+  const backBox = await back.boundingBox();
+  expect(backBox).not.toBeNull();
+  expect(backBox!.width).toBeGreaterThanOrEqual(44);
+  expect(backBox!.height).toBeGreaterThanOrEqual(44);
+
+  await back.click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+});
 
 test("Peppa explores a fullscreen lesson garden with genuinely detailed large sprites", async ({
   page,
