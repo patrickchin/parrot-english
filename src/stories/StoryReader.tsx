@@ -99,7 +99,7 @@ export function StoryReader({
         playbackControlRef.current = null;
         setNarrationState("idle");
         setError(
-          "Read-aloud is not available in this browser. You can still turn the pages and read together.",
+          "Story audio is not available right now. You can still turn the pages and read together.",
         );
       });
   }
