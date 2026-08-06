@@ -10,9 +10,13 @@ import {
   Volume2,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
-import { isAbortError, type PlaybackControl } from "../media/audio-playback";
-import { playDeviceSpeech } from "../media/device-speech";
+import {
+  isAbortError,
+  playAudioLine,
+  type PlaybackControl,
+} from "../media/audio-playback";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
 import type { Story } from "./story-catalog";
 
@@ -58,19 +62,25 @@ export function StoryReader({
     stopNarration();
     const controller = new AbortController();
     const generation = playbackGenerationRef.current;
+    const narration = getStaticAudioLineForSpeech(
+      "narrator",
+      `${page.text} ${page.joinIn}`,
+    );
     abortControllerRef.current = controller;
     setError("");
     setNarrationState("playing");
 
-    void playDeviceSpeech({
+    void playAudioLine({
+      audioId: narration.id,
+      audioSrc: narration.src,
+      lang: narration.lang,
       onPlaybackControl: (control) => {
         if (generation === playbackGenerationRef.current) {
           playbackControlRef.current = control;
         }
       },
       signal: controller.signal,
-      speaker: "narrator",
-      text: `${page.text} ${page.joinIn}`,
+      text: narration.text,
     })
       .then(() => {
         if (generation !== playbackGenerationRef.current) return;
@@ -89,7 +99,7 @@ export function StoryReader({
         playbackControlRef.current = null;
         setNarrationState("idle");
         setError(
-          "Read-aloud is not available in this browser. You can still turn the pages and read together.",
+          "Story audio is not available right now. You can still turn the pages and read together.",
         );
       });
   }
