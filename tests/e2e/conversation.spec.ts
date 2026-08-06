@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { startSmallChat } from "./conversation-helpers";
 
 test("Back returns home and Talk to Peppa can be opened again", async ({
   page,
 }) => {
   await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
   await expect(page.getByRole("button", { name: "Start my turn" })).toBeVisible();
 
   await page.getByRole("button", { exact: true, name: "Back" }).click();
@@ -19,6 +21,7 @@ test("Back returns home and Talk to Peppa can be opened again", async ({
   await page.getByRole("link", { name: /^Talk to Peppa/ }).click();
 
   await expect(page).toHaveURL("/talk-to-peppa");
+  await startSmallChat(page);
   const turnButton = page.getByRole("button", { name: "Start my turn" });
   await expect(turnButton).toBeVisible();
   await turnButton.click();
@@ -29,6 +32,7 @@ test("Back returns home and Talk to Peppa can be opened again", async ({
 
 test("the learner sees a streamed transcript while speaking", async ({ page }) => {
   await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
 
   await page.getByRole("button", { name: "Start my turn" }).click();
 
@@ -47,6 +51,7 @@ test("the latest Peppa message repeats from its bottom-right audio control", asy
 }) => {
   await page.setViewportSize({ width: 280, height: 568 });
   await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
 
   const message = page.getByRole("group", { name: "Peppa's message" });
   const quotedSpeech = message.getByRole("blockquote", {

@@ -15,7 +15,13 @@ import {
   CONVERSATION_SYSTEM_PROMPTS,
   createGettingToKnowYouTask,
   createSmallChatTask,
+  getConversationSystemPrompt,
 } from "../agent/peppa-conversation.ts";
+import {
+  SMALL_CHAT_SHARED_PROMPT,
+  SMALL_CHAT_STYLE_PROMPTS,
+  getSmallChatSystemPrompt,
+} from "../agent/prompts/small-chat.ts";
 import * as conversationScenario from "../agent/peppa-conversation.ts";
 import {
   createAgentModels,
@@ -128,8 +134,27 @@ describe("LiveKit agent configuration", () => {
           learnedAge: true,
           finishReason: null,
         },
+        promptStyle: undefined,
         purpose: "profile-edit",
       },
+    );
+    const legacySmallChat = parseConversationParticipantMetadata(
+      JSON.stringify({
+        conversationId: "conversation-2",
+        scenarioKey: "small-chat",
+      }),
+    );
+    assert.equal(legacySmallChat.promptStyle, "tiny-turns");
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-3",
+            promptStyle: "wordy",
+            scenarioKey: "small-chat",
+          }),
+        ),
+      /promptStyle/,
     );
     assert.throws(
       () => parseConversationParticipantMetadata("{}"),
@@ -263,7 +288,7 @@ describe("purpose-specific Peppa conversation prompts", () => {
         readFileSync(resolve(promptDirectory, file), "utf8"),
       ]),
     );
-    for (const source of Object.values(sources)) {
+    for (const source of [sources["introduction.ts"], sources["profile-edit.ts"]]) {
       assert.match(source, /warm, playful pig friend/i);
       assert.match(source, /speak first/i);
       assert.match(source, /edit only the large block of text below/i);
@@ -273,7 +298,8 @@ describe("purpose-specific Peppa conversation prompts", () => {
     assert.match(sources["profile-edit.ts"], /update the existing learner profile/i);
     assert.match(sources["profile-edit.ts"], /Edit profile.*Chat with Peppa again/is);
     assert.match(sources["small-chat.ts"], /ordinary small chat/i);
-    assert.match(sources["small-chat.ts"], /Talk to Peppa.*main menu/is);
+    assert.match(sources["small-chat.ts"], /selected teaching/i);
+    assert.match(sources["small-chat.ts"], /SMALL_CHAT_STYLE_PROMPTS/);
 
     const runtimeSource = readFileSync(
       resolve(import.meta.dirname, "../agent/peppa-conversation.ts"),
@@ -295,18 +321,58 @@ describe("purpose-specific Peppa conversation prompts", () => {
     assert.match(prompts["profile-edit"], /update.*profile/is);
     assert.match(prompts["profile-edit"], /correct|change/i);
     assert.match(prompts["small-chat"], /ordinary.*chat/is);
-    assert.match(prompts["small-chat"], /do not.*profile/i);
+    assert.match(prompts["small-chat"], /do not[\s\S]*profile/i);
     assert.equal(new Set(Object.values(prompts)).size, 3);
   });
 
   it("keeps Peppa's speech brief and easy for a beginner child", () => {
-    for (const prompt of Object.values(CONVERSATION_SYSTEM_PROMPTS)) {
+    for (const purpose of ["onboarding", "profile-edit"]) {
+      const prompt = CONVERSATION_SYSTEM_PROMPTS[purpose];
       assert.match(prompt, /beginner English/i);
       assert.match(prompt, /one short sentence/i);
       assert.match(prompt, /3[-–]8 words/i);
       assert.match(prompt, /one question/i);
       assert.match(prompt, /opening.*10 words/is);
     }
+
+    for (const promptStyle of Object.keys(SMALL_CHAT_STYLE_PROMPTS)) {
+      const prompt = getSmallChatSystemPrompt(promptStyle);
+      assert.match(prompt, /beginner English/i);
+      assert.match(prompt, /Ask at most\s+one question/i);
+      assert.match(prompt, /ordinary spoken reply must contain 2-(?:8|10) words/i);
+      assert.match(prompt, /opening within eight spoken words/i);
+    }
+  });
+
+  it("composes three distinct child-safe small-chat system prompts", () => {
+    const prompts = Object.fromEntries(
+      Object.keys(SMALL_CHAT_STYLE_PROMPTS).map((style) => [
+        style,
+        getSmallChatSystemPrompt(style),
+      ]),
+    );
+
+    assert.deepEqual(Object.keys(prompts).sort(), [
+      "gentle-guide",
+      "playful-pal",
+      "tiny-turns",
+    ]);
+    assert.equal(new Set(Object.values(prompts)).size, 3);
+    for (const prompt of Object.values(prompts)) {
+      assert.match(prompt, /one-word answers/i);
+      assert.match(prompt, /Never ask for a surname/i);
+      assert.match(prompt, /safe trusted adult/i);
+      assert.match(prompt, /endConversation is the only tool/i);
+      assert.match(prompt, /untrusted learner data/i);
+    }
+    assert.match(prompts["tiny-turns"], /mirror the child's key words/i);
+    assert.match(prompts["gentle-guide"], /naturally recasting/i);
+    assert.match(prompts["playful-pal"], /one playful reaction/i);
+    assert.equal(
+      getConversationSystemPrompt("small-chat", "gentle-guide"),
+      prompts["gentle-guide"],
+    );
+    assert.match(SMALL_CHAT_SHARED_PROMPT, /child-safe/i);
   });
 });
 
@@ -429,7 +495,7 @@ describe("purpose-scoped learner-profile agent tools", () => {
   });
 
   it("gives ordinary small chat a static opening prompt and only the ending tool", async () => {
-    const task = createSmallChatTask();
+    const task = createSmallChatTask({ promptStyle: "gentle-guide" });
     let opening;
 
     await task.hookAdapter.hooks.onEnter({
@@ -446,6 +512,8 @@ describe("purpose-scoped learner-profile agent tools", () => {
     ]);
     assert.deepEqual(opening, { allowInterruptions: false });
     assert.match(task._instructions, /ordinary small chat/i);
+    assert.match(task._instructions, /Selected style: Gentle guide/i);
+    assert.doesNotMatch(task._instructions, /Selected style: Tiny turns/i);
     assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);
     assert.doesNotMatch(task._instructions, /call exactly one appropriate state tool/i);
   });

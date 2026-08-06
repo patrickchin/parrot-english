@@ -5,6 +5,11 @@ import {
   type ConversationPurpose,
 } from "../lib/conversation-purpose.ts";
 import {
+  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  isTalkToPeppaPromptStyle,
+  type TalkToPeppaPromptStyle,
+} from "../lib/talk-to-peppa-prompt-style.ts";
+import {
   deriveConversationProfileState,
   type ConversationProfileState,
 } from "./conversation-profile-finalization.ts";
@@ -39,10 +44,10 @@ const CONVERSATION_SCENARIOS = {
   },
   "small-chat": {
     key: "small-chat",
-    version: 1,
+    version: 2,
     requiredDetails: [],
     summaryMode: "none",
-    maxOptionalExchanges: null,
+    maxOptionalExchanges: 8,
   },
 } as const satisfies Record<
   ConversationPurpose,
@@ -167,11 +172,26 @@ export async function handleConversationRequest(
       if (!isConversationPurpose(purpose)) {
         throw new ConversationApiError(400, "invalid_conversation_purpose");
       }
+      let promptStyle: TalkToPeppaPromptStyle | undefined;
+      if (purpose === "small-chat") {
+        promptStyle =
+          body.promptStyle === undefined
+            ? DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE
+            : isTalkToPeppaPromptStyle(body.promptStyle)
+              ? body.promptStyle
+              : undefined;
+        if (!promptStyle) {
+          throw new ConversationApiError(400, "invalid_prompt_style");
+        }
+      } else if (body.promptStyle !== undefined) {
+        throw new ConversationApiError(400, "invalid_prompt_style");
+      }
       const scenario = CONVERSATION_SCENARIOS[purpose];
       const livekitUrl = required(input.env.LIVEKIT_URL, "livekit_url");
       const conversation = await repository.createConversation(
         input.identity,
         scenario,
+        { promptStyle },
       );
       const initialState = JSON.parse(conversation.controllerState) as Record<
         string,
@@ -183,6 +203,7 @@ export async function handleConversationRequest(
         identity: input.identity,
         initialState,
         now: dependencies.now(),
+        promptStyle,
       });
       return json(
         {

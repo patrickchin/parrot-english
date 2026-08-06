@@ -271,6 +271,7 @@ export const conversationSession = sqliteTable(
       .references(() => user.id, { onDelete: "cascade" }),
     scenarioKey: text("scenario_key").notNull(),
     scenarioVersion: integer("scenario_version").notNull(),
+    promptStyle: text("prompt_style"),
     roomName: text("room_name").notNull(),
     status: text("status").notNull(),
     finishReason: text("finish_reason"),

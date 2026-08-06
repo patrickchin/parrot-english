@@ -1,4 +1,5 @@
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
+import type { TalkToPeppaPromptStyle } from "../../lib/talk-to-peppa-prompt-style";
 
 export type ConversationTurn = {
   id: string;
@@ -20,6 +21,7 @@ export type ConversationSession = {
   authUserId: string;
   scenarioKey: ConversationPurpose;
   scenarioVersion: number;
+  promptStyle: TalkToPeppaPromptStyle | null;
   roomName: string;
   status:
     | "starting"
@@ -56,6 +58,16 @@ export type ConversationRequestOptions = {
   fetch?: typeof globalThis.fetch;
   signal?: AbortSignal;
 };
+
+export type ConversationStartInput =
+  | {
+      promptStyle: TalkToPeppaPromptStyle;
+      purpose: "small-chat";
+    }
+  | {
+      promptStyle?: never;
+      purpose: Exclude<ConversationPurpose, "small-chat">;
+    };
 
 export class ConversationApiError extends Error {
   readonly code: string;
@@ -115,13 +127,13 @@ function jsonRequest<Result>(
 }
 
 export function startConversation(
-  purpose: ConversationPurpose,
+  input: ConversationStartInput,
   options?: ConversationRequestOptions,
 ) {
   return jsonRequest<ConversationStartResponse>(
     "/api/conversations",
     "POST",
-    { purpose },
+    input,
     options,
   );
 }

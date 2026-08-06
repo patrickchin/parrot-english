@@ -172,7 +172,7 @@ function ConversationHookHarness({
   createTransport,
   now,
   onCompleted = async () => {},
-  purpose = "small-chat",
+  purpose = "onboarding",
 }) {
   const conversation = usePeppaConversation({
     active: true,
@@ -217,15 +217,18 @@ function ConversationHookHarness({
 
 function conversationSurfaceProps(overrides = {}) {
   return {
+    canFinish: true,
     error: "",
     liveTranscript: "",
     microphoneEnabled: false,
     onBack() {},
     onFinish() {},
+    onPromptStyleChange() {},
     onRepeatAudio() {},
     onStart() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
+    promptStyle: "tiny-turns",
     responseLatencyMs: null,
     status: "listening",
     turnReady: true,
@@ -650,6 +653,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/conversations" && init.method === "POST") {
         conversationStarts += 1;
+        assert.deepEqual(JSON.parse(init.body), {
+          promptStyle: "tiny-turns",
+          purpose: "small-chat",
+        });
         return json({
           conversation: { id: `conversation-route-${conversationStarts}` },
           livekit: {
@@ -669,6 +676,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     };
 
     await mountStrict(createElement(StandaloneConversationRouteHarness));
+    await waitFor(() => text(/Start chat/));
+    await click(button("Start chat"));
     await waitFor(() => text(/Start my turn/));
 
     await click(button("Back"));
@@ -677,6 +686,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/VOICE CHAT UNAVAILABLE/);
 
     await click(button("Talk to Peppa"));
+    await waitFor(() => text(/Start chat/));
+    await click(button("Start chat"));
     await waitFor(() => text(/Start my turn/));
     assert.equal(conversationStarts, 2);
   });

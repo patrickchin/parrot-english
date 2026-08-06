@@ -1,0 +1,1 @@
+ALTER TABLE `conversation_session` ADD `prompt_style` text;

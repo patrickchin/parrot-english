@@ -13,6 +13,7 @@ const MODELS = {
       "authUserId",
       "scenarioKey",
       "scenarioVersion",
+      "promptStyle",
       "roomName",
       "status",
       "finishReason",
@@ -197,6 +198,7 @@ describe("conversation persistence infrastructure", () => {
 
       assert.match(sessionSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
       assert.match(sessionSql, /json_valid\([^)]*controller_state/i);
+      assert.match(sessionSql, /prompt_style/i);
       assert.match(sessionSql, /starting.*active.*completed.*stopped.*disconnected.*failed.*abandoned/i);
       assert.match(turnSql, /REFERENCES [`"]?conversation_session/i);
       assert.match(turnSql, /CHECK\s*\([^\n]*role[^\n]*user[^\n]*assistant/i);
