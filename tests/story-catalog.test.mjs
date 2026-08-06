@@ -6,6 +6,7 @@ import {
   UPCOMING_STORIES,
   resolveStory,
 } from "../src/stories/story-catalog.ts";
+import { getStaticAudioLineForSpeech } from "../lib/static-audio.js";
 
 const storyAssetPaths = [
   "/assets/stories/the-lantern-trail-cover.webp",
@@ -14,6 +15,15 @@ const storyAssetPaths = [
     (_, index) =>
       `/assets/stories/the-lantern-trail-${String(index + 1).padStart(2, "0")}.webp`,
   ),
+];
+
+const lanternTrailNarrationIds = [
+  "story-lantern-trail-the-garden-gate",
+  "story-lantern-trail-the-moonlit-stream",
+  "story-lantern-trail-the-rain-leaf",
+  "story-lantern-trail-the-windy-sunflowers",
+  "story-lantern-trail-the-lantern-tree",
+  "story-lantern-trail-one-last-glow",
 ];
 
 function publicAssetUrl(src) {
@@ -56,6 +66,29 @@ describe("story catalog", () => {
     const fullStory = story.pages.map(({ text }) => text).join(" ");
     assert.match(fullStory, /Pip the green parrot/);
     assert.match(fullStory, /Flicker/);
+  });
+
+  it("registers one saved narrator performance for every story page", () => {
+    const story = resolveStory("the-lantern-trail");
+    assert.ok(story);
+
+    for (const [index, page] of story.pages.entries()) {
+      const narrationText = `${page.text} ${page.joinIn}`;
+      const narration = getStaticAudioLineForSpeech("narrator", narrationText);
+      const expectedId = lanternTrailNarrationIds[index];
+
+      assert.equal(narration.id, expectedId);
+      assert.equal(narration.src, `/assets/audio/${expectedId}.mp3`);
+      assert.equal(
+        existsSync(publicAssetUrl(narration.src)),
+        true,
+        `${expectedId} saved narration exists`,
+      );
+      assert.ok(
+        statSync(publicAssetUrl(narration.src)).size > 0,
+        `${expectedId} saved narration is non-empty`,
+      );
+    }
   });
 
   it("resolves only exact playable story IDs", () => {
