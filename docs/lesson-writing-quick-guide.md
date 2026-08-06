@@ -1,7 +1,9 @@
 # Lesson Writing Quick Guide
 
 This is the short, non-technical guide for creating a Parrot English lesson.
-For every validation rule and field, see the
+Custom lessons use the app's GUI editor after AI generation or JSON import, so
+you do not need to edit JSON by hand. For every validation rule and field, or
+for preparing an import or built-in lesson file, see the
 [Lesson JSON Schema Reference](./lesson-json-schema.md).
 
 ## What You Need Before You Start
@@ -22,7 +24,29 @@ Decide these things first:
 There is no required number of goal phrases or scenes. A lesson only needs at
 least one scene with at least one spoken line.
 
-## Where the Information Goes
+## Build the Story Visually
+
+The lesson studio keeps the story itself in the foreground:
+
+1. Use the **Storyboard** strip to choose a scene. Each thumbnail shows its
+   background and on-stage characters.
+2. Watch the **Live scene preview** while you work. It shows the selected
+   dialogue line, speaker, character moods, and background together.
+3. Choose backgrounds, characters, and moods from illustrated cards. You do
+   not need to remember catalog IDs.
+4. Use the **Dialogue timeline** below the preview to choose the line you want
+   to edit. Add, remove, or move lines to change playback order.
+5. Open **Scene title and notes**, **Lesson setup and goals**, or speaking
+   feedback only when you need their text fields. These details are kept out of
+   the main visual workflow but remain fully editable.
+
+On a phone, swipe the storyboard sideways; the live preview appears above the
+controls for the selected scene.
+
+## What the GUI Edits
+
+The editor labels these concepts in plain language. The field names below are
+also useful when importing JSON or maintaining a built-in lesson.
 
 | Information | Where it goes | Example |
 | --- | --- | --- |
@@ -53,7 +77,8 @@ Only Peppa and Dolly are visible. Put the visible characters for a scene in its
 
 ## Background Choices
 
-Choose one background for each scene:
+Choose one illustrated background card for each scene. Imported JSON uses the
+matching ID:
 
 - `episode-garden`
 - `meadow-day`
@@ -62,7 +87,8 @@ Choose one background for each scene:
 
 ## Character Expressions
 
-You can optionally change a visible character's expression with `emotes`:
+Choose a character portrait to change that character's mood for the selected
+dialogue line. Imported JSON stores the choice in `emotes`:
 
 - `idle`
 - `talking`
@@ -179,10 +205,15 @@ Correct and final replies must use `"after": "continue"`.
 
 ### My Lesson
 
-Open **Lessons → My lessons → Create custom lesson** in the app. Use **Make with
-AI** for the simple topic flow, or **Import JSON** to paste a complete script.
-Review any warnings and save it. My lessons use the device's available speech
-voice, so no audio files are needed.
+Choose **Create a Lesson** on the Home page. You can also use the Create action
+in **Lessons → My lessons**. Use **Make with AI** for the simple topic flow, or
+**Import JSON** to bring in a complete script. Both paths open the same GUI
+editor, where you can change lesson details, scenes, backgrounds, characters,
+speakers, dialogue, expressions, and speaking checks without editing raw JSON.
+Start with the storyboard and live preview, then expand lesson setup, scene
+notes, or speaking feedback only when needed. Review any warnings and save the
+lesson. My lessons use the device's available speech voice, so no audio files
+are needed.
 
 ### Built-in Parrot Lesson
 
@@ -210,4 +241,5 @@ Before saving, confirm:
 - `user` and `narrator` are not listed as visible characters.
 - Every `check` is attached to a `user` step.
 - Correct and final replies continue rather than retry.
-- The JSON has no comments or trailing commas.
+- If you are importing or maintaining a JSON file, it has no comments or
+  trailing commas.

@@ -361,15 +361,19 @@ function ConversationCaptions({
             </p>
           </div>
           {showRepeat ? (
-            <IconButton
-              aria-label="Repeat Peppa's audio"
-              className="sticky -bottom-2 col-start-2 row-start-1 size-10 translate-y-2 self-end shadow-none short:size-9"
-              onClick={onRepeatAudio}
-              type="button"
-              variant="brand"
-            >
-              <Volume2 aria-hidden="true" className="size-5" />
-            </IconButton>
+            <span className="sticky -bottom-2 col-start-2 row-start-1 block translate-y-2 self-end">
+              <IconButton
+                aria-label="Repeat Peppa's audio"
+                elevation="flat"
+                frame="white"
+                onClick={onRepeatAudio}
+                size="compact"
+                type="button"
+                variant="brand"
+              >
+                <Volume2 aria-hidden="true" className="size-5" />
+              </IconButton>
+            </span>
           ) : null}
         </div>
       </div>
@@ -381,8 +385,9 @@ function WaitingTurnControl({ status }: { status: ConversationSurfaceStatus }) {
   return (
     <ActionButton
       aria-label="Waiting for Peppa"
-      className="min-h-14 whitespace-nowrap short:min-h-12 short:gap-2 short:px-2 short:text-sm"
+      className="whitespace-nowrap short:gap-2 short:px-2 short:text-sm"
       disabled
+      fullWidth
       size="large"
       type="button"
       variant="surface"
@@ -512,9 +517,10 @@ export function ConversationSurface({
               <label className="min-w-0 text-left" htmlFor="peppa-prompt-style">
                 <span className="sr-only">Chat style</span>
                 <select
-                  className={fieldClassName(
-                    "min-h-14 truncate short:min-h-12 short:rounded-xl short:px-2 short:py-1 short:text-sm",
-                  )}
+                  className={fieldClassName({
+                    className:
+                      "min-h-14 truncate short:min-h-12 short:rounded-xl short:px-2 short:py-1 short:text-sm",
+                  })}
                   id="peppa-prompt-style"
                   onChange={(event) => {
                     if (isTalkToPeppaPromptStyle(event.target.value)) {
@@ -541,7 +547,7 @@ export function ConversationSurface({
             </>
           ) : status === "error" ? (
             <ActionButton
-              className="min-h-14 short:min-h-12 short:px-3"
+              fullWidth
               onClick={onStart}
               size="large"
               type="button"
@@ -553,7 +559,8 @@ export function ConversationSurface({
             <ActionButton
               aria-keyshortcuts="Space"
               aria-pressed={microphoneEnabled}
-              className="min-h-14 whitespace-nowrap short:min-h-12 short:gap-2 short:px-2 short:text-sm"
+              className="whitespace-nowrap short:gap-2 short:px-2 short:text-sm"
+              fullWidth
               onClick={onToggleMicrophone}
               size="large"
               type="button"
@@ -568,7 +575,7 @@ export function ConversationSurface({
                 <strong>
                   {microphoneEnabled ? "End my turn" : "Start my turn"}
                 </strong>
-                <small className="mt-1 text-xs font-bold opacity-85 short:hidden">
+                <small className="hidden text-xs font-bold leading-none opacity-85 md:mt-0.5 md:block">
                   Click or press Space
                 </small>
               </span>

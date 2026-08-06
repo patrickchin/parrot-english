@@ -1,16 +1,30 @@
-import { ArrowLeft, ClipboardPaste, FileJson, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardPaste,
+  FileJson,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
-import { ActionButton, cx, fieldClassName } from "../shared/ui";
+import {
+  ActionButton,
+  Card,
+  cx,
+  fieldClassName,
+  SegmentedButton,
+  SegmentedControl,
+} from "../shared/ui";
 import type { Lesson } from "./lesson-catalog";
 import {
-  formatLessonScript,
   getLessonScriptByteLength,
   MAX_LESSON_SCRIPT_BYTES,
   parseLessonScript,
+  prepareLessonDraft,
 } from "./lesson-creator-script";
+import { LessonGuiEditor } from "./LessonGuiEditor";
 import {
   generateMyLesson,
   saveMyLesson,
@@ -64,9 +78,10 @@ export function LessonPreview({
       </dl>
       <LessonWarnings warnings={warnings} />
       <ActionButton
-        className="w-full sm:w-fit"
         disabled={isSaving}
+        fullWidth
         onClick={onSave}
+        className="sm:w-fit"
         type="button"
         variant="success"
       >
@@ -86,7 +101,8 @@ export function LessonWarnings({ warnings }: { warnings: string[] }) {
     >
       <h3 className="m-0 text-xl">Draft warnings</h3>
       <p className="mb-0 mt-2 font-bold">
-        Safe defaults were applied. You can edit the JSON or save it as-is.
+        Safe defaults were applied. You can adjust the lesson fields or save
+        them as-is.
       </p>
       <ul className="mb-0 mt-3 grid gap-1 pl-5 font-semibold">
         {warnings.map((warning, index) => (
@@ -134,7 +150,7 @@ export function ScriptEditor({
         </div>
         {activeTab === "upload" ? (
           <ActionButton
-            className="shrink-0 gap-2"
+            className="shrink-0"
             disabled={Boolean(busyAction)}
             onClick={onPaste}
             size="compact"
@@ -148,9 +164,9 @@ export function ScriptEditor({
       </div>
       <textarea
         aria-describedby="lesson-script-size"
-        className={fieldClassName(
-          "min-h-80 resize-y font-mono text-sm leading-relaxed",
-        )}
+        className={fieldClassName({
+          className: "min-h-80 resize-y font-mono text-sm leading-relaxed",
+        })}
         disabled={busyAction === "save"}
         id="lesson-script-editor"
         onChange={(event) => onScriptChange(event.currentTarget.value)}
@@ -176,8 +192,9 @@ export function ScriptEditor({
           {Math.ceil(scriptBytes / 1024)} KB of 256 KB
         </span>
         <ActionButton
-          className="w-full sm:w-auto"
+          className="sm:w-auto"
           disabled={Boolean(busyAction) || !scriptText.trim()}
+          fullWidth
           onClick={onReview}
           type="button"
           variant="navy"
@@ -238,17 +255,13 @@ export function LessonCreator() {
     setNotice("");
     try {
       const generatedDraft = await generateMyLesson(requestedTopic);
-      setScripts((current) => ({
-        ...current,
-        generate: formatLessonScript(generatedDraft.lesson),
-      }));
       setLesson(generatedDraft.lesson);
       setWarnings(generatedDraft.warnings);
       setLessonSource("generated");
       setNotice(
         generatedDraft.warnings.length > 0
-          ? "Your lesson is ready with safe defaults. Review the warnings or save it as-is."
-          : "Your lesson is ready to review and save.",
+          ? "Your lesson is ready with safe defaults. Fine-tune it in the visual editor below."
+          : "Your lesson is ready. Fine-tune it in the visual editor below, then save it.",
       );
     } catch (caughtError) {
       setError(
@@ -301,15 +314,15 @@ export function LessonCreator() {
     try {
       const reviewedDraft = parseLessonScript(
         scriptText,
-        activeTab === "generate" ? "edited generated script" : "pasted script",
+        "pasted script",
       );
       setLesson(reviewedDraft.lesson);
       setWarnings(reviewedDraft.warnings);
-      setLessonSource(activeTab === "generate" ? "generated" : "uploaded");
+      setLessonSource("uploaded");
       setNotice(
         reviewedDraft.warnings.length > 0
-          ? "Script is playable with safe defaults. Review the warnings or save it as-is."
-          : "Script validated. Review the lesson summary before saving.",
+          ? "The lesson was imported with safe defaults. Fine-tune it in the visual editor below."
+          : "Lesson imported. Fine-tune it in the visual editor below, then save it.",
       );
     } catch (caughtError) {
       setError(
@@ -320,12 +333,24 @@ export function LessonCreator() {
     }
   }
 
-  async function handleSave() {
+  function updateLesson(nextLesson: Lesson) {
+    setLesson(nextLesson);
+    setWarnings([]);
+    setError("");
+    setNotice("");
+  }
+
+  async function handleSave(event: FormEvent) {
+    event.preventDefault();
     if (!lesson || busyAction) return;
     setBusyAction("save");
     setError("");
+    setNotice("");
     try {
-      const saved = await saveMyLesson(lesson, lessonSource);
+      const prepared = prepareLessonDraft(lesson, "custom lesson");
+      setLesson(prepared.lesson);
+      setWarnings(prepared.warnings);
+      const saved = await saveMyLesson(prepared.lesson, lessonSource);
       navigate(getLessonScenePath("my", saved.id, 0));
     } catch (caughtError) {
       setError(
@@ -349,118 +374,130 @@ export function LessonCreator() {
         </HeaderLink>
       </RouteHeader>
 
-      <section className="mx-auto grid w-full max-w-4xl gap-6 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-9">
+      <Card className="mx-auto grid w-full max-w-6xl gap-6 p-5 md:p-9">
         <header className="text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
             Create a custom lesson
           </h1>
           <p className="mb-0 mt-3 text-lg font-bold text-slate-600">
-            Grown-up tools: turn a topic into a speaking lesson, or import
-            lesson JSON.
+            Grown-up tools: start with AI or import a lesson, then shape every
+            detail in the visual editor.
           </p>
         </header>
 
-        <div
-          aria-label="Choose how to create a custom lesson"
-          className="grid grid-cols-2 gap-2 rounded-3xl bg-sky-100 p-2"
-          role="tablist"
-        >
-          <ActionButton
-            role="tab"
-            aria-selected={activeTab === "generate"}
-            aria-controls="generate-script-panel"
-            className="min-w-0 gap-2 rounded-2xl px-3 shadow-none"
-            id="generate-script-tab"
-            onClick={() => chooseTab("generate")}
-            type="button"
-            variant={activeTab === "generate" ? "navy" : "surface"}
-          >
-            <Sparkles aria-hidden="true" className="size-5" /> Make with AI
-          </ActionButton>
-          <ActionButton
-            role="tab"
-            aria-selected={activeTab === "upload"}
-            aria-controls="upload-script-panel"
-            className="min-w-0 gap-2 rounded-2xl px-3 shadow-none"
-            id="upload-script-tab"
-            onClick={() => chooseTab("upload")}
-            type="button"
-            variant={activeTab === "upload" ? "navy" : "surface"}
-          >
-            <FileJson aria-hidden="true" className="size-5" /> Import JSON
-          </ActionButton>
-        </div>
-
-        {activeTab === "generate" ? (
-          <section
-            aria-labelledby="generate-script-tab"
-            className="grid gap-6"
-            id="generate-script-panel"
-            role="tabpanel"
-          >
-            <form
-              aria-busy={busyAction === "generate"}
-              className="grid gap-3 rounded-3xl bg-sky-50 p-4 md:p-6"
-              onSubmit={(event) => void handleGenerate(event)}
+        {!lesson ? (
+          <>
+            <SegmentedControl
+              aria-label="Choose how to create a custom lesson"
+              className="grid-cols-2"
+              role="tablist"
             >
-              <label
-                className="text-lg font-black text-brand-navy"
-                htmlFor="lesson-topic"
+              <SegmentedButton
+                aria-controls="lesson-creator-panel"
+                id="generate-script-tab"
+                onClick={() => chooseTab("generate")}
+                role="tab"
+                selected={activeTab === "generate"}
+                type="button"
               >
-                What should this lesson be about?
-              </label>
-              <textarea
-                className={fieldClassName("min-h-28 resize-y")}
-                id="lesson-topic"
-                maxLength={500}
-                onChange={(event) => setTopic(event.currentTarget.value)}
-                placeholder="For example: ordering ice cream at a café"
-                rows={5}
-                value={topic}
-              />
-              <ActionButton
-                className="w-full gap-2 sm:w-fit"
-                disabled={Boolean(busyAction)}
-                type="submit"
+                <Sparkles aria-hidden="true" className="size-5" /> Make with AI
+              </SegmentedButton>
+              <SegmentedButton
+                aria-controls="lesson-creator-panel"
+                id="upload-script-tab"
+                onClick={() => chooseTab("upload")}
+                role="tab"
+                selected={activeTab === "upload"}
+                type="button"
               >
-                <Sparkles aria-hidden="true" className="size-5" />
-                {busyAction === "generate" ? "Making lesson…" : "Make lesson"}
-              </ActionButton>
-            </form>
-            {scriptText ? (
-              <details className="rounded-3xl border-3 border-sky-200 bg-sky-50 p-4 md:p-6">
-                <summary className="cursor-pointer font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink">
-                  Advanced: edit lesson JSON
-                </summary>
-                <div className="mt-5">
-                  <ScriptEditor
-                    activeTab={activeTab}
-                    busyAction={busyAction}
-                    onPaste={() => void handlePaste()}
-                    onReview={handleReview}
-                    onScriptChange={updateScript}
-                    scriptText={scriptText}
+                <FileJson aria-hidden="true" className="size-5" /> Import JSON
+              </SegmentedButton>
+            </SegmentedControl>
+
+            {activeTab === "generate" ? (
+              <section
+                aria-labelledby="generate-script-tab"
+                className="grid gap-6"
+                id="lesson-creator-panel"
+                role="tabpanel"
+              >
+                <form
+                  aria-busy={busyAction === "generate"}
+                  className="grid gap-3 rounded-3xl bg-sky-50 p-4 md:p-6"
+                  onSubmit={(event) => void handleGenerate(event)}
+                >
+                  <label
+                    className="text-lg font-black text-brand-navy"
+                    htmlFor="lesson-topic"
+                  >
+                    What should this lesson be about?
+                  </label>
+                  <textarea
+                    className={fieldClassName({
+                      className: "min-h-28 resize-y",
+                    })}
+                    id="lesson-topic"
+                    maxLength={500}
+                    onChange={(event) => setTopic(event.currentTarget.value)}
+                    placeholder="For example: ordering ice cream at a café"
+                    rows={5}
+                    value={topic}
                   />
-                </div>
-              </details>
-            ) : null}
-          </section>
+                  <ActionButton
+                    className="sm:w-fit"
+                    disabled={Boolean(busyAction)}
+                    fullWidth
+                    type="submit"
+                  >
+                    <Sparkles aria-hidden="true" className="size-5" />
+                    {busyAction === "generate" ? "Making lesson…" : "Make lesson"}
+                  </ActionButton>
+                </form>
+              </section>
+            ) : (
+              <section
+                aria-labelledby="upload-script-tab"
+                className="grid gap-6"
+                id="lesson-creator-panel"
+                role="tabpanel"
+              >
+                <ScriptEditor
+                  activeTab={activeTab}
+                  busyAction={busyAction}
+                  onPaste={() => void handlePaste()}
+                  onReview={handleReview}
+                  onScriptChange={updateScript}
+                  scriptText={scriptText}
+                />
+              </section>
+            )}
+          </>
         ) : (
-          <section
-            aria-labelledby="upload-script-tab"
-            className="grid gap-6"
-            id="upload-script-panel"
-            role="tabpanel"
+          <Card
+            className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+            elevation="flat"
+            tone="inset"
           >
-            <ScriptEditor
-              activeTab={activeTab}
-              busyAction={busyAction}
-              onPaste={() => void handlePaste()}
-              onReview={handleReview}
-              onScriptChange={updateScript}
-              scriptText={scriptText}
-            />
-          </section>
+            <p className="m-0 font-bold text-sky-950">
+              You are editing the visual lesson. The original starting method is
+              tucked away.
+            </p>
+            <ActionButton
+              className="shrink-0 gap-2"
+              disabled={Boolean(busyAction)}
+              onClick={() => {
+                setLesson(null);
+                setWarnings([]);
+                setError("");
+                setNotice("");
+              }}
+              size="compact"
+              type="button"
+              variant="surface"
+            >
+              <RotateCcw aria-hidden="true" className="size-5" /> Start over
+            </ActionButton>
+          </Card>
         )}
 
         {notice ? (
@@ -480,14 +517,30 @@ export function LessonCreator() {
           </p>
         ) : null}
         {lesson ? (
-          <LessonPreview
-            isSaving={busyAction === "save"}
-            lesson={lesson}
-            onSave={() => void handleSave()}
-            warnings={warnings}
-          />
+          <form
+            aria-busy={busyAction === "save"}
+            className="grid gap-6"
+            onSubmit={(event) => void handleSave(event)}
+          >
+            <LessonGuiEditor
+              disabled={busyAction === "save"}
+              lesson={lesson}
+              onChange={updateLesson}
+            />
+            <LessonWarnings warnings={warnings} />
+            <ActionButton
+              className="w-full justify-self-stretch sm:w-auto sm:justify-self-end"
+              disabled={busyAction === "save"}
+              type="submit"
+              variant="success"
+            >
+              {busyAction === "save"
+                ? "Saving lesson..."
+                : "Save and play lesson"}
+            </ActionButton>
+          </form>
         ) : null}
-      </section>
+      </Card>
     </main>
   );
 }

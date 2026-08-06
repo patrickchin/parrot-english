@@ -1,6 +1,16 @@
-import { BookOpen, Gamepad2, MessageCircle, Play, Sparkles } from "lucide-react";
-import { Link } from "react-router";
-import { cx } from "../shared/ui";
+import {
+  BookOpen,
+  Gamepad2,
+  MessageCircle,
+  Play,
+  Plus,
+  Sparkles,
+} from "lucide-react";
+import {
+  cx,
+  InteractiveCardButton,
+  InteractiveCardLink,
+} from "../shared/ui";
 
 const PRIMARY_ACTIVITIES = [
   {
@@ -30,6 +40,15 @@ const PRIMARY_ACTIVITIES = [
     tone: "navy",
     to: "/prototypes/pixel-stage/",
   },
+  {
+    badge: "Grown-up tools",
+    description: "Build a custom speaking lesson with a visual editor.",
+    icon: Plus,
+    label: "Create a Lesson",
+    reloadDocument: false,
+    tone: "green",
+    to: "/lessons/my/create",
+  },
 ] as const;
 
 const UPCOMING_ACTIVITIES = [
@@ -48,16 +67,16 @@ const UPCOMING_ACTIVITIES = [
 export function HomeMenu() {
   return (
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto bg-home px-4 pb-10 pt-24 short:pt-20 md:px-8 md:pb-14 md:pt-32 lg:px-16">
-      <header className="mx-auto mb-6 w-full max-w-5xl text-center md:mb-10">
+      <header className="mx-auto mb-6 w-full max-w-7xl text-center md:mb-10">
         <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-5xl lg:text-7xl">
           What do you want to do today?
         </h1>
       </header>
       <nav
         aria-label="Learning activities"
-        className="mx-auto w-full max-w-5xl"
+        className="mx-auto w-full max-w-7xl"
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
           {PRIMARY_ACTIVITIES.map(
             ({
               badge,
@@ -68,8 +87,8 @@ export function HomeMenu() {
               to,
               tone,
             }) => (
-              <Link
-                className="grid min-h-40 grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-4 gap-y-3 rounded-3xl border-4 border-white bg-white/95 p-5 text-slate-900 no-underline shadow-card transition hover:-translate-y-1 hover:brightness-105 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-navy md:min-h-56 md:gap-x-6 md:p-8"
+              <InteractiveCardLink
+                className="grid min-h-40 grid-cols-[auto_minmax(0,1fr)] content-center items-center gap-x-4 gap-y-3 p-5 md:min-h-56 md:gap-x-6 md:p-8 lg:grid-cols-1 lg:justify-items-center lg:text-center"
                 key={to}
                 reloadDocument={reloadDocument}
                 to={to}
@@ -80,6 +99,7 @@ export function HomeMenu() {
                     "size-13 shrink-0 rounded-2xl p-3 text-white shadow-control-navy sm:size-14 md:size-18 md:p-4",
                     tone === "navy" && "bg-brand-navy",
                     tone === "rose" && "bg-brand-rose",
+                    tone === "green" && "bg-brand-green",
                   )}
                 />
                 <strong
@@ -87,19 +107,20 @@ export function HomeMenu() {
                     "text-2xl leading-tight md:text-3xl",
                     tone === "navy" && "text-brand-navy",
                     tone === "rose" && "text-brand-rose",
+                    tone === "green" && "text-brand-green",
                   )}
                 >
                   {label}
                 </strong>
-                <span className="col-span-2 w-full font-bold leading-relaxed md:col-span-1 md:col-start-2">
+                <span className="col-span-2 w-full font-bold leading-relaxed md:col-span-1 md:col-start-2 lg:col-start-1">
                   {description}
                 </span>
                 {badge ? (
-                  <small className="col-span-2 w-fit rounded-full bg-brand-navy px-3 py-1 text-xs font-black uppercase tracking-wider text-white md:col-start-2">
+                  <small className="col-span-2 w-fit rounded-full bg-brand-navy px-3 py-1 text-xs font-black uppercase tracking-wider text-white md:col-start-2 lg:col-span-1 lg:col-start-1">
                     {badge}
                   </small>
                 ) : null}
-              </Link>
+              </InteractiveCardLink>
             ),
           )}
         </div>
@@ -116,11 +137,12 @@ export function HomeMenu() {
           </h2>
           <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-5">
             {UPCOMING_ACTIVITIES.map(({ icon: Icon, label, tone }) => (
-              <button
+              <InteractiveCardButton
                 aria-label={`${label}, coming soon`}
-                className="flex min-h-24 w-full cursor-not-allowed items-center gap-4 rounded-2xl border-4 border-white bg-white/75 p-4 text-left text-slate-700 opacity-80 shadow-card min-[360px]:min-h-36 min-[360px]:flex-col min-[360px]:justify-center min-[360px]:gap-2 min-[360px]:text-center md:min-h-40 md:rounded-3xl"
+                className="flex min-h-24 w-full items-center gap-4 p-4 text-left min-[360px]:min-h-36 min-[360px]:flex-col min-[360px]:justify-center min-[360px]:gap-2 min-[360px]:text-center md:min-h-40"
                 disabled
                 key={label}
+                tone="muted"
                 type="button"
               >
                 <Icon
@@ -137,7 +159,7 @@ export function HomeMenu() {
                     Coming soon
                   </small>
                 </span>
-              </button>
+              </InteractiveCardButton>
             ))}
           </div>
         </section>

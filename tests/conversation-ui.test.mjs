@@ -79,7 +79,7 @@ describe("accessible realtime conversation surface", () => {
       const html = render({ status });
       assert.match(
         html,
-        /<button aria-label="Back"[^>]*>/,
+        /<button[^>]*aria-label="Back"[^>]*>/,
         status,
       );
     }

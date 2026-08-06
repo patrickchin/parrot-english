@@ -7,20 +7,9 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
-import { Link, type LinkProps } from "react-router";
-import { ActionButton, cx, controlClassName } from "../shared/ui";
+import type { LinkProps } from "react-router";
+import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
 import { AboutDialog } from "./AboutDialog";
-
-function headerControlClassName(variant: "navy" | "surface") {
-  return controlClassName({
-    className: cx(
-      "size-13 min-h-0 min-w-0 gap-2 rounded-full border-4 border-white p-0 shadow-control-navy hover:-translate-y-0.5 hover:brightness-105 short:size-11 md:size-16 wide:w-auto wide:px-5",
-      variant === "surface" && "shadow-control-surface",
-    ),
-    size: "bare",
-    variant,
-  });
-}
 
 function HeaderLabel({ children }: { children: ReactNode }) {
   return <span className="hidden wide:inline">{children}</span>;
@@ -48,12 +37,12 @@ export function HeaderButton({
   variant?: "navy" | "surface";
 }) {
   return (
-    <button {...props} className={headerControlClassName(variant)}>
+    <ActionButton size="header" variant={variant} {...props}>
       <span aria-hidden="true" className="size-6 shrink-0">
         {icon}
       </span>
       <HeaderLabel>{children}</HeaderLabel>
-    </button>
+    </ActionButton>
   );
 }
 
@@ -68,12 +57,12 @@ export function HeaderLink({
   variant?: "navy" | "surface";
 }) {
   return (
-    <Link className={headerControlClassName(variant)} {...props}>
+    <ActionLink size="header" variant={variant} {...props}>
       <span aria-hidden="true" className="size-6 shrink-0">
         {icon}
       </span>
       <HeaderLabel>{children}</HeaderLabel>
-    </Link>
+    </ActionLink>
   );
 }
 
@@ -150,9 +139,9 @@ export function AccountHeader({
         aria-controls={menuId}
         aria-expanded={isMenuOpen}
         aria-haspopup="menu"
-        className="min-h-13 max-w-full min-w-0 gap-1.5 rounded-full border-4 border-white px-3 py-0 shadow-control-navy short:min-h-11 short:px-2 short:text-sm md:min-h-16 md:gap-2 md:px-5 md:text-base"
+        className="max-w-full"
         onClick={() => setIsMenuOpen((current) => !current)}
-        size="bare"
+        size="headerAccount"
         title={userEmail}
         type="button"
         variant="navy"
@@ -184,37 +173,30 @@ export function AccountHeader({
             role="menu"
           >
             {onOpenProfile ? (
-              <ActionButton
-                className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+              <MenuButton
                 onClick={() => selectAction(onOpenProfile)}
                 role="menuitem"
-                size="bare"
                 type="button"
-                variant="surface"
               >
                 Learner profile
-              </ActionButton>
+              </MenuButton>
             ) : null}
-            <ActionButton
-              className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+            <MenuButton
               onClick={() => selectAction(() => setIsAboutOpen(true))}
               role="menuitem"
-              size="bare"
               type="button"
-              variant="surface"
             >
               About
-            </ActionButton>
-            <ActionButton
-              className="min-h-11 w-full min-w-0 justify-start rounded-2xl px-4 shadow-none"
+            </MenuButton>
+            <MenuButton
               disabled={isSigningOut}
               onClick={() => selectAction(onSignOut)}
               role="menuitem"
-              size="bare"
               type="button"
+              variant="brand"
             >
               {isSigningOut ? "Signing out…" : "Sign out"}
-            </ActionButton>
+            </MenuButton>
           </div>
         </div>
       ) : null}

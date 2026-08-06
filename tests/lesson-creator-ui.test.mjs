@@ -67,7 +67,7 @@ test("the import query reveals the advanced clipboard-paste panel", () => {
     .map(([button]) => button)
     .find((button) => button.includes("Import JSON"));
   const uploadPanel = html.match(
-    /<section[^>]*id="upload-script-panel"[^>]*>/,
+    /<section[^>]*id="lesson-creator-panel"[^>]*>/,
   )?.[0];
 
   assert.ok(uploadTab);
