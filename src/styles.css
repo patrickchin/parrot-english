@@ -123,6 +123,36 @@
     linear-gradient(145deg, #8bd5fa, #75cfef);
 }
 
+@utility bg-story-shelf {
+  background-image:
+    radial-gradient(
+      circle at 12% 14%,
+      rgb(255 207 64 / 82%) 0 7%,
+      transparent 7.3%
+    ),
+    radial-gradient(
+      circle at 89% 84%,
+      rgb(255 70 123 / 34%) 0 10%,
+      transparent 10.3%
+    ),
+    linear-gradient(155deg, #9ee1f7 0%, #83d3ee 48%, #c9e99e 100%);
+}
+
+@utility bg-story-reader {
+  background-image:
+    radial-gradient(
+      circle at 88% 12%,
+      rgb(255 207 64 / 28%) 0 5%,
+      transparent 18%
+    ),
+    radial-gradient(
+      circle at 12% 88%,
+      rgb(255 70 123 / 16%) 0 8%,
+      transparent 24%
+    ),
+    linear-gradient(145deg, #173c67, #254f7d 56%, #315f89);
+}
+
 @layer base {
   :root {
     color: #241d2b;

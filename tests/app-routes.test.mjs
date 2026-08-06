@@ -36,6 +36,15 @@ function getMyLessonRouteDecision(entry, lessonId, sceneNumber) {
   return routes.resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
 }
 
+function getStoryRouteDecision(storyId, pageNumber) {
+  assert.equal(
+    typeof routes.resolveStoryRouteDecision,
+    "function",
+    "Expected an executable story route decision boundary",
+  );
+  return routes.resolveStoryRouteDecision(storyId, pageNumber);
+}
+
 describe("app route helpers", () => {
   it("builds source-specific lesson paths", () => {
     assert.equal(
@@ -70,6 +79,43 @@ describe("app route helpers", () => {
         () => routes.getLessonPath("parrot", lessonId),
         /Lesson ID must be non-empty and cannot be a dot segment/,
       );
+    }
+  });
+
+  it("builds encoded story and story-page paths", () => {
+    assert.equal(
+      routes.getStoryPath("the-lantern-trail"),
+      "/stories/the-lantern-trail",
+    );
+    assert.equal(
+      routes.getStoryPath("story/id"),
+      "/stories/story%2Fid",
+    );
+    assert.equal(
+      routes.getStoryPath("100% ready"),
+      "/stories/100%25%20ready",
+    );
+    assert.equal(
+      routes.getStoryPagePath("the-lantern-trail", 0),
+      "/stories/the-lantern-trail/pages/1",
+    );
+    assert.equal(
+      routes.getStoryPagePath("story/id", 2),
+      "/stories/story%2Fid/pages/3",
+    );
+  });
+
+  it("rejects empty and dot-segment story IDs", () => {
+    for (const storyId of ["", "   ", ".", ".."]) {
+      for (const buildPath of [
+        () => routes.getStoryPath(storyId),
+        () => routes.getStoryPagePath(storyId, 0),
+      ]) {
+        assert.throws(
+          buildPath,
+          /Story ID must be non-empty and cannot be a dot segment/,
+        );
+      }
     }
   });
 
@@ -129,6 +175,13 @@ describe("app route helpers", () => {
       ["/profile", "/Profile//", "profile"],
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/progress", "/Progress///", null],
+      ["/stories", "/Stories///", null],
+      ["/stories/:storyId", "/Stories/the-lantern-trail//", null],
+      [
+        "/stories/:storyId/pages/:pageNumber",
+        "/Stories/the-lantern-trail/Pages/2///",
+        null,
+      ],
       ["/lessons", "/Lessons//", null],
       ["/lessons/my/create", "/Lessons/My/Create///", null],
       ["/lessons/my/:lessonId/edit", "/Lessons/My/demo/Edit///", null],
@@ -243,6 +296,93 @@ describe("app route helpers", () => {
     assert.equal(routes.resolveMyLessonScene(entry, "other-id", "1"), null);
   });
 
+  it("resolves a stable story ID and one-based page", () => {
+    assert.equal(typeof routes.resolveStory, "function");
+    assert.equal(typeof routes.resolveStoryPage, "function");
+    const story = routes.resolveStory("the-lantern-trail");
+    const resolved = routes.resolveStoryPage("the-lantern-trail", "2");
+    const finalPage = routes.resolveStoryPage("the-lantern-trail", "6");
+
+    assert.equal(story.id, "the-lantern-trail");
+    assert.equal(story.pages.length, 6);
+    assert.equal(
+      routes.getStoryPagePath(story.id, 0),
+      "/stories/the-lantern-trail/pages/1",
+    );
+    assert.equal(resolved.story, story);
+    assert.equal(resolved.pageIndex, 1);
+    assert.equal(finalPage.story, story);
+    assert.equal(finalPage.pageIndex, 5);
+  });
+
+  it("redirects a short story URL to its canonical first page", () => {
+    assert.deepEqual(
+      getStoryRouteDecision("the-lantern-trail", undefined),
+      {
+        kind: "redirect",
+        replace: true,
+        to: "/stories/the-lantern-trail/pages/1",
+      },
+    );
+  });
+
+  it("redirects invalid story pages to the canonical first page", () => {
+    for (const pageNumber of ["", "0", "01", "1.5", "7", "99", "x"]) {
+      assert.deepEqual(
+        getStoryRouteDecision("the-lantern-trail", pageNumber),
+        {
+          kind: "redirect",
+          replace: true,
+          to: "/stories/the-lantern-trail/pages/1",
+        },
+      );
+    }
+  });
+
+  it("redirects unknown and encoded story IDs to the story list", () => {
+    for (const storyId of [
+      "missing",
+      "the-lantern-trail%2Fpages%2F1",
+      "the-lantern-trail/../missing",
+    ]) {
+      assert.deepEqual(getStoryRouteDecision(storyId, "1"), {
+        kind: "redirect",
+        replace: true,
+        to: "/stories",
+      });
+    }
+  });
+
+  it("returns a playable decision only for a valid story page", () => {
+    const decision = getStoryRouteDecision("the-lantern-trail", "2");
+
+    assert.equal(decision.kind, "story");
+    assert.equal(decision.story.id, "the-lantern-trail");
+    assert.equal(decision.pageIndex, 1);
+  });
+
+  it("rejects unknown stories and non-canonical page values", () => {
+    for (const value of [
+      undefined,
+      "",
+      "0",
+      "-1",
+      "01",
+      "1.5",
+      "x",
+      "9007199254740992",
+    ]) {
+      assert.equal(
+        routes.resolveStoryPage("the-lantern-trail", value),
+        null,
+      );
+    }
+    assert.equal(routes.resolveStory(undefined), null);
+    assert.equal(routes.resolveStory("missing"), null);
+    assert.equal(routes.resolveStoryPage("missing", "1"), null);
+    assert.equal(routes.resolveStoryPage("the-lantern-trail", "7"), null);
+  });
+
   it("redirects a short Parrot lesson URL to its canonical first scene", () => {
     assert.deepEqual(
       getParrotLessonRouteDecision("01-peppas-high-ball", undefined),
@@ -354,6 +494,8 @@ describe("app route helpers", () => {
     for (const returnTo of [
       "/progress//",
       "/stories///",
+      "/stories/the-lantern-trail//",
+      "/stories/the-lantern-trail/pages/2///",
       "/profile//",
       "/lessons//",
       "/lessons/my/create///",
@@ -370,6 +512,12 @@ describe("app route helpers", () => {
         "?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
       ),
       "/lessons/parrot/01-peppas-high-ball/scenes/2",
+    );
+    assert.equal(
+      routes.getSafeReturnTo(
+        "?returnTo=%2Fstories%2Fthe-lantern-trail%2Fpages%2F2",
+      ),
+      "/stories/the-lantern-trail/pages/2",
     );
     assert.equal(
       routes.getSafeReturnTo("?returnTo=https%3A%2F%2Fevil.example"),
@@ -396,6 +544,9 @@ describe("app route helpers", () => {
     for (const returnTo of [
       "/progress/history",
       "/progress//history",
+      "/stories//the-lantern-trail",
+      "/stories/the-lantern-trail//pages/1",
+      "/stories/the-lantern-trail/pages/1/extra",
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",

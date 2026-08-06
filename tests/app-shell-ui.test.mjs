@@ -50,25 +50,30 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu exposes lesson creation with the working activities", () => {
+test("home menu prioritizes five working activities and previews Progress", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
   assert.match(html, /<nav[^>]*aria-label="Learning activities"/);
+  const activityHrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+  assert.equal(activityHrefs.length, 5);
   assert.deepEqual(
-    [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href),
-    [
+    new Set(activityHrefs),
+    new Set([
       "/talk-to-peppa",
       "/lessons",
+      "/stories",
       "/prototypes/pixel-stage/",
       "/lessons/my/create",
-    ],
+    ]),
   );
-  assert.equal((html.match(/<button/g) ?? []).length, 2);
-  assert.equal((html.match(/disabled=""/g) ?? []).length, 2);
-  assert.equal((html.match(/>Coming soon</g) ?? []).length, 2);
+  assert.equal((html.match(/<button/g) ?? []).length, 1);
+  assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
+  assert.equal((html.match(/>Coming soon</g) ?? []).length, 1);
   assert.match(html, /What do you want to do today\?/);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, /chat freely/i);
@@ -81,8 +86,10 @@ test("home menu exposes lesson creation with the working activities", () => {
     html,
     /<a[^>]*href="\/lessons\/my\/create"[^>]*>[\s\S]*Create a Lesson[\s\S]*<\/a>/,
   );
+  assert.match(html, />Storytelling</);
+  assert.match(html, /href="\/stories"/);
   assert.match(html, /aria-label="Progress, coming soon"/);
-  assert.match(html, /aria-label="Storytelling, coming soon"/);
+  assert.doesNotMatch(html, /aria-label="Storytelling, coming soon"/);
   assert.doesNotMatch(html, /PARROT ENGLISH/);
 });
 
@@ -141,13 +148,17 @@ test("feature placeholder keeps visual actions in keyboard order", () => {
   );
 });
 
-test("authenticated application routes keep working activities and retire legacy placeholders", () => {
+test("authenticated application routes include Storytelling and retire Progress", () => {
   assert.match(renderApplicationRoute("/"), /Learning activities/);
   assert.match(
     renderApplicationRoute("/talk-to-peppa"),
     /Peppa is taking a break/,
   );
   assert.match(renderApplicationRoute("/lessons"), /<h1[^>]*>Lessons<\/h1>/);
+  assert.match(
+    renderApplicationRoute("/stories"),
+    /<h1[^>]*>Storytelling<\/h1>/,
+  );
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
@@ -156,15 +167,13 @@ test("authenticated application routes keep working activities and retire legacy
   assert.doesNotMatch(createLesson, /LEARN YOUR WAY/);
   assert.match(createLesson, /<form|<textarea/);
 
-  for (const retiredPath of ["/progress", "/stories"]) {
-    const html = renderApplicationRoute(retiredPath);
-    assert.doesNotMatch(html, /Progress|Storytelling|coming soon/i);
-  }
+  const retiredProgress = renderApplicationRoute("/progress");
+  assert.doesNotMatch(retiredProgress, /Progress|coming soon/i);
   assert.match(
     app,
     /<Route\s+element=\{<Navigate\s+replace\s+to=["']\/["']\s*\/>\}\s+path=["']\/progress["']\s*\/>/,
   );
-  assert.match(
+  assert.doesNotMatch(
     app,
     /<Route\s+element=\{<Navigate\s+replace\s+to=["']\/["']\s*\/>\}\s+path=["']\/stories["']\s*\/>/,
   );
@@ -252,6 +261,8 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     "/lessons/my/:lessonId/scenes/:sceneNumber",
     "/progress",
     "/stories",
+    "/stories/:storyId",
+    "/stories/:storyId/pages/:pageNumber",
     "/login",
     "/profile/setup",
     "/profile",

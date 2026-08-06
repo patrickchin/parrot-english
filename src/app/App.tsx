@@ -58,12 +58,15 @@ import {
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
   getSafeReturnTo,
+  getStoryPagePath,
   isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
+  resolveStoryRouteDecision,
   type LessonRouteDecision,
   type LessonSource,
+  type StoryRouteDecision,
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
 import { HeaderButton, RouteHeader } from "./AppHeader";
@@ -102,6 +105,8 @@ import {
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
+import { StoryList } from "../stories/StoryList";
+import { StoryReader } from "../stories/StoryReader";
 
 const RECORDING_UNSUPPORTED_MESSAGE =
   "This browser does not support audio recording. Try the latest Chrome or Safari.";
@@ -841,6 +846,48 @@ function MyLessonRoute() {
   return <LessonRouteDecisionView decision={decision} source="my" />;
 }
 
+function StoryRouteDecisionView({
+  decision,
+}: {
+  decision: StoryRouteDecision;
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  if (decision.kind === "redirect") {
+    return <Navigate replace={decision.replace} to={decision.to} />;
+  }
+
+  return (
+    <StoryReader
+      onNavigatePage={(pageIndex) =>
+        navigate(getStoryPagePath(decision.story.id, pageIndex))
+      }
+      pageIndex={decision.pageIndex}
+      story={decision.story}
+      key={`${location.key}:${decision.story.id}:${decision.pageIndex}`}
+    />
+  );
+}
+
+function StoryRedirect() {
+  const { storyId } = useParams();
+  return (
+    <StoryRouteDecisionView
+      decision={resolveStoryRouteDecision(storyId, undefined)}
+    />
+  );
+}
+
+function StoryPageRoute() {
+  const { pageNumber, storyId } = useParams();
+  return (
+    <StoryRouteDecisionView
+      decision={resolveStoryRouteDecision(storyId, pageNumber)}
+    />
+  );
+}
+
 export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
     <Routes>
@@ -887,9 +934,11 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         element={<Navigate replace to="/" />}
         path="/progress"
       />
+      <Route element={<StoryList />} path="/stories" />
+      <Route element={<StoryRedirect />} path="/stories/:storyId" />
       <Route
-        element={<Navigate replace to="/" />}
-        path="/stories"
+        element={<StoryPageRoute />}
+        path="/stories/:storyId/pages/:pageNumber"
       />
       <Route element={<Navigate replace to={loginTarget} />} path="/login" />
       <Route element={null} path="/profile/setup" />

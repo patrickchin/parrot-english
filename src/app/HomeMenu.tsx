@@ -32,6 +32,15 @@ const PRIMARY_ACTIVITIES = [
     to: "/lessons",
   },
   {
+    badge: "New",
+    description: "Choose a story, listen, and join in.",
+    icon: BookOpen,
+    label: "Storytelling",
+    reloadDocument: false,
+    tone: "blue",
+    to: "/stories",
+  },
+  {
     badge: "Proof of concept",
     description: "Explore the pixel garden and move Peppa around.",
     icon: Gamepad2,
@@ -57,11 +66,6 @@ const UPCOMING_ACTIVITIES = [
     label: "Progress",
     tone: "amber",
   },
-  {
-    icon: BookOpen,
-    label: "Storytelling",
-    tone: "blue",
-  },
 ] as const;
 
 export function HomeMenu() {
@@ -76,7 +80,7 @@ export function HomeMenu() {
         aria-label="Learning activities"
         className="mx-auto w-full max-w-7xl"
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:auto-rows-fr md:grid-cols-2 md:gap-6 lg:grid-cols-4 xl:grid-cols-5">
           {PRIMARY_ACTIVITIES.map(
             ({
               badge,
@@ -100,6 +104,7 @@ export function HomeMenu() {
                     tone === "navy" && "bg-brand-navy",
                     tone === "rose" && "bg-brand-rose",
                     tone === "green" && "bg-brand-green",
+                    tone === "blue" && "bg-brand-blue",
                   )}
                 />
                 <strong
@@ -108,6 +113,7 @@ export function HomeMenu() {
                     tone === "navy" && "text-brand-navy",
                     tone === "rose" && "text-brand-rose",
                     tone === "green" && "text-brand-green",
+                    tone === "blue" && "text-brand-blue",
                   )}
                 >
                   {label}
@@ -135,7 +141,7 @@ export function HomeMenu() {
           >
             More to explore
           </h2>
-          <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-5">
+          <div className="mx-auto grid max-w-xl grid-cols-1 gap-3 md:gap-5">
             {UPCOMING_ACTIVITIES.map(({ icon: Icon, label, tone }) => (
               <InteractiveCardButton
                 aria-label={`${label}, coming soon`}
@@ -150,7 +156,6 @@ export function HomeMenu() {
                   className={cx(
                     "size-11 shrink-0 rounded-xl p-2.5 text-white shadow-control-navy",
                     tone === "amber" && "bg-amber-500",
-                    tone === "blue" && "bg-brand-blue",
                   )}
                 />
                 <span className="grid gap-1">

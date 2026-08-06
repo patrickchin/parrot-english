@@ -92,7 +92,7 @@ for (const viewport of phoneViewports) {
     const activities = page.getByRole("navigation", {
       name: "Learning activities",
     });
-    await expect(activities.getByRole("link")).toHaveCount(4);
+    await expect(activities.getByRole("link")).toHaveCount(5);
     const talk = activities.getByRole("link", { name: /^Talk to Peppa/ });
     const createLesson = activities.getByRole("link", {
       name: /^Create a Lesson/,
@@ -106,14 +106,16 @@ for (const viewport of phoneViewports) {
     ).toBeVisible();
     await expect(createLesson).toBeVisible();
     await expect(createLesson).toHaveAttribute("href", "/lessons/my/create");
+    const storytelling = activities.getByRole("link", {
+      name: /^Storytelling/,
+    });
+    await expect(storytelling).toBeVisible();
+    await expect(storytelling).toHaveAttribute("href", "/stories");
     const progress = activities.getByRole("button", {
       name: "Progress, coming soon",
     });
-    const storytelling = activities.getByRole("button", {
-      name: "Storytelling, coming soon",
-    });
+    await expect(activities.getByRole("button")).toHaveCount(1);
     await expect(progress).toBeDisabled();
-    await expect(storytelling).toBeDisabled();
 
     const talkBox = await talk.boundingBox();
     const descriptionBox = await page
@@ -128,7 +130,6 @@ for (const viewport of phoneViewports) {
       await expectInsidePage(activity, page);
     }
     await expectInsidePage(progress, page);
-    await expectInsidePage(storytelling, page);
 
     await expect
       .poll(() =>
@@ -171,7 +172,9 @@ test("primary home activities share one rendered card chrome and focus outline",
   const cards = [
     activities.getByRole("link", { name: /^Talk to Peppa/ }),
     activities.getByRole("link", { name: /^Lessons/ }),
+    activities.getByRole("link", { name: /^Storytelling/ }),
     activities.getByRole("link", { name: /^Game/ }),
+    activities.getByRole("link", { name: /^Create a Lesson/ }),
   ];
   const boxes = await Promise.all(
     cards.map(async (card) => {
@@ -192,8 +195,9 @@ test("primary home activities share one rendered card chrome and focus outline",
   ).toBeLessThanOrEqual(1);
 
   const chrome = await Promise.all(cards.map(renderedCardChrome));
-  expect(chrome[1]).toEqual(chrome[0]);
-  expect(chrome[2]).toEqual(chrome[0]);
+  for (const cardChrome of chrome.slice(1)) {
+    expect(cardChrome).toEqual(chrome[0]);
+  }
 
   const outlines = [];
   for (const card of cards) {
@@ -204,18 +208,17 @@ test("primary home activities share one rendered card chrome and focus outline",
     outlines.push(outline);
   }
 
-  expect(outlines[1]).toEqual(outlines[0]);
-  expect(outlines[2]).toEqual(outlines[0]);
+  for (const outline of outlines.slice(1)) {
+    expect(outline).toEqual(outlines[0]);
+  }
 });
 
-test("retired feature URLs return to the useful home hub", async ({ page }) => {
-  for (const path of ["/progress", "/stories"]) {
-    await page.goto(path);
-    await expect(page).toHaveURL("/");
-    await expect(
-      page.getByRole("navigation", { name: "Learning activities" }),
-    ).toBeVisible();
-  }
+test("the retired Progress URL returns to the useful home hub", async ({ page }) => {
+  await page.goto("/progress");
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
 });
 
 test("Game opens the pixel garden proof of concept", async ({ page }) => {
@@ -226,25 +229,33 @@ test("Game opens the pixel garden proof of concept", async ({ page }) => {
   const talk = page.getByRole("link", { name: /^Talk to Peppa/ });
   const lessons = page.getByRole("link", { name: /^Lessons/ });
   const createLesson = page.getByRole("link", { name: /^Create a Lesson/ });
+  const storytelling = page.getByRole("link", { name: /^Storytelling/ });
   await expect(game).toBeVisible();
+  await expect(talk).toBeVisible();
+  await expect(lessons).toBeVisible();
+  await expect(storytelling).toBeVisible();
+  await expect(createLesson).toBeVisible();
   await expect(game).toHaveAttribute("href", "/prototypes/pixel-stage/");
   await expect(game.getByText("Proof of concept", { exact: true })).toBeVisible();
   await expect(createLesson).toHaveAttribute("href", "/lessons/my/create");
 
-  const [createLessonBox, gameBox, lessonsBox, talkBox] = await Promise.all([
-    createLesson.boundingBox(),
-    game.boundingBox(),
-    lessons.boundingBox(),
-    talk.boundingBox(),
-  ]);
+  const [createLessonBox, gameBox, lessonsBox, storytellingBox, talkBox] =
+    await Promise.all([
+      createLesson.boundingBox(),
+      game.boundingBox(),
+      lessons.boundingBox(),
+      storytelling.boundingBox(),
+      talk.boundingBox(),
+    ]);
   expect(createLessonBox).not.toBeNull();
   expect(gameBox).not.toBeNull();
   expect(lessonsBox).not.toBeNull();
+  expect(storytellingBox).not.toBeNull();
   expect(talkBox).not.toBeNull();
   expect(createLessonBox!.y).toBe(talkBox!.y);
   expect(gameBox!.y).toBe(talkBox!.y);
   expect(lessonsBox!.y).toBe(talkBox!.y);
-
+  expect(storytellingBox!.y).toBe(talkBox!.y);
   await game.click();
 
   await expect(page).toHaveURL(/\/prototypes\/pixel-stage\/$/);
