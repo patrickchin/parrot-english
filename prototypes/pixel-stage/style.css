@@ -32,7 +32,11 @@ body {
   background: #8dce17;
 }
 
-button {
+button,
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 44px;
   min-height: 44px;
   border: 2px solid #332438;
@@ -46,18 +50,25 @@ button {
   font-weight: 1000;
   line-height: 1;
   cursor: pointer;
+  text-decoration: none;
+}
+
+button {
   touch-action: none;
 }
 
 button:hover,
-button:focus-visible {
+button:focus-visible,
+.back-link:hover,
+.back-link:focus-visible {
   translate: -1px -1px;
   box-shadow: 3px 3px 0 #332438;
   outline: 3px solid #f4c95d;
   outline-offset: 2px;
 }
 
-button:active {
+button:active,
+.back-link:active {
   translate: 1px 1px;
   box-shadow: 1px 1px 0 #332438;
 }
@@ -133,6 +144,27 @@ main {
 
 .game-world[data-ready="true"] .loading-status {
   display: none;
+}
+
+.page-navigation {
+  position: absolute;
+  z-index: 30;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 50%;
+  translate: -50% 0;
+}
+
+.back-link {
+  gap: 6px;
+  padding: 4px 10px;
+  color: #fff8d8;
+  background: #bd4e62;
+  font-size: 0.7rem;
+  touch-action: manipulation;
+}
+
+.back-link [aria-hidden="true"] {
+  font-size: 1.05rem;
 }
 
 .hud {
@@ -254,6 +286,20 @@ main {
   grid-template-columns: repeat(2, 44px);
   grid-template-rows: repeat(2, 44px);
   gap: 4px;
+}
+
+@media (max-width: 374px) {
+  .page-navigation {
+    top: calc(env(safe-area-inset-top) + 108px);
+    right: calc(env(safe-area-inset-right) + 8px);
+    left: auto;
+    width: 92px;
+    translate: none;
+  }
+
+  .back-link {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
