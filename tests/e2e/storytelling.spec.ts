@@ -91,8 +91,11 @@ async function installStorySpeechGuard(page: Page) {
   });
 }
 
-async function installStoryAudioMock(page: Page) {
-  await page.evaluate(() => {
+async function installStoryAudioMock(
+  page: Page,
+  { rejectPlayback = false }: { rejectPlayback?: boolean } = {},
+) {
+  await page.evaluate(({ shouldRejectPlayback }) => {
     const state = (
       window as unknown as Window & {
         __storyPlaybackMock: { state: StoryPlaybackMockState };
@@ -113,6 +116,9 @@ async function installStoryAudioMock(page: Page) {
 
       async play() {
         state.audioPlayCount += 1;
+        if (shouldRejectPlayback) {
+          throw new Error("Mock saved narration failure.");
+        }
       }
     }
 
@@ -120,7 +126,7 @@ async function installStoryAudioMock(page: Page) {
       configurable: true,
       value: MockStoryAudio,
     });
-  });
+  }, { shouldRejectPlayback: rejectPlayback });
 }
 
 async function playbackMockState(page: Page) {
@@ -270,6 +276,32 @@ test("page 6 Read to me pauses and resumes one saved narration", async ({
     .toBe(2);
   expect((await playbackMockState(page)).audioSources).toHaveLength(1);
   expect((await playbackMockState(page)).spokenTexts).toHaveLength(0);
+
+  await controls.getByRole("button", { name: "Previous page" }).click();
+  await expect(page).toHaveURL(/\/stories\/the-lantern-trail\/pages\/5$/);
+  await expect
+    .poll(async () => (await playbackMockState(page)).audioPauseCount)
+    .toBe(2);
+});
+
+test("saved narration errors use provider-neutral guidance", async ({ page }) => {
+  await page.goto("/stories/the-lantern-trail/pages/6");
+
+  const readToMe = page.getByRole("button", { name: "Read to me" });
+  await readToMe.waitFor();
+  await installStoryAudioMock(page, { rejectPlayback: true });
+  await readToMe.click();
+
+  await expect(page.getByRole("alert")).toHaveText(
+    "Story audio is not available right now. You can still turn the pages and read together.",
+  );
+  await expect
+    .poll(async () => await playbackMockState(page))
+    .toMatchObject({
+      audioPlayCount: 1,
+      audioSources: ["/assets/audio/story-lantern-trail-one-last-glow.mp3"],
+      spokenTexts: [],
+    });
 });
 
 for (const viewport of viewports) {
