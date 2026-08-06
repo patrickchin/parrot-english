@@ -297,8 +297,10 @@ export function StoryReader({
               aria-label="Previous page"
               className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-sm shadow-control-surface"
               disabled={isFirstPage}
+              frame="none"
               onClick={() => navigatePage(pageIndex - 1)}
-              size="bare"
+              shape="rounded"
+              size="inline"
               type="button"
               variant="surface"
             >
@@ -312,8 +314,10 @@ export function StoryReader({
                 "min-h-12 min-w-0 gap-1.5 rounded-xl px-2 text-sm",
                 narrationState === "paused" && "bg-brand-navy shadow-control-navy",
               )}
+              frame="none"
               onClick={toggleNarration}
-              size="bare"
+              shape="rounded"
+              size="inline"
               type="button"
               variant={narrationState === "paused" ? "navy" : "brand"}
             >
@@ -332,10 +336,12 @@ export function StoryReader({
             <ActionButton
               aria-label={isLastPage ? "Finish story" : "Next page"}
               className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-sm"
+              frame="none"
               onClick={() =>
                 isLastPage ? finishStory() : navigatePage(pageIndex + 1)
               }
-              size="bare"
+              shape="rounded"
+              size="inline"
               type="button"
               variant="success"
             >
