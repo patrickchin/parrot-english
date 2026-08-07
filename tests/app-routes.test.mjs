@@ -105,6 +105,24 @@ describe("app route helpers", () => {
     );
   });
 
+  it("builds and resolves level-filtered story shelf paths", () => {
+    assert.equal(routes.getStoryShelfPath(), "/stories");
+    assert.equal(routes.getStoryShelfPath("first-words"), "/stories");
+    assert.equal(
+      routes.getStoryShelfPath("tiny-stories"),
+      "/stories?level=tiny-stories",
+    );
+    assert.equal(routes.resolveStoryShelfLevel(""), "first-words");
+    assert.equal(
+      routes.resolveStoryShelfLevel("?level=early-a1"),
+      "early-a1",
+    );
+    assert.equal(
+      routes.resolveStoryShelfLevel("?level=not-a-level"),
+      "first-words",
+    );
+  });
+
   it("rejects empty and dot-segment story IDs", () => {
     for (const storyId of ["", "   ", ".", ".."]) {
       for (const buildPath of [
