@@ -24,8 +24,9 @@ the deterministic pixel-world pipeline.
   nearest-neighbor `2×` review scale.
 - `final/holdable-library-contact-sheet.png`: all sixteen holdable sprites at
   nearest-neighbor `4×` review scale.
-- `final/parallax-comparison-contact-sheet.png`: matched horizontal-movement
-  captures with parallax off and camera parallax on.
+- `final/parallax-comparison-contact-sheet.png`: near-matched horizontal
+  movement captures (`x = 598` and `x = 600`) with parallax off and camera
+  parallax on.
 - `baseline/`: the old garden at the original, mobile, desktop, and wide
   review sizes.
 - `contact-sheets/pixel-pitch-calibration-01.png`: same runtime texel pitch but
