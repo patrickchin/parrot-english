@@ -2,10 +2,10 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "../src/db/schema.ts";
 import { createDatabase } from "./database.ts";
+import { PUBLIC_APP_ORIGIN } from "./public-origin.ts";
 
 const PR_PREVIEW_ORIGIN_PATTERN =
   "https://*-parrot-english.p-ch.workers.dev";
-const PUBLIC_APP_ORIGIN = "https://parrotbook.com";
 
 export interface AuthEnv {
   DB: D1Database;

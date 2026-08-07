@@ -163,6 +163,72 @@ describe("Worker authentication", () => {
     assert.ok(createDatabase({}));
   });
 
+  it("redirects public aliases to the canonical HTTPS origin", async () => {
+    let authFactoryCalls = 0;
+    const { env, getAssetCalls } = createEnvironment();
+    const worker = createTestWorker({
+      createAuth() {
+        authFactoryCalls += 1;
+        return createAuthStub().auth;
+      },
+    });
+    const cases = [
+      [
+        "http://parrotbook.com/login?returnTo=%2Flessons",
+        "GET",
+        "https://parrotbook.com/login?returnTo=%2Flessons",
+      ],
+      [
+        "https://www.parrotbook.com/api/auth/sign-in/email?returnTo=%2Flessons",
+        "POST",
+        "https://parrotbook.com/api/auth/sign-in/email?returnTo=%2Flessons",
+      ],
+      [
+        "http://www.parrotbook.com/lessons?tag=a+b&tag=%2F",
+        "GET",
+        "https://parrotbook.com/lessons?tag=a+b&tag=%2F",
+      ],
+    ];
+
+    for (const [source, method, target] of cases) {
+      const response = await worker.fetch(new Request(source, { method }), env);
+
+      assert.equal(response.status, 308, source);
+      assert.equal(response.headers.get("location"), target, source);
+    }
+
+    assert.equal(authFactoryCalls, 0);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("does not redirect canonical, preview, local, or lookalike hosts", async () => {
+    let assetCalls = 0;
+    const env = {
+      ASSETS: {
+        async fetch() {
+          assetCalls += 1;
+          return new Response("asset");
+        },
+      },
+    };
+    const worker = createTestWorker();
+    const urls = [
+      "https://parrotbook.com/login",
+      "https://branch-parrot-english.p-ch.workers.dev/login",
+      "http://127.0.0.1:3000/login",
+      "http://parrotbook.com.evil.example/login",
+    ];
+
+    for (const url of urls) {
+      const response = await worker.fetch(new Request(url), env);
+
+      assert.equal(response.status, 200, url);
+      assert.equal(await response.text(), "asset", url);
+    }
+
+    assert.equal(assetCalls, urls.length);
+  });
+
   it("dispatches Better Auth routes without falling through to assets", async () => {
     const authResponse = Response.json({ route: "better-auth" });
     const authStub = createAuthStub({ response: authResponse });

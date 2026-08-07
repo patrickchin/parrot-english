@@ -26,6 +26,7 @@ import {
   handlePixelLessonRequest,
   type PixelLessonsEnv,
 } from "./pixel-lessons.ts";
+import { createPublicAppRedirect } from "./public-origin.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
@@ -110,6 +111,8 @@ export function createWorker(
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
       const url = new URL(request.url);
+      const publicAppRedirect = createPublicAppRedirect(url);
+      if (publicAppRedirect) return publicAppRedirect;
 
       if (
         url.pathname === "/api/build-info" ||

@@ -379,6 +379,20 @@ describe("authentication infrastructure", () => {
     assert.equal(wrangler.preview_urls, true);
   });
 
+  it("routes both public hostnames through Cloudflare custom domains", () => {
+    const wrangler = JSON.parse(readProjectFile("wrangler.jsonc"));
+
+    assert.deepEqual(wrangler.routes, [
+      { pattern: "parrotbook.com", custom_domain: true },
+      { pattern: "www.parrotbook.com", custom_domain: true },
+    ]);
+    assert.equal(wrangler.assets.run_worker_first, true);
+    assert.deepEqual(wrangler.dev, {
+      host: "localhost",
+      local_protocol: "http",
+    });
+  });
+
   it("configures Better Auth and a local-capable D1 binding", () => {
     const packageJson = JSON.parse(readProjectFile("package.json"));
     const wrangler = readProjectFile("wrangler.jsonc");
