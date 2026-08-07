@@ -177,6 +177,7 @@ export function StoryReader({
           <StoryArtwork
             artwork={story.cover}
             className="max-h-72 sm:max-h-none"
+            priority
           />
           <div className="grid content-center justify-items-center gap-4 p-6 sm:p-8">
             <BookOpenCheck

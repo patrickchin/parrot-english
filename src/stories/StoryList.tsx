@@ -27,15 +27,16 @@ export function StoryList() {
 
       <header className="mx-auto mb-8 w-full max-w-6xl text-center md:mb-11">
         <span className="mb-2 inline-flex items-center gap-2 rounded-full border-3 border-white bg-brand-navy px-3 py-1 text-xs font-black uppercase tracking-wider text-white shadow-control-navy sm:text-sm">
-          <FlaskConical aria-hidden="true" className="size-4" /> 20 script
-          experiments
+          <FlaskConical aria-hidden="true" className="size-4" /> 20 prompt
+          experiments + original
         </span>
         <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl lg:text-8xl">
           Storytelling
         </h1>
         <p className="mx-auto mb-0 mt-3 max-w-3xl text-base font-extrabold leading-relaxed text-brand-blue sm:text-xl">
-          Try stories from first words to early A1. The scripts are ready;
-          artwork and audio stay as placeholders until we choose the best ones.
+          Try stories from first words to early A1, then compare the original
+          baseline. Every story has a cover; page artwork and audio stay as
+          placeholders for now.
         </p>
       </header>
 
@@ -55,7 +56,8 @@ export function StoryList() {
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,0.8fr)] sm:items-end">
                 <div>
                   <p className="mb-1 mt-0 text-xs font-black uppercase tracking-wider text-brand-blue">
-                    {level.cefrReference} · {stories.length} stories
+                    {level.cefrReference} · {stories.length}{" "}
+                    {stories.length === 1 ? "story" : "stories"}
                   </p>
                   <h2
                     className="m-0 text-3xl leading-none text-brand-navy sm:text-4xl"
@@ -81,9 +83,12 @@ export function StoryList() {
                       key={story.id}
                     >
                       <div className="relative min-h-44 overflow-hidden border-b-4 border-white">
-                        <StoryArtwork artwork={story.cover} />
+                        <StoryArtwork
+                          artwork={story.cover}
+                          priority={story === STORIES[0]}
+                        />
                         <span className="absolute left-3 top-3 rounded-full border-3 border-white bg-brand-yellow px-3 py-1 text-xs font-black uppercase tracking-wider text-brand-ink shadow-control-surface">
-                          Script only
+                          Cover ready
                         </span>
                       </div>
 
@@ -133,9 +138,11 @@ export function StoryList() {
                               <span className="font-black text-brand-blue">
                                 Assumes familiar:
                               </span>{" "}
-                              {story.assumedKnownWords.length > 0
-                                ? story.assumedKnownWords.join(" · ")
-                                : "no extra content words"}
+                              {story.level === "original-baseline"
+                                ? `${story.assumedKnownWords.length} extra word forms in the original`
+                                : story.assumedKnownWords.length > 0
+                                  ? story.assumedKnownWords.join(" · ")
+                                  : "no extra content words"}
                             </p>
                           </div>
                         </div>
