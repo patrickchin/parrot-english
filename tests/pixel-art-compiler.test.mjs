@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   compileRgbaToPixelGrid,
+  expandRgbaCells,
   validatePixelAssetContract,
 } from "../scripts/lib/pixel-art-compiler.mjs";
 
@@ -61,5 +62,25 @@ describe("pixel art compiler", () => {
         worldScale: 1,
       }),
     );
+  });
+
+  it("expands every authored cell to the same square world-space block", () => {
+    const red = [255, 0, 0, 255];
+    const green = [0, 255, 0, 255];
+    const expanded = expandRgbaCells({
+      cellSize: 2,
+      data: new Uint8ClampedArray([...red, ...green]),
+      height: 1,
+      width: 2,
+    });
+
+    assert.deepEqual(
+      { height: expanded.height, width: expanded.width },
+      { height: 2, width: 4 },
+    );
+    assert.deepEqual([...expanded.data], [
+      ...red, ...red, ...green, ...green,
+      ...red, ...red, ...green, ...green,
+    ]);
   });
 });

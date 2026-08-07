@@ -21,9 +21,10 @@ describe("pixel world pack", () => {
       width: 720,
     });
     assert.equal(PIXEL_WORLD_PACK.renderProfile.cameraZoom, 2);
+    assert.equal(PIXEL_WORLD_PACK.renderProfile.artCellWorldPixels, 2);
     assert.equal(PIXEL_WORLD_PACK.renderProfile.sourcePixelsPerWorldPixel, 1);
     assert.equal(PIXEL_WORLD_PACK.renderProfile.textureToWorldScale, 1);
-    assert.equal(PIXEL_WORLD_PACK.renderProfile.screenPixelsPerArtPixel, 2);
+    assert.equal(PIXEL_WORLD_PACK.renderProfile.screenPixelsPerArtPixel, 4);
     assert.equal(PIXEL_WORLD_PACK.renderProfile.alpha, "binary");
     assert.ok(PIXEL_WORLD_PACK.renderProfile.palette.length >= 24);
     assert.ok(PIXEL_WORLD_PACK.renderProfile.palette.length <= 48);
