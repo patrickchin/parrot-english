@@ -25,10 +25,12 @@ import { getStoryLevel, type Story } from "./story-catalog";
 type NarrationState = "complete" | "idle" | "paused" | "playing";
 
 export function StoryReader({
+  backToStories,
   onNavigatePage,
   pageIndex,
   story,
 }: {
+  backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
   story: Story;
@@ -165,7 +167,7 @@ export function StoryReader({
           <HeaderLink
             aria-label="Back to stories"
             icon={<ArrowLeft />}
-            to="/stories"
+            to={backToStories}
           >
             Back to stories
           </HeaderLink>
@@ -206,7 +208,7 @@ export function StoryReader({
               </ActionButton>
               <ActionLink
                 className="w-full rounded-full border-4 border-white"
-                to="/stories"
+                to={backToStories}
                 variant="surface"
               >
                 Back to the story shelf
@@ -233,7 +235,7 @@ export function StoryReader({
         <HeaderLink
           aria-label="Back to stories"
           icon={<ArrowLeft />}
-          to="/stories"
+          to={backToStories}
         >
           Back to stories
         </HeaderLink>

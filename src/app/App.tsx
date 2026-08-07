@@ -59,6 +59,7 @@ import {
   getRequestedProtectedTarget,
   getSafeReturnTo,
   getStoryPagePath,
+  getStoryShelfPath,
   isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
@@ -861,6 +862,7 @@ function StoryRouteDecisionView({
 
   return (
     <StoryReader
+      backToStories={getStoryShelfPath(decision.story.level)}
       onNavigatePage={(pageIndex) =>
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }
