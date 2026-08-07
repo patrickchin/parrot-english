@@ -10,6 +10,14 @@ Built-in Parrot Lesson playback uses saved audio in `public/assets/audio`.
 Authenticated My Lessons use browser on-device English speech synthesis.
 Neither playback mode adds audio fields to the lesson-authoring format.
 
+Storytelling candidates use a separate text-first contract. Their catalog pages
+carry a nullable narration audio ID and nullable artwork source. A null value is
+an intentional placeholder: the reader disables narration and renders a visual
+placeholder without requesting a missing file. Do not add static-audio entries
+or generate story media while script wording is still being compared.
+Artwork production prompts remain catalogue metadata and are not rendered as
+extra child-facing reading text.
+
 ## Sources of Truth
 
 - Lessons: `content/lessons/*.json`
@@ -24,6 +32,9 @@ Neither playback mode adds audio fields to the lesson-authoring format.
 - Saved-audio metadata: `lib/static-audio.js`
 - Source audio files: `public/assets/audio`
 - Build output: `dist/assets/audio`
+- Story script candidates: `src/stories/story-script-candidates.ts`
+- Story language and prompt research:
+  `docs/design/young-learner-storytelling.md`
 
 Do not edit `dist` directly.
 
@@ -64,6 +75,11 @@ same device-speech path as their other lines.
 A missing built-in metadata entry or file should fail tests during development
 instead of silently falling back to device speech. Device speech is selected
 only by the `my` lesson source and is cancelled on scene or route changes.
+
+For Storytelling, saved playback is attempted only when a page declares a
+non-null narration audio ID. The resolved exact-text cache entry must match that
+ID. Prototype pages with null IDs show Audio later and never call the saved
+audio resolver.
 
 ## ElevenLabs Generation
 

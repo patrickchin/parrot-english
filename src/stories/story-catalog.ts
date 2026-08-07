@@ -1,119 +1,332 @@
-export type StoryPage = {
-  id: string;
-  imageAlt: string;
-  imageSrc: string;
-  joinIn: string;
-  text: string;
-};
+import { STORY_SCRIPT_CANDIDATES } from "./story-script-candidates.ts";
+import type {
+  Story,
+  StoryLevel,
+  StoryLevelId,
+  StoryVocabularyProfile,
+  StoryVocabularyProfileId,
+} from "./story-types.ts";
 
-export type Story = {
-  category: string;
-  coverAlt: string;
-  coverSrc: string;
-  durationMinutes: number;
-  id: string;
-  pages: readonly StoryPage[];
-  summary: string;
-  title: string;
-};
+export type {
+  Story,
+  StoryArtwork,
+  StoryLevel,
+  StoryLevelId,
+  StoryPage,
+  StoryPromptExperiment,
+  StoryVocabularyProfile,
+  StoryVocabularyProfileId,
+} from "./story-types.ts";
 
-export type UpcomingStory = {
-  category: string;
-  durationMinutes: number;
-  summary: string;
-  title: string;
-};
+const CAMBRIDGE_YLE_WORDLIST_URL =
+  "https://www.cambridgeenglish.org/Images/739104-starters-movers-flyers-word-list-2025.pdf";
 
-export const STORIES: readonly Story[] = [
+const FIRST_WORDS_CORE = [
+  "a",
+  "am",
+  "and",
+  "are",
+  "can",
+  "for",
+  "has",
+  "here",
+  "i",
+  "in",
+  "is",
+  "it",
+  "me",
+  "my",
+  "no",
+  "not",
+  "now",
+  "on",
+  "one",
+  "the",
+  "there",
+  "to",
+  "two",
+  "up",
+  "we",
+  "where",
+  "which",
+  "yes",
+  "you",
+] as const;
+
+const REPEATING_PATTERNS_CORE = [
+  ...FIRST_WORDS_CORE,
+  "again",
+  "does",
+  "her",
+  "off",
+  "she",
+  "too",
+  "you're",
+] as const;
+
+const TINY_STORIES_CORE = [
+  ...REPEATING_PATTERNS_CORE,
+  "by",
+  "he",
+  "them",
+  "they",
+] as const;
+
+const EARLY_A1_CORE = [
+  ...TINY_STORIES_CORE,
+  "an",
+  "as",
+  "at",
+  "away",
+  "back",
+  "be",
+  "cannot",
+  "each",
+  "from",
+  "his",
+  "our",
+  "this",
+  "will",
+  "with",
+] as const;
+
+export const STORY_VOCABULARY_PROFILES: readonly StoryVocabularyProfile[] = [
   {
-    id: "the-lantern-trail",
-    title: "The Lantern Trail",
-    category: "Adventure",
-    durationMinutes: 4,
-    summary:
-      "Help Pip guide a little firefly home through a glowing nighttime garden.",
-    coverSrc: "/assets/stories/the-lantern-trail-cover.webp",
-    coverAlt:
-      "Pip the green parrot follows Flicker the glowing firefly across a stream toward a lantern-lit tree house",
-    pages: [
-      {
-        id: "the-garden-gate",
-        imageSrc: "/assets/stories/the-lantern-trail-01.webp",
-        imageAlt:
-          "Pip meets Flicker beside an open garden gate at sunset",
-        text:
-          "At sunset, Pip the green parrot heard a tiny voice by the garden gate. “I’m Flicker,” said a little firefly. “The wind blew me away from my family.” Pip opened his wings. “We’ll follow your glow and find the lantern tree.”",
-        joinIn: "Glow, little lantern, show us the way!",
-      },
-      {
-        id: "the-moonlit-stream",
-        imageSrc: "/assets/stories/the-lantern-trail-02.webp",
-        imageAlt:
-          "Pip and Flicker hop across round stones in a moonlit stream",
-        text:
-          "The trail reached a stream where round stones winked in the moonlight. Flicker lit the first stone, and Pip hopped after him—tip, tap, tip! Together they crossed without wetting a feather.",
-        joinIn: "Glow, little lantern, show us the way!",
-      },
-      {
-        id: "the-rain-leaf",
-        imageSrc: "/assets/stories/the-lantern-trail-03.webp",
-        imageAlt:
-          "Pip shelters Flicker beneath a giant leaf while rain falls",
-        text:
-          "Soft rain began to patter. Pip lifted a giant leaf over them like an umbrella, but Flicker’s light grew dim. Pip stayed close until the warm glow shone again.",
-        joinIn: "Glow, little lantern, show us the way!",
-      },
-      {
-        id: "the-windy-sunflowers",
-        imageSrc: "/assets/stories/the-lantern-trail-04.webp",
-        imageAlt:
-          "Pip protects Flicker from the wind among tall sleeping sunflowers",
-        text:
-          "A gust whooshed through the sleeping sunflowers and spun Flicker in circles. Pip cupped his wings around his little friend. When the wind passed, a golden trail twinkled ahead.",
-        joinIn: "Glow, little lantern, show us the way!",
-      },
-      {
-        id: "the-lantern-tree",
-        imageSrc: "/assets/stories/the-lantern-trail-05.webp",
-        imageAlt:
-          "Pip watches Flicker reunite with a sparkling firefly family inside the lantern tree",
-        text:
-          "The trail ended at an old lantern tree. Dozens of fireflies danced from the hollow, and Flicker’s family wrapped him in a warm, sparkling hug. Pip cheered as the whole tree lit up.",
-        joinIn: "Welcome home, Flicker!",
-      },
-      {
-        id: "one-last-glow",
-        imageSrc: "/assets/stories/the-lantern-trail-06.webp",
-        imageAlt:
-          "Pip rests in bed while Flicker glows outside the round window beneath the moon",
-        text:
-          "Flicker guided Pip back to his cosy tree house. One tiny light hovered outside the round window until Pip was tucked beneath his blanket. Then Flicker blinked once, twice, and floated home beneath the moon.",
-        joinIn: "Good night, little lantern.",
-      },
-    ],
+    id: "first-words-v1",
+    basis:
+      "Small prototype grammar inventory; content words must be targets or explicitly assumed familiar. Cambridge YLE 2025 is a candidate source, not an age norm.",
+    coreWords: FIRST_WORDS_CORE,
+    sourceUrl: CAMBRIDGE_YLE_WORDLIST_URL,
+  },
+  {
+    id: "repeating-patterns-v1",
+    basis:
+      "Cumulative prototype grammar inventory for supported Pre-A1; validate every assumed word with the child.",
+    coreWords: REPEATING_PATTERNS_CORE,
+    sourceUrl: CAMBRIDGE_YLE_WORDLIST_URL,
+  },
+  {
+    id: "tiny-stories-v1",
+    basis:
+      "Cumulative prototype grammar inventory for secure Pre-A1 read-alouds; it is not a placement result.",
+    coreWords: TINY_STORIES_CORE,
+    sourceUrl: CAMBRIDGE_YLE_WORDLIST_URL,
+  },
+  {
+    id: "early-a1-v1",
+    basis:
+      "Cumulative prototype grammar inventory for a Pre-A1 to A1 bridge; it is not a universal known-word list.",
+    coreWords: EARLY_A1_CORE,
+    sourceUrl: CAMBRIDGE_YLE_WORDLIST_URL,
   },
 ];
 
-export const UPCOMING_STORIES: readonly UpcomingStory[] = [
+export const STORY_LEVELS: readonly StoryLevel[] = [
   {
-    title: "The Cloud Who Lost Its Rain",
-    category: "Weather",
-    durationMinutes: 3,
-    summary: "Listen for three sounds that wake a gentle rainstorm.",
+    id: "first-words",
+    label: "First words",
+    cefrReference: "Entry Pre-A1",
+    description:
+      "One pictured idea at a time, very short lines, and an immediately repeatable refrain.",
+    maxAssumedKnownWords: 3,
+    maxNarrativeWordsPerPage: 8,
+    maxNarrativeWordsTotal: 36,
+    targetWordRange: [4, 6],
+    vocabularyProfileId: "first-words-v1",
   },
   {
-    title: "The Tiny Dragon’s Big Sneeze",
-    category: "Silly story",
-    durationMinutes: 3,
-    summary: "Help a tiny dragon learn a soft sneeze and save the birthday cake.",
+    id: "repeating-patterns",
+    label: "Repeating patterns",
+    cefrReference: "Supported Pre-A1",
+    description:
+      "Familiar routines and mirrored sentence frames with a small, visible teaching set.",
+    maxAssumedKnownWords: 5,
+    maxNarrativeWordsPerPage: 12,
+    maxNarrativeWordsTotal: 58,
+    targetWordRange: [5, 6],
+    vocabularyProfileId: "repeating-patterns-v1",
   },
   {
-    title: "Robot’s First Picnic",
-    category: "Friendship",
-    durationMinutes: 4,
-    summary: "Pack a funny first picnic and learn what friends need.",
+    id: "tiny-stories",
+    label: "Tiny stories",
+    cefrReference: "Secure Pre-A1",
+    description:
+      "A small problem or sequence, short dialogue, and literal language supported page by page.",
+    maxAssumedKnownWords: 12,
+    maxNarrativeWordsPerPage: 12,
+    maxNarrativeWordsTotal: 65,
+    targetWordRange: [6, 7],
+    vocabularyProfileId: "tiny-stories-v1",
+  },
+  {
+    id: "early-a1",
+    label: "Early A1",
+    cefrReference: "Pre-A1 to A1 bridge",
+    description:
+      "A complete but compact story arc with simple connectors, directions, or light fantasy.",
+    maxAssumedKnownWords: 18,
+    maxNarrativeWordsPerPage: 14,
+    maxNarrativeWordsTotal: 80,
+    targetWordRange: [7, 8],
+    vocabularyProfileId: "early-a1-v1",
   },
 ];
+
+const STORY_LEVEL_ORDER = new Map(
+  STORY_LEVELS.map(({ id }, index) => [id, index]),
+);
+
+export const STORIES: readonly Story[] = [...STORY_SCRIPT_CANDIDATES].sort(
+  (firstStory, secondStory) =>
+    (STORY_LEVEL_ORDER.get(firstStory.level) ?? 0) -
+    (STORY_LEVEL_ORDER.get(secondStory.level) ?? 0),
+);
+
+export function countStoryWords(text: string): number {
+  return text.match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g)?.length ?? 0;
+}
+
+export function getStoryLevel(levelId: StoryLevelId): StoryLevel {
+  const level = STORY_LEVELS.find(({ id }) => id === levelId);
+  if (!level) {
+    throw new Error(`Unknown story level: ${levelId}`);
+  }
+  return level;
+}
+
+export function getStoryVocabularyProfile(
+  profileId: StoryVocabularyProfileId,
+): StoryVocabularyProfile {
+  const profile = STORY_VOCABULARY_PROFILES.find(({ id }) => id === profileId);
+  if (!profile) {
+    throw new Error(`Unknown story vocabulary profile: ${profileId}`);
+  }
+  return profile;
+}
+
+const NON_TEACHING_STORY_TOKENS = new Set([
+  // Character names.
+  "ana",
+  "bo",
+  "dot",
+  "flicker",
+  "jo",
+  "leo",
+  "lina",
+  "maya",
+  "mia",
+  "nina",
+  "nori",
+  "pia",
+  "pip",
+  "robo",
+  "tess",
+  "timo",
+  "tomo",
+  "wally",
+  // Participation sounds and exclamations.
+  "beep",
+  "boom",
+  "bump",
+  "chik",
+  "crunch",
+  "ding",
+  "drip",
+  "drop",
+  "hooray",
+  "la",
+  "oh",
+  "splash",
+  "swish",
+  "tap",
+  "whoosh",
+  "yum",
+]);
+
+const STORY_WORD_LEMMAS = new Map([
+  ["ana's", "ana"],
+  ["apples", "apple"],
+  ["asks", "ask"],
+  ["brushes", "brush"],
+  ["crackers", "cracker"],
+  ["eats", "eat"],
+  ["eyes", "eye"],
+  ["flies", "fly"],
+  ["fits", "fit"],
+  ["found", "find"],
+  ["friends", "friend"],
+  ["gets", "get"],
+  ["gives", "give"],
+  ["glows", "glow"],
+  ["goes", "go"],
+  ["grows", "grow"],
+  ["hats", "hat"],
+  ["holds", "hold"],
+  ["jumps", "jump"],
+  ["lifts", "lift"],
+  ["lights", "light"],
+  ["looks", "look"],
+  ["plants", "plant"],
+  ["pulls", "pull"],
+  ["puts", "put"],
+  ["rolls", "roll"],
+  ["runs", "run"],
+  ["says", "say"],
+  ["sees", "see"],
+  ["shoes", "shoe"],
+  ["shuts", "shut"],
+  ["sits", "sit"],
+  ["sleeps", "sleep"],
+  ["smiles", "smile"],
+  ["socks", "sock"],
+  ["stops", "stop"],
+  ["takes", "take"],
+  ["timo's", "timo"],
+  ["tries", "try"],
+  ["walks", "walk"],
+  ["wakes", "wake"],
+  ["washes", "wash"],
+]);
+
+function storyWordTokens(text: string): string[] {
+  return (text.toLowerCase().match(/[a-z]+(?:['’][a-z]+)?/g) ?? []).map(
+    (word) => word.replace("’", "'"),
+  );
+}
+
+function vocabularyCandidates(word: string): readonly string[] {
+  const lemma = STORY_WORD_LEMMAS.get(word);
+  return lemma ? [word, lemma] : [word];
+}
+
+export function auditStoryVocabulary(story: Story): {
+  profileId: StoryVocabularyProfileId;
+  unlistedWords: readonly string[];
+} {
+  const level = getStoryLevel(story.level);
+  const profile = getStoryVocabularyProfile(level.vocabularyProfileId);
+  const allowedWords = new Set([
+    ...profile.coreWords,
+    ...story.assumedKnownWords.flatMap(storyWordTokens),
+    ...story.targetWords.flatMap(storyWordTokens),
+    ...NON_TEACHING_STORY_TOKENS,
+  ]);
+  const scriptWords = storyWordTokens(
+    `${story.pages.map(({ joinIn, text }) => `${text} ${joinIn}`).join(" ")} ${story.completionText}`,
+  );
+  const unlistedWords = [
+    ...new Set(
+      scriptWords.filter(
+        (word) =>
+          !vocabularyCandidates(word).some((candidate) =>
+            allowedWords.has(candidate),
+          ),
+      ),
+    ),
+  ].sort();
+
+  return { profileId: profile.id, unlistedWords };
+}
 
 export function resolveStory(storyId: string | undefined): Story | null {
   if (!storyId) return null;

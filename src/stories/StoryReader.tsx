@@ -3,6 +3,7 @@ import {
   BookOpenCheck,
   ChevronLeft,
   ChevronRight,
+  Music2,
   Pause,
   Play,
   RotateCcw,
@@ -18,7 +19,8 @@ import {
   type PlaybackControl,
 } from "../media/audio-playback";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
-import type { Story } from "./story-catalog";
+import { StoryArtwork } from "./StoryArtwork";
+import { getStoryLevel, type Story } from "./story-catalog";
 
 type NarrationState = "complete" | "idle" | "paused" | "playing";
 
@@ -38,9 +40,12 @@ export function StoryReader({
   const abortControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
+  const pageTextRef = useRef<HTMLParagraphElement | null>(null);
   const page = story.pages[pageIndex];
   const isFirstPage = pageIndex === 0;
   const isLastPage = pageIndex === story.pages.length - 1;
+  const hasNarration = page.narrationAudioId !== null;
+  const storyLevel = getStoryLevel(story.level);
 
   const stopNarration = useCallback(() => {
     playbackGenerationRef.current += 1;
@@ -58,14 +63,36 @@ export function StoryReader({
     return stopNarration;
   }, [pageIndex, stopNarration, story.id]);
 
+  useEffect(() => {
+    pageTextRef.current?.focus({ preventScroll: true });
+  }, [pageIndex, story.id]);
+
   function startNarration() {
+    if (!page.narrationAudioId) return;
+
     stopNarration();
     const controller = new AbortController();
     const generation = playbackGenerationRef.current;
-    const narration = getStaticAudioLineForSpeech(
-      "narrator",
-      `${page.text} ${page.joinIn}`,
-    );
+    let narration;
+
+    try {
+      narration = getStaticAudioLineForSpeech(
+        "narrator",
+        `${page.text} ${page.joinIn}`,
+      );
+      if (narration.id !== page.narrationAudioId) {
+        throw new Error(
+          `Expected ${page.narrationAudioId}, received ${narration.id}`,
+        );
+      }
+    } catch {
+      setNarrationState("idle");
+      setError(
+        "Story audio is not available right now. You can still turn the pages and read together.",
+      );
+      return;
+    }
+
     abortControllerRef.current = controller;
     setError("");
     setNarrationState("playing");
@@ -147,12 +174,9 @@ export function StoryReader({
           aria-label="Story complete"
           className="my-auto grid w-full max-w-3xl overflow-hidden rounded-[2rem] border-4 border-white bg-white/95 text-center shadow-card sm:grid-cols-[minmax(0,1fr)_minmax(18rem,0.9fr)]"
         >
-          <img
-            alt={story.coverAlt}
-            className="h-full max-h-72 w-full object-cover sm:max-h-none"
-            height="1024"
-            src={story.coverSrc}
-            width="1536"
+          <StoryArtwork
+            artwork={story.cover}
+            className="max-h-72 sm:max-h-none"
           />
           <div className="grid content-center justify-items-center gap-4 p-6 sm:p-8">
             <BookOpenCheck
@@ -164,10 +188,10 @@ export function StoryReader({
                 The end
               </p>
               <h1 className="mb-0 mt-1 text-3xl leading-none text-brand-ink sm:text-4xl">
-                What a bright adventure!
+                You finished the story!
               </h1>
               <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-700">
-                You helped Pip bring Flicker safely home.
+                {story.completionText}
               </p>
             </div>
             <div className="grid w-full gap-3">
@@ -219,13 +243,11 @@ export function StoryReader({
         className="mx-auto grid h-[calc(100dvh-6rem)] min-h-0 w-full max-w-7xl content-start overflow-x-hidden overflow-y-auto rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short-wide:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)] md:rounded-[2.25rem] lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]"
       >
         <figure className="relative m-0 aspect-[3/2] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:h-40 short:aspect-auto short-wide:h-full short-wide:border-b-0 short-wide:border-r-4 lg:h-full lg:aspect-auto lg:border-b-0 lg:border-r-4">
-          <img
-            alt={page.imageAlt}
-            className="aspect-[3/2] h-full max-h-[52dvh] min-h-40 w-full object-cover short:h-40 short:aspect-auto short-wide:h-full short-wide:max-h-none lg:h-full lg:max-h-none"
-            height="1024"
+          <StoryArtwork
+            artwork={page.artwork}
+            className="aspect-[3/2] max-h-[52dvh] min-h-40 short:h-40 short:aspect-auto short-wide:h-full short-wide:max-h-none lg:h-full lg:max-h-none"
             key={page.id}
-            src={page.imageSrc}
-            width="1536"
+            priority
           />
           <figcaption className="absolute bottom-2 left-2 rounded-full border-2 border-white bg-brand-navy/90 px-3 py-1 text-xs font-black text-white sm:bottom-3 sm:left-3">
             Page {pageIndex + 1} of {story.pages.length}
@@ -236,9 +258,14 @@ export function StoryReader({
           <div className="grid gap-3 sm:gap-4">
             <header>
               <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-brand-blue">
-                  {story.category}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-brand-blue">
+                    {storyLevel.label}
+                  </span>
+                  <span className="text-xs font-black text-brand-blue">
+                    {story.category}
+                  </span>
+                </div>
                 <span className="text-xs font-black text-brand-blue">
                   {pageIndex + 1} / {story.pages.length}
                 </span>
@@ -261,9 +288,18 @@ export function StoryReader({
               <h1 className="mb-0 mt-3 text-2xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
                 {story.title}
               </h1>
+              <p className="mb-0 mt-2 text-xs font-extrabold leading-relaxed text-brand-blue sm:text-sm">
+                <span className="font-black">Words to notice:</span>{" "}
+                {story.targetWords.join(" · ")}
+              </p>
             </header>
 
-            <p className="m-0 text-base font-bold leading-relaxed text-slate-800 sm:text-lg lg:text-xl lg:leading-[1.65]">
+            <p
+              aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
+              className="m-0 text-base font-bold leading-relaxed text-slate-800 outline-none focus-visible:ring-4 focus-visible:ring-sky-300 sm:text-lg lg:text-xl lg:leading-[1.65]"
+              ref={pageTextRef}
+              tabIndex={-1}
+            >
               {page.text}
             </p>
 
@@ -319,11 +355,12 @@ export function StoryReader({
             </ActionButton>
 
             <ActionButton
-              aria-label={narrationLabel}
+              aria-label={hasNarration ? narrationLabel : "Audio placeholder"}
               className={cx(
                 "min-h-12 min-w-0 gap-1.5 rounded-xl px-2 text-sm",
                 narrationState === "paused" && "bg-brand-navy shadow-control-navy",
               )}
+              disabled={!hasNarration}
               frame="none"
               onClick={toggleNarration}
               shape="rounded"
@@ -331,7 +368,9 @@ export function StoryReader({
               type="button"
               variant={narrationState === "paused" ? "navy" : "brand"}
             >
-              {narrationState === "playing" ? (
+              {!hasNarration ? (
+                <Music2 aria-hidden="true" className="size-5 shrink-0" />
+              ) : narrationState === "playing" ? (
                 <Pause aria-hidden="true" className="size-5 shrink-0 fill-current" />
               ) : narrationState === "complete" ? (
                 <RotateCcw aria-hidden="true" className="size-5 shrink-0" />
@@ -340,7 +379,9 @@ export function StoryReader({
               ) : (
                 <Volume2 aria-hidden="true" className="size-5 shrink-0" />
               )}
-              <span className="truncate">{narrationLabel}</span>
+              <span className="truncate">
+                {hasNarration ? narrationLabel : "Audio later"}
+              </span>
             </ActionButton>
 
             <ActionButton
