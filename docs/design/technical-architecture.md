@@ -140,9 +140,9 @@ the built-in catalog has no D1 lesson rows, and the route namespace prevents an
 identical ID from conflicting. Create a Lesson is a top-level Home activity and
 may also be linked from My lessons. Generation and import hydrate the same GUI
 editor used for saved-lesson editing; JSON remains the persistence and import
-contract, not the required authoring interface. Progress and Storytelling are
-retained only as backward-compatible redirects until they provide real product
-outcomes.
+contract, not the required authoring interface. Progress is retained only as a
+backward-compatible redirect. Storytelling is an active catalog with durable
+story and one-based page routes.
 
 The editor keeps the complete lesson draft as React state while exposing one
 selected scene and one selected dialogue step at a time. Storyboard thumbnails,
@@ -179,6 +179,14 @@ accepts only the `lesson-garden` world, authored target IDs, supported Peppa
 emotes, and bounded text. The generation endpoint returns a validated preview
 without writing D1. Phaser receives the prepared mission while its trusted
 engine code retains all geometry, asset URLs, collisions, and physics tuning.
+
+Story scripts form another checked-in boundary. `src/stories/story-types.ts`
+defines their levels, target words, prompt experiment, per-page text, join-in
+line, and nullable media references. `src/stories/story-script-candidates.ts`
+owns the 20 prototypes; `src/stories/story-catalog.ts` owns level limits,
+versioned vocabulary profiles, undeclared-word auditing, metrics, and exact-ID
+resolution. Null artwork and narration references are intentional prototype
+states, not missing runtime assets.
 
 Lesson JSON never contains asset filenames. `src/lessons/lesson-catalog.ts` uses eager
 `import.meta.glob` discovery, so adding or removing a valid lesson file changes

@@ -8,7 +8,9 @@ home hub with Talk to Peppa, Lessons, Storytelling, Game, Create a Lesson, and
 Pixel Lesson Lab as top-level activities. Progress appears underneath as a
 smaller disabled preview. Create a Lesson opens the custom lesson authoring
 flow directly; the same flow can also remain reachable from My lessons.
-Storytelling opens an illustrated read-aloud shelf. Game keeps the standalone
+Storytelling opens a read-aloud script lab with 20 selectable prototypes across
+four internal language bands. Their artwork and narration remain explicit
+placeholders while the scripts are compared. Game keeps the standalone
 pixel-garden experience, while Pixel Lesson Lab generates a transient speaking
 mission and runs it in the same pixel-art engine. A lesson plays like a short
 interactive episode: characters act out a situation, a character models a
@@ -41,6 +43,26 @@ point. Legacy `/progress` links safely redirect home. Home names Progress only
 in a disabled “Coming soon” tile, so it adds context without creating dead-end
 navigation.
 Each non-home page provides a direct way back to Home or the lesson catalog.
+
+## Storytelling Prompt Lab
+
+`/stories` exposes 20 complete listen-and-join-in scripts rather than hiding
+unbuilt titles behind disabled cards. The shelf groups them into First words,
+Repeating patterns, Tiny stories, and Early A1. Every card states its narrative
+word count, target words, assumed-familiar content words, and prompt mechanism
+so an adult can compare the experiments while the child still gets a direct
+Open the script action.
+
+Every page contains one short narrator beat and one easier join-in line. A null
+artwork source renders a neutral child-facing placeholder; production prompts
+remain metadata and are not added to the controlled reading text. A null
+narration ID disables the audio control with an Audio later label; it never
+attempts saved playback or browser speech. Completion copy is owned by the
+story instead of referring to one fixed character or plot.
+
+The internal bands are product heuristics, not claims that age determines CEFR
+level. The full research basis, vocabulary guidance, reusable prompt, and
+selection plan live in `docs/design/young-learner-storytelling.md`.
 
 ## Roles
 

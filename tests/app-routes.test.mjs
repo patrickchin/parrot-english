@@ -316,6 +316,21 @@ describe("app route helpers", () => {
     assert.equal(finalPage.pageIndex, 5);
   });
 
+  it("resolves a new first-words story with its own page boundary", () => {
+    const story = routes.resolveStory("the-red-ball");
+    const finalPage = routes.resolveStoryPage("the-red-ball", "5");
+
+    assert.equal(story.id, "the-red-ball");
+    assert.equal(story.pages.length, 5);
+    assert.equal(
+      routes.getStoryPagePath(story.id, 0),
+      "/stories/the-red-ball/pages/1",
+    );
+    assert.equal(finalPage.story, story);
+    assert.equal(finalPage.pageIndex, 4);
+    assert.equal(routes.resolveStoryPage("the-red-ball", "6"), null);
+  });
+
   it("redirects a short story URL to its canonical first page", () => {
     assert.deepEqual(
       getStoryRouteDecision("the-lantern-trail", undefined),

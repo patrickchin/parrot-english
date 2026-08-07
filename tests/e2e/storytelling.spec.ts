@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const firstStoryPath = "/stories/the-lantern-trail/pages/1";
+const firstStoryPath = "/stories/the-red-ball/pages/1";
 
 const viewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
@@ -9,135 +9,33 @@ const viewports = [
   { height: 800, name: "desktop", width: 1280 },
 ];
 
-type StoryPlaybackMockState = {
-  audioPauseCount: number;
-  audioPlayCount: number;
-  audioSources: string[];
-  spokenTexts: string[];
-};
-
-async function installStorySpeechGuard(page: Page) {
+async function installStoryMediaGuard(page: Page) {
   await page.addInitScript(() => {
-    const state: StoryPlaybackMockState = {
-      audioPauseCount: 0,
-      audioPlayCount: 0,
-      audioSources: [],
-      spokenTexts: [],
-    };
-
-    class MockSpeechSynthesisUtterance {
-      lang = "";
-      onend: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      pitch = 1;
-      rate = 1;
-      voice: SpeechSynthesisVoice | null = null;
-      volume = 1;
-
-      constructor(readonly text: string) {}
-    }
-
-    let activeUtterance: MockSpeechSynthesisUtterance | null = null;
-    let paused = false;
-
-    Object.defineProperty(window, "SpeechSynthesisUtterance", {
-      configurable: true,
-      value: MockSpeechSynthesisUtterance,
-    });
-    Object.defineProperty(window, "speechSynthesis", {
-      configurable: true,
-      value: {
-        cancel() {
-          activeUtterance = null;
-          paused = false;
-        },
-        get paused() {
-          return paused;
-        },
-        get pending() {
-          return false;
-        },
-        get speaking() {
-          return activeUtterance !== null;
-        },
-        getVoices() {
-          return [
-            {
-              default: true,
-              lang: "en-US",
-              localService: true,
-              name: "Parrot E2E English",
-              voiceURI: "parrot-e2e-english",
-            },
-          ];
-        },
-        pause() {
-          paused = true;
-        },
-        resume() {
-          paused = false;
-        },
-        speak(utterance: MockSpeechSynthesisUtterance) {
-          activeUtterance = utterance;
-          paused = false;
-          state.spokenTexts.push(utterance.text);
-        },
-      },
-    });
-    Object.defineProperty(window, "__storyPlaybackMock", {
-      configurable: true,
-      value: { state },
-    });
-  });
-}
-
-async function installStoryAudioMock(
-  page: Page,
-  { rejectPlayback = false }: { rejectPlayback?: boolean } = {},
-) {
-  await page.evaluate(({ shouldRejectPlayback }) => {
-    const state = (
-      window as unknown as Window & {
-        __storyPlaybackMock: { state: StoryPlaybackMockState };
-      }
-    ).__storyPlaybackMock.state;
-
-    class MockStoryAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-
-      constructor(readonly src = "") {
-        state.audioSources.push(src);
-      }
-
-      pause() {
-        state.audioPauseCount += 1;
-      }
-
-      async play() {
-        state.audioPlayCount += 1;
-        if (shouldRejectPlayback) {
-          throw new Error("Mock saved narration failure.");
-        }
+    class ForbiddenStoryAudio {
+      constructor() {
+        throw new Error("A script-only story tried to create audio.");
       }
     }
 
     Object.defineProperty(window, "Audio", {
       configurable: true,
-      value: MockStoryAudio,
+      value: ForbiddenStoryAudio,
     });
-  }, { shouldRejectPlayback: rejectPlayback });
-}
-
-async function playbackMockState(page: Page) {
-  return page.evaluate(
-    () =>
-      (
-        window as unknown as Window & {
-          __storyPlaybackMock: { state: StoryPlaybackMockState };
-        }
-      ).__storyPlaybackMock.state,
-  );
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+        cancel() {},
+        getVoices() {
+          return [];
+        },
+        pause() {},
+        resume() {},
+        speak() {
+          throw new Error("A script-only story tried to use browser speech.");
+        },
+      },
+    });
+  });
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -162,10 +60,10 @@ async function expectInsideViewportHorizontally(locator: Locator, page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await installStorySpeechGuard(page);
+  await installStoryMediaGuard(page);
 });
 
-test("the story shelf opens The Lantern Trail in its reader", async ({
+test("the shelf exposes all 20 prompt experiments in four levels", async ({
   page,
 }) => {
   await page.goto("/stories");
@@ -174,22 +72,36 @@ test("the story shelf opens The Lantern Trail in its reader", async ({
     page.getByRole("heading", { exact: true, name: "Storytelling" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const readStory = shelf.getByRole("link", {
-    name: "Read story: The Lantern Trail",
-  });
-  await expect(readStory).toHaveAttribute("href", firstStoryPath);
+  await expect(shelf.getByRole("link", { name: /^Read story:/ })).toHaveCount(
+    20,
+  );
 
-  await readStory.click();
+  for (const level of [
+    "First words",
+    "Repeating patterns",
+    "Tiny stories",
+    "Early A1",
+  ]) {
+    await expect(
+      shelf.getByRole("heading", { exact: true, name: level }),
+    ).toBeVisible();
+  }
 
-  await expect(page).toHaveURL(firstStoryPath);
-  const reader = page.getByRole("region", { name: "Story reader" });
-  await expect(reader).toBeVisible();
   await expect(
-    reader.getByRole("heading", { exact: true, name: "The Lantern Trail" }),
-  ).toBeVisible();
+    shelf.getByRole("link", { name: "Read story: The Red Ball" }),
+  ).toHaveAttribute("href", firstStoryPath);
+  await expect(
+    shelf.getByRole("link", { name: "Read story: The Lantern Trail" }),
+  ).toHaveAttribute("href", "/stories/the-lantern-trail/pages/1");
+  await expect(shelf.getByText("Script only", { exact: true })).toHaveCount(20);
+  await expect(
+    shelf.getByText("Assumes familiar: no extra content words", {
+      exact: true,
+    }),
+  ).toHaveCount(2);
 });
 
-test("the reader exposes progress and page navigation", async ({
+test("a first-words script exposes placeholders, targets, and page navigation", async ({
   page,
 }) => {
   await page.goto(firstStoryPath);
@@ -201,111 +113,87 @@ test("the reader exposes progress and page navigation", async ({
   const controls = reader.getByRole("navigation", {
     name: "Story playback controls",
   });
-  const previous = controls.getByRole("button", { name: "Previous page" });
-  const next = controls.getByRole("button", { name: "Next page" });
 
+  await expect(
+    reader.getByRole("heading", { exact: true, name: "The Red Ball" }),
+  ).toBeVisible();
+  await expect(reader.getByText("First words", { exact: true })).toBeVisible();
+  await expect(reader.getByText(/Words to notice:.*red.*ball.*roll/)).toBeVisible();
   await expect(progress).toHaveAttribute("aria-valuemin", "1");
-  await expect(progress).toHaveAttribute("aria-valuemax", "6");
+  await expect(progress).toHaveAttribute("aria-valuemax", "5");
   await expect(progress).toHaveAttribute("aria-valuenow", "1");
-  await expect(reader.getByText("Page 1 of 6", { exact: true })).toBeVisible();
-  await expect(reader.getByRole("img")).toBeVisible();
-  await expect(previous).toBeDisabled();
-  await expect(next).toBeEnabled();
+  await expect(reader.getByText("Page 1 of 5", { exact: true })).toBeVisible();
   await expect(
-    controls.getByRole("button", { name: "Read to me" }),
-  ).toBeEnabled();
-  await expect((await playbackMockState(page)).audioSources).toEqual([]);
-  await expect((await playbackMockState(page)).spokenTexts).toEqual([]);
+    reader.getByRole("img", {
+      name: "Artwork placeholder for The Red Ball, page 1",
+    }),
+  ).toBeVisible();
+  await expect(reader.getByText("Picture coming later", { exact: true })).toBeVisible();
+  await expect(
+    reader.getByText("A child holding one bright red ball", { exact: true }),
+  ).toHaveCount(0);
+  await expect(controls.getByRole("button", { name: "Audio placeholder" })).toBeDisabled();
+  await expect(controls.getByText("Audio later", { exact: true })).toBeVisible();
+  await expect(controls.getByRole("button", { name: "Previous page" })).toBeDisabled();
 
-  await next.click();
-  await expect(page).toHaveURL(/\/stories\/the-lantern-trail\/pages\/2$/);
+  await controls.getByRole("button", { name: "Next page" }).click();
+  await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/2$/);
   await expect(progress).toHaveAttribute("aria-valuenow", "2");
-  await expect(reader.getByText("Page 2 of 6", { exact: true })).toBeVisible();
-  await expect(previous).toBeEnabled();
-
-  await previous.click();
-  await expect(page).toHaveURL(firstStoryPath);
-  await expect(progress).toHaveAttribute("aria-valuenow", "1");
-
-  await page.goto("/stories/the-lantern-trail/pages/6");
-  await expect(progress).toHaveAttribute("aria-valuenow", "6");
-  await expect(reader.getByText("Page 6 of 6", { exact: true })).toBeVisible();
-  await expect(
-    controls.getByRole("button", { name: "Finish story" }),
-  ).toBeEnabled();
-});
-
-test("page 6 Read to me pauses and resumes one saved narration", async ({
-  page,
-}) => {
-  await page.goto("/stories/the-lantern-trail/pages/6");
-
-  const controls = page.getByRole("navigation", {
-    name: "Story playback controls",
+  const secondPageText = reader.getByText("Roll, red ball, roll.", {
+    exact: true,
   });
-  const readToMe = controls.getByRole("button", { name: "Read to me" });
-  await readToMe.waitFor();
-  await installStoryAudioMock(page);
-  await readToMe.click();
-
-  await expect(
-    controls.getByRole("button", { name: "Pause story" }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => await playbackMockState(page))
-    .toMatchObject({
-      audioPlayCount: 1,
-      audioSources: ["/assets/audio/story-lantern-trail-one-last-glow.mp3"],
-      spokenTexts: [],
-    });
-
-  await controls.getByRole("button", { name: "Pause story" }).click();
-  await expect(
-    controls.getByRole("button", { name: "Resume story" }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await playbackMockState(page)).audioPauseCount)
-    .toBe(1);
-
-  await controls.getByRole("button", { name: "Resume story" }).click();
-  await expect(
-    controls.getByRole("button", { name: "Pause story" }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await playbackMockState(page)).audioPlayCount)
-    .toBe(2);
-  expect((await playbackMockState(page)).audioSources).toHaveLength(1);
-  expect((await playbackMockState(page)).spokenTexts).toHaveLength(0);
-
-  await controls.getByRole("button", { name: "Previous page" }).click();
-  await expect(page).toHaveURL(/\/stories\/the-lantern-trail\/pages\/5$/);
-  await expect
-    .poll(async () => (await playbackMockState(page)).audioPauseCount)
-    .toBe(2);
+  await expect(secondPageText).toBeVisible();
+  await expect(secondPageText).toBeFocused();
+  await expect(secondPageText).toHaveAttribute(
+    "aria-label",
+    "Page 2 of 5. Roll, red ball, roll.",
+  );
+  await expect(controls.getByRole("button", { name: "Previous page" })).toBeEnabled();
 });
 
-test("saved narration errors use provider-neutral guidance", async ({ page }) => {
-  await page.goto("/stories/the-lantern-trail/pages/6");
+test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) => {
+  await page.goto("/stories/the-lantern-trail/pages/1");
 
-  const readToMe = page.getByRole("button", { name: "Read to me" });
-  await readToMe.waitFor();
-  await installStoryAudioMock(page, { rejectPlayback: true });
-  await readToMe.click();
+  const reader = page.getByRole("region", { name: "Story reader" });
+  await expect(
+    reader.getByRole("heading", { exact: true, name: "The Lantern Trail" }),
+  ).toBeVisible();
+  await expect(
+    reader.getByText("Pip sees a little light. “Hello! I am Flicker.”", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(reader.getByText(/Glow, Flicker, glow!/)).toBeVisible();
+  await expect(reader.getByText(/At sunset|moonlight|lantern tree/i)).toHaveCount(0);
+  await expect(
+    reader.getByRole("button", { name: "Audio placeholder" }),
+  ).toBeDisabled();
+});
 
-  await expect(page.getByRole("alert")).toHaveText(
-    "Story audio is not available right now. You can still turn the pages and read together.",
+test("finishing a prototype uses story-owned completion copy", async ({ page }) => {
+  await page.goto("/stories/the-red-ball/pages/5");
+
+  await page.getByRole("button", { name: "Finish story" }).click();
+
+  const complete = page.getByRole("region", { name: "Story complete" });
+  await expect(
+    complete.getByRole("heading", { name: "You finished the story!" }),
+  ).toBeVisible();
+  await expect(complete.getByText("The red ball is home.", { exact: true })).toBeVisible();
+  await expect(
+    complete.getByRole("img", {
+      name: "Artwork placeholder for the cover of The Red Ball",
+    }),
+  ).toBeVisible();
+  await expect(complete.getByRole("button", { name: "Read again" })).toBeEnabled();
+  await expect(complete.getByRole("link", { name: "Back to the story shelf" })).toHaveAttribute(
+    "href",
+    "/stories",
   );
-  await expect
-    .poll(async () => await playbackMockState(page))
-    .toMatchObject({
-      audioPlayCount: 1,
-      audioSources: ["/assets/audio/story-lantern-trail-one-last-glow.mp3"],
-      spokenTexts: [],
-    });
 });
 
 for (const viewport of viewports) {
-  test(`the story shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({
+  test(`the expanded shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -313,7 +201,7 @@ for (const viewport of viewports) {
 
     const shelf = page.getByRole("region", { name: "Read-aloud stories" });
     const readStory = shelf.getByRole("link", {
-      name: "Read story: The Lantern Trail",
+      name: "Read story: The Red Ball",
     });
     await expectInsideViewportHorizontally(shelf, page);
     await expectInsideViewportHorizontally(readStory, page);
@@ -332,7 +220,7 @@ for (const viewport of viewports) {
     await expectInsideViewportHorizontally(progress, page);
     await expectInsideViewportHorizontally(controls, page);
     await expectInsideViewportHorizontally(
-      controls.getByRole("button", { name: "Read to me" }),
+      controls.getByRole("button", { name: "Audio placeholder" }),
       page,
     );
     await expectNoHorizontalOverflow(page);

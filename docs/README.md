@@ -1,7 +1,7 @@
 # Parrot English Docs
 
 These docs describe the current product and technical design as of
-2026-07-14. They are based on the implemented code, existing specs, and the
+2026-08-07. They are based on the implemented code, existing specs, and the
 prompt history from Codex sessions in this project.
 
 ## Design Docs
@@ -20,6 +20,9 @@ prompt history from Codex sessions in this project.
 - [Audio and Content Pipeline](./design/audio-and-content-pipeline.md) explains
   built-in static lesson audio, My Lesson on-device speech, voice direction,
   and regeneration rules.
+- [Young-Learner Storytelling Language Guide](./design/young-learner-storytelling.md)
+  records the Pre-A1/A1 research, working vocabulary bands, reusable generation
+  prompt, and 20 script experiments that precede artwork and narration.
 - [Codex Session Decision Log](./design/codex-session-decision-log.md) records
   the major decisions that came from the project Codex prompts.
 
