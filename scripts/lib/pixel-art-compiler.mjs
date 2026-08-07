@@ -66,6 +66,40 @@ export function compileRgbaToPixelGrid({
   return output;
 }
 
+export function expandRgbaCells({ cellSize, data, height, width }) {
+  if (!Number.isInteger(cellSize) || cellSize < 1) {
+    throw new Error("cellSize must be a positive integer.");
+  }
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
+    throw new Error("width and height must be positive integers.");
+  }
+  if (data.length !== width * height * 4) {
+    throw new Error("Pixel data does not match the declared dimensions.");
+  }
+
+  const expandedWidth = width * cellSize;
+  const expandedHeight = height * cellSize;
+  const output = new Uint8ClampedArray(expandedWidth * expandedHeight * 4);
+  for (let sourceY = 0; sourceY < height; sourceY += 1) {
+    for (let sourceX = 0; sourceX < width; sourceX += 1) {
+      const sourceOffset = (sourceY * width + sourceX) * 4;
+      for (let cellY = 0; cellY < cellSize; cellY += 1) {
+        for (let cellX = 0; cellX < cellSize; cellX += 1) {
+          const targetX = sourceX * cellSize + cellX;
+          const targetY = sourceY * cellSize + cellY;
+          const targetOffset = (targetY * expandedWidth + targetX) * 4;
+          output[targetOffset] = data[sourceOffset];
+          output[targetOffset + 1] = data[sourceOffset + 1];
+          output[targetOffset + 2] = data[sourceOffset + 2];
+          output[targetOffset + 3] = data[sourceOffset + 3];
+        }
+      }
+    }
+  }
+
+  return { data: output, height: expandedHeight, width: expandedWidth };
+}
+
 export function validatePixelAssetContract({
   actualHeight,
   actualWidth,
