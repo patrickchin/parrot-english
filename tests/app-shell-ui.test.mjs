@@ -67,7 +67,7 @@ test("home menu prioritizes six working activities and previews Progress", () =>
       "/talk-to-peppa",
       "/lessons",
       "/stories",
-      "/prototypes/pixel-stage/",
+      "/games/worlds",
       "/games",
       "/lessons/my/create",
     ]),
@@ -80,8 +80,8 @@ test("home menu prioritizes six working activities and previews Progress", () =>
   assert.match(html, /chat freely/i);
   assert.match(html, />Lessons</);
   assert.match(html, /story.*speaking|speaking.*story/i);
-  assert.match(html, />Game</);
-  assert.match(html, />Proof of concept</);
+  assert.match(html, />World Explorer</);
+  assert.match(html, />New pipeline</);
   assert.match(html, />Create a Lesson</);
   assert.match(
     html,

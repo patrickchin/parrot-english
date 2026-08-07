@@ -10,6 +10,12 @@ const backgroundCatalogFile = fileURLToPath(
 );
 const webAssetExtensions = new Set([".mp3", ".svg", ".webp"]);
 
+function isSupportedAsset(filePath) {
+  if (webAssetExtensions.has(extname(filePath))) return true;
+  if (/^pixel-world\/.+\.png$/.test(filePath)) return true;
+  return filePath === "pixel-world/manifest.json";
+}
+
 async function listAssetFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
   const files = [];
@@ -32,7 +38,7 @@ describe("web asset formats", () => {
     const files = await listAssetFiles(publicAssetsDir);
     const unsupportedFiles = files
       .map((filePath) => relative(publicAssetsDir, filePath))
-      .filter((filePath) => !webAssetExtensions.has(extname(filePath)));
+      .filter((filePath) => !isSupportedAsset(filePath));
 
     assert.deepEqual(unsupportedFiles, []);
   });

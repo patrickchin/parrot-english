@@ -41,7 +41,6 @@ describe("pixel world runtime model", () => {
       offsetY: -4,
       originX: 0.5,
       originY: 0.5,
-      rotation: -20,
     };
     assert.deepEqual(
       resolveHeldItemTransform({ anchors, flipX: false, frameIndex: 1, itemHold }),
@@ -50,9 +49,8 @@ describe("pixel world runtime model", () => {
         flipX: false,
         originX: 0.5,
         originY: 0.5,
-        rotation: -20,
-        x: 36,
-        y: -110,
+        x: 63,
+        y: -57,
       },
     );
     assert.deepEqual(
@@ -62,9 +60,8 @@ describe("pixel world runtime model", () => {
         flipX: true,
         originX: 0.5,
         originY: 0.5,
-        rotation: 20,
-        x: -36,
-        y: -110,
+        x: -63,
+        y: -57,
       },
     );
   });

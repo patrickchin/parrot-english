@@ -14,7 +14,8 @@
     "screenPixelsPerArtPixel": 4
   },
   "normalization": {
-    "charactersAndLayers": "downsample to the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
+    "charactersAndGrounds": "aspect-preserving cover crop onto the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
+    "parallaxStrips": "trim transparency, aspect-preserving contain at bottom-center on the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
     "objects": "trim transparency, fit on the shared authored-cell grid, bottom-center, harden alpha, quantize, then nearest-expand",
     "runtimeScaling": "integer camera zoom only; no per-asset fractional scaling"
   },

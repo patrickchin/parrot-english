@@ -1,16 +1,18 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { PIXEL_WORLD_PACK } from "../prototypes/pixel-stage/world-pack.js";
 import {
   compileRgbaToPixelGrid,
   expandRgbaCells,
+  mergeCompiledAssetEntries,
   validatePixelAssetContract,
 } from "./lib/pixel-art-compiler.mjs";
 
-const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+const projectRoot = fileURLToPath(new globalThis.URL("..", import.meta.url));
 const sourceRoot = path.join(projectRoot, "art-source", "pixel-world", "sources");
 const outputRoot = path.join(projectRoot, "public", "assets", "pixel-world");
 const publicPrefix = "/assets/pixel-world/";
@@ -36,8 +38,27 @@ async function normalizeFullCanvas(input, width, height) {
   const { data, info } = await sharp(input)
     .ensureAlpha()
     .resize(width, height, {
-      fit: "fill",
+      fit: "cover",
       kernel: sharp.kernel.lanczos3,
+      position: "centre",
+    })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { data, info };
+}
+
+async function normalizeLayerStrip(input, width, height) {
+  const trimmed = await sharp(input)
+    .ensureAlpha()
+    .trim({ background: transparent, threshold: 8 })
+    .png()
+    .toBuffer();
+  const { data, info } = await sharp(trimmed)
+    .resize(width, height, {
+      background: transparent,
+      fit: "contain",
+      kernel: sharp.kernel.lanczos3,
+      position: "south",
     })
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -116,7 +137,9 @@ async function compileAsset(assetId, asset) {
   const authoredHeight = asset.nativeHeight / cellSize;
   const normalized = asset.kind === "sprite"
     ? await normalizeSprite(input, authoredWidth, authoredHeight, asset)
-    : await normalizeFullCanvas(input, authoredWidth, authoredHeight);
+    : asset.kind === "layer" && !assetId.startsWith("sky-")
+      ? await normalizeLayerStrip(input, authoredWidth, authoredHeight)
+      : await normalizeFullCanvas(input, authoredWidth, authoredHeight);
 
   const authoredPixels = compileRgbaToPixelGrid({
     alphaThreshold,
@@ -189,12 +212,31 @@ function requestedAssetIds() {
 }
 
 async function main() {
+  const allAssetIds = Object.keys(PIXEL_WORLD_PACK.assets);
+  const selectedAssetIds = requestedAssetIds();
   const results = [];
-  for (const assetId of requestedAssetIds()) {
+  for (const assetId of selectedAssetIds) {
     results.push(await compileAsset(assetId, PIXEL_WORLD_PACK.assets[assetId]));
   }
+  let existingEntries = [];
+  if (selectedAssetIds.length !== allAssetIds.length) {
+    const existingManifestPath = path.join(outputRoot, "manifest.json");
+    const existingManifest = JSON.parse(
+      await readFile(existingManifestPath, "utf8").catch((error) => {
+        throw new Error(
+          "Partial compilation requires an existing complete runtime manifest.",
+          { cause: error },
+        );
+      }),
+    );
+    existingEntries = existingManifest.assets ?? [];
+  }
   const manifest = {
-    assets: results,
+    assets: mergeCompiledAssetEntries({
+      assetIds: allAssetIds,
+      compiledEntries: results,
+      existingEntries,
+    }),
     compiler: {
       alphaThreshold,
       artCellWorldPixels: PIXEL_WORLD_PACK.renderProfile.artCellWorldPixels,
@@ -207,7 +249,6 @@ async function main() {
       textureToWorldScale:
         PIXEL_WORLD_PACK.renderProfile.textureToWorldScale,
     },
-    generatedAt: new Date().toISOString(),
     schemaVersion: 1,
     worldPackId: PIXEL_WORLD_PACK.id,
   };

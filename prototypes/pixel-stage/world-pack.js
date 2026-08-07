@@ -12,6 +12,7 @@ const renderProfile = Object.freeze({
   artCellWorldPixels: 2,
   cameraZoom: 2,
   palette: PALETTE,
+  playfield: Object.freeze({ bottom: 480, left: 0, right: 720, top: 160 }),
   screenPixelsPerArtPixel: 4,
   sourcePixelsPerWorldPixel: 1,
   textureToWorldScale: 1,
@@ -57,6 +58,27 @@ const holdableSpecs = [
   ["garden-shovel", 48, 56, "garden"], ["kite", 56, 64, "toy"],
   ["teddy-bear", 48, 56, "toy"], ["wrapped-gift", 48, 48, "celebration"],
 ];
+function hold(originX, originY, offsetX = 0, offsetY = 0) {
+  return Object.freeze({ offsetX, offsetY, originX, originY });
+}
+const holdProfiles = Object.freeze({
+  "red-apple": hold(0.5, 0.5),
+  "green-pear": hold(0.5, 0.55),
+  banana: hold(0.42, 0.72, 2),
+  carrot: hold(0.5, 0.78, 2),
+  "paint-brush": hold(0.5, 0.82, 2),
+  storybook: hold(0.45, 0.72, 3),
+  "juice-bottle": hold(0.5, 0.66, 2),
+  lantern: hold(0.5, 0.16, 3, 2),
+  "red-ball": hold(0.5, 0.5, 3),
+  "garden-flower": hold(0.5, 0.82, 2),
+  "picnic-basket": hold(0.5, 0.18, 5, 2),
+  "watering-can": hold(0.56, 0.24, 5, 2),
+  "garden-shovel": hold(0.5, 0.12, 3, 2),
+  kite: hold(0.5, 0.9, 4, -2),
+  "teddy-bear": hold(0.24, 0.4, 4, 1),
+  "wrapped-gift": hold(0.5, 0.5, 4, 2),
+});
 
 const assets = {
   "player-peppa-sheet": Object.freeze({
@@ -65,7 +87,7 @@ const assets = {
   }),
 };
 for (const [id, width, height] of layerSpecs) assets[id] = makeAsset(`parallax/${id}.png`, width, height, "layer");
-for (const id of groundIds) assets[`ground-${id}`] = makeAsset(`grounds/${id}-ground.png`, 720, 480, "ground");
+for (const id of groundIds) assets[`ground-${id}`] = makeAsset(`grounds/${id}-ground.png`, 720, 320, "ground");
 for (const [id, width, height] of [...scenerySpecs, ...holdableSpecs]) assets[`object-${id}`] = makeAsset(`objects/${id}.png`, width, height);
 Object.freeze(assets);
 
@@ -99,13 +121,13 @@ const objects = Object.freeze([
     category,
     collision: null,
     footOffsetY: 0,
-    hold: Object.freeze({ offsetX: 0, offsetY: 0, originX: 0.5, originY: 0.5, rotation: 0 }),
+    hold: holdProfiles[id],
     id,
     origin: Object.freeze({ x: 0.5, y: 1 }),
   })),
 ]);
 
-function layer(assetId, y, scrollFactorX, depth, scrollFactorY = 0) {
+function layer(assetId, y, scrollFactorX, depth, scrollFactorY = 1) {
   return Object.freeze({ assetId, depth, repeatX: false, scrollFactorX, scrollFactorY, x: 0, y });
 }
 function placements(entries) {
@@ -118,7 +140,7 @@ function scene({ id, name, ground, start, entries, sky = "sky-day", cloud = "clo
       sky: Object.freeze([layer(sky, 0, 0, -50)]),
       far: Object.freeze([layer(cloud, 14, 0.08, -40), layer(far, 58, 0.2, -30)]),
       mid: Object.freeze([layer(mid, 92, 0.42, -20)]),
-      play: Object.freeze([layer(`ground-${ground}`, 0, 1, 0, 1)]),
+      play: Object.freeze([layer(`ground-${ground}`, 160, 1, 0, 1)]),
       foreground: Object.freeze([]),
     }),
     name,
@@ -128,14 +150,14 @@ function scene({ id, name, ground, start, entries, sky = "sky-day", cloud = "clo
 }
 
 const scenes = Object.freeze([
-  scene({ id: "garden-party", name: "Garden Party", ground: "garden", start: { x: 430, y: 250 }, entries: [["oak-tree",150,300],["fruit-tree",610,290],["flower-patch",340,210],["bench",340,390],["hedge",90,450],["signpost",470,210],["picnic-basket",430,350]] }),
+  scene({ id: "garden-party", name: "Garden Party", ground: "garden", start: { x: 430, y: 250 }, entries: [["oak-tree",150,300],["fruit-tree",610,210],["flower-patch",340,210],["bench",340,390],["hedge",90,450],["signpost",70,220],["picnic-basket",430,350]] }),
   scene({ id: "orchard-walk", name: "Orchard Walk", ground: "orchard", far: "hills-green", start: { x: 340, y: 350 }, entries: [["fruit-tree",120,270],["fruit-tree",330,255],["fruit-tree",600,285],["fence-short",150,455],["fence-short",560,455],["bench",470,390],["red-apple",370,330]] }),
-  scene({ id: "market-morning", name: "Market Morning", ground: "market", far: "village-far", start: { x: 250, y: 380 }, entries: [["market-stall",160,305],["market-stall",560,310],["lamp-post",360,250],["bench",360,425],["signpost",70,420],["picnic-basket",520,410],["wrapped-gift",215,365]] }),
-  scene({ id: "pond-picnic", name: "Pond Picnic", ground: "pond", far: "hills-green", start: { x: 390, y: 390 }, entries: [["pond-reeds",180,300],["pond-reeds",540,290],["oak-tree",630,280],["picnic-blanket",350,410],["rock-cluster",260,360],["tall-grass",90,410],["picnic-basket",430,405]] }),
+  scene({ id: "market-morning", name: "Market Morning", ground: "market", far: "village-far", start: { x: 250, y: 380 }, entries: [["market-stall",160,330],["market-stall",560,330],["lamp-post",400,350],["bench",360,425],["signpost",70,420],["picnic-basket",520,410],["wrapped-gift",215,365]] }),
+  scene({ id: "pond-picnic", name: "Pond Picnic", ground: "pond", far: "hills-green", start: { x: 390, y: 390 }, entries: [["pond-reeds",180,300],["pond-reeds",540,290],["oak-tree",630,280],["picnic-blanket",240,430],["rock-cluster",260,360],["tall-grass",90,410],["picnic-basket",300,440]] }),
   scene({ id: "kite-meadow", name: "Kite Meadow", ground: "meadow", cloud: "clouds-soft", far: "hills-green", start: { x: 350, y: 330 }, entries: [["pine-tree",90,280],["pine-tree",650,300],["round-bush",210,390],["round-bush",560,420],["flower-patch",380,220],["fallen-log",140,440],["kite",440,370]] }),
-  scene({ id: "playground-afternoon", name: "Playground Afternoon", ground: "playground", far: "village-far", start: { x: 360, y: 400 }, entries: [["playground-slide",180,350],["swing-set",550,330],["bench",360,440],["oak-tree",670,280],["fence-short",90,460],["fence-short",610,460],["red-ball",410,380]] }),
-  scene({ id: "forest-trail", name: "Forest Trail", ground: "forest", cloud: "clouds-soft", far: "hills-green", mid: "treeline-pine", start: { x: 350, y: 390 }, entries: [["pine-tree",95,260],["pine-tree",615,280],["fallen-log",260,420],["rock-cluster",500,400],["tall-grass",180,350],["tall-grass",580,440],["signpost",360,280]] }),
-  scene({ id: "village-sunset", name: "Village Sunset", ground: "village", sky: "sky-sunset", cloud: "clouds-soft", far: "village-far", start: { x: 360, y: 390 }, entries: [["market-stall",150,320],["lamp-post",340,320],["lamp-post",650,350],["bench",510,420],["flower-patch",300,430],["signpost",70,410],["wrapped-gift",410,395]] }),
+  scene({ id: "playground-afternoon", name: "Playground Afternoon", ground: "playground", far: "village-far", start: { x: 360, y: 320 }, entries: [["playground-slide",180,350],["swing-set",550,330],["bench",360,440],["oak-tree",670,280],["fence-short",90,460],["fence-short",610,460],["red-ball",410,380]] }),
+  scene({ id: "forest-trail", name: "Forest Trail", ground: "forest", cloud: "clouds-soft", far: "hills-green", mid: "treeline-pine", start: { x: 350, y: 390 }, entries: [["pine-tree",95,260],["pine-tree",615,280],["fallen-log",260,420],["rock-cluster",500,400],["tall-grass",180,350],["tall-grass",580,440],["signpost",450,260]] }),
+  scene({ id: "village-sunset", name: "Village Sunset", ground: "village", sky: "sky-sunset", cloud: "clouds-soft", far: "village-far", start: { x: 360, y: 390 }, entries: [["market-stall",150,320],["lamp-post",240,320],["lamp-post",650,350],["bench",510,420],["flower-patch",300,430],["signpost",70,410],["wrapped-gift",410,395]] }),
 ]);
 
 function anchors(entries) {
@@ -144,11 +166,11 @@ function anchors(entries) {
 const player = Object.freeze({
   body: Object.freeze({ height: 24, offsetX: 56, offsetY: 136, width: 48 }),
   sockets: Object.freeze({ mainHand: Object.freeze({ byPose: Object.freeze({
-    idle: anchors([[30,-108]]),
-    walking: anchors([[30,-108],[34,-106],[28,-110],[32,-107]]),
-    talking: anchors([[32,-108],[34,-106],[30,-109],[33,-107]]),
-    happy: anchors([[28,-112],[30,-110],[26,-114],[29,-111]]),
-    surprised: anchors([[33,-114],[35,-112],[32,-115],[34,-113]]),
+    idle: anchors([[56,-49]]),
+    walking: anchors([[56,-49],[61,-53],[61,-48],[62,-49]]),
+    talking: anchors([[56,-48],[67,-57],[61,-48],[67,-57]]),
+    happy: anchors([[65,-70],[61,-49],[65,-71],[67,-67]]),
+    surprised: anchors([[60,-46],[60,-51],[60,-54],[62,-44]]),
   }) }) }),
   spriteSheet: Object.freeze({ assetId: "player-peppa-sheet", columns: 4, frameHeight: 160, frameWidth: 160, rows: 4 }),
 });

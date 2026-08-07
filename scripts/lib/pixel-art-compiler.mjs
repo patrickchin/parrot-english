@@ -100,6 +100,31 @@ export function expandRgbaCells({ cellSize, data, height, width }) {
   return { data: output, height: expandedHeight, width: expandedWidth };
 }
 
+export function mergeCompiledAssetEntries({
+  assetIds,
+  compiledEntries,
+  existingEntries,
+}) {
+  const expectedIds = new Set(assetIds);
+  if (expectedIds.size !== assetIds.length) {
+    throw new Error("Pixel-world asset IDs must be unique.");
+  }
+  const entriesById = new Map();
+  for (const entry of [...existingEntries, ...compiledEntries]) {
+    if (!expectedIds.has(entry.id)) {
+      throw new Error(`Unknown compiled manifest entry: ${entry.id}`);
+    }
+    entriesById.set(entry.id, entry);
+  }
+  return assetIds.map((assetId) => {
+    const entry = entriesById.get(assetId);
+    if (!entry) {
+      throw new Error(`Missing compiled manifest entry for ${assetId}`);
+    }
+    return entry;
+  });
+}
+
 export function validatePixelAssetContract({
   actualHeight,
   actualWidth,

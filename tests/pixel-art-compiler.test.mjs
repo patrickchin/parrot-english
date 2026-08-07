@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   compileRgbaToPixelGrid,
   expandRgbaCells,
+  mergeCompiledAssetEntries,
   validatePixelAssetContract,
 } from "../scripts/lib/pixel-art-compiler.mjs";
 
@@ -82,5 +83,32 @@ describe("pixel art compiler", () => {
       ...red, ...red, ...green, ...green,
       ...red, ...red, ...green, ...green,
     ]);
+  });
+
+  it("preserves the complete deterministic manifest during partial compilation", () => {
+    const entries = mergeCompiledAssetEntries({
+      assetIds: ["character", "ground", "apple"],
+      compiledEntries: [{ id: "apple", sha256: "new" }],
+      existingEntries: [
+        { id: "apple", sha256: "old" },
+        { id: "character", sha256: "same" },
+        { id: "ground", sha256: "same" },
+      ],
+    });
+
+    assert.deepEqual(entries, [
+      { id: "character", sha256: "same" },
+      { id: "ground", sha256: "same" },
+      { id: "apple", sha256: "new" },
+    ]);
+    assert.throws(
+      () =>
+        mergeCompiledAssetEntries({
+          assetIds: ["character", "ground"],
+          compiledEntries: [],
+          existingEntries: [{ id: "character", sha256: "same" }],
+        }),
+      /Missing compiled manifest entry for ground/,
+    );
   });
 });

@@ -41,13 +41,13 @@ const PRIMARY_ACTIVITIES = [
     to: "/stories",
   },
   {
-    badge: "Proof of concept",
-    description: "Explore the pixel garden and move Peppa around.",
+    badge: "New pipeline",
+    description: "Review reusable scenes, scenery, and holdable item sprites.",
     icon: Gamepad2,
-    label: "Game",
-    reloadDocument: true,
+    label: "World Explorer",
+    reloadDocument: false,
     tone: "navy",
-    to: "/prototypes/pixel-stage/",
+    to: "/games/worlds",
   },
   {
     badge: "Experiment",

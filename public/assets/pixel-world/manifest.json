@@ -18,12 +18,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 1123,
+      "bytes": 1308,
       "colorCount": 2,
       "height": 192,
       "id": "sky-day",
       "output": "parallax/sky-day.png",
-      "sha256": "bdc33d7e8f281395bdeeee414803fa23b1b91e1ba1533bee1b5597436af712f3",
+      "sha256": "5e0e0c3098e4384c754c7262e2a67e6acb841ce1589ff71a4df5fb784be1d59d",
       "source": "art-source/pixel-world/sources/parallax/sky-day.png",
       "width": 720
     },
@@ -31,12 +31,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 3094,
-      "colorCount": 8,
+      "bytes": 3280,
+      "colorCount": 4,
       "height": 192,
       "id": "sky-sunset",
       "output": "parallax/sky-sunset.png",
-      "sha256": "585ee92143bbe1cf2dd205f651e4b4a091096735318eb0423b0e71eb43ca9f8f",
+      "sha256": "b4e0110f1943c591443f1cdda08d1054175bae1d0e71296b41917c50ba91857f",
       "source": "art-source/pixel-world/sources/parallax/sky-sunset.png",
       "width": 720
     },
@@ -45,12 +45,12 @@
         0,
         255
       ],
-      "bytes": 1046,
+      "bytes": 2274,
       "colorCount": 4,
       "height": 128,
       "id": "clouds-day",
       "output": "parallax/clouds-day.png",
-      "sha256": "566086ae65891649e0d8d4b5be50ecc71c716b8111e055aa086a327294e1a476",
+      "sha256": "eaaeb3c3ad79db39acc4375987e9acb14f70dab21adf4f7ea208f07f4a7af25b",
       "source": "art-source/pixel-world/sources/parallax/clouds-day.png",
       "width": 720
     },
@@ -59,12 +59,12 @@
         0,
         255
       ],
-      "bytes": 1083,
+      "bytes": 2142,
       "colorCount": 4,
       "height": 128,
       "id": "clouds-soft",
       "output": "parallax/clouds-soft.png",
-      "sha256": "af6e873f3b7464c2dccfd975ad8fe8963a6e5f349b2a31a26e8bc8d9f0d2befa",
+      "sha256": "31aaea86843c990b02426820619d925a32ea4a60b84233a305c932587f73ebd2",
       "source": "art-source/pixel-world/sources/parallax/clouds-soft.png",
       "width": 720
     },
@@ -73,12 +73,12 @@
         0,
         255
       ],
-      "bytes": 1170,
-      "colorCount": 4,
+      "bytes": 2169,
+      "colorCount": 6,
       "height": 160,
       "id": "hills-blue",
       "output": "parallax/hills-blue.png",
-      "sha256": "1c7ff7ccade4522df806c756b9be0df14c5440b2452d1f7028ae210b043eed64",
+      "sha256": "8c2f209b23530d92a99b9190e97888cd4cee0f612b78fe79d5263b18faa345d5",
       "source": "art-source/pixel-world/sources/parallax/hills-blue.png",
       "width": 720
     },
@@ -87,12 +87,12 @@
         0,
         255
       ],
-      "bytes": 1730,
-      "colorCount": 7,
+      "bytes": 3415,
+      "colorCount": 9,
       "height": 160,
       "id": "hills-green",
       "output": "parallax/hills-green.png",
-      "sha256": "e64ce6bb0fcc07b66bfe878fa1b684e9121a20e8c33684212cce186961615aaa",
+      "sha256": "5cfee05b633757a3078002b7528a026cc418b3e73a9f9594f1500299c3f58e59",
       "source": "art-source/pixel-world/sources/parallax/hills-green.png",
       "width": 720
     },
@@ -101,12 +101,12 @@
         0,
         255
       ],
-      "bytes": 2670,
-      "colorCount": 10,
+      "bytes": 5472,
+      "colorCount": 11,
       "height": 144,
       "id": "treeline-far",
       "output": "parallax/treeline-far.png",
-      "sha256": "6213beab797409f6307daac1ebf8b58f45c5ec70e12a006bf2d0f2ab02d1fe98",
+      "sha256": "3b2e69ae140bae2bdf6dac6141b2bfea94c61bf6950e34550b67479f02eb9c26",
       "source": "art-source/pixel-world/sources/parallax/treeline-far.png",
       "width": 720
     },
@@ -115,12 +115,12 @@
         0,
         255
       ],
-      "bytes": 2551,
-      "colorCount": 5,
+      "bytes": 4280,
+      "colorCount": 8,
       "height": 144,
       "id": "treeline-pine",
       "output": "parallax/treeline-pine.png",
-      "sha256": "e3ff201ab4c02d4c7039c5f81586ca9ac3e0d93dff2b0eadd57af719122d6ecc",
+      "sha256": "4f445bb9b8bdeb94caecd68c21571c7d5e715b4bdf52ee6ddf510f1927e0815d",
       "source": "art-source/pixel-world/sources/parallax/treeline-pine.png",
       "width": 720
     },
@@ -129,12 +129,12 @@
         0,
         255
       ],
-      "bytes": 2412,
-      "colorCount": 17,
+      "bytes": 5886,
+      "colorCount": 22,
       "height": 144,
       "id": "village-far",
       "output": "parallax/village-far.png",
-      "sha256": "eb9b96640811482ed30f48faf0576f277e5725db6614a0c5e72c70e484379ec3",
+      "sha256": "412f2a937ec0ac0f9211735fc2563389bde6976183366695ed6bae3f87f7d949",
       "source": "art-source/pixel-world/sources/parallax/village-far.png",
       "width": 720
     },
@@ -142,12 +142,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2478,
-      "colorCount": 3,
-      "height": 480,
+      "bytes": 10507,
+      "colorCount": 18,
+      "height": 320,
       "id": "ground-garden",
       "output": "grounds/garden-ground.png",
-      "sha256": "fd5fde1bc62087daee7c29a6b895c5d9767d242c7b108d01f9874b840dc8668a",
+      "sha256": "b597143b0df875919c05842a7c4f12da641f9ab327b115806241ac06b0c00d45",
       "source": "art-source/pixel-world/sources/grounds/garden-ground.png",
       "width": 720
     },
@@ -155,12 +155,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2545,
-      "colorCount": 4,
-      "height": 480,
+      "bytes": 11136,
+      "colorCount": 11,
+      "height": 320,
       "id": "ground-orchard",
       "output": "grounds/orchard-ground.png",
-      "sha256": "3aa63cc93243615828eccd36b92c5c256a2bf54de33ecad8a070a0135481edf8",
+      "sha256": "20beff53214aa1f23992e9be7ee5d7c4d8399e4effa28afdec111b8a4aa7b7a6",
       "source": "art-source/pixel-world/sources/grounds/orchard-ground.png",
       "width": 720
     },
@@ -168,12 +168,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2274,
-      "colorCount": 5,
-      "height": 480,
+      "bytes": 13035,
+      "colorCount": 9,
+      "height": 320,
       "id": "ground-market",
       "output": "grounds/market-ground.png",
-      "sha256": "46d70b8e25a33de040efe4021bf982d93b9ca0b734f1a388c013f30dba22a382",
+      "sha256": "f2d005f6693546875cf165e7da9736e54a631a0389e2edf197fb4e67300f896c",
       "source": "art-source/pixel-world/sources/grounds/market-ground.png",
       "width": 720
     },
@@ -181,12 +181,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2851,
-      "colorCount": 5,
-      "height": 480,
+      "bytes": 13943,
+      "colorCount": 20,
+      "height": 320,
       "id": "ground-pond",
       "output": "grounds/pond-ground.png",
-      "sha256": "a5a8365b185c5a9197b9942994bcf041adc0dae8fddb631c95cbb7692738fe7c",
+      "sha256": "f7aadeec426b6cd7c107ad072d7318aa404d9068310b6548848f635cf10b824a",
       "source": "art-source/pixel-world/sources/grounds/pond-ground.png",
       "width": 720
     },
@@ -194,12 +194,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2545,
-      "colorCount": 4,
-      "height": 480,
+      "bytes": 14650,
+      "colorCount": 22,
+      "height": 320,
       "id": "ground-meadow",
       "output": "grounds/meadow-ground.png",
-      "sha256": "3aa63cc93243615828eccd36b92c5c256a2bf54de33ecad8a070a0135481edf8",
+      "sha256": "07016a470cfc4597be453e6a607fcd595982ab317be13bb582f9c41eb25ab627",
       "source": "art-source/pixel-world/sources/grounds/meadow-ground.png",
       "width": 720
     },
@@ -207,12 +207,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2478,
-      "colorCount": 3,
-      "height": 480,
+      "bytes": 7529,
+      "colorCount": 19,
+      "height": 320,
       "id": "ground-playground",
       "output": "grounds/playground-ground.png",
-      "sha256": "fd5fde1bc62087daee7c29a6b895c5d9767d242c7b108d01f9874b840dc8668a",
+      "sha256": "65c892b41bef57f6764a0cb3c8f0a3699cb46ebaecbc89d1aedb420cc8124238",
       "source": "art-source/pixel-world/sources/grounds/playground-ground.png",
       "width": 720
     },
@@ -220,12 +220,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2545,
-      "colorCount": 4,
-      "height": 480,
+      "bytes": 13375,
+      "colorCount": 13,
+      "height": 320,
       "id": "ground-forest",
       "output": "grounds/forest-ground.png",
-      "sha256": "3aa63cc93243615828eccd36b92c5c256a2bf54de33ecad8a070a0135481edf8",
+      "sha256": "2232e085c116940fe8b1bab7bd1334c5412890051a3207eed5eeb9f155c14c45",
       "source": "art-source/pixel-world/sources/grounds/forest-ground.png",
       "width": 720
     },
@@ -233,12 +233,12 @@
       "alphaValues": [
         255
       ],
-      "bytes": 2274,
-      "colorCount": 5,
-      "height": 480,
+      "bytes": 18231,
+      "colorCount": 11,
+      "height": 320,
       "id": "ground-village",
       "output": "grounds/village-ground.png",
-      "sha256": "46d70b8e25a33de040efe4021bf982d93b9ca0b734f1a388c013f30dba22a382",
+      "sha256": "6aa4cc1e663ab42d5d4e9f076ff316e5e2947ae5d5394b543c5a8898a12a0364",
       "source": "art-source/pixel-world/sources/grounds/village-ground.png",
       "width": 720
     },
@@ -583,12 +583,12 @@
         0,
         255
       ],
-      "bytes": 192,
-      "colorCount": 7,
+      "bytes": 310,
+      "colorCount": 13,
       "height": 48,
       "id": "object-juice-bottle",
       "output": "objects/juice-bottle.png",
-      "sha256": "2b0cd519305598fa148ddb13085e2b5416b29c299bf8b92a9998dfff1bc23f26",
+      "sha256": "911159ff667c60821e9f5e1a3fef85be66427d9ae925fd3f3cecd6f5200423cb",
       "source": "art-source/pixel-world/sources/objects/juice-bottle.png",
       "width": 32
     },
@@ -597,12 +597,12 @@
         0,
         255
       ],
-      "bytes": 262,
-      "colorCount": 8,
+      "bytes": 454,
+      "colorCount": 11,
       "height": 56,
       "id": "object-lantern",
       "output": "objects/lantern.png",
-      "sha256": "84472d333297a7999be821472362615264e78f106357026b1fdd553338096b63",
+      "sha256": "66257db9f8e61bec80a524db0e78c2c1872aa6cc77e7354a79ff7fc79e920433",
       "source": "art-source/pixel-world/sources/objects/lantern.png",
       "width": 40
     },
@@ -611,12 +611,12 @@
         0,
         255
       ],
-      "bytes": 265,
-      "colorCount": 6,
+      "bytes": 266,
+      "colorCount": 7,
       "height": 40,
       "id": "object-red-ball",
       "output": "objects/red-ball.png",
-      "sha256": "26d13c1cab3ba605b6d1939420b01fb8ad69c7c3101b7499aa095cfcb0309fd8",
+      "sha256": "38a1d66044d17ee91ce68895f31fe56cd43eb091a93edcc2dcce95fd9aabec34",
       "source": "art-source/pixel-world/sources/objects/red-ball.png",
       "width": 40
     },
@@ -625,12 +625,12 @@
         0,
         255
       ],
-      "bytes": 257,
-      "colorCount": 12,
+      "bytes": 398,
+      "colorCount": 13,
       "height": 48,
       "id": "object-garden-flower",
       "output": "objects/garden-flower.png",
-      "sha256": "a20ac2858fd5049a43dede2072efdd00ebece5667101b3b46c0f41c003de1fab",
+      "sha256": "5ea670624052d51bbf6a257c1cbb7ef8385a4d1cdcece68d1f9c71223753a07f",
       "source": "art-source/pixel-world/sources/objects/garden-flower.png",
       "width": 32
     },
@@ -639,12 +639,12 @@
         0,
         255
       ],
-      "bytes": 241,
-      "colorCount": 6,
+      "bytes": 433,
+      "colorCount": 12,
       "height": 48,
       "id": "object-picnic-basket",
       "output": "objects/picnic-basket.png",
-      "sha256": "28f28b30242c89cabed22c532b6b098c2cd1bcc1cc25aa4a8c2e7e919dcb4fed",
+      "sha256": "05008e396627088a1fb4b94c856eeea30e5d48df4c813baca52e48c991117057",
       "source": "art-source/pixel-world/sources/objects/picnic-basket.png",
       "width": 56
     },
@@ -653,12 +653,12 @@
         0,
         255
       ],
-      "bytes": 432,
-      "colorCount": 9,
+      "bytes": 439,
+      "colorCount": 10,
       "height": 48,
       "id": "object-watering-can",
       "output": "objects/watering-can.png",
-      "sha256": "a681cbca6304d8a85873bd99a1d19123746438b853bbab2a42805bcc78ae5485",
+      "sha256": "fadde7e6c80c4301a8eafb48b89874b5c7c2e24bac2ab2d5dc6f62e2c01f2aae",
       "source": "art-source/pixel-world/sources/objects/watering-can.png",
       "width": 56
     },
@@ -761,7 +761,6 @@
     "screenPixelsPerArtPixel": 4,
     "textureToWorldScale": 1
   },
-  "generatedAt": "2026-08-07T22:06:25.466Z",
   "schemaVersion": 1,
   "worldPackId": "storybook-meadows"
 }

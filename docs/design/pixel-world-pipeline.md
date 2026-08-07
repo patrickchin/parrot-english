@@ -19,6 +19,7 @@ pipeline enforces both a runtime grid and an authored detail grid.
 | Property | Contract |
 | --- | --- |
 | Logical world | `720 × 480` world pixels |
+| Play plane | opaque `720 × 320` terrain beginning at world `y = 160` |
 | Camera | integer `2×` zoom |
 | Runtime asset scale | `1` for every asset |
 | Character frame | native `160 × 160` world pixels |
@@ -51,11 +52,13 @@ their source canvases. The compiler then:
 1. validates the declared native dimensions and `worldScale: 1`;
 2. trims transparent object sources;
 3. fits objects bottom-center on the authored-cell canvas;
-4. downsamples full-canvas art to the same authored-cell grid;
-5. hardens alpha at the configured threshold;
-6. maps every visible cell to the shared palette;
-7. expands cells by nearest-neighbor replication;
-8. writes lossless local PNGs and a hash/quality manifest.
+4. normalizes concepts without changing their aspect ratio: cover-crop for
+   opaque canvases and bottom-centered contain for transparent horizon strips;
+5. downsamples normalized art to the same authored-cell grid;
+6. hardens alpha at the configured threshold;
+7. maps every visible cell to the shared palette;
+8. expands cells by nearest-neighbor replication;
+9. writes lossless local PNGs and a hash/quality manifest.
 
 Run the complete compiler with:
 
@@ -68,6 +71,10 @@ Compile selected assets while iterating with:
 ```sh
 npm run generate:pixel-world-assets -- --only object-red-apple,object-oak-tree
 ```
+
+Partial compilation merges updated entries into the existing complete
+manifest in stable world-pack order. The manifest contains no wall-clock
+timestamp, so unchanged full and partial compiles are byte-for-byte stable.
 
 ## Reusable world model
 
@@ -88,6 +95,10 @@ The initial pack contains eight scenes, eighteen scenery objects, and sixteen
 holdable objects. Scenes are recipes made from `sky`, `far`, `mid`, `play`, and
 `foreground` layers plus object placements.
 
+The opaque play plane starts at `y = 160`, leaving the upper world visible for
+sky and distant layers. The physics bounds use the same playfield rectangle,
+so the player cannot walk into the horizon band.
+
 ## Parallax experiment
 
 Parallax is optional and reviewable in the World Explorer:
@@ -99,7 +110,10 @@ Parallax is optional and reviewable in the World Explorer:
 
 Reduced-motion preference forces the effective mode to off. Gameplay objects,
 the character, and held items always stay on the play plane. The default mode
-is camera-only so screenshot captures are deterministic.
+is camera-only so screenshot captures are deterministic. Visual A/B review
+selected horizontal camera parallax: it adds depth without changing the
+vertical horizon composition. Ambient drift remains an experiment rather than
+a scene requirement.
 
 ## Visual review loop
 
@@ -117,4 +131,7 @@ For each material change:
 
 The checked-in browser tests cover the review controls and runtime metadata.
 The compiler tests cover palette mapping, hard alpha, native dimensions, and
-the shared authored-cell expansion.
+the shared authored-cell expansion. The compiled-asset integration gate also
+decodes all 52 runtime PNGs and verifies every aligned `2 × 2` cell directly.
+Curated screenshots, contact sheets, and analysis live in
+`artifacts/pixel-world`.

@@ -10,7 +10,8 @@ import { chromium, expect } from "@playwright/test";
 
 const DEFAULT_BASE_URL = "http://127.0.0.1:4174";
 const READY_TIMEOUT_MS = 30_000;
-const MOVE_DISTANCE = 220;
+const MOVE_DISTANCE = 150;
+const MOVE_NUDGES = 9;
 const CAPTURE_TIMESTAMP = "2026-07-10T08:00:00.000Z";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, "..");
@@ -48,7 +49,35 @@ const viewportMatrix = [
     viewport: { height: 720, width: 1280 },
   },
   {
-    heldItem: "picnic basket",
+    heldItem: "green pear",
+    label: "desktop-orchard",
+    parallax: "camera",
+    scene: { id: "orchard-walk", name: "Orchard Walk" },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    heldItem: "teddy bear",
+    label: "desktop-playground",
+    parallax: "camera",
+    scene: { id: "playground-afternoon", name: "Playground Afternoon" },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    heldItem: "garden shovel",
+    label: "desktop-forest",
+    parallax: "camera",
+    scene: { id: "forest-trail", name: "Forest Trail" },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    heldItem: "kite",
+    label: "desktop-meadow",
+    parallax: "camera",
+    scene: { id: "kite-meadow", name: "Kite Meadow" },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    heldItem: "storybook",
     label: "mobile",
     parallax: "off",
     scene: { id: "pond-picnic", name: "Pond Picnic" },
@@ -64,12 +93,12 @@ const viewportMatrix = [
 ];
 
 const parallaxMatrix = ["off", "camera"].map((parallax) => ({
-  heldItem: "kite",
-  label: "wide",
+  heldItem: "paint brush",
+  label: "parallax-review",
   moveRight: true,
   parallax,
-  scene: { id: "kite-meadow", name: "Kite Meadow" },
-  viewport: { height: 1080, width: 1920 },
+  scene: { id: "garden-party", name: "Garden Party" },
+  viewport: { height: 900, width: 1280 },
 }));
 
 const captureSession = {
@@ -265,46 +294,22 @@ async function movePlayerRight(page, world) {
   if (!Number.isFinite(startX)) {
     throw new Error("The pixel world did not expose a numeric data-x value.");
   }
-  const targetX = startX + MOVE_DISTANCE;
   const moveRight = page.getByRole("button", { name: "Move right" });
   await moveRight.scrollIntoViewIfNeeded();
-  const moveRightBox = await moveRight.boundingBox();
-  if (!moveRightBox) {
-    throw new Error("The Move right control does not have a visible position.");
-  }
-  await page.mouse.move(
-    moveRightBox.x + moveRightBox.width / 2,
-    moveRightBox.y + moveRightBox.height / 2,
-  );
-
-  await page.mouse.down();
-  try {
+  for (let index = 0; index < MOVE_NUDGES; index += 1) {
+    const previousX = Number(await world.getAttribute("data-x"));
+    await moveRight.click();
     await expect
       .poll(async () => Number(await world.getAttribute("data-x")), {
-        message: `Move the player at least ${MOVE_DISTANCE}px to reveal camera parallax`,
+        message: `Apply right nudge ${index + 1} of ${MOVE_NUDGES}`,
         timeout: 10_000,
       })
-      .toBeGreaterThanOrEqual(targetX);
-    await expect
-      .poll(
-        async () => {
-          const before = Number(await world.getAttribute("data-x"));
-          await settleRendering(page, 6);
-          const after = Number(await world.getAttribute("data-x"));
-          return after >= targetX && after === before;
-        },
-        {
-          message: "Move the player to a stable right-edge comparison point",
-          timeout: 10_000,
-        },
-      )
-      .toBe(true);
-  } finally {
-    await page.mouse.up();
+      .toBeGreaterThan(previousX);
+    await page.waitForTimeout(180);
   }
 
   await expect(world).toHaveAttribute("data-frame", "0");
-  await settleRendering(page, 30);
+  await settleRendering(page, 12);
   const endX = Number(await world.getAttribute("data-x"));
   if (endX - startX < MOVE_DISTANCE) {
     throw new Error(

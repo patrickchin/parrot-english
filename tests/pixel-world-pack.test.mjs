@@ -26,6 +26,12 @@ describe("pixel world pack", () => {
     assert.equal(PIXEL_WORLD_PACK.renderProfile.textureToWorldScale, 1);
     assert.equal(PIXEL_WORLD_PACK.renderProfile.screenPixelsPerArtPixel, 4);
     assert.equal(PIXEL_WORLD_PACK.renderProfile.alpha, "binary");
+    assert.deepEqual(PIXEL_WORLD_PACK.renderProfile.playfield, {
+      bottom: 480,
+      left: 0,
+      right: 720,
+      top: 160,
+    });
     assert.ok(PIXEL_WORLD_PACK.renderProfile.palette.length >= 24);
     assert.ok(PIXEL_WORLD_PACK.renderProfile.palette.length <= 48);
 
@@ -90,6 +96,12 @@ describe("pixel world pack", () => {
       assert.ok(scene.layers.far.length >= 1);
       assert.ok(scene.layers.mid.length >= 1);
       assert.ok(scene.layers.play.length >= 1);
+      assert.equal(scene.layers.play.length, 1);
+      assert.equal(scene.layers.play[0].y, 160);
+      assert.equal(
+        PIXEL_WORLD_PACK.assets[scene.layers.play[0].assetId].nativeHeight,
+        320,
+      );
       assert.ok(scene.placements.length >= 6);
       assert.equal(Number.isInteger(scene.start.x), true);
       assert.equal(Number.isInteger(scene.start.y), true);
@@ -98,6 +110,7 @@ describe("pixel world pack", () => {
         assert.ok(layer.assetId.length > 0);
         assert.ok(layer.scrollFactorX >= 0 && layer.scrollFactorX <= 1);
         assert.ok(layer.scrollFactorY >= 0 && layer.scrollFactorY <= 1);
+        assert.equal(layer.scrollFactorY, 1);
         assert.equal(Number.isInteger(layer.x), true);
         assert.equal(Number.isInteger(layer.y), true);
       }
@@ -119,6 +132,11 @@ describe("pixel world pack", () => {
       "happy",
       "surprised",
     ]);
+    assert.deepEqual(mainHand.byPose.idle[0], {
+      depth: "front",
+      x: 56,
+      y: -49,
+    });
 
     for (const [pose, anchors] of Object.entries(mainHand.byPose)) {
       assert.ok(Array.isArray(anchors));
@@ -130,6 +148,12 @@ describe("pixel world pack", () => {
         assert.match(anchor.depth, /^(back|front)$/);
       }
     }
+
+    const holdProfiles = PIXEL_WORLD_PACK.objects
+      .filter(({ capabilities }) => capabilities.includes("holdable"))
+      .map(({ hold }) => JSON.stringify(hold));
+    assert.ok(new Set(holdProfiles).size >= 6);
+    assert.equal(holdProfiles.some((profile) => profile.includes("rotation")), false);
   });
 
   it("ships only local, compiler-owned assets with declared native dimensions", () => {
@@ -166,6 +190,10 @@ describe("pixel world pack", () => {
     assert.equal(
       packageManifest.scripts["generate:pixel-world-assets"],
       "node scripts/generate-pixel-world-assets.mjs",
+    );
+    assert.equal(
+      packageManifest.scripts["capture:pixel-world"],
+      "node scripts/capture-pixel-world-screenshots.mjs",
     );
     assert.equal(
       existsSync(path.join(projectRoot, "scripts", "generate-pixel-world-assets.mjs")),

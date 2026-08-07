@@ -25,7 +25,6 @@ export function resolveHeldItemTransform({
     flipX,
     originX: itemHold.originX,
     originY: itemHold.originY,
-    rotation: flipX ? -itemHold.rotation : itemHold.rotation,
     x: flipX ? -x : x,
     y: anchor.y + itemHold.offsetY,
   };
