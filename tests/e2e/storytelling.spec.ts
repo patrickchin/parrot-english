@@ -63,7 +63,7 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the shelf exposes all 20 prompt experiments in four levels", async ({
+test("the shelf exposes 20 prompt experiments plus the original baseline", async ({
   page,
 }) => {
   await page.goto("/stories");
@@ -73,7 +73,7 @@ test("the shelf exposes all 20 prompt experiments in four levels", async ({
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
   await expect(shelf.getByRole("link", { name: /^Read story:/ })).toHaveCount(
-    20,
+    21,
   );
 
   for (const level of [
@@ -81,6 +81,7 @@ test("the shelf exposes all 20 prompt experiments in four levels", async ({
     "Repeating patterns",
     "Tiny stories",
     "Early A1",
+    "Original baseline",
   ]) {
     await expect(
       shelf.getByRole("heading", { exact: true, name: level }),
@@ -91,14 +92,41 @@ test("the shelf exposes all 20 prompt experiments in four levels", async ({
     shelf.getByRole("link", { name: "Read story: The Red Ball" }),
   ).toHaveAttribute("href", firstStoryPath);
   await expect(
-    shelf.getByRole("link", { name: "Read story: The Lantern Trail" }),
+    shelf.getByRole("link", {
+      exact: true,
+      name: "Read story: The Lantern Trail",
+    }),
   ).toHaveAttribute("href", "/stories/the-lantern-trail/pages/1");
-  await expect(shelf.getByText("Script only", { exact: true })).toHaveCount(20);
+  await expect(
+    shelf.getByRole("link", {
+      name: "Read story: The Lantern Trail — Original",
+    }),
+  ).toHaveAttribute("href", "/stories/the-lantern-trail-original/pages/1");
+  await expect(shelf.getByText("Cover ready", { exact: true })).toHaveCount(21);
+  const firstCover = shelf.getByRole("img", {
+    name: "A bright red ball beside a smiling young child",
+  });
+  await expect(firstCover).toBeVisible();
+  await expect(firstCover).toHaveAttribute("loading", "eager");
+  await expect(
+    shelf.getByRole("img", {
+      name: "Three simple hats in red, blue, and yellow",
+    }),
+  ).toHaveAttribute("loading", "lazy");
   await expect(
     shelf.getByText("Assumes familiar: no extra content words", {
       exact: true,
     }),
   ).toHaveCount(2);
+  await expect(
+    shelf.getByText(
+      "Assumes familiar: 107 extra word forms in the original",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    shelf.getByText("Uncontrolled comparison · 1 story", { exact: true }),
+  ).toBeVisible();
 });
 
 test("a first-words script exposes placeholders, targets, and page navigation", async ({
@@ -170,6 +198,29 @@ test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) =
   ).toBeDisabled();
 });
 
+test("the complete original Lantern Trail remains readable as a baseline", async ({
+  page,
+}) => {
+  await page.goto("/stories/the-lantern-trail-original/pages/1");
+
+  const reader = page.getByRole("region", { name: "Story reader" });
+  await expect(
+    reader.getByRole("heading", {
+      exact: true,
+      name: "The Lantern Trail — Original",
+    }),
+  ).toBeVisible();
+  await expect(
+    reader.getByText(
+      /At sunset, Pip the green parrot heard a tiny voice by the garden gate/,
+    ),
+  ).toBeVisible();
+  await expect(
+    reader.getByText(/Glow, little lantern, show us the way!/),
+  ).toBeVisible();
+  await expect(reader.getByText("Page 1 of 6", { exact: true })).toBeVisible();
+});
+
 test("finishing a prototype uses story-owned completion copy", async ({ page }) => {
   await page.goto("/stories/the-red-ball/pages/5");
 
@@ -182,7 +233,7 @@ test("finishing a prototype uses story-owned completion copy", async ({ page }) 
   await expect(complete.getByText("The red ball is home.", { exact: true })).toBeVisible();
   await expect(
     complete.getByRole("img", {
-      name: "Artwork placeholder for the cover of The Red Ball",
+      name: "A bright red ball beside a smiling young child",
     }),
   ).toBeVisible();
   await expect(complete.getByRole("button", { name: "Read again" })).toBeEnabled();

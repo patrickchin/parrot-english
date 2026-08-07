@@ -22,7 +22,8 @@ prompt history from Codex sessions in this project.
   and regeneration rules.
 - [Young-Learner Storytelling Language Guide](./design/young-learner-storytelling.md)
   records the Pre-A1/A1 research, working vocabulary bands, reusable generation
-  prompt, and 20 script experiments that precede artwork and narration.
+  prompt, 20 script experiments, preserved original baseline, and the cover-art
+  gate that precedes page illustration and narration.
 - [Codex Session Decision Log](./design/codex-session-decision-log.md) records
   the major decisions that came from the project Codex prompts.
 

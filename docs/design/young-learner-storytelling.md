@@ -18,9 +18,10 @@ individual known-word profile, the safe starting point is familiar,
 picture-supported Pre-A1 language with a very small explicit teaching set.
 
 The current prompt lab therefore starts below a normal full picture-book word
-count on purpose. Its 20 scripts range from 17 to 52 narrative words so we can
-find the lowest language level that still feels like a satisfying story before
-we invest in narration or art.
+count on purpose. Its 20 controlled scripts range from 17 to 52 narrative words
+so we can find the lowest language level that still feels like a satisfying
+story. The 199-word original Lantern Trail remains available as a 21st,
+uncontrolled baseline rather than being overwritten by its simpler rewrite.
 
 ## What the External Frameworks Say
 
@@ -193,6 +194,7 @@ child speaking load can be inspected separately.
 | Repeating patterns | Supported Pre-A1 | 6 pages; up to 58 words; up to 12 words/page; 5–6 targets; up to 5 assumptions | Familiar routine, mirrored frames, direct cause and effect |
 | Tiny stories | Secure Pre-A1 | 6 pages; up to 65 words; up to 12 words/page; 6–7 targets; up to 12 assumptions | One small problem or sequence, literal short dialogue |
 | Early A1 | Pre-A1 to A1 bridge | 7 pages; up to 80 words; up to 14 words/page; 7–8 targets; up to 18 assumptions | Compact story arc, simple connectors or directions, light fantasy |
+| Original baseline | Uncontrolled comparison | 6 pages; 199 narrative words; 29–41 words/page; 107 extra declared word forms | The untouched first script, deliberately outside the controlled learner levels |
 
 The first research pass is deliberately more conservative than many published
 read-aloud heuristics. If children understand and enjoy the shortest versions,
@@ -210,7 +212,9 @@ reaching 12–17 words. It also used incidental language such as *sunset*,
 The prompt-lab rewrite keeps Pip, Flicker, the lost-family problem, and the
 homecoming, but uses 46 narrative words with no page above nine words. This
 directly tests whether the plot was sound and the lexical density was the real
-problem.
+problem. Both versions are playable: `the-lantern-trail` is the controlled
+rewrite, while `the-lantern-trail-original` preserves the first script
+verbatim as the comparison baseline.
 
 ## Reusable Generation Prompt
 
@@ -282,18 +286,21 @@ more useful than generating 20 stories from one vague "make it fun" prompt.
 | The Moon Bus | Early A1 | Put concrete transport phrases inside a gentle fantasy setting. | Comparing it with realistic stories tests whether fantasy adds engagement or overload. |
 
 The exact scripts, target lists, prompt instructions, hypotheses, word limits,
-and media placeholders live in `src/stories/story-script-candidates.ts` and
-`src/stories/story-catalog.ts`.
+cover assets, and remaining page/audio placeholders live in
+`src/stories/story-script-candidates.ts`, `src/stories/story-catalog.ts`, and
+`public/assets/stories`.
 
 ## First Comparison Set
 
-Start user testing with five stories rather than all 20:
+Start user testing with five controlled stories plus the original baseline:
 
 1. **The Red Ball** — finds the practical language floor.
 2. **Seed, Wake Up!** — tests simple factual content and cause/effect.
 3. **The Lantern Trail** — compares the same plot after vocabulary control.
 4. **The Picnic Blanket Search** — tests the participatory adventure pattern.
 5. **The Moon Bus** — tests whether light fantasy helps or distracts.
+6. **The Lantern Trail — Original** — measures the controlled rewrite against
+   the untouched language-rich version that prompted this investigation.
 
 For each reading, record:
 
@@ -302,7 +309,8 @@ For each reading, record:
 - whether the child supplies a repeated word, chunk, or frame after modelling
   or by the third reading;
 - which target words the child recognises immediately and after the story;
-- whether the child can order three picture placeholders; and
+- whether the child can order three picture cards once page art is produced;
+  and
 - the child's voluntary request to hear it again.
 
 Do not choose a winner from adult preference alone. The strongest prompt is the
@@ -311,11 +319,16 @@ repeat the story with the least adult repair.
 
 ## Media Gate
 
-All 20 candidates currently use `null` artwork sources and `null` narration
-audio IDs. The UI renders an accessible placeholder instead of a broken image
-and disables narration instead of falling into an unavailable audio lookup.
-The superseded Lantern narration and artwork are removed from the public
-bundle so the harder wording cannot be accidentally reassociated with the
-stable story ID.
-Generate illustrations and ElevenLabs narration only after a small comparison
-set has been selected and its wording has stopped changing.
+All 20 prompt experiments plus the original baseline have generated landscape
+WebP covers under `public/assets/stories`. They share a warm
+gouache-and-watercolour picture-book style, simple readable silhouettes, and
+story-specific exact object or character counts. The catalog stores each
+cover's concise scene prompt and descriptive alt text.
+
+Page artwork sources and narration audio IDs remain `null`. The reader renders
+an accessible page placeholder and disables narration instead of requesting a
+missing file. The superseded Lantern page art and narration remain absent; the
+harder script is isolated under `the-lantern-trail-original`, so it cannot be
+accidentally reassociated with the simplified story's stable ID. Generate page
+illustrations and ElevenLabs narration only after a small comparison set has
+been selected and its wording has stopped changing.

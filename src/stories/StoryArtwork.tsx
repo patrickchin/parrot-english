@@ -16,8 +16,10 @@ export function StoryArtwork({
       <img
         alt={artwork.alt}
         className={cx("h-full w-full object-cover", className)}
+        decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         height="1024"
+        loading={priority ? "eager" : "lazy"}
         src={artwork.src}
         width="1536"
       />

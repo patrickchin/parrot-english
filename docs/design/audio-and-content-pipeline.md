@@ -10,13 +10,13 @@ Built-in Parrot Lesson playback uses saved audio in `public/assets/audio`.
 Authenticated My Lessons use browser on-device English speech synthesis.
 Neither playback mode adds audio fields to the lesson-authoring format.
 
-Storytelling candidates use a separate text-first contract. Their catalog pages
-carry a nullable narration audio ID and nullable artwork source. A null value is
-an intentional placeholder: the reader disables narration and renders a visual
-placeholder without requesting a missing file. Do not add static-audio entries
-or generate story media while script wording is still being compared.
-Artwork production prompts remain catalogue metadata and are not rendered as
-extra child-facing reading text.
+Storytelling candidates use a separate text-first contract. Every catalog story
+has a generated cover WebP; individual pages carry a nullable narration audio
+ID and nullable artwork source. A null page value is an intentional placeholder:
+the reader disables narration and renders a visual placeholder without
+requesting a missing file. Do not add static-audio entries or page illustrations
+while script wording is still being compared. Artwork production prompts remain
+catalogue metadata and are not rendered as extra child-facing reading text.
 
 ## Sources of Truth
 
@@ -33,6 +33,7 @@ extra child-facing reading text.
 - Source audio files: `public/assets/audio`
 - Build output: `dist/assets/audio`
 - Story script candidates: `src/stories/story-script-candidates.ts`
+- Generated story covers: `public/assets/stories/*-cover.webp`
 - Story language and prompt research:
   `docs/design/young-learner-storytelling.md`
 
@@ -169,4 +170,6 @@ response.
 - Run `npm run verify:backgrounds` after any background catalog change.
 - Run `npm run verify:pixel-stage-media` after any pixel-stage catalog change.
 - Run focused lesson/audio tests.
+- Confirm every story cover path resolves to a checked-in WebP while page media
+  remains explicitly nullable.
 - Run `npm run build` so Vite copies the source assets into `dist`.
