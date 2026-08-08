@@ -221,6 +221,26 @@ describe("pixel world pack", () => {
     assert.equal(sourceIds.size, PIXEL_WORLD_PACK.scenes.length);
   });
 
+  it("keeps every ready-made cast together inside the active camera composition", () => {
+    const slotsById = new Map(
+      requirePlacementSlots().map((slot) => [slot.id, slot]),
+    );
+
+    for (const scene of PIXEL_WORLD_PACK.scenes) {
+      const positions = scene.cast.map(({ slotId }) => slotsById.get(slotId));
+      assert.equal(positions.every(Boolean), true, `${scene.id} must use known slots`);
+      assert.equal(
+        new Set(positions.map(({ y }) => y)).size,
+        1,
+        `${scene.id} must keep Peppa and Polly on one readable depth row`,
+      );
+      assert.ok(
+        Math.abs(positions[0].x - positions[1].x) <= 100,
+        `${scene.id} must keep Peppa and Polly within one camera composition`,
+      );
+    }
+  });
+
   it("maps lesson and story scene sources to real catalog entries", () => {
     const lessonIds = new Set(
       readdirSync(new URL("../content/lessons/", import.meta.url))
