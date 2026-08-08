@@ -18,6 +18,12 @@ const outputRoot = path.join(projectRoot, "public", "assets", "pixel-world");
 const publicPrefix = "/assets/pixel-world/";
 const alphaThreshold = 128;
 const transparent = Object.freeze({ alpha: 0, b: 0, g: 0, r: 0 });
+const spriteSheetPoseRows = Object.freeze([
+  "walking",
+  "talking",
+  "happy",
+  "surprised",
+]);
 
 function relativeAssetPath(asset) {
   if (!asset.src.startsWith(publicPrefix)) {
@@ -105,6 +111,163 @@ async function normalizeSprite(input, width, height, asset) {
     .raw()
     .toBuffer({ resolveWithObject: true });
   return { data, info };
+}
+
+function copyEllipse({
+  centerX,
+  centerY,
+  data,
+  height,
+  output,
+  radiusX,
+  radiusY,
+  width,
+}) {
+  let visiblePixelCount = 0;
+  const left = Math.max(0, Math.floor(centerX - radiusX));
+  const right = Math.min(width - 1, Math.ceil(centerX + radiusX));
+  const top = Math.max(0, Math.floor(centerY - radiusY));
+  const bottom = Math.min(height - 1, Math.ceil(centerY + radiusY));
+
+  for (let y = top; y <= bottom; y += 1) {
+    for (let x = left; x <= right; x += 1) {
+      const xRatio = (x - centerX) / radiusX;
+      const yRatio = (y - centerY) / radiusY;
+      if (xRatio * xRatio + yRatio * yRatio > 1) continue;
+      const offset = (y * width + x) * 4;
+      output[offset] = data[offset];
+      output[offset + 1] = data[offset + 1];
+      output[offset + 2] = data[offset + 2];
+      output[offset + 3] = data[offset + 3];
+      if (data[offset + 3] >= alphaThreshold) visiblePixelCount += 1;
+    }
+  }
+  return visiblePixelCount;
+}
+
+function findNearestVisiblePixel({ centerX, centerY, data, frame, width }) {
+  let nearest = null;
+  for (let y = frame.top; y < frame.bottom; y += 1) {
+    for (let x = frame.left; x < frame.right; x += 1) {
+      const offset = (y * width + x) * 4;
+      if (data[offset + 3] < alphaThreshold) continue;
+      const distanceSquared = (x - centerX) ** 2 + (y - centerY) ** 2;
+      if (!nearest || distanceSquared < nearest.distanceSquared) {
+        nearest = { distanceSquared, x, y };
+      }
+    }
+  }
+  return nearest;
+}
+
+async function deriveFrontHandOverlaySource(character) {
+  const bodySheet = character.spriteSheet;
+  const overlaySheet = character.overlays?.mainHandFront;
+  if (!overlaySheet) return null;
+  if (
+    bodySheet.columns !== overlaySheet.columns ||
+    bodySheet.rows !== overlaySheet.rows ||
+    bodySheet.frameWidth !== overlaySheet.frameWidth ||
+    bodySheet.frameHeight !== overlaySheet.frameHeight
+  ) {
+    throw new Error(`${character.id} body and front-hand overlay geometry must match.`);
+  }
+
+  const bodyAsset = PIXEL_WORLD_PACK.assets[bodySheet.assetId];
+  const overlayAsset = PIXEL_WORLD_PACK.assets[overlaySheet.assetId];
+  if (!bodyAsset || !overlayAsset) {
+    throw new Error(`${character.id} requires declared body and front-hand assets.`);
+  }
+
+  const cellSize = PIXEL_WORLD_PACK.renderProfile.artCellWorldPixels;
+  const authoredWidth = overlayAsset.nativeWidth / cellSize;
+  const authoredHeight = overlayAsset.nativeHeight / cellSize;
+  const body = await normalizeFullCanvas(
+    await readFile(sourcePathFor(bodyAsset)),
+    authoredWidth,
+    authoredHeight,
+  );
+  const overlay = new Uint8ClampedArray(body.data.length);
+  const authoredFrameWidth = overlaySheet.frameWidth / cellSize;
+  const authoredFrameHeight = overlaySheet.frameHeight / cellSize;
+  const radiusX = Math.max(4, (overlaySheet.frameWidth * 0.07) / cellSize);
+  const radiusY = Math.max(5, (overlaySheet.frameHeight * 0.09) / cellSize);
+  const anchorsByPose = character.sockets?.mainHand?.byPose;
+
+  for (let row = 0; row < spriteSheetPoseRows.length; row += 1) {
+    const pose = spriteSheetPoseRows[row];
+    const anchors = anchorsByPose?.[pose];
+    if (!anchors?.length) {
+      throw new Error(`${character.id} is missing ${pose} main-hand anchors.`);
+    }
+    for (let column = 0; column < overlaySheet.columns; column += 1) {
+      const anchor = anchors[column % anchors.length];
+      if (
+        anchor.depth !== "front" ||
+        anchor.overlayRole !== "mainHandFront"
+      ) {
+        continue;
+      }
+      const socketX =
+        column * authoredFrameWidth +
+        (overlaySheet.frameWidth / 2 + anchor.x) / cellSize;
+      const socketY =
+        row * authoredFrameHeight +
+        (overlaySheet.frameHeight + anchor.y) / cellSize;
+      const nearestVisiblePixel = findNearestVisiblePixel({
+        centerX: socketX,
+        centerY: socketY,
+        data: body.data,
+        frame: {
+          bottom: (row + 1) * authoredFrameHeight,
+          left: column * authoredFrameWidth,
+          right: (column + 1) * authoredFrameWidth,
+          top: row * authoredFrameHeight,
+        },
+        width: authoredWidth,
+      });
+      if (!nearestVisiblePixel) {
+        throw new Error(
+          `${character.id} frame ${row * overlaySheet.columns + column} is empty.`,
+        );
+      }
+      const visiblePixelCount = copyEllipse({
+        centerX: nearestVisiblePixel.x,
+        centerY: nearestVisiblePixel.y,
+        data: body.data,
+        height: authoredHeight,
+        output: overlay,
+        radiusX,
+        radiusY,
+        width: authoredWidth,
+      });
+      if (!visiblePixelCount) {
+        throw new Error(
+          `${character.id} frame ${row * overlaySheet.columns + column} ` +
+            "has no front-hand pixels.",
+        );
+      }
+    }
+  }
+
+  const overlaySourcePath = sourcePathFor(overlayAsset);
+  await mkdir(path.dirname(overlaySourcePath), { recursive: true });
+  await sharp(overlay, {
+    raw: { channels: 4, height: authoredHeight, width: authoredWidth },
+  })
+    .png({ compressionLevel: 9, palette: false })
+    .toFile(overlaySourcePath);
+  return overlaySheet.assetId;
+}
+
+async function deriveSelectedCharacterOverlays(selectedAssetIds) {
+  const selected = new Set(selectedAssetIds);
+  for (const character of PIXEL_WORLD_PACK.characters ?? []) {
+    const overlayAssetId = character.overlays?.mainHandFront?.assetId;
+    if (overlayAssetId && selected.has(overlayAssetId)) {
+      await deriveFrontHandOverlaySource(character);
+    }
+  }
 }
 
 function inspectCompiledPixels(data) {
@@ -214,6 +377,7 @@ function requestedAssetIds() {
 async function main() {
   const allAssetIds = Object.keys(PIXEL_WORLD_PACK.assets);
   const selectedAssetIds = requestedAssetIds();
+  await deriveSelectedCharacterOverlays(selectedAssetIds);
   const results = [];
   for (const assetId of selectedAssetIds) {
     results.push(await compileAsset(assetId, PIXEL_WORLD_PACK.assets[assetId]));
