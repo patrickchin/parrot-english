@@ -92,6 +92,62 @@ const viewportMatrix = [
   },
 ];
 
+const composerMatrix = [
+  {
+    activeCharacter: "peppa",
+    heldItem: "red apple",
+    label: "composer-story-apples",
+    parallax: "camera",
+    scene: {
+      id: "story-three-apples",
+      name: "Story: Three Apples",
+      sourceKind: "story",
+    },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    activeCharacter: "polly",
+    heldItem: "lantern",
+    label: "composer-lesson-bedtime",
+    parallax: "camera",
+    scene: {
+      id: "lesson-bedtime-story",
+      name: "Lesson: Bedtime Story",
+      sourceKind: "lesson",
+    },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    activeCharacter: "peppa",
+    heldItem: "kite",
+    label: "composer-story-kite",
+    parallax: "camera",
+    scene: {
+      id: "story-kite-come-back",
+      name: "Story: Kite, Come Back!",
+      sourceKind: "story",
+    },
+    viewport: { height: 1080, width: 1920 },
+  },
+  {
+    activeCharacter: "polly",
+    heldItem: "storybook",
+    label: "composer-polly-storybook",
+    parallax: "camera",
+    placement: "center-right",
+    scene: { id: "garden-party", name: "Garden Party", sourceKind: "world" },
+    viewport: { height: 900, width: 1280 },
+  },
+  {
+    activeCharacter: "polly",
+    heldItem: "red apple",
+    label: "composer-mobile-polly",
+    parallax: "off",
+    scene: { id: "orchard-walk", name: "Orchard Walk", sourceKind: "world" },
+    viewport: { height: 844, width: 390 },
+  },
+];
+
 const parallaxMatrix = ["off", "camera"].map((parallax) => ({
   heldItem: "paint brush",
   label: "parallax-review",
@@ -156,7 +212,7 @@ function explorerUrl() {
   return new globalThis.URL("/games/worlds", baseUrl).href;
 }
 
-async function settleRendering(page, frameCount = 2) {
+async function settleRendering(page, frameCount = 30) {
   await page.evaluate(
     (frames) =>
       new Promise((resolve) => {
@@ -188,6 +244,7 @@ async function waitForWorldState(world, expected, message) {
     .poll(
       async () => {
         const state = await world.evaluate((element) => ({
+          activeCharacter: element.dataset.activeCharacter,
           heldItem: element.dataset.heldItem,
           parallaxMode: element.dataset.parallaxMode,
           ready: element.dataset.ready,
@@ -232,6 +289,7 @@ async function openExplorer(page) {
 }
 
 async function chooseState(page, world, scenario) {
+  const composer = page.getByRole("region", { name: "Scene composer" });
   const sceneChooser = page.getByRole("region", { name: "Scene chooser" });
   const itemChooser = page.getByRole("region", {
     name: "Holdable item chooser",
@@ -241,7 +299,11 @@ async function chooseState(page, world, scenario) {
   });
 
   if ((await world.getAttribute("data-scene-id")) !== scenario.scene.id) {
-    await sceneChooser
+    const sceneRegion =
+      scenario.scene.sourceKind && scenario.scene.sourceKind !== "world"
+        ? composer
+        : sceneChooser;
+    await sceneRegion
       .getByRole("button", { exact: true, name: scenario.scene.name })
       .click();
   }
@@ -267,6 +329,38 @@ async function chooseState(page, world, scenario) {
     },
     `Wait for ${scenario.parallax} parallax to become ready`,
   );
+
+  const activeCharacter = scenario.activeCharacter ?? "peppa";
+  if (
+    (await world.getAttribute("data-active-character")) !== activeCharacter
+  ) {
+    await composer
+      .getByRole("group", { name: "Character chooser" })
+      .getByRole("button", {
+        exact: true,
+        name: activeCharacter === "polly" ? "Polly" : "Peppa",
+      })
+      .click();
+  }
+  await waitForWorldState(
+    world,
+    { activeCharacter, ready: "true", sceneId: scenario.scene.id },
+    `Wait for ${activeCharacter} to become the active character`,
+  );
+
+  if (scenario.placement) {
+    const characterName = activeCharacter === "polly" ? "Polly" : "Peppa";
+    await composer
+      .getByRole("button", {
+        exact: true,
+        name: `Place ${characterName} ${scenario.placement.replaceAll("-", " ")}`,
+      })
+      .click();
+    await expect(world).toHaveAttribute(
+      `data-${activeCharacter}-slot`,
+      scenario.placement,
+    );
+  }
 
   const heldItemId = slug(scenario.heldItem);
   if ((await world.getAttribute("data-held-item")) !== heldItemId) {
@@ -390,7 +484,11 @@ async function main() {
   const results = [];
 
   try {
-    for (const scenario of [...viewportMatrix, ...parallaxMatrix]) {
+    for (const scenario of [
+      ...viewportMatrix,
+      ...composerMatrix,
+      ...parallaxMatrix,
+    ]) {
       results.push({
         result: await captureScenario(browser, scenario),
         scenario,
