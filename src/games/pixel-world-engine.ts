@@ -379,6 +379,7 @@ export function createPixelWorldEngine(
       actor.sprite.setPosition(position.x, position.y).setVelocity(0, 0);
       actor.sprite.setDepth(getDepthForFootY(actor.sprite.y));
       this.updateActorHold(actor, actor.state.emote);
+      this.startCameraFollow(this.getActiveActor().sprite);
       this.syncStatus();
     }
 
@@ -468,12 +469,17 @@ export function createPixelWorldEngine(
     }
 
     private startCameraFollow(sprite: PhaserType.Physics.Arcade.Sprite) {
+      const castCenterX =
+        [...this.actors.values()].reduce(
+          (total, actor) => total + actor.sprite.x,
+          0,
+        ) / this.actors.size;
       this.cameras.main.startFollow(
         sprite,
         true,
         reducedMotion?.matches ? 1 : 0.35,
         reducedMotion?.matches ? 1 : 0.35,
-        0,
+        sprite.x - castCenterX,
         CAMERA_FOLLOW_OFFSET_Y,
       );
     }
@@ -610,6 +616,9 @@ export function createPixelWorldEngine(
         ART_CELL_SIZE * this.cameras.main.zoom,
       );
       host.dataset.activeCharacter = activeCharacterId;
+      host.dataset.cameraFollowOffsetX = String(
+        this.cameras.main.followOffset.x,
+      );
       host.dataset.cameraFollowOffsetY = String(
         this.cameras.main.followOffset.y,
       );

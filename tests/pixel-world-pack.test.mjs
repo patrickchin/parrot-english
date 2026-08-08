@@ -265,10 +265,16 @@ describe("pixel world pack", () => {
     );
 
     for (const scene of PIXEL_WORLD_PACK.scenes) {
+      const castCenterX =
+        scene.cast.reduce(
+          (total, castMember) =>
+            total + slotsById.get(castMember.slotId).x,
+          0,
+        ) / scene.cast.length;
       for (const activeCastMember of scene.cast) {
         const activePosition = slotsById.get(activeCastMember.slotId);
         const scrollX = clamp(
-          activePosition.x - visibleWidth / 2,
+          castCenterX - visibleWidth / 2,
           0,
           maxScrollX,
         );
