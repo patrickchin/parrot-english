@@ -118,11 +118,9 @@ test("ready-made lessons use distinct story-specific artwork", () => {
   assert.equal(new Set(expectedReadyMadeArtwork.map(([src]) => src)).size, 7);
 });
 
-test("lesson two offers its full-scene artwork comparison directly beneath the original", () => {
+test("lesson two offers its full-scene artwork comparison within the original card", () => {
   const html = renderLessonList();
-  const originalLessonStart = html.indexOf(
-    'aria-label="Start lesson: The Red Flower"',
-  );
+  const originalLessonTitle = html.indexOf("The Red Flower</h3>");
   const comparisonHref =
     "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
   const comparisonStart = html.indexOf(`href="${comparisonHref}"`);
@@ -130,8 +128,8 @@ test("lesson two offers its full-scene artwork comparison directly beneath the o
     'aria-label="Start lesson: Peppa&#x27;s Apple Snack"',
   );
 
-  assert.ok(originalLessonStart >= 0, "Expected the original lesson two row");
-  assert.ok(comparisonStart > originalLessonStart);
+  assert.ok(originalLessonTitle >= 0, "Expected the original lesson two row");
+  assert.ok(comparisonStart > originalLessonTitle);
   assert.ok(comparisonStart < nextLessonStart);
 
   const comparisonCopy = html.slice(comparisonStart, nextLessonStart);

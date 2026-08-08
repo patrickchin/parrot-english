@@ -786,7 +786,7 @@ function LessonRouteDecisionView({
   return (
     <LessonPlayer
       audioMode={source === "my" ? "device" : "static"}
-      key={`${source}:${decision.entry.id}:${variant?.id ?? "layered"}`}
+      key={`${source}:${decision.entry.id}`}
       lesson={decision.entry.lesson}
       onBack={() => navigate("/lessons")}
       onNavigateScene={(sceneIndex) =>
