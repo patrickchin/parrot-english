@@ -3,6 +3,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const lessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
 const fullSceneLessonPath =
   "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
+const shortFullSceneLessonPath =
+  "/lessons/parrot/02-garden-colors/variants/full-scene";
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
 
@@ -398,6 +400,18 @@ test("the full-scene route keeps the same lesson flow while each scene selects i
     page.getByRole("region", { name: "Lesson progress" }),
   ).toContainText("The Finished Basket");
   await expectNoPageOverflow(page);
+});
+
+test("the short full-scene route opens the canonical first scene", async ({
+  page,
+}) => {
+  await page.goto(shortFullSceneLessonPath);
+
+  await expect(page).toHaveURL(fullSceneLessonPath);
+  await expect(
+    page.getByRole("region", { name: "Full-scene artwork" }),
+  ).toHaveAttribute("data-frame-preset", "landscape");
+  await expect(page.getByRole("button", { name: "Start lesson" })).toBeVisible();
 });
 
 test("playback controls pause, resume, and navigate between scenes", async ({

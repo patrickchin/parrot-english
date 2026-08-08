@@ -214,6 +214,11 @@ describe("app route helpers", () => {
       ["/lessons/my/:lessonId/edit", "/Lessons/My/demo/Edit///", null],
       ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],
       [
+        "/lessons/parrot/:lessonId/variants/:variantId",
+        "/Lessons/Parrot/02-garden-colors/Variants/full-scene///",
+        null,
+      ],
+      [
         "/lessons/parrot/:lessonId/scenes/:sceneNumber",
         "/Lessons/Parrot/demo/Scenes/2///",
         null,
@@ -604,6 +609,8 @@ describe("app route helpers", () => {
 
   it("keeps a full-scene lesson variant as a safe return target", () => {
     for (const returnTo of [
+      "/lessons/parrot/02-garden-colors/variants/full-scene",
+      "/Lessons/Parrot/02-garden-colors/Variants/full-scene///",
       "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/2",
       "/Lessons/Parrot/02-garden-colors/Variants/full-scene/Scenes/2///",
     ]) {
@@ -614,7 +621,6 @@ describe("app route helpers", () => {
     }
 
     for (const returnTo of [
-      "/lessons/parrot/02-garden-colors/variants/full-scene",
       "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/2/extra",
       "/lessons/parrot/02-garden-colors/variants//scenes/2",
     ]) {
