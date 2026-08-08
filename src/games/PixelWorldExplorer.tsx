@@ -8,7 +8,9 @@ import {
   ArrowRightLeft,
   Hand,
   Map,
+  RotateCcw,
   Trees,
+  Users,
 } from "lucide-react";
 import {
   useEffect,
@@ -25,6 +27,7 @@ import {
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { ActionButton, cx } from "../shared/ui";
 import type {
+  PixelWorldActorState,
   PixelWorldController,
   PixelWorldDirection,
   PixelWorldEmote,
@@ -33,6 +36,20 @@ import type {
 
 const DIRECTIONS: PixelWorldDirection[] = ["up", "left", "down", "right"];
 const EMOTES: PixelWorldEmote[] = ["idle", "talking", "happy", "surprised"];
+const DEFAULT_ACTORS: PixelWorldActorState[] = [
+  {
+    characterId: "peppa",
+    emote: "idle",
+    heldItemId: "red-apple",
+    slotId: "center",
+  },
+  {
+    characterId: "polly",
+    emote: "happy",
+    heldItemId: null,
+    slotId: "front-right",
+  },
+];
 const PARALLAX_MODES: Array<{
   description: string;
   icon: ReactNode;
@@ -112,28 +129,46 @@ function DirectionButton({
 export function PixelWorldExplorer() {
   const sceneList = PIXEL_WORLD_PACK.scenes;
   const defaultScene = PIXEL_WORLD_PACK.defaultSceneId;
-  const [emote, setEmote] = useState<PixelWorldEmote>("idle");
+  const [activeCharacterId, setActiveCharacterId] = useState("peppa");
+  const [actors, setActors] = useState<PixelWorldActorState[]>(() =>
+    DEFAULT_ACTORS.map((actor) => ({ ...actor })),
+  );
   const [engineAttempt, setEngineAttempt] = useState(0);
   const [engineError, setEngineError] = useState("");
   const [engineReady, setEngineReady] = useState(false);
-  const [heldItemId, setHeldItemId] = useState<string | null>("red-apple");
   const [parallaxMode, setParallaxMode] =
     useState<PixelWorldParallaxMode>("camera");
   const [sceneId, setSceneId] = useState<string>(defaultScene);
   const controllerRef = useRef<PixelWorldController | null>(null);
-  const emoteRef = useRef(emote);
-  const heldItemRef = useRef(heldItemId);
+  const activeCharacterIdRef = useRef(activeCharacterId);
+  const actorsRef = useRef(actors);
   const hostRef = useRef<HTMLDivElement | null>(null);
-  emoteRef.current = emote;
-  heldItemRef.current = heldItemId;
+  activeCharacterIdRef.current = activeCharacterId;
+  actorsRef.current = actors;
 
   const activeScene =
     PIXEL_WORLD_SCENES_BY_ID.get(sceneId) ?? sceneList[0];
-  const heldItem = heldItemId
-    ? PIXEL_WORLD_OBJECTS_BY_ID.get(heldItemId)
+  const activeActor =
+    actors.find(({ characterId }) => characterId === activeCharacterId) ??
+    actors[0];
+  const activeCharacter =
+    PIXEL_WORLD_PACK.characters.find(
+      ({ id }) => id === activeActor.characterId,
+    ) ?? PIXEL_WORLD_PACK.characters[0];
+  const heldItem = activeActor.heldItemId
+    ? PIXEL_WORLD_OBJECTS_BY_ID.get(activeActor.heldItemId)
     : null;
   const holdableObjects = PIXEL_WORLD_PACK.objects.filter((object) =>
     object.capabilities.includes("holdable"),
+  );
+  const worldScenes = sceneList.filter(
+    ({ source }) => source.kind === "world",
+  );
+  const lessonScenes = sceneList.filter(
+    ({ source }) => source.kind === "lesson",
+  );
+  const storyScenes = sceneList.filter(
+    ({ source }) => source.kind === "story",
   );
 
   useEffect(() => {
@@ -158,8 +193,8 @@ export function PixelWorldExplorer() {
         mountedController = createPixelWorldEngine(
           engineHost,
           {
-            heldItemId: heldItemRef.current,
-            initialEmote: emoteRef.current,
+            activeCharacterId: activeCharacterIdRef.current,
+            actors: actorsRef.current,
             parallaxMode,
             sceneId,
           },
@@ -200,13 +235,82 @@ export function PixelWorldExplorer() {
     };
   }, [engineAttempt, parallaxMode, sceneId]);
 
-  useEffect(() => {
-    controllerRef.current?.setEmote(emote);
-  }, [emote, engineReady]);
+  function updateActor(
+    characterId: string,
+    update: (actor: PixelWorldActorState) => PixelWorldActorState,
+  ) {
+    setActors((currentActors) =>
+      currentActors.map((actor) =>
+        actor.characterId === characterId ? update(actor) : actor,
+      ),
+    );
+  }
 
-  useEffect(() => {
-    controllerRef.current?.setHeldItem(heldItemId);
-  }, [engineReady, heldItemId]);
+  function chooseCharacter(characterId: string) {
+    stopAllDirections(controllerRef.current);
+    setActiveCharacterId(characterId);
+    controllerRef.current?.setActiveCharacter(characterId);
+  }
+
+  function chooseEmote(emote: PixelWorldEmote) {
+    updateActor(activeCharacterId, (actor) => ({ ...actor, emote }));
+    controllerRef.current?.setCharacterEmote(activeCharacterId, emote);
+  }
+
+  function chooseHeldItem(heldItemId: string | null) {
+    updateActor(activeCharacterId, (actor) => ({ ...actor, heldItemId }));
+    controllerRef.current?.setCharacterHeldItem(
+      activeCharacterId,
+      heldItemId,
+    );
+  }
+
+  function choosePlacement(slotId: string) {
+    updateActor(activeCharacterId, (actor) => ({ ...actor, slotId }));
+    controllerRef.current?.setCharacterPosition(activeCharacterId, slotId);
+  }
+
+  function chooseComposition(scene: (typeof sceneList)[number]) {
+    stopAllDirections(controllerRef.current);
+    const nextActors: PixelWorldActorState[] = scene.cast.map((actor) => ({
+      ...actor,
+      emote: actor.emote as PixelWorldEmote,
+    }));
+    setActors(nextActors);
+    for (const actor of nextActors) {
+      controllerRef.current?.setCharacterEmote(actor.characterId, actor.emote);
+      controllerRef.current?.setCharacterHeldItem(
+        actor.characterId,
+        actor.heldItemId,
+      );
+      controllerRef.current?.setCharacterPosition(
+        actor.characterId,
+        actor.slotId,
+      );
+    }
+    setSceneId(scene.id);
+  }
+
+  function resetComposition() {
+    stopAllDirections(controllerRef.current);
+    const nextActors = DEFAULT_ACTORS.map((actor) => ({ ...actor }));
+    setActiveCharacterId("peppa");
+    setActors(nextActors);
+    setParallaxMode("camera");
+    setSceneId(defaultScene);
+    controllerRef.current?.setActiveCharacter("peppa");
+    for (const actor of nextActors) {
+      controllerRef.current?.setCharacterEmote(actor.characterId, actor.emote);
+      controllerRef.current?.setCharacterHeldItem(
+        actor.characterId,
+        actor.heldItemId,
+      );
+      controllerRef.current?.setCharacterPosition(
+        actor.characterId,
+        actor.slotId,
+      );
+    }
+  }
 
   function handleDirectionStart(
     direction: PixelWorldDirection,
@@ -254,12 +358,13 @@ export function PixelWorldExplorer() {
             className="grid gap-3 rounded-3xl bg-sky-50 p-4 md:p-5"
           >
             <p className="m-0 font-bold leading-relaxed text-slate-700">
-              Each scene uses one <strong>720×480</strong> world, one Peppa
-              sheet, local compiled assets, and a shared <strong>4×4 screen-pixel</strong>
-              art cell.
+              Each scene uses one <strong>720×480</strong> world, reusable
+              Peppa and Polly sheets, local compiled assets, and a shared{" "}
+              <strong>4×4 screen-pixel</strong> art cell.
             </p>
             <p className="m-0 text-sm font-bold uppercase tracking-[0.2em] text-sky-900">
-              Scene: {activeScene.name} · Hold item: {heldItem?.id ?? "none"}
+              Scene: {activeScene.name} · Active: {activeCharacter.name} · Hold
+              item: {heldItem?.id ?? "none"}
             </p>
           </section>
 
@@ -271,7 +376,7 @@ export function PixelWorldExplorer() {
               <Trees aria-hidden="true" className="size-5" /> Scenes
             </h2>
             <div className="grid gap-2">
-              {sceneList.map((scene) => (
+              {worldScenes.map((scene) => (
                 <ActionButton
                   className="justify-start"
                   key={scene.id}
@@ -286,6 +391,179 @@ export function PixelWorldExplorer() {
                 </ActionButton>
               ))}
             </div>
+          </section>
+
+          <section
+            aria-label="Scene composer"
+            className="grid min-w-0 gap-5 rounded-3xl border-3 border-amber-200 bg-amber-50/80 p-4"
+          >
+            <header className="grid gap-2">
+              <h2 className="m-0 flex items-center gap-2 text-xl text-brand-navy">
+                <Users aria-hidden="true" className="size-5" /> Scene composer
+              </h2>
+              <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
+                Stage both characters, then choose who receives the next pose,
+                position, or item.
+              </p>
+            </header>
+
+            <div aria-label="Character chooser" className="grid gap-2" role="group">
+              <h3 className="m-0 text-base text-brand-navy">Edit character</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {PIXEL_WORLD_PACK.characters.map((character) => (
+                  <ActionButton
+                    aria-pressed={character.id === activeCharacterId}
+                    className="min-w-0"
+                    fullWidth
+                    key={character.id}
+                    onClick={() => chooseCharacter(character.id)}
+                    size="compact"
+                    type="button"
+                    variant={
+                      character.id === activeCharacterId ? "navy" : "surface"
+                    }
+                  >
+                    {character.name}
+                  </ActionButton>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <h3 className="m-0 text-base text-brand-navy">Ready-made scenes</h3>
+              <div className="grid gap-2">
+                <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                  Lessons
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {lessonScenes.map((scene) => (
+                    <ActionButton
+                      className="min-w-0 justify-start whitespace-normal py-3 text-left leading-tight"
+                      fullWidth
+                      key={scene.id}
+                      onClick={() => chooseComposition(scene)}
+                      size="compact"
+                      type="button"
+                      variant={scene.id === sceneId ? "navy" : "surface"}
+                    >
+                      {scene.name}
+                    </ActionButton>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                  Stories
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {storyScenes.map((scene) => (
+                    <ActionButton
+                      className="min-w-0 justify-start whitespace-normal py-3 text-left leading-tight"
+                      fullWidth
+                      key={scene.id}
+                      onClick={() => chooseComposition(scene)}
+                      size="compact"
+                      type="button"
+                      variant={scene.id === sceneId ? "navy" : "surface"}
+                    >
+                      {scene.name}
+                    </ActionButton>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <h3 className="m-0 text-base text-brand-navy">
+                Place {activeCharacter.name}
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {PIXEL_WORLD_PACK.placementSlots.map((slot) => (
+                  <ActionButton
+                    aria-label={`Place ${activeCharacter.name} ${slot.id.replaceAll("-", " ")}`}
+                    aria-pressed={slot.id === activeActor.slotId}
+                    className="min-w-0 whitespace-normal px-1 text-xs leading-tight"
+                    fullWidth
+                    key={slot.id}
+                    onClick={() => choosePlacement(slot.id)}
+                    size="compact"
+                    type="button"
+                    variant={slot.id === activeActor.slotId ? "navy" : "surface"}
+                  >
+                    {slot.label}
+                  </ActionButton>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <h3 className="m-0 text-base text-brand-navy">
+                {activeCharacter.name}&apos;s expression
+              </h3>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {EMOTES.map((emote) => (
+                  <ActionButton
+                    aria-pressed={emote === activeActor.emote}
+                    className="min-w-0 capitalize"
+                    fullWidth
+                    key={emote}
+                    onClick={() => chooseEmote(emote)}
+                    size="compact"
+                    type="button"
+                    variant={emote === activeActor.emote ? "navy" : "surface"}
+                  >
+                    {emote}
+                  </ActionButton>
+                ))}
+              </div>
+            </div>
+
+            <section aria-label="Holdable item chooser" className="grid gap-3">
+              <h3 className="m-0 flex items-center gap-2 text-base text-brand-navy">
+                <Hand aria-hidden="true" className="size-5" /> Item for{" "}
+                {activeCharacter.name}
+              </h3>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <ActionButton
+                  aria-pressed={activeActor.heldItemId === null}
+                  className="min-w-0 justify-start"
+                  fullWidth
+                  onClick={() => chooseHeldItem(null)}
+                  size="compact"
+                  type="button"
+                  variant={activeActor.heldItemId === null ? "navy" : "surface"}
+                >
+                  Empty hands
+                </ActionButton>
+                {holdableObjects.map((item) => (
+                  <ActionButton
+                    aria-pressed={item.id === activeActor.heldItemId}
+                    className="min-w-0 justify-start"
+                    fullWidth
+                    key={String(item.id)}
+                    onClick={() => chooseHeldItem(String(item.id))}
+                    size="compact"
+                    type="button"
+                    variant={
+                      item.id === activeActor.heldItemId ? "navy" : "surface"
+                    }
+                  >
+                    {String(item.id).replaceAll("-", " ")}
+                  </ActionButton>
+                ))}
+              </div>
+            </section>
+
+            <ActionButton
+              className="min-w-0 gap-2"
+              fullWidth
+              onClick={resetComposition}
+              type="button"
+              variant="navy"
+            >
+              <RotateCcw aria-hidden="true" className="size-4" /> Reset
+              composition
+            </ActionButton>
           </section>
 
           <section
@@ -321,35 +599,6 @@ export function PixelWorldExplorer() {
             </p>
           </section>
 
-          <section
-            aria-label="Holdable item chooser"
-            className="grid gap-3 rounded-3xl border-3 border-sky-200 bg-white p-4"
-          >
-            <h2 className="m-0 flex items-center gap-2 text-xl text-brand-navy">
-              <Hand aria-hidden="true" className="size-5" /> Holdable items
-            </h2>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <ActionButton
-                className="justify-start"
-                onClick={() => setHeldItemId(null)}
-                type="button"
-                variant={heldItemId === null ? "navy" : "surface"}
-              >
-                Empty hands
-              </ActionButton>
-              {holdableObjects.map((item) => (
-                <ActionButton
-                  className="justify-start"
-                  key={String(item.id)}
-                  onClick={() => setHeldItemId(String(item.id))}
-                  type="button"
-                  variant={item.id === heldItemId ? "navy" : "surface"}
-                >
-                  {String(item.id).replaceAll("-", " ")}
-                </ActionButton>
-              ))}
-            </div>
-          </section>
         </section>
 
         <section
@@ -362,8 +611,8 @@ export function PixelWorldExplorer() {
                 Review stage
               </h2>
               <p className="mb-0 mt-1 font-bold leading-relaxed text-slate-600">
-                Move Peppa, switch scenes, and check whether item and scenery
-                pixels stay coherent together.
+                Move the active character, switch scenes, and check whether
+                characters, items, and scenery stay coherent together.
               </p>
             </div>
             {engineError ? (
@@ -380,7 +629,7 @@ export function PixelWorldExplorer() {
           >
             <div
               aria-label="Pixel world explorer game world"
-              className="aspect-[3/2] min-h-80 w-full bg-sky-100 sm:min-h-0"
+              className="aspect-[3/2] w-full bg-sky-100"
               data-engine="phaser"
               ref={hostRef}
               role="group"
@@ -400,13 +649,15 @@ export function PixelWorldExplorer() {
             </p>
           ) : null}
 
-          <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)]">
+          <div className="grid gap-3">
             <section
               aria-label="Movement controls"
               className="grid gap-3 rounded-3xl border-3 border-sky-200 bg-white p-4"
             >
-              <h3 className="m-0 text-lg text-brand-navy">Move Peppa</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <h3 className="m-0 text-lg text-brand-navy">
+                Move {activeCharacter.name}
+              </h3>
+              <div className="grid w-fit grid-cols-3 gap-2">
                 <DirectionButton
                   direction="up"
                   disabled={!engineReady}
@@ -440,28 +691,9 @@ export function PixelWorldExplorer() {
                   onStop={handleDirectionStop}
                 />
               </div>
-            </section>
-
-            <section
-              aria-label="Animation review"
-              className="grid gap-3 rounded-3xl border-3 border-sky-200 bg-white p-4"
-            >
-              <h3 className="m-0 text-lg text-brand-navy">Animation review</h3>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {EMOTES.map((value) => (
-                  <ActionButton
-                    key={value}
-                    onClick={() => setEmote(value)}
-                    type="button"
-                    variant={value === emote ? "navy" : "surface"}
-                  >
-                    {value}
-                  </ActionButton>
-                ))}
-              </div>
               <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Walking uses separate hold anchors, so move Peppa with an item
-                selected to inspect placement while the frame changes.
+                Movement applies to the selected character. Composer placement
+                buttons return either character to an exact reusable slot.
               </p>
             </section>
           </div>
