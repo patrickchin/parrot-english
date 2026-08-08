@@ -97,6 +97,7 @@ test("the scene composer stages Peppa and Polly in reusable story scenes", async
   await expect(composer).toBeVisible();
   await expect(world).toHaveAttribute("data-character-count", "2");
   await expect(world).toHaveAttribute("data-active-character", "peppa");
+  await expect(world).toHaveAttribute("data-camera-follow-offset-x", "-50");
   await expect(world).toHaveAttribute("data-camera-follow-offset-y", "72");
 
   const characterChooser = composer.getByRole("group", {
@@ -113,6 +114,7 @@ test("the scene composer stages Peppa and Polly in reusable story scenes", async
 
   await choosePolly.click();
   await expect(world).toHaveAttribute("data-active-character", "polly");
+  await expect(world).toHaveAttribute("data-camera-follow-offset-x", "50");
   await expect(world).toHaveAttribute("data-camera-follow-offset-y", "72");
   await composer
     .getByRole("button", { exact: true, name: "storybook" })
