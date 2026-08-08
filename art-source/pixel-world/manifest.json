@@ -15,6 +15,7 @@
   },
   "normalization": {
     "charactersAndGrounds": "aspect-preserving cover crop onto the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
+    "frontHandOverlays": "derive a tight socket-guided hand or wing-tip ellipse from each normalized character frame, then harden alpha, quantize, and nearest-expand in lockstep with its body sheet",
     "parallaxStrips": "trim transparency, aspect-preserving contain at bottom-center on the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
     "objects": "trim transparency, fit on the shared authored-cell grid, bottom-center, harden alpha, quantize, then nearest-expand",
     "runtimeScaling": "integer camera zoom only; no per-asset fractional scaling"

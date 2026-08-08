@@ -16,6 +16,48 @@
     },
     {
       "alphaValues": [
+        0,
+        255
+      ],
+      "bytes": 2765,
+      "colorCount": 6,
+      "height": 640,
+      "id": "player-peppa-main-hand-front-sheet",
+      "output": "characters/peppa-main-hand-front-sheet.png",
+      "sha256": "cec1b4befb68dfafa4b961aa6fc02e5230e74ada6bc3ee29b0eaa230eb5d4e78",
+      "source": "art-source/pixel-world/sources/characters/peppa-main-hand-front-sheet.png",
+      "width": 640
+    },
+    {
+      "alphaValues": [
+        0,
+        255
+      ],
+      "bytes": 12252,
+      "colorCount": 22,
+      "height": 512,
+      "id": "player-polly-sheet",
+      "output": "characters/polly-world-sheet.png",
+      "sha256": "78645d2e25863b48471c63920c8dc0b528801352c9424690d8002daa6bdde3d0",
+      "source": "art-source/pixel-world/sources/characters/polly-world-sheet.png",
+      "width": 512
+    },
+    {
+      "alphaValues": [
+        0,
+        255
+      ],
+      "bytes": 2027,
+      "colorCount": 6,
+      "height": 512,
+      "id": "player-polly-main-hand-front-sheet",
+      "output": "characters/polly-main-hand-front-sheet.png",
+      "sha256": "ce7c5634cdc84e7dc25e3042dff3259e7b78ba2173b628acd733cf84c0008059",
+      "source": "art-source/pixel-world/sources/characters/polly-main-hand-front-sheet.png",
+      "width": 512
+    },
+    {
+      "alphaValues": [
         255
       ],
       "bytes": 1308,

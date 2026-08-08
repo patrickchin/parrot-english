@@ -7,16 +7,25 @@ import {
 import {
   flattenSceneLayers,
   getLayerScrollFactor,
+  resolveCameraZoom,
   resolveHeldItemTransform,
+  resolvePlacementSlot,
 } from "../../prototypes/pixel-stage/world-runtime.js";
 
 export type PixelWorldDirection = "down" | "left" | "right" | "up";
 export type PixelWorldEmote = "happy" | "idle" | "surprised" | "talking";
 export type PixelWorldParallaxMode = "ambient" | "camera" | "off";
 
-export interface PixelWorldEngineOptions {
+export interface PixelWorldActorState {
+  characterId: string;
+  emote: PixelWorldEmote;
   heldItemId: string | null;
-  initialEmote: PixelWorldEmote;
+  slotId: string;
+}
+
+export interface PixelWorldEngineOptions {
+  activeCharacterId: string;
+  actors: readonly PixelWorldActorState[];
   parallaxMode: PixelWorldParallaxMode;
   sceneId: string;
 }
@@ -29,8 +38,14 @@ export interface PixelWorldEngineCallbacks {
 export interface PixelWorldController {
   destroy: () => void;
   nudge: (direction: PixelWorldDirection) => void;
+  setActiveCharacter: (characterId: string) => void;
+  setCharacterEmote: (characterId: string, emote: PixelWorldEmote) => void;
+  setCharacterHeldItem: (characterId: string, itemId: string | null) => void;
+  setCharacterPosition: (characterId: string, slotId: string) => void;
   setDirection: (direction: PixelWorldDirection, active: boolean) => void;
+  /** Updates the currently active character. */
   setEmote: (emote: PixelWorldEmote) => void;
+  /** Updates the currently active character. */
   setHeldItem: (itemId: string | null) => void;
 }
 
@@ -41,6 +56,8 @@ type HoldMetadata = {
   originX: number;
   originY: number;
 };
+type CharacterConfig = (typeof PIXEL_WORLD_PACK.characters)[number];
+type CharacterState = PixelWorldActorState;
 type WorldObject = {
   assetId: string;
   capabilities: readonly string[];
@@ -56,14 +73,23 @@ type WorldObject = {
   origin: { x: number; y: number };
 };
 type SceneConfig = (typeof PIXEL_WORLD_PACK.scenes)[number];
+type ActorRuntime = {
+  character: CharacterConfig;
+  handOverlay: PhaserType.GameObjects.Sprite | null;
+  heldItem: PhaserType.GameObjects.Image | null;
+  heldItemDefinition: (WorldObject & { hold: HoldMetadata }) | null;
+  holdPresentation: "back" | "front-covered" | "none";
+  sprite: PhaserType.Physics.Arcade.Sprite;
+  state: CharacterState;
+};
 
-const CAMERA_ZOOM = PIXEL_WORLD_PACK.renderProfile.cameraZoom;
+const CAMERA_FOLLOW_OFFSET_Y =
+  PIXEL_WORLD_PACK.renderProfile.cameraFollowOffsetY;
 const ART_CELL_SIZE = PIXEL_WORLD_PACK.renderProfile.artCellWorldPixels;
 const TEXTURE_SCALE = PIXEL_WORLD_PACK.renderProfile.textureToWorldScale;
 const WORLD_SIZE = PIXEL_WORLD_PACK.renderProfile.worldSize;
 const PLAYFIELD = PIXEL_WORLD_PACK.renderProfile.playfield;
 const PLAYER_SPEED = 144;
-const PLAYER_CAMERA_FOLLOW_OFFSET_Y = 72;
 const NUDGE_DURATION_MS = 140;
 const SCENE_KEY = "react-pixel-world-stage";
 const MOVEMENT_KEY_DIRECTIONS = new Map<string, PixelWorldDirection>([
@@ -90,6 +116,10 @@ const POSE_START = Object.freeze({
   talking: 4,
   walking: 0,
 });
+
+function animationKey(characterId: string, pose: PixelWorldEmote | "walking") {
+  return `${SCENE_KEY}:${characterId}:${pose}`;
+}
 
 function toError(value: unknown, fallback: string) {
   return value instanceof Error ? value : new Error(fallback);
@@ -125,12 +155,36 @@ export function createPixelWorldEngine(
   if (!selectedScene) throw new Error(`Unknown pixel world scene: ${options.sceneId}`);
   const sceneConfig: SceneConfig = selectedScene;
 
+  const actorStates = new Map<string, CharacterState>();
+  for (const character of PIXEL_WORLD_PACK.characters) {
+    const configuredActor = options.actors.find(
+      (actor) => actor.characterId === character.id,
+    );
+    const sceneActor = sceneConfig.cast.find(
+      (actor) => actor.characterId === character.id,
+    );
+    const actor = configuredActor ?? sceneActor;
+    if (!actor) throw new Error(`Missing pixel world actor: ${character.id}`);
+    resolvePlacementSlot(actor.slotId);
+    actorStates.set(character.id, {
+      characterId: character.id,
+      emote: actor.emote as PixelWorldEmote,
+      heldItemId: actor.heldItemId,
+      slotId: actor.slotId,
+    });
+  }
+  let activeCharacterId = actorStates.has(options.activeCharacterId)
+    ? options.activeCharacterId
+    : PIXEL_WORLD_PACK.characters[0].id;
   let destroyed = false;
-  let selectedEmote: PixelWorldEmote = options.initialEmote;
-  let selectedHeldItemId = options.heldItemId;
   let viewport = getViewport(host);
-  let nudgeScene: ((direction: PixelWorldDirection) => void) | null = null;
-  let refreshSceneHeldItem: (() => void) | null = null;
+  let sceneBridge: {
+    nudge: (direction: PixelWorldDirection) => void;
+    placeActor: (characterId: string) => void;
+    refreshActorHold: (characterId: string) => void;
+    selectActor: (characterId: string) => void;
+    sync: () => void;
+  } | null = null;
   const heldDirections = new Set<PixelWorldDirection>();
   const keyboardDirections = new Set<PixelWorldDirection>();
   const reducedMotion =
@@ -141,12 +195,10 @@ export function createPixelWorldEngine(
   };
 
   class PixelWorldScene extends Phaser.Scene {
+    private readonly actors = new Map<string, ActorRuntime>();
     private cloudLayers: PhaserType.GameObjects.Image[] = [];
-    private heldItem: PhaserType.GameObjects.Image | null = null;
-    private heldItemDefinition: WorldObject | null = null;
     private readonly nudgedDirections = new Set<PixelWorldDirection>();
     private readonly nudgeTimers = new Map<PixelWorldDirection, PhaserType.Time.TimerEvent>();
-    private player!: PhaserType.Physics.Arcade.Sprite;
     private ready = false;
 
     constructor() {
@@ -171,8 +223,13 @@ export function createPixelWorldEngine(
 
     create() {
       try {
-        nudgeScene = (direction) => this.nudge(direction);
-        refreshSceneHeldItem = () => this.refreshHeldItem();
+        sceneBridge = {
+          nudge: (direction) => this.nudge(direction),
+          placeActor: (characterId) => this.placeActor(characterId),
+          refreshActorHold: (characterId) => this.refreshActorHold(characterId),
+          selectActor: (characterId) => this.selectActor(characterId),
+          sync: () => this.syncStatus(),
+        };
         this.createLayers();
         const blockers = this.createWorldObjects();
         this.physics.world.setBounds(
@@ -181,35 +238,43 @@ export function createPixelWorldEngine(
           PLAYFIELD.right - PLAYFIELD.left,
           PLAYFIELD.bottom - PLAYFIELD.top,
         );
-        this.player = this.physics.add.sprite(
-          sceneConfig.start.x,
-          sceneConfig.start.y,
-          PIXEL_WORLD_PACK.player.spriteSheet.assetId,
-          0,
-        );
-        this.player
-          .setCollideWorldBounds(true)
-          .setDepth(getDepthForFootY(sceneConfig.start.y))
-          .setOrigin(0.5, 1)
-          .setScale(TEXTURE_SCALE);
-        const body = this.player.body as PhaserType.Physics.Arcade.Body;
-        body.updateBounds();
-        body.setSize(
-          PIXEL_WORLD_PACK.player.body.width,
-          PIXEL_WORLD_PACK.player.body.height,
-          false,
-        );
-        body.setOffset(
-          PIXEL_WORLD_PACK.player.body.offsetX,
-          PIXEL_WORLD_PACK.player.body.offsetY,
-        );
-        this.physics.add.collider(this.player, blockers);
-
         this.createAnimations();
+        for (const character of PIXEL_WORLD_PACK.characters) {
+          const state = actorStates.get(character.id);
+          if (!state) throw new Error(`Missing pixel world actor state: ${character.id}`);
+          const position = resolvePlacementSlot(state.slotId);
+          const sprite = this.physics.add.sprite(
+            position.x,
+            position.y,
+            character.spriteSheet.assetId,
+            POSE_START[state.emote],
+          );
+          sprite
+            .setCollideWorldBounds(true)
+            .setDepth(getDepthForFootY(position.y))
+            .setOrigin(0.5, 1)
+            .setScale(TEXTURE_SCALE);
+          const body = sprite.body as PhaserType.Physics.Arcade.Body;
+          body.updateBounds();
+          body.setSize(character.body.width, character.body.height, false);
+          body.setOffset(character.body.offsetX, character.body.offsetY);
+          this.physics.add.collider(sprite, blockers);
+          this.actors.set(character.id, {
+            character,
+            handOverlay: null,
+            heldItem: null,
+            heldItemDefinition: null,
+            holdPresentation: "none",
+            sprite,
+            state,
+          });
+        }
         this.configureCamera();
         this.configureCanvas();
-        this.refreshHeldItem();
-        this.playAnimation(selectedEmote);
+        for (const actor of this.actors.values()) {
+          this.refreshActorHold(actor.character.id);
+          this.playAnimation(actor, actor.state.emote);
+        }
         this.ready = true;
         this.syncStatus();
         callbacks.onReady?.();
@@ -237,18 +302,27 @@ export function createPixelWorldEngine(
         Number(down) - Number(up),
       );
 
-      this.player.setVelocity(0, 0);
+      const activeActor = this.getActiveActor();
+      for (const actor of this.actors.values()) actor.sprite.setVelocity(0, 0);
       if (velocity.lengthSq() > 0) {
         velocity.normalize().scale(PLAYER_SPEED);
-        this.player.setVelocity(velocity.x, velocity.y);
-        if (velocity.x !== 0) this.player.setFlipX(velocity.x < 0);
-        this.playAnimation("walking");
+        activeActor.sprite.setVelocity(velocity.x, velocity.y);
+        if (velocity.x !== 0) activeActor.sprite.setFlipX(velocity.x < 0);
+        this.playAnimation(activeActor, "walking");
       } else {
-        this.playAnimation(selectedEmote);
+        this.playAnimation(activeActor, activeActor.state.emote);
       }
-      this.player.setDepth(getDepthForFootY(this.player.y));
+      for (const actor of this.actors.values()) {
+        if (actor !== activeActor) this.playAnimation(actor, actor.state.emote);
+        actor.sprite.setDepth(getDepthForFootY(actor.sprite.y));
+        this.updateActorHold(
+          actor,
+          actor === activeActor && velocity.lengthSq() > 0
+            ? "walking"
+            : actor.state.emote,
+        );
+      }
       this.updateAmbientParallax();
-      this.updateHeldItem(velocity.lengthSq() > 0 ? "walking" : selectedEmote);
       this.syncStatus();
     }
 
@@ -263,25 +337,59 @@ export function createPixelWorldEngine(
       this.nudgeTimers.set(direction, timer);
     }
 
-    refreshHeldItem() {
-      this.heldItem?.destroy();
-      this.heldItem = null;
-      this.heldItemDefinition = null;
-      if (!selectedHeldItemId) {
+    refreshActorHold(characterId: string) {
+      const actor = this.getActor(characterId);
+      actor.heldItem?.destroy();
+      actor.handOverlay?.destroy();
+      actor.heldItem = null;
+      actor.handOverlay = null;
+      actor.heldItemDefinition = null;
+      actor.holdPresentation = "none";
+      if (!actor.state.heldItemId) {
         this.syncStatus();
         return;
       }
-      const definition = PIXEL_WORLD_OBJECTS_BY_ID.get(selectedHeldItemId) as
+      const definition = PIXEL_WORLD_OBJECTS_BY_ID.get(actor.state.heldItemId) as
         | WorldObject
         | undefined;
       if (!isHoldable(definition)) {
-        selectedHeldItemId = null;
+        actor.state.heldItemId = null;
         this.syncStatus();
         return;
       }
-      this.heldItemDefinition = definition ?? null;
-      this.heldItem = this.add.image(this.player.x, this.player.y, definition.assetId);
-      this.updateHeldItem(selectedEmote);
+      actor.heldItemDefinition = definition;
+      actor.heldItem = this.add.image(
+        actor.sprite.x,
+        actor.sprite.y,
+        definition.assetId,
+      );
+      const overlay = actor.character.overlays.mainHandFront;
+      actor.handOverlay = this.add
+        .sprite(actor.sprite.x, actor.sprite.y, overlay.assetId, 0)
+        .setOrigin(0.5, 1)
+        .setScale(TEXTURE_SCALE)
+        .setVisible(false);
+      this.updateActorHold(actor, actor.state.emote);
+      this.syncStatus();
+    }
+
+    placeActor(characterId: string) {
+      const actor = this.getActor(characterId);
+      const position = resolvePlacementSlot(actor.state.slotId);
+      actor.sprite.setPosition(position.x, position.y).setVelocity(0, 0);
+      actor.sprite.setDepth(getDepthForFootY(actor.sprite.y));
+      this.updateActorHold(actor, actor.state.emote);
+      this.startCameraFollow(this.getActiveActor().sprite);
+      this.syncStatus();
+    }
+
+    selectActor(characterId: string) {
+      const actor = this.getActor(characterId);
+      heldDirections.clear();
+      keyboardDirections.clear();
+      this.nudgedDirections.clear();
+      for (const candidate of this.actors.values()) candidate.sprite.setVelocity(0, 0);
+      this.startCameraFollow(actor.sprite);
       this.syncStatus();
     }
 
@@ -331,44 +439,61 @@ export function createPixelWorldEngine(
     }
 
     private createAnimations() {
-      for (const animation of ANIMATIONS) {
-        if (this.anims.exists(animation.key)) continue;
-        this.anims.create({
-          frameRate: animation.frameRate,
-          frames: this.anims.generateFrameNumbers(
-            PIXEL_WORLD_PACK.player.spriteSheet.assetId,
-            { end: animation.end, start: animation.start },
-          ),
-          key: animation.key,
-          repeat: animation.repeat,
-        });
+      for (const character of PIXEL_WORLD_PACK.characters) {
+        for (const animation of ANIMATIONS) {
+          const key = animationKey(character.id, animation.key as PixelWorldEmote | "walking");
+          if (this.anims.exists(key)) continue;
+          this.anims.create({
+            frameRate: animation.frameRate,
+            frames: this.anims.generateFrameNumbers(
+              character.spriteSheet.assetId,
+              { end: animation.end, start: animation.start },
+            ),
+            key,
+            repeat: animation.repeat,
+          });
+        }
       }
     }
 
     private configureCamera() {
       const camera = this.cameras.main;
       camera.setBackgroundColor(0x82c9ed);
-      camera.setZoom(CAMERA_ZOOM);
-      camera.startFollow(
-        this.player,
-        true,
-        reducedMotion?.matches ? 1 : 0.35,
-        reducedMotion?.matches ? 1 : 0.35,
-      );
-      camera.setFollowOffset(0, PLAYER_CAMERA_FOLLOW_OFFSET_Y);
-      camera.setDeadzone(120 / CAMERA_ZOOM, 84 / CAMERA_ZOOM);
-      camera.roundPixels = true;
       this.fitCameraBoundsToViewport();
+      this.startCameraFollow(this.getActiveActor().sprite);
+      camera.roundPixels = true;
       this.scale.on(Phaser.Scale.Events.RESIZE, this.fitCameraBoundsToViewport, this);
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
         this.scale.off(Phaser.Scale.Events.RESIZE, this.fitCameraBoundsToViewport, this);
       });
     }
 
+    private startCameraFollow(sprite: PhaserType.Physics.Arcade.Sprite) {
+      const castCenterX =
+        [...this.actors.values()].reduce(
+          (total, actor) => total + actor.sprite.x,
+          0,
+        ) / this.actors.size;
+      this.cameras.main.startFollow(
+        sprite,
+        true,
+        reducedMotion?.matches ? 1 : 0.35,
+        reducedMotion?.matches ? 1 : 0.35,
+        sprite.x - castCenterX,
+        CAMERA_FOLLOW_OFFSET_Y,
+      );
+    }
+
     private fitCameraBoundsToViewport() {
       const camera = this.cameras.main;
-      const visibleWidth = camera.width / CAMERA_ZOOM;
-      const visibleHeight = camera.height / CAMERA_ZOOM;
+      const cameraZoom = resolveCameraZoom({
+        height: camera.height,
+        width: camera.width,
+      });
+      camera.setZoom(cameraZoom);
+      camera.setDeadzone(120 / cameraZoom, 84 / cameraZoom);
+      const visibleWidth = camera.width / cameraZoom;
+      const visibleHeight = camera.height / cameraZoom;
       const horizontalMargin = Math.max(0, Math.ceil((visibleWidth - WORLD_SIZE.width) / 2));
       const verticalMargin = Math.max(0, Math.ceil((visibleHeight - WORLD_SIZE.height) / 2));
       camera.setBounds(
@@ -420,12 +545,15 @@ export function createPixelWorldEngine(
       });
     }
 
-    private playAnimation(key: PixelWorldEmote | "walking") {
+    private playAnimation(
+      actor: ActorRuntime,
+      key: PixelWorldEmote | "walking",
+    ) {
       if (reducedMotion?.matches) {
-        this.player.anims.stop();
-        this.player.setFrame(POSE_START[key]);
+        actor.sprite.anims.stop();
+        actor.sprite.setFrame(POSE_START[key]);
       } else {
-        this.player.anims.play(key, true);
+        actor.sprite.anims.play(animationKey(actor.character.id, key), true);
       }
     }
 
@@ -435,46 +563,100 @@ export function createPixelWorldEngine(
       for (const cloud of this.cloudLayers) cloud.x = offset;
     }
 
-    private updateHeldItem(pose: PixelWorldEmote | "walking") {
-      if (!this.heldItem || !this.heldItemDefinition?.hold) return;
-      const anchors = PIXEL_WORLD_PACK.player.sockets.mainHand.byPose[pose];
-      const frameIndex = Math.max(0, this.getPlayerFrameIndex() - POSE_START[pose]);
+    private updateActorHold(
+      actor: ActorRuntime,
+      pose: PixelWorldEmote | "walking",
+    ) {
+      if (!actor.heldItem || !actor.heldItemDefinition?.hold) {
+        actor.handOverlay?.setVisible(false);
+        actor.holdPresentation = "none";
+        return;
+      }
+      const anchors = actor.character.sockets.mainHand.byPose[pose];
+      const bodyFrameIndex = this.getActorFrameIndex(actor);
+      const frameIndex = Math.max(0, bodyFrameIndex - POSE_START[pose]);
       const transform = resolveHeldItemTransform({
         anchors,
-        flipX: this.player.flipX,
+        flipX: actor.sprite.flipX,
         frameIndex,
-        itemHold: this.heldItemDefinition.hold,
+        itemHold: actor.heldItemDefinition.hold,
       });
-      this.heldItem
-        .setDepth(transform.depth === "front" ? this.player.depth + 1 : this.player.depth - 1)
+      const isFrontCovered =
+        transform.depth === "front" &&
+        transform.overlayRole === "mainHandFront" &&
+        Boolean(actor.handOverlay);
+      actor.heldItem
+        .setDepth(
+          transform.depth === "front"
+            ? actor.sprite.depth + 0.1
+            : actor.sprite.depth - 0.1,
+        )
         .setFlipX(transform.flipX)
         .setOrigin(transform.originX, transform.originY)
-        .setPosition(this.player.x + transform.x, this.player.y + transform.y)
+        .setPosition(actor.sprite.x + transform.x, actor.sprite.y + transform.y)
         .setRotation(0)
         .setScale(TEXTURE_SCALE);
+      actor.handOverlay
+        ?.setDepth(actor.sprite.depth + 0.2)
+        .setFlipX(actor.sprite.flipX)
+        .setFrame(bodyFrameIndex)
+        .setPosition(actor.sprite.x, actor.sprite.y)
+        .setVisible(isFrontCovered);
+      actor.holdPresentation = isFrontCovered
+        ? "front-covered"
+        : transform.depth === "back"
+          ? "back"
+          : "none";
     }
 
     private syncStatus() {
-      if (!this.player) return;
+      if (this.actors.size === 0) return;
+      const activeActor = this.getActiveActor();
       host.dataset.artCellScreenPixels = String(
-        PIXEL_WORLD_PACK.renderProfile.screenPixelsPerArtPixel,
+        ART_CELL_SIZE * this.cameras.main.zoom,
       );
-      host.dataset.cameraZoom = String(CAMERA_ZOOM);
-      host.dataset.frame = String(this.getPlayerFrameIndex());
-      host.dataset.heldItem = selectedHeldItemId ?? "none";
+      host.dataset.activeCharacter = activeCharacterId;
+      host.dataset.cameraFollowOffsetX = String(
+        this.cameras.main.followOffset.x,
+      );
+      host.dataset.cameraFollowOffsetY = String(
+        this.cameras.main.followOffset.y,
+      );
+      host.dataset.cameraZoom = String(this.cameras.main.zoom);
+      host.dataset.characterCount = String(this.actors.size);
+      host.dataset.frame = String(this.getActorFrameIndex(activeActor));
+      host.dataset.heldItem = activeActor.state.heldItemId ?? "none";
       host.dataset.parallaxMode = reducedMotion?.matches ? "off" : options.parallaxMode;
       host.dataset.ready = String(this.ready);
       host.dataset.reducedMotion = String(Boolean(reducedMotion?.matches));
       host.dataset.sceneId = sceneConfig.id;
+      host.dataset.sceneSource = `${sceneConfig.source.kind}:${sceneConfig.source.id}`;
       host.dataset.textureScale = String(TEXTURE_SCALE);
       host.dataset.viewportHeight = String(viewport.height);
       host.dataset.viewportWidth = String(viewport.width);
-      host.dataset.x = String(Math.round(this.player.x));
-      host.dataset.y = String(Math.round(this.player.y));
+      host.dataset.x = String(Math.round(activeActor.sprite.x));
+      host.dataset.y = String(Math.round(activeActor.sprite.y));
+      for (const actor of this.actors.values()) {
+        host.dataset[`${actor.character.id}HeldItem`] =
+          actor.state.heldItemId ?? "none";
+        host.dataset[`${actor.character.id}HoldPresentation`] =
+          actor.holdPresentation;
+        host.dataset[`${actor.character.id}Slot`] = actor.state.slotId;
+      }
     }
 
-    private getPlayerFrameIndex() {
-      const frameName = this.player.frame?.name;
+    private getActor(characterId: string) {
+      const actor = this.actors.get(characterId);
+      if (!actor) throw new Error(`Unknown pixel world character: ${characterId}`);
+      return actor;
+    }
+
+    private getActiveActor() {
+      return this.getActor(activeCharacterId);
+    }
+
+    private getActorFrameIndex(actor: ActorRuntime) {
+      const frameName = actor.sprite.frame?.name;
       return typeof frameName === "number"
         ? frameName
         : Number.parseInt(String(frameName ?? 0), 10) || 0;
@@ -528,10 +710,49 @@ export function createPixelWorldEngine(
   };
   const resizeObserver = new ResizeObserver(scheduleResize);
   resizeObserver.observe(host);
+  const activeState = actorStates.get(activeCharacterId);
   host.dataset.ready = "false";
   host.dataset.sceneId = sceneConfig.id;
+  host.dataset.sceneSource = `${sceneConfig.source.kind}:${sceneConfig.source.id}`;
   host.dataset.parallaxMode = options.parallaxMode;
-  host.dataset.heldItem = selectedHeldItemId ?? "none";
+  host.dataset.characterCount = String(actorStates.size);
+  host.dataset.activeCharacter = activeCharacterId;
+  host.dataset.heldItem = activeState?.heldItemId ?? "none";
+  for (const actor of actorStates.values()) {
+    host.dataset[`${actor.characterId}HeldItem`] = actor.heldItemId ?? "none";
+    host.dataset[`${actor.characterId}HoldPresentation`] = "none";
+    host.dataset[`${actor.characterId}Slot`] = actor.slotId;
+  }
+
+  const requireActorState = (characterId: string) => {
+    const state = actorStates.get(characterId);
+    if (!state) {
+      throw new Error(`Unknown pixel world character: ${characterId}`);
+    }
+    return state;
+  };
+  const selectCharacter = (characterId: string) => {
+    const state = requireActorState(characterId);
+    activeCharacterId = state.characterId;
+    sceneBridge?.selectActor(characterId);
+    sceneBridge?.sync();
+  };
+  const setActorEmote = (characterId: string, emote: PixelWorldEmote) => {
+    const state = requireActorState(characterId);
+    state.emote = emote;
+    sceneBridge?.sync();
+  };
+  const setActorHeldItem = (characterId: string, itemId: string | null) => {
+    const state = requireActorState(characterId);
+    state.heldItemId = itemId;
+    sceneBridge?.refreshActorHold(characterId);
+  };
+  const setActorPosition = (characterId: string, slotId: string) => {
+    const state = requireActorState(characterId);
+    resolvePlacementSlot(slotId);
+    state.slotId = slotId;
+    sceneBridge?.placeActor(characterId);
+  };
 
   return {
     destroy() {
@@ -541,12 +762,43 @@ export function createPixelWorldEngine(
       keyboardDirections.clear();
       resizeObserver.disconnect();
       if (resizeFrame !== null && view) view.cancelAnimationFrame(resizeFrame);
-      nudgeScene = null;
-      refreshSceneHeldItem = null;
+      sceneBridge = null;
       game.destroy(true);
     },
     nudge(direction) {
-      if (!destroyed) nudgeScene?.(direction);
+      if (!destroyed) sceneBridge?.nudge(direction);
+    },
+    setActiveCharacter(characterId) {
+      if (destroyed) return;
+      try {
+        selectCharacter(characterId);
+      } catch (error) {
+        reportError(error, "The selected character is not available.");
+      }
+    },
+    setCharacterEmote(characterId, emote) {
+      if (destroyed) return;
+      try {
+        setActorEmote(characterId, emote);
+      } catch (error) {
+        reportError(error, "The selected character is not available.");
+      }
+    },
+    setCharacterHeldItem(characterId, itemId) {
+      if (destroyed) return;
+      try {
+        setActorHeldItem(characterId, itemId);
+      } catch (error) {
+        reportError(error, "The selected character is not available.");
+      }
+    },
+    setCharacterPosition(characterId, slotId) {
+      if (destroyed) return;
+      try {
+        setActorPosition(characterId, slotId);
+      } catch (error) {
+        reportError(error, "The selected character position is not available.");
+      }
     },
     setDirection(direction, active) {
       if (destroyed) return;
@@ -554,12 +806,20 @@ export function createPixelWorldEngine(
       else heldDirections.delete(direction);
     },
     setEmote(emote) {
-      if (!destroyed) selectedEmote = emote;
+      if (destroyed) return;
+      try {
+        setActorEmote(activeCharacterId, emote);
+      } catch (error) {
+        reportError(error, "The selected character is not available.");
+      }
     },
     setHeldItem(itemId) {
       if (destroyed) return;
-      selectedHeldItemId = itemId;
-      refreshSceneHeldItem?.();
+      try {
+        setActorHeldItem(activeCharacterId, itemId);
+      } catch (error) {
+        reportError(error, "The selected character is not available.");
+      }
     },
   };
 }

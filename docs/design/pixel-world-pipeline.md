@@ -20,11 +20,11 @@ pipeline enforces both a runtime grid and an authored detail grid.
 | --- | --- |
 | Logical world | `720 × 480` world pixels |
 | Play plane | opaque `720 × 320` terrain beginning at world `y = 160` |
-| Camera | integer `2×` zoom |
+| Camera | discrete `2×`, `1×`, or `0.5×` zoom selected from viewport size |
 | Runtime asset scale | `1` for every asset |
 | Character frame | native `160 × 160` world pixels |
 | Authored art cell | `2 × 2` world pixels |
-| Visible art cell | exact `4 × 4` screen pixels at `2×` camera zoom |
+| Visible art cell | exact `4 × 4`, `2 × 2`, or `1 × 1` screen pixels |
 | Alpha | `0` or `255`; no partial alpha in compiled art |
 | Palette | one shared palette, maximum 32 colors |
 | Placement | integer world coordinates and bottom-center origins |
@@ -75,6 +75,8 @@ npm run generate:pixel-world-assets -- --only object-red-apple,object-oak-tree
 Partial compilation merges updated entries into the existing complete
 manifest in stable world-pack order. The manifest contains no wall-clock
 timestamp, so unchanged full and partial compiles are byte-for-byte stable.
+Selecting a Peppa or Polly body sheet also expands the partial build to its
+derived front-hand or front-wing overlay, preventing stale grip layers.
 
 ## Reusable world model
 
@@ -87,13 +89,15 @@ item engines. Capabilities describe use:
 - `occluder`
 
 This allows an apple, basket, gift, or ball to exist in the world and also be
-attached to a hand. Peppa has one named `mainHand` socket with frame-specific
-anchors. The runtime composes the selected object at that socket; it does not
-need a full-body Peppa sprite for every item.
+attached to a hand. Peppa and Polly each have a named `mainHand` socket with
+frame-specific anchors and a derived front overlay. The runtime draws the body,
+selected object, and hand or wing overlay in that order; it does not need a
+full-body character sprite for every item.
 
-The initial pack contains eight scenes, eighteen scenery objects, and sixteen
-holdable objects. Scenes are recipes made from `sky`, `far`, `mid`, `play`, and
-`foreground` layers plus object placements.
+The current pack contains eight reusable world scenes, seven lesson scenes,
+six story scenes, eighteen scenery objects, and sixteen holdable objects.
+Scenes are recipes made from `sky`, `far`, `mid`, `play`, and `foreground`
+layers plus object placements and a two-character cast.
 
 The opaque play plane starts at `y = 160`, leaving the upper world visible for
 sky and distant layers. The physics bounds use the same playfield rectangle,
@@ -129,9 +133,11 @@ For each material change:
 7. reject any asset that introduces smaller detail cells, soft edges,
    non-square pixels, rotation blur, or a different palette vocabulary.
 
-The checked-in browser tests cover the review controls and runtime metadata.
-The compiler tests cover palette mapping, hard alpha, native dimensions, and
-the shared authored-cell expansion. The compiled-asset integration gate also
-decodes all 52 runtime PNGs and verifies every aligned `2 × 2` cell directly.
+The checked-in browser tests cover the review controls, two-character composer,
+responsive integer zoom tiers down to 280px, and runtime metadata.
+The compiler tests cover palette mapping, hard alpha, native dimensions,
+derived-overlay partial-build dependencies, and the shared authored-cell
+expansion. The compiled-asset integration gate also decodes all 55 runtime PNGs
+and verifies every aligned `2 × 2` cell directly.
 Curated screenshots, contact sheets, and analysis live in
 `artifacts/pixel-world`.

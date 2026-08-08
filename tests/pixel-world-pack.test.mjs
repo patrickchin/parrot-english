@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -13,6 +13,22 @@ const { PIXEL_WORLD_PACK } = await import(
 );
 
 const layerEntries = (scene) => Object.values(scene.layers).flat();
+
+const requireCharacters = () => {
+  assert.ok(
+    Array.isArray(PIXEL_WORLD_PACK.characters),
+    "The world pack must expose its playable cast as characters[]",
+  );
+  return PIXEL_WORLD_PACK.characters;
+};
+
+const requirePlacementSlots = () => {
+  assert.ok(
+    Array.isArray(PIXEL_WORLD_PACK.placementSlots),
+    "The world pack must expose semantic placementSlots[]",
+  );
+  return PIXEL_WORLD_PACK.placementSlots;
+};
 
 describe("pixel world pack", () => {
   it("defines one native logical-pixel contract for every asset", () => {
@@ -34,11 +50,59 @@ describe("pixel world pack", () => {
     });
     assert.ok(PIXEL_WORLD_PACK.renderProfile.palette.length >= 24);
     assert.ok(PIXEL_WORLD_PACK.renderProfile.palette.length <= 48);
+  });
 
-    assert.equal(PIXEL_WORLD_PACK.player.spriteSheet.frameWidth, 160);
-    assert.equal(PIXEL_WORLD_PACK.player.spriteSheet.frameHeight, 160);
-    assert.equal(PIXEL_WORLD_PACK.player.spriteSheet.columns, 4);
-    assert.equal(PIXEL_WORLD_PACK.player.spriteSheet.rows, 4);
+  it("defines exactly Peppa and Polly as overlay-capable characters", () => {
+    const characters = requireCharacters();
+    assert.equal("player" in PIXEL_WORLD_PACK, false);
+    assert.deepEqual(
+      characters.map(({ id }) => id).sort(),
+      ["peppa", "polly"],
+    );
+
+    const expectedFrameSize = { peppa: 160, polly: 128 };
+    for (const character of characters) {
+      assert.ok(character.name.length > 0);
+      assert.ok(character.body);
+      assert.ok(character.spriteSheet);
+      assert.ok(character.overlays?.mainHandFront);
+      assert.ok(character.sockets?.mainHand);
+
+      const bodySheet = character.spriteSheet;
+      const handOverlaySheet = character.overlays.mainHandFront;
+      assert.equal(bodySheet.frameWidth, expectedFrameSize[character.id]);
+      assert.equal(bodySheet.frameHeight, expectedFrameSize[character.id]);
+      for (const key of ["columns", "frameHeight", "frameWidth", "rows"]) {
+        assert.equal(
+          handOverlaySheet[key],
+          bodySheet[key],
+          `${character.id} body and hand overlay must share ${key}`,
+        );
+      }
+
+      for (const sheet of [bodySheet, handOverlaySheet]) {
+        const asset = PIXEL_WORLD_PACK.assets[sheet.assetId];
+        assert.ok(asset, `Missing ${character.id} sheet asset ${sheet.assetId}`);
+        assert.equal(asset.nativeWidth, sheet.frameWidth * sheet.columns);
+        assert.equal(asset.nativeHeight, sheet.frameHeight * sheet.rows);
+      }
+    }
+  });
+
+  it("defines nine unique semantic placement slots", () => {
+    const slots = requirePlacementSlots();
+    assert.equal(slots.length, 9);
+    assert.equal(new Set(slots.map(({ id }) => id)).size, slots.length);
+    assert.ok(slots.some(({ id }) => id === "back-left"));
+    assert.ok(slots.some(({ id }) => id === "center"));
+    assert.ok(slots.some(({ id }) => id === "front-right"));
+
+    for (const slot of slots) {
+      assert.ok(slot.id.length > 0);
+      assert.ok(slot.label.length > 0);
+      assert.equal(Number.isInteger(slot.x), true);
+      assert.equal(Number.isInteger(slot.y), true);
+    }
   });
 
   it("provides a large reusable prop superset instead of separate item and scenery systems", () => {
@@ -76,15 +140,46 @@ describe("pixel world pack", () => {
     }
   });
 
-  it("builds eight composable scenes from deterministic depth layers", () => {
+  it("builds a sourced twenty-scene composer library from deterministic depth layers", () => {
     assert.equal(PIXEL_WORLD_PACK.id, "storybook-meadows");
     assert.ok(Array.isArray(PIXEL_WORLD_PACK.scenes));
-    assert.ok(PIXEL_WORLD_PACK.scenes.length >= 8);
+    assert.ok(PIXEL_WORLD_PACK.scenes.length >= 20);
 
     const objectIds = new Set(PIXEL_WORLD_PACK.objects.map(({ id }) => id));
+    const holdableIds = new Set(
+      PIXEL_WORLD_PACK.objects
+        .filter(({ capabilities }) => capabilities.includes("holdable"))
+        .map(({ id }) => id),
+    );
+    const characterIds = new Set(requireCharacters().map(({ id }) => id));
+    const slotIds = new Set(requirePlacementSlots().map(({ id }) => id));
+    const sourceCounts = { lesson: 0, story: 0, world: 0 };
+    const sourceIds = new Set();
     for (const scene of PIXEL_WORLD_PACK.scenes) {
       assert.ok(scene.id.length > 0);
       assert.ok(scene.name.length > 0);
+      assert.match(scene.source?.kind ?? "", /^(lesson|story|world)$/);
+      assert.ok(scene.source.id.length > 0);
+      sourceCounts[scene.source.kind] += 1;
+      sourceIds.add(`${scene.source.kind}:${scene.source.id}`);
+      assert.deepEqual(
+        scene.cast.map(({ characterId }) => characterId).sort(),
+        ["peppa", "polly"],
+      );
+      assert.equal(scene.cast.length, characterIds.size);
+      for (const castMember of scene.cast) {
+        assert.equal(characterIds.has(castMember.characterId), true);
+        assert.equal(slotIds.has(castMember.slotId), true);
+        assert.ok(castMember.emote.length > 0);
+        assert.equal(
+          Object.hasOwn(castMember, "heldItemId"),
+          true,
+          `${scene.id}/${castMember.characterId} must declare heldItemId`,
+        );
+        if (castMember.heldItemId !== null) {
+          assert.equal(holdableIds.has(castMember.heldItemId), true);
+        }
+      }
       assert.deepEqual(Object.keys(scene.layers), [
         "sky",
         "far",
@@ -120,33 +215,156 @@ describe("pixel world pack", () => {
         assert.equal(Number.isInteger(placement.y), true);
       }
     }
+    assert.equal(sourceCounts.world, 8);
+    assert.equal(sourceCounts.lesson, 7);
+    assert.ok(sourceCounts.story >= 5);
+    assert.equal(sourceIds.size, PIXEL_WORLD_PACK.scenes.length);
   });
 
-  it("defines frame-stable named sockets for generic held-item attachment", () => {
-    const mainHand = PIXEL_WORLD_PACK.player.sockets.mainHand;
-    assert.ok(mainHand);
-    assert.deepEqual(Object.keys(mainHand.byPose), [
-      "idle",
-      "walking",
-      "talking",
-      "happy",
-      "surprised",
-    ]);
-    assert.deepEqual(mainHand.byPose.idle[0], {
-      depth: "front",
-      x: 56,
-      y: -49,
-    });
+  it("keeps every ready-made cast together inside the active camera composition", () => {
+    const slotsById = new Map(
+      requirePlacementSlots().map((slot) => [slot.id, slot]),
+    );
 
-    for (const [pose, anchors] of Object.entries(mainHand.byPose)) {
-      assert.ok(Array.isArray(anchors));
-      assert.ok(anchors.length >= 1);
-      if (pose === "walking") assert.equal(anchors.length, 4);
-      for (const anchor of anchors) {
-        assert.equal(Number.isInteger(anchor.x), true);
-        assert.equal(Number.isInteger(anchor.y), true);
-        assert.match(anchor.depth, /^(back|front)$/);
+    for (const scene of PIXEL_WORLD_PACK.scenes) {
+      const positions = scene.cast.map(({ slotId }) => slotsById.get(slotId));
+      assert.equal(positions.every(Boolean), true, `${scene.id} must use known slots`);
+      assert.equal(
+        new Set(positions.map(({ y }) => y)).size,
+        1,
+        `${scene.id} must keep Peppa and Polly on one readable depth row`,
+      );
+      assert.ok(
+        Math.abs(positions[0].x - positions[1].x) <= 100,
+        `${scene.id} must keep Peppa and Polly within one camera composition`,
+      );
+    }
+  });
+
+  it("keeps every ready-made cast fully framed when either character is active", () => {
+    const { cameraFollowOffsetY, cameraZoom, worldSize } =
+      PIXEL_WORLD_PACK.renderProfile;
+    assert.equal(
+      Number.isInteger(cameraFollowOffsetY),
+      true,
+      "The camera follow offset must be part of the shared render contract",
+    );
+
+    const visibleWidth = worldSize.width / cameraZoom;
+    const visibleHeight = worldSize.height / cameraZoom;
+    const maxScrollX = worldSize.width - visibleWidth;
+    const maxScrollY = worldSize.height - visibleHeight;
+    const frameMargin = 8;
+    const clamp = (value, minimum, maximum) =>
+      Math.min(maximum, Math.max(minimum, value));
+    const slotsById = new Map(
+      requirePlacementSlots().map((slot) => [slot.id, slot]),
+    );
+    const charactersById = new Map(
+      requireCharacters().map((character) => [character.id, character]),
+    );
+
+    for (const scene of PIXEL_WORLD_PACK.scenes) {
+      const castCenterX =
+        scene.cast.reduce(
+          (total, castMember) =>
+            total + slotsById.get(castMember.slotId).x,
+          0,
+        ) / scene.cast.length;
+      for (const activeCastMember of scene.cast) {
+        const activePosition = slotsById.get(activeCastMember.slotId);
+        const scrollX = clamp(
+          castCenterX - visibleWidth / 2,
+          0,
+          maxScrollX,
+        );
+        const scrollY = clamp(
+          activePosition.y - visibleHeight / 2 - cameraFollowOffsetY,
+          0,
+          maxScrollY,
+        );
+
+        for (const castMember of scene.cast) {
+          const character = charactersById.get(castMember.characterId);
+          const position = slotsById.get(castMember.slotId);
+          const left = position.x - character.spriteSheet.frameWidth / 2;
+          const right = position.x + character.spriteSheet.frameWidth / 2;
+          const top = position.y - character.spriteSheet.frameHeight;
+          const bottom = position.y;
+          const label = `${scene.id}/${activeCastMember.characterId} camera must fully frame ${castMember.characterId}`;
+
+          assert.ok(left >= scrollX + frameMargin, `${label} on the left`);
+          assert.ok(right <= scrollX + visibleWidth - frameMargin, `${label} on the right`);
+          assert.ok(top >= scrollY + frameMargin, `${label} at the top`);
+          assert.ok(bottom <= scrollY + visibleHeight - frameMargin, `${label} at the bottom`);
+        }
       }
+    }
+  });
+
+  it("maps lesson and story scene sources to real catalog entries", () => {
+    const lessonIds = new Set(
+      readdirSync(new URL("../content/lessons/", import.meta.url))
+        .filter((fileName) => fileName.endsWith(".json"))
+        .map((fileName) => path.basename(fileName, ".json")),
+    );
+    const storyCatalogSource = projectFile(
+      "src/stories/story-script-candidates.ts",
+    );
+    const storyIds = new Set(
+      [...storyCatalogSource.matchAll(
+        /^ {2}makePrototypeStory\(\{\n {4}id: "([^"]+)",/gm,
+      )].map((match) => match[1]),
+    );
+
+    assert.equal(lessonIds.size, 7);
+    assert.ok(storyIds.size >= 20);
+    for (const scene of PIXEL_WORLD_PACK.scenes) {
+      if (scene.source.kind === "lesson") {
+        assert.equal(
+          lessonIds.has(scene.source.id),
+          true,
+          `${scene.id} must map to a content/lessons JSON file`,
+        );
+      }
+      if (scene.source.kind === "story") {
+        assert.equal(
+          storyIds.has(scene.source.id),
+          true,
+          `${scene.id} must map to a top-level story candidate`,
+        );
+      }
+    }
+  });
+
+  it("defines frame-stable named sockets that select the front-hand overlay", () => {
+    for (const character of requireCharacters()) {
+      const mainHand = character.sockets.mainHand;
+      assert.ok(mainHand);
+      assert.deepEqual(Object.keys(mainHand.byPose), [
+        "idle",
+        "walking",
+        "talking",
+        "happy",
+        "surprised",
+      ]);
+
+      let frontAnchorCount = 0;
+      for (const [pose, anchors] of Object.entries(mainHand.byPose)) {
+        assert.ok(Array.isArray(anchors));
+        assert.ok(anchors.length >= 1);
+        if (pose === "walking") assert.equal(anchors.length, 4);
+        for (const anchor of anchors) {
+          assert.equal(Number.isInteger(anchor.x), true);
+          assert.equal(Number.isInteger(anchor.y), true);
+          assert.match(anchor.depth, /^(back|front)$/);
+          if (anchor.depth === "front") {
+            frontAnchorCount += 1;
+            assert.equal(anchor.overlayRole, "mainHandFront");
+          }
+        }
+      }
+      assert.ok(frontAnchorCount > 0);
     }
 
     const holdProfiles = PIXEL_WORLD_PACK.objects
@@ -162,7 +380,10 @@ describe("pixel world pack", () => {
       ...PIXEL_WORLD_PACK.scenes.flatMap((scene) =>
         layerEntries(scene).map(({ assetId }) => assetId),
       ),
-      PIXEL_WORLD_PACK.player.spriteSheet.assetId,
+      ...requireCharacters().flatMap((character) => [
+        character.spriteSheet.assetId,
+        character.overlays.mainHandFront.assetId,
+      ]),
     ]);
 
     for (const assetId of referencedAssetIds) {
