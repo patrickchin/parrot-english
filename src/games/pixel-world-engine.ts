@@ -460,7 +460,6 @@ export function createPixelWorldEngine(
       camera.setBackgroundColor(0x82c9ed);
       camera.setZoom(CAMERA_ZOOM);
       this.startCameraFollow(this.getActiveActor().sprite);
-      camera.setFollowOffset(0, CAMERA_FOLLOW_OFFSET_Y);
       camera.setDeadzone(120 / CAMERA_ZOOM, 84 / CAMERA_ZOOM);
       camera.roundPixels = true;
       this.fitCameraBoundsToViewport();
@@ -476,6 +475,8 @@ export function createPixelWorldEngine(
         true,
         reducedMotion?.matches ? 1 : 0.35,
         reducedMotion?.matches ? 1 : 0.35,
+        0,
+        CAMERA_FOLLOW_OFFSET_Y,
       );
     }
 
@@ -605,6 +606,9 @@ export function createPixelWorldEngine(
         PIXEL_WORLD_PACK.renderProfile.screenPixelsPerArtPixel,
       );
       host.dataset.activeCharacter = activeCharacterId;
+      host.dataset.cameraFollowOffsetY = String(
+        this.cameras.main.followOffset.y,
+      );
       host.dataset.cameraZoom = String(CAMERA_ZOOM);
       host.dataset.characterCount = String(this.actors.size);
       host.dataset.frame = String(this.getActorFrameIndex(activeActor));
