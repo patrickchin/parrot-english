@@ -1,7 +1,11 @@
-import { ArrowLeft, BookOpen, Pencil, Play, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, BookOpen, Images, Pencil, Play, Plus } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
-import { getLessonScenePath, getMyLessonEditPath } from "../app/app-routes";
+import {
+  getLessonScenePath,
+  getMyLessonEditPath,
+  getParrotLessonVariantScenePath,
+} from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   LESSONS,
@@ -18,6 +22,7 @@ import {
   loadMyLessons,
   type MyLessonDescriptor,
 } from "./my-lessons-api";
+import { FULL_SCENE_LESSON_VARIANTS } from "./full-scene-lessons";
 
 type LessonCard = {
   id: string;
@@ -133,6 +138,65 @@ function LessonCardView({
   );
 }
 
+const fullSceneComparison = FULL_SCENE_LESSON_VARIANTS.find(
+  ({ baseLessonId, id }) =>
+    baseLessonId === "02-garden-colors" && id === "full-scene",
+);
+
+function FullSceneComparisonCard({ lesson }: { lesson: LessonCard }) {
+  if (!fullSceneComparison) return null;
+
+  const preview = fullSceneComparison.scenes[0]?.image;
+  if (!preview) return null;
+
+  return (
+    <aside
+      aria-label={`Full-scene artwork comparison for ${lesson.title}`}
+      className={cardClassName({
+        className:
+          "ml-3 flex min-w-0 items-center gap-2 border-dashed border-sky-300 bg-sky-50/90 p-2 sm:ml-8 sm:gap-3",
+        elevation: "soft",
+        tone: "muted",
+      })}
+    >
+      <ActionLink
+        aria-label={`Start full-scene version: ${lesson.title}`}
+        className="order-3"
+        size="cardAction"
+        to={getParrotLessonVariantScenePath(
+          lesson.id,
+          fullSceneComparison.id,
+          0,
+        )}
+        variant="navy"
+      >
+        <Images aria-hidden="true" className="size-5 shrink-0" />
+        <span className="hidden min-[360px]:inline">Compare</span>
+      </ActionLink>
+
+      <div className="order-1 size-16 shrink-0 overflow-hidden rounded-xl sm:h-20 sm:w-28">
+        <img
+          alt={preview.alt}
+          className="size-full object-cover"
+          src={preview.src}
+        />
+      </div>
+
+      <div className="order-2 grid min-w-0 flex-1 content-center gap-0.5">
+        <span className="text-[0.625rem] font-black uppercase tracking-wider text-brand-rose sm:text-xs">
+          Visual experiment
+        </span>
+        <h4 className="m-0 text-sm leading-tight text-brand-navy sm:text-base">
+          Full-scene artwork
+        </h4>
+        <p className="m-0 line-clamp-2 text-xs font-bold leading-snug text-slate-700 sm:text-sm">
+          Same lesson, same audio—one complete image per scene.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
 export function LessonListView({
   isLoadingMyLessons,
   myLessons,
@@ -177,12 +241,16 @@ export function LessonListView({
         </h2>
         <div className="grid gap-2 sm:gap-3">
           {cards.map((lesson, index) => (
-            <LessonCardView
-              index={index}
-              key={lesson.id}
-              lesson={lesson}
-              source="parrot"
-            />
+            <Fragment key={lesson.id}>
+              <LessonCardView
+                index={index}
+                lesson={lesson}
+                source="parrot"
+              />
+              {lesson.id === fullSceneComparison?.baseLessonId ? (
+                <FullSceneComparisonCard lesson={lesson} />
+              ) : null}
+            </Fragment>
           ))}
         </div>
       </section>
