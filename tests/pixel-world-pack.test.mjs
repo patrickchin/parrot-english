@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -219,6 +219,41 @@ describe("pixel world pack", () => {
     assert.equal(sourceCounts.lesson, 7);
     assert.ok(sourceCounts.story >= 5);
     assert.equal(sourceIds.size, PIXEL_WORLD_PACK.scenes.length);
+  });
+
+  it("maps lesson and story scene sources to real catalog entries", () => {
+    const lessonIds = new Set(
+      readdirSync(new URL("../content/lessons/", import.meta.url))
+        .filter((fileName) => fileName.endsWith(".json"))
+        .map((fileName) => path.basename(fileName, ".json")),
+    );
+    const storyCatalogSource = projectFile(
+      "src/stories/story-script-candidates.ts",
+    );
+    const storyIds = new Set(
+      [...storyCatalogSource.matchAll(
+        /^  makePrototypeStory\(\{\n    id: "([^"]+)",/gm,
+      )].map((match) => match[1]),
+    );
+
+    assert.equal(lessonIds.size, 7);
+    assert.ok(storyIds.size >= 20);
+    for (const scene of PIXEL_WORLD_PACK.scenes) {
+      if (scene.source.kind === "lesson") {
+        assert.equal(
+          lessonIds.has(scene.source.id),
+          true,
+          `${scene.id} must map to a content/lessons JSON file`,
+        );
+      }
+      if (scene.source.kind === "story") {
+        assert.equal(
+          storyIds.has(scene.source.id),
+          true,
+          `${scene.id} must map to a top-level story candidate`,
+        );
+      }
+    }
   });
 
   it("defines frame-stable named sockets that select the front-hand overlay", () => {
