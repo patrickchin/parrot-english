@@ -87,12 +87,85 @@ test("the world lab switches scenes, items, and optional parallax", async ({
   }
 });
 
+test("the scene composer stages Peppa and Polly in reusable story scenes", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  const world = await openExplorer(page);
+  const composer = page.getByRole("region", { name: "Scene composer" });
+
+  await expect(composer).toBeVisible();
+  await expect(world).toHaveAttribute("data-character-count", "2");
+  await expect(world).toHaveAttribute("data-active-character", "peppa");
+
+  const characterChooser = composer.getByRole("group", {
+    name: "Character chooser",
+  });
+  await expect(
+    characterChooser.getByRole("button", { exact: true, name: "Peppa" }),
+  ).toBeVisible();
+  const choosePolly = characterChooser.getByRole("button", {
+    exact: true,
+    name: "Polly",
+  });
+  await expect(choosePolly).toBeVisible();
+
+  await choosePolly.click();
+  await expect(world).toHaveAttribute("data-active-character", "polly");
+  await composer
+    .getByRole("button", { exact: true, name: "storybook" })
+    .click();
+  await expect(world).toHaveAttribute("data-polly-held-item", "storybook");
+  await expect(world).toHaveAttribute(
+    "data-polly-hold-presentation",
+    "front-covered",
+  );
+
+  await composer
+    .getByRole("button", { exact: true, name: "Place Polly front right" })
+    .click();
+  await expect(world).toHaveAttribute("data-polly-slot", "front-right");
+
+  await composer
+    .getByRole("button", { exact: true, name: "Story: Three Apples" })
+    .click();
+  await expect(world).toHaveAttribute("data-scene-id", "story-three-apples");
+  await expect(world).toHaveAttribute(
+    "data-scene-source",
+    "story:three-apples",
+  );
+
+  await composer
+    .getByRole("button", { exact: true, name: "Reset composition" })
+    .click();
+  await expect(world).toHaveAttribute("data-scene-id", "garden-party");
+  await expect(world).toHaveAttribute("data-active-character", "peppa");
+  await expect(world).toHaveAttribute("data-character-count", "2");
+});
+
 test("the explorer remains usable on mobile without horizontal overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await openExplorer(page);
 
+  const composer = page.getByRole("region", { name: "Scene composer" });
+  await expect(composer).toBeVisible();
+  await expect(
+    composer.getByRole("button", { exact: true, name: "Polly" }),
+  ).toBeVisible();
+  await expect(
+    composer.getByRole("button", {
+      exact: true,
+      name: "Story: Three Apples",
+    }),
+  ).toBeVisible();
+  await expect(
+    composer.getByRole("button", {
+      exact: true,
+      name: "Reset composition",
+    }),
+  ).toBeVisible();
   await expect(page.getByRole("button", { name: "Move up" })).toBeVisible();
   await expect(page.getByRole("button", { name: "garden shovel" })).toBeVisible();
   const dimensions = await page.evaluate(() => ({
