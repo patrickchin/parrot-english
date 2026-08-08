@@ -83,12 +83,13 @@ type ActorRuntime = {
 };
 
 const CAMERA_ZOOM = PIXEL_WORLD_PACK.renderProfile.cameraZoom;
+const CAMERA_FOLLOW_OFFSET_Y =
+  PIXEL_WORLD_PACK.renderProfile.cameraFollowOffsetY;
 const ART_CELL_SIZE = PIXEL_WORLD_PACK.renderProfile.artCellWorldPixels;
 const TEXTURE_SCALE = PIXEL_WORLD_PACK.renderProfile.textureToWorldScale;
 const WORLD_SIZE = PIXEL_WORLD_PACK.renderProfile.worldSize;
 const PLAYFIELD = PIXEL_WORLD_PACK.renderProfile.playfield;
 const PLAYER_SPEED = 144;
-const PLAYER_CAMERA_FOLLOW_OFFSET_Y = 72;
 const NUDGE_DURATION_MS = 140;
 const SCENE_KEY = "react-pixel-world-stage";
 const MOVEMENT_KEY_DIRECTIONS = new Map<string, PixelWorldDirection>([
@@ -459,7 +460,7 @@ export function createPixelWorldEngine(
       camera.setBackgroundColor(0x82c9ed);
       camera.setZoom(CAMERA_ZOOM);
       this.startCameraFollow(this.getActiveActor().sprite);
-      camera.setFollowOffset(0, PLAYER_CAMERA_FOLLOW_OFFSET_Y);
+      camera.setFollowOffset(0, CAMERA_FOLLOW_OFFSET_Y);
       camera.setDeadzone(120 / CAMERA_ZOOM, 84 / CAMERA_ZOOM);
       camera.roundPixels = true;
       this.fitCameraBoundsToViewport();

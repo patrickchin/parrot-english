@@ -10,6 +10,7 @@ const PALETTE = Object.freeze([
 const renderProfile = Object.freeze({
   alpha: "binary",
   artCellWorldPixels: 2,
+  cameraFollowOffsetY: -48,
   cameraZoom: 2,
   palette: PALETTE,
   playfield: Object.freeze({ bottom: 480, left: 0, right: 720, top: 160 }),
@@ -147,15 +148,15 @@ function placements(entries) {
 }
 
 const placementSlots = Object.freeze([
-  Object.freeze({ id: "back-left", label: "Back left", x: 260, y: 270 }),
+  Object.freeze({ id: "back-left", label: "Back left", x: 280, y: 270 }),
   Object.freeze({ id: "back-center", label: "Back center", x: 360, y: 270 }),
-  Object.freeze({ id: "back-right", label: "Back right", x: 460, y: 270 }),
-  Object.freeze({ id: "center-left", label: "Center left", x: 260, y: 350 }),
+  Object.freeze({ id: "back-right", label: "Back right", x: 440, y: 270 }),
+  Object.freeze({ id: "center-left", label: "Center left", x: 280, y: 350 }),
   Object.freeze({ id: "center", label: "Center", x: 360, y: 350 }),
-  Object.freeze({ id: "center-right", label: "Center right", x: 460, y: 350 }),
-  Object.freeze({ id: "front-left", label: "Front left", x: 260, y: 430 }),
+  Object.freeze({ id: "center-right", label: "Center right", x: 440, y: 350 }),
+  Object.freeze({ id: "front-left", label: "Front left", x: 280, y: 430 }),
   Object.freeze({ id: "front-center", label: "Front center", x: 360, y: 430 }),
-  Object.freeze({ id: "front-right", label: "Front right", x: 460, y: 430 }),
+  Object.freeze({ id: "front-right", label: "Front right", x: 440, y: 430 }),
 ]);
 
 function characterCast({
