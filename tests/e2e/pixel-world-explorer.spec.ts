@@ -149,7 +149,10 @@ test("the explorer remains usable on mobile without horizontal overflow", async 
   page,
 }) => {
   await page.setViewportSize({ height: 844, width: 390 });
-  await openExplorer(page);
+  const world = await openExplorer(page);
+
+  await expect(world).toHaveAttribute("data-camera-zoom", "1");
+  await expect(world).toHaveAttribute("data-art-cell-screen-pixels", "2");
 
   const composer = page.getByRole("region", { name: "Scene composer" });
   await expect(composer).toBeVisible();

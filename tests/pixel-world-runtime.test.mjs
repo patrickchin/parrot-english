@@ -6,6 +6,7 @@ import * as worldRuntime from "../prototypes/pixel-stage/world-runtime.js";
 const {
   flattenSceneLayers,
   getLayerScrollFactor,
+  resolveCameraZoom,
   resolveHeldItemTransform,
   resolvePlacementSlot,
 } = worldRuntime;
@@ -45,6 +46,17 @@ describe("pixel world runtime model", () => {
       x: 1,
       y: 1,
     });
+  });
+
+  it("selects an integer pixel zoom tier that keeps the cast readable", () => {
+    assert.equal(
+      typeof resolveCameraZoom,
+      "function",
+      "The runtime must export resolveCameraZoom(viewport)",
+    );
+    assert.equal(resolveCameraZoom({ height: 476, width: 713 }), 2);
+    assert.equal(resolveCameraZoom({ height: 217, width: 325 }), 1);
+    assert.equal(resolveCameraZoom({ height: 143, width: 215 }), 0.5);
   });
 
   it("resolves all semantic placement slots to bounded integer positions", () => {
