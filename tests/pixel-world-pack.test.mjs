@@ -241,6 +241,61 @@ describe("pixel world pack", () => {
     }
   });
 
+  it("keeps every ready-made cast fully framed when either character is active", () => {
+    const { cameraFollowOffsetY, cameraZoom, worldSize } =
+      PIXEL_WORLD_PACK.renderProfile;
+    assert.equal(
+      Number.isInteger(cameraFollowOffsetY),
+      true,
+      "The camera follow offset must be part of the shared render contract",
+    );
+
+    const visibleWidth = worldSize.width / cameraZoom;
+    const visibleHeight = worldSize.height / cameraZoom;
+    const maxScrollX = worldSize.width - visibleWidth;
+    const maxScrollY = worldSize.height - visibleHeight;
+    const frameMargin = 8;
+    const clamp = (value, minimum, maximum) =>
+      Math.min(maximum, Math.max(minimum, value));
+    const slotsById = new Map(
+      requirePlacementSlots().map((slot) => [slot.id, slot]),
+    );
+    const charactersById = new Map(
+      requireCharacters().map((character) => [character.id, character]),
+    );
+
+    for (const scene of PIXEL_WORLD_PACK.scenes) {
+      for (const activeCastMember of scene.cast) {
+        const activePosition = slotsById.get(activeCastMember.slotId);
+        const scrollX = clamp(
+          activePosition.x - visibleWidth / 2,
+          0,
+          maxScrollX,
+        );
+        const scrollY = clamp(
+          activePosition.y - visibleHeight / 2 + cameraFollowOffsetY,
+          0,
+          maxScrollY,
+        );
+
+        for (const castMember of scene.cast) {
+          const character = charactersById.get(castMember.characterId);
+          const position = slotsById.get(castMember.slotId);
+          const left = position.x - character.spriteSheet.frameWidth / 2;
+          const right = position.x + character.spriteSheet.frameWidth / 2;
+          const top = position.y - character.spriteSheet.frameHeight;
+          const bottom = position.y;
+          const label = `${scene.id}/${activeCastMember.characterId} camera must fully frame ${castMember.characterId}`;
+
+          assert.ok(left >= scrollX + frameMargin, `${label} on the left`);
+          assert.ok(right <= scrollX + visibleWidth - frameMargin, `${label} on the right`);
+          assert.ok(top >= scrollY + frameMargin, `${label} at the top`);
+          assert.ok(bottom <= scrollY + visibleHeight - frameMargin, `${label} at the bottom`);
+        }
+      }
+    }
+  });
+
   it("maps lesson and story scene sources to real catalog entries", () => {
     const lessonIds = new Set(
       readdirSync(new URL("../content/lessons/", import.meta.url))
