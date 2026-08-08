@@ -180,6 +180,21 @@ test("the explorer remains usable on mobile without horizontal overflow", async 
     scrollWidth: document.documentElement.scrollWidth,
   }));
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+
+  await page.setViewportSize({ height: 640, width: 280 });
+  const narrowWorld = await openExplorer(page);
+  await expect(narrowWorld).toHaveAttribute("data-camera-zoom", "0.5");
+  await expect(narrowWorld).toHaveAttribute(
+    "data-art-cell-screen-pixels",
+    "1",
+  );
+  const narrowDimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(narrowDimensions.scrollWidth).toBeLessThanOrEqual(
+    narrowDimensions.clientWidth,
+  );
 });
 
 test("reduced motion forces the effective parallax mode off", async ({ page }) => {
