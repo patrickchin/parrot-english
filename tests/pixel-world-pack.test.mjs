@@ -273,7 +273,7 @@ describe("pixel world pack", () => {
           maxScrollX,
         );
         const scrollY = clamp(
-          activePosition.y - visibleHeight / 2 + cameraFollowOffsetY,
+          activePosition.y - visibleHeight / 2 - cameraFollowOffsetY,
           0,
           maxScrollY,
         );

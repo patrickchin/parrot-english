@@ -10,7 +10,7 @@ const PALETTE = Object.freeze([
 const renderProfile = Object.freeze({
   alpha: "binary",
   artCellWorldPixels: 2,
-  cameraFollowOffsetY: -48,
+  cameraFollowOffsetY: 72,
   cameraZoom: 2,
   palette: PALETTE,
   playfield: Object.freeze({ bottom: 480, left: 0, right: 720, top: 160 }),
