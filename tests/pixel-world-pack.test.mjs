@@ -252,7 +252,7 @@ describe("pixel world pack", () => {
     );
     const storyIds = new Set(
       [...storyCatalogSource.matchAll(
-        /^  makePrototypeStory\(\{\n    id: "([^"]+)",/gm,
+        /^ {2}makePrototypeStory\(\{\n {4}id: "([^"]+)",/gm,
       )].map((match) => match[1]),
     );
 

@@ -47,7 +47,7 @@ const DEFAULT_ACTORS: PixelWorldActorState[] = [
     characterId: "polly",
     emote: "happy",
     heldItemId: null,
-    slotId: "front-right",
+    slotId: "center-right",
   },
 ];
 const PARALLAX_MODES: Array<{
