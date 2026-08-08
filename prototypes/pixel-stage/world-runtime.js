@@ -1,4 +1,7 @@
-import { PIXEL_WORLD_PLACEMENT_SLOTS_BY_ID } from "./world-pack.js";
+import {
+  PIXEL_WORLD_PACK,
+  PIXEL_WORLD_PLACEMENT_SLOTS_BY_ID,
+} from "./world-pack.js";
 
 const LAYER_ORDER = Object.freeze(["sky", "far", "mid", "play", "foreground"]);
 
@@ -11,6 +14,18 @@ export function flattenSceneLayers(scene) {
 export function getLayerScrollFactor(layer, mode, reducedMotion) {
   if (mode === "off" || reducedMotion) return { x: 1, y: 1 };
   return { x: layer.scrollFactorX, y: layer.scrollFactorY };
+}
+
+export function resolveCameraZoom(
+  viewport,
+  renderProfile = PIXEL_WORLD_PACK.renderProfile,
+) {
+  const { cameraSafeViewport, cameraZoomSteps } = renderProfile;
+  return cameraZoomSteps.find(
+    (zoom) =>
+      viewport.width / zoom >= cameraSafeViewport.width &&
+      viewport.height / zoom >= cameraSafeViewport.height,
+  ) ?? renderProfile.cameraZoom;
 }
 
 export function resolvePlacementSlot(slotId) {

@@ -7,6 +7,7 @@ import {
 import {
   flattenSceneLayers,
   getLayerScrollFactor,
+  resolveCameraZoom,
   resolveHeldItemTransform,
   resolvePlacementSlot,
 } from "../../prototypes/pixel-stage/world-runtime.js";
@@ -82,7 +83,6 @@ type ActorRuntime = {
   state: CharacterState;
 };
 
-const CAMERA_ZOOM = PIXEL_WORLD_PACK.renderProfile.cameraZoom;
 const CAMERA_FOLLOW_OFFSET_Y =
   PIXEL_WORLD_PACK.renderProfile.cameraFollowOffsetY;
 const ART_CELL_SIZE = PIXEL_WORLD_PACK.renderProfile.artCellWorldPixels;
@@ -458,11 +458,9 @@ export function createPixelWorldEngine(
     private configureCamera() {
       const camera = this.cameras.main;
       camera.setBackgroundColor(0x82c9ed);
-      camera.setZoom(CAMERA_ZOOM);
-      this.startCameraFollow(this.getActiveActor().sprite);
-      camera.setDeadzone(120 / CAMERA_ZOOM, 84 / CAMERA_ZOOM);
-      camera.roundPixels = true;
       this.fitCameraBoundsToViewport();
+      this.startCameraFollow(this.getActiveActor().sprite);
+      camera.roundPixels = true;
       this.scale.on(Phaser.Scale.Events.RESIZE, this.fitCameraBoundsToViewport, this);
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
         this.scale.off(Phaser.Scale.Events.RESIZE, this.fitCameraBoundsToViewport, this);
@@ -482,8 +480,14 @@ export function createPixelWorldEngine(
 
     private fitCameraBoundsToViewport() {
       const camera = this.cameras.main;
-      const visibleWidth = camera.width / CAMERA_ZOOM;
-      const visibleHeight = camera.height / CAMERA_ZOOM;
+      const cameraZoom = resolveCameraZoom({
+        height: camera.height,
+        width: camera.width,
+      });
+      camera.setZoom(cameraZoom);
+      camera.setDeadzone(120 / cameraZoom, 84 / cameraZoom);
+      const visibleWidth = camera.width / cameraZoom;
+      const visibleHeight = camera.height / cameraZoom;
       const horizontalMargin = Math.max(0, Math.ceil((visibleWidth - WORLD_SIZE.width) / 2));
       const verticalMargin = Math.max(0, Math.ceil((visibleHeight - WORLD_SIZE.height) / 2));
       camera.setBounds(
@@ -603,13 +607,13 @@ export function createPixelWorldEngine(
       if (this.actors.size === 0) return;
       const activeActor = this.getActiveActor();
       host.dataset.artCellScreenPixels = String(
-        PIXEL_WORLD_PACK.renderProfile.screenPixelsPerArtPixel,
+        ART_CELL_SIZE * this.cameras.main.zoom,
       );
       host.dataset.activeCharacter = activeCharacterId;
       host.dataset.cameraFollowOffsetY = String(
         this.cameras.main.followOffset.y,
       );
-      host.dataset.cameraZoom = String(CAMERA_ZOOM);
+      host.dataset.cameraZoom = String(this.cameras.main.zoom);
       host.dataset.characterCount = String(this.actors.size);
       host.dataset.frame = String(this.getActorFrameIndex(activeActor));
       host.dataset.heldItem = activeActor.state.heldItemId ?? "none";

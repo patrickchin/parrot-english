@@ -359,8 +359,8 @@ export function PixelWorldExplorer() {
           >
             <p className="m-0 font-bold leading-relaxed text-slate-700">
               Each scene uses one <strong>720×480</strong> world, reusable
-              Peppa and Polly sheets, local compiled assets, and a shared{" "}
-              <strong>4×4 screen-pixel</strong> art cell.
+              Peppa and Polly sheets, local compiled assets, and shared integer
+              square-pixel zoom tiers.
             </p>
             <p className="m-0 text-sm font-bold uppercase tracking-[0.2em] text-sky-900">
               Scene: {activeScene.name} · Active: {activeCharacter.name} · Hold
