@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "worldPackId": "storybook-meadows",
+  "sourcePolicy": {
+    "description": "High-resolution generated concepts are inputs. Only compiler-normalized PNGs ship to the runtime.",
+    "sourceRoot": "art-source/pixel-world/sources",
+    "outputRoot": "public/assets/pixel-world",
+    "alphaThreshold": 128,
+    "artCellWorldPixels": 2,
+    "paletteMaximum": 48,
+    "sourcePixelsPerWorldPixel": 1,
+    "textureToWorldScale": 1,
+    "cameraZoom": 2,
+    "screenPixelsPerArtPixel": 4
+  },
+  "normalization": {
+    "charactersAndGrounds": "aspect-preserving cover crop onto the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
+    "parallaxStrips": "trim transparency, aspect-preserving contain at bottom-center on the shared authored-cell grid, harden alpha, quantize, then nearest-expand each cell",
+    "objects": "trim transparency, fit on the shared authored-cell grid, bottom-center, harden alpha, quantize, then nearest-expand",
+    "runtimeScaling": "integer camera zoom only; no per-asset fractional scaling"
+  },
+  "sourceNaming": "Each runtime path under /assets/pixel-world maps to the same relative path under art-source/pixel-world/sources."
+}

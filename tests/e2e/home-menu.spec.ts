@@ -102,7 +102,7 @@ for (const viewport of phoneViewports) {
       activities.getByRole("link", { name: /^Lessons/ }),
     ).toBeVisible();
     await expect(
-      activities.getByRole("link", { name: /^Game/ }),
+      activities.getByRole("link", { name: /^World Explorer/ }),
     ).toBeVisible();
     await expect(createLesson).toBeVisible();
     await expect(createLesson).toHaveAttribute("href", "/lessons/my/create");
@@ -178,7 +178,7 @@ test("primary home activities share one rendered card chrome and focus outline",
     activities.getByRole("link", { name: /^Talk to Peppa/ }),
     activities.getByRole("link", { name: /^Lessons/ }),
     activities.getByRole("link", { name: /^Storytelling/ }),
-    activities.getByRole("link", { name: /^Game/ }),
+    activities.getByRole("link", { name: /^World Explorer/ }),
     activities.getByRole("link", { name: /^Pixel Lesson Lab/ }),
     activities.getByRole("link", { name: /^Create a Lesson/ }),
   ];
@@ -227,11 +227,13 @@ test("the retired Progress URL returns to the useful home hub", async ({ page })
   ).toBeVisible();
 });
 
-test("Game opens the pixel garden proof of concept", async ({ page }) => {
+test("World Explorer opens the deterministic pixel-world review lab", async ({
+  page,
+}) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/");
 
-  const game = page.getByRole("link", { name: /^Game/ });
+  const game = page.getByRole("link", { name: /^World Explorer/ });
   const pixelLab = page.getByRole("link", { name: /^Pixel Lesson Lab/ });
   const talk = page.getByRole("link", { name: /^Talk to Peppa/ });
   const lessons = page.getByRole("link", { name: /^Lessons/ });
@@ -243,8 +245,8 @@ test("Game opens the pixel garden proof of concept", async ({ page }) => {
   await expect(storytelling).toBeVisible();
   await expect(pixelLab).toBeVisible();
   await expect(createLesson).toBeVisible();
-  await expect(game).toHaveAttribute("href", "/prototypes/pixel-stage/");
-  await expect(game.getByText("Proof of concept", { exact: true })).toBeVisible();
+  await expect(game).toHaveAttribute("href", "/games/worlds");
+  await expect(game.getByText("New pipeline", { exact: true })).toBeVisible();
   await expect(createLesson).toHaveAttribute("href", "/lessons/my/create");
   await expect(pixelLab).toHaveAttribute("href", "/games");
 
@@ -276,11 +278,13 @@ test("Game opens the pixel garden proof of concept", async ({ page }) => {
   expect(gameBox!.y).toBeGreaterThan(talkBox!.y);
   await game.click();
 
-  await expect(page).toHaveURL(/\/prototypes\/pixel-stage\/$/);
-  await expect(page).toHaveTitle("Explore Peppa's lesson garden");
+  await expect(page).toHaveURL("/games/worlds");
+  await expect(
+    page.getByRole("heading", { name: "Pixel World Explorer" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("region", {
-      name: "Peppa lesson garden exploration stage",
+      name: "Pixel world explorer stage",
     }),
   ).toBeVisible();
 });

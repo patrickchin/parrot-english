@@ -27,6 +27,7 @@ const SAFE_RETURN_PATHS = [
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/games\/*$/i,
+  /^\/games\/worlds\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
   /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
