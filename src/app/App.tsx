@@ -819,6 +819,25 @@ function ParrotLessonSceneRoute() {
   return <LessonRouteDecisionView decision={decision} source="parrot" />;
 }
 
+function ParrotLessonVariantRedirect() {
+  const { lessonId, variantId } = useParams();
+  const variant = FULL_SCENE_LESSON_VARIANTS.find(
+    (candidate) =>
+      candidate.baseLessonId === lessonId && candidate.id === variantId,
+  );
+
+  if (!lessonId || !variantId || !variant) {
+    return <Navigate replace to="/lessons" />;
+  }
+
+  return (
+    <Navigate
+      replace
+      to={getParrotLessonVariantScenePath(lessonId, variantId, 0)}
+    />
+  );
+}
+
 function ParrotLessonVariantSceneRoute() {
   const { lessonId, sceneNumber, variantId } = useParams();
   const variant = FULL_SCENE_LESSON_VARIANTS.find(
@@ -991,6 +1010,10 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
       <Route
         element={<ParrotLessonSceneRoute />}
         path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
+      />
+      <Route
+        element={<ParrotLessonVariantRedirect />}
+        path="/lessons/parrot/:lessonId/variants/:variantId"
       />
       <Route
         element={<ParrotLessonVariantSceneRoute />}

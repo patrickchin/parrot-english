@@ -32,6 +32,7 @@ const SAFE_RETURN_PATHS = [
   /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
+  /^\/lessons\/parrot\/[^/]+\/variants\/[^/]+\/*$/i,
   /^\/lessons\/parrot\/[^/]+\/variants\/[^/]+\/scenes\/[^/]+\/*$/i,
   /^\/progress\/*$/i,
   /^\/stories\/*$/i,
