@@ -270,6 +270,25 @@ async function deriveSelectedCharacterOverlays(selectedAssetIds) {
   }
 }
 
+function includeDerivedCharacterOverlays(selectedAssetIds) {
+  const expandedAssetIds = [...selectedAssetIds];
+  const selected = new Set(expandedAssetIds);
+  for (const character of PIXEL_WORLD_PACK.characters ?? []) {
+    const bodyAssetId = character.spriteSheet?.assetId;
+    const overlayAssetId = character.overlays?.mainHandFront?.assetId;
+    if (
+      bodyAssetId &&
+      overlayAssetId &&
+      selected.has(bodyAssetId) &&
+      !selected.has(overlayAssetId)
+    ) {
+      selected.add(overlayAssetId);
+      expandedAssetIds.push(overlayAssetId);
+    }
+  }
+  return expandedAssetIds;
+}
+
 function inspectCompiledPixels(data) {
   const alphaValues = new Set();
   const colors = new Set();
@@ -376,7 +395,7 @@ function requestedAssetIds() {
 
 async function main() {
   const allAssetIds = Object.keys(PIXEL_WORLD_PACK.assets);
-  const selectedAssetIds = requestedAssetIds();
+  const selectedAssetIds = includeDerivedCharacterOverlays(requestedAssetIds());
   await deriveSelectedCharacterOverlays(selectedAssetIds);
   const results = [];
   for (const assetId of selectedAssetIds) {

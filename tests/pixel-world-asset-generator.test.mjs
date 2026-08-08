@@ -11,6 +11,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import process from "node:process";
 import { promisify } from "node:util";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
