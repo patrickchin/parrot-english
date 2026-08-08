@@ -1,6 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const lessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
+const fullSceneLessonPath =
+  "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
+const shortFullSceneLessonPath =
+  "/lessons/parrot/02-garden-colors/variants/full-scene";
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
 
@@ -322,6 +326,93 @@ for (const viewport of viewports) {
     await expectNoPageOverflow(page);
   });
 }
+
+for (const viewport of viewports) {
+  test(`full-scene artwork stays boxed on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(fullSceneLessonPath);
+    await installAudioDelay(page, 5_000);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const artwork = page.getByRole("region", {
+      name: "Full-scene artwork",
+    });
+    const image = artwork.getByRole("img", {
+      name: /Peppa and Dolly discover many colorful flowers/i,
+    });
+
+    const artworkBox = await expectInsideViewport(artwork, viewport);
+    await expectInsideViewport(image, viewport);
+    await expect(artwork).toHaveAttribute("data-frame-preset", "landscape");
+    await expect(artwork.getByText("Landscape · 3:2", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Lesson progress" }),
+    ).toContainText("Colorful Flowers");
+    await expect(page.getByText("Look at the flowers!", { exact: true })).toBeVisible();
+    await expect(page.locator("[data-character]")).toHaveCount(0);
+    expect(artworkBox.width).toBeLessThan(viewport.width);
+    expect(artworkBox.height).toBeLessThan(viewport.height);
+    await expectNoPageOverflow(page);
+  });
+}
+
+test("the full-scene route keeps the same lesson flow while each scene selects its frame", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(fullSceneLessonPath);
+  await installAudioDelay(page, 5_000);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const controls = page.getByRole("navigation", {
+    name: "Story playback controls",
+  });
+  const artwork = page.getByRole("region", { name: "Full-scene artwork" });
+
+  await controls.getByRole("button", { name: "Next scene" }).click();
+  await expect(page).toHaveURL(
+    /\/lessons\/parrot\/02-garden-colors\/variants\/full-scene\/scenes\/2$/,
+  );
+  await expect(artwork).toHaveAttribute("data-frame-preset", "square");
+  await expect(artwork.getByText("Square · 1:1", { exact: true })).toBeVisible();
+  let artworkBox = await visibleBox(artwork);
+  expect(Math.abs(artworkBox.width - artworkBox.height)).toBeLessThanOrEqual(2);
+
+  await controls.getByRole("button", { name: "Next scene" }).click();
+  await expect(page).toHaveURL(/\/variants\/full-scene\/scenes\/3$/);
+  await expect(artwork).toHaveAttribute("data-frame-preset", "portrait");
+  await expect(artwork.getByText("Portrait · 2:3", { exact: true })).toBeVisible();
+  artworkBox = await visibleBox(artwork);
+  expect(artworkBox.height).toBeGreaterThan(artworkBox.width);
+
+  await controls.getByRole("button", { name: "Next scene" }).click();
+  await expect(page).toHaveURL(/\/variants\/full-scene\/scenes\/4$/);
+  await expect(artwork).toHaveAttribute("data-frame-preset", "wide");
+  await expect(artwork.getByText("Wide · 16:9", { exact: true })).toBeVisible();
+
+  await controls.getByRole("button", { name: "Next scene" }).click();
+  await expect(page).toHaveURL(/\/variants\/full-scene\/scenes\/5$/);
+  await expect(artwork).toHaveAttribute("data-frame-preset", "free");
+  await expect(artwork.getByText("Natural size", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toContainText("The Finished Basket");
+  await expectNoPageOverflow(page);
+});
+
+test("the short full-scene route opens the canonical first scene", async ({
+  page,
+}) => {
+  await page.goto(shortFullSceneLessonPath);
+
+  await expect(page).toHaveURL(fullSceneLessonPath);
+  await expect(
+    page.getByRole("region", { name: "Full-scene artwork" }),
+  ).toHaveAttribute("data-frame-preset", "landscape");
+  await expect(page.getByRole("button", { name: "Start lesson" })).toBeVisible();
+});
 
 test("playback controls pause, resume, and navigate between scenes", async ({
   page,

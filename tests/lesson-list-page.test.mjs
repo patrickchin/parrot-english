@@ -118,6 +118,26 @@ test("ready-made lessons use distinct story-specific artwork", () => {
   assert.equal(new Set(expectedReadyMadeArtwork.map(([src]) => src)).size, 7);
 });
 
+test("lesson two offers its full-scene artwork comparison within the original card", () => {
+  const html = renderLessonList();
+  const originalLessonTitle = html.indexOf("The Red Flower</h3>");
+  const comparisonHref =
+    "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
+  const comparisonStart = html.indexOf(`href="${comparisonHref}"`);
+  const nextLessonStart = html.indexOf(
+    'aria-label="Start lesson: Peppa&#x27;s Apple Snack"',
+  );
+
+  assert.ok(originalLessonTitle >= 0, "Expected the original lesson two row");
+  assert.ok(comparisonStart > originalLessonTitle);
+  assert.ok(comparisonStart < nextLessonStart);
+
+  const comparisonCopy = html.slice(comparisonStart, nextLessonStart);
+  assert.match(comparisonCopy, /same lesson/i);
+  assert.match(comparisonCopy, /same audio/i);
+  assert.match(comparisonCopy, /full-scene artwork/i);
+});
+
 test("lesson list keeps custom creation secondary and explains who it is for", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
@@ -190,6 +210,22 @@ test("a canonical Parrot catalog href renders its directly matched lesson route"
   assert.match(html, /Parrot English speaking lesson/);
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.doesNotMatch(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
+  assert.match(html, /aria-label="Start lesson"/);
+  assert.match(html, />Back to lessons</);
+});
+
+test("the full-scene comparison href renders lesson two at its canonical variant route", () => {
+  const comparisonHref =
+    "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
+  assert.match(renderLessonList(), new RegExp(`href="${comparisonHref}"`));
+
+  const html = renderInRouter(
+    createElement(ApplicationRoutes, { loginTarget: "/" }),
+    comparisonHref,
+  );
+
+  assert.match(html, /Parrot English speaking lesson/);
+  assert.match(html, /The Red Flower/);
   assert.match(html, /aria-label="Start lesson"/);
   assert.match(html, />Back to lessons</);
 });

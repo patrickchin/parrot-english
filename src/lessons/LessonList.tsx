@@ -1,7 +1,11 @@
-import { ArrowLeft, BookOpen, Pencil, Play, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, Images, Pencil, Play, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
-import { getLessonScenePath, getMyLessonEditPath } from "../app/app-routes";
+import {
+  getLessonScenePath,
+  getMyLessonEditPath,
+  getParrotLessonVariantScenePath,
+} from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   LESSONS,
@@ -18,6 +22,7 @@ import {
   loadMyLessons,
   type MyLessonDescriptor,
 } from "./my-lessons-api";
+import { FULL_SCENE_LESSON_VARIANTS } from "./full-scene-lessons";
 
 type LessonCard = {
   id: string;
@@ -35,6 +40,10 @@ type LessonArtwork = {
 
 const readyMadeArtwork = new Map<string, LessonArtwork>(
   lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
+);
+const fullSceneComparison = FULL_SCENE_LESSON_VARIANTS.find(
+  ({ baseLessonId, id }) =>
+    baseLessonId === "02-garden-colors" && id === "full-scene",
 );
 
 function createAvailableLessonCard(
@@ -78,6 +87,11 @@ function LessonCardView({
   lesson: LessonCard;
   source: "my" | "parrot";
 }) {
+  const comparison =
+    source === "parrot" && lesson.id === fullSceneComparison?.baseLessonId
+      ? fullSceneComparison
+      : null;
+
   return (
     <article
       className={cardClassName({
@@ -116,6 +130,24 @@ function LessonCardView({
             >
               <Pencil aria-hidden="true" className="size-3.5 shrink-0" />
               Edit
+            </TextLink>
+          ) : null}
+          {comparison ? (
+            <TextLink
+              aria-label={`Start full-scene version: ${lesson.title}`}
+              className="min-w-11 shrink-0 gap-1 text-xs max-[359px]:min-h-0 sm:text-sm"
+              to={getParrotLessonVariantScenePath(
+                lesson.id,
+                comparison.id,
+                0,
+              )}
+            >
+              <Images aria-hidden="true" className="size-4 shrink-0" />
+              <span className="hidden min-[360px]:inline sm:hidden">
+                Full image
+              </span>
+              <span className="hidden sm:inline">Full-scene artwork</span>
+              <span className="sr-only">Same lesson, same audio.</span>
             </TextLink>
           ) : null}
         </div>

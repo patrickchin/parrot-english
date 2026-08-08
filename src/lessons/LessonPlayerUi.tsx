@@ -22,6 +22,11 @@ import {
   IconButton,
   Card,
 } from "../shared/ui";
+import {
+  FULL_SCENE_FRAME_PRESETS,
+  type FullSceneFramePreset,
+  type FullSceneImage,
+} from "./full-scene-lessons";
 
 type LessonBackgroundAsset = {
   alt: string;
@@ -53,29 +58,87 @@ type LessonFeedbackOutcome =
 export function LessonStage({
   background,
   children,
+  presentation = "layered",
 }: {
   background: LessonBackgroundAsset;
   children: ReactNode;
+  presentation?: "boxed" | "layered";
 }) {
   return (
     <main className="h-dvh min-h-svh w-screen overflow-hidden text-slate-900">
       <section
         aria-label="Parrot English speaking lesson"
-        className="relative isolate h-full w-full overflow-hidden bg-sky-300"
+        className={cx(
+          "relative isolate h-full w-full overflow-hidden bg-sky-300",
+          presentation === "boxed" && "bg-conversation",
+        )}
       >
-        <img
-          alt={background.alt}
-          className="absolute inset-0 z-0 size-full select-none object-cover"
-          draggable="false"
-          src={background.src}
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
-        />
+        {presentation === "layered" ? (
+          <>
+            <img
+              alt={background.alt}
+              className="absolute inset-0 z-0 size-full select-none object-cover"
+              draggable="false"
+              src={background.src}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
+            />
+          </>
+        ) : null}
         {children}
       </section>
     </main>
+  );
+}
+
+const fullSceneFrameWidth: Record<FullSceneFramePreset, string> = {
+  landscape: "w-[min(calc(100%_-_2rem),78dvh,48rem)]",
+  square: "w-[min(calc(100%_-_2rem),52dvh,36rem)]",
+  portrait: "w-[min(calc(100%_-_2rem),34dvh,24rem)]",
+  wide: "w-[min(calc(100%_-_2rem),92dvh,56rem)]",
+  free: "w-fit max-w-[calc(100%_-_2rem)]",
+};
+
+export function BoxedFullSceneStage({
+  framePreset,
+  image,
+}: {
+  framePreset: FullSceneFramePreset;
+  image: FullSceneImage;
+}) {
+  const frame = FULL_SCENE_FRAME_PRESETS[framePreset];
+  const aspectRatio = frame.aspectRatio
+    ? { aspectRatio: frame.aspectRatio }
+    : undefined;
+
+  return (
+    <section
+      aria-label="Full-scene artwork"
+      className={cx(
+        "absolute left-1/2 top-1/2 z-10 grid max-h-[52dvh] -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card",
+        fullSceneFrameWidth[framePreset],
+      )}
+      data-frame-preset={framePreset}
+      role="region"
+      style={aspectRatio}
+    >
+      <img
+        alt={image.alt}
+        className={cx(
+          "block select-none object-contain",
+          framePreset === "free"
+            ? "h-auto w-auto max-h-[50dvh] max-w-full"
+            : "size-full",
+        )}
+        draggable="false"
+        src={image.src}
+      />
+      <span className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-navy/90 px-3 py-1 text-xs font-black text-white shadow-sm md:text-sm">
+        {frame.label}
+      </span>
+    </section>
   );
 }
 
@@ -259,10 +322,12 @@ export function LessonCharacters({
 export function LessonSpeech({
   characterCount,
   characterIndex,
+  showTail = true,
   speech,
 }: {
   characterCount: number;
   characterIndex: number;
+  showTail?: boolean;
   speech: LessonSpeechPresentation;
 }) {
   if (speech.kind === "user" || speech.kind === "feedback") return null;
@@ -282,10 +347,17 @@ export function LessonSpeech({
         "lesson-dialogue-overlay absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface short:top-32 md:top-28 md:px-7 md:py-4",
         isNarration
           ? "bg-brand-navy/95 text-white shadow-control-navy"
-          : "lesson-speech-tail bg-white/95 text-brand-ink",
+          : cx(
+              "bg-white/95 text-brand-ink",
+              showTail && "lesson-speech-tail",
+            ),
       )}
       role="status"
-      style={{ "--speech-tail-position": tailPosition } as CSSProperties}
+      style={
+        showTail
+          ? ({ "--speech-tail-position": tailPosition } as CSSProperties)
+          : undefined
+      }
     >
       <span
         className={cx(

@@ -68,6 +68,14 @@ describe("app route helpers", () => {
       "/lessons/my/same-id/scenes/3",
     );
     assert.equal(
+      routes.getParrotLessonVariantScenePath(
+        "02-garden-colors",
+        "full-scene",
+        0,
+      ),
+      "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1",
+    );
+    assert.equal(
       routes.getMyLessonEditPath("lesson/id"),
       "/lessons/my/lesson%2Fid/edit",
     );
@@ -206,8 +214,18 @@ describe("app route helpers", () => {
       ["/lessons/my/:lessonId/edit", "/Lessons/My/demo/Edit///", null],
       ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],
       [
+        "/lessons/parrot/:lessonId/variants/:variantId",
+        "/Lessons/Parrot/02-garden-colors/Variants/full-scene///",
+        null,
+      ],
+      [
         "/lessons/parrot/:lessonId/scenes/:sceneNumber",
         "/Lessons/Parrot/demo/Scenes/2///",
+        null,
+      ],
+      [
+        "/lessons/parrot/:lessonId/variants/:variantId/scenes/:sceneNumber",
+        "/Lessons/Parrot/02-garden-colors/Variants/full-scene/Scenes/2///",
         null,
       ],
     ]) {
@@ -584,6 +602,27 @@ describe("app route helpers", () => {
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
+    }
+  });
+
+  it("keeps a full-scene lesson variant as a safe return target", () => {
+    for (const returnTo of [
+      "/lessons/parrot/02-garden-colors/variants/full-scene",
+      "/Lessons/Parrot/02-garden-colors/Variants/full-scene///",
+      "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/2",
+      "/Lessons/Parrot/02-garden-colors/Variants/full-scene/Scenes/2///",
+    ]) {
+      assert.equal(
+        routes.getSafeReturnTo(returnToSearch(returnTo)),
+        returnTo,
+      );
+    }
+
+    for (const returnTo of [
+      "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/2/extra",
+      "/lessons/parrot/02-garden-colors/variants//scenes/2",
     ]) {
       assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
     }
