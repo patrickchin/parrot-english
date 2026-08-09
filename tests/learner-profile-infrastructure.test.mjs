@@ -100,7 +100,7 @@ function indexDetails(database, table) {
 }
 
 describe("learner-profile infrastructure", () => {
-  it("configures independent platform rate limits for speech endpoints", () => {
+  it("configures independent platform rate limits for protected endpoints", () => {
     const config = JSON.parse(
       readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
     );
@@ -125,6 +125,11 @@ describe("learner-profile infrastructure", () => {
         name: "LESSON_GENERATION_RATE_LIMITER",
         namespace_id: "104204",
         simple: { limit: 4, period: 60 },
+      },
+      {
+        name: "PERSONALIZED_STORY_ART_RATE_LIMITER",
+        namespace_id: "104205",
+        simple: { limit: 2, period: 60 },
       },
     ]);
   });
