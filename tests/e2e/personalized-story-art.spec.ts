@@ -11,7 +11,7 @@ const personalizedStoryAlt = "You holding a bright red ball";
 const lessonPortraitAlt = "You in storybook style";
 const placeholderAlt = "Artwork placeholder for The Red Ball, page 1";
 const tinyPng = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn4p2cAAAAASUVORK5CYII=",
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGPQqNjyH4QZYAwATjwJTSZS7G8AAAAASUVORK5CYII=",
   "base64",
 );
 
