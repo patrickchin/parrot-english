@@ -25,6 +25,44 @@ async function createTaggedPng({ width, height }) {
 }
 
 describe("personalized story art image pipeline", () => {
+  it("rejects forged PNG uploads and corrupt critical-chunk checksums", async () => {
+    const { createPersonalizedStoryArtImage } = await import(
+      "../worker/personalized-story-art-image.ts"
+    );
+    const valid = await createTaggedPng({ width: 480, height: 320 });
+    const corrupted = new Uint8Array(valid);
+    corrupted[32] ^= 0xff;
+    let aiCalls = 0;
+    const ai = {
+      async run() {
+        aiCalls += 1;
+        return { image: "" };
+      },
+    };
+
+    await assert.rejects(
+      createPersonalizedStoryArtImage({
+        ai,
+        prompt: "Replace only the child.",
+        sceneImage: new File([valid], "scene.png", { type: "image/png" }),
+        sourceImage: new File([valid], "forged.jpg", { type: "image/jpeg" }),
+      }),
+      /PNG/i,
+    );
+    await assert.rejects(
+      createPersonalizedStoryArtImage({
+        ai,
+        prompt: "Replace only the child.",
+        sceneImage: new File([valid], "scene.png", { type: "image/png" }),
+        sourceImage: new File([corrupted], "corrupt.png", {
+          type: "image/png",
+        }),
+      }),
+      /CRC|corrupt/i,
+    );
+    assert.equal(aiCalls, 0);
+  });
+
   it("rejects uploaded PNGs that are not below the provider's 512px input limit", async () => {
     const { createPersonalizedStoryArtImage } = await import(
       "../worker/personalized-story-art-image.ts"
@@ -112,5 +150,26 @@ describe("personalized story art image pipeline", () => {
     const outputMetadata = await sharp(result.bytes).metadata();
     assert.equal(outputMetadata.format, "webp");
     assert.equal(result.contentType, "image/webp");
+  });
+
+  it("rejects provider output that is not a supported raster image", async () => {
+    const { createPersonalizedStoryArtImage } = await import(
+      "../worker/personalized-story-art-image.ts"
+    );
+    const source = await createTaggedPng({ width: 480, height: 320 });
+
+    await assert.rejects(
+      createPersonalizedStoryArtImage({
+        ai: {
+          async run() {
+            return { image: Buffer.from("not an image").toString("base64") };
+          },
+        },
+        prompt: "Replace only the child.",
+        sceneImage: new File([source], "scene.png", { type: "image/png" }),
+        sourceImage: new File([source], "source.png", { type: "image/png" }),
+      }),
+      /supported image|provider/i,
+    );
   });
 });

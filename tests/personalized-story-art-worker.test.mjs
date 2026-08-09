@@ -138,6 +138,39 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("rejects oversized multipart uploads before image generation", async () => {
+    const state = seedDatabase();
+    let generationCalls = 0;
+    try {
+      const formData = new FormData();
+      formData.set(
+        "source",
+        new File([new Uint8Array(2 * 1024 * 1024)], "too-large.png", {
+          type: "image/png",
+        }),
+      );
+      formData.set("guardianConsentAccepted", "yes");
+      formData.set("guardianConsentVersion", CONSENT_VERSION);
+
+      const response = await call(
+        state,
+        { body: formData, method: "POST" },
+        {
+          async generateImage() {
+            generationCalls += 1;
+            throw new Error("must not generate");
+          },
+        },
+      );
+
+      assert.equal(response.status, 413);
+      assert.deepEqual(await response.json(), { error: "payload_too_large" });
+      assert.equal(generationCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
   it("requires the current explicit guardian consent version before generation", async () => {
     const state = seedDatabase();
     let generationCalls = 0;
@@ -303,6 +336,8 @@ describe("personalized story art Worker handler", () => {
       const response = await call(
         state,
         {
+          dataApproved: "0",
+          enabled: "0",
           method: "DELETE",
           bucket: bucketStub({
             async delete(key) {
