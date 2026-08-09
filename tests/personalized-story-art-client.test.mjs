@@ -288,7 +288,16 @@ describe("personalized story art client API", () => {
       enabled: true,
       guardianConsentVersion: "2026-08-09",
       hasStoredArt: false,
-      stories: {},
+      stories: {
+        "the-red-ball": {
+          pages: {
+            "my-red-ball": {
+              alt: "You holding a bright red ball",
+              src: "https://tracking.example/learner.png",
+            },
+          },
+        },
+      },
       updatedAt: null,
     });
 

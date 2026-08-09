@@ -102,6 +102,7 @@ function storedMetadata({
   includeStory = true,
   updatedAt = "2026-08-09T10:00:00.000Z",
 } = {}) {
+  const version = Date.parse(updatedAt);
   return {
     enabled,
     guardianConsentVersion: CONSENT_VERSION,
@@ -110,7 +111,10 @@ function storedMetadata({
       ? {
           [STORY_ID]: {
             pages: {
-              [PAGE_ID]: { alt: ART_ALT, src: ASSET_ROUTE },
+              [PAGE_ID]: {
+                alt: ART_ALT,
+                src: `${ASSET_ROUTE}?v=${version}`,
+              },
             },
           },
         }
