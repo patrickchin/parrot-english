@@ -14,7 +14,9 @@
     "local_protocol": "http"
   },
   "vars": {
-    "REALTIME_CONVERSATIONS_ENABLED": "1"
+    "REALTIME_CONVERSATIONS_ENABLED": "1",
+    "PERSONALIZED_STORY_ART_ENABLED": "0",
+    "PERSONALIZED_STORY_ART_DATA_APPROVED": "0"
   },
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
@@ -47,14 +49,28 @@
       "name": "LESSON_GENERATION_RATE_LIMITER",
       "namespace_id": "104204",
       "simple": { "limit": 4, "period": 60 }
+    },
+    {
+      "name": "PERSONALIZED_STORY_ART_RATE_LIMITER",
+      "namespace_id": "104205",
+      "simple": { "limit": 2, "period": 60 }
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": true
   },
+  "r2_buckets": [
+    {
+      "binding": "PERSONALIZED_STORY_ART_BUCKET",
+      "bucket_name": "parrot-english-personalized-story-art"
+    }
+  ],
   "observability": {
     "enabled": true
   }

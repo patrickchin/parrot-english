@@ -1,4 +1,5 @@
 import {
+  checkPersonalizedStoryArtRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
@@ -26,6 +27,10 @@ import {
   handlePixelLessonRequest,
   type PixelLessonsEnv,
 } from "./pixel-lessons.ts";
+import {
+  handlePersonalizedStoryArtRequest,
+  type PersonalizedStoryArtEnv,
+} from "./personalized-story-art.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
 
 interface AssetFetcher {
@@ -38,7 +43,8 @@ interface Env
     RateLimitEnv,
     ConversationEnv,
     MyLessonsEnv,
-    PixelLessonsEnv {
+    PixelLessonsEnv,
+    PersonalizedStoryArtEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
@@ -52,11 +58,13 @@ interface WorkerDependencies {
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
   checkLessonGenerationRateLimit: typeof checkLessonGenerationRateLimit;
+  checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
   handlePixelLessonRequest: typeof handlePixelLessonRequest;
+  handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
 }
 
 function isLearnerProfilePath(pathname: string) {
@@ -83,6 +91,10 @@ function isPixelLessonPath(pathname: string) {
   return pathname === "/api/pixel-lessons/generate";
 }
 
+function isPersonalizedStoryArtPath(pathname: string) {
+  return /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname);
+}
+
 export function createWorker(
   dependencies: Partial<WorkerDependencies> = {}
 ) {
@@ -96,6 +108,9 @@ export function createWorker(
     checkLearnerProfileEnrichmentRateLimit;
   const lessonGenerationRateLimit =
     dependencies.checkLessonGenerationRateLimit ?? checkLessonGenerationRateLimit;
+  const personalizedStoryArtRateLimit =
+    dependencies.checkPersonalizedStoryArtRateLimit ??
+    checkPersonalizedStoryArtRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const learnerProfileRequest =
@@ -106,6 +121,9 @@ export function createWorker(
     dependencies.handleMyLessonRequest ?? handleMyLessonRequest;
   const pixelLessonRequest =
     dependencies.handlePixelLessonRequest ?? handlePixelLessonRequest;
+  const personalizedStoryArtRequest =
+    dependencies.handlePersonalizedStoryArtRequest ??
+    handlePersonalizedStoryArtRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
 
   return {
@@ -249,6 +267,33 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
         return pixelLessonRequest({
+          database: createDatabase(env.DB),
+          env,
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+            userName: session.user.name?.trim() || null,
+          },
+          request,
+        });
+      }
+
+      if (isPersonalizedStoryArtPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+        if (request.method === "POST") {
+          const rateLimited = await personalizedStoryArtRateLimit(
+            request,
+            env,
+            session.user.id,
+          );
+          if (rateLimited) return rateLimited;
+        }
+        return personalizedStoryArtRequest({
           database: createDatabase(env.DB),
           env,
           identity: {

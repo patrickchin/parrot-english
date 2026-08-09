@@ -374,11 +374,48 @@ export const conversationFact = sqliteTable(
   ]
 );
 
+export const personalizedStoryArt = sqliteTable(
+  "personalized_story_art",
+  {
+    id: text("id").primaryKey(),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    storyId: text("story_id").notNull(),
+    status: text("status").notNull(),
+    r2ObjectKey: text("r2_object_key").notNull(),
+    contentType: text("content_type").notNull(),
+    guardianConsentVersion: text("guardian_consent_version").notNull(),
+    guardianConsentAt: integer("guardian_consent_at", {
+      mode: "timestamp_ms",
+    }).notNull(),
+    provider: text("provider").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    uniqueIndex("personalized_story_art_user_story_unique").on(
+      table.authUserId,
+      table.storyId,
+    ),
+    check(
+      "personalized_story_art_status_check",
+      sql`${table.status} in ('ready', 'deleting')`,
+    ),
+    check(
+      "personalized_story_art_content_type_check",
+      sql`${table.contentType} in ('image/jpeg', 'image/png', 'image/webp')`,
+    ),
+  ],
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
   learnerProfile: one(learnerProfile),
   learnerLessons: many(learnerLesson),
+  personalizedStoryArt: many(personalizedStoryArt),
   profileSessionBypasses: many(profileSessionBypass),
   sessions: many(session),
 }));
@@ -459,6 +496,16 @@ export const conversationFactRelations = relations(
       references: [conversationSession.id],
     }),
   })
+);
+
+export const personalizedStoryArtRelations = relations(
+  personalizedStoryArt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [personalizedStoryArt.authUserId],
+      references: [user.id],
+    }),
+  }),
 );
 
 export const questionnaireRelations = relations(

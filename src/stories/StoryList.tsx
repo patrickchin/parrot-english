@@ -21,6 +21,7 @@ import {
   SegmentedButton,
   SegmentedControl,
 } from "../shared/ui";
+import { PersonalizedStoryArtPanel } from "./PersonalizedStoryArtPanel";
 import { StoryArtwork } from "./StoryArtwork";
 import {
   countStoryWords,
@@ -29,10 +30,12 @@ import {
   STORY_LEVELS,
   type StoryLevelId,
 } from "./story-catalog";
+import { usePersonalizedStoryArt } from "./usePersonalizedStoryArt";
 
 export function StoryList() {
   const location = useLocation();
   const navigate = useNavigate();
+  const personalizedStoryArt = usePersonalizedStoryArt();
   const requestedLevelId = new URLSearchParams(location.search).get("level");
   const activeLevelId = resolveStoryShelfLevel(location.search);
   const activeLevel = getStoryLevel(activeLevelId);
@@ -74,6 +77,24 @@ export function StoryList() {
         aria-label="Read-aloud stories"
         className="mx-auto grid w-full max-w-7xl gap-4"
       >
+        <PersonalizedStoryArtPanel
+          consentChecked={personalizedStoryArt.consentChecked}
+          error={personalizedStoryArt.error}
+          featureEnabled={personalizedStoryArt.featureEnabled}
+          fileName={personalizedStoryArt.selectedFileName}
+          hasSelectedPhoto={personalizedStoryArt.hasSelectedPhoto}
+          hasStoredArt={Boolean(personalizedStoryArt.metadata.hasStoredArt)}
+          generateDisabled={personalizedStoryArt.generateDisabled}
+          isGenerating={personalizedStoryArt.isGenerating}
+          onConsentChange={personalizedStoryArt.setConsentChecked}
+          onFileChange={personalizedStoryArt.setSelectedFile}
+          onGenerate={() => void personalizedStoryArt.generate()}
+          onRemove={() => void personalizedStoryArt.remove()}
+          personalizedArtwork={personalizedStoryArt.personalizedArtwork}
+          statusMessage={personalizedStoryArt.statusMessage}
+          storyTitle={personalizedStoryArt.storyTitle}
+        />
+
         <div className="rounded-[1.5rem] border-4 border-white bg-white/90 p-2.5 shadow-card sm:p-3">
           <div className="mb-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1 px-1">
             <h2 className="m-0 text-lg leading-none text-brand-navy sm:text-xl">
