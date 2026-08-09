@@ -221,6 +221,26 @@ test("the scene composer stages Peppa and Polly in reusable story scenes", async
   await expect(world).toHaveAttribute("data-character-count", "2");
 });
 
+test("custom edits clear the preset and the next preset restores its facing", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  const world = await openExplorer(page);
+  const readyMadeScene = page.getByLabel("Ready-made scene");
+
+  await readyMadeScene.selectOption("story-three-apples");
+  await expect(readyMadeScene).toHaveValue("story-three-apples");
+
+  await page.getByRole("button", { name: "Face Peppa left" }).click();
+  await expect(world).toHaveAttribute("data-facing", "left");
+  await expect(readyMadeScene).toHaveValue("");
+
+  await readyMadeScene.selectOption("story-red-ball");
+  await expect(world).toHaveAttribute("data-scene-id", "story-red-ball");
+  await expect(world).toHaveAttribute("data-facing", "right");
+  await expect(readyMadeScene).toHaveValue("story-red-ball");
+});
+
 test("the explorer remains usable on mobile without horizontal overflow", async ({
   page,
 }) => {
@@ -277,6 +297,33 @@ test("the explorer remains usable on mobile without horizontal overflow", async 
   expect(narrowDimensions.scrollHeight).toBeLessThanOrEqual(
     narrowDimensions.clientHeight,
   );
+});
+
+test("the fixed editor keeps its stage and transform bar reachable in a short landscape", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 320, width: 568 });
+  await openExplorer(page);
+
+  const stage = page.getByRole("region", {
+    name: "Pixel world explorer stage",
+  });
+  const transforms = page.getByRole("region", {
+    name: "Movement and facing controls",
+  });
+  const [stageBox, transformBox] = await Promise.all([
+    stage.boundingBox(),
+    transforms.boundingBox(),
+  ]);
+
+  expect(stageBox).not.toBeNull();
+  expect(transformBox).not.toBeNull();
+  expect(stageBox!.height).toBeGreaterThan(0);
+  expect(transformBox!.y + transformBox!.height).toBeLessThanOrEqual(320);
+
+  const dimensions = await viewportMetrics(page);
+  expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.clientHeight);
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
 });
 
 test("reduced motion forces the effective parallax mode off", async ({ page }) => {
