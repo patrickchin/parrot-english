@@ -23,6 +23,7 @@ import {
   Card,
 } from "../shared/ui";
 import type { PersonalizedStoryArtwork } from "../stories/personalized-story-art-client";
+import type { FullSceneImage } from "./full-scene-lessons";
 
 type LessonBackgroundAsset = {
   alt: string;
@@ -54,29 +55,55 @@ type LessonFeedbackOutcome =
 export function LessonStage({
   background,
   children,
+  presentation = "layered",
 }: {
   background: LessonBackgroundAsset;
   children: ReactNode;
+  presentation?: "boxed" | "layered";
 }) {
   return (
     <main className="h-dvh min-h-svh w-screen overflow-hidden text-slate-900">
       <section
         aria-label="Parrot English speaking lesson"
-        className="relative isolate h-full w-full overflow-hidden bg-sky-300"
+        className={cx(
+          "relative isolate h-full w-full overflow-hidden bg-sky-300",
+          presentation === "boxed" && "bg-conversation",
+        )}
       >
-        <img
-          alt={background.alt}
-          className="absolute inset-0 z-0 size-full select-none object-cover"
-          draggable="false"
-          src={background.src}
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
-        />
+        {presentation === "layered" ? (
+          <>
+            <img
+              alt={background.alt}
+              className="absolute inset-0 z-0 size-full select-none object-cover"
+              draggable="false"
+              src={background.src}
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
+            />
+          </>
+        ) : null}
         {children}
       </section>
     </main>
+  );
+}
+
+export function BoxedFullSceneStage({ image }: { image: FullSceneImage }) {
+  return (
+    <section
+      aria-label="Lesson artwork"
+      className="absolute left-1/2 top-1/2 z-10 aspect-video max-h-[52dvh] w-[min(calc(100%_-_2rem),92dvh,56rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card"
+      role="region"
+    >
+      <img
+        alt={image.alt}
+        className="block size-full select-none object-contain"
+        draggable="false"
+        src={image.src}
+      />
+    </section>
   );
 }
 

@@ -49,6 +49,8 @@ stored.
 The lesson catalog shows seven ready-made lessons first. Each row has one clear
 Start action. My Lessons and the grown-up custom lesson action appear below the
 ready-made catalog so authoring does not compete with child practice.
+Ready-made lessons use one consistent 16:9 scene illustration per step as their
+default presentation; learners do not choose between rendering experiments.
 
 A lesson plays as a short interactive episode:
 

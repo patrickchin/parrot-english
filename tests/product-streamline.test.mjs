@@ -48,7 +48,7 @@ test("home gives children three clear, working learning choices", () => {
   );
 });
 
-test("lesson catalog keeps product choices separate from artwork experiments", () => {
+test("lesson catalog presents one canonical path without artwork experiments", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
       isLoadingMyLessons: false,

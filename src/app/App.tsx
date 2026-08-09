@@ -82,6 +82,7 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import {
+  BoxedFullSceneStage,
   LessonCharacters,
   LessonCompletion,
   LessonErrorBanner,
@@ -94,6 +95,10 @@ import {
   LessonStage,
   LessonUserPrompt,
 } from "../lessons/LessonPlayerUi";
+import {
+  FULL_SCENE_LESSONS,
+  type FullSceneImage,
+} from "../lessons/full-scene-lessons";
 import { LessonCreator } from "../lessons/LessonCreator";
 import { LessonEditor } from "../lessons/LessonEditor";
 import { playDeviceSpeech } from "../media/device-speech";
@@ -142,6 +147,7 @@ type LessonEvent =
 
 type LessonPlayerProps = {
   audioMode: "device" | "static";
+  fullSceneArtwork?: FullSceneImage[];
   lesson: Lesson;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
@@ -174,6 +180,7 @@ function getMicrophoneErrorMessage(caughtError: unknown) {
 
 export function LessonPlayer({
   audioMode,
+  fullSceneArtwork,
   lesson: currentLesson,
   onBack,
   onNavigateScene,
@@ -649,8 +656,16 @@ export function LessonPlayer({
   const speechCharacterIndex = scene.characters.findIndex(
     (character) => character.id === scene.speech.speaker
   );
+  const fullScene = fullSceneArtwork?.[state.sceneIndex];
+  if (fullSceneArtwork && !fullScene) {
+    throw new Error(`Lesson artwork is missing scene ${state.sceneIndex + 1}.`);
+  }
   return (
-    <LessonStage background={scene.backgroundAsset}>
+    <LessonStage
+      background={scene.backgroundAsset}
+      presentation={fullScene ? "boxed" : "layered"}
+    >
+      {fullScene && !isFinished ? <BoxedFullSceneStage image={fullScene} /> : null}
       <RouteHeader>
         <HeaderButton
           aria-label="Back to lesson list"
@@ -687,7 +702,7 @@ export function LessonPlayer({
             sceneCount={currentLesson.scenes.length}
             title={scene.title}
           />
-          <LessonCharacters characters={scene.characters} />
+          {fullScene ? null : <LessonCharacters characters={scene.characters} />}
 
           {showUserTurn ? (
             <LessonUserPrompt
@@ -703,7 +718,7 @@ export function LessonPlayer({
             <LessonSpeech
               characterCount={scene.characters.length}
               characterIndex={speechCharacterIndex}
-              showTail
+              showTail={!fullScene}
               speech={scene.speech}
             />
           )}
@@ -774,9 +789,17 @@ function LessonRouteDecisionView({
     );
   }
 
+  const fullSceneArtwork =
+    source === "parrot"
+      ? FULL_SCENE_LESSONS.find(
+          (candidate) => candidate.lessonId === decision.entry.id,
+        )?.scenes
+      : undefined;
+
   return (
     <LessonPlayer
       audioMode={source === "my" ? "device" : "static"}
+      fullSceneArtwork={fullSceneArtwork}
       key={`${source}:${decision.entry.id}`}
       lesson={decision.entry.lesson}
       onBack={() => navigate("/lessons")}

@@ -78,6 +78,8 @@ recording work before a new scene is selected.
 - `content/lessons/*.json` owns built-in lesson scripts.
 - `content/catalogs/*.json` owns shared character, emote, background, and cover
   references.
+- `src/lessons/full-scene-lessons.ts` maps each ready-made lesson scene to its
+  checked-in 16:9 illustration.
 - `lib/static-audio.js` owns saved speech keyed by speaker and exact text.
 - `src/stories/story-script-candidates.ts` owns the twenty learner stories.
 - `content/learner-profile/questionnaire-v2.json` owns form-fallback prompts.

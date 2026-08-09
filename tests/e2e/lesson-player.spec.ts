@@ -197,11 +197,20 @@ test("the start state introduces the lesson without premature scene UI", async (
 
   const start = page.getByRole("button", { name: "Start lesson" });
   await expect(start).toBeFocused();
-  await expect(page.getByAltText("A sunny garden with flowers and a tall tree")).toBeVisible();
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  await expect(artwork).toBeVisible();
+  await expect(
+    artwork.getByAltText(
+      "Peppa and Dolly look up at the red ball caught high in the tree",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByAltText("A sunny garden with flowers and a tall tree"),
+  ).toBeHidden();
+  await expect(page.getByText(/Wide · 16:9|Full-scene artwork/)).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeHidden();
-  await expect(page.getByAltText(/Peppa/)).toBeHidden();
-  await expect(page.getByAltText(/Dolly/)).toBeHidden();
+  await expect(artwork.getByRole("img")).toHaveCount(1);
   await expect(page.getByRole("navigation", { name: "Speaking controls" })).toBeHidden();
   await expect(page.getByLabel(/Build version/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Previous scene" })).toHaveCount(0);
@@ -223,8 +232,7 @@ for (const viewport of viewports) {
     const speech = page.getByRole("status").filter({
       hasText: "Look! My ball!",
     });
-    const peppa = page.getByAltText(/Peppa/);
-    const dolly = page.getByAltText(/Dolly/);
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
     const back = page.getByRole("button", { name: "Back to lesson list" });
     const account = page.getByRole("button", {
       exact: true,
@@ -237,13 +245,10 @@ for (const viewport of viewports) {
     await expect(speech).toContainText("Listen");
     await expectInsideViewport(hud, viewport);
     await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(peppa, viewport);
-    await expectInsideViewport(dolly, viewport);
+    await expectInsideViewport(artwork, viewport);
     await expectNoOverlap(back, hud);
     await expectNoOverlap(account, hud);
     await expectBefore(hud, speech);
-    await expectBefore(speech, peppa);
-    await expectBefore(speech, dolly);
     await expect(
       page.getByRole("region", { name: "Lesson introduction" }),
     ).toBeHidden();
@@ -311,13 +316,9 @@ for (const viewport of viewports) {
     expect(Math.abs(microphoneBox.height - skipBox.height)).toBeLessThanOrEqual(
       1,
     );
-    await expectInsideViewport(peppa, viewport);
-    await expectInsideViewport(dolly, viewport);
+    await expectInsideViewport(artwork, viewport);
     await expectBefore(hud, prompt);
-    await expectBefore(prompt, peppa);
-    await expectBefore(prompt, dolly);
-    await expectBefore(peppa, controls);
-    await expectBefore(dolly, controls);
+    await expectNoOverlap(prompt, controls);
     await expectLeftOf(microphone, skip);
     await expectNoPageOverflow(page);
   });

@@ -89,7 +89,7 @@ test("ready-made lessons show distinct story-specific artwork", async ({
   }
 });
 
-test("every ready-made lesson exposes its canonical full-scene link", async ({
+test("every ready-made lesson exposes one canonical start link", async ({
   page,
 }) => {
   await page.route("**/api/lessons/my", async (route) => {
@@ -109,12 +109,15 @@ test("every ready-made lesson exposes its canonical full-scene link", async ({
   for (const [index, lesson] of readyMadeArtwork.entries()) {
     await expect(
       cards.nth(index).getByRole("link", {
-        name: `Start full-scene version: ${lesson.title}`,
+        name: `Start lesson: ${lesson.title}`,
       }),
     ).toHaveAttribute(
       "href",
-      `/lessons/parrot/${lesson.id}/variants/full-scene/scenes/1`,
+      `/lessons/parrot/${lesson.id}/scenes/1`,
     );
+    await expect(
+      cards.nth(index).getByRole("link", { name: /full-scene/i }),
+    ).toHaveCount(0);
   }
 });
 
