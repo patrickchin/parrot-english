@@ -1,26 +1,31 @@
 import { Image as ImageIcon, Sparkles } from "lucide-react";
 import { cx } from "../shared/ui";
+import type { PersonalizedStoryArtwork } from "./personalized-story-art-client";
 import type { StoryArtwork as StoryArtworkData } from "./story-types";
 
 export function StoryArtwork({
   artwork,
   className,
+  personalizedOverride,
   priority = false,
 }: {
   artwork: StoryArtworkData;
   className?: string;
+  personalizedOverride?: PersonalizedStoryArtwork | null;
   priority?: boolean;
 }) {
-  if (artwork.src) {
+  const renderedArtwork = personalizedOverride ?? artwork;
+
+  if (renderedArtwork.src) {
     return (
       <img
-        alt={artwork.alt}
+        alt={renderedArtwork.alt}
         className={cx("h-full w-full object-cover", className)}
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         height="1024"
         loading={priority ? "eager" : "lazy"}
-        src={artwork.src}
+        src={renderedArtwork.src}
         width="1536"
       />
     );
@@ -28,7 +33,7 @@ export function StoryArtwork({
 
   return (
     <div
-      aria-label={artwork.alt}
+      aria-label={renderedArtwork.alt}
       className={cx(
         "grid h-full w-full place-items-center bg-[radial-gradient(circle_at_top_left,#fef3c7_0,#dbeafe_45%,#fce7f3_100%)] p-5 text-center text-brand-navy",
         className,

@@ -112,7 +112,12 @@ import {
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
 import { StoryList } from "../stories/StoryList";
+import { PersonalizedStoryArtPanel } from "../stories/PersonalizedStoryArtPanel";
+import {
+  PERSONALIZED_STORY_ID,
+} from "../stories/personalized-story-art-client";
 import { StoryReader } from "../stories/StoryReader";
+import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 
 const RECORDING_UNSUPPORTED_MESSAGE =
   "This browser does not support audio recording. Try the latest Chrome or Safari.";
@@ -145,6 +150,10 @@ type LessonPlayerProps = {
   lesson: Lesson;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
+  promptPortrait?: {
+    alt: string;
+    src: string;
+  } | null;
   routedLocationKey: string;
   routedSceneIndex: number;
   variant?: (typeof FULL_SCENE_LESSON_VARIANTS)[number];
@@ -174,6 +183,7 @@ export function LessonPlayer({
   lesson: currentLesson,
   onBack,
   onNavigateScene,
+  promptPortrait,
   routedLocationKey,
   routedSceneIndex,
   variant,
@@ -705,7 +715,10 @@ export function LessonPlayer({
           )}
 
           {showUserTurn ? (
-            <LessonUserPrompt dialogue={currentStep.dialogue} />
+            <LessonUserPrompt
+              dialogue={currentStep.dialogue}
+              portrait={promptPortrait}
+            />
           ) : isResponding ? (
             <LessonFeedback
               outcome={state.responseOutcome}
@@ -764,10 +777,15 @@ export function LessonPlayer({
 
 function LessonRouteDecisionView({
   decision,
+  promptPortrait,
   source,
   variant,
 }: {
   decision: LessonRouteDecision;
+  promptPortrait?: {
+    alt: string;
+    src: string;
+  } | null;
   source: LessonSource;
   variant?: (typeof FULL_SCENE_LESSON_VARIANTS)[number];
 }) {
@@ -802,21 +820,36 @@ function LessonRouteDecisionView({
       }
       routedLocationKey={location.key}
       routedSceneIndex={decision.sceneIndex}
+      promptPortrait={promptPortrait}
       variant={variant}
     />
   );
 }
 
 function ParrotLessonRedirect() {
+  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, undefined);
-  return <LessonRouteDecisionView decision={decision} source="parrot" />;
+  return (
+    <LessonRouteDecisionView
+      decision={decision}
+      promptPortrait={personalizedStoryArt.personalizedArtwork}
+      source="parrot"
+    />
+  );
 }
 
 function ParrotLessonSceneRoute() {
+  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId, sceneNumber } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
-  return <LessonRouteDecisionView decision={decision} source="parrot" />;
+  return (
+    <LessonRouteDecisionView
+      decision={decision}
+      promptPortrait={personalizedStoryArt.personalizedArtwork}
+      source="parrot"
+    />
+  );
 }
 
 function ParrotLessonVariantRedirect() {
@@ -839,6 +872,7 @@ function ParrotLessonVariantRedirect() {
 }
 
 function ParrotLessonVariantSceneRoute() {
+  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId, sceneNumber, variantId } = useParams();
   const variant = FULL_SCENE_LESSON_VARIANTS.find(
     (candidate) =>
@@ -862,6 +896,7 @@ function ParrotLessonVariantSceneRoute() {
   return (
     <LessonRouteDecisionView
       decision={decision}
+      promptPortrait={personalizedStoryArt.personalizedArtwork}
       source="parrot"
       variant={variant}
     />
@@ -869,6 +904,7 @@ function ParrotLessonVariantSceneRoute() {
 }
 
 function MyLessonRoute() {
+  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId, sceneNumber } = useParams();
   const [entry, setEntry] = useState<LessonCatalogEntry | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -929,7 +965,13 @@ function MyLessonRoute() {
     );
   }
   const decision = resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
-  return <LessonRouteDecisionView decision={decision} source="my" />;
+  return (
+    <LessonRouteDecisionView
+      decision={decision}
+      promptPortrait={personalizedStoryArt.personalizedArtwork}
+      source="my"
+    />
+  );
 }
 
 function StoryRouteDecisionView({
@@ -939,6 +981,7 @@ function StoryRouteDecisionView({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const personalizedStoryArt = usePersonalizedStoryArt();
 
   if (decision.kind === "redirect") {
     return <Navigate replace={decision.replace} to={decision.to} />;
@@ -951,6 +994,29 @@ function StoryRouteDecisionView({
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }
       pageIndex={decision.pageIndex}
+      personalizationPanel={
+        decision.story.id === PERSONALIZED_STORY_ID ? (
+          <PersonalizedStoryArtPanel
+            consentChecked={personalizedStoryArt.consentChecked}
+            error={personalizedStoryArt.error}
+            featureEnabled={personalizedStoryArt.featureEnabled}
+            fileName={personalizedStoryArt.selectedFileName}
+            hasSelectedPhoto={personalizedStoryArt.hasSelectedPhoto}
+            hasStoredArt={Boolean(personalizedStoryArt.metadata.hasStoredArt)}
+            generateDisabled={personalizedStoryArt.generateDisabled}
+            isGenerating={personalizedStoryArt.isGenerating}
+            onConsentChange={personalizedStoryArt.setConsentChecked}
+            onFileChange={personalizedStoryArt.setSelectedFile}
+            onGenerate={() => void personalizedStoryArt.generate()}
+            onRemove={() => void personalizedStoryArt.remove()}
+            personalizedArtwork={personalizedStoryArt.personalizedArtwork}
+            showPreviewArtwork={false}
+            statusMessage={personalizedStoryArt.statusMessage}
+            storyTitle={personalizedStoryArt.storyTitle}
+          />
+        ) : null
+      }
+      personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
       key={`${location.key}:${decision.story.id}:${decision.pageIndex}`}
     />

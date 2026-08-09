@@ -10,7 +10,7 @@ import {
   Sparkles,
   Volume2,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
@@ -19,6 +19,10 @@ import {
   type PlaybackControl,
 } from "../media/audio-playback";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
+import {
+  getPersonalizedStoryArtOverride,
+  type PersonalizedStoryArtMetadata,
+} from "./personalized-story-art-client";
 import { StoryArtwork } from "./StoryArtwork";
 import { getStoryLevel, type Story } from "./story-catalog";
 
@@ -28,11 +32,15 @@ export function StoryReader({
   backToStories,
   onNavigatePage,
   pageIndex,
+  personalizationPanel,
+  personalizedOverrides,
   story,
 }: {
   backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
+  personalizationPanel?: ReactNode;
+  personalizedOverrides?: PersonalizedStoryArtMetadata["stories"];
   story: Story;
 }) {
   const [error, setError] = useState("");
@@ -44,6 +52,11 @@ export function StoryReader({
   const playbackGenerationRef = useRef(0);
   const pageTextRef = useRef<HTMLParagraphElement | null>(null);
   const page = story.pages[pageIndex];
+  const personalizedOverride = getPersonalizedStoryArtOverride(
+    { stories: personalizedOverrides ?? {} },
+    story.id,
+    page.id,
+  );
   const isFirstPage = pageIndex === 0;
   const isLastPage = pageIndex === story.pages.length - 1;
   const hasNarration = page.narrationAudioId !== null;
@@ -250,6 +263,7 @@ export function StoryReader({
             artwork={page.artwork}
             className="aspect-[3/2] max-h-[52dvh] min-h-40 short:h-40 short:aspect-auto short-wide:h-full short-wide:max-h-none lg:h-full lg:max-h-none"
             key={page.id}
+            personalizedOverride={personalizedOverride}
             priority
           />
           <figcaption className="absolute bottom-2 left-2 rounded-full border-2 border-white bg-brand-navy/90 px-3 py-1 text-xs font-black text-white sm:bottom-3 sm:left-3">
@@ -259,6 +273,7 @@ export function StoryReader({
 
         <div className="grid content-start gap-3 p-4 pb-20 short:p-3 short:pb-20 short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-20 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
           <div className="grid gap-3 sm:gap-4">
+            {personalizationPanel}
             <header>
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">

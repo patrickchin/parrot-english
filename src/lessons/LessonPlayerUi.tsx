@@ -27,6 +27,7 @@ import {
   type FullSceneFramePreset,
   type FullSceneImage,
 } from "./full-scene-lessons";
+import type { PersonalizedStoryArtwork } from "../stories/personalized-story-art-client";
 
 type LessonBackgroundAsset = {
   alt: string;
@@ -384,13 +385,26 @@ export function LessonSpeech({
   );
 }
 
-export function LessonUserPrompt({ dialogue }: { dialogue: string }) {
+export function LessonUserPrompt({
+  dialogue,
+  portrait,
+}: {
+  dialogue: string;
+  portrait?: PersonalizedStoryArtwork | null;
+}) {
   return (
     <section
       aria-label="Your turn"
       className="lesson-dialogue-overlay lesson-user-prompt absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface short:top-32 min-[340px]:px-4 min-[340px]:py-3 md:top-28 md:px-7 md:py-4"
       role="region"
     >
+      {portrait ? (
+        <img
+          alt="You in storybook style"
+          className="mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24"
+          src={portrait.src}
+        />
+      ) : null}
       <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
         <Mic aria-hidden="true" className="size-4" />
         Your turn
