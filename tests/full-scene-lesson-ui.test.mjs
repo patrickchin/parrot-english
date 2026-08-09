@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import sharp from "sharp";
 import test, { after } from "node:test";
 import { createServer } from "vite";
 
@@ -88,7 +89,7 @@ function renderStage(scene) {
   );
 }
 
-test("lesson 02 full-scene artwork matches its five-scene story and frame plan", async () => {
+test("lesson 02 full-scene artwork keeps one wide frame across all five scenes", async () => {
   const lesson = JSON.parse(await readFile(lessonFile, "utf8"));
   const variant = getLessonTwoVariant();
 
@@ -96,7 +97,7 @@ test("lesson 02 full-scene artwork matches its five-scene story and frame plan",
   assert.equal(variant.scenes.length, lesson.scenes.length);
   assert.deepEqual(
     variant.scenes.map((scene) => scene.frame.preset),
-    expectedFrames.map(([preset]) => preset),
+    Array.from({ length: lesson.scenes.length }, () => "wide"),
   );
   assert.equal(
     new Set(variant.scenes.map((scene) => scene.image.src)).size,
@@ -113,7 +114,7 @@ test("lesson 02 full-scene artwork matches its five-scene story and frame plan",
   }
 });
 
-test("every lesson 02 full-scene source is an existing WebP file", async () => {
+test("every lesson 02 full-scene source is an existing 16:9 WebP file", async () => {
   const variant = getLessonTwoVariant();
 
   for (const scene of variant.scenes) {
@@ -122,6 +123,14 @@ test("every lesson 02 full-scene source is an existing WebP file", async () => {
 
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
     assert.equal(bytes.subarray(8, 12).toString("ascii"), "WEBP");
+
+    const metadata = await sharp(filePath).metadata();
+    assert.equal(metadata.format, "webp");
+    assert.ok(metadata.width && metadata.height);
+    assert.ok(
+      Math.abs(metadata.width / metadata.height - 16 / 9) < 0.01,
+      `Expected ${scene.image.src} to use a 16:9 source ratio`,
+    );
   }
 });
 
