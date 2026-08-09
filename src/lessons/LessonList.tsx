@@ -41,9 +41,10 @@ type LessonArtwork = {
 const readyMadeArtwork = new Map<string, LessonArtwork>(
   lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
 );
-const fullSceneComparison = FULL_SCENE_LESSON_VARIANTS.find(
-  ({ baseLessonId, id }) =>
-    baseLessonId === "02-garden-colors" && id === "full-scene",
+const fullSceneComparisons = new Map(
+  FULL_SCENE_LESSON_VARIANTS.filter(({ id }) => id === "full-scene").map(
+    (variant) => [variant.baseLessonId, variant],
+  ),
 );
 
 function createAvailableLessonCard(
@@ -88,15 +89,13 @@ function LessonCardView({
   source: "my" | "parrot";
 }) {
   const comparison =
-    source === "parrot" && lesson.id === fullSceneComparison?.baseLessonId
-      ? fullSceneComparison
-      : null;
+    source === "parrot" ? (fullSceneComparisons.get(lesson.id) ?? null) : null;
 
   return (
     <article
       className={cardClassName({
         className:
-          "flex min-w-0 items-center gap-2 overflow-hidden p-2 sm:gap-3",
+          "flex min-w-0 items-center gap-2 overflow-hidden px-2 py-1.5 sm:gap-3 sm:p-2",
       })}
     >
       <div className="relative size-19 shrink-0 overflow-hidden rounded-xl min-[360px]:size-[5.375rem] sm:h-24 sm:w-32 lg:w-40">
@@ -135,7 +134,7 @@ function LessonCardView({
           {comparison ? (
             <TextLink
               aria-label={`Start full-scene version: ${lesson.title}`}
-              className="min-w-11 shrink-0 gap-1 text-xs max-[359px]:min-h-0 sm:text-sm"
+              className="min-w-11 shrink-0 gap-1 text-xs max-sm:min-h-0 sm:text-sm"
               to={getParrotLessonVariantScenePath(
                 lesson.id,
                 comparison.id,
@@ -144,7 +143,7 @@ function LessonCardView({
             >
               <Images aria-hidden="true" className="size-4 shrink-0" />
               <span className="hidden min-[360px]:inline sm:hidden">
-                Full image
+                Full
               </span>
               <span className="hidden sm:inline">Full-scene artwork</span>
               <span className="sr-only">Same lesson, same audio.</span>

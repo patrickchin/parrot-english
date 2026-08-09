@@ -20,31 +20,45 @@ async function visibleBox(locator: Locator) {
 const readyMadeArtwork = [
   {
     alt: "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
+    id: "01-peppas-high-ball",
     src: "/assets/lesson-covers/01-peppas-high-ball.webp",
+    title: "Peppa's High Ball",
   },
   {
     alt: "Peppa and Dolly choosing a red flower for their basket",
+    id: "02-garden-colors",
     src: "/assets/lesson-covers/02-garden-colors.webp",
+    title: "The Red Flower",
   },
   {
     alt: "Dolly handing Peppa an apple from a snack basket",
+    id: "03-snack-time",
     src: "/assets/lesson-covers/03-snack-time.webp",
+    title: "Peppa's Apple Snack",
   },
   {
     alt: "Peppa waiting beside a swing while Dolly takes her turn",
+    id: "04-playground-words",
     src: "/assets/lesson-covers/04-playground-words.webp",
+    title: "A Turn on the Swing",
   },
   {
     alt: "Peppa buying two red apples from Dolly's fruit stand",
+    id: "05-market-day",
     src: "/assets/lesson-covers/05-market-day.webp",
+    title: "Two Apples for Peppa",
   },
   {
     alt: "Dolly pouring juice for Peppa on a picnic blanket",
+    id: "06-picnic-time",
     src: "/assets/lesson-covers/06-picnic-time.webp",
+    title: "Juice at the Picnic",
   },
   {
     alt: "Peppa tucked under a blanket while Dolly reads beside a lantern",
+    id: "07-bedtime-story",
     src: "/assets/lesson-covers/07-bedtime-story.webp",
+    title: "Good Night, Peppa",
   },
 ];
 
@@ -72,6 +86,35 @@ test("ready-made lessons show distinct story-specific artwork", async ({
     await expect
       .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
       .toBeGreaterThan(0);
+  }
+});
+
+test("every ready-made lesson exposes its canonical full-scene link", async ({
+  page,
+}) => {
+  await page.route("**/api/lessons/my", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ lessons: [] }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.goto("/lessons");
+
+  const cards = page
+    .getByRole("region", { name: "Ready-made lessons" })
+    .getByRole("article");
+  await expect(cards).toHaveCount(readyMadeArtwork.length);
+
+  for (const [index, lesson] of readyMadeArtwork.entries()) {
+    await expect(
+      cards.nth(index).getByRole("link", {
+        name: `Start full-scene version: ${lesson.title}`,
+      }),
+    ).toHaveAttribute(
+      "href",
+      `/lessons/parrot/${lesson.id}/variants/full-scene/scenes/1`,
+    );
   }
 });
 

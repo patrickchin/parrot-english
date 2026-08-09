@@ -43,6 +43,19 @@ function getParrotLessonHrefs(html) {
     .filter((href) => /^\/lessons\/parrot\/[^/]+\/scenes\/1$/.test(href));
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function escapeHtmlAttribute(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
 const expectedReadyMadeArtwork = [
   [
     "/assets/lesson-covers/01-peppas-high-ball.webp",
@@ -118,24 +131,41 @@ test("ready-made lessons use distinct story-specific artwork", () => {
   assert.equal(new Set(expectedReadyMadeArtwork.map(([src]) => src)).size, 7);
 });
 
-test("lesson two offers its full-scene artwork comparison within the original card", () => {
+test("every ready-made lesson offers one accurate full-scene comparison", () => {
   const html = renderLessonList();
-  const originalLessonTitle = html.indexOf("The Red Flower</h3>");
-  const comparisonHref =
-    "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
-  const comparisonStart = html.indexOf(`href="${comparisonHref}"`);
-  const nextLessonStart = html.indexOf(
-    'aria-label="Start lesson: Peppa&#x27;s Apple Snack"',
+  const cards = [...html.matchAll(/<article\b[\s\S]*?<\/article>/g)].map(
+    ([card]) => card,
   );
+  const comparisonHrefs = [];
 
-  assert.ok(originalLessonTitle >= 0, "Expected the original lesson two row");
-  assert.ok(comparisonStart > originalLessonTitle);
-  assert.ok(comparisonStart < nextLessonStart);
+  assert.equal(cards.length, LESSONS.length);
 
-  const comparisonCopy = html.slice(comparisonStart, nextLessonStart);
-  assert.match(comparisonCopy, /same lesson/i);
-  assert.match(comparisonCopy, /same audio/i);
-  assert.match(comparisonCopy, /full-scene artwork/i);
+  for (const [index, entry] of LESSONS.entries()) {
+    const card = cards[index];
+    const title = escapeRegExp(escapeHtmlAttribute(entry.lesson.title));
+    const comparisonHref = `/lessons/parrot/${entry.id}/variants/full-scene/scenes/1`;
+    const comparisonLink = card.match(
+      new RegExp(
+        `<a(?=[^>]*aria-label="Start full-scene version: ${title}")(?=[^>]*href="${escapeRegExp(comparisonHref)}")[^>]*>([\\s\\S]*?)<\\/a>`,
+      ),
+    );
+
+    assert.ok(
+      comparisonLink,
+      `Expected a full-scene comparison link for ${entry.id}`,
+    );
+    assert.match(comparisonLink[1], /same lesson/i);
+    assert.match(comparisonLink[1], /same audio/i);
+    assert.match(comparisonLink[1], /full-scene artwork/i);
+    comparisonHrefs.push(comparisonHref);
+  }
+
+  assert.equal(new Set(comparisonHrefs).size, LESSONS.length);
+  assert.equal(
+    (html.match(/href="\/lessons\/parrot\/[^/]+\/variants\/full-scene\/scenes\/1"/g) ?? [])
+      .length,
+    LESSONS.length,
+  );
 });
 
 test("lesson list keeps custom creation secondary and explains who it is for", () => {
@@ -214,9 +244,10 @@ test("a canonical Parrot catalog href renders its directly matched lesson route"
   assert.match(html, />Back to lessons</);
 });
 
-test("the full-scene comparison href renders lesson two at its canonical variant route", () => {
-  const comparisonHref =
-    "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
+test("a non-lesson-two full-scene href renders its matching lesson", () => {
+  const lesson = LESSONS.at(-1);
+  assert.ok(lesson, "Expected a final ready-made lesson");
+  const comparisonHref = `/lessons/parrot/${lesson.id}/variants/full-scene/scenes/1`;
   assert.match(renderLessonList(), new RegExp(`href="${comparisonHref}"`));
 
   const html = renderInRouter(
@@ -225,7 +256,10 @@ test("the full-scene comparison href renders lesson two at its canonical variant
   );
 
   assert.match(html, /Parrot English speaking lesson/);
-  assert.match(html, /The Red Flower/);
+  assert.match(
+    html,
+    new RegExp(escapeRegExp(escapeHtmlAttribute(lesson.lesson.title))),
+  );
   assert.match(html, /aria-label="Start lesson"/);
   assert.match(html, />Back to lessons</);
 });
