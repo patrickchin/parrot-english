@@ -41,9 +41,10 @@ type LessonArtwork = {
 const readyMadeArtwork = new Map<string, LessonArtwork>(
   lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
 );
-const fullSceneComparison = FULL_SCENE_LESSON_VARIANTS.find(
-  ({ baseLessonId, id }) =>
-    baseLessonId === "02-garden-colors" && id === "full-scene",
+const fullSceneComparisons = new Map(
+  FULL_SCENE_LESSON_VARIANTS.filter(({ id }) => id === "full-scene").map(
+    (variant) => [variant.baseLessonId, variant],
+  ),
 );
 
 function createAvailableLessonCard(
@@ -88,9 +89,7 @@ function LessonCardView({
   source: "my" | "parrot";
 }) {
   const comparison =
-    source === "parrot" && lesson.id === fullSceneComparison?.baseLessonId
-      ? fullSceneComparison
-      : null;
+    source === "parrot" ? (fullSceneComparisons.get(lesson.id) ?? null) : null;
 
   return (
     <article
