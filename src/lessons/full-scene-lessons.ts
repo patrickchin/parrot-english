@@ -45,21 +45,21 @@ export const FULL_SCENE_LESSON_VARIANTS: FullSceneLessonVariant[] = [
     id: "full-scene",
     scenes: [
       {
-        frame: { preset: "landscape" },
+        frame: { preset: "wide" },
         image: {
           alt: "Peppa and Dolly discover many colorful flowers beside their basket in the sunny garden",
           src: "/assets/full-scenes/02-garden-colors/01-colorful-flowers.webp",
         },
       },
       {
-        frame: { preset: "square" },
+        frame: { preset: "wide" },
         image: {
           alt: "Peppa points to a flower while Dolly considers its color beside the basket",
           src: "/assets/full-scenes/02-garden-colors/02-color-question.webp",
         },
       },
       {
-        frame: { preset: "portrait" },
+        frame: { preset: "wide" },
         image: {
           alt: "Dolly identifies the red flower while Peppa watches in the garden",
           src: "/assets/full-scenes/02-garden-colors/03-red-one.webp",
@@ -73,7 +73,7 @@ export const FULL_SCENE_LESSON_VARIANTS: FullSceneLessonVariant[] = [
         },
       },
       {
-        frame: { preset: "free" },
+        frame: { preset: "wide" },
         image: {
           alt: "Peppa and Dolly admire their finished basket with the red flower",
           src: "/assets/full-scenes/02-garden-colors/05-finished-basket.webp",
