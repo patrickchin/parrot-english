@@ -7,7 +7,6 @@ import {
   ArrowRightLeft,
   ArrowUp,
   FlipHorizontal2,
-  Hand,
   Map,
   Monitor,
   RotateCcw,
