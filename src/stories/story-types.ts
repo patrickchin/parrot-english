@@ -2,8 +2,7 @@ export type StoryLevelId =
   | "first-words"
   | "repeating-patterns"
   | "tiny-stories"
-  | "early-a1"
-  | "original-baseline";
+  | "early-a1";
 
 export type StoryVocabularyProfileId =
   | "first-words-v1"

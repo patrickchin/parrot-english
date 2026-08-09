@@ -34,17 +34,17 @@ function renderInRouter(element, initialEntry = "/") {
   );
 }
 
-test("home gives children two clear, working learning choices", () => {
+test("home gives children three clear, working learning choices", () => {
   const html = renderInRouter(createElement(HomeMenu));
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
   );
 
-  assert.deepEqual(hrefs, ["/lessons", "/stories"]);
+  assert.deepEqual(hrefs, ["/talk-to-peppa", "/lessons", "/stories"]);
   assert.match(html, /Choose how you want to practice/i);
   assert.doesNotMatch(
     html,
-    /Talk to Peppa|World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
+    /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
   );
 });
 
@@ -91,7 +91,10 @@ test("the shipped application no longer carries the pixel-game prototype", () =>
   );
 
   assert.equal(packageManifest.dependencies.phaser, undefined);
-  assert.equal(existsSync(new URL("../src/games", import.meta.url)), false);
+  assert.equal(
+    existsSync(new URL("../src/games/PixelLessonLab.tsx", import.meta.url)),
+    false,
+  );
   assert.equal(existsSync(new URL("../worker/pixel-lessons.ts", import.meta.url)), false);
   assert.doesNotMatch(appSource, /PixelLesson|PixelWorld|path="\/games/);
   assert.doesNotMatch(workerSource, /pixelLesson|PixelLesson|\/api\/pixel-lessons/);

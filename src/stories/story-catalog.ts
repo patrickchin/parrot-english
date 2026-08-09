@@ -170,18 +170,6 @@ export const STORY_LEVELS: readonly StoryLevel[] = [
     targetWordRange: [7, 8],
     vocabularyProfileId: "early-a1-v1",
   },
-  {
-    id: "original-baseline",
-    label: "Original baseline",
-    cefrReference: "Uncontrolled comparison",
-    description:
-      "The first vocabulary-rich script, kept intact so it can be compared directly with the controlled rewrite.",
-    maxAssumedKnownWords: 120,
-    maxNarrativeWordsPerPage: 45,
-    maxNarrativeWordsTotal: 210,
-    targetWordRange: [6, 6],
-    vocabularyProfileId: "early-a1-v1",
-  },
 ];
 
 const STORY_LEVEL_ORDER = new Map(

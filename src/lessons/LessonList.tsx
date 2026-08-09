@@ -1,10 +1,9 @@
-import { ArrowLeft, BookOpen, Images, Pencil, Play, Plus } from "lucide-react";
+import { ArrowLeft, BookOpen, Pencil, Play, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
 import {
   getLessonScenePath,
   getMyLessonEditPath,
-  getParrotLessonVariantScenePath,
 } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
@@ -22,7 +21,6 @@ import {
   loadMyLessons,
   type MyLessonDescriptor,
 } from "./my-lessons-api";
-import { FULL_SCENE_LESSON_VARIANTS } from "./full-scene-lessons";
 
 type LessonCard = {
   id: string;
@@ -40,11 +38,6 @@ type LessonArtwork = {
 
 const readyMadeArtwork = new Map<string, LessonArtwork>(
   lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
-);
-const fullSceneComparisons = new Map(
-  FULL_SCENE_LESSON_VARIANTS.filter(({ id }) => id === "full-scene").map(
-    (variant) => [variant.baseLessonId, variant],
-  ),
 );
 
 function createAvailableLessonCard(
@@ -88,14 +81,11 @@ function LessonCardView({
   lesson: LessonCard;
   source: "my" | "parrot";
 }) {
-  const comparison =
-    source === "parrot" ? (fullSceneComparisons.get(lesson.id) ?? null) : null;
-
   return (
     <article
       className={cardClassName({
         className:
-          "flex min-w-0 items-center gap-2 overflow-hidden px-2 py-1.5 sm:gap-3 sm:p-2",
+          "flex min-w-0 items-center gap-2 overflow-hidden p-2 sm:gap-3",
       })}
     >
       <div className="relative size-19 shrink-0 overflow-hidden rounded-xl min-[360px]:size-[5.375rem] sm:h-24 sm:w-32 lg:w-40">
@@ -129,24 +119,6 @@ function LessonCardView({
             >
               <Pencil aria-hidden="true" className="size-3.5 shrink-0" />
               Edit
-            </TextLink>
-          ) : null}
-          {comparison ? (
-            <TextLink
-              aria-label={`Start full-scene version: ${lesson.title}`}
-              className="min-w-11 shrink-0 gap-1 text-xs max-sm:min-h-0 sm:text-sm"
-              to={getParrotLessonVariantScenePath(
-                lesson.id,
-                comparison.id,
-                0,
-              )}
-            >
-              <Images aria-hidden="true" className="size-4 shrink-0" />
-              <span className="hidden min-[360px]:inline sm:hidden">
-                Full
-              </span>
-              <span className="hidden sm:inline">Full-scene artwork</span>
-              <span className="sr-only">Same lesson, same audio.</span>
             </TextLink>
           ) : null}
         </div>

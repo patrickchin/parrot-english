@@ -22,11 +22,6 @@ import {
   IconButton,
   Card,
 } from "../shared/ui";
-import {
-  FULL_SCENE_FRAME_PRESETS,
-  type FullSceneFramePreset,
-  type FullSceneImage,
-} from "./full-scene-lessons";
 import type { PersonalizedStoryArtwork } from "../stories/personalized-story-art-client";
 
 type LessonBackgroundAsset = {
@@ -59,87 +54,29 @@ type LessonFeedbackOutcome =
 export function LessonStage({
   background,
   children,
-  presentation = "layered",
 }: {
   background: LessonBackgroundAsset;
   children: ReactNode;
-  presentation?: "boxed" | "layered";
 }) {
   return (
     <main className="h-dvh min-h-svh w-screen overflow-hidden text-slate-900">
       <section
         aria-label="Parrot English speaking lesson"
-        className={cx(
-          "relative isolate h-full w-full overflow-hidden bg-sky-300",
-          presentation === "boxed" && "bg-conversation",
-        )}
+        className="relative isolate h-full w-full overflow-hidden bg-sky-300"
       >
-        {presentation === "layered" ? (
-          <>
-            <img
-              alt={background.alt}
-              className="absolute inset-0 z-0 size-full select-none object-cover"
-              draggable="false"
-              src={background.src}
-            />
-            <div
-              aria-hidden="true"
-              className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
-            />
-          </>
-        ) : null}
+        <img
+          alt={background.alt}
+          className="absolute inset-0 z-0 size-full select-none object-cover"
+          draggable="false"
+          src={background.src}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0 bg-linear-to-b from-sky-950/10 via-transparent to-sky-950/20"
+        />
         {children}
       </section>
     </main>
-  );
-}
-
-const fullSceneFrameWidth: Record<FullSceneFramePreset, string> = {
-  landscape: "w-[min(calc(100%_-_2rem),78dvh,48rem)]",
-  square: "w-[min(calc(100%_-_2rem),52dvh,36rem)]",
-  portrait: "w-[min(calc(100%_-_2rem),34dvh,24rem)]",
-  wide: "w-[min(calc(100%_-_2rem),92dvh,56rem)]",
-  free: "w-fit max-w-[calc(100%_-_2rem)]",
-};
-
-export function BoxedFullSceneStage({
-  framePreset,
-  image,
-}: {
-  framePreset: FullSceneFramePreset;
-  image: FullSceneImage;
-}) {
-  const frame = FULL_SCENE_FRAME_PRESETS[framePreset];
-  const aspectRatio = frame.aspectRatio
-    ? { aspectRatio: frame.aspectRatio }
-    : undefined;
-
-  return (
-    <section
-      aria-label="Full-scene artwork"
-      className={cx(
-        "absolute left-1/2 top-1/2 z-10 grid max-h-[52dvh] -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card",
-        fullSceneFrameWidth[framePreset],
-      )}
-      data-frame-preset={framePreset}
-      role="region"
-      style={aspectRatio}
-    >
-      <img
-        alt={image.alt}
-        className={cx(
-          "block select-none object-contain",
-          framePreset === "free"
-            ? "h-auto w-auto max-h-[50dvh] max-w-full"
-            : "size-full",
-        )}
-        draggable="false"
-        src={image.src}
-      />
-      <span className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-navy/90 px-3 py-1 text-xs font-black text-white shadow-sm md:text-sm">
-        {frame.label}
-      </span>
-    </section>
   );
 }
 

@@ -54,7 +54,6 @@ import {
   getLessonScenePath,
   getLoginPath,
   getLearnerProfilePath,
-  getParrotLessonVariantScenePath,
   getProfilePath,
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
@@ -83,7 +82,6 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import {
-  BoxedFullSceneStage,
   LessonCharacters,
   LessonCompletion,
   LessonErrorBanner,
@@ -96,11 +94,8 @@ import {
   LessonStage,
   LessonUserPrompt,
 } from "../lessons/LessonPlayerUi";
-import { FULL_SCENE_LESSON_VARIANTS } from "../lessons/full-scene-lessons";
 import { LessonCreator } from "../lessons/LessonCreator";
 import { LessonEditor } from "../lessons/LessonEditor";
-import { PixelLessonLab } from "../games/PixelLessonLab";
-import { PixelWorldExplorer } from "../games/PixelWorldExplorer";
 import { playDeviceSpeech } from "../media/device-speech";
 import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
@@ -156,7 +151,6 @@ type LessonPlayerProps = {
   } | null;
   routedLocationKey: string;
   routedSceneIndex: number;
-  variant?: (typeof FULL_SCENE_LESSON_VARIANTS)[number];
 };
 
 type RegisterLessonRouteExitBarrier = (
@@ -186,7 +180,6 @@ export function LessonPlayer({
   promptPortrait,
   routedLocationKey,
   routedSceneIndex,
-  variant,
 }: LessonPlayerProps) {
   const registerLessonRouteExitBarrier = useContext(
     LessonRouteExitBarrierContext,
@@ -656,24 +649,8 @@ export function LessonPlayer({
   const speechCharacterIndex = scene.characters.findIndex(
     (character) => character.id === scene.speech.speaker
   );
-  const fullScene = variant?.scenes[state.sceneIndex];
-  if (variant && !fullScene) {
-    throw new Error(
-      `Lesson variant ${variant.id} is missing scene ${state.sceneIndex + 1}.`,
-    );
-  }
-
   return (
-    <LessonStage
-      background={scene.backgroundAsset}
-      presentation={fullScene ? "boxed" : "layered"}
-    >
-      {fullScene ? (
-        <BoxedFullSceneStage
-          framePreset={fullScene.frame.preset}
-          image={fullScene.image}
-        />
-      ) : null}
+    <LessonStage background={scene.backgroundAsset}>
       <RouteHeader>
         <HeaderButton
           aria-label="Back to lesson list"
@@ -710,9 +687,7 @@ export function LessonPlayer({
             sceneCount={currentLesson.scenes.length}
             title={scene.title}
           />
-          {fullScene ? null : (
-            <LessonCharacters characters={scene.characters} />
-          )}
+          <LessonCharacters characters={scene.characters} />
 
           {showUserTurn ? (
             <LessonUserPrompt
@@ -728,7 +703,7 @@ export function LessonPlayer({
             <LessonSpeech
               characterCount={scene.characters.length}
               characterIndex={speechCharacterIndex}
-              showTail={!fullScene}
+              showTail
               speech={scene.speech}
             />
           )}
@@ -779,7 +754,6 @@ function LessonRouteDecisionView({
   decision,
   promptPortrait,
   source,
-  variant,
 }: {
   decision: LessonRouteDecision;
   promptPortrait?: {
@@ -787,7 +761,6 @@ function LessonRouteDecisionView({
     src: string;
   } | null;
   source: LessonSource;
-  variant?: (typeof FULL_SCENE_LESSON_VARIANTS)[number];
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -808,20 +781,11 @@ function LessonRouteDecisionView({
       lesson={decision.entry.lesson}
       onBack={() => navigate("/lessons")}
       onNavigateScene={(sceneIndex) =>
-        navigate(
-          variant
-            ? getParrotLessonVariantScenePath(
-                decision.entry.id,
-                variant.id,
-                sceneIndex,
-              )
-            : getLessonScenePath(source, decision.entry.id, sceneIndex),
-        )
+        navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
       }
       routedLocationKey={location.key}
       routedSceneIndex={decision.sceneIndex}
       promptPortrait={promptPortrait}
-      variant={variant}
     />
   );
 }
@@ -848,57 +812,6 @@ function ParrotLessonSceneRoute() {
       decision={decision}
       promptPortrait={personalizedStoryArt.personalizedArtwork}
       source="parrot"
-    />
-  );
-}
-
-function ParrotLessonVariantRedirect() {
-  const { lessonId, variantId } = useParams();
-  const variant = FULL_SCENE_LESSON_VARIANTS.find(
-    (candidate) =>
-      candidate.baseLessonId === lessonId && candidate.id === variantId,
-  );
-
-  if (!lessonId || !variantId || !variant) {
-    return <Navigate replace to="/lessons" />;
-  }
-
-  return (
-    <Navigate
-      replace
-      to={getParrotLessonVariantScenePath(lessonId, variantId, 0)}
-    />
-  );
-}
-
-function ParrotLessonVariantSceneRoute() {
-  const personalizedStoryArt = usePersonalizedStoryArt();
-  const { lessonId, sceneNumber, variantId } = useParams();
-  const variant = FULL_SCENE_LESSON_VARIANTS.find(
-    (candidate) =>
-      candidate.baseLessonId === lessonId && candidate.id === variantId,
-  );
-
-  if (!lessonId || !variantId || !variant) {
-    return <Navigate replace to="/lessons" />;
-  }
-
-  const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
-  if (decision.kind === "redirect") {
-    return (
-      <Navigate
-        replace
-        to={getParrotLessonVariantScenePath(lessonId, variantId, 0)}
-      />
-    );
-  }
-
-  return (
-    <LessonRouteDecisionView
-      decision={decision}
-      promptPortrait={personalizedStoryArt.personalizedArtwork}
-      source="parrot"
-      variant={variant}
     />
   );
 }
@@ -1059,8 +972,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         path="/talk-to-peppa"
       />
       <Route element={<LessonList />} path="/lessons" />
-      <Route element={<PixelLessonLab />} path="/games" />
-      <Route element={<PixelWorldExplorer />} path="/games/worlds" />
       <Route
         element={<LessonCreator />}
         path="/lessons/my/create"
@@ -1076,14 +987,6 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
       <Route
         element={<ParrotLessonSceneRoute />}
         path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
-      />
-      <Route
-        element={<ParrotLessonVariantRedirect />}
-        path="/lessons/parrot/:lessonId/variants/:variantId"
-      />
-      <Route
-        element={<ParrotLessonVariantSceneRoute />}
-        path="/lessons/parrot/:lessonId/variants/:variantId/scenes/:sceneNumber"
       />
       <Route
         element={<MyLessonRoute />}
