@@ -134,7 +134,7 @@ function LessonCardView({
           {comparison ? (
             <TextLink
               aria-label={`Start full-scene version: ${lesson.title}`}
-              className="min-w-11 shrink-0 gap-1 text-xs max-[359px]:min-h-0 sm:text-sm"
+              className="min-w-11 shrink-0 gap-1 text-xs max-sm:min-h-0 sm:text-sm"
               to={getParrotLessonVariantScenePath(
                 lesson.id,
                 comparison.id,
@@ -143,7 +143,7 @@ function LessonCardView({
             >
               <Images aria-hidden="true" className="size-4 shrink-0" />
               <span className="hidden min-[360px]:inline sm:hidden">
-                Full image
+                Full
               </span>
               <span className="hidden sm:inline">Full-scene artwork</span>
               <span className="sr-only">Same lesson, same audio.</span>
