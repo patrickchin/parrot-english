@@ -152,6 +152,7 @@ export function PixelWorldExplorer() {
   const [parallaxMode, setParallaxMode] =
     useState<PixelWorldParallaxMode>("camera");
   const [sceneId, setSceneId] = useState<string>(defaultScene);
+  const [selectedCompositionId, setSelectedCompositionId] = useState("");
   const controllerRef = useRef<PixelWorldController | null>(null);
   const activeCharacterIdRef = useRef(activeCharacterId);
   const actorsRef = useRef(actors);
@@ -183,8 +184,6 @@ export function PixelWorldExplorer() {
   const storyScenes = sceneList.filter(
     ({ source }) => source.kind === "story",
   );
-  const readyMadeSceneId =
-    activeScene.source.kind === "world" ? "" : activeScene.id;
   const activeFacing = activeActor.facing ?? "right";
 
   useEffect(() => {
@@ -217,6 +216,7 @@ export function PixelWorldExplorer() {
           {
             onCharacterFacingChange(characterId, facing) {
               if (cancelled) return;
+              setSelectedCompositionId("");
               updateActor(characterId, (actor) =>
                 actor.facing === facing ? actor : { ...actor, facing },
               );
@@ -275,16 +275,19 @@ export function PixelWorldExplorer() {
   }
 
   function chooseEmote(emote: PixelWorldEmote) {
+    setSelectedCompositionId("");
     updateActor(activeCharacterId, (actor) => ({ ...actor, emote }));
     controllerRef.current?.setCharacterEmote(activeCharacterId, emote);
   }
 
   function chooseFacing(facing: PixelWorldFacing) {
+    setSelectedCompositionId("");
     updateActor(activeCharacterId, (actor) => ({ ...actor, facing }));
     controllerRef.current?.setCharacterFacing(activeCharacterId, facing);
   }
 
   function chooseHeldItem(heldItemId: string | null) {
+    setSelectedCompositionId("");
     updateActor(activeCharacterId, (actor) => ({ ...actor, heldItemId }));
     controllerRef.current?.setCharacterHeldItem(
       activeCharacterId,
@@ -293,6 +296,7 @@ export function PixelWorldExplorer() {
   }
 
   function choosePlacement(slotId: string) {
+    setSelectedCompositionId("");
     updateActor(activeCharacterId, (actor) => ({ ...actor, slotId }));
     controllerRef.current?.setCharacterPosition(activeCharacterId, slotId);
   }
@@ -302,9 +306,7 @@ export function PixelWorldExplorer() {
     const nextActors: PixelWorldActorState[] = scene.cast.map((actor) => ({
       ...actor,
       emote: actor.emote as PixelWorldEmote,
-      facing:
-        actors.find(({ characterId }) => characterId === actor.characterId)
-          ?.facing ?? "right",
+      facing: "right",
     }));
     setActors(nextActors);
     for (const actor of nextActors) {
@@ -322,6 +324,7 @@ export function PixelWorldExplorer() {
         actor.slotId,
       );
     }
+    setSelectedCompositionId(scene.id);
     setSceneId(scene.id);
   }
 
@@ -331,6 +334,7 @@ export function PixelWorldExplorer() {
     setActiveCharacterId("peppa");
     setActors(nextActors);
     setParallaxMode("camera");
+    setSelectedCompositionId("");
     setSceneId(defaultScene);
     controllerRef.current?.setActiveCharacter("peppa");
     for (const actor of nextActors) {
@@ -355,6 +359,7 @@ export function PixelWorldExplorer() {
     event: PointerEvent<HTMLButtonElement>,
   ) {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) return;
+    setSelectedCompositionId("");
     event.currentTarget.setPointerCapture(event.pointerId);
     controllerRef.current?.setDirection(direction, true);
   }
@@ -366,6 +371,11 @@ export function PixelWorldExplorer() {
   function handleRetry() {
     stopAllDirections(controllerRef.current);
     setEngineAttempt((attempt) => attempt + 1);
+  }
+
+  function nudgeCharacter(direction: PixelWorldDirection) {
+    setSelectedCompositionId("");
+    controllerRef.current?.nudge(direction);
   }
 
   return (
@@ -391,7 +401,7 @@ export function PixelWorldExplorer() {
         </p>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-[minmax(9rem,1.2fr)_minmax(0,1fr)_auto] gap-2 lg:grid-cols-[14rem_minmax(0,1fr)_16rem] lg:grid-rows-[minmax(0,1fr)_auto]">
+      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-[minmax(6rem,1.2fr)_minmax(0,1fr)_auto] gap-2 lg:grid-cols-[14rem_minmax(0,1fr)_16rem] lg:grid-rows-[minmax(0,1fr)_auto]">
         <section
           aria-label="World controls"
           className="col-start-1 row-start-2 grid min-h-0 min-w-0 content-start gap-3 overflow-y-auto rounded-xl border-2 border-slate-700 bg-slate-900 p-2.5 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:p-3"
@@ -409,6 +419,7 @@ export function PixelWorldExplorer() {
               })}
               onChange={(event) => {
                 stopAllDirections(controllerRef.current);
+                setSelectedCompositionId("");
                 setSceneId(event.target.value);
               }}
               value={worldScenes.some(({ id }) => id === sceneId) ? sceneId : ""}
@@ -434,7 +445,7 @@ export function PixelWorldExplorer() {
                 const scene = PIXEL_WORLD_SCENES_BY_ID.get(event.target.value);
                 if (scene) chooseComposition(scene);
               }}
-              value={readyMadeSceneId}
+              value={selectedCompositionId}
             >
               <option value="">Choose a composition</option>
               <optgroup label="Lessons">
@@ -658,7 +669,7 @@ export function PixelWorldExplorer() {
               direction="left"
               disabled={!engineReady}
               icon={<ArrowLeft aria-hidden="true" className="size-5" />}
-              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onNudge={nudgeCharacter}
               onStart={handleDirectionStart}
               onStop={handleDirectionStop}
             />
@@ -666,7 +677,7 @@ export function PixelWorldExplorer() {
               direction="up"
               disabled={!engineReady}
               icon={<ArrowUp aria-hidden="true" className="size-5" />}
-              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onNudge={nudgeCharacter}
               onStart={handleDirectionStart}
               onStop={handleDirectionStop}
             />
@@ -674,7 +685,7 @@ export function PixelWorldExplorer() {
               direction="down"
               disabled={!engineReady}
               icon={<ArrowDown aria-hidden="true" className="size-5" />}
-              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onNudge={nudgeCharacter}
               onStart={handleDirectionStart}
               onStop={handleDirectionStop}
             />
@@ -682,7 +693,7 @@ export function PixelWorldExplorer() {
               direction="right"
               disabled={!engineReady}
               icon={<ArrowRight aria-hidden="true" className="size-5" />}
-              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onNudge={nudgeCharacter}
               onStart={handleDirectionStart}
               onStop={handleDirectionStop}
             />
