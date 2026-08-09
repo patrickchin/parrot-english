@@ -95,6 +95,29 @@ function emptyMetadata(enabled, hasStoredArt = false) {
   };
 }
 
+function storedMetadata({
+  enabled = true,
+  hasStoredArt = true,
+  includeStory = true,
+  updatedAt = "2026-08-10T10:00:00.000Z",
+} = {}) {
+  return {
+    enabled,
+    guardianConsentVersion: CONSENT_VERSION,
+    hasStoredArt,
+    stories: includeStory
+      ? {
+          [STORY_ID]: {
+            pages: {
+              [PAGE_ID]: { alt: ART_ALT, src: ASSET_ROUTE },
+            },
+          },
+        }
+      : {},
+    updatedAt,
+  };
+}
+
 describe("personalized story art Worker handler", () => {
   it("reports the capability as disabled unless both release gates are enabled", async () => {
     const state = seedDatabase();
@@ -239,26 +262,11 @@ describe("personalized story art Worker handler", () => {
       );
 
       assert.equal(response.status, 201);
-      assert.deepEqual(await response.json(), {
-        enabled: true,
-        guardianConsentVersion: CONSENT_VERSION,
-        hasStoredArt: true,
-        stories: {
-          [STORY_ID]: {
-            pages: {
-              [PAGE_ID]: { alt: ART_ALT, src: ASSET_ROUTE },
-            },
-          },
-        },
-        updatedAt: "2026-08-10T10:00:00.000Z",
-      });
+      assert.deepEqual(await response.json(), storedMetadata());
       assert.equal(generationInput.sourceImage.type, "image/png");
       assert.equal(generationInput.storyId, STORY_ID);
       assert.ok(putCall);
-      assert.match(
-        putCall.key,
-        /^personalized-story-art\/user-1\/the-red-ball\/art-1\.webp$/,
-      );
+      assert.equal(putCall.key, "personalized-story-art/user-1/the-red-ball/current");
       assert.equal(Buffer.from(putCall.bytes).toString("ascii", 0, 4), "RIFF");
       assert.equal(putCall.options.httpMetadata?.contentType, "image/webp");
       assert.equal(
@@ -309,8 +317,7 @@ describe("personalized story art Worker handler", () => {
 
   it("tombstones reads, purges R2, and only then deletes the database row", async () => {
     const state = seedDatabase();
-    const objectKey =
-      `personalized-story-art/user-1/${STORY_ID}/art-1.webp`;
+    const objectKey = `personalized-story-art/user-1/${STORY_ID}/current`;
     try {
       state.sqlite
         .prepare(
@@ -375,8 +382,7 @@ describe("personalized story art Worker handler", () => {
 
   it("keeps a failed purge tombstoned so asset reads remain blocked and deletion can retry", async () => {
     const state = seedDatabase();
-    const objectKey =
-      `personalized-story-art/user-1/${STORY_ID}/art-1.webp`;
+    const objectKey = `personalized-story-art/user-1/${STORY_ID}/current`;
     try {
       state.sqlite
         .prepare(
@@ -414,6 +420,16 @@ describe("personalized story art Worker handler", () => {
         "deleting",
       );
 
+      const metadataWhileDeleting = await call(state);
+      assert.deepEqual(
+        await metadataWhileDeleting.json(),
+        storedMetadata({
+          enabled: true,
+          includeStory: false,
+          updatedAt: "1970-01-01T00:00:01.000Z",
+        }),
+      );
+
       const blockedRead = await call(state, { path: ASSET_ROUTE });
       assert.equal(blockedRead.status, 404);
 
@@ -427,6 +443,115 @@ describe("personalized story art Worker handler", () => {
           .prepare("SELECT count(*) AS count FROM personalized_story_art")
           .get().count,
         0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("reports stored-art ownership even when the feature flags are disabled", async () => {
+    const state = seedDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO personalized_story_art (
+            id, auth_user_id, story_id, status, r2_object_key, content_type,
+            guardian_consent_version, guardian_consent_at, provider,
+            prompt_version, created_at, updated_at
+          ) VALUES (?, ?, ?, 'ready', ?, 'image/webp', ?, ?,
+            'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+        )
+        .run(
+          "art-1",
+          "user-1",
+          STORY_ID,
+          `personalized-story-art/user-1/${STORY_ID}/current`,
+          CONSENT_VERSION,
+          1_000,
+          1_000,
+          1_000,
+        );
+
+      const response = await call(state, { enabled: "0", dataApproved: "0" });
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(
+        await response.json(),
+        storedMetadata({ enabled: false, includeStory: false, updatedAt: "1970-01-01T00:00:01.000Z" }),
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("reuses the same storage key when regenerating existing personalized art", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const putKeys = [];
+    try {
+      const firstResponse = await call(
+        state,
+        {
+          body: uploadForm(),
+          method: "POST",
+          bucket: bucketStub({
+            async put(key) {
+              putKeys.push(key);
+            },
+          }),
+        },
+        {
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+          now: () => new Date("2026-08-10T10:00:00.000Z"),
+        },
+      );
+      assert.equal(firstResponse.status, 201);
+
+      const secondResponse = await call(
+        state,
+        {
+          body: uploadForm(),
+          method: "POST",
+          bucket: bucketStub({
+            async put(key) {
+              putKeys.push(key);
+            },
+          }),
+        },
+        {
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+          now: () => new Date("2026-08-10T11:00:00.000Z"),
+        },
+      );
+      assert.equal(secondResponse.status, 201);
+      assert.deepEqual(putKeys, [
+        "personalized-story-art/user-1/the-red-ball/current",
+        "personalized-story-art/user-1/the-red-ball/current",
+      ]);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM personalized_story_art")
+          .get().count,
+        1,
       );
     } finally {
       state.close();

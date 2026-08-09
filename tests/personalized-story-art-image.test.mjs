@@ -172,4 +172,76 @@ describe("personalized story art image pipeline", () => {
       /supported image|provider/i,
     );
   });
+
+  it("preserves the detected provider output content type and extension", async () => {
+    const { createPersonalizedStoryArtImage } = await import(
+      "../worker/personalized-story-art-image.ts"
+    );
+    const source = await createTaggedPng({ width: 480, height: 320 });
+    const scene = await createTaggedPng({ width: 480, height: 320 });
+    const rasterOutputs = [
+      {
+        build: () =>
+          sharp({
+            create: {
+              width: 512,
+              height: 384,
+              channels: 3,
+              background: { r: 220, g: 180, b: 80 },
+            },
+          })
+            .jpeg()
+            .toBuffer(),
+        contentType: "image/jpeg",
+        extension: "jpg",
+      },
+      {
+        build: () =>
+          sharp({
+            create: {
+              width: 512,
+              height: 384,
+              channels: 4,
+              background: { r: 40, g: 130, b: 200, alpha: 1 },
+            },
+          })
+            .png()
+            .toBuffer(),
+        contentType: "image/png",
+        extension: "png",
+      },
+      {
+        build: () =>
+          sharp({
+            create: {
+              width: 512,
+              height: 384,
+              channels: 4,
+              background: { r: 40, g: 180, b: 120, alpha: 1 },
+            },
+          })
+            .webp()
+            .toBuffer(),
+        contentType: "image/webp",
+        extension: "webp",
+      },
+    ];
+
+    for (const expected of rasterOutputs) {
+      const bytes = await expected.build();
+      const result = await createPersonalizedStoryArtImage({
+        ai: {
+          async run() {
+            return { image: bytes.toString("base64") };
+          },
+        },
+        prompt: "Replace only the child.",
+        sceneImage: new File([scene], "scene.png", { type: "image/png" }),
+        sourceImage: new File([source], "source.png", { type: "image/png" }),
+      });
+
+      assert.equal(result.contentType, expected.contentType);
+      assert.equal(result.extension, expected.extension);
+    }
+  });
 });
