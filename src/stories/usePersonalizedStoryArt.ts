@@ -7,7 +7,6 @@ import {
   PERSONALIZED_STORY_PAGE_ID,
   PERSONALIZED_STORY_TITLE,
   type PersonalizedStoryArtMetadata,
-  type PersonalizedStoryArtwork,
   PersonalizedStoryArtApiError,
   removePersonalizedStoryArt,
 } from "./personalized-story-art-client";

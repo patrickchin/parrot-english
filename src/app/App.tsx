@@ -115,7 +115,6 @@ import { StoryList } from "../stories/StoryList";
 import { PersonalizedStoryArtPanel } from "../stories/PersonalizedStoryArtPanel";
 import {
   PERSONALIZED_STORY_ID,
-  PERSONALIZED_STORY_PAGE_ID,
 } from "../stories/personalized-story-art-client";
 import { StoryReader } from "../stories/StoryReader";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import sharp from "sharp";
 import { describe, it } from "node:test";
 
