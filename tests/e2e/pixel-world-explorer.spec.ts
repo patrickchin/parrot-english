@@ -113,7 +113,9 @@ test("the world lab switches scenes, items, and optional parallax", async ({
     page.getByRole("application", { name: /Interactive pixel world explorer/ }),
   ).toHaveCSS("image-rendering", "pixelated");
 
-  await expect(page.getByLabel("World scene").locator("option")).toHaveCount(8);
+  await expect(
+    page.getByLabel("World scene").locator("option:not([disabled])"),
+  ).toHaveCount(8);
   await expect(page.getByLabel("Held item").locator("option")).toHaveCount(17);
 
   await page.getByLabel("Held item").selectOption("paint-brush");
@@ -242,7 +244,7 @@ test("the explorer remains usable on mobile without horizontal overflow", async 
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Move up" })).toBeVisible();
   await expect(
-    composer.getByRole("button", { name: "Face Peppa left" }),
+    page.getByRole("button", { name: "Face Peppa left" }),
   ).toBeVisible();
   const dimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -255,11 +257,14 @@ test("the explorer remains usable on mobile without horizontal overflow", async 
 
   await page.setViewportSize({ height: 640, width: 280 });
   const narrowWorld = await openExplorer(page);
-  await expect(narrowWorld).toHaveAttribute("data-camera-zoom", "0.5");
+  await expect(narrowWorld).toHaveAttribute("data-camera-zoom", "1");
   await expect(narrowWorld).toHaveAttribute(
     "data-art-cell-screen-pixels",
-    "1",
+    "2",
   );
+  await expect(
+    composer.getByRole("button", { exact: true, name: "Polly" }),
+  ).toBeVisible();
   const narrowDimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
     clientHeight: document.documentElement.clientHeight,

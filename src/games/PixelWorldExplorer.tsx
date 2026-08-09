@@ -1,13 +1,15 @@
 import {
   ArrowDown,
   ArrowLeft,
-  ArrowRight,
-  ArrowUp,
   ArrowLeftRight,
   ArrowLeftToLine,
+  ArrowRight,
   ArrowRightLeft,
+  ArrowUp,
+  FlipHorizontal2,
   Hand,
   Map,
+  Monitor,
   RotateCcw,
   Trees,
   Users,
@@ -25,12 +27,13 @@ import {
   PIXEL_WORLD_SCENES_BY_ID,
 } from "../../prototypes/pixel-stage/world-pack.js";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
-import { ActionButton, cx } from "../shared/ui";
+import { ActionButton, fieldClassName } from "../shared/ui";
 import type {
   PixelWorldActorState,
   PixelWorldController,
   PixelWorldDirection,
   PixelWorldEmote,
+  PixelWorldFacing,
   PixelWorldParallaxMode,
 } from "./pixel-world-engine";
 
@@ -40,12 +43,14 @@ const DEFAULT_ACTORS: PixelWorldActorState[] = [
   {
     characterId: "peppa",
     emote: "idle",
+    facing: "right",
     heldItemId: "red-apple",
     slotId: "center",
   },
   {
     characterId: "polly",
     emote: "happy",
+    facing: "right",
     heldItemId: null,
     slotId: "center-right",
   },
@@ -103,13 +108,7 @@ function DirectionButton({
   return (
     <ActionButton
       aria-label={`Move ${direction}`}
-      className={cx(
-        "size-12 min-h-12 min-w-12 touch-none rounded-xl p-0 text-brand-navy shadow-control-surface",
-        direction === "up" && "col-start-2",
-        direction === "left" && "col-start-1 row-start-2",
-        direction === "down" && "col-start-2 row-start-2",
-        direction === "right" && "col-start-3 row-start-2",
-      )}
+      className="size-11 min-h-11 min-w-11 touch-none rounded-xl p-0 text-brand-navy shadow-control-surface"
       disabled={disabled}
       onClick={() => onNudge(direction)}
       onLostPointerCapture={() => onStop(direction)}
@@ -123,6 +122,21 @@ function DirectionButton({
     >
       {icon}
     </ActionButton>
+  );
+}
+
+function ToolField({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <label className="grid min-w-0 gap-1 text-xs font-black uppercase tracking-[0.12em] text-sky-100">
+      <span>{label}</span>
+      {children}
+    </label>
   );
 }
 
@@ -170,6 +184,9 @@ export function PixelWorldExplorer() {
   const storyScenes = sceneList.filter(
     ({ source }) => source.kind === "story",
   );
+  const readyMadeSceneId =
+    activeScene.source.kind === "world" ? "" : activeScene.id;
+  const activeFacing = activeActor.facing ?? "right";
 
   useEffect(() => {
     const host = hostRef.current;
@@ -199,6 +216,12 @@ export function PixelWorldExplorer() {
             sceneId,
           },
           {
+            onCharacterFacingChange(characterId, facing) {
+              if (cancelled) return;
+              updateActor(characterId, (actor) =>
+                actor.facing === facing ? actor : { ...actor, facing },
+              );
+            },
             onError(error) {
               if (cancelled) return;
               setEngineError(error.message);
@@ -257,6 +280,11 @@ export function PixelWorldExplorer() {
     controllerRef.current?.setCharacterEmote(activeCharacterId, emote);
   }
 
+  function chooseFacing(facing: PixelWorldFacing) {
+    updateActor(activeCharacterId, (actor) => ({ ...actor, facing }));
+    controllerRef.current?.setCharacterFacing(activeCharacterId, facing);
+  }
+
   function chooseHeldItem(heldItemId: string | null) {
     updateActor(activeCharacterId, (actor) => ({ ...actor, heldItemId }));
     controllerRef.current?.setCharacterHeldItem(
@@ -275,10 +303,17 @@ export function PixelWorldExplorer() {
     const nextActors: PixelWorldActorState[] = scene.cast.map((actor) => ({
       ...actor,
       emote: actor.emote as PixelWorldEmote,
+      facing:
+        actors.find(({ characterId }) => characterId === actor.characterId)
+          ?.facing ?? "right",
     }));
     setActors(nextActors);
     for (const actor of nextActors) {
       controllerRef.current?.setCharacterEmote(actor.characterId, actor.emote);
+      controllerRef.current?.setCharacterFacing(
+        actor.characterId,
+        actor.facing ?? "right",
+      );
       controllerRef.current?.setCharacterHeldItem(
         actor.characterId,
         actor.heldItemId,
@@ -301,6 +336,10 @@ export function PixelWorldExplorer() {
     controllerRef.current?.setActiveCharacter("peppa");
     for (const actor of nextActors) {
       controllerRef.current?.setCharacterEmote(actor.characterId, actor.emote);
+      controllerRef.current?.setCharacterFacing(
+        actor.characterId,
+        actor.facing ?? "right",
+      );
       controllerRef.current?.setCharacterHeldItem(
         actor.characterId,
         actor.heldItemId,
@@ -331,371 +370,353 @@ export function PixelWorldExplorer() {
   }
 
   return (
-    <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-lesson-list px-4 pb-12 pt-28 short:pt-20 md:px-8 md:pb-16 md:pt-32">
+    <main className="relative flex h-dvh w-screen flex-col gap-2 overflow-hidden bg-slate-950 px-2 pb-2 pt-20 short:pt-16 md:px-3 md:pb-3 md:pt-24">
       <RouteHeader>
         <HeaderLink aria-label="Back to home" icon={<ArrowLeft />} to="/">
           Back to home
         </HeaderLink>
       </RouteHeader>
 
-      <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[minmax(19rem,0.72fr)_minmax(0,1.38fr)] lg:items-start">
-        <section className="grid gap-5 rounded-3xl border-4 border-white bg-white/95 p-5 shadow-card md:border-6 md:p-8">
-          <header className="grid gap-3">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-navy px-3 py-1 text-sm font-black uppercase tracking-wider text-white">
-              <Map aria-hidden="true" className="size-4" /> World pipeline
-            </span>
-            <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl">
-              Pixel World Explorer
-            </h1>
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review reusable scenes, scenery, and holdable items against the
-              same runtime pixel contract.
-            </p>
-          </header>
+      <header className="flex min-h-11 shrink-0 items-center justify-between gap-2 rounded-xl border-2 border-slate-700 bg-slate-900 px-3 text-white">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden items-center gap-1 rounded-lg bg-sky-900 px-2 py-1 text-xs font-black uppercase tracking-wider text-sky-100 sm:inline-flex">
+            <Map aria-hidden="true" className="size-4" /> World pipeline
+          </span>
+          <h1 className="m-0 truncate text-xl leading-none sm:text-2xl">
+            Pixel World Explorer
+          </h1>
+        </div>
+        <p className="m-0 hidden min-w-0 truncate text-sm font-bold text-slate-300 md:block">
+          {activeScene.name} · {activeCharacter.name} ·{" "}
+          {heldItem?.id ?? "empty hands"}
+        </p>
+      </header>
 
-          <section
-            aria-label="Pipeline summary"
-            className="grid gap-3 rounded-3xl bg-sky-50 p-4 md:p-5"
-          >
-            <p className="m-0 font-bold leading-relaxed text-slate-700">
-              Each scene uses one <strong>720×480</strong> world, reusable
-              Peppa and Polly sheets, local compiled assets, and shared integer
-              square-pixel zoom tiers.
-            </p>
-            <p className="m-0 text-sm font-bold uppercase tracking-[0.2em] text-sky-900">
-              Scene: {activeScene.name} · Active: {activeCharacter.name} · Hold
-              item: {heldItem?.id ?? "none"}
-            </p>
-          </section>
+      <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-[minmax(9rem,1.2fr)_minmax(0,1fr)_auto] gap-2 lg:grid-cols-[14rem_minmax(0,1fr)_16rem] lg:grid-rows-[minmax(0,1fr)_auto]">
+        <section
+          aria-label="World controls"
+          className="col-start-1 row-start-2 grid min-h-0 min-w-0 content-start gap-3 overflow-y-auto rounded-xl border-2 border-slate-700 bg-slate-900 p-2.5 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:p-3"
+          role="region"
+        >
+          <h2 className="m-0 flex items-center gap-2 text-base text-white">
+            <Trees aria-hidden="true" className="size-5 text-sky-300" /> World
+          </h2>
 
-          <section
-            aria-label="Scene chooser"
-            className="grid gap-3 rounded-3xl border-3 border-sky-200 bg-white p-4"
-          >
-            <h2 className="m-0 flex items-center gap-2 text-xl text-brand-navy">
-              <Trees aria-hidden="true" className="size-5" /> Scenes
-            </h2>
-            <div className="grid gap-2">
-              {worldScenes.map((scene) => (
-                <ActionButton
-                  className="justify-start"
-                  key={scene.id}
-                  onClick={() => {
-                    stopAllDirections(controllerRef.current);
-                    setSceneId(scene.id);
-                  }}
-                  type="button"
-                  variant={scene.id === sceneId ? "navy" : "surface"}
-                >
-                  {scene.name}
-                </ActionButton>
-              ))}
-            </div>
-          </section>
-
-          <section
-            aria-label="Scene composer"
-            className="grid min-w-0 gap-5 rounded-3xl border-3 border-amber-200 bg-amber-50/80 p-4"
-          >
-            <header className="grid gap-2">
-              <h2 className="m-0 flex items-center gap-2 text-xl text-brand-navy">
-                <Users aria-hidden="true" className="size-5" /> Scene composer
-              </h2>
-              <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Stage both characters, then choose who receives the next pose,
-                position, or item.
-              </p>
-            </header>
-
-            <div aria-label="Character chooser" className="grid gap-2" role="group">
-              <h3 className="m-0 text-base text-brand-navy">Edit character</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {PIXEL_WORLD_PACK.characters.map((character) => (
-                  <ActionButton
-                    aria-pressed={character.id === activeCharacterId}
-                    className="min-w-0"
-                    fullWidth
-                    key={character.id}
-                    onClick={() => chooseCharacter(character.id)}
-                    size="compact"
-                    type="button"
-                    variant={
-                      character.id === activeCharacterId ? "navy" : "surface"
-                    }
-                  >
-                    {character.name}
-                  </ActionButton>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-3">
-              <h3 className="m-0 text-base text-brand-navy">Ready-made scenes</h3>
-              <div className="grid gap-2">
-                <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                  Lessons
-                </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {lessonScenes.map((scene) => (
-                    <ActionButton
-                      className="min-w-0 justify-start whitespace-normal py-3 text-left leading-tight"
-                      fullWidth
-                      key={scene.id}
-                      onClick={() => chooseComposition(scene)}
-                      size="compact"
-                      type="button"
-                      variant={scene.id === sceneId ? "navy" : "surface"}
-                    >
-                      {scene.name}
-                    </ActionButton>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                  Stories
-                </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {storyScenes.map((scene) => (
-                    <ActionButton
-                      className="min-w-0 justify-start whitespace-normal py-3 text-left leading-tight"
-                      fullWidth
-                      key={scene.id}
-                      onClick={() => chooseComposition(scene)}
-                      size="compact"
-                      type="button"
-                      variant={scene.id === sceneId ? "navy" : "surface"}
-                    >
-                      {scene.name}
-                    </ActionButton>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <h3 className="m-0 text-base text-brand-navy">
-                Place {activeCharacter.name}
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {PIXEL_WORLD_PACK.placementSlots.map((slot) => (
-                  <ActionButton
-                    aria-label={`Place ${activeCharacter.name} ${slot.id.replaceAll("-", " ")}`}
-                    aria-pressed={slot.id === activeActor.slotId}
-                    className="min-w-0 whitespace-normal px-1 text-xs leading-tight"
-                    fullWidth
-                    key={slot.id}
-                    onClick={() => choosePlacement(slot.id)}
-                    size="compact"
-                    type="button"
-                    variant={slot.id === activeActor.slotId ? "navy" : "surface"}
-                  >
-                    {slot.label}
-                  </ActionButton>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <h3 className="m-0 text-base text-brand-navy">
-                {activeCharacter.name}&apos;s expression
-              </h3>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {EMOTES.map((emote) => (
-                  <ActionButton
-                    aria-pressed={emote === activeActor.emote}
-                    className="min-w-0 capitalize"
-                    fullWidth
-                    key={emote}
-                    onClick={() => chooseEmote(emote)}
-                    size="compact"
-                    type="button"
-                    variant={emote === activeActor.emote ? "navy" : "surface"}
-                  >
-                    {emote}
-                  </ActionButton>
-                ))}
-              </div>
-            </div>
-
-            <section aria-label="Holdable item chooser" className="grid gap-3">
-              <h3 className="m-0 flex items-center gap-2 text-base text-brand-navy">
-                <Hand aria-hidden="true" className="size-5" /> Item for{" "}
-                {activeCharacter.name}
-              </h3>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <ActionButton
-                  aria-pressed={activeActor.heldItemId === null}
-                  className="min-w-0 justify-start"
-                  fullWidth
-                  onClick={() => chooseHeldItem(null)}
-                  size="compact"
-                  type="button"
-                  variant={activeActor.heldItemId === null ? "navy" : "surface"}
-                >
-                  Empty hands
-                </ActionButton>
-                {holdableObjects.map((item) => (
-                  <ActionButton
-                    aria-pressed={item.id === activeActor.heldItemId}
-                    className="min-w-0 justify-start"
-                    fullWidth
-                    key={String(item.id)}
-                    onClick={() => chooseHeldItem(String(item.id))}
-                    size="compact"
-                    type="button"
-                    variant={
-                      item.id === activeActor.heldItemId ? "navy" : "surface"
-                    }
-                  >
-                    {String(item.id).replaceAll("-", " ")}
-                  </ActionButton>
-                ))}
-              </div>
-            </section>
-
-            <ActionButton
-              className="min-w-0 gap-2"
-              fullWidth
-              onClick={resetComposition}
-              type="button"
-              variant="navy"
+          <ToolField label="World scene">
+            <select
+              className={fieldClassName({
+                className:
+                  "min-w-0 rounded-xl border-2 px-2 py-1 text-sm shadow-none",
+              })}
+              onChange={(event) => {
+                stopAllDirections(controllerRef.current);
+                setSceneId(event.target.value);
+              }}
+              value={worldScenes.some(({ id }) => id === sceneId) ? sceneId : ""}
             >
-              <RotateCcw aria-hidden="true" className="size-4" /> Reset
-              composition
-            </ActionButton>
-          </section>
-
-          <section
-            aria-label="Parallax controls"
-            className="grid gap-3 rounded-3xl border-3 border-sky-200 bg-white p-4"
-          >
-            <h2 className="m-0 text-xl text-brand-navy">Parallax review</h2>
-            <div className="grid gap-2">
-              {PARALLAX_MODES.map(({ description, icon, label, mode }) => (
-                <ActionButton
-                  aria-describedby={`parallax-${mode}-description`}
-                  aria-label={label}
-                  className="justify-start gap-2"
-                  key={mode}
-                  onClick={() => setParallaxMode(mode)}
-                  type="button"
-                  variant={mode === parallaxMode ? "navy" : "surface"}
-                >
-                  {icon}
-                  <span>{label}</span>
-                  <span
-                    className="sr-only"
-                    id={`parallax-${mode}-description`}
-                  >
-                    {description}
-                  </span>
-                </ActionButton>
+              <option disabled value="">
+                Custom composition
+              </option>
+              {worldScenes.map((scene) => (
+                <option key={scene.id} value={scene.id}>
+                  {scene.name}
+                </option>
               ))}
-            </div>
-            <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-              Use these three modes to compare depth against motion. Reduced
-              motion should collapse ambient drift automatically.
-            </p>
-          </section>
+            </select>
+          </ToolField>
 
+          <ToolField label="Ready-made scene">
+            <select
+              className={fieldClassName({
+                className:
+                  "min-w-0 rounded-xl border-2 px-2 py-1 text-sm shadow-none",
+              })}
+              onChange={(event) => {
+                const scene = PIXEL_WORLD_SCENES_BY_ID.get(event.target.value);
+                if (scene) chooseComposition(scene);
+              }}
+              value={readyMadeSceneId}
+            >
+              <option value="">Choose a composition</option>
+              <optgroup label="Lessons">
+                {lessonScenes.map((scene) => (
+                  <option key={scene.id} value={scene.id}>
+                    {scene.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Stories">
+                {storyScenes.map((scene) => (
+                  <option key={scene.id} value={scene.id}>
+                    {scene.name}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </ToolField>
+
+          <section aria-label="Parallax controls" className="grid gap-2">
+            <h3 className="m-0 text-xs font-black uppercase tracking-[0.12em] text-sky-100">
+              Depth motion
+            </h3>
+            {PARALLAX_MODES.map(({ description, icon, label, mode }) => (
+              <ActionButton
+                aria-describedby={`parallax-${mode}-description`}
+                aria-label={label}
+                aria-pressed={mode === parallaxMode}
+                className="min-w-0 justify-start gap-2 rounded-xl px-2"
+                fullWidth
+                key={mode}
+                onClick={() => setParallaxMode(mode)}
+                size="compact"
+                type="button"
+                variant={mode === parallaxMode ? "navy" : "surface"}
+              >
+                {icon}
+                <span>{label}</span>
+                <span
+                  className="sr-only"
+                  id={`parallax-${mode}-description`}
+                >
+                  {description}
+                </span>
+              </ActionButton>
+            ))}
+          </section>
         </section>
 
         <section
-          aria-labelledby="pixel-world-preview-title"
-          className="grid min-w-0 gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card md:border-6 md:p-5"
+          aria-label="Pixel world explorer stage"
+          className="relative col-span-2 col-start-1 row-start-1 min-h-0 min-w-0 overflow-hidden rounded-xl border-2 border-slate-600 bg-slate-950 shadow-2xl lg:col-span-1 lg:col-start-2 lg:row-start-1"
+          role="region"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="m-0 text-2xl text-brand-navy" id="pixel-world-preview-title">
-                Review stage
-              </h2>
-              <p className="mb-0 mt-1 font-bold leading-relaxed text-slate-600">
-                Move the active character, switch scenes, and check whether
-                characters, items, and scenery stay coherent together.
+          <div className="pointer-events-none absolute left-2 top-2 z-10 flex max-w-[calc(100%-1rem)] items-center gap-1.5 rounded-lg bg-slate-950/80 px-2 py-1 text-xs font-black uppercase tracking-wider text-white backdrop-blur-sm">
+            <Monitor aria-hidden="true" className="size-4 text-sky-300" />
+            <span className="truncate">{activeScene.name}</span>
+          </div>
+          <div
+            aria-label="Pixel world explorer game world"
+            className="h-full min-h-0 w-full bg-sky-100"
+            data-engine="phaser"
+            ref={hostRef}
+            role="group"
+          />
+          {!engineReady && !engineError ? (
+            <div className="pointer-events-none absolute inset-0 grid place-items-center bg-slate-950/20">
+              <p className="m-0 rounded-lg bg-white/95 px-4 py-2 font-black text-brand-navy shadow-control-surface">
+                Loading world…
               </p>
             </div>
-            {engineError ? (
-              <ActionButton onClick={handleRetry} type="button" variant="navy">
-                Reload stage
+          ) : null}
+          {engineError ? (
+            <div className="absolute inset-0 grid place-items-center bg-slate-950/80 p-4">
+              <div className="grid max-w-md gap-3 rounded-xl border-2 border-red-300 bg-red-50 p-4 text-center">
+                <p className="m-0 font-bold text-red-800" role="alert">
+                  {engineError}
+                </p>
+                <ActionButton
+                  onClick={handleRetry}
+                  type="button"
+                  variant="navy"
+                >
+                  Reload stage
+                </ActionButton>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <section
+          aria-label="Character controls"
+          className="col-start-2 row-start-2 grid min-h-0 min-w-0 content-start gap-3 overflow-y-auto rounded-xl border-2 border-slate-700 bg-slate-900 p-2.5 lg:col-start-3 lg:row-start-1 lg:p-3"
+          role="region"
+        >
+          <header className="flex items-center justify-between gap-2">
+            <h2 className="m-0 flex min-w-0 items-center gap-2 text-base text-white">
+              <Users aria-hidden="true" className="size-5 text-amber-300" />
+              Character
+            </h2>
+            <span className="hidden truncate text-xs font-black uppercase tracking-wider text-slate-300 min-[360px]:inline">
+              {activeCharacter.name}
+            </span>
+          </header>
+
+          <div
+            aria-label="Character chooser"
+            className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2"
+            role="group"
+          >
+            {PIXEL_WORLD_PACK.characters.map((character) => (
+              <ActionButton
+                aria-pressed={character.id === activeCharacterId}
+                className="min-w-0 rounded-xl"
+                fullWidth
+                key={character.id}
+                onClick={() => chooseCharacter(character.id)}
+                size="compact"
+                type="button"
+                variant={
+                  character.id === activeCharacterId ? "navy" : "surface"
+                }
+              >
+                {character.name}
               </ActionButton>
-            ) : null}
+            ))}
+          </div>
+
+          <ToolField label="Placement">
+            <select
+              className={fieldClassName({
+                className:
+                  "min-w-0 rounded-xl border-2 px-2 py-1 text-sm shadow-none",
+              })}
+              onChange={(event) => choosePlacement(event.target.value)}
+              value={activeActor.slotId}
+            >
+              {PIXEL_WORLD_PACK.placementSlots.map((slot) => (
+                <option key={slot.id} value={slot.id}>
+                  {slot.label}
+                </option>
+              ))}
+            </select>
+          </ToolField>
+
+          <ToolField label="Expression">
+            <select
+              className={fieldClassName({
+                className:
+                  "min-w-0 rounded-xl border-2 px-2 py-1 text-sm capitalize shadow-none",
+              })}
+              onChange={(event) =>
+                chooseEmote(event.target.value as PixelWorldEmote)
+              }
+              value={activeActor.emote}
+            >
+              {EMOTES.map((emote) => (
+                <option className="capitalize" key={emote} value={emote}>
+                  {emote}
+                </option>
+              ))}
+            </select>
+          </ToolField>
+
+          <section aria-label="Holdable item chooser">
+            <ToolField label="Held item">
+              <select
+                className={fieldClassName({
+                  className:
+                    "min-w-0 rounded-xl border-2 px-2 py-1 text-sm shadow-none",
+                })}
+                onChange={(event) =>
+                  chooseHeldItem(event.target.value || null)
+                }
+                value={activeActor.heldItemId ?? ""}
+              >
+                <option value="">Empty hands</option>
+                {holdableObjects.map((item) => (
+                  <option key={String(item.id)} value={String(item.id)}>
+                    {String(item.id).replaceAll("-", " ")}
+                  </option>
+                ))}
+              </select>
+            </ToolField>
+          </section>
+
+          <ActionButton
+            className="sticky bottom-0 mt-auto min-w-0 gap-2 rounded-xl"
+            fullWidth
+            onClick={resetComposition}
+            size="compact"
+            type="button"
+            variant="navy"
+          >
+            <RotateCcw aria-hidden="true" className="size-4" /> Reset composition
+          </ActionButton>
+        </section>
+
+        <section
+          aria-label="Movement and facing controls"
+          className="col-span-2 col-start-1 row-start-3 flex min-w-0 flex-wrap items-center justify-center gap-2 rounded-xl border-2 border-slate-700 bg-slate-900 p-2 lg:col-start-2 lg:row-start-2 lg:justify-between"
+          role="region"
+        >
+          <h2 className="m-0 hidden items-center gap-2 text-sm text-white lg:flex">
+            <FlipHorizontal2
+              aria-hidden="true"
+              className="size-5 text-sky-300"
+            />
+            Transform {activeCharacter.name}
+          </h2>
+
+          <div
+            aria-label="Movement controls"
+            className="flex items-center gap-1.5"
+            role="group"
+          >
+            <span className="mr-1 text-xs font-black uppercase tracking-wider text-slate-300">
+              Move
+            </span>
+            <DirectionButton
+              direction="left"
+              disabled={!engineReady}
+              icon={<ArrowLeft aria-hidden="true" className="size-5" />}
+              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onStart={handleDirectionStart}
+              onStop={handleDirectionStop}
+            />
+            <DirectionButton
+              direction="up"
+              disabled={!engineReady}
+              icon={<ArrowUp aria-hidden="true" className="size-5" />}
+              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onStart={handleDirectionStart}
+              onStop={handleDirectionStop}
+            />
+            <DirectionButton
+              direction="down"
+              disabled={!engineReady}
+              icon={<ArrowDown aria-hidden="true" className="size-5" />}
+              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onStart={handleDirectionStart}
+              onStop={handleDirectionStop}
+            />
+            <DirectionButton
+              direction="right"
+              disabled={!engineReady}
+              icon={<ArrowRight aria-hidden="true" className="size-5" />}
+              onNudge={(direction) => controllerRef.current?.nudge(direction)}
+              onStart={handleDirectionStart}
+              onStop={handleDirectionStop}
+            />
           </div>
 
           <div
-            aria-label="Pixel world explorer stage"
-            className="relative overflow-hidden rounded-[2rem] border-4 border-brand-navy bg-sky-100"
-            role="region"
+            aria-label="Facing controls"
+            className="flex items-center gap-1.5"
+            role="group"
           >
-            <div
-              aria-label="Pixel world explorer game world"
-              className="aspect-[3/2] w-full bg-sky-100"
-              data-engine="phaser"
-              ref={hostRef}
-              role="group"
-            />
-            {!engineReady && !engineError ? (
-              <div className="pointer-events-none absolute inset-0 grid place-items-center bg-brand-navy/10">
-                <p className="m-0 rounded-full bg-white/95 px-4 py-2 font-black text-brand-navy shadow-control-surface">
-                  Loading world…
-                </p>
-              </div>
-            ) : null}
-          </div>
-
-          {engineError ? (
-            <p className="m-0 rounded-2xl border-3 border-red-300 bg-red-50 p-4 font-bold text-red-800" role="alert">
-              {engineError}
-            </p>
-          ) : null}
-
-          <div className="grid gap-3">
-            <section
-              aria-label="Movement controls"
-              className="grid gap-3 rounded-3xl border-3 border-sky-200 bg-white p-4"
-            >
-              <h3 className="m-0 text-lg text-brand-navy">
-                Move {activeCharacter.name}
-              </h3>
-              <div className="grid w-fit grid-cols-3 gap-2">
-                <DirectionButton
-                  direction="up"
-                  disabled={!engineReady}
-                  icon={<ArrowUp aria-hidden="true" className="size-5" />}
-                  onNudge={(direction) => controllerRef.current?.nudge(direction)}
-                  onStart={handleDirectionStart}
-                  onStop={handleDirectionStop}
-                />
-                <DirectionButton
-                  direction="left"
-                  disabled={!engineReady}
-                  icon={<ArrowLeft aria-hidden="true" className="size-5" />}
-                  onNudge={(direction) => controllerRef.current?.nudge(direction)}
-                  onStart={handleDirectionStart}
-                  onStop={handleDirectionStop}
-                />
-                <DirectionButton
-                  direction="down"
-                  disabled={!engineReady}
-                  icon={<ArrowDown aria-hidden="true" className="size-5" />}
-                  onNudge={(direction) => controllerRef.current?.nudge(direction)}
-                  onStart={handleDirectionStart}
-                  onStop={handleDirectionStop}
-                />
-                <DirectionButton
-                  direction="right"
-                  disabled={!engineReady}
-                  icon={<ArrowRight aria-hidden="true" className="size-5" />}
-                  onNudge={(direction) => controllerRef.current?.nudge(direction)}
-                  onStart={handleDirectionStart}
-                  onStop={handleDirectionStop}
-                />
-              </div>
-              <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Movement applies to the selected character. Composer placement
-                buttons return either character to an exact reusable slot.
-              </p>
-            </section>
+            <span className="mr-1 text-xs font-black uppercase tracking-wider text-slate-300">
+              Face
+            </span>
+            {(["left", "right"] as PixelWorldFacing[]).map((facing) => (
+              <ActionButton
+                aria-label={`Face ${activeCharacter.name} ${facing}`}
+                aria-pressed={activeFacing === facing}
+                className="size-11 min-h-11 min-w-11 rounded-xl p-0"
+                disabled={!engineReady}
+                key={facing}
+                onClick={() => chooseFacing(facing)}
+                size="inline"
+                title={`Face ${facing}`}
+                type="button"
+                variant={activeFacing === facing ? "navy" : "surface"}
+              >
+                {facing === "left" ? (
+                  <ArrowLeft aria-hidden="true" className="size-5" />
+                ) : (
+                  <ArrowRight aria-hidden="true" className="size-5" />
+                )}
+              </ActionButton>
+            ))}
           </div>
         </section>
       </div>
