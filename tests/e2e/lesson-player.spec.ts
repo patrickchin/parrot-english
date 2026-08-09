@@ -5,6 +5,8 @@ const fullSceneLessonPath =
   "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
 const shortFullSceneLessonPath =
   "/lessons/parrot/02-garden-colors/variants/full-scene";
+const bedtimeFullSceneLessonPath =
+  "/lessons/parrot/07-bedtime-story/variants/full-scene/scenes/1";
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
 
@@ -405,6 +407,65 @@ test("the full-scene route keeps one stable 16:9 frame throughout the lesson", a
   await expect(
     page.getByRole("region", { name: "Lesson progress" }),
   ).toContainText("The Finished Basket");
+  await expectNoPageOverflow(page);
+});
+
+test("a bedtime full-scene route starts the matching lesson and advances boxed artwork", async ({
+  page,
+}) => {
+  const viewport = { width: 390, height: 844 };
+  await page.setViewportSize(viewport);
+  await page.goto(bedtimeFullSceneLessonPath);
+
+  const introduction = page.getByRole("region", {
+    name: "Lesson introduction",
+  });
+  await expect(
+    introduction.getByRole("heading", { name: "Good Night, Peppa" }),
+  ).toBeVisible();
+
+  await installAudioDelay(page, 5_000);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const progress = page.getByRole("region", { name: "Lesson progress" });
+  const artwork = page.getByRole("region", { name: "Full-scene artwork" });
+  const firstImage = artwork.getByRole("img", {
+    name: "Dolly closes the storybook while Peppa rests awake on the evening meadow blanket",
+  });
+  const firstArtworkBox = await visibleBox(artwork);
+
+  await expect(progress).toContainText("The Story Ends");
+  await expect(firstImage).toHaveAttribute(
+    "src",
+    "/assets/full-scenes/07-bedtime-story/01-story-ends.webp",
+  );
+  await expect(page.getByText("The story is finished.", { exact: true })).toBeVisible();
+  await expect(artwork.getByText("Wide · 16:9", { exact: true })).toBeVisible();
+  expect(firstArtworkBox.width).toBeLessThan(viewport.width);
+  expect(firstArtworkBox.height).toBeLessThan(viewport.height);
+
+  await page
+    .getByRole("navigation", { name: "Story playback controls" })
+    .getByRole("button", { name: "Next scene" })
+    .click();
+
+  await expect(page).toHaveURL(
+    "/lessons/parrot/07-bedtime-story/variants/full-scene/scenes/2",
+  );
+  await expect(progress).toContainText("A Quiet Evening");
+  await expect(
+    artwork.getByRole("img", {
+      name: "Peppa and Dolly sit quietly by the lantern beneath the crescent moon",
+    }),
+  ).toHaveAttribute(
+    "src",
+    "/assets/full-scenes/07-bedtime-story/02-quiet-evening.webp",
+  );
+  await expect(page.getByText("The moon is high.", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-character]")).toHaveCount(0);
+  const secondArtworkBox = await visibleBox(artwork);
+  expect(Math.abs(secondArtworkBox.width - firstArtworkBox.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(secondArtworkBox.height - firstArtworkBox.height)).toBeLessThanOrEqual(2);
   await expectNoPageOverflow(page);
 });
 

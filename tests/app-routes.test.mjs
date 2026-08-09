@@ -81,6 +81,23 @@ describe("app route helpers", () => {
     );
   });
 
+  it("builds and safely preserves a non-lesson-two full-scene path", () => {
+    const scenePath = routes.getParrotLessonVariantScenePath(
+      "07-bedtime-story",
+      "full-scene",
+      1,
+    );
+
+    assert.equal(
+      scenePath,
+      "/lessons/parrot/07-bedtime-story/variants/full-scene/scenes/2",
+    );
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch(scenePath)),
+      scenePath,
+    );
+  });
+
   it("rejects empty and dot-segment lesson IDs", () => {
     for (const lessonId of ["", "   ", ".", ".."]) {
       assert.throws(
