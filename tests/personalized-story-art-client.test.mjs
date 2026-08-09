@@ -67,7 +67,7 @@ describe("personalized story art client API", () => {
 
     const parsed = parsePersonalizedStoryArtMetadata({
       enabled: true,
-      guardianConsentVersion: "2026-08-10",
+      guardianConsentVersion: "2026-08-09",
       hasStoredArt: true,
       stories: {
         "the-red-ball": {
@@ -84,7 +84,7 @@ describe("personalized story art client API", () => {
 
     assert.deepEqual(parsed, {
       enabled: true,
-      guardianConsentVersion: "2026-08-10",
+      guardianConsentVersion: "2026-08-09",
       hasStoredArt: true,
       stories: {
         "the-red-ball": {
@@ -168,6 +168,25 @@ describe("personalized story art client API", () => {
     assert.equal(metadata.iptc, undefined);
   });
 
+  it("refuses to substitute a blank portrait when browser image decoding is unavailable", async () => {
+    const { normalizePersonalizedStoryArtUpload } = requireClientApi();
+    const source = new File([new Uint8Array([1, 2, 3])], "portrait.jpg", {
+      type: "image/jpeg",
+    });
+
+    await assert.rejects(
+      normalizePersonalizedStoryArtUpload(source, {
+        createCanvas() {
+          return null;
+        },
+        async decodeImage() {
+          return null;
+        },
+      }),
+      /prepare|decode|browser/i,
+    );
+  });
+
   it("generates private art by uploading a normalized PNG and parsing the returned metadata", async () => {
     const {
       generatePersonalizedStoryArt,
@@ -175,7 +194,7 @@ describe("personalized story art client API", () => {
     } = requireClientApi();
     const request = jsonFetch({
       enabled: true,
-      guardianConsentVersion: "2026-08-10",
+      guardianConsentVersion: "2026-08-09",
       hasStoredArt: true,
       stories: {
         "the-red-ball": {
@@ -202,18 +221,35 @@ describe("personalized story art client API", () => {
 
     const result = await generatePersonalizedStoryArt(
       {
-        guardianConsentVersion: "2026-08-10",
+        guardianConsentVersion: "2026-08-09",
         photo: source,
         storyId: "the-red-ball",
       },
-      { fetch: request.fetch },
+      {
+        fetch: request.fetch,
+        normalization: {
+          createCanvas() {
+            return {
+              getContext() {
+                return { clearRect() {}, drawImage() {} };
+              },
+              toBlob(callback) {
+                callback(new Blob([sourceBytes], { type: "image/png" }));
+              },
+            };
+          },
+          async decodeImage() {
+            return { height: 480, width: 480 };
+          },
+        },
+      },
     );
 
     assert.deepEqual(
       result,
       parsePersonalizedStoryArtMetadata({
         enabled: true,
-        guardianConsentVersion: "2026-08-10",
+        guardianConsentVersion: "2026-08-09",
         hasStoredArt: true,
         stories: {
           "the-red-ball": {
@@ -235,7 +271,7 @@ describe("personalized story art client API", () => {
     assert.ok(request.calls[0][1].body instanceof FormData);
     assert.equal(
       request.calls[0][1].body.get("guardianConsentVersion"),
-      "2026-08-10",
+      "2026-08-09",
     );
     assert.equal(
       request.calls[0][1].body.get("guardianConsentAccepted"),
@@ -249,7 +285,7 @@ describe("personalized story art client API", () => {
     const { loadPersonalizedStoryArt } = requireClientApi();
     const request = jsonFetch({
       enabled: true,
-      guardianConsentVersion: "2026-08-10",
+      guardianConsentVersion: "2026-08-09",
       hasStoredArt: false,
       stories: {},
       updatedAt: null,

@@ -20,7 +20,7 @@ type PhotoState = "deleted" | "empty" | "ready";
 function readyPhotoPayload() {
   return {
     enabled: true,
-    guardianConsentVersion: "2026-08-10",
+    guardianConsentVersion: "2026-08-09",
     hasStoredArt: true,
     stories: {
       "the-red-ball": {
@@ -32,7 +32,7 @@ function readyPhotoPayload() {
         },
       },
     },
-    updatedAt: "2026-08-10T12:00:00.000Z",
+    updatedAt: "2026-08-09T12:00:00.000Z",
   };
 }
 
@@ -109,7 +109,7 @@ async function mockPersonalizedStoryArtApis(
               ? readyPhotoPayload()
               : {
                   enabled: true,
-                  guardianConsentVersion: "2026-08-10",
+                  guardianConsentVersion: "2026-08-09",
                   hasStoredArt: false,
                   stories: {},
                   updatedAt: null,

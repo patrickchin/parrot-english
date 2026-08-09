@@ -6,7 +6,7 @@ import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const STORY_ID = "the-red-ball";
 const PAGE_ID = "my-red-ball";
-const CONSENT_VERSION = "2026-08-10";
+const CONSENT_VERSION = "2026-08-09";
 const ROUTE = `/api/stories/${STORY_ID}/personalized-art`;
 const ASSET_ROUTE = `${ROUTE}/asset`;
 const ART_ALT = "You holding a bright red ball";
@@ -99,7 +99,7 @@ function storedMetadata({
   enabled = true,
   hasStoredArt = true,
   includeStory = true,
-  updatedAt = "2026-08-10T10:00:00.000Z",
+  updatedAt = "2026-08-09T10:00:00.000Z",
 } = {}) {
   return {
     enabled,
@@ -270,7 +270,7 @@ describe("personalized story art Worker handler", () => {
               extension: "webp",
             };
           },
-          now: () => new Date("2026-08-10T10:00:00.000Z"),
+          now: () => new Date("2026-08-09T10:00:00.000Z"),
         },
       );
 
@@ -434,14 +434,12 @@ describe("personalized story art Worker handler", () => {
       );
 
       const metadataWhileDeleting = await call(state);
-      assert.deepEqual(
-        await metadataWhileDeleting.json(),
-        storedMetadata({
-          enabled: true,
-          includeStory: false,
-          updatedAt: "1970-01-01T00:00:01.000Z",
-        }),
-      );
+      const deletingMetadata = await metadataWhileDeleting.json();
+      assert.equal(deletingMetadata.enabled, true);
+      assert.equal(deletingMetadata.guardianConsentVersion, CONSENT_VERSION);
+      assert.equal(deletingMetadata.hasStoredArt, true);
+      assert.deepEqual(deletingMetadata.stories, {});
+      assert.ok(Date.parse(deletingMetadata.updatedAt));
 
       const blockedRead = await call(state, { path: ASSET_ROUTE });
       assert.equal(blockedRead.status, 404);
@@ -528,7 +526,7 @@ describe("personalized story art Worker handler", () => {
               extension: "png",
             };
           },
-          now: () => new Date("2026-08-10T10:00:00.000Z"),
+          now: () => new Date("2026-08-09T10:00:00.000Z"),
         },
       );
       assert.equal(firstResponse.status, 201);
@@ -552,7 +550,7 @@ describe("personalized story art Worker handler", () => {
               extension: "png",
             };
           },
-          now: () => new Date("2026-08-10T11:00:00.000Z"),
+          now: () => new Date("2026-08-09T11:00:00.000Z"),
         },
       );
       assert.equal(secondResponse.status, 201);

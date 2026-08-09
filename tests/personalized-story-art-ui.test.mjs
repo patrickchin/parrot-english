@@ -198,4 +198,23 @@ describe("personalized story art UI", () => {
     assert.match(removable, /Delete learner photo/);
     assert.match(removable, /You holding a bright red ball/);
   });
+
+  it("keeps private-art deletion available when generation is disabled or a purge is pending", () => {
+    const html = renderSetupPanel({
+      consentChecked: false,
+      featureEnabled: false,
+      hasStoredArt: true,
+      isGenerating: false,
+      onConsentChange() {},
+      onFileChange() {},
+      onGenerate() {},
+      onRemove() {},
+      personalizedArtwork: null,
+      storyTitle: "The Red Ball",
+    });
+
+    assert.match(html, /aria-label="Personalized story art"/);
+    assert.match(html, /Delete stored story art/);
+    assert.doesNotMatch(html, /Upload learner photo|Generate story art/);
+  });
 });
