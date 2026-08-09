@@ -95,7 +95,7 @@ function LessonCardView({
     <article
       className={cardClassName({
         className:
-          "flex min-w-0 items-center gap-2 overflow-hidden p-2 sm:gap-3",
+          "flex min-w-0 items-center gap-2 overflow-hidden px-2 py-1.5 sm:gap-3 sm:p-2",
       })}
     >
       <div className="relative size-19 shrink-0 overflow-hidden rounded-xl min-[360px]:size-[5.375rem] sm:h-24 sm:w-32 lg:w-40">
