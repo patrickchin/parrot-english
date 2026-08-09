@@ -10,9 +10,15 @@ import { createServer } from "vite";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const publicDir = fileURLToPath(new URL("../public", import.meta.url));
-const lessonFile = fileURLToPath(
-  new URL("../content/lessons/02-garden-colors.json", import.meta.url),
-);
+const expectedLessonIds = [
+  "01-peppas-high-ball",
+  "02-garden-colors",
+  "03-snack-time",
+  "04-playground-words",
+  "05-market-day",
+  "06-picnic-time",
+  "07-bedtime-story",
+];
 
 const vite = await createServer({
   appType: "custom",
@@ -62,17 +68,34 @@ function escapeHtmlAttribute(value) {
     .replaceAll(">", "&gt;");
 }
 
-function getLessonTwoVariant() {
+function getFullSceneVariants() {
   assert.ok(
     Array.isArray(FULL_SCENE_LESSON_VARIANTS),
     "Expected FULL_SCENE_LESSON_VARIANTS to be an array",
   );
-  const variant = FULL_SCENE_LESSON_VARIANTS.find(
-    (entry) =>
-      entry.baseLessonId === "02-garden-colors" && entry.id === "full-scene",
+
+  return expectedLessonIds.map((lessonId) => {
+    const matches = FULL_SCENE_LESSON_VARIANTS.filter(
+      (entry) => entry.baseLessonId === lessonId && entry.id === "full-scene",
+    );
+    assert.equal(
+      matches.length,
+      1,
+      `Expected exactly one full-scene variant for ${lessonId}`,
+    );
+    return matches[0];
+  });
+}
+
+function getDeclaredReadyMadeVariants() {
+  assert.ok(
+    Array.isArray(FULL_SCENE_LESSON_VARIANTS),
+    "Expected FULL_SCENE_LESSON_VARIANTS to be an array",
   );
-  assert.ok(variant, "Expected lesson 02 to expose a full-scene variant");
-  return variant;
+  return FULL_SCENE_LESSON_VARIANTS.filter(
+    (entry) =>
+      entry.id === "full-scene" && expectedLessonIds.includes(entry.baseLessonId),
+  );
 }
 
 function renderStage(scene) {
@@ -89,36 +112,61 @@ function renderStage(scene) {
   );
 }
 
-test("lesson 02 full-scene artwork keeps one wide frame across all five scenes", async () => {
-  const lesson = JSON.parse(await readFile(lessonFile, "utf8"));
-  const variant = getLessonTwoVariant();
+test("every ready-made lesson has one five-scene wide artwork variant", async () => {
+  const variants = getFullSceneVariants();
+  const allSources = [];
 
-  assert.equal(lesson.scenes.length, 5);
-  assert.equal(variant.scenes.length, lesson.scenes.length);
-  assert.deepEqual(
-    variant.scenes.map((scene) => scene.frame.preset),
-    Array.from({ length: lesson.scenes.length }, () => "wide"),
-  );
-  assert.equal(
-    new Set(variant.scenes.map((scene) => scene.image.src)).size,
-    lesson.scenes.length,
-    "Expected one distinct full-scene image per lesson scene",
-  );
-
-  for (const scene of variant.scenes) {
-    assert.match(
-      scene.image.src,
-      /^\/assets\/full-scenes\/02-garden-colors\/.+\.webp$/,
+  for (const [index, variant] of variants.entries()) {
+    const lessonId = expectedLessonIds[index];
+    const lessonFile = fileURLToPath(
+      new URL(`../content/lessons/${lessonId}.json`, import.meta.url),
     );
-    assert.ok(scene.image.alt.trim(), "Expected descriptive full-scene alt text");
+    const lesson = JSON.parse(await readFile(lessonFile, "utf8"));
+
+    assert.equal(lesson.scenes.length, 5, `Expected five scenes in ${lessonId}`);
+    assert.equal(variant.scenes.length, lesson.scenes.length);
+    assert.deepEqual(
+      variant.scenes.map((scene) => scene.frame.preset),
+      Array.from({ length: lesson.scenes.length }, () => "wide"),
+    );
+
+    for (const scene of variant.scenes) {
+      assert.match(
+        scene.image.src,
+        new RegExp(`^/assets/full-scenes/${lessonId}/.+\\.webp$`),
+      );
+      assert.ok(
+        scene.image.alt.trim(),
+        `Expected descriptive full-scene alt text for ${lessonId}`,
+      );
+      allSources.push(scene.image.src);
+    }
   }
+
+  assert.equal(allSources.length, 35);
+  assert.equal(
+    new Set(allSources).size,
+    allSources.length,
+    "Expected all 35 full-scene artwork sources to be globally unique",
+  );
 });
 
-test("every lesson 02 full-scene source is an existing 16:9 WebP file", async () => {
-  const variant = getLessonTwoVariant();
+test("every declared ready-made full-scene source is an existing 1672x941 WebP file", async () => {
+  const variants = getDeclaredReadyMadeVariants();
+  const allSources = variants.flatMap((variant) =>
+    variant.scenes.map((scene) => scene.image.src),
+  );
 
-  for (const scene of variant.scenes) {
-    const filePath = join(publicDir, scene.image.src.replace(/^\//, ""));
+  assert.equal(
+    variants.length,
+    expectedLessonIds.length,
+    "Expected asset declarations for all seven ready-made lessons",
+  );
+  assert.equal(allSources.length, 35);
+  assert.equal(new Set(allSources).size, allSources.length);
+
+  for (const source of allSources) {
+    const filePath = join(publicDir, source.replace(/^\//, ""));
     const bytes = await readFile(filePath);
 
     assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
@@ -126,11 +174,8 @@ test("every lesson 02 full-scene source is an existing 16:9 WebP file", async ()
 
     const metadata = await sharp(filePath).metadata();
     assert.equal(metadata.format, "webp");
-    assert.ok(metadata.width && metadata.height);
-    assert.ok(
-      Math.abs(metadata.width / metadata.height - 16 / 9) < 0.01,
-      `Expected ${scene.image.src} to use a 16:9 source ratio`,
-    );
+    assert.equal(metadata.width, 1672, `Expected ${source} width`);
+    assert.equal(metadata.height, 941, `Expected ${source} height`);
   }
 });
 
