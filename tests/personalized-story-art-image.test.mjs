@@ -24,6 +24,28 @@ async function createTaggedPng({ width, height }) {
     .toBuffer();
 }
 
+function movePngChunkAfterIdat(buffer, movedType) {
+  const bytes = Buffer.from(buffer);
+  const signature = bytes.subarray(0, 8);
+  const chunks = [];
+  let offset = 8;
+  while (offset < bytes.length) {
+    const length = bytes.readUInt32BE(offset);
+    const end = offset + 12 + length;
+    chunks.push({
+      bytes: bytes.subarray(offset, end),
+      type: bytes.toString("ascii", offset + 4, offset + 8),
+    });
+    offset = end;
+  }
+  const movedIndex = chunks.findIndex(({ type }) => type === movedType);
+  assert.notEqual(movedIndex, -1, `Expected ${movedType} in PNG fixture`);
+  const [moved] = chunks.splice(movedIndex, 1);
+  const firstIdatIndex = chunks.findIndex(({ type }) => type === "IDAT");
+  chunks.splice(firstIdatIndex + 1, 0, moved);
+  return Buffer.concat([signature, ...chunks.map(({ bytes: chunkBytes }) => chunkBytes)]);
+}
+
 describe("personalized story art image pipeline", () => {
   it("rejects forged PNG uploads and corrupt critical-chunk checksums", async () => {
     const { createPersonalizedStoryArtImage } = await import(
@@ -136,6 +158,7 @@ describe("personalized story art image pipeline", () => {
     assert.equal(providerInput.form.get("height"), "768");
     assert.equal(providerInput.form.get("input_image_0").type, "image/png");
     assert.equal(providerInput.form.get("input_image_1").type, "image/png");
+    assert.equal(providerInput.form.get("input_image_1").name, "learner.png");
 
     const learnerSource = Buffer.from(
       await providerInput.form.get("input_image_1").arrayBuffer(),
@@ -150,6 +173,42 @@ describe("personalized story art image pipeline", () => {
     const outputMetadata = await sharp(result.bytes).metadata();
     assert.equal(outputMetadata.format, "webp");
     assert.equal(result.contentType, "image/webp");
+    assert.equal(result.extension, "webp");
+  });
+
+  it("rejects a palette chunk that appears after image data", async () => {
+    const { createPersonalizedStoryArtImage } = await import(
+      "../worker/personalized-story-art-image.ts"
+    );
+    const palettePng = await sharp({
+      create: {
+        width: 480,
+        height: 320,
+        channels: 4,
+        background: { r: 255, g: 0, b: 0, alpha: 1 },
+      },
+    })
+      .png({ palette: true, colours: 16 })
+      .toBuffer();
+    const invalidOrder = movePngChunkAfterIdat(palettePng, "PLTE");
+    let aiCalls = 0;
+
+    await assert.rejects(
+      createPersonalizedStoryArtImage({
+        ai: {
+          async run() {
+            aiCalls += 1;
+            return { image: "" };
+          },
+        },
+        prompt: "Replace only the child.",
+        sceneImage: new File([palettePng], "scene.png", { type: "image/png" }),
+        sourceImage: new File([invalidOrder], "source.png", {
+          type: "image/png",
+        }),
+      }),
+    );
+    assert.equal(aiCalls, 0);
   });
 
   it("rejects provider output that is not a supported raster image", async () => {

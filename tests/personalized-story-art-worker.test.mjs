@@ -161,6 +161,19 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("returns not found for malformed encoded story identifiers", async () => {
+    const state = seedDatabase();
+    try {
+      const response = await call(state, {
+        path: "/api/stories/%E0%A4%A/personalized-art",
+      });
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+    } finally {
+      state.close();
+    }
+  });
+
   it("rejects oversized multipart uploads before image generation", async () => {
     const state = seedDatabase();
     let generationCalls = 0;
