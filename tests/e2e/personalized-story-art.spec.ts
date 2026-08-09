@@ -27,7 +27,7 @@ function readyPhotoPayload() {
         pages: {
           "my-red-ball": {
             alt: personalizedStoryAlt,
-            src: "/api/stories/the-red-ball/personalized-art/asset",
+            src: "/api/stories/the-red-ball/personalized-art/asset?v=1786276800000",
           },
         },
       },

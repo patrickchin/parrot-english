@@ -80,7 +80,10 @@ function emptyMetadata(): PersonalizedStoryArtMetadata {
   return { stories: {} };
 }
 
-function normalizeArtwork(value: unknown): PersonalizedStoryArtwork | null {
+function normalizeArtwork(
+  value: unknown,
+  storyId: string,
+): PersonalizedStoryArtwork | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as { alt?: unknown; src?: unknown };
   if (
@@ -91,7 +94,13 @@ function normalizeArtwork(value: unknown): PersonalizedStoryArtwork | null {
   ) {
     return null;
   }
-  return { alt: candidate.alt.trim(), src: candidate.src.trim() };
+  const src = candidate.src.trim();
+  const expectedPath = `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset`;
+  const suffix = src.slice(expectedPath.length);
+  if (!src.startsWith(expectedPath) || (suffix !== "" && !/^\?v=\d+$/.test(suffix))) {
+    return null;
+  }
+  return { alt: candidate.alt.trim(), src };
 }
 
 export function parsePersonalizedStoryArtMetadata(
@@ -117,7 +126,7 @@ export function parsePersonalizedStoryArtMetadata(
 
       const pages: Record<string, PersonalizedStoryArtwork> = {};
       for (const [pageId, pageValue] of Object.entries(pageContainer)) {
-        const artwork = normalizeArtwork(pageValue);
+        const artwork = normalizeArtwork(pageValue, storyId);
         if (artwork) pages[pageId] = artwork;
       }
 

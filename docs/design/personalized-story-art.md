@@ -190,6 +190,10 @@ The intended first-pass flow is:
    - `Cache-Control: private, no-store`
    - `X-Content-Type-Options: nosniff`
 
+   Metadata adds the row update time as a same-origin `?v=` query so React
+   reloads the one stable object immediately after regeneration. The browser
+   rejects any artwork URL outside this authenticated route shape.
+
    This derivative is the only image used in the story page and lesson portrait.
 
 ## Storage Contract

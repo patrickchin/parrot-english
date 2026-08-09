@@ -148,7 +148,7 @@ function metadataPayload(
               pages: {
                 [config.pageId]: {
                   alt: config.alt,
-                  src: `/api/stories/${row.storyId}/personalized-art/asset`,
+                  src: `/api/stories/${encodeURIComponent(row.storyId)}/personalized-art/asset?v=${row.updatedAt.getTime()}`,
                 },
               },
             },
