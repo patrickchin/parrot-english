@@ -7,7 +7,7 @@ import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const STORY_ID = "the-red-ball";
 const PAGE_ID = "my-red-ball";
-const CONSENT_VERSION = "2026-08-09";
+const CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 const ROUTE = `/api/stories/${STORY_ID}/personalized-art`;
 const ASSET_ROUTE = `${ROUTE}/asset`;
 const ART_ALT = "You holding a bright red ball";
@@ -500,7 +500,62 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
-  it("reuses the same storage key when regenerating existing personalized art", async () => {
+  it("blocks generation and asset reads after account deletion is tombstoned", async () => {
+    const state = seedDatabase();
+    const { markAccountDeletionPending } = await import(
+      "../worker/account-deletion.ts"
+    );
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO personalized_story_art (
+            id, auth_user_id, story_id, status, r2_object_key, content_type,
+            guardian_consent_version, guardian_consent_at, provider,
+            prompt_version, created_at, updated_at
+          ) VALUES (?, ?, ?, 'ready', ?, 'image/webp', ?, ?,
+            'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+        )
+        .run(
+          "art-1",
+          "user-1",
+          STORY_ID,
+          `personalized-story-art/user-1/${STORY_ID}/versions/one.webp`,
+          CONSENT_VERSION,
+          1_000,
+          1_000,
+          1_000,
+        );
+      await markAccountDeletionPending(state.database, "user-1");
+
+      const metadata = await call(state);
+      assert.equal(metadata.status, 200);
+      assert.deepEqual(
+        await metadata.json(),
+        storedMetadata({
+          enabled: false,
+          includeStory: false,
+          updatedAt: "1970-01-01T00:00:01.000Z",
+        }),
+      );
+
+      const upload = await call(state, {
+        body: uploadForm(),
+        method: "POST",
+      });
+      assert.equal(upload.status, 409);
+      assert.deepEqual(await upload.json(), {
+        error: "account_deletion_pending",
+        message: "Account deletion is in progress.",
+      });
+
+      const asset = await call(state, { path: ASSET_ROUTE });
+      assert.equal(asset.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("stages each regeneration under a new key and deletes the old object before updating its audit row", async () => {
     const state = seedDatabase();
     const generatedPng = await sharp({
       create: {
@@ -511,6 +566,7 @@ describe("personalized story art Worker handler", () => {
       },
     }).png().toBuffer();
     const putKeys = [];
+    const deleteEvents = [];
     try {
       const firstResponse = await call(
         state,
@@ -524,6 +580,7 @@ describe("personalized story art Worker handler", () => {
           }),
         },
         {
+          createObjectId: () => "generation-1",
           async generateImage() {
             return {
               bytes: new Uint8Array(generatedPng),
@@ -545,9 +602,18 @@ describe("personalized story art Worker handler", () => {
             async put(key) {
               putKeys.push(key);
             },
+            async delete(key) {
+              const row = state.sqlite
+                .prepare(
+                  "SELECT r2_object_key FROM personalized_story_art WHERE auth_user_id = ? AND story_id = ?",
+                )
+                .get("user-1", STORY_ID);
+              deleteEvents.push([key, row.r2_object_key]);
+            },
           }),
         },
         {
+          createObjectId: () => "generation-2",
           async generateImage() {
             return {
               bytes: new Uint8Array(generatedPng),
@@ -560,14 +626,106 @@ describe("personalized story art Worker handler", () => {
       );
       assert.equal(secondResponse.status, 201);
       assert.deepEqual(putKeys, [
-        "personalized-story-art/user-1/the-red-ball/current",
-        "personalized-story-art/user-1/the-red-ball/current",
+        "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
+        "personalized-story-art/user-1/the-red-ball/versions/generation-2.png",
+      ]);
+      assert.deepEqual(deleteEvents, [
+        [
+          "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
+          "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
+        ],
       ]);
       assert.equal(
         state.sqlite
           .prepare("SELECT count(*) AS count FROM personalized_story_art")
           .get().count,
         1,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT r2_object_key FROM personalized_story_art WHERE auth_user_id = ? AND story_id = ?",
+          )
+          .get("user-1", STORY_ID).r2_object_key,
+        "personalized-story-art/user-1/the-red-ball/versions/generation-2.png",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps the old audit row and removes the staged candidate if old-object purge fails", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
+    const candidateKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+    const deleteKeys = [];
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO personalized_story_art (
+            id, auth_user_id, story_id, status, r2_object_key, content_type,
+            guardian_consent_version, guardian_consent_at, provider,
+            prompt_version, created_at, updated_at
+          ) VALUES (?, ?, ?, 'ready', ?, 'image/png', ?, ?,
+            'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+        )
+        .run(
+          "art-1",
+          "user-1",
+          STORY_ID,
+          oldKey,
+          CONSENT_VERSION,
+          1_000,
+          1_000,
+          1_000,
+        );
+
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              deleteKeys.push(key);
+              if (key === oldKey) throw new Error("temporary R2 failure");
+            },
+          }),
+        },
+        {
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+        },
+      );
+
+      assert.equal(response.status, 502);
+      assert.deepEqual(await response.json(), {
+        error: "storage_delete_failed",
+      });
+      assert.deepEqual(deleteKeys, [oldKey, candidateKey]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT r2_object_key FROM personalized_story_art WHERE id = ?",
+          )
+          .get("art-1").r2_object_key,
+        oldKey,
       );
     } finally {
       state.close();

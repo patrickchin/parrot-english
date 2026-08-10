@@ -6,7 +6,7 @@ const narrowPhone = { width: 280, height: 568 };
 const storyPath = "/stories/the-red-ball/pages/1";
 const lessonPath = "/lessons/my/personalized-speaking-turn/scenes/1";
 const guardianConsentLabel =
-  "I confirm I am the child's guardian or have permission to use this photo.";
+  "I am 18 or older. I confirm I am the child's guardian or have permission to use this photo, and I agree to send a cropped copy to Cloudflare Workers AI to make the illustration.";
 const personalizedStoryAlt = "You holding a bright red ball";
 const lessonPortraitAlt = "You in storybook style";
 const placeholderAlt = "Artwork placeholder for The Red Ball, page 1";
@@ -20,7 +20,7 @@ type PhotoState = "deleted" | "empty" | "ready";
 function readyPhotoPayload() {
   return {
     enabled: true,
-    guardianConsentVersion: "2026-08-09",
+    guardianConsentVersion: "guardian-photo-cloudflare-v1",
     hasStoredArt: true,
     stories: {
       "the-red-ball": {
@@ -109,7 +109,7 @@ async function mockPersonalizedStoryArtApis(
               ? readyPhotoPayload()
               : {
                   enabled: true,
-                  guardianConsentVersion: "2026-08-09",
+                  guardianConsentVersion: "guardian-photo-cloudflare-v1",
                   hasStoredArt: false,
                   stories: {},
                   updatedAt: null,
