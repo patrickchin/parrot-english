@@ -14,11 +14,13 @@ import {
 
 export type PixelWorldDirection = "down" | "left" | "right" | "up";
 export type PixelWorldEmote = "happy" | "idle" | "surprised" | "talking";
+export type PixelWorldFacing = "left" | "right";
 export type PixelWorldParallaxMode = "ambient" | "camera" | "off";
 
 export interface PixelWorldActorState {
   characterId: string;
   emote: PixelWorldEmote;
+  facing?: PixelWorldFacing;
   heldItemId: string | null;
   slotId: string;
 }
@@ -31,6 +33,10 @@ export interface PixelWorldEngineOptions {
 }
 
 export interface PixelWorldEngineCallbacks {
+  onCharacterFacingChange?: (
+    characterId: string,
+    facing: PixelWorldFacing,
+  ) => void;
   onError?: (error: Error) => void;
   onReady?: () => void;
 }
@@ -40,6 +46,10 @@ export interface PixelWorldController {
   nudge: (direction: PixelWorldDirection) => void;
   setActiveCharacter: (characterId: string) => void;
   setCharacterEmote: (characterId: string, emote: PixelWorldEmote) => void;
+  setCharacterFacing: (
+    characterId: string,
+    facing: PixelWorldFacing,
+  ) => void;
   setCharacterHeldItem: (characterId: string, itemId: string | null) => void;
   setCharacterPosition: (characterId: string, slotId: string) => void;
   setDirection: (direction: PixelWorldDirection, active: boolean) => void;
@@ -57,7 +67,9 @@ type HoldMetadata = {
   originY: number;
 };
 type CharacterConfig = (typeof PIXEL_WORLD_PACK.characters)[number];
-type CharacterState = PixelWorldActorState;
+type CharacterState = Omit<PixelWorldActorState, "facing"> & {
+  facing: PixelWorldFacing;
+};
 type WorldObject = {
   assetId: string;
   capabilities: readonly string[];
@@ -79,6 +91,7 @@ type ActorRuntime = {
   heldItem: PhaserType.GameObjects.Image | null;
   heldItemDefinition: (WorldObject & { hold: HoldMetadata }) | null;
   holdPresentation: "back" | "front-covered" | "none";
+  pose: PixelWorldEmote | "walking";
   sprite: PhaserType.Physics.Arcade.Sprite;
   state: CharacterState;
 };
@@ -169,6 +182,8 @@ export function createPixelWorldEngine(
     actorStates.set(character.id, {
       characterId: character.id,
       emote: actor.emote as PixelWorldEmote,
+      facing:
+        "facing" in actor && actor.facing === "left" ? "left" : "right",
       heldItemId: actor.heldItemId,
       slotId: actor.slotId,
     });
@@ -179,6 +194,7 @@ export function createPixelWorldEngine(
   let destroyed = false;
   let viewport = getViewport(host);
   let sceneBridge: {
+    faceActor: (characterId: string) => void;
     nudge: (direction: PixelWorldDirection) => void;
     placeActor: (characterId: string) => void;
     refreshActorHold: (characterId: string) => void;
@@ -192,6 +208,23 @@ export function createPixelWorldEngine(
 
   const reportError = (value: unknown, fallback: string) => {
     if (!destroyed) callbacks.onError?.(toError(value, fallback));
+  };
+
+  const setActorFacingState = (
+    state: CharacterState,
+    facing: PixelWorldFacing,
+  ) => {
+    if (state.facing === facing) return false;
+    state.facing = facing;
+    callbacks.onCharacterFacingChange?.(state.characterId, facing);
+    return true;
+  };
+
+  const syncFacingData = () => {
+    host.dataset.facing = actorStates.get(activeCharacterId)?.facing ?? "right";
+    for (const actor of actorStates.values()) {
+      host.dataset[`${actor.characterId}Facing`] = actor.facing;
+    }
   };
 
   class PixelWorldScene extends Phaser.Scene {
@@ -224,6 +257,7 @@ export function createPixelWorldEngine(
     create() {
       try {
         sceneBridge = {
+          faceActor: (characterId) => this.faceActor(characterId),
           nudge: (direction) => this.nudge(direction),
           placeActor: (characterId) => this.placeActor(characterId),
           refreshActorHold: (characterId) => this.refreshActorHold(characterId),
@@ -252,6 +286,7 @@ export function createPixelWorldEngine(
           sprite
             .setCollideWorldBounds(true)
             .setDepth(getDepthForFootY(position.y))
+            .setFlipX(state.facing === "left")
             .setOrigin(0.5, 1)
             .setScale(TEXTURE_SCALE);
           const body = sprite.body as PhaserType.Physics.Arcade.Body;
@@ -265,6 +300,7 @@ export function createPixelWorldEngine(
             heldItem: null,
             heldItemDefinition: null,
             holdPresentation: "none",
+            pose: state.emote,
             sprite,
             state,
           });
@@ -307,7 +343,13 @@ export function createPixelWorldEngine(
       if (velocity.lengthSq() > 0) {
         velocity.normalize().scale(PLAYER_SPEED);
         activeActor.sprite.setVelocity(velocity.x, velocity.y);
-        if (velocity.x !== 0) activeActor.sprite.setFlipX(velocity.x < 0);
+        if (velocity.x !== 0) {
+          setActorFacingState(
+            activeActor.state,
+            velocity.x < 0 ? "left" : "right",
+          );
+          this.applyActorFacing(activeActor);
+        }
         this.playAnimation(activeActor, "walking");
       } else {
         this.playAnimation(activeActor, activeActor.state.emote);
@@ -335,6 +377,12 @@ export function createPixelWorldEngine(
         this.nudgeTimers.delete(direction);
       });
       this.nudgeTimers.set(direction, timer);
+    }
+
+    faceActor(characterId: string) {
+      const actor = this.getActor(characterId);
+      this.applyActorFacing(actor);
+      this.syncStatus();
     }
 
     refreshActorHold(characterId: string) {
@@ -549,6 +597,7 @@ export function createPixelWorldEngine(
       actor: ActorRuntime,
       key: PixelWorldEmote | "walking",
     ) {
+      actor.pose = key;
       if (reducedMotion?.matches) {
         actor.sprite.anims.stop();
         actor.sprite.setFrame(POSE_START[key]);
@@ -609,6 +658,11 @@ export function createPixelWorldEngine(
           : "none";
     }
 
+    private applyActorFacing(actor: ActorRuntime) {
+      actor.sprite.setFlipX(actor.state.facing === "left");
+      this.updateActorHold(actor, actor.pose);
+    }
+
     private syncStatus() {
       if (this.actors.size === 0) return;
       const activeActor = this.getActiveActor();
@@ -625,6 +679,7 @@ export function createPixelWorldEngine(
       host.dataset.cameraZoom = String(this.cameras.main.zoom);
       host.dataset.characterCount = String(this.actors.size);
       host.dataset.frame = String(this.getActorFrameIndex(activeActor));
+      syncFacingData();
       host.dataset.heldItem = activeActor.state.heldItemId ?? "none";
       host.dataset.parallaxMode = reducedMotion?.matches ? "off" : options.parallaxMode;
       host.dataset.ready = String(this.ready);
@@ -717,6 +772,7 @@ export function createPixelWorldEngine(
   host.dataset.parallaxMode = options.parallaxMode;
   host.dataset.characterCount = String(actorStates.size);
   host.dataset.activeCharacter = activeCharacterId;
+  syncFacingData();
   host.dataset.heldItem = activeState?.heldItemId ?? "none";
   for (const actor of actorStates.values()) {
     host.dataset[`${actor.characterId}HeldItem`] = actor.heldItemId ?? "none";
@@ -741,6 +797,15 @@ export function createPixelWorldEngine(
     const state = requireActorState(characterId);
     state.emote = emote;
     sceneBridge?.sync();
+  };
+  const setActorFacing = (
+    characterId: string,
+    facing: PixelWorldFacing,
+  ) => {
+    const state = requireActorState(characterId);
+    setActorFacingState(state, facing);
+    syncFacingData();
+    sceneBridge?.faceActor(characterId);
   };
   const setActorHeldItem = (characterId: string, itemId: string | null) => {
     const state = requireActorState(characterId);
@@ -780,6 +845,14 @@ export function createPixelWorldEngine(
       if (destroyed) return;
       try {
         setActorEmote(characterId, emote);
+      } catch (error) {
+        reportError(error, "The selected character is not available.");
+      }
+    },
+    setCharacterFacing(characterId, facing) {
+      if (destroyed) return;
+      try {
+        setActorFacing(characterId, facing);
       } catch (error) {
         reportError(error, "The selected character is not available.");
       }
