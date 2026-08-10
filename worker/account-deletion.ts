@@ -18,7 +18,7 @@ function r2PrefixForUser(userId: string) {
   return `personalized-story-art/${encodeURIComponent(userId)}/`;
 }
 
-async function hashUserId(userId: string) {
+export async function accountDeletionTombstoneKey(userId: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(userId),
@@ -32,7 +32,7 @@ export async function isAccountDeletionPending(
   database: Database,
   userId: string,
 ) {
-  const userIdHash = await hashUserId(userId);
+  const userIdHash = await accountDeletionTombstoneKey(userId);
   const [tombstone] = await database
     .select({ userIdHash: accountDeletionTombstone.userIdHash })
     .from(accountDeletionTombstone)
@@ -50,7 +50,7 @@ export async function markAccountDeletionPending(
   const tombstone = {
     r2Prefix: r2PrefixForUser(userId),
     requestedAt,
-    userIdHash: await hashUserId(userId),
+    userIdHash: await accountDeletionTombstoneKey(userId),
   };
 
   await database.batch([

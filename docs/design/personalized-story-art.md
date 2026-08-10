@@ -2,10 +2,11 @@
 
 ## Goal
 
-Add one tightly bounded personalized-art slice for children’s story content without
-turning Parrot English into a general photo-storage feature.
+Parrot English now implements one tightly bounded personalized-art slice for
+children’s story content without turning the product into a general
+photo-storage feature.
 
-The first shippable slice is:
+The implemented slice is:
 
 - one generated derivative for **The Red Ball** page 1 (`the-red-ball` / `my-red-ball`);
 - the same derivative reused as the lesson **"You"** speaking portrait during user turns;
@@ -13,7 +14,7 @@ The first shippable slice is:
 - explicit guardian attestation required every time art is generated;
 - original learner photo never stored.
 
-This plan is grounded in the current story and lesson seams already referenced by:
+This record is grounded in the current story and lesson seams already referenced by:
 
 - [src/stories/story-script-candidates.ts](../../src/stories/story-script-candidates.ts)
 - [src/stories/StoryReader.tsx](../../src/stories/StoryReader.tsx)
@@ -71,7 +72,11 @@ family or broad gallery UI.
 - Lesson portrait alt text: `You in storybook style`
 - Provider: Cloudflare Workers AI `@cf/black-forest-labs/flux-2-klein-4b`
 - Base scene reference: `public/assets/personalization/the-red-ball-scene-reference.webp`
-- Storage: one private R2 derivative per owner and story
+- Consent version: `guardian-photo-cloudflare-v1`
+- Prompt version: `red-ball-v1`
+- Provider label stored in D1: `cloudflare-workers-ai`
+- Storage: one private R2 derivative row per owner and story, backed by
+  versioned object keys under `/versions/`
 
 ### Concept Preview
 
@@ -80,8 +85,8 @@ The current synthetic concept preview is embedded below:
 ![Synthetic personalized story art preview](assets/personalized-story-art-preview.png)
 
 This preview uses a **fully synthetic learner reference**, not a real learner
-photo. It is only a design aid for the record. The intended checked-in base
-scene input for the generated slice is:
+photo. It is only a design aid for the record. The checked-in base scene input
+for the implemented slice is:
 
 - `public/assets/personalization/the-red-ball-scene-reference.webp`
 
@@ -94,11 +99,11 @@ scene input for the generated slice is:
 - background jobs or queues;
 - sharing across users or accounts;
 - public URLs;
-- account-deletion activation before purge proof exists.
+- multi-story account-wide artwork reuse beyond the current slice.
 
 ## Data Flow
 
-The intended first-pass flow is:
+The implemented flow is:
 
 1. **Browser normalization**
    The browser accepts one learner photo and normalizes it to one metadata-free
@@ -121,7 +126,7 @@ The intended first-pass flow is:
 
    - normalized learner PNG
    - `guardianConsentAccepted=yes`
-   - `guardianConsentVersion=<approved version string>`
+   - `guardianConsentVersion=guardian-photo-cloudflare-v1`
 
 3. **Worker critical-chunk sanitizer**
    The Worker must not trust the browser-normalized upload as final.
@@ -156,7 +161,7 @@ The intended first-pass flow is:
 
    to Cloudflare Workers AI FLUX.2 [klein] 4B.
 
-   Current test seam:
+   Current implementation anchors:
 
    - provider model: `@cf/black-forest-labs/flux-2-klein-4b`
    - output dimensions: `1152 x 768`
@@ -164,14 +169,17 @@ The intended first-pass flow is:
 
 6. **Private derivative storage**
    The Worker stores only the generated derivative in private R2 under an
-   owner-scoped key such as:
+   owner-scoped, versioned key such as:
 
-   - `personalized-story-art/<encoded_auth_user_id>/<encoded_story_id>/current`
+   - `personalized-story-art/<encoded_auth_user_id>/<encoded_story_id>/versions/<object_id>.<ext>`
 
-   Regeneration overwrites this one deterministic private object so an older
-   derivative cannot become an unreferenced retention leak.
+   For example:
 
-   The original upload is discarded after generation.
+   - `personalized-story-art/user-1/the-red-ball/versions/generation-2.png`
+
+   Regeneration stages a new object under a fresh versioned key, deletes the old
+   object, then updates the one owner/story audit row to the new key. The
+   original upload is discarded after generation.
 
 7. **Authenticated metadata read**
    The browser `GET`s:
@@ -196,9 +204,24 @@ The intended first-pass flow is:
 
    This derivative is the only image used in the story page and lesson portrait.
 
+## Current Activation State
+
+The shared worktree now reflects an activated implementation path:
+
+- `PERSONALIZED_STORY_ART_ENABLED="1"` in [wrangler.jsonc](../../wrangler.jsonc)
+- `PERSONALIZED_STORY_ART_DATA_APPROVED="1"` in [wrangler.jsonc](../../wrangler.jsonc)
+- private R2 bucket binding:
+  `parrot-english-personalized-story-art`
+- dedicated rate limiter:
+  `PERSONALIZED_STORY_ART_RATE_LIMITER`
+
+This document records the code and configuration state only. It does **not**
+claim that legal approval, production rollout approval, or guardian-facing user
+acceptance has been independently verified in this document.
+
 ## Storage Contract
 
-The minimal storage contract should be one row per owner/story slice, with a
+The implemented storage contract is one row per owner/story slice, with a
 status-driven delete lifecycle.
 
 Minimum row fields:
@@ -245,7 +268,7 @@ The first-pass checkbox copy should remain close to the current test seam:
 
 - `I confirm I am the child's guardian or have permission to use this photo.`
 
-Rules:
+Implemented rules:
 
 - generation stays disabled until the box is checked;
 - the Worker requires both the attestation and the current consent version;
@@ -253,14 +276,12 @@ Rules:
 - changing the approved consent copy or legal meaning requires a new
   `guardianConsentVersion`.
 
-Important version note:
+Current implementation note:
 
-- the current tests use `2026-08-09` as a consent version string;
-- treat it as a placeholder policy version label, not as proof of approval or
-  an activation date.
-
-Before activation, replace that placeholder with the actually approved legal
-version string.
+- the Worker and tests now use `guardian-photo-cloudflare-v1`;
+- this version string is evidence of the current code contract, not evidence
+  that legal approved the underlying text or that guardians accepted it in
+  production.
 
 ## Privacy Rules
 
@@ -298,7 +319,8 @@ Metadata and asset reads must remain owner-scoped:
 
 ## Deletion Contract
 
-Delete must be a tombstone-plus-purge flow, not an optimistic row delete.
+Delete is implemented as a tombstone-plus-purge flow, not an optimistic row
+delete.
 
 Required order:
 
@@ -313,35 +335,44 @@ If R2 purge fails:
 - keep asset reads blocked
 - allow a retry to finish the purge later
 
-This matches the current worker test expectations and is the minimum safe
-behavior for private learner media.
+This matches the current worker and account-deletion test expectations.
 
-## Feature Flags and Release Gates
+### Account deletion integration
 
-This feature must remain off by default.
+Account deletion is now implemented as a separate tombstone-and-sweep path:
 
-Required flags:
+1. persist an opaque `account_deletion_tombstone` outside the user-row cascade;
+2. mark all `personalized_story_art` rows for that user as `deleting`;
+3. list and purge the full user R2 prefix, including orphaned objects not
+   currently referenced by D1;
+4. only then allow the Better Auth user deletion cascade to remove the user and
+   dependent D1 rows.
 
-- `PERSONALIZED_STORY_ART_ENABLED=0`
-- `PERSONALIZED_STORY_ART_DATA_APPROVED=0`
+The tombstone intentionally outlives the user row long enough to fence in-flight
+uploads and reads.
 
-Both flags must be `1` before the capability reports as enabled.
+## Feature Flags and Current Gates
 
-Rationale:
+The capability still gates on both feature variables, but the current shared
+worktree has both gates enabled:
 
-- `ENABLED` is a product-release gate
-- `DATA_APPROVED` is a legal/privacy gate
+- `PERSONALIZED_STORY_ART_ENABLED="1"`
+- `PERSONALIZED_STORY_ART_DATA_APPROVED="1"`
 
-Neither flag alone is sufficient.
+Runtime behavior still requires both values to be `1`; neither flag alone is
+sufficient.
 
-Keep a dedicated upload limiter as part of the slice. The current infrastructure
-test expects a strict low-volume limiter and a dedicated private R2 bucket.
+The implementation also depends on:
+
+- the private R2 bucket binding;
+- the AI binding;
+- the dedicated low-volume upload limiter.
 
 ## Provider Choice and Terms Review
 
-### First-pass provider choice
+### Current provider choice
 
-Use Cloudflare Workers AI FLUX.2 [klein] 4B for the first slice because:
+The implemented slice uses Cloudflare Workers AI FLUX.2 [klein] 4B because:
 
 - the current repository test seam already targets that exact model;
 - the model is positioned for fast interactive image generation/editing paths;
@@ -383,20 +414,32 @@ including:
 
 - <https://developers.cloudflare.com/ai/models/openai/gpt-image-1.5/>
 
-Even so, the first slice should stay on the existing FLUX.2 [klein] 4B seam
-unless and until a separate legal, privacy, and provider-terms review approves a
-direct OpenAI or OpenAI-backed alternative for child-photo-derived content.
+Even so, the implemented slice stays on the existing FLUX.2 [klein] 4B seam
+rather than moving child-photo-derived content to OpenAI image generation.
 
-### Required provider review before activation
+### Current provider review record
 
-Activation must not proceed until the team reviews and signs off on:
+The current official-provider review findings are:
 
-- Cloudflare Workers AI data handling for inputs and outputs;
-- Black Forest Labs license/terms for FLUX.2 [klein];
-- Cloudflare R2 bucket configuration, access boundaries, and lifecycle rules;
-- whether any additional internal vendor review is required for child-photo
-  derivatives;
-- whether moderation or abuse-detection obligations attach to this workflow.
+- Cloudflare states that it does not use Workers AI Customer Content to train
+  models or improve Cloudflare or third-party services unless it receives
+  explicit consent.
+- Cloudflare also states that Workers AI models are third-party services and may
+  be subject to separate provider license terms.
+- The Cloudflare FLUX.2 [klein] model page links to Black Forest Labs terms, but
+  no explicit **model-level** zero-data-retention guarantee was found on the
+  Cloudflare model page itself.
+- The linked Black Forest Labs terms grant a broader license over Input, Output,
+  and Tasks to provide, develop, train, and improve its services and
+  technologies.
+- Black Forest Labs says future training use can be opted out of by contacting
+  `legal@blackforestlabs.ai`, but the license continues for content already used
+  for training and for retained safety, security, legal-compliance, and feedback
+  cases.
+
+This document records those published terms. It does **not** claim that those
+terms are acceptable for production child-photo use, nor that any separate legal
+review has approved them.
 
 ## Logging and Metrics
 
@@ -426,68 +469,69 @@ Do not log:
 
 If request tracing is needed, use opaque IDs only.
 
-## Known Blocker Before Activation
+## Residual Non-Atomic Crash Risk
 
-**No account-deletion path is a release blocker.**
+The implementation is fail-closed in the ordinary handled-error paths, but it is
+not globally atomic across D1 and R2.
 
-Parrot English must not activate personalized story art until account deletion
-or an equivalent authenticated data-erasure path can prove all of the following:
+The remaining honest risk is a process crash or runtime termination between
+storage steps that cannot be wrapped in one transaction across both systems. The
+most important residual race is:
 
-- the derivative row is discovered;
-- reads are tombstoned;
-- the private R2 derivative is purged;
-- retries are possible if purge fails;
-- no orphaned personalized-art objects remain.
+1. new versioned object is written to R2;
+2. old object is deleted from R2;
+3. process crashes before the D1 row is updated to the new key.
 
-Without that proof, the feature may be implemented behind flags for review, but
-must not be enabled in production.
+In that window:
 
-## Activation Checklist
+- the existing row can still point at an object that has already been deleted;
+- the new candidate object can exist in R2 without being referenced by D1;
+- reads can fail until regeneration, deletion retry, or account-deletion sweep
+  repairs the state.
 
-Do not enable the feature until every item below is complete.
+The code includes compensating cleanup on handled exceptions, and account
+deletion sweeps the whole user prefix, but a hard crash between R2 and D1 steps
+still leaves a non-atomic recovery gap.
 
-### Legal and policy
+## Current Checklist Status
+
+The implementation now satisfies the core technical slice in code and tests:
+
+- The Red Ball page 1 override path exists
+- lesson `"user"` portrait reuse exists
+- owner-scoped metadata and private asset reads exist
+- original photo is not persisted as an application object
+- delete tombstone/purge/retry exists
+- account deletion tombstone plus full-prefix sweep exists
+- dedicated R2 bucket binding exists
+- dedicated rate limiter exists
+- both runtime gates are currently set to `1` in the shared worktree
+
+What this document does **not** verify:
+
+- legal approval;
+- guardian-facing copy approval;
+- production rollout approval;
+- separate vendor review acceptance.
+
+### Remaining non-code approvals and operational checks
 
 - guardian attestation copy approved
 - consent version string approved
 - privacy-policy and guardian-facing disclosure approved
 - provider terms and data-handling review completed
 - explicit decision recorded for under-13 handling and applicable age-of-digital-consent handling
-
-### Infrastructure
-
-- private R2 bucket exists for personalized story art
-- Worker has the R2 binding
-- Worker has the AI binding
-- dedicated upload limiter exists
 - lifecycle rules reviewed for abandoned multipart uploads and any delayed cleanup policy
+- operations runbook and on-call expectations recorded
 
-### Product and code
-
-- The Red Ball page 1 override works
-- lesson `"user"` portrait reuse works
-- owner-scoped metadata and private asset reads work
-- original photo is never stored
-- delete tombstone/purge/retry behavior works
-- both release flags default to `0`
-
-### Verification
+### Verification anchors
 
 - unit tests for client normalization pass
 - unit tests for provider image pipeline pass
 - worker tests for auth, ownership, delete, and retry pass
-- e2e tests for story panel, story override, and lesson portrait pass
+- worker tests for account deletion and tombstone sweep pass
+- e2e tests for story panel, story override, lesson portrait, and account deletion pass
 - observability confirms counters and latency without content logging
-
-### Release decision
-
-- account-deletion blocker resolved and tested
-- legal/privacy sign-off recorded
-- product sign-off recorded
-- operations runbook recorded
-- only then set:
-  - `PERSONALIZED_STORY_ART_DATA_APPROVED=1`
-  - `PERSONALIZED_STORY_ART_ENABLED=1`
 
 ## Follow-on Work After the First Slice
 
@@ -513,18 +557,21 @@ this order:
    Add orphan detection, purge verification, and support-safe diagnostics without
    exposing learner media.
 
-6. **Account deletion integration**
-   Make personalized-art purge a first-class part of the account-deletion flow,
-   then remove the current activation blocker.
+6. **Crash-recovery hardening**
+   Reduce the remaining R2/D1 non-atomic window with stronger resumable repair
+   logic, explicit staged-object scavenging, or a job model that can reconcile
+   incomplete transitions.
 
 ## Summary
 
-The correct first move is not "store a child photo and use it everywhere." The
-correct first move is:
+The implemented scope remains intentionally narrow:
 
-- generate one private derivative for **The Red Ball** page 1;
-- reuse that derivative as the lesson **"You"** portrait;
-- never store the original;
-- require explicit guardian attestation and versioning;
-- keep release and data-approval flags off by default;
-- block activation until deletion and provider/legal review are complete.
+- one private derivative for **The Red Ball** page 1;
+- reuse of that derivative as the lesson **"You"** portrait;
+- no stored original learner photo;
+- explicit guardian attestation with `guardian-photo-cloudflare-v1`;
+- versioned private R2 objects plus owner-scoped D1 audit rows;
+- completed delete and account-deletion purge flows, with one remaining
+  non-atomic crash window across R2 and D1;
+- published provider-review caveats recorded without claiming legal approval or
+  guardian-facing acceptance.

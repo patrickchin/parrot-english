@@ -3,16 +3,12 @@ import { personalizedStoryArt } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 
 type RepositoryOptions = {
-  createId?: () => string;
   now?: () => Date;
 };
 
 export function createPersonalizedStoryArtRepository(
   database: Database,
-  {
-    createId = () => crypto.randomUUID(),
-    now = () => new Date(),
-  }: RepositoryOptions = {},
+  { now = () => new Date() }: RepositoryOptions = {},
 ) {
   async function findOwnedStory(userId: string, storyId: string) {
     const [row] = await database
@@ -26,54 +22,6 @@ export function createPersonalizedStoryArtRepository(
       )
       .limit(1);
     return row ?? null;
-  }
-
-  async function saveReady(
-    userId: string,
-    storyId: string,
-    input: {
-      contentType: string;
-      guardianConsentAt: Date;
-      guardianConsentVersion: string;
-      provider: string;
-      promptVersion: string;
-      r2ObjectKey: string;
-    },
-  ) {
-    const timestamp = now();
-    await database
-      .insert(personalizedStoryArt)
-      .values({
-        authUserId: userId,
-        contentType: input.contentType,
-        createdAt: timestamp,
-        guardianConsentAt: input.guardianConsentAt,
-        guardianConsentVersion: input.guardianConsentVersion,
-        id: createId(),
-        promptVersion: input.promptVersion,
-        provider: input.provider,
-        r2ObjectKey: input.r2ObjectKey,
-        status: "ready",
-        storyId,
-        updatedAt: timestamp,
-      })
-      .onConflictDoUpdate({
-        target: [
-          personalizedStoryArt.authUserId,
-          personalizedStoryArt.storyId,
-        ],
-        set: {
-          contentType: input.contentType,
-          guardianConsentAt: input.guardianConsentAt,
-          guardianConsentVersion: input.guardianConsentVersion,
-          promptVersion: input.promptVersion,
-          provider: input.provider,
-          r2ObjectKey: input.r2ObjectKey,
-          status: "ready",
-          updatedAt: timestamp,
-        },
-      });
-    return findOwnedStory(userId, storyId);
   }
 
   async function markDeleting(userId: string, storyId: string) {
@@ -103,6 +51,5 @@ export function createPersonalizedStoryArtRepository(
     deleteByIdIfDeleting,
     findOwnedStory,
     markDeleting,
-    saveReady,
   };
 }

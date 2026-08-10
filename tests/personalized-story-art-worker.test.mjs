@@ -64,6 +64,36 @@ function failD1RunWhen(d1, predicate) {
   };
 }
 
+function observeD1RunWhen(d1, predicate, { beforeRun, afterRun }) {
+  function wrapStatement(statement, sql) {
+    return new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) =>
+            wrapStatement(target.bind(...parameters), sql);
+        }
+        if (property === "run" && predicate(sql)) {
+          return async () => {
+            await beforeRun();
+            const result = await target.run();
+            afterRun(result);
+            return result;
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  }
+
+  return {
+    ...d1,
+    prepare(sql) {
+      return wrapStatement(d1.prepare(sql), sql);
+    },
+  };
+}
+
 async function call(state, options = {}, overrides = {}) {
   const { handlePersonalizedStoryArtRequest } = await import(
     "../worker/personalized-story-art.ts"
@@ -880,6 +910,93 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("atomically refuses finalization when account deletion begins at the CAS boundary", async () => {
+    const state = seedDatabase();
+    const { markAccountDeletionPending } = await import(
+      "../worker/account-deletion.ts"
+    );
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const candidateKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
+    const objectKeys = new Set();
+    let finalizeChanges = null;
+    try {
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          d1: observeD1RunWhen(
+            state.d1,
+            (sql) =>
+              /\bINSERT\s+INTO\s+[`"]?personalized_story_art[`"]?\s*\(/i.test(
+                sql,
+              ),
+            {
+              async beforeRun() {
+                await markAccountDeletionPending(state.database, "user-1");
+              },
+              afterRun(result) {
+                finalizeChanges = result.meta.changes;
+              },
+            },
+          ),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              objectKeys.delete(key);
+            },
+            async put(key) {
+              objectKeys.add(key);
+            },
+          }),
+        },
+        {
+          createId: () => "art-1",
+          createObjectId: () => "generation-1",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+        },
+      );
+
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), {
+        error: "account_deletion_pending",
+        message: "Account deletion is in progress.",
+      });
+      assert.equal(finalizeChanges, 0);
+      assert.deepEqual([...objectKeys], []);
+      assert.equal(objectKeys.has(candidateKey), false);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM personalized_story_art")
+          .get().count,
+        0,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("recovers an expired pre-finalize lease by deleting its candidate", async () => {
     const state = seedDatabase();
     const generatedPng = await sharp({
@@ -1210,6 +1327,93 @@ describe("personalized story art Worker handler", () => {
           .get().count,
         0,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps a candidate tracked when cleanup after CAS failure cannot delete it", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
+    const candidateKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+    const objectKeys = new Set([oldKey]);
+    const deleteKeys = [];
+    try {
+      insertReadyArt(state, { objectKey: oldKey });
+
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          d1: failD1RunWhen(
+            state.d1,
+            (sql) =>
+              /\bUPDATE\s+[`"]?personalized_story_art[`"]?\s+SET/i.test(
+                sql,
+              ),
+          ),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              deleteKeys.push(key);
+              if (key === candidateKey) {
+                throw new Error("temporary R2 failure");
+              }
+              objectKeys.delete(key);
+            },
+            async put(key) {
+              objectKeys.add(key);
+            },
+          }),
+        },
+        {
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+          now: () => new Date(10_000),
+        },
+      );
+
+      assert.equal(response.status, 502);
+      assert.deepEqual(await response.json(), {
+        error: "storage_delete_failed",
+      });
+      assert.deepEqual(deleteKeys, [candidateKey]);
+      assert.deepEqual([...objectKeys].sort(), [candidateKey, oldKey].sort());
+      const storedRow = state.sqlite
+        .prepare(
+          "SELECT status, r2_object_key FROM personalized_story_art WHERE id = ?",
+        )
+        .get("art-1");
+      assert.equal(storedRow.status, "ready");
+      assert.equal(storedRow.r2_object_key, oldKey);
+      const lease = state.sqlite
+        .prepare(
+          `SELECT generation_token, candidate_r2_object_key,
+            previous_r2_object_key, lease_expires_at
+          FROM personalized_story_art_generation_lease
+          WHERE auth_user_id = ? AND story_id = ?`,
+        )
+        .get("user-1", STORY_ID);
+      assert.ok(lease.generation_token);
+      assert.equal(lease.candidate_r2_object_key, candidateKey);
+      assert.equal(lease.previous_r2_object_key, oldKey);
+      assert.equal(lease.lease_expires_at, 310_000);
     } finally {
       state.close();
     }

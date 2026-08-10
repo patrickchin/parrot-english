@@ -10,6 +10,7 @@ import {
 import type { LinkProps } from "react-router";
 import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
 import { AboutDialog } from "./AboutDialog";
+import { AccountDeleteDialog } from "./AccountDeleteDialog";
 
 function HeaderLabel({ children }: { children: ReactNode }) {
   return <span className="hidden wide:inline">{children}</span>;
@@ -69,6 +70,7 @@ export function HeaderLink({
 export function AccountHeader({
   error,
   isSigningOut,
+  onDeleteAccount,
   onOpenProfile,
   onSignOut,
   userEmail,
@@ -76,6 +78,7 @@ export function AccountHeader({
 }: {
   error: string;
   isSigningOut: boolean;
+  onDeleteAccount: (password: string) => Promise<string | null>;
   onOpenProfile: (() => void) | null;
   onSignOut: () => void;
   userEmail: string;
@@ -83,6 +86,7 @@ export function AccountHeader({
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
   const menuId = useId();
 
@@ -122,6 +126,13 @@ export function AccountHeader({
 
   function closeAbout() {
     setIsAboutOpen(false);
+    accountRef.current
+      ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
+      ?.focus();
+  }
+
+  function closeDelete() {
+    setIsDeleteOpen(false);
     accountRef.current
       ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
       ?.focus();
@@ -190,6 +201,15 @@ export function AccountHeader({
             </MenuButton>
             <MenuButton
               disabled={isSigningOut}
+              onClick={() => selectAction(() => setIsDeleteOpen(true))}
+              role="menuitem"
+              type="button"
+              variant="brand"
+            >
+              Delete account
+            </MenuButton>
+            <MenuButton
+              disabled={isSigningOut}
               onClick={() => selectAction(onSignOut)}
               role="menuitem"
               type="button"
@@ -201,11 +221,14 @@ export function AccountHeader({
         </div>
       ) : null}
       {isAboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
+      {isDeleteOpen ? (
+        <AccountDeleteDialog onClose={closeDelete} onDelete={onDeleteAccount} />
+      ) : null}
       {error ? (
         <span
           className={cx(
             "absolute right-0 top-full mt-2 w-64 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md sm:w-80",
-            isMenuOpen && "mt-44",
+            isMenuOpen && "mt-56",
           )}
           role="alert"
         >

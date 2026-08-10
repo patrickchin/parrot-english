@@ -31,6 +31,22 @@ describe("personalized story art infrastructure", () => {
     assert.equal(wrangler.vars?.PERSONALIZED_STORY_ART_DATA_APPROVED, "1");
   });
 
+  it("uses a distinct preview bucket for personalized story art", () => {
+    const wrangler = JSON.parse(projectFile("wrangler.jsonc"));
+    const storyArtBucket = wrangler.r2_buckets?.find(
+      ({ binding }) => binding === "PERSONALIZED_STORY_ART_BUCKET",
+    );
+
+    assert.equal(
+      storyArtBucket?.preview_bucket_name,
+      "parrot-english-personalized-story-art-preview",
+    );
+    assert.notEqual(
+      storyArtBucket?.preview_bucket_name,
+      storyArtBucket?.bucket_name,
+    );
+  });
+
   it("keeps generated Cloudflare binding types in sync with deployment config", () => {
     const workerTypes = projectFile("worker-configuration.d.ts");
     assert.match(workerTypes, /AI:\s*Ai;/);
