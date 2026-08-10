@@ -457,3 +457,49 @@ test("account menu separates learner profile from account sign-out", async ({
   await expect(page).toHaveURL("/login?returnTo=%2F");
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 });
+
+test("account deletion requires the password and returns to sign in only after private-data purge succeeds", async ({
+  page,
+}) => {
+  let deleted = false;
+  let deletePayload: unknown = null;
+  await page.route("**/api/auth/**", async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === "/api/auth/delete-user") {
+      deletePayload = route.request().postDataJSON();
+      deleted = true;
+      await route.fulfill({
+        body: JSON.stringify({ success: true, message: "User deleted" }),
+        contentType: "application/json",
+        status: 200,
+      });
+      return;
+    }
+    if (pathname === "/api/auth/get-session" && deleted) {
+      await route.fulfill({
+        body: "null",
+        contentType: "application/json",
+        status: 200,
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Account for Mia" }).click();
+  await page.getByRole("menuitem", { name: "Delete account" }).click();
+  const dialog = page.getByRole("dialog", { name: "Delete account" });
+  await expect(dialog).toContainText(
+    "Your profile, lessons, conversations, and private story art will be permanently deleted.",
+  );
+  const confirm = dialog.getByRole("button", { name: "Permanently delete account" });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByLabel("Password").fill("parent-password");
+  await expect(confirm).toBeEnabled();
+  await confirm.click();
+
+  await expect(page).toHaveURL("/login?returnTo=%2F");
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  expect(deletePayload).toEqual({ password: "parent-password" });
+});

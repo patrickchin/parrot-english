@@ -7,7 +7,7 @@ function projectFile(path) {
 }
 
 describe("personalized story art infrastructure", () => {
-  it("declares private R2, Workers AI, and a dedicated upload limiter while staying off by default", () => {
+  it("declares private R2, Workers AI, a dedicated limiter, and both activation approvals", () => {
     const wrangler = JSON.parse(projectFile("wrangler.jsonc"));
 
     assert.equal(wrangler.ai?.binding, "AI");
@@ -27,8 +27,24 @@ describe("personalized story art infrastructure", () => {
           simple?.period === 60,
       ),
     );
-    assert.equal(wrangler.vars?.PERSONALIZED_STORY_ART_ENABLED, "0");
-    assert.equal(wrangler.vars?.PERSONALIZED_STORY_ART_DATA_APPROVED, "0");
+    assert.equal(wrangler.vars?.PERSONALIZED_STORY_ART_ENABLED, "1");
+    assert.equal(wrangler.vars?.PERSONALIZED_STORY_ART_DATA_APPROVED, "1");
+  });
+
+  it("uses a distinct preview bucket for personalized story art", () => {
+    const wrangler = JSON.parse(projectFile("wrangler.jsonc"));
+    const storyArtBucket = wrangler.r2_buckets?.find(
+      ({ binding }) => binding === "PERSONALIZED_STORY_ART_BUCKET",
+    );
+
+    assert.equal(
+      storyArtBucket?.preview_bucket_name,
+      "parrot-english-personalized-story-art-preview",
+    );
+    assert.notEqual(
+      storyArtBucket?.preview_bucket_name,
+      storyArtBucket?.bucket_name,
+    );
   });
 
   it("keeps generated Cloudflare binding types in sync with deployment config", () => {
@@ -36,7 +52,7 @@ describe("personalized story art infrastructure", () => {
     assert.match(workerTypes, /AI:\s*Ai;/);
     assert.match(workerTypes, /PERSONALIZED_STORY_ART_BUCKET:\s*R2Bucket;/);
     assert.match(workerTypes, /PERSONALIZED_STORY_ART_RATE_LIMITER:\s*RateLimit;/);
-    assert.match(workerTypes, /PERSONALIZED_STORY_ART_ENABLED:\s*"0";/);
-    assert.match(workerTypes, /PERSONALIZED_STORY_ART_DATA_APPROVED:\s*"0";/);
+    assert.match(workerTypes, /PERSONALIZED_STORY_ART_ENABLED:\s*"1";/);
+    assert.match(workerTypes, /PERSONALIZED_STORY_ART_DATA_APPROVED:\s*"1";/);
   });
 });

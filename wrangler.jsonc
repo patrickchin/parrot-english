@@ -15,8 +15,8 @@
   },
   "vars": {
     "REALTIME_CONVERSATIONS_ENABLED": "1",
-    "PERSONALIZED_STORY_ART_ENABLED": "0",
-    "PERSONALIZED_STORY_ART_DATA_APPROVED": "0"
+    "PERSONALIZED_STORY_ART_ENABLED": "1",
+    "PERSONALIZED_STORY_ART_DATA_APPROVED": "1"
   },
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
@@ -68,7 +68,8 @@
   "r2_buckets": [
     {
       "binding": "PERSONALIZED_STORY_ART_BUCKET",
-      "bucket_name": "parrot-english-personalized-story-art"
+      "bucket_name": "parrot-english-personalized-story-art",
+      "preview_bucket_name": "parrot-english-personalized-story-art-preview"
     }
   ],
   "observability": {

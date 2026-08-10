@@ -34,6 +34,7 @@ interface AuthActionResult {
 }
 
 export interface AuthActionClient {
+  deleteUser(fields: { password: string }): Promise<AuthActionResult>;
   signIn: {
     email(fields: { email: string; password: string }): Promise<AuthActionResult>;
   };
@@ -59,7 +60,15 @@ interface SignOutSessionOptions {
   refetch: () => Promise<unknown>;
 }
 
+interface DeleteAccountSessionOptions {
+  client: AuthActionClient;
+  password: string;
+  refetch: () => Promise<unknown>;
+}
+
 const SIGN_OUT_ERROR_MESSAGE = "Unable to sign you out. Please try again.";
+const DELETE_ACCOUNT_ERROR_MESSAGE =
+  "Unable to delete the account. The account and private story art were kept. Please try again.";
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
@@ -144,6 +153,22 @@ export async function signOutSession({
   }
 }
 
+export async function deleteAccountSession({
+  client,
+  password,
+  refetch,
+}: DeleteAccountSessionOptions): Promise<string | null> {
+  try {
+    const result = await client.deleteUser({ password });
+    if (result.error) return DELETE_ACCOUNT_ERROR_MESSAGE;
+
+    await refetch();
+    return null;
+  } catch {
+    return DELETE_ACCOUNT_ERROR_MESSAGE;
+  }
+}
+
 interface AuthSession {
   user: {
     email: string;
@@ -160,6 +185,7 @@ interface AuthGateViewProps {
   isSigningOut: boolean;
   isSubmitting: boolean;
   mode: AuthMode;
+  onDeleteAccount: (password: string) => Promise<string | null>;
   onFieldChange: (field: keyof AuthFields, value: string) => void;
   onModeChange: (mode: AuthMode) => void;
   onOpenProfile: (() => void) | null;
@@ -181,6 +207,7 @@ export function AuthGateView({
   isSigningOut,
   isSubmitting,
   mode,
+  onDeleteAccount,
   onFieldChange,
   onModeChange,
   onOpenProfile,
@@ -376,6 +403,7 @@ export function AuthGateView({
       <AccountHeader
         error={accountError}
         isSigningOut={isSigningOut}
+        onDeleteAccount={onDeleteAccount}
         onOpenProfile={onOpenProfile}
         onSignOut={onSignOut}
         userEmail={session.user.email}
@@ -408,6 +436,7 @@ export type StateHook = <State>(
 
 interface CreateAuthGateOptions {
   client: AuthGateClient;
+  deleteAccountAction?: typeof deleteAccountSession;
   signOutAction?: typeof signOutSession;
   stateHook?: StateHook;
   submitAction?: typeof submitAuthForm;
@@ -416,6 +445,7 @@ interface CreateAuthGateOptions {
 
 export function createAuthGate({
   client,
+  deleteAccountAction = deleteAccountSession,
   signOutAction = signOutSession,
   stateHook = useState,
   submitAction = submitAuthForm,
@@ -486,6 +516,10 @@ export function createAuthGate({
       }
     }
 
+    async function handleDeleteAccount(password: string) {
+      return deleteAccountAction({ client, password, refetch });
+    }
+
     return (
       <AccountActionProvider setProfileAction={setProfileAction}>
         <View
@@ -496,6 +530,7 @@ export function createAuthGate({
           isSigningOut={isSigningOut}
           isSubmitting={isSubmitting}
           mode={mode}
+          onDeleteAccount={handleDeleteAccount}
           onFieldChange={updateField}
           onModeChange={selectMode}
           onOpenProfile={profileAction?.onOpen ?? null}

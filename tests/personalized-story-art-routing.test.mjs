@@ -84,7 +84,7 @@ describe("personalized story art Worker routing", () => {
         type: "image/png",
       }),
     );
-    formData.set("guardianConsentVersion", "2026-08-09");
+    formData.set("guardianConsentVersion", "guardian-photo-cloudflare-v1");
     formData.set("guardianConsentAccepted", "yes");
 
     const response = await worker.fetch(

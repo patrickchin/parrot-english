@@ -159,6 +159,22 @@ describe("Worker authentication", () => {
     });
   });
 
+  it("enables password-confirmed account deletion with a fail-closed pre-delete purge", () => {
+    const auth = createAuth({
+      DB: {},
+      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+      BETTER_AUTH_URL: "https://example.test",
+      PERSONALIZED_STORY_ART_BUCKET: {},
+    });
+
+    assert.equal(auth.options.user?.deleteUser?.enabled, true);
+    assert.equal(
+      typeof auth.options.user?.deleteUser?.beforeDelete,
+      "function",
+      "Account removal must run the personalized-art purge before Better Auth deletes the user row",
+    );
+  });
+
   it("creates a Drizzle database around the D1 binding", async () => {
     assert.ok(createDatabase({}));
   });

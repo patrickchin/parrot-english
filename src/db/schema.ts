@@ -3,6 +3,7 @@ import {
   check,
   index,
   integer,
+  primaryKey,
   sqliteTable,
   text,
   uniqueIndex,
@@ -410,12 +411,43 @@ export const personalizedStoryArt = sqliteTable(
   ],
 );
 
+export const personalizedStoryArtGenerationLease = sqliteTable(
+  "personalized_story_art_generation_lease",
+  {
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    storyId: text("story_id").notNull(),
+    generationToken: text("generation_token").notNull(),
+    candidateR2ObjectKey: text("candidate_r2_object_key"),
+    previousR2ObjectKey: text("previous_r2_object_key"),
+    leaseExpiresAt: integer("lease_expires_at", {
+      mode: "timestamp_ms",
+    }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [primaryKey({ columns: [table.authUserId, table.storyId] })],
+);
+
+export const accountDeletionTombstone = sqliteTable(
+  "account_deletion_tombstone",
+  {
+    userIdHash: text("user_id_hash").primaryKey(),
+    r2Prefix: text("r2_prefix").notNull(),
+    requestedAt: integer("requested_at", { mode: "timestamp_ms" }).notNull(),
+  },
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
   learnerProfile: one(learnerProfile),
   learnerLessons: many(learnerLesson),
   personalizedStoryArt: many(personalizedStoryArt),
+  personalizedStoryArtGenerationLeases: many(
+    personalizedStoryArtGenerationLease,
+  ),
   profileSessionBypasses: many(profileSessionBypass),
   sessions: many(session),
 }));
@@ -503,6 +535,16 @@ export const personalizedStoryArtRelations = relations(
   ({ one }) => ({
     user: one(user, {
       fields: [personalizedStoryArt.authUserId],
+      references: [user.id],
+    }),
+  }),
+);
+
+export const personalizedStoryArtGenerationLeaseRelations = relations(
+  personalizedStoryArtGenerationLease,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [personalizedStoryArtGenerationLease.authUserId],
       references: [user.id],
     }),
   }),

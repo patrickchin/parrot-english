@@ -24,6 +24,7 @@ const authGateModule = await vite.ssrLoadModule("/src/auth/AuthGate.tsx");
 const {
   AuthGateView,
   createAuthGate,
+  deleteAccountSession,
   signOutSession,
   submitAuthForm,
 } = authGateModule;
@@ -34,6 +35,7 @@ test.after(async () => {
 
 function createAuthClientStub(overrides = {}) {
   return {
+    deleteUser: async () => ({ error: null }),
     signIn: { email: async () => ({ error: null }) },
     signOut: async () => ({ error: null }),
     signUp: { email: async () => ({ error: null }) },
@@ -582,6 +584,52 @@ test("sign-out maps failures without refetching and refetches success", async ()
   });
   assert.equal(success, null);
   assert.equal(refetchCalls, 1);
+});
+
+test("account deletion sends the password, fails closed, and refetches only after success", async () => {
+  assert.equal(
+    typeof deleteAccountSession,
+    "function",
+    "Expected an executable account-deletion action",
+  );
+  const payloads = [];
+  let refetchCalls = 0;
+  const refetch = async () => {
+    refetchCalls += 1;
+  };
+
+  const failure = await deleteAccountSession({
+    client: createAuthClientStub({
+      deleteUser: async (payload) => {
+        payloads.push(payload);
+        return { error: { code: "INTERNAL_SERVER_ERROR" } };
+      },
+    }),
+    password: "parent-password",
+    refetch,
+  });
+  assert.equal(
+    failure,
+    "Unable to delete the account. The account and private story art were kept. Please try again.",
+  );
+  assert.equal(refetchCalls, 0);
+
+  const success = await deleteAccountSession({
+    client: createAuthClientStub({
+      deleteUser: async (payload) => {
+        payloads.push(payload);
+        return { error: null };
+      },
+    }),
+    password: "parent-password",
+    refetch,
+  });
+  assert.equal(success, null);
+  assert.equal(refetchCalls, 1);
+  assert.deepEqual(payloads, [
+    { password: "parent-password" },
+    { password: "parent-password" },
+  ]);
 });
 
 test("App composes AuthGate, route-aware onboarding, and authenticated routes", () => {

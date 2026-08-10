@@ -148,8 +148,9 @@ export function PersonalizedStoryArtPanel({
               type="checkbox"
             />
             <span>
-              I confirm I am the child&apos;s guardian or have permission to use
-              this photo.
+              I am 18 or older. I confirm I am the child&apos;s guardian or have
+              permission to use this photo, and I agree to send a cropped copy
+              to Cloudflare Workers AI to make the illustration.
             </span>
           </label>
 

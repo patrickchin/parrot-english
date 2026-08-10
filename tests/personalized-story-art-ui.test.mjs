@@ -163,6 +163,8 @@ describe("personalized story art UI", () => {
       storyTitle: "The Red Ball",
     });
     assert.match(locked, /guardian consent/i);
+    assert.match(locked, /I am 18 or older/i);
+    assert.match(locked, /Cloudflare Workers AI/i);
     assert.match(locked, /type="checkbox"/);
     assert.match(locked, /Upload learner photo/);
     assert.match(locked, /Generate story art/);
