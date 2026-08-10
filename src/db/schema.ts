@@ -410,6 +410,15 @@ export const personalizedStoryArt = sqliteTable(
   ],
 );
 
+export const accountDeletionTombstone = sqliteTable(
+  "account_deletion_tombstone",
+  {
+    userIdHash: text("user_id_hash").primaryKey(),
+    r2Prefix: text("r2_prefix").notNull(),
+    requestedAt: integer("requested_at", { mode: "timestamp_ms" }).notNull(),
+  },
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
