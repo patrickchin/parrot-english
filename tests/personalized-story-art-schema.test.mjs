@@ -92,6 +92,52 @@ describe("personalized story art persistence contract", () => {
     }
   });
 
+  it("adds an owner-and-story generation lease with tracked recovery keys", () => {
+    assert.ok(
+      schema.personalizedStoryArtGenerationLease,
+      "Expected schema.personalizedStoryArtGenerationLease",
+    );
+    assert.equal(
+      getTableName(schema.personalizedStoryArtGenerationLease),
+      "personalized_story_art_generation_lease",
+    );
+    assert.deepEqual(
+      Object.keys(getTableColumns(schema.personalizedStoryArtGenerationLease)),
+      [
+        "authUserId",
+        "storyId",
+        "generationToken",
+        "candidateR2ObjectKey",
+        "previousR2ObjectKey",
+        "leaseExpiresAt",
+        "createdAt",
+        "updatedAt",
+      ],
+    );
+
+    const database = createMigratedDatabase();
+    try {
+      const sql = tableSql(
+        database,
+        "personalized_story_art_generation_lease",
+      );
+      assert.match(
+        sql ?? "",
+        /PRIMARY KEY\s*\(\s*[`"]?auth_user_id[`"]?\s*,\s*[`"]?story_id[`"]?\s*\)/i,
+      );
+      assert.match(
+        sql ?? "",
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(sql ?? "", /[`"]?generation_token[`"]?\s+text\s+NOT NULL/i);
+      assert.match(sql ?? "", /[`"]?candidate_r2_object_key[`"]?\s+text/i);
+      assert.match(sql ?? "", /[`"]?previous_r2_object_key[`"]?\s+text/i);
+      assert.match(sql ?? "", /[`"]?lease_expires_at[`"]?\s+integer\s+NOT NULL/i);
+    } finally {
+      database.close();
+    }
+  });
+
   it("persists an opaque account-deletion tombstone outside the user cascade", () => {
     assert.ok(
       schema.accountDeletionTombstone,

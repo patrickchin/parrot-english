@@ -37,6 +37,33 @@ function bucketStub(overrides = {}) {
   };
 }
 
+function failD1RunWhen(d1, predicate) {
+  function wrapStatement(statement, sql) {
+    return new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) =>
+            wrapStatement(target.bind(...parameters), sql);
+        }
+        if (property === "run" && predicate(sql)) {
+          return async () => {
+            throw new Error("temporary D1 write failure");
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  }
+
+  return {
+    ...d1,
+    prepare(sql) {
+      return wrapStatement(d1.prepare(sql), sql);
+    },
+  };
+}
+
 async function call(state, options = {}, overrides = {}) {
   const { handlePersonalizedStoryArtRequest } = await import(
     "../worker/personalized-story-art.ts"
@@ -55,7 +82,7 @@ async function call(state, options = {}, overrides = {}) {
             throw new Error("ASSETS.fetch must be stubbed");
           },
         },
-        DB: state.d1,
+        DB: options.d1 ?? state.d1,
         PERSONALIZED_STORY_ART_ENABLED: options.enabled ?? "1",
         PERSONALIZED_STORY_ART_DATA_APPROVED: options.dataApproved ?? "1",
         PERSONALIZED_STORY_ART_BUCKET: options.bucket ?? bucketStub(),
@@ -84,6 +111,70 @@ function uploadForm({ consent = true } = {}) {
     formData.set("guardianConsentVersion", CONSENT_VERSION);
   }
   return formData;
+}
+
+function insertReadyArt(
+  state,
+  {
+    contentType = "image/png",
+    id = "art-1",
+    objectKey,
+    storyId = STORY_ID,
+    updatedAt = 1_000,
+    userId = "user-1",
+  },
+) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO personalized_story_art (
+        id, auth_user_id, story_id, status, r2_object_key, content_type,
+        guardian_consent_version, guardian_consent_at, provider,
+        prompt_version, created_at, updated_at
+      ) VALUES (?, ?, ?, 'ready', ?, ?, ?, ?,
+        'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+    )
+    .run(
+      id,
+      userId,
+      storyId,
+      objectKey,
+      contentType,
+      CONSENT_VERSION,
+      1_000,
+      1_000,
+      updatedAt,
+    );
+}
+
+function insertGenerationLease(
+  state,
+  {
+    candidateKey = null,
+    expiresAt,
+    previousKey = null,
+    storyId = STORY_ID,
+    token = "lease-1",
+    userId = "user-1",
+  },
+) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO personalized_story_art_generation_lease (
+        auth_user_id, story_id, generation_token,
+        candidate_r2_object_key, previous_r2_object_key,
+        lease_expires_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      userId,
+      storyId,
+      token,
+      candidateKey,
+      previousKey,
+      expiresAt,
+      1_000,
+      1_000,
+    );
 }
 
 function emptyMetadata(enabled, hasStoredArt = false) {
@@ -267,6 +358,7 @@ describe("personalized story art Worker handler", () => {
         },
         {
           createId: () => "art-1",
+          createObjectId: () => "generation-1",
           async generateImage(input) {
             generationInput = input;
             return {
@@ -284,7 +376,10 @@ describe("personalized story art Worker handler", () => {
       assert.equal(generationInput.sourceImage.type, "image/png");
       assert.equal(generationInput.storyId, STORY_ID);
       assert.ok(putCall);
-      assert.equal(putCall.key, "personalized-story-art/user-1/the-red-ball/current");
+      assert.equal(
+        putCall.key,
+        "personalized-story-art/user-1/the-red-ball/versions/generation-1.webp",
+      );
       assert.equal(Buffer.from(putCall.bytes).toString("ascii", 0, 4), "RIFF");
       assert.equal(putCall.options.httpMetadata?.contentType, "image/webp");
       assert.equal(
@@ -328,6 +423,193 @@ describe("personalized story art Worker handler", () => {
         userId: "user-2",
       });
       assert.equal(foreignAsset.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps only the winning version when two first-generation uploads overlap", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const objectKeys = new Set();
+    let firstGenerationCalls = 0;
+    let secondGenerationCalls = 0;
+    let releaseFirstGeneration;
+    let signalFirstGenerationStarted;
+    const firstGenerationStarted = new Promise((resolve) => {
+      signalFirstGenerationStarted = resolve;
+    });
+    const firstGenerationBarrier = new Promise((resolve) => {
+      releaseFirstGeneration = resolve;
+    });
+    const bucket = bucketStub({
+      async delete(key) {
+        objectKeys.delete(key);
+      },
+      async put(key) {
+        objectKeys.add(key);
+      },
+    });
+    const generatedImage = {
+      bytes: new Uint8Array(generatedPng),
+      contentType: "image/png",
+      extension: "png",
+    };
+
+    try {
+      const firstResponsePromise = call(
+        state,
+        { body: uploadForm(), bucket, method: "POST" },
+        {
+          createId: () => "art-1",
+          createObjectId: () => "generation-1",
+          async generateImage() {
+            firstGenerationCalls += 1;
+            signalFirstGenerationStarted();
+            await firstGenerationBarrier;
+            return generatedImage;
+          },
+        },
+      );
+      await firstGenerationStarted;
+
+      const secondResponse = await call(
+        state,
+        { body: uploadForm(), bucket, method: "POST" },
+        {
+          createId: () => "art-2",
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            secondGenerationCalls += 1;
+            return generatedImage;
+          },
+        },
+      );
+      releaseFirstGeneration();
+      const firstResponse = await firstResponsePromise;
+
+      assert.deepEqual(
+        [firstResponse.status, secondResponse.status].sort(),
+        [201, 409],
+      );
+      assert.deepEqual(await secondResponse.json(), {
+        error: "generation_in_progress",
+      });
+      assert.equal(firstGenerationCalls + secondGenerationCalls, 1);
+      const storedRow = state.sqlite
+        .prepare(
+          "SELECT r2_object_key FROM personalized_story_art WHERE auth_user_id = ? AND story_id = ?",
+        )
+        .get("user-1", STORY_ID);
+      assert.deepEqual([...objectKeys].sort(), [storedRow.r2_object_key]);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM personalized_story_art")
+          .get().count,
+        1,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects an overlapping regeneration before the second provider call", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 40, g: 120, b: 220, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey =
+      "personalized-story-art/user-1/the-red-ball/versions/original.png";
+    const objectKeys = new Set([oldKey]);
+    let firstGenerationCalls = 0;
+    let secondGenerationCalls = 0;
+    let releaseFirstGeneration;
+    let signalFirstGenerationStarted;
+    const firstGenerationStarted = new Promise((resolve) => {
+      signalFirstGenerationStarted = resolve;
+    });
+    const firstGenerationBarrier = new Promise((resolve) => {
+      releaseFirstGeneration = resolve;
+    });
+    const bucket = bucketStub({
+      async delete(key) {
+        objectKeys.delete(key);
+      },
+      async put(key) {
+        objectKeys.add(key);
+      },
+    });
+    const generatedImage = {
+      bytes: new Uint8Array(generatedPng),
+      contentType: "image/png",
+      extension: "png",
+    };
+    insertReadyArt(state, { objectKey: oldKey });
+
+    try {
+      const firstResponsePromise = call(
+        state,
+        { body: uploadForm(), bucket, method: "POST" },
+        {
+          createObjectId: () => "generation-1",
+          async generateImage() {
+            firstGenerationCalls += 1;
+            signalFirstGenerationStarted();
+            await firstGenerationBarrier;
+            return generatedImage;
+          },
+        },
+      );
+      await firstGenerationStarted;
+
+      const secondResponse = await call(
+        state,
+        { body: uploadForm(), bucket, method: "POST" },
+        {
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            secondGenerationCalls += 1;
+            return generatedImage;
+          },
+        },
+      );
+      releaseFirstGeneration();
+      const firstResponse = await firstResponsePromise;
+
+      assert.deepEqual(
+        [firstResponse.status, secondResponse.status].sort(),
+        [201, 409],
+      );
+      assert.deepEqual(await secondResponse.json(), {
+        error: "generation_in_progress",
+      });
+      assert.equal(firstGenerationCalls + secondGenerationCalls, 1);
+      const storedRow = state.sqlite
+        .prepare(
+          "SELECT r2_object_key FROM personalized_story_art WHERE auth_user_id = ? AND story_id = ?",
+        )
+        .get("user-1", STORY_ID);
+      assert.deepEqual([...objectKeys], [storedRow.r2_object_key]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
     } finally {
       state.close();
     }
@@ -465,6 +747,44 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("does not let DELETE race an active generation lease", async () => {
+    const state = seedDatabase();
+    const objectKey =
+      "personalized-story-art/user-1/the-red-ball/versions/current.webp";
+    let deleteCalls = 0;
+    try {
+      insertReadyArt(state, { contentType: "image/webp", objectKey });
+      insertGenerationLease(state, {
+        expiresAt: 9_999_999_999_999,
+        previousKey: objectKey,
+      });
+
+      const response = await call(state, {
+        method: "DELETE",
+        bucket: bucketStub({
+          async delete() {
+            deleteCalls += 1;
+          },
+        }),
+      });
+
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), {
+        error: "generation_in_progress",
+      });
+      assert.equal(deleteCalls, 0);
+      const storedRow = state.sqlite
+        .prepare(
+          "SELECT status, r2_object_key FROM personalized_story_art WHERE id = ?",
+        )
+        .get("art-1");
+      assert.equal(storedRow.status, "ready");
+      assert.equal(storedRow.r2_object_key, objectKey);
+    } finally {
+      state.close();
+    }
+  });
+
   it("reports stored-art ownership even when the feature flags are disabled", async () => {
     const state = seedDatabase();
     try {
@@ -525,6 +845,11 @@ describe("personalized story art Worker handler", () => {
           1_000,
           1_000,
         );
+      insertGenerationLease(state, {
+        candidateKey: `personalized-story-art/user-1/${STORY_ID}/versions/in-flight.webp`,
+        expiresAt: 9_999_999_999_999,
+        previousKey: `personalized-story-art/user-1/${STORY_ID}/versions/one.webp`,
+      });
       await markAccountDeletionPending(state.database, "user-1");
 
       const metadata = await call(state);
@@ -555,7 +880,163 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
-  it("stages each regeneration under a new key and deletes the old object before updating its audit row", async () => {
+  it("recovers an expired pre-finalize lease by deleting its candidate", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey =
+      "personalized-story-art/user-1/the-red-ball/versions/original.png";
+    const abandonedCandidateKey =
+      "personalized-story-art/user-1/the-red-ball/versions/abandoned.png";
+    const nextKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+    const objectKeys = new Set([oldKey, abandonedCandidateKey]);
+    const deleteKeys = [];
+    try {
+      insertReadyArt(state, { objectKey: oldKey });
+      insertGenerationLease(state, {
+        candidateKey: abandonedCandidateKey,
+        expiresAt: 1_000,
+        previousKey: oldKey,
+      });
+
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              deleteKeys.push(key);
+              objectKeys.delete(key);
+            },
+            async put(key) {
+              objectKeys.add(key);
+            },
+          }),
+        },
+        {
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+          now: () => new Date(10_000),
+        },
+      );
+
+      assert.equal(response.status, 201);
+      assert.deepEqual(deleteKeys, [abandonedCandidateKey, oldKey]);
+      assert.deepEqual([...objectKeys], [nextKey]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT r2_object_key FROM personalized_story_art WHERE id = ?",
+          )
+          .get("art-1").r2_object_key,
+        nextKey,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("recovers an expired post-finalize lease by deleting its tracked old key", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey =
+      "personalized-story-art/user-1/the-red-ball/versions/original.png";
+    const finalizedCandidateKey =
+      "personalized-story-art/user-1/the-red-ball/versions/finalized.png";
+    const nextKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+    const objectKeys = new Set([oldKey, finalizedCandidateKey]);
+    const deleteKeys = [];
+    try {
+      insertReadyArt(state, { objectKey: finalizedCandidateKey });
+      insertGenerationLease(state, {
+        candidateKey: finalizedCandidateKey,
+        expiresAt: 1_000,
+        previousKey: oldKey,
+      });
+
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              deleteKeys.push(key);
+              objectKeys.delete(key);
+            },
+            async put(key) {
+              objectKeys.add(key);
+            },
+          }),
+        },
+        {
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+          now: () => new Date(10_000),
+        },
+      );
+
+      assert.equal(response.status, 201);
+      assert.deepEqual(deleteKeys, [oldKey, finalizedCandidateKey]);
+      assert.deepEqual([...objectKeys], [nextKey]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT r2_object_key FROM personalized_story_art WHERE id = ?",
+          )
+          .get("art-1").r2_object_key,
+        nextKey,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("CAS-finalizes each regeneration before deleting its tracked old object", async () => {
     const state = seedDatabase();
     const generatedPng = await sharp({
       create: {
@@ -632,7 +1113,7 @@ describe("personalized story art Worker handler", () => {
       assert.deepEqual(deleteEvents, [
         [
           "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
-          "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
+          "personalized-story-art/user-1/the-red-ball/versions/generation-2.png",
         ],
       ]);
       assert.equal(
@@ -654,7 +1135,87 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
-  it("keeps the old audit row and removes the staged candidate if old-object purge fails", async () => {
+  it("keeps the old ready art when CAS finalization fails", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
+    const candidateKey =
+      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+    const objectKeys = new Set([oldKey]);
+    const deleteKeys = [];
+    try {
+      insertReadyArt(state, { objectKey: oldKey });
+
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          d1: failD1RunWhen(
+            state.d1,
+            (sql) =>
+              /\bUPDATE\s+[`"]?personalized_story_art[`"]?\s+SET/i.test(
+                sql,
+              ),
+          ),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              deleteKeys.push(key);
+              objectKeys.delete(key);
+            },
+            async put(key) {
+              objectKeys.add(key);
+            },
+          }),
+        },
+        {
+          createObjectId: () => "generation-2",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+        },
+      );
+
+      assert.equal(response.status, 500);
+      assert.deepEqual(await response.json(), {
+        error: "internal_error",
+        message: "The personalized story art request failed.",
+      });
+      assert.deepEqual(deleteKeys, [candidateKey]);
+      assert.deepEqual([...objectKeys], [oldKey]);
+      const storedRow = state.sqlite
+        .prepare(
+          "SELECT status, r2_object_key FROM personalized_story_art WHERE id = ?",
+        )
+        .get("art-1");
+      assert.equal(storedRow.status, "ready");
+      assert.equal(storedRow.r2_object_key, oldKey);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps a tracked lease when old-object purge fails after CAS finalization", async () => {
     const state = seedDatabase();
     const generatedPng = await sharp({
       create: {
@@ -670,25 +1231,7 @@ describe("personalized story art Worker handler", () => {
       "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
     const deleteKeys = [];
     try {
-      state.sqlite
-        .prepare(
-          `INSERT INTO personalized_story_art (
-            id, auth_user_id, story_id, status, r2_object_key, content_type,
-            guardian_consent_version, guardian_consent_at, provider,
-            prompt_version, created_at, updated_at
-          ) VALUES (?, ?, ?, 'ready', ?, 'image/png', ?, ?,
-            'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-        )
-        .run(
-          "art-1",
-          "user-1",
-          STORY_ID,
-          oldKey,
-          CONSENT_VERSION,
-          1_000,
-          1_000,
-          1_000,
-        );
+      insertReadyArt(state, { objectKey: oldKey });
 
       const response = await call(
         state,
@@ -711,6 +1254,7 @@ describe("personalized story art Worker handler", () => {
               extension: "png",
             };
           },
+          now: () => new Date(10_000),
         },
       );
 
@@ -718,15 +1262,27 @@ describe("personalized story art Worker handler", () => {
       assert.deepEqual(await response.json(), {
         error: "storage_delete_failed",
       });
-      assert.deepEqual(deleteKeys, [oldKey, candidateKey]);
+      assert.deepEqual(deleteKeys, [oldKey]);
       assert.equal(
         state.sqlite
           .prepare(
             "SELECT r2_object_key FROM personalized_story_art WHERE id = ?",
           )
           .get("art-1").r2_object_key,
-        oldKey,
+        candidateKey,
       );
+      const lease = state.sqlite
+        .prepare(
+          `SELECT generation_token, candidate_r2_object_key,
+            previous_r2_object_key, lease_expires_at
+          FROM personalized_story_art_generation_lease
+          WHERE auth_user_id = ? AND story_id = ?`,
+        )
+        .get("user-1", STORY_ID);
+      assert.ok(lease.generation_token);
+      assert.equal(lease.candidate_r2_object_key, candidateKey);
+      assert.equal(lease.previous_r2_object_key, oldKey);
+      assert.equal(lease.lease_expires_at, 310_000);
     } finally {
       state.close();
     }
