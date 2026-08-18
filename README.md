@@ -67,8 +67,7 @@ changed; a clean no-drift result does not require a new migration.
 
 Each file in `content/lessons/*.json` is discovered automatically and appears
 as a playable card on the lesson list. Adding or removing a lesson requires no
-registry edit. Disabled preview cards demonstrate upcoming lesson topics
-without creating placeholder scripts or audio.
+registry edit.
 
 A lesson contains display summaries, zero or more goal phrases, and one or more
 scenes. Every scene chooses a supported background while also describing its

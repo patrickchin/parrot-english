@@ -24,10 +24,6 @@ import {
   type MyLessonsEnv,
 } from "./my-lessons.ts";
 import {
-  handlePixelLessonRequest,
-  type PixelLessonsEnv,
-} from "./pixel-lessons.ts";
-import {
   handlePersonalizedStoryArtRequest,
   type PersonalizedStoryArtEnv,
 } from "./personalized-story-art.ts";
@@ -43,7 +39,6 @@ interface Env
     RateLimitEnv,
     ConversationEnv,
     MyLessonsEnv,
-    PixelLessonsEnv,
     PersonalizedStoryArtEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
@@ -63,7 +58,6 @@ interface WorkerDependencies {
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
-  handlePixelLessonRequest: typeof handlePixelLessonRequest;
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
 }
 
@@ -85,10 +79,6 @@ function isAgentConversationPath(pathname: string) {
 
 function isMyLessonPath(pathname: string) {
   return pathname === "/api/lessons/my" || pathname.startsWith("/api/lessons/my/");
-}
-
-function isPixelLessonPath(pathname: string) {
-  return pathname === "/api/pixel-lessons/generate";
 }
 
 function isPersonalizedStoryArtPath(pathname: string) {
@@ -119,8 +109,6 @@ export function createWorker(
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const myLessonRequest =
     dependencies.handleMyLessonRequest ?? handleMyLessonRequest;
-  const pixelLessonRequest =
-    dependencies.handlePixelLessonRequest ?? handlePixelLessonRequest;
   const personalizedStoryArtRequest =
     dependencies.handlePersonalizedStoryArtRequest ??
     handlePersonalizedStoryArtRequest;
@@ -240,33 +228,6 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
         return myLessonRequest({
-          database: createDatabase(env.DB),
-          env,
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-            userName: session.user.name?.trim() || null,
-          },
-          request,
-        });
-      }
-
-      if (isPixelLessonPath(url.pathname)) {
-        const session = await authFactory(env).api.getSession({
-          headers: request.headers,
-        });
-        if (!session) {
-          return Response.json({ error: "unauthorized" }, { status: 401 });
-        }
-        if (request.method === "POST") {
-          const rateLimited = await lessonGenerationRateLimit(
-            request,
-            env,
-            session.user.id,
-          );
-          if (rateLimited) return rateLimited;
-        }
-        return pixelLessonRequest({
           database: createDatabase(env.DB),
           env,
           identity: {

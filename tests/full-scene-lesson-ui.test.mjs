@@ -27,28 +27,19 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-const variantModule = await vite
+const artworkModule = await vite
   .ssrLoadModule("/src/lessons/full-scene-lessons.ts")
   .catch(() => ({}));
 const playerUiModule = await vite
   .ssrLoadModule("/src/lessons/LessonPlayerUi.tsx")
   .catch(() => ({}));
 
-const { FULL_SCENE_LESSON_VARIANTS } = variantModule;
+const { FULL_SCENE_LESSONS } = artworkModule;
 const { BoxedFullSceneStage } = playerUiModule;
 
 after(async () => vite.close());
 
-const expectedFrames = [
-  ["landscape", "Landscape · 3:2", "3 / 2"],
-  ["square", "Square · 1:1", "1 / 1"],
-  ["portrait", "Portrait · 2:3", "2 / 3"],
-  ["wide", "Wide · 16:9", "16 / 9"],
-  ["free", "Natural size", null],
-];
-
 const stageFixture = {
-  frame: { preset: "landscape" },
   image: {
     alt: "Peppa and Dolly look at colorful flowers in the garden",
     src: "/assets/full-scenes/02-garden-colors/01-colorful-flowers.webp",
@@ -68,33 +59,32 @@ function escapeHtmlAttribute(value) {
     .replaceAll(">", "&gt;");
 }
 
-function getFullSceneVariants() {
+function getFullSceneLessons() {
   assert.ok(
-    Array.isArray(FULL_SCENE_LESSON_VARIANTS),
-    "Expected FULL_SCENE_LESSON_VARIANTS to be an array",
+    Array.isArray(FULL_SCENE_LESSONS),
+    "Expected FULL_SCENE_LESSONS to be an array",
   );
 
   return expectedLessonIds.map((lessonId) => {
-    const matches = FULL_SCENE_LESSON_VARIANTS.filter(
-      (entry) => entry.baseLessonId === lessonId && entry.id === "full-scene",
+    const matches = FULL_SCENE_LESSONS.filter(
+      (entry) => entry.lessonId === lessonId,
     );
     assert.equal(
       matches.length,
       1,
-      `Expected exactly one full-scene variant for ${lessonId}`,
+      `Expected exactly one full-scene artwork set for ${lessonId}`,
     );
     return matches[0];
   });
 }
 
-function getDeclaredReadyMadeVariants() {
+function getDeclaredReadyMadeLessons() {
   assert.ok(
-    Array.isArray(FULL_SCENE_LESSON_VARIANTS),
-    "Expected FULL_SCENE_LESSON_VARIANTS to be an array",
+    Array.isArray(FULL_SCENE_LESSONS),
+    "Expected FULL_SCENE_LESSONS to be an array",
   );
-  return FULL_SCENE_LESSON_VARIANTS.filter(
-    (entry) =>
-      entry.id === "full-scene" && expectedLessonIds.includes(entry.baseLessonId),
+  return FULL_SCENE_LESSONS.filter(
+    (entry) => expectedLessonIds.includes(entry.lessonId),
   );
 }
 
@@ -106,17 +96,16 @@ function renderStage(scene) {
   );
   return renderToStaticMarkup(
     createElement(BoxedFullSceneStage, {
-      framePreset: scene.frame.preset,
       image: scene.image,
     }),
   );
 }
 
-test("every ready-made lesson has one five-scene wide artwork variant", async () => {
-  const variants = getFullSceneVariants();
+test("every ready-made lesson has one five-scene artwork set", async () => {
+  const lessons = getFullSceneLessons();
   const allSources = [];
 
-  for (const [index, variant] of variants.entries()) {
+  for (const [index, artwork] of lessons.entries()) {
     const lessonId = expectedLessonIds[index];
     const lessonFile = fileURLToPath(
       new URL(`../content/lessons/${lessonId}.json`, import.meta.url),
@@ -124,22 +113,18 @@ test("every ready-made lesson has one five-scene wide artwork variant", async ()
     const lesson = JSON.parse(await readFile(lessonFile, "utf8"));
 
     assert.equal(lesson.scenes.length, 5, `Expected five scenes in ${lessonId}`);
-    assert.equal(variant.scenes.length, lesson.scenes.length);
-    assert.deepEqual(
-      variant.scenes.map((scene) => scene.frame.preset),
-      Array.from({ length: lesson.scenes.length }, () => "wide"),
-    );
+    assert.equal(artwork.scenes.length, lesson.scenes.length);
 
-    for (const scene of variant.scenes) {
+    for (const scene of artwork.scenes) {
       assert.match(
-        scene.image.src,
+        scene.src,
         new RegExp(`^/assets/full-scenes/${lessonId}/.+\\.webp$`),
       );
       assert.ok(
-        scene.image.alt.trim(),
+        scene.alt.trim(),
         `Expected descriptive full-scene alt text for ${lessonId}`,
       );
-      allSources.push(scene.image.src);
+      allSources.push(scene.src);
     }
   }
 
@@ -152,13 +137,13 @@ test("every ready-made lesson has one five-scene wide artwork variant", async ()
 });
 
 test("every declared ready-made full-scene source is an existing 1672x941 WebP file", async () => {
-  const variants = getDeclaredReadyMadeVariants();
-  const allSources = variants.flatMap((variant) =>
-    variant.scenes.map((scene) => scene.image.src),
+  const lessons = getDeclaredReadyMadeLessons();
+  const allSources = lessons.flatMap((lesson) =>
+    lesson.scenes.map((scene) => scene.src),
   );
 
   assert.equal(
-    variants.length,
+    lessons.length,
     expectedLessonIds.length,
     "Expected asset declarations for all seven ready-made lessons",
   );
@@ -179,34 +164,16 @@ test("every declared ready-made full-scene source is an existing 1672x941 WebP f
   }
 });
 
-test("boxed full-scene artwork renders as one labelled image without layered sprites", () => {
+test("boxed lesson artwork renders as one labelled image without experiment chrome", () => {
   const html = renderStage(stageFixture);
   const alt = escapeRegExp(escapeHtmlAttribute(stageFixture.image.alt));
   const src = escapeRegExp(escapeHtmlAttribute(stageFixture.image.src));
 
-  assert.match(html, /aria-label="Full-scene artwork"/);
+  assert.match(html, /aria-label="Lesson artwork"/);
   assert.match(html, /role="region"/);
   assert.match(html, new RegExp(`<img[^>]*alt="${alt}"[^>]*src="${src}"`));
-  assert.match(html, />Landscape · 3:2</);
+  assert.match(html, /aspect-video/);
+  assert.doesNotMatch(html, /Landscape|Portrait|Wide|Natural size/);
   assert.equal((html.match(/<img\b/g) ?? []).length, 1);
   assert.doesNotMatch(html, /data-character=|lesson-character-slot/);
-});
-
-test("boxed full-scene artwork exposes each frame label and leaves free art at its natural ratio", () => {
-  for (const [preset, label, aspectRatio] of expectedFrames) {
-    const html = renderStage({
-      ...stageFixture,
-      frame: { preset },
-    });
-
-    assert.match(html, new RegExp(`>${escapeRegExp(label)}<`));
-    if (aspectRatio) {
-      assert.match(
-        html,
-        new RegExp(`style="[^"]*aspect-ratio:${escapeRegExp(aspectRatio)}`),
-      );
-    } else {
-      assert.doesNotMatch(html, /aspect-ratio:/);
-    }
-  }
 });

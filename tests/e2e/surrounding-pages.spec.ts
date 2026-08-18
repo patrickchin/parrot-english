@@ -89,7 +89,7 @@ test("ready-made lessons show distinct story-specific artwork", async ({
   }
 });
 
-test("every ready-made lesson exposes its canonical full-scene link", async ({
+test("every ready-made lesson exposes one canonical start link", async ({
   page,
 }) => {
   await page.route("**/api/lessons/my", async (route) => {
@@ -109,12 +109,15 @@ test("every ready-made lesson exposes its canonical full-scene link", async ({
   for (const [index, lesson] of readyMadeArtwork.entries()) {
     await expect(
       cards.nth(index).getByRole("link", {
-        name: `Start full-scene version: ${lesson.title}`,
+        name: `Start lesson: ${lesson.title}`,
       }),
     ).toHaveAttribute(
       "href",
-      `/lessons/parrot/${lesson.id}/variants/full-scene/scenes/1`,
+      `/lessons/parrot/${lesson.id}/scenes/1`,
     );
+    await expect(
+      cards.nth(index).getByRole("link", { name: /full-scene/i }),
+    ).toHaveCount(0);
   }
 });
 
@@ -158,7 +161,6 @@ for (const viewport of [
       .getByRole("region", { name: "Ready-made lessons" })
       .getByRole("article");
     const firstLesson = readyMadeLessons.first();
-    const secondLesson = readyMadeLessons.nth(1);
     const thirdLesson = readyMadeLessons.nth(2);
     const title = firstLesson.getByRole("heading", {
       name: "Peppa's High Ball",
@@ -174,11 +176,6 @@ for (const viewport of [
     const artworkBox = await visibleBox(artwork);
     const titleBox = await visibleBox(title);
     const startBox = await visibleBox(start);
-    const comparisonBox = await visibleBox(
-      secondLesson.getByRole("link", {
-        name: "Start full-scene version: The Red Flower",
-      }),
-    );
     const thirdCardBox = await visibleBox(thirdLesson);
     const cardBoxes = await Promise.all(
       Array.from({ length: 7 }, (_, index) =>
@@ -207,15 +204,6 @@ for (const viewport of [
       viewport.width < 360 ? 48 : 80,
     );
     expect(startBox.width).toBeLessThanOrEqual(viewport.maxStartWidth);
-    const secondCardBox = await visibleBox(secondLesson);
-    expect(comparisonBox.x).toBeGreaterThanOrEqual(secondCardBox.x);
-    expect(comparisonBox.x + comparisonBox.width).toBeLessThanOrEqual(
-      secondCardBox.x + secondCardBox.width,
-    );
-    expect(comparisonBox.y).toBeGreaterThanOrEqual(secondCardBox.y);
-    expect(comparisonBox.y + comparisonBox.height).toBeLessThanOrEqual(
-      secondCardBox.y + secondCardBox.height,
-    );
     expect(thirdCardBox.y).toBeLessThan(viewport.height);
 
     if (viewport.width < 360) {
@@ -275,11 +263,6 @@ for (const viewport of [
     const firstCard = lessons.nth(0);
     const firstCardBox = await visibleBox(firstCard);
     const secondCardBox = await visibleBox(lessons.nth(1));
-    const comparisonBox = await visibleBox(
-      lessons.nth(1).getByRole("link", {
-        name: "Start full-scene version: The Red Flower",
-      }),
-    );
     const fifthCardBox = await visibleBox(lessons.nth(4));
     const titleBox = await visibleBox(
       firstCard.getByRole("heading", { name: "Peppa's High Ball" }),
@@ -297,10 +280,6 @@ for (const viewport of [
     );
     expect(secondCardBox.y).toBeGreaterThanOrEqual(
       firstCardBox.y + firstCardBox.height,
-    );
-    expect(comparisonBox.y).toBeGreaterThanOrEqual(secondCardBox.y);
-    expect(comparisonBox.y + comparisonBox.height).toBeLessThanOrEqual(
-      secondCardBox.y + secondCardBox.height,
     );
     expect(firstCardBox.height).toBeLessThanOrEqual(viewport.maxCardHeight);
     expect(artworkBox.width).toBeGreaterThanOrEqual(

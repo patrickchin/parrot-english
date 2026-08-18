@@ -26,14 +26,10 @@ const SAFE_RETURN_PATHS = [
   TALK_TO_PEPPA_ROUTE_PATH,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
-  /^\/games\/*$/i,
-  /^\/games\/worlds\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
   /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
-  /^\/lessons\/parrot\/[^/]+\/variants\/[^/]+\/*$/i,
-  /^\/lessons\/parrot\/[^/]+\/variants\/[^/]+\/scenes\/[^/]+\/*$/i,
   /^\/progress\/*$/i,
   /^\/stories\/*$/i,
   /^\/stories\/[^/]+\/*$/i,
@@ -95,20 +91,6 @@ export function getLessonScenePath(
   sceneIndex: number,
 ) {
   return `${getLessonPath(source, lessonId)}/scenes/${sceneIndex + 1}`;
-}
-
-export function getParrotLessonVariantScenePath(
-  lessonId: string,
-  variantId: string,
-  sceneIndex: number,
-) {
-  if (!variantId.trim() || variantId === "." || variantId === "..") {
-    throw new TypeError("Variant ID must be non-empty and cannot be a dot segment.");
-  }
-
-  return `${getLessonPath("parrot", lessonId)}/variants/${encodeURIComponent(
-    variantId,
-  )}/scenes/${sceneIndex + 1}`;
 }
 
 export function getMyLessonEditPath(lessonId: string) {

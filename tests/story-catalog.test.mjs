@@ -12,9 +12,9 @@ import {
 } from "../src/stories/story-catalog.ts";
 
 describe("story script catalog", () => {
-  it("publishes 20 script experiments plus the original baseline", () => {
-    assert.equal(STORIES.length, 21);
-    assert.equal(STORY_LEVELS.length, 5);
+  it("publishes 20 stories across four learner levels", () => {
+    assert.equal(STORIES.length, 20);
+    assert.equal(STORY_LEVELS.length, 4);
     assert.equal(STORY_VOCABULARY_PROFILES.length, 4);
     assert.deepEqual(
       STORY_LEVELS.map(({ id }) => id),
@@ -23,21 +23,19 @@ describe("story script catalog", () => {
         "repeating-patterns",
         "tiny-stories",
         "early-a1",
-        "original-baseline",
       ],
     );
     assert.deepEqual(
       STORIES.map(({ level }) => level),
       [
-        ...STORY_LEVELS.slice(0, 4).flatMap(({ id }) => Array(5).fill(id)),
-        "original-baseline",
+        ...STORY_LEVELS.flatMap(({ id }) => Array(5).fill(id)),
       ],
     );
 
-    for (const [levelIndex, level] of STORY_LEVELS.entries()) {
+    for (const level of STORY_LEVELS) {
       assert.equal(
         STORIES.filter((story) => story.level === level.id).length,
-        levelIndex < 4 ? 5 : 1,
+        5,
         `${level.label} story count`,
       );
     }
@@ -239,72 +237,10 @@ describe("story script catalog", () => {
     assert.match(narrative, /family/);
   });
 
-  it("keeps the complete original Lantern Trail beside the controlled rewrite", () => {
-    const story = resolveStory("the-lantern-trail-original");
-    assert.ok(story);
-    assert.equal(story.title, "The Lantern Trail — Original");
-    assert.equal(story.level, "original-baseline");
-    assert.equal(story.pages.length, 6);
-    assert.equal(story.assumedKnownWords.length, 107);
-    assert.deepEqual(
-      story.pages.map(({ id, joinIn, text }) => ({ id, joinIn, text })),
-      [
-        {
-          id: "the-garden-gate",
-          text:
-            "At sunset, Pip the green parrot heard a tiny voice by the garden gate. “I’m Flicker,” said a little firefly. “The wind blew me away from my family.” Pip opened his wings. “We’ll follow your glow and find the lantern tree.”",
-          joinIn: "Glow, little lantern, show us the way!",
-        },
-        {
-          id: "the-moonlit-stream",
-          text:
-            "The trail reached a stream where round stones winked in the moonlight. Flicker lit the first stone, and Pip hopped after him—tip, tap, tip! Together they crossed without wetting a feather.",
-          joinIn: "Glow, little lantern, show us the way!",
-        },
-        {
-          id: "the-rain-leaf",
-          text:
-            "Soft rain began to patter. Pip lifted a giant leaf over them like an umbrella, but Flicker’s light grew dim. Pip stayed close until the warm glow shone again.",
-          joinIn: "Glow, little lantern, show us the way!",
-        },
-        {
-          id: "the-windy-sunflowers",
-          text:
-            "A gust whooshed through the sleeping sunflowers and spun Flicker in circles. Pip cupped his wings around his little friend. When the wind passed, a golden trail twinkled ahead.",
-          joinIn: "Glow, little lantern, show us the way!",
-        },
-        {
-          id: "the-lantern-tree",
-          text:
-            "The trail ended at an old lantern tree. Dozens of fireflies danced from the hollow, and Flicker’s family wrapped him in a warm, sparkling hug. Pip cheered as the whole tree lit up.",
-          joinIn: "Welcome home, Flicker!",
-        },
-        {
-          id: "one-last-glow",
-          text:
-            "Flicker guided Pip back to his cosy tree house. One tiny light hovered outside the round window until Pip was tucked beneath his blanket. Then Flicker blinked once, twice, and floated home beneath the moon.",
-          joinIn: "Good night, little lantern.",
-        },
-      ],
-    );
-
-    const narrative = story.pages.map(({ text }) => text).join(" ");
-    assert.equal(countStoryWords(narrative), 199);
-    assert.equal(
-      Math.max(...story.pages.map(({ text }) => countStoryWords(text))),
-      41,
-    );
-    assert.match(narrative, /sunset|moonlight|patter|whooshed|twinkled/i);
-    assert.match(narrative, /One tiny light hovered outside the round window/);
-  });
-
   it("resolves only exact playable story IDs", () => {
     assert.equal(resolveStory("the-red-ball"), STORIES[0]);
     assert.equal(resolveStory("the-lantern-trail")?.id, "the-lantern-trail");
-    assert.equal(
-      resolveStory("the-lantern-trail-original")?.id,
-      "the-lantern-trail-original",
-    );
+    assert.equal(resolveStory("the-lantern-trail-original"), null);
     assert.equal(resolveStory("The-Red-Ball"), null);
     assert.equal(resolveStory("missing-story"), null);
     assert.equal(resolveStory(undefined), null);

@@ -1,12 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const lessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
-const fullSceneLessonPath =
-  "/lessons/parrot/02-garden-colors/variants/full-scene/scenes/1";
-const shortFullSceneLessonPath =
-  "/lessons/parrot/02-garden-colors/variants/full-scene";
-const bedtimeFullSceneLessonPath =
-  "/lessons/parrot/07-bedtime-story/variants/full-scene/scenes/1";
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
 
@@ -203,11 +197,20 @@ test("the start state introduces the lesson without premature scene UI", async (
 
   const start = page.getByRole("button", { name: "Start lesson" });
   await expect(start).toBeFocused();
-  await expect(page.getByAltText("A sunny garden with flowers and a tall tree")).toBeVisible();
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  await expect(artwork).toBeVisible();
+  await expect(
+    artwork.getByAltText(
+      "Peppa and Dolly look up at the red ball caught high in the tree",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByAltText("A sunny garden with flowers and a tall tree"),
+  ).toBeHidden();
+  await expect(page.getByText(/Wide · 16:9|Full-scene artwork/)).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeHidden();
-  await expect(page.getByAltText(/Peppa/)).toBeHidden();
-  await expect(page.getByAltText(/Dolly/)).toBeHidden();
+  await expect(artwork.getByRole("img")).toHaveCount(1);
   await expect(page.getByRole("navigation", { name: "Speaking controls" })).toBeHidden();
   await expect(page.getByLabel(/Build version/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Previous scene" })).toHaveCount(0);
@@ -229,8 +232,7 @@ for (const viewport of viewports) {
     const speech = page.getByRole("status").filter({
       hasText: "Look! My ball!",
     });
-    const peppa = page.getByAltText(/Peppa/);
-    const dolly = page.getByAltText(/Dolly/);
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
     const back = page.getByRole("button", { name: "Back to lesson list" });
     const account = page.getByRole("button", {
       exact: true,
@@ -243,13 +245,10 @@ for (const viewport of viewports) {
     await expect(speech).toContainText("Listen");
     await expectInsideViewport(hud, viewport);
     await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(peppa, viewport);
-    await expectInsideViewport(dolly, viewport);
+    await expectInsideViewport(artwork, viewport);
     await expectNoOverlap(back, hud);
     await expectNoOverlap(account, hud);
     await expectBefore(hud, speech);
-    await expectBefore(speech, peppa);
-    await expectBefore(speech, dolly);
     await expect(
       page.getByRole("region", { name: "Lesson introduction" }),
     ).toBeHidden();
@@ -317,169 +316,13 @@ for (const viewport of viewports) {
     expect(Math.abs(microphoneBox.height - skipBox.height)).toBeLessThanOrEqual(
       1,
     );
-    await expectInsideViewport(peppa, viewport);
-    await expectInsideViewport(dolly, viewport);
+    await expectInsideViewport(artwork, viewport);
     await expectBefore(hud, prompt);
-    await expectBefore(prompt, peppa);
-    await expectBefore(prompt, dolly);
-    await expectBefore(peppa, controls);
-    await expectBefore(dolly, controls);
+    await expectNoOverlap(prompt, controls);
     await expectLeftOf(microphone, skip);
     await expectNoPageOverflow(page);
   });
 }
-
-for (const viewport of viewports) {
-  test(`full-scene artwork stays boxed on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(fullSceneLessonPath);
-    await installAudioDelay(page, 5_000);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const artwork = page.getByRole("region", {
-      name: "Full-scene artwork",
-    });
-    const image = artwork.getByRole("img", {
-      name: /Peppa and Dolly discover many colorful flowers/i,
-    });
-
-    const artworkBox = await expectInsideViewport(artwork, viewport);
-    await expectInsideViewport(image, viewport);
-    await expect(artwork).toHaveAttribute("data-frame-preset", "wide");
-    await expect(artwork.getByText("Wide · 16:9", { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole("region", { name: "Lesson progress" }),
-    ).toContainText("Colorful Flowers");
-    await expect(page.getByText("Look at the flowers!", { exact: true })).toBeVisible();
-    await expect(page.locator("[data-character]")).toHaveCount(0);
-    expect(artworkBox.width).toBeLessThan(viewport.width);
-    expect(artworkBox.height).toBeLessThan(viewport.height);
-    await expectNoPageOverflow(page);
-  });
-}
-
-test("the full-scene route keeps one stable 16:9 frame throughout the lesson", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(fullSceneLessonPath);
-  await installAudioDelay(page, 5_000);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  const controls = page.getByRole("navigation", {
-    name: "Story playback controls",
-  });
-  const artwork = page.getByRole("region", { name: "Full-scene artwork" });
-  const firstArtworkBox = await visibleBox(artwork);
-
-  await controls.getByRole("button", { name: "Next scene" }).click();
-  await expect(page).toHaveURL(
-    /\/lessons\/parrot\/02-garden-colors\/variants\/full-scene\/scenes\/2$/,
-  );
-  await expect(artwork).toHaveAttribute("data-frame-preset", "wide");
-  await expect(artwork.getByText("Wide · 16:9", { exact: true })).toBeVisible();
-  let artworkBox = await visibleBox(artwork);
-  expect(Math.abs(artworkBox.width - firstArtworkBox.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(artworkBox.height - firstArtworkBox.height)).toBeLessThanOrEqual(2);
-
-  await controls.getByRole("button", { name: "Next scene" }).click();
-  await expect(page).toHaveURL(/\/variants\/full-scene\/scenes\/3$/);
-  await expect(artwork).toHaveAttribute("data-frame-preset", "wide");
-  artworkBox = await visibleBox(artwork);
-  expect(Math.abs(artworkBox.width - firstArtworkBox.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(artworkBox.height - firstArtworkBox.height)).toBeLessThanOrEqual(2);
-
-  await controls.getByRole("button", { name: "Next scene" }).click();
-  await expect(page).toHaveURL(/\/variants\/full-scene\/scenes\/4$/);
-  await expect(artwork).toHaveAttribute("data-frame-preset", "wide");
-  artworkBox = await visibleBox(artwork);
-  expect(Math.abs(artworkBox.width - firstArtworkBox.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(artworkBox.height - firstArtworkBox.height)).toBeLessThanOrEqual(2);
-
-  await controls.getByRole("button", { name: "Next scene" }).click();
-  await expect(page).toHaveURL(/\/variants\/full-scene\/scenes\/5$/);
-  await expect(artwork).toHaveAttribute("data-frame-preset", "wide");
-  artworkBox = await visibleBox(artwork);
-  expect(Math.abs(artworkBox.width - firstArtworkBox.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(artworkBox.height - firstArtworkBox.height)).toBeLessThanOrEqual(2);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toContainText("The Finished Basket");
-  await expectNoPageOverflow(page);
-});
-
-test("a bedtime full-scene route starts the matching lesson and advances boxed artwork", async ({
-  page,
-}) => {
-  const viewport = { width: 390, height: 844 };
-  await page.setViewportSize(viewport);
-  await page.goto(bedtimeFullSceneLessonPath);
-
-  const introduction = page.getByRole("region", {
-    name: "Lesson introduction",
-  });
-  await expect(
-    introduction.getByRole("heading", { name: "Good Night, Peppa" }),
-  ).toBeVisible();
-
-  await installAudioDelay(page, 5_000);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  const progress = page.getByRole("region", { name: "Lesson progress" });
-  const artwork = page.getByRole("region", { name: "Full-scene artwork" });
-  const firstImage = artwork.getByRole("img", {
-    name: "Dolly closes the storybook while Peppa rests awake on the evening meadow blanket",
-  });
-  const firstArtworkBox = await visibleBox(artwork);
-
-  await expect(progress).toContainText("The Story Ends");
-  await expect(firstImage).toHaveAttribute(
-    "src",
-    "/assets/full-scenes/07-bedtime-story/01-story-ends.webp",
-  );
-  await expect(page.getByText("The story is finished.", { exact: true })).toBeVisible();
-  await expect(artwork.getByText("Wide · 16:9", { exact: true })).toBeVisible();
-  expect(firstArtworkBox.width).toBeLessThan(viewport.width);
-  expect(firstArtworkBox.height).toBeLessThan(viewport.height);
-
-  await page
-    .getByRole("navigation", { name: "Story playback controls" })
-    .getByRole("button", { name: "Next scene" })
-    .click();
-
-  await expect(page).toHaveURL(
-    "/lessons/parrot/07-bedtime-story/variants/full-scene/scenes/2",
-  );
-  await expect(progress).toContainText("A Quiet Evening");
-  await expect(
-    artwork.getByRole("img", {
-      name: "Peppa and Dolly sit quietly by the lantern beneath the crescent moon",
-    }),
-  ).toHaveAttribute(
-    "src",
-    "/assets/full-scenes/07-bedtime-story/02-quiet-evening.webp",
-  );
-  await expect(page.getByText("The moon is high.", { exact: true })).toBeVisible();
-  await expect(page.locator("[data-character]")).toHaveCount(0);
-  const secondArtworkBox = await visibleBox(artwork);
-  expect(Math.abs(secondArtworkBox.width - firstArtworkBox.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(secondArtworkBox.height - firstArtworkBox.height)).toBeLessThanOrEqual(2);
-  await expectNoPageOverflow(page);
-});
-
-test("the short full-scene route opens the canonical first scene", async ({
-  page,
-}) => {
-  await page.goto(shortFullSceneLessonPath);
-
-  await expect(page).toHaveURL(fullSceneLessonPath);
-  await expect(
-    page.getByRole("region", { name: "Full-scene artwork" }),
-  ).toHaveAttribute("data-frame-preset", "wide");
-  await expect(page.getByRole("button", { name: "Start lesson" })).toBeVisible();
-});
 
 test("playback controls pause, resume, and navigate between scenes", async ({
   page,

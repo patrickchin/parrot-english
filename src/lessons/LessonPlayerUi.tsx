@@ -22,12 +22,8 @@ import {
   IconButton,
   Card,
 } from "../shared/ui";
-import {
-  FULL_SCENE_FRAME_PRESETS,
-  type FullSceneFramePreset,
-  type FullSceneImage,
-} from "./full-scene-lessons";
 import type { PersonalizedStoryArtwork } from "../stories/personalized-story-art-client";
+import type { FullSceneImage } from "./full-scene-lessons";
 
 type LessonBackgroundAsset = {
   alt: string;
@@ -94,51 +90,19 @@ export function LessonStage({
   );
 }
 
-const fullSceneFrameWidth: Record<FullSceneFramePreset, string> = {
-  landscape: "w-[min(calc(100%_-_2rem),78dvh,48rem)]",
-  square: "w-[min(calc(100%_-_2rem),52dvh,36rem)]",
-  portrait: "w-[min(calc(100%_-_2rem),34dvh,24rem)]",
-  wide: "w-[min(calc(100%_-_2rem),92dvh,56rem)]",
-  free: "w-fit max-w-[calc(100%_-_2rem)]",
-};
-
-export function BoxedFullSceneStage({
-  framePreset,
-  image,
-}: {
-  framePreset: FullSceneFramePreset;
-  image: FullSceneImage;
-}) {
-  const frame = FULL_SCENE_FRAME_PRESETS[framePreset];
-  const aspectRatio = frame.aspectRatio
-    ? { aspectRatio: frame.aspectRatio }
-    : undefined;
-
+export function BoxedFullSceneStage({ image }: { image: FullSceneImage }) {
   return (
     <section
-      aria-label="Full-scene artwork"
-      className={cx(
-        "absolute left-1/2 top-1/2 z-10 grid max-h-[52dvh] -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card",
-        fullSceneFrameWidth[framePreset],
-      )}
-      data-frame-preset={framePreset}
+      aria-label="Lesson artwork"
+      className="absolute left-1/2 top-1/2 z-10 aspect-video max-h-[52dvh] w-[min(calc(100%_-_2rem),92dvh,56rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card"
       role="region"
-      style={aspectRatio}
     >
       <img
         alt={image.alt}
-        className={cx(
-          "block select-none object-contain",
-          framePreset === "free"
-            ? "h-auto w-auto max-h-[50dvh] max-w-full"
-            : "size-full",
-        )}
+        className="block size-full select-none object-contain"
         draggable="false"
         src={image.src}
       />
-      <span className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-navy/90 px-3 py-1 text-xs font-black text-white shadow-sm md:text-sm">
-        {frame.label}
-      </span>
     </section>
   );
 }

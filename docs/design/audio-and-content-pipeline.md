@@ -145,19 +145,6 @@ described in `docs/deployment/background-media-r2.md`. Public object keys are
 versioned and immutable; changing artwork requires a new version and catalog
 URL rather than overwriting an existing object.
 
-Approved pixel-stage art also lives outside Git. The public PNGs use immutable
-keys under `prototypes/pixel-stage/v<version>` in `parrot-english-media`, while
-source PNGs and the provenance manifest stay private in
-`parrot-english-art-source`. The committed
-`prototypes/pixel-stage/assets.json` file records delivery URLs, dimensions,
-and SHA-256 hashes without storing image bytes. The public bucket's read-only
-CORS rule lets Phaser load those textures from the media hostname.
-
-During the current proof-of-concept iteration, the `v1` pixel-art objects may be
-replaced in place. Runtime art requests include a revisioned art cache key so a
-genuinely redrawn sprite cannot reuse an earlier duplicated-pixel browser/CDN
-response.
-
 ## QA Checklist
 
 - Validate every checked-in lesson and catalog.
@@ -168,7 +155,6 @@ response.
   and cancels on navigation.
 - Confirm each audio metadata path exists under `public`.
 - Run `npm run verify:backgrounds` after any background catalog change.
-- Run `npm run verify:pixel-stage-media` after any pixel-stage catalog change.
 - Run focused lesson/audio tests.
 - Confirm every story cover path resolves to a checked-in WebP while page media
   remains explicitly nullable.

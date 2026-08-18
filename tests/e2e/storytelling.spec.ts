@@ -63,13 +63,13 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the shelf shows one reading level at a time with teaching notes on demand", async ({
+test("the shelf shows one clear reading level at a time", async ({
   page,
 }) => {
   await page.goto("/stories");
 
   await expect(
-    page.getByRole("heading", { exact: true, name: "Storytelling" }),
+    page.getByRole("heading", { exact: true, name: "Choose a story" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
   const levelTabs = shelf.getByRole("tablist", {
@@ -101,20 +101,7 @@ test("the shelf shows one reading level at a time with teaching notes on demand"
   await expect(
     redBallCard.getByText("5 pages", { exact: true }),
   ).toBeVisible();
-  await expect(
-    redBallCard.getByText("23 narrator words", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    redBallCard.getByText("Assumes familiar: no extra content words", {
-      exact: true,
-    }),
-  ).toBeHidden();
-  await redBallCard.getByText("Teaching notes", { exact: true }).click();
-  await expect(
-    redBallCard.getByText("Assumes familiar: no extra content words", {
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(redBallCard.getByText(/Teaching notes|Prompt test/)).toHaveCount(0);
 
   await firstWordsTab.focus();
   await firstWordsTab.press("ArrowRight");
@@ -149,25 +136,7 @@ test("the shelf shows one reading level at a time with teaching notes on demand"
     ).toBeVisible();
   }
 
-  await levelTabs.getByRole("tab", { name: /Original baseline/ }).click();
-  await expect(page).toHaveURL(/\?level=original-baseline$/);
-  panel = shelf.getByRole("region", { name: /Original baseline stories/ });
-  await expect(panel.getByRole("article")).toHaveCount(1);
-  await expect(
-    panel.getByRole("link", {
-      name: "Read story: The Lantern Trail — Original",
-    }),
-  ).toHaveAttribute("href", "/stories/the-lantern-trail-original/pages/1");
-  const originalCard = panel.getByRole("article", {
-    name: "The Lantern Trail — Original",
-  });
-  await originalCard.getByText("Teaching notes", { exact: true }).click();
-  await expect(
-    originalCard.getByText(
-      "Assumes familiar: 107 extra word forms in the original",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  await expect(levelTabs.getByRole("tab")).toHaveCount(4);
 
   await page.goto("/stories?level=not-a-level");
   await expect(page).toHaveURL(/\/stories$/);
@@ -290,27 +259,15 @@ test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) =
   ).toBeDisabled();
 });
 
-test("the complete original Lantern Trail remains readable as a baseline", async ({
+test("the retired original Lantern Trail returns to the story shelf", async ({
   page,
 }) => {
   await page.goto("/stories/the-lantern-trail-original/pages/1");
 
-  const reader = page.getByRole("region", { name: "Story reader" });
+  await expect(page).toHaveURL("/stories");
   await expect(
-    reader.getByRole("heading", {
-      exact: true,
-      name: "The Lantern Trail — Original",
-    }),
+    page.getByRole("heading", { exact: true, name: "Choose a story" }),
   ).toBeVisible();
-  await expect(
-    reader.getByText(
-      /At sunset, Pip the green parrot heard a tiny voice by the garden gate/,
-    ),
-  ).toBeVisible();
-  await expect(
-    reader.getByText(/Glow, little lantern, show us the way!/),
-  ).toBeVisible();
-  await expect(reader.getByText("Page 1 of 6", { exact: true })).toBeVisible();
 });
 
 test("finishing a prototype uses story-owned completion copy", async ({ page }) => {

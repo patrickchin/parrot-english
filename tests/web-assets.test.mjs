@@ -11,9 +11,7 @@ const backgroundCatalogFile = fileURLToPath(
 const webAssetExtensions = new Set([".mp3", ".svg", ".webp"]);
 
 function isSupportedAsset(filePath) {
-  if (webAssetExtensions.has(extname(filePath))) return true;
-  if (/^pixel-world\/.+\.png$/.test(filePath)) return true;
-  return filePath === "pixel-world/manifest.json";
+  return webAssetExtensions.has(extname(filePath));
 }
 
 async function listAssetFiles(dir) {

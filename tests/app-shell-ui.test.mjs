@@ -50,7 +50,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu prioritizes six working activities and previews Progress", () => {
+test("home menu prioritizes the three learner activities", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -60,41 +60,14 @@ test("home menu prioritizes six working activities and previews Progress", () =>
   const activityHrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
   );
-  assert.equal(activityHrefs.length, 6);
-  assert.deepEqual(
-    new Set(activityHrefs),
-    new Set([
-      "/talk-to-peppa",
-      "/lessons",
-      "/stories",
-      "/games/worlds",
-      "/games",
-      "/lessons/my/create",
-    ]),
-  );
-  assert.equal((html.match(/<button/g) ?? []).length, 1);
-  assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
-  assert.equal((html.match(/>Coming soon</g) ?? []).length, 1);
-  assert.match(html, /What do you want to do today\?/);
+  assert.deepEqual(activityHrefs, ["/talk-to-peppa", "/lessons", "/stories"]);
+  assert.equal((html.match(/<button/g) ?? []).length, 0);
+  assert.match(html, /Choose how you want to practice/);
   assert.match(html, />Talk to Peppa</);
-  assert.match(html, /chat freely/i);
-  assert.match(html, />Lessons</);
-  assert.match(html, /story.*speaking|speaking.*story/i);
-  assert.match(html, />World Explorer</);
-  assert.match(html, />New pipeline</);
-  assert.match(html, />Create a Lesson</);
-  assert.match(
-    html,
-    /<a[^>]*href="\/lessons\/my\/create"[^>]*>[\s\S]*Create a Lesson[\s\S]*<\/a>/,
-  );
-  assert.match(html, />Storytelling</);
+  assert.match(html, />Speaking lessons</);
+  assert.match(html, />Story time</);
   assert.match(html, /href="\/stories"/);
-  assert.match(html, />Pixel Lesson Lab</);
-  assert.match(html, />Experiment</i);
-  assert.match(html, /speaking adventure/i);
-  assert.match(html, /aria-label="Progress, coming soon"/);
-  assert.doesNotMatch(html, /aria-label="Storytelling, coming soon"/);
-  assert.doesNotMatch(html, /PARROT ENGLISH/);
+  assert.doesNotMatch(html, /World Explorer|Pixel Lesson Lab|Progress|Coming soon/);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -152,7 +125,7 @@ test("feature placeholder keeps visual actions in keyboard order", () => {
   );
 });
 
-test("authenticated application routes include Storytelling and retire Progress", () => {
+test("authenticated application routes include the core learner activities", () => {
   assert.match(renderApplicationRoute("/"), /Learning activities/);
   assert.match(
     renderApplicationRoute("/talk-to-peppa"),
@@ -161,12 +134,9 @@ test("authenticated application routes include Storytelling and retire Progress"
   assert.match(renderApplicationRoute("/lessons"), /<h1[^>]*>Lessons<\/h1>/);
   assert.match(
     renderApplicationRoute("/stories"),
-    /<h1[^>]*>Storytelling<\/h1>/,
+    /<h1[^>]*>Choose a story<\/h1>/,
   );
-  assert.match(
-    renderApplicationRoute("/games"),
-    /<h1[^>]*>Pixel Lesson Lab<\/h1>/,
-  );
+  assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
