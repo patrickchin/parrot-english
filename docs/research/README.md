@@ -22,6 +22,7 @@ Last reviewed: 2026-08-21
 - [Age-adaptive experience guidance](./age-adaptive-experience-guidance.md)
 - [Cognitive accessibility for young learners](./cognitive-accessibility.md)
 - [Child AI safety and privacy](./child-ai-safety-and-privacy.md)
+- [Bounded conversation safety evaluation](./bounded-conversation-safety-eval.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Lesson start state stability](./lesson-start-stability.md)
