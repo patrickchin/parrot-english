@@ -22,14 +22,14 @@ and with children; they are not child-development standards.
 
 ## Event model and starting thresholds
 
-| Area | Minimum event fields | Definition | Starting threshold |
+| Area | Minimum privacy-reviewed fields | Definition | Starting threshold |
 | --- | --- | --- | --- |
-| Page experience | `web_vital {name, value, rating, route, navigation_type}` | Field LCP, INP, and CLS by route/device/browser | Official "good" at p75: LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1 |
-| Control acknowledgement | `control_ack {control, duration_ms}` | Activation to next painted visual state for Start, Mic, Stop, Repeat, Continue | Proposed p95 ≤100 ms |
-| Microphone startup | request, permission settled/outcome, capture ready, failure/reason | Separate human permission time from post-decision device startup | Proposed after grant: p75 ≤1 s, p95 ≤2 s; never SLO the human decision interval |
-| Voice room startup | start requested, room connected, mic published, first remote audio, playback blocked | Start tap to connected/published/audible milestones | Proposed room connected p75 ≤3 s, p95 ≤7 s; first remote audio after connection p75 ≤1 s, p95 ≤2 s |
-| Turn response | `turn_id`, child end, agent stages, client first audible | Child stops speaking to character audio becoming audible | Proposed p75 ≤1.5 s, p95 ≤3 s; treat ≥4 s as degraded pending child validation |
-| Recovery | reconnect started/completed, duration, disconnect reason | Active voice interruption through usable recovery or clear fallback | Proposed reconnect p95 ≤3 s; offer calm fallback rather than an endless spinner |
+| Page experience | Future fixed metric, coarse surface, value, rating, and navigation type; no raw route | Field LCP, INP, and CLS after a separate collection review | Official "good" at p75: LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1 |
+| Future control acknowledgement | Proposed `control_ack {control, duration_ms}` after a separate privacy review | Activation to next painted visual state for Start, Mic, Stop, Repeat, Continue | Proposed p95 ≤100 ms |
+| Microphone startup | Fixed outcome and bounded duration only | Current lesson measurement includes the human permission decision; a future post-grant event must separate it before applying a device SLO | Proposed after grant: p75 ≤1 s, p95 ≤2 s; never SLO the human decision interval |
+| Voice room startup | One identifier-free payload with API-ready, room-connected, initial-mute-confirmed, and learner-turn-state-ready relative durations | Start action through the logical client transition to a learner turn; initial mute is a control milestone, not microphone permission, capture, publication, or device readiness, and the learner-turn state does not verify a painted control or audible output | Proposed room connected p75 ≤3 s and p95 ≤7 s; learner-turn target still needs a field baseline |
+| Turn response | Fixed surface, fixed outcome, and bounded duration; no turn ID | End-turn action to the first assistant transport or transcript signal; this is not proof of audible output | Proposed p75 ≤1.5 s, p95 ≤3 s; treat ≥4 s as degraded pending child validation |
+| Future recovery | Proposed fixed operation/outcome and bounded duration after a separate privacy review; no disconnect text | Active interruption through usable recovery or clear fallback | Proposed reconnect p95 ≤3 s; offer calm fallback rather than an endless spinner |
 
 The four-second conversational boundary is informed by an adult 2025 study of
 1.5, 4.0, and 6.5 second response onset. It is useful as a warning, not
@@ -58,16 +58,27 @@ experience.
 
 ## Privacy-preserving telemetry
 
-- Report distributions (p50/p75/p95) by release, route, browser, coarse device
-  class, and permission state.
-- Use session-scoped random identifiers and, where available, LiveKit
-  `speech_id` correlation.
-- Keep both agent-side end-to-end timing and client-observed first-audible time.
-  Near-zero server playback timing does not include delivery to the learner.
-- Sample connection quality coarsely while a voice session is active. Derive
-  jitter-buffer average from `jitterBufferDelay / jitterBufferEmittedCount`.
-- Never send raw audio, transcript content, IP or ICE candidate addresses,
-  persistent device identifiers, or precise network/location signals.
+The first implemented boundary is intentionally narrower than this memo's
+earlier proposal. It emits no session-scoped random identifier and no LiveKit
+`speech_id`. It also adds no production sink, network request, persistent event
+storage, cookie, global DOM event, or console output, so this boundary currently
+creates no persistent event retention. This does not describe unrelated app data.
+See [Privacy-safe experience events](./privacy-safe-experience-events.md).
+
+- Use one fixed final event for a multi-stage operation, or an in-memory token
+  that is never emitted. Do not build a cross-session funnel.
+- Allow only closed system enums and bounded relative integer durations. Do not
+  add a metadata/tag bag.
+- Do not emit raw routes, URLs, saved-content IDs, account/session/conversation/
+  turn identifiers, names, ages, audio, transcripts, prompts, lesson text,
+  correctness, error messages/stacks, epoch timestamps, user agents, device or
+  screen details, network addresses, ICE candidates, or complete WebRTC stats.
+- Call the current turn endpoint **assistant signal**, not first audible. Add an
+  audible endpoint only after the mounted media element exposes a verified
+  `playing` signal.
+- A future field sink requires a purpose, owner, legal/consent review, network
+  and access-log audit, enforced deletion timeframe, and explicit data-flow
+  documentation before it is enabled.
 - Instrumentation failure must never block a lesson or conversation.
 
 ## Measurement sequence
@@ -83,7 +94,8 @@ experience.
 
 ## Evidence and limits
 
-See [PERF-01 through PERF-02](./source-register.md) and
+See [PRIV-04 through PRIV-06](./source-register.md),
+[PERF-01 through PERF-03](./source-register.md), and
 [VOICE-01 through VOICE-03](./source-register.md). Core Web Vitals are official
 page-experience thresholds. The voice targets are Parrot hypotheses assembled
 from platform semantics, general responsiveness research, and an adult

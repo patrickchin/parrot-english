@@ -21,6 +21,12 @@ import {
   DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   type TalkToPeppaPromptStyle,
 } from "../../lib/talk-to-peppa-prompt-style";
+import {
+  experienceEvents,
+  type ConversationExperienceSurface,
+  type ConversationResponseOutcome,
+  type ExperienceTimeline,
+} from "../experience/experience-events";
 
 const COMPLETED_DISCONNECT_REASONS = new Set([
   "ROOM_DELETED",
@@ -103,6 +109,15 @@ type ConversationRuntime = {
   transportReady: boolean;
 };
 
+type ConversationStartMeasurement = {
+  apiReadyMs: number | null;
+  microphoneMutedMs: number | null;
+  operation: number;
+  roomReadyMs: number | null;
+  surface: ConversationExperienceSurface;
+  timeline: ExperienceTimeline;
+};
+
 function createConversationRuntime(): ConversationRuntime {
   return {
     assistantSpeaking: false,
@@ -112,6 +127,12 @@ function createConversationRuntime(): ConversationRuntime {
     openingHeard: false,
     transportReady: false,
   };
+}
+
+function conversationExperienceSurface(
+  purpose: ConversationPurpose,
+): ConversationExperienceSurface {
+  return purpose === "small-chat" ? "talk" : "learner_profile";
 }
 
 export function usePeppaConversation({
@@ -138,6 +159,11 @@ export function usePeppaConversation({
     DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   );
   const conversationIdRef = useRef<string | null>(null);
+  const conversationStartMeasurementRef =
+    useRef<ConversationStartMeasurement | null>(null);
+  const responseExperienceTimelineRef = useRef<ExperienceTimeline | null>(null);
+  const responseExperienceSurfaceRef =
+    useRef<ConversationExperienceSurface | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
   const autoStartRef = useRef(false);
@@ -150,13 +176,86 @@ export function usePeppaConversation({
 
   const resetResponseLatency = useCallback(() => {
     responseLatencyTimer.reset();
+    responseExperienceTimelineRef.current?.cancel();
+    responseExperienceTimelineRef.current = null;
+    responseExperienceSurfaceRef.current = null;
     setResponseLatencyMs(null);
   }, [responseLatencyTimer]);
 
-  const finishResponseLatency = useCallback(() => {
+  const settleResponseLatency = useCallback((
+    outcome: ConversationResponseOutcome,
+  ) => {
     const elapsedMs = responseLatencyTimer.finish();
-    if (elapsedMs !== null) setResponseLatencyMs(elapsedMs);
+    const experienceTimeline = responseExperienceTimelineRef.current;
+    responseExperienceTimelineRef.current = null;
+    const experienceSurface = responseExperienceSurfaceRef.current;
+    responseExperienceSurfaceRef.current = null;
+    const experienceDurationMs = experienceTimeline?.finish() ?? null;
+    if (elapsedMs === null) return;
+    if (outcome === "assistant_signal") setResponseLatencyMs(elapsedMs);
+    if (experienceDurationMs !== null && experienceSurface !== null) {
+      experienceEvents.emit({
+        durationMs: experienceDurationMs,
+        name: "conversation_turn_response",
+        outcome,
+        surface: experienceSurface,
+      });
+    }
   }, [responseLatencyTimer]);
+
+  const cancelConversationStartMeasurement = useCallback(() => {
+    conversationStartMeasurementRef.current?.timeline.cancel();
+    conversationStartMeasurementRef.current = null;
+  }, []);
+
+  const failConversationStartMeasurement = useCallback((operation: number) => {
+    const measurement = conversationStartMeasurementRef.current;
+    if (!measurement || measurement.operation !== operation) return;
+    conversationStartMeasurementRef.current = null;
+    const durationMs = measurement.timeline.finish();
+    if (durationMs === null) return;
+    experienceEvents.emit({
+      durationMs,
+      name: "conversation_start",
+      outcome: "failed",
+      stage:
+        measurement.apiReadyMs === null
+          ? "api"
+          : measurement.roomReadyMs === null
+            ? "room"
+            : measurement.microphoneMutedMs === null
+              ? "microphone_mute"
+              : "opening",
+      surface: measurement.surface,
+    });
+  }, []);
+
+  const completeConversationStartMeasurement = useCallback(
+    (operation: number) => {
+      const measurement = conversationStartMeasurementRef.current;
+      if (!measurement || measurement.operation !== operation) return;
+      conversationStartMeasurementRef.current = null;
+      const learnerTurnReadyMs = measurement.timeline.finish();
+      if (
+        measurement.apiReadyMs === null ||
+        measurement.roomReadyMs === null ||
+        measurement.microphoneMutedMs === null ||
+        learnerTurnReadyMs === null
+      ) {
+        return;
+      }
+      experienceEvents.emit({
+        apiReadyMs: measurement.apiReadyMs,
+        learnerTurnReadyMs,
+        microphoneMutedMs: measurement.microphoneMutedMs,
+        name: "conversation_start",
+        outcome: "ready",
+        roomReadyMs: measurement.roomReadyMs,
+        surface: measurement.surface,
+      });
+    },
+    [],
+  );
 
   const loadSummary = useCallback(
     async (id: string, operation = operationRef.current) => {
@@ -201,8 +300,9 @@ export function usePeppaConversation({
       setMicrophoneBusy(false);
       setTurnReady(true);
       setStatus("listening");
+      completeConversationStartMeasurement(operation);
     },
-    [isCurrent],
+    [completeConversationStartMeasurement, isCurrent],
   );
 
   const handleTransportEvent = useCallback(
@@ -229,6 +329,10 @@ export function usePeppaConversation({
         return;
       }
       if (event.type === "disconnected") {
+        if (runtimeRef.current.awaitingResponse) {
+          settleResponseLatency("disconnected");
+        }
+        failConversationStartMeasurement(operation);
         runtimeRef.current.awaitingResponse = false;
         runtimeRef.current.learnerTurnOpen = false;
         runtimeRef.current.transportReady = false;
@@ -255,7 +359,7 @@ export function usePeppaConversation({
           setTurnReady(false);
           if (runtimeRef.current.awaitingResponse) {
             runtimeRef.current.awaitingResponse = false;
-            finishResponseLatency();
+            settleResponseLatency("assistant_signal");
           }
           if (!runtimeRef.current.learnerTurnOpen) {
             runtimeRef.current.openingHeard = true;
@@ -296,7 +400,9 @@ export function usePeppaConversation({
         );
       });
       if (event.role === "assistant") {
-        if (runtimeRef.current.awaitingResponse) finishResponseLatency();
+        if (runtimeRef.current.awaitingResponse) {
+          settleResponseLatency("assistant_signal");
+        }
         runtimeRef.current.awaitingResponse = false;
         if (event.final) {
           if (!runtimeRef.current.learnerTurnOpen) {
@@ -319,12 +425,29 @@ export function usePeppaConversation({
         );
       }
     },
-    [finishResponseLatency, isCurrent, loadSummary, openLearnerTurn, purpose],
+    [
+      failConversationStartMeasurement,
+      isCurrent,
+      loadSummary,
+      openLearnerTurn,
+      purpose,
+      settleResponseLatency,
+    ],
   );
 
   const start = useCallback(async () => {
     const operation = operationRef.current + 1;
     operationRef.current = operation;
+    cancelConversationStartMeasurement();
+    const conversationStartTimeline = experienceEvents.start();
+    conversationStartMeasurementRef.current = {
+      apiReadyMs: null,
+      microphoneMutedMs: null,
+      operation,
+      roomReadyMs: null,
+      surface: conversationExperienceSurface(purpose),
+      timeline: conversationStartTimeline,
+    };
     const previousConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const previousTransport = transportRef.current;
@@ -352,22 +475,54 @@ export function usePeppaConversation({
           : { purpose },
       );
       if (!isCurrent(operation)) return;
-      conversationIdRef.current = started.conversation.id;
+      const conversationId = started?.conversation?.id;
+      const participantToken = started?.livekit?.participantToken;
+      const livekitUrl = started?.livekit?.url;
+      if (
+        typeof conversationId !== "string" ||
+        !conversationId ||
+        typeof participantToken !== "string" ||
+        !participantToken ||
+        typeof livekitUrl !== "string" ||
+        !livekitUrl
+      ) {
+        throw new Error("Invalid conversation start response");
+      }
+      const measurement = conversationStartMeasurementRef.current;
+      if (measurement?.operation === operation) {
+        measurement.apiReadyMs = measurement.timeline.mark();
+      }
+      conversationIdRef.current = conversationId;
       const transport = createTransport({
-        token: started.livekit.participantToken,
-        url: started.livekit.url,
+        token: participantToken,
+        url: livekitUrl,
       });
       transportRef.current = transport;
       transport.subscribe((event) =>
-        handleTransportEvent(event, started.conversation.id, operation),
+        handleTransportEvent(event, conversationId, operation),
       );
       await transport.connect();
-      if (!isCurrent(operation)) {
+      if (
+        !isCurrent(operation) ||
+        transportRef.current !== transport
+      ) {
         await transport.disconnect();
         return;
       }
+      if (measurement?.operation === operation) {
+        measurement.roomReadyMs = measurement.timeline.mark();
+      }
       await transport.setMicrophoneEnabled(false);
-      if (!isCurrent(operation)) return;
+      if (
+        !isCurrent(operation) ||
+        transportRef.current !== transport
+      ) {
+        await transport.disconnect();
+        return;
+      }
+      if (measurement?.operation === operation) {
+        measurement.microphoneMutedMs = measurement.timeline.mark();
+      }
       runtimeRef.current.transportReady = true;
       setMicrophoneEnabled(false);
       if (
@@ -381,11 +536,14 @@ export function usePeppaConversation({
       if (runtimeRef.current.assistantSpeaking) setStatus("speaking");
     } catch {
       if (!isCurrent(operation)) return;
+      failConversationStartMeasurement(operation);
       setError(childFacingConversationError("start", purpose));
       setStatus("error");
     }
   }, [
+    cancelConversationStartMeasurement,
     createTransport,
+    failConversationStartMeasurement,
     handleTransportEvent,
     isCurrent,
     openLearnerTurn,
@@ -397,7 +555,11 @@ export function usePeppaConversation({
   const finish = useCallback(async () => {
     const conversationId = conversationIdRef.current;
     if (!conversationId) return;
-    const operation = operationRef.current;
+    const operation = operationRef.current + 1;
+    operationRef.current = operation;
+    const transport = transportRef.current;
+    cancelConversationStartMeasurement();
+    resetResponseLatency();
     microphoneBusyRef.current = false;
     setMicrophoneBusy(false);
     setMicrophoneEnabled(false);
@@ -406,15 +568,23 @@ export function usePeppaConversation({
     setError("");
     try {
       await finishConversation(conversationId, "finished_by_learner");
-      await transportRef.current?.disconnect();
-      transportRef.current = null;
+      if (!isCurrent(operation)) return;
+      await transport?.disconnect();
+      if (!isCurrent(operation)) return;
+      if (transportRef.current === transport) transportRef.current = null;
       await loadSummary(conversationId, operation);
     } catch {
       if (!isCurrent(operation)) return;
       setError(childFacingConversationError("finish", purpose));
       setStatus("error");
     }
-  }, [isCurrent, loadSummary, purpose]);
+  }, [
+    cancelConversationStartMeasurement,
+    isCurrent,
+    loadSummary,
+    purpose,
+    resetResponseLatency,
+  ]);
 
   const back = useCallback(() => {
     operationRef.current += 1;
@@ -423,6 +593,7 @@ export function usePeppaConversation({
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
+    cancelConversationStartMeasurement();
     resetResponseLatency();
     setLiveTranscript("");
     setMicrophoneBusy(false);
@@ -430,7 +601,7 @@ export function usePeppaConversation({
     onBack();
     if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
-  }, [onBack, resetResponseLatency]);
+  }, [cancelConversationStartMeasurement, onBack, resetResponseLatency]);
 
   const toggleMicrophone = useCallback(async () => {
     if (
@@ -451,6 +622,10 @@ export function usePeppaConversation({
     setError("");
     if (!enabled) {
       responseLatencyTimer.start();
+      responseExperienceTimelineRef.current?.cancel();
+      responseExperienceTimelineRef.current = experienceEvents.start(now);
+      responseExperienceSurfaceRef.current =
+        conversationExperienceSurface(purpose);
       runtimeRef.current.awaitingResponse = true;
       setMicrophoneEnabled(false);
       setTurnReady(false);
@@ -458,6 +633,9 @@ export function usePeppaConversation({
     } else {
       setLiveTranscript("");
       responseLatencyTimer.reset();
+      responseExperienceTimelineRef.current?.cancel();
+      responseExperienceTimelineRef.current = null;
+      responseExperienceSurfaceRef.current = null;
     }
     try {
       await transport.setMicrophoneEnabled(enabled);
@@ -476,7 +654,9 @@ export function usePeppaConversation({
       if (!enabled && !runtimeRef.current.awaitingResponse) return;
       if (!enabled) {
         runtimeRef.current.awaitingResponse = false;
-        responseLatencyTimer.reset();
+        settleResponseLatency(
+          microphoneChanged ? "send_failed" : "microphone_stop_failed",
+        );
         setMicrophoneEnabled(!microphoneChanged);
         setTurnReady(true);
         setStatus("listening");
@@ -497,7 +677,7 @@ export function usePeppaConversation({
         setMicrophoneBusy(false);
       }
     }
-  }, [isCurrent, microphoneEnabled, responseLatencyTimer]);
+  }, [isCurrent, microphoneEnabled, now, purpose, responseLatencyTimer, settleResponseLatency]);
 
   const repeatAudio = useCallback(async () => {
     if (
@@ -531,6 +711,7 @@ export function usePeppaConversation({
   useEffect(() => {
     if (active) return;
     operationRef.current += 1;
+    cancelConversationStartMeasurement();
     autoStartRef.current = false;
     microphoneBusyRef.current = false;
     runtimeRef.current = createConversationRuntime();
@@ -552,15 +733,19 @@ export function usePeppaConversation({
         () => {},
       );
     }
-  }, [active, resetResponseLatency]);
+  }, [active, cancelConversationStartMeasurement, resetResponseLatency]);
 
   useEffect(
     () => () => {
       operationRef.current += 1;
+      cancelConversationStartMeasurement();
       autoStartRef.current = false;
       microphoneBusyRef.current = false;
       runtimeRef.current = createConversationRuntime();
       responseLatencyTimer.reset();
+      responseExperienceTimelineRef.current?.cancel();
+      responseExperienceTimelineRef.current = null;
+      responseExperienceSurfaceRef.current = null;
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();
@@ -572,7 +757,7 @@ export function usePeppaConversation({
         );
       }
     },
-    [responseLatencyTimer],
+    [cancelConversationStartMeasurement, responseLatencyTimer],
   );
 
   return useMemo(

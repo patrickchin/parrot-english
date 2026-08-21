@@ -117,6 +117,7 @@ import {
   PERSONALIZED_STORY_ID,
 } from "../stories/personalized-story-art-client";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
+import { experienceEvents } from "../experience/experience-events";
 
 const LessonCreator = import.meta.env.SSR
   ? (await import("../lessons/LessonCreator")).LessonCreator
@@ -615,6 +616,7 @@ export function LessonPlayer({
     }
 
     recordingActiveRef.current = true;
+    const microphoneTimeline = experienceEvents.start();
     setIsStartingRecording(true);
     const sequence = recordingSequenceRef.current + 1;
     recordingSequenceRef.current = sequence;
@@ -632,19 +634,45 @@ export function LessonPlayer({
         recordingSequenceRef.current !== sequence
       ) {
         session.cancel();
+        microphoneTimeline.cancel();
         return;
       }
       recordingRef.current = session;
       setIsStartingRecording(false);
+      const durationMs = microphoneTimeline.finish();
+      if (durationMs !== null) {
+        experienceEvents.emit({
+          durationMs,
+          name: "lesson_microphone",
+          outcome: "ready",
+        });
+      }
       dispatch({ type: "MIC_STARTED" });
     } catch (caughtError) {
       setIsStartingRecording(false);
-      if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+      if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) {
+        microphoneTimeline.cancel();
+        return;
+      }
       if (isAbortError(caughtError)) {
         recordingActiveRef.current = false;
+        microphoneTimeline.cancel();
         return;
       }
       recordingActiveRef.current = false;
+      const durationMs = microphoneTimeline.finish();
+      if (durationMs !== null) {
+        experienceEvents.emit({
+          durationMs,
+          name: "lesson_microphone",
+          outcome:
+            caughtError instanceof RecordingUnsupportedError
+              ? "unsupported"
+              : caughtError instanceof MicrophoneAccessError
+                ? "access_failed"
+                : "failed",
+        });
+      }
       setSpeechFallback(getMicrophoneErrorMessage(caughtError));
     }
   }
@@ -669,37 +697,56 @@ export function LessonPlayer({
       return;
     }
 
-    await finishSpeechOperation({
-      evaluate: currentStep.check ? evaluateSpeech : null,
-      evaluationControllerRef,
-      generation,
-      getCurrentGeneration: () => recordingSequenceRef.current,
-      onEvaluated: (result) => {
-        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatch({
-          type: "EVALUATED",
-          outcome: result.outcome,
-          transcript: result.transcript,
-        });
-      },
-      onFailed: () => {
-        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        if (currentStep.check) {
-          setSpeechFallback(SPEECH_CHECK_ERROR_MESSAGE);
-          dispatch({ type: "EVALUATION_FAILED" });
-        } else {
-          setError("The mic stopped. Try it again.");
-        }
-      },
-      onReleased: () => {
-        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatchLessonEvent({ type: "MIC_RELEASED" });
-      },
-      recordingController,
-      recordingControllerRef,
-      session,
-      targetText: currentStep.dialogue,
-    });
+    const speechCheckTimeline = currentStep.check
+      ? experienceEvents.start()
+      : null;
+    const settleSpeechCheck = (outcome: "completed" | "failed") => {
+      const durationMs = speechCheckTimeline?.finish();
+      if (durationMs === null || durationMs === undefined) return;
+      experienceEvents.emit({
+        durationMs,
+        name: "lesson_speech_check",
+        outcome,
+      });
+    };
+
+    try {
+      await finishSpeechOperation({
+        evaluate: currentStep.check ? evaluateSpeech : null,
+        evaluationControllerRef,
+        generation,
+        getCurrentGeneration: () => recordingSequenceRef.current,
+        onEvaluated: (result) => {
+          if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+          settleSpeechCheck("completed");
+          dispatch({
+            type: "EVALUATED",
+            outcome: result.outcome,
+            transcript: result.transcript,
+          });
+        },
+        onFailed: () => {
+          if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+          if (currentStep.check) {
+            settleSpeechCheck("failed");
+            setSpeechFallback(SPEECH_CHECK_ERROR_MESSAGE);
+            dispatch({ type: "EVALUATION_FAILED" });
+          } else {
+            setError("The mic stopped. Try it again.");
+          }
+        },
+        onReleased: () => {
+          if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
+          dispatchLessonEvent({ type: "MIC_RELEASED" });
+        },
+        recordingController,
+        recordingControllerRef,
+        session,
+        targetText: currentStep.dialogue,
+      });
+    } finally {
+      speechCheckTimeline?.cancel();
+    }
   }
 
   function handleToggleRecording() {

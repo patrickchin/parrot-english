@@ -35,6 +35,7 @@ Last reviewed: 2026-08-21
 - [Name-safe copy for ready-made lessons](./learner-name-safe-copy.md)
 - [Performance and child-perceived latency baseline](./performance-baseline.md)
 - [Picture-led first use](./picture-led-first-use.md)
+- [Privacy-safe experience events](./privacy-safe-experience-events.md)
 - [Responsive lesson and story shelf artwork](./responsive-shelf-art.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
 - [Literal voice-state feedback implementation](./voice-state-feedback.md)

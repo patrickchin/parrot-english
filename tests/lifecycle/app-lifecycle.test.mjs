@@ -39,13 +39,20 @@ const vite = await createServer({
 
 let ApplicationRoutes;
 let ConversationSurface;
+let experienceEvents;
+let maxExperienceDurationMs;
 let LearnerProfileGate;
 let usePeppaConversation;
 let createAuthGate;
 let firstLesson;
 let firstLessonId;
+let restoreExperienceSink = () => {};
 
 before(async () => {
+  ({
+    experienceEvents,
+    MAX_EXPERIENCE_DURATION_MS: maxExperienceDurationMs,
+  } = await vite.ssrLoadModule("/src/experience/experience-events.ts"));
   ({ ConversationSurface } = await vite.ssrLoadModule(
     "/src/conversation/ConversationSurface.tsx",
   ));
@@ -61,6 +68,8 @@ before(async () => {
 });
 
 afterEach(async () => {
+  restoreExperienceSink();
+  restoreExperienceSink = () => {};
   await cleanupMountedRoots();
   document.body.replaceChildren();
   globalThis.fetch = originalFetch;
@@ -221,6 +230,16 @@ function ConversationHookHarness({
       "button",
       { onClick: conversation.onRepeatAudio, type: "button" },
       "Repeat voice",
+    ),
+    createElement(
+      "button",
+      { onClick: conversation.onFinish, type: "button" },
+      "Finish voice",
+    ),
+    createElement(
+      "button",
+      { onClick: conversation.onBack, type: "button" },
+      "Back voice",
     ),
   );
 }
@@ -452,6 +471,15 @@ function text(value) {
   assert.match(document.body.textContent, value);
 }
 
+function captureExperienceEvents() {
+  const events = [];
+  restoreExperienceSink();
+  restoreExperienceSink = experienceEvents.installSink((event) => {
+    events.push(event);
+  });
+  return events;
+}
+
 function noText(value) {
   assert.doesNotMatch(document.body.textContent, value);
 }
@@ -553,6 +581,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("opens the learner's turn only after Peppa finishes her opening", async () => {
+    const experienceTrace = captureExperienceEvents();
     let disconnectCalls = 0;
     let listener = () => {};
     const microphoneCalls = [];
@@ -653,12 +682,34 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "true",
     );
+    await waitFor(() => {
+      const startup = experienceTrace.find(
+        (event) =>
+          event.name === "conversation_start" && event.outcome === "ready",
+      );
+      assert.ok(startup);
+      assert.equal(startup.surface, "learner_profile");
+      assert.ok(startup.apiReadyMs <= startup.roomReadyMs);
+      assert.ok(startup.roomReadyMs <= startup.microphoneMutedMs);
+      assert.ok(startup.microphoneMutedMs <= startup.learnerTurnReadyMs);
+      assert.deepEqual(Object.keys(startup).sort(), [
+        "apiReadyMs",
+        "learnerTurnReadyMs",
+        "microphoneMutedMs",
+        "name",
+        "outcome",
+        "roomReadyMs",
+        "schemaVersion",
+        "surface",
+      ]);
+    });
     await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
   });
 
   it("acknowledges Start before the conversation request finishes", async () => {
+    const experienceTrace = captureExperienceEvents();
     const response = deferred();
     globalThis.fetch = async () => response.promise;
 
@@ -688,6 +739,284 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           .textContent,
         "error",
       ),
+    );
+    await waitFor(() =>
+      assert.deepEqual(
+        experienceTrace.map(({ name, outcome, stage, surface }) => ({
+          name,
+          outcome,
+          stage,
+          surface,
+        })),
+        [
+          {
+            name: "conversation_start",
+            outcome: "failed",
+            stage: "api",
+            surface: "talk",
+          },
+        ],
+      ),
+    );
+  });
+
+  it("attributes startup failure after room connection to the initial mute control", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {
+        throw new Error("Initial microphone setup failed");
+      },
+      subscribe() {
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-microphone-startup-error" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "error",
+      ),
+    );
+    await waitFor(() =>
+      assert.deepEqual(
+        experienceTrace.map(({ name, outcome, stage, surface }) => ({
+          name,
+          outcome,
+          stage,
+          surface,
+        })),
+        [
+          {
+            name: "conversation_start",
+            outcome: "failed",
+            stage: "microphone_mute",
+            surface: "talk",
+          },
+        ],
+      ),
+    );
+  });
+
+  it("does not revive startup when the room disconnects during initial mute", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const initialMute = deferred();
+    let listener = () => {};
+    let muteStarted = false;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {
+        muteStarted = true;
+        return initialMute.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-disconnected-during-mute" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(muteStarted, true));
+    await act(async () => {
+      listener({ type: "disconnected", reason: "SERVER_SHUTDOWN" });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "error",
+    );
+
+    initialMute.resolve();
+    await act(async () => flush());
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "error",
+    );
+    assert.deepEqual(
+      experienceTrace.map(({ name, outcome, stage }) => ({
+        name,
+        outcome,
+        stage,
+      })),
+      [
+        {
+          name: "conversation_start",
+          outcome: "failed",
+          stage: "microphone_mute",
+        },
+      ],
+    );
+  });
+
+  it("quarantines a stale Finish after the learner leaves and reopens chat", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const finishRequest = deferred();
+    let listener = () => {};
+    const microphoneCalls = [];
+    let conversationStarts = 0;
+    let transportStarts = 0;
+    const disconnectCalls = [0, 0];
+    const transports = disconnectCalls.map((_, index) => ({
+      async connect() {},
+      async disconnect() {
+        disconnectCalls[index] += 1;
+      },
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    }));
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        conversationStarts += 1;
+        return json({
+          conversation: {
+            id:
+              conversationStarts === 1
+                ? "conversation-finished-during-opening"
+                : "conversation-reopened",
+          },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "small-chat",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      if (
+        path ===
+          "/api/conversations/conversation-finished-during-opening/finish" &&
+        init.method === "POST"
+      ) {
+        const { reason } = JSON.parse(init.body);
+        return reason === "finished_by_learner"
+          ? finishRequest.promise
+          : json({ conversation: {} });
+      }
+      if (
+        path === "/api/conversations/conversation-reopened/finish" &&
+        init.method === "POST"
+      ) {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transports[transportStarts++],
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await click(button("Finish voice"));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "late-opening",
+        text: "Hello after Finish",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
+    );
+    assert.equal(
+      experienceTrace.some((event) => event.name === "conversation_start"),
+      false,
+    );
+
+    await click(button("Back voice"));
+    await click(button("Start voice"));
+    await waitFor(() => {
+      assert.equal(conversationStarts, 2);
+      assert.equal(transportStarts, 2);
+      assert.deepEqual(microphoneCalls, [false, false]);
+    });
+    finishRequest.resolve(json({ conversation: {} }));
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.deepEqual(disconnectCalls, [1, 0]);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "connecting",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
     );
   });
 
@@ -834,8 +1163,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const finishRequest = deferred();
     let listener = () => {};
     let now = 1_000;
+    let reviewCalls = 0;
     let turnCommits = 0;
     const microphoneCalls = [];
     const transport = {
@@ -854,22 +1186,46 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     };
     globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/conversations");
-      assert.equal(init.method, "POST");
-      return json({
-        conversation: { id: "conversation-response-loading" },
-        livekit: {
-          participantToken: "participant-token",
-          url: "wss://livekit.example.test",
-        },
-        scenario: {
-          key: "small-chat",
-          maxOptionalExchanges: 3,
-          requiredDetails: ["name", "age"],
-          summaryMode: "prose",
-          version: 1,
-        },
-      });
+      if (path === "/api/conversations" && init.method === "POST") {
+        return json({
+          conversation: { id: "conversation-response-loading" },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "small-chat",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      if (
+        path === "/api/conversations/conversation-response-loading/finish" &&
+        init.method === "POST"
+      ) {
+        return finishRequest.promise;
+      }
+      if (
+        path === "/api/conversations/conversation-response-loading" &&
+        init.method === "GET"
+      ) {
+        return json({ conversation: { turns: [] } });
+      }
+      if (
+        path === "/api/conversations/conversation-response-loading/review" &&
+        init.method === "PUT"
+      ) {
+        reviewCalls += 1;
+        return json({
+          bypassed: false,
+          conversationId: "conversation-response-loading",
+          profileCompleted: false,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
 
     await mountStrict(
@@ -918,6 +1274,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "1254",
     );
+    await waitFor(() => {
+      const response = experienceTrace.find(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.deepEqual(response, {
+        durationMs: 1_254,
+        name: "conversation_turn_response",
+        outcome: "assistant_signal",
+        schemaVersion: 1,
+        surface: "learner_profile",
+      });
+      assert.doesNotMatch(
+        JSON.stringify(experienceTrace),
+        /Mia|conversation-response-loading|peppa-reply/,
+      );
+    });
 
     await act(async () => {
       listener({
@@ -961,6 +1333,205 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "listening",
     );
+
+    await click(button("Start my turn"));
+    await waitFor(() =>
+      assert.deepEqual(microphoneCalls, [false, true, false, true]),
+    );
+    await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 2));
+    now += maxExperienceDurationMs + 1_000;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    await waitFor(() => {
+      const responses = experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.equal(responses.length, 2);
+      assert.equal(responses[1].durationMs, maxExperienceDurationMs);
+    });
+
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await click(button("Start my turn"));
+    await waitFor(() =>
+      assert.deepEqual(
+        microphoneCalls,
+        [false, true, false, true, false, true],
+      ),
+    );
+    await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 3));
+
+    const replacementTrace = [];
+    restoreExperienceSink();
+    restoreExperienceSink = experienceEvents.installSink((event) => {
+      replacementTrace.push(event);
+    });
+    now += 100;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.deepEqual(replacementTrace, []);
+    assert.equal(
+      experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      ).length,
+      2,
+    );
+
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await click(button("Start my turn"));
+    await waitFor(() =>
+      assert.deepEqual(
+        microphoneCalls,
+        [false, true, false, true, false, true, false, true],
+      ),
+    );
+    await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 4));
+    await click(button("Finish voice"));
+    now += 100;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.deepEqual(replacementTrace, []);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
+    );
+
+    finishRequest.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(reviewCalls, 1));
+  });
+
+  it("distinguishes microphone-stop failure from turn-send failure", async () => {
+    const experienceTrace = captureExperienceEvents();
+    let listener = () => {};
+    let disableCalls = 0;
+    let commitCalls = 0;
+    const transport = {
+      async commitUserTurn() {
+        commitCalls += 1;
+        throw new Error("Turn commit failed");
+      },
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        if (!enabled) {
+          disableCalls += 1;
+          if (disableCalls === 2) {
+            throw new Error("Microphone stop failed");
+          }
+        }
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-turn-failures" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(disableCalls, 1));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await click(button("Start my turn"));
+    await click(button("End my turn"));
+    await waitFor(() => {
+      const responseEvents = experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.equal(responseEvents.length, 1);
+      assert.equal(responseEvents[0].outcome, "microphone_stop_failed");
+      assert.equal(commitCalls, 0);
+    });
+
+    await click(button("End my turn"));
+    await waitFor(() => {
+      const responseEvents = experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.deepEqual(
+        responseEvents.map((event) => ({
+          keys: Object.keys(event).sort(),
+          outcome: event.outcome,
+          surface: event.surface,
+        })),
+        [
+          {
+            keys: [
+              "durationMs",
+              "name",
+              "outcome",
+              "schemaVersion",
+              "surface",
+            ],
+            outcome: "microphone_stop_failed",
+            surface: "talk",
+          },
+          {
+            keys: [
+              "durationMs",
+              "name",
+              "outcome",
+              "schemaVersion",
+              "surface",
+            ],
+            outcome: "send_failed",
+            surface: "talk",
+          },
+        ],
+      );
+      assert.equal(commitCalls, 1);
+    });
   });
 
   it("coalesces rapid microphone taps while an async change is pending", async () => {
@@ -1701,6 +2272,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("moves a mounted learner turn through recording, checking, and feedback", async () => {
+    const experienceTrace = captureExperienceEvents();
     const ControlledAudio = installControlledAudio();
     installSpeechRecorder();
     const evaluation = deferred();
@@ -1725,9 +2297,26 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
     await waitFor(() => text(/Great job!/));
+    await waitFor(() => {
+      const lessonEvents = experienceTrace.filter((event) =>
+        event.name.startsWith("lesson_"),
+      );
+      assert.deepEqual(
+        lessonEvents.map(({ name, outcome }) => ({ name, outcome })),
+        [
+          { name: "lesson_microphone", outcome: "ready" },
+          { name: "lesson_speech_check", outcome: "completed" },
+        ],
+      );
+      assert.doesNotMatch(
+        JSON.stringify(lessonEvents),
+        /It is up high|recorded audio|correct/,
+      );
+    });
   });
 
   it("aborts a stale evaluation when browser history changes the lesson route", async () => {
+    const experienceTrace = captureExperienceEvents();
     const ControlledAudio = installControlledAudio();
     installSpeechRecorder();
     const evaluation = deferred();
@@ -1786,5 +2375,17 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(new RegExp(firstLesson.scenes[1].title));
     noText(/Checking your words|Great job!|Speech check failed|Audio unavailable/);
     assert.equal(document.activeElement, button("Start lesson"));
+    await waitFor(() =>
+      assert.ok(
+        experienceTrace.some(
+          (event) =>
+            event.name === "lesson_microphone" && event.outcome === "ready",
+        ),
+      ),
+    );
+    assert.equal(
+      experienceTrace.some((event) => event.name === "lesson_speech_check"),
+      false,
+    );
   });
 });
