@@ -135,6 +135,21 @@ validates complete playable descriptors, rejects unsafe route IDs, sanitizes
 parser causes, holds keyboard focus through retry and success, and fixes the
 390 px panel squeeze found during visual review.
 
+The stacked Talk recovery branches now make a slow or failed remote voice task
+finite. `codex/talk-wait-recovery-message` at `5366776` adds staged literal
+feedback and one first retry. `codex/repeated-talk-recovery` at `d48c38f`
+switches only a second consecutive Talk failure to one static, picture-led
+**Play a lesson** route while preserving reusable recovery for onboarding and
+profile editing. The exact threshold, picture, and English remain child-study
+hypotheses.
+
+The next selected stacked improvement is **one child-facing Talk state at a
+time**. A direct visual audit found duplicate status/caption/button wording,
+two simultaneous spinners, and unnecessary floating-character motion in
+ordinary waiting and blocked-audio states. Research and implementation should
+simplify those layers without removing immediate acknowledgement, reserved
+geometry, accessible live feedback, or the finite recovery paths above.
+
 ### Hand-off record
 
 ```text
@@ -332,6 +347,36 @@ Measured result: synthetic validation distinguishes known blocked, gesture-pendi
 Risks / limitations: target-browser LiveKit event order, real autoplay policy, queued-versus-dropped audio, physical output, screen readers, representative devices, and child comprehension remain untested
 Retain, revise, or reject: retain the readiness/audibility distinction and direct recovery; revise replay and copy only after device and child evidence
 Next question: Across target browsers and devices, is blocked audio queued, discarded, or partly rendered, and can young multilingual learners use Tap for sound without adult translation?
+```
+
+```text
+Branch: codex/talk-wait-recovery-message
+Base branch / dependency: codex/first-audible-feedback documentation hand-off f11bde7
+Commit: 5366776
+Hypothesis: staged plain-language waiting followed by one static, result-first restart state helps a young beginner distinguish a slow reply from a failed one
+Changed: transcript acknowledgement; staged wait copy; finite result-first terminal state; one live status and restart action; stable reserved geometry; serialized session retirement; stale, reused-ID, remount, and hung-request reconciliation; seven screenshots; research memo
+Not changed: response thresholds, provider behavior, production telemetry, persistence, localization, or non-voice fallback
+Tests: 665/665 unit/integration/lifecycle/safety tests; 178/178 Chromium tests; TypeScript, build, lint, diff, links, and JPEG integrity passed
+Screenshots / traces: seven JPEGs in artifacts/ux-review/conversation-wait-recovery at 280x568 and 640x360
+Measured result: deterministic boundaries acknowledge the learner, distinguish two wait stages, stop busy motion at terminal failure, keep Back/action geometry stable, and safely reconcile stale or hung replacement starts
+Risks / limitations: mock transport/time and Chromium only; no real service, target assistive technology, localization, or direct child/caregiver evidence
+Retain, revise, or reject: retain provisionally pending representative comprehension and timing work
+Next question: After that explicit retry also fails, can a picture-led non-voice route preserve the learning goal without adding choice overload?
+```
+
+```text
+Branch: codex/repeated-talk-recovery
+Base branch / dependency: codex/talk-wait-recovery-message documentation hand-off ee5ba00
+Commit: d48c38f
+Hypothesis: after one explicit voice retry also fails, one familiar picture-led lesson route preserves the learning goal better than another identical retry loop
+Changed: Talk-only retry budget; response-gated reset; restart/finish phase separation; static lesson-cover cue; one Play a lesson action; matching Finish recovery; cleanup-before-navigation; contrast-safe rose state; responsive, live-region, focus, motion, race, and purpose-isolation tests; five screenshots; research memo
+Not changed: threshold evidence, provider behavior, persistence, production telemetry, localization, automatic lesson selection/playback, or child-content collection
+Tests: 674/674 unit/integration/lifecycle/safety tests; 182/182 Chromium tests; TypeScript, production build, lint, diff, 196/196 local research links, and JPEG integrity passed
+Screenshots / traces: five JPEGs in artifacts/ux-review/repeated-talk-recovery at 280x568, 390x844, and 640x360
+Measured result: first failure keeps one retry; second consecutive Talk failure shows one static lesson route with exact polite status, >=44 px action, >=4.5:1 rest/interaction contrast, stable containment, destination focus, and safe stale/hung-start cleanup; onboarding/profile retries remain reusable
+Risks / limitations: deterministic mocks and Chromium only; assistant signal is not proof of sound; server retirement may settle after navigation; direct child/caregiver, screen-reader, localization, and real-device/network evidence is absent
+Retain, revise, or reject: retain as a bounded reversible hypothesis pending the documented formative study
+Next question: Can Talk show one child-facing state at a time without duplicate text, multiple spinners, or unnecessary character motion?
 ```
 
 ## Newly observed defects
