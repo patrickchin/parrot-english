@@ -88,7 +88,7 @@ score.
 ```text
 Branch: codex/child-language-content-checks
 Base branch / dependency: codex/continuous-research-program at 8baaae7
-Implementation commit: pending
+Implementation commit: 6f0392d
 Hypothesis: Concrete, non-blocking language notes make complexity reviewable without claiming to measure a learner.
 Changed: Pure dialogue/feedback advisory; existing grown-up warning surface; focused tests; author and research docs.
 Not changed: Lesson schema validity, save behavior, generation prompt, built-in lessons, learner profile, vocabulary/proficiency inference, picture-language review.
