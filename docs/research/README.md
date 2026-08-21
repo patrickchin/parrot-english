@@ -19,6 +19,7 @@ Last reviewed: 2026-08-21
 ## Current research memos
 
 - [Beginner language and age](./beginner-language-and-age.md)
+- [Age-adaptive experience guidance](./age-adaptive-experience-guidance.md)
 - [Cognitive accessibility for young learners](./cognitive-accessibility.md)
 - [Child AI safety and privacy](./child-ai-safety-and-privacy.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
