@@ -366,10 +366,17 @@ describe("scene-script lesson state", () => {
   it("returns to the same user step after an evaluation service failure", () => {
     const evaluating = releaseRecording(startAtUser());
     const waiting = reduce(evaluating, { type: "EVALUATION_FAILED" });
+    const continuedWithoutCheck = reduce(waiting, { type: "SKIP_USER" });
 
     assert.equal(waiting.phase, LessonPhase.WaitingForUser);
     assert.equal(waiting.stepIndex, evaluating.stepIndex);
     assert.equal(waiting.attemptCount, 0);
+    assert.equal(continuedWithoutCheck.phase, LessonPhase.Speaking);
+    assert.equal(continuedWithoutCheck.sceneIndex, 1);
+    assert.equal(continuedWithoutCheck.attemptCount, 0);
+    assert.equal(continuedWithoutCheck.response, null);
+    assert.equal(continuedWithoutCheck.responseOutcome, null);
+    assert.equal(continuedWithoutCheck.transcript, "");
   });
 
   it("resets the complete script position", () => {

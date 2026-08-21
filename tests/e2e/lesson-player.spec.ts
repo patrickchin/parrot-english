@@ -724,35 +724,118 @@ for (const viewport of viewports) {
   });
 }
 
-test("a microphone error stays above the speaking controls on a narrow phone", async ({
+test("a denied microphone offers calm unscored practice on a narrow phone", async ({
   page,
 }) => {
   const viewport = { width: 280, height: 568 };
   await page.setViewportSize(viewport);
-  await page.goto(lessonPath);
-  await page.evaluate(() => {
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: {
-        getUserMedia: async () => {
-          throw new DOMException("Permission denied", "NotAllowedError");
-        },
-      },
-    });
-  });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=denied`);
 
   await page.getByRole("button", { name: "Start lesson" }).click();
   const microphone = await waitForLearnerTurn(page);
   await microphone.click();
 
-  const error = page.getByRole("alert");
+  const help = page.getByRole("status", { name: "Speaking help" });
   const controls = page.getByRole("navigation", {
     name: "Speaking controls",
   });
-  await expect(error).toContainText(
-    "Please allow microphone access, then tap the microphone again.",
+  const done = controls.getByRole("button", { name: "Done with speaking" });
+  const retry = controls.getByRole("button", {
+    name: "Try microphone again",
+  });
+  await expect(help).toContainText(
+    "The mic is off. Say the words. Then tap Done.",
   );
-  await expectInsideViewport(error, viewport);
-  await expectBefore(error, controls);
+  const updates = page.getByRole("status", { name: "Lesson updates" });
+  await expect(updates).not.toContainText("Tap the microphone");
+  await expect(page.getByText(/allow microphone access/i)).toHaveCount(0);
+  await expect(done).toContainText("Done");
+  await expect(retry).toContainText("Try mic");
+  await expectInsideViewport(help, viewport);
+  const [doneBox, retryBox] = await Promise.all([
+    expectInsideViewport(done, viewport),
+    expectInsideViewport(retry, viewport),
+  ]);
+  expect(doneBox.width).toBeGreaterThanOrEqual(44);
+  expect(doneBox.height).toBeGreaterThanOrEqual(44);
+  expect(retryBox.width).toBeGreaterThanOrEqual(44);
+  expect(retryBox.height).toBeGreaterThanOrEqual(44);
+  await expectBefore(help, controls);
   await expectNoPageOverflow(page);
+
+  await done.click();
+  await expect(page).toHaveURL(/\/scenes\/2$/);
+  await expect(
+    page.getByRole("region", { name: "Speaking feedback" }),
+  ).toBeHidden();
+});
+
+test("a generated lesson can finish when recording is unsupported", async ({
+  page,
+}) => {
+  const viewport = { width: 768, height: 600 };
+  await page.setViewportSize(viewport);
+  await mockLongDialogueLesson(page);
+  await page.goto(
+    "/lessons/my/long-dialogue/scenes/1?parrotE2eMicrophone=unsupported",
+  );
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const microphone = await waitForLearnerTurn(page);
+  await microphone.click();
+
+  const help = page.getByRole("status", { name: "Speaking help" });
+  const controls = page.getByRole("navigation", { name: "Speaking controls" });
+  const done = controls.getByRole("button", { name: "Done with speaking" });
+  await expect(help).toContainText(
+    "No mic here. Say the words. Then tap Done.",
+  );
+  await expect(
+    controls.getByRole("button", { name: "Try microphone again" }),
+  ).toBeVisible();
+  await expectInsideViewport(help, viewport);
+  await expectInsideViewport(controls, viewport);
+  await expectNoPageOverflow(page);
+
+  await done.click();
+  await expect(
+    page.getByRole("region", { name: "Lesson completion" }),
+  ).toContainText("Lesson complete!");
+  await expect(
+    page.getByRole("region", { name: "Speaking feedback" }),
+  ).toBeHidden();
+});
+
+test("a failed speech check preserves the turn and offers unscored progress", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/evaluate-speech", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ message: "Speech provider returned HTTP 503." }),
+      contentType: "application/json",
+      status: 503,
+    });
+  });
+  await page.goto(lessonPath);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const microphone = await waitForLearnerTurn(page);
+  await microphone.click();
+  await microphone.click();
+
+  const help = page.getByRole("status", { name: "Speaking help" });
+  await expect(help).toContainText(
+    "We could not check your words. Tap Done to keep going.",
+    { timeout: 3_000 },
+  );
+  await expect(page).toHaveURL(/\/scenes\/1$/);
+  await expect(page.getByText(/HTTP 503|Speech check failed/i)).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Speaking feedback" }),
+  ).toBeHidden();
+
+  await page.getByRole("button", { name: "Done with speaking" }).click();
+  await expect(page).toHaveURL(/\/scenes\/2$/);
+  await expect(
+    page.getByRole("region", { name: "Speaking feedback" }),
+  ).toBeHidden();
 });

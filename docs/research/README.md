@@ -26,6 +26,7 @@ Last reviewed: 2026-08-21
 - [Lesson start state stability](./lesson-start-stability.md)
 - [Lesson speech in short landscape](./lesson-speech-short-landscape.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
+- [Voice fallback speaking practice](./voice-fallback-practice.md)
 
 These memos complement the existing
 [child-first UX audit](../design/child-first-ux-audit.md) and

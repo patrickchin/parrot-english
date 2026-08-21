@@ -158,9 +158,13 @@ const StoryReader = import.meta.env.SSR
     );
 
 const RECORDING_UNSUPPORTED_MESSAGE =
-  "This browser does not support audio recording. Try the latest Chrome or Safari.";
+  "No mic here. Say the words. Then tap Done.";
 const MICROPHONE_ACCESS_MESSAGE =
-  "Please allow microphone access, then tap the microphone again.";
+  "The mic is off. Say the words. Then tap Done.";
+const MICROPHONE_ERROR_MESSAGE =
+  "The mic did not work. Say the words. Then tap Done.";
+const SPEECH_CHECK_ERROR_MESSAGE =
+  "We could not check your words. Tap Done to keep going.";
 const LESSON_AUDIO_ERROR_MESSAGE =
   "The sound stopped. Try it again or skip this sound.";
 const MINIMUM_LESSON_FEEDBACK_MS = 1_500;
@@ -214,9 +218,7 @@ function getMicrophoneErrorMessage(caughtError: unknown) {
   if (caughtError instanceof MicrophoneAccessError) {
     return MICROPHONE_ACCESS_MESSAGE;
   }
-  return caughtError instanceof Error
-    ? caughtError.message
-    : "The microphone could not start.";
+  return MICROPHONE_ERROR_MESSAGE;
 }
 
 export function LessonPlayer({
@@ -240,6 +242,7 @@ export function LessonPlayer({
     { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
   const [error, setError] = useState("");
+  const [speechFallback, setSpeechFallback] = useState("");
   const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [historyPopSequence, setHistoryPopSequence] = useState(0);
   const [audioRetrySequence, setAudioRetrySequence] = useState(0);
@@ -347,6 +350,7 @@ export function LessonPlayer({
       if (targetSceneIndex !== null) {
         invalidateRouteActivity();
         setError("");
+        setSpeechFallback("");
         pendingHistoryPopTokenRef.current = null;
         pendingRoutedEventRef.current = {
           event,
@@ -359,6 +363,7 @@ export function LessonPlayer({
       if (cancel) {
         cancelPendingWork();
         setError("");
+        setSpeechFallback("");
       }
       dispatch(event);
     },
@@ -390,6 +395,7 @@ export function LessonPlayer({
 
     cancelPendingWork();
     setError("");
+    setSpeechFallback("");
     dispatch(reconciliationEvent);
   }, [
     cancelPendingWork,
@@ -616,6 +622,7 @@ export function LessonPlayer({
     const controller = new AbortController();
     recordingControllerRef.current = controller;
     setError("");
+    setSpeechFallback("");
 
     try {
       const session = await startSpeechRecording({ signal: controller.signal });
@@ -638,7 +645,7 @@ export function LessonPlayer({
         return;
       }
       recordingActiveRef.current = false;
-      setError(getMicrophoneErrorMessage(caughtError));
+      setSpeechFallback(getMicrophoneErrorMessage(caughtError));
     }
   }
 
@@ -675,23 +682,13 @@ export function LessonPlayer({
           transcript: result.transcript,
         });
       },
-      onFailed: (caughtError) => {
+      onFailed: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         if (currentStep.check) {
-          setError(
-            caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
-              ? "Speech checking is not configured."
-              : `Speech check failed: ${
-                  caughtError instanceof Error ? caughtError.message : "Unknown error."
-                }`
-          );
+          setSpeechFallback(SPEECH_CHECK_ERROR_MESSAGE);
           dispatch({ type: "EVALUATION_FAILED" });
         } else {
-          setError(
-            `Recording failed: ${
-              caughtError instanceof Error ? caughtError.message : "Unknown error."
-            }`,
-          );
+          setError("The mic stopped. Try it again.");
         }
       },
       onReleased: () => {
@@ -816,6 +813,7 @@ export function LessonPlayer({
               isStartingRecording={isStartingRecording}
               onSkip={handleSkipUser}
               onToggleRecording={handleToggleRecording}
+              usePracticeFallback={Boolean(speechFallback)}
             />
           ) : null}
           {showPlaybackControls ? (
@@ -829,7 +827,7 @@ export function LessonPlayer({
             />
           ) : null}
           <LessonErrorBanner
-            error={error}
+            error={speechFallback || error}
             onRetry={
               error === LESSON_AUDIO_ERROR_MESSAGE
                 ? handleRetryAudio
@@ -840,6 +838,7 @@ export function LessonPlayer({
                 ? handleSkipAudio
                 : undefined
             }
+            tone={speechFallback ? "help" : "error"}
           />
         </>
       ) : null}
@@ -850,14 +849,18 @@ export function LessonPlayer({
         className="sr-only"
         role="status"
       >
-        {isIdle || isFinished
-          ? progressLabel
-          : `${progressLabel}.${
-              showUserTurn ? ` Say: ${currentStep.dialogue}.` : ""
-            } Scene ${state.sceneIndex + 1} of ${
-              currentLesson.scenes.length
-            }. ${scene.settingDescription}`}
-        {state.transcript ? ` Heard: ${state.transcript}.` : ""}
+        {speechFallback
+          ? ""
+          : isIdle || isFinished
+            ? progressLabel
+            : `${progressLabel}.${
+                showUserTurn ? ` Say: ${currentStep.dialogue}.` : ""
+              } Scene ${state.sceneIndex + 1} of ${
+                currentLesson.scenes.length
+              }. ${scene.settingDescription}`}
+        {!speechFallback && state.transcript
+          ? ` Heard: ${state.transcript}.`
+          : ""}
         {error ? ` ${error}` : ""}
       </div>
     </LessonStage>

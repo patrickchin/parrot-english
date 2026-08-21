@@ -532,12 +532,14 @@ export function LessonSpeakingControls({
   isStartingRecording,
   onSkip,
   onToggleRecording,
+  usePracticeFallback = false,
 }: {
   isEvaluating: boolean;
   isRecording: boolean;
   isStartingRecording: boolean;
   onSkip: () => void;
   onToggleRecording: () => void;
+  usePracticeFallback?: boolean;
 }) {
   return (
     <nav
@@ -563,19 +565,36 @@ export function LessonSpeakingControls({
         </span>
       ) : (
         <>
+          {usePracticeFallback ? (
+            <ActionButton
+              aria-label="Done with speaking"
+              className="min-w-0 flex-1"
+              onClick={onSkip}
+              size="large"
+              type="button"
+              variant="success"
+            >
+              Done
+              <ChevronRight aria-hidden="true" className="size-6 md:size-7" />
+            </ActionButton>
+          ) : null}
           <ActionButton
-            aria-label="Microphone"
+            aria-label={
+              usePracticeFallback ? "Try microphone again" : "Microphone"
+            }
             aria-pressed={isRecording}
             aria-busy={isStartingRecording || undefined}
             className={cx(
-              "min-w-0 flex-1",
+              usePracticeFallback ? "shrink-0" : "min-w-0 flex-1",
               isRecording && "animate-pulse motion-reduce:animate-none",
             )}
             disabled={isStartingRecording}
             onClick={onToggleRecording}
             size="large"
             type="button"
-            variant={isRecording ? "brand" : "success"}
+            variant={
+              isRecording ? "brand" : usePracticeFallback ? "navy" : "success"
+            }
           >
             {isStartingRecording ? (
               <LoaderCircle
@@ -589,19 +608,23 @@ export function LessonSpeakingControls({
               ? "Opening mic…"
               : isRecording
                 ? "Tap when done"
-                : "Tap to talk"}
+                : usePracticeFallback
+                  ? "Try mic"
+                  : "Tap to talk"}
           </ActionButton>
-          <ActionButton
-            aria-label="Skip speaking turn"
-            className="shrink-0"
-            disabled={isStartingRecording}
-            onClick={onSkip}
-            size="large"
-            type="button"
-            variant="navy"
-          >
-            Skip
-          </ActionButton>
+          {usePracticeFallback ? null : (
+            <ActionButton
+              aria-label="Skip speaking turn"
+              className="shrink-0"
+              disabled={isStartingRecording}
+              onClick={onSkip}
+              size="large"
+              type="button"
+              variant="navy"
+            >
+              Skip
+            </ActionButton>
+          )}
         </>
       )}
     </nav>
@@ -612,17 +635,23 @@ export function LessonErrorBanner({
   error,
   onRetry,
   onSkip,
+  tone = "error",
 }: {
   error: string;
   onRetry?: () => void;
   onSkip?: () => void;
+  tone?: "error" | "help";
 }) {
   if (!error) return null;
 
   return (
     <div
-      className="lesson-error-banner absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white bg-red-800 px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base"
-      role="alert"
+      aria-label={tone === "help" ? "Speaking help" : undefined}
+      className={cx(
+        "lesson-error-banner absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base",
+        tone === "help" ? "bg-brand-navy" : "bg-red-800",
+      )}
+      role={tone === "help" ? "status" : "alert"}
     >
       <p className="m-0">{error}</p>
       {onRetry && onSkip ? (

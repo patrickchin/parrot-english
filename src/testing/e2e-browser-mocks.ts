@@ -5,6 +5,7 @@ const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
 const MOCK_RECORDING_DELAY_MS = 5000;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
+const E2E_MICROPHONE_SCENARIOS = new Set(["denied", "unsupported"]);
 
 function getE2eScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
@@ -12,6 +13,14 @@ function getE2eScenario() {
   );
 
   return scenario && E2E_SCENARIOS.has(scenario) ? scenario : DEFAULT_SCENARIO;
+}
+
+function getE2eMicrophoneScenario() {
+  const scenario = new URL(window.location.href).searchParams.get(
+    "parrotE2eMicrophone",
+  );
+
+  return scenario && E2E_MICROPHONE_SCENARIOS.has(scenario) ? scenario : null;
 }
 
 function getMockAudioDelayMs(src: string) {
@@ -91,13 +100,21 @@ Object.defineProperty(window, "Audio", {
 
 Object.defineProperty(window, "MediaRecorder", {
   configurable: true,
-  value: MockMediaRecorder,
+  value:
+    getE2eMicrophoneScenario() === "unsupported"
+      ? undefined
+      : MockMediaRecorder,
 });
 
 Object.defineProperty(navigator, "mediaDevices", {
   configurable: true,
   value: {
-    getUserMedia: async () => createMockStream(),
+    getUserMedia: async () => {
+      if (getE2eMicrophoneScenario() === "denied") {
+        throw new DOMException("Permission denied", "NotAllowedError");
+      }
+      return createMockStream();
+    },
   },
 });
 
