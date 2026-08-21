@@ -1,8 +1,13 @@
 # My Lessons Error Recovery
 
-Last reviewed: 2026-08-21  
-Branch: `codex/my-lessons-recovery-copy`  
-Status: implemented; final commit pending  
+Last reviewed: 2026-08-21
+
+Branch: `codex/my-lessons-recovery-copy`
+
+Status: implemented
+
+Implementation commit: `f5b28b2`
+
 Audience: a grown-up managing saved lessons inside a child-first lesson shelf
 
 ## Decision
@@ -191,9 +196,9 @@ availability change.
 
 - All 626 unit, lifecycle, safety, language, route, response-contract, and asset
   tests pass.
-- All 163 Chromium tests pass with four workers, including three responsive
-  malformed-response cases and one network → failed retry → populated success
-  sequence.
+- All 163 Chromium tests pass in 44.1 seconds with four workers, including
+  three responsive malformed-response cases and one network → failed retry →
+  populated success sequence.
 - The in-page click-to-status measurement stays below the 100 ms immediate
   feedback threshold at 280×568, 390×844, and 640×360. The pending request is
   held so the loading state, focus, duplicate suppression, and geometry can be

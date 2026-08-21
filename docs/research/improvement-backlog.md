@@ -127,6 +127,14 @@ Chromium tests, the production build and responsive-art benchmark, and lint
 with zero errors. Independent re-review found no actionable regression across
 the combined fallback layouts.
 
+The stacked recovery branch `codex/my-lessons-recovery-copy` is implemented at
+`f5b28b2`, based on the integration documentation hand-off `aa943b6`. It turns
+malformed, technical, and failed My Lessons responses into one calm grown-up
+recovery state while preserving the child-ready shelf. The implementation also
+validates complete playable descriptors, rejects unsafe route IDs, sanitizes
+parser causes, holds keyboard focus through retry and success, and fixes the
+390 px panel squeeze found during visual review.
+
 ### Hand-off record
 
 ```text
@@ -279,6 +287,21 @@ Retain, revise, or reject: retain pending direct child/caregiver comprehension o
 Next question: When the microphone is denied, can a non-reading beginner identify Done without adult translation?
 ```
 
+```text
+Branch: codex/my-lessons-recovery-copy
+Base branch / dependency: codex/child-first-ux-integration documentation hand-off aa943b6
+Commit: f5b28b2
+Hypothesis: one named failure sentence and one literal retry action let a grown-up recover without exposing implementation detail or implying saved lessons were deleted
+Changed: strict list-response validation, shared route-ID safety, sanitized internal causes, explicit loading/error/retrying states, stable live region and focus behavior, 390 px responsive composition, E2E mock, screenshots, research memo
+Not changed: lesson-detail/update response validation, telemetry provider, server contracts, saved data, direct child or caregiver copy research
+Tests: 626 unit/lifecycle/safety tests passed; 163 Chromium tests passed in 44.1 seconds with four workers; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/my-lessons-recovery at 280x568, 390x844, and 640x360, plus pending retry at 390x844
+Measured result: the 390 px status column grew from 105 px to at least 200 px, its three-line 60 px heading stayed within 32 px, and click-to-loading status remained below 100 ms at every responsive target
+Risks / limitations: direct screen-reader checks, 200% zoom, increased text spacing, and caregiver comprehension remain untested; other My Lessons endpoints retain their existing validation boundary
+Retain, revise, or reject: retain
+Next question: Can privacy-safe milestone timing reveal slow or broken child journeys without collecting speech, lesson text, names, or stable identifiers?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -302,10 +325,9 @@ branches.
    450ms.** Mitigated on `codex/responsive-shelf-art` with smaller responsive
    candidates; loading priority remains unchanged pending field evidence.
 7. **Medium: malformed My Lessons responses can expose raw data-shape text.**
-   The in-app E2E-mock review showed `Cannot read properties of null` in the
-   grown-up tools panel when the listing endpoint was absent. Reproduce with an
-   explicit malformed-response contract, keep diagnostics internal, and show a
-   calm retry message on a separate stacked branch.
+   Fixed on `codex/my-lessons-recovery-copy` at `f5b28b2` with a fixed public
+   recovery state, complete list-response validation, sanitized diagnostic
+   causes, and stable retry focus.
 
 ## Parked ideas
 
