@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-21  
 Status: implemented on `codex/grown-up-ai-transparency`  
-Implementation commit: pending final verification  
+Implementation commit: `7a36b94`
 Audience: caregivers and other grown-ups supporting a young English learner
 
 ## Question and scope
