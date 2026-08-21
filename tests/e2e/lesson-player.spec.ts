@@ -3,6 +3,10 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const lessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
+const longFeedback =
+  "You kept trying and said the whole picnic sentence clearly, so Peppa and Dolly can carry the basket to the big tree with you now.";
+const reviewedCharacterLine =
+  "Peppa and Dolly see one bright red kite over the green garden today.";
 
 const viewports = [
   { name: "ultra-narrow phone", width: 280, height: 568 },
@@ -17,6 +21,13 @@ const boxedLandscapeViewports = [
   { name: "wide short window", width: 1280, height: 360 },
   { name: "short tablet", width: 768, height: 600 },
 ];
+
+function usesLayeredLearningPane(viewport: { width: number; height: number }) {
+  return (
+    (viewport.width >= 560 && viewport.height <= 420) ||
+    (viewport.width >= 768 && viewport.height <= 480)
+  );
+}
 
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
@@ -88,6 +99,32 @@ async function expectContainedBy(child: Locator, parent: Locator) {
   );
 }
 
+async function expectLongTextReachable(locator: Locator) {
+  const metrics = await locator.evaluate((element) => {
+    const target = element as HTMLElement;
+    return {
+      clientHeight: target.clientHeight,
+      scrollHeight: target.scrollHeight,
+    };
+  });
+
+  expect(metrics.scrollHeight).toBeGreaterThanOrEqual(metrics.clientHeight);
+  if (metrics.scrollHeight > metrics.clientHeight) {
+    await expect(locator).toHaveAttribute("tabindex", "0");
+    await locator.focus();
+    await locator.press("End");
+    await expect
+      .poll(() => locator.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    await locator.press("Home");
+    await expect
+      .poll(() => locator.evaluate((element) => element.scrollTop))
+      .toBe(0);
+  } else {
+    await expect(locator).not.toHaveAttribute("tabindex", "0");
+  }
+}
+
 async function installAudioDelay(
   page: Page,
   delayMs: number,
@@ -144,6 +181,58 @@ async function installAudioDelay(
   }, { defaultDelay: delayMs, held: heldAudio });
 }
 
+async function installDeviceSpeechDelay(page: Page, delayMs = 5_000) {
+  await page.addInitScript(({ delay }) => {
+    class DelayedSpeechUtterance {
+      lang = "";
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      pitch = 1;
+      rate = 1;
+      text: string;
+      voice = null;
+      volume = 1;
+
+      constructor(text: string) {
+        this.text = text;
+      }
+    }
+
+    let pendingTimer: number | null = null;
+    Object.defineProperty(window, "SpeechSynthesisUtterance", {
+      configurable: true,
+      value: DelayedSpeechUtterance,
+    });
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+        cancel() {
+          if (pendingTimer !== null) window.clearTimeout(pendingTimer);
+          pendingTimer = null;
+        },
+        getVoices() {
+          return [
+            {
+              default: true,
+              lang: "en-US",
+              localService: true,
+              name: "Test English",
+            },
+          ];
+        },
+        pause() {},
+        resume() {},
+        speak(utterance: DelayedSpeechUtterance) {
+          pendingTimer = window.setTimeout(() => {
+            pendingTimer = null;
+            utterance.onend?.();
+          }, delay);
+        },
+      },
+    });
+  }, { delay: delayMs });
+}
+
 async function waitForLearnerTurn(page: Page) {
   const microphone = page.getByRole("button", { name: "Microphone" });
   await expect(microphone).toBeVisible({ timeout: 8_000 });
@@ -184,6 +273,90 @@ async function mockLongDialogueLesson(page: Page) {
                       peppa: "listening",
                       dolly: "listening",
                     },
+                    check: {
+                      maxAttempts: 2,
+                      correct: {
+                        speaker: "narrator",
+                        dialogue: longFeedback,
+                        after: "continue",
+                      },
+                      incorrect: {
+                        speaker: "narrator",
+                        dialogue: "Almost! Try again.",
+                        after: "retry",
+                      },
+                      incorrectFinal: {
+                        speaker: "narrator",
+                        dialogue: "Good try! Let's keep going.",
+                        after: "continue",
+                      },
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    });
+  });
+}
+
+async function mockLayeredListeningLesson(
+  page: Page,
+  {
+    characters,
+    dialogue = "Look at the red kite!",
+    id,
+  }: {
+    characters: Array<"dolly" | "peppa">;
+    dialogue?: string;
+    id: string;
+  },
+) {
+  const speaker = characters.at(-1) ?? "dolly";
+  await page.route(`**/api/lessons/my/${id}`, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        lesson: {
+          id,
+          source: "generated",
+          lesson: {
+            title: "The Red Kite",
+            childName: "Mia",
+            goalPhrases: [dialogue],
+            summary: "Friends find a red kite in the garden.",
+            detailedSummary:
+              "Mia listens and talks about the bright red kite with Peppa and Dolly.",
+            location: {
+              name: "The garden",
+              description: "A sunny garden with a red kite.",
+            },
+            scenes: [
+              {
+                title: "The Red Kite",
+                settingDescription:
+                  "The friends look at one bright red kite in the sky.",
+                background: "episode-garden",
+                characters,
+                steps: [
+                  {
+                    speaker,
+                    dialogue,
+                    emotes: Object.fromEntries(
+                      characters.map((character) => [
+                        character,
+                        character === speaker ? "talking" : "listening",
+                      ]),
+                    ),
+                  },
+                  {
+                    speaker: "user",
+                    dialogue: "Red kite!",
+                    emotes: Object.fromEntries(
+                      characters.map((character) => [character, "listening"]),
+                    ),
                   },
                 ],
               },
@@ -415,6 +588,298 @@ for (const viewport of boxedLandscapeViewports) {
     await expectNoOverlap(artwork, controls);
     await expectBefore(hud, speech);
     await expectNoOverlap(speech, controls);
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const fixture of [
+  {
+    characters: ["dolly"] as Array<"dolly" | "peppa">,
+    dialogue: "Look at the red kite!",
+    id: "one-character-landscape",
+    viewport: { name: "one character at the boundary", width: 560, height: 360 },
+  },
+  {
+    characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
+    dialogue: "Look at the red kite!",
+    id: "two-character-boundary",
+    viewport: { name: "two characters at the boundary", width: 560, height: 360 },
+  },
+  ...[
+    { name: "421px-tall phone landscape", width: 844, height: 421 },
+    { name: "430px-tall phone landscape", width: 932, height: 430 },
+    { name: "two-pane height boundary", width: 768, height: 480 },
+  ].map((viewport) => ({
+    characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
+    dialogue: reviewedCharacterLine,
+    id: `two-character-${viewport.width}x${viewport.height}`,
+    viewport,
+  })),
+  ...boxedLandscapeViewports
+    .filter((viewport) => viewport.height <= 420)
+    .map((viewport) => ({
+      characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
+      dialogue:
+        viewport.width === 768 && viewport.height === 360
+          ? reviewedCharacterLine
+          : "Look at the red kite!",
+      id: `two-character-${viewport.width}x${viewport.height}`,
+      viewport,
+    })),
+]) {
+  test(`layered lesson keeps characters and learning UI separate with ${fixture.viewport.name}`, async ({
+    page,
+  }) => {
+    const {
+      characters,
+      dialogue = "Look at the red kite!",
+      id,
+      viewport,
+    } = fixture;
+    await page.setViewportSize(viewport);
+    await installDeviceSpeechDelay(page);
+    await mockLayeredListeningLesson(page, { characters, dialogue, id });
+    await page.goto(`/lessons/my/${id}/scenes/1`);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status", {
+      name: `${characters.at(-1) === "peppa" ? "Peppa" : "Dolly"} is speaking`,
+    });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const characterImages = characters.map((character) =>
+      page.getByRole("img", {
+        name: new RegExp(`^${character[0].toUpperCase()}${character.slice(1)} `),
+      }),
+    );
+
+    const line = speech.getByText(dialogue, { exact: true });
+    await expect(line).toBeVisible();
+    await expect(speech).toContainText(
+      `Listen · ${characters.at(-1) === "peppa" ? "Peppa" : "Dolly"}`,
+    );
+    await expectInsideViewport(hud, viewport);
+    await expectInsideViewport(speech, viewport);
+    await expectInsideViewport(controls, viewport);
+    await expectBefore(hud, speech);
+    await expectNoOverlap(speech, controls);
+    await expect
+      .poll(() =>
+        line.evaluate(
+          (element) => element.scrollHeight <= element.clientHeight,
+        ),
+      )
+      .toBe(true);
+    await expect(line).not.toHaveAttribute("tabindex", "0");
+
+    for (const character of characterImages) {
+      const characterBox = await expectInsideViewport(character, viewport);
+      expect(characterBox.width).toBeGreaterThanOrEqual(100);
+      expect(characterBox.height).toBeGreaterThanOrEqual(165);
+      await expectLeftOf(character, hud);
+      await expectLeftOf(character, speech);
+      await expectLeftOf(character, controls);
+      await expectNoOverlap(character, hud);
+      await expectNoOverlap(character, speech);
+      await expectNoOverlap(character, controls);
+    }
+
+    for (const button of await controls.getByRole("button").all()) {
+      const buttonBox = await visibleBox(button);
+      expect(buttonBox.width).toBeGreaterThanOrEqual(44);
+      expect(buttonBox.height).toBeGreaterThanOrEqual(44);
+    }
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "first stabilized vertical pixel", width: 768, height: 481 },
+  { name: "short tablet", width: 768, height: 600 },
+  { name: "compact-band boundary", width: 768, height: 640 },
+  { name: "first smooth transition pixel", width: 768, height: 641 },
+  { name: "matched default geometry", width: 768, height: 807 },
+]) {
+  test(`layered lesson keeps its vertical composition collision-free at the ${viewport.name}`, async ({
+    page,
+  }) => {
+    const id = `vertical-${viewport.width}x${viewport.height}`;
+    await page.setViewportSize(viewport);
+    await installDeviceSpeechDelay(page);
+    await mockLayeredListeningLesson(page, {
+      characters: ["peppa", "dolly"],
+      id,
+    });
+    await page.goto(`/lessons/my/${id}/scenes/1`);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status", { name: "Dolly is speaking" });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const peppa = page.getByRole("img", { name: /^Peppa / });
+    const dolly = page.getByRole("img", { name: /^Dolly / });
+
+    await expectInsideViewport(hud, viewport);
+    await expectInsideViewport(speech, viewport);
+    await expectInsideViewport(controls, viewport);
+    await expectBefore(hud, speech);
+    for (const character of [peppa, dolly]) {
+      await expectInsideViewport(character, viewport);
+      await expectBefore(speech, character);
+      await expectBefore(character, controls);
+      await expectNoOverlap(speech, character);
+      await expectNoOverlap(character, controls);
+    }
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "small phone landscape", width: 640, height: 360 },
+  { name: "large phone landscape", width: 768, height: 360 },
+  { name: "vertical transition", width: 768, height: 481 },
+  { name: "smoothed vertical transition", width: 768, height: 641 },
+  { name: "vertical transition midpoint", width: 768, height: 720 },
+  { name: "matched default geometry", width: 768, height: 807 },
+]) {
+  test(`long generated dialogue stays contained on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await mockLongDialogueLesson(page);
+    await page.goto("/lessons/my/long-dialogue/scenes/1");
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const prompt = page.getByRole("region", { name: "Your turn" });
+    const phrase = prompt.getByText(longDialogue, { exact: true });
+    const peppa = page.getByRole("img", { name: /^Peppa / });
+    const dolly = page.getByRole("img", { name: /^Dolly / });
+    const controls = page.getByRole("navigation", {
+      name: "Speaking controls",
+    });
+
+    await expectInsideViewport(prompt, viewport);
+    await expectInsideViewport(phrase, viewport);
+    await expectContainedBy(phrase, prompt);
+    await expectLongTextReachable(phrase);
+    await expectBefore(hud, prompt);
+    await expectNoOverlap(prompt, controls);
+    for (const character of [peppa, dolly]) {
+      if (usesLayeredLearningPane(viewport)) {
+        await expectLeftOf(character, prompt);
+        await expectLeftOf(character, controls);
+      } else {
+        await expectBefore(prompt, character);
+        await expectBefore(character, controls);
+      }
+      await expectNoOverlap(character, prompt);
+      await expectNoOverlap(character, controls);
+    }
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "short learning pane", width: 640, height: 360 },
+  { name: "vertical transition", width: 768, height: 481 },
+  { name: "smoothed vertical transition", width: 768, height: 641 },
+  { name: "vertical transition midpoint", width: 768, height: 720 },
+  { name: "matched default geometry", width: 768, height: 807 },
+]) {
+  test(`long generated character speech stays reachable at the ${viewport.name}`, async ({
+    page,
+  }) => {
+    const id = `long-character-speech-${viewport.width}x${viewport.height}`;
+    await page.setViewportSize(viewport);
+    await installDeviceSpeechDelay(page);
+    await mockLayeredListeningLesson(page, {
+      characters: ["peppa", "dolly"],
+      dialogue: longDialogue,
+      id,
+    });
+    await page.goto(`/lessons/my/${id}/scenes/1`);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status", { name: "Dolly is speaking" });
+    const phrase = speech.getByText(longDialogue, { exact: true });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+
+    await expectInsideViewport(speech, viewport);
+    await expectInsideViewport(phrase, viewport);
+    await expectContainedBy(phrase, speech);
+    await expectLongTextReachable(phrase);
+    await expectBefore(hud, speech);
+    await expectNoOverlap(speech, controls);
+    for (const character of [
+      page.getByRole("img", { name: /^Peppa / }),
+      page.getByRole("img", { name: /^Dolly / }),
+    ]) {
+      if (usesLayeredLearningPane(viewport)) {
+        await expectLeftOf(character, speech);
+        await expectLeftOf(character, controls);
+      } else {
+        await expectBefore(speech, character);
+        await expectBefore(character, controls);
+      }
+      await expectNoOverlap(character, speech);
+      await expectNoOverlap(character, controls);
+    }
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "short learning pane", width: 640, height: 360 },
+  { name: "vertical transition", width: 768, height: 481 },
+  { name: "smoothed vertical transition", width: 768, height: 641 },
+  { name: "vertical transition midpoint", width: 768, height: 720 },
+  { name: "matched default geometry", width: 768, height: 807 },
+]) {
+  test(`long generated feedback stays reachable at the ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await installDeviceSpeechDelay(page);
+    await mockLongDialogueLesson(page);
+    await page.goto("/lessons/my/long-dialogue/scenes/1");
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const microphone = await waitForLearnerTurn(page);
+    await microphone.click();
+    await microphone.click();
+
+    const feedback = page.getByRole("region", { name: "Speaking feedback" });
+    const phrase = feedback.getByText(longFeedback, { exact: true });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const peppa = page.getByRole("img", { name: /^Peppa / });
+    const dolly = page.getByRole("img", { name: /^Dolly / });
+    await expect(phrase).toBeVisible({ timeout: 3_000 });
+    await expectInsideViewport(feedback, viewport);
+    await expectInsideViewport(phrase, viewport);
+    await expectContainedBy(phrase, feedback);
+    await expectLongTextReachable(phrase);
+    await expectNoOverlap(feedback, controls);
+    for (const character of [peppa, dolly]) {
+      if (usesLayeredLearningPane(viewport)) {
+        await expectLeftOf(character, feedback);
+        await expectLeftOf(character, controls);
+      } else {
+        await expectBefore(feedback, character);
+        await expectBefore(character, controls);
+      }
+      await expectNoOverlap(character, feedback);
+      await expectNoOverlap(character, controls);
+    }
     await expectNoPageOverflow(page);
   });
 }
@@ -709,18 +1174,33 @@ for (const viewport of viewports) {
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(phrase, viewport);
     await expectBefore(hud, prompt);
-    await expectBefore(prompt, peppa);
-    await expectBefore(prompt, dolly);
-    await expectBefore(peppa, controls);
-    await expectBefore(dolly, controls);
+    if (usesLayeredLearningPane(viewport)) {
+      await expectLeftOf(peppa, prompt);
+      await expectLeftOf(dolly, prompt);
+      await expectLeftOf(peppa, controls);
+      await expectLeftOf(dolly, controls);
+      await expectNoOverlap(peppa, prompt);
+      await expectNoOverlap(dolly, prompt);
+      await expectNoOverlap(peppa, controls);
+      await expectNoOverlap(dolly, controls);
+    } else {
+      await expectBefore(prompt, peppa);
+      await expectBefore(prompt, dolly);
+      await expectBefore(peppa, controls);
+      await expectBefore(dolly, controls);
+    }
     await expectNoPageOverflow(page);
-    await expect
-      .poll(() =>
-        prompt.evaluate(
-          (element) => element.scrollHeight <= element.clientHeight,
-        ),
-      )
-      .toBe(true);
+    if (usesLayeredLearningPane(viewport)) {
+      await expectLongTextReachable(phrase);
+    } else {
+      await expect
+        .poll(() =>
+          prompt.evaluate(
+            (element) => element.scrollHeight <= element.clientHeight,
+          ),
+        )
+        .toBe(true);
+    }
   });
 }
 

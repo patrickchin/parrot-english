@@ -73,13 +73,21 @@ the picture and controls fixed and lets only the right content pane scroll.
 Complete control containment now passes at 640×360 and 1280×360 without a test
 helper scrolling first.
 
-The next stacked visual branch, `codex/lesson-speech-short-landscape`, is
+The stacked visual branch `codex/lesson-speech-short-landscape` is
 implemented for ready-made boxed lessons. The same audit found that the active
 lesson speech panel covered 53–59% of the scene artwork at 360 px height. Its
 two-pane layout preserves the complete spoken line, speaker identity, progress,
-controls, and picture context. The generated layered presentation remains the
-next visual follow-up because its character distribution and speech tail need a
-coordinated placement decision.
+controls, and picture context.
+
+The follow-up `codex/layered-lesson-short-landscape` is also implemented. It
+uses a two-pane layout through 420 px, extends it through 480 px where `md`
+controls otherwise collide, and gives the familiar vertical layout a compact
+starting band that converges continuously with its roomy default geometry. The
+complete supported one/two-character set stays separate from learning UI, and
+the misleading generic speech tail is omitted only in the two-pane state.
+Exceptional generated copy is measured from real overflow and remains
+keyboard/touch reachable, but is still a content-quality failure case rather
+than a normal authoring target.
 
 ### Hand-off record
 
@@ -143,6 +151,21 @@ Retain, revise, or reject: retain for boxed lessons
 Next question: Can layered characters and speech form the same stable relationship without a misleading speech tail?
 ```
 
+```text
+Branch: codex/layered-lesson-short-landscape
+Base branch / dependency: codex/lesson-speech-short-landscape
+Commit: pending final validation
+Hypothesis: separating the supported layered characters from the learning pane preserves picture meaning and child actions on genuinely shallow landscape screens
+Changed: one/two-character shallow geometry, continuous compact-to-roomy vertical character geometry, layered presentation regression hooks, tail removal in two-pane state, measured-overflow keyboard/touch fallback for speech/prompt/feedback, overlap tests, screenshots, research memo
+Not changed: generated lesson content limits, audio timing, normal-height layout, character catalog
+Tests: 29 boundary/long-copy Chromium cases passed; full validation pending
+Screenshots / traces: artifacts/ux-review/layered-lesson-short-landscape at 560×360, 640×360, 768×360, 844×421, and 768×600
+Measured result: zero character/HUD/dialogue/control overlap across the 360–807px sampled boundaries; reviewed 13-word line fits without scrolling in the shallow pane; 44×44 control floor preserved
+Risks / limitations: direct child speaker matching, inner-scroll discovery, localization, text zoom, and real safe-area geometry remain untested
+Retain, revise, or reject: retain pending full validation
+Next question: Do children correctly match the tail-free speaker label with the active character?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -155,8 +178,8 @@ branches.
    `codex/story-controls-short-landscape` at `445dad4`.
 3. **High: short-landscape lesson speech obscures most of the scene artwork.**
    Fixed for ready-made boxed lessons on
-   `codex/lesson-speech-short-landscape`; layered generated lessons remain the
-   next stacked visual branch.
+   `codex/lesson-speech-short-landscape` and for generated layered lessons on
+   `codex/layered-lesson-short-landscape`.
 4. **High: all ready-made retry lines call the signed-in learner Mia “Bella.”**
    Separate authored character data from the current learner name, or use
    name-free retry language.

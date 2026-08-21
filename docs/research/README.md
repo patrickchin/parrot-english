@@ -25,6 +25,7 @@ Last reviewed: 2026-08-21
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Lesson start state stability](./lesson-start-stability.md)
 - [Lesson speech in short landscape](./lesson-speech-short-landscape.md)
+- [Layered lessons in short landscape](./layered-lesson-short-landscape.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
 
 These memos complement the existing

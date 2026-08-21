@@ -13,7 +13,11 @@ import {
 import {
   forwardRef,
   type CSSProperties,
+  type KeyboardEvent,
   type ReactNode,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
 import {
   ActionButton,
@@ -51,6 +55,63 @@ type LessonFeedbackOutcome =
   | "noInput"
   | "noInputFinal"
   | null;
+
+function scrollOverflowText(event: KeyboardEvent<HTMLParagraphElement>) {
+  const target = event.currentTarget;
+  if (target.scrollHeight <= target.clientHeight) return;
+
+  const lineHeight = Number.parseFloat(getComputedStyle(target).lineHeight) || 24;
+  const pageDistance = Math.max(lineHeight, target.clientHeight - lineHeight);
+  const nextScrollTop =
+    event.key === "ArrowDown"
+      ? target.scrollTop + lineHeight
+      : event.key === "ArrowUp"
+        ? target.scrollTop - lineHeight
+        : event.key === "PageDown"
+          ? target.scrollTop + pageDistance
+          : event.key === "PageUp"
+            ? target.scrollTop - pageDistance
+            : event.key === "End"
+              ? target.scrollHeight
+              : event.key === "Home"
+                ? 0
+                : null;
+
+  if (nextScrollTop === null) return;
+  event.preventDefault();
+  target.scrollTop = nextScrollTop;
+}
+
+function useOverflowText(text: string) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useEffect(() => {
+    const target = ref.current;
+    if (!target) return;
+
+    let active = true;
+    const update = () => {
+      if (!active) return;
+      setIsOverflowing(target.scrollHeight - target.clientHeight > 1);
+    };
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+
+    update();
+    resizeObserver?.observe(target);
+    window.addEventListener("resize", update);
+    void document.fonts?.ready.then(update);
+
+    return () => {
+      active = false;
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [text]);
+
+  return { ref, tabIndex: isOverflowing ? 0 : undefined };
+}
 
 export function LessonStage({
   background,
@@ -271,7 +332,10 @@ export function LessonCharacters({
   characters: LessonCharacterPresentation[];
 }) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-10">
+    <div
+      className="lesson-character-layer pointer-events-none absolute inset-0 z-10"
+      data-character-count={characters.length}
+    >
       {characters.map((character, index) => (
         <div
           className={cx(
@@ -310,6 +374,7 @@ export function LessonSpeech({
   showTail?: boolean;
   speech: LessonSpeechPresentation;
 }) {
+  const overflowText = useOverflowText(speech.text);
   if (speech.kind === "user" || speech.kind === "feedback") return null;
 
   const isNarration = speech.kind === "narration";
@@ -357,7 +422,17 @@ export function LessonSpeech({
           </>
         )}
       </span>
-      <p className="m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight md:max-h-40">
+      <p
+        className={cx(
+          "m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 md:max-h-40",
+          isNarration
+            ? "focus-visible:outline-brand-yellow"
+            : "focus-visible:outline-brand-ink",
+        )}
+        onKeyDown={scrollOverflowText}
+        ref={overflowText.ref}
+        tabIndex={overflowText.tabIndex}
+      >
         {speech.text}
       </p>
     </div>
@@ -373,6 +448,7 @@ export function LessonUserPrompt({
   portrait?: PersonalizedStoryArtwork | null;
   status?: "checking" | "opening" | "ready" | "recording";
 }) {
+  const overflowText = useOverflowText(dialogue);
   const promptLabel =
     status === "recording"
       ? "Listening"
@@ -410,7 +486,12 @@ export function LessonUserPrompt({
           )}
           {promptLabel}
         </span>
-        <p className="m-0 text-base font-black leading-[1.15] min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]">
+        <p
+          className="m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]"
+          onKeyDown={scrollOverflowText}
+          ref={overflowText.ref}
+          tabIndex={overflowText.tabIndex}
+        >
           {dialogue}
         </p>
       </div>
@@ -425,6 +506,7 @@ export function LessonFeedback({
   outcome: LessonFeedbackOutcome;
   speech: LessonSpeechPresentation;
 }) {
+  const overflowText = useOverflowText(speech.text);
   const isCorrect = outcome === "correct";
   const isRetry = outcome === "incorrect" || outcome === "noInput";
   const heading = isCorrect
@@ -452,8 +534,11 @@ export function LessonFeedback({
       </span>
       <p
         aria-live="polite"
-        className="m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight"
+        className="m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+        onKeyDown={scrollOverflowText}
+        ref={overflowText.ref}
         role="status"
+        tabIndex={overflowText.tabIndex}
       >
         {speech.text}
       </p>
