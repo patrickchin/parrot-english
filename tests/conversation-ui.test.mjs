@@ -30,18 +30,22 @@ function props(overrides = {}) {
     microphoneBusy: false,
     microphoneEnabled: true,
     onBack() {},
+    onChooseLesson() {},
     onFinish() {},
     onPromptStyleChange() {},
     onRepeatAudio() {},
+    onRetryVoice() {},
     onStart() {},
     onStartAudio() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
     promptStyle: "tiny-turns",
+    recoveryPhase: null,
     responseLatencyMs: null,
     status: "ready",
     turnReady: true,
     turns: [],
+    voiceRetryUsed: false,
     waitCycle: 0,
     ...overrides,
   };
@@ -433,6 +437,7 @@ describe("accessible realtime conversation surface", () => {
     const html = render({
       canFinish: false,
       error: "The voice room took a break.",
+      recoveryPhase: "restart",
       status: "error",
     });
 
@@ -440,6 +445,35 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /Try again/);
     assert.doesNotMatch(html, /Finish chat|Tap, then talk|I’m done/);
     assert.doesNotMatch(html, /Type instead|Type your answer|>Send</);
+  });
+
+  it("offers one picture-led lesson path after the voice retry also fails", () => {
+    const html = render({
+      error: "Peppa cannot talk now. Tap Try again.",
+      recoveryPhase: "restart",
+      status: "error",
+      voiceRetryUsed: true,
+    });
+
+    assert.match(html, /Chat paused/);
+    assert.match(html, /Peppa cannot talk now/);
+    assert.match(html, /Play a lesson/);
+    assert.match(html, /01-peppas-high-ball/);
+    assert.doesNotMatch(html, /role="alert"/);
+    assert.doesNotMatch(html, /Try again|Finish chat|alt="Peppa"/);
+    assert.doesNotMatch(html, /aria-busy/);
+  });
+
+  it("gives a finish failure one matching full-width finish action", () => {
+    const html = render({
+      error: "The chat did not finish. Tap Finish chat again.",
+      recoveryPhase: "finish",
+      status: "error",
+    });
+
+    assert.match(html, /The chat did not finish/);
+    assert.match(html, />Finish chat again</);
+    assert.doesNotMatch(html, />Try again</);
   });
 
   it("shows a microphone error without throwing away the learner's turn", () => {

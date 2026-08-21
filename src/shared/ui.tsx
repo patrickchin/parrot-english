@@ -7,7 +7,7 @@ import type {
 } from "react";
 import { Link } from "react-router";
 
-export type ControlVariant = "brand" | "navy" | "success" | "surface";
+export type ControlVariant = "brand" | "navy" | "rose" | "success" | "surface";
 export type ControlSize =
   | "compact"
   | "default"
@@ -74,9 +74,15 @@ export function controlClassName({
     "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter,box-shadow] duration-150 ease-out motion-reduce:transition-none",
     focusClassName,
     interaction === "button" &&
-      "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:hover:brightness-105 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
+      "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
     interaction === "link" &&
-      "cursor-pointer hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+      "cursor-pointer hover:-translate-y-0.5 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+    interaction === "button" &&
+      (variant === "rose"
+        ? "enabled:hover:brightness-95"
+        : "enabled:hover:brightness-105"),
+    interaction === "link" &&
+      (variant === "rose" ? "hover:brightness-95" : "hover:brightness-105"),
     "disabled:cursor-not-allowed disabled:opacity-60",
     align === "center" && "justify-center text-center",
     align === "start" && "justify-start text-left",
@@ -102,11 +108,12 @@ export function controlClassName({
     size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
     variant === "brand" && "bg-brand-pink text-white",
     variant === "navy" && "bg-brand-navy text-white",
+    variant === "rose" && "bg-brand-rose text-white",
     variant === "success" && "bg-brand-green text-white",
     variant === "surface" && "bg-white/90 text-brand-blue",
     elevation === "flat" && "shadow-none",
     elevation === "raised" &&
-      variant === "brand" &&
+      (variant === "brand" || variant === "rose") &&
       "shadow-control-pink",
     elevation === "raised" &&
       variant === "navy" &&

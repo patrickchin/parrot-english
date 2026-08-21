@@ -1,8 +1,10 @@
 import { ArrowRight, Headphones, MessageCircle, Play } from "lucide-react";
 import { cx, InteractiveCardLink } from "../shared/ui";
+import { LESSON_LEARNING_PATH } from "./learning-paths";
 
 type LearningPath = {
   icon: typeof Play;
+  imageAlt?: string;
   imageClassName: string;
   imageHeight: number;
   imageSizes?: string;
@@ -17,16 +19,8 @@ type LearningPath = {
 const LEARNING_PATHS: readonly LearningPath[] = [
   {
     icon: Play,
-    imageClassName: "object-cover",
-    imageHeight: 1024,
-    imageSizes: "(min-width: 768px) 30vw, (min-width: 560px) 112px, 80px",
-    imageSrc: "/assets/lesson-covers/01-peppas-high-ball.webp",
-    imageSrcSet:
-      "/assets/lesson-covers/01-peppas-high-ball-384.webp 384w, /assets/lesson-covers/01-peppas-high-ball-768.webp 768w, /assets/lesson-covers/01-peppas-high-ball.webp 1024w",
-    imageWidth: 1024,
-    label: "Play a lesson",
+    ...LESSON_LEARNING_PATH,
     tone: "rose",
-    to: "/lessons",
   },
   {
     icon: MessageCircle,

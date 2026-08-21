@@ -7,7 +7,7 @@ export type TimedConversationStatus =
   | "saving";
 
 export type ConversationWaitFeedback = {
-  action?: "leave" | "retry";
+  action?: "leave" | "lesson" | "retry";
   label: string;
   showLearnerAnswer?: boolean;
   text: string;
@@ -40,11 +40,13 @@ export function selectConversationWaitFeedback({
   purpose,
   responseLatencyMs = null,
   status,
+  voiceRetryUsed = false,
 }: {
   elapsedMs: number;
   purpose: ConversationPurpose;
   responseLatencyMs?: number | null;
   status: TimedConversationStatus;
+  voiceRetryUsed?: boolean;
 }): ConversationWaitFeedback {
   const stage = conversationFeedbackMilestones(
     status,
@@ -65,7 +67,8 @@ export function selectConversationWaitFeedback({
       };
     }
     return {
-      action: "retry",
+      action:
+        purpose === "small-chat" && voiceRetryUsed ? "lesson" : "retry",
       label: "Chat paused",
       text: "The chat did not start.",
     };
@@ -90,7 +93,8 @@ export function selectConversationWaitFeedback({
       text: "Still waiting for Peppa.",
     };
     return {
-      action: "retry",
+      action:
+        purpose === "small-chat" && voiceRetryUsed ? "lesson" : "retry",
       label: "Chat paused",
       text: "Peppa did not answer.",
     };
@@ -106,7 +110,8 @@ export function selectConversationWaitFeedback({
       text: "Still trying.",
     };
     return {
-      action: "retry",
+      action:
+        purpose === "small-chat" && voiceRetryUsed ? "lesson" : "retry",
       label: "Chat paused",
       text: "The chat stopped.",
     };

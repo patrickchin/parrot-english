@@ -3,6 +3,7 @@ import {
   LoaderCircle,
   Mic,
   MicOff,
+  Play,
   RotateCcw,
   Volume2,
   VolumeX,
@@ -16,6 +17,7 @@ import {
   type TalkToPeppaPromptStyle,
 } from "../../lib/talk-to-peppa-prompt-style";
 import { HeaderButton, RouteHeader } from "../app/AppHeader";
+import { LESSON_LEARNING_PATH } from "../app/learning-paths";
 import {
   ActionButton,
   cx,
@@ -40,6 +42,8 @@ export type ConversationSurfaceStatus =
   | "error"
   | "saving";
 
+export type ConversationRecoveryPhase = "finish" | "restart" | null;
+
 export type ConversationSurfaceTurn = {
   id: string;
   role: "user" | "assistant";
@@ -56,18 +60,22 @@ type ConversationSurfaceProps = {
   microphoneBusy: boolean;
   microphoneEnabled: boolean;
   onBack: () => void;
+  onChooseLesson: () => void;
   onFinish: () => void;
   onPromptStyleChange: (style: TalkToPeppaPromptStyle) => void;
   onRepeatAudio: () => void;
+  onRetryVoice: () => void;
   onStart: () => void;
   onStartAudio: () => void;
   onToggleMicrophone: () => void;
   purpose: ConversationPurpose;
   promptStyle: TalkToPeppaPromptStyle;
+  recoveryPhase: ConversationRecoveryPhase;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
   turnReady: boolean;
   turns: ConversationSurfaceTurn[];
+  voiceRetryUsed: boolean;
   waitCycle: number;
 };
 
@@ -129,6 +137,7 @@ function useConversationWaitFeedback(
   purpose: ConversationPurpose,
   responseLatencyMs: number | null,
   status: ConversationSurfaceStatus,
+  voiceRetryUsed: boolean,
   waitCycle: number,
 ) {
   const [clock, setClock] = useState({ elapsedMs: 0, status, waitCycle });
@@ -157,6 +166,7 @@ function useConversationWaitFeedback(
         purpose,
         responseLatencyMs,
         status,
+        voiceRetryUsed,
       })
     : null;
 }
@@ -218,7 +228,7 @@ function statusLabel(
   if (status === "reconnecting" || status === "saving") {
     return waitFeedback?.label ?? "Please wait";
   }
-  if (status === "error") return "Chat paused";
+  if (status === "error") return waitFeedback?.label ?? "Chat paused";
   return "Finishing chat";
 }
 
@@ -276,6 +286,8 @@ function ConversationStatus({
         <VolumeX aria-hidden="true" className="size-4 shrink-0" />
       ) : waitFeedback?.action === "retry" ? (
         <RotateCcw aria-hidden="true" className="size-4 shrink-0" />
+      ) : waitFeedback?.action === "lesson" ? (
+        <Play aria-hidden="true" className="size-4 shrink-0 fill-current" />
       ) : waitFeedback?.action === "leave" ? (
         <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
       ) : status === "listening" ? (
@@ -307,7 +319,11 @@ function ConversationStatus({
       {waitComplete && !audioPlaybackBlocked && !audioPlaybackBusy ? (
         <span className="sr-only">
           . {waitFeedback?.text}{" "}
-          {waitFeedback?.action === "retry" ? "Try chat again." : "Back."}
+          {waitFeedback?.action === "retry"
+            ? "Try chat again."
+            : waitFeedback?.action === "lesson"
+              ? "Play a lesson."
+              : "Back."}
         </span>
       ) : null}
     </p>
@@ -346,9 +362,15 @@ function selectCaption({
 }): Caption {
   if (status === "error" || error) {
     return {
-      label: status === "error" ? "Chat paused" : "Please try again",
-      role: "alert",
-      text: error || "The voice room took a break. Try again.",
+      label:
+        status === "error"
+          ? waitFeedback?.label ?? "Chat paused"
+          : "Please try again",
+      role: waitFeedback?.action ? undefined : "alert",
+      text:
+        waitFeedback?.text ||
+        error ||
+        "The voice room took a break. Try again.",
       transcript: null,
     };
   }
@@ -500,7 +522,7 @@ function ConversationCaptions({
             className="min-w-0"
             role={caption.label === "Peppa" ? "blockquote" : undefined}
           >
-            <span className="text-xs font-black uppercase tracking-wide opacity-65 short:text-[0.65rem] sm:text-sm">
+            <span className="text-xs font-black uppercase tracking-wide opacity-70 short:text-[0.65rem] sm:text-sm">
               {caption.label}
             </span>
             <p
@@ -570,18 +592,22 @@ export function ConversationSurface({
   microphoneBusy,
   microphoneEnabled,
   onBack,
+  onChooseLesson,
   onFinish,
   onPromptStyleChange,
   onRepeatAudio,
+  onRetryVoice,
   onStart,
   onStartAudio,
   onToggleMicrophone,
   purpose,
   promptStyle,
+  recoveryPhase,
   responseLatencyMs,
   status,
   turnReady,
   turns,
+  voiceRetryUsed,
   waitCycle,
 }: ConversationSurfaceProps) {
   const showAudioRecovery =
@@ -597,8 +623,21 @@ export function ConversationSurface({
     purpose,
     responseLatencyMs,
     status,
+    voiceRetryUsed,
     waitCycle,
   );
+  const repeatedErrorFeedback: ConversationWaitFeedback | null =
+    purpose === "small-chat" &&
+    status === "error" &&
+    recoveryPhase === "restart" &&
+    voiceRetryUsed
+      ? {
+          action: "lesson",
+          label: "Chat paused",
+          text: "Peppa cannot talk now.",
+        }
+      : null;
+  const recoveryFeedback = repeatedErrorFeedback ?? waitFeedback;
   const caption = selectCaption({
     audioPlaybackBlocked: showAudioRecovery && audioPlaybackBlocked,
     audioPlaybackBusy: showAudioRecovery && audioPlaybackBusy,
@@ -609,7 +648,7 @@ export function ConversationSurface({
     microphoneEnabled,
     purpose,
     status,
-    waitFeedback,
+    waitFeedback: recoveryFeedback,
   });
   const showRepeat = Boolean(
     latestTurn?.role === "assistant" &&
@@ -621,15 +660,16 @@ export function ConversationSurface({
   );
   const expandLandscapeCaption = caption.text.length > 100;
   const { finishLabel, title } = PURPOSE_COPY[purpose];
+  const finishRetryLabel = finishLabel ? `${finishLabel} again` : "Finish again";
   const showPromptStyleSetup = purpose === "small-chat" && status === "ready";
   const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
-  const recoveryAction = waitFeedback?.action;
+  const recoveryAction = recoveryFeedback?.action;
   const peppaStatus = recoveryAction ? "error" : status;
   const showFinish =
     canFinish &&
     finishLabel &&
     !recoveryAction &&
-    !["ready", "connecting", "saving"].includes(status);
+    !["ready", "connecting", "error", "saving"].includes(status);
 
   useEffect(() => {
     if (!turnInteractive) return;
@@ -666,20 +706,35 @@ export function ConversationSurface({
           microphoneEnabled={microphoneEnabled}
           purpose={purpose}
           status={status}
-          waitFeedback={waitFeedback}
+          waitFeedback={recoveryFeedback}
         />
 
         <figure className="m-0 grid h-full min-h-0 w-full place-items-center short-wide:col-start-1 short-wide:row-span-4 short-wide:row-start-1">
-          <img
-            alt="Peppa"
-            className="h-full min-h-0 w-full max-w-sm animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-w-32 short-wide:max-w-56 sm:max-w-md"
-            decoding="async"
-            height={1024}
-            sizes="(max-height: 420px) 14rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
-            src={responsivePeppaAsset(PEPPA_ASSETS[peppaStatus], 768)}
-            srcSet={responsivePeppaSrcSet(PEPPA_ASSETS[peppaStatus])}
-            width={1024}
-          />
+          {recoveryAction === "lesson" ? (
+            <div className="relative aspect-[4/3] max-h-full w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short:max-w-56 short:rounded-2xl short-wide:max-w-sm sm:max-w-md">
+              <img
+                alt={LESSON_LEARNING_PATH.imageAlt}
+                className="size-full object-cover"
+                decoding="async"
+                height={LESSON_LEARNING_PATH.imageHeight}
+                sizes="(max-height: 420px) 24rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
+                src={LESSON_LEARNING_PATH.imageSrc}
+                srcSet={LESSON_LEARNING_PATH.imageSrcSet}
+                width={LESSON_LEARNING_PATH.imageWidth}
+              />
+            </div>
+          ) : (
+            <img
+              alt="Peppa"
+              className="h-full min-h-0 w-full max-w-sm animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-w-32 short-wide:max-w-56 sm:max-w-md"
+              decoding="async"
+              height={1024}
+              sizes="(max-height: 420px) 14rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
+              src={responsivePeppaAsset(PEPPA_ASSETS[peppaStatus], 768)}
+              srcSet={responsivePeppaSrcSet(PEPPA_ASSETS[peppaStatus])}
+              width={1024}
+            />
+          )}
         </figure>
 
         <ConversationCaptions
@@ -767,10 +822,30 @@ export function ConversationSurface({
                 </div>
               </details>
             </div>
+          ) : recoveryAction === "lesson" ? (
+            <ActionButton
+              fullWidth
+              onClick={onChooseLesson}
+              size="large"
+              type="button"
+              variant="rose"
+            >
+              <Play aria-hidden="true" className="fill-current" />
+              {LESSON_LEARNING_PATH.label}
+            </ActionButton>
+          ) : status === "error" && recoveryPhase === "finish" ? (
+            <ActionButton
+              fullWidth
+              onClick={onFinish}
+              size="large"
+              type="button"
+            >
+              {finishRetryLabel}
+            </ActionButton>
           ) : status === "error" ? (
             <ActionButton
               fullWidth
-              onClick={onStart}
+              onClick={onRetryVoice}
               size="large"
               type="button"
             >
@@ -796,7 +871,12 @@ export function ConversationSurface({
               {audioPlaybackBusy ? "Starting sound" : "Tap for sound"}
             </ActionButton>
           ) : recoveryAction === "retry" ? (
-            <ActionButton fullWidth onClick={onStart} size="large" type="button">
+            <ActionButton
+              fullWidth
+              onClick={onRetryVoice}
+              size="large"
+              type="button"
+            >
               <RotateCcw aria-hidden="true" />
               Try chat again
             </ActionButton>

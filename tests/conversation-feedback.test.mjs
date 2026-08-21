@@ -31,6 +31,10 @@ describe("child-friendly conversation wait feedback", () => {
       "Chat paused",
     );
     assert.equal(feedback("connecting", 12_000).action, "retry");
+    assert.equal(
+      feedback("connecting", 12_000, { voiceRetryUsed: true }).action,
+      "lesson",
+    );
   });
 
   it("acknowledges a learner immediately before moving to calm wait copy", () => {
@@ -47,6 +51,10 @@ describe("child-friendly conversation wait feedback", () => {
     assert.equal(
       feedback("thinking", 15_000).text,
       "Peppa did not answer.",
+    );
+    assert.equal(
+      feedback("thinking", 15_000, { voiceRetryUsed: true }).action,
+      "lesson",
     );
   });
 
@@ -78,8 +86,19 @@ describe("child-friendly conversation wait feedback", () => {
     );
     assert.equal(feedback("saving", 18_000).action, "leave");
     assert.equal(feedback("reconnecting", 18_000).action, "retry");
+    assert.equal(
+      feedback("reconnecting", 18_000, { voiceRetryUsed: true }).action,
+      "lesson",
+    );
     assert.equal(feedback("reconnecting", 0).label, "Trying again");
     assert.equal(feedback("reconnecting", 8_000).label, "Trying again");
     assert.doesNotMatch(feedback("reconnecting", 0).text, /safe|saved/i);
+    assert.equal(
+      feedback("connecting", 12_000, {
+        purpose: "onboarding",
+        voiceRetryUsed: true,
+      }).action,
+      "retry",
+    );
   });
 });

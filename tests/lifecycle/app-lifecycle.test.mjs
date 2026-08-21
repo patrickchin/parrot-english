@@ -211,6 +211,7 @@ function learnerProfileRouteProps(completedLearnerProfileFallback) {
     isProfileRoute: false,
     learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
     onCloseProfileRoute() {},
+    onOpenLessons() {},
     onOpenProfileRoute() {},
   };
 }
@@ -219,6 +220,7 @@ function ConversationHookHarness({
   createTransport,
   now,
   onBack = () => {},
+  onChooseLesson = () => {},
   onCompleted = async () => {},
   purpose = "onboarding",
 }) {
@@ -227,6 +229,7 @@ function ConversationHookHarness({
     createTransport,
     now,
     onBack,
+    onChooseLesson,
     onCompleted,
     purpose,
   });
@@ -279,7 +282,22 @@ function ConversationHookHarness({
       { "aria-label": "Conversation error" },
       conversation.error,
     ),
+    createElement(
+      "output",
+      { "aria-label": "Conversation recovery phase" },
+      conversation.recoveryPhase ?? "",
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Voice retry used" },
+      String(conversation.voiceRetryUsed),
+    ),
     createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
+    createElement(
+      "button",
+      { onClick: conversation.onRetryVoice, type: "button" },
+      "Retry voice",
+    ),
     createElement(
       "button",
       {
@@ -308,6 +326,11 @@ function ConversationHookHarness({
       "button",
       { onClick: conversation.onBack, type: "button" },
       "Back voice",
+    ),
+    createElement(
+      "button",
+      { onClick: conversation.onChooseLesson, type: "button" },
+      "Choose lesson",
     ),
   );
 }
@@ -341,17 +364,21 @@ function conversationSurfaceProps(overrides = {}) {
     microphoneBusy: false,
     microphoneEnabled: false,
     onBack() {},
+    onChooseLesson() {},
     onFinish() {},
     onPromptStyleChange() {},
     onRepeatAudio() {},
+    onRetryVoice() {},
     onStart() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
     promptStyle: "tiny-turns",
+    recoveryPhase: null,
     responseLatencyMs: null,
     status: "listening",
     turnReady: true,
     turns: [],
+    voiceRetryUsed: false,
     waitCycle: 0,
     ...overrides,
   };
@@ -368,6 +395,7 @@ function ProfileRouteHarness({ children }) {
       isProfileRoute: route === "/profile",
       learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
       onCloseProfileRoute: () => setRoute("/"),
+      onOpenLessons() {},
       onOpenProfileRoute: () => setRoute("/profile"),
     },
     children,
@@ -388,6 +416,7 @@ function StandaloneConversationRouteHarness() {
       learnerProfileFallback: createElement("p", null, "LEARNER PROFILE ROUTE"),
       onCloseProfileRoute() {},
       onConversationCompleted: () => setRoute("/"),
+      onOpenLessons: () => setRoute("/lessons"),
       onOpenProfileRoute() {},
       onRedoCompleted() {},
       onRedoLearnerProfileRoute() {},
@@ -1732,6 +1761,316 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           },
         ],
       ),
+    );
+  });
+
+  it("allows one voice retry and coalesces another rapid activation", async () => {
+    let starts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return json({}, 500);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, { purpose: "small-chat" }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(output("Conversation recovery phase").textContent, "restart");
+    assert.equal(output("Voice retry used").textContent, "false");
+
+    await act(async () => {
+      button("Retry voice").click();
+      button("Retry voice").click();
+      await flush();
+    });
+    await waitFor(() => assert.equal(starts, 2));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(output("Conversation recovery phase").textContent, "restart");
+    assert.equal(output("Voice retry used").textContent, "true");
+  });
+
+  for (const purpose of ["onboarding", "profile-edit"]) {
+    it(`keeps ${purpose} voice recovery reusable after repeated failures`, async () => {
+      let starts = 0;
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/conversations" && init.method === "POST") {
+          starts += 1;
+          return json({}, 500);
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(createElement(ConversationHookHarness, { purpose }));
+      await waitFor(() => assert.equal(starts, 1));
+      await waitFor(() =>
+        assert.equal(output("Conversation status").textContent, "error"),
+      );
+
+      await click(button("Retry voice"));
+      await waitFor(() => assert.equal(starts, 2));
+      await waitFor(() =>
+        assert.equal(output("Conversation status").textContent, "error"),
+      );
+
+      await click(button("Retry voice"));
+      await waitFor(() => assert.equal(starts, 3));
+      await waitFor(() =>
+        assert.equal(output("Conversation status").textContent, "error"),
+      );
+      assert.equal(output("Voice retry used").textContent, "false");
+    });
+  }
+
+  it("keeps finish recovery separate from voice restart recovery", async () => {
+    let completedCalls = 0;
+    let finishAttempts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("finish-error-conversation");
+      }
+      if (
+        path === "/api/conversations/finish-error-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finishAttempts += 1;
+        return finishAttempts === 1 ? json({}, 503) : json({ conversation: {} });
+      }
+      if (
+        path === "/api/conversations/finish-error-conversation" &&
+        init.method === "GET"
+      ) {
+        return json({ conversation: { turns: [] } });
+      }
+      if (
+        path === "/api/conversations/finish-error-conversation/review" &&
+        init.method === "PUT"
+      ) {
+        return json({
+          bypassed: false,
+          conversationId: "finish-error-conversation",
+          profileCompleted: false,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => ({
+          async connect() {},
+          async disconnect() {},
+          async setMicrophoneEnabled() {},
+          subscribe() {
+            return () => {};
+          },
+        }),
+        onCompleted: async () => {
+          completedCalls += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Finish voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(output("Conversation recovery phase").textContent, "finish");
+    assert.equal(output("Voice retry used").textContent, "false");
+    assert.match(
+      output("Conversation error").textContent,
+      /Finish chat again/,
+    );
+
+    await click(button("Finish voice"));
+    await waitFor(() => assert.equal(completedCalls, 1));
+    assert.equal(finishAttempts, 2);
+    assert.equal(output("Conversation recovery phase").textContent, "");
+  });
+
+  it("keeps the retry used through the opening and resets it on Peppa's reply", async () => {
+    let listener = () => {};
+    let starts = 0;
+    const transport = {
+      async commitUserTurn() {},
+      async connect() {},
+      async disconnect() {},
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? json({}, 500)
+          : conversationStartResponse("recovered-conversation");
+      }
+      if (path.endsWith("/finish") && init.method === "POST") {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    await click(button("Retry voice"));
+    await waitFor(() => assert.equal(starts, 2));
+
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "listening"),
+    );
+    assert.equal(output("Voice retry used").textContent, "true");
+
+    await click(button("Start my turn"));
+    await click(button("End my turn"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "thinking"),
+    );
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    assert.equal(output("Voice retry used").textContent, "false");
+  });
+
+  it("leaves for lessons with the same one-shot conversation cleanup as Back", async () => {
+    const finished = [];
+    let lessonChoices = 0;
+    let disconnects = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("lesson-fallback-conversation");
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => ({
+          async connect() {},
+          async disconnect() {
+            disconnects += 1;
+          },
+          async setMicrophoneEnabled() {},
+          subscribe() {
+            return () => {};
+          },
+        }),
+        onChooseLesson: () => {
+          lessonChoices += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Choose lesson"));
+
+    assert.equal(lessonChoices, 1);
+    assert.equal(disconnects, 1);
+    assert.equal(output("Voice retry used").textContent, "false");
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        {
+          id: "lesson-fallback-conversation",
+          reason: "left_conversation",
+        },
+      ]),
+    );
+  });
+
+  it("detaches a hung retry and retires its stale predecessor before choosing lessons", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let lessonChoices = 0;
+    let starts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          throw new Error("A detached Start must not create a transport.");
+        },
+        onChooseLesson: () => {
+          lessonChoices += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Retry voice"));
+    assert.equal(starts, 2);
+    assert.equal(output("Voice retry used").textContent, "true");
+
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await act(async () => {
+      await flush();
+    });
+    assert.deepEqual(finished, []);
+
+    await click(button("Choose lesson"));
+    assert.equal(lessonChoices, 1);
+    assert.equal(output("Voice retry used").textContent, "false");
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
     );
   });
 

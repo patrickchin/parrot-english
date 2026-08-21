@@ -7,6 +7,7 @@ import {
   type ConversationTurn,
 } from "./conversation-api";
 import type {
+  ConversationRecoveryPhase,
   ConversationSurfaceStatus,
   ConversationSurfaceTurn,
 } from "./ConversationSurface";
@@ -220,6 +221,7 @@ type UsePeppaConversationOptions = {
   createTransport?: typeof createLiveKitConversation;
   now?: () => number;
   onBack: () => void;
+  onChooseLesson: () => void;
   onCompleted: () => Promise<void>;
   purpose: ConversationPurpose;
 };
@@ -282,6 +284,7 @@ export function usePeppaConversation({
   createTransport = createLiveKitConversation,
   now,
   onBack,
+  onChooseLesson,
   onCompleted,
   purpose,
 }: UsePeppaConversationOptions) {
@@ -301,6 +304,9 @@ export function usePeppaConversation({
     createResponseLatencyTimer(now),
   );
   const [error, setError] = useState("");
+  const [recoveryPhase, setRecoveryPhase] =
+    useState<ConversationRecoveryPhase>(null);
+  const [voiceRetryUsed, setVoiceRetryUsed] = useState(false);
   const [promptStyle, setPromptStyle] = useState<TalkToPeppaPromptStyle>(
     DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   );
@@ -323,9 +329,15 @@ export function usePeppaConversation({
   const microphoneBusyRef = useRef(false);
   const retirementReasonsRef = useRef(new Map<string, string>());
   const runtimeRef = useRef(createConversationRuntime());
+  const voiceRetryUsedRef = useRef(false);
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
+  }, []);
+
+  const updateVoiceRetryUsed = useCallback((used: boolean) => {
+    voiceRetryUsedRef.current = used;
+    setVoiceRetryUsed(used);
   }, []);
 
   const queueConversationRetirement = useCallback(
@@ -478,6 +490,7 @@ export function usePeppaConversation({
         if (!isCurrent(operation)) return;
         runtimeRef.current.completingConversationId = null;
         setError(childFacingConversationError("finish", purpose));
+        setRecoveryPhase("finish");
         setStatus("error");
       }
     },
@@ -686,6 +699,7 @@ export function usePeppaConversation({
         void transport?.disconnect();
         if (!COMPLETED_DISCONNECT_REASONS.has(event.reason)) {
           setError(childFacingConversationError("disconnect", purpose));
+          setRecoveryPhase("restart");
           setStatus("error");
           return;
         }
@@ -704,6 +718,7 @@ export function usePeppaConversation({
           setTurnReady(false);
           if (runtimeRef.current.awaitingResponse) {
             runtimeRef.current.awaitingResponse = false;
+            updateVoiceRetryUsed(false);
             settleResponseLatency("assistant_signal");
           }
           if (!runtimeRef.current.learnerTurnOpen) {
@@ -766,6 +781,7 @@ export function usePeppaConversation({
           runtimeRef.current.assistantOutputBeforePlaybackReady = true;
         }
         if (runtimeRef.current.awaitingResponse) {
+          updateVoiceRetryUsed(false);
           settleResponseLatency("assistant_signal");
         }
         runtimeRef.current.awaitingResponse = false;
@@ -805,6 +821,7 @@ export function usePeppaConversation({
       repeatPossiblyInterruptedAudio,
       settleConversationAudioPlaybackMeasurement,
       settleResponseLatency,
+      updateVoiceRetryUsed,
     ],
   );
 
@@ -849,6 +866,7 @@ export function usePeppaConversation({
     audioPlaybackRequestRef.current += 1;
     microphoneBusyRef.current = false;
     setError("");
+    setRecoveryPhase(null);
     setAudioPlaybackBlocked(false);
     setAudioPlaybackBusy(false);
     setAudioPlaybackError("");
@@ -971,6 +989,7 @@ export function usePeppaConversation({
       failConversationStartMeasurement(operation);
       cancelConversationAudioPlaybackMeasurement();
       setError(childFacingConversationError("start", purpose));
+      setRecoveryPhase("restart");
       setStatus("error");
     }
   }, [
@@ -989,6 +1008,16 @@ export function usePeppaConversation({
     resetResponseLatency,
     retireQueuedConversations,
   ]);
+
+  const retryVoice = useCallback(() => {
+    if (purpose !== "small-chat") {
+      void start();
+      return;
+    }
+    if (voiceRetryUsedRef.current) return;
+    updateVoiceRetryUsed(true);
+    void start();
+  }, [purpose, start, updateVoiceRetryUsed]);
 
   const finish = useCallback(async () => {
     const conversationId = conversationIdRef.current;
@@ -1012,6 +1041,7 @@ export function usePeppaConversation({
     setWaitCycle((current) => current + 1);
     setStatus("saving");
     setError("");
+    setRecoveryPhase(null);
     if (transportRef.current === transport) transportRef.current = null;
     const disconnectPromise = transport?.disconnect().catch(() => {});
     try {
@@ -1023,6 +1053,7 @@ export function usePeppaConversation({
     } catch {
       if (!isCurrent(operation)) return;
       setError(childFacingConversationError("finish", purpose));
+      setRecoveryPhase("finish");
       setStatus("error");
     }
   }, [
@@ -1035,7 +1066,7 @@ export function usePeppaConversation({
     resetResponseLatency,
   ]);
 
-  const back = useCallback(() => {
+  const leaveConversation = useCallback((onLeave: () => void) => {
     operationRef.current += 1;
     detachConversationStarts(conversationLifecycleOwner);
     audioPlaybackBusyRef.current = false;
@@ -1053,8 +1084,10 @@ export function usePeppaConversation({
     setAudioPlaybackBusy(false);
     setAudioPlaybackError("");
     setMicrophoneBusy(false);
+    setMicrophoneEnabled(false);
     setTurnReady(false);
-    onBack();
+    setRecoveryPhase(null);
+    updateVoiceRetryUsed(false);
     if (id) {
       releaseConversationClaim(conversationLifecycleOwner, id);
       queueConversationRetirement(id, "left_conversation");
@@ -1063,15 +1096,24 @@ export function usePeppaConversation({
     }
     void retireQueuedConversations().catch(() => {});
     void transport?.disconnect();
+    onLeave();
   }, [
     cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
     conversationLifecycleOwner,
-    onBack,
     queueConversationRetirement,
     resetResponseLatency,
     retireQueuedConversations,
+    updateVoiceRetryUsed,
   ]);
+
+  const back = useCallback(() => {
+    leaveConversation(onBack);
+  }, [leaveConversation, onBack]);
+
+  const chooseLesson = useCallback(() => {
+    leaveConversation(onChooseLesson);
+  }, [leaveConversation, onChooseLesson]);
 
   const toggleMicrophone = useCallback(async () => {
     if (
@@ -1262,6 +1304,8 @@ export function usePeppaConversation({
     setMicrophoneEnabled(false);
     setTurnReady(false);
     setError("");
+    setRecoveryPhase(null);
+    updateVoiceRetryUsed(false);
     void transport?.disconnect();
     if (activeConversationId) {
       releaseConversationClaim(
@@ -1281,6 +1325,7 @@ export function usePeppaConversation({
     queueConversationRetirement,
     resetResponseLatency,
     retireQueuedConversations,
+    updateVoiceRetryUsed,
   ]);
 
   useEffect(
@@ -1294,6 +1339,7 @@ export function usePeppaConversation({
       audioPlaybackRequestRef.current += 1;
       microphoneBusyRef.current = false;
       runtimeRef.current = createConversationRuntime();
+      voiceRetryUsedRef.current = false;
       responseLatencyTimer.reset();
       responseExperienceTimelineRef.current?.cancel();
       responseExperienceTimelineRef.current = null;
@@ -1338,18 +1384,22 @@ export function usePeppaConversation({
       microphoneBusy,
       microphoneEnabled,
       onBack: back,
+      onChooseLesson: chooseLesson,
       onStartAudio: () => void startAudioPlayback(),
       onFinish: () => void finish(),
       onPromptStyleChange: setPromptStyle,
       onRepeatAudio: () => void repeatAudio(),
+      onRetryVoice: retryVoice,
       onStart: () => void start(),
       onToggleMicrophone: () => void toggleMicrophone(),
+      recoveryPhase,
       responseLatencyMs,
       purpose,
       promptStyle,
       status,
       turnReady,
       turns,
+      voiceRetryUsed,
       waitCycle,
     }),
     [
@@ -1357,21 +1407,25 @@ export function usePeppaConversation({
       audioPlaybackBusy,
       audioPlaybackError,
       back,
+      chooseLesson,
       error,
       finish,
       liveTranscript,
       microphoneBusy,
       microphoneEnabled,
       repeatAudio,
+      recoveryPhase,
       responseLatencyMs,
       purpose,
       promptStyle,
+      retryVoice,
       start,
       startAudioPlayback,
       status,
       toggleMicrophone,
       turnReady,
       turns,
+      voiceRetryUsed,
       waitCycle,
     ],
   );

@@ -1256,6 +1256,7 @@ function RoutedApplication() {
             navigate(safeReturnTo, { replace: true })
           }
           onConversationCompleted={() => navigate("/", { replace: true })}
+          onOpenLessons={() => navigate("/lessons", { replace: true })}
           onOpenProfileRoute={openProfileRoute}
           onRedoCompleted={() =>
             navigate(safeReturnTo, { replace: true })

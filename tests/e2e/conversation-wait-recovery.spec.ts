@@ -167,7 +167,9 @@ for (const viewport of viewports) {
   });
 }
 
-test("a timed-out connection restarts its feedback clock", async ({ page }) => {
+test("a timed-out connection gets one retry before a lesson alternative", async ({
+  page,
+}) => {
   await page.setViewportSize({ height: 568, width: 280 });
   await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
   await page.clock.install();
@@ -212,12 +214,116 @@ test("a timed-out connection restarts its feedback clock", async ({ page }) => {
   await page.clock.fastForward(1_100);
   await expect(captions).toContainText("Still getting ready.");
   await page.clock.fastForward(8_000);
-  await expect(retry).toBeVisible();
+  const lesson = page.getByRole("button", { name: "Play a lesson" });
+  const lessonCover = page.getByRole("img", {
+    name: /Peppa and Dolly with a red ball/i,
+  });
+  await expect(lesson).toBeVisible();
+  await expect(retry).toBeHidden();
   await expect(status).toContainText("Chat paused");
+  await expect(status).toContainText("The chat did not start");
+  await expect(status).toContainText("Play a lesson");
+  await expect(captions).toContainText("The chat did not start.");
+  await expect(lessonCover).toBeVisible();
   await expectNoBusyAttribute(status);
   await expectAnimationCount(status, 0);
+  await expectAnimationCount(lessonCover, 0);
+  await expectAnimationCount(lesson, 0);
   expectSameBox(controlsBox, await box(controls));
+  expect((await box(lesson)).height).toBeGreaterThanOrEqual(44);
   await expectNoPageScroll(page);
+
+  await lesson.click();
+  await expect(page).toHaveURL(/\/lessons$/);
+  await expect(
+    page.getByRole("heading", { name: "Pick a lesson" }),
+  ).toBeVisible();
+});
+
+for (const viewport of [
+  { height: 568, name: "narrow phone", width: 280 },
+  { height: 844, name: "regular phone", width: 390 },
+  { height: 360, name: "short landscape", width: 640 },
+]) {
+  test(`two immediate Talk failures offer one lesson path on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/talk-to-peppa?parrotE2eConversation=error");
+    await startSmallChat(page);
+
+    const retry = page.getByRole("button", { name: "Try again" });
+    await expect(retry).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveText(
+      "Peppa cannot talk now. Tap Try again.",
+    );
+    await retry.click();
+
+    const status = page.getByRole("status");
+    const captions = page.getByRole("region", {
+      name: "Conversation captions",
+    });
+    const lesson = page.getByRole("button", { name: "Play a lesson" });
+    const lessonCover = page.getByRole("img", {
+      name: /Peppa and Dolly with a red ball/i,
+    });
+    await expect(status).toHaveText(
+      "Chat paused. Peppa cannot talk now. Play a lesson.",
+    );
+    await expect(captions).toContainText("Peppa cannot talk now.");
+    await expect(lesson).toBeVisible();
+    await expect(lessonCover).toBeVisible();
+    await expect(retry).toBeHidden();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Finish chat" }),
+    ).toHaveCount(0);
+    await expectNoBusyAttribute(status);
+    for (const locator of [status, lessonCover, lesson]) {
+      await expectAnimationCount(locator, 0);
+    }
+    const lessonBox = await box(lesson);
+    expect(lessonBox.height).toBeGreaterThanOrEqual(44);
+    expect(lessonBox.x).toBeGreaterThanOrEqual(0);
+    expect(lessonBox.y).toBeGreaterThanOrEqual(0);
+    expect(lessonBox.x + lessonBox.width).toBeLessThanOrEqual(viewport.width);
+    expect(lessonBox.y + lessonBox.height).toBeLessThanOrEqual(viewport.height);
+    await expectNoPageScroll(page);
+
+    await lesson.click();
+    await expect(page).toHaveURL(/\/lessons$/);
+    const lessonHeading = page.getByRole("heading", { name: "Pick a lesson" });
+    await expect(lessonHeading).toBeVisible();
+    await expect(lessonHeading).toBeFocused();
+  });
+}
+
+test("an opening greeting does not erase the used voice retry", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
+  await endLearnerTurn(page);
+  await page.clock.fastForward(15_000);
+
+  await page.getByRole("button", { name: "Try chat again" }).click();
+  const nextTurn = page.getByRole("button", { name: "Tap, then talk" });
+  await expect(nextTurn).toBeVisible();
+  await nextTurn.click();
+  await page.clock.fastForward(100);
+  await page.getByRole("button", { name: "I’m done" }).click();
+  await page.clock.fastForward(15_000);
+
+  await expect(
+    page.getByRole("button", { name: "Play a lesson" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Try chat again" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Conversation captions" }),
+  ).toContainText("Peppa did not answer.");
 });
 
 test("reduced motion keeps terminal recovery static and understandable", async ({

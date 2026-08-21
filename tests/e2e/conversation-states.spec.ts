@@ -174,7 +174,12 @@ test("a technical finish response names the control that retries the save", asyn
   await expect(page.getByText(/D1 transaction|conversation request/i)).toHaveCount(
     0,
   );
-  await expect(page.getByRole("button", { name: "Finish chat" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish chat again", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Try again", exact: true }),
+  ).toHaveCount(0);
 });
 
 test("profile completion uses the stable saving stage", async ({ page }) => {

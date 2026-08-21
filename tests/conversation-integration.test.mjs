@@ -67,18 +67,22 @@ function conversationProps(overrides = {}) {
     microphoneBusy: false,
     microphoneEnabled: true,
     onBack() {},
+    onChooseLesson() {},
     onFinish() {},
     onPromptStyleChange() {},
     onRepeatAudio() {},
+    onRetryVoice() {},
     onStart() {},
     onStartAudio() {},
     onToggleMicrophone() {},
     purpose: "onboarding",
     promptStyle: "tiny-turns",
+    recoveryPhase: null,
     responseLatencyMs: null,
     status: "ready",
     turnReady: true,
     turns: [],
+    voiceRetryUsed: false,
     waitCycle: 0,
     ...overrides,
   };
@@ -135,10 +139,11 @@ describe("realtime learner-profile gate integration", () => {
     assert.doesNotMatch(fallback, /Chat with Peppa/);
   });
 
-  it("keeps retry and profile completion visible after a voice-room failure", () => {
+  it("keeps one matching retry after a voice-room failure", () => {
     const html = renderGate({
       conversationProps: conversationProps({
         error: "The voice room took a break.",
+        recoveryPhase: "restart",
         status: "error",
       }),
       data: fullState("realtime"),
@@ -147,7 +152,7 @@ describe("realtime learner-profile gate integration", () => {
     assert.match(html, /The voice room took a break/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.match(html, /Try again/);
-    assert.match(html, /Save and finish/);
+    assert.doesNotMatch(html, /Save and finish/);
     assert.doesNotMatch(html, /Finish conversation/);
     assert.doesNotMatch(html, /Type instead|aria-label="Type your answer"/);
   });

@@ -530,6 +530,7 @@ type LearnerProfileGateProps = {
   learnerProfileFallback: ReactNode;
   onCloseProfileRoute: () => void;
   onConversationCompleted: () => void;
+  onOpenLessons: () => void;
   onOpenProfileRoute: () => void;
   onRedoCompleted: () => void;
   onRedoLearnerProfileRoute: () => void;
@@ -545,6 +546,7 @@ export function LearnerProfileGate({
   learnerProfileFallback,
   onCloseProfileRoute,
   onConversationCompleted,
+  onOpenLessons,
   onOpenProfileRoute,
   onRedoCompleted,
   onRedoLearnerProfileRoute,
@@ -717,6 +719,7 @@ export function LearnerProfileGate({
                 fullData.profile.profileStatus !== "completed")))),
     ),
     onBack: handleConversationBack,
+    onChooseLesson: onOpenLessons,
     onCompleted: handleConversationCompleted,
     purpose: conversationPurpose,
   });
