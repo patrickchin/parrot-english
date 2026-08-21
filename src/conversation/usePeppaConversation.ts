@@ -101,11 +101,17 @@ type UsePeppaConversationOptions = {
 };
 
 type ConversationRuntime = {
+  assistantOutputBeforePlaybackReady: boolean;
   assistantSpeaking: boolean;
+  audioPlaybackBlocked: boolean;
+  audioPlaybackReady: boolean;
   awaitingResponse: boolean;
   completingConversationId: string | null;
   learnerTurnOpen: boolean;
-  openingHeard: boolean;
+  openingComplete: boolean;
+  openingSignalSeen: boolean;
+  playbackInterruptionObserved: boolean;
+  repeatAfterInterruptedSpeech: boolean;
   transportReady: boolean;
 };
 
@@ -118,13 +124,25 @@ type ConversationStartMeasurement = {
   timeline: ExperienceTimeline;
 };
 
+type ConversationAudioPlaybackMeasurement = {
+  operation: number;
+  surface: ConversationExperienceSurface;
+  timeline: ExperienceTimeline;
+};
+
 function createConversationRuntime(): ConversationRuntime {
   return {
+    assistantOutputBeforePlaybackReady: false,
     assistantSpeaking: false,
+    audioPlaybackBlocked: false,
+    audioPlaybackReady: false,
     awaitingResponse: false,
     completingConversationId: null,
     learnerTurnOpen: false,
-    openingHeard: false,
+    openingComplete: false,
+    openingSignalSeen: false,
+    playbackInterruptionObserved: false,
+    repeatAfterInterruptedSpeech: false,
     transportReady: false,
   };
 }
@@ -147,6 +165,9 @@ export function usePeppaConversation({
     useState<ConversationSurfaceStatus>("ready");
   const [turns, setTurns] = useState<ConversationSurfaceTurn[]>([]);
   const [liveTranscript, setLiveTranscript] = useState("");
+  const [audioPlaybackBlocked, setAudioPlaybackBlocked] = useState(false);
+  const [audioPlaybackBusy, setAudioPlaybackBusy] = useState(false);
+  const [audioPlaybackError, setAudioPlaybackError] = useState("");
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [microphoneBusy, setMicrophoneBusy] = useState(false);
   const [turnReady, setTurnReady] = useState(false);
@@ -159,6 +180,8 @@ export function usePeppaConversation({
     DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   );
   const conversationIdRef = useRef<string | null>(null);
+  const conversationAudioPlaybackMeasurementRef =
+    useRef<ConversationAudioPlaybackMeasurement | null>(null);
   const conversationStartMeasurementRef =
     useRef<ConversationStartMeasurement | null>(null);
   const responseExperienceTimelineRef = useRef<ExperienceTimeline | null>(null);
@@ -167,6 +190,8 @@ export function usePeppaConversation({
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
   const autoStartRef = useRef(false);
+  const audioPlaybackBusyRef = useRef(false);
+  const audioPlaybackRequestRef = useRef(0);
   const microphoneBusyRef = useRef(false);
   const runtimeRef = useRef(createConversationRuntime());
 
@@ -206,6 +231,28 @@ export function usePeppaConversation({
   const cancelConversationStartMeasurement = useCallback(() => {
     conversationStartMeasurementRef.current?.timeline.cancel();
     conversationStartMeasurementRef.current = null;
+  }, []);
+
+  const cancelConversationAudioPlaybackMeasurement = useCallback(() => {
+    conversationAudioPlaybackMeasurementRef.current?.timeline.cancel();
+    conversationAudioPlaybackMeasurementRef.current = null;
+  }, []);
+
+  const settleConversationAudioPlaybackMeasurement = useCallback((
+    operation: number,
+    outcome: "blocked" | "ready",
+  ) => {
+    const measurement = conversationAudioPlaybackMeasurementRef.current;
+    if (!measurement || measurement.operation !== operation) return;
+    conversationAudioPlaybackMeasurementRef.current = null;
+    const durationMs = measurement.timeline.finish();
+    if (durationMs === null) return;
+    experienceEvents.emit({
+      durationMs,
+      name: "conversation_audio_playback",
+      outcome,
+      surface: measurement.surface,
+    });
   }, []);
 
   const failConversationStartMeasurement = useCallback((operation: number) => {
@@ -288,7 +335,10 @@ export function usePeppaConversation({
       if (
         !isCurrent(operation) ||
         !runtimeRef.current.transportReady ||
-        !runtimeRef.current.openingHeard ||
+        !runtimeRef.current.openingComplete ||
+        !runtimeRef.current.audioPlaybackReady ||
+        runtimeRef.current.audioPlaybackBlocked ||
+        runtimeRef.current.repeatAfterInterruptedSpeech ||
         runtimeRef.current.learnerTurnOpen ||
         !transportRef.current
       ) {
@@ -305,13 +355,140 @@ export function usePeppaConversation({
     [completeConversationStartMeasurement, isCurrent],
   );
 
+  const repeatPossiblyInterruptedAudio = useCallback(
+    async (operation: number, transport: LiveKitConversation) => {
+      if (!isCurrent(operation) || transportRef.current !== transport) return;
+      runtimeRef.current.repeatAfterInterruptedSpeech = false;
+      runtimeRef.current.assistantOutputBeforePlaybackReady = false;
+      runtimeRef.current.playbackInterruptionObserved = false;
+      setTurnReady(false);
+      setStatus("speaking");
+      setError("");
+      try {
+        await transport.repeatLastAudio();
+        if (!isCurrent(operation) || transportRef.current !== transport) return;
+      } catch {
+        if (!isCurrent(operation) || transportRef.current !== transport) return;
+        setError(childFacingConversationError("repeat", purpose));
+        if (!runtimeRef.current.learnerTurnOpen) {
+          void openLearnerTurn(operation);
+        } else {
+          setTurnReady(true);
+          setStatus("listening");
+        }
+      }
+    },
+    [isCurrent, openLearnerTurn, purpose],
+  );
+
+  const markAudioPlaybackReady = useCallback(
+    (operation: number, transport: LiveKitConversation) => {
+      if (!isCurrent(operation) || transportRef.current !== transport) return;
+      if (
+        runtimeRef.current.audioPlaybackReady &&
+        !runtimeRef.current.audioPlaybackBlocked
+      ) {
+        return;
+      }
+      const shouldReplay =
+        runtimeRef.current.playbackInterruptionObserved &&
+        runtimeRef.current.assistantOutputBeforePlaybackReady;
+      settleConversationAudioPlaybackMeasurement(operation, "ready");
+      runtimeRef.current.audioPlaybackBlocked = false;
+      runtimeRef.current.audioPlaybackReady = true;
+      runtimeRef.current.assistantOutputBeforePlaybackReady = false;
+      runtimeRef.current.playbackInterruptionObserved = false;
+      audioPlaybackBusyRef.current = false;
+      audioPlaybackRequestRef.current += 1;
+      setAudioPlaybackBlocked(false);
+      setAudioPlaybackBusy(false);
+      setAudioPlaybackError("");
+      if (shouldReplay) {
+        if (runtimeRef.current.assistantSpeaking) {
+          runtimeRef.current.repeatAfterInterruptedSpeech = true;
+        } else {
+          void repeatPossiblyInterruptedAudio(operation, transport);
+        }
+        return;
+      }
+      if (
+        runtimeRef.current.openingComplete &&
+        !runtimeRef.current.learnerTurnOpen
+      ) {
+        void openLearnerTurn(operation);
+      } else if (
+        runtimeRef.current.learnerTurnOpen &&
+        !runtimeRef.current.awaitingResponse &&
+        !runtimeRef.current.assistantSpeaking
+      ) {
+        setTurnReady(true);
+        setStatus("listening");
+      }
+    },
+    [
+      isCurrent,
+      openLearnerTurn,
+      repeatPossiblyInterruptedAudio,
+      settleConversationAudioPlaybackMeasurement,
+    ],
+  );
+
   const handleTransportEvent = useCallback(
     (event: ConversationTransportEvent, id: string, operation: number) => {
       if (!isCurrent(operation)) return;
+      if (event.type === "audio-playback") {
+        if (event.state === "blocked") {
+          settleConversationAudioPlaybackMeasurement(operation, "blocked");
+          runtimeRef.current.audioPlaybackBlocked = true;
+          runtimeRef.current.audioPlaybackReady = false;
+          runtimeRef.current.playbackInterruptionObserved = true;
+          runtimeRef.current.assistantOutputBeforePlaybackReady ||=
+            runtimeRef.current.assistantSpeaking;
+          runtimeRef.current.repeatAfterInterruptedSpeech = false;
+          audioPlaybackBusyRef.current = false;
+          audioPlaybackRequestRef.current += 1;
+          setAudioPlaybackBlocked(true);
+          setAudioPlaybackBusy(false);
+          setAudioPlaybackError("");
+          setTurnReady(false);
+          return;
+        }
+        if (event.state === "stopped") {
+          runtimeRef.current.playbackInterruptionObserved ||=
+            runtimeRef.current.assistantSpeaking;
+          runtimeRef.current.assistantOutputBeforePlaybackReady ||=
+            runtimeRef.current.assistantSpeaking;
+          runtimeRef.current.audioPlaybackBlocked = false;
+          runtimeRef.current.audioPlaybackReady = false;
+          runtimeRef.current.repeatAfterInterruptedSpeech = false;
+          audioPlaybackBusyRef.current = false;
+          audioPlaybackRequestRef.current += 1;
+          setAudioPlaybackBlocked(false);
+          setAudioPlaybackBusy(false);
+          setAudioPlaybackError("");
+          setTurnReady(false);
+          setStatus("connecting");
+          return;
+        }
+        if (event.state === "ready") {
+          const transport = transportRef.current;
+          if (runtimeRef.current.audioPlaybackBlocked && transport) {
+            // A known false→true LiveKit transition is recovery readiness.
+            // An initial true signal is intentionally ignored above this path.
+            markAudioPlaybackReady(operation, transport);
+          }
+          return;
+        }
+        const transport = transportRef.current;
+        if (transport) markAudioPlaybackReady(operation, transport);
+        return;
+      }
       if (event.type === "state") {
         const connectedTurnReady =
           event.state === "connected" &&
           runtimeRef.current.learnerTurnOpen &&
+          runtimeRef.current.audioPlaybackReady &&
+          !runtimeRef.current.audioPlaybackBlocked &&
           !runtimeRef.current.awaitingResponse &&
           !runtimeRef.current.assistantSpeaking;
         setTurnReady(connectedTurnReady);
@@ -333,10 +510,16 @@ export function usePeppaConversation({
           settleResponseLatency("disconnected");
         }
         failConversationStartMeasurement(operation);
+        cancelConversationAudioPlaybackMeasurement();
         runtimeRef.current.awaitingResponse = false;
         runtimeRef.current.learnerTurnOpen = false;
         runtimeRef.current.transportReady = false;
+        audioPlaybackBusyRef.current = false;
+        audioPlaybackRequestRef.current += 1;
         microphoneBusyRef.current = false;
+        setAudioPlaybackBlocked(false);
+        setAudioPlaybackBusy(false);
+        setAudioPlaybackError("");
         setMicrophoneBusy(false);
         setMicrophoneEnabled(false);
         setTurnReady(false);
@@ -356,13 +539,16 @@ export function usePeppaConversation({
       if (event.type === "speech-started") {
         if (event.role === "assistant") {
           runtimeRef.current.assistantSpeaking = true;
+          if (!runtimeRef.current.audioPlaybackReady) {
+            runtimeRef.current.assistantOutputBeforePlaybackReady = true;
+          }
           setTurnReady(false);
           if (runtimeRef.current.awaitingResponse) {
             runtimeRef.current.awaitingResponse = false;
             settleResponseLatency("assistant_signal");
           }
           if (!runtimeRef.current.learnerTurnOpen) {
-            runtimeRef.current.openingHeard = true;
+            runtimeRef.current.openingSignalSeen = true;
           }
           setStatus("speaking");
         }
@@ -371,16 +557,33 @@ export function usePeppaConversation({
       if (event.type === "speech-ended") {
         if (event.role === "assistant") {
           runtimeRef.current.assistantSpeaking = false;
+          if (runtimeRef.current.repeatAfterInterruptedSpeech) {
+            const transport = transportRef.current;
+            runtimeRef.current.repeatAfterInterruptedSpeech = false;
+            if (transport) {
+              void repeatPossiblyInterruptedAudio(operation, transport);
+            }
+            return;
+          }
           if (!runtimeRef.current.learnerTurnOpen) {
-            if (runtimeRef.current.openingHeard) {
+            if (runtimeRef.current.openingSignalSeen) {
+              runtimeRef.current.openingComplete = true;
               void openLearnerTurn(operation);
             } else {
               setStatus("connecting");
             }
           } else {
-            setTurnReady(!runtimeRef.current.awaitingResponse);
+            const canListen =
+              !runtimeRef.current.awaitingResponse &&
+              runtimeRef.current.audioPlaybackReady &&
+              !runtimeRef.current.audioPlaybackBlocked;
+            setTurnReady(canListen);
             setStatus(
-              runtimeRef.current.awaitingResponse ? "thinking" : "listening",
+              runtimeRef.current.awaitingResponse
+                ? "thinking"
+                : canListen
+                  ? "listening"
+                  : "connecting",
             );
           }
         }
@@ -400,19 +603,26 @@ export function usePeppaConversation({
         );
       });
       if (event.role === "assistant") {
+        if (!runtimeRef.current.audioPlaybackReady) {
+          runtimeRef.current.assistantOutputBeforePlaybackReady = true;
+        }
         if (runtimeRef.current.awaitingResponse) {
           settleResponseLatency("assistant_signal");
         }
         runtimeRef.current.awaitingResponse = false;
         if (event.final) {
           if (!runtimeRef.current.learnerTurnOpen) {
-            runtimeRef.current.openingHeard = true;
+            runtimeRef.current.openingSignalSeen = true;
             if (!runtimeRef.current.assistantSpeaking) {
+              runtimeRef.current.openingComplete = true;
               void openLearnerTurn(operation);
             }
           } else if (!runtimeRef.current.assistantSpeaking) {
-            setTurnReady(true);
-            setStatus("listening");
+            const canListen =
+              runtimeRef.current.audioPlaybackReady &&
+              !runtimeRef.current.audioPlaybackBlocked;
+            setTurnReady(canListen);
+            setStatus(canListen ? "listening" : "connecting");
           }
         } else {
           setTurnReady(false);
@@ -426,11 +636,15 @@ export function usePeppaConversation({
       }
     },
     [
+      cancelConversationAudioPlaybackMeasurement,
       failConversationStartMeasurement,
       isCurrent,
       loadSummary,
+      markAudioPlaybackReady,
       openLearnerTurn,
       purpose,
+      repeatPossiblyInterruptedAudio,
+      settleConversationAudioPlaybackMeasurement,
       settleResponseLatency,
     ],
   );
@@ -439,21 +653,33 @@ export function usePeppaConversation({
     const operation = operationRef.current + 1;
     operationRef.current = operation;
     cancelConversationStartMeasurement();
+    cancelConversationAudioPlaybackMeasurement();
     const conversationStartTimeline = experienceEvents.start();
+    const experienceSurface = conversationExperienceSurface(purpose);
     conversationStartMeasurementRef.current = {
       apiReadyMs: null,
       microphoneMutedMs: null,
       operation,
       roomReadyMs: null,
-      surface: conversationExperienceSurface(purpose),
+      surface: experienceSurface,
       timeline: conversationStartTimeline,
+    };
+    conversationAudioPlaybackMeasurementRef.current = {
+      operation,
+      surface: experienceSurface,
+      timeline: experienceEvents.start(now),
     };
     const previousConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     const previousTransport = transportRef.current;
     transportRef.current = null;
+    audioPlaybackBusyRef.current = false;
+    audioPlaybackRequestRef.current += 1;
     microphoneBusyRef.current = false;
     setError("");
+    setAudioPlaybackBlocked(false);
+    setAudioPlaybackBusy(false);
+    setAudioPlaybackError("");
     setStatus("connecting");
     setTurns([]);
     setLiveTranscript("");
@@ -497,6 +723,13 @@ export function usePeppaConversation({
         token: participantToken,
         url: livekitUrl,
       });
+      // The production adapter always reports playback. Preserve dependency-
+      // injected legacy transports that predate that contract.
+      if (
+        typeof (transport as { startAudio?: unknown }).startAudio !== "function"
+      ) {
+        runtimeRef.current.audioPlaybackReady = true;
+      }
       transportRef.current = transport;
       transport.subscribe((event) =>
         handleTransportEvent(event, conversationId, operation),
@@ -526,7 +759,9 @@ export function usePeppaConversation({
       runtimeRef.current.transportReady = true;
       setMicrophoneEnabled(false);
       if (
-        runtimeRef.current.openingHeard &&
+        runtimeRef.current.openingComplete &&
+        runtimeRef.current.audioPlaybackReady &&
+        !runtimeRef.current.audioPlaybackBlocked &&
         !runtimeRef.current.assistantSpeaking
       ) {
         await openLearnerTurn(operation);
@@ -537,15 +772,18 @@ export function usePeppaConversation({
     } catch {
       if (!isCurrent(operation)) return;
       failConversationStartMeasurement(operation);
+      cancelConversationAudioPlaybackMeasurement();
       setError(childFacingConversationError("start", purpose));
       setStatus("error");
     }
   }, [
+    cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
     createTransport,
     failConversationStartMeasurement,
     handleTransportEvent,
     isCurrent,
+    now,
     openLearnerTurn,
     promptStyle,
     purpose,
@@ -559,19 +797,26 @@ export function usePeppaConversation({
     operationRef.current = operation;
     const transport = transportRef.current;
     cancelConversationStartMeasurement();
+    cancelConversationAudioPlaybackMeasurement();
     resetResponseLatency();
+    audioPlaybackBusyRef.current = false;
+    audioPlaybackRequestRef.current += 1;
     microphoneBusyRef.current = false;
     setMicrophoneBusy(false);
     setMicrophoneEnabled(false);
     setTurnReady(false);
+    setAudioPlaybackBlocked(false);
+    setAudioPlaybackBusy(false);
+    setAudioPlaybackError("");
     setStatus("saving");
     setError("");
+    if (transportRef.current === transport) transportRef.current = null;
+    const disconnectPromise = transport?.disconnect().catch(() => {});
     try {
       await finishConversation(conversationId, "finished_by_learner");
       if (!isCurrent(operation)) return;
-      await transport?.disconnect();
+      await disconnectPromise;
       if (!isCurrent(operation)) return;
-      if (transportRef.current === transport) transportRef.current = null;
       await loadSummary(conversationId, operation);
     } catch {
       if (!isCurrent(operation)) return;
@@ -579,6 +824,7 @@ export function usePeppaConversation({
       setStatus("error");
     }
   }, [
+    cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
     isCurrent,
     loadSummary,
@@ -588,20 +834,31 @@ export function usePeppaConversation({
 
   const back = useCallback(() => {
     operationRef.current += 1;
+    audioPlaybackBusyRef.current = false;
+    audioPlaybackRequestRef.current += 1;
     microphoneBusyRef.current = false;
     const id = conversationIdRef.current;
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
     cancelConversationStartMeasurement();
+    cancelConversationAudioPlaybackMeasurement();
     resetResponseLatency();
     setLiveTranscript("");
+    setAudioPlaybackBlocked(false);
+    setAudioPlaybackBusy(false);
+    setAudioPlaybackError("");
     setMicrophoneBusy(false);
     setTurnReady(false);
     onBack();
     if (id) void finishConversation(id, "left_conversation").catch(() => {});
     void transport?.disconnect();
-  }, [cancelConversationStartMeasurement, onBack, resetResponseLatency]);
+  }, [
+    cancelConversationAudioPlaybackMeasurement,
+    cancelConversationStartMeasurement,
+    onBack,
+    resetResponseLatency,
+  ]);
 
   const toggleMicrophone = useCallback(async () => {
     if (
@@ -609,6 +866,7 @@ export function usePeppaConversation({
       !runtimeRef.current.learnerTurnOpen ||
       runtimeRef.current.awaitingResponse ||
       runtimeRef.current.assistantSpeaking ||
+      (runtimeRef.current.audioPlaybackBlocked && !microphoneEnabled) ||
       microphoneBusyRef.current
     ) {
       return;
@@ -679,9 +937,63 @@ export function usePeppaConversation({
     }
   }, [isCurrent, microphoneEnabled, now, purpose, responseLatencyTimer, settleResponseLatency]);
 
-  const repeatAudio = useCallback(async () => {
+  const startAudioPlayback = useCallback(async () => {
+    const operation = operationRef.current;
+    const transport = transportRef.current;
     if (
-      !transportRef.current ||
+      !transport ||
+      !runtimeRef.current.audioPlaybackBlocked ||
+      audioPlaybackBusyRef.current
+    ) {
+      return;
+    }
+    const request = audioPlaybackRequestRef.current + 1;
+    audioPlaybackRequestRef.current = request;
+    audioPlaybackBusyRef.current = true;
+    setAudioPlaybackBusy(true);
+    setAudioPlaybackError("");
+    try {
+      await transport.startAudio();
+      if (
+        !isCurrent(operation) ||
+        transportRef.current !== transport ||
+        audioPlaybackRequestRef.current !== request
+      ) {
+        return;
+      }
+      // LiveKit's fulfilled gesture-bound request establishes only room/browser
+      // playback readiness. It does not claim non-silent output or hearing.
+      markAudioPlaybackReady(operation, transport);
+    } catch {
+      if (
+        !isCurrent(operation) ||
+        transportRef.current !== transport ||
+        audioPlaybackRequestRef.current !== request
+      ) {
+        return;
+      }
+      if (
+        runtimeRef.current.audioPlaybackReady ||
+        !runtimeRef.current.audioPlaybackBlocked
+      ) {
+        return;
+      }
+      audioPlaybackBusyRef.current = false;
+      audioPlaybackRequestRef.current += 1;
+      setAudioPlaybackBusy(false);
+      setAudioPlaybackBlocked(true);
+      setAudioPlaybackError("Sound did not start. Tap again.");
+    }
+  }, [isCurrent, markAudioPlaybackReady]);
+
+  const repeatAudio = useCallback(async () => {
+    const operation = operationRef.current;
+    const transport = transportRef.current;
+    if (
+      !transport ||
+      audioPlaybackBusyRef.current ||
+      runtimeRef.current.audioPlaybackBlocked ||
+      !runtimeRef.current.audioPlaybackReady ||
       microphoneBusyRef.current ||
       microphoneEnabled ||
       status !== "listening" ||
@@ -693,13 +1005,15 @@ export function usePeppaConversation({
     setTurnReady(false);
     setStatus("speaking");
     try {
-      await transportRef.current.repeatLastAudio();
+      await transport.repeatLastAudio();
+      if (!isCurrent(operation) || transportRef.current !== transport) return;
     } catch {
+      if (!isCurrent(operation) || transportRef.current !== transport) return;
       setError(childFacingConversationError("repeat", purpose));
       setTurnReady(true);
       setStatus("listening");
     }
-  }, [microphoneEnabled, purpose, status, turns]);
+  }, [isCurrent, microphoneEnabled, purpose, status, turns]);
 
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;
@@ -712,7 +1026,10 @@ export function usePeppaConversation({
     if (active) return;
     operationRef.current += 1;
     cancelConversationStartMeasurement();
+    cancelConversationAudioPlaybackMeasurement();
     autoStartRef.current = false;
+    audioPlaybackBusyRef.current = false;
+    audioPlaybackRequestRef.current += 1;
     microphoneBusyRef.current = false;
     runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
@@ -723,6 +1040,9 @@ export function usePeppaConversation({
     setStatus("ready");
     setTurns([]);
     setLiveTranscript("");
+    setAudioPlaybackBlocked(false);
+    setAudioPlaybackBusy(false);
+    setAudioPlaybackError("");
     setMicrophoneBusy(false);
     setMicrophoneEnabled(false);
     setTurnReady(false);
@@ -733,13 +1053,21 @@ export function usePeppaConversation({
         () => {},
       );
     }
-  }, [active, cancelConversationStartMeasurement, resetResponseLatency]);
+  }, [
+    active,
+    cancelConversationAudioPlaybackMeasurement,
+    cancelConversationStartMeasurement,
+    resetResponseLatency,
+  ]);
 
   useEffect(
     () => () => {
       operationRef.current += 1;
       cancelConversationStartMeasurement();
+      cancelConversationAudioPlaybackMeasurement();
       autoStartRef.current = false;
+      audioPlaybackBusyRef.current = false;
+      audioPlaybackRequestRef.current += 1;
       microphoneBusyRef.current = false;
       runtimeRef.current = createConversationRuntime();
       responseLatencyTimer.reset();
@@ -757,17 +1085,25 @@ export function usePeppaConversation({
         );
       }
     },
-    [cancelConversationStartMeasurement, responseLatencyTimer],
+    [
+      cancelConversationAudioPlaybackMeasurement,
+      cancelConversationStartMeasurement,
+      responseLatencyTimer,
+    ],
   );
 
   return useMemo(
     () => ({
+      audioPlaybackBlocked,
+      audioPlaybackBusy,
+      audioPlaybackError,
       canFinish: conversationIdRef.current !== null,
       error,
       liveTranscript,
       microphoneBusy,
       microphoneEnabled,
       onBack: back,
+      onStartAudio: () => void startAudioPlayback(),
       onFinish: () => void finish(),
       onPromptStyleChange: setPromptStyle,
       onRepeatAudio: () => void repeatAudio(),
@@ -781,6 +1117,9 @@ export function usePeppaConversation({
       turns,
     }),
     [
+      audioPlaybackBlocked,
+      audioPlaybackBusy,
+      audioPlaybackError,
       back,
       error,
       finish,
@@ -792,6 +1131,7 @@ export function usePeppaConversation({
       purpose,
       promptStyle,
       start,
+      startAudioPlayback,
       status,
       toggleMicrophone,
       turnReady,

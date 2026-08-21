@@ -21,6 +21,9 @@ after(async () => {
 
 function props(overrides = {}) {
   return {
+    audioPlaybackBlocked: false,
+    audioPlaybackBusy: false,
+    audioPlaybackError: "",
     canFinish: true,
     error: "",
     liveTranscript: "",
@@ -31,6 +34,7 @@ function props(overrides = {}) {
     onPromptStyleChange() {},
     onRepeatAudio() {},
     onStart() {},
+    onStartAudio() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
     promptStyle: "tiny-turns",
@@ -153,6 +157,63 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(connecting, /Tap, then talk|I’m done/);
     assert.doesNotMatch(connecting, /Repeat Peppa|Response latency|Timing…/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
+  });
+
+  it("offers one literal sound action without claiming the child heard audio", () => {
+    const blocked = render({
+      audioPlaybackBlocked: true,
+      microphoneEnabled: false,
+      status: "connecting",
+      turnReady: false,
+    });
+    assert.match(blocked, /Sound is off/);
+    assert.match(blocked, /Tap for sound/);
+    assert.match(blocked, /<button[^>]*>[^<]*(?:<[^>]+>)*Tap for sound/);
+    assert.doesNotMatch(blocked, /Tap, then talk|Listen to Peppa|audio heard/i);
+
+    const pending = render({
+      audioPlaybackBlocked: true,
+      audioPlaybackBusy: true,
+      microphoneEnabled: false,
+      status: "connecting",
+      turnReady: false,
+    });
+    assert.match(pending, /Starting sound/);
+    assert.match(pending, /Starting sound\./);
+    assert.match(pending, /<button[^>]*disabled=""[^>]*>/);
+    assert.doesNotMatch(pending, /Tap for sound<\/button>/);
+
+    const failed = render({
+      audioPlaybackBlocked: true,
+      audioPlaybackError: "Sound did not start. Tap again.",
+      microphoneEnabled: false,
+      status: "connecting",
+      turnReady: false,
+    });
+    assert.match(failed, /Sound did not start\. Tap again/);
+    assert.match(failed, /Tap for sound/);
+  });
+
+  it("keeps the end-turn action available when sound blocks during recording", () => {
+    const recording = render({
+      audioPlaybackBlocked: true,
+      microphoneEnabled: true,
+      status: "listening",
+      turnReady: true,
+    });
+    assert.match(recording, /aria-label="I’m done"/);
+    assert.match(recording, /aria-pressed="true"/);
+    assert.doesNotMatch(recording, /Tap for sound|Sound is off/);
+
+    const microphoneStopped = render({
+      audioPlaybackBlocked: true,
+      microphoneEnabled: false,
+      status: "listening",
+      turnReady: false,
+    });
+    assert.match(microphoneStopped, /Tap for sound/);
+    assert.match(microphoneStopped, /Sound is off/);
+    assert.doesNotMatch(microphoneStopped, /I’m done/);
   });
 
   it("makes the learner and Peppa turns unmistakably different", () => {

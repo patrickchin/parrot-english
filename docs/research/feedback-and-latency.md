@@ -10,11 +10,17 @@ Measure two different experiences:
 
 1. **Control acknowledgement:** the tap or key produces a visible state change
    immediately, even when permission, networking, AI, or audio needs more time.
-2. **Outcome latency:** the requested experience becomes usable or audible.
+2. **Named outcome latency:** the requested experience reaches a precisely
+   defined client milestone, such as microphone ready, assistant signal, or
+   remote-audio session readiness.
 
 A backend timing is not the child's waiting time. Voice measurement should
-connect the child's action to a client-observed event such as microphone-ready
-or first audible remote audio, while retaining stage timings for diagnosis.
+connect the child's action to an accurately named client event while retaining
+stage timings for diagnosis. The existing `assistant_signal` is a LiveKit
+active-speaker, agent-state, or transcript signal. A fulfilled media-element
+play request is session playback readiness. Neither is per-turn first audible,
+physical output, or proof that a child heard sound. See
+[Remote audio playback readiness and honest feedback](./remote-audio-playback.md).
 
 Standards-backed page thresholds and product SLOs must be labelled separately.
 Proposed SLOs below are starting hypotheses to validate on real target devices
@@ -27,8 +33,9 @@ and with children; they are not child-development standards.
 | Page experience | Future fixed metric, coarse surface, value, rating, and navigation type; no raw route | Field LCP, INP, and CLS after a separate collection review | Official "good" at p75: LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1 |
 | Future control acknowledgement | Proposed `control_ack {control, duration_ms}` after a separate privacy review | Activation to next painted visual state for Start, Mic, Stop, Repeat, Continue | Proposed p95 ≤100 ms |
 | Microphone startup | Fixed outcome and bounded duration only | Current lesson measurement includes the human permission decision; a future post-grant event must separate it before applying a device SLO | Proposed after grant: p75 ≤1 s, p95 ≤2 s; never SLO the human decision interval |
-| Voice room startup | One identifier-free payload with API-ready, room-connected, initial-mute-confirmed, and learner-turn-state-ready relative durations | Start action through the logical client transition to a learner turn; initial mute is a control milestone, not microphone permission, capture, publication, or device readiness, and the learner-turn state does not verify a painted control or audible output | Proposed room connected p75 ≤3 s and p95 ≤7 s; learner-turn target still needs a field baseline |
+| Voice room startup | One identifier-free payload with API-ready, room-connected, initial-mute-confirmed, and learner-turn-state-ready relative durations | Start action through the logical client transition to a learner turn; initial mute is a control milestone, not microphone permission, capture, publication, or device readiness. `learnerTurnReadyMs` can include a person's autoplay-unlock delay and an automatic repeat of possibly interrupted opening output, so it is neither a painted-control measure nor a post-grant device/system SLO | Proposed room connected p75 ≤3 s and p95 ≤7 s; learner-turn target still needs a field baseline |
 | Turn response | Fixed surface, fixed outcome, and bounded duration; no turn ID | End-turn action to the first assistant transport or transcript signal; this is not proof of audible output | Proposed p75 ≤1.5 s, p95 ≤3 s; treat ≥4 s as degraded pending child validation |
+| Remote-audio session | Fixed surface, fixed `ready` or `blocked` outcome, and bounded duration; no room, participant, track, or device ID | Conversation Start through the first session-readiness signal or known autoplay block. The one-shot event records whichever occurs first and does not time recovery; this is not per-turn, non-silent, physical output, or proof a child heard | No SLO until the browser/autoplay matrix establishes an interoperable baseline |
 | Future recovery | Proposed fixed operation/outcome and bounded duration after a separate privacy review; no disconnect text | Active interruption through usable recovery or clear fallback | Proposed reconnect p95 ≤3 s; offer calm fallback rather than an endless spinner |
 
 The four-second conversational boundary is informed by an adult 2025 study of
@@ -47,7 +54,8 @@ next action:
 | Connecting | "Getting ready…" | Stop / go back remains available |
 | Listening | "Your turn." | Repeat prompt, then speak |
 | Processing | "Thinking…" | Keep the prior context visible; no layout jump |
-| Remote speech | "Peppa's turn." | Stop, replay if supported |
+| Agent speaking signal | "Peppa's turn." | Stop, replay if supported; do not present the software signal as verified sound |
+| Remote audio blocked | "Tap for sound." | Call LiveKit audio recovery directly from the tap; show **Starting sound.** while pending; automatically repeat only if assistant output overlapped an observed block or stop |
 | Reconnecting | "Trying again…" | Show a short fallback after the recovery budget |
 | Recoverable failure | Specific literal cause when known | Retry plus a non-voice path or grown-up help |
 | Complete | "Finished." | Leave, repeat, or choose another activity deliberately |
@@ -73,9 +81,15 @@ See [Privacy-safe experience events](./privacy-safe-experience-events.md).
   turn identifiers, names, ages, audio, transcripts, prompts, lesson text,
   correctness, error messages/stacks, epoch timestamps, user agents, device or
   screen details, network addresses, ICE candidates, or complete WebRTC stats.
-- Call the current turn endpoint **assistant signal**, not first audible. Add an
-  audible endpoint only after the mounted media element exposes a verified
-  `playing` signal.
+- Call the current turn endpoint **assistant signal**, not first audible. Keep a
+  media element's `playing` event or a successful `startAudio()` result as a
+  separate session playback-readiness signal. No current browser event proves
+  per-turn non-silent sound, physical output, or that a child heard it.
+- Treat `conversation_audio_playback` as a one-shot startup outcome. It records
+  the first `ready` **or** `blocked` observation and never measures the later
+  recovery. An initial LiveKit `canPlaybackAudio === true` is not readiness in
+  v2.20.0; only first element `playing`, known false→true recovery, or fulfilled
+  gesture-bound `startAudio()` supplies the implemented readiness signal.
 - A future field sink requires a purpose, owner, legal/consent review, network
   and access-log audit, enforced deletion timeframe, and explicit data-flow
   documentation before it is enabled.
@@ -96,15 +110,20 @@ See [Privacy-safe experience events](./privacy-safe-experience-events.md).
 
 See [PRIV-04 through PRIV-06](./source-register.md),
 [PERF-01 through PERF-03](./source-register.md), and
-[VOICE-01 through VOICE-03](./source-register.md). Core Web Vitals are official
+[VOICE-01 through VOICE-09](./source-register.md). Core Web Vitals are official
 page-experience thresholds. The voice targets are Parrot hypotheses assembled
 from platform semantics, general responsiveness research, and an adult
 conversation study; they require validation with the product's audience.
 
 ## Open questions
 
-- Where does current time-to-first-audio accrue: permission, room connection,
-  agent startup, model response, speech generation, network, or autoplay?
+- Where does current assistant-signal and session playback-readiness time
+  accrue: permission, room connection, agent startup, model response, speech
+  generation, network, or autoplay?
+- What happens to audio sent before successful autoplay recovery on each target
+  browser, and is one automatic repeat after an observed interruption the right
+  recovery? A delayed `playing` event without interruption must not infer missed
+  output or trigger replay.
 - Does "Thinking" reassure children, or do they need a more concrete cue?
 - What non-voice path preserves learning when microphone permission is denied?
 - Which metrics can remain entirely on-device while still helping a grown-up

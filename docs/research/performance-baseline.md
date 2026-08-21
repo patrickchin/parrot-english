@@ -4,6 +4,12 @@ Last measured: 2026-08-21
 Primary product question: Which waits can a young learner see, and which current
 costs most delay the picture, control, or voice outcome they need?
 
+Revision note, 2026-08-21: later browser and LiveKit research rejected a
+browser-derived per-turn "first audible" milestone for Parrot's long-lived
+remote stream. This historical lab baseline now keeps `assistant_signal`,
+session playback readiness/known block, and physical output separate. See
+[Remote audio playback readiness and honest feedback](./remote-audio-playback.md).
+
 ## Decision summary
 
 The current candidate acknowledges core taps quickly. The first lesson Start
@@ -37,8 +43,8 @@ Excluded from the lab voice outcome:
 
 - a real authentication, profile, conversation, or LiveKit service;
 - microphone permission and device capture startup;
-- the real 121.41 kB gzip LiveKit download, room connection, remote agent, and
-  first audible audio;
+- the real 121.41 kB gzip LiveKit download, room connection, remote agent,
+  remote non-silent samples, physical audio output, and learner perception;
 - CDN, cache, packet loss, server geography, and low-memory device behavior;
 - direct observation with children or caregivers.
 
@@ -171,12 +177,15 @@ Keep the existing proposed milestones separately:
 
 - tap acknowledgement p95 ≤100 ms;
 - room connected p75 ≤3 s and p95 ≤7 s;
-- first audible remote audio after connection p75 ≤1 s and p95 ≤2 s;
-- child end-of-turn to first audible response p75 ≤1.5 s and p95 ≤3 s;
-- ≥4 s turn response is a degraded warning pending child validation.
+- child end-of-turn to first `assistant_signal` p75 ≤1.5 s and p95 ≤3 s;
+- ≥4 s to `assistant_signal` is a degraded warning pending child validation;
+- conversation Start to first remote-audio session readiness or known block:
+  no SLO until the real browser/autoplay matrix supplies a baseline.
 
 The permission decision interval is human time and must not be placed inside a
-microphone-start SLO.
+microphone-start SLO. Similarly, `learnerTurnReadyMs` can include a person's
+autoplay-unlock delay and the automatic repeat of possibly interrupted opening
+output. Do not use it as a post-grant device or system SLO.
 
 ## Smallest useful test set
 
@@ -213,7 +222,8 @@ automation dependency are unnecessary for the next step.
    preload it on home or merely on route view; that would charge every visitor.
 3. **Add privacy-safe field milestones.** Record only allowlisted timings for
    control acknowledgement, API completion, module ready, room connected,
-   microphone published, and first audible audio.
+   microphone published, `assistant_signal`, and remote-audio session readiness
+   or known block. Never rename a software milestone as physical audible output.
 4. **Keep route fallback simple.** Story and Talk loading feedback appeared in
    1–321 ms. Do not build skeleton systems or prefetch every route without field
    evidence. Consider intent-based prefetch on pointer, focus, or touch only if
@@ -225,14 +235,19 @@ automation dependency are unnecessary for the next step.
 ## Evidence and unresolved questions
 
 Threshold sources are [PERF-01 and PERF-02](./source-register.md); voice event
-semantics are [VOICE-01 through VOICE-03](./source-register.md). Lab budgets and
+semantics are [VOICE-01 through VOICE-09](./source-register.md). Lab budgets and
 responsive-art estimates are Parrot decisions, not claims from those sources.
 
 Next evidence needed:
 
 - real deployed p75/p95 by route and coarse device class;
-- actual Start-to-first-audible breakdown across API, LiveKit module, room,
-  agent, network, and autoplay;
+- actual assistant-signal stage breakdown across API, LiveKit module, room,
+  agent, model/speech generation, and network;
+- session playback readiness/known-block outcomes and human recovery delay by
+  target browser and device, kept separate from assistant-signal timing;
+- an optional controlled acoustic comparison of software signals with physical
+  speaker onset using synthetic adult audio only; never treat it as production
+  monitoring or proof that a child heard sound;
 - visual fidelity review of 384/768 shelf images on 1×/2× screens;
 - direct child observation of whether an immediate stable wait state preserves
   confidence during a 2–4 second outcome delay;

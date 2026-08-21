@@ -50,6 +50,12 @@ const acceptedEvents = [
     name: "lesson_speech_check",
     outcome: "completed",
   },
+  {
+    durationMs: 1_240,
+    name: "conversation_audio_playback",
+    outcome: "ready",
+    surface: "learner_profile",
+  },
 ];
 
 describe("privacy-safe experience events", () => {
@@ -89,8 +95,34 @@ describe("privacy-safe experience events", () => {
         ["durationMs", "name", "outcome", "schemaVersion", "surface"],
         ["durationMs", "name", "outcome", "schemaVersion"],
         ["durationMs", "name", "outcome", "schemaVersion"],
+        ["durationMs", "name", "outcome", "schemaVersion", "surface"],
       ],
     );
+  });
+
+  it("accepts the blocked playback outcome without adding diagnostic fields", () => {
+    const { boundary, delivered, tasks } = createQueuedBoundary();
+
+    assert.equal(
+      boundary.emit({
+        durationMs: 640,
+        name: "conversation_audio_playback",
+        outcome: "blocked",
+        surface: "talk",
+      }),
+      true,
+    );
+    tasks.forEach((task) => task());
+
+    assert.deepEqual(delivered, [
+      {
+        durationMs: 640,
+        name: "conversation_audio_playback",
+        outcome: "blocked",
+        schemaVersion: EXPERIENCE_EVENT_SCHEMA_VERSION,
+        surface: "talk",
+      },
+    ]);
   });
 
   it("rejects unknown, extra, identifying, malformed, and inconsistent fields", () => {
@@ -178,6 +210,38 @@ describe("privacy-safe experience events", () => {
         name: "conversation_start",
         outcome: "ready",
         roomReadyMs: 150,
+        surface: "talk",
+      },
+      {
+        durationMs: 10,
+        name: "conversation_audio_playback",
+        outcome: "started",
+        surface: "talk",
+      },
+      {
+        durationMs: 10,
+        name: "conversation_audio_playback",
+        outcome: "blocked",
+        surface: "/talk-to-peppa?learner=Mia",
+      },
+      {
+        conversationId: "conversation-Mia",
+        durationMs: 10,
+        name: "conversation_audio_playback",
+        outcome: "ready",
+        surface: "talk",
+      },
+      {
+        durationMs: 10,
+        name: "conversation_audio_playback",
+        outcome: "ready",
+        surface: "talk",
+        transcript: "Hello Mia",
+      },
+      {
+        durationMs: MAX_EXPERIENCE_DURATION_MS + 1,
+        name: "conversation_audio_playback",
+        outcome: "blocked",
         surface: "talk",
       },
       {

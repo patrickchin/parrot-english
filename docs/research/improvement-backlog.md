@@ -317,6 +317,23 @@ Retain, revise, or reject: retain the inert boundary; do not enable a production
 Next question: Can the mounted remote media element expose first-audible feedback without changing autoplay, replay, accessibility, or privacy behavior?
 ```
 
+```text
+Branch: codex/first-audible-feedback
+Base branch / dependency: codex/privacy-safe-experience-events at 8291916
+Commit: pending integration
+Hypothesis: honest session-level playback readiness plus one direct autoplay-recovery action can keep a child from entering a silent turn without falsely claiming per-turn audibility or hearing
+Changed: first mounted-element playing and LiveKit playback-status/startAudio transport signals; initial-true guard; Tap for sound recovery with a static blocked icon and "Starting sound."; interruption-gated one-repeat behavior; exact-key one-shot startup event; lifecycle/transport/UI/local-Chromium contracts; research record
+Not changed: LiveKit dependency, production event sink or retention, physical-output or child-hearing measurement, output routing, legal status, or direct child/caregiver research
+Signal semantics: first element playing, known false→true, or fulfilled gesture-bound startAudio means session readiness; initial true is ignored; blocked closes the one-shot event; delayed playing without an observed block/stop opens the learner turn without replay
+Tests: 653/653 unit/lifecycle/safety tests passed in 90 suites (~2.45 seconds); 172/172 Chromium tests passed in 13 files (~30 seconds); lint passed with 0 errors and the same 2 generated-file warnings
+Final build: passed; core index-67RCCEkF.js is 491.37 kB raw / 148.36 kB gzip; ConversationSurface-BWl6fnDQ.js is 15.68 kB raw / 5.24 kB gzip
+Screenshots / traces: five JPGs — artifacts/ux-review/remote-audio-playback/blocked-280x568.jpg; artifacts/ux-review/remote-audio-playback/blocked-640x360.jpg; artifacts/ux-review/remote-audio-playback/starting-sound-280x568.jpg; artifacts/ux-review/remote-audio-playback/failed-280x568.jpg; artifacts/ux-review/remote-audio-playback/recovered-280x568.jpg — local Chromium screenshots driven by a synthetic conversation transport, not real WebRTC or autoplay interoperability evidence
+Measured result: synthetic validation distinguishes known blocked, gesture-pending, rejected-recovery, and recovered states; readiness gates the learner turn; only output overlapping an observed block/stop requests one automatic repeat; first ready OR blocked is recorded without identifiers or recovery timing
+Risks / limitations: target-browser LiveKit event order, real autoplay policy, queued-versus-dropped audio, physical output, screen readers, representative devices, and child comprehension remain untested
+Retain, revise, or reject: retain the readiness/audibility distinction and direct recovery; revise replay and copy only after device and child evidence
+Next question: Across target browsers and devices, is blocked audio queued, discarded, or partly rendered, and can young multilingual learners use Tap for sound without adult translation?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser

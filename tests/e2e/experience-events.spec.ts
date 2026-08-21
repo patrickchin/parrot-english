@@ -61,8 +61,23 @@ test("the privacy-safe trace preserves startup order without child content or sy
 
   await expect
     .poll(() => readPageLocalExperienceTrace(page))
-    .toHaveLength(1);
-  const [startup] = await readPageLocalExperienceTrace(page);
+    .toHaveLength(2);
+  const [audioPlayback, startup] = await readPageLocalExperienceTrace(page);
+
+  expect(audioPlayback).toMatchObject({
+    name: "conversation_audio_playback",
+    outcome: "ready",
+    schemaVersion: 1,
+    surface: "talk",
+  });
+  expect(audioPlayback.durationMs).toEqual(expect.any(Number));
+  expect(Object.keys(audioPlayback).sort()).toEqual([
+    "durationMs",
+    "name",
+    "outcome",
+    "schemaVersion",
+    "surface",
+  ]);
 
   expect(startup).toMatchObject({
     name: "conversation_start",
@@ -93,7 +108,7 @@ test("the privacy-safe trace preserves startup order without child content or sy
     "schemaVersion",
     "surface",
   ]);
-  expect(JSON.stringify(startup)).not.toMatch(
+  expect(JSON.stringify([audioPlayback, startup])).not.toMatch(
     /Mia|e2e-|participant-token|wss:\/\/|Hello again|example\.test/i,
   );
   expect(pageErrors).toEqual([]);

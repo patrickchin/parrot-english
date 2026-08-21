@@ -66,8 +66,10 @@ The detailed language-level and age/proficiency cautions remain in
 
 - Lesson and conversation microphones show an immediate opening state and
   reject duplicate taps.
-- Conversation feedback moves through honest connecting, heard, thinking,
-  reconnecting, and saving stages. A cold start offers retry after 12 seconds.
+- Conversation feedback moves through literal **Getting ready**, **Your turn**,
+  **Thinking**, **Peppa's turn**, **Trying again**, and saving/finishing stages.
+  It does not claim the child or character heard sound. A cold start offers
+  retry after 12 seconds.
 - Thinking, reconnecting, and saving also end in a large retry or back action;
   none of the child-facing wait states can remain an actionless spinner forever.
 - Lesson praise has a minimum 1.5 second visible dwell after a short feedback

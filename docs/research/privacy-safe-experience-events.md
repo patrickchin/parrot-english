@@ -8,6 +8,27 @@ Status: implemented and validated
 
 Implementation commit: `526d6d1`
 
+Revision note, 2026-08-21: follow-up browser and LiveKit research rejected
+`HTMLMediaElement.playing` as a per-turn audible endpoint. It can support only
+session playback readiness. See
+[Remote audio playback readiness and honest feedback](./remote-audio-playback.md).
+
+The dependent `codex/first-audible-feedback` branch extends the closed schema
+with one `conversation_audio_playback` startup event containing only `surface`,
+`outcome: "ready" | "blocked"`, and a bounded `durationMs`. It records whichever
+outcome is observed first. A known block settles the event, so later recovery
+does not emit or time a second outcome. Initial LiveKit `true` is ignored as
+proof; first element `playing`, a known false→true transition, or fulfilled
+gesture-bound `startAudio()` supplies session readiness. None establishes
+per-turn non-silent samples, physical output, or hearing.
+
+On that dependent branch, `conversation_start.learnerTurnReadyMs` waits for
+session playback readiness. It can therefore include a person's autoplay-unlock
+delay and an automatic repeat of opening output that overlapped an observed
+block or stop. It is not a post-grant device/system SLO. The new playback event
+also does not prove that the prompt rendered, that the person used it, or that
+recovery completed.
+
 Audience: young English learners, with a deliberately narrower data boundary
 because child voice and personalised lesson flows can contain sensitive content
 
@@ -151,8 +172,9 @@ accept a generic metadata object.
 - **Attach errors, messages, codes, stacks, or response bodies.** Free-form
   diagnostics can contain account, content, network, or provider details.
 - **Call the turn event first audio.** The existing callback is a transport or
-  transcript signal; only a mounted media element's verified `playing` event
-  could support an audible milestone.
+  transcript signal. A mounted element's `playing` event would add only
+  session playback readiness; it still cannot establish per-turn non-silent
+  audio, physical output, or that a child heard it.
 - **Add Core Web Vitals in the same schema.** Page metrics have different
   lifecycle and privacy semantics and need their own collection review.
 - **Measure engagement, dwell time, streaks, or cross-session funnels.** Those
@@ -187,9 +209,10 @@ existing 180 kB gzip boot guardrail.
 - A logical learner-turn transition can precede a committed paint under main-
   thread contention. Measure control paint separately before making a child-
   visible wait claim.
-- The assistant signal can precede audible output. A future media-element
-  `playing` milestone should be researched and tested across autoplay,
-  reconnect, replay, and accessibility behavior.
+- The assistant signal can precede audible output. A media-element `playing`
+  milestone can also occur once at attachment while later utterances use the
+  same stream, and the element can play silence. Treat it only as session
+  readiness and test autoplay, reconnect, replay, and accessibility behavior.
 - Lesson microphone time currently includes the human permission decision.
   Separate permission-granted from device-ready before applying startup SLOs.
 - No field distribution exists yet, so the proposed voice targets in
@@ -212,5 +235,5 @@ Screenshots / traces: artifacts/ux-review/privacy-safe-experience-events/talk-re
 Measured result: exact identifier-free events preserve milestone order; no-sink startup performs no measurement work; stale operations, replaced sinks, queued removal, and sink failures are isolated; core index is 484.96 kB raw / 147.02 kB gzip
 Risks / limitations: logical learner readiness is not verified paint; assistant signal is not audible output; microphone permission decision remains inside lesson timing; no field baseline or child/caregiver study
 Retain, revise, or reject: retain the inert boundary; do not enable a production sink without the documented field-sink gate
-Next question: Can the mounted remote media element expose first-audible feedback without changing autoplay, replay, accessibility, or privacy behavior?
+Next question: Can LiveKit's supported autoplay recovery expose honest session playback readiness without changing replay, accessibility, or privacy behavior?
 ```

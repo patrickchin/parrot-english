@@ -1,6 +1,10 @@
 export const EXPERIENCE_EVENT_SCHEMA_VERSION = 1 as const;
 export const MAX_EXPERIENCE_DURATION_MS = 5 * 60 * 1_000;
 
+const CONVERSATION_AUDIO_PLAYBACK_OUTCOME_VALUES = [
+  "ready",
+  "blocked",
+] as const;
 const CONVERSATION_RESPONSE_OUTCOME_VALUES = [
   "assistant_signal",
   "disconnected",
@@ -8,6 +12,8 @@ const CONVERSATION_RESPONSE_OUTCOME_VALUES = [
   "send_failed",
 ] as const;
 
+export type ConversationAudioPlaybackOutcome =
+  (typeof CONVERSATION_AUDIO_PLAYBACK_OUTCOME_VALUES)[number];
 export type ConversationResponseOutcome =
   (typeof CONVERSATION_RESPONSE_OUTCOME_VALUES)[number];
 
@@ -31,6 +37,13 @@ type ConversationStartFailedInput = {
   surface: ConversationExperienceSurface;
 };
 
+type ConversationAudioPlaybackInput = {
+  durationMs: number;
+  name: "conversation_audio_playback";
+  outcome: ConversationAudioPlaybackOutcome;
+  surface: ConversationExperienceSurface;
+};
+
 type ConversationTurnResponseInput = {
   durationMs: number;
   name: "conversation_turn_response";
@@ -51,6 +64,7 @@ type LessonSpeechCheckInput = {
 };
 
 export type ExperienceEventInput =
+  | ConversationAudioPlaybackInput
   | ConversationStartFailedInput
   | ConversationStartReadyInput
   | ConversationTurnResponseInput
@@ -91,6 +105,9 @@ const CONVERSATION_FAILURE_STAGES = new Set([
   "opening",
   "room",
 ]);
+const CONVERSATION_AUDIO_PLAYBACK_OUTCOMES = new Set<string>(
+  CONVERSATION_AUDIO_PLAYBACK_OUTCOME_VALUES,
+);
 const CONVERSATION_RESPONSE_OUTCOMES = new Set<string>(
   CONVERSATION_RESPONSE_OUTCOME_VALUES,
 );
@@ -227,6 +244,25 @@ function safeEvent(input: unknown): ExperienceEvent | null {
       outcome: "failed",
       schemaVersion: EXPERIENCE_EVENT_SCHEMA_VERSION,
       stage: record.stage as ConversationStartFailedInput["stage"],
+      surface: record.surface,
+    });
+  }
+
+  if (record.name === "conversation_audio_playback") {
+    if (
+      !hasExactKeys(record, ["durationMs", "name", "outcome", "surface"]) ||
+      !isConversationSurface(record.surface) ||
+      typeof record.outcome !== "string" ||
+      !CONVERSATION_AUDIO_PLAYBACK_OUTCOMES.has(record.outcome) ||
+      !isDuration(record.durationMs)
+    ) {
+      return null;
+    }
+    return Object.freeze({
+      durationMs: record.durationMs,
+      name: "conversation_audio_playback",
+      outcome: record.outcome as ConversationAudioPlaybackInput["outcome"],
+      schemaVersion: EXPERIENCE_EVENT_SCHEMA_VERSION,
       surface: record.surface,
     });
   }

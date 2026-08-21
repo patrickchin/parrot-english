@@ -58,6 +58,9 @@ function fullState(experienceMode) {
 
 function conversationProps(overrides = {}) {
   return {
+    audioPlaybackBlocked: false,
+    audioPlaybackBusy: false,
+    audioPlaybackError: "",
     canFinish: true,
     error: "",
     liveTranscript: "",
@@ -68,6 +71,7 @@ function conversationProps(overrides = {}) {
     onPromptStyleChange() {},
     onRepeatAudio() {},
     onStart() {},
+    onStartAudio() {},
     onToggleMicrophone() {},
     purpose: "onboarding",
     promptStyle: "tiny-turns",

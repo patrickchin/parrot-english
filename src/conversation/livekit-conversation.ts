@@ -5,11 +5,13 @@ import {
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
   activeSpeakers: "activeSpeakersChanged",
+  audioPlayback: "audioPlaybackChanged",
   disconnected: "disconnected",
   participantAttributes: "participantAttributesChanged",
   reconnected: "reconnected",
   reconnecting: "reconnecting",
   trackSubscribed: "trackSubscribed",
+  trackUnsubscribed: "trackUnsubscribed",
   transcription: "transcriptionReceived",
 } as const;
 
@@ -18,6 +20,10 @@ type ConversationRoomEvent =
 
 export type ConversationTransportEvent =
   | { type: "state"; state: "connecting" | "connected" | "reconnecting" }
+  | {
+      type: "audio-playback";
+      state: "blocked" | "ready" | "started" | "stopped";
+    }
   | { type: "speech-started"; role: "assistant" }
   | { type: "speech-ended"; role: "assistant" }
   | {
@@ -32,8 +38,18 @@ export type ConversationTransportEvent =
 
 type Listener = (event: ConversationTransportEvent) => void;
 type EventListener = (...args: unknown[]) => void;
+type MediaEventListener = () => void;
 
-type AudioElementLike = { remove(): void };
+type AudioElementLike = {
+  addEventListener(type: "playing", listener: MediaEventListener): void;
+  remove(): void;
+  removeEventListener(type: "playing", listener: MediaEventListener): void;
+};
+type AudioAttachment = {
+  element: AudioElementLike;
+  onPlaying: MediaEventListener;
+  started: boolean;
+};
 type TrackLike = {
   kind?: unknown;
   attach?: () => AudioElementLike;
@@ -49,6 +65,7 @@ type RoomLike = {
   };
   on(event: ConversationRoomEvent, listener: EventListener): unknown;
   off(event: ConversationRoomEvent, listener: EventListener): unknown;
+  startAudio(): Promise<void>;
 };
 
 type CreateLiveKitConversationOptions = {
@@ -81,6 +98,9 @@ const DISCONNECT_REASON_NAMES = [
   "AGENT_ERROR",
 ] as const;
 const E2E_CONVERSATION_SCENARIOS = new Set([
+  "audio-blocked",
+  "audio-delayed",
+  "audio-rejected",
   "connecting",
   "error",
   "long",
@@ -146,9 +166,26 @@ function createE2eLiveKitConversation() {
       : "Hello again! What's your name?";
   let learnerTurnId: string | null = null;
   let learnerTurnSequence = 0;
+  let audioStartAttempts = 0;
+  let audioPlaybackStarted = false;
+  let audioPlaybackPermission: "blocked" | "ready" | null = null;
+  let disconnected = false;
 
   function publish(event: ConversationTransportEvent) {
+    if (disconnected) return;
     for (const listener of listeners) listener(event);
+  }
+
+  function setAudioPlaybackPermission(state: "blocked" | "ready") {
+    if (audioPlaybackPermission === state) return;
+    audioPlaybackPermission = state;
+    publish({ type: "audio-playback", state });
+  }
+
+  function startAudioPlayback() {
+    if (audioPlaybackStarted) return;
+    audioPlaybackStarted = true;
+    publish({ type: "audio-playback", state: "started" });
   }
 
   function clearTranscriptTimers() {
@@ -180,6 +217,14 @@ function createE2eLiveKitConversation() {
     eventTimers.add(timer);
   }
 
+  function scheduleAudioPlayback(delayMs: number) {
+    const timer = setTimeout(() => {
+      eventTimers.delete(timer);
+      startAudioPlayback();
+    }, delayMs);
+    eventTimers.add(timer);
+  }
+
   return {
     async commitUserTurn() {
       if (!learnerTurnId) return;
@@ -203,6 +248,13 @@ function createE2eLiveKitConversation() {
       }
       publish({ type: "state", state: "connected" });
       if (scenario === "connecting") return;
+      if (scenario === "audio-blocked" || scenario === "audio-rejected") {
+        setAudioPlaybackPermission("blocked");
+      } else if (scenario === "audio-delayed") {
+        scheduleAudioPlayback(500);
+      } else {
+        startAudioPlayback();
+      }
       if (scenario === "opening-speaking") {
         publish({ type: "speech-started", role: "assistant" });
         publish({
@@ -275,7 +327,35 @@ function createE2eLiveKitConversation() {
       });
     },
 
+    startAudio() {
+      if (scenario === "audio-blocked" || scenario === "audio-rejected") {
+        if (audioPlaybackPermission === "ready" && audioPlaybackStarted) {
+          return Promise.resolve();
+        }
+        const attempt = ++audioStartAttempts;
+        return new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(() => {
+            eventTimers.delete(timer);
+            if (scenario === "audio-rejected" && attempt === 1) {
+              reject(new Error("Synthetic audio recovery failure"));
+              return;
+            }
+            setAudioPlaybackPermission("ready");
+            startAudioPlayback();
+            resolve();
+          }, 750);
+          eventTimers.add(timer);
+        });
+      }
+      return Promise.resolve();
+    },
+
     async disconnect() {
+      if (disconnected) return;
+      if (audioPlaybackStarted) {
+        publish({ type: "audio-playback", state: "stopped" });
+      }
+      disconnected = true;
       clearTranscriptTimers();
       for (const timer of eventTimers) clearTimeout(timer);
       eventTimers.clear();
@@ -302,17 +382,47 @@ export function createLiveKitConversation({
   }
   let activeRoom = room ?? null;
   const listeners = new Set<Listener>();
-  const attachments = new Map<TrackLike, AudioElementLike>();
+  const attachments = new Map<TrackLike, AudioAttachment>();
   let connected = false;
   let disconnected = false;
   let listenersAttached = false;
   let assistantSpeaking = false;
+  let audioPlaybackPermission: "blocked" | "ready" | null = null;
 
   function publish(event: ConversationTransportEvent) {
+    if (disconnected) return;
     for (const listener of listeners) listener(event);
   }
 
+  function removeAudioAttachment(
+    track: TrackLike,
+    { detach = false }: { detach?: boolean } = {},
+  ) {
+    const attachment = attachments.get(track);
+    if (!attachment) return;
+    attachments.delete(track);
+    attachment.element.removeEventListener("playing", attachment.onPlaying);
+    if (detach) track.detach?.();
+    attachment.element.remove();
+    if (
+      attachment.started &&
+      ![...attachments.values()].some((candidate) => candidate.started)
+    ) {
+      publish({ type: "audio-playback", state: "stopped" });
+    }
+  }
+
   const eventListeners = new Map<ConversationRoomEvent, EventListener>([
+    [
+      LIVEKIT_CONVERSATION_EVENTS.audioPlayback,
+      (canPlayback) => {
+        if (typeof canPlayback !== "boolean") return;
+        const state = canPlayback ? "ready" : "blocked";
+        if (audioPlaybackPermission === state) return;
+        audioPlaybackPermission = state;
+        publish({ type: "audio-playback", state });
+      },
+    ],
     [
       LIVEKIT_CONVERSATION_EVENTS.activeSpeakers,
       (participants) => {
@@ -402,11 +512,32 @@ export function createLiveKitConversation({
       LIVEKIT_CONVERSATION_EVENTS.trackSubscribed,
       (candidate) => {
         const track = candidate as TrackLike;
-        if (track.kind !== "audio" || typeof track.attach !== "function") return;
+        if (
+          track.kind !== "audio" ||
+          typeof track.attach !== "function" ||
+          attachments.has(track)
+        ) {
+          return;
+        }
         const element = track.attach();
-        attachments.set(track, element);
+        const attachment: AudioAttachment = {
+          element,
+          onPlaying: () => {
+            if (disconnected || attachment.started) return;
+            if (attachments.get(track) !== attachment) return;
+            attachment.started = true;
+            publish({ type: "audio-playback", state: "started" });
+          },
+          started: false,
+        };
+        element.addEventListener("playing", attachment.onPlaying);
+        attachments.set(track, attachment);
         mountAudio(element);
       },
+    ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.trackUnsubscribed,
+      (candidate) => removeAudioAttachment(candidate as TrackLike),
     ],
   ]);
 
@@ -473,15 +604,20 @@ export function createLiveKitConversation({
       await activeRoom.localParticipant.sendText(trimmed, { topic: "lk.chat" });
     },
 
+    startAudio() {
+      if (!connected || !activeRoom) {
+        return Promise.reject(new Error("Connect before starting audio."));
+      }
+      return activeRoom.startAudio();
+    },
+
     async disconnect() {
       if (disconnected) return;
-      disconnected = true;
       if (activeRoom) detachListeners(activeRoom);
-      for (const [track, element] of attachments) {
-        track.detach?.();
-        element.remove();
+      for (const track of attachments.keys()) {
+        removeAudioAttachment(track, { detach: true });
       }
-      attachments.clear();
+      disconnected = true;
       listeners.clear();
       await activeRoom?.disconnect();
       connected = false;
