@@ -26,6 +26,7 @@ Last reviewed: 2026-08-21
 - [Bounded conversation safety evaluation](./bounded-conversation-safety-eval.md)
 - [Child-friendly Talk error recovery](./child-friendly-talk-errors.md)
 - [Child-first UX integration audit](./child-first-ux-integration.md)
+- [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Lesson start state stability](./lesson-start-stability.md)
