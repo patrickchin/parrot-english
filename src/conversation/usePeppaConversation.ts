@@ -51,6 +51,24 @@ function readableError(error: unknown) {
     : "The voice conversation could not continue.";
 }
 
+function childFacingConversationError(
+  phase: "disconnect" | "finish" | "repeat" | "start",
+  purpose: ConversationPurpose,
+) {
+  if (phase === "start") return "Peppa cannot talk now. Tap Try again.";
+  if (phase === "disconnect") return "The chat stopped. Tap Try again.";
+  if (phase === "repeat") {
+    return "Peppa could not say that again. Keep talking.";
+  }
+  if (purpose === "onboarding") {
+    return "Your answers did not save. Tap Save and finish again.";
+  }
+  if (purpose === "profile-edit") {
+    return "Your changes did not save. Tap Save changes again.";
+  }
+  return "The chat did not finish. Tap Finish chat again.";
+}
+
 function readableMicrophoneError(
   error: unknown,
   enabled: boolean,
@@ -156,14 +174,14 @@ export function usePeppaConversation({
         if (!isCurrent(operation)) return;
         conversationIdRef.current = null;
         await onCompleted();
-      } catch (summaryError) {
+      } catch {
         if (!isCurrent(operation)) return;
         runtimeRef.current.completingConversationId = null;
-        setError(readableError(summaryError));
+        setError(childFacingConversationError("finish", purpose));
         setStatus("error");
       }
     },
-    [isCurrent, onCompleted],
+    [isCurrent, onCompleted, purpose],
   );
 
   const openLearnerTurn = useCallback(
@@ -222,9 +240,7 @@ export function usePeppaConversation({
         transportRef.current = null;
         void transport?.disconnect();
         if (!COMPLETED_DISCONNECT_REASONS.has(event.reason)) {
-          setError(
-            "The chat stopped before you finished.",
-          );
+          setError(childFacingConversationError("disconnect", purpose));
           setStatus("error");
           return;
         }
@@ -303,7 +319,7 @@ export function usePeppaConversation({
         );
       }
     },
-    [finishResponseLatency, isCurrent, loadSummary, openLearnerTurn],
+    [finishResponseLatency, isCurrent, loadSummary, openLearnerTurn, purpose],
   );
 
   const start = useCallback(async () => {
@@ -363,9 +379,9 @@ export function usePeppaConversation({
         setStatus("connecting");
       }
       if (runtimeRef.current.assistantSpeaking) setStatus("speaking");
-    } catch (startError) {
+    } catch {
       if (!isCurrent(operation)) return;
-      setError(readableError(startError));
+      setError(childFacingConversationError("start", purpose));
       setStatus("error");
     }
   }, [
@@ -393,12 +409,12 @@ export function usePeppaConversation({
       await transportRef.current?.disconnect();
       transportRef.current = null;
       await loadSummary(conversationId, operation);
-    } catch (finishError) {
+    } catch {
       if (!isCurrent(operation)) return;
-      setError(readableError(finishError));
+      setError(childFacingConversationError("finish", purpose));
       setStatus("error");
     }
-  }, [isCurrent, loadSummary]);
+  }, [isCurrent, loadSummary, purpose]);
 
   const back = useCallback(() => {
     operationRef.current += 1;
@@ -498,12 +514,12 @@ export function usePeppaConversation({
     setStatus("speaking");
     try {
       await transportRef.current.repeatLastAudio();
-    } catch (repeatError) {
-      setError(readableError(repeatError));
+    } catch {
+      setError(childFacingConversationError("repeat", purpose));
       setTurnReady(true);
       setStatus("listening");
     }
-  }, [microphoneEnabled, status, turns]);
+  }, [microphoneEnabled, purpose, status, turns]);
 
   useEffect(() => {
     if (!active || status !== "ready" || autoStartRef.current) return;

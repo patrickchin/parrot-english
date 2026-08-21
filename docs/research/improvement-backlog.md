@@ -210,6 +210,21 @@ Retain, revise, or reject: retain
 Next question: Do deployed low-end phones meet the same first-picture budget without increasing eager image contention?
 ```
 
+```text
+Branch: codex/child-friendly-talk-errors
+Base branch / dependency: 4c54b7f (codex/lesson-speech-short-landscape)
+Commit: recorded after the implementation commit
+Hypothesis: phase-specific literal recovery copy helps a young beginner act without exposing request, database, configuration, or voice-transport language
+Changed: conversation-hook error boundary, start/disconnect/finish/repeat copy, accessible failure tests, narrow and short-landscape screenshots, research memo
+Not changed: server response payloads, ConversationApiError diagnostics, authentication errors, microphone-permission copy, non-voice fallback
+Tests: pending final full validation
+Screenshots / traces: artifacts/ux-review/child-friendly-talk-errors at 280×568 and 640×360
+Measured result: reviewed error state has no outer overflow; alert and 48 px control row remain visible at both sizes
+Risks / limitations: English copy is not child-tested; persistent failures still need a bounded non-voice path; two recovery actions remain after a room was created
+Retain, revise, or reject: retain pending direct child/caregiver recovery testing
+Next question: Does a beginner identify Try again without adult explanation, and when should repeated failure switch to grown-up help or non-voice practice?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -228,7 +243,8 @@ branches.
    Fixed with name-free retry and final language on
    `codex/learner-name-safe-copy` at `e4f6176`.
 5. **Medium: generic Talk request failures use grown-up API language.** Map
-   transport errors to literal child-facing recovery copy.
+   Fixed on `codex/child-friendly-talk-errors`; implementation commit recorded
+   in the hand-off below.
 6. **Low: a visible fourth desktop lesson card can remain blank for roughly
    450ms.** Mitigated on `codex/responsive-shelf-art` with smaller responsive
    candidates; loading priority remains unchanged pending field evidence.
