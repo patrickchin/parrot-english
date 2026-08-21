@@ -41,7 +41,8 @@ test("home gives children three clear, working learning choices", () => {
   );
 
   assert.deepEqual(hrefs, ["/lessons", "/talk-to-peppa", "/stories"]);
-  assert.match(html, /What do you want to do/i);
+  assert.match(html, /Tap a picture\./i);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 3);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
