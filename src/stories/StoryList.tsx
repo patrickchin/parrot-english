@@ -22,6 +22,9 @@ import {
 } from "./story-catalog";
 import { usePersonalizedStoryArt } from "./usePersonalizedStoryArt";
 
+const STORY_SHELF_IMAGE_SIZES =
+  "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 273px";
+
 export function StoryList() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -98,6 +101,7 @@ export function StoryList() {
                     <StoryArtwork
                       artwork={story.cover}
                       priority={storyIndex === 0}
+                      sizes={STORY_SHELF_IMAGE_SIZES}
                     />
                   </div>
 

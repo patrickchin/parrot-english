@@ -75,4 +75,48 @@ describe("web asset formats", () => {
       }
     }
   });
+
+  it("ships crop-safe responsive shelf art within the 768px byte budget", async () => {
+    const shelves = [
+      { directory: "lesson-covers", expectedCount: 7 },
+      { directory: "stories", expectedCount: 20 },
+    ];
+
+    for (const shelf of shelves) {
+      const directory = join(publicAssetsDir, shelf.directory);
+      const sources = (await readdir(directory))
+        .filter((file) => file.endsWith(".webp") && !/-\d+\.webp$/.test(file))
+        .sort();
+      assert.equal(sources.length, shelf.expectedCount);
+
+      for (const source of sources) {
+        const sourcePath = join(directory, source);
+        const sourceMetadata = await sharp(sourcePath).metadata();
+
+        for (const width of [384, 768]) {
+          const candidatePath = join(
+            directory,
+            source.replace(/\.webp$/, `-${width}.webp`),
+          );
+          const [candidateMetadata, candidateFile] = await Promise.all([
+            sharp(candidatePath).metadata(),
+            stat(candidatePath),
+          ]);
+          assert.equal(candidateMetadata.format, "webp");
+          assert.equal(candidateMetadata.width, width);
+          assert.equal(
+            candidateMetadata.height,
+            Math.round((sourceMetadata.height * width) / sourceMetadata.width),
+            `${candidatePath} preserves the source crop`,
+          );
+          if (width === 768) {
+            assert.ok(
+              candidateFile.size <= 50 * 1024,
+              `${candidatePath} exceeds the 50 kB shelf-art budget`,
+            );
+          }
+        }
+      }
+    }
+  });
 });
