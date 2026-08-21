@@ -1,7 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { LearnerProfileAcknowledgment as Acknowledgment } from "./learner-profile-api";
-import { LearnerProfileCard } from "./LearnerProfileLayout";
-import { ActionButton } from "../shared/ui";
+import {
+  LearnerProfileCard,
+  useLearnerProfileStepHeading,
+} from "./LearnerProfileLayout";
+import { ActionButton, cx } from "../shared/ui";
 
 type AudioLike = {
   addEventListener: (event: "ended" | "error", listener: () => void) => void;
@@ -66,7 +69,8 @@ export function LearnerProfileAcknowledgment({
   onNext: () => void;
   operationId: number;
 }) {
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const headingRef = useLearnerProfileStepHeading(operationId);
+  const hasLongAcknowledgment = acknowledgment.text.length > 120;
 
   useEffect(
     () =>
@@ -76,32 +80,33 @@ export function LearnerProfileAcknowledgment({
     [acknowledgment, operationId],
   );
 
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      headingRef.current?.focus({ preventScroll: true });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [operationId]);
-
   return (
     <LearnerProfileCard
       aria-live="polite"
-      className="grid justify-items-center gap-5 p-8 text-center sm:p-14"
+      className="grid justify-items-center gap-5 p-8 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto] short-wide:items-center short-wide:gap-x-6 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-14"
     >
       <img
         alt="Peppa smiling"
-        className="max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-56"
+        className="aspect-square max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-2 short-wide:row-start-1 short-wide:w-full short-wide:max-w-40 sm:w-56"
+        height={1024}
         src="/assets/characters/peppa/peppa-happy.webp"
+        width={1024}
       />
       <h1
-        className="m-0 max-w-xl text-3xl leading-tight text-brand-ink sm:text-5xl"
+        className={cx(
+          "m-0 max-w-xl break-words text-3xl leading-tight text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:justify-self-start short:text-2xl",
+          hasLongAcknowledgment ? "sm:text-4xl" : "sm:text-5xl",
+        )}
         ref={headingRef}
         tabIndex={-1}
       >
         {acknowledgment.text}
       </h1>
-      <ActionButton onClick={onNext} type="button">
+      <ActionButton
+        className="short-wide:col-start-2 short-wide:row-start-2 short-wide:justify-self-start"
+        onClick={onNext}
+        type="button"
+      >
         Next
       </ActionButton>
     </LearnerProfileCard>

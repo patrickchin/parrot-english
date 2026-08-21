@@ -7,7 +7,10 @@ import {
   type LearnerProfileQuestion,
 } from "./learner-profile-api";
 import { recordSpeechClip } from "../media/speech-recorder";
-import { LearnerProfileCard } from "./LearnerProfileLayout";
+import {
+  LearnerProfileCard,
+  useLearnerProfileStepHeading,
+} from "./LearnerProfileLayout";
 import {
   ActionButton,
   fieldClassName,
@@ -48,6 +51,7 @@ export function LearnerProfileQuestionView({
 }: LearnerProfileQuestionViewProps) {
   const disabled = status !== "idle";
   const inputId = `learner-profile-answer-${question.answerKey}`;
+  const headingRef = useLearnerProfileStepHeading(question.answerKey);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,10 +60,10 @@ export function LearnerProfileQuestionView({
 
   return (
     <LearnerProfileCard
-      className="p-6 sm:p-10"
+      className="p-6 short:p-3 short-wide:grid short-wide:grid-cols-[7rem_minmax(0,1fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:gap-x-4 sm:p-10"
       aria-labelledby="learner-profile-question-title"
     >
-      <header className="flex items-center justify-between gap-4">
+      <header className="flex items-center justify-between gap-4 short:gap-2 short-wide:col-start-2 short-wide:row-start-1">
         <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-rose">
           Question {progress.current} of {progress.total}
         </p>
@@ -67,22 +71,27 @@ export function LearnerProfileQuestionView({
           aria-label="Replay question"
           disabled={disabled || !question.audio}
           onClick={onReplay}
+          className="short:size-11"
           type="button"
         >
           <Volume2 aria-hidden="true" className="size-6" />
         </IconButton>
       </header>
 
-      <div className="my-5 grid items-center gap-4 text-center sm:grid-cols-4 sm:gap-8 sm:text-left">
+      <div className="my-5 grid items-center gap-4 text-center short:my-2 short:gap-2 short-wide:contents sm:grid-cols-4 sm:gap-8 sm:text-left">
         <img
           alt="Peppa, your English host"
-          className="mx-auto max-h-40 w-24 animate-float object-contain motion-reduce:animate-none sm:col-span-1 sm:w-full"
+          className="mx-auto aspect-square max-h-40 w-24 animate-float object-contain motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-28 sm:col-span-1 sm:w-full"
+          height={1024}
           src="/assets/characters/peppa/peppa-happy.webp"
+          width={1024}
         />
-        <div className="sm:col-span-3">
+        <div className="short-wide:col-start-2 short-wide:row-start-2 sm:col-span-3">
           <h1
-            className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl"
+            className="m-0 text-3xl leading-tight text-brand-ink short:text-3xl sm:text-4xl"
             id="learner-profile-question-title"
+            ref={headingRef}
+            tabIndex={-1}
           >
             {question.promptEn}
           </h1>
@@ -94,13 +103,16 @@ export function LearnerProfileQuestionView({
         </div>
       </div>
 
-      <form onSubmit={submit}>
+      <form
+        className="short-wide:col-start-2 short-wide:row-start-3"
+        onSubmit={submit}
+      >
         <fieldset
-          className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75"
+          className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75 short:gap-2"
           disabled={disabled}
         >
           <label
-            className="grid gap-2 font-black text-brand-ink"
+            className="grid gap-2 font-black text-brand-ink short:gap-1"
             htmlFor={inputId}
           >
             <span>Your answer</span>
@@ -108,7 +120,7 @@ export function LearnerProfileQuestionView({
               <textarea
                 className={fieldClassName({
                   className:
-                    "min-h-28 min-w-0 flex-1 resize-y leading-relaxed",
+                    "min-h-28 min-w-0 flex-1 resize-y leading-relaxed short:h-20 short:min-h-20",
                 })}
                 id={inputId}
                 maxLength={question.maxLength}
@@ -150,7 +162,7 @@ export function LearnerProfileQuestionView({
             </p>
           ) : null}
 
-          <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-sm:justify-between">
+          <div className="mt-2 flex flex-wrap items-center justify-end gap-4 short:mt-0 short:gap-2 max-sm:justify-between">
             {mode === "learner-profile" && !question.required ? (
               <TextButton
                 onClick={onSkipQuestion}
@@ -164,7 +176,10 @@ export function LearnerProfileQuestionView({
                 Skip for now
               </TextButton>
             ) : null}
-            <ActionButton type="submit">
+            <ActionButton
+              className="short:min-h-11 short:min-w-20 short:px-3"
+              type="submit"
+            >
               {status === "saving"
                 ? "Peppa is thinking…"
                 : mode === "profile"

@@ -7,6 +7,15 @@ const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_MICROPHONE_SCENARIOS = new Set(["denied", "unsupported"]);
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
+const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
+const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
+const E2E_LONG_ACKNOWLEDGMENT =
+  "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!";
+const E2E_PROFILE_SCENARIOS = new Set([
+  E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO,
+  E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO,
+  E2E_PROFILE_VIEWPORT_SCENARIO,
+]);
 
 const E2E_INCOMPLETE_PROFILE = {
   canBypass: false,
@@ -59,6 +68,76 @@ const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
   question: null,
 };
 
+const E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT = {
+  ...E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT,
+  acknowledgment: {
+    audio: null,
+    text: E2E_LONG_ACKNOWLEDGMENT,
+  },
+};
+
+const E2E_VIEWPORT_INCOMPLETE_PROFILE = {
+  ...E2E_INCOMPLETE_PROFILE,
+  progress: { answered: 0, current: 1, total: 2 },
+};
+
+const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
+  ...E2E_VIEWPORT_INCOMPLETE_PROFILE,
+  acknowledgment: { audio: null, text: "Mia is a lovely name!" },
+  profile: {
+    ...E2E_VIEWPORT_INCOMPLETE_PROFILE.profile,
+    answers: {
+      ...E2E_VIEWPORT_INCOMPLETE_PROFILE.profile.answers,
+      responses: {
+        name: {
+          acknowledgment: "Mia is a lovely name!",
+          answeredAt: "2026-07-10T08:00:00.000Z",
+          enrichmentStatus: "generated",
+          question: "What's your name?",
+          rawAnswer: "Mia",
+          summary: "Mia",
+        },
+      },
+    },
+    currentQuestionKey: "age",
+    name: "Mia",
+    profileStatus: "in_progress",
+  },
+  progress: { answered: 1, current: 2, total: 2 },
+  question: {
+    answerKey: "age",
+    audio: null,
+    maxLength: 120,
+    position: 2,
+    promptEn: "How old are you?",
+    promptZh: null,
+    required: true,
+  },
+};
+
+const E2E_VIEWPORT_EDITOR_PROFILE = {
+  ...E2E_VIEWPORT_PROFILE_AFTER_NAME.profile,
+  age: 8,
+  completedAt: "2026-07-10T08:00:00.000Z",
+  currentQuestionKey: null,
+  profileStatus: "completed",
+};
+
+const E2E_VIEWPORT_EDITOR_GATE = {
+  canBypass: true,
+  experienceMode: "form",
+  mode: "full",
+  profile: E2E_VIEWPORT_EDITOR_PROFILE,
+  progress: { answered: 2, current: 2, total: 2 },
+  question: null,
+  questionnaire: { version: 2 },
+};
+
+const E2E_VIEWPORT_EDITOR_STATE = {
+  profile: E2E_VIEWPORT_EDITOR_PROFILE,
+  questions: [],
+};
+
 function getE2eScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
     "parrotE2eScenario"
@@ -75,18 +154,20 @@ function getE2eMicrophoneScenario() {
   return scenario && E2E_MICROPHONE_SCENARIOS.has(scenario) ? scenario : null;
 }
 
-function hasE2eProfileAcknowledgmentScenario() {
-  return (
-    new URL(window.location.href).searchParams.get("parrotE2eProfile") ===
-    E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO
+function getE2eProfileScenario() {
+  const scenario = new URL(window.location.href).searchParams.get(
+    "parrotE2eProfile",
   );
+
+  return scenario && E2E_PROFILE_SCENARIOS.has(scenario) ? scenario : null;
 }
 
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
 
   window.fetch = async (input, init) => {
-    if (!hasE2eProfileAcknowledgmentScenario()) {
+    const profileScenario = getE2eProfileScenario();
+    if (!profileScenario) {
       return nativeFetch(input, init);
     }
 
@@ -112,7 +193,22 @@ function installE2eProfileFetchMock() {
       url.pathname === "/api/learner-profile" &&
       method === "GET"
     ) {
-      return json(E2E_INCOMPLETE_PROFILE);
+      return json(
+        profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
+          ? window.location.pathname === "/profile"
+            ? E2E_VIEWPORT_EDITOR_GATE
+            : E2E_VIEWPORT_INCOMPLETE_PROFILE
+          : E2E_INCOMPLETE_PROFILE,
+      );
+    }
+
+    if (
+      profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO &&
+      url.origin === window.location.origin &&
+      url.pathname === "/api/profile" &&
+      method === "GET"
+    ) {
+      return json(E2E_VIEWPORT_EDITOR_STATE);
     }
 
     if (
@@ -120,7 +216,13 @@ function installE2eProfileFetchMock() {
       url.pathname === "/api/learner-profile/answer" &&
       method === "PUT"
     ) {
-      return json(E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT);
+      return json(
+        profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
+          ? E2E_VIEWPORT_PROFILE_AFTER_NAME
+          : profileScenario === E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO
+            ? E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT
+            : E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT,
+      );
     }
 
     return nativeFetch(input, init);

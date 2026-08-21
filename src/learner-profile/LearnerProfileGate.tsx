@@ -33,6 +33,7 @@ import {
   LearnerProfileCard,
   LearnerProfileScreen,
   LearnerProfileStatusCard,
+  useLearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import {
   LearnerProfileQuestionView,
@@ -113,6 +114,47 @@ type LearnerProfileGateViewProps = {
   redoLearnerProfile: boolean;
   started: boolean;
 };
+
+function LearnerProfileSetupView({
+  onSkip,
+  onStart,
+}: {
+  onSkip: () => void;
+  onStart: () => void;
+}) {
+  const headingRef = useLearnerProfileStepHeading("setup");
+
+  return (
+    <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
+      <img
+        alt="Peppa waving hello"
+        className="aspect-square max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-44 sm:w-52"
+        height={1024}
+        src="/assets/characters/peppa/peppa-happy.webp"
+        width={1024}
+      />
+      <h1
+        className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
+        ref={headingRef}
+        tabIndex={-1}
+      >
+        Help Peppa get to know you
+      </h1>
+      <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
+        Answer a few quick questions to personalize chats and lessons. You can
+        change these later in Learner profile.
+      </p>
+      <div className="grid justify-items-center gap-1 short-wide:col-start-2 short-wide:row-start-3 short-wide:flex short-wide:items-center short-wide:justify-self-start short-wide:gap-4">
+        <ActionButton onClick={onStart} type="button">
+          Set up profile
+        </ActionButton>
+        <TextButton onClick={onSkip} type="button">
+          Skip for now
+        </TextButton>
+      </div>
+    </LearnerProfileCard>
+  );
+}
 
 export function LearnerProfileGateView({
   acknowledgment,
@@ -297,26 +339,7 @@ export function LearnerProfileGateView({
   if (fullData && !started) {
     return (
       <LearnerProfileScreen>
-        <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center sm:p-12">
-          <img
-            alt="Peppa waving hello"
-            className="max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-52"
-            src="/assets/characters/peppa/peppa-happy.webp"
-          />
-          <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
-            Help Peppa get to know you
-          </h1>
-          <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
-            Answer a few quick questions to personalize chats and lessons. You
-            can change these later in Learner profile.
-          </p>
-          <ActionButton className="mt-2" onClick={onStart} type="button">
-            Set up profile
-          </ActionButton>
-          <TextButton onClick={onSkip} type="button">
-            Skip for now
-          </TextButton>
-        </LearnerProfileCard>
+        <LearnerProfileSetupView onSkip={onSkip} onStart={onStart} />
       </LearnerProfileScreen>
     );
   }
