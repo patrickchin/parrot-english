@@ -165,15 +165,15 @@ permission behavior, after-state visual review, and child/caregiver
 comprehension remain explicit validation gates.
 
 The parallel first-use language, timing, and visual audits are complete on
-`codex/first-use-ux-audit`. Their synthesis selects
-`codex/profile-acknowledgment-control` as the next bounded branch: optional
-audio must never navigate, the existing **Next** action becomes the sole
-advance owner, and the acknowledgment heading receives focus when it replaces
-the submitted question. The following stacked branch is
+`codex/first-use-ux-audit`. Their selected child-paced acknowledgment change is
+implemented on `codex/profile-acknowledgment-control` at `4dd2ad3`. Optional
+audio no longer navigates, the existing **Next** action is the sole advance
+owner, and the acknowledgment heading receives focus when it replaces the
+submitted question. The selected next stacked branch is
 `codex/profile-fallback-viewport-stability`, which reserves the profile art and
 keeps profile context and actions visible at the four responsive targets. This
-order fixes deterministic content loss before layout and lets the layout branch
-test a stable, child-paced acknowledgment boundary.
+order fixed deterministic content loss before layout and lets the layout branch
+test the now-stable, child-paced acknowledgment boundary.
 
 ### Hand-off record
 
@@ -448,6 +448,21 @@ Risks / limitations: deterministic local browser and source evidence only; no ch
 Next question: Can explicit Next preserve every acknowledgment and hand focus to each new step without adding copy or changing audio?
 ```
 
+```text
+Branch: codex/profile-acknowledgment-control
+Base branch / dependency: codex/first-use-ux-audit ab95c65
+Implementation commit: 4dd2ad3
+Hypothesis: explicit Next lets each learner process acknowledgment feedback at their own pace without removing optional audio
+Changed: removed timer/media navigation; idempotent audio cleanup; one-time per-operation heading focus; opt-in browser fixture; component/lifecycle/responsive browser contracts
+Not changed: message copy, generated-output constraints, profile data/API/persistence, audio content/provider, replay UI, visual layout, telemetry, dependencies, or translations
+Tests: 92/92 focused component/lifecycle; 2/2 focused Chromium; 679/679 full unit/integration/lifecycle/safety; 195/195 full Chromium; build and TypeScript passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: five in-app Browser JPEGs and manifest in artifacts/ux-review/profile-acknowledgment-control
+Measured result: no implicit advance after 2.2s; heading owns focus; explicit Next alone navigates; 280x568, 390x844, and 1440x900 have no main overflow; initial 640x360 exposes the queued 260px vertical gap
+Risks / limitations: target AT announcement order, real audio/browser policy, real devices, localization, production latency, and child/caregiver comprehension remain untested
+Retain, revise, or reject: retain provisionally
+Next branch: codex/profile-fallback-viewport-stability stacked on this documentation hand-off
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -479,6 +494,17 @@ branches.
    `codex/privacy-safe-experience-events` at `526d6d1` by invalidating the old
    operation immediately, retaining transport ownership across awaits, and
    regression-testing Finish → Back → reopen → late completion.
+9. **High: profile acknowledgments can disappear on audio outcome or after
+   1,800 ms without a learner action.** Fixed on
+   `codex/profile-acknowledgment-control` at `4dd2ad3`; **Next** is now the sole
+   advance owner and each message receives focus.
+10. **High: the form-profile fallback moves and hides its first action or next
+    step at narrow and short viewports.** Confirmed again by the initial
+    640×360 acknowledgment capture; selected next on
+    `codex/profile-fallback-viewport-stability`.
+11. **High: normal-size white text on the default pink action token is 3.27:1.**
+    Keep as a separate contrast-safe shared-control branch after profile
+    viewport stability.
 
 ## Parked ideas
 

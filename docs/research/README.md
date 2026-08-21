@@ -41,6 +41,7 @@ Last reviewed: 2026-08-21
 - [Performance and child-perceived latency baseline](./performance-baseline.md)
 - [Picture-led first use](./picture-led-first-use.md)
 - [Privacy-safe experience events](./privacy-safe-experience-events.md)
+- [Child-paced profile acknowledgments](./profile-acknowledgment-control.md)
 - [Remote audio playback readiness and honest feedback](./remote-audio-playback.md)
 - [Responsive lesson and story shelf artwork](./responsive-shelf-art.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
