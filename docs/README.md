@@ -2,6 +2,18 @@
 
 These docs describe the current product and technical design.
 
+## Research and Continuous Improvement
+
+- [Research index](./research/README.md) is the entry point for evidence,
+  decisions, experiments, and the ranked product backlog.
+- [Continuous improvement program](./research/continuous-improvement-program.md)
+  records the branch/worktree strategy, evidence standard, validation gates,
+  and hand-off format for future improvements.
+- [Improvement backlog](./research/improvement-backlog.md) ranks candidate work
+  by child benefit, evidence, risk, effort, and dependency.
+- [Source register](./research/source-register.md) keeps dated, direct links to
+  the primary sources used in product decisions.
+
 ## Design Docs
 
 - [Lesson Writing Quick Guide](./lesson-writing-quick-guide.md) is the short,
