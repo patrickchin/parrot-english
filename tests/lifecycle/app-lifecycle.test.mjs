@@ -41,6 +41,7 @@ let ApplicationRoutes;
 let ConversationSurface;
 let experienceEvents;
 let maxExperienceDurationMs;
+let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let usePeppaConversation;
 let createAuthGate;
@@ -57,6 +58,9 @@ before(async () => {
     "/src/conversation/ConversationSurface.tsx",
   ));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
+  ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
+    "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
+  ));
   ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx"));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
@@ -384,8 +388,8 @@ function conversationSurfaceProps(overrides = {}) {
   };
 }
 
-function ProfileRouteHarness({ children }) {
-  const [route, setRoute] = useState("/");
+function ProfileRouteHarness({ children, initialRoute = "/" }) {
+  const [route, setRoute] = useState(initialRoute);
 
   return createElement(
     LearnerProfileGate,
@@ -3980,6 +3984,83 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/AUTHENTICATED APP/);
   });
 
+  it("keeps a mounted acknowledgment until Next and focuses each new message once", async () => {
+    const firstAcknowledgment = {
+      text: "Dinosaurs are very stompy!",
+      audio: null,
+    };
+    const secondAcknowledgment = {
+      text: "Drawing dragons sounds fun!",
+      audio: null,
+    };
+    let advanceCalls = 0;
+    let rerenderSameAcknowledgment;
+
+    function AcknowledgmentHarness() {
+      const [view, setView] = useState({
+        acknowledgment: firstAcknowledgment,
+        operationId: 11,
+        revision: 0,
+      });
+      rerenderSameAcknowledgment = () =>
+        setView((current) => ({
+          ...current,
+          revision: current.revision + 1,
+        }));
+      return createElement(LearnerProfileAcknowledgment, {
+        acknowledgment: view.acknowledgment,
+        onNext() {
+          advanceCalls += 1;
+          if (view.operationId === 11) {
+            setView({
+              acknowledgment: secondAcknowledgment,
+              operationId: 12,
+              revision: 0,
+            });
+          }
+        },
+        operationId: view.operationId,
+      });
+    }
+
+    const headingFocuses = [];
+    const originalFocus = window.HTMLElement.prototype.focus;
+    window.HTMLElement.prototype.focus = function focus(options) {
+      if (this.tagName === "H1") headingFocuses.push(this.textContent);
+      return originalFocus.call(this, options);
+    };
+
+    try {
+      await mountStrict(createElement(AcknowledgmentHarness));
+      const firstHeading = document.querySelector("h1");
+      assert.ok(firstHeading);
+      assert.equal(firstHeading.tabIndex, -1);
+      await waitFor(() => assert.equal(document.activeElement, firstHeading));
+      assert.deepEqual(headingFocuses, ["Dinosaurs are very stompy!"]);
+
+      const next = button("Next");
+      assert.equal(next.tabIndex, 0);
+      next.focus();
+      await act(async () => rerenderSameAcknowledgment());
+      assert.equal(document.activeElement, next);
+      assert.deepEqual(headingFocuses, ["Dinosaurs are very stompy!"]);
+      assert.equal(advanceCalls, 0);
+      text(/Dinosaurs are very stompy!/);
+
+      await click(next);
+      const secondHeading = document.querySelector("h1");
+      assert.ok(secondHeading);
+      await waitFor(() => assert.equal(document.activeElement, secondHeading));
+      assert.deepEqual(headingFocuses, [
+        "Dinosaurs are very stompy!",
+        "Drawing dragons sounds fun!",
+      ]);
+      assert.equal(advanceCalls, 1);
+    } finally {
+      window.HTMLElement.prototype.focus = originalFocus;
+    }
+  });
+
   it("moves onboarding through retry, bypass, and final-answer completion", async () => {
     let loadAttempts = 0;
     globalThis.fetch = async (path, init = {}) => {
@@ -4109,6 +4190,70 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         },
       },
     ]);
+  });
+
+  it("paces saved profile acknowledgments one Next action at a time", async () => {
+    const profileState = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: 8,
+        description: "Mia is eight and likes dinosaurs.",
+      },
+      questions: [question()],
+    };
+    let saveCalls = 0;
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(profileState);
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        saveCalls += 1;
+        return json({
+          ...profileState,
+          acknowledgments: [
+            { text: "Mia is a lovely name!", audio: null },
+            { text: "Dinosaurs are fun!", audio: null },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        ProfileRouteHarness,
+        { initialRoute: "/profile" },
+        createElement("p", null, "PROFILE LESSONS"),
+      ),
+    );
+    await waitFor(() => text(/Learner profile/));
+    await click(button("Save changes"));
+
+    await waitFor(() => text(/Mia is a lovely name!/));
+    noText(/Dinosaurs are fun!|PROFILE LESSONS/);
+    await waitFor(() =>
+      assert.equal(document.activeElement, document.querySelector("h1")),
+    );
+
+    const firstNext = button("Next");
+    await act(async () => {
+      firstNext.click();
+      firstNext.click();
+    });
+    await waitFor(() => text(/Dinosaurs are fun!/));
+    noText(/Mia is a lovely name!|PROFILE LESSONS/);
+    await waitFor(() =>
+      assert.equal(document.activeElement, document.querySelector("h1")),
+    );
+    assert.equal(saveCalls, 1);
+
+    await click(button("Next"));
+    await waitFor(() => text(/PROFILE LESSONS/));
+    assert.equal(saveCalls, 1);
   });
 
   it("navigates production lesson routes and isolates stale playback", async () => {

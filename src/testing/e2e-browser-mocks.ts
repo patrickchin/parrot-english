@@ -6,6 +6,58 @@ const MOCK_RECORDING_DELAY_MS = 5000;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_MICROPHONE_SCENARIOS = new Set(["denied", "unsupported"]);
+const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
+
+const E2E_INCOMPLETE_PROFILE = {
+  canBypass: false,
+  experienceMode: "form",
+  mode: "full",
+  profile: {
+    age: null,
+    answers: {
+      legacyAnswers: null,
+      questionnaireVersion: 2,
+      responses: {},
+      schemaVersion: 2,
+    },
+    completedAt: null,
+    currentQuestionKey: "name",
+    description: null,
+    name: null,
+    profileStatus: "not_started",
+    questionnaireVersion: 2,
+  },
+  progress: { answered: 0, current: 1, total: 1 },
+  question: {
+    answerKey: "name",
+    audio: null,
+    maxLength: 120,
+    position: 1,
+    promptEn: "What's your name?",
+    promptZh: null,
+    required: true,
+  },
+  questionnaire: { version: 2 },
+};
+
+const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
+  ...E2E_INCOMPLETE_PROFILE,
+  acknowledgment: { audio: null, text: "Mia is a lovely name!" },
+  canBypass: true,
+  profile: {
+    ...E2E_INCOMPLETE_PROFILE.profile,
+    answers: {
+      ...E2E_INCOMPLETE_PROFILE.profile.answers,
+      responses: { name: "Mia" },
+    },
+    completedAt: "2026-07-10T08:00:00.000Z",
+    currentQuestionKey: null,
+    name: "Mia",
+    profileStatus: "completed",
+  },
+  progress: { answered: 1, current: 1, total: 1 },
+  question: null,
+};
 
 function getE2eScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
@@ -21,6 +73,58 @@ function getE2eMicrophoneScenario() {
   );
 
   return scenario && E2E_MICROPHONE_SCENARIOS.has(scenario) ? scenario : null;
+}
+
+function hasE2eProfileAcknowledgmentScenario() {
+  return (
+    new URL(window.location.href).searchParams.get("parrotE2eProfile") ===
+    E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO
+  );
+}
+
+function installE2eProfileFetchMock() {
+  const nativeFetch = window.fetch.bind(window);
+
+  window.fetch = async (input, init) => {
+    if (!hasE2eProfileAcknowledgmentScenario()) {
+      return nativeFetch(input, init);
+    }
+
+    const request = input instanceof Request ? input : null;
+    const source =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+    const url = new URL(source, window.location.href);
+    const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+    const json = (payload: unknown) =>
+      Response.json(payload, {
+        headers: {
+          "Cache-Control": "no-store",
+          "X-Parrot-Mock-Api": "browser",
+        },
+      });
+
+    if (
+      url.origin === window.location.origin &&
+      url.pathname === "/api/learner-profile" &&
+      method === "GET"
+    ) {
+      return json(E2E_INCOMPLETE_PROFILE);
+    }
+
+    if (
+      url.origin === window.location.origin &&
+      url.pathname === "/api/learner-profile/answer" &&
+      method === "PUT"
+    ) {
+      return json(E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT);
+    }
+
+    return nativeFetch(input, init);
+  };
 }
 
 function getMockAudioDelayMs(src: string) {
@@ -117,5 +221,7 @@ Object.defineProperty(navigator, "mediaDevices", {
     },
   },
 });
+
+installE2eProfileFetchMock();
 
 export {};

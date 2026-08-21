@@ -257,11 +257,12 @@ describe("Peppa acknowledgment", () => {
     assert.doesNotMatch(html, /<textarea/);
   });
 
-  it("plays base64 MP3, advances on completion, and revokes its URL", async () => {
-    let ended;
+  it("uses ended and error events only for idempotent audio cleanup", async () => {
+    const listeners = new Map();
+    const removedEvents = [];
+    let pauseCalls = 0;
     let playCalls = 0;
-    let advanced = 0;
-    let revoked = "";
+    const revokedUrls = [];
     const cleanup = beginAcknowledgmentPlayback({
       acknowledgment: {
         text: "Dinosaurs are very stompy!",
@@ -271,14 +272,19 @@ describe("Peppa acknowledgment", () => {
         assert.equal(src, "blob:acknowledgment");
         return {
           addEventListener(event, listener) {
-            if (event === "ended") ended = listener;
+            listeners.set(event, listener);
           },
-          pause() {},
+          pause() {
+            pauseCalls += 1;
+          },
           play() {
             playCalls += 1;
             return Promise.resolve();
           },
-          removeEventListener() {},
+          removeEventListener(event, listener) {
+            assert.equal(listeners.get(event), listener);
+            removedEvents.push(event);
+          },
         };
       },
       createObjectURL(blob) {
@@ -286,42 +292,153 @@ describe("Peppa acknowledgment", () => {
         assert.equal(blob.size, 3);
         return "blob:acknowledgment";
       },
-      onAdvance() {
-        advanced += 1;
-      },
       revokeObjectURL(url) {
-        revoked = url;
+        revokedUrls.push(url);
       },
     });
 
     await Promise.resolve();
     assert.equal(playCalls, 1);
-    ended();
-    assert.equal(advanced, 1);
+    assert.deepEqual([...listeners.keys()], ["ended", "error"]);
+
+    const staleError = listeners.get("error");
+    listeners.get("ended")();
+    assert.equal(pauseCalls, 1);
+    assert.deepEqual(revokedUrls, ["blob:acknowledgment"]);
+    assert.deepEqual(removedEvents, ["ended", "error"]);
+
+    staleError();
     cleanup();
-    assert.equal(revoked, "blob:acknowledgment");
+    assert.equal(pauseCalls, 1);
+    assert.deepEqual(revokedUrls, ["blob:acknowledgment"]);
+    assert.deepEqual(removedEvents, ["ended", "error"]);
   });
 
-  it("uses a readable no-audio delay and ignores stale playback", () => {
-    let scheduled;
-    let advanced = 0;
+  it("handles rejected playback and still releases its resources", async () => {
+    let catchCalls = 0;
+    let pauseCalls = 0;
+    const removedEvents = [];
+    const revokedUrls = [];
+    const rejectedPlayback = Promise.reject(
+      new Error("Autoplay is unavailable."),
+    );
+    const originalCatch = rejectedPlayback.catch.bind(rejectedPlayback);
+    rejectedPlayback.catch = (onRejected) => {
+      catchCalls += 1;
+      return originalCatch(onRejected);
+    };
+
     const cleanup = beginAcknowledgmentPlayback({
-      acknowledgment: { text: "Lovely!", audio: null },
-      onAdvance() {
-        advanced += 1;
+      acknowledgment: {
+        text: "Lovely!",
+        audio: { contentType: "audio/mpeg", base64: "AQID" },
       },
-      setTimer(callback, delay) {
-        assert.ok(delay >= 1_500);
-        scheduled = callback;
-        return 7;
+      createAudio() {
+        return {
+          addEventListener() {},
+          pause() {
+            pauseCalls += 1;
+          },
+          play() {
+            return rejectedPlayback;
+          },
+          removeEventListener(event) {
+            removedEvents.push(event);
+          },
+        };
       },
-      clearTimer(id) {
-        assert.equal(id, 7);
+      createObjectURL() {
+        return "blob:rejected";
+      },
+      revokeObjectURL(url) {
+        revokedUrls.push(url);
       },
     });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(catchCalls, 1);
+    assert.equal(pauseCalls, 1);
+    assert.deepEqual(revokedUrls, ["blob:rejected"]);
+    assert.deepEqual(removedEvents, ["ended", "error"]);
+
     cleanup();
-    scheduled();
-    assert.equal(advanced, 0);
+    assert.equal(pauseCalls, 1);
+    assert.deepEqual(revokedUrls, ["blob:rejected"]);
+    assert.deepEqual(removedEvents, ["ended", "error"]);
+  });
+
+  it("does not schedule fallback timers when audio is missing or setup fails", () => {
+    const scheduledDelays = [];
+    const originalSetTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = (_callback, delay) => {
+      scheduledDelays.push(delay);
+      return 7;
+    };
+
+    try {
+      const noAudioCleanup = beginAcknowledgmentPlayback({
+        acknowledgment: { text: "Lovely!", audio: null },
+      });
+      noAudioCleanup();
+
+      let decodedObjectUrls = 0;
+      let decodeCleanup;
+      assert.doesNotThrow(() => {
+        decodeCleanup = beginAcknowledgmentPlayback({
+          acknowledgment: {
+            text: "Lovely!",
+            audio: { contentType: "audio/mpeg", base64: "%" },
+          },
+          createObjectURL() {
+            decodedObjectUrls += 1;
+            return "blob:decoded";
+          },
+        });
+      });
+      decodeCleanup?.();
+      assert.equal(decodedObjectUrls, 0);
+
+      let createCleanup;
+      assert.doesNotThrow(() => {
+        createCleanup = beginAcknowledgmentPlayback({
+          acknowledgment: {
+            text: "Lovely!",
+            audio: { contentType: "audio/mpeg", base64: "AQID" },
+          },
+          createObjectURL() {
+            throw new Error("Object URLs are unavailable.");
+          },
+        });
+      });
+      createCleanup?.();
+
+      const revokedUrls = [];
+      let setupCleanup;
+      assert.doesNotThrow(() => {
+        setupCleanup = beginAcknowledgmentPlayback({
+          acknowledgment: {
+            text: "Lovely!",
+            audio: { contentType: "audio/mpeg", base64: "AQID" },
+          },
+          createAudio() {
+            throw new Error("Audio setup is unavailable.");
+          },
+          createObjectURL() {
+            return "blob:setup-error";
+          },
+          revokeObjectURL(url) {
+            revokedUrls.push(url);
+          },
+        });
+      });
+      setupCleanup?.();
+      assert.deepEqual(revokedUrls, ["blob:setup-error"]);
+    } finally {
+      globalThis.setTimeout = originalSetTimeout;
+    }
+
+    assert.deepEqual(scheduledDelays, []);
   });
 });
 
