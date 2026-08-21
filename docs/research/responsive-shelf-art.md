@@ -138,11 +138,11 @@ change.
 ```text
 Branch: codex/responsive-shelf-art
 Base branch / dependency: codex/lesson-speech-short-landscape at 4c54b7f
-Commit: pending implementation commit
+Commit: 1cc6b27
 Hypothesis: verified in the constrained lab; responsive candidates make picture-led choices useful sooner without changing the crop
 Changed: 384/768 shelf assets, srcset/sizes, generator, production benchmark, asset/UI/browser tests, screenshots, research memo
 Not changed: source artwork, card layout, loading priority, story page art, full-scene lesson art, personalized private art
-Tests: pending full validation
+Tests: 612 unit/lifecycle passed; 118 Chromium passed in 29.7 seconds; 26 focused Chromium passed in 7.9 seconds; production build passed; lint 0 errors with 2 generated-file warnings; production benchmark passed
 Screenshots / traces: artifacts/ux-review/responsive-shelf-art before/after at 390×844
 Measured result: lesson first cover median 661 ms; story first cover median 625 ms; largest 768 px candidate 46.96 kB
 Risks / limitations: local lab only; no child fidelity study; older browsers retain the larger source fallback

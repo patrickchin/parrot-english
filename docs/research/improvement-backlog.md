@@ -81,6 +81,13 @@ controls, and picture context. The generated layered presentation remains the
 next visual follow-up because its character distribution and speech tail need a
 coordinated placement decision.
 
+The independent performance follow-up `codex/responsive-shelf-art` is
+implemented at `1cc6b27`, based on `4c54b7f`. It keeps the same child-facing
+art and loading policy while adding crop-preserving 384/768 candidates and
+layout-specific browser selection. On the documented constrained profile, the
+first lesson cover completed in a median 661 ms and the first story cover in
+625 ms, down from about 3.25 s. Every 768 px candidate is below 50 kB.
+
 ### Hand-off record
 
 ```text
@@ -143,6 +150,21 @@ Retain, revise, or reject: retain for boxed lessons
 Next question: Can layered characters and speech form the same stable relationship without a misleading speech tail?
 ```
 
+```text
+Branch: codex/responsive-shelf-art
+Base branch / dependency: codex/lesson-speech-short-landscape at 4c54b7f
+Commit: 1cc6b27
+Hypothesis: verified in the constrained lab; responsive candidates make picture-led choices useful sooner without changing the crop
+Changed: 384/768 shelf assets, srcset/sizes, generator, production benchmark, asset/UI/browser tests, screenshots, research memo
+Not changed: source artwork, card layout, loading priority, story page art, full-scene lesson art, personalized private art
+Tests: 612 unit/lifecycle passed; 118 Chromium passed in 29.7 seconds; 26 focused Chromium passed in 7.9 seconds; production build passed; lint 0 errors with 2 generated-file warnings; production benchmark passed
+Screenshots / traces: artifacts/ux-review/responsive-shelf-art before/after at 390×844
+Measured result: lesson first cover median 661 ms; story first cover median 625 ms; largest 768 px candidate 46.96 kB
+Risks / limitations: local lab only; no child fidelity study; older browsers retain the larger source fallback
+Retain, revise, or reject: retain
+Next question: Do deployed low-end phones meet the same first-picture budget without increasing eager image contention?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -163,8 +185,8 @@ branches.
 5. **Medium: generic Talk request failures use grown-up API language.** Map
    transport errors to literal child-facing recovery copy.
 6. **Low: a visible fourth desktop lesson card can remain blank for roughly
-   450ms.** Measure eager-image coverage and placeholder behavior before
-   increasing eager loading.
+   450ms.** Mitigated on `codex/responsive-shelf-art` with smaller responsive
+   candidates; loading priority remains unchanged pending field evidence.
 
 ## Parked ideas
 
