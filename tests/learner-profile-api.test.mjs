@@ -46,7 +46,11 @@ describe("learnerProfile browser API", () => {
       question: null,
       acknowledgment: {
         text: "Thank you!",
-        audio: { contentType: "audio/mpeg", base64: "AQID" },
+        audio: {
+          id: "peppa-thank-you",
+          src: "/assets/audio/peppa-thank-you.mp3",
+          text: "Thank you!",
+        },
       },
     };
     const learnerProfile = jsonFetch(payload);
@@ -79,7 +83,14 @@ describe("learnerProfile browser API", () => {
     const payload = {
       profile: { name: "Maya" },
       acknowledgments: [
-        { text: "Thank you!", audio: null },
+        {
+          text: "Thank you!",
+          audio: {
+            id: "peppa-thank-you",
+            src: "/assets/audio/peppa-thank-you.mp3",
+            text: "Thank you!",
+          },
+        },
       ],
     };
     const request = jsonFetch(payload);

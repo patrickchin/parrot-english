@@ -11,7 +11,7 @@ Child-first listening, speaking, and story practice for young English learners.
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
 - OpenAI lesson generation plus Groq speech evaluation, onboarding transcription, and answer enrichment
-- ElevenLabs saved prompt audio and runtime fixed profile-confirmation audio
+- ElevenLabs-generated saved prompt and profile-confirmation audio
 - LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
 The frontend is a Vite single-page app. The Worker serves the built assets and
@@ -108,9 +108,10 @@ validated, and stored directly without an AI request.
 
 Form onboarding also uses `GROQ_API_KEY` for factual answer summaries and
 canonical name or age extraction. The child-facing response is the locally
-selected `Thank you!`, never model output. Set `ELEVENLABS_API_KEY` in
-`.dev.vars` to speak that fixed response at runtime; the browser never receives
-either provider key.
+selected `Thank you!`, never model output. Its matching saved acknowledgment
+audio is generated ahead of deployment and served as a same-origin app asset;
+profile saves make no runtime ElevenLabs request. The browser never receives a
+provider key.
 
 Email/password authentication currently has no email verification, password
 reset, social sign-in, or Resend integration.
@@ -124,7 +125,6 @@ be configured without committing them:
 ```bash
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put BETTER_AUTH_URL
-npx wrangler secret put ELEVENLABS_API_KEY
 ```
 
 Apply future reviewed migrations with:
@@ -207,9 +207,10 @@ acknowledgment, enrichment status, and server timestamp. Canonical name and age
 remain in their existing profile columns as well. The enrichment status
 describes only summary/canonical enrichment. Historical version-two snapshots
 remain readable, but API responses replace old generated acknowledgments with
-the current reviewed phrase. Groq enrichment is persisted before the Worker
-requests optional fixed acknowledgment audio from ElevenLabs, so a TTS failure
-does not lose the answer.
+the current reviewed phrase. After Groq enrichment is persisted, the Worker
+returns the matching saved `peppa-thank-you` audio descriptor from the
+checked-in registry. The browser attempts that same-origin asset without
+blocking the visible confirmation or its child-controlled **Next** action.
 
 The normalized `questionnaire` and `questionnaire_question` tables remain
 dormant for rollback safety. Runtime onboarding no longer reads or writes them;

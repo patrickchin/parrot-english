@@ -11,6 +11,11 @@ const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
 const E2E_LONG_ACKNOWLEDGMENT =
   "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!";
+const E2E_SAVED_ACKNOWLEDGMENT_AUDIO = {
+  id: "peppa-thank-you",
+  src: "/assets/audio/peppa-thank-you.mp3",
+  text: "Thank you!",
+};
 const E2E_PROFILE_SCENARIOS = new Set([
   E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO,
   E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO,
@@ -51,7 +56,10 @@ const E2E_INCOMPLETE_PROFILE = {
 
 const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
   ...E2E_INCOMPLETE_PROFILE,
-  acknowledgment: { audio: null, text: "Thank you!" },
+  acknowledgment: {
+    audio: E2E_SAVED_ACKNOWLEDGMENT_AUDIO,
+    text: "Thank you!",
+  },
   canBypass: true,
   profile: {
     ...E2E_INCOMPLETE_PROFILE.profile,
@@ -83,7 +91,10 @@ const E2E_VIEWPORT_INCOMPLETE_PROFILE = {
 
 const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
   ...E2E_VIEWPORT_INCOMPLETE_PROFILE,
-  acknowledgment: { audio: null, text: "Thank you!" },
+  acknowledgment: {
+    audio: E2E_SAVED_ACKNOWLEDGMENT_AUDIO,
+    text: "Thank you!",
+  },
   profile: {
     ...E2E_VIEWPORT_INCOMPLETE_PROFILE.profile,
     answers: {

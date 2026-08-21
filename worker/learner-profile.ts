@@ -8,6 +8,7 @@ import {
   writeV2Response,
 } from "../lib/learner-profile-responses.js";
 import {
+  LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID,
   LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
 } from "../lib/learner-profile-questionnaire.js";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
@@ -18,10 +19,6 @@ import {
   handleLearnerProfileTranscription,
   type ApiEnv,
 } from "./groq.ts";
-import {
-  synthesizeAcknowledgment,
-  type ElevenLabsEnv,
-} from "./learner-profile-acknowledgment-audio.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
   enrichLearnerProfileAnswer,
@@ -42,16 +39,13 @@ export interface LearnerProfileIdentity {
 
 export interface LearnerProfileRequestInput {
   database: Database;
-  env: AuthEnv &
-    ApiEnv &
-    ElevenLabsEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
+  env: AuthEnv & ApiEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
   identity: LearnerProfileIdentity;
   request: Request;
 }
 
 type HandlerDependencies = {
   enrichAnswer: typeof enrichLearnerProfileAnswer;
-  synthesizeAudio: typeof synthesizeAcknowledgment;
   now: () => Date;
 };
 
@@ -108,6 +102,14 @@ function serializeQuestion(question: Question) {
     required: question.required,
     maxLength: question.maxLength,
     audio: resolveAudio(question.audioId, question.promptEn),
+  };
+}
+
+function serializeAcknowledgment(question: Question) {
+  const text = question.fallbackAcknowledgment;
+  return {
+    text,
+    audio: resolveAudio(LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID, text),
   };
 }
 
@@ -396,7 +398,6 @@ async function saveAnswer({
   }
 
   let storedProfile = profile;
-  const acknowledgment = question.fallbackAcknowledgment;
   if (!sameAnswer) {
     const updated = writeV2Response(readable, question, {
       ...enrichment,
@@ -429,11 +430,10 @@ async function saveAnswer({
     storedProfile = await repository.loadProfile(input.identity);
   }
 
-  const audio = await dependencies.synthesizeAudio({
-    env: input.env,
-    text: acknowledgment,
-  });
-  return { profile: storedProfile, acknowledgment: { text: acknowledgment, audio } };
+  return {
+    profile: storedProfile,
+    acknowledgment: serializeAcknowledgment(question),
+  };
 }
 
 async function saveProfileAnswers({
@@ -490,7 +490,7 @@ async function saveProfileAnswers({
     }
   }
 
-  const changed: Array<{ question: Question; acknowledgment: string }> = [];
+  const changed: Question[] = [];
   for (const question of LEARNER_PROFILE_QUESTIONNAIRE.questions) {
     if (!(question.answerKey in answers)) continue;
     const submitted = answers[question.answerKey];
@@ -541,10 +541,7 @@ async function saveProfileAnswers({
         rawAnswer,
         answeredAt: dependencies.now().toISOString(),
       });
-      changed.push({
-        question,
-        acknowledgment: question.fallbackAcknowledgment,
-      });
+      changed.push(question);
     } catch {
       fieldErrors[question.answerKey] = "Please check this answer and try again.";
     }
@@ -565,14 +562,7 @@ async function saveProfileAnswers({
     storedProfile = await repository.loadProfile(input.identity);
   }
 
-  const acknowledgments = [];
-  for (const entry of changed) {
-    const audio = await dependencies.synthesizeAudio({
-      env: input.env,
-      text: entry.acknowledgment,
-    });
-    acknowledgments.push({ text: entry.acknowledgment, audio });
-  }
+  const acknowledgments = changed.map(serializeAcknowledgment);
   return { profile: storedProfile, acknowledgments };
 }
 
@@ -582,7 +572,6 @@ export async function handleLearnerProfileRequest(
 ): Promise<Response> {
   const dependencies: HandlerDependencies = {
     enrichAnswer: enrichLearnerProfileAnswer,
-    synthesizeAudio: synthesizeAcknowledgment,
     now: () => new Date(),
     ...dependencyOverrides,
   };

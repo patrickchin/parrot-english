@@ -123,15 +123,18 @@ which are app/data concepts rather than beginner activity words. The heading
 with the character. **Quick** is also a timing promise that the implementation
 cannot guarantee.
 
-The server performs profile enrichment with a 15-second default upstream
-timeout and then acknowledgment speech synthesis with a 10-second default
-timeout. Those calls are sequential after a submitted answer; configurable
-ceilings are 60 and 30 seconds respectively
+At this audit's baseline, the server performed profile enrichment with a
+15-second default upstream timeout and then acknowledgment speech synthesis
+with a 10-second default timeout. Those calls were sequential after a submitted
+answer; configurable ceilings were 60 and 30 seconds respectively
 ([`groq.ts`, lines 19–20 and 52–59](../../worker/groq.ts),
-[`learner-profile-acknowledgment-audio.ts`, lines 7–9 and 28–35](../../worker/learner-profile-acknowledgment-audio.ts),
+the [saved acknowledgment audio baseline](./static-profile-acknowledgment-audio-guidance.md#product-question-and-scope),
 and [`learner-profile.ts`, lines 371–422](../../worker/learner-profile.ts)).
 These are code ceilings, not measured deployed latency. Network and database
 time are additional, and deployed configuration is unknown.
+
+Update 2026-08-22: the saved-audio branch removed the runtime acknowledgment
+synthesis call and its timeout. Groq enrichment and persistence remain.
 
 A simpler, more literal intro hypothesis for later testing is:
 

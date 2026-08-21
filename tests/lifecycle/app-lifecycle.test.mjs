@@ -4099,7 +4099,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       if (path === "/api/learner-profile/answer" && init.method === "PUT") {
         return json({
           ...completed,
-          acknowledgment: { text: "Thank you!", audio: null },
+          acknowledgment: {
+            text: "Thank you!",
+            audio: {
+              id: "peppa-thank-you",
+              src: "/assets/audio/peppa-thank-you.mp3",
+              text: "Thank you!",
+            },
+          },
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -4215,8 +4222,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         return json({
           ...profileState,
           acknowledgments: [
-            { text: "Thank you!", audio: null },
-            { text: "Thank you!", audio: null },
+            {
+              text: "Thank you!",
+              audio: {
+                id: "peppa-thank-you",
+                src: "/assets/audio/peppa-thank-you.mp3",
+                text: "Thank you!",
+              },
+            },
+            {
+              text: "Thank you!",
+              audio: {
+                id: "peppa-thank-you",
+                src: "/assets/audio/peppa-thank-you.mp3",
+                text: "Thank you!",
+              },
+            },
           ],
         });
       }

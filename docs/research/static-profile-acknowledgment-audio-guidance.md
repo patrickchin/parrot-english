@@ -58,8 +58,9 @@ will allow audible autoplay.
 
 The existing asset is registered in
 [`lib/static-audio.js`](../../lib/static-audio.js) as
-`peppa-thank-you`, spoken by Peppa in English, with exact text `Thank you!` and
-source `/assets/audio/peppa-thank-you.mp3`.
+`peppa-thank-you`, with speaker metadata `peppa`, language metadata `en-US`,
+the transcript `Thank you!`, and source
+`/assets/audio/peppa-thank-you.mp3`.
 
 Inspection on 2026-08-22 found:
 
@@ -70,18 +71,18 @@ Inspection on 2026-08-22 found:
 | Estimated duration | 1.071020 seconds |
 | File size | 17,598 bytes |
 | SHA-256 | `4b90bc530f89e28e972d0c8ea92faad4728266523dca56a4719c94cf2f3abc8a` |
-| Registered visible/spoken text | exact `Thank you!` |
+| Registered transcript | exact `Thank you!` |
 
 The saved-audio generator is ElevenLabs-only and the asset is already checked
 in. No local or macOS text-to-speech substitute is needed or allowed.
 
-The current runtime path lives in
-[`worker/learner-profile-acknowledgment-audio.ts`](../../worker/learner-profile-acknowledgment-audio.ts).
-It accepts an ElevenLabs API key, sends the public confirmation to the provider,
-waits up to the configured bound, reads up to one megabyte, and embeds a base64
-copy in each JSON response. The browser path in
+At the research baseline (`a94fc9c`), the runtime path lived in
+`worker/learner-profile-acknowledgment-audio.ts`; this implementation removes
+that file. It accepted an ElevenLabs API key, sent the public confirmation to
+the provider, waited up to the configured bound, read up to one megabyte, and
+embedded a base64 copy in each JSON response. The baseline browser path in
 [`LearnerProfileAcknowledgment.tsx`](../../src/learner-profile/LearnerProfileAcknowledgment.tsx)
-reconstructs the same media bytes as a temporary object URL.
+reconstructed the same media bytes as a temporary object URL.
 
 ## Why the saved reference is preferable
 
@@ -96,10 +97,11 @@ sound can begin.
 
 ### Reliability and pacing
 
-One deployed asset has a stable ID, URL, text, speaker, and duration. A provider
-failure can no longer turn a successful answer into a silent response after a
-long wait. A static media request can still fail, be slow, or be blocked by
-autoplay policy, so visible feedback and **Next** remain independent.
+One deployed asset has a stable ID, URL, catalog transcript and speaker
+metadata, byte identity, and duration. A provider failure can no longer turn a
+successful answer into a silent response after a long wait. A static media
+request can still fail, be slow, or be blocked by autoplay policy, so visible
+feedback and **Next** remain independent.
 
 The HTML media specification defines the `play()` promise and media readiness;
 it does not prove that a child heard physical output. Chrome and WebKit also
@@ -132,19 +134,20 @@ cache-hit or network-duration guarantee is claimed.
 The acknowledgment audio ID is owned beside the deterministic acknowledgment
 text in the questionnaire domain. The Worker resolves that ID through the
 existing static-audio registry and verifies the expected speaker and exact
-text before serializing it. This keeps the public text and spoken asset from
-drifting silently.
+catalog transcript before serializing it. This keeps the public text and asset
+metadata from drifting silently. It does not verify the audible words encoded
+in the MP3.
 
 The browser consumes the existing `LearnerProfileAudio` shape used by question
 prompts:
 
-- `id` identifies the reviewed asset;
+- `id` identifies the selected checked-in asset;
 - `src` is the same-origin public path; and
 - `text` is the exact speech transcript.
 
-`audio` remains nullable as a defensive client contract. A malformed, missing,
-slow, blocked, or failed optional media item must never hide the confirmation,
-disable **Next**, schedule navigation, or prevent cleanup.
+`audio` remains optional and nullable as a defensive client contract. A
+malformed, missing, slow, blocked, or failed optional media item must never hide
+the confirmation, disable **Next**, schedule navigation, or prevent cleanup.
 
 ## Rolling-deploy and rollback analysis
 
@@ -184,14 +187,16 @@ ordinary asset-serving path.
 
 ### Generate a new confirmation asset
 
-The existing approved Peppa asset matches the exact selected text. Generating
-another asset adds cost and an unnecessary voice/content review without
-changing the user-facing contract.
+The existing checked-in catalog asset has the exact selected transcript.
+Generating another asset adds cost and another voice/content review without
+changing the user-facing contract. A human must still listen to the retained
+file to confirm its exact audible words, voice and clarity, clipping or silence,
+and level.
 
 ### Remove acknowledgment sound
 
-Audio supports learners who cannot yet read the confirmation. The problem is
-the runtime dependency, not the existence of the spoken cue.
+Audio can support learners who cannot yet read the confirmation. The problem is
+the runtime dependency, not the existence of the saved cue.
 
 ## Acceptance and evidence plan
 
@@ -204,7 +209,7 @@ The implementation should prove that:
   synthesis;
 - the Worker has no runtime acknowledgment TTS module, dependency, fetch,
   timeout setting, or production secret requirement;
-- a legacy injected `synthesizeAudio` promise is never read or awaited;
+- a legacy injected `synthesizeAudio` function is never invoked;
 - bulk edits return references in questionnaire order without a per-answer
   synthesis loop;
 - the browser passes `audio.src` directly to the media element and performs no
@@ -239,16 +244,24 @@ storage is unchanged, rollback is code-only.
 ## Sources and limits
 
 Related stable entries in the [source register](./source-register.md) are
-AI-01, PRIV-06, VOICE-04, and VOICE-09.
+AI-01, PRIV-06, VOICE-04, VOICE-09, and VOICE-11.
 
 - [WHATWG, HTML Living Standard: media
   elements](https://html.spec.whatwg.org/multipage/media.html), last updated
-  2026-08-20 and accessed 2026-08-21, defines media and `play()` behavior. It
+  2026-08-21 and accessed 2026-08-22, defines media and `play()` behavior. It
   does not prove audible physical output or a child's perception.
 - [Chrome autoplay policy](https://developer.chrome.com/blog/autoplay/) and
-  [WebKit WebRTC/media guidance](https://webkit.org/blog/7763/a-closer-look-into-webrtc/)
-  document user-activation restrictions. Exact embedded or installed-app
-  behavior still requires target-device testing.
+  [WebKit's iOS media policy](https://webkit.org/blog/6784/new-video-policies-for-ios/)
+  document user-activation restrictions, including direct `<audio>` playback
+  on iOS. Exact current embedded or installed-app behavior still requires
+  target-device testing; the WebKit article dates from 2016.
+- [W3C WAI, Understanding SC 1.4.2: Audio
+  Control](https://www.w3.org/WAI/WCAG22/Understanding/audio-control.html),
+  updated 2025-09-16 and accessed 2026-08-22, explains the three-second
+  control threshold and why automatic sound can interfere with screen-reader
+  speech. The 1.071-second asset is below that duration threshold, but target
+  assistive-technology testing remains necessary and the page is informative,
+  not a conformance certificate.
 - [UK ICO Children's Code: data
   minimisation](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/childrens-information/childrens-code-guidance-and-resources/age-appropriate-design-a-code-of-practice-for-online-services/8-data-minimisation/),
   accessed 2026-08-21, supports minimum necessary data use. Removing this
@@ -258,4 +271,3 @@ AI-01, PRIV-06, VOICE-04, and VOICE-09.
   3.0*](https://www.unicef.org/innocenti/reports/policy-guidance-ai-children),
   December 2025, provides a child-centred privacy and accountability frame. It
   does not prescribe this architecture or certify the product.
-

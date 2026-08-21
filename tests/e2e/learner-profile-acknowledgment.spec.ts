@@ -101,6 +101,191 @@ test("profile acknowledgment stays until its explicit Next action", async ({
   await expect(heading).toHaveCount(0);
 });
 
+test("saved acknowledgment audio cannot block its visible Next action", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto(acknowledgmentPath);
+  await page.getByRole("button", { name: "Set up profile" }).click();
+
+  await page.evaluate(() => {
+    const evidence = {
+      atobCalls: 0,
+      objectUrlCalls: 0,
+      pauseCalls: 0,
+      playCalls: 0,
+      sources: [] as string[],
+    };
+    Object.assign(window, { __parrotAcknowledgmentAudioEvidence: evidence });
+    window.atob = () => {
+      evidence.atobCalls += 1;
+      throw new Error("Inline acknowledgment audio is forbidden.");
+    };
+    URL.createObjectURL = () => {
+      evidence.objectUrlCalls += 1;
+      throw new Error("Acknowledgment object URLs are forbidden.");
+    };
+    class PendingAudio {
+      onended: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      constructor(readonly src: string) {
+        evidence.sources.push(src);
+      }
+
+      pause() {
+        evidence.pauseCalls += 1;
+      }
+
+      async play() {
+        evidence.playCalls += 1;
+      }
+    }
+    Object.defineProperty(window, "Audio", {
+      configurable: true,
+      value: PendingAudio,
+    });
+  });
+
+  await page.getByRole("textbox", { name: /Your answer/ }).fill("Mia");
+  await page.getByRole("button", { exact: true, name: "Next" }).click();
+
+  const heading = page.getByRole("heading", { name: "Thank you!" });
+  const next = page.getByRole("button", { exact: true, name: "Next" });
+  await expect(heading).toBeVisible();
+  await expect(heading).toBeFocused();
+  await expect(next).toBeEnabled();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as typeof window & {
+          __parrotAcknowledgmentAudioEvidence: {
+            atobCalls: number;
+            objectUrlCalls: number;
+            pauseCalls: number;
+            playCalls: number;
+            sources: string[];
+          };
+        }).__parrotAcknowledgmentAudioEvidence.playCalls,
+      ),
+    )
+    .toBeGreaterThanOrEqual(1);
+  const playbackEvidence = await page.evaluate(
+    () =>
+      (window as typeof window & {
+        __parrotAcknowledgmentAudioEvidence: {
+          atobCalls: number;
+          objectUrlCalls: number;
+          pauseCalls: number;
+          playCalls: number;
+          sources: string[];
+        };
+      }).__parrotAcknowledgmentAudioEvidence,
+  );
+  expect(playbackEvidence.atobCalls).toBe(0);
+  expect(playbackEvidence.objectUrlCalls).toBe(0);
+  expect(playbackEvidence.pauseCalls).toBe(playbackEvidence.playCalls - 1);
+  expect(playbackEvidence.sources).toHaveLength(playbackEvidence.playCalls);
+  expect(
+    playbackEvidence.sources.every(
+      (source) => source === "/assets/audio/peppa-thank-you.mp3",
+    ),
+  ).toBe(true);
+
+  await next.click();
+  await expect(page).toHaveURL("/");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => {
+          const evidence = (
+            window as typeof window & {
+              __parrotAcknowledgmentAudioEvidence: {
+                pauseCalls: number;
+                playCalls: number;
+              };
+            }
+          ).__parrotAcknowledgmentAudioEvidence;
+          return evidence.pauseCalls - evidence.playCalls;
+        },
+      ),
+    )
+    .toBe(0);
+});
+
+test("saved acknowledgment audio reaches browser media metadata", async ({
+  page,
+}) => {
+  const mediaResponses: Array<{
+    contentType: string;
+    status: number;
+    url: string;
+  }> = [];
+  page.on("response", (response) => {
+    if (response.url().endsWith("/assets/audio/peppa-thank-you.mp3")) {
+      mediaResponses.push({
+        contentType: response.headers()["content-type"] ?? "",
+        status: response.status(),
+        url: response.url(),
+      });
+    }
+  });
+  await page.goto("/");
+
+  const media = await page.evaluate(async () => {
+    const audio = document.createElement("audio");
+    const events: string[] = [];
+    for (const event of ["loadstart", "loadedmetadata", "canplay", "error"]) {
+      audio.addEventListener(event, () => events.push(event));
+    }
+    audio.preload = "metadata";
+    audio.src = "/assets/audio/peppa-thank-you.mp3";
+    document.body.appendChild(audio);
+    const outcome = await new Promise<"loadedmetadata" | "error" | "timeout">(
+      (resolve) => {
+        const timeout = window.setTimeout(() => resolve("timeout"), 5_000);
+        const finish = (result: "loadedmetadata" | "error") => {
+          window.clearTimeout(timeout);
+          resolve(result);
+        };
+        audio.addEventListener("loadedmetadata", () => finish("loadedmetadata"), {
+          once: true,
+        });
+        audio.addEventListener("error", () => finish("error"), { once: true });
+        audio.load();
+      },
+    );
+    const result = {
+      currentSrc: audio.currentSrc,
+      duration: audio.duration,
+      errorCode: audio.error?.code ?? null,
+      events,
+      outcome,
+      readyState: audio.readyState,
+    };
+    audio.remove();
+    return result;
+  });
+
+  expect(media.outcome).toBe("loadedmetadata");
+  expect(media.errorCode).toBeNull();
+  expect(media.currentSrc).toBe(
+    `${new URL("/", page.url()).origin}/assets/audio/peppa-thank-you.mp3`,
+  );
+  expect(media.duration).toBeGreaterThan(1);
+  expect(media.duration).toBeLessThan(1.2);
+  expect(media.readyState).toBeGreaterThanOrEqual(1);
+  expect(media.events).toContain("loadedmetadata");
+  expect(mediaResponses.length).toBeGreaterThanOrEqual(1);
+  expect(
+    mediaResponses.every(
+      (response) =>
+        response.contentType === "audio/mpeg" &&
+        [200, 206].includes(response.status),
+    ),
+  ).toBe(true);
+});
+
 test("profile acknowledgment keeps one ordered action at responsive targets", async ({
   page,
 }) => {

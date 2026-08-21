@@ -10,7 +10,7 @@ API and falls back to static Vite assets for non-API requests.
 Browser
   -> Cloudflare Worker
        -> /api/auth/* -> Better Auth -> Drizzle -> D1
-       -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
+       -> /api/learner-profile/* -> Groq -> D1
        -> /api/conversations/* -> LiveKit -> D1
        -> /api/lessons/my/* -> OpenAI -> D1
        -> /api/evaluate-speech -> Groq
@@ -96,14 +96,16 @@ level, cover, title, summary, pages, and join-in content.
 - My Lessons use cancellable browser English speech.
 - Groq evaluates lesson speech and supports private factual profile enrichment;
   it does not generate child-facing profile acknowledgments.
-- Form profile saves select `Thank you!` locally and optionally ask ElevenLabs
-  to speak only that fixed phrase at runtime.
+- Form profile saves select `Thank you!` locally and return its checked-in
+  `peppa-thank-you` audio asset; they make no runtime TTS request.
 - OpenAI generates custom lesson drafts.
 - LiveKit carries realtime conversation audio; the agent uses explicit model
   IDs and purpose-specific prompts.
 
-Provider keys remain on the Worker or agent. The browser receives only
-same-origin API responses and short-lived room-scoped LiveKit tokens.
+Runtime provider keys remain on the Worker or agent. The ElevenLabs key is used
+locally to generate reviewed saved audio, not by form-profile requests. The
+browser receives only same-origin API responses, app assets, and short-lived
+room-scoped LiveKit tokens.
 
 ## Verification
 

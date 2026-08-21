@@ -146,6 +146,15 @@ const GENERATED = {
   enrichmentStatus: "generated",
 };
 
+const SAVED_ACKNOWLEDGMENT = {
+  text: "Thank you!",
+  audio: {
+    id: "peppa-thank-you",
+    src: "/assets/audio/peppa-thank-you.mp3",
+    text: "Thank you!",
+  },
+};
+
 function createDependencies(overrides = {}) {
   return {
     now: () => new Date("2026-07-06T10:30:00.000Z"),
@@ -160,9 +169,6 @@ function createDependencies(overrides = {}) {
             : null,
         enrichmentStatus: "generated",
       };
-    },
-    async synthesizeAudio() {
-      return null;
     },
     ...overrides,
   };
@@ -324,11 +330,13 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("persists a complete snapshot before requesting acknowledgment audio", async () => {
+  it("persists a complete snapshot and returns saved audio without runtime TTS", async () => {
     const state = createSeededDatabase();
     try {
       await callLearnerProfile(state.database, "/api/learner-profile");
       const calls = [];
+      let legacySecretReads = 0;
+      let legacySynthesisCalls = 0;
       const dependencies = createDependencies({
         async enrichAnswer() {
           calls.push("enrich");
@@ -339,35 +347,49 @@ describe("onboarding persistence and API", () => {
             canonicalName: "Mia",
           };
         },
-        async synthesizeAudio({ text }) {
-          calls.push("tts");
-          assert.equal(text, "Thank you!");
-          const stored = state.sqlite
-            .prepare("SELECT answers_json FROM learner_profile WHERE auth_user_id = ?")
-            .get("user-1");
-          assert.equal(
-            JSON.parse(stored.answers_json).responses.name.acknowledgment,
-            "Thank you!",
-          );
-          return { contentType: "audio/mpeg", base64: "AQID" };
+        async synthesizeAudio() {
+          legacySynthesisCalls += 1;
+          throw new Error("Runtime acknowledgment synthesis must not run.");
         },
       });
-      const response = await callLearnerProfile(
-        state.database,
-        "/api/learner-profile/answer",
-        "PUT",
-        { questionKey: "name", rawAnswer: "  Mia  " },
-        {},
+      const env = new Proxy(
+        { DB: state.database.$client },
+        {
+          get(target, property, receiver) {
+            if (
+              property === "ELEVENLABS_API_KEY" ||
+              property === "ELEVENLABS_REQUEST_TIMEOUT_MS"
+            ) {
+              legacySecretReads += 1;
+              throw new Error("Runtime ElevenLabs configuration was read.");
+            }
+            return Reflect.get(target, property, receiver);
+          },
+        },
+      );
+      const response = await handleLearnerProfileRequest(
+        {
+          database: state.database,
+          env,
+          identity: {
+            sessionId: "session-1",
+            userId: "user-1",
+            userName: "Mia",
+          },
+          request: request("/api/learner-profile/answer", "PUT", {
+            questionKey: "name",
+            rawAnswer: "  Mia  ",
+          }),
+        },
         dependencies,
       );
       assert.equal(response.status, 200);
       const payload = await response.json();
-      assert.deepEqual(calls, ["enrich", "tts"]);
+      assert.deepEqual(calls, ["enrich"]);
+      assert.equal(legacySecretReads, 0);
+      assert.equal(legacySynthesisCalls, 0);
       assert.equal(payload.question.answerKey, "age");
-      assert.deepEqual(payload.acknowledgment, {
-        text: "Thank you!",
-        audio: { contentType: "audio/mpeg", base64: "AQID" },
-      });
+      assert.deepEqual(payload.acknowledgment, SAVED_ACKNOWLEDGMENT);
 
       const row = state.sqlite
         .prepare("SELECT name, answers_json, current_question_key, onboarding_status FROM learner_profile WHERE auth_user_id = ?")
@@ -400,7 +422,7 @@ describe("onboarding persistence and API", () => {
         "x".repeat(500),
       ];
       const hostileAcknowledgment = "Z".repeat(160);
-      const audioTexts = [];
+      let legacySynthesisCalls = 0;
       const dependencies = createDependencies({
         async enrichAnswer({ rawAnswer }) {
           const index = rawAnswers.indexOf(rawAnswer);
@@ -412,9 +434,9 @@ describe("onboarding persistence and API", () => {
             enrichmentStatus: index % 2 === 0 ? "generated" : "fallback",
           };
         },
-        async synthesizeAudio({ text }) {
-          audioTexts.push(text);
-          return null;
+        async synthesizeAudio() {
+          legacySynthesisCalls += 1;
+          throw new Error("Runtime acknowledgment synthesis must not run.");
         },
       });
 
@@ -429,7 +451,7 @@ describe("onboarding persistence and API", () => {
         );
         assert.equal(response.status, 200);
         const payload = await response.json();
-        assert.equal(payload.acknowledgment.text, "Thank you!");
+        assert.deepEqual(payload.acknowledgment, SAVED_ACKNOWLEDGMENT);
         assert.equal(
           payload.profile.answers.responses.favoriteAnimals.acknowledgment,
           "Thank you!",
@@ -448,7 +470,7 @@ describe("onboarding persistence and API", () => {
 
       assert.equal(hostileAcknowledgment.length, 160);
       assert.equal(rawAnswers.at(-1).length, 500);
-      assert.deepEqual(audioTexts, Array(rawAnswers.length).fill("Thank you!"));
+      assert.equal(legacySynthesisCalls, 0);
     } finally {
       state.close();
     }
@@ -497,7 +519,7 @@ describe("onboarding persistence and API", () => {
     try {
       await callLearnerProfile(state.database, "/api/learner-profile");
       let enrichmentCalls = 0;
-      const audioTexts = [];
+      let legacySynthesisCalls = 0;
       const dependencies = createDependencies({
         async enrichAnswer() {
           enrichmentCalls += 1;
@@ -508,9 +530,9 @@ describe("onboarding persistence and API", () => {
             canonicalName: "Mia",
           };
         },
-        async synthesizeAudio({ text }) {
-          audioTexts.push(text);
-          return null;
+        async synthesizeAudio() {
+          legacySynthesisCalls += 1;
+          throw new Error("Runtime acknowledgment synthesis must not run.");
         },
       });
       for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -524,7 +546,7 @@ describe("onboarding persistence and API", () => {
         );
         assert.equal(response.status, 200);
         const payload = await response.json();
-        assert.equal(payload.acknowledgment.text, "Thank you!");
+        assert.deepEqual(payload.acknowledgment, SAVED_ACKNOWLEDGMENT);
         assert.equal(
           payload.profile.answers.responses.name.acknowledgment,
           "Thank you!",
@@ -568,7 +590,7 @@ describe("onboarding persistence and API", () => {
         }
       }
       assert.equal(enrichmentCalls, 1);
-      assert.deepEqual(audioTexts, ["Thank you!", "Thank you!"]);
+      assert.equal(legacySynthesisCalls, 0);
       const stored = state.sqlite
         .prepare(
           "SELECT answers_json FROM learner_profile WHERE auth_user_id = ?",
@@ -856,7 +878,7 @@ describe("onboarding persistence and API", () => {
       const payload = await response.json();
       assert.deepEqual(enriched, ["name"]);
       assert.deepEqual(payload.acknowledgments, [
-        { text: "Thank you!", audio: null },
+        SAVED_ACKNOWLEDGMENT,
       ]);
       const row = state.sqlite
         .prepare("SELECT name, age, answers_json FROM learner_profile WHERE auth_user_id = ?")
@@ -879,7 +901,7 @@ describe("onboarding persistence and API", () => {
         "UPDATE learner_profile SET onboarding_status = 'completed', completed_at = 2000 WHERE auth_user_id = 'user-1'",
       );
       const enriched = [];
-      const audioTexts = [];
+      let legacySynthesisCalls = 0;
       const dependencies = createDependencies({
         async enrichAnswer({ question, rawAnswer }) {
           enriched.push(question.answerKey);
@@ -891,15 +913,9 @@ describe("onboarding persistence and API", () => {
             enrichmentStatus: "generated",
           };
         },
-        async synthesizeAudio({ text }) {
-          audioTexts.push(text);
-          const stored = state.sqlite
-            .prepare("SELECT answers_json FROM learner_profile WHERE auth_user_id = ?")
-            .get("user-1");
-          assert.equal(Object.keys(JSON.parse(stored.answers_json).responses).length, 3);
-          return audioTexts.length === 1
-            ? { contentType: "audio/mpeg", base64: "AQID" }
-            : null;
+        async synthesizeAudio() {
+          legacySynthesisCalls += 1;
+          throw new Error("Runtime acknowledgment synthesis must not run.");
         },
       });
 
@@ -921,11 +937,12 @@ describe("onboarding persistence and API", () => {
       assert.equal(response.status, 200);
       const payload = await response.json();
       assert.deepEqual(enriched, ["name", "age", "favoriteCartoons"]);
-      assert.deepEqual(audioTexts, ["Thank you!", "Thank you!", "Thank you!"]);
-      assert.deepEqual(
-        payload.acknowledgments.map(({ text }) => text),
-        ["Thank you!", "Thank you!", "Thank you!"],
-      );
+      assert.equal(legacySynthesisCalls, 0);
+      assert.deepEqual(payload.acknowledgments, [
+        SAVED_ACKNOWLEDGMENT,
+        SAVED_ACKNOWLEDGMENT,
+        SAVED_ACKNOWLEDGMENT,
+      ]);
 
       const row = state.sqlite
         .prepare("SELECT name, age, answers_json, onboarding_status FROM learner_profile WHERE auth_user_id = ?")

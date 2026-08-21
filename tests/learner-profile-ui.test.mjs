@@ -257,119 +257,81 @@ describe("Peppa acknowledgment", () => {
     assert.doesNotMatch(html, /<textarea/);
   });
 
-  it("uses ended and error events only for idempotent audio cleanup", async () => {
-    const listeners = new Map();
-    const removedEvents = [];
-    let pauseCalls = 0;
-    let playCalls = 0;
-    const revokedUrls = [];
+  it("plays the saved source directly and aborts pending playback on cleanup", async () => {
+    let playback;
+    let abortEvents = 0;
     const cleanup = beginAcknowledgmentPlayback({
       acknowledgment: {
-        text: "Dinosaurs are very stompy!",
-        audio: { contentType: "audio/mpeg", base64: "AQID" },
+        text: "Thank you!",
+        audio: {
+          id: "peppa-thank-you",
+          src: "/assets/audio/peppa-thank-you.mp3",
+          text: "Thank you!",
+        },
       },
-      createAudio(src) {
-        assert.equal(src, "blob:acknowledgment");
-        return {
-          addEventListener(event, listener) {
-            listeners.set(event, listener);
-          },
-          pause() {
-            pauseCalls += 1;
-          },
-          play() {
-            playCalls += 1;
-            return Promise.resolve();
-          },
-          removeEventListener(event, listener) {
-            assert.equal(listeners.get(event), listener);
-            removedEvents.push(event);
-          },
-        };
-      },
-      createObjectURL(blob) {
-        assert.equal(blob.type, "audio/mpeg");
-        assert.equal(blob.size, 3);
-        return "blob:acknowledgment";
-      },
-      revokeObjectURL(url) {
-        revokedUrls.push(url);
+      playLine(options) {
+        playback = options;
+        return new Promise((_resolve, reject) => {
+          options.signal.addEventListener("abort", () => {
+            abortEvents += 1;
+            const error = new Error("Audio playback was cancelled.");
+            error.name = "AbortError";
+            reject(error);
+          });
+        });
       },
     });
 
-    await Promise.resolve();
-    assert.equal(playCalls, 1);
-    assert.deepEqual([...listeners.keys()], ["ended", "error"]);
+    assert.equal(playback.audioId, "peppa-thank-you");
+    assert.equal(playback.audioSrc, "/assets/audio/peppa-thank-you.mp3");
+    assert.equal(playback.text, "Thank you!");
+    assert.equal(playback.signal.aborted, false);
 
-    const staleError = listeners.get("error");
-    listeners.get("ended")();
-    assert.equal(pauseCalls, 1);
-    assert.deepEqual(revokedUrls, ["blob:acknowledgment"]);
-    assert.deepEqual(removedEvents, ["ended", "error"]);
-
-    staleError();
     cleanup();
-    assert.equal(pauseCalls, 1);
-    assert.deepEqual(revokedUrls, ["blob:acknowledgment"]);
-    assert.deepEqual(removedEvents, ["ended", "error"]);
+    cleanup();
+    await Promise.resolve();
+    assert.equal(playback.signal.aborted, true);
+    assert.equal(abortEvents, 1);
   });
 
-  it("handles rejected playback and still releases its resources", async () => {
-    let catchCalls = 0;
-    let pauseCalls = 0;
-    const removedEvents = [];
-    const revokedUrls = [];
-    const rejectedPlayback = Promise.reject(
-      new Error("Autoplay is unavailable."),
-    );
-    const originalCatch = rejectedPlayback.catch.bind(rejectedPlayback);
-    rejectedPlayback.catch = (onRejected) => {
-      catchCalls += 1;
-      return originalCatch(onRejected);
+  it("keeps optional playback rejection and setup failure out of navigation", async () => {
+    const acknowledgment = {
+      text: "Thank you!",
+      audio: {
+        id: "peppa-thank-you",
+        src: "/assets/audio/peppa-thank-you.mp3",
+        text: "Thank you!",
+      },
     };
-
-    const cleanup = beginAcknowledgmentPlayback({
-      acknowledgment: {
-        text: "Lovely!",
-        audio: { contentType: "audio/mpeg", base64: "AQID" },
-      },
-      createAudio() {
-        return {
-          addEventListener() {},
-          pause() {
-            pauseCalls += 1;
-          },
-          play() {
-            return rejectedPlayback;
-          },
-          removeEventListener(event) {
-            removedEvents.push(event);
-          },
-        };
-      },
-      createObjectURL() {
-        return "blob:rejected";
-      },
-      revokeObjectURL(url) {
-        revokedUrls.push(url);
+    let rejectedCalls = 0;
+    const rejectedCleanup = beginAcknowledgmentPlayback({
+      acknowledgment,
+      async playLine() {
+        rejectedCalls += 1;
+        const error = new Error("Autoplay is unavailable.");
+        error.name = "NotAllowedError";
+        throw error;
       },
     });
-
     await Promise.resolve();
     await Promise.resolve();
-    assert.equal(catchCalls, 1);
-    assert.equal(pauseCalls, 1);
-    assert.deepEqual(revokedUrls, ["blob:rejected"]);
-    assert.deepEqual(removedEvents, ["ended", "error"]);
+    assert.equal(rejectedCalls, 1);
+    assert.doesNotThrow(rejectedCleanup);
 
-    cleanup();
-    assert.equal(pauseCalls, 1);
-    assert.deepEqual(revokedUrls, ["blob:rejected"]);
-    assert.deepEqual(removedEvents, ["ended", "error"]);
+    assert.doesNotThrow(() => {
+      const cleanup = beginAcknowledgmentPlayback({
+        acknowledgment,
+        playLine() {
+          throw new Error("Audio setup is unavailable.");
+        },
+      });
+      cleanup();
+    });
   });
 
-  it("does not schedule fallback timers when audio is missing or setup fails", () => {
+  it("skips missing, legacy, mismatched, and third-party media without timers", () => {
     const scheduledDelays = [];
+    const playedSources = [];
     const originalSetTimeout = globalThis.setTimeout;
     globalThis.setTimeout = (_callback, delay) => {
       scheduledDelays.push(delay);
@@ -377,67 +339,46 @@ describe("Peppa acknowledgment", () => {
     };
 
     try {
-      const noAudioCleanup = beginAcknowledgmentPlayback({
-        acknowledgment: { text: "Lovely!", audio: null },
-      });
-      noAudioCleanup();
-
-      let decodedObjectUrls = 0;
-      let decodeCleanup;
-      assert.doesNotThrow(() => {
-        decodeCleanup = beginAcknowledgmentPlayback({
-          acknowledgment: {
-            text: "Lovely!",
-            audio: { contentType: "audio/mpeg", base64: "%" },
-          },
-          createObjectURL() {
-            decodedObjectUrls += 1;
-            return "blob:decoded";
-          },
+      const playLine = ({ audioSrc }) => {
+        playedSources.push(audioSrc);
+        return Promise.resolve();
+      };
+      for (const audio of [
+        undefined,
+        null,
+        { contentType: "audio/mpeg", base64: "AQID" },
+        {
+          id: "peppa-thank-you",
+          src: "https://tracker.invalid/thank-you.mp3",
+          text: "Thank you!",
+        },
+        {
+          id: "peppa-thank-you",
+          src: "//tracker.invalid/thank-you.mp3",
+          text: "Thank you!",
+        },
+        {
+          id: "peppa-thank-you",
+          src: "/assets/audio/other.mp3",
+          text: "Thank you!",
+        },
+        {
+          id: "peppa-thank-you",
+          src: "/assets/audio/peppa-thank-you.mp3",
+          text: "A different phrase!",
+        },
+      ]) {
+        const cleanup = beginAcknowledgmentPlayback({
+          acknowledgment: { text: "Thank you!", audio },
+          playLine,
         });
-      });
-      decodeCleanup?.();
-      assert.equal(decodedObjectUrls, 0);
-
-      let createCleanup;
-      assert.doesNotThrow(() => {
-        createCleanup = beginAcknowledgmentPlayback({
-          acknowledgment: {
-            text: "Lovely!",
-            audio: { contentType: "audio/mpeg", base64: "AQID" },
-          },
-          createObjectURL() {
-            throw new Error("Object URLs are unavailable.");
-          },
-        });
-      });
-      createCleanup?.();
-
-      const revokedUrls = [];
-      let setupCleanup;
-      assert.doesNotThrow(() => {
-        setupCleanup = beginAcknowledgmentPlayback({
-          acknowledgment: {
-            text: "Lovely!",
-            audio: { contentType: "audio/mpeg", base64: "AQID" },
-          },
-          createAudio() {
-            throw new Error("Audio setup is unavailable.");
-          },
-          createObjectURL() {
-            return "blob:setup-error";
-          },
-          revokeObjectURL(url) {
-            revokedUrls.push(url);
-          },
-        });
-      });
-      setupCleanup?.();
-      assert.deepEqual(revokedUrls, ["blob:setup-error"]);
+        cleanup();
+      }
     } finally {
       globalThis.setTimeout = originalSetTimeout;
     }
 
+    assert.deepEqual(playedSources, []);
     assert.deepEqual(scheduledDelays, []);
   });
 });

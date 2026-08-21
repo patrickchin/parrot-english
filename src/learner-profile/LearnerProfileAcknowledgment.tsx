@@ -1,63 +1,61 @@
 import { useEffect } from "react";
-import type { LearnerProfileAcknowledgment as Acknowledgment } from "./learner-profile-api";
+import type {
+  LearnerProfileAcknowledgment as Acknowledgment,
+  LearnerProfileAudio,
+} from "./learner-profile-api";
+import { playAudioLine } from "../media/audio-playback";
 import {
   LearnerProfileCard,
   useLearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import { ActionButton, cx } from "../shared/ui";
 
-type AudioLike = {
-  addEventListener: (event: "ended" | "error", listener: () => void) => void;
-  removeEventListener: (event: "ended" | "error", listener: () => void) => void;
-  pause: () => void;
-  play: () => Promise<void>;
-};
+type PlayLine = typeof playAudioLine;
+
+function isSavedAcknowledgmentAudio(
+  audio: Acknowledgment["audio"],
+  expectedText: string,
+): audio is LearnerProfileAudio {
+  return (
+    audio != null &&
+    typeof audio === "object" &&
+    typeof audio.id === "string" &&
+    /^[a-z0-9-]+$/.test(audio.id) &&
+    typeof audio.src === "string" &&
+    audio.src === `/assets/audio/${audio.id}.mp3` &&
+    audio.text === expectedText
+  );
+}
 
 export function beginAcknowledgmentPlayback({
   acknowledgment,
-  createAudio = (source) => new Audio(source),
-  createObjectURL = (blob) => URL.createObjectURL(blob),
-  revokeObjectURL = (url) => URL.revokeObjectURL(url),
+  createAbortController = () => new AbortController(),
+  playLine = playAudioLine,
 }: {
   acknowledgment: Acknowledgment;
-  createAudio?: (source: string) => AudioLike;
-  createObjectURL?: (blob: Blob) => string;
-  revokeObjectURL?: (url: string) => void;
+  createAbortController?: () => AbortController;
+  playLine?: PlayLine;
 }) {
-  let audio: AudioLike | null = null;
-  let cleanedUp = false;
-  let objectUrl = "";
-
-  const cleanup = () => {
-    if (cleanedUp) return;
-    cleanedUp = true;
-    if (audio) {
-      audio.removeEventListener("ended", cleanup);
-      audio.removeEventListener("error", cleanup);
-      audio.pause();
-    }
-    if (objectUrl) revokeObjectURL(objectUrl);
-  };
-
   const audioData = acknowledgment.audio;
-  if (audioData) {
-    try {
-      const binary = globalThis.atob(audioData.base64);
-      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-      objectUrl = createObjectURL(
-        new Blob([bytes], { type: audioData.contentType }),
-      );
-      audio = createAudio(objectUrl);
-      audio.addEventListener("ended", cleanup);
-      audio.addEventListener("error", cleanup);
-      void audio.play().catch(cleanup);
-    } catch {
-      // Audio is optional feedback. The visible Next action owns navigation.
-      cleanup();
-    }
+  if (!isSavedAcknowledgmentAudio(audioData, acknowledgment.text)) {
+    return () => {};
   }
 
-  return cleanup;
+  const controller = createAbortController();
+  try {
+    void playLine({
+      audioId: audioData.id,
+      audioSrc: audioData.src,
+      signal: controller.signal,
+      text: audioData.text,
+    }).catch(() => {
+      // Audio is optional feedback. The visible Next action owns navigation.
+    });
+  } catch {
+    // Audio is optional feedback. The visible Next action owns navigation.
+  }
+
+  return () => controller.abort();
 }
 
 export function LearnerProfileAcknowledgment({

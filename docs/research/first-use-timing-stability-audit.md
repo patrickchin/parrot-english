@@ -186,23 +186,27 @@ system or eager route bundle is not warranted from this result.
 
 ### Profile submission has a serial upstream tail
 
-For a first-use answer, the worker awaits enrichment, persistence/reload, and
-then acknowledgment TTS before returning the acknowledgment
+At this audit's baseline, a first-use answer awaited enrichment,
+persistence/reload, and then acknowledgment TTS before returning the
+acknowledgment
 ([`worker/learner-profile.ts`](../../worker/learner-profile.ts), lines 371–422).
 The default Groq timeout is 15,000 ms
 ([`worker/groq.ts`](../../worker/groq.ts), lines 19–20 and 52–58), and the default
-ElevenLabs timeout is 10,000 ms
-([`worker/learner-profile-acknowledgment-audio.ts`](../../worker/learner-profile-acknowledgment-audio.ts),
-lines 7–9 and 28–35). These are caps for individual upstream calls, not observed
-waits or an end-to-end guarantee.
+ElevenLabs timeout was 10,000 ms, as preserved in the
+[saved acknowledgment audio baseline](./static-profile-acknowledgment-audio-guidance.md#product-question-and-scope).
+These are caps for individual upstream calls, not observed waits or an
+end-to-end guarantee.
 
-Profile edit is more exposed: changed answers are enriched sequentially at
-`worker/learner-profile.ts` lines 479–535, then their audio is synthesized
-sequentially at lines 555–562. The UI remains in its saving state throughout.
-This is a high potential latency issue, but frequency and production phase
-durations are unknown. It ranks below the acknowledgment behavior because the
-latter is certain whenever one of its explicit media branches occurs and can
-navigate away without consent.
+Profile edit was more exposed: changed answers were enriched sequentially at
+`worker/learner-profile.ts` lines 479–535, then their audio was synthesized
+sequentially at lines 555–562. The UI remained in its saving state throughout.
+This was a high potential latency issue, but frequency and production phase
+durations were unknown. It ranked below the acknowledgment behavior because the
+latter was certain whenever one of its explicit media branches occurred and
+could navigate away without consent.
+
+Update 2026-08-22: the saved-audio branch removed the runtime acknowledgment
+TTS tail and the bulk synthesis loop. Groq enrichment remains on the save path.
 
 ### Talk defers LiveKit, but begins its import after the start API
 

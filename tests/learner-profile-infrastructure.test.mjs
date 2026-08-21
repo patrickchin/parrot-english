@@ -402,7 +402,7 @@ describe("checked-in questionnaire deployment", () => {
     );
   });
 
-  it("documents the runtime secret, JSON snapshots, and dormant legacy tables", () => {
+  it("uses saved acknowledgment audio without a runtime TTS boundary", () => {
     const documentation = [
       readFileSync(new URL("../README.md", import.meta.url), "utf8"),
       readFileSync(
@@ -410,8 +410,26 @@ describe("checked-in questionnaire deployment", () => {
         "utf8",
       ),
     ].join("\n");
+    const workerSource = [
+      readFileSync(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFileSync(new URL("../worker/learner-profile.ts", import.meta.url), "utf8"),
+    ].join("\n");
 
-    assert.match(documentation, /wrangler secret put ELEVENLABS_API_KEY/);
+    assert.equal(
+      existsSync(
+        new URL(
+          "../worker/learner-profile-acknowledgment-audio.ts",
+          import.meta.url,
+        ),
+      ),
+      false,
+    );
+    assert.doesNotMatch(
+      workerSource,
+      /synthesizeAcknowledgment|synthesizeAudio|ElevenLabsEnv|ELEVENLABS_(?:API_KEY|REQUEST_TIMEOUT_MS)|api\.elevenlabs\.io/,
+    );
+    assert.doesNotMatch(documentation, /wrangler secret put ELEVENLABS_API_KEY/);
+    assert.match(documentation, /saved acknowledgment\s+audio/i);
     assert.match(documentation, /answers_json/);
     assert.match(documentation, /checked-in.*questionnaire/i);
     assert.match(documentation, /dormant/i);

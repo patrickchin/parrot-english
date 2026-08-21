@@ -70,6 +70,45 @@ describe("audio playback", () => {
     assert.deepEqual(events, ["play", "pause", "play"]);
   });
 
+  it("cleans up shared media handlers after media and play failures", async () => {
+    for (const failure of ["media-error", "async-play-error", "sync-play-error"]) {
+      let audio;
+      const controls = [];
+      const operation = playAudioLine({
+        audioSrc: "/assets/audio/peppa-thank-you.mp3",
+        text: "Thank you!",
+        env: {
+          createAudio() {
+            audio = {
+              play() {
+                if (failure === "async-play-error") {
+                  return Promise.reject(new Error("Playback was rejected."));
+                }
+                if (failure === "sync-play-error") {
+                  throw new Error("Playback setup failed.");
+                }
+                return Promise.resolve();
+              },
+            };
+            return audio;
+          },
+        },
+        onPlaybackControl(control) {
+          controls.push(control === null ? "cleared" : "ready");
+        },
+      });
+
+      if (failure === "media-error") {
+        audio.onerror?.();
+      }
+
+      await assert.rejects(operation, /Audio playback failed|Playback/);
+      assert.equal(audio.onended, null, failure);
+      assert.equal(audio.onerror, null, failure);
+      assert.deepEqual(controls, ["ready", "cleared"], failure);
+    }
+  });
+
   it("requires a saved audio source", async () => {
     await assert.rejects(
       playAudioLine({

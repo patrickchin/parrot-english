@@ -320,8 +320,9 @@ export function AboutDialog({
             <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
               Current services include Cloudflare for hosting and story art,
               LiveKit for live voice transport, OpenAI for lesson generation
-              and live voice, Groq for speech checks and profile summaries, and
-              ElevenLabs for some spoken profile replies.
+              and live voice, and Groq for speech checks and profile summaries.
+              Some saved lesson and profile audio was made with ElevenLabs
+              before deployment.
             </p>
 
             <BuildCard
