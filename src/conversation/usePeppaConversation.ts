@@ -33,6 +33,130 @@ const COMPLETED_DISCONNECT_REASONS = new Set([
   "task_complete",
 ]);
 
+type ConversationLifecycleOwner = symbol;
+type ConversationStartRequest = symbol;
+
+// Start responses can outlive one hook instance, while the server may reuse a
+// fresh active conversation ID. Keep only claimable requests in this shared
+// registry so a late response neither retires a remounted chat nor blocks every
+// later retry when its request never settles.
+const conversationClaims = new Map<ConversationLifecycleOwner, string>();
+const pendingConversationStarts = new Map<
+  ConversationStartRequest,
+  ConversationLifecycleOwner
+>();
+const pendingConversationStartWaiters = new Set<() => void>();
+const staleConversationStarts = new Set<string>();
+const conversationRetirementPromises = new Map<string, Promise<void>>();
+
+function conversationIsClaimed(conversationId: string) {
+  return [...conversationClaims.values()].includes(conversationId);
+}
+
+function claimConversation(
+  owner: ConversationLifecycleOwner,
+  conversationId: string,
+) {
+  conversationClaims.set(owner, conversationId);
+  staleConversationStarts.delete(conversationId);
+}
+
+function releaseConversationClaim(
+  owner: ConversationLifecycleOwner,
+  conversationId?: string,
+) {
+  if (
+    conversationId === undefined ||
+    conversationClaims.get(owner) === conversationId
+  ) {
+    conversationClaims.delete(owner);
+  }
+}
+
+async function waitForPendingConversationStarts() {
+  while (pendingConversationStarts.size > 0) {
+    await new Promise<void>((resolve) => {
+      pendingConversationStartWaiters.add(resolve);
+    });
+  }
+}
+
+function notifyConversationStartsSettled() {
+  if (pendingConversationStarts.size > 0) return;
+  for (const resolve of pendingConversationStartWaiters) resolve();
+  pendingConversationStartWaiters.clear();
+}
+
+function detachConversationStarts(owner: ConversationLifecycleOwner) {
+  for (const [request, requestOwner] of pendingConversationStarts) {
+    if (requestOwner === owner) pendingConversationStarts.delete(request);
+  }
+  notifyConversationStartsSettled();
+  void flushStaleConversationStarts();
+}
+
+function runConversationRetirement(conversationId: string, reason: string) {
+  const activeRetirement = conversationRetirementPromises.get(conversationId);
+  if (activeRetirement) return activeRetirement;
+  const retirement = finishConversation(conversationId, reason)
+    .then(() => {})
+    .finally(() => {
+      conversationRetirementPromises.delete(conversationId);
+    });
+  conversationRetirementPromises.set(conversationId, retirement);
+  return retirement;
+}
+
+async function flushStaleConversationStarts() {
+  if (pendingConversationStarts.size === 0) {
+    for (const conversationId of staleConversationStarts) {
+      staleConversationStarts.delete(conversationId);
+      if (
+        conversationIsClaimed(conversationId) ||
+        conversationRetirementPromises.has(conversationId)
+      ) {
+        continue;
+      }
+      void runConversationRetirement(
+        conversationId,
+        "superseded_start",
+      ).catch(() => {});
+    }
+  }
+  await Promise.all(
+    [...conversationRetirementPromises.values()].map((retirement) =>
+      retirement.catch(() => {}),
+    ),
+  );
+}
+
+function beginConversationStart(owner: ConversationLifecycleOwner) {
+  const request = Symbol("conversation-start");
+  pendingConversationStarts.set(request, owner);
+  return request;
+}
+
+function settleConversationStart({
+  conversationId,
+  currentOwner,
+  request,
+}: {
+  conversationId: string | null;
+  currentOwner: ConversationLifecycleOwner | null;
+  request: ConversationStartRequest;
+}) {
+  pendingConversationStarts.delete(request);
+  notifyConversationStartsSettled();
+  if (conversationId) {
+    if (currentOwner) {
+      claimConversation(currentOwner, conversationId);
+    } else if (!conversationIsClaimed(conversationId)) {
+      staleConversationStarts.add(conversationId);
+    }
+  }
+  void flushStaleConversationStarts();
+}
+
 export function selectLearnerProfileExperience(
   serverMode: "realtime" | "form",
   userSelectedForm: boolean,
@@ -171,6 +295,7 @@ export function usePeppaConversation({
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [microphoneBusy, setMicrophoneBusy] = useState(false);
   const [turnReady, setTurnReady] = useState(false);
+  const [waitCycle, setWaitCycle] = useState(0);
   const [responseLatencyMs, setResponseLatencyMs] = useState<number | null>(null);
   const [responseLatencyTimer] = useState(() =>
     createResponseLatencyTimer(now),
@@ -178,6 +303,9 @@ export function usePeppaConversation({
   const [error, setError] = useState("");
   const [promptStyle, setPromptStyle] = useState<TalkToPeppaPromptStyle>(
     DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  );
+  const [conversationLifecycleOwner] = useState<ConversationLifecycleOwner>(
+    () => Symbol("conversation-owner"),
   );
   const conversationIdRef = useRef<string | null>(null);
   const conversationAudioPlaybackMeasurementRef =
@@ -193,10 +321,35 @@ export function usePeppaConversation({
   const audioPlaybackBusyRef = useRef(false);
   const audioPlaybackRequestRef = useRef(0);
   const microphoneBusyRef = useRef(false);
+  const retirementReasonsRef = useRef(new Map<string, string>());
   const runtimeRef = useRef(createConversationRuntime());
 
   const isCurrent = useCallback((operation: number) => {
     return operationRef.current === operation;
+  }, []);
+
+  const queueConversationRetirement = useCallback(
+    (conversationId: string, reason: string) => {
+      if (!retirementReasonsRef.current.has(conversationId)) {
+        retirementReasonsRef.current.set(conversationId, reason);
+      }
+    },
+    [],
+  );
+
+  const retireQueuedConversations = useCallback(async () => {
+    while (retirementReasonsRef.current.size > 0) {
+      const [conversationId, reason] = retirementReasonsRef.current.entries()
+        .next().value as [string, string];
+      await waitForPendingConversationStarts();
+      // A concurrently mounted replacement may have adopted the reusable ID.
+      if (conversationIsClaimed(conversationId)) {
+        retirementReasonsRef.current.delete(conversationId);
+        continue;
+      }
+      await runConversationRetirement(conversationId, reason);
+      retirementReasonsRef.current.delete(conversationId);
+    }
   }, []);
 
   const resetResponseLatency = useCallback(() => {
@@ -318,6 +471,7 @@ export function usePeppaConversation({
         setStatus("saving");
         await finalizeConversation(id);
         if (!isCurrent(operation)) return;
+        releaseConversationClaim(conversationLifecycleOwner, id);
         conversationIdRef.current = null;
         await onCompleted();
       } catch {
@@ -327,7 +481,7 @@ export function usePeppaConversation({
         setStatus("error");
       }
     },
-    [isCurrent, onCompleted, purpose],
+    [conversationLifecycleOwner, isCurrent, onCompleted, purpose],
   );
 
   const openLearnerTurn = useCallback(
@@ -467,6 +621,7 @@ export function usePeppaConversation({
           setAudioPlaybackBusy(false);
           setAudioPlaybackError("");
           setTurnReady(false);
+          setWaitCycle((current) => current + 1);
           setStatus("connecting");
           return;
         }
@@ -484,6 +639,9 @@ export function usePeppaConversation({
         return;
       }
       if (event.type === "state") {
+        if (event.state === "reconnecting") {
+          setWaitCycle((current) => current + 1);
+        }
         const connectedTurnReady =
           event.state === "connected" &&
           runtimeRef.current.learnerTurnOpen &&
@@ -532,6 +690,7 @@ export function usePeppaConversation({
           return;
         }
         setError("");
+        setWaitCycle((current) => current + 1);
         setStatus("saving");
         void loadSummary(id, operation);
         return;
@@ -652,6 +811,9 @@ export function usePeppaConversation({
   const start = useCallback(async () => {
     const operation = operationRef.current + 1;
     operationRef.current = operation;
+    detachConversationStarts(conversationLifecycleOwner);
+    let startRequest: ConversationStartRequest | null = null;
+    let returnedConversationId: string | null = null;
     cancelConversationStartMeasurement();
     cancelConversationAudioPlaybackMeasurement();
     const conversationStartTimeline = experienceEvents.start();
@@ -671,6 +833,16 @@ export function usePeppaConversation({
     };
     const previousConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
+    if (previousConversationId) {
+      releaseConversationClaim(
+        conversationLifecycleOwner,
+        previousConversationId,
+      );
+      queueConversationRetirement(
+        previousConversationId,
+        "restarted_after_error",
+      );
+    }
     const previousTransport = transportRef.current;
     transportRef.current = null;
     audioPlaybackBusyRef.current = false;
@@ -680,6 +852,7 @@ export function usePeppaConversation({
     setAudioPlaybackBlocked(false);
     setAudioPlaybackBusy(false);
     setAudioPlaybackError("");
+    setWaitCycle((current) => current + 1);
     setStatus("connecting");
     setTurns([]);
     setLiveTranscript("");
@@ -689,19 +862,30 @@ export function usePeppaConversation({
     runtimeRef.current = createConversationRuntime();
     resetResponseLatency();
     void previousTransport?.disconnect();
-    if (previousConversationId) {
-      void finishConversation(previousConversationId, "restarted_after_error").catch(
-        () => {},
-      );
-    }
     try {
+      await retireQueuedConversations();
+      await flushStaleConversationStarts();
+      if (!isCurrent(operation)) return;
+      startRequest = beginConversationStart(conversationLifecycleOwner);
       const started = await startConversation(
         purpose === "small-chat"
           ? { promptStyle, purpose }
           : { purpose },
       );
-      if (!isCurrent(operation)) return;
       const conversationId = started?.conversation?.id;
+      returnedConversationId =
+        typeof conversationId === "string" && conversationId
+          ? conversationId
+          : null;
+      if (!isCurrent(operation)) {
+        settleConversationStart({
+          conversationId: returnedConversationId,
+          currentOwner: null,
+          request: startRequest,
+        });
+        startRequest = null;
+        return;
+      }
       const participantToken = started?.livekit?.participantToken;
       const livekitUrl = started?.livekit?.url;
       if (
@@ -719,6 +903,12 @@ export function usePeppaConversation({
         measurement.apiReadyMs = measurement.timeline.mark();
       }
       conversationIdRef.current = conversationId;
+      settleConversationStart({
+        conversationId,
+        currentOwner: conversationLifecycleOwner,
+        request: startRequest,
+      });
+      startRequest = null;
       const transport = createTransport({
         token: participantToken,
         url: livekitUrl,
@@ -770,6 +960,13 @@ export function usePeppaConversation({
       }
       if (runtimeRef.current.assistantSpeaking) setStatus("speaking");
     } catch {
+      if (startRequest) {
+        settleConversationStart({
+          conversationId: returnedConversationId,
+          currentOwner: null,
+          request: startRequest,
+        });
+      }
       if (!isCurrent(operation)) return;
       failConversationStartMeasurement(operation);
       cancelConversationAudioPlaybackMeasurement();
@@ -779,6 +976,7 @@ export function usePeppaConversation({
   }, [
     cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
+    conversationLifecycleOwner,
     createTransport,
     failConversationStartMeasurement,
     handleTransportEvent,
@@ -787,7 +985,9 @@ export function usePeppaConversation({
     openLearnerTurn,
     promptStyle,
     purpose,
+    queueConversationRetirement,
     resetResponseLatency,
+    retireQueuedConversations,
   ]);
 
   const finish = useCallback(async () => {
@@ -795,6 +995,7 @@ export function usePeppaConversation({
     if (!conversationId) return;
     const operation = operationRef.current + 1;
     operationRef.current = operation;
+    detachConversationStarts(conversationLifecycleOwner);
     const transport = transportRef.current;
     cancelConversationStartMeasurement();
     cancelConversationAudioPlaybackMeasurement();
@@ -808,6 +1009,7 @@ export function usePeppaConversation({
     setAudioPlaybackBlocked(false);
     setAudioPlaybackBusy(false);
     setAudioPlaybackError("");
+    setWaitCycle((current) => current + 1);
     setStatus("saving");
     setError("");
     if (transportRef.current === transport) transportRef.current = null;
@@ -826,6 +1028,7 @@ export function usePeppaConversation({
   }, [
     cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
+    conversationLifecycleOwner,
     isCurrent,
     loadSummary,
     purpose,
@@ -834,6 +1037,7 @@ export function usePeppaConversation({
 
   const back = useCallback(() => {
     operationRef.current += 1;
+    detachConversationStarts(conversationLifecycleOwner);
     audioPlaybackBusyRef.current = false;
     audioPlaybackRequestRef.current += 1;
     microphoneBusyRef.current = false;
@@ -851,13 +1055,22 @@ export function usePeppaConversation({
     setMicrophoneBusy(false);
     setTurnReady(false);
     onBack();
-    if (id) void finishConversation(id, "left_conversation").catch(() => {});
+    if (id) {
+      releaseConversationClaim(conversationLifecycleOwner, id);
+      queueConversationRetirement(id, "left_conversation");
+    } else {
+      releaseConversationClaim(conversationLifecycleOwner);
+    }
+    void retireQueuedConversations().catch(() => {});
     void transport?.disconnect();
   }, [
     cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
+    conversationLifecycleOwner,
     onBack,
+    queueConversationRetirement,
     resetResponseLatency,
+    retireQueuedConversations,
   ]);
 
   const toggleMicrophone = useCallback(async () => {
@@ -887,6 +1100,7 @@ export function usePeppaConversation({
       runtimeRef.current.awaitingResponse = true;
       setMicrophoneEnabled(false);
       setTurnReady(false);
+      setWaitCycle((current) => current + 1);
       setStatus("thinking");
     } else {
       setLiveTranscript("");
@@ -1025,6 +1239,7 @@ export function usePeppaConversation({
   useEffect(() => {
     if (active) return;
     operationRef.current += 1;
+    detachConversationStarts(conversationLifecycleOwner);
     cancelConversationStartMeasurement();
     cancelConversationAudioPlaybackMeasurement();
     autoStartRef.current = false;
@@ -1049,20 +1264,29 @@ export function usePeppaConversation({
     setError("");
     void transport?.disconnect();
     if (activeConversationId) {
-      void finishConversation(activeConversationId, "left_conversation").catch(
-        () => {},
+      releaseConversationClaim(
+        conversationLifecycleOwner,
+        activeConversationId,
       );
+      queueConversationRetirement(activeConversationId, "left_conversation");
+    } else {
+      releaseConversationClaim(conversationLifecycleOwner);
     }
+    void retireQueuedConversations().catch(() => {});
   }, [
     active,
     cancelConversationAudioPlaybackMeasurement,
     cancelConversationStartMeasurement,
+    conversationLifecycleOwner,
+    queueConversationRetirement,
     resetResponseLatency,
+    retireQueuedConversations,
   ]);
 
   useEffect(
     () => () => {
       operationRef.current += 1;
+      detachConversationStarts(conversationLifecycleOwner);
       cancelConversationStartMeasurement();
       cancelConversationAudioPlaybackMeasurement();
       autoStartRef.current = false;
@@ -1080,15 +1304,26 @@ export function usePeppaConversation({
       const activeConversationId = conversationIdRef.current;
       conversationIdRef.current = null;
       if (activeConversationId) {
-        void finishConversation(activeConversationId, "component_unmounted").catch(
-          () => {},
+        releaseConversationClaim(
+          conversationLifecycleOwner,
+          activeConversationId,
         );
+        queueConversationRetirement(
+          activeConversationId,
+          "component_unmounted",
+        );
+      } else {
+        releaseConversationClaim(conversationLifecycleOwner);
       }
+      void retireQueuedConversations().catch(() => {});
     },
     [
       cancelConversationAudioPlaybackMeasurement,
       cancelConversationStartMeasurement,
+      conversationLifecycleOwner,
+      queueConversationRetirement,
       responseLatencyTimer,
+      retireQueuedConversations,
     ],
   );
 
@@ -1115,6 +1350,7 @@ export function usePeppaConversation({
       status,
       turnReady,
       turns,
+      waitCycle,
     }),
     [
       audioPlaybackBlocked,
@@ -1136,6 +1372,7 @@ export function usePeppaConversation({
       toggleMicrophone,
       turnReady,
       turns,
+      waitCycle,
     ],
   );
 }

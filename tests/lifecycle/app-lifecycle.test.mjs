@@ -271,6 +271,11 @@ function ConversationHookHarness({
     ),
     createElement(
       "output",
+      { "aria-label": "Wait cycle" },
+      String(conversation.waitCycle),
+    ),
+    createElement(
+      "output",
       { "aria-label": "Conversation error" },
       conversation.error,
     ),
@@ -307,6 +312,27 @@ function ConversationHookHarness({
   );
 }
 
+function RemountingConversationHookHarness({ createTransport }) {
+  const [generation, setGeneration] = useState(0);
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "button",
+      {
+        onClick: () => setGeneration((current) => current + 1),
+        type: "button",
+      },
+      "Remount voice",
+    ),
+    createElement(ConversationHookHarness, {
+      createTransport,
+      key: generation,
+      purpose: "small-chat",
+    }),
+  );
+}
+
 function conversationSurfaceProps(overrides = {}) {
   return {
     canFinish: true,
@@ -326,6 +352,7 @@ function conversationSurfaceProps(overrides = {}) {
     status: "listening",
     turnReady: true,
     turns: [],
+    waitCycle: 0,
     ...overrides,
   };
 }
@@ -1708,6 +1735,610 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
+  it("closes a late start response after a newer retry supersedes it", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async setMicrophoneEnabled() {},
+      subscribe() {
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return transport;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    assert.equal(output("Wait cycle").textContent, "1");
+    await click(button("Start voice"));
+    assert.equal(output("Wait cycle").textContent, "2");
+    assert.equal(starts, 2);
+
+    secondStart.resolve(conversationStartResponse("current-conversation"));
+    await waitFor(() =>
+      assert.equal(transports, 1),
+    );
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("lets later retries progress when a superseded Start never settles", async () => {
+    const firstStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        if (starts === 1) return firstStart.promise;
+        return conversationStartResponse(
+          starts === 2 ? "current-conversation" : "replacement-conversation",
+        );
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+    assert.equal(starts, 2);
+
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 2));
+    assert.equal(starts, 3);
+    assert.deepEqual(finished, [
+      { id: "current-conversation", reason: "restarted_after_error" },
+    ]);
+  });
+
+  for (const responseOrder of ["current-first", "stale-first"]) {
+    it(`keeps a reused current conversation open when the ${responseOrder} response arrives first`, async () => {
+      const firstStart = deferred();
+      const secondStart = deferred();
+      const finished = [];
+      let starts = 0;
+      let transports = 0;
+      const transport = {
+        async connect() {},
+        async disconnect() {},
+        async setMicrophoneEnabled() {},
+        subscribe() {
+          return () => {};
+        },
+      };
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/conversations" && init.method === "POST") {
+          starts += 1;
+          return starts === 1 ? firstStart.promise : secondStart.promise;
+        }
+        const finishMatch = String(path).match(
+          /^\/api\/conversations\/([^/]+)\/finish$/,
+        );
+        if (finishMatch && init.method === "POST") {
+          finished.push({
+            id: decodeURIComponent(finishMatch[1]),
+            reason: JSON.parse(init.body).reason,
+          });
+          return json({ conversation: {} });
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        createElement(ConversationHookHarness, {
+          createTransport: () => {
+            transports += 1;
+            return transport;
+          },
+          purpose: "small-chat",
+        }),
+      );
+      await click(button("Start voice"));
+      await click(button("Start voice"));
+      assert.equal(starts, 2);
+
+      const responses =
+        responseOrder === "current-first"
+          ? [secondStart, firstStart]
+          : [firstStart, secondStart];
+      responses[0].resolve(conversationStartResponse("shared-conversation"));
+      await act(async () => {
+        await flush();
+      });
+      if (responseOrder === "current-first") {
+        await waitFor(() => assert.equal(transports, 1));
+      } else {
+        assert.equal(transports, 0);
+      }
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+
+      responses[1].resolve(conversationStartResponse("shared-conversation"));
+      await waitFor(() => assert.equal(transports, 1));
+      await act(async () => {
+        await flush();
+      });
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+    });
+  }
+
+  for (const responseOrder of ["current-first", "stale-first"]) {
+    it(`keeps a reused conversation open across remount when the ${responseOrder} response arrives first`, async () => {
+      const firstStart = deferred();
+      const secondStart = deferred();
+      const finished = [];
+      let starts = 0;
+      let transports = 0;
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/conversations" && init.method === "POST") {
+          starts += 1;
+          return starts === 1 ? firstStart.promise : secondStart.promise;
+        }
+        const finishMatch = String(path).match(
+          /^\/api\/conversations\/([^/]+)\/finish$/,
+        );
+        if (finishMatch && init.method === "POST") {
+          finished.push({
+            id: decodeURIComponent(finishMatch[1]),
+            reason: JSON.parse(init.body).reason,
+          });
+          return json({ conversation: {} });
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        createElement(RemountingConversationHookHarness, {
+          createTransport: () => {
+            transports += 1;
+            return {
+              async connect() {},
+              async disconnect() {},
+              async setMicrophoneEnabled() {},
+              subscribe() {
+                return () => {};
+              },
+            };
+          },
+        }),
+      );
+      await click(button("Start voice"));
+      await click(button("Remount voice"));
+      await click(button("Start voice"));
+      assert.equal(starts, 2);
+
+      const responses =
+        responseOrder === "current-first"
+          ? [secondStart, firstStart]
+          : [firstStart, secondStart];
+      responses[0].resolve(conversationStartResponse("shared-conversation"));
+      await act(async () => {
+        await flush();
+      });
+      if (responseOrder === "current-first") {
+        await waitFor(() => assert.equal(transports, 1));
+      } else {
+        assert.equal(transports, 0);
+      }
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+
+      responses[1].resolve(conversationStartResponse("shared-conversation"));
+      await waitFor(() => assert.equal(transports, 1));
+      await act(async () => {
+        await flush();
+      });
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+    });
+  }
+
+  it("retires a distinct stale response only after a remounted Start settles", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(RemountingConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Remount voice"));
+    await click(button("Start voice"));
+
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await act(async () => {
+      await flush();
+    });
+    assert.deepEqual(finished, []);
+
+    secondStart.resolve(conversationStartResponse("current-conversation"));
+    await waitFor(() => assert.equal(transports, 1));
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("retires a distinct stale Start when Back detaches a hung newer request", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          throw new Error("A detached Start must not create a transport.");
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Start voice"));
+    assert.equal(starts, 2);
+
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await act(async () => {
+      await flush();
+    });
+    assert.deepEqual(finished, []);
+
+    await click(button("Back voice"));
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("waits for an unmounted conversation to retire before remount start", async () => {
+    const retirement = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("unmounted-conversation")
+          : secondStart.promise;
+      }
+      if (
+        path === "/api/conversations/unmounted-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finished.push(JSON.parse(init.body).reason);
+        return retirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(RemountingConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+    await click(button("Remount voice"));
+    await waitFor(() =>
+      assert.deepEqual(finished, ["component_unmounted"]),
+    );
+
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+    retirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    secondStart.resolve(conversationStartResponse("remounted-conversation"));
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("retires the previous conversation before requesting its replacement", async () => {
+    const retirement = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    const createTransport = () => {
+      transports += 1;
+      return {
+        async connect() {},
+        async disconnect() {},
+        async setMicrophoneEnabled() {},
+        subscribe() {
+          return () => {};
+        },
+      };
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("previous-conversation")
+          : secondStart.promise;
+      }
+      if (
+        path === "/api/conversations/previous-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finished.push(JSON.parse(init.body).reason);
+        return retirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.deepEqual(finished, ["restarted_after_error"]),
+    );
+    assert.equal(starts, 1);
+
+    retirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    secondStart.resolve(conversationStartResponse("replacement-conversation"));
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("retries a failed retirement before requesting a replacement", async () => {
+    const successfulRetirement = deferred();
+    const replacementStart = deferred();
+    let retirementCalls = 0;
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("retirement-failure-conversation")
+          : replacementStart.promise;
+      }
+      if (
+        path ===
+          "/api/conversations/retirement-failure-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        retirementCalls += 1;
+        assert.equal(JSON.parse(init.body).reason, "restarted_after_error");
+        return retirementCalls === 1
+          ? json({ error: "finish_failed" }, 503)
+          : successfulRetirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(retirementCalls, 1);
+    assert.equal(starts, 1);
+
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(retirementCalls, 2));
+    assert.equal(starts, 1);
+    successfulRetirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    replacementStart.resolve(
+      conversationStartResponse("replacement-after-retirement-retry"),
+    );
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("waits for Back cleanup before reopening the same chat", async () => {
+    const retirement = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let backCalls = 0;
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("left-conversation")
+          : secondStart.promise;
+      }
+      if (
+        path === "/api/conversations/left-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finished.push(JSON.parse(init.body).reason);
+        return retirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+        onBack: () => {
+          backCalls += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+
+    await click(button("Back voice"));
+    assert.equal(backCalls, 1);
+    await waitFor(() => assert.deepEqual(finished, ["left_conversation"]));
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+
+    retirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    secondStart.resolve(conversationStartResponse("reopened-conversation"));
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
   it("attributes startup failure after room connection to the initial mute control", async () => {
     const experienceTrace = captureExperienceEvents();
     const transport = {
@@ -1970,6 +2601,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("returns a standalone conversation to the main menu and allows reopening it", async () => {
     let conversationStarts = 0;
+    const conversationLifecycle = [];
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/learner-profile" && init.method === "GET") {
         return json({
@@ -1979,6 +2611,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/conversations" && init.method === "POST") {
         conversationStarts += 1;
+        conversationLifecycle.push(`start-${conversationStarts}`);
         assert.deepEqual(JSON.parse(init.body), {
           promptStyle: "tiny-turns",
           purpose: "small-chat",
@@ -1998,6 +2631,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           },
         });
       }
+      if (
+        path === "/api/conversations/conversation-route-1/finish" &&
+        init.method === "POST"
+      ) {
+        conversationLifecycle.push(
+          `finish-1:${JSON.parse(init.body).reason}`,
+        );
+        return json({ conversation: {} });
+      }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
 
@@ -2016,6 +2658,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Start chat"));
     await waitFor(() => text(/Tap, then talk/));
     assert.equal(conversationStarts, 2);
+    assert.deepEqual(conversationLifecycle, [
+      "start-1",
+      "finish-1:left_conversation",
+      "start-2",
+    ]);
   });
 
   it("updates and preserves the latest learner transcript after a microphone turn", async () => {

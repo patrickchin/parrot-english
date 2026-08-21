@@ -35,11 +35,19 @@ describe("child-friendly conversation wait feedback", () => {
 
   it("acknowledges a learner immediately before moving to calm wait copy", () => {
     assert.equal(feedback("thinking", 0).label, "Thinking");
+    assert.equal(feedback("thinking", 0).showLearnerAnswer, true);
     assert.match(feedback("thinking", 0).text, /Your turn is done/);
     assert.equal(feedback("thinking", 1_800).label, "Thinking");
+    assert.equal(feedback("thinking", 1_800).showLearnerAnswer, undefined);
+    assert.equal(feedback("thinking", 1_800).text, "Wait for Peppa.");
     assert.equal(feedback("thinking", 7_000).label, "Thinking");
+    assert.equal(feedback("thinking", 7_000).text, "Still waiting for Peppa.");
     assert.equal(feedback("thinking", 15_000).action, "retry");
     assert.equal(feedback("thinking", 15_000).label, "Chat paused");
+    assert.equal(
+      feedback("thinking", 15_000).text,
+      "Peppa did not answer.",
+    );
   });
 
   it("uses the last measured reply only to delay a premature long-wait warning", () => {

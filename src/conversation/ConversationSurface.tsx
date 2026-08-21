@@ -68,6 +68,7 @@ type ConversationSurfaceProps = {
   status: ConversationSurfaceStatus;
   turnReady: boolean;
   turns: ConversationSurfaceTurn[];
+  waitCycle: number;
 };
 
 const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
@@ -128,9 +129,13 @@ function useConversationWaitFeedback(
   purpose: ConversationPurpose,
   responseLatencyMs: number | null,
   status: ConversationSurfaceStatus,
+  waitCycle: number,
 ) {
-  const [clock, setClock] = useState({ elapsedMs: 0, status });
-  const elapsedMs = clock.status === status ? clock.elapsedMs : 0;
+  const [clock, setClock] = useState({ elapsedMs: 0, status, waitCycle });
+  const elapsedMs =
+    clock.status === status && clock.waitCycle === waitCycle
+      ? clock.elapsedMs
+      : 0;
 
   useEffect(() => {
     if (!isTimedStatus(status)) return;
@@ -139,12 +144,12 @@ function useConversationWaitFeedback(
       responseLatencyMs,
     ).map((milestone) =>
       window.setTimeout(
-        () => setClock({ elapsedMs: milestone, status }),
+        () => setClock({ elapsedMs: milestone, status, waitCycle }),
         milestone,
       ),
     );
     return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [responseLatencyMs, status]);
+  }, [responseLatencyMs, status, waitCycle]);
 
   return isTimedStatus(status)
     ? selectConversationWaitFeedback({
@@ -236,9 +241,11 @@ function ConversationStatus({
   status: ConversationSurfaceStatus;
   waitFeedback: ConversationWaitFeedback | null;
 }) {
+  const waitComplete = Boolean(waitFeedback?.action);
   const busy =
     audioPlaybackBusy ||
     (!audioPlaybackBlocked &&
+      !waitComplete &&
       !(status === "ready" && purpose === "small-chat") &&
       (microphoneBusy ||
       ["ready", "connecting", "thinking", "reconnecting", "saving"].includes(
@@ -267,6 +274,10 @@ function ConversationStatus({
         />
       ) : audioPlaybackBlocked ? (
         <VolumeX aria-hidden="true" className="size-4 shrink-0" />
+      ) : waitFeedback?.action === "retry" ? (
+        <RotateCcw aria-hidden="true" className="size-4 shrink-0" />
+      ) : waitFeedback?.action === "leave" ? (
+        <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
       ) : status === "listening" ? (
         <Mic aria-hidden="true" className="size-4 shrink-0" />
       ) : status === "speaking" ? (
@@ -293,6 +304,12 @@ function ConversationStatus({
         purpose,
         waitFeedback,
       )}
+      {waitComplete && !audioPlaybackBlocked && !audioPlaybackBusy ? (
+        <span className="sr-only">
+          . {waitFeedback?.text}{" "}
+          {waitFeedback?.action === "retry" ? "Try chat again." : "Back."}
+        </span>
+      ) : null}
     </p>
   );
 }
@@ -358,7 +375,7 @@ function selectCaption({
   }
   if (status === "connecting") {
     return {
-      label: "Getting ready",
+      label: waitFeedback?.label ?? "Getting ready",
       role: undefined,
       text: waitFeedback?.text ?? "Starting the voice chat.",
       transcript: null,
@@ -366,7 +383,7 @@ function selectCaption({
   }
   if (status === "reconnecting") {
     return {
-      label: "Trying again",
+      label: waitFeedback?.label ?? "Trying again",
       role: undefined,
       text: waitFeedback?.text ?? "The connection stopped. Trying again.",
       transcript: null,
@@ -389,11 +406,20 @@ function selectCaption({
     };
   }
   if (status === "thinking") {
+    const showLearnerAnswer = Boolean(
+      liveTranscript && waitFeedback?.showLearnerAnswer,
+    );
     return {
-      label: liveTranscript ? "You said" : "Please wait",
+      label: showLearnerAnswer
+        ? "You said"
+        : waitFeedback?.action
+          ? waitFeedback.label
+          : "Please wait",
       role: undefined,
-      text: liveTranscript || waitFeedback?.text || "Wait for Peppa.",
-      transcript: liveTranscript ? "final" : null,
+      text: showLearnerAnswer
+        ? liveTranscript
+        : waitFeedback?.text || "Wait for Peppa.",
+      transcript: showLearnerAnswer ? "final" : null,
     };
   }
   if (status === "speaking") {
@@ -457,7 +483,9 @@ function ConversationCaptions({
               ? "Live transcript"
               : caption.transcript === "final"
                 ? "Your answer"
-                : "Peppa's message"
+                : caption.label === "Peppa"
+                  ? "Peppa's message"
+                  : "Conversation message"
           }
           className={cx(
             "relative grid min-h-full items-center",
@@ -554,6 +582,7 @@ export function ConversationSurface({
   status,
   turnReady,
   turns,
+  waitCycle,
 }: ConversationSurfaceProps) {
   const showAudioRecovery =
     (audioPlaybackBlocked || audioPlaybackBusy) &&
@@ -568,6 +597,7 @@ export function ConversationSurface({
     purpose,
     responseLatencyMs,
     status,
+    waitCycle,
   );
   const caption = selectCaption({
     audioPlaybackBlocked: showAudioRecovery && audioPlaybackBlocked,
@@ -594,9 +624,11 @@ export function ConversationSurface({
   const showPromptStyleSetup = purpose === "small-chat" && status === "ready";
   const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
   const recoveryAction = waitFeedback?.action;
+  const peppaStatus = recoveryAction ? "error" : status;
   const showFinish =
     canFinish &&
     finishLabel &&
+    !recoveryAction &&
     !["ready", "connecting", "saving"].includes(status);
 
   useEffect(() => {
@@ -644,8 +676,8 @@ export function ConversationSurface({
             decoding="async"
             height={1024}
             sizes="(max-height: 420px) 14rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
-            src={responsivePeppaAsset(PEPPA_ASSETS[status], 768)}
-            srcSet={responsivePeppaSrcSet(PEPPA_ASSETS[status])}
+            src={responsivePeppaAsset(PEPPA_ASSETS[peppaStatus], 768)}
+            srcSet={responsivePeppaSrcSet(PEPPA_ASSETS[peppaStatus])}
             width={1024}
           />
         </figure>

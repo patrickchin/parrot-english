@@ -9,6 +9,7 @@ export type TimedConversationStatus =
 export type ConversationWaitFeedback = {
   action?: "leave" | "retry";
   label: string;
+  showLearnerAnswer?: boolean;
   text: string;
 };
 
@@ -60,13 +61,13 @@ export function selectConversationWaitFeedback({
     if (stage === 1) {
       return {
         label: "Getting ready",
-        text: "Still getting the voice chat ready.",
+        text: "Still getting ready.",
       };
     }
     return {
       action: "retry",
       label: "Chat paused",
-      text: "The chat did not start. Tap “Try chat again” below.",
+      text: "The chat did not start.",
     };
   }
 
@@ -74,23 +75,24 @@ export function selectConversationWaitFeedback({
     if (stage === 0) {
       return {
         label: "Thinking",
+        showLearnerAnswer: true,
         text: "Your turn is done. Wait for Peppa.",
       };
     }
     if (stage === 1) {
       return {
         label: "Thinking",
-        text: "Waiting for Peppa’s answer.",
+        text: "Wait for Peppa.",
       };
     }
     if (stage < 3) return {
       label: "Thinking",
-      text: "This is taking longer than usual.",
+      text: "Still waiting for Peppa.",
     };
     return {
       action: "retry",
       label: "Chat paused",
-      text: "Peppa did not answer. Tap “Try chat again” below.",
+      text: "Peppa did not answer.",
     };
   }
 
@@ -101,12 +103,12 @@ export function selectConversationWaitFeedback({
     };
     if (stage === 1) return {
       label: "Trying again",
-      text: "Still trying to connect.",
+      text: "Still trying.",
     };
     return {
       action: "retry",
       label: "Chat paused",
-      text: "The connection did not come back. Tap “Try chat again” below.",
+      text: "The chat stopped.",
     };
   }
 
@@ -136,6 +138,6 @@ export function selectConversationWaitFeedback({
   return {
     action: "leave",
     label: "Finish paused",
-    text: "Finishing took too long. You can go back.",
+    text: "Finishing took too long.",
   };
 }

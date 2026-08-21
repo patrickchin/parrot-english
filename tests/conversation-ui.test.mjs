@@ -42,6 +42,7 @@ function props(overrides = {}) {
     status: "ready",
     turnReady: true,
     turns: [],
+    waitCycle: 0,
     ...overrides,
   };
 }
@@ -168,6 +169,8 @@ describe("accessible realtime conversation surface", () => {
     });
     assert.match(blocked, /Sound is off/);
     assert.match(blocked, /Tap for sound/);
+    assert.match(blocked, /<p[^>]*role="status"/);
+    assert.doesNotMatch(blocked, /aria-busy/);
     assert.match(blocked, /<button[^>]*>[^<]*(?:<[^>]+>)*Tap for sound/);
     assert.doesNotMatch(blocked, /Tap, then talk|Listen to Peppa|audio heard/i);
 
@@ -180,6 +183,8 @@ describe("accessible realtime conversation surface", () => {
     });
     assert.match(pending, /Starting sound/);
     assert.match(pending, /Starting sound\./);
+    assert.match(pending, /<p[^>]*role="status"/);
+    assert.doesNotMatch(pending, /aria-busy/);
     assert.match(pending, /<button[^>]*disabled=""[^>]*>/);
     assert.doesNotMatch(pending, /Tap for sound<\/button>/);
 
@@ -368,6 +373,7 @@ describe("accessible realtime conversation surface", () => {
 
     assert.match(html, /role="status"/);
     assert.match(html, /aria-live="polite"/);
+    assert.doesNotMatch(html, /aria-busy/);
     assert.match(html, /Thinking/);
     assert.match(html, /Waiting for Peppa/);
     assert.match(html, /Your turn is done. Wait for Peppa/);

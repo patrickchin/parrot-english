@@ -124,6 +124,7 @@ function conversationProps(overrides = {}) {
     status: "listening",
     turnReady: true,
     turns: [],
+    waitCycle: 0,
     ...overrides,
   };
 }

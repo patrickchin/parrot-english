@@ -287,6 +287,19 @@ function parrotE2eMockApi(): Plugin {
         }
 
         if (
+          pathname === "/api/conversations/e2e-conversation/finish" &&
+          request.method === "POST"
+        ) {
+          sendMockJson(response, {
+            conversation: {
+              id: "e2e-conversation",
+              status: "finished",
+            },
+          });
+          return;
+        }
+
+        if (
           pathname === "/api/conversations/e2e-conversation/review" &&
           request.method === "PUT"
         ) {

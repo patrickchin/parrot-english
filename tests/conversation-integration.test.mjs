@@ -79,6 +79,7 @@ function conversationProps(overrides = {}) {
     status: "ready",
     turnReady: true,
     turns: [],
+    waitCycle: 0,
     ...overrides,
   };
 }
