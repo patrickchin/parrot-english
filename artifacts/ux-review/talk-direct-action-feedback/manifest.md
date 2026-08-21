@@ -1,17 +1,22 @@
 # Talk direct-action feedback evidence
 
-Captured 2026-08-21 (Asia/Shanghai) from commit
-`feacfe1f2dedd55d5f50e5d5a1fe51443b030c49` on
-`codex/talk-direct-action-feedback`.
+Baseline captured 2026-08-21 (Asia/Shanghai) from commit
+`feacfe1f2dedd55d5f50e5d5a1fe51443b030c49`. After-state capture followed on
+the same date from implementation commit `8e69386`, checked out through its
+documentation descendant `7e3bf1d`.
 
-All JPEGs in this directory are pre-implementation evidence. The implemented
-state is commit `8e69386`; it is represented by rendered-behavior tests, not by
-an after-state screenshot.
+Files beginning `before-`, plus the legacy `after-microphone-390x844.jpg`
+endpoint, are pre-implementation evidence. Files beginning
+`after-starting-sound-` or `after-opening-microphone-` are genuine
+after-implementation captures from the in-app Browser.
 
 ## Provenance
 
 - Surface: Codex in-app Browser only.
-- Local app: `http://127.0.0.1:4177/talk-to-peppa?parrotE2eConversation=audio-blocked`.
+- Baseline local app:
+  `http://127.0.0.1:4177/talk-to-peppa?parrotE2eConversation=audio-blocked`.
+- After-state local app: `http://127.0.0.1:4178/talk-to-peppa` with the
+  `audio-blocked` and `microphone-delayed` deterministic scenarios.
 - Deterministic setup: `PARROT_E2E_MOCK_API=1`,
   `VITE_PARROT_E2E=1`, fixed frontend build metadata, and the repository's
   `audio-blocked` conversation transport.
@@ -24,7 +29,7 @@ an after-state screenshot.
 
 ## Screenshots
 
-| File | Viewport | Baseline moment |
+| File | Viewport | Evidence moment |
 | --- | ---: | --- |
 | `before-starting-sound-280x568.jpg` | 280×568 | Sound-recovery request pending |
 | `before-starting-sound-390x844.jpg` | 390×844 | Sound-recovery request pending |
@@ -32,6 +37,14 @@ an after-state screenshot.
 | `before-starting-sound-1440x900.jpg` | 1440×900 | Sound-recovery request pending |
 | `before-opening-microphone-390x844.jpg` | 390×844 | Focused child action immediately before microphone activation |
 | `after-microphone-390x844.jpg` | 390×844 | Listening endpoint immediately after microphone activation |
+| `after-starting-sound-280x568.jpg` | 280×568 | Implemented sound-recovery request pending |
+| `after-starting-sound-390x844.jpg` | 390×844 | Implemented sound-recovery request pending |
+| `after-starting-sound-640x360.jpg` | 640×360 | Implemented sound-recovery request pending |
+| `after-starting-sound-1440x900.jpg` | 1440×900 | Implemented sound-recovery request pending |
+| `after-opening-microphone-280x568.jpg` | 280×568 | Implemented microphone request pending |
+| `after-opening-microphone-390x844.jpg` | 390×844 | Implemented microphone request pending |
+| `after-opening-microphone-640x360.jpg` | 640×360 | Implemented microphone request pending |
+| `after-opening-microphone-1440x900.jpg` | 1440×900 | Implemented microphone request pending |
 
 `after-microphone-390x844.jpg` is a **pre-implementation baseline endpoint**.
 Here, “after” means after activating the existing control; it does not mean an
@@ -92,9 +105,10 @@ not production latency claims. The deterministic sound operation itself uses a
 - This in-app Browser session reports normal motion and exposes viewport but no
   media-preference emulation. The reduced-motion alternate was therefore not
   visually exercised. The audit stayed on the requested Browser surface.
-- The opening-microphone pending frame needs a deterministic delay hook or a
-  real transport that remains pending long enough for a paint before it can be
-  visually compared.
+- The baseline transport did not hold the opening-microphone pending frame long
+  enough to capture. The implementation added the deterministic
+  `microphone-delayed` test scenario; the after-state PNGs use that scenario,
+  not a real permission prompt.
 - These are implementation-review screenshots, not child usability evidence.
   The four repeated messages, duplicate spinners, and focus loss should be
   treated as design hypotheses to validate with keyboard/switch users and young
@@ -102,12 +116,16 @@ not production latency claims. The deterministic sound operation itself uses a
 
 ## After-state validation
 
-After commit `8e69386`, an in-app Browser comparison was attempted. The active
-binding had disconnected, browser discovery returned no available browser, and
-the retry reported the in-app Browser unavailable. In accordance with the
-Browser workflow, no different screenshot tool or synthetic after image was
-used. No file in this directory should be read as an after-implementation
-capture.
+The first after-state attempt following commit `8e69386` was unavailable when
+the in-app Browser binding disconnected. A later supported in-app Browser
+session succeeded from descendant `7e3bf1d`; it produced the eight JPEGs above.
+No alternate screenshot surface or synthetic image was used.
+
+Direct inspection at 280×568 found the active element remained the pending
+button, with `aria-disabled="true"`, one running animation, and zero horizontal
+or vertical `<main>` overflow in both pending states. Visual review of all four
+sizes found one pending phrase, one spinner, a static Peppa, a stable caption,
+and the existing Finish action contained beside the microphone control.
 
 The deterministic rendered-browser evidence passed on 2026-08-21:
 
@@ -123,6 +141,6 @@ The deterministic rendered-browser evidence passed on 2026-08-21:
   1440×900.
 
 The complete run passed 676/676 unit, integration, lifecycle, and safety tests
-and 193/193 Chromium browser tests. These results do not replace a visual
-comparison, target-browser autoplay/permission check, assistive-technology
-observation, or child/caregiver study.
+and 193/193 Chromium browser tests. The captures close the local visual-review
+gap; they do not replace a target-browser autoplay/permission check,
+assistive-technology observation, or child/caregiver study.

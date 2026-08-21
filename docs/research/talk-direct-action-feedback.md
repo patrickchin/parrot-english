@@ -7,7 +7,7 @@ Branch: `codex/talk-direct-action-feedback`
 Base commit: `feacfe1`
 
 Status: implemented at `8e69386`; automated Chromium, component, lifecycle,
-type, build, and lint validation complete; after-state in-app screenshots,
+type, build, lint, and four-viewport in-app visual validation complete;
 target-browser/media interoperability, assistive-technology observation, and
 child/caregiver testing remain open
 
@@ -567,15 +567,17 @@ motion, stable control geometry, and no main overflow at 280×568, 390×844,
 640×360, and 1440×900. They do not emulate a real browser permission prompt,
 autoplay profile, media device, or assistive technology.
 
-The pre-change in-app Browser evidence remains in
+The paired in-app Browser evidence is in
 [`artifacts/ux-review/talk-direct-action-feedback`](../../artifacts/ux-review/talk-direct-action-feedback/manifest.md).
-An after-state capture was attempted after implementation, but the Browser
-binding disconnected and discovery returned no available in-app browser. Per
-the Browser workflow, no alternate screenshot surface or synthetic comparison
-was substituted. The manifest identifies every image as baseline and links the
-automated after-state evidence. Visual comparison, target-browser/media
-interoperability, assistive-technology observation, and child/caregiver study
-remain open rather than being inferred from tests.
+The first after-state attempt was unavailable after the Browser binding
+disconnected; a later supported session succeeded from documentation descendant
+`7e3bf1d`. It captured both pending actions at 280×568, 390×844, 640×360, and
+1440×900. Direct inspection confirmed one pending phrase, one spinner, a static
+character, retained pending-button focus, and no main overflow. No alternate
+screenshot surface or synthetic comparison was substituted. Target-browser
+media interoperability, assistive-technology observation, and child/caregiver
+study remain open rather than being inferred from this deterministic local
+visual pass.
 
 ## Open questions and revision triggers
 
