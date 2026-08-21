@@ -41,13 +41,15 @@ Priority is the sum, but dependencies and irreversible risk can override it.
 Item 1 is implemented and retained. Its final evidence is in
 [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md).
 
-The immediate stacked improvement is **lesson-start state preservation** on
-`codex/lesson-start-stability`, based on `codex/grown-up-ai-transparency`.
-During personalized-art browser validation, the first tap on **Let's go!**
-transitioned to a not-yet-rendered lazy lesson panel. The route-level Suspense
-fallback unmounted the entire lesson player, repeated the My Lesson fetch, and
-returned the learner to the introduction. This is a directly observed lost
-action and content shift, not a speculative enhancement.
+The stacked **lesson-start state preservation** improvement is implemented on
+`codex/lesson-start-stability` at `783da0f`, based on
+`codex/grown-up-ai-transparency`. During personalized-art browser validation,
+the first tap on **Start lesson** transitioned to a not-yet-rendered lazy lesson
+panel. The route-level Suspense fallback unmounted the entire lesson player,
+repeated the My Lesson fetch, and returned the learner to the introduction.
+The final branch moves the small core lesson-player frame into the main bundle,
+adds about 3.04 kB gzip to that bundle, and protects the transition with a
+single-click/no-refetch browser contract.
 
 Acceptance criteria:
 
@@ -59,6 +61,9 @@ Acceptance criteria:
    or a test-only wait;
 4. lazy transitions do not repeat the My Lesson API request;
 5. the full responsive browser suite passes.
+
+All five acceptance criteria passed. Final validation was 610 unit/lifecycle
+tests, 109 Chromium tests, a production build, and lint with zero errors.
 
 The next visual branch after that is `codex/story-controls-short-landscape`.
 The 2026-08-21 first-use audit found that at 640×360 the real Back, Listen, and
@@ -83,14 +88,29 @@ Retain, revise, or reject: retain
 Next question: Can a caregiver accurately explain the AI/data boundary after one read?
 ```
 
+```text
+Branch: codex/lesson-start-stability
+Base branch / dependency: codex/grown-up-ai-transparency
+Commit: 783da0f
+Hypothesis: keeping the small core lesson frame eager prevents a cold deferred panel from discarding a child's first Start action
+Changed: lesson-player import boundary, single-click/request-count regression, accessible chat-style disclosure found during validation, semantic browser state assertions, screenshot, research memo
+Not changed: creator/editor/story/conversation chunk splitting, lesson state model, field performance instrumentation
+Tests: 610 unit/lifecycle passed; 109 Chromium passed in 35.9 seconds with four workers; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/lesson-start-stability/first-tap-active-280x568.jpg
+Measured result: first tap reaches the learner turn, My Lesson request count stays unchanged, core bundle +3.04 kB gzip
+Risks / limitations: field Start-to-turn latency and low-end device impact are not yet measured
+Retain, revise, or reject: retain
+Next question: Can the story reader keep its primary controls visible at 640×360 without covering story meaning?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
 validation. They are recorded before scoring so they are not lost between
 branches.
 
-1. **High: lesson Start can be discarded by a deferred UI boundary.** Selected
-   now as `codex/lesson-start-stability`.
+1. **High: lesson Start can be discarded by a deferred UI boundary.** Fixed on
+   `codex/lesson-start-stability` at `783da0f`.
 2. **High: story controls are initially off-screen at 640×360.** Planned as
    `codex/story-controls-short-landscape`.
 3. **High: short-landscape lesson speech obscures most of the scene artwork.**

@@ -2,6 +2,7 @@
 
 Last reviewed: 2026-08-21  
 Status: implemented on `codex/lesson-start-stability`  
+Implementation commit: `783da0f`
 Audience: young learners starting a ready-made or generated lesson
 
 ## Question and scope
