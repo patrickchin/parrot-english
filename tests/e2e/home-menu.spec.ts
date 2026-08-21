@@ -171,6 +171,24 @@ test("home uses pictures instead of helper sentences", async ({ page }) => {
   await expectActivityPicturesLoaded(activities);
 });
 
+test("home uses responsive art for its lesson preview", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/");
+
+  const preview = page
+    .getByRole("link", { name: "Play a lesson" })
+    .locator("img");
+  await expect(preview).toHaveAttribute(
+    "srcset",
+    /01-peppas-high-ball-384\.webp 384w.*01-peppas-high-ball-768\.webp 768w/,
+  );
+  await expect
+    .poll(() =>
+      preview.evaluate((image) => (image as HTMLImageElement).currentSrc),
+    )
+    .toMatch(/01-peppas-high-ball-384\.webp$/);
+});
+
 test("desktop home gives the three learner paths equal visual weight", async ({
   page,
 }) => {

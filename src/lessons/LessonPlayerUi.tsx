@@ -736,6 +736,7 @@ export function LessonErrorBanner({
         "lesson-error-banner absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base",
         tone === "help" ? "bg-brand-navy" : "bg-red-800",
       )}
+      data-tone={tone}
       role={tone === "help" ? "status" : "alert"}
     >
       <p className="m-0">{error}</p>

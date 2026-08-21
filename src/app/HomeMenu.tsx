@@ -1,12 +1,28 @@
 import { ArrowRight, Headphones, MessageCircle, Play } from "lucide-react";
 import { cx, InteractiveCardLink } from "../shared/ui";
 
-const LEARNING_PATHS = [
+type LearningPath = {
+  icon: typeof Play;
+  imageClassName: string;
+  imageHeight: number;
+  imageSizes?: string;
+  imageSrc: string;
+  imageSrcSet?: string;
+  imageWidth: number;
+  label: string;
+  tone: "blue" | "navy" | "rose";
+  to: string;
+};
+
+const LEARNING_PATHS: readonly LearningPath[] = [
   {
     icon: Play,
     imageClassName: "object-cover",
     imageHeight: 1024,
+    imageSizes: "(min-width: 768px) 30vw, (min-width: 560px) 112px, 80px",
     imageSrc: "/assets/lesson-covers/01-peppas-high-ball.webp",
+    imageSrcSet:
+      "/assets/lesson-covers/01-peppas-high-ball-384.webp 384w, /assets/lesson-covers/01-peppas-high-ball-768.webp 768w, /assets/lesson-covers/01-peppas-high-ball.webp 1024w",
     imageWidth: 1024,
     label: "Play a lesson",
     tone: "rose",
@@ -32,7 +48,7 @@ const LEARNING_PATHS = [
     tone: "blue",
     to: "/stories",
   },
-] as const;
+];
 
 export function HomeMenu() {
   return (
@@ -56,7 +72,9 @@ export function HomeMenu() {
               icon: Icon,
               imageClassName,
               imageHeight,
+              imageSizes,
               imageSrc,
+              imageSrcSet,
               imageWidth,
               label,
               tone,
@@ -79,7 +97,9 @@ export function HomeMenu() {
                     className={cx("size-full", imageClassName)}
                     decoding="async"
                     height={imageHeight}
+                    sizes={imageSizes}
                     src={imageSrc}
+                    srcSet={imageSrcSet}
                     width={imageWidth}
                   />
                   <span

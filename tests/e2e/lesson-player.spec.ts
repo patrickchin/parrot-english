@@ -1269,10 +1269,65 @@ test("a denied microphone offers calm unscored practice on a narrow phone", asyn
   ).toBeHidden();
 });
 
-test("a generated lesson can finish when recording is unsupported", async ({
+for (const viewport of [
+  { name: "portrait phone", width: 390, height: 844 },
+  { name: "vertical tablet", width: 768, height: 600 },
+]) {
+  test(`a generated lesson can finish without recording on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await mockLongDialogueLesson(page);
+    await page.goto(
+      "/lessons/my/long-dialogue/scenes/1?parrotE2eMicrophone=unsupported",
+    );
+    await page.getByRole("button", { name: "Start lesson" }).click();
+    const microphone = await waitForLearnerTurn(page);
+    await microphone.click();
+
+    const prompt = page.getByRole("region", { name: "Your turn" });
+    const phrase = prompt.getByText(longDialogue, { exact: true });
+    const help = page.getByRole("status", { name: "Speaking help" });
+    const controls = page.getByRole("navigation", { name: "Speaking controls" });
+    const done = controls.getByRole("button", { name: "Done with speaking" });
+    await expect(help).toContainText(
+      "No mic here. Say the words. Then tap Done.",
+    );
+    await expect(
+      controls.getByRole("button", { name: "Try microphone again" }),
+    ).toBeVisible();
+    await expectInsideViewport(prompt, viewport);
+    await expectInsideViewport(phrase, viewport);
+    await expectInsideViewport(help, viewport);
+    await expectInsideViewport(controls, viewport);
+    await expectNoOverlap(prompt, help);
+    await expectNoOverlap(prompt, controls);
+    await expectNoOverlap(help, controls);
+    for (const character of [
+      page.getByRole("img", { name: /^Peppa / }),
+      page.getByRole("img", { name: /^Dolly / }),
+    ]) {
+      await expectInsideViewport(character, viewport);
+      await expectNoOverlap(character, prompt);
+      await expectNoOverlap(character, help);
+      await expectNoOverlap(character, controls);
+    }
+    await expectNoPageOverflow(page);
+
+    await done.click();
+    await expect(
+      page.getByRole("region", { name: "Lesson completion" }),
+    ).toContainText("Lesson complete!");
+    await expect(
+      page.getByRole("region", { name: "Speaking feedback" }),
+    ).toBeHidden();
+  });
+}
+
+test("generated fallback keeps long practice words clear in short landscape", async ({
   page,
 }) => {
-  const viewport = { width: 768, height: 600 };
+  const viewport = { width: 640, height: 360 };
   await page.setViewportSize(viewport);
   await mockLongDialogueLesson(page);
   await page.goto(
@@ -1282,26 +1337,31 @@ test("a generated lesson can finish when recording is unsupported", async ({
   const microphone = await waitForLearnerTurn(page);
   await microphone.click();
 
+  const prompt = page.getByRole("region", { name: "Your turn" });
+  const phrase = prompt.getByText(longDialogue, { exact: true });
   const help = page.getByRole("status", { name: "Speaking help" });
   const controls = page.getByRole("navigation", { name: "Speaking controls" });
-  const done = controls.getByRole("button", { name: "Done with speaking" });
-  await expect(help).toContainText(
-    "No mic here. Say the words. Then tap Done.",
-  );
-  await expect(
-    controls.getByRole("button", { name: "Try microphone again" }),
-  ).toBeVisible();
+  const peppa = page.getByRole("img", { name: /^Peppa / });
+  const dolly = page.getByRole("img", { name: /^Dolly / });
+
+  await expectLongTextReachable(phrase);
+  await expectInsideViewport(prompt, viewport);
   await expectInsideViewport(help, viewport);
   await expectInsideViewport(controls, viewport);
+  await expectNoOverlap(prompt, help);
+  await expectNoOverlap(prompt, controls);
+  await expectNoOverlap(help, controls);
+  for (const character of [peppa, dolly]) {
+    await expectNoOverlap(character, help);
+    await expectNoOverlap(character, prompt);
+    await expectNoOverlap(character, controls);
+  }
   await expectNoPageOverflow(page);
 
-  await done.click();
+  await controls.getByRole("button", { name: "Done with speaking" }).click();
   await expect(
     page.getByRole("region", { name: "Lesson completion" }),
   ).toContainText("Lesson complete!");
-  await expect(
-    page.getByRole("region", { name: "Speaking feedback" }),
-  ).toBeHidden();
 });
 
 test("a failed speech check preserves the turn and offers unscored progress", async ({

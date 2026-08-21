@@ -291,6 +291,11 @@ branches.
 6. **Low: a visible fourth desktop lesson card can remain blank for roughly
    450ms.** Mitigated on `codex/responsive-shelf-art` with smaller responsive
    candidates; loading priority remains unchanged pending field evidence.
+7. **Medium: malformed My Lessons responses can expose raw data-shape text.**
+   The in-app E2E-mock review showed `Cannot read properties of null` in the
+   grown-up tools panel when the listing endpoint was absent. Reproduce with an
+   explicit malformed-response contract, keep diagnostics internal, and show a
+   calm retry message on a separate stacked branch.
 
 ## Parked ideas
 

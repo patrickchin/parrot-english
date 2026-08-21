@@ -146,6 +146,14 @@
     bottom: 5rem;
   }
 
+  [data-presentation="layered"] .lesson-error-banner[data-tone="help"] {
+    top: 4rem;
+    right: auto;
+    bottom: auto;
+    left: 0.75rem;
+    width: calc(54% - 1.125rem);
+  }
+
   [data-presentation="layered"] .lesson-character-slot {
     left: calc(
       (var(--character-index) + 1) * 54% / (var(--character-count) + 1)
@@ -231,6 +239,11 @@
   [data-presentation="layered"] .lesson-error-banner {
     bottom: 5.75rem;
   }
+
+  [data-presentation="layered"] .lesson-error-banner[data-tone="help"] {
+    top: 5rem;
+    bottom: auto;
+  }
 }
 
 @media (min-width: 768px) and (min-height: 481px) {
@@ -266,5 +279,42 @@
   [data-presentation="layered"] .lesson-character-slot {
     bottom: var(--lesson-layered-character-bottom);
     height: var(--lesson-layered-character-height);
+  }
+}
+
+@media (max-width: 559px),
+  (min-width: 560px) and (max-width: 767px) and (min-height: 421px),
+  (min-width: 768px) and (min-height: 481px) {
+  [data-presentation="layered"]:has(
+      .lesson-error-banner[data-tone="help"]
+    )
+    .lesson-error-banner[data-tone="help"] {
+    left: 50%;
+    width: min(46vw, 16rem);
+  }
+
+  [data-presentation="layered"]:has(
+      .lesson-error-banner[data-tone="help"]
+    )
+    .lesson-character-slot {
+    left: calc(12.5% + var(--character-index) * 75%);
+    width: min(24vw, 11rem);
+    min-width: 0;
+    max-width: 11rem;
+  }
+
+  [data-presentation="layered"]:has(
+      .lesson-character-layer[data-character-count="1"]
+    )
+    .lesson-error-banner[data-tone="help"] {
+    left: 70%;
+  }
+
+  [data-presentation="layered"]:has(
+      .lesson-error-banner[data-tone="help"]
+    )
+    .lesson-character-layer[data-character-count="1"]
+    .lesson-character-slot {
+    left: 22%;
   }
 }
