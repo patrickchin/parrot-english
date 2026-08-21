@@ -62,13 +62,15 @@ test("home menu prioritizes the three learner activities", () => {
   );
   assert.deepEqual(activityHrefs, ["/lessons", "/talk-to-peppa", "/stories"]);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
-  assert.match(html, /What do you want to do\?/);
+  assert.match(html, /Tap a picture\./);
   assert.match(html, />Play a lesson</);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
-  assert.match(html, /Listen and speak\./);
-  assert.match(html, /Say hello and chat\./);
-  assert.match(html, /Listen to a story\./);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 3);
+  assert.doesNotMatch(
+    html,
+    /Listen and speak\.|Say hello and chat\.|Listen to a story\.|Tap one\./,
+  );
   assert.doesNotMatch(
     html,
     /friendly English conversation|practice speaking out loud|at your level/i,

@@ -1,27 +1,33 @@
-import { ArrowRight, BookOpen, MessageCircle, Play } from "lucide-react";
+import { ArrowRight, Headphones, MessageCircle, Play } from "lucide-react";
 import { cx, InteractiveCardLink } from "../shared/ui";
 
 const LEARNING_PATHS = [
   {
-    description: "Listen and speak.",
-    eyebrow: "Speak",
     icon: Play,
+    imageClassName: "object-cover",
+    imageHeight: 1024,
+    imageSrc: "/assets/lesson-covers/01-peppas-high-ball.webp",
+    imageWidth: 1024,
     label: "Play a lesson",
     tone: "rose",
     to: "/lessons",
   },
   {
-    description: "Say hello and chat.",
-    eyebrow: "Talk",
     icon: MessageCircle,
+    imageClassName: "object-contain p-1.5",
+    imageHeight: 384,
+    imageSrc: "/assets/characters/peppa/peppa-talking-384.webp",
+    imageWidth: 384,
     label: "Talk to Peppa",
     tone: "navy",
     to: "/talk-to-peppa",
   },
   {
-    description: "Listen to a story.",
-    eyebrow: "Listen",
-    icon: BookOpen,
+    icon: Headphones,
+    imageClassName: "object-cover",
+    imageHeight: 512,
+    imageSrc: "/assets/story-pages/the-red-ball-my-red-ball.webp",
+    imageWidth: 768,
     label: "Story time",
     tone: "blue",
     to: "/stories",
@@ -37,41 +43,62 @@ export function HomeMenu() {
             Parrot English
           </p>
           <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink min-[360px]:text-4xl sm:text-5xl lg:text-7xl">
-            What do you want to do?
+            Tap a picture.
           </h1>
-          <p className="mx-auto m-0 max-w-2xl text-sm font-extrabold leading-snug text-brand-blue min-[360px]:text-base sm:text-xl">
-            Tap one.
-          </p>
         </header>
 
         <nav
           aria-label="Learning activities"
-          className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6"
+          className="grid grid-cols-1 gap-4 short-wide:grid-cols-3 short-wide:gap-3 md:grid-cols-3 md:gap-6"
         >
           {LEARNING_PATHS.map(
-            ({ description, eyebrow, icon: Icon, label, tone, to }) => (
+            ({
+              icon: Icon,
+              imageClassName,
+              imageHeight,
+              imageSrc,
+              imageWidth,
+              label,
+              tone,
+              to,
+            }) => (
               <InteractiveCardLink
                 aria-label={label}
-                className="grid min-h-28 grid-cols-[3.5rem_minmax(0,1fr)_2.75rem] items-center gap-3 p-3 text-left short:min-h-24 short:grid-cols-[3rem_minmax(0,1fr)_2.5rem] short:gap-2.5 short:p-2.5 md:min-h-64 md:grid-cols-1 md:content-center md:justify-items-center md:gap-4 md:p-8 md:text-center"
+                className="grid min-h-24 grid-cols-[5rem_minmax(0,1fr)] items-center gap-3 overflow-hidden p-2.5 text-left short:grid-cols-[4rem_minmax(0,1fr)] short:gap-2 short:p-2 short-wide:!min-h-32 short-wide:!grid-cols-1 short-wide:!content-stretch short-wide:!gap-2 short-wide:!p-2.5 short-wide:!text-center md:min-h-64 md:grid-cols-1 md:content-stretch md:gap-4 md:p-4 md:text-center"
                 key={to}
                 to={to}
               >
-                <Icon
-                  aria-hidden="true"
+                <span
                   className={cx(
-                    "size-14 rounded-2xl p-3.5 text-white short:size-12 short:p-3 md:size-20 md:p-5",
-                    tone === "navy" && "bg-brand-navy shadow-control-navy",
-                    tone === "rose" && "bg-brand-rose shadow-control-pink",
-                    tone === "blue" && "bg-brand-blue shadow-control-navy",
+                    "relative size-20 overflow-hidden rounded-2xl bg-sky-100 short:size-16 short-wide:!h-20 short-wide:!w-28 md:aspect-[3/2] md:h-auto md:w-full",
+                    tone === "navy" && "bg-pink-100",
                   )}
-                />
-                <span className="grid min-w-0 gap-0.5 md:justify-items-center md:gap-2">
-                  <span className="text-[0.6875rem] font-black uppercase tracking-[0.16em] text-brand-blue md:text-xs">
-                    {eyebrow}
+                >
+                  <img
+                    alt=""
+                    className={cx("size-full", imageClassName)}
+                    decoding="async"
+                    height={imageHeight}
+                    src={imageSrc}
+                    width={imageWidth}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className={cx(
+                      "absolute bottom-1 right-1 grid size-7 place-items-center rounded-full border-2 border-white text-white shadow-sm md:size-10",
+                      tone === "navy" && "bg-brand-navy",
+                      tone === "rose" && "bg-brand-rose",
+                      tone === "blue" && "bg-brand-blue",
+                    )}
+                  >
+                    <Icon className="size-3.5 md:size-5" />
                   </span>
+                </span>
+
+                <span className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 short-wide:w-full md:w-full">
                   <strong
                     className={cx(
-                      "text-xl leading-tight min-[360px]:text-2xl md:text-4xl md:leading-none",
+                      "text-xl leading-tight min-[360px]:text-2xl md:text-3xl md:leading-none",
                       tone === "navy" && "text-brand-navy",
                       tone === "rose" && "text-brand-rose",
                       tone === "blue" && "text-brand-blue",
@@ -79,19 +106,16 @@ export function HomeMenu() {
                   >
                     {label}
                   </strong>
-                  <span className="text-sm font-bold leading-snug text-slate-800 min-[360px]:text-base md:max-w-md md:text-lg md:leading-relaxed">
-                    {description}
-                  </span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className={cx(
+                      "size-10 shrink-0 rounded-full p-2 text-white md:size-11 md:p-2.5",
+                      tone === "navy" && "bg-brand-navy",
+                      tone === "rose" && "bg-brand-rose",
+                      tone === "blue" && "bg-brand-blue",
+                    )}
+                  />
                 </span>
-                <ArrowRight
-                  aria-hidden="true"
-                  className={cx(
-                    "size-11 rounded-full p-2.5 text-white short:size-10 short:p-2 md:mt-1 md:size-12 md:p-3",
-                    tone === "navy" && "bg-brand-navy",
-                    tone === "rose" && "bg-brand-rose",
-                    tone === "blue" && "bg-brand-blue",
-                  )}
-                />
               </InteractiveCardLink>
             ),
           )}

@@ -5,16 +5,22 @@ const phoneViewports = [
   { height: 480, name: "short", width: 320 },
   { height: 844, name: "regular", width: 390 },
 ];
+const shortLandscapeViewports = [
+  { height: 360, width: 560 },
+  { height: 360, width: 640 },
+  { height: 360, width: 1280 },
+];
 
 async function expectInsidePage(locator: Locator, page: Page) {
-  await locator.scrollIntoViewIfNeeded();
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
   const viewport = page.viewportSize();
   expect(box).not.toBeNull();
   expect(viewport).not.toBeNull();
   expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
 }
 
 async function expectHomeOwnsVerticalScrolling(page: Page) {
@@ -35,12 +41,26 @@ async function expectHomeOwnsVerticalScrolling(page: Page) {
   expect(Math.abs(metrics.clientHeight - viewport.height)).toBeLessThanOrEqual(1);
   expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(viewport.height + 1);
   expect(metrics.overflowY).toBe("auto");
-  if (metrics.maxScrollTop > 0) {
-    expect(metrics.scrollTop).toBeGreaterThan(0);
-    expect(Math.abs(metrics.scrollTop - metrics.maxScrollTop)).toBeLessThanOrEqual(
-      1,
-    );
-  }
+  expect(metrics.maxScrollTop).toBe(0);
+  expect(metrics.scrollTop).toBe(0);
+}
+
+async function expectActivityPicturesLoaded(activities: Locator) {
+  const pictures = activities.locator("img");
+  await expect(pictures).toHaveCount(3);
+  await expect(activities.getByRole("img")).toHaveCount(0);
+  await expect
+    .poll(() =>
+      pictures.evaluateAll((images) =>
+        images.every(
+          (image) =>
+            image instanceof HTMLImageElement &&
+            image.complete &&
+            image.naturalWidth > 0,
+        ),
+      ),
+    )
+    .toBe(true);
 }
 
 for (const viewport of phoneViewports) {
@@ -51,7 +71,7 @@ for (const viewport of phoneViewports) {
     await page.goto("/");
 
     await expect(
-      page.getByRole("heading", { name: "What do you want to do?" }),
+      page.getByRole("heading", { name: "Tap a picture." }),
     ).toBeVisible();
 
     const activities = page.getByRole("navigation", {
@@ -69,12 +89,13 @@ for (const viewport of phoneViewports) {
       activities.getByRole("link", { name: "Story time" }),
     ).toHaveAttribute("href", "/stories");
     await expect(activities.getByRole("button")).toHaveCount(0);
+    await expectActivityPicturesLoaded(activities);
 
     const accountBox = await page
       .getByRole("button", { name: "Account for Mia" })
       .boundingBox();
     const headingBox = await page
-      .getByRole("heading", { name: "What do you want to do?" })
+      .getByRole("heading", { name: "Tap a picture." })
       .boundingBox();
     expect(accountBox).not.toBeNull();
     expect(headingBox).not.toBeNull();
@@ -99,6 +120,56 @@ for (const viewport of phoneViewports) {
       .toBe(true);
   });
 }
+
+for (const viewport of shortLandscapeViewports) {
+  test(`home keeps all picture choices in view at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+
+    const activities = page.getByRole("navigation", {
+      name: "Learning activities",
+    });
+    await expect(activities.getByRole("link")).toHaveCount(3);
+    const links = await activities.getByRole("link").all();
+    await expectActivityPicturesLoaded(activities);
+
+    for (const link of links) {
+      await expect(link).toBeVisible();
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.y).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+      expect(box!.height).toBeGreaterThanOrEqual(128);
+    }
+
+    const scrollMetrics = await page.getByRole("main").evaluate((main) => ({
+      clientHeight: main.clientHeight,
+      scrollHeight: main.scrollHeight,
+      scrollTop: main.scrollTop,
+    }));
+    expect(scrollMetrics.scrollTop).toBe(0);
+    expect(scrollMetrics.scrollHeight).toBeLessThanOrEqual(
+      scrollMetrics.clientHeight,
+    );
+  });
+}
+
+test("home uses pictures instead of helper sentences", async ({ page }) => {
+  await page.goto("/");
+
+  const activities = page.getByRole("navigation", {
+    name: "Learning activities",
+  });
+  await expect(activities.getByText("Listen and speak.")).toHaveCount(0);
+  await expect(activities.getByText("Say hello and chat.")).toHaveCount(0);
+  await expect(activities.getByText("Listen to a story.")).toHaveCount(0);
+  await expect(page.getByText("Tap one.")).toHaveCount(0);
+  await expectActivityPicturesLoaded(activities);
+});
 
 test("desktop home gives the three learner paths equal visual weight", async ({
   page,
