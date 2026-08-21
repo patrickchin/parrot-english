@@ -28,7 +28,7 @@ Priority is the sum, but dependencies and irreversible risk can override it.
 | 1 | **Grown-up AI and saved-data explanation.** If About states verified AI/data facts in plain language, caregivers can make and revisit an informed choice without adding child-screen complexity. | 5 | 5 | 5 | 4 | 4 | 23 | Implemented on `codex/grown-up-ai-transparency` at `7a36b94` | Every sentence maps to code/deployment evidence; keyboard/mobile dialog tests pass; caregiver comprehension test planned |
 | 2 | **Explicit voice state model and recovery.** If conversation uses stable Getting ready / Your turn / Thinking / character turn / Trying again states with immediate acknowledgement, children can distinguish waiting from failure and recover. | 5 | 4 | 4 | 4 | 3 | 20 | Implemented independently on `codex/voice-state-feedback` at `af311a7` | All state transitions tested; ack p95 target defined; no indefinite spinner; narrow/short screenshots |
 | 3 | **Privacy-safe experience event boundary.** If typed allowlisted events capture milestones without content, the team can locate slow or broken experiences without collecting child speech. | 4 | 4 | 5 | 5 | 2 | 20 | Data review after item 1; `codex/privacy-safe-experience-events` | Event payload forbids content/identifiers; no-op never blocks UI; trace proves milestone ordering |
-| 4 | **Non-reading first-use demonstrations.** If the three learner paths each show one pictorial/audio demonstration rather than helper prose, more beginners can start independently. | 5 | 4 | 2 | 5 | 3 | 19 | Picture-first scope implemented independently on `codex/nonreading-first-use`; commit pending | All routes preview real content; labels remain accessible; no surprise autoplay; direct child task success remains untested |
+| 4 | **Non-reading first-use demonstrations.** If the three learner paths each show one pictorial/audio demonstration rather than helper prose, more beginners can start independently. | 5 | 4 | 2 | 5 | 3 | 19 | Picture-first scope implemented independently on `codex/nonreading-first-use` at `a256a4a` | All routes preview real content; labels remain accessible; no surprise autoplay; direct child task success remains untested |
 | 5 | **Skill-first learner modes.** If grown-ups can choose a reversible support profile (pre-reader, emerging reader, older beginner) separate from topic/age, tasks remain linguistically accessible without becoming babyish. | 5 | 3 | 3 | 5 | 1 | 17 | Needs child/caregiver research and content inventory; independent worktree spike first | Skill-specific placement is brief and reversible; no age-as-ability inference; content coverage measured |
 | 6 | **Content-language lint and preview.** If authored/generated lessons flag long, abstract, unsupported directions and picture mismatches before publish, child-facing complexity becomes reviewable. | 4 | 3 | 3 | 4 | 2 | 16 | Implemented independently on `codex/child-language-content-checks` at `6f0392d`; hand-off `b51ab2c` | Advisory lint catches seeded problems without blocking valid simple content; human override recorded |
 | 7 | **Caregiver/child co-design protocol.** If structured sessions test comprehension, perceived AI identity, recovery, and respectful age adaptation, roadmap confidence stops relying on adult intuition. | 5 | 5 | 5 | 5 | 0 | 20 | External recruitment, consent, safeguarding, ethics, accessibility; research artifact rather than code-first | Approved protocol, diverse sample, observable tasks, no dark-pattern engagement metric |
@@ -102,6 +102,14 @@ art and loading policy while adding crop-preserving 384/768 candidates and
 layout-specific browser selection. On the documented constrained profile, the
 first lesson cover completed in a median 661 ms and the first story cover in
 625 ms, down from about 3.25 s. Every 768 px candidate is below 50 kB.
+
+The independent picture-first branch `codex/nonreading-first-use` is
+implemented at `a256a4a`. Its direct audit found that every destination was
+already picture-led while the home asked for up to 30 words of English and
+clipped choices at small portrait and short-landscape sizes. The final home
+reuses real route art, keeps one visible accessible label per full-card link,
+plays no automatic sound, and fits all three choices without scrolling at every
+reviewed 280–390 px portrait and 560–1280×360 viewport.
 
 ### Hand-off record
 
@@ -223,6 +231,21 @@ Measured result: reviewed error state has no outer overflow; alert and 48 px con
 Risks / limitations: English copy is not child-tested; persistent failures still need a bounded non-voice path; two recovery actions remain after a room was created
 Retain, revise, or reject: retain pending direct child/caregiver recovery testing
 Next question: Does a beginner identify Try again without adult explanation, and when should repeated failure switch to grown-up help or non-voice practice?
+```
+
+```text
+Branch: codex/nonreading-first-use
+Base branch / dependency: codex/lesson-speech-short-landscape at 4c54b7f; independent of later layered-lesson work
+Commit: a256a4a
+Hypothesis: real destination previews plus one short label reduce first-use reading and make all three learner paths immediately findable without surprise audio
+Changed: home heading, route-card previews, compact short-wide arrangement, accessible image/link regression tests, primary-source register, screenshots, research memo
+Not changed: destination screens, route behavior, audio behavior, learner mode, translation, image files
+Tests: 10 focused home Chromium passed; 610 unit/lifecycle passed; 122 Chromium passed in 36.9 seconds with four workers; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/nonreading-first-use at 280×568, 320×480, 390×844, 560×360, 640×360, 1280×360, and 1280×900, with before views at 280×568 and 640×360
+Measured result: choice text fell from 30 to 11 words; 280×568 home scroll height fell 603→568 px; 640×360 fell 535→360 px; all three choices now fit initially at every tested size
+Risks / limitations: no child comprehension study; three existing images add 156,838 bytes to a cold home; lesson/story distinction and localization still need observation
+Retain, revise, or reject: retain provisionally, pending direct child task testing and cold-load measurement
+Next question: Can a young beginner choose lesson, chat, or story from the pictures without adult translation, and recover calmly from a wrong choice?
 ```
 
 ## Newly observed defects

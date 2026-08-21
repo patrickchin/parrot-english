@@ -1,8 +1,8 @@
 # Picture-Led First Use
 
-Last reviewed: 2026-08-21  
-Status: implemented on `codex/nonreading-first-use`  
-Implementation commit: pending first reviewable commit  
+Last reviewed: 2026-08-21
+Status: implemented on `codex/nonreading-first-use`
+Implementation commit: `a256a4a`
 Audience: young beginner English learners who may not read English independently
 
 ## Question and scope
