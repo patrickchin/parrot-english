@@ -244,13 +244,13 @@ Moderated research with children and caregivers is the next evidence step.
 ```text
 Branch: codex/age-cohort-guidance
 Base branch / dependency: codex/continuous-research-program (8baaae7)
-Evidence commit: pending
+Evidence commit: 0850f26
 Hypothesis: Separating language level, experience cohort, and access support can
   make future age adaptation more respectful without making English harder.
 Changed: Research memo, source register, and research index only.
 Not changed: Product UI, content catalogue, data model, age collection, and
   learner defaults.
-Tests: Documentation validation only.
+Tests: git diff --check; local Markdown target check; duplicate source-ID check.
 Screenshots / traces: None; no product implementation.
 Measured result: Not measured. Proposed experiments define the next evidence.
 Risks / limitations: Cohorts remain broad hypotheses and may encode cultural or
