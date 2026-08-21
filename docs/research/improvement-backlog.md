@@ -65,11 +65,19 @@ Acceptance criteria:
 All five acceptance criteria passed. Final validation was 610 unit/lifecycle
 tests, 109 Chromium tests, a production build, and lint with zero errors.
 
-The next visual branch after that is `codex/story-controls-short-landscape`.
-The 2026-08-21 first-use audit found that at 640×360 the real Back, Listen, and
-Next controls require roughly 300px of internal scrolling while a non-interactive
-“Tap Listen” panel is visible. That work should keep the child controls fixed in
-the short-wide right pane and let only secondary grown-up content scroll.
+The stacked visual branch `codex/story-controls-short-landscape` is implemented
+at `445dad4`. The 2026-08-21 first-use audit found that at 640×360 the real Back,
+Listen, and Next controls started entirely below the reader while a
+non-interactive **Tap Listen** cue was visible. The final two-pane layout keeps
+the picture and controls fixed and lets only the right content pane scroll.
+Complete control containment now passes at 640×360 and 1280×360 without a test
+helper scrolling first.
+
+The next visual branch is `codex/lesson-speech-short-landscape`. The same audit
+found that the active lesson speech panel can obscure most of the scene art in
+a short landscape. The investigation should preserve the spoken line, speaker
+identity, progress, and controls while keeping enough unobscured picture context
+for a beginner to understand the line.
 
 ### Hand-off record
 
@@ -103,6 +111,21 @@ Retain, revise, or reject: retain
 Next question: Can the story reader keep its primary controls visible at 640×360 without covering story meaning?
 ```
 
+```text
+Branch: codex/story-controls-short-landscape
+Base branch / dependency: codex/lesson-start-stability
+Commit: 445dad4
+Hypothesis: a fixed picture/control layer with an independently scrolling content pane keeps the real child actions discoverable on short landscape screens
+Changed: short-wide story grid, right-pane scroll ownership, opaque control surface, single-column grown-up form, disclosure name, no-scroll geometry tests, screenshots, research memo
+Not changed: story scripts, typography scale, phone fixed controls, normal-height desktop layout
+Tests: 610 unit/lifecycle passed; 111 Chromium passed in 35.0 seconds with four workers; focused story/art 17 passed; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/story-controls-short-landscape includes before, first use, listening, grown-up scroll, long-title, and phone views
+Measured result: controls moved from y 352.5–415.5 outside the reader to y 249–312 inside it; reader outer scroll remains 0; art remains fixed
+Risks / limitations: inner-scroll discoverability, real safe-area geometry, and child task success remain untested
+Retain, revise, or reject: retain
+Next question: Can short-landscape lesson speech preserve both legible words and enough picture context?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -111,8 +134,8 @@ branches.
 
 1. **High: lesson Start can be discarded by a deferred UI boundary.** Fixed on
    `codex/lesson-start-stability` at `783da0f`.
-2. **High: story controls are initially off-screen at 640×360.** Planned as
-   `codex/story-controls-short-landscape`.
+2. **High: story controls are initially off-screen at 640×360.** Fixed on
+   `codex/story-controls-short-landscape` at `445dad4`.
 3. **High: short-landscape lesson speech obscures most of the scene artwork.**
    Audit the `short-wide` speech placement after story controls.
 4. **High: all ready-made retry lines call the signed-in learner Mia “Bella.”**

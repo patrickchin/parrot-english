@@ -2,6 +2,7 @@
 
 Last reviewed: 2026-08-21
 Status: implemented on `codex/story-controls-short-landscape`
+Implementation commit: `445dad4`
 Audience: young learners using a phone or small tablet sideways
 
 ## Question and scope
