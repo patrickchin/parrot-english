@@ -71,6 +71,7 @@ describe("static audio cache metadata", () => {
       assert.ok(allowedSpeakers.has(line.speaker), `${id} speaker`);
       assert.equal(line.lang, "en-US", `${id} language`);
       assert.doesNotMatch(line.text, /[\u3400-\u9fff]/u, `${id} text`);
+      assert.doesNotMatch(line.text, /\bBella\b/i, `${id} fixed learner name`);
       assert.match(line.src, /^\/assets\/audio\/.+\.mp3$/, `${id} source`);
     }
   });

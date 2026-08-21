@@ -423,16 +423,15 @@ for (const viewport of [
   { name: "small phone landscape", width: 640, height: 360 },
   { name: "large phone landscape", width: 768, height: 360 },
 ]) {
-  test(`the longest built-in lesson line stays readable on a ${viewport.name}`, async ({
+  test(`built-in final feedback stays name-free on a ${viewport.name}`, async ({
     page,
   }) => {
-    const finalLine =
-      "Great job, Bella! Peppa and Dolly are playing together!";
+    const finalLine = "Great job!";
     await page.setViewportSize(viewport);
     await page.goto("/lessons/parrot/04-playground-words/scenes/5");
     await installAudioDelay(page, 25, {
-      delayMs: 5_000,
-      source: "playground-narrator-finished-bella",
+      delayMs: 15_000,
+      source: "narrator-feedback-success",
     });
     await page.getByRole("button", { name: "Start lesson" }).click();
     await waitForLearnerTurn(page);
@@ -443,6 +442,7 @@ for (const viewport of [
     const line = narration.getByText(finalLine, { exact: true });
 
     await expect(line).toBeVisible();
+    await expect(narration).not.toContainText("Bella");
     await expectInsideViewport(narration, viewport);
     await expectLeftOf(artwork, narration);
     await expectNoOverlap(artwork, narration);
@@ -602,6 +602,25 @@ test("checking and feedback replace the speaking action", async ({ page }) => {
   ).toContainText("Peppa Cannot Reach");
 });
 
+test("retry feedback uses universal, name-free copy", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${lessonPath}?parrotE2eScenario=incorrect`);
+  await installAudioDelay(page, 10, {
+    delayMs: 15_000,
+    source: "narrator-feedback-retry.mp3",
+  });
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const microphone = await waitForLearnerTurn(page);
+
+  await microphone.click();
+  await microphone.click();
+
+  const feedback = page.getByRole("region", { name: "Speaking feedback" });
+  await expect(feedback).toContainText("Try once more", { timeout: 3_000 });
+  await expect(feedback).toContainText("Almost! Try again.");
+  await expect(feedback).not.toContainText("Bella");
+});
+
 test("microphone setup gives immediate feedback and blocks duplicate actions", async ({
   page,
 }) => {
@@ -678,7 +697,7 @@ test("completion becomes a focused end screen and replay restarts the story", as
   await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
   await expect(page.getByRole("navigation", { name: "Speaking controls" })).toBeHidden();
   await expect(page.getByAltText(/Peppa/)).toBeHidden();
-  await expect(page.getByText("Great job, Bella! Peppa has her ball!")).toBeHidden();
+  await expect(page.getByText("Great job!", { exact: true })).toBeHidden();
 
   await installAudioDelay(page, 2_000);
   await completion.getByRole("button", { name: "Replay lesson" }).click();
