@@ -30,6 +30,7 @@ Last reviewed: 2026-08-21
 - [Enabled pink action content contrast](./contrast-safe-child-actions-implementation.md)
 - [Shared focus visibility guidance](./shared-focus-visibility-guidance.md)
 - [Shared focus visibility implementation](./shared-focus-visibility-implementation.md)
+- [Story Reader page-focus visibility guidance](./story-reader-page-focus-guidance.md)
 - [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Repeated Talk failure: picture-led lesson fallback](./repeated-talk-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
