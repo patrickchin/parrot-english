@@ -4,9 +4,9 @@ Last reviewed: 2026-08-21
 
 Branch: `codex/privacy-safe-experience-events`
 
-Status: implemented and validated; implementation commit and hand-off pending
+Status: implemented and validated
 
-Implementation commit: pending
+Implementation commit: `526d6d1`
 
 Audience: young English learners, with a deliberately narrower data boundary
 because child voice and personalised lesson flows can contain sensitive content
@@ -203,9 +203,9 @@ existing 180 kB gzip boot guardrail.
 ```text
 Branch: codex/privacy-safe-experience-events
 Base branch / dependency: codex/my-lessons-recovery-copy documentation hand-off 85558fa
-Commit: pending
+Commit: 526d6d1
 Hypothesis: a closed identifier-free milestone boundary can make waiting and failure measurable without collecting child content or introducing production retention
-Changed: strict event schema, no-op sink boundary, conversation/lesson timing integration, lifecycle and rendered-browser traces, privacy/timing research records
+Changed: strict event schema, no-op sink boundary, conversation/lesson timing integration, lifecycle and browser contracts, privacy/timing research records
 Not changed: production collection, analytics/error vendor, event endpoint/store, account/conversation/lesson persistence, consent/legal status, child-facing UI, audible-output measurement
 Tests: 638 unit/lifecycle/safety tests passed; 166 Chromium tests passed in 36.3 seconds; build passed; lint 0 errors with 2 pre-existing generated-file warnings
 Screenshots / traces: artifacts/ux-review/privacy-safe-experience-events/talk-ready-desktop.jpg and talk-learner-turn-desktop.jpg; the page-local event trace is asserted in browser tests and intentionally not retained; no child-facing UI changed

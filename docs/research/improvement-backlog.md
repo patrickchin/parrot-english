@@ -27,7 +27,7 @@ Priority is the sum, but dependencies and irreversible risk can override it.
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | 1 | **Grown-up AI and saved-data explanation.** If About states verified AI/data facts in plain language, caregivers can make and revisit an informed choice without adding child-screen complexity. | 5 | 5 | 5 | 4 | 4 | 23 | Implemented on `codex/grown-up-ai-transparency` at `7a36b94` | Every sentence maps to code/deployment evidence; keyboard/mobile dialog tests pass; caregiver comprehension test planned |
 | 2 | **Explicit voice state model and recovery.** If conversation uses stable Getting ready / Your turn / Thinking / character turn / Trying again states with immediate acknowledgement, children can distinguish waiting from failure and recover. | 5 | 4 | 4 | 4 | 3 | 20 | Implemented independently on `codex/voice-state-feedback` at `af311a7` | All state transitions tested; ack p95 target defined; no indefinite spinner; narrow/short screenshots |
-| 3 | **Privacy-safe experience event boundary.** If typed allowlisted events capture milestones without content, the team can locate slow or broken experiences without collecting child speech. | 4 | 4 | 5 | 5 | 2 | 20 | Data review after item 1; `codex/privacy-safe-experience-events` | Event payload forbids content/identifiers; no-op never blocks UI; trace proves milestone ordering |
+| 3 | **Privacy-safe experience event boundary.** If typed allowlisted events capture milestones without content, the team can locate slow or broken experiences without collecting child speech. | 4 | 4 | 5 | 5 | 2 | 20 | Implemented on `codex/privacy-safe-experience-events` at `526d6d1` | Exact-key payload forbids content/identifiers; no-sink path performs no timing or scheduling work; browser contract proves milestone order |
 | 4 | **Non-reading first-use demonstrations.** If the three learner paths each show one pictorial/audio demonstration rather than helper prose, more beginners can start independently. | 5 | 4 | 2 | 5 | 3 | 19 | Picture-first scope implemented independently on `codex/nonreading-first-use` at `a256a4a` | All routes preview real content; labels remain accessible; no surprise autoplay; direct child task success remains untested |
 | 5 | **Skill-first learner modes.** If grown-ups can choose a reversible support profile (pre-reader, emerging reader, older beginner) separate from topic/age, tasks remain linguistically accessible without becoming babyish. | 5 | 3 | 3 | 5 | 1 | 17 | Needs child/caregiver research and content inventory; independent worktree spike first | Skill-specific placement is brief and reversible; no age-as-ability inference; content coverage measured |
 | 6 | **Content-language lint and preview.** If authored/generated lessons flag long, abstract, unsupported directions and picture mismatches before publish, child-facing complexity becomes reviewable. | 4 | 3 | 3 | 4 | 2 | 16 | Implemented independently on `codex/child-language-content-checks` at `6f0392d`; hand-off `b51ab2c` | Advisory lint catches seeded problems without blocking valid simple content; human override recorded |
@@ -302,6 +302,21 @@ Retain, revise, or reject: retain
 Next question: Can privacy-safe milestone timing reveal slow or broken child journeys without collecting speech, lesson text, names, or stable identifiers?
 ```
 
+```text
+Branch: codex/privacy-safe-experience-events
+Base branch / dependency: codex/my-lessons-recovery-copy documentation hand-off 85558fa
+Commit: 526d6d1
+Hypothesis: a closed identifier-free milestone boundary can make waiting and failure measurable without collecting child content or introducing production retention
+Changed: strict event schema, constant no-op boundary, conversation/lesson timing integration, stale-operation and sink-generation isolation, lifecycle/browser contracts, two reviewed screenshots, privacy/timing research records
+Not changed: production collection, analytics/error vendor, event endpoint/store, account/conversation/lesson persistence, consent/legal status, child-facing UI, painted-control or audible-output measurement
+Tests: 638 unit/lifecycle/safety tests passed; 166 Chromium tests passed in 36.3 seconds; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/privacy-safe-experience-events/talk-ready-desktop.jpg and talk-learner-turn-desktop.jpg; the page-local event trace is asserted in browser tests and intentionally not retained
+Measured result: exact identifier-free events preserve milestone order; a missing sink performs no timing or scheduling work; stale operations, replaced sinks, queued removal, and sink failures are isolated; core index is 484.96 kB raw / 147.02 kB gzip (+6.27 kB raw / +1.94 kB gzip from the base and below the 180 kB gzip boot guardrail)
+Risks / limitations: logical learner readiness is not verified paint; assistant signal is not audible output; microphone permission decision remains inside lesson timing; no field sink, field baseline, or direct child/caregiver study exists
+Retain, revise, or reject: retain the inert boundary; do not enable a production sink without the documented field-sink gate
+Next question: Can the mounted remote media element expose first-audible feedback without changing autoplay, replay, accessibility, or privacy behavior?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -328,6 +343,11 @@ branches.
    Fixed on `codex/my-lessons-recovery-copy` at `f5b28b2` with a fixed public
    recovery state, complete list-response validation, sanitized diagnostic
    causes, and stable retry focus.
+8. **High: a deferred Finish continuation could revive a conversation the child
+   had left or disconnect a newly opened transport.** Fixed on
+   `codex/privacy-safe-experience-events` at `526d6d1` by invalidating the old
+   operation immediately, retaining transport ownership across awaits, and
+   regression-testing Finish → Back → reopen → late completion.
 
 ## Parked ideas
 
