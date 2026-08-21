@@ -3,6 +3,7 @@
 Last reviewed: 2026-08-21  
 Branch: `codex/child-friendly-talk-errors`  
 Base: `4c54b7f` (`codex/lesson-speech-short-landscape`)
+Implementation commit: `1613ba1`
 
 ## Question and scope
 
@@ -127,8 +128,11 @@ The mounted lifecycle suite also verifies that an unexpected disconnect is not
 presented as completion and that a repeat-audio transport exception returns to
 the learner turn with child-facing copy.
 
-Final full-suite counts and the implementation commit are recorded in the
-[improvement backlog hand-off](./improvement-backlog.md).
+Final validation passed 611 unit/lifecycle tests and 120 Chromium tests with
+four workers. The production build passed. Lint reported zero errors and two
+pre-existing unused-disable warnings in generated `worker-configuration.d.ts`.
+The implementation commit and hand-off are recorded in the
+[improvement backlog](./improvement-backlog.md).
 
 ## Measurement and safety guardrails
 
