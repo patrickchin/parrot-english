@@ -39,7 +39,7 @@ export function cx(
 }
 
 const focusClassName =
-  "focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink";
+  "focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-focus-dark focus-visible:ring-4 focus-visible:ring-focus-light";
 
 export function fieldClassName({
   className,
@@ -71,7 +71,7 @@ export function controlClassName({
   size?: ControlSize | "none";
 } = {}) {
   return cx(
-    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter,box-shadow] duration-150 ease-out motion-reduce:transition-none",
+    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter] duration-150 ease-out motion-reduce:transition-none",
     focusClassName,
     interaction === "button" &&
       "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
@@ -374,7 +374,7 @@ export function SegmentedButton({
       aria-pressed={role === "tab" ? undefined : selected}
       aria-selected={role === "tab" ? selected : undefined}
       className={cx(
-        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[translate,filter,box-shadow] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[translate,filter] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
         focusClassName,
         selected
           ? "bg-brand-navy text-white shadow-control-navy"
