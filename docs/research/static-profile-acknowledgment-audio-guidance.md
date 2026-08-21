@@ -1,9 +1,12 @@
 # Saved profile acknowledgment audio
 
-Status: selected for implementation  
-Research date: 2026-08-22  
+Status: implemented and retained provisionally
+Research date: 2026-08-22
 Audience in scope: children around age five who may be pre-readers or Pre-A1
 English learners, plus the grown-ups helping them
+
+Implementation and verification are recorded in [saved profile acknowledgment
+audio implementation](./static-profile-acknowledgment-audio-implementation.md).
 
 ## Decision
 
@@ -198,9 +201,9 @@ and level.
 Audio can support learners who cannot yet read the confirmation. The problem is
 the runtime dependency, not the existence of the saved cue.
 
-## Acceptance and evidence plan
+## Acceptance and evidence outcome
 
-The implementation should prove that:
+The implementation and tests establish that:
 
 - every single-answer and bulk changed-answer response returns the exact
   `peppa-thank-you` ID, source, and transcript;
@@ -216,8 +219,8 @@ The implementation should prove that:
   base64, `Blob`, or object-URL work;
 - playback end, error, rejection, unmount, missing media, and malformed legacy
   media remain idempotent cleanup paths and never navigate;
-- delaying or failing the MP3 request does not delay the visible `Thank you!`,
-  focused heading, or enabled Next action; and
+- a pending or failed playback operation does not hide the visible `Thank
+  you!`, focused heading, or enabled Next action; and
 - ultra-narrow, short-landscape, and desktop layouts preserve their previous
   containment, scroll origin, focus, and target geometry.
 

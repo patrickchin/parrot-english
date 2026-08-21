@@ -552,6 +552,22 @@ Retain, revise, or reject: retain provisionally pending direct child/caregiver c
 Next branch: codex/static-profile-acknowledgment-audio to remove the now-redundant runtime ElevenLabs request; later test a non-control-like reading-position cue for focused profile headings
 ```
 
+```text
+Branch: codex/static-profile-acknowledgment-audio
+Base branch / dependency: codex/deterministic-profile-acknowledgments documentation hand-off a94fc9c
+Research commit: a7f6cd7
+Implementation commit: 41bb210
+Hypothesis: one checked-in acknowledgment asset can preserve the short spoken cue for pre-readers while removing a redundant production provider request, timeout tail, inline media payload, and browser reconstruction work
+Changed: form-profile single, retry, and bulk responses return the exact peppa-thank-you static descriptor; runtime acknowledgment TTS module/env/dependency/provider request removed; browser validates and plays the same-origin source through the shared abortable player; current About/architecture/privacy/timing documentation; asset, error, compatibility, native-media, and visual evidence
+Not changed: visible Thank you! copy, explicit Next pacing, profile questions/order, Groq factual enrichment, D1 persistence or schemas, realtime conversation speech, saved-audio generation, audio bytes, routes, layout, translations, or dependencies
+Tests: 88/88 focused player/profile/API/Worker/infrastructure/audio; 677/677 full unit/integration/lifecycle; 8/8 focused Chromium plus 20/20 repeated new audio cases; 238/238 full Chromium; production build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: two genuine in-app Browser JPEGs and a provenance/integrity manifest in artifacts/ux-review/static-profile-acknowledgment-audio at 390×844 and 640×360
+Measured result: zero runtime acknowledgment-synthesis calls or waits; removed the prior 10-second default/30-second capped TTS tail and sequential bulk synthesis loop; selected MP3 is 17,598 bytes, approximately 1.071 seconds, and browser metadata loads as audio/mpeg; screenshots retain focus, scroll origin, zero horizontal overflow, and the prior layout
+Risks / limitations: no universal millisecond saving; Groq and D1 remain on the save path; repository metadata and media loading do not prove the audible words, physical output, child hearing, voice quality, level, autoplay reliability, assistive-technology overlap, or comprehension; deployed-secret deletion remains an authorized post-rollout operation
+Retain, revise, or reject: retain provisionally pending human listening and target-device/assistive-technology/child review
+Next branch: codex/profile-heading-reading-cue stacked on this documentation hand-off; then investigate the Story Reader short-wide prompt affordance
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -619,6 +635,21 @@ branches.
     The page-focus branch causes zero prompt or scroll-geometry change. Study a
     discoverable short-wide content-pane affordance separately without reducing
     story font size or silently moving focus away from the sentence.
+16. **High: deterministic form-profile saves still waited for redundant runtime
+    acknowledgment synthesis.** Fixed on
+    `codex/static-profile-acknowledgment-audio` at `41bb210`. The Worker now
+    returns the checked-in `peppa-thank-you` descriptor with zero runtime
+    acknowledgment-TTS calls or waits, and bulk edits no longer run a serial
+    synthesis loop. The removed 10-second default and 30-second cap were code
+    bounds, not observed production latency. Groq enrichment and D1 persistence
+    remain on the save path.
+17. **Medium: programmatically focused profile headings resemble text fields.**
+    The closed browser outline appears on setup, every question, and every
+    acknowledgment—13 arrivals in a complete six-question flow—and sits directly
+    above a genuine outlined textarea on question screens. Research a separated
+    reading-position marker that preserves focus and forced-colors feedback
+    without changing copy, timing, or geometry on
+    `codex/profile-heading-reading-cue`.
 
 ## Parked ideas
 
