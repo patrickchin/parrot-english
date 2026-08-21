@@ -217,6 +217,11 @@ function ConversationHookHarness({
       { onClick: conversation.onToggleMicrophone, type: "button" },
       conversation.microphoneEnabled ? "End my turn" : "Start my turn",
     ),
+    createElement(
+      "button",
+      { onClick: conversation.onRepeatAudio, type: "button" },
+      "Repeat voice",
+    ),
   );
 }
 
@@ -1092,6 +1097,71 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(button("Start my turn").textContent, "Start my turn");
   });
 
+  it("hides transport detail when repeating Peppa's voice fails", async () => {
+    let listener = () => {};
+    const transport = {
+      async commitUserTurn() {},
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        throw new Error("LiveKit data packet send failed");
+      },
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-repeat-error" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: [],
+          summaryMode: "none",
+          version: 2,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await click(button("Repeat voice"));
+
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation error"]')
+          .textContent,
+        "Peppa could not say that again. Keep talking.",
+      ),
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "listening",
+    );
+  });
+
   it("toggles the learner turn with Space without hijacking focused controls", async () => {
     const toggles = [];
     const backs = [];
@@ -1332,7 +1402,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.match(
       document.querySelector('output[aria-label="Conversation error"]')
         .textContent,
-      /disconnected before the conversation finished/i,
+      /chat stopped\. Tap Try again/i,
     );
   });
 

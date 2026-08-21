@@ -117,11 +117,64 @@ test("reconnecting and error states keep recovery language in the same stage", a
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
   await startSmallChat(page);
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Peppa cannot talk now. Tap Try again.",
+  );
+  await expect(page.getByText(/voice room/i)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
+});
+
+test("a technical start response becomes one literal child recovery step", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.route("**/api/conversations", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    await route.fulfill({
+      json: {
+        error: "conversation_unavailable",
+        message: "LIVEKIT_URL is not configured.",
+      },
+      status: 503,
+    });
+  });
+  await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
+
+  const alert = page.getByRole("alert");
+  await expect(alert).toHaveText("Peppa cannot talk now. Tap Try again.");
+  await expect(page.getByText(/LIVEKIT_URL|conversation request/i)).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+});
+
+test("a technical finish response names the control that retries the save", async ({
+  page,
+}) => {
+  await page.route("**/api/conversations/e2e-conversation/finish", async (route) => {
+    await route.fulfill({
+      json: {
+        error: "conversation_unavailable",
+        message: "D1 transaction failed while ending session.",
+      },
+      status: 503,
+    });
+  });
+  await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
+  await page.getByRole("button", { name: "Finish chat" }).click();
+
+  await expect(page.getByRole("alert")).toHaveText(
+    "The chat did not finish. Tap Finish chat again.",
+  );
+  await expect(page.getByText(/D1 transaction|conversation request/i)).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("button", { name: "Finish chat" })).toBeVisible();
 });
 
 test("profile completion uses the stable saving stage", async ({ page }) => {
