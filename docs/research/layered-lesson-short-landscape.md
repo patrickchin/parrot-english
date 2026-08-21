@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-21
 Status: implemented on `codex/layered-lesson-short-landscape`
-Implementation commit: pending final validation
+Implementation commit: `010dc4f`
 Audience: young beginner English learners using generated **My Lessons** sideways
 
 ## Question and scope
@@ -172,8 +172,11 @@ keeps listening playback controls clear.
 - [After: keyboard End reveals the end of the contained prompt](../../artifacts/ux-review/layered-lesson-short-landscape/after-long-prompt-keyboard-end-640x360.jpg)
 - [Stabilized vertical strategy for a long prompt at 768×600](../../artifacts/ux-review/layered-lesson-short-landscape/after-long-prompt-768x600.jpg)
 
-Final validation results will be recorded in the hand-off commit after the
-complete browser, unit, build, lint, and manual console passes.
+Final validation passed with 610 unit/lifecycle tests and 147 Chromium browser
+tests. The production build passed. Lint completed with zero errors and the two
+existing generated-file warnings. A final independent diff review found no
+remaining actionable issue, and the manual browser review produced no console
+warning or error.
 
 ## Measurement and rollback guardrails
 

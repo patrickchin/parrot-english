@@ -154,15 +154,15 @@ Next question: Can layered characters and speech form the same stable relationsh
 ```text
 Branch: codex/layered-lesson-short-landscape
 Base branch / dependency: codex/lesson-speech-short-landscape
-Commit: pending final validation
+Commit: 010dc4f
 Hypothesis: separating the supported layered characters from the learning pane preserves picture meaning and child actions on genuinely shallow landscape screens
 Changed: one/two-character shallow geometry, continuous compact-to-roomy vertical character geometry, layered presentation regression hooks, tail removal in two-pane state, measured-overflow keyboard/touch fallback for speech/prompt/feedback, overlap tests, screenshots, research memo
 Not changed: generated lesson content limits, audio timing, normal-height layout, character catalog
-Tests: 29 boundary/long-copy Chromium cases passed; full validation pending
+Tests: 29 boundary/generated-long-copy Chromium cases passed; 610 unit/lifecycle and 147 full Chromium passed; build passed; lint 0 errors with 2 pre-existing generated-file warnings
 Screenshots / traces: artifacts/ux-review/layered-lesson-short-landscape at 560×360, 640×360, 768×360, 844×421, and 768×600
 Measured result: zero character/HUD/dialogue/control overlap across the 360–807px sampled boundaries; reviewed 13-word line fits without scrolling in the shallow pane; 44×44 control floor preserved
 Risks / limitations: direct child speaker matching, inner-scroll discovery, localization, text zoom, and real safe-area geometry remain untested
-Retain, revise, or reject: retain pending full validation
+Retain, revise, or reject: retain
 Next question: Do children correctly match the tail-free speaker label with the active character?
 ```
 
