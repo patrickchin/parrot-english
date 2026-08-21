@@ -146,11 +146,11 @@ Next question: Can layered characters and speech form the same stable relationsh
 ```text
 Branch: codex/child-friendly-talk-errors
 Base branch / dependency: 4c54b7f (codex/lesson-speech-short-landscape)
-Commit: recorded after the implementation commit
+Commit: 1613ba1
 Hypothesis: phase-specific literal recovery copy helps a young beginner act without exposing request, database, configuration, or voice-transport language
 Changed: conversation-hook error boundary, start/disconnect/finish/repeat copy, accessible failure tests, narrow and short-landscape screenshots, research memo
 Not changed: server response payloads, ConversationApiError diagnostics, authentication errors, microphone-permission copy, non-voice fallback
-Tests: pending final full validation
+Tests: 611 unit/lifecycle passed; 120 Chromium passed in 38.1 seconds with four workers; build passed; lint 0 errors with 2 pre-existing generated-file warnings
 Screenshots / traces: artifacts/ux-review/child-friendly-talk-errors at 280×568 and 640×360
 Measured result: reviewed error state has no outer overflow; alert and 48 px control row remain visible at both sizes
 Risks / limitations: English copy is not child-tested; persistent failures still need a bounded non-voice path; two recovery actions remain after a room was created
@@ -175,9 +175,8 @@ branches.
 4. **High: all ready-made retry lines call the signed-in learner Mia “Bella.”**
    Separate authored character data from the current learner name, or use
    name-free retry language.
-5. **Medium: generic Talk request failures use grown-up API language.** Map
-   Fixed on `codex/child-friendly-talk-errors`; implementation commit recorded
-   in the hand-off below.
+5. **Medium: generic Talk request failures use grown-up API language.** Fixed
+   on `codex/child-friendly-talk-errors` at `1613ba1`.
 6. **Low: a visible fourth desktop lesson card can remain blank for roughly
    450ms.** Measure eager-image coverage and placeholder behavior before
    increasing eager loading.
