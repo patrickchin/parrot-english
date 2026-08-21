@@ -154,7 +154,7 @@ function LessonCardView({
             </span>
             <span
               aria-hidden="true"
-              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full bg-brand-pink px-3 text-sm font-black text-white shadow-control-pink"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full bg-brand-pink px-3 text-sm font-black text-brand-action-ink shadow-control-pink"
             >
               <Play aria-hidden="true" className="size-4 fill-current" />
               <span className="hidden sm:inline">Play</span>

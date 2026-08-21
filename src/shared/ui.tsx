@@ -108,7 +108,7 @@ export function controlClassName({
       "size-12 min-h-0 min-w-0 shrink-0 gap-1 p-0 text-sm min-[360px]:w-auto min-[360px]:min-w-20 sm:min-w-21",
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
     size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
-    variant === "brand" && "bg-brand-pink text-white",
+    variant === "brand" && "bg-brand-pink text-brand-action-ink",
     variant === "navy" && "bg-brand-navy text-white",
     variant === "rose" && "bg-brand-rose text-white",
     variant === "success" && "bg-brand-green text-white",

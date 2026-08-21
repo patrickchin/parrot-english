@@ -113,7 +113,7 @@ export function StoryList() {
                       {story.title}
                     </h3>
 
-                    <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-white shadow-control-pink">
+                    <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-brand-action-ink shadow-control-pink">
                       <Headphones aria-hidden="true" className="size-5" />
                       Listen
                     </span>
