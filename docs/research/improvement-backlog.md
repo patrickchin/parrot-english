@@ -166,14 +166,14 @@ comprehension remain explicit validation gates.
 
 The parallel first-use language, timing, and visual audits are complete on
 `codex/first-use-ux-audit`. Their selected child-paced acknowledgment change is
-implemented on `codex/profile-acknowledgment-control` at `4dd2ad3`. Optional
-audio no longer navigates, the existing **Next** action is the sole advance
-owner, and the acknowledgment heading receives focus when it replaces the
-submitted question. The selected next stacked branch is
-`codex/profile-fallback-viewport-stability`, which reserves the profile art and
-keeps profile context and actions visible at the four responsive targets. This
-order fixed deterministic content loss before layout and lets the layout branch
-test the now-stable, child-paced acknowledgment boundary.
+implemented on `codex/profile-acknowledgment-control` at `4dd2ad3`. The stacked
+viewport-stability change is implemented on
+`codex/profile-fallback-viewport-stability` at `1152866`: profile art reserves
+its geometry, short screens use deliberate compositions, and each same-route
+step restores its visible/focused origin. The selected next stacked branch is a
+contrast-safe child-action improvement. This sequence fixed deterministic
+content loss before layout, then removed movement and hidden actions before
+changing the shared visual token.
 
 ### Hand-off record
 
@@ -463,6 +463,22 @@ Retain, revise, or reject: retain provisionally
 Next branch: codex/profile-fallback-viewport-stability stacked on this documentation hand-off
 ```
 
+```text
+Branch: codex/profile-fallback-viewport-stability
+Base branch / dependency: codex/profile-acknowledgment-control documentation hand-off 7a89a39
+Research commit: 7ef2e35
+Implementation commit: 1152866
+Hypothesis: reserved art, viewport-shaped composition, and one-time step focus keep the current profile task visible without changing its flow
+Changed: intrinsic image geometry; short and short-wide layout; step-keyed scroll/focus hand-off; length-aware valid acknowledgment layout; deterministic multi-step/long-copy fixtures; rendered regression matrix
+Not changed: profile questions/copy/order, bilingual support, audio/transcription, skip behavior, API/persistence, telemetry, dependencies, or explicit acknowledgment pacing
+Tests: 93/93 focused component/lifecycle; 14/14 focused Chromium; 679/679 full unit/integration/lifecycle/safety; 207/207 full Chromium; TypeScript/build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: twelve in-app Browser JPEGs and manifest in artifacts/ux-review/profile-fallback-viewport-stability
+Measured result: <=1px delayed-image movement across 16 surface/viewport cases; zero-scroll visible flow at 280x568, 390x844, 640x360, and 1440x900; exact 160-character boundary remains visible with Next
+Risks / limitations: target devices/AT, zoom/text spacing, localization, real latency/CLS, and child/caregiver comprehension remain untested; maximum valid feedback is still linguistically dense
+Retain, revise, or reject: retain provisionally
+Next branch: contrast-safe child actions stacked on this documentation hand-off
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -499,12 +515,16 @@ branches.
    `codex/profile-acknowledgment-control` at `4dd2ad3`; **Next** is now the sole
    advance owner and each message receives focus.
 10. **High: the form-profile fallback moves and hides its first action or next
-    step at narrow and short viewports.** Confirmed again by the initial
-    640×360 acknowledgment capture; selected next on
-    `codex/profile-fallback-viewport-stability`.
+    step at narrow and short viewports.** Fixed on
+    `codex/profile-fallback-viewport-stability` at `1152866` with intrinsic art
+    geometry, compact compositions, and step-keyed scroll/focus restoration.
 11. **High: normal-size white text on the default pink action token is 3.27:1.**
     Keep as a separate contrast-safe shared-control branch after profile
     viewport stability.
+12. **Medium: a valid 160-character acknowledgment becomes a ten-line reading
+    wall at 280×568.** The viewport branch keeps the full text and **Next**
+    visible; a separate generated-language contract should make the common case
+    substantially shorter and simpler before claiming beginner comprehension.
 
 ## Parked ideas
 

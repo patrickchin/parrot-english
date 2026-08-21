@@ -42,6 +42,7 @@ Last reviewed: 2026-08-21
 - [Picture-led first use](./picture-led-first-use.md)
 - [Privacy-safe experience events](./privacy-safe-experience-events.md)
 - [Child-paced profile acknowledgments](./profile-acknowledgment-control.md)
+- [Profile fallback viewport stability](./profile-fallback-viewport-stability.md)
 - [Profile fallback viewport-stability guidance](./profile-fallback-viewport-stability-guidance.md)
 - [Remote audio playback readiness and honest feedback](./remote-audio-playback.md)
 - [Responsive lesson and story shelf artwork](./responsive-shelf-art.md)
