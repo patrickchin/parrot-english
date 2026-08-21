@@ -115,7 +115,7 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
   let panel = shelf.getByRole("region", { name: /Start here stories/ });
 
-  const grownUpOptions = shelf.getByText("Grown-up options", { exact: true });
+  const grownUpOptions = shelf.getByLabel("Grown-up options");
   const levelTabs = shelf.getByRole("tablist", {
     name: "Pick a story group",
   });
@@ -190,6 +190,7 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
 
   await page.goto("/stories?level=not-a-level");
   await expect(page).toHaveURL(/\/stories$/);
+  await shelf.getByLabel("Grown-up options").click();
   await expect(
     shelf.getByRole("tab", { name: /Start here/ }),
   ).toHaveAttribute("aria-selected", "true");
@@ -227,7 +228,7 @@ test("a phone puts story pictures before secondary level choices", async ({ page
   const redBall = shelf.getByRole("link", {
     name: "Listen to story: The Red Ball",
   });
-  const grownUpOptions = shelf.getByText("Grown-up options", { exact: true });
+  const grownUpOptions = shelf.getByLabel("Grown-up options");
   await expect(redBall).toBeVisible();
   await expect(levelTabs).toBeHidden();
   const [storyBox, optionsBox] = await Promise.all([
@@ -404,7 +405,7 @@ for (const viewport of viewports) {
       }).first(),
     ).toBeHidden();
     await expectInsideViewportHorizontally(shelf, page);
-    const grownUpOptions = shelf.getByText("Grown-up options", { exact: true });
+    const grownUpOptions = shelf.getByLabel("Grown-up options");
     await expectInsideViewportHorizontally(grownUpOptions, page);
     await grownUpOptions.click();
     await expectInsideViewportHorizontally(

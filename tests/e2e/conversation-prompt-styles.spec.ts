@@ -13,11 +13,9 @@ for (const viewport of setupViewports) {
     await page.goto("/talk-to-peppa");
 
     const main = page.getByRole("main");
-    const style = page.getByLabel("Chat style");
+    const style = page.getByRole("combobox", { name: "Chat style" });
     const start = page.getByRole("button", { name: "Start chat" });
-    const grownUpOptions = page.getByText("Grown-up: chat style", {
-      exact: true,
-    });
+    const grownUpOptions = page.getByLabel(/^Grown-up chat style:/);
     await expect(start).toBeVisible();
     await expect(start).toContainText("Talk to Peppa");
     await expect(style).toBeHidden();
@@ -66,14 +64,21 @@ test("the selected style reaches every retry and setup stays hidden", async ({
   });
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
 
-  await page.getByText("Grown-up: chat style", { exact: true }).click();
-  await page.getByLabel("Chat style").selectOption("gentle-guide");
+  const grownUpOptions = page.getByLabel(/^Grown-up chat style:/);
+  await grownUpOptions.click();
+  await page
+    .getByRole("combobox", { name: "Chat style" })
+    .selectOption("gentle-guide");
+  await expect(grownUpOptions).toBeFocused();
+  await expect(grownUpOptions).toContainText("Gentle guide");
   await expect(
-    page.getByText("Peppa helps you say one easy sentence.", { exact: true }),
-  ).toBeVisible();
+    page.getByRole("combobox", { name: "Chat style" }),
+  ).toBeHidden();
   await startSmallChat(page);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
-  await expect(page.getByLabel("Chat style")).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Chat style" }),
+  ).toHaveCount(0);
   await page.getByRole("button", { name: "Try again" }).click();
   await expect.poll(() => starts.length).toBe(2);
   expect(starts).toEqual([

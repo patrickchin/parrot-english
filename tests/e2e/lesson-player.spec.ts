@@ -425,14 +425,19 @@ test("checking and feedback replace the speaking action", async ({ page }) => {
   await expect(microphone).toBeHidden();
 
   const feedback = page.getByRole("region", { name: "Speaking feedback" });
+  const speakingControls = page.getByRole("navigation", {
+    name: "Speaking controls",
+  });
   await expect(feedback).toContainText("You did it!", { timeout: 3_000 });
   await expect(feedback).toContainText("Great job!");
+  await expect(speakingControls).toBeHidden();
   await page.waitForTimeout(800);
   await expect(feedback).toBeVisible();
   await expect(feedback).toBeHidden({ timeout: 3_000 });
+  await expect(page).toHaveURL(/\/scenes\/2$/);
   await expect(
-    page.getByRole("navigation", { name: "Speaking controls" }),
-  ).toBeHidden();
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toContainText("Peppa Cannot Reach");
 });
 
 test("microphone setup gives immediate feedback and blocks duplicate actions", async ({

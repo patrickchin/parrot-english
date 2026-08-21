@@ -176,6 +176,7 @@ async function mockPersonalizedStoryArtApis(
 }
 
 async function mockSpeakingTurnLesson(page: Page) {
+  let requestCount = 0;
   const lesson = createLessonScript({ title: "Personalized Speaking Turn" });
   lesson.scenes = [
     {
@@ -197,6 +198,7 @@ async function mockSpeakingTurnLesson(page: Page) {
   ];
 
   await page.route("**/api/lessons/my/personalized-speaking-turn", async (route) => {
+    requestCount += 1;
     await route.fulfill({
       body: JSON.stringify({
         lesson: {
@@ -209,6 +211,8 @@ async function mockSpeakingTurnLesson(page: Page) {
       status: 200,
     });
   });
+
+  return { requestCount: () => requestCount };
 }
 
 test("storytelling shelf offers guardian-consented story-art opt-in on a 280px phone", async ({
@@ -301,9 +305,12 @@ test("a learner speaking turn can show the saved portrait without overflowing a 
 }) => {
   await page.setViewportSize(narrowPhone);
   await mockPersonalizedStoryArtApis(page, "ready");
-  await mockSpeakingTurnLesson(page);
+  const lessonRequests = await mockSpeakingTurnLesson(page);
   await page.goto(lessonPath);
-  await page.getByRole("button", { name: "Start lesson" }).click();
+  const start = page.getByRole("button", { name: "Start lesson" });
+  await expect(start).toBeFocused();
+  const requestCountBeforeStart = lessonRequests.requestCount();
+  await start.click();
 
   const prompt = page.getByRole("region", { name: "Your turn" });
   const controls = page.getByRole("navigation", { name: "Speaking controls" });
@@ -315,4 +322,5 @@ test("a learner speaking turn can show the saved portrait without overflowing a 
   await expectInsideViewportHorizontally(controls, page);
   await expectInsideViewportHorizontally(portrait, page);
   await expectNoHorizontalOverflow(page);
+  expect(lessonRequests.requestCount()).toBe(requestCountBeforeStart);
 });

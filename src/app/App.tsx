@@ -89,6 +89,20 @@ import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
 } from "../lessons/full-scene-lessons";
+import {
+  BoxedFullSceneStage,
+  LessonCharacters,
+  LessonCompletion,
+  LessonErrorBanner,
+  LessonFeedback,
+  LessonHud,
+  LessonIntroduction,
+  LessonPlaybackControls,
+  LessonSpeakingControls,
+  LessonSpeech,
+  LessonStage,
+  LessonUserPrompt,
+} from "../lessons/LessonPlayerUi";
 import { playDeviceSpeech } from "../media/device-speech";
 import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
@@ -103,46 +117,6 @@ import {
   PERSONALIZED_STORY_ID,
 } from "../stories/personalized-story-art-client";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
-
-type LessonPlayerUiModule = typeof import("../lessons/LessonPlayerUi");
-
-function lazyLessonPlayerComponent<Name extends keyof LessonPlayerUiModule>(
-  name: Name,
-) {
-  return lazy(() =>
-    import("../lessons/LessonPlayerUi").then((module) => ({
-      default: module[name],
-    })),
-  ) as unknown as LessonPlayerUiModule[Name];
-}
-
-const lessonPlayerUiModule = import.meta.env.SSR
-  ? await import("../lessons/LessonPlayerUi")
-  : null;
-const BoxedFullSceneStage = lessonPlayerUiModule?.BoxedFullSceneStage ??
-  lazyLessonPlayerComponent("BoxedFullSceneStage");
-const LessonCharacters = lessonPlayerUiModule?.LessonCharacters ??
-  lazyLessonPlayerComponent("LessonCharacters");
-const LessonCompletion = lessonPlayerUiModule?.LessonCompletion ??
-  lazyLessonPlayerComponent("LessonCompletion");
-const LessonErrorBanner = lessonPlayerUiModule?.LessonErrorBanner ??
-  lazyLessonPlayerComponent("LessonErrorBanner");
-const LessonFeedback = lessonPlayerUiModule?.LessonFeedback ??
-  lazyLessonPlayerComponent("LessonFeedback");
-const LessonHud = lessonPlayerUiModule?.LessonHud ??
-  lazyLessonPlayerComponent("LessonHud");
-const LessonIntroduction = lessonPlayerUiModule?.LessonIntroduction ??
-  lazyLessonPlayerComponent("LessonIntroduction");
-const LessonPlaybackControls = lessonPlayerUiModule?.LessonPlaybackControls ??
-  lazyLessonPlayerComponent("LessonPlaybackControls");
-const LessonSpeakingControls = lessonPlayerUiModule?.LessonSpeakingControls ??
-  lazyLessonPlayerComponent("LessonSpeakingControls");
-const LessonSpeech = lessonPlayerUiModule?.LessonSpeech ??
-  lazyLessonPlayerComponent("LessonSpeech");
-const LessonStage = lessonPlayerUiModule?.LessonStage ??
-  lazyLessonPlayerComponent("LessonStage");
-const LessonUserPrompt = lessonPlayerUiModule?.LessonUserPrompt ??
-  lazyLessonPlayerComponent("LessonUserPrompt");
 
 const LessonCreator = import.meta.env.SSR
   ? (await import("../lessons/LessonCreator")).LessonCreator

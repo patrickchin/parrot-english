@@ -540,6 +540,7 @@ export function ConversationSurface({
   const expandLandscapeCaption = caption.text.length > 100;
   const { finishLabel, title } = PURPOSE_COPY[purpose];
   const showPromptStyleSetup = purpose === "small-chat" && status === "ready";
+  const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
   const recoveryAction = waitFeedback?.action;
   const showFinish =
     canFinish &&
@@ -630,20 +631,26 @@ export function ConversationSurface({
                 Talk to Peppa
               </ActionButton>
               <details className="group relative">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-white/70 px-3 text-xs font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden">
-                  Grown-up: chat style
+                <summary
+                  aria-label={`Grown-up chat style: ${promptStyleOption.label}`}
+                  className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-white/70 px-3 text-xs font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden"
+                >
+                  Grown-up: {promptStyleOption.label}
                   <span aria-hidden="true" className="group-open:rotate-180">
                     ▾
                   </span>
                 </summary>
-                <label
+                <div
                   className="absolute bottom-full left-0 z-50 mb-2 grid w-full min-w-0 gap-1 rounded-2xl border-3 border-white bg-white/95 p-2 text-left shadow-card"
-                  htmlFor="peppa-prompt-style"
                 >
-                  <span className="text-xs font-black text-brand-blue">
+                  <label
+                    className="text-xs font-black text-brand-blue"
+                    htmlFor="peppa-prompt-style"
+                  >
                     Chat style
-                  </span>
+                  </label>
                   <select
+                    aria-describedby="peppa-prompt-style-description"
                     className={fieldClassName({
                       className:
                         "min-h-12 truncate rounded-xl px-3 py-1 text-sm",
@@ -652,6 +659,9 @@ export function ConversationSurface({
                     onChange={(event) => {
                       if (isTalkToPeppaPromptStyle(event.target.value)) {
                         onPromptStyleChange(event.target.value);
+                        const details = event.currentTarget.closest("details");
+                        details?.removeAttribute("open");
+                        details?.querySelector("summary")?.focus();
                       }
                     }}
                     value={promptStyle}
@@ -662,10 +672,13 @@ export function ConversationSurface({
                       </option>
                     ))}
                   </select>
-                  <span className="text-xs font-bold leading-snug text-brand-blue">
-                    {talkToPeppaPromptStyleOption(promptStyle).description}
+                  <span
+                    className="text-xs font-bold leading-snug text-brand-blue"
+                    id="peppa-prompt-style-description"
+                  >
+                    {promptStyleOption.description}
                   </span>
-                </label>
+                </div>
               </details>
             </div>
           ) : recoveryAction === "retry" ? (

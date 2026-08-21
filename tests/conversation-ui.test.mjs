@@ -58,7 +58,8 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /peppa-happy-384\.webp 384w/);
     assert.match(html, /peppa-happy-1024\.webp 1024w/);
     assert.match(html, /Peppa is ready\. Tap the pink button\./);
-    assert.match(html, /Grown-up: chat style/);
+    assert.match(html, /aria-label="Grown-up chat style: Tiny turns"/);
+    assert.match(html, /Grown-up: Tiny turns/);
     assert.match(html, /<select[^>]*id="peppa-prompt-style"/);
     assert.match(html, /Tiny turns/);
     assert.match(html, /Gentle guide/);

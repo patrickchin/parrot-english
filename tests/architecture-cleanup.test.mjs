@@ -61,6 +61,8 @@ describe("architecture cleanup contracts", () => {
     assert.match(playerUi, /characters\.map/);
     assert.match(app, /ChevronLeft|ChevronRight/);
     assert.match(app, /SCENE_NEXT|SCENE_PREVIOUS/);
+    assert.match(app, /from "\.\.\/lessons\/LessonPlayerUi"/);
+    assert.doesNotMatch(app, /lazyLessonPlayerComponent/);
   });
 
   it("keeps the active lesson experience English-only", () => {

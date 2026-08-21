@@ -7,8 +7,12 @@ export async function startSmallChat(
   const start = page.getByRole("button", { name: "Start chat" });
   await expect(start).toBeVisible();
   if (promptStyle) {
-    await page.getByText("Grown-up: chat style", { exact: true }).click();
-    await page.getByLabel("Chat style").selectOption(promptStyle);
+    await page
+      .getByLabel(/^Grown-up chat style:/)
+      .click();
+    await page
+      .getByRole("combobox", { name: "Chat style" })
+      .selectOption(promptStyle);
   }
   await start.click();
 }
