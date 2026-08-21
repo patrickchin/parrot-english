@@ -176,9 +176,10 @@ bright pink remains the primary cue while deep-navy content raises the rendered
 pair above 4.5:1 in every tested enabled state. This sequence fixed
 deterministic content loss before layout, then removed movement and hidden
 actions before changing the shared visual treatment. Its visual review found a
-separate 1.278:1 focus-ring failure on the navy account menu, so the next
-stacked branch is `codex/shared-focus-visibility`; the generated-feedback
-language contract follows that bounded repair.
+separate 1.278:1 focus-ring failure on the navy account menu. The bounded repair
+is implemented on `codex/shared-focus-visibility` at `d5e1bdc`. A small
+route-specific Story Reader page-text focus follow-up comes next; the
+generated-feedback language contract follows that visual repair.
 
 ### Hand-off record
 
@@ -500,6 +501,22 @@ Retain, revise, or reject: retain provisionally for enabled pink action content 
 Next branch: codex/shared-focus-visibility stacked on this documentation hand-off
 ```
 
+```text
+Branch: codex/shared-focus-visibility
+Base branch / dependency: codex/contrast-safe-child-actions documentation hand-off a851d88
+Research commit: 2c988b3
+Implementation commit: d5e1bdc
+Hypothesis: one contiguous light/deep indicator can keep shared keyboard focus visible across light, navy, selected, raised, and image-adjacent placements without extra language or layout change
+Changed: semantic light/dark focus tokens; shared/base two-color focus geometry; synchronous ring feedback; rendered changed-area, retained-focus, forced-colors, and representative-surface browser contracts; thirteen screenshots; implementation evidence
+Not changed: focus order, programmatic focus movement, labels, routes, content, control geometry, navigation, audio, domain timing, data, dependencies, translations, disabled palette, or route-specific page-text focus
+Tests: 12/12 focused Chromium; 679/679 unit/integration/lifecycle/safety; 230/230 full Chromium; production build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: thirteen genuine in-app Browser JPEGs and a provenance/integrity manifest in artifacts/ux-review/shared-focus-visibility at 280×568, 390×844, 640×360, and 1440×900
+Measured result: unchanged base failed two dark-surface cases with zero qualifying changed area; candidate passes all twelve; the 16.576:1 token pair renders as four-pixel white then four-pixel deep navy without increasing the prior eight-pixel footprint; removing the shadow transition makes the full light band synchronous instead of arriving over 150 ms
+Risks / limitations: same-pixel test is not exhaustive adjacent contrast or whole-product conformance; forced colors is computed emulation only; representative artwork is bounded; target devices/browsers/AT, zoom/text spacing, and child/caregiver comprehension remain untested
+Retain, revise, or reject: retain provisionally for shared controls and base form fallbacks
+Next branch: codex/story-reader-page-focus-visibility stacked on this documentation hand-off; then generated profile-feedback language
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -549,10 +566,14 @@ branches.
     visible; a separate generated-language contract should make the common case
     substantially shorter and simpler before claiming beginner comprehension.
 13. **High: the shared ink focus outline nearly disappears against the navy
-    account menu.** The rendered pair is only 1.278:1. Light child surfaces are
-    clear, but the shared primitive also reaches dark and image-adjacent
-    contexts. Fix with a robust multi-surface indicator on
-    `codex/shared-focus-visibility` before making shared-focus contrast claims.
+    account menu.** Fixed provisionally on `codex/shared-focus-visibility` at
+    `d5e1bdc` with a contiguous four-pixel white/four-pixel deep-navy indicator.
+    The unchanged base failed both routed dark-surface cases; the candidate
+    passes all 12 bounded shared-focus checks.
+14. **Medium: the Story Reader's programmatically focused page text uses a pale
+    sky ring against cream.** The measured pair is about 1.603:1, and this cue
+    is outside the shared-control primitive. Decide and validate its reading-
+    position semantics separately on `codex/story-reader-page-focus-visibility`.
 
 ## Parked ideas
 

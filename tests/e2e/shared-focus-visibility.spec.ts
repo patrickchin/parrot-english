@@ -283,7 +283,9 @@ for (const scenario of focusScenarios) {
   });
 }
 
-test("dark-surface focus does not fade in", async ({ page }) => {
+test("dark-surface focus does not fade in or linger after moving", async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/");
@@ -291,6 +293,9 @@ test("dark-surface focus does not fade in", async ({ page }) => {
   const profile = page.getByRole("menuitem", { name: "Learner profile" });
   await expect(profile).toBeFocused();
   await blurActiveElement(page);
+  const unfocusedShadow = await profile.evaluate(
+    (element) => getComputedStyle(element).boxShadow,
+  );
 
   await profile.evaluate((element) => {
     const measured = element as HTMLElement & {
@@ -319,6 +324,34 @@ test("dark-surface focus does not fade in", async ({ page }) => {
     (element) => getComputedStyle(element).boxShadow,
   );
   expect(initialShadow).toBe(settledShadow);
+
+  await profile.evaluate((element) => {
+    const measured = element as HTMLElement & {
+      parrotInitialBlurShadow?: string;
+    };
+    element.addEventListener(
+      "blur",
+      () => {
+        measured.parrotInitialBlurShadow = getComputedStyle(element).boxShadow;
+      },
+      { once: true },
+    );
+  });
+  await profile.press("ArrowDown");
+  await expect(
+    page.getByRole("menuitem", { name: "AI and saved data" }),
+  ).toBeFocused();
+  const initialBlurShadow = await profile.evaluate(
+    (element) =>
+      (element as HTMLElement & { parrotInitialBlurShadow?: string })
+        .parrotInitialBlurShadow,
+  );
+  expect(initialBlurShadow).toBe(unfocusedShadow);
+
+  await page.waitForTimeout(200);
+  expect(
+    await profile.evaluate((element) => getComputedStyle(element).boxShadow),
+  ).toBe(unfocusedShadow);
 });
 
 test("retained pending focus stays visible", async ({ page }) => {

@@ -1,8 +1,10 @@
 # Shared focus visibility guidance
 
-Status: pre-implementation research guidance  
-Branch: `codex/shared-focus-visibility`  
-Base: `codex/contrast-safe-child-actions` at `a851d88`  
+Status: implemented; see the companion implementation evidence
+
+Branch: `codex/shared-focus-visibility`
+
+Base: `codex/contrast-safe-child-actions` at `a851d88`
 Research date: 2026-08-21
 
 ## Question
@@ -10,15 +12,21 @@ Research date: 2026-08-21
 Can Parrot replace its single dark-blue authored focus outline with one bounded,
 shared indicator that remains easy to find on light child surfaces, the navy
 account menu, smooth gradients, and controls beside artwork, without changing
-focus order, task behavior, labels, or interaction timing?
+focus order, task behavior, labels, or task/domain timing?
 
-**Recommended answer:** use one contiguous two-color indicator for shared
-controls: a light inner band and a deep-navy outer band, with an actual CSS
-`outline` retained as the inner band and a composable shadow/ring used for the
-outer band. Each band should be at least 2 CSS px thick. The candidate existing
-colors `#ffffff` and `#061f3b` are 16.576:1 apart, comfortably above the 9:1
-pair used by W3C Technique C40. Start with no transparent offset gap so the two
-bands stay contiguous and their geometry is easy to test.
+**Selected answer:** use one contiguous two-color indicator for shared
+controls: a four-pixel white inner ring and a four-pixel deep-navy outer CSS
+`outline`. The existing four-pixel outline offset is retained, but the inner
+ring fills that region so normal-color rendering has no transparent gap. The
+semantic focus colors `#ffffff` and `#061f3b` are 16.576:1 apart, comfortably
+above the 9:1 pair used by W3C Technique C40.
+
+Implementation update, 2026-08-21: the initial research direction put a light
+zero-offset outline inside a dark shadow. Rendered review selected the inverse
+layer order above because it preserves Parrot's existing eight-pixel external
+footprint, gives each band four pixels rather than the two-pixel minimum, and
+lets Tailwind's inner ring compose with existing elevation shadows. The real
+outer outline remains the independent forced-colors fallback.
 
 This is a bounded repair, not a claim of whole-product WCAG conformance. A
 two-color token pair provides a strong reusable design over solid surfaces. It
@@ -46,7 +54,8 @@ Out of scope for this branch:
 
 - focus order, programmatic focus movement, route transitions, or live-region
   behavior;
-- labels, icons, component dimensions, navigation, audio, or timing;
+- labels, icons, component dimensions, navigation, audio, or task/domain
+  timing;
 - a complete disabled-control redesign;
 - route-specific `focus-within` and focused-heading treatments that do not use
   the shared primitive;
@@ -56,7 +65,7 @@ Out of scope for this branch:
 
 ## Observed baseline
 
-`src/shared/ui.tsx` currently gives `ActionButton`, `ActionLink`, `IconButton`,
+At base `a851d88`, `src/shared/ui.tsx` gave `ActionButton`, `ActionLink`, `IconButton`,
 `TextButton`, and `TextLink` the same four-pixel `#173c67` outline with a
 four-pixel positive offset. `MenuButton` inherits that treatment. The base
 rules in `src/styles.css` repeat the same outline for buttons and form fields.
@@ -138,33 +147,32 @@ treatment rather than copy the color values into pages:
 | Light band / bright pink `#ff467b` | 3.274:1 | The light band also clears 3:1 for this declared accent, but this is not an image guarantee. |
 
 Ratios use the WCAG 2.2 sRGB relative-luminance formula without rounding a
-near-failure into a pass. Color values are candidate product choices, not W3C
-prescriptions.
+near-failure into a pass. The colors are selected semantic focus tokens for
+this branch, not W3C prescriptions.
 
 ## Recommended geometry
 
-Use a contiguous implementation equivalent to the C40 pattern:
+Use the selected contiguous implementation:
 
-- an inner solid light `outline` at least 2 CSS px thick with zero offset; and
-- an outer deep-navy ring/shadow whose exposed band is at least 2 CSS px thick.
+- an inner four-pixel white Tailwind ring/`box-shadow`; and
+- an outer four-pixel deep-navy outline at a positive four-pixel offset.
 
-For example, a two-pixel light outline plus a four-pixel spread outer shadow
-leaves two visible pixels of each band when the outline covers the inner half
-of that shadow. The exact implementation can use the Tailwind ring/shadow
-composition already available to the app, but the rendered geometry—not the
-utility names—is the contract.
+The inner ring occupies the outline-offset region, so the normal-color order is
+control → white band → deep band → surface with no transparent pixels between
+the bands. Tailwind's ring variables compose the white band above each named
+control-elevation shadow rather than replacing that shadow. The rendered
+geometry—not the utility names—is the contract.
 
 The `outline` is essential. Do not implement the indicator with `box-shadow`
 alone, and do not remove the outline in favor of an otherwise invisible custom
-effect. Raised controls already use an elevation shadow; the focus shadow must
-compose above it rather than replace it or become hidden underneath its lower
-edge. The same geometry should apply to filled controls, surface controls, text
-controls, icon controls, menu items, and base form fields.
+effect. Raised controls already use an elevation shadow; the inner focus ring
+must compose above it rather than replace it or become hidden underneath its
+lower edge. The same geometry should apply to filled controls, surface
+controls, text controls, icon controls, menu items, and base form fields.
 
-Two-pixel bands meet the strong size target in the uncomplicated perimeter
-case. If visual review at 280 px or beside artwork finds that too subtle, use
-three-pixel bands consistently; do not add pulsing, route-specific colors, or a
-second textual instruction merely to make focus noticeable.
+Each selected band is four pixels thick, twice C40's minimum. Do not add
+pulsing, route-specific colors, or a second textual instruction merely to make
+focus noticeable.
 
 ### Offset outlines
 
@@ -173,11 +181,12 @@ says a small offset can help visibility, but changed transparent gap pixels are
 not indicator area. A positive offset also moves the contrast comparison onto
 the surrounding page or image and increases clipping/collision risk.
 
-The bounded repair should therefore start with zero offset so its two bands are
-contiguous and visibly attached to the control. If a later visual review keeps
-an offset:
+The selected repair keeps the existing positive four-pixel offset while filling
+that entire region with the white inner ring. Thus the two normal-color bands
+stay contiguous and visibly attached to the control without increasing the
+existing outside footprint. For this offset geometry:
 
-- do not count the transparent gap toward changed area;
+- do not count any transparent pixels toward changed area;
 - ensure both actual color bands retain the intended thickness;
 - sample the surface underneath the displaced bands;
 - verify the larger footprint is not clipped by overflow, a viewport edge, a
@@ -220,6 +229,15 @@ filter, or a focus-retaining `aria-disabled` pending state. The indicator must
 not disappear, become time-limited, or be replaced by movement alone in any of
 those states.
 
+The shared control transition deliberately excludes `box-shadow`. Otherwise
+the white band would fade from transparent to opaque over 150 ms while the dark
+outline remained hard to see on the navy menu. A focus-scoped transition
+override was rejected because it caused the old ring to fade out after focus
+moved, briefly showing two focus locations. Translate and filter feedback can
+still animate; both focus bands appear and disappear synchronously. The bounded
+trade-off is that shared elevation and segmented-selection shadow changes are
+also synchronous rather than transitioning for 150 ms.
+
 The current shared controls use brightness filters and can apply 60% opacity to
 disabled or `aria-disabled` controls. Filters and whole-element opacity can
 also alter an outline and shadow because the effects are rendered as part of
@@ -253,8 +271,8 @@ The implementation contract is therefore:
 
 - keep a real outline at least 2 CSS px thick as an independently sized
   one-band fallback;
-- treat the outer shadow as normal-color reinforcement, never the sole focus
-  indicator;
+- treat the inner white shadow/ring as normal-color reinforcement, never the
+  sole focus indicator;
 - leave `forced-color-adjust: auto` unless target-browser evidence proves a
   narrow exception is necessary;
 - do not assume `getComputedStyle()` reveals the used forced system color—the
@@ -262,6 +280,11 @@ The implementation contract is therefore:
 - test rendered output with forced colors active, including both light and
   dark/high-contrast palettes on a real supported operating system where
   possible.
+
+With shadows suppressed, the four-pixel offset region becomes transparent and
+the mapped four-pixel real outline remains outside it. Browser emulation checks
+that the outline is still present and independently sized; it does not prove
+the used system color or every real Windows High Contrast palette.
 
 Browser emulation is a useful regression check, not proof of every Windows
 High Contrast theme, customized palette, browser, remote desktop, or
@@ -309,16 +332,22 @@ In scope:
 Not changed:
 
 - DOM order, focus order, focus movement, routes, labels, target sizes,
-  navigation, audio, timing, or data;
+  navigation, audio, task/domain timing, or data;
 - component fill/foreground contrast already handled by the preceding branch;
 - native disabled focusability or a general disabled palette; and
 - unrelated route-specific focus treatments unless a shared consumer cannot be
   validated without a narrowly documented follow-up.
 
-## Validation plan
+## Validation plan and completion boundary
 
-Follow the repository rule: use Playwright and accessible locators; never
-assert source strings or Tailwind class names.
+The following was the pre-implementation target. The implementation automates
+the representative same-pixel area cases, synchronous entry/exit timing,
+retained pending focus, and computed forced-colors outline fallback described
+in the companion evidence memo. Shift+Tab, hover/active combinations,
+exhaustive adjacent-pixel contrast, explicit before/after geometry equality,
+and a post-pending activation attempt remain follow-up work. Follow the
+repository rule: use Playwright and accessible locators; never assert source
+strings or Tailwind class names.
 
 ### Automated browser contract
 
@@ -327,7 +356,7 @@ assert source strings or Tailwind class names.
 2. Assert focus remains on the expected accessible role/name and that a visible
    indicator persists until focus moves. Pointer click need not show the
    `:focus-visible` treatment.
-3. Record rendered outline style, width, offset, color, outer shadow/ring,
+3. Record rendered outline style, width, offset, color, inner ring/shadow,
    opacity, filter, bounding box, and adjacent surface. Use these as computed
    evidence, not source/class assertions.
 4. Require at least 3:1 adjacent contrast for enough authored indicator pixels
@@ -341,7 +370,7 @@ assert source strings or Tailwind class names.
    perimeter at controlled deterministic states. A single convenient pixel is
    insufficient.
 7. Emulate forced colors and verify the outline remains visible and at least 2
-   CSS px thick when the outer shadow is absent. Do not assert an authored RGB
+   CSS px thick when the inner shadow/ring is absent. Do not assert an authored RGB
    value that the user agent is expected to replace.
 8. Verify the focus effect neither changes control geometry nor creates main
    horizontal overflow at 280×568, 390×844, 640×360, and 1440×900. Check that
@@ -382,7 +411,7 @@ Revise or roll back the implementation if:
 - either band is clipped or covered on a required shared surface;
 - focus is unclear on navy, a deterministic image/gradient placement, or in
   forced-colors mode;
-- the outer focus ring replaces a control's elevation or changes its geometry;
+- either focus band replaces a control's elevation or changes its geometry;
 - hover, active, an ancestor filter, or a focus-retaining pending state erases
   the indicator;
 - route-specific overrides produce inconsistent focus for the same shared
@@ -405,9 +434,9 @@ not whole-product accessibility or child comprehension.
   because it is easy to miss consumers and weakens a consistent learned state.
 - **Use `box-shadow` alone:** rejected because forced-colors mode commonly
   suppresses it and the CSS specification makes it compute to `none`.
-- **Keep a transparent four-pixel gap and count it as focus area:** rejected;
-  unchanged transparent pixels are not indicator area, and the displaced ring
-  must be measured against the surface beneath it.
+- **Keep the four-pixel offset region transparent and count it as focus area:**
+  rejected; the selected inner ring fills it in normal colors, and unchanged
+  transparent pixels are not indicator area.
 - **Assert only the 16.576:1 band-pair ratio:** rejected because C40's guarantee
   has geometry and solid-background preconditions.
 - **Call the two-pixel changed-area rule AA:** rejected because Focus Appearance
@@ -429,15 +458,15 @@ not whole-product accessibility or child comprehension.
   action require a narrowly coupled pending-state revision?
 - Which URL-backed images remain beside controls in forced-colors mode, and do
   target browsers expose the same system outline behavior?
-- Does a two-pixel-per-band ring feel sufficiently obvious on small physical
-  devices, or should Parrot adopt three-pixel bands as its product baseline?
+- Do the selected four-pixel bands feel clear without being mistaken for
+  selection or reward feedback on small physical devices?
 - Can children and caregivers identify the current interaction point without
   reading or naming a color, and without mistaking focus for selection?
 
-The next cheapest evidence is a focused Playwright matrix plus matched
-normal-color and forced-colors screenshots on the actual shared surfaces,
-followed by Windows High Contrast and switch/keyboard observation. Broader
-route-specific focus and disabled-palette work should be separate branches.
+The next cheapest remaining evidence is a real Windows High Contrast pass,
+keyboard/switch observation, and the unautomated state combinations above.
+Broader route-specific focus and disabled-palette work should be separate
+branches.
 
 ## Primary sources
 
