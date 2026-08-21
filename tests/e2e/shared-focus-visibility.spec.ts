@@ -179,45 +179,64 @@ function pixel(
   };
 }
 
-async function renderedFocusDelta(page: Page, target: Locator) {
-  await expect(target).toBeVisible();
-  await target.scrollIntoViewIfNeeded();
-  await blurActiveElement(page);
-  const box = await target.boundingBox();
-  const viewport = page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(viewport).not.toBeNull();
-  const borderRadius = await target.evaluate((element) =>
-    Number.parseFloat(getComputedStyle(element).borderTopLeftRadius),
-  );
-
-  const unfocused = await decodedScreenshot(page);
-  await focusWithKeyboard(page, target);
-  await expect(target).toBeFocused();
-  expect(await target.evaluate((element) => element.matches(":focus-visible"))).toBe(
-    true,
-  );
-  const focused = await decodedScreenshot(page);
-
+function renderedScreenshotDelta({
+  borderRadius,
+  box,
+  focused,
+  unfocused,
+  viewport,
+}: {
+  borderRadius: number;
+  box: NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>;
+  focused: Awaited<ReturnType<typeof decodedScreenshot>>;
+  unfocused: Awaited<ReturnType<typeof decodedScreenshot>>;
+  viewport: NonNullable<ReturnType<Page["viewportSize"]>>;
+}) {
   expect(focused.info.width).toBe(unfocused.info.width);
   expect(focused.info.height).toBe(unfocused.info.height);
   expect(focused.info.channels).toBe(unfocused.info.channels);
 
-  const scaleX = focused.info.width / viewport!.width;
-  const scaleY = focused.info.height / viewport!.height;
+  const scaleX = focused.info.width / viewport.width;
+  const scaleY = focused.info.height / viewport.height;
   const padding = 12;
-  const left = Math.max(0, Math.floor((box!.x - padding) * scaleX));
+  const left = Math.max(0, Math.floor((box.x - padding) * scaleX));
   const right = Math.min(
     focused.info.width,
-    Math.ceil((box!.x + box!.width + padding) * scaleX),
+    Math.ceil((box.x + box.width + padding) * scaleX),
   );
-  const top = Math.max(0, Math.floor((box!.y - padding) * scaleY));
+  const top = Math.max(0, Math.floor((box.y - padding) * scaleY));
   const bottom = Math.min(
     focused.info.height,
-    Math.ceil((box!.y + box!.height + padding) * scaleY),
+    Math.ceil((box.y + box.height + padding) * scaleY),
+  );
+  const markerLeft = Math.max(0, Math.floor((box.x - 8) * scaleX));
+  const markerRight = Math.min(
+    focused.info.width,
+    Math.ceil((box.x - 4) * scaleX),
+  );
+  const outlineLeftLeft = Math.max(0, Math.floor((box.x - 4) * scaleX));
+  const outlineLeftRight = Math.min(
+    focused.info.width,
+    Math.ceil(box.x * scaleX),
+  );
+  const markerTop = Math.max(0, Math.floor(box.y * scaleY));
+  const markerBottom = Math.min(
+    focused.info.height,
+    Math.ceil((box.y + box.height) * scaleY),
+  );
+  const outlineRightLeft = Math.max(
+    0,
+    Math.floor((box.x + box.width) * scaleX),
+  );
+  const outlineRightRight = Math.min(
+    focused.info.width,
+    Math.ceil((box.x + box.width + 4) * scaleX),
   );
   let changedPixels = 0;
   let contrastingPixels = 0;
+  let leftMarkerContrastingPixels = 0;
+  let leftOutlineContrastingPixels = 0;
+  let rightOutlineContrastingPixels = 0;
   let strongestContrast = 1;
 
   for (let y = top; y < bottom; y += 1) {
@@ -246,23 +265,153 @@ async function renderedFocusDelta(page: Page, target: Locator) {
       changedPixels += 1;
       const ratio = contrast(after, before);
       strongestContrast = Math.max(strongestContrast, ratio);
-      if (ratio >= 3) contrastingPixels += 1;
+      if (ratio >= 3) {
+        contrastingPixels += 1;
+        if (
+          x >= markerLeft &&
+          x < markerRight &&
+          y >= markerTop &&
+          y < markerBottom
+        ) {
+          leftMarkerContrastingPixels += 1;
+        }
+        if (
+          x >= outlineLeftLeft &&
+          x < outlineLeftRight &&
+          y >= markerTop &&
+          y < markerBottom
+        ) {
+          leftOutlineContrastingPixels += 1;
+        }
+        if (
+          x >= outlineRightLeft &&
+          x < outlineRightRight &&
+          y >= markerTop &&
+          y < markerBottom
+        ) {
+          rightOutlineContrastingPixels += 1;
+        }
+      }
     }
   }
 
   const renderedPixelsPerCssPixel = scaleX * scaleY;
   const radius = Math.min(
     Number.isFinite(borderRadius) ? borderRadius : 0,
-    box!.width / 2,
-    box!.height / 2,
+    box.width / 2,
+    box.height / 2,
   );
   return {
     changedArea: changedPixels / renderedPixelsPerCssPixel,
     contrastingArea: contrastingPixels / renderedPixelsPerCssPixel,
+    leftMarkerContrastingArea:
+      leftMarkerContrastingPixels / renderedPixelsPerCssPixel,
+    leftOutlineContrastingArea:
+      leftOutlineContrastingPixels / renderedPixelsPerCssPixel,
+    rightOutlineContrastingArea:
+      rightOutlineContrastingPixels / renderedPixelsPerCssPixel,
+    forcedOutlineEdgeArea: 1.5 * box.height,
+    readingCueArea: 3 * box.height,
     requiredArea:
-      4 * (box!.width + box!.height) - (16 - 4 * Math.PI) * radius,
+      4 * (box.width + box.height) - (16 - 4 * Math.PI) * radius,
     strongestContrast,
   };
+}
+
+async function focusGeometry(page: Page, target: Locator) {
+  const box = await target.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  return {
+    borderRadius: await target.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).borderTopLeftRadius),
+    ),
+    box: box!,
+    viewport: viewport!,
+  };
+}
+
+async function renderedFocusDelta(page: Page, target: Locator) {
+  await expect(target).toBeVisible();
+  await target.scrollIntoViewIfNeeded();
+  await blurActiveElement(page);
+  const geometry = await focusGeometry(page, target);
+  const unfocused = await decodedScreenshot(page);
+  await focusWithKeyboard(page, target);
+  await expect(target).toBeFocused();
+  expect(await target.evaluate((element) => element.matches(":focus-visible"))).toBe(
+    true,
+  );
+  const focused = await decodedScreenshot(page);
+
+  return renderedScreenshotDelta({ ...geometry, focused, unfocused });
+}
+
+async function renderedInitialFocusDelta(page: Page, target: Locator) {
+  await expect(target).toBeVisible();
+  await expect(target).toBeFocused();
+  const geometry = await focusGeometry(page, target);
+  const focused = await decodedScreenshot(page);
+  await target.evaluate((element) => (element as HTMLElement).blur());
+  await expect(target).not.toBeFocused();
+  const unfocused = await decodedScreenshot(page);
+
+  return renderedScreenshotDelta({ ...geometry, focused, unfocused });
+}
+
+function expectRenderedFocusTarget(
+  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
+  name: string,
+) {
+  expect.soft(
+    focus.changedArea,
+    `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${focus.requiredArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(focus.requiredArea);
+  expect(
+    focus.contrastingArea,
+    `${name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${focus.requiredArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(focus.requiredArea);
+}
+
+function expectRenderedReadingCue(
+  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
+  name: string,
+) {
+  expect.soft(
+    focus.changedArea,
+    `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered change; ${focus.readingCueArea.toFixed(0)} CSS px² required for the reading marker`,
+  ).toBeGreaterThanOrEqual(focus.readingCueArea);
+  expect(
+    focus.contrastingArea,
+    `${name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${focus.readingCueArea.toFixed(0)} CSS px² required for the reading marker`,
+  ).toBeGreaterThanOrEqual(focus.readingCueArea);
+}
+
+function expectRenderedReadingMarker(
+  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
+  name: string,
+) {
+  expectRenderedReadingCue(focus, name);
+  expect(
+    focus.leftMarkerContrastingArea,
+    `${name} has ${focus.leftMarkerContrastingArea.toFixed(0)} CSS px² at 3:1 or better in its four-pixel marker strip; ${focus.readingCueArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(focus.readingCueArea);
+}
+
+function expectRenderedForcedReadingOutline(
+  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
+  name: string,
+) {
+  expectRenderedReadingCue(focus, name);
+  expect(
+    focus.leftOutlineContrastingArea,
+    `${name} has ${focus.leftOutlineContrastingArea.toFixed(0)} CSS px² at 3:1 or better along its left outline edge; ${focus.forcedOutlineEdgeArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(focus.forcedOutlineEdgeArea);
+  expect(
+    focus.rightOutlineContrastingArea,
+    `${name} has ${focus.rightOutlineContrastingArea.toFixed(0)} CSS px² at 3:1 or better along its right outline edge; ${focus.forcedOutlineEdgeArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(focus.forcedOutlineEdgeArea);
 }
 
 for (const scenario of focusScenarios) {
@@ -272,14 +421,191 @@ for (const scenario of focusScenarios) {
     const target = await scenario.prepare(page);
     const focus = await renderedFocusDelta(page, target);
 
-    expect.soft(
-      focus.changedArea,
-      `${scenario.name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${focus.requiredArea.toFixed(0)} CSS px² required`,
-    ).toBeGreaterThanOrEqual(focus.requiredArea);
-    expect(
-      focus.contrastingArea,
-      `${scenario.name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${focus.requiredArea.toFixed(0)} CSS px² required`,
-    ).toBeGreaterThanOrEqual(focus.requiredArea);
+    expectRenderedFocusTarget(focus, scenario.name);
+  });
+}
+
+test("programmatic story focus stays visible on a narrow phone", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/stories/the-red-ball/pages/1");
+  const text = page.getByText("Here is my red ball.", { exact: true });
+
+  await expect(text).toHaveAttribute(
+    "aria-label",
+    "Page 1 of 5. Here is my red ball.",
+  );
+  expect(
+    await text.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return Math.round(
+        element.getBoundingClientRect().height /
+          Number.parseFloat(style.lineHeight),
+      );
+    }),
+  ).toBe(1);
+  expectRenderedReadingMarker(
+    await renderedInitialFocusDelta(page, text),
+    "narrow Story Reader page text",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("story page changes retain the visible reading marker after pointer input", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/stories/the-red-ball/pages/1");
+  const reader = page.getByRole("region", { name: "Story reader" });
+
+  await reader.getByRole("button", { name: "Next page" }).click();
+  await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/2$/);
+  const text = reader.getByText("Roll, red ball, roll.", { exact: true });
+  await expect(text).toHaveAttribute(
+    "aria-label",
+    "Page 2 of 5. Roll, red ball, roll.",
+  );
+  expectRenderedReadingMarker(
+    await renderedInitialFocusDelta(page, text),
+    "pointer-advanced Story Reader page text",
+  );
+});
+
+test("long story focus stays visible inside the short-wide reading pane", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/stories/kite-come-back/pages/4");
+  const text = page.getByText(
+    "Ana gives the string one small pull. It will not move.",
+    { exact: true },
+  );
+  const controls = page.getByRole("navigation", { name: "Story controls" });
+
+  await expect(text).toHaveAttribute(
+    "aria-label",
+    "Page 4 of 7. Ana gives the string one small pull. It will not move.",
+  );
+  const containment = await text.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const target = element.getBoundingClientRect();
+    return {
+      lineCount: Math.round(
+        target.height / Number.parseFloat(style.lineHeight),
+      ),
+    };
+  });
+  expect(containment.lineCount).toBeLessThanOrEqual(3);
+
+  const textBox = await text.boundingBox();
+  const controlsBox = await controls.boundingBox();
+  expect(textBox).not.toBeNull();
+  expect(controlsBox).not.toBeNull();
+  expect(textBox!.y).toBeGreaterThanOrEqual(0);
+  expect(textBox!.y + textBox!.height).toBeLessThanOrEqual(controlsBox!.y);
+  expectRenderedReadingMarker(
+    await renderedInitialFocusDelta(page, text),
+    "short-wide Story Reader page text",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("a threshold story line keeps its prompt visible in short-wide reading", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/stories/robo-tries/pages/6");
+  const text = page.getByText('Robo smiles. “I can try!”', { exact: true });
+  const prompt = page.getByLabel("Say it: I can try!");
+  const controls = page.getByRole("navigation", { name: "Story controls" });
+
+  const lineCount = await text.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return Math.round(
+      element.getBoundingClientRect().height /
+        Number.parseFloat(style.lineHeight),
+    );
+  });
+  expect(lineCount).toBe(1);
+  const promptBox = await prompt.boundingBox();
+  const controlsBox = await controls.boundingBox();
+  expect(promptBox).not.toBeNull();
+  expect(controlsBox).not.toBeNull();
+  expect(promptBox!.y).toBeGreaterThanOrEqual(0);
+  expect(promptBox!.y + promptBox!.height).toBeLessThanOrEqual(controlsBox!.y);
+  const promptVisibility = await prompt.evaluate((element) => {
+    let clip = element.parentElement;
+    while (clip) {
+      const overflowY = getComputedStyle(clip).overflowY;
+      if (overflowY === "auto" || overflowY === "scroll") break;
+      clip = clip.parentElement;
+    }
+    if (!clip) return null;
+    const target = element.getBoundingClientRect();
+    const viewport = clip.getBoundingClientRect();
+    return {
+      height: target.height,
+      visibleHeight: Math.max(
+        0,
+        Math.min(target.bottom, viewport.bottom) -
+          Math.max(target.top, viewport.top),
+      ),
+    };
+  });
+  expect(promptVisibility).not.toBeNull();
+  expect(promptVisibility!.visibleHeight).toBeGreaterThanOrEqual(
+    promptVisibility!.height - 1,
+  );
+});
+
+for (const scenario of [
+  {
+    name: "narrow phone",
+    route: "/stories/the-red-ball/pages/1",
+    text: "Here is my red ball.",
+    viewport: { height: 568, width: 280 },
+  },
+  {
+    name: "short-wide reader",
+    route: "/stories/kite-come-back/pages/4",
+    text: "Ana gives the string one small pull. It will not move.",
+    viewport: { height: 360, width: 640 },
+  },
+] as const) {
+  test(`story page focus retains a complete real indicator in forced colors on the ${scenario.name}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+    await page.setViewportSize(scenario.viewport);
+    await page.goto(scenario.route);
+    const text = page.getByText(scenario.text, { exact: true });
+
+    await expect(text).toBeFocused();
+    const indicator = await text.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        outlineStyle: style.outlineStyle,
+        outlineWidth: Number.parseFloat(style.outlineWidth),
+      };
+    });
+    expect(indicator.outlineStyle).not.toBe("none");
+    expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
+    expectRenderedForcedReadingOutline(
+      await renderedInitialFocusDelta(page, text),
+      `forced-colors Story Reader page text on the ${scenario.name}`,
+    );
   });
 }
 

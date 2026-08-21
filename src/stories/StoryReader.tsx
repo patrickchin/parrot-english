@@ -300,7 +300,7 @@ export function StoryReader({
         </figure>
 
         <div className="grid content-start gap-3 p-4 pb-24 short:p-3 short:pb-24 short-wide:min-h-0 short-wide:grid-rows-[minmax(0,1fr)_auto] short-wide:gap-2 short-wide:overflow-hidden short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-24 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
-          <div className="grid gap-3 short-wide:min-h-0 short-wide:min-w-0 short-wide:gap-2 short-wide:overflow-x-hidden short-wide:overflow-y-auto sm:gap-4">
+          <div className="grid gap-3 short-wide:-mx-2 short-wide:min-h-0 short-wide:min-w-0 short-wide:gap-2 short-wide:overflow-x-hidden short-wide:overflow-y-auto short-wide:px-2 sm:gap-4">
             <header className="grid gap-2.5 short-wide:gap-1">
               <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
                 {story.title}
@@ -325,7 +325,7 @@ export function StoryReader({
 
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
-              className="m-0 text-[1.35rem] font-black leading-snug text-slate-800 outline-none focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-sky-300 sm:text-2xl lg:text-3xl lg:leading-snug"
+              className="relative m-0 text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-2xl lg:text-3xl lg:leading-snug"
               ref={pageTextRef}
               tabIndex={-1}
             >
