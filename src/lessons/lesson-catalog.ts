@@ -1,24 +1,17 @@
 /// <reference types="vite/client" />
 
-import backgrounds from "../../content/catalogs/backgrounds.json";
-import characters from "../../content/catalogs/characters.json";
-import emotes from "../../content/catalogs/emotes.json";
 import {
-  createLessonCatalog,
   prepareLesson,
   validateLesson,
 } from "../../lib/lesson-data";
+import { LESSON_VISUAL_CATALOG } from "../../lib/lesson-visual-catalog";
 
 const lessonModules = import.meta.glob("../../content/lessons/*.json", {
   eager: true,
   import: "default",
 }) as Record<string, unknown>;
 
-export const VISUAL_CATALOG = createLessonCatalog({
-  emotes,
-  characters,
-  backgrounds,
-});
+export const VISUAL_CATALOG = LESSON_VISUAL_CATALOG;
 
 export type Lesson = ReturnType<typeof validateLesson>;
 export type LessonDraft = ReturnType<typeof prepareLesson>;

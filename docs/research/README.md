@@ -31,6 +31,7 @@ Last reviewed: 2026-08-21
 - [Lesson start state stability](./lesson-start-stability.md)
 - [Lesson speech in short landscape](./lesson-speech-short-landscape.md)
 - [Layered lessons in short landscape](./layered-lesson-short-landscape.md)
+- [My Lessons error recovery](./my-lessons-recovery.md)
 - [Name-safe copy for ready-made lessons](./learner-name-safe-copy.md)
 - [Performance and child-perceived latency baseline](./performance-baseline.md)
 - [Picture-led first use](./picture-led-first-use.md)

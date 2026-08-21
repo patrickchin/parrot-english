@@ -73,11 +73,11 @@ describe("app route helpers", () => {
     );
   });
 
-  it("rejects empty and dot-segment lesson IDs", () => {
-    for (const lessonId of ["", "   ", ".", ".."]) {
+  it("rejects empty, dot-segment, and unencodable lesson IDs", () => {
+    for (const lessonId of ["", "   ", ".", "..", "\ud800"]) {
       assert.throws(
         () => routes.getLessonPath("parrot", lessonId),
-        /Lesson ID must be non-empty and cannot be a dot segment/,
+        /Lesson ID must be non-empty, encodable, and cannot be a dot segment/,
       );
     }
   });
@@ -123,15 +123,15 @@ describe("app route helpers", () => {
     );
   });
 
-  it("rejects empty and dot-segment story IDs", () => {
-    for (const storyId of ["", "   ", ".", ".."]) {
+  it("rejects empty, dot-segment, and unencodable story IDs", () => {
+    for (const storyId of ["", "   ", ".", "..", "\ud800"]) {
       for (const buildPath of [
         () => routes.getStoryPath(storyId),
         () => routes.getStoryPagePath(storyId, 0),
       ]) {
         assert.throws(
           buildPath,
-          /Story ID must be non-empty and cannot be a dot segment/,
+          /Story ID must be non-empty, encodable, and cannot be a dot segment/,
         );
       }
     }

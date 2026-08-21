@@ -196,6 +196,11 @@ function parrotE2eMockApi(): Plugin {
           return;
         }
 
+        if (pathname === "/api/lessons/my" && request.method === "GET") {
+          sendMockJson(response, { lessons: [] });
+          return;
+        }
+
         if (pathname === "/api/build-info" && request.method === "GET") {
           sendMockJson(response, {
             backend: {

@@ -5,6 +5,7 @@ import {
   STORY_LEVELS,
   type StoryLevelId,
 } from "../stories/story-catalog";
+import { isSafeRouteId } from "../../lib/route-id";
 
 export type LessonSource = "parrot" | "my";
 export type GateRouteKind = "login" | "learner-profile" | "profile";
@@ -51,16 +52,20 @@ function parseSceneNumber(value: string | undefined) {
 }
 
 export function getLessonPath(source: LessonSource, lessonId: string) {
-  if (!lessonId.trim() || lessonId === "." || lessonId === "..") {
-    throw new TypeError("Lesson ID must be non-empty and cannot be a dot segment.");
+  if (!isSafeRouteId(lessonId)) {
+    throw new TypeError(
+      "Lesson ID must be non-empty, encodable, and cannot be a dot segment.",
+    );
   }
 
   return `/lessons/${source}/${encodeURIComponent(lessonId)}`;
 }
 
 export function getStoryPath(storyId: string) {
-  if (!storyId.trim() || storyId === "." || storyId === "..") {
-    throw new TypeError("Story ID must be non-empty and cannot be a dot segment.");
+  if (!isSafeRouteId(storyId)) {
+    throw new TypeError(
+      "Story ID must be non-empty, encodable, and cannot be a dot segment.",
+    );
   }
 
   return `/stories/${encodeURIComponent(storyId)}`;

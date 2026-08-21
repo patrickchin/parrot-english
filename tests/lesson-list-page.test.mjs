@@ -130,9 +130,8 @@ test("ready-made lessons use distinct story-specific artwork", () => {
 test("lesson list keeps custom creation secondary and explains who it is for", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [],
-      myLessonsError: "",
+      myLessonsLoadPhase: "ready",
       onRetryMyLessons() {},
     }),
   );
@@ -168,23 +167,39 @@ test("lesson artwork reserves its card space and defers off-screen images", () =
 test("a failed custom-lesson list offers retry without hiding ready-made lessons", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [],
-      myLessonsError: "Your custom lessons could not be loaded.",
+      myLessonsLoadPhase: "error",
       onRetryMyLessons() {},
     }),
   );
 
-  assert.match(html, /role="alert"/);
-  assert.match(html, /Your custom lessons could not be loaded\./);
+  assert.match(html, /role="status"/);
+  assert.match(html, /aria-live="polite"/);
+  assert.match(html, /aria-atomic="true"/);
+  assert.match(html, /We couldn&#x27;t load My Lessons\./);
   assert.match(html, /<button[^>]*>Try again<\/button>/);
   assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.match(html, /aria-label="Create custom lesson"/);
+  assert.doesNotMatch(html, /Cannot read properties|TypeError|request_failed/);
+});
+
+test("retry keeps one focusable unavailable action beside loading feedback", () => {
+  const html = renderInRouter(
+    createElement(LessonListView, {
+      myLessons: [],
+      myLessonsLoadPhase: "retrying",
+      onRetryMyLessons() {},
+    }),
+  );
+
+  assert.match(html, /Loading My Lessons…/);
+  assert.match(html, /<button[^>]*aria-disabled="true"[^>]*>Try again<\/button>/);
+  assert.doesNotMatch(html, /<button[^>]* disabled=""/);
 });
 
 test("saved lessons keep distinct play, edit, and create actions", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [
         {
           id: "lesson/id",
@@ -192,7 +207,7 @@ test("saved lessons keep distinct play, edit, and create actions", () => {
           source: "uploaded",
         },
       ],
-      myLessonsError: "",
+      myLessonsLoadPhase: "ready",
       onRetryMyLessons() {},
     }),
   );

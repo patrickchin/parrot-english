@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
@@ -15,6 +16,31 @@ async function visibleBox(locator: Locator) {
   const box = await locator.boundingBox();
   expect(box).not.toBeNull();
   return box!;
+}
+
+function boxesOverlap(
+  first: { height: number; width: number; x: number; y: number },
+  second: { height: number; width: number; x: number; y: number },
+) {
+  return !(
+    first.x + first.width <= second.x ||
+    second.x + second.width <= first.x ||
+    first.y + first.height <= second.y ||
+    second.y + second.height <= first.y
+  );
+}
+
+async function expectContained(parent: Locator, child: Locator) {
+  const parentBox = await visibleBox(parent);
+  const childBox = await visibleBox(child);
+  expect(childBox.x).toBeGreaterThanOrEqual(parentBox.x - 1);
+  expect(childBox.y).toBeGreaterThanOrEqual(parentBox.y - 1);
+  expect(childBox.x + childBox.width).toBeLessThanOrEqual(
+    parentBox.x + parentBox.width + 1,
+  );
+  expect(childBox.y + childBox.height).toBeLessThanOrEqual(
+    parentBox.y + parentBox.height + 1,
+  );
 }
 
 const readyMadeArtwork = [
@@ -284,6 +310,289 @@ for (const viewport of [
     await expectNoHorizontalOverflow(page);
   });
 }
+
+for (const viewport of [
+  {
+    failureBody: "null",
+    failureContentType: "application/json",
+    failureStatus: 200,
+    height: 568,
+    width: 280,
+  },
+  {
+    failureBody: JSON.stringify({
+      error: "database_unavailable",
+      message: "D1 binding LESSON_DB is missing.",
+    }),
+    failureContentType: "application/json",
+    failureStatus: 500,
+    height: 844,
+    width: 390,
+  },
+  {
+    failureBody: "<html>not json</html>",
+    failureContentType: "text/html",
+    failureStatus: 200,
+    height: 360,
+    width: 640,
+  },
+]) {
+  test(`My Lessons recovers safely at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    let attempts = 0;
+    let retryMode = false;
+    let releaseRetry = () => {};
+    let reportRetryStarted = () => {};
+    const retryGate = new Promise<void>((resolve) => {
+      releaseRetry = resolve;
+    });
+    const retryStarted = new Promise<void>((resolve) => {
+      reportRetryStarted = resolve;
+    });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await page.route("**/api/lessons/my", async (route) => {
+      attempts += 1;
+      if (!retryMode) {
+        await route.fulfill({
+          body: viewport.failureBody,
+          contentType: viewport.failureContentType,
+          status: viewport.failureStatus,
+        });
+        return;
+      }
+
+      reportRetryStarted();
+      await retryGate;
+      await route.fulfill({
+        body: JSON.stringify({ lessons: [] }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+    await page.setViewportSize(viewport);
+    await page.goto("/lessons");
+
+    const readyMadeLessons = page
+      .getByRole("region", { name: "Lessons" })
+      .getByRole("article");
+    await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+    await expect(
+      readyMadeLessons.first().getByRole("link", {
+        name: "Start lesson: Peppa's High Ball",
+      }),
+    ).toBeVisible();
+
+    const main = page.getByRole("main");
+    await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+    const panel = page.getByRole("complementary", {
+      name: "Grown-up tools",
+    });
+    const heading = panel.getByRole("heading", { name: "Grown-up tools" });
+    const status = panel.getByRole("status");
+    const retry = panel.getByRole("button", { name: "Try again" });
+    const create = panel.getByRole("link", { name: "Create custom lesson" });
+
+    await expect(status).toHaveText("We couldn't load My Lessons.");
+    await expect(status).toHaveAttribute("aria-live", "polite");
+    await expect(status).toHaveAttribute("aria-atomic", "true");
+    await expect(retry).toBeVisible();
+    await expect(create).toBeVisible();
+    await expect(
+      page.getByText(
+        /Cannot read properties|TypeError|invalid_response|database_unavailable|D1 binding/i,
+      ),
+    ).toHaveCount(0);
+    const panelBox = await visibleBox(panel);
+    const headingBox = await visibleBox(heading);
+    const statusBox = await visibleBox(status);
+    const retryBox = await visibleBox(retry);
+    const createBox = await visibleBox(create);
+    expect(headingBox.height).toBeLessThanOrEqual(32);
+    expect(statusBox.width).toBeGreaterThanOrEqual(200);
+    expect(retryBox.height).toBeGreaterThanOrEqual(44);
+    expect(retryBox.width).toBeGreaterThanOrEqual(44);
+    expect(createBox.height).toBeGreaterThanOrEqual(44);
+    expect(createBox.width).toBeGreaterThanOrEqual(44);
+    expect(boxesOverlap(retryBox, createBox)).toBe(false);
+    expect(panelBox.y).toBeGreaterThanOrEqual(0);
+    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
+    await expectContained(panel, retry);
+    await expectContained(panel, create);
+    await expectNoHorizontalOverflow(page);
+    expect(pageErrors).toEqual([]);
+
+    const attemptsBeforeRetry = attempts;
+    retryMode = true;
+    await retry.evaluate((button) => {
+      const statusElement = document.getElementById("my-lessons-status");
+      const metrics = window as Window & {
+        parrotMyLessonsFeedbackMs?: number;
+        parrotMyLessonsFeedbackStart?: number;
+      };
+      metrics.parrotMyLessonsFeedbackMs = undefined;
+      button.addEventListener(
+        "click",
+        () => {
+          metrics.parrotMyLessonsFeedbackStart = performance.now();
+        },
+        { capture: true, once: true },
+      );
+      const observer = new MutationObserver(() => {
+        if (
+          statusElement?.textContent === "Loading My Lessons…" &&
+          metrics.parrotMyLessonsFeedbackStart !== undefined
+        ) {
+          metrics.parrotMyLessonsFeedbackMs =
+            performance.now() - metrics.parrotMyLessonsFeedbackStart;
+          observer.disconnect();
+        }
+      });
+      observer.observe(statusElement!, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+      });
+    });
+    await retry.click();
+    await expect(status).toHaveText("Loading My Lessons…", { timeout: 500 });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { parrotMyLessonsFeedbackMs?: number })
+              .parrotMyLessonsFeedbackMs ?? null,
+        ),
+      )
+      .not.toBeNull();
+    const feedbackMs = await page.evaluate(
+      () =>
+        (window as Window & { parrotMyLessonsFeedbackMs?: number })
+          .parrotMyLessonsFeedbackMs!,
+    );
+    expect(feedbackMs).toBeLessThan(100);
+    await retryStarted;
+    await expect(retry).toHaveAttribute("aria-disabled", "true");
+    await expect(retry).toBeFocused();
+    expect(attempts).toBe(attemptsBeforeRetry + 1);
+    await retry.press("Enter");
+    expect(attempts).toBe(attemptsBeforeRetry + 1);
+    await expect(page).toHaveURL("/lessons");
+    expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    expect(
+      boxesOverlap(await visibleBox(retry), await visibleBox(create)),
+    ).toBe(false);
+    await expectContained(panel, retry);
+    await expectContained(panel, create);
+    await expectNoHorizontalOverflow(page);
+
+    releaseRetry();
+    await expect(status).toHaveText("No made-for-you lessons yet.");
+    await expect(retry).toHaveCount(0);
+    await expect(heading).toBeFocused();
+    await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+    expect(pageErrors).toEqual([]);
+  });
+}
+
+test("My Lessons keeps recovery stable across a failed retry and populated success", async ({
+  page,
+}) => {
+  const savedLesson = {
+    id: "recovered-garden",
+    lesson: createLessonScript({ title: "Recovered Garden" }),
+    source: "uploaded",
+  };
+  let attempts = 0;
+  let phase: "initial-failure" | "retry-failure" | "success" =
+    "initial-failure";
+  let releaseRetryFailure = () => {};
+  let reportRetryFailureStarted = () => {};
+  const retryFailureGate = new Promise<void>((resolve) => {
+    releaseRetryFailure = resolve;
+  });
+  const retryFailureStarted = new Promise<void>((resolve) => {
+    reportRetryFailureStarted = resolve;
+  });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("**/api/lessons/my", async (route) => {
+    attempts += 1;
+    if (phase === "initial-failure") {
+      await route.abort("failed");
+      return;
+    }
+    if (phase === "retry-failure") {
+      reportRetryFailureStarted();
+      await retryFailureGate;
+      await route.fulfill({
+        body: JSON.stringify({
+          error: "database_unavailable",
+          message: "D1 binding LESSON_DB is missing.",
+        }),
+        contentType: "application/json",
+        status: 503,
+      });
+      return;
+    }
+    await route.fulfill({
+      body: JSON.stringify({ lessons: [savedLesson] }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/lessons");
+
+  const readyMadeLessons = page
+    .getByRole("region", { name: "Lessons" })
+    .getByRole("article");
+  const panel = page.getByRole("complementary", { name: "Grown-up tools" });
+  const heading = panel.getByRole("heading", { name: "Grown-up tools" });
+  const status = panel.getByRole("status");
+  const retry = panel.getByRole("button", { name: "Try again" });
+  const create = panel.getByRole("link", { name: "Create custom lesson" });
+  await expect(status).toHaveText("We couldn't load My Lessons.");
+  await panel.scrollIntoViewIfNeeded();
+  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+  await expect(create).toBeVisible();
+
+  const attemptsBeforeFailedRetry = attempts;
+  phase = "retry-failure";
+  await retry.click();
+  await expect(status).toHaveText("Loading My Lessons…", { timeout: 500 });
+  await retryFailureStarted;
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).toBeFocused();
+  await retry.press("Enter");
+  expect(attempts).toBe(attemptsBeforeFailedRetry + 1);
+  releaseRetryFailure();
+
+  await expect(status).toHaveText("We couldn't load My Lessons.");
+  await expect(retry).not.toHaveAttribute("aria-disabled", "true");
+  await expect(retry).toBeFocused();
+  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+  await expect(create).toBeVisible();
+  await expect(
+    page.getByText(/database_unavailable|D1 binding|503|TypeError/i),
+  ).toHaveCount(0);
+
+  const attemptsBeforeSuccess = attempts;
+  phase = "success";
+  await retry.click();
+  await expect(
+    page.getByRole("heading", { name: "Recovered Garden" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Start lesson: Recovered Garden" }),
+  ).toBeVisible();
+  expect(attempts).toBe(attemptsBeforeSuccess + 1);
+  await expect(heading).toBeFocused();
+  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+  await expect(create).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
 
 test("signed-out protected routes preserve the destination and show account access", async ({
   page,
