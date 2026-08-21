@@ -57,7 +57,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /peppa\/peppa-happy-768\.webp/);
     assert.match(html, /peppa-happy-384\.webp 384w/);
     assert.match(html, /peppa-happy-1024\.webp 1024w/);
-    assert.match(html, /Peppa is ready\. Tap the pink button\./);
+    assert.match(html, /Tap Talk to Peppa\./);
     assert.match(html, /aria-label="Grown-up chat style: Tiny turns"/);
     assert.match(html, /Grown-up: Tiny turns/);
     assert.match(html, /<select[^>]*id="peppa-prompt-style"/);
@@ -130,7 +130,7 @@ describe("accessible realtime conversation surface", () => {
     assert.match(guide, /<option value="gentle-guide" selected=""/);
 
     const onboarding = render({ purpose: "onboarding" });
-    assert.match(onboarding, /Wait here. Peppa is getting ready/);
+    assert.match(onboarding, /Wait here. The voice chat is getting ready/);
     assert.doesNotMatch(onboarding, /Chat style|Start chat|Gentle guide/);
   });
 
@@ -148,8 +148,8 @@ describe("accessible realtime conversation surface", () => {
       microphoneEnabled: false,
       turnReady: false,
     });
-    assert.match(connecting, /Waking up Peppa/);
-    assert.match(connecting, /Peppa is waking up/);
+    assert.match(connecting, /Getting ready/);
+    assert.match(connecting, /Starting the voice chat/);
     assert.doesNotMatch(connecting, /Tap, then talk|I’m done/);
     assert.doesNotMatch(connecting, /Repeat Peppa|Response latency|Timing…/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
@@ -192,7 +192,7 @@ describe("accessible realtime conversation surface", () => {
       microphoneEnabled: false,
       status: "reconnecting",
     });
-    assert.match(reconnecting, /Connecting again/);
+    assert.match(reconnecting, /Trying again/);
     assert.doesNotMatch(reconnecting, /Tap, then talk|I’m done/);
   });
 
@@ -273,7 +273,7 @@ describe("accessible realtime conversation surface", () => {
       assert.ok(turnStatus);
       assert.equal(turnStatus.getAttribute("aria-live"), "polite");
       assert.equal(turnStatus.getAttribute("aria-atomic"), "true");
-      assert.equal(turnStatus.textContent.trim(), "I’m listening");
+      assert.equal(turnStatus.textContent.trim(), "Listening");
     }
 
     const endedTurn = render({
@@ -292,7 +292,7 @@ describe("accessible realtime conversation surface", () => {
     assert.equal(finalTranscript.querySelector("[aria-live]"), null);
     const finalStatus = document.querySelector('[role="status"]');
     assert.ok(finalStatus);
-    assert.equal(finalStatus.textContent.trim(), "Peppa heard you");
+    assert.equal(finalStatus.textContent.trim(), "Thinking");
   });
 
   it("shows a quiet thinking state without exposing a latency badge", () => {
@@ -307,9 +307,9 @@ describe("accessible realtime conversation surface", () => {
 
     assert.match(html, /role="status"/);
     assert.match(html, /aria-live="polite"/);
-    assert.match(html, /Peppa heard you/);
+    assert.match(html, /Thinking/);
     assert.match(html, /Waiting for Peppa/);
-    assert.match(html, /Got it! Wait for Peppa/);
+    assert.match(html, /Your turn is done. Wait for Peppa/);
     assert.doesNotMatch(html, /What do you like to do/);
     assert.doesNotMatch(html, /response latency|Reply:|Timing…/i);
     assert.doesNotMatch(html, /Tap, then talk|I’m done/);
@@ -377,14 +377,14 @@ describe("accessible realtime conversation surface", () => {
 
   it("shows a microphone error without throwing away the learner's turn", () => {
     const html = render({
-      error: "Please let Peppa use the microphone.",
+      error: "Ask a grown-up to turn on the microphone.",
       microphoneEnabled: false,
       status: "listening",
     });
 
     assert.match(html, /role="alert"/);
     assert.match(html, /Please try again/);
-    assert.match(html, /Please let Peppa use the microphone/);
+    assert.match(html, /Ask a grown-up to turn on the microphone/);
     assert.match(html, /Tap, then talk/);
   });
 

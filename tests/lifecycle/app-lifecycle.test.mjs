@@ -653,6 +653,39 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(disconnectCalls, 0);
   });
 
+  it("acknowledges Start before the conversation request finishes", async () => {
+    const response = deferred();
+    globalThis.fetch = async () => response.promise;
+
+    await mountStrict(
+      createElement(ConversationHookHarness, { purpose: "small-chat" }),
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "ready",
+    );
+
+    await act(async () => {
+      button("Start voice").click();
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "connecting",
+    );
+
+    response.resolve(json({}, 500));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "error",
+      ),
+    );
+  });
+
   it("returns a standalone conversation to the main menu and allows reopening it", async () => {
     let conversationStarts = 0;
     globalThis.fetch = async (path, init = {}) => {
@@ -1076,7 +1109,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(
         document.querySelector('output[aria-label="Conversation error"]')
           .textContent,
-        "Please ask a grown-up to let Peppa use the microphone.",
+        "Ask a grown-up to turn on the microphone.",
       ),
     );
     assert.equal(
@@ -1332,7 +1365,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.match(
       document.querySelector('output[aria-label="Conversation error"]')
         .textContent,
-      /disconnected before the conversation finished/i,
+      /chat stopped before you finished/i,
     );
   });
 

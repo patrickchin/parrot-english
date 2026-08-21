@@ -58,7 +58,7 @@ function readableMicrophoneError(
 ) {
   const message = readableError(error);
   if (/denied|notallowed|not allowed|permission/i.test(message)) {
-    return "Please ask a grown-up to let Peppa use the microphone.";
+    return "Ask a grown-up to turn on the microphone.";
   }
   if (enabled) return "The microphone did not start. Tap again.";
   if (!microphoneChanged) {
@@ -223,7 +223,7 @@ export function usePeppaConversation({
         void transport?.disconnect();
         if (!COMPLETED_DISCONNECT_REASONS.has(event.reason)) {
           setError(
-            "The voice room disconnected before the conversation finished.",
+            "The chat stopped before you finished.",
           );
           setStatus("error");
           return;

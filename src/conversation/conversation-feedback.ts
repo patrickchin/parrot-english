@@ -53,60 +53,60 @@ export function selectConversationWaitFeedback({
   if (status === "connecting") {
     if (stage === 0) {
       return {
-        label: "Waking up Peppa",
-        text: "Peppa is waking up. Stay here.",
+        label: "Getting ready",
+        text: "Starting the voice chat.",
       };
     }
     if (stage === 1) {
       return {
-        label: "Almost ready",
-        text: "Peppa is getting her voice ready.",
+        label: "Getting ready",
+        text: "Still getting the voice chat ready.",
       };
     }
     return {
       action: "retry",
-      label: "Taking too long",
-      text: "Let’s try again.",
+      label: "Chat paused",
+      text: "The chat did not start. Tap “Try chat again” below.",
     };
   }
 
   if (status === "thinking") {
     if (stage === 0) {
       return {
-        label: "Peppa heard you",
-        text: "Got it! Wait for Peppa.",
+        label: "Thinking",
+        text: "Your turn is done. Wait for Peppa.",
       };
     }
     if (stage === 1) {
       return {
-        label: "Peppa is thinking",
-        text: "Peppa is making an answer.",
+        label: "Thinking",
+        text: "Waiting for Peppa’s answer.",
       };
     }
     if (stage < 3) return {
-      label: "Still thinking",
-      text: "Peppa needs a little more time.",
+      label: "Thinking",
+      text: "This is taking longer than usual.",
     };
     return {
       action: "retry",
-      label: "Taking too long",
-      text: "Let’s try the chat again.",
+      label: "Chat paused",
+      text: "Peppa did not answer. Tap “Try chat again” below.",
     };
   }
 
   if (status === "reconnecting") {
     if (stage === 0) return {
-      label: "Connecting again",
-      text: "The chat stopped. Trying again. Your words are safe.",
+      label: "Trying again",
+      text: "The connection stopped. Trying again.",
     };
     if (stage === 1) return {
-      label: "Still trying",
-      text: "Still trying. Your words are safe.",
+      label: "Trying again",
+      text: "Still trying to connect.",
     };
     return {
       action: "retry",
-      label: "Taking too long",
-      text: "Let’s try the chat again.",
+      label: "Chat paused",
+      text: "The connection did not come back. Tap “Try chat again” below.",
     };
   }
 
@@ -122,13 +122,20 @@ export function selectConversationWaitFeedback({
           text: "That was fun! Finishing up…",
         };
   }
-  if (stage === 1) return {
-      label: "Still finishing",
-      text: "Your chat is safe. Still finishing…",
-    };
+  if (stage === 1) {
+    return savingProfile
+      ? {
+          label: "Saving your answers",
+          text: "Still saving your answers…",
+        }
+      : {
+          label: "Finishing chat",
+          text: "Still finishing the chat…",
+        };
+  }
   return {
     action: "leave",
-    label: "Taking too long",
-    text: "Your chat is safe. You can go back.",
+    label: "Finish paused",
+    text: "Finishing took too long. You can go back.",
   };
 }

@@ -31,6 +31,7 @@ Last reviewed: 2026-08-21
 - [Layered lessons in short landscape](./layered-lesson-short-landscape.md)
 - [Performance and child-perceived latency baseline](./performance-baseline.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
+- [Literal voice-state feedback implementation](./voice-state-feedback.md)
 
 These memos complement the existing
 [child-first UX audit](../design/child-first-ux-audit.md) and

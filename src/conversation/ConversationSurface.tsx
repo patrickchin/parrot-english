@@ -198,7 +198,7 @@ function statusLabel(
   }
   if (status === "listening") {
     if (microphoneBusy) return "Opening microphone";
-    return microphoneEnabled ? "I’m listening" : "Your turn";
+    return microphoneEnabled ? "Listening" : "Your turn";
   }
   if (status === "speaking") return "Peppa’s turn";
   if (status === "reconnecting" || status === "saving") {
@@ -313,30 +313,30 @@ function selectCaption({
       role: undefined,
       text:
         purpose === "small-chat"
-          ? "Peppa is ready. Tap the pink button."
-          : "Wait here. Peppa is getting ready…",
+          ? "Tap Talk to Peppa."
+          : "Wait here. The voice chat is getting ready…",
       transcript: null,
     };
   }
   if (status === "connecting") {
     return {
-      label: "Please wait",
+      label: "Getting ready",
       role: undefined,
-      text: waitFeedback?.text ?? "Starting Peppa’s voice…",
+      text: waitFeedback?.text ?? "Starting the voice chat.",
       transcript: null,
     };
   }
   if (status === "reconnecting") {
     return {
-      label: "Please wait",
+      label: "Trying again",
       role: undefined,
-      text: waitFeedback?.text ?? "Trying again. Your words are safe.",
+      text: waitFeedback?.text ?? "The connection stopped. Trying again.",
       transcript: null,
     };
   }
   if (status === "saving") {
     return {
-      label: "Almost done",
+      label: waitFeedback?.label ?? "Finishing",
       role: undefined,
       text: waitFeedback?.text ?? "Finishing up…",
       transcript: null,
