@@ -89,6 +89,13 @@ Exceptional generated copy is measured from real overflow and remains
 keyboard/touch reachable, but is still a content-quality failure case rather
 than a normal authoring target.
 
+The independent data-integrity branch `codex/learner-name-safe-copy` is
+implemented at `e4f6176`, based on the completed boxed-lesson layout. All 18
+ready-made retry responses and seven final lines now use short universal copy,
+so the signed-in learner Mia is no longer called Bella in text or audio. The
+branch also removes the obsolete named assets and adds catalog, manifest, audio,
+and rendered-state regression coverage.
+
 ### Hand-off record
 
 ```text
@@ -166,6 +173,21 @@ Retain, revise, or reject: retain
 Next question: Do children correctly match the tail-free speaker label with the active character?
 ```
 
+```text
+Branch: codex/learner-name-safe-copy
+Base branch / dependency: codex/lesson-speech-short-landscape
+Commit: e4f6176
+Hypothesis: universal exact-text feedback is safer than a fixed authored name when ready-made lesson audio cannot pronounce the current learner's name
+Changed: 18 retry responses, seven final lines, exact-text audio manifest, one trimmed ElevenLabs retry asset, stale named-asset removal, catalog/audio/browser regressions, screenshot, research memo
+Not changed: My Lesson personalization, account/profile data flow, lesson schema, legacy ready-made childName metadata
+Tests: 611 unit/lifecycle passed; 119 Chromium passed in 37.7 seconds with four workers; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/learner-name-safe-copy/retry-feedback-390x844.jpg
+Measured result: 25 reachable wrong-name lines reduced to zero; account Mia and name-free retry render together; about 468 KB of stale named audio removed
+Risks / limitations: direct child comprehension of the generic final cue and auditory review across target devices remain untested
+Retain, revise, or reject: retain
+Next question: Can generic Talk request failures use one short child-facing recovery action instead of API language?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -181,8 +203,8 @@ branches.
    `codex/lesson-speech-short-landscape` and for generated layered lessons on
    `codex/layered-lesson-short-landscape`.
 4. **High: all ready-made retry lines call the signed-in learner Mia “Bella.”**
-   Separate authored character data from the current learner name, or use
-   name-free retry language.
+   Fixed with name-free retry and final language on
+   `codex/learner-name-safe-copy` at `e4f6176`.
 5. **Medium: generic Talk request failures use grown-up API language.** Map
    transport errors to literal child-facing recovery copy.
 6. **Low: a visible fourth desktop lesson card can remain blank for roughly

@@ -129,7 +129,7 @@ state and success/failure, never the child's name or raw audio.
 
 - Branch: `codex/learner-name-safe-copy`
 - Base: `4c54b7f`
-- Implementation commit: pending
+- Implementation commit: `e4f6176`
 - Tests: 611 unit/lifecycle tests passed; 119 Chromium tests passed in 37.7
   seconds with four workers; the production build passed; lint passed with zero
   errors and two pre-existing generated-file warnings.
