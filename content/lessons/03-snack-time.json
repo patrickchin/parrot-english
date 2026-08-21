@@ -106,7 +106,7 @@
             },
             "incorrect": {
               "speaker": "narrator",
-              "dialogue": "Almost! Try again, Bella.",
+              "dialogue": "Almost! Try again.",
               "after": "retry"
             },
             "incorrectFinal": {
@@ -164,7 +164,7 @@
             },
             "incorrect": {
               "speaker": "narrator",
-              "dialogue": "Almost! Try again, Bella.",
+              "dialogue": "Almost! Try again.",
               "after": "retry"
             },
             "incorrectFinal": {
@@ -200,7 +200,7 @@
         },
         {
           "speaker": "narrator",
-          "dialogue": "Great job, Bella! Peppa has her apple snack!",
+          "dialogue": "Great job!",
           "emotes": {
             "peppa": "happy",
             "dolly": "happy"

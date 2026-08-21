@@ -93,7 +93,23 @@ describe("lesson catalog", () => {
       assert.equal(lesson.title, title);
       assert.equal(lesson.childName, "Bella");
       assert.deepEqual(lesson.goalPhrases, goalPhrases);
-      assert.match(lesson.scenes.at(-1).steps.at(-1).dialogue, /Bella/);
+      assert.equal(lesson.scenes.at(-1).steps.at(-1).dialogue, "Great job!");
+
+      const dialogue = lesson.scenes.flatMap((scene) =>
+        scene.steps.flatMap((step) => [
+          step.dialogue,
+          ...Object.entries(step.check ?? {})
+            .filter(([key]) => key !== "maxAttempts")
+            .map(([, response]) => response.dialogue),
+        ]),
+      );
+      for (const line of dialogue) {
+        assert.equal(
+          line.includes(lesson.childName),
+          false,
+          `${lesson.title} must not call every learner ${lesson.childName}: ${line}`,
+        );
+      }
     });
   });
 });
