@@ -1,10 +1,14 @@
 # Story Reader page-focus visibility guidance
 
-Status: pre-implementation research guidance
+Status: implemented and provisionally retained
 
 Branch: `codex/story-reader-page-focus-visibility`
 
 Base: `codex/shared-focus-visibility` at `0d08e63`
+
+Research commit: `749ab64`
+
+Implementation commit: `8c300aa`
 
 Research date: 2026-08-22
 
@@ -14,17 +18,45 @@ When Story Reader moves programmatic focus to the newly shown sentence, can its
 visual cue remain clear on the cream reading surface and in forced colors while
 looking like a reading-position marker rather than another button or input?
 
-**Selected candidate:** keep the existing focus lifecycle and use a single
-three-CSS-pixel brand-blue real outline with a two-pixel offset, a small corner
-radius, and a static horizontal containment gutter. The brand-blue/cream pair
-is 6.451:1. This branch treats the numeric contrast and area checks as a Parrot
-product target for a static reading cue, not as a claim that WCAG's UI-component
-contrast requirements necessarily apply to the paragraph.
+**Selected implementation:** keep the existing focus lifecycle and show one
+four-CSS-pixel brand-blue rule in the sentence's left margin, separated from
+the first glyph by four pixels of cream, whenever the route-managed paragraph
+owns focus. In short-wide layouts, an
+eight-pixel containment gutter on both sides of the inner scroll viewport keeps
+the rule visible without changing any child's available text width. In forced
+colors, replace the suppressed shadow with a real two-pixel outline and
+two-pixel offset. The brand-blue/cream pair is 6.451:1.
 
-The candidate must pass visual review before retention. Reject or revise it if
-the closed outline still looks actionable, dominates the sentence, causes new
-wrapping, touches the progress/prompt chrome, or appears broken where the
-short-wide reading column clips overflow.
+The cue means **this page just arrived here**. It does not track narration and
+it disappears when focus moves to Listen or another control. The rendered
+contrast and area checks below are Parrot product targets for this static
+reading cue, not a claim that WCAG's UI-component contrast requirements
+necessarily apply to the paragraph.
+
+## Decision revision, 2026-08-22
+
+The research candidate was revised twice rather than silently rewritten:
+
+1. A compact closed brand-blue outline passed the first automated checks but
+   failed visual review. Around static prose it still looked like an editable
+   or tappable field and competed with the yellow join-in card.
+2. An inset left rule plus a permanent 12 px paragraph gutter removed that
+   false affordance, but code review found a content regression. Across all 122
+   pages, 10 gained a line at 280×568 and six gained a line at 640×360. On Robo
+   Tries page 6, the prompt changed from fully visible to only 37 of about 68 px
+   visible.
+3. The retained treatment puts the rule outside the unchanged paragraph box.
+   The short-wide scroll clip alone gains symmetric containment space through
+   equal negative margins and padding, so every child keeps the baseline text
+   measure. A threshold-page regression now protects the one-line Robo sentence
+   and its complete prompt.
+
+The final implementation also uses `:focus`, not `:focus-visible`, for this
+non-interactive route-managed target. Chromium may omit `:focus-visible` after
+a pointer activates **Next**, even though the script correctly focuses the new
+sentence. Styling focus directly makes the page-arrival cue consistent for the
+touch/pointer audience as well as keyboard and switch users. A child cannot
+pointer-focus this `tabIndex=-1` paragraph directly.
 
 ## Audience and scope
 
@@ -153,20 +185,39 @@ underline can look like a link and compete with the story text. Either could be
 reconsidered after child observation if every closed boundary is mistaken for
 a control.
 
-### Selected candidate: compact real outline
+### Rejected after visual review: compact real outline
+
+The initial candidate used a three-pixel `#315f89` real outline with a
+two-pixel offset and smaller corners. It met the first numeric contract but
+still enclosed the prose like a field. It was rejected before implementation
+retention.
+
+### Rejected after exhaustive content review: inset marker with text padding
+
+The second candidate used a four-pixel inset left rule and 12 px of permanent
+left padding. It looked calmer than either closed outline, but the padding
+reduced the available line width. The exhaustive regression described in the
+decision revision showed that this was a content and prompt-visibility change,
+not a harmless alignment choice.
+
+### Selected: separated page-arrival marker with forced-colors outline
 
 Use:
 
-- a three-pixel `#315f89` real outline;
-- a two-pixel positive offset;
-- a small radius rather than the rounded input shape;
-- enough static horizontal gutter to keep the five-pixel external extent
-  inside the short-wide clipping column; and
+- a four-pixel `#315f89` vertical rule in the outer half of an eight-pixel
+  left containment gutter;
+- four pixels of cream between the rule and the first glyph, so a beginner is
+  less likely to decode the rule as a caret or extra character;
+- the unchanged paragraph box and text measure;
+- a symmetric eight-pixel short-wide scroll-viewport gutter, made with equal
+  negative margin and padding so child content keeps its baseline width;
+- a real two-pixel outline with two-pixel offset in forced colors, with both
+  vertical edges contained and measured; and
 - no transition, motion, extra text, icon, or new color token.
 
-The gutter must be present in focused and unfocused presentation so focus does
-not cause reflow. It may not make a valid short sentence wrap or increase the
-long stress case beyond its current three lines.
+The marker is tied to paragraph focus rather than input modality. It survives a
+pointer-initiated page change, clears when focus moves to a real action, and
+does not add the paragraph to sequential keyboard navigation.
 
 ## Automated acceptance contract
 
@@ -174,23 +225,31 @@ Follow the repository rule: use Playwright and accessible locators; do not
 assert Tailwind source or class strings.
 
 1. On The Red Ball page 1 at 280×568, require the labeled paragraph to be the
-   active element and match `:focus-visible` after route-managed focus settles.
+   active element after route-managed focus settles.
 2. Compare the focused screenshot with the same stable state after blur. Count
-   same-position pixels whose change reaches 3:1, and require at least a
-   two-CSS-pixel-perimeter equivalent. Treat this as the voluntary product
-   target above, not a WCAG classification.
+   same-position pixels whose change reaches 3:1. Require a three-pixel-
+   equivalent full-height change overall and inside the exact four-pixel marker
+   strip. Treat this as the voluntary product target above, not a WCAG
+   classification.
 3. Repeat the rendered-area check for Kite, Come Back! page 4 at 640×360.
    Require the three-line paragraph to remain fully visible above the fixed
    story controls and keep document width at 640 px.
-4. Verify the first-page treatment creates no document horizontal overflow at
-   280×568, 390×844, or 640×360 and does not change the valid long page beyond
-   three lines.
-5. After pointer **Next** at 390×844, preserve the existing exact accessible
-   label and programmatic focus on page 2.
-6. In forced-colors emulation, require the page paragraph to remain focused,
-   match `:focus-visible`, and expose a computed non-`none` real outline at
-   least two CSS pixels wide. Do not assert an authored RGB value.
-7. Preserve existing Story Reader navigation, narration, responsive control,
+4. On the one-line threshold case Robo Tries page 6 at 640×360, require one line
+   and the complete prompt to intersect its scroll viewport. This protects
+   meaning and action discovery rather than merely checking document width.
+5. Verify the treatment creates no document horizontal overflow at 280×568,
+   390×844, or 640×360 and does not increase valid wrapping. The exhaustive
+   review must find zero line, prompt, scroll-height, or child-geometry changes
+   across all 122 pages at all three widths.
+6. After pointer **Next** at 390×844, preserve the exact page-2 accessible label,
+   programmatic focus, and rendered marker even when Chromium does not apply
+   `:focus-visible` to that script focus.
+7. In forced-colors emulation at 280×568 and 640×360, require the paragraph to
+   remain focused and expose a computed non-`none` real outline at least two CSS
+   pixels wide. Require qualifying rendered pixels along both vertical outline
+   edges so clipped top/bottom rails cannot produce a false pass. Do not assert
+   an authored RGB value.
+8. Preserve existing Story Reader navigation, narration, responsive control,
    overflow, and shared-focus tests.
 
 ## Visual review matrix
@@ -200,13 +259,16 @@ Capture matched normal-color states in the genuine in-app Browser:
 - 280×568, first page focused on initial load;
 - 390×844, second page focused after pointer **Next**;
 - 640×360, short first-page sentence; and
-- 640×360, three-line Kite page.
+- 640×360, three-line Kite page;
+- 640×360, the threshold one-line Robo page with its complete prompt; and
+- 390×844 after Listen receives focus and the page marker clears.
 
-For every capture, verify the active element and `:focus-visible` before saving.
-Review whether the cue is clearly attached to the sentence, stays complete,
-leaves progress and prompt breathing room, and looks less like an action or
-input than the baseline. Capture dimensions, commits, fixture provenance, and
-SHA-256 digests in an artifact manifest.
+For focused captures, verify the paragraph is the active element before saving;
+record `:focus-visible` as observation rather than a prerequisite. Review
+whether the cue is clearly attached to the sentence without touching its first
+glyph, stays complete, leaves progress and prompt breathing room, and looks
+less like an action or input than the baseline. Capture dimensions, commits,
+fixture provenance, and SHA-256 digests in an artifact manifest.
 
 ## Rollback and follow-up
 
@@ -220,6 +282,14 @@ sentence handoff with retaining the activated page button plus a concise live
 announcement. That experiment needs VoiceOver, TalkBack/NVDA, switch/keyboard,
 and child/caregiver observation because the two patterns trade reading context
 against repeated Tab effort.
+
+The matched long-page screenshots also expose a separate pre-existing
+short-wide discoverability problem: when a page needs three lines, the yellow
+join-in prompt may be reduced to a thin top sliver with no visible scroll cue.
+The final marker produces zero line, prompt, or scroll geometry changes versus
+the base, so that issue does not block this branch. Record and test it as a
+separate content-pane affordance improvement; do not “fix” it here by shrinking
+the story words or silently scrolling away from the focused sentence.
 
 Ask young learners and caregivers to show what they think can be pressed and
 where reading continues. Do not ask them to name colors or accessibility

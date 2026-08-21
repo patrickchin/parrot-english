@@ -1,6 +1,6 @@
 # Evidence-Ranked Improvement Backlog
 
-Last ranked: 2026-08-21
+Last ranked: 2026-08-22
 
 This is a decision queue, not a promise that every feature will be built. Scores
 are relative and should change when observation, implementation, or direct
@@ -177,9 +177,12 @@ pair above 4.5:1 in every tested enabled state. This sequence fixed
 deterministic content loss before layout, then removed movement and hidden
 actions before changing the shared visual treatment. Its visual review found a
 separate 1.278:1 focus-ring failure on the navy account menu. The bounded repair
-is implemented on `codex/shared-focus-visibility` at `d5e1bdc`. A small
-route-specific Story Reader page-text focus follow-up comes next; the
-generated-feedback language contract follows that visual repair.
+is implemented on `codex/shared-focus-visibility` at `d5e1bdc`. The stacked
+route-specific Story Reader page-arrival cue is implemented on
+`codex/story-reader-page-focus-visibility` at `8c300aa`: static prose now uses
+an open, separated reading marker rather than a pale closed ring, without
+changing any current story's geometry. The generated-feedback language
+contract follows this visual repair.
 
 ### Hand-off record
 
@@ -517,6 +520,22 @@ Retain, revise, or reject: retain provisionally for shared controls and base for
 Next branch: codex/story-reader-page-focus-visibility stacked on this documentation hand-off; then generated profile-feedback language
 ```
 
+```text
+Branch: codex/story-reader-page-focus-visibility
+Base branch / dependency: codex/shared-focus-visibility documentation hand-off 0d08e63
+Research commit: 749ab64
+Implementation commit: 8c300aa
+Hypothesis: a separated left page-arrival marker can make route-managed story focus findable without extra English, closed-control affordance, or changed story geometry
+Changed: focused page-text presentation; pointer-stable :focus cue; symmetric short-wide containment gutter; forced-colors outline; shape/contrast/pointer/wrapping/prompt/edge browser contracts; fourteen screenshots and implementation evidence
+Not changed: focus lifecycle, tab order, routes, page words, prompts, narration, audio timing, controls, data, dependencies, translations, or shared-control focus
+Tests: 18/18 focused Chromium; 679/679 unit/integration/lifecycle/safety; 236/236 full Chromium; production build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: fourteen genuine in-app Browser JPEGs and a provenance/integrity manifest in artifacts/ux-review/story-reader-page-focus-visibility at 280×568, 390×844, and 640×360
+Measured result: baseline sky/cream pair 1.603:1; retained brand-blue/cream pair 6.451:1; all 122 pages show zero line, prompt, scroll, overflow, clip, or focus geometry regressions across three viewports; both forced-color outline edges render in the short-wide clip
+Risks / limitations: static paragraph is not classified as a UI component; forced colors is emulation only; target browsers/devices/AT, RTL/localization, zoom/text spacing, and child/caregiver comprehension remain untested
+Retain, revise, or reject: retain provisionally as page-arrival feedback, not narration tracking
+Next branch: codex/deterministic-profile-acknowledgments; then separately investigate long-page short-wide prompt discoverability
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -571,9 +590,16 @@ branches.
     The unchanged base failed both routed dark-surface cases; the candidate
     passes all 12 bounded shared-focus checks.
 14. **Medium: the Story Reader's programmatically focused page text uses a pale
-    sky ring against cream.** The measured pair is about 1.603:1, and this cue
-    is outside the shared-control primitive. Decide and validate its reading-
-    position semantics separately on `codex/story-reader-page-focus-visibility`.
+    sky ring against cream.** Fixed provisionally on
+    `codex/story-reader-page-focus-visibility` at `8c300aa` with a separated
+    four-pixel page-arrival marker and real forced-colors fallback. The
+    retained pair is 6.451:1; all 122 current pages preserve baseline geometry.
+15. **Medium: a three-line Story Reader page at 640×360 can leave only the top
+    sliver of the yellow join-in prompt visible with no obvious scroll cue.**
+    Confirmed on Kite, Come Back! page 4 in both base and retained screenshots.
+    The page-focus branch causes zero prompt or scroll-geometry change. Study a
+    discoverable short-wide content-pane affordance separately without reducing
+    story font size or silently moving focus away from the sentence.
 
 ## Parked ideas
 
