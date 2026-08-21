@@ -138,7 +138,7 @@ export function LessonEditor() {
               lesson={lesson}
               onChange={updateLesson}
             />
-            <LessonWarnings warnings={warnings} />
+            <LessonWarnings lesson={lesson} warnings={warnings} />
             <ActionButton
               className="w-full justify-self-stretch sm:w-auto sm:justify-self-end"
               disabled={isSaving}

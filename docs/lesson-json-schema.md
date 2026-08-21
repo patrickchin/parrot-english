@@ -434,6 +434,19 @@ are saved. Recoverable problems produce warnings and safe values:
 Invalid JSON, input larger than the editor's size limit, and a draft with no
 playable dialogue remain fatal.
 
+### Advisory Child-Language Review
+
+The My Lesson review screen also reports concrete language warning lights. It
+flags learner practice lines over 7 words, child-facing questions over 7 words,
+other spoken lines over 13 words, and a small explicit list of technical terms.
+It checks scripted speaking feedback as well as main dialogue.
+
+These notes do not change the lesson or block saving. They are author prompts,
+not an age, reading-level, proficiency, or learning-ability score. A long line
+or technical term can be intentional target language, so a grown-up may keep
+it. The evidence, rule limits, and implementation record are in the
+[child-language content check memo](./research/child-language-content-check.md).
+
 ## Built-in and My Lesson Audio
 
 Lesson JSON never contains audio filenames or voice IDs.
