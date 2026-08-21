@@ -98,7 +98,7 @@ export function PersonalizedStoryArtPanel({
       aria-label="Personalized story art"
       className="rounded-[1.5rem] border-4 border-white bg-white/95 p-4 shadow-card sm:p-5"
     >
-      <div className="grid gap-4 sm:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)] sm:items-start">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)] sm:items-start short-wide:grid-cols-1">
         <div className="grid gap-3">
           <div className="grid gap-1">
             <p className="m-0 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand-blue">

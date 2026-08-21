@@ -284,7 +284,7 @@ export function StoryReader({
 
       <section
         aria-label="Story reader"
-        className="mx-auto grid h-[calc(100dvh-6rem)] min-h-0 w-full max-w-7xl content-start overflow-x-hidden overflow-y-auto rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short-wide:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)] md:rounded-[2.25rem] lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]"
+        className="mx-auto grid h-[calc(100dvh-6rem)] min-h-0 w-full max-w-7xl content-start overflow-x-hidden overflow-y-auto rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short-wide:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)] short-wide:grid-rows-[minmax(0,1fr)] short-wide:overflow-hidden md:rounded-[2.25rem] lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]"
       >
         <figure className="relative m-0 aspect-[3/2] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:h-40 short:aspect-auto short-wide:h-full short-wide:border-b-0 short-wide:border-r-4 lg:h-full lg:aspect-auto lg:border-b-0 lg:border-r-4">
           <StoryArtwork
@@ -299,9 +299,9 @@ export function StoryReader({
           </figcaption>
         </figure>
 
-        <div className="grid content-start gap-3 p-4 pb-24 short:p-3 short:pb-24 short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-24 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
-          <div className="grid gap-3 sm:gap-4">
-            <header className="grid gap-2.5">
+        <div className="grid content-start gap-3 p-4 pb-24 short:p-3 short:pb-24 short-wide:min-h-0 short-wide:grid-rows-[minmax(0,1fr)_auto] short-wide:gap-2 short-wide:overflow-hidden short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-24 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
+          <div className="grid gap-3 short-wide:min-h-0 short-wide:min-w-0 short-wide:gap-2 short-wide:overflow-x-hidden short-wide:overflow-y-auto sm:gap-4">
+            <header className="grid gap-2.5 short-wide:gap-1">
               <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
                 {story.title}
               </h1>
@@ -334,7 +334,7 @@ export function StoryReader({
 
             <aside
               aria-label={`Say it: ${page.joinIn}`}
-              className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 sm:p-4"
+              className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 short-wide:gap-2 short-wide:p-2 sm:p-4"
             >
               <Sparkles
                 aria-hidden="true"
@@ -359,8 +359,11 @@ export function StoryReader({
             </aside>
 
             {personalizationPanel ? (
-              <details className="group">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-sky-100 px-3 text-sm font-black text-brand-blue [&::-webkit-details-marker]:hidden">
+              <details className="group min-w-0">
+                <summary
+                  aria-label="Grown-up options"
+                  className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-sky-100 px-3 text-sm font-black text-brand-blue [&::-webkit-details-marker]:hidden"
+                >
                   Grown-up options
                   <span aria-hidden="true" className="group-open:rotate-180">
                     ▾
@@ -393,7 +396,7 @@ export function StoryReader({
 
           <nav
             aria-label="Story controls"
-            className="fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-2 rounded-2xl border-3 border-white bg-[#fffaf0]/95 p-2 shadow-card short-wide:static short-wide:rounded-none short-wide:border-x-0 short-wide:border-b-0 short-wide:border-t-3 short-wide:border-sky-100 short-wide:bg-transparent short-wide:p-0 short-wide:pt-3 short-wide:shadow-none sm:gap-3 lg:static lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t-3 lg:border-sky-100 lg:bg-transparent lg:p-0 lg:pt-4 lg:shadow-none"
+            className="fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-2 rounded-2xl border-3 border-white bg-[#fffaf0]/95 p-2 shadow-card short-wide:static short-wide:rounded-none short-wide:border-x-0 short-wide:border-b-0 short-wide:border-t-3 short-wide:border-sky-100 short-wide:bg-[#fffaf0] short-wide:p-0 short-wide:pt-3 short-wide:shadow-none sm:gap-3 lg:static lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t-3 lg:border-sky-100 lg:bg-transparent lg:p-0 lg:pt-4 lg:shadow-none"
           >
             <ActionButton
               aria-label="Previous page"

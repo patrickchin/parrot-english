@@ -100,6 +100,60 @@ async function expectInsideViewportHorizontally(locator: Locator, page: Page) {
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
 }
 
+async function enablePersonalizedStoryArtPanel(page: Page) {
+  await page.route(
+    /\/api\/stories\/the-red-ball\/personalized-art(?:\?.*)?$/,
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        json: {
+          enabled: true,
+          guardianConsentVersion: "guardian-photo-cloudflare-v1",
+          hasStoredArt: false,
+          stories: {},
+          updatedAt: null,
+        },
+        status: 200,
+      });
+    },
+  );
+}
+
+async function visibleBoxWithoutScrolling(locator: Locator) {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  return box!;
+}
+
+async function expectContainedWithoutScrolling(
+  container: Locator,
+  content: Locator,
+) {
+  const [containerBox, contentBox] = await Promise.all([
+    visibleBoxWithoutScrolling(container),
+    visibleBoxWithoutScrolling(content),
+  ]);
+
+  expect(contentBox.x).toBeGreaterThanOrEqual(containerBox.x);
+  expect(contentBox.y).toBeGreaterThanOrEqual(containerBox.y);
+  expect(contentBox.x + contentBox.width).toBeLessThanOrEqual(
+    containerBox.x + containerBox.width,
+  );
+  expect(contentBox.y + contentBox.height).toBeLessThanOrEqual(
+    containerBox.y + containerBox.height,
+  );
+  return contentBox;
+}
+
+function expectStablePosition(
+  before: { x: number; y: number },
+  after: { x: number; y: number },
+) {
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
+}
+
 test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
@@ -332,6 +386,87 @@ test("a script-only story has descriptive art, read-aloud, and obvious page cont
   );
   await expect(controls.getByRole("button", { name: "Previous page" })).toBeEnabled();
 });
+
+for (const viewport of [
+  { height: 360, name: "compact landscape", width: 640 },
+  { height: 360, name: "wide short screen", width: 1280 },
+]) {
+  test(`a ${viewport.name} keeps story art and child controls fixed while secondary content scrolls`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await enablePersonalizedStoryArtPanel(page);
+    await page.goto(firstStoryPath);
+
+    const reader = page.getByRole("region", { name: "Story reader" });
+    const controls = reader.getByRole("navigation", {
+      name: "Story controls",
+    });
+    const artwork = reader.getByRole("img", {
+      name: "A child holding one bright red ball",
+    });
+    const grownUpOptions = reader.getByLabel("Grown-up options");
+
+    await expect(
+      reader.evaluate((element) => ({
+        hasOuterScroll: element.scrollHeight > element.clientHeight,
+        scrollTop: element.scrollTop,
+      })),
+    ).resolves.toEqual({ hasOuterScroll: false, scrollTop: 0 });
+
+    const initialControlsBox = await expectContainedWithoutScrolling(
+      reader,
+      controls,
+    );
+    const initialArtworkBox = await visibleBoxWithoutScrolling(artwork);
+    for (const button of await controls.getByRole("button").all()) {
+      const box = await visibleBoxWithoutScrolling(button);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+
+    await grownUpOptions.click();
+    const personalization = reader.getByRole("region", {
+      name: "Personalized story art",
+    });
+    await expect(personalization).toBeVisible();
+    await expect(
+      personalization.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth,
+      ),
+    ).resolves.toBe(true);
+    expectStablePosition(
+      initialControlsBox,
+      await expectContainedWithoutScrolling(reader, controls),
+    );
+    expectStablePosition(
+      initialArtworkBox,
+      await visibleBoxWithoutScrolling(artwork),
+    );
+
+    await controls.getByRole("button", { name: "Listen" }).click();
+    await expect(
+      controls.getByRole("button", { name: "Pause story" }),
+    ).toBeVisible();
+    expectStablePosition(
+      initialControlsBox,
+      await expectContainedWithoutScrolling(reader, controls),
+    );
+
+    await controls.getByRole("button", { name: "Next page" }).click();
+    await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/2$/);
+    await expect(
+      reader.getByRole("progressbar", { name: "Story progress" }),
+    ).toHaveAttribute("aria-valuenow", "2");
+    expectStablePosition(
+      initialControlsBox,
+      await expectContainedWithoutScrolling(reader, controls),
+    );
+    await expect(
+      reader.evaluate((element) => element.scrollTop),
+    ).resolves.toBe(0);
+  });
+}
 
 test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) => {
   await page.goto("/stories/the-lantern-trail/pages/1");

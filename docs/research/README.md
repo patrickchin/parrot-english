@@ -24,6 +24,7 @@ Last reviewed: 2026-08-21
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Lesson start state stability](./lesson-start-stability.md)
+- [Story controls in short landscape](./story-controls-short-landscape.md)
 
 These memos complement the existing
 [child-first UX audit](../design/child-first-ux-audit.md) and

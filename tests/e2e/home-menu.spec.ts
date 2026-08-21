@@ -106,11 +106,11 @@ test("desktop home gives the three learner paths equal visual weight", async ({
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/");
 
-  const cards = await page
+  const cardLinks = page
     .getByRole("navigation", { name: "Learning activities" })
-    .getByRole("link")
-    .all();
-  expect(cards).toHaveLength(3);
+    .getByRole("link");
+  await expect(cardLinks).toHaveCount(3);
+  const cards = await cardLinks.all();
 
   const boxes = await Promise.all(cards.map((card) => card.boundingBox()));
   for (const box of boxes) expect(box).not.toBeNull();
