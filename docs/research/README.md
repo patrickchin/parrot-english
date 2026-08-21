@@ -36,6 +36,7 @@ Last reviewed: 2026-08-21
 - [Responsive lesson and story shelf artwork](./responsive-shelf-art.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
 - [Literal voice-state feedback implementation](./voice-state-feedback.md)
+- [Voice fallback speaking practice](./voice-fallback-practice.md)
 
 These memos complement the existing
 [child-first UX audit](../design/child-first-ux-audit.md) and
