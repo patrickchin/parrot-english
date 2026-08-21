@@ -8,13 +8,24 @@ export function StoryArtwork({
   className,
   personalizedOverride,
   priority = false,
+  sizes,
 }: {
   artwork: StoryArtworkData;
   className?: string;
   personalizedOverride?: PersonalizedStoryArtwork | null;
   priority?: boolean;
+  sizes?: string;
 }) {
   const renderedArtwork = personalizedOverride ?? artwork;
+  const srcSet =
+    sizes && !personalizedOverride && renderedArtwork.src
+      ? ([384, 768] as const)
+          .map(
+            (width) =>
+              `${renderedArtwork.src!.replace(/\.webp$/, `-${width}.webp`)} ${width}w`,
+          )
+          .join(", ")
+      : undefined;
 
   if (renderedArtwork.src) {
     return (
@@ -25,7 +36,9 @@ export function StoryArtwork({
         fetchPriority={priority ? "high" : "auto"}
         height="1024"
         loading={priority ? "eager" : "lazy"}
+        sizes={srcSet ? sizes : undefined}
         src={renderedArtwork.src}
+        srcSet={srcSet}
         width="1536"
       />
     );

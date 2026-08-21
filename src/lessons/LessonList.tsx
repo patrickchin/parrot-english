@@ -44,6 +44,15 @@ type LessonArtwork = {
   src: string;
 };
 
+const LESSON_SHELF_IMAGE_SIZES =
+  "(max-width: 359px) 104px, (max-width: 639px) calc((100vw - 36px) / 2), (max-width: 1023px) calc((100vw - 64px) / 3), (max-width: 1279px) calc((100vw - 176px) / 4), 276px";
+
+function responsiveShelfSrcSet(src: string) {
+  return ([384, 768] as const)
+    .map((width) => `${src.replace(/\.webp$/, `-${width}.webp`)} ${width}w`)
+    .join(", ");
+}
+
 const readyMadeArtwork = new Map<string, LessonArtwork>(
   lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
 );
@@ -117,7 +126,9 @@ function LessonCardView({
             decoding="async"
             fetchPriority={source === "parrot" && index === 0 ? "high" : undefined}
             loading={source === "parrot" && index < 2 ? "eager" : "lazy"}
+            sizes={source === "parrot" ? LESSON_SHELF_IMAGE_SIZES : undefined}
             src={lesson.artworkSrc}
+            srcSet={source === "parrot" ? responsiveShelfSrcSet(lesson.artworkSrc) : undefined}
           />
         </div>
 

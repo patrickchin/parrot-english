@@ -83,10 +83,25 @@ test("ready-made lessons show distinct story-specific artwork", async ({
       .nth(index)
       .getByRole("img", { name: artwork.alt });
     await expect(image).toHaveAttribute("src", artwork.src);
+    await expect(image).toHaveAttribute(
+      "srcset",
+      `${artwork.src.replace(/\.webp$/, "-384.webp")} 384w, ${artwork.src.replace(/\.webp$/, "-768.webp")} 768w`,
+    );
     await expect
       .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
       .toBeGreaterThan(0);
   }
+
+  await expect
+    .poll(() =>
+      readyMadeLessons
+        .first()
+        .getByRole("img")
+        .evaluate((element: HTMLImageElement) =>
+          new URL(element.currentSrc).pathname,
+        ),
+    )
+    .toMatch(/\/assets\/lesson-covers\/01-peppas-high-ball-(384|768)\.webp$/);
 });
 
 test("every ready-made lesson exposes one canonical start link", async ({

@@ -155,6 +155,14 @@ test("lesson artwork reserves its card space and defers off-screen images", () =
     html,
     /<img[^>]*fetchPriority="high"[^>]*loading="eager"[^>]*src="\/assets\/lesson-covers\/01-peppas-high-ball\.webp"/,
   );
+  assert.match(
+    html,
+    /sizes="\(max-width: 359px\) 104px,[^"]+"/,
+  );
+  assert.match(
+    html,
+    /srcSet="\/assets\/lesson-covers\/01-peppas-high-ball-384\.webp 384w, \/assets\/lesson-covers\/01-peppas-high-ball-768\.webp 768w"/,
+  );
 });
 
 test("a failed custom-lesson list offers retry without hiding ready-made lessons", () => {

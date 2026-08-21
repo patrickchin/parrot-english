@@ -112,6 +112,32 @@ describe("personalized story art UI", () => {
     assert.doesNotMatch(html, /Artwork placeholder|Picture coming later/);
   });
 
+  it("offers responsive public cover art without rewriting a private override", () => {
+    const artwork = {
+      alt: "A red ball",
+      prompt: "A red ball",
+      src: "/assets/stories/the-red-ball-cover.webp",
+    };
+    const sizes = "(max-width: 519px) calc(100vw - 24px), 273px";
+
+    const publicHtml = renderStoryArtwork({ artwork, sizes });
+    assert.match(publicHtml, new RegExp(`sizes="${sizes.replace(/[()]/g, "\\$&")}"`));
+    assert.match(
+      publicHtml,
+      /srcSet="\/assets\/stories\/the-red-ball-cover-384\.webp 384w, \/assets\/stories\/the-red-ball-cover-768\.webp 768w"/,
+    );
+
+    const privateHtml = renderStoryArtwork({
+      artwork,
+      personalizedOverride: {
+        alt: "You holding a red ball",
+        src: "/api/stories/the-red-ball/personalized-art/asset",
+      },
+      sizes,
+    });
+    assert.doesNotMatch(privateHtml, /srcSet=|sizes=/);
+  });
+
   it("lets StoryReader render one private override for The Red Ball page 1 without mutating the illustrated catalog story", () => {
     assert.ok(Array.isArray(STORIES), "Expected story catalog stories");
     const story = STORIES.find(({ id }) => id === "the-red-ball");

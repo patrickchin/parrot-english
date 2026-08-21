@@ -185,6 +185,17 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
   });
   await expect(firstCover).toBeVisible();
   await expect(firstCover).toHaveAttribute("loading", "eager");
+  await expect(firstCover).toHaveAttribute(
+    "srcset",
+    "/assets/stories/the-red-ball-cover-384.webp 384w, /assets/stories/the-red-ball-cover-768.webp 768w",
+  );
+  await expect
+    .poll(() =>
+      firstCover.evaluate((element: HTMLImageElement) =>
+        new URL(element.currentSrc).pathname,
+      ),
+    )
+    .toMatch(/\/assets\/stories\/the-red-ball-cover-(384|768)\.webp$/);
   await expect(
     panel.getByRole("img", {
       name: "Three simple hats in red, blue, and yellow",
