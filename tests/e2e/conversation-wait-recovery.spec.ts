@@ -112,6 +112,7 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("button", { name: "Finish chat" }),
     ).toBeVisible();
+    const captionsBox = await box(captions);
     const controlsBox = await box(controls);
     await expect(
       page.getByRole("button", { name: "Waiting for Peppa" }),
@@ -153,6 +154,7 @@ for (const viewport of viewports) {
     const retryBox = await box(retry);
     expectSameControlRow(controlsBox, retryBox);
     expect(retryBox.width).toBeGreaterThanOrEqual(controlsBox.width - 2);
+    expectSameBox(captionsBox, await box(captions));
     expectSameBox(controlsBox, await box(controls));
     expect(retryBox.height).toBeGreaterThanOrEqual(44);
     expect(retryBox.x).toBeGreaterThanOrEqual(0);
