@@ -565,7 +565,7 @@ Screenshots / traces: two genuine in-app Browser JPEGs and a provenance/integrit
 Measured result: zero runtime acknowledgment-synthesis calls or waits; removed the prior 10-second default/30-second capped TTS tail and sequential bulk synthesis loop; selected MP3 is 17,598 bytes, approximately 1.071 seconds, and browser metadata loads as audio/mpeg; screenshots retain focus, scroll origin, zero horizontal overflow, and the prior layout
 Risks / limitations: no universal millisecond saving; Groq and D1 remain on the save path; repository metadata and media loading do not prove the audible words, physical output, child hearing, voice quality, level, autoplay reliability, assistive-technology overlap, or comprehension; deployed-secret deletion remains an authorized post-rollout operation
 Retain, revise, or reject: retain provisionally pending human listening and target-device/assistive-technology/child review
-Next branch: codex/profile-heading-reading-cue stacked on this documentation hand-off; then investigate the Story Reader short-wide prompt affordance
+Next branch: codex/story-reader-join-in-visibility stacked on this documentation hand-off; then codex/profile-heading-reading-cue
 ```
 
 ## Newly observed defects
@@ -629,12 +629,15 @@ branches.
     `codex/story-reader-page-focus-visibility` at `8c300aa` with a separated
     four-pixel page-arrival marker and real forced-colors fallback. The
     retained pair is 6.451:1; all 122 current pages preserve baseline geometry.
-15. **Medium: a three-line Story Reader page at 640×360 can leave only the top
-    sliver of the yellow join-in prompt visible with no obvious scroll cue.**
-    Confirmed on Kite, Come Back! page 4 in both base and retained screenshots.
-    The page-focus branch causes zero prompt or scroll-geometry change. Study a
-    discoverable short-wide content-pane affordance separately without reducing
-    story font size or silently moving focus away from the sentence.
+15. **High: the Story Reader join-in prompt is partly or wholly hidden on most
+    pages at 640×360.**
+    A subsequent 122-page geometry sweep found 47 prompts fully visible, 74
+    partial, and one wholly hidden; 26 pages expose none of the prompt label or
+    phrase text. Kite, Come Back! page 4 retains only 4 of 67.5 pixels even when
+    narration reaches **Your turn**. The page-focus branch causes zero prompt or
+    scroll-geometry change. Repair phase-appropriate visibility separately
+    without reducing story font size or silently moving focus away from the
+    sentence on `codex/story-reader-join-in-visibility`.
 16. **High: deterministic form-profile saves still waited for redundant runtime
     acknowledgment synthesis.** Fixed on
     `codex/static-profile-acknowledgment-audio` at `41bb210`. The Worker now

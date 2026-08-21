@@ -168,6 +168,7 @@ offline content-generation dependency.
 
 The programmatically focused profile heading still uses a tight rectangular
 cue that can resemble a text field. It is a separate visual semantics issue,
-not a reason to restore runtime TTS. The next stacked branch is
-`codex/profile-heading-reading-cue`; the Story Reader short-wide prompt
-affordance remains queued behind it.
+not a reason to restore runtime TTS. A subsequent 122-page short-wide inventory
+found the Story Reader's speaking prompt partly or wholly hidden on 75 pages,
+so `codex/story-reader-join-in-visibility` is the next stacked branch. The
+profile heading cue remains queued behind that functional visibility repair.
