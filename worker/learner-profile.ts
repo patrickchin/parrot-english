@@ -7,6 +7,9 @@ import {
   readV2Answers,
   writeV2Response,
 } from "../lib/learner-profile-responses.js";
+import {
+  LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
+} from "../lib/learner-profile-questionnaire.js";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
@@ -123,7 +126,21 @@ function clientProfile(profile: Profile) {
     : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
-  const answers = readV2Answers(readable);
+  const storedAnswers = readV2Answers(readable);
+  const answers = {
+    ...storedAnswers,
+    responses: Object.fromEntries(
+      Object.entries(
+        storedAnswers.responses as Record<string, Record<string, unknown>>,
+      ).map(([answerKey, response]) => [
+        answerKey,
+        {
+          ...response,
+          acknowledgment: LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
+        },
+      ]),
+    ),
+  };
   return {
     name: profile.name,
     age: profile.age,
@@ -308,7 +325,6 @@ function savedEnrichment(profile: Profile, answerKey: string) {
   if (!response) return null;
   return {
     summary: response.summary,
-    acknowledgment: response.acknowledgment,
     canonicalName: answerKey === "name" ? profile.name : null,
     canonicalAge: answerKey === "age" ? profile.age : null,
     enrichmentStatus: response.enrichmentStatus,
@@ -380,15 +396,13 @@ async function saveAnswer({
   }
 
   let storedProfile = profile;
-  let acknowledgment = enrichment.acknowledgment;
+  const acknowledgment = question.fallbackAcknowledgment;
   if (!sameAnswer) {
     const updated = writeV2Response(readable, question, {
-      rawAnswer,
       ...enrichment,
+      rawAnswer,
       answeredAt: dependencies.now().toISOString(),
     });
-    acknowledgment =
-      readV2Answers(updated).responses[question.answerKey].acknowledgment;
 
     if (profileEdit) {
       await repository.saveAnswer(profile.id, {
@@ -523,14 +537,13 @@ async function saveProfileAnswers({
 
     try {
       updated = writeV2Response(updated, question, {
-        rawAnswer,
         ...enrichment,
+        rawAnswer,
         answeredAt: dependencies.now().toISOString(),
       });
       changed.push({
         question,
-        acknowledgment:
-          readV2Answers(updated).responses[question.answerKey].acknowledgment,
+        acknowledgment: question.fallbackAcknowledgment,
       });
     } catch {
       fieldErrors[question.answerKey] = "Please check this answer and try again.";

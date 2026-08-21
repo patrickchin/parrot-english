@@ -7,24 +7,17 @@ import { LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT } from "./prompts/learner-prof
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
-const OUTPUT_KEYS = new Set([
-  "summary",
-  "acknowledgment",
-  "canonicalName",
-  "canonicalAge",
-]);
+const OUTPUT_KEYS = new Set(["summary", "canonicalName", "canonicalAge"]);
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u;
 
 type LearnerProfileQuestion = {
   promptEn: string;
   canonicalField: "name" | "age" | null;
   maxLength: number;
-  fallbackAcknowledgment: string;
 };
 
 export type LearnerProfileEnrichment = {
   summary: string;
-  acknowledgment: string;
   canonicalName: string | null;
   canonicalAge: number | null;
   enrichmentStatus: "generated" | "fallback";
@@ -45,7 +38,6 @@ const RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     summary: { type: "string", maxLength: 240 },
-    acknowledgment: { type: "string", maxLength: 160 },
     canonicalName: {
       anyOf: [{ type: "string", maxLength: 80 }, { type: "null" }],
     },
@@ -56,7 +48,7 @@ const RESPONSE_SCHEMA = {
       ],
     },
   },
-  required: ["summary", "acknowledgment", "canonicalName", "canonicalAge"],
+  required: ["summary", "canonicalName", "canonicalAge"],
   additionalProperties: false,
 } as const;
 
@@ -111,7 +103,6 @@ function fallback(
   if ("fieldError" in canonical) return canonical;
   return {
     summary: truncate(rawAnswer, 240),
-    acknowledgment: question.fallbackAcknowledgment,
     ...canonical,
     enrichmentStatus: "fallback",
   };
@@ -133,17 +124,7 @@ function parseGenerated(
   }
 
   const summary = typeof output.summary === "string" ? output.summary.trim() : "";
-  const acknowledgment =
-    typeof output.acknowledgment === "string"
-      ? output.acknowledgment.trim()
-      : "";
-  if (
-    summary.length === 0 ||
-    summary.length > 240 ||
-    acknowledgment.length === 0 ||
-    acknowledgment.length > 160 ||
-    acknowledgment.includes("?")
-  ) {
+  if (summary.length === 0 || summary.length > 240) {
     return null;
   }
 
@@ -161,7 +142,6 @@ function parseGenerated(
 
   return {
     summary,
-    acknowledgment,
     canonicalName:
       typeof output.canonicalName === "string" ? output.canonicalName : null,
     canonicalAge:

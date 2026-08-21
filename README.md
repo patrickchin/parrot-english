@@ -11,7 +11,7 @@ Child-first listening, speaking, and story practice for young English learners.
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
 - OpenAI lesson generation plus Groq speech evaluation, onboarding transcription, and answer enrichment
-- ElevenLabs saved prompt audio and runtime onboarding acknowledgments
+- ElevenLabs saved prompt audio and runtime fixed profile-confirmation audio
 - LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
 The frontend is a Vite single-page app. The Worker serves the built assets and
@@ -106,9 +106,11 @@ Create Lesson uses OpenAI `gpt-5.6-luna` and is protected by the authenticated
 `LESSON_GENERATION_RATE_LIMITER` binding. Pasted lesson scripts are editable,
 validated, and stored directly without an AI request.
 
-Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
-acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic
-acknowledgments; the browser never receives either provider key.
+Form onboarding also uses `GROQ_API_KEY` for factual answer summaries and
+canonical name or age extraction. The child-facing response is the locally
+selected `Thank you!`, never model output. Set `ELEVENLABS_API_KEY` in
+`.dev.vars` to speak that fixed response at runtime; the browser never receives
+either provider key.
 
 Email/password authentication currently has no email verification, password
 reset, social sign-in, or Resend integration.
@@ -200,10 +202,13 @@ The six v2 questions ship with the Worker in the checked-in questionnaire at
 code review and deployment; there is no questionnaire publishing command.
 
 Every confirmed answer is stored as prose in `learner_profile.answers_json`
-with the exact question, raw answer, concise summary, playful acknowledgment,
-enrichment status, and server timestamp. Canonical name and age remain in their
-existing profile columns as well. Groq enrichment is persisted before the
-Worker requests optional acknowledgment audio from ElevenLabs, so a TTS failure
+with the exact question, raw answer, concise summary, reviewed `Thank you!`
+acknowledgment, enrichment status, and server timestamp. Canonical name and age
+remain in their existing profile columns as well. The enrichment status
+describes only summary/canonical enrichment. Historical version-two snapshots
+remain readable, but API responses replace old generated acknowledgments with
+the current reviewed phrase. Groq enrichment is persisted before the Worker
+requests optional fixed acknowledgment audio from ElevenLabs, so a TTS failure
 does not lose the answer.
 
 The normalized `questionnaire` and `questionnaire_question` tables remain

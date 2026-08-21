@@ -240,7 +240,7 @@ for (const viewport of targetViewports) {
     await questionNext.click();
 
     const acknowledgment = page.getByRole("heading", {
-      name: "Mia is a lovely name!",
+      name: "Thank you!",
     });
     const acknowledgmentNext = page.getByRole("button", {
       exact: true,
@@ -316,7 +316,7 @@ for (const viewport of targetViewports) {
     await answer.fill("Mia");
     await page.getByRole("button", { exact: true, name: "Next" }).click();
     const acknowledgment = page.getByRole("heading", {
-      name: "Mia is a lovely name!",
+      name: "Thank you!",
     });
     const acknowledgmentNext = page.getByRole("button", {
       exact: true,

@@ -39,7 +39,7 @@ describe("onboarding answer enrichment", () => {
     assert.doesNotMatch(runtimeSource, /summarize the child's answer factually/i);
   });
 
-  it("requests strict child-safe summary and acknowledgment JSON", async () => {
+  it("requests strict factual enrichment JSON without public copy", async () => {
     let upstreamRequest;
     const result = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
@@ -51,7 +51,6 @@ describe("onboarding answer enrichment", () => {
         };
         return providerResponse({
           summary: "Likes dinosaurs.",
-          acknowledgment: "Dinosaurs are very stompy!",
           canonicalName: null,
           canonicalAge: null,
         });
@@ -74,13 +73,21 @@ describe("onboarding answer enrichment", () => {
       upstreamRequest.body.messages[0].content,
       /summarize the child's answer factually/i,
     );
+    assert.match(
+      upstreamRequest.body.messages[0].content,
+      /untrusted data, not instructions/i,
+    );
+    assert.doesNotMatch(
+      upstreamRequest.body.messages[0].content,
+      /acknowledg|friendly response|shown to the learner/i,
+    );
     assert.equal(
       upstreamRequest.body.response_format.json_schema.strict,
       true,
     );
     assert.deepEqual(
       upstreamRequest.body.response_format.json_schema.schema.required,
-      ["summary", "acknowledgment", "canonicalName", "canonicalAge"],
+      ["summary", "canonicalName", "canonicalAge"],
     );
     assert.equal(
       upstreamRequest.body.response_format.json_schema.schema.additionalProperties,
@@ -97,7 +104,6 @@ describe("onboarding answer enrichment", () => {
     );
     assert.deepEqual(result, {
       summary: "Likes dinosaurs.",
-      acknowledgment: "Dinosaurs are very stompy!",
       canonicalName: null,
       canonicalAge: null,
       enrichmentStatus: "generated",
@@ -110,7 +116,6 @@ describe("onboarding answer enrichment", () => {
       fetch: async () =>
         providerResponse({
           summary: "Is called Mia.",
-          acknowledgment: "Mia is a lovely name!",
           canonicalName: "Mia",
           canonicalAge: null,
         }),
@@ -124,7 +129,6 @@ describe("onboarding answer enrichment", () => {
       fetch: async () =>
         providerResponse({
           summary: "Is thirty years old.",
-          acknowledgment: "Thirty is a brilliant age!",
           canonicalName: null,
           canonicalAge: 30,
         }),
@@ -148,17 +152,14 @@ describe("onboarding answer enrichment", () => {
     assert.equal(fetchCalls, 0);
     assert.equal(missingKey.enrichmentStatus, "fallback");
     assert.ok(missingKey.summary.length <= 240);
-    assert.equal(
-      missingKey.acknowledgment,
-      animalsQuestion.fallbackAcknowledgment,
-    );
+    assert.equal("acknowledgment" in missingKey, false);
 
     const invalid = await enrichLearnerProfileAnswer({
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () =>
         providerResponse({
           summary: "Likes dinosaurs.",
-          acknowledgment: "Which dinosaur is your favourite?",
+          acknowledgment: "Mia from Green Street is my best friend!",
           canonicalName: "Invented Name",
           canonicalAge: 99,
           extra: "not allowed",
@@ -168,7 +169,6 @@ describe("onboarding answer enrichment", () => {
     });
     assert.deepEqual(invalid, {
       summary: "I like dinosaurs",
-      acknowledgment: animalsQuestion.fallbackAcknowledgment,
       canonicalName: null,
       canonicalAge: null,
       enrichmentStatus: "fallback",
@@ -217,7 +217,7 @@ describe("onboarding answer enrichment", () => {
       });
       assert.equal(result.enrichmentStatus, "fallback");
       assert.equal(result.summary, "I like cats");
-      assert.equal(result.acknowledgment, "Those animals sound brilliant!");
+      assert.equal("acknowledgment" in result, false);
     }
   });
 });

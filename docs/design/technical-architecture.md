@@ -82,7 +82,8 @@ recording work before a new scene is selected.
   checked-in 16:9 illustration.
 - `lib/static-audio.js` owns saved speech keyed by speaker and exact text.
 - `src/stories/story-script-candidates.ts` owns the twenty learner stories.
-- `content/learner-profile/questionnaire-v2.json` owns form-fallback prompts.
+- `content/learner-profile/questionnaire-v2.json` owns form-fallback prompts and
+  the reviewed, input-independent profile acknowledgment.
 
 Built-in lesson JSON never stores asset filenames. My Lessons are validated
 against the same contract and stored in D1. Story scripts retain internal
@@ -93,7 +94,10 @@ level, cover, title, summary, pages, and join-in content.
 
 - Built-in lesson lines use checked-in ElevenLabs audio assets.
 - My Lessons use cancellable browser English speech.
-- Groq evaluates lesson speech and supports profile enrichment.
+- Groq evaluates lesson speech and supports private factual profile enrichment;
+  it does not generate child-facing profile acknowledgments.
+- Form profile saves select `Thank you!` locally and optionally ask ElevenLabs
+  to speak only that fixed phrase at runtime.
 - OpenAI generates custom lesson drafts.
 - LiveKit carries realtime conversation audio; the agent uses explicit model
   IDs and purpose-specific prompts.

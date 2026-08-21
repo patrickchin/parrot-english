@@ -164,18 +164,37 @@ describe("learner-profile infrastructure", () => {
       definition.questions.map(({ canonicalField }) => canonicalField),
       ["name", "age", null, null, null, null],
     );
+    assert.deepEqual(
+      definition.questions.map(({ fallbackAcknowledgment }) =>
+        fallbackAcknowledgment
+      ),
+      Array(6).fill("Thank you!"),
+    );
     assert.ok(Object.isFrozen(definition));
     assert.ok(Object.isFrozen(definition.questions));
     assert.ok(definition.questions.every(Object.isFrozen));
   });
 
-  it("rejects duplicate positions and unknown definition fields", () => {
+  it("rejects duplicate positions, unknown fields, and public-copy drift", () => {
     assert.throws(
       () =>
         validateLearnerProfileQuestionnaire({
           ...questionnaireV2,
           questions: questionnaireV2.questions.map((entry, index) =>
             index === 1 ? { ...entry, position: 1, mystery: true } : entry,
+          ),
+        }),
+      /Invalid learner-profile questionnaire/,
+    );
+
+    assert.throws(
+      () =>
+        validateLearnerProfileQuestionnaire({
+          ...questionnaireV2,
+          questions: questionnaireV2.questions.map((entry, index) =>
+            index === 0
+              ? { ...entry, fallbackAcknowledgment: "Great job!" }
+              : entry,
           ),
         }),
       /Invalid learner-profile questionnaire/,

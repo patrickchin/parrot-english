@@ -18,7 +18,7 @@ async function openAcknowledgment(
   page: Page,
   {
     path = acknowledgmentPath,
-    text = "Mia is a lovely name!",
+    text = "Thank you!",
   }: { path?: string; text?: string } = {},
 ) {
   await page.goto(path);
@@ -111,11 +111,10 @@ test("profile acknowledgment keeps one ordered action at responsive targets", as
     const next = page.getByRole("button", { exact: true, name: "Next" });
     const main = page.getByRole("main");
 
-    await next.scrollIntoViewIfNeeded();
     const [imageBox, headingBox, nextBox] = await Promise.all([
-      box(image),
-      box(heading),
-      box(next),
+      expectInsideViewport(image, viewport),
+      expectInsideViewport(heading, viewport),
+      expectInsideViewport(next, viewport),
     ]);
 
     if (viewport.width === 640 && viewport.height === 360) {
@@ -129,6 +128,7 @@ test("profile acknowledgment keeps one ordered action at responsive targets", as
     expect(headingBox.y + headingBox.height).toBeLessThanOrEqual(nextBox.y + 1);
     expect(nextBox.height).toBeGreaterThanOrEqual(44);
     expect(nextBox.width).toBeGreaterThanOrEqual(44);
+    await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBe(0);
     await expect
       .poll(() =>
         page.evaluate(() => ({
@@ -139,7 +139,7 @@ test("profile acknowledgment keeps one ordered action at responsive targets", as
         })),
       )
       .toEqual({ document: 0, main: 0 });
-    await expect(main).toContainText("Mia is a lovely name!");
+    await expect(main).toContainText("Thank you!");
   }
 });
 

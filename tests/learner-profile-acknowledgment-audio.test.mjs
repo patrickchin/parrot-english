@@ -29,7 +29,7 @@ describe("onboarding acknowledgment audio", () => {
           headers: { "Content-Type": "audio/mpeg" },
         });
       },
-      text: "Dinosaurs are very stompy!",
+      text: "Thank you!",
     });
 
     assert.match(request.url, /Oqy85UMasXzUjUxF0ta5/);
@@ -42,7 +42,7 @@ describe("onboarding acknowledgment audio", () => {
     assert.equal(request.body.model_id, "eleven_v3");
     assert.equal(
       request.body.text,
-      "[bright and playful] Dinosaurs are very stompy!",
+      "[bright and playful] Thank you!",
     );
     assert.deepEqual(audio, { contentType: "audio/mpeg", base64: "AQID" });
   });

@@ -4099,7 +4099,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       if (path === "/api/learner-profile/answer" && init.method === "PUT") {
         return json({
           ...completed,
-          acknowledgment: { text: "Mia is a lovely name!", audio: null },
+          acknowledgment: { text: "Thank you!", audio: null },
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -4117,7 +4117,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/What's your name/));
     await input(document.querySelector("#learner-profile-answer-name"), "Mia");
     await click(button("Next"));
-    await waitFor(() => text(/Mia is a lovely name!/));
+    await waitFor(() => text(/Thank you!/));
     await click(button("Next"));
     await waitFor(() => text(/COMPLETED LESSONS/));
   });
@@ -4215,8 +4215,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         return json({
           ...profileState,
           acknowledgments: [
-            { text: "Mia is a lovely name!", audio: null },
-            { text: "Dinosaurs are fun!", audio: null },
+            { text: "Thank you!", audio: null },
+            { text: "Thank you!", audio: null },
           ],
         });
       }
@@ -4233,22 +4233,28 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/Learner profile/));
     await click(button("Save changes"));
 
-    await waitFor(() => text(/Mia is a lovely name!/));
-    noText(/Dinosaurs are fun!|PROFILE LESSONS/);
+    await waitFor(() => text(/Thank you!/));
+    noText(/PROFILE LESSONS/);
     await waitFor(() =>
       assert.equal(document.activeElement, document.querySelector("h1")),
     );
 
     const firstNext = button("Next");
-    await act(async () => {
-      firstNext.click();
-      firstNext.click();
-    });
-    await waitFor(() => text(/Dinosaurs are fun!/));
-    noText(/Mia is a lovely name!|PROFILE LESSONS/);
+    let renewedHeadingFocuses = 0;
+    const countHeadingFocus = (event) => {
+      if (event.target?.tagName === "H1") renewedHeadingFocuses += 1;
+    };
+    document.addEventListener("focusin", countHeadingFocus);
+    firstNext.focus();
+    assert.equal(document.activeElement, firstNext);
+    await click(firstNext);
+    await waitFor(() => assert.equal(renewedHeadingFocuses, 1));
+    text(/Thank you!/);
+    noText(/PROFILE LESSONS/);
     await waitFor(() =>
       assert.equal(document.activeElement, document.querySelector("h1")),
     );
+    document.removeEventListener("focusin", countHeadingFocus);
     assert.equal(saveCalls, 1);
 
     await click(button("Next"));

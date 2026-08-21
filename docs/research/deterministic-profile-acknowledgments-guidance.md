@@ -196,6 +196,10 @@ safe and predictable.
 
 ## Sources
 
+Related stable entries in the [source register](./source-register.md) are
+LANG-09, LANG-11, A11Y-01, A11Y-11, A11Y-19, AI-01, AI-05, PRIV-02, PRIV-05,
+and PRIV-06.
+
 - [Council of Europe, *CEFR Companion Volume with New Descriptors*
   (2020)](https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4)
   describes Pre-A1 use of a small repertoire of familiar words and formulaic

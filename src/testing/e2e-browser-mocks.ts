@@ -51,7 +51,7 @@ const E2E_INCOMPLETE_PROFILE = {
 
 const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
   ...E2E_INCOMPLETE_PROFILE,
-  acknowledgment: { audio: null, text: "Mia is a lovely name!" },
+  acknowledgment: { audio: null, text: "Thank you!" },
   canBypass: true,
   profile: {
     ...E2E_INCOMPLETE_PROFILE.profile,
@@ -83,14 +83,14 @@ const E2E_VIEWPORT_INCOMPLETE_PROFILE = {
 
 const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
   ...E2E_VIEWPORT_INCOMPLETE_PROFILE,
-  acknowledgment: { audio: null, text: "Mia is a lovely name!" },
+  acknowledgment: { audio: null, text: "Thank you!" },
   profile: {
     ...E2E_VIEWPORT_INCOMPLETE_PROFILE.profile,
     answers: {
       ...E2E_VIEWPORT_INCOMPLETE_PROFILE.profile.answers,
       responses: {
         name: {
-          acknowledgment: "Mia is a lovely name!",
+          acknowledgment: "Thank you!",
           answeredAt: "2026-07-10T08:00:00.000Z",
           enrichmentStatus: "generated",
           question: "What's your name?",
