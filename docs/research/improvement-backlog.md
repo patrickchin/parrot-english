@@ -151,16 +151,18 @@ longer expose named groups, and sparse wait milestones remain in the single
 polite live status. State/timer behavior and direct microphone/autoplay actions
 are unchanged.
 
-The next selected stacked improvement is **single-owner direct Talk action
-feedback** on `codex/talk-direct-action-feedback`. The baseline visual audit
-found **Starting sound** four times with three simultaneous animations, while
-**Opening microphone** duplicates its pending state and spinner between status
-and control. Research must decide whether the focus-preserving control or the
-visible status owns progress, then test keyboard, switch-style operation,
-VoiceOver, autoplay gesture continuity, repeated activation, reduced motion,
-and every target viewport before changing either gesture-sensitive path. If a
-focused pending control uses `aria-disabled`, explicit click and keyboard guards
-must enforce it because ARIA does not block activation on its own.
+The stacked **single-owner direct Talk action feedback** improvement is
+implemented on `codex/talk-direct-action-feedback` at `8e69386`. The focused
+control now owns the only visible pending label and spinner while one static
+visible status retains turn context and exposes the pending detail through its
+existing polite live region. The same `aria-disabled` button remains mounted;
+view and domain guards prevent repeated activation; sound recovery stays in the
+native click call stack; and deliberate success/failure hand-offs prevent focus
+from falling to the document body. Deterministic tests cover delayed sound and
+microphone work, timing, motion, geometry, repeated input, stale completion,
+and all target viewports. Screen-reader announcement order, real autoplay and
+permission behavior, after-state visual review, and child/caregiver
+comprehension remain explicit validation gates.
 
 ### Hand-off record
 
@@ -405,6 +407,21 @@ Measured result: ordinary Thinking falls from three simultaneous animations to o
 Risks / limitations: no after-state visual inspection, VoiceOver/TalkBack session, 200% zoom/text-spacing check, real service/device/browser interoperability, localization review, or child/caregiver study; speaking and direct-action character motion remain deferred
 Retain, revise, or reject: retain provisionally pending the documented visual, assistive-technology, and formative child/caregiver checks
 Next question: Can Starting sound and Opening microphone acknowledge a child once without losing focus or the browser-required activation gesture?
+```
+
+```text
+Branch: codex/talk-direct-action-feedback
+Base branch / dependency: codex/talk-state-clarity documentation hand-off feacfe1
+Commit: 8e69386
+Hypothesis: the focused direct-action control can own one immediate pending acknowledgement while a stable status retains context, without losing focus, repeating transport work, or breaking gesture-bound sound recovery
+Changed: single visible pending owner and spinner; static status context with one polite atomic announcement; same-node aria-disabled control; view and hook activation guards; inert shared-control pointer/press styling; literal microphone action semantics; static Peppa; neutral unattributed caption fallback; deliberate sound success/failure focus hand-off; deterministic delayed-microphone and established-track sound cases; timing, motion, geometry, focus, and repetition tests
+Not changed: LiveKit or production transport behavior, request/operation IDs, permission policy, autoplay policy, retry budgets, wait thresholds, prompts, audio, persistence, production timeout, telemetry, dependencies, or translations
+Tests: 27/27 focused component/lifecycle tests; 10/10 focused Chromium direct-action tests; 676/676 full unit/integration/lifecycle/safety tests; 193/193 full Chromium tests; TypeScript and production build passed; lint 0 errors with 2 generated-file warnings
+Screenshots / traces: six pre-change JPEGs and a provenance/measurement manifest in artifacts/ux-review/talk-direct-action-feedback; after-state in-app capture was unavailable after the Browser binding disconnected and is not represented
+Measured result: pending feedback renders below 100 ms in deterministic in-page measurement; one visible label and running animation at normal motion and zero animations under reduced motion; same button node and focus survive pending; duplicate pointer, Enter, Space, held-Space, programmatic, and hook calls are suppressed; stable control containment and no main overflow at 280×568, 390×844, 640×360, and 1440×900
+Risks / limitations: automated Chromium and deterministic transport only; no after-state visual inspection, target-browser clean autoplay profile, real permission prompt/media device, VoiceOver/TalkBack/NVDA/switch observation, localization review, or direct child/caregiver study
+Retain, revise, or reject: retain provisionally pending the documented platform, assistive-technology, visual, and formative checks
+Next question: Which remaining first-use surface causes the largest avoidable content shift, hidden action, or language burden for a young English beginner?
 ```
 
 ## Newly observed defects
