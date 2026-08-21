@@ -117,6 +117,16 @@ shared ready-made/generated lesson player now offers calm, unscored out-loud
 practice through **Done**, keeps **Try mic** secondary, and never invents an
 assessment result. Whole-session low-bandwidth audio remains a separate study.
 
+The integration branch `codex/child-first-ux-integration` is implemented at
+`4ef7886`, based on the completed stacked visual hand-off `dc65b5c`. It retains
+the ten independently developed improvements above, resolves their shared
+voice-error contract, gives generated no-microphone help a non-overlapping
+place in layered lessons, and reuses responsive cover candidates on the new
+picture-led home. Final validation passed 622 unit/lifecycle tests, 159
+Chromium tests, the production build and responsive-art benchmark, and lint
+with zero errors. Independent re-review found no actionable regression across
+the combined fallback layouts.
+
 ### Hand-off record
 
 ```text

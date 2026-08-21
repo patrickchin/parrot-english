@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-21
 Status: implemented on `codex/child-first-ux-integration`
-Implementation commit: pending final validation
+Implementation commit: `4ef7886`
 Audience: young beginner English learners, including children who cannot yet
 read much English, and the grown-ups who help them
 
@@ -91,20 +91,19 @@ endpoint; that manual path exposed raw data-shape text in the grown-up tools
 error. This is recorded as a separate recovery-copy follow-up rather than
 silently treated as an integration failure.
 
-## Validation contract
+## Validation results
 
-Final validation must include:
-
-- all unit, lifecycle, safety-eval, language, and asset tests;
-- the complete Chromium suite, not only each source branch's focused tests;
-- production type-check and build;
-- lint with zero errors;
-- responsive-art benchmark; and
-- a final independent integration review with no unresolved high-severity
-  finding.
-
-Results and the exact integration commit will be recorded in the hand-off
-commit after those checks pass.
+- All 622 unit, lifecycle, safety-evaluation, language, and asset tests passed.
+- All 159 Chromium tests passed in 43.8 seconds with four workers.
+- The production type-check and build passed across 1,884 modules.
+- Lint passed with zero errors and the two existing generated-file warnings.
+- The production responsive-art benchmark passed. The lesson shelf loaded its
+  17,202-byte 384 px candidates in 95, 83, and 87 ms (87 ms median); the story
+  shelf loaded 11,490-byte candidates in 585, 585, and 620 ms (585 ms median).
+- Independent re-review found no actionable regression. It also manually
+  exercised the one-character fallback at eight portrait, landscape,
+  transition, and desktop sizes; prompt, help, character, and controls stayed
+  contained and pairwise non-overlapping.
 
 ## Retain, revise, or reject
 
