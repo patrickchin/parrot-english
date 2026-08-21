@@ -107,6 +107,9 @@ function DialogHarness({ kind }) {
 
 function conversationProps(overrides = {}) {
   return {
+    audioPlaybackBlocked: false,
+    audioPlaybackBusy: false,
+    audioPlaybackError: "",
     canFinish: true,
     error: "",
     liveTranscript: "",
@@ -119,6 +122,7 @@ function conversationProps(overrides = {}) {
     onRepeatAudio() {},
     onRetryVoice() {},
     onStart() {},
+    onStartAudio() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
     promptStyle: "tiny-turns",
@@ -131,6 +135,32 @@ function conversationProps(overrides = {}) {
     waitCycle: 0,
     ...overrides,
   };
+}
+
+function DirectActionHarness({ action, onActivate }) {
+  const [busy, setBusy] = useState(false);
+  const activate = () => {
+    onActivate();
+    setBusy(true);
+  };
+
+  return createElement(
+    ConversationSurface,
+    conversationProps(
+      action === "sound"
+        ? {
+            audioPlaybackBlocked: true,
+            audioPlaybackBusy: busy,
+            onStartAudio: activate,
+            status: "connecting",
+            turnReady: false,
+          }
+        : {
+            microphoneBusy: busy,
+            onToggleMicrophone: activate,
+          },
+    ),
+  );
 }
 
 describe("keyboard accessibility lifecycles", () => {
@@ -209,6 +239,57 @@ describe("keyboard accessibility lifecycles", () => {
     await cleanupMountedRoots();
     await press(window, " ", { code: "Space" });
     assert.deepEqual(toggles, ["toggle"]);
+  });
+
+  it("keeps the sound action focused and inert while it starts", async () => {
+    const activations = [];
+    await mountStrict(
+      createElement(DirectActionHarness, {
+        action: "sound",
+        onActivate: () => activations.push("sound"),
+      }),
+    );
+
+    const action = button("Tap for sound");
+    action.focus();
+    await click(action);
+    const pending = button("Starting sound");
+
+    assert.equal(pending, action);
+    assert.equal(document.activeElement, pending);
+    assert.equal(pending.disabled, false);
+    assert.equal(pending.getAttribute("aria-disabled"), "true");
+    assert.deepEqual(activations, ["sound"]);
+
+    await click(pending);
+    assert.deepEqual(activations, ["sound"]);
+    assert.equal(document.activeElement, pending);
+  });
+
+  it("keeps the microphone action focused and inert while it opens", async () => {
+    const activations = [];
+    await mountStrict(
+      createElement(DirectActionHarness, {
+        action: "microphone",
+        onActivate: () => activations.push("microphone"),
+      }),
+    );
+
+    const action = button("Tap, then talk");
+    action.focus();
+    await click(action);
+    const pending = button("Opening microphone");
+
+    assert.equal(pending, action);
+    assert.equal(document.activeElement, pending);
+    assert.equal(pending.disabled, false);
+    assert.equal(pending.getAttribute("aria-disabled"), "true");
+    assert.equal(pending.hasAttribute("aria-keyshortcuts"), false);
+    assert.deepEqual(activations, ["microphone"]);
+
+    await click(pending);
+    assert.deepEqual(activations, ["microphone"]);
+    assert.equal(document.activeElement, pending);
   });
 
   it("traps AI and saved data focus in both directions and restores its opener on Escape", async () => {

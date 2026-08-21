@@ -75,6 +75,8 @@ export function controlClassName({
     focusClassName,
     interaction === "button" &&
       "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
+    interaction === "button" &&
+      "aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:transition-none aria-disabled:hover:translate-y-0 aria-disabled:hover:brightness-100 aria-disabled:active:translate-y-0 aria-disabled:active:brightness-100",
     interaction === "link" &&
       "cursor-pointer hover:-translate-y-0.5 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
     interaction === "button" &&

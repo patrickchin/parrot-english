@@ -100,10 +100,12 @@ const DISCONNECT_REASON_NAMES = [
 const E2E_CONVERSATION_SCENARIOS = new Set([
   "audio-blocked",
   "audio-delayed",
+  "audio-established-blocked",
   "audio-rejected",
   "connecting",
   "error",
   "long",
+  "microphone-delayed",
   "opening-speaking",
   "reconnecting",
   "saving",
@@ -275,6 +277,13 @@ function createE2eLiveKitConversation() {
         language: "en",
         role: "assistant",
       });
+      if (scenario === "audio-established-blocked") {
+        const timer = setTimeout(() => {
+          eventTimers.delete(timer);
+          setAudioPlaybackPermission("blocked");
+        }, 50);
+        eventTimers.add(timer);
+      }
       if (scenario === "reconnecting") {
         scheduleEvent({ type: "state", state: "reconnecting" }, 50);
       }
@@ -288,6 +297,15 @@ function createE2eLiveKitConversation() {
 
     async setMicrophoneEnabled(enabled: boolean) {
       if (enabled) {
+        if (scenario === "microphone-delayed") {
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(() => {
+              eventTimers.delete(timer);
+              resolve();
+            }, 1_500);
+            eventTimers.add(timer);
+          });
+        }
         clearTranscriptTimers();
         learnerTurnSequence += 1;
         learnerTurnId = `e2e-learner-${learnerTurnSequence}`;
@@ -328,7 +346,11 @@ function createE2eLiveKitConversation() {
     },
 
     startAudio() {
-      if (scenario === "audio-blocked" || scenario === "audio-rejected") {
+      if (
+        scenario === "audio-blocked" ||
+        scenario === "audio-established-blocked" ||
+        scenario === "audio-rejected"
+      ) {
         if (audioPlaybackPermission === "ready" && audioPlaybackStarted) {
           return Promise.resolve();
         }

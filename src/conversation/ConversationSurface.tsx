@@ -8,7 +8,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
 import {
   isTalkToPeppaPromptStyle,
@@ -204,14 +204,11 @@ function ConversationScreen({ children }: { children: ReactNode }) {
 
 function statusLabel(
   audioPlaybackBlocked: boolean,
-  audioPlaybackBusy: boolean,
   status: ConversationSurfaceStatus,
-  microphoneBusy: boolean,
   microphoneEnabled: boolean,
   purpose: ConversationPurpose,
   waitFeedback: ConversationWaitFeedback | null,
 ) {
-  if (audioPlaybackBusy) return "Starting sound";
   if (audioPlaybackBlocked) return "Sound is off";
   if (status === "ready" && purpose === "small-chat") {
     return "Ready to talk";
@@ -221,7 +218,6 @@ function statusLabel(
     return waitFeedback?.label ?? "Please wait";
   }
   if (status === "listening") {
-    if (microphoneBusy) return "Opening microphone";
     return microphoneEnabled ? "Listening" : "Your turn";
   }
   if (status === "speaking") return "Peppa’s turn";
@@ -234,9 +230,9 @@ function statusLabel(
 
 function ConversationStatus({
   audioPlaybackBlocked,
-  audioPlaybackBusy,
+  audioPlaybackError,
   className,
-  microphoneBusy,
+  directActionAnnouncement,
   microphoneEnabled,
   purpose,
   status,
@@ -244,9 +240,9 @@ function ConversationStatus({
   waitDetailIsVisibleTranscript,
 }: {
   audioPlaybackBlocked: boolean;
-  audioPlaybackBusy: boolean;
+  audioPlaybackError: string;
   className?: string;
-  microphoneBusy: boolean;
+  directActionAnnouncement: string | null;
   microphoneEnabled: boolean;
   purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
@@ -258,21 +254,24 @@ function ConversationStatus({
     waitFeedback &&
       !waitDetailIsVisibleTranscript &&
       !audioPlaybackBlocked &&
-      !audioPlaybackBusy,
+      !directActionAnnouncement,
   );
   const busy =
-    audioPlaybackBusy ||
-    (!audioPlaybackBlocked &&
-      !waitComplete &&
-      !(status === "ready" && purpose === "small-chat") &&
-      (microphoneBusy ||
-      ["ready", "connecting", "thinking", "reconnecting", "saving"].includes(
-        status,
-      )));
-  const learnerTurn =
-    status === "listening" &&
     !audioPlaybackBlocked &&
-    !audioPlaybackBusy;
+    !waitComplete &&
+    !(status === "ready" && purpose === "small-chat") &&
+    ["ready", "connecting", "thinking", "reconnecting", "saving"].includes(
+      status,
+    );
+  const learnerTurn =
+    status === "listening" && !audioPlaybackBlocked;
+  const visibleLabel = statusLabel(
+    audioPlaybackBlocked,
+    status,
+    microphoneEnabled,
+    purpose,
+    waitFeedback,
+  );
 
   return (
     <p
@@ -315,17 +314,15 @@ function ConversationStatus({
           )}
         />
       )}
-      <span>
-        {statusLabel(
-          audioPlaybackBlocked,
-          audioPlaybackBusy,
-          status,
-          microphoneBusy,
-          microphoneEnabled,
-          purpose,
-          waitFeedback,
-        )}
+      <span aria-hidden={directActionAnnouncement ? true : undefined}>
+        {visibleLabel}
       </span>
+      {directActionAnnouncement ? (
+        <span className="sr-only">{directActionAnnouncement}.</span>
+      ) : null}
+      {!directActionAnnouncement && audioPlaybackError ? (
+        <span className="sr-only">. {audioPlaybackError}</span>
+      ) : null}
       {announceWaitDetail ? (
         <span className="sr-only">
           . {waitFeedback?.text}{" "}
@@ -387,12 +384,20 @@ function selectCaption({
     };
   }
   if (audioPlaybackBlocked || audioPlaybackBusy) {
+    if (audioPlaybackError) {
+      return {
+        label: "Please try again",
+        role: undefined,
+        text: audioPlaybackError,
+        transcript: null,
+      };
+    }
+    const peppaTurn =
+      latestTurn?.role === "assistant" ? latestTurn : null;
     return {
-      label: audioPlaybackBusy ? "Starting sound" : "Sound is off",
+      label: peppaTurn ? "Peppa" : null,
       role: undefined,
-      text:
-        audioPlaybackError ||
-        (audioPlaybackBusy ? "Starting sound." : "Tap for sound."),
+      text: peppaTurn?.text ?? "Peppa is here.",
       transcript: null,
     };
   }
@@ -483,11 +488,13 @@ function ConversationCaptions({
   caption,
   className,
   onRepeatAudio,
+  regionRef,
   showRepeat,
 }: {
   caption: Caption;
   className?: string;
   onRepeatAudio: () => void;
+  regionRef?: Ref<HTMLDivElement>;
   showRepeat: boolean;
 }) {
   return (
@@ -505,6 +512,7 @@ function ConversationCaptions({
         aria-label="Conversation captions"
         className="relative z-10 h-full w-full overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-white/95 px-4 py-3 text-center text-brand-ink shadow-control-surface short:rounded-2xl short:px-3 short:py-2 sm:px-5 sm:py-4"
         role="region"
+        ref={regionRef}
         tabIndex={0}
       >
         <div
@@ -594,12 +602,29 @@ export function ConversationSurface({
   voiceRetryUsed,
   waitCycle,
 }: ConversationSurfaceProps) {
+  const captionRegionRef = useRef<HTMLDivElement>(null);
+  const soundActionRef = useRef<HTMLButtonElement>(null);
+  const soundFocusHandoffRef = useRef(false);
+  const turnActionRef = useRef<HTMLButtonElement>(null);
   const showAudioRecovery =
     (audioPlaybackBlocked || audioPlaybackBusy) &&
     !microphoneEnabled &&
     !["error", "reconnecting", "saving"].includes(status);
   const showTurnControl =
     (turnReady || microphoneEnabled) && status === "listening";
+  const openingMicrophone =
+    showTurnControl && microphoneBusy && !microphoneEnabled;
+  const directActionAnnouncement =
+    showAudioRecovery && audioPlaybackBusy
+      ? "Starting sound"
+      : openingMicrophone
+        ? "Opening microphone"
+        : null;
+  const turnControlLabel = openingMicrophone
+    ? "Opening microphone"
+    : microphoneEnabled
+      ? "I’m done"
+      : "Tap, then talk";
   const turnInteractive =
     showTurnControl && !microphoneBusy && !showAudioRecovery;
   const latestTurn = latestConversationTurn(turns);
@@ -649,7 +674,8 @@ export function ConversationSurface({
   const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
   const recoveryAction = recoveryFeedback?.action;
   const peppaStatus = recoveryAction ? "error" : status;
-  const peppaIsStatic = isTimedStatus(status);
+  const peppaIsStatic =
+    isTimedStatus(status) || showAudioRecovery || openingMicrophone;
   const showFinish =
     canFinish &&
     finishLabel &&
@@ -683,6 +709,16 @@ export function ConversationSurface({
     return () => window.removeEventListener("keydown", toggleTurnWithSpace);
   }, [onToggleMicrophone, turnInteractive]);
 
+  useEffect(() => {
+    if (showAudioRecovery || !soundFocusHandoffRef.current) return;
+    soundFocusHandoffRef.current = false;
+    if (document.hasFocus() && document.activeElement === document.body) {
+      (turnActionRef.current ?? captionRegionRef.current)?.focus({
+        preventScroll: true,
+      });
+    }
+  }, [showAudioRecovery]);
+
   return (
     <ConversationScreen>
       <ConversationHeader onBack={onBack} />
@@ -693,9 +729,9 @@ export function ConversationSurface({
 
         <ConversationStatus
           audioPlaybackBlocked={showAudioRecovery && audioPlaybackBlocked}
-          audioPlaybackBusy={showAudioRecovery && audioPlaybackBusy}
+          audioPlaybackError={showAudioRecovery ? audioPlaybackError : ""}
           className="short-wide:col-start-2 short-wide:row-start-2 short-wide:self-start"
-          microphoneBusy={microphoneBusy}
+          directActionAnnouncement={directActionAnnouncement}
           microphoneEnabled={microphoneEnabled}
           purpose={purpose}
           status={status}
@@ -744,6 +780,7 @@ export function ConversationSurface({
               : "short-wide:h-28 short-wide:self-end",
           )}
           onRepeatAudio={onRepeatAudio}
+          regionRef={captionRegionRef}
           showRepeat={showRepeat}
         />
 
@@ -854,9 +891,23 @@ export function ConversationSurface({
             </ActionButton>
           ) : showAudioRecovery ? (
             <ActionButton
-              disabled={audioPlaybackBusy}
+              aria-disabled={audioPlaybackBusy ? true : undefined}
               fullWidth
-              onClick={onStartAudio}
+              onBlur={(event) => {
+                if (event.relatedTarget instanceof Element) {
+                  soundFocusHandoffRef.current = false;
+                }
+              }}
+              onClick={
+                audioPlaybackBusy
+                  ? undefined
+                  : () => {
+                      soundFocusHandoffRef.current =
+                        document.activeElement === soundActionRef.current;
+                      onStartAudio();
+                    }
+              }
+              ref={soundActionRef}
               size="large"
               type="button"
             >
@@ -892,24 +943,18 @@ export function ConversationSurface({
             </ActionButton>
           ) : showTurnControl ? (
             <ActionButton
-              aria-keyshortcuts="Space"
-              aria-label={
-                microphoneBusy
-                  ? "Opening microphone"
-                  : microphoneEnabled
-                    ? "I’m done"
-                    : "Tap, then talk"
-              }
-              aria-pressed={microphoneEnabled}
+              aria-disabled={microphoneBusy ? true : undefined}
+              aria-keyshortcuts={microphoneBusy ? undefined : "Space"}
+              aria-label={turnControlLabel}
               className="whitespace-nowrap short:gap-2 short:px-2 short:text-sm"
-              disabled={microphoneBusy}
               fullWidth
-              onClick={onToggleMicrophone}
+              onClick={microphoneBusy ? undefined : onToggleMicrophone}
+              ref={turnActionRef}
               size="large"
               type="button"
               variant={microphoneEnabled ? "brand" : "success"}
             >
-              {microphoneBusy ? (
+              {openingMicrophone ? (
                 <LoaderCircle
                   aria-hidden="true"
                   className="animate-spin motion-reduce:animate-none"
@@ -920,16 +965,12 @@ export function ConversationSurface({
                 <Mic aria-hidden="true" />
               )}
               <span className="grid justify-items-start leading-tight">
-                <strong>
-                  {microphoneBusy
-                    ? "Opening microphone"
-                    : microphoneEnabled
-                      ? "I’m done"
-                      : "Tap, then talk"}
-                </strong>
-                <small className="hidden text-xs font-bold leading-none opacity-85 md:mt-0.5 md:block">
-                  Tap or press Space
-                </small>
+                <strong>{turnControlLabel}</strong>
+                {!microphoneBusy ? (
+                  <small className="hidden text-xs font-bold leading-none opacity-85 md:mt-0.5 md:block">
+                    Tap or press Space
+                  </small>
+                ) : null}
               </span>
             </ActionButton>
           ) : (

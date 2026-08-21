@@ -190,9 +190,12 @@ describe("accessible realtime conversation surface", () => {
     });
     assert.match(blocked, /Sound is off/);
     assert.match(blocked, /Tap for sound/);
+    assert.match(blocked, /Peppa is here/);
     assert.match(blocked, /<p[^>]*role="status"/);
     assert.doesNotMatch(blocked, /aria-busy/);
     assert.match(blocked, /<button[^>]*>[^<]*(?:<[^>]+>)*Tap for sound/);
+    assert.doesNotMatch(blocked, /aria-label="Peppa(?:'|&#x27;)s message"/);
+    assert.doesNotMatch(blocked, /Sound is off<\/span>[\s\S]*Sound is off/);
     assert.doesNotMatch(blocked, /Tap, then talk|Listen to Peppa|audio heard/i);
 
     const pending = render({
@@ -202,12 +205,31 @@ describe("accessible realtime conversation surface", () => {
       status: "connecting",
       turnReady: false,
     });
-    assert.match(pending, /Starting sound/);
-    assert.match(pending, /Starting sound\./);
-    assert.match(pending, /<p[^>]*role="status"/);
+    const document = new Window().document;
+    document.body.innerHTML = pending;
+    const pendingStatus = document.querySelector('[role="status"]');
+    assert.ok(pendingStatus);
+    const pendingButton = [...document.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Starting sound",
+    );
+    const visibleStatus = [...pendingStatus.querySelectorAll("span")].find(
+      (candidate) => candidate.textContent.trim() === "Sound is off",
+    );
+    const statusAnnouncement = [...pendingStatus.querySelectorAll("span")].find(
+      (candidate) => candidate.textContent.trim() === "Starting sound.",
+    );
+    assert.ok(pendingButton);
+    assert.ok(visibleStatus);
+    assert.ok(statusAnnouncement);
+    assert.equal(visibleStatus.getAttribute("aria-hidden"), "true");
+    assert.equal(statusAnnouncement.getAttribute("aria-hidden"), null);
+    assert.equal(pendingButton.getAttribute("aria-disabled"), "true");
+    assert.equal(pendingButton.hasAttribute("disabled"), false);
     assert.doesNotMatch(pending, /aria-busy/);
-    assert.match(pending, /<button[^>]*disabled=""[^>]*>/);
-    assert.doesNotMatch(pending, /Tap for sound<\/button>/);
+    assert.doesNotMatch(
+      document.querySelector('[aria-label="Conversation captions"]').textContent,
+      /Starting sound|Tap for sound/,
+    );
 
     const failed = render({
       audioPlaybackBlocked: true,
@@ -218,6 +240,13 @@ describe("accessible realtime conversation surface", () => {
     });
     assert.match(failed, /Sound did not start\. Tap again/);
     assert.match(failed, /Tap for sound/);
+    document.body.innerHTML = failed;
+    const failedStatus = document.querySelector('[role="status"]');
+    assert.ok(failedStatus);
+    assert.equal(
+      failedStatus.textContent.replace(/\s+/g, " ").trim(),
+      "Sound is off. Sound did not start. Tap again.",
+    );
   });
 
   it("keeps the end-turn action available when sound blocks during recording", () => {
@@ -228,7 +257,7 @@ describe("accessible realtime conversation surface", () => {
       turnReady: true,
     });
     assert.match(recording, /aria-label="I’m done"/);
-    assert.match(recording, /aria-pressed="true"/);
+    assert.doesNotMatch(recording, /aria-pressed/);
     assert.doesNotMatch(recording, /Tap for sound|Sound is off/);
 
     const microphoneStopped = render({
@@ -247,7 +276,7 @@ describe("accessible realtime conversation surface", () => {
       microphoneEnabled: false,
       status: "listening",
     });
-    assert.match(learnerTurn, /aria-pressed="false"/);
+    assert.doesNotMatch(learnerTurn, /aria-pressed/);
     assert.match(learnerTurn, /Tap, then talk/);
     assert.match(learnerTurn, /Your turn/);
     assert.doesNotMatch(
@@ -259,7 +288,7 @@ describe("accessible realtime conversation surface", () => {
       microphoneEnabled: true,
       status: "listening",
     });
-    assert.match(activeTurn, /aria-pressed="true"/);
+    assert.doesNotMatch(activeTurn, /aria-pressed/);
     assert.match(activeTurn, /I’m done/);
     assert.match(activeTurn, /Tap or press Space/);
 
@@ -291,12 +320,43 @@ describe("accessible realtime conversation surface", () => {
       status: "listening",
     });
 
-    assert.match(html, /Opening microphone/);
-    assert.match(
-      html,
-      /<button[^>]*aria-label="Opening microphone"[^>]*disabled=""/,
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    const status = document.querySelector('[role="status"]');
+    const pendingButton = document.querySelector(
+      'button[aria-label="Opening microphone"]',
     );
+    assert.ok(status);
+    assert.ok(pendingButton);
+    const visibleStatus = [...status.querySelectorAll("span")].find(
+      (candidate) => candidate.textContent.trim() === "Your turn",
+    );
+    const statusAnnouncement = [...status.querySelectorAll("span")].find(
+      (candidate) => candidate.textContent.trim() === "Opening microphone.",
+    );
+    assert.ok(visibleStatus);
+    assert.ok(statusAnnouncement);
+    assert.equal(visibleStatus.getAttribute("aria-hidden"), "true");
+    assert.equal(statusAnnouncement.getAttribute("aria-hidden"), null);
+    assert.equal(pendingButton.getAttribute("aria-disabled"), "true");
+    assert.equal(pendingButton.hasAttribute("disabled"), false);
+    assert.equal(pendingButton.hasAttribute("aria-keyshortcuts"), false);
+    assert.equal(pendingButton.hasAttribute("aria-pressed"), false);
+    assert.doesNotMatch(
+      document.querySelector('[aria-label="Conversation captions"]').textContent,
+      /Opening microphone/,
+    );
+    assert.doesNotMatch(html, /Tap or press Space/);
     assert.doesNotMatch(html, /Tap, then talk|I’m done/);
+
+    const endingTurn = render({
+      microphoneBusy: true,
+      microphoneEnabled: false,
+      status: "thinking",
+      turnReady: false,
+    });
+    assert.match(endingTurn, /Thinking/);
+    assert.doesNotMatch(endingTurn, /Opening microphone/);
   });
 
   it("does not leave an old Peppa sentence on screen when a new reply starts", () => {
