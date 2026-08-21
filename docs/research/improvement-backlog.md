@@ -170,10 +170,15 @@ implemented on `codex/profile-acknowledgment-control` at `4dd2ad3`. The stacked
 viewport-stability change is implemented on
 `codex/profile-fallback-viewport-stability` at `1152866`: profile art reserves
 its geometry, short screens use deliberate compositions, and each same-route
-step restores its visible/focused origin. The selected next stacked branch is a
-contrast-safe child-action improvement. This sequence fixed deterministic
-content loss before layout, then removed movement and hidden actions before
-changing the shared visual token.
+step restores its visible/focused origin. The selected enabled-action contrast
+change is implemented on `codex/contrast-safe-child-actions` at `c5fa0f6`:
+bright pink remains the primary cue while deep-navy content raises the rendered
+pair above 4.5:1 in every tested enabled state. This sequence fixed
+deterministic content loss before layout, then removed movement and hidden
+actions before changing the shared visual treatment. Its visual review found a
+separate 1.278:1 focus-ring failure on the navy account menu, so the next
+stacked branch is `codex/shared-focus-visibility`; the generated-feedback
+language contract follows that bounded repair.
 
 ### Hand-off record
 
@@ -479,6 +484,22 @@ Retain, revise, or reject: retain provisionally
 Next branch: contrast-safe child actions stacked on this documentation hand-off
 ```
 
+```text
+Branch: codex/contrast-safe-child-actions
+Base branch / dependency: codex/profile-fallback-viewport-stability e2cf42a
+Research commit: 13a2bd4
+Implementation commit: c5fa0f6
+Hypothesis: a deep semantic foreground can make enabled bright-pink action content readable without removing Parrot's playful primary cue
+Changed: one action-foreground token; shared brand content; direct Play/Listen content; rendered state/ancestor-filter regression tests; before/after/focus evidence
+Not changed: decorative/progress pink, labels, icons, target sizes, layout, navigation, timing, audio, APIs, persistence, disabled opacity, focus-ring token, dependencies, or translations
+Tests: 11/11 focused Chromium; 679/679 full unit/integration/lifecycle/safety; 218/218 full Chromium; TypeScript/build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: thirteen in-app Browser JPEGs and manifest in artifacts/ux-review/contrast-safe-child-actions
+Measured result: enabled pair 5.063 rest, 5.066 hover, 4.685 active; prior pair 3.274 rest and about 3.21-3.22 filtered; no observed layout shift
+Known boundaries: disabled composite about 2.105 over white under inactive exception; shared focus outline only 1.278 against navy menu
+Retain, revise, or reject: retain provisionally for enabled pink action content only
+Next branch: codex/shared-focus-visibility stacked on this documentation hand-off
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -519,12 +540,19 @@ branches.
     `codex/profile-fallback-viewport-stability` at `1152866` with intrinsic art
     geometry, compact compositions, and step-keyed scroll/focus restoration.
 11. **High: normal-size white text on the default pink action token is 3.27:1.**
-    Keep as a separate contrast-safe shared-control branch after profile
-    viewport stability.
+    Fixed for enabled shared brand content and direct **Play**/**Listen** cues
+    on `codex/contrast-safe-child-actions` at `c5fa0f6`. The retained
+    bright-pink/deep-navy pair is 5.063:1 at rest, 5.066:1 on hover, and 4.685:1
+    active.
 12. **Medium: a valid 160-character acknowledgment becomes a ten-line reading
     wall at 280×568.** The viewport branch keeps the full text and **Next**
     visible; a separate generated-language contract should make the common case
     substantially shorter and simpler before claiming beginner comprehension.
+13. **High: the shared ink focus outline nearly disappears against the navy
+    account menu.** The rendered pair is only 1.278:1. Light child surfaces are
+    clear, but the shared primitive also reaches dark and image-adjacent
+    contexts. Fix with a robust multi-surface indicator on
+    `codex/shared-focus-visibility` before making shared-focus contrast claims.
 
 ## Parked ideas
 

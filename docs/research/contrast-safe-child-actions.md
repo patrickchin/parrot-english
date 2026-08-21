@@ -7,6 +7,14 @@ Branch: `codex/contrast-safe-child-actions`
 Status: bounded research hand-off; it does not claim an implementation result,
 complete WCAG conformance, or child comprehension
 
+Revision, 2026-08-21: the retained implementation chose a different safe
+palette option after rendered visual comparison. It keeps the bright pink fill
+and uses a semantic deep-navy foreground for enabled action content. The
+[implementation decision](./contrast-safe-child-actions-implementation.md)
+records the ratios, screenshots, disabled-state boundary, and discovered
+dark-surface focus defect. This note preserves the pre-implementation
+alternatives instead of silently rewriting that decision history.
+
 ## Question and scope
 
 How should Parrot repair the shared pink treatment used by child-facing actions
@@ -126,27 +134,37 @@ device, language, and prior interface experience. See
 
 ## Bounded product decisions
 
-### 1. Separate action pink from decorative pink
+### 1. Separate action treatment from decorative pink
 
 Keep `#ff467b` available for decoration where a separate audit finds it
 appropriate. Do not globally darken every radial gradient, progress fill,
 character mark, or decorative accent merely to fix text-bearing actions.
 
-Introduce or map a semantic **action** fill for shared `brand` controls and for
-the direct lesson **Play** and story **Listen** cues. A safe implementation can
-use `#c52765` (5.45:1 with white) as the enabled action pink. The existing
-`#d62f70` rose (4.67:1) is also valid at rest only if every lightening filter and
-ancestor effect is removed or replaced and every resulting state is verified.
-The exact palette choice is a Parrot product decision, not a WCAG prescription.
+Introduce or map a semantic **action** foreground or fill for shared `brand`
+controls and for the direct lesson **Play** and story **Listen** cues. Two safe
+candidates emerged:
+
+- `#c52765` as the enabled action fill with white content gives 5.45:1 at rest,
+  but sits close to the existing `#b92259` shadow and `brand-rose` treatment;
+- `#061f3b` as enabled action content on the existing `#ff467b` fill gives
+  5.06:1 at rest while preserving the familiar fill and shadow depth.
+
+The branch selected the second option after before/after visual review. Its
+existing whole-control filters remain only because rendered checks cover the
+foreground and background together: 5.066:1 at `brightness(1.05)` and 4.685:1
+at `brightness(0.95)`. The existing `#d62f70` rose (4.67:1 with white) remains
+valid only at rest; its 5% lightening approximation still fails. None of these
+colors is prescribed by WCAG.
 
 ### 2. Make state treatments explicit
 
 For enabled pink actions:
 
-- keep white label/icon contrast at least 4.5:1 in rest, hover, active, and
+- keep label/icon contrast at least 4.5:1 in rest, hover, active, and
   focus states;
-- prefer translation, elevation, border/outline, or an explicitly tested
-  darker fill over `brightness()`;
+- prefer translation, elevation, border/outline, or explicit colors over an
+  unmeasured `brightness()` effect; retain a filter only when the whole rendered
+  subtree is checked in every authored state;
 - do not allow an interactive card's ancestor filter to lighten a nested
   **Play** or **Listen** cue below the threshold;
 - keep the action's accessible name and visible words stable unless the action
@@ -165,22 +183,34 @@ criteria. Parrot should not treat that exception as a target because a young
 learner may still need to read **Wait**, understand what will become available,
 or recognize why tapping has no effect.
 
-Use an explicit disabled presentation with a readable foreground/background,
-no hover/active movement, reduced or removed elevation, correct native
-`disabled` or guarded `aria-disabled` semantics, and a literal state label when
+The guidance target is an explicit disabled presentation with a readable
+foreground/background, no hover/active movement, reduced or removed elevation,
+correct native `disabled` or guarded `aria-disabled` semantics, and a literal
+state label when
 the control communicates waiting. Avoid whole-control opacity over variable
 page gradients. Aim for 4.5:1 for visible disabled labels as a Parrot product
 contract, while documenting that this exceeds the WCAG inactive-component
 minimum. Do not make a disabled control look enabled merely to gain contrast.
 
+The bounded enabled-content implementation did not meet this aspirational
+disabled contract: it retained the existing 60% whole-control opacity, which
+puts the selected pair at about 2.105:1 over white. Tests therefore check
+correct inactive semantics and a distinct rendering, not a false 4.5:1 claim.
+An explicit disabled-state redesign remains separate.
+
 ### 4. Preserve and verify focus independently
 
-Keep the shared four-pixel `brand-ink` focus outline unless rendered evidence
-shows it fails against an adjacent surface. Because the outline is offset, its
+The shared four-pixel `brand-ink` focus outline must be checked against each
+adjacent surface. Because the outline is offset, its
 relevant adjacent color is normally the page/card surface underneath the ring,
 not automatically the button fill. Gradients and overlapping accents require
 testing at the actual placement. A two-color indicator is the robust fallback
 when one ring color cannot guarantee adjacent contrast across surfaces.
+
+Rendered review found that the current ring is clear on the light profile and
+story surfaces but only 1.278:1 against the navy account menu. That pre-existing
+failure is not fixed by the foreground change and prevents a whole-system
+“contrast-safe focus” claim. It is queued as the next stacked branch.
 
 Focus must remain visible for as long as keyboard focus remains. A hover,
 active, disabled, or loading style must not erase it. The visible label and
@@ -198,7 +228,8 @@ In scope:
   colors;
 - the direct **Play** cue in `LessonList.tsx` and **Listen** cue in
   `StoryList.tsx`; and
-- rendered contrast, focus, semantics, target-size, and screenshot evidence.
+- rendered enabled-content contrast, bounded focus evidence, semantics,
+  target-size, and screenshot evidence.
 
 Out of scope:
 
