@@ -320,7 +320,7 @@ Next question: Can the mounted remote media element expose first-audible feedbac
 ```text
 Branch: codex/first-audible-feedback
 Base branch / dependency: codex/privacy-safe-experience-events at 8291916
-Commit: pending integration
+Commit: 5178822
 Hypothesis: honest session-level playback readiness plus one direct autoplay-recovery action can keep a child from entering a silent turn without falsely claiming per-turn audibility or hearing
 Changed: first mounted-element playing and LiveKit playback-status/startAudio transport signals; initial-true guard; Tap for sound recovery with a static blocked icon and "Starting sound."; interruption-gated one-repeat behavior; exact-key one-shot startup event; lifecycle/transport/UI/local-Chromium contracts; research record
 Not changed: LiveKit dependency, production event sink or retention, physical-output or child-hearing measurement, output routing, legal status, or direct child/caregiver research

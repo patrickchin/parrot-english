@@ -346,12 +346,12 @@ PERF-03](./source-register.md).
 6. Establish representative-device latency percentiles before choosing a slow
    feedback threshold or an SLO for session playback readiness.
 
-## Pending hand-off
+## Implementation hand-off
 
 ```text
 Branch: codex/first-audible-feedback
 Base branch / dependency: codex/privacy-safe-experience-events at 8291916
-Commit: pending integration
+Commit: 5178822
 Decision: reject per-turn first-audible measurement from HTMLMediaElement events; retain assistant_signal and add only session playback readiness/autoplay recovery
 Changed: LiveKit playback-status/startAudio and mounted-element playing events; a Tap for sound recovery state with static blocked feedback and "Starting sound."; interruption-gated one-repeat recovery; exact-key one-shot startup event; lifecycle, transport, UI, and local Chromium contracts; research records
 Signal semantics: initial LiveKit true is ignored; first element playing, known false→true, or fulfilled gesture-bound startAudio means session readiness; blocked settles the event; delayed playing without interruption never replays
