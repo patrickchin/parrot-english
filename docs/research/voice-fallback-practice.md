@@ -1,8 +1,8 @@
 # Voice fallback speaking practice
 
 Date: 2026-08-21
-Status: implemented on `codex/voice-fallback-practice`; final validation and
-commit recorded in the hand-off update
+Status: implemented on `codex/voice-fallback-practice`
+Implementation commit: `2a7fd71`
 
 ## Question and scope
 
@@ -140,6 +140,16 @@ response, and attempt count empty.
 The E2E-only `parrotE2eMicrophone=denied|unsupported` scenario makes these
 states reproducible for screenshots and browser tests without changing
 production behavior.
+
+Final validation:
+
+- 18 focused lesson-state tests passed;
+- 25 focused lesson-player Chromium tests passed;
+- 610 unit and mounted-lifecycle tests passed;
+- 120 Chromium tests passed in 36.5 seconds with four workers;
+- the production build passed;
+- lint reported zero errors and the two pre-existing unused-disable warnings in
+  generated `worker-configuration.d.ts`.
 
 ## Measurement and safety guardrails
 

@@ -32,7 +32,7 @@ Priority is the sum, but dependencies and irreversible risk can override it.
 | 5 | **Skill-first learner modes.** If grown-ups can choose a reversible support profile (pre-reader, emerging reader, older beginner) separate from topic/age, tasks remain linguistically accessible without becoming babyish. | 5 | 3 | 3 | 5 | 1 | 17 | Needs child/caregiver research and content inventory; independent worktree spike first | Skill-specific placement is brief and reversible; no age-as-ability inference; content coverage measured |
 | 6 | **Content-language lint and preview.** If authored/generated lessons flag long, abstract, unsupported directions and picture mismatches before publish, child-facing complexity becomes reviewable. | 4 | 3 | 3 | 4 | 2 | 16 | Implemented independently on `codex/child-language-content-checks` at `6f0392d`; hand-off `b51ab2c` | Advisory lint catches seeded problems without blocking valid simple content; human override recorded |
 | 7 | **Caregiver/child co-design protocol.** If structured sessions test comprehension, perceived AI identity, recovery, and respectful age adaptation, roadmap confidence stops relying on adult intuition. | 5 | 5 | 5 | 5 | 0 | 20 | External recruitment, consent, safeguarding, ethics, accessibility; research artifact rather than code-first | Approved protocol, diverse sample, observable tasks, no dark-pattern engagement metric |
-| 8 | **Low-bandwidth and denied-mic learning path.** If core practice retains a tap/listen path when voice is unavailable, more children can complete the learning goal. | 5 | 3 | 3 | 3 | 2 | 16 | Microphone and speech-check fallback implemented independently on `codex/voice-fallback-practice`; full-session low-bandwidth work remains | Simulated denial/unsupported/check failure completes; no shame copy; progress safe |
+| 8 | **Low-bandwidth and denied-mic learning path.** If core practice retains a tap/listen path when voice is unavailable, more children can complete the learning goal. | 5 | 3 | 3 | 3 | 2 | 16 | Microphone and speech-check fallback implemented independently on `codex/voice-fallback-practice` at `2a7fd71`; full-session low-bandwidth work remains | Simulated denial/unsupported/check failure completes; no shame copy; progress safe |
 | 9 | **[Bounded conversation safety evaluation](./bounded-conversation-safety-eval.md).** If scripted ordinary-child and adversarial cases verify topic, disclosure, dependency, and stop boundaries, character chat can be treated as practice rather than assumed safe. | 5 | 4 | 5 | 3 | 1 | 18 | Implemented independently on `codex/bounded-conversation-eval` at `5e7b705` | Versioned cases and pass criteria; failures reproducible; release rollback switch documented |
 | 10 | **Session-ending and pause design.** If each activity offers a clear finish and never rolls into the next one, child agency and healthy use improve without reducing learning. | 4 | 4 | 4 | 5 | 3 | 20 | Audit all flows; `codex/calm-finish-controls` | Finish visible/reachable in active states; no progress loss; no autoplay or guilt copy |
 
@@ -110,6 +110,12 @@ clipped choices at small portrait and short-landscape sizes. The final home
 reuses real route art, keeps one visible accessible label per full-card link,
 plays no automatic sound, and fits all three choices without scrolling at every
 reviewed 280–390 px portrait and 560–1280×360 viewport.
+
+The independent `codex/voice-fallback-practice` branch is implemented at
+`2a7fd71`. When a microphone is denied/unsupported or a speech check fails, the
+shared ready-made/generated lesson player now offers calm, unscored out-loud
+practice through **Done**, keeps **Try mic** secondary, and never invents an
+assessment result. Whole-session low-bandwidth audio remains a separate study.
 
 ### Hand-off record
 
@@ -246,6 +252,21 @@ Measured result: choice text fell from 30 to 11 words; 280×568 home scroll heig
 Risks / limitations: no child comprehension study; three existing images add 156,838 bytes to a cold home; lesson/story distinction and localization still need observation
 Retain, revise, or reject: retain provisionally, pending direct child task testing and cold-load measurement
 Next question: Can a young beginner choose lesson, chat, or story from the pictures without adult translation, and recover calmly from a wrong choice?
+```
+
+```text
+Branch: codex/voice-fallback-practice
+Base commit / dependency: 4c54b7f (codex/lesson-speech-short-landscape hand-off)
+Commit: 2a7fd71
+Hypothesis: a calm unscored Done path preserves speaking practice when recording or checking is unavailable
+Changed: shared lesson failure copy/state, primary Done and secondary Try mic recovery, polite status semantics, deterministic microphone simulations, ready-made/generated/error browser contracts, reducer progress assertion, screenshots, research memo
+Not changed: speech scoring, microphone permissions, live conversation, offline recognition, whole-session low-bandwidth audio
+Tests: 18 focused state tests; 25 focused lesson-player Chromium tests; 610 unit/lifecycle tests; 120 Chromium tests in 36.5 seconds; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/voice-fallback-practice at 280×568 and 640×360, including a denied-access baseline
+Measured result: every simulated failure can advance without transcript, outcome, attempt increment, or feedback; 640×360 art, prompt, help, and controls have non-overlapping rectangles and no overflow
+Risks / limitations: child comprehension is untested; rare unchecked-recorder stop ordering and whole-session offline audio remain
+Retain, revise, or reject: retain pending direct child/caregiver comprehension observation
+Next question: When the microphone is denied, can a non-reading beginner identify Done without adult translation?
 ```
 
 ## Newly observed defects
