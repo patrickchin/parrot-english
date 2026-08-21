@@ -49,8 +49,9 @@ large retry or Back action. Microphone setup changes the visible control
 immediately and blocks duplicate taps while permission is pending.
 
 The learner may interrupt, repeat Peppa's latest completed line, or finish at
-any time. Ordinary chat never updates the learner profile. Raw audio is not
-stored.
+any time. Ordinary chat never updates the learner profile. Parrot does not write
+raw conversation audio to its D1 or R2 application storage, and LiveKit session
+recording is disabled; live audio is still processed by LiveKit and OpenAI.
 
 ## Speaking Lessons
 

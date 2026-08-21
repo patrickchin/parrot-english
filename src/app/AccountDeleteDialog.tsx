@@ -68,7 +68,7 @@ export function AccountDeleteDialog({
       >
         <header className="grid gap-2">
           <p className="m-0 text-xs font-black uppercase tracking-widest text-red-700">
-            Permanent action
+            Cannot be undone
           </p>
           <h2
             className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
@@ -79,8 +79,9 @@ export function AccountDeleteDialog({
         </header>
 
         <p className="m-0 font-bold leading-relaxed text-slate-700">
-          Your profile, lessons, conversations, and private story art will be
-          permanently deleted.
+          This removes your account, learner profile, My Lessons, saved
+          conversation text, and private story art from Parrot. A small deletion
+          marker stays so old private art cannot return.
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>
@@ -127,7 +128,7 @@ export function AccountDeleteDialog({
                 Cancel
               </ActionButton>
               <ActionButton disabled={!password} type="submit" variant="brand">
-                {isDeleting ? "Deleting account…" : "Permanently delete account"}
+                {isDeleting ? "Deleting account…" : "Delete account now"}
               </ActionButton>
             </div>
           </fieldset>

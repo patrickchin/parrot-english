@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-test("the account About panel is wired to deployed component metadata", () => {
+test("the account AI and saved data panel is wired to deployed component metadata", () => {
   const header = readFileSync(
     new URL("../src/app/AppHeader.tsx", import.meta.url),
     "utf8",
@@ -51,8 +51,13 @@ test("the account About panel is wired to deployed component metadata", () => {
     "utf8",
   );
 
-  assert.match(header, />\s*About\s*</s);
-  assert.match(about, /About Parrot English/);
+  assert.match(header, />\s*AI and saved data\s*</s);
+  assert.match(about, /AI and saved data/);
+  assert.match(about, /How Parrot uses AI/);
+  assert.match(about, /Raw audio is not\s+added to the Parrot account/);
+  assert.match(about, /Talk to Peppa does not change the learner profile/);
+  assert.match(about, /The photo is not added to the account/);
+  assert.match(about, /Technical build details/);
   assert.match(about, /\/api\/build-info/);
   assert.match(about, /Lesson script LLM/);
   assert.match(about, /Realtime voice model/);

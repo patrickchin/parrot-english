@@ -217,7 +217,7 @@ describe("personalized story art UI", () => {
       },
       storyTitle: "The Red Ball",
     });
-    assert.match(removable, /Delete learner photo/);
+    assert.match(removable, /Delete story art/);
     assert.match(removable, /You holding a bright red ball/);
   });
 

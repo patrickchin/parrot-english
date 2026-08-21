@@ -173,19 +173,21 @@ one cumulative “About this learner” paragraph in D1; small chat cannot. Live
 turns use one LLM inference each because the agent exposes no profile-writing
 tools. After the conversation finishes, the Worker makes one separate structured
 Groq call over the saved transcript and persists the resulting profile.
-Raw audio is not stored: LiveKit session recording is explicitly disabled with
-`record: false`. Onboarding completes only when the finished transcript provides
-both name and age; otherwise it grants the existing session-scoped bypass. The
-active agent creates no structured fact rows. The legacy fact table remains
-dormant for rollback safety, while conversation rows cascade from the Better
-Auth user and remain until account deletion under the current retention policy.
+Parrot does not write raw conversation audio to its D1 or R2 application
+storage, and LiveKit session recording is explicitly disabled with
+`record: false`. LiveKit and OpenAI still process live audio; their deployed
+retention settings require a separate provider review. Onboarding completes only
+when the finished transcript provides both name and age; otherwise it grants the
+existing session-scoped bypass. The active agent creates no structured fact
+rows. The legacy fact table remains dormant for rollback safety, while
+conversation rows cascade from the Better Auth user and remain until account
+deletion under the current retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.
-LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit
-LiveKit Inference model IDs for ElevenLabs Scribe STT, OpenAI LLM reasoning, and
-ElevenLabs `eleven_v3` TTS with the Summer character-directed voice. It does not
-claim to be a named television character and does not use an exact protected
-voice clone.
+LiveKit and ingest secrets stay on the Worker or agent. LiveKit transports the
+room; the agent uses explicit OpenAI Realtime and OpenAI transcription model
+IDs, plus a configured OpenAI realtime voice. It does not claim to be a named
+television character or use an exact protected voice clone.
 
 See [the LiveKit agent deployment runbook](docs/deployment/livekit-agent.md) for
 local setup, secrets, deployment, cost dependencies, smoke testing, and

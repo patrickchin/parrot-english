@@ -109,9 +109,9 @@ export function PersonalizedStoryArtPanel({
               Make page one of {storyTitle} look like your child
             </h2>
             <p className="m-0 text-sm font-bold leading-relaxed text-slate-700">
-              This is optional. The original photo is not saved. Parrot keeps one
-              private storybook-style picture for this page, and you can delete it
-              anytime.
+              This is optional. A cropped copy goes to Cloudflare Workers AI.
+              Parrot adds only the private storybook-style picture to this
+              account, and you can delete it anytime.
             </p>
           </div>
 
@@ -174,7 +174,7 @@ export function PersonalizedStoryArtPanel({
                 variant="surface"
               >
                 <Trash2 aria-hidden="true" className="size-5" />
-                Delete learner photo
+                Delete story art
               </ActionButton>
             ) : null}
           </div>

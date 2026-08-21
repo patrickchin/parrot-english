@@ -84,7 +84,7 @@ async function press(target, key, options = {}) {
 
 function DialogHarness({ kind }) {
   const [isOpen, setIsOpen] = useState(false);
-  const label = kind === "about" ? "Open About" : "Open delete";
+  const label = kind === "about" ? "Open AI and saved data" : "Open delete";
   return createElement(
     "main",
     null,
@@ -206,7 +206,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.deepEqual(toggles, ["toggle"]);
   });
 
-  it("traps About focus in both directions and restores its opener on Escape", async () => {
+  it("traps AI and saved data focus in both directions and restores its opener on Escape", async () => {
     globalThis.fetch = async () =>
       Response.json({
         backend: {
@@ -220,10 +220,10 @@ describe("keyboard accessibility lifecycles", () => {
       });
     await mountStrict(createElement(DialogHarness, { kind: "about" }));
 
-    const opener = button("Open About");
+    const opener = button("Open AI and saved data");
     opener.focus();
     await click(opener);
-    const close = button("Close About");
+    const close = button("Close AI and saved data");
     const done = button("Done");
     await waitFor(() => assert.equal(document.activeElement, close));
 
@@ -257,7 +257,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.activeElement, password);
 
     await input(password, "parent-password");
-    const confirm = button("Permanently delete account");
+    const confirm = button("Delete account now");
     assert.equal(confirm.disabled, false);
     confirm.focus();
     await press(confirm, "Tab");
@@ -287,7 +287,7 @@ describe("keyboard accessibility lifecycles", () => {
     const items = [...document.querySelectorAll('[role="menuitem"]')];
     assert.deepEqual(
       items.map((item) => item.textContent.trim()),
-      ["Learner profile", "About", "Delete account", "Sign out"],
+      ["Learner profile", "AI and saved data", "Delete account", "Sign out"],
     );
     await waitFor(() => assert.equal(document.activeElement, items[0]));
 
@@ -328,7 +328,7 @@ describe("keyboard accessibility lifecycles", () => {
       });
     await click(reopenedItems[1]);
     await waitFor(() =>
-      assert.equal(document.activeElement, button("Close About")),
+      assert.equal(document.activeElement, button("Close AI and saved data")),
     );
     await press(document.activeElement, "Escape");
     assert.equal(document.activeElement, trigger);

@@ -12,7 +12,8 @@ The implemented slice is:
 - the same derivative reused as the lesson **"You"** speaking portrait during user turns;
 - one story only, one derivative only, one owner only;
 - explicit guardian attestation required every time art is generated;
-- original learner photo never stored.
+- original learner photo is not persisted in Parrot's D1 or R2 storage; the
+  sanitized copy is still processed by Cloudflare Workers AI.
 
 This record is grounded in the current story and lesson seams already referenced by:
 
@@ -568,7 +569,7 @@ The implemented scope remains intentionally narrow:
 
 - one private derivative for **The Red Ball** page 1;
 - reuse of that derivative as the lesson **"You"** portrait;
-- no stored original learner photo;
+- no original learner photo persisted in Parrot's D1 or R2 storage;
 - explicit guardian attestation with `guardian-photo-cloudflare-v1`;
 - versioned private R2 objects plus owner-scoped D1 audit rows;
 - completed delete and account-deletion purge flows, with one remaining

@@ -162,7 +162,7 @@ for (const route of routes) {
         page.getByRole("menuitem", { name: "Learner profile" }),
       ).toBeHidden();
       await expect(
-        page.getByRole("menuitem", { name: "About" }),
+        page.getByRole("menuitem", { name: "AI and saved data" }),
       ).toBeHidden();
       await expect(
         page.getByRole("menuitem", { name: "Sign out" }),
@@ -212,21 +212,58 @@ test("the learner name opens the account menu", async ({ page }) => {
   await expect(
     page.getByRole("menuitem", { name: "Learner profile" }),
   ).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: "About" })).toBeVisible();
+  await expect(
+    page.getByRole("menuitem", { name: "AI and saved data" }),
+  ).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
 });
 
-test("About shows independently deployed component versions", async ({ page }) => {
+test("AI and saved data explains caregiver facts before optional technical details", async ({
+  page,
+}) => {
   const viewport = mobileViewports.find(({ name }) => name === "small phone")!;
   await page.setViewportSize(viewport);
   await page.goto("/lessons");
   await page
     .getByRole("button", { exact: true, name: "Account for Mia" })
     .click();
-  await page.getByRole("menuitem", { name: "About" }).click();
+  await page.getByRole("menuitem", { name: "AI and saved data" }).click();
 
-  const about = page.getByRole("dialog", { name: "About Parrot English" });
+  const about = page.getByRole("dialog", { name: "AI and saved data" });
   await expectInsideViewport(about, viewport);
+  await expect(
+    about.getByRole("heading", { name: "How Parrot uses AI" }),
+  ).toBeVisible();
+  await expect(
+    about.getByRole("heading", { name: "What this account keeps" }),
+  ).toBeVisible();
+  await expect(
+    about.getByText("Raw audio is not added to the Parrot account.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(
+    about.getByText(
+      "Talk to Peppa does not change the learner profile.",
+      { exact: false },
+    ),
+  ).toBeVisible();
+  await expect(about.getByRole("heading", { name: "Web app" })).toBeHidden();
+
+  const closeAbout = page.getByRole("button", {
+    name: "Close AI and saved data",
+  });
+  const technicalDetails = about.getByLabel("Technical build details");
+  const done = about.getByRole("button", { name: "Done" });
+  await expect(closeAbout).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(technicalDetails).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(done).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(technicalDetails).toBeFocused();
+
+  await technicalDetails.click();
   await expect(about.getByRole("heading", { name: "Web app" })).toBeVisible();
   await expect(
     about.getByRole("heading", { name: "Cloudflare Worker" }),
@@ -245,11 +282,62 @@ test("About shows independently deployed component versions", async ({ page }) =
   await expect(about.getByText("Input transcription")).toBeVisible();
   await expect(about.getByText("gpt-4o-mini-transcribe")).toBeVisible();
 
-  const closeAbout = page.getByRole("button", { name: "Close About" });
   const closeBox = await visibleBox(closeAbout);
   expect(closeBox.width).toBeGreaterThanOrEqual(44);
   expect(closeBox.height).toBeGreaterThanOrEqual(44);
   await closeAbout.click();
+  await expect(about).toBeHidden();
+});
+
+test("AI and saved data stays usable on a 280px by 480px screen when technical details fail", async ({
+  page,
+}) => {
+  const viewport = { name: "short ultra-narrow phone", width: 280, height: 480 };
+  await page.setViewportSize(viewport);
+  await page.route("**/api/build-info", async (route) => {
+    await route.fulfill({ body: "", status: 503 });
+  });
+  await page.goto("/lessons");
+  await page
+    .getByRole("button", { exact: true, name: "Account for Mia" })
+    .click();
+  await page.getByRole("menuitem", { name: "AI and saved data" }).click();
+
+  const about = page.getByRole("dialog", { name: "AI and saved data" });
+  await expectInsideViewport(about, viewport);
+  await expect(
+    about.getByRole("heading", { name: "How Parrot uses AI" }),
+  ).toBeVisible();
+  await expect(
+    about.getByRole("heading", { name: "What this account keeps" }),
+  ).toBeVisible();
+
+  const technicalDetails = about.getByLabel("Technical build details");
+  await technicalDetails.scrollIntoViewIfNeeded();
+  const technicalBox = await visibleBox(technicalDetails);
+  expect(technicalBox.width).toBeGreaterThanOrEqual(44);
+  expect(technicalBox.height).toBeGreaterThanOrEqual(44);
+  await technicalDetails.click();
+  await expect(
+    about.getByText(
+      "Technical details could not load. The AI and saved data notes above are still available.",
+      { exact: true },
+    ).first(),
+  ).toBeVisible();
+
+  const done = about.getByRole("button", { name: "Done" });
+  await done.scrollIntoViewIfNeeded();
+  const doneBox = await visibleBox(done);
+  expect(doneBox.width).toBeGreaterThanOrEqual(44);
+  expect(doneBox.height).toBeGreaterThanOrEqual(44);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await done.click();
   await expect(about).toBeHidden();
 });
 

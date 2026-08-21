@@ -218,7 +218,7 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
   await page.setViewportSize(narrowPhone);
   await mockPersonalizedStoryArtApis(page);
   await page.goto("/stories");
-  await page.getByText("Grown-up options", { exact: true }).click();
+  await page.getByLabel("Grown-up options").click();
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   const consent = panel.getByRole("checkbox", { name: guardianConsentLabel });
@@ -237,7 +237,7 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
 
   await expect(panel.getByText("Story art ready", { exact: true })).toBeVisible();
   await expect(
-    panel.getByRole("button", { name: "Delete learner photo" }),
+    panel.getByRole("button", { name: "Delete story art" }),
   ).toBeVisible();
   await expectInsideViewportHorizontally(
     panel.getByRole("img", { name: personalizedStoryAlt }),
@@ -268,16 +268,16 @@ test("The Red Ball page 1 uses personalized story art instead of the placeholder
   await expectNoHorizontalOverflow(page);
 });
 
-test("deleting learner photo falls back to the default story placeholder", async ({
+test("deleting story art falls back to the default story placeholder", async ({
   page,
 }) => {
   await installStoryMediaGuard(page);
   await mockPersonalizedStoryArtApis(page, "ready");
   await page.goto("/stories");
-  await page.getByText("Grown-up options", { exact: true }).click();
+  await page.getByLabel("Grown-up options").click();
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
-  await panel.getByRole("button", { name: "Delete learner photo" }).click();
+  await panel.getByRole("button", { name: "Delete story art" }).click();
   await expect(
     panel.getByText("Personalized story art removed.", { exact: true }),
   ).toBeVisible();

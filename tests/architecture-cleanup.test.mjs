@@ -125,13 +125,14 @@ describe("architecture cleanup contracts", () => {
     assert.doesNotMatch(scene, /futureSrc|sparkle/);
   });
 
-  it("documents durable transcripts without raw-audio retention", () => {
+  it("documents durable transcripts and the application audio boundary", () => {
     const readme = readProjectFile("README.md");
     const agent = readProjectFile("agent/index.ts");
     const worker = readProjectFile("worker/conversations.ts");
 
     assert.match(readme, /finalized conversation transcript/i);
-    assert.match(readme, /raw audio is\s+not stored/i);
+    assert.match(readme, /does not write raw conversation audio to its D1 or R2/i);
+    assert.match(readme, /LiveKit and OpenAI still process live audio/i);
     assert.match(agent, /record:\s*AGENT_SESSION_START_OPTIONS\.record/);
     assert.doesNotMatch(worker, /audio(?:Blob|Base64|Bytes)|rawAudio/i);
   });

@@ -119,9 +119,9 @@ npm run deploy:agent -- --secrets-file=.env.livekit
 
 The Worker and agent deploy wrappers use the same repository commit-count semver
 and short Git SHA. The running agent waits for those values and its pinned model
-IDs to be stored whenever it starts a conversation, so the account menu's About
-panel reflects the builds that actually ran. Production agent images reject
-missing or placeholder build metadata.
+IDs to be stored whenever it starts a conversation, so the account menu's
+AI and saved data panel reflects the builds that actually ran. Production agent
+images reject missing or placeholder build metadata.
 
 Do not put the automatically injected `LIVEKIT_URL`, `LIVEKIT_API_KEY`, or
 `LIVEKIT_API_SECRET` into `.env.livekit`. The agent secrets file needs only:

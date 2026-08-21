@@ -124,7 +124,10 @@ export function StoryList() {
           className="group mt-1"
           open={activeLevelId !== "first-words" || undefined}
         >
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border-3 border-white bg-white/75 px-4 text-center text-sm font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden">
+          <summary
+            aria-label="Grown-up options"
+            className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border-3 border-white bg-white/75 px-4 text-center text-sm font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden"
+          >
             <Settings2 aria-hidden="true" className="size-4" />
             Grown-up options
             <span aria-hidden="true" className="group-open:rotate-180">

@@ -22,6 +22,7 @@ Last reviewed: 2026-08-21
 - [Cognitive accessibility for young learners](./cognitive-accessibility.md)
 - [Child AI safety and privacy](./child-ai-safety-and-privacy.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
+- [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 
 These memos complement the existing
 [child-first UX audit](../design/child-first-ux-audit.md) and

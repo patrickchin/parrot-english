@@ -241,7 +241,7 @@ export function AccountHeader({
               role="menuitem"
               type="button"
             >
-              About
+              AI and saved data
             </MenuButton>
             <MenuButton
               disabled={isSigningOut}
