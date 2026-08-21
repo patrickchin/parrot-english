@@ -1,9 +1,10 @@
 # Deterministic profile acknowledgment implementation
 
-Status: implemented and locally verified  
-Branch: `codex/deterministic-profile-acknowledgments`  
-Stacked on: `codex/story-reader-page-focus-visibility` (`1fb33b6`)  
-Research decision: [deterministic profile acknowledgments](./deterministic-profile-acknowledgments-guidance.md)
+- Status: implemented and locally verified
+- Branch: `codex/deterministic-profile-acknowledgments`
+- Stacked on: `codex/story-reader-page-focus-visibility` (`1fb33b6`)
+- Implementation commit: `77916ca`
+- Research decision: [deterministic profile acknowledgments](./deterministic-profile-acknowledgments-guidance.md)
 
 ## Outcome
 

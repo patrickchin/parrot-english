@@ -533,7 +533,23 @@ Screenshots / traces: fourteen genuine in-app Browser JPEGs and a provenance/int
 Measured result: baseline sky/cream pair 1.603:1; retained brand-blue/cream pair 6.451:1; all 122 pages show zero line, prompt, scroll, overflow, clip, or focus geometry regressions across three viewports; both forced-color outline edges render in the short-wide clip
 Risks / limitations: static paragraph is not classified as a UI component; forced colors is emulation only; target browsers/devices/AT, RTL/localization, zoom/text spacing, and child/caregiver comprehension remain untested
 Retain, revise, or reject: retain provisionally as page-arrival feedback, not narration tracking
-Next branch: codex/deterministic-profile-acknowledgments; then separately investigate long-page short-wide prompt discoverability
+Completed next branch: codex/deterministic-profile-acknowledgments at 77916ca; separately investigate long-page short-wide prompt discoverability
+```
+
+```text
+Branch: codex/deterministic-profile-acknowledgments
+Base branch / dependency: codex/story-reader-page-focus-visibility documentation hand-off 1fb33b6
+Research commit: 160e2a3
+Implementation commit: 77916ca
+Hypothesis: one reviewed, input-independent Pre-A1 formula can confirm every successful form-profile answer without model-written reading-level drift, subjective praise, invented language, or public answer echo
+Changed: all six checked-in acknowledgments to exact Thank you!; validator drift guard; Groq prompt/schema/parser limited to summary and canonical fields; trusted write boundary; historical API projection; retry and bulk selection; standard browser fixtures; adversarial/generated/fallback/read/repeated-copy tests; five visual-evidence captures; language, privacy, compatibility, and implementation research
+Not changed: profile questions/order, raw-answer/summary persistence, Groq factual enrichment, realtime profile conversation, explicit Next pacing, runtime acknowledgment TTS, API or D1 snapshot shape, database migrations, dependencies, translations, or long legacy rendering tolerance
+Tests: 53/53 focused domain/enrichment/worker/infrastructure; 680/680 full unit/integration/lifecycle/safety; 236/236 full Chromium; production build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: four selected-state and one legacy-density genuine in-app Browser JPEGs with integrity manifest in artifacts/ux-review/deterministic-profile-acknowledgments at 280×568, 390×844, 640×360, and 1440×900
+Measured result: exact current phrase remains one line at all four viewports; 30px heading height at 280×568 versus 300px for the retained 160-character defensive fixture; Next is 144×52; heading focus, main scroll origin, and zero horizontal overflow are preserved
+Risks / limitations: Thank you! is a vocabulary-aligned product hypothesis, not proven comprehension; six repeated screens may feel tedious; raw answers still go to Groq and D1; realtime speech remains generated; target child/caregiver, device/browser/AT, localization, production latency, and provider-retention testing remain
+Retain, revise, or reject: retain provisionally pending direct child/caregiver comprehension and repetition testing
+Next branch: codex/static-profile-acknowledgment-audio to remove the now-redundant runtime ElevenLabs request; later test a non-control-like reading-position cue for focused profile headings
 ```
 
 ## Newly observed defects
@@ -581,9 +597,12 @@ branches.
     bright-pink/deep-navy pair is 5.063:1 at rest, 5.066:1 on hover, and 4.685:1
     active.
 12. **Medium: a valid 160-character acknowledgment becomes a ten-line reading
-    wall at 280×568.** The viewport branch keeps the full text and **Next**
-    visible; a separate generated-language contract should make the common case
-    substantially shorter and simpler before claiming beginner comprehension.
+    wall at 280×568.** Fixed provisionally for current server output on
+    `codex/deterministic-profile-acknowledgments` at `77916ca`: all six form
+    questions now use exact `Thank you!`, which occupies one 30-pixel line at
+    280×568 instead of the legacy fixture's 300-pixel, ten-line heading. The
+    160-character viewport case remains as defensive compatibility coverage,
+    and direct beginner comprehension is still untested.
 13. **High: the shared ink focus outline nearly disappears against the navy
     account menu.** Fixed provisionally on `codex/shared-focus-visibility` at
     `d5e1bdc` with a contiguous four-pixel white/four-pixel deep-navy indicator.

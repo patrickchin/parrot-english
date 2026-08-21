@@ -5,7 +5,7 @@ is not to make the product look "research-backed." It is to make assumptions,
 trade-offs, unknowns, and evidence inspectable by the next person who changes
 the product.
 
-Last reviewed: 2026-08-21
+Last reviewed: 2026-08-22
 
 ## Start here
 
@@ -48,6 +48,8 @@ Last reviewed: 2026-08-21
 - [Picture-led first use](./picture-led-first-use.md)
 - [Privacy-safe experience events](./privacy-safe-experience-events.md)
 - [Child-paced profile acknowledgments](./profile-acknowledgment-control.md)
+- [Deterministic beginner-safe profile acknowledgment guidance](./deterministic-profile-acknowledgments-guidance.md)
+- [Deterministic profile acknowledgment implementation](./deterministic-profile-acknowledgments-implementation.md)
 - [Profile fallback viewport stability](./profile-fallback-viewport-stability.md)
 - [Profile fallback viewport-stability guidance](./profile-fallback-viewport-stability-guidance.md)
 - [Remote audio playback readiness and honest feedback](./remote-audio-playback.md)
