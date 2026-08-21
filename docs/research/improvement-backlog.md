@@ -143,12 +143,24 @@ switches only a second consecutive Talk failure to one static, picture-led
 profile editing. The exact threshold, picture, and English remain child-study
 hypotheses.
 
-The next selected stacked improvement is **one child-facing Talk state at a
-time**. A direct visual audit found duplicate status/caption/button wording,
-two simultaneous spinners, and unnecessary floating-character motion in
-ordinary waiting and blocked-audio states. Research and implementation should
-simplify those layers without removing immediate acknowledgement, reserved
-geometry, accessible live feedback, or the finite recovery paths above.
+The stacked **one child-facing Talk state at a time** improvement is implemented
+on `codex/talk-state-clarity` at `17c1711`. Remote waits now use one visible
+phase owner, one meaningful caption, an inert reserved primary-control slot,
+and one status spinner. Peppa is static during timed remote work, empty slots no
+longer expose named groups, and sparse wait milestones remain in the single
+polite live status. State/timer behavior and direct microphone/autoplay actions
+are unchanged.
+
+The next selected stacked improvement is **single-owner direct Talk action
+feedback** on `codex/talk-direct-action-feedback`. The baseline visual audit
+found **Starting sound** four times with three simultaneous animations, while
+**Opening microphone** duplicates its pending state and spinner between status
+and control. Research must decide whether the focus-preserving control or the
+visible status owns progress, then test keyboard, switch-style operation,
+VoiceOver, autoplay gesture continuity, repeated activation, reduced motion,
+and every target viewport before changing either gesture-sensitive path. If a
+focused pending control uses `aria-disabled`, explicit click and keyboard guards
+must enforce it because ARIA does not block activation on its own.
 
 ### Hand-off record
 
@@ -377,6 +389,22 @@ Measured result: first failure keeps one retry; second consecutive Talk failure 
 Risks / limitations: deterministic mocks and Chromium only; assistant signal is not proof of sound; server retirement may settle after navigation; direct child/caregiver, screen-reader, localization, and real-device/network evidence is absent
 Retain, revise, or reject: retain as a bounded reversible hypothesis pending the documented formative study
 Next question: Can Talk show one child-facing state at a time without duplicate text, multiple spinners, or unnecessary character motion?
+```
+
+```text
+Branch: codex/talk-state-clarity
+Base branch / dependency: codex/repeated-talk-recovery documentation hand-off b0f6147
+Commit: 17c1711
+Geometry evidence follow-up: b5c00b4
+Hypothesis: one named phase, one meaningful caption, and only actionable controls make remote Talk states calmer and easier to parse than repeated wait text, disabled pseudo-actions, and simultaneous busy motion
+Changed: duplicate system-caption labels removed; passive wait/listen pseudo-controls replaced by a responsive inert slot; timed Peppa motion stopped; reconnecting and saving copy simplified; sparse milestone detail kept in one atomic polite status; empty control slots removed from the accessibility tree; four-viewport geometry and active reduced-motion coverage added
+Not changed: lifecycle states, wait thresholds, retry budgets, LiveKit or AI behavior, prompts, audio, persistence, Finish/Back/Retry/lesson fallback, or gesture-bound Starting sound and Opening microphone controls
+Tests: 674/674 unit/integration/lifecycle/safety tests; 189/189 Chromium tests; TypeScript, production build, lint with 0 errors and 2 generated-file warnings, diff checks, 200 local research-document links (206 including the artifact manifest), and six baseline JPEG integrity checks passed
+Screenshots / traces: six baseline JPEGs and a manifest in artifacts/ux-review/talk-state-clarity; after-state in-app capture remains unavailable and is explicitly not represented
+Measured result: ordinary Thinking falls from three simultaneous animations to one; timed remote states have one running status animation, zero character/control-slot animations, and zero under reduced motion; caption and control-slot geometry remains stable across wait, Peppa speech, learner turn, and terminal recovery at 280×568, 390×844, 640×360, and 1440×900
+Risks / limitations: no after-state visual inspection, VoiceOver/TalkBack session, 200% zoom/text-spacing check, real service/device/browser interoperability, localization review, or child/caregiver study; speaking and direct-action character motion remain deferred
+Retain, revise, or reject: retain provisionally pending the documented visual, assistive-technology, and formative child/caregiver checks
+Next question: Can Starting sound and Opening microphone acknowledge a child once without losing focus or the browser-required activation gesture?
 ```
 
 ## Newly observed defects

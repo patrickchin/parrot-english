@@ -41,6 +41,7 @@ Last reviewed: 2026-08-21
 - [Remote audio playback readiness and honest feedback](./remote-audio-playback.md)
 - [Responsive lesson and story shelf artwork](./responsive-shelf-art.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)
+- [Talk state clarity: one primary signal at a time](./talk-state-clarity.md)
 - [Literal voice-state feedback implementation](./voice-state-feedback.md)
 - [Voice fallback speaking practice](./voice-fallback-practice.md)
 
