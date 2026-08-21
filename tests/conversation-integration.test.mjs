@@ -61,6 +61,7 @@ function conversationProps(overrides = {}) {
     canFinish: true,
     error: "",
     liveTranscript: "",
+    microphoneBusy: false,
     microphoneEnabled: true,
     onBack() {},
     onFinish() {},

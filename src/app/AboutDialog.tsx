@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { ActionButton, Card, cx, IconButton } from "../shared/ui";
+import { useDialogFocus } from "./useDialogFocus";
 
 type BackendBuild = {
   commitSha: string;
@@ -127,19 +128,27 @@ async function loadBuildInfo(signal: AbortSignal) {
   return (await response.json()) as BuildInfo;
 }
 
-export function AboutDialog({ onClose }: { onClose: () => void }) {
+export function AboutDialog({
+  onClose,
+  returnFocusRef,
+}: {
+  onClose: () => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
   const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
   const [error, setError] = useState("");
   const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+
+  useDialogFocus({
+    dialogRef,
+    initialFocusRef: closeRef,
+    onClose,
+    returnFocusRef,
+  });
 
   useEffect(() => {
     const controller = new AbortController();
-    closeRef.current?.focus();
-
-    function closeFromEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("keydown", closeFromEscape);
     void loadBuildInfo(controller.signal)
       .then(setBuildInfo)
       .catch((reason: unknown) => {
@@ -149,9 +158,8 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
 
     return () => {
       controller.abort();
-      document.removeEventListener("keydown", closeFromEscape);
     };
-  }, [onClose]);
+  }, []);
 
   const agent = buildInfo?.components.find(
     ({ component }) => component === "conversation-agent",
@@ -169,7 +177,9 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
         aria-labelledby="about-parrot-title"
         aria-modal="true"
         className="grid max-h-[calc(100dvh-5rem)] w-full max-w-md gap-4 overflow-y-auto rounded-3xl border-4 border-white bg-sky-50 p-4 text-left font-ui text-slate-900 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)] md:p-5"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <header className="flex items-center justify-between gap-3">
           <div>

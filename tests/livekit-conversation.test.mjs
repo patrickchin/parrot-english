@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { DisconnectReason } from "livekit-client";
+import { DisconnectReason, RoomEvent } from "livekit-client";
 import {
   createLiveKitConversation,
   LIVEKIT_CONVERSATION_EVENTS,
@@ -46,6 +46,44 @@ class FakeRoom {
 }
 
 describe("LiveKit conversation adapter", () => {
+  it("keeps the lazy adapter event names aligned with the pinned SDK", () => {
+    assert.deepEqual(LIVEKIT_CONVERSATION_EVENTS, {
+      activeSpeakers: RoomEvent.ActiveSpeakersChanged,
+      disconnected: RoomEvent.Disconnected,
+      participantAttributes: RoomEvent.ParticipantAttributesChanged,
+      reconnected: RoomEvent.Reconnected,
+      reconnecting: RoomEvent.Reconnecting,
+      trackSubscribed: RoomEvent.TrackSubscribed,
+      transcription: RoomEvent.TranscriptionReceived,
+    });
+  });
+
+  it("does not load the real-time SDK until a real room connects", async () => {
+    const log = [];
+    const room = new FakeRoom(log);
+    let roomLoads = 0;
+    const conversation = createLiveKitConversation({
+      async loadRoom() {
+        roomLoads += 1;
+        return room;
+      },
+      token: "participant-token",
+      url: "wss://livekit.example.test",
+    });
+
+    assert.equal(roomLoads, 0);
+    assert.deepEqual(log, []);
+
+    await conversation.connect();
+    assert.equal(roomLoads, 1);
+    assert.deepEqual(log, [
+      ["connect", "wss://livekit.example.test", "participant-token"],
+    ]);
+
+    await conversation.connect();
+    assert.equal(roomLoads, 1);
+  });
+
   it("provides a deterministic greeting only for the Maestro marker credentials", async () => {
     const conversation = createLiveKitConversation({
       token: "parrot-e2e-participant-token",

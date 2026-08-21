@@ -57,7 +57,10 @@ export function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
 
-async function waitForPlaybackPause(durationMs: number, signal?: AbortSignal) {
+export async function waitForAbortableDelay(
+  durationMs: number,
+  signal?: AbortSignal,
+) {
   if (durationMs <= 0) return;
 
   await new Promise<void>((resolve, reject) => {
@@ -169,7 +172,7 @@ export async function playAudioSequence({
   env = getBrowserEnvironment(),
   lines,
   signal,
-  wait = waitForPlaybackPause,
+  wait = waitForAbortableDelay,
 }: PlayAudioSequenceOptions): Promise<void> {
   for (const line of lines) {
     await playAudioLine({

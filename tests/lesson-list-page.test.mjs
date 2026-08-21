@@ -74,23 +74,20 @@ const expectedReadyMadeArtwork = [
   ],
 ];
 
-test("lesson list separates ready-made lessons from custom lessons", () => {
+test("lesson list gives children one simple picture-led lesson path", () => {
   const html = renderLessonList();
   const expectedHrefs = LESSONS.map(
     (entry) => `/lessons/parrot/${encodeURIComponent(entry.id)}/scenes/1`,
   );
 
-  assert.match(html, /<h1[^>]*>Lessons<\/h1>/);
-  assert.match(html, /Choose a story and start speaking/i);
+  assert.match(html, /<h1[^>]*>Pick a lesson<\/h1>/);
+  assert.match(html, /Listen\. Then speak\./i);
   assert.match(
     html,
-    /<h2[^>]*id="parrot-lessons-title"[^>]*>Ready-made lessons<\/h2>/,
+    /<section[^>]*aria-label="Lessons"/,
   );
-  assert.match(
-    html,
-    /<h2[^>]*id="my-lessons-title"[^>]*>My lessons<\/h2>/,
-  );
-  assert.equal((html.match(/<h2/g) ?? []).length, 2);
+  assert.match(html, /<h2[^>]*id="grown-up-tools-title"[^>]*>[\s\S]*Grown-up tools<\/h2>/);
+  assert.doesNotMatch(html, /id="my-lessons-title"/);
   assert.equal((html.match(/<h3/g) ?? []).length, 7);
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.equal((html.match(/<article/g) ?? []).length, 7);
@@ -99,6 +96,18 @@ test("lesson list separates ready-made lessons from custom lessons", () => {
     (html.match(/aria-label="Start lesson: [^"]+"/g) ?? []).length,
     7,
   );
+  for (const practiceLine of [
+    "Say: Can you help me?",
+    "Say: It is red.",
+    "Say: May I have an apple?",
+    "Say: Can I have a turn?",
+    "Say: Two apples, please.",
+    "Say: Yes, please.",
+    "Say: Good night.",
+  ]) {
+    assert.match(html, new RegExp(practiceLine.replace(/[?.]/g, "\\$&")));
+  }
+  assert.doesNotMatch(html, /retrieve a ball from a high tree branch/i);
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
@@ -128,11 +137,23 @@ test("lesson list keeps custom creation secondary and explains who it is for", (
     }),
   );
 
-  assert.match(html, /No custom lessons yet\./);
-  assert.match(html, /grown-up/i);
+  assert.match(html, /No made-for-you lessons yet\./);
+  assert.match(html, /Grown-up tools/);
   assert.match(
     html,
-    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create custom lesson<\/a>/s,
+    /<a[^>]*aria-label="Create custom lesson"[^>]*href="\/lessons\/my\/create"[^>]*>.*Make a lesson<\/a>/s,
+  );
+});
+
+test("lesson artwork reserves its card space and defers off-screen images", () => {
+  const html = renderLessonList();
+
+  assert.equal((html.match(/decoding="async"/g) ?? []).length, 7);
+  assert.equal((html.match(/loading="eager"/g) ?? []).length, 2);
+  assert.equal((html.match(/loading="lazy"/g) ?? []).length, 5);
+  assert.match(
+    html,
+    /<img[^>]*fetchPriority="high"[^>]*loading="eager"[^>]*src="\/assets\/lesson-covers\/01-peppas-high-ball\.webp"/,
   );
 });
 
@@ -170,11 +191,14 @@ test("saved lessons keep distinct play, edit, and create actions", () => {
 
   assert.match(html, /aria-label="Start lesson: Editable Garden"/);
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
+  assert.match(html, /Made for you/);
+  assert.match(html, /A lesson made for you\./);
   assert.match(html, /aria-label="Edit lesson: Editable Garden"/);
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/edit"/);
+  assert.match(html, /Grown-up: edit/);
   assert.match(
     html,
-    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create custom lesson<\/a>/s,
+    /<a[^>]*aria-label="Create custom lesson"[^>]*href="\/lessons\/my\/create"[^>]*>.*Make a lesson<\/a>/s,
   );
 });
 

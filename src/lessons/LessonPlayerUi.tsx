@@ -169,19 +169,33 @@ export const LessonIntroduction = forwardRef<
       role="region"
     >
       <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9">
-        <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black uppercase tracking-wider text-brand-blue">
+        <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black text-brand-blue">
           <Sparkles aria-hidden="true" className="size-4" />
-          Story lesson
+          {sceneCount} parts
         </span>
         <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
           {lessonTitle}
         </h1>
-        <p className="mb-0 mt-3 text-base font-black text-brand-rose md:text-xl">
-          {sceneCount} scenes
-        </p>
-        <p className="mx-auto mb-5 mt-2 max-w-md text-base font-bold leading-snug text-slate-600 md:mb-7 md:text-xl">
-          Listen to the story, then speak when it is your turn.
-        </p>
+        <div
+          aria-label="How to play"
+          className="mx-auto my-5 grid max-w-md grid-cols-2 gap-2 text-brand-ink md:my-7 md:gap-3"
+          role="list"
+        >
+          <span
+            className="grid min-h-20 place-items-center gap-1 rounded-2xl bg-sky-100 p-3 text-lg font-black md:min-h-24 md:text-xl"
+            role="listitem"
+          >
+            <Ear aria-hidden="true" className="size-7 text-brand-blue md:size-9" />
+            1. Listen
+          </span>
+          <span
+            className="grid min-h-20 place-items-center gap-1 rounded-2xl bg-emerald-100 p-3 text-lg font-black md:min-h-24 md:text-xl"
+            role="listitem"
+          >
+            <Mic aria-hidden="true" className="size-7 text-brand-green md:size-9" />
+            2. Talk
+          </span>
+        </div>
         <ActionButton
           aria-label="Start lesson"
           className="max-w-sm"
@@ -191,7 +205,7 @@ export const LessonIntroduction = forwardRef<
           size="hero"
           type="button"
         >
-          Start lesson
+          Let’s go!
         </ActionButton>
       </Card>
     </section>
@@ -220,7 +234,7 @@ export const LessonCompletion = forwardRef<
           <Sparkles aria-hidden="true" className="size-8 md:size-11" />
         </span>
         <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
-          Story complete!
+          Lesson complete!
         </h1>
         <p className="mb-5 mt-3 text-lg font-bold leading-snug text-slate-600 md:mb-7 md:text-2xl">
           You finished {lessonTitle}!
@@ -306,7 +320,7 @@ export function LessonSpeech({
 
   return (
     <div
-      aria-label={isNarration ? "Story narration" : `${speakerName} is speaking`}
+      aria-label={isNarration ? "Lesson narration" : `${speakerName} is speaking`}
       aria-live="polite"
       className={cx(
         "lesson-dialogue-overlay absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface short:top-32 md:top-28 md:px-7 md:py-4",
@@ -352,10 +366,21 @@ export function LessonSpeech({
 export function LessonUserPrompt({
   dialogue,
   portrait,
+  status = "ready",
 }: {
   dialogue: string;
   portrait?: PersonalizedStoryArtwork | null;
+  status?: "checking" | "opening" | "ready" | "recording";
 }) {
+  const promptLabel =
+    status === "recording"
+      ? "Listening"
+      : status === "opening"
+        ? "Opening mic"
+      : status === "checking"
+        ? "Checking"
+        : "Your turn";
+
   return (
     <section
       aria-label="Your turn"
@@ -370,8 +395,15 @@ export function LessonUserPrompt({
         />
       ) : null}
       <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
-        <Mic aria-hidden="true" className="size-4" />
-        Your turn
+        {status === "checking" || status === "opening" ? (
+          <LoaderCircle
+            aria-hidden="true"
+            className="size-4 animate-spin motion-reduce:animate-none"
+          />
+        ) : (
+          <Mic aria-hidden="true" className="size-4" />
+        )}
+        {promptLabel}
       </span>
       <p className="m-0 text-base font-black leading-[1.15] min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]">
         {dialogue}
@@ -438,11 +470,11 @@ export function LessonPlaybackControls({
   onPauseResume: () => void;
   onPrevious: () => void;
 }) {
-  const pauseLabel = isPaused ? "Resume story" : "Pause story";
+  const pauseLabel = isPaused ? "Resume lesson" : "Pause lesson";
 
   return (
     <nav
-      aria-label="Story playback controls"
+      aria-label="Lesson playback controls"
       className="absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 md:bottom-6 md:gap-3"
     >
       <IconButton
@@ -491,11 +523,13 @@ export function LessonPlaybackControls({
 export function LessonSpeakingControls({
   isEvaluating,
   isRecording,
+  isStartingRecording,
   onSkip,
   onToggleRecording,
 }: {
   isEvaluating: boolean;
   isRecording: boolean;
+  isStartingRecording: boolean;
   onSkip: () => void;
   onToggleRecording: () => void;
 }) {
@@ -526,21 +560,35 @@ export function LessonSpeakingControls({
           <ActionButton
             aria-label="Microphone"
             aria-pressed={isRecording}
+            aria-busy={isStartingRecording || undefined}
             className={cx(
               "min-w-0 flex-1",
               isRecording && "animate-pulse motion-reduce:animate-none",
             )}
+            disabled={isStartingRecording}
             onClick={onToggleRecording}
             size="large"
             type="button"
             variant={isRecording ? "brand" : "success"}
           >
-            <Mic aria-hidden="true" className="size-7 md:size-8" />
-            {isRecording ? "Tap when done" : "Tap to talk"}
+            {isStartingRecording ? (
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-7 animate-spin motion-reduce:animate-none md:size-8"
+              />
+            ) : (
+              <Mic aria-hidden="true" className="size-7 md:size-8" />
+            )}
+            {isStartingRecording
+              ? "Opening mic…"
+              : isRecording
+                ? "Tap when done"
+                : "Tap to talk"}
           </ActionButton>
           <ActionButton
             aria-label="Skip speaking turn"
             className="shrink-0"
+            disabled={isStartingRecording}
             onClick={onSkip}
             size="large"
             type="button"
@@ -554,15 +602,49 @@ export function LessonSpeakingControls({
   );
 }
 
-export function LessonErrorBanner({ error }: { error: string }) {
+export function LessonErrorBanner({
+  error,
+  onRetry,
+  onSkip,
+}: {
+  error: string;
+  onRetry?: () => void;
+  onSkip?: () => void;
+}) {
   if (!error) return null;
 
   return (
     <div
-      className="absolute bottom-24 left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl border-4 border-white bg-red-800 px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base"
+      className="absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white bg-red-800 px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base"
       role="alert"
     >
-      {error}
+      <p className="m-0">{error}</p>
+      {onRetry && onSkip ? (
+        <div className="grid grid-cols-2 gap-2">
+          <ActionButton
+            frame="none"
+            onClick={onRetry}
+            shape="rounded"
+            size="compact"
+            type="button"
+            variant="surface"
+          >
+            <RotateCcw aria-hidden="true" className="size-4" />
+            Try sound
+          </ActionButton>
+          <ActionButton
+            frame="none"
+            onClick={onSkip}
+            shape="rounded"
+            size="compact"
+            type="button"
+            variant="navy"
+          >
+            Skip sound
+            <ChevronRight aria-hidden="true" className="size-4" />
+          </ActionButton>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
 import type { LinkProps } from "react-router";
@@ -88,14 +89,19 @@ export function AccountHeader({
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
 
   useEffect(() => {
     if (!isMenuOpen) return;
 
-    accountRef.current
-      ?.querySelector<HTMLButtonElement>("[role='menuitem']:not(:disabled)")
-      ?.focus();
+    const menuItems = accountRef.current?.querySelectorAll<HTMLButtonElement>(
+      "[role='menuitem']:not(:disabled)",
+    );
+    menuItems?.[
+      menuFocusRef.current === "last" ? menuItems.length - 1 : 0
+    ]?.focus();
 
     function closeFromOutside(event: PointerEvent) {
       if (!accountRef.current?.contains(event.target as Node)) {
@@ -105,9 +111,9 @@ export function AccountHeader({
 
     function closeFromEscape(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
+      event.preventDefault();
       setIsMenuOpen(false);
-      accountRef.current?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
-        ?.focus();
+      accountButtonRef.current?.focus();
     }
 
     document.addEventListener("pointerdown", closeFromOutside);
@@ -126,16 +132,48 @@ export function AccountHeader({
 
   function closeAbout() {
     setIsAboutOpen(false);
-    accountRef.current
-      ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
-      ?.focus();
   }
 
   function closeDelete() {
     setIsDeleteOpen(false);
-    accountRef.current
-      ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
-      ?.focus();
+  }
+
+  function openMenu(focus: "first" | "last" = "first") {
+    menuFocusRef.current = focus;
+    setIsMenuOpen(true);
+  }
+
+  function handleAccountKeyDown(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+  ) {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    openMenu(event.key === "ArrowUp" ? "last" : "first");
+  }
+
+  function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      return;
+    }
+
+    const items = [
+      ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
+        "[role='menuitem']:not(:disabled)",
+      ),
+    ];
+    if (items.length === 0) return;
+    event.preventDefault();
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+    let nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    else if (event.key === "ArrowDown") {
+      nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+    } else if (event.key === "ArrowUp") {
+      nextIndex =
+        currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+    }
+    items[nextIndex]?.focus();
   }
 
   return (
@@ -151,7 +189,12 @@ export function AccountHeader({
         aria-expanded={isMenuOpen}
         aria-haspopup="menu"
         className="max-w-full"
-        onClick={() => setIsMenuOpen((current) => !current)}
+        onClick={() => {
+          if (!isMenuOpen) menuFocusRef.current = "first";
+          setIsMenuOpen((current) => !current);
+        }}
+        onKeyDown={handleAccountKeyDown}
+        ref={accountButtonRef}
         size="headerAccount"
         title={userEmail}
         type="button"
@@ -181,6 +224,7 @@ export function AccountHeader({
             aria-label="Account menu"
             className="grid gap-1"
             id={menuId}
+            onKeyDown={handleMenuKeyDown}
             role="menu"
           >
             {onOpenProfile ? (
@@ -220,9 +264,18 @@ export function AccountHeader({
           </div>
         </div>
       ) : null}
-      {isAboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
+      {isAboutOpen ? (
+        <AboutDialog
+          onClose={closeAbout}
+          returnFocusRef={accountButtonRef}
+        />
+      ) : null}
       {isDeleteOpen ? (
-        <AccountDeleteDialog onClose={closeDelete} onDelete={onDeleteAccount} />
+        <AccountDeleteDialog
+          onClose={closeDelete}
+          onDelete={onDeleteAccount}
+          returnFocusRef={accountButtonRef}
+        />
       ) : null}
       {error ? (
         <span

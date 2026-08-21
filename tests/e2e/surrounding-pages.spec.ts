@@ -75,7 +75,7 @@ test("ready-made lessons show distinct story-specific artwork", async ({
   await page.goto("/lessons");
 
   const readyMadeLessons = page
-    .getByRole("region", { name: "Ready-made lessons" })
+    .getByRole("region", { name: "Lessons" })
     .getByRole("article");
 
   for (const [index, artwork] of readyMadeArtwork.entries()) {
@@ -102,7 +102,7 @@ test("every ready-made lesson exposes one canonical start link", async ({
   await page.goto("/lessons");
 
   const cards = page
-    .getByRole("region", { name: "Ready-made lessons" })
+    .getByRole("region", { name: "Lessons" })
     .getByRole("article");
   await expect(cards).toHaveCount(readyMadeArtwork.length);
 
@@ -122,29 +122,11 @@ test("every ready-made lesson exposes one canonical start link", async ({
 });
 
 for (const viewport of [
-  {
-    artworkSize: 76,
-    height: 568,
-    maxCardHeight: 106,
-    maxStartWidth: 52,
-    width: 280,
-  },
-  {
-    artworkSize: 86,
-    height: 640,
-    maxCardHeight: 116,
-    maxStartWidth: 84,
-    width: 360,
-  },
-  {
-    artworkSize: 86,
-    height: 844,
-    maxCardHeight: 116,
-    maxStartWidth: 84,
-    width: 390,
-  },
+  { height: 568, width: 280 },
+  { height: 640, width: 360 },
+  { height: 844, width: 390 },
 ]) {
-  test(`lesson discovery stays compact and readable at ${viewport.width}px`, async ({
+  test(`lesson discovery is picture-led and reachable at ${viewport.width}px`, async ({
     page,
   }) => {
     await page.route("**/api/lessons/my", async (route) => {
@@ -158,61 +140,62 @@ for (const viewport of [
     await page.goto("/lessons");
 
     const readyMadeLessons = page
-      .getByRole("region", { name: "Ready-made lessons" })
+      .getByRole("region", { name: "Lessons" })
       .getByRole("article");
     const firstLesson = readyMadeLessons.first();
+    const secondLesson = readyMadeLessons.nth(1);
     const thirdLesson = readyMadeLessons.nth(2);
     const title = firstLesson.getByRole("heading", {
       name: "Peppa's High Ball",
     });
     const artwork = firstLesson.getByRole("img");
-    const summary = firstLesson.getByText(
-      /Peppa asks Dolly to help retrieve a ball/i,
+    const practiceLine = firstLesson.getByText(
+      "Say: Can you help me?",
+      { exact: true },
     );
     const start = firstLesson.getByRole("link", {
       name: "Start lesson: Peppa's High Ball",
     });
     const cardBox = await visibleBox(firstLesson);
+    const secondCardBox = await visibleBox(secondLesson);
+    const thirdCardBox = await visibleBox(thirdLesson);
     const artworkBox = await visibleBox(artwork);
     const titleBox = await visibleBox(title);
+    const practiceBox = await visibleBox(practiceLine);
     const startBox = await visibleBox(start);
-    const thirdCardBox = await visibleBox(thirdLesson);
-    const cardBoxes = await Promise.all(
-      Array.from({ length: 7 }, (_, index) =>
-        visibleBox(readyMadeLessons.nth(index)),
-      ),
-    );
 
-    expect(Math.max(...cardBoxes.map((box) => box.height))).toBeLessThanOrEqual(
-      viewport.maxCardHeight,
-    );
-    expect(artworkBox.width).toBeGreaterThanOrEqual(
-      viewport.artworkSize - 1,
-    );
-    expect(artworkBox.height).toBeGreaterThanOrEqual(
-      viewport.artworkSize - 1,
-    );
-    expect(artworkBox.x + artworkBox.width).toBeLessThanOrEqual(titleBox.x);
-    expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(startBox.x);
-    expect(startBox.x).toBeGreaterThan(artworkBox.x + artworkBox.width);
+    expect(startBox.x).toBeGreaterThanOrEqual(cardBox.x);
     expect(startBox.y).toBeGreaterThanOrEqual(cardBox.y);
-    expect(startBox.y + startBox.height).toBeLessThanOrEqual(
-      cardBox.y + cardBox.height,
-    );
-    expect(startBox.height).toBeGreaterThanOrEqual(48);
+    expect(startBox.width).toBeGreaterThanOrEqual(cardBox.width - 1);
+    expect(startBox.height).toBeGreaterThanOrEqual(128);
     expect(startBox.width).toBeGreaterThanOrEqual(
-      viewport.width < 360 ? 48 : 80,
+      viewport.width < 360 ? 240 : 150,
     );
-    expect(startBox.width).toBeLessThanOrEqual(viewport.maxStartWidth);
+    expect(artworkBox.width).toBeGreaterThanOrEqual(102);
+    expect(artworkBox.height).toBeGreaterThanOrEqual(110);
+    expect(practiceBox.x).toBeGreaterThanOrEqual(titleBox.x);
     expect(thirdCardBox.y).toBeLessThan(viewport.height);
 
     if (viewport.width < 360) {
-      await expect(summary).toBeHidden();
+      expect(artworkBox.x + artworkBox.width).toBeLessThanOrEqual(titleBox.x);
+      expect(secondCardBox.y).toBeGreaterThanOrEqual(
+        cardBox.y + cardBox.height,
+      );
     } else {
-      const summaryBox = await visibleBox(summary);
-      expect(summaryBox.x).toBeGreaterThanOrEqual(titleBox.x);
-      expect(summaryBox.x + summaryBox.width).toBeLessThanOrEqual(startBox.x);
+      expect(Math.abs(cardBox.y - secondCardBox.y)).toBeLessThanOrEqual(2);
+      expect(secondCardBox.x).toBeGreaterThanOrEqual(
+        cardBox.x + cardBox.width,
+      );
+      expect(thirdCardBox.y).toBeGreaterThanOrEqual(
+        cardBox.y + cardBox.height,
+      );
+      expect(titleBox.y).toBeGreaterThanOrEqual(
+        artworkBox.y + artworkBox.height,
+      );
     }
+    await expect(
+      firstLesson.getByText(/retrieve a ball from a high tree branch/i),
+    ).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
     const main = page.getByRole("main");
@@ -220,7 +203,9 @@ for (const viewport of [
     await expect
       .poll(() => main.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await expect(page.getByRole("heading", { name: "My lessons" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Grown-up tools" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Create custom lesson" }),
     ).toBeVisible();
@@ -231,20 +216,10 @@ for (const viewport of [
 }
 
 for (const viewport of [
-  {
-    artworkWidth: 128,
-    height: 900,
-    maxCardHeight: 124,
-    width: 687,
-  },
-  {
-    artworkWidth: 160,
-    height: 900,
-    maxCardHeight: 124,
-    width: 1440,
-  },
+  { height: 900, width: 687 },
+  { height: 900, width: 1440 },
 ]) {
-  test(`lesson discovery remains one compact vertical list at ${viewport.width}px`, async ({
+  test(`lesson discovery becomes a roomy visual grid at ${viewport.width}px`, async ({
     page,
   }) => {
     await page.route("**/api/lessons/my", async (route) => {
@@ -258,11 +233,14 @@ for (const viewport of [
     await page.goto("/lessons");
 
     const lessons = page
-      .getByRole("region", { name: "Ready-made lessons" })
+      .getByRole("region", { name: "Lessons" })
       .getByRole("article");
     const firstCard = lessons.nth(0);
     const firstCardBox = await visibleBox(firstCard);
     const secondCardBox = await visibleBox(lessons.nth(1));
+    const nextRowCardBox = await visibleBox(
+      lessons.nth(viewport.width >= 1024 ? 4 : 3),
+    );
     const fifthCardBox = await visibleBox(lessons.nth(4));
     const titleBox = await visibleBox(
       firstCard.getByRole("heading", { name: "Peppa's High Ball" }),
@@ -274,21 +252,19 @@ for (const viewport of [
       }),
     );
 
-    expect(Math.abs(firstCardBox.x - secondCardBox.x)).toBeLessThanOrEqual(2);
-    expect(Math.abs(firstCardBox.width - secondCardBox.width)).toBeLessThanOrEqual(
-      2,
+    expect(Math.abs(firstCardBox.y - secondCardBox.y)).toBeLessThanOrEqual(2);
+    expect(secondCardBox.x).toBeGreaterThanOrEqual(
+      firstCardBox.x + firstCardBox.width,
     );
-    expect(secondCardBox.y).toBeGreaterThanOrEqual(
+    expect(nextRowCardBox.y).toBeGreaterThanOrEqual(
       firstCardBox.y + firstCardBox.height,
     );
-    expect(firstCardBox.height).toBeLessThanOrEqual(viewport.maxCardHeight);
-    expect(artworkBox.width).toBeGreaterThanOrEqual(
-      viewport.artworkWidth - 1,
-    );
-    expect(artworkBox.height).toBeGreaterThanOrEqual(95);
-    expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(startBox.x);
-    expect(startBox.width).toBeGreaterThanOrEqual(80);
-    expect(startBox.width).toBeLessThanOrEqual(88);
+    expect(firstCardBox.width).toBeGreaterThanOrEqual(180);
+    expect(artworkBox.width).toBeGreaterThanOrEqual(firstCardBox.width - 10);
+    expect(artworkBox.height).toBeGreaterThanOrEqual(130);
+    expect(titleBox.y).toBeGreaterThanOrEqual(artworkBox.y + artworkBox.height);
+    expect(startBox.width).toBeGreaterThanOrEqual(firstCardBox.width - 1);
+    expect(startBox.height).toBeGreaterThanOrEqual(240);
     expect(fifthCardBox.y).toBeLessThan(viewport.height);
     await expectNoHorizontalOverflow(page);
   });
@@ -396,7 +372,7 @@ test("learner profile returns to the page that opened it", async ({ page }) => {
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page).toHaveURL("/lessons");
   await expect(
-    page.getByRole("heading", { exact: true, name: "Lessons" }),
+    page.getByRole("heading", { exact: true, name: "Pick a lesson" }),
   ).toBeVisible();
 });
 

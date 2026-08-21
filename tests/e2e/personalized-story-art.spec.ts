@@ -9,7 +9,7 @@ const guardianConsentLabel =
   "I am 18 or older. I confirm I am the child's guardian or have permission to use this photo, and I agree to send a cropped copy to Cloudflare Workers AI to make the illustration.";
 const personalizedStoryAlt = "You holding a bright red ball";
 const lessonPortraitAlt = "You in storybook style";
-const placeholderAlt = "Artwork placeholder for The Red Ball, page 1";
+const defaultArtworkAlt = "A child holding one bright red ball";
 const tinyPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGPQqNjyH4QZYAwATjwJTSZS7G8AAAAASUVORK5CYII=",
   "base64",
@@ -218,6 +218,7 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
   await page.setViewportSize(narrowPhone);
   await mockPersonalizedStoryArtApis(page);
   await page.goto("/stories");
+  await page.getByText("Grown-up options", { exact: true }).click();
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   const consent = panel.getByRole("checkbox", { name: guardianConsentLabel });
@@ -259,7 +260,7 @@ test("The Red Ball page 1 uses personalized story art instead of the placeholder
   await expect(personalized).toBeVisible();
   await expectInsideViewportHorizontally(personalized, page);
   await expect(
-    reader.getByRole("img", { name: placeholderAlt }),
+    reader.getByRole("img", { name: defaultArtworkAlt }),
   ).toHaveCount(0);
   await expect(
     reader.getByText("Picture coming later", { exact: true }),
@@ -273,6 +274,7 @@ test("deleting learner photo falls back to the default story placeholder", async
   await installStoryMediaGuard(page);
   await mockPersonalizedStoryArtApis(page, "ready");
   await page.goto("/stories");
+  await page.getByText("Grown-up options", { exact: true }).click();
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   await panel.getByRole("button", { name: "Delete learner photo" }).click();
@@ -283,10 +285,12 @@ test("deleting learner photo falls back to the default story placeholder", async
   await page.goto(storyPath);
   const reader = page.getByRole("region", { name: "Story reader" });
 
-  await expect(reader.getByRole("img", { name: placeholderAlt })).toBeVisible();
+  await expect(
+    reader.getByRole("img", { name: defaultArtworkAlt }),
+  ).toBeVisible();
   await expect(
     reader.getByText("Picture coming later", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     reader.getByRole("img", { name: personalizedStoryAlt }),
   ).toHaveCount(0);

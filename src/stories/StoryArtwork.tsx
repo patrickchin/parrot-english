@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles } from "lucide-react";
 import { cx } from "../shared/ui";
 import type { PersonalizedStoryArtwork } from "./personalized-story-art-client";
 import type { StoryArtwork as StoryArtworkData } from "./story-types";
@@ -31,25 +31,42 @@ export function StoryArtwork({
     );
   }
 
+  const catalogAlt = /^Artwork placeholder\b/i.test(artwork.alt)
+    ? ""
+    : artwork.alt.trim();
+  const artworkDescription =
+    personalizedOverride?.alt.trim() ||
+    artwork.prompt.trim() ||
+    catalogAlt ||
+    "Story picture";
+
   return (
     <div
-      aria-label={renderedArtwork.alt}
+      aria-label={artworkDescription}
       className={cx(
-        "grid h-full w-full place-items-center bg-[radial-gradient(circle_at_top_left,#fef3c7_0,#dbeafe_45%,#fce7f3_100%)] p-5 text-center text-brand-navy",
+        "relative isolate grid h-full w-full place-items-center overflow-hidden bg-[linear-gradient(180deg,#bde9ff_0_58%,#b9e78b_58%_100%)] p-5 text-brand-navy",
         className,
       )}
       role="img"
     >
-      <div className="grid max-w-lg justify-items-center gap-2">
-        <span className="grid size-14 place-items-center rounded-2xl border-3 border-white bg-white/85 shadow-control-surface">
-          <ImageIcon aria-hidden="true" className="size-7" />
-        </span>
-        <span className="inline-flex items-center gap-1 text-xs font-black uppercase tracking-wider text-brand-blue">
-          <Sparkles aria-hidden="true" className="size-4" /> Artwork placeholder
-        </span>
-        <span className="text-sm font-extrabold leading-snug text-slate-700 sm:text-base">
-          Picture coming later
-        </span>
+      <span
+        aria-hidden="true"
+        className="absolute -left-8 top-5 size-24 rounded-full bg-white/75 sm:size-32"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -right-8 top-9 size-28 rounded-full bg-brand-yellow/90 sm:size-36"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-10 left-[12%] h-24 w-[76%] rounded-[50%] bg-emerald-500/35 sm:h-32"
+      />
+      <div
+        aria-hidden="true"
+        className="relative grid size-24 rotate-[-3deg] place-items-center rounded-[1.75rem] border-4 border-white bg-white/90 text-brand-pink shadow-card sm:size-32"
+      >
+        <BookOpen className="size-12 sm:size-16" strokeWidth={2.6} />
+        <Sparkles className="absolute -right-3 -top-3 size-8 rounded-full bg-brand-yellow p-1 text-brand-navy" />
       </div>
     </div>
   );

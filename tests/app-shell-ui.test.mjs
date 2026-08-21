@@ -60,12 +60,19 @@ test("home menu prioritizes the three learner activities", () => {
   const activityHrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
   );
-  assert.deepEqual(activityHrefs, ["/talk-to-peppa", "/lessons", "/stories"]);
+  assert.deepEqual(activityHrefs, ["/lessons", "/talk-to-peppa", "/stories"]);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
-  assert.match(html, /Choose how you want to practice/);
+  assert.match(html, /What do you want to do\?/);
+  assert.match(html, />Play a lesson</);
   assert.match(html, />Talk to Peppa</);
-  assert.match(html, />Speaking lessons</);
   assert.match(html, />Story time</);
+  assert.match(html, /Listen and speak\./);
+  assert.match(html, /Say hello and chat\./);
+  assert.match(html, /Listen to a story\./);
+  assert.doesNotMatch(
+    html,
+    /friendly English conversation|practice speaking out loud|at your level/i,
+  );
   assert.match(html, /href="\/stories"/);
   assert.doesNotMatch(html, /World Explorer|Pixel Lesson Lab|Progress|Coming soon/);
 });
@@ -131,10 +138,13 @@ test("authenticated application routes include the core learner activities", () 
     renderApplicationRoute("/talk-to-peppa"),
     /Peppa is taking a break/,
   );
-  assert.match(renderApplicationRoute("/lessons"), /<h1[^>]*>Lessons<\/h1>/);
+  assert.match(
+    renderApplicationRoute("/lessons"),
+    /<h1[^>]*>Pick a lesson<\/h1>/,
+  );
   assert.match(
     renderApplicationRoute("/stories"),
-    /<h1[^>]*>Choose a story<\/h1>/,
+    /<h1[^>]*>Pick a story<\/h1>/,
   );
   assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
@@ -163,7 +173,9 @@ test("canonical Parrot scene routes start without premature scene content", () =
   );
 
   assert.match(html, /Peppa&#x27;s High Ball/);
-  assert.match(html, /5 scenes/);
+  assert.match(html, /5 parts/);
+  assert.match(html, /1\. Listen/);
+  assert.match(html, /2\. Talk/);
   assert.match(html, /aria-label="Start lesson"/);
   assert.doesNotMatch(html, /Peppa Cannot Reach/);
   assert.doesNotMatch(html, /The Ball Up High/);

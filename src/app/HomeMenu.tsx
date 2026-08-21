@@ -1,26 +1,26 @@
-import { BookOpen, MessageCircle, Play } from "lucide-react";
+import { ArrowRight, BookOpen, MessageCircle, Play } from "lucide-react";
 import { cx, InteractiveCardLink } from "../shared/ui";
 
 const LEARNING_PATHS = [
   {
-    description: "Have a friendly English conversation about the things you like.",
-    eyebrow: "Free conversation",
+    description: "Listen and speak.",
+    eyebrow: "Speak",
+    icon: Play,
+    label: "Play a lesson",
+    tone: "rose",
+    to: "/lessons",
+  },
+  {
+    description: "Say hello and chat.",
+    eyebrow: "Talk",
     icon: MessageCircle,
     label: "Talk to Peppa",
     tone: "navy",
     to: "/talk-to-peppa",
   },
   {
-    description: "Follow a short story, listen to the characters, and practice speaking out loud.",
-    eyebrow: "Speak and repeat",
-    icon: Play,
-    label: "Speaking lessons",
-    tone: "rose",
-    to: "/lessons",
-  },
-  {
-    description: "Choose a story at your level, listen page by page, and join in with simple lines.",
-    eyebrow: "Listen and join in",
+    description: "Listen to a story.",
+    eyebrow: "Listen",
     icon: BookOpen,
     label: "Story time",
     tone: "blue",
@@ -30,17 +30,17 @@ const LEARNING_PATHS = [
 
 export function HomeMenu() {
   return (
-    <main className="grid min-h-dvh w-screen content-center overflow-x-hidden bg-home px-4 py-24 sm:px-6 md:px-10 lg:px-16">
-      <section className="mx-auto grid w-full max-w-5xl gap-7 md:gap-10">
-        <header className="mx-auto grid max-w-3xl gap-3 text-center">
-          <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-brand-blue sm:text-base">
+    <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-4 short:pt-17 sm:px-6 md:px-10 md:py-24 lg:px-16">
+      <section className="mx-auto grid w-full max-w-5xl gap-5 short:gap-3.5 md:gap-9">
+        <header className="mx-auto grid max-w-3xl gap-2 text-center short:gap-1 md:gap-3">
+          <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue sm:text-sm md:text-base">
             Parrot English
           </p>
-          <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-5xl lg:text-7xl">
-            Choose how you want to practice
+          <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink min-[360px]:text-4xl sm:text-5xl lg:text-7xl">
+            What do you want to do?
           </h1>
-          <p className="mx-auto m-0 max-w-2xl text-base font-extrabold leading-relaxed text-brand-blue sm:text-xl">
-            Pick one activity and start learning in English.
+          <p className="mx-auto m-0 max-w-2xl text-sm font-extrabold leading-snug text-brand-blue min-[360px]:text-base sm:text-xl">
+            Tap one.
           </p>
         </header>
 
@@ -52,46 +52,46 @@ export function HomeMenu() {
             ({ description, eyebrow, icon: Icon, label, tone, to }) => (
               <InteractiveCardLink
                 aria-label={label}
-                className="grid min-h-56 content-center justify-items-center gap-4 p-7 text-center sm:min-h-64 sm:p-9"
+                className="grid min-h-28 grid-cols-[3.5rem_minmax(0,1fr)_2.75rem] items-center gap-3 p-3 text-left short:min-h-24 short:grid-cols-[3rem_minmax(0,1fr)_2.5rem] short:gap-2.5 short:p-2.5 md:min-h-64 md:grid-cols-1 md:content-center md:justify-items-center md:gap-4 md:p-8 md:text-center"
                 key={to}
                 to={to}
               >
                 <Icon
                   aria-hidden="true"
                   className={cx(
-                    "size-16 rounded-2xl p-4 text-white sm:size-20 sm:p-5",
+                    "size-14 rounded-2xl p-3.5 text-white short:size-12 short:p-3 md:size-20 md:p-5",
                     tone === "navy" && "bg-brand-navy shadow-control-navy",
                     tone === "rose" && "bg-brand-rose shadow-control-pink",
                     tone === "blue" && "bg-brand-blue shadow-control-navy",
                   )}
                 />
-                <span className="text-xs font-black uppercase tracking-[0.16em] text-brand-blue">
-                  {eyebrow}
+                <span className="grid min-w-0 gap-0.5 md:justify-items-center md:gap-2">
+                  <span className="text-[0.6875rem] font-black uppercase tracking-[0.16em] text-brand-blue md:text-xs">
+                    {eyebrow}
+                  </span>
+                  <strong
+                    className={cx(
+                      "text-xl leading-tight min-[360px]:text-2xl md:text-4xl md:leading-none",
+                      tone === "navy" && "text-brand-navy",
+                      tone === "rose" && "text-brand-rose",
+                      tone === "blue" && "text-brand-blue",
+                    )}
+                  >
+                    {label}
+                  </strong>
+                  <span className="text-sm font-bold leading-snug text-slate-800 min-[360px]:text-base md:max-w-md md:text-lg md:leading-relaxed">
+                    {description}
+                  </span>
                 </span>
-                <strong
-                  className={cx(
-                    "text-3xl leading-none sm:text-4xl",
-                    tone === "navy" && "text-brand-navy",
-                    tone === "rose" && "text-brand-rose",
-                    tone === "blue" && "text-brand-blue",
-                  )}
-                >
-                  {label}
-                </strong>
-                <span className="max-w-md font-bold leading-relaxed text-slate-800 sm:text-lg">
-                  {description}
-                </span>
-                <span
+                <ArrowRight
                   aria-hidden="true"
                   className={cx(
-                    "mt-1 rounded-full px-5 py-3 font-black text-white",
+                    "size-11 rounded-full p-2.5 text-white short:size-10 short:p-2 md:mt-1 md:size-12 md:p-3",
                     tone === "navy" && "bg-brand-navy",
                     tone === "rose" && "bg-brand-rose",
                     tone === "blue" && "bg-brand-blue",
                   )}
-                >
-                  Start
-                </span>
+                />
               </InteractiveCardLink>
             ),
           )}

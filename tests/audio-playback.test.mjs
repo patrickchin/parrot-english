@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { playAudioLine, playAudioSequence } from "../src/media/audio-playback.ts";
+import {
+  playAudioLine,
+  playAudioSequence,
+  waitForAbortableDelay,
+} from "../src/media/audio-playback.ts";
 
 describe("audio playback", () => {
   it("plays saved audio assets directly", async () => {
@@ -123,5 +127,14 @@ describe("audio playback", () => {
       "wait:350",
       "play:/assets/audio/parrot-here-you-are.mp3",
     ]);
+  });
+
+  it("cancels a pending visual dwell when the learner leaves", async () => {
+    const controller = new AbortController();
+    const pending = waitForAbortableDelay(10_000, controller.signal);
+
+    controller.abort();
+
+    await assert.rejects(pending, { name: "AbortError" });
   });
 });

@@ -49,6 +49,8 @@ test("each purpose has its own framing and only profile flows offer save complet
   await expect(
     page.getByRole("button", { name: /Save and finish|Save changes/ }),
   ).toHaveCount(0);
+  await expect(page.getByLabel("Chat style")).toBeHidden();
+  await page.getByText("Grown-up: chat style", { exact: true }).click();
   await expect(page.getByLabel("Chat style")).toHaveValue("tiny-turns");
 
   await useIncompleteProfile(page);
@@ -77,26 +79,29 @@ test("the cold-start state gives an honest wait without showing turn controls", 
   await startSmallChat(page);
 
   await expect(page.getByRole("status")).toContainText(
-    "Peppa is getting ready",
+    "Waking up Peppa",
   );
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("about 25 seconds");
+  ).toContainText("Peppa is waking up");
   await expect(
-    page.getByRole("button", { name: /Start my turn|End my turn/ }),
+    page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
 });
 
-test("opening audio changes the visible state to speaking before its transcript is final", async ({
+test("opening audio keeps the learner waiting until Peppa finishes", async ({
   page,
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=opening-speaking");
   await startSmallChat(page);
 
-  await expect(page.getByRole("status")).toContainText("Peppa is talking");
+  await expect(page.getByRole("status")).toContainText("Peppa’s turn");
   await expect(
-    page.getByRole("button", { name: "Start my turn" }),
-  ).toBeEnabled();
+    page.getByRole("button", { name: "Listen to Peppa" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Tap, then talk" }),
+  ).toHaveCount(0);
 });
 
 test("reconnecting and error states keep recovery language in the same stage", async ({
@@ -104,17 +109,17 @@ test("reconnecting and error states keep recovery language in the same stage", a
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
   await startSmallChat(page);
-  await expect(page.getByRole("status")).toContainText("Reconnecting");
+  await expect(page.getByRole("status")).toContainText("Connecting again");
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("Your answers are safe");
+  ).toContainText("Your words are safe");
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
   await startSmallChat(page);
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Start my turn|End my turn/ }),
+    page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
 });
 
@@ -122,11 +127,11 @@ test("profile completion uses the stable saving stage", async ({ page }) => {
   await useIncompleteProfile(page);
   await page.goto("/profile/setup?parrotE2eConversation=saving");
 
-  await expect(page.getByRole("status")).toContainText("Conversation ended");
+  await expect(page.getByRole("status")).toContainText("Saving your answers");
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("remember");
+  ).toContainText("Saving your answers");
   await expect(
-    page.getByRole("button", { name: /Start my turn|End my turn/ }),
+    page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
 });

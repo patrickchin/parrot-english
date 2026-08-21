@@ -130,6 +130,14 @@ Parrot English should eventually label three modes:
 The current prototypes are **listen + join in**. They are not certified
 decodable readers.
 
+The learner-facing media rollout begins with the five **First words** stories.
+Every page in that entry band has approved, literal artwork that shows the
+target object, action, count, or position. This is intentional sequencing: a
+new learner should never have to infer the easiest story from text alone.
+Higher bands keep their production prompts and an accessible visual fallback
+until complete illustration sets are reviewed for story and character
+continuity.
+
 ## Working Vocabulary Rules
 
 Until learner-specific vocabulary exists, authors should treat common
@@ -264,7 +272,7 @@ more useful than generating 20 stories from one vague "make it fun" prompt.
 | Story | Level | Experiment instruction | Hypothesis |
 | --- | --- | --- | --- |
 | The Red Ball | First words | Hold one object through five pages; use one colour, two actions, no figurative language, and no line over six words. | One persistent object may let repetition carry comprehension. |
-| Which Hat? | First words | Repeat one sentence and substitute only the colour; finish with a choice. | One-word substitution isolates colour vocabulary and invites prediction. |
+| Which Hat? | First words | Repeat one sentence and substitute only the colour; finish with the yellow hat. | One-word substitution isolates colour vocabulary and makes the final reveal predictable. |
 | Wake Up, Nori! | First words | Give a physical command, then show the character doing it; use only actions a child can copy. | Total Physical Response may make new verbs clear without translation. |
 | Three Apples | First words | Build around counting up, one visible change, and a sharing ending. | A known number sequence can support one new event word. |
 | Where Is Dot? | First words | Repeat one location question, change one preposition, and delay the yes answer. | A fixed question frame makes position words easier to compare. |

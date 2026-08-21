@@ -1,6 +1,6 @@
 # Parrot English
 
-List-first, scene-based English speaking practice for young learners.
+Child-first listening, speaking, and story practice for young English learners.
 
 ## Stack
 

@@ -8,18 +8,21 @@ const setupViewports = [
 ];
 
 for (const viewport of setupViewports) {
-  test(`the prompt-style setup fits a ${viewport.name}`, async ({ page }) => {
+  test(`the child-first chat start fits a ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/talk-to-peppa");
 
     const main = page.getByRole("main");
     const style = page.getByLabel("Chat style");
     const start = page.getByRole("button", { name: "Start chat" });
-    await expect(style).toBeVisible();
-    await expect(style).toHaveValue("tiny-turns");
+    const grownUpOptions = page.getByText("Grown-up: chat style", {
+      exact: true,
+    });
     await expect(start).toBeVisible();
+    await expect(start).toContainText("Talk to Peppa");
+    await expect(style).toBeHidden();
     await expect(page.getByRole("status")).toContainText(
-      "Choose how Peppa talks",
+      "Ready to talk",
     );
     await expect
       .poll(() =>
@@ -30,13 +33,22 @@ for (const viewport of setupViewports) {
       )
       .toEqual({ horizontal: false, vertical: false });
 
-    for (const locator of [style, start]) {
+    for (const locator of [start, grownUpOptions]) {
       const box = await locator.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
       expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
     }
+
+    await grownUpOptions.click();
+    await expect(style).toBeVisible();
+    await expect(style).toHaveValue("tiny-turns");
+    const styleBox = await style.boundingBox();
+    expect(styleBox).not.toBeNull();
+    expect(styleBox!.x).toBeGreaterThanOrEqual(0);
+    expect(styleBox!.x + styleBox!.width).toBeLessThanOrEqual(viewport.width);
+    expect(styleBox!.y + styleBox!.height).toBeLessThanOrEqual(viewport.height);
   });
 }
 
@@ -54,10 +66,11 @@ test("the selected style reaches every retry and setup stays hidden", async ({
   });
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
 
+  await page.getByText("Grown-up: chat style", { exact: true }).click();
   await page.getByLabel("Chat style").selectOption("gentle-guide");
   await expect(
-    page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("two easy choices");
+    page.getByText("Peppa helps you say one easy sentence.", { exact: true }),
+  ).toBeVisible();
   await startSmallChat(page);
   await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(page.getByLabel("Chat style")).toHaveCount(0);

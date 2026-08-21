@@ -17,6 +17,32 @@ async function expectInsidePage(locator: Locator, page: Page) {
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
 }
 
+async function expectHomeOwnsVerticalScrolling(page: Page) {
+  const metrics = await page.getByRole("main").evaluate((main) => {
+    const maxScrollTop = main.scrollHeight - main.clientHeight;
+    main.scrollTop = main.scrollHeight;
+
+    return {
+      bodyScrollHeight: document.body.scrollHeight,
+      clientHeight: main.clientHeight,
+      maxScrollTop,
+      overflowY: getComputedStyle(main).overflowY,
+      scrollTop: main.scrollTop,
+    };
+  });
+  const viewport = page.viewportSize()!;
+
+  expect(Math.abs(metrics.clientHeight - viewport.height)).toBeLessThanOrEqual(1);
+  expect(metrics.bodyScrollHeight).toBeLessThanOrEqual(viewport.height + 1);
+  expect(metrics.overflowY).toBe("auto");
+  if (metrics.maxScrollTop > 0) {
+    expect(metrics.scrollTop).toBeGreaterThan(0);
+    expect(Math.abs(metrics.scrollTop - metrics.maxScrollTop)).toBeLessThanOrEqual(
+      1,
+    );
+  }
+}
+
 for (const viewport of phoneViewports) {
   test(`home presents three focused learning paths on a ${viewport.name} phone`, async ({
     page,
@@ -25,7 +51,7 @@ for (const viewport of phoneViewports) {
     await page.goto("/");
 
     await expect(
-      page.getByRole("heading", { name: "Choose how you want to practice" }),
+      page.getByRole("heading", { name: "What do you want to do?" }),
     ).toBeVisible();
 
     const activities = page.getByRole("navigation", {
@@ -34,18 +60,34 @@ for (const viewport of phoneViewports) {
     const links = activities.getByRole("link");
     await expect(links).toHaveCount(3);
     await expect(
-      activities.getByRole("link", { name: /^Talk to Peppa/ }),
-    ).toHaveAttribute("href", "/talk-to-peppa");
-    await expect(
-      activities.getByRole("link", { name: /^Speaking lessons/ }),
+      activities.getByRole("link", { name: "Play a lesson" }),
     ).toHaveAttribute("href", "/lessons");
     await expect(
-      activities.getByRole("link", { name: /^Story time/ }),
+      activities.getByRole("link", { name: "Talk to Peppa" }),
+    ).toHaveAttribute("href", "/talk-to-peppa");
+    await expect(
+      activities.getByRole("link", { name: "Story time" }),
     ).toHaveAttribute("href", "/stories");
     await expect(activities.getByRole("button")).toHaveCount(0);
 
+    const accountBox = await page
+      .getByRole("button", { name: "Account for Mia" })
+      .boundingBox();
+    const headingBox = await page
+      .getByRole("heading", { name: "What do you want to do?" })
+      .boundingBox();
+    expect(accountBox).not.toBeNull();
+    expect(headingBox).not.toBeNull();
+    expect(headingBox!.y).toBeGreaterThanOrEqual(
+      accountBox!.y + accountBox!.height,
+    );
+
+    await expectHomeOwnsVerticalScrolling(page);
     for (const activity of await links.all()) {
       await expectInsidePage(activity, page);
+      const box = await activity.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(96);
     }
 
     await expect
@@ -87,7 +129,7 @@ test("desktop home gives the three learner paths equal visual weight", async ({
 
 test("home routes into and back out of a guided lesson", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: /^Speaking lessons/ }).click();
+  await page.getByRole("link", { name: "Play a lesson" }).click();
   await expect(page).toHaveURL("/lessons");
 
   await page

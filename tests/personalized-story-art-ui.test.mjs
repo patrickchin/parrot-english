@@ -76,6 +76,22 @@ function renderSetupPanel(props) {
 }
 
 describe("personalized story art UI", () => {
+  it("renders script-only artwork as an accessible storybook scene without prototype copy", () => {
+    const html = renderStoryArtwork({
+      artwork: {
+        alt: "Artwork placeholder for The Red Ball, page 1",
+        prompt: "A child holding one bright red ball",
+        src: null,
+      },
+    });
+
+    assert.match(
+      html,
+      /role="img"[^>]*aria-label="A child holding one bright red ball"|aria-label="A child holding one bright red ball"[^>]*role="img"/,
+    );
+    assert.doesNotMatch(html, /Artwork placeholder|Picture coming later/);
+  });
+
   it("lets StoryArtwork prefer a private override image over the catalog placeholder", () => {
     const html = renderStoryArtwork({
       artwork: {
@@ -96,15 +112,15 @@ describe("personalized story art UI", () => {
     assert.doesNotMatch(html, /Artwork placeholder|Picture coming later/);
   });
 
-  it("lets StoryReader render one private override for The Red Ball page 1 without mutating the catalog story", () => {
+  it("lets StoryReader render one private override for The Red Ball page 1 without mutating the illustrated catalog story", () => {
     assert.ok(Array.isArray(STORIES), "Expected story catalog stories");
     const story = STORIES.find(({ id }) => id === "the-red-ball");
     assert.ok(story, "Expected The Red Ball in the story catalog");
     assert.equal(story.pages[0].id, "my-red-ball");
+    const catalogArtworkSource = story.pages[0].artwork.src;
     assert.equal(
-      story.pages[0].artwork.src,
-      null,
-      "Catalog JSON should remain placeholder-only for page one",
+      catalogArtworkSource,
+      "/assets/story-pages/the-red-ball-my-red-ball.webp",
     );
 
     const html = renderStoryReader({
@@ -124,13 +140,17 @@ describe("personalized story art UI", () => {
       story,
     });
 
+    assert.equal(story.pages[0].artwork.src, catalogArtworkSource);
+
     assert.match(html, /The Red Ball/);
     assert.match(
       html,
       /<img[^>]*alt="You holding a bright red ball"[^>]*src="\/api\/stories\/the-red-ball\/personalized-art\/asset"/,
     );
     assert.doesNotMatch(html, /Picture coming later/);
-    assert.match(html, /Words to notice:.*red.*ball.*roll/s);
+    assert.match(html, /Tap Listen/);
+    assert.match(html, /aria-label="Listen"/);
+    assert.doesNotMatch(html, /Words to notice|First words|One object/);
   });
 
   it("lets LessonUserPrompt show the same private art as an accessible storybook portrait during user turns", () => {

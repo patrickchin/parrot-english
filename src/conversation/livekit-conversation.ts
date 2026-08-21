@@ -1,18 +1,20 @@
-import { DisconnectReason, Room, RoomEvent } from "livekit-client";
 import {
   COMMIT_USER_TURN_COMMAND,
   REPEAT_LAST_AUDIO_COMMAND,
 } from "../../lib/conversation-audio.js";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
-  activeSpeakers: RoomEvent.ActiveSpeakersChanged,
-  disconnected: RoomEvent.Disconnected,
-  participantAttributes: RoomEvent.ParticipantAttributesChanged,
-  reconnected: RoomEvent.Reconnected,
-  reconnecting: RoomEvent.Reconnecting,
-  trackSubscribed: RoomEvent.TrackSubscribed,
-  transcription: RoomEvent.TranscriptionReceived,
+  activeSpeakers: "activeSpeakersChanged",
+  disconnected: "disconnected",
+  participantAttributes: "participantAttributesChanged",
+  reconnected: "reconnected",
+  reconnecting: "reconnecting",
+  trackSubscribed: "trackSubscribed",
+  transcription: "transcriptionReceived",
 } as const;
+
+type ConversationRoomEvent =
+  (typeof LIVEKIT_CONVERSATION_EVENTS)[keyof typeof LIVEKIT_CONVERSATION_EVENTS];
 
 export type ConversationTransportEvent =
   | { type: "state"; state: "connecting" | "connected" | "reconnecting" }
@@ -45,11 +47,12 @@ type RoomLike = {
     setMicrophoneEnabled(enabled: boolean): Promise<unknown>;
     sendText(text: string, options: { topic: string }): Promise<unknown>;
   };
-  on(event: RoomEvent, listener: EventListener): unknown;
-  off(event: RoomEvent, listener: EventListener): unknown;
+  on(event: ConversationRoomEvent, listener: EventListener): unknown;
+  off(event: ConversationRoomEvent, listener: EventListener): unknown;
 };
 
 type CreateLiveKitConversationOptions = {
+  loadRoom?: () => Promise<RoomLike>;
   mountAudio?: (element: AudioElementLike) => void;
   room?: RoomLike;
   token: string;
@@ -58,6 +61,25 @@ type CreateLiveKitConversationOptions = {
 
 const E2E_PARTICIPANT_TOKEN = "parrot-e2e-participant-token";
 const E2E_LIVEKIT_URL = "wss://parrot-e2e.invalid";
+const DISCONNECT_REASON_NAMES = [
+  "UNKNOWN_REASON",
+  "CLIENT_INITIATED",
+  "DUPLICATE_IDENTITY",
+  "SERVER_SHUTDOWN",
+  "PARTICIPANT_REMOVED",
+  "ROOM_DELETED",
+  "STATE_MISMATCH",
+  "JOIN_FAILURE",
+  "MIGRATION",
+  "SIGNAL_CLOSE",
+  "ROOM_CLOSED",
+  "USER_UNAVAILABLE",
+  "USER_REJECTED",
+  "SIP_TRUNK_FAILURE",
+  "CONNECTION_TIMEOUT",
+  "MEDIA_FAILURE",
+  "AGENT_ERROR",
+] as const;
 const E2E_CONVERSATION_SCENARIOS = new Set([
   "connecting",
   "error",
@@ -99,9 +121,14 @@ function segmentRecords(value: unknown) {
 
 function readableDisconnectReason(reason: unknown) {
   if (typeof reason === "number") {
-    return DisconnectReason[reason] ?? String(reason);
+    return DISCONNECT_REASON_NAMES[reason] ?? String(reason);
   }
   return typeof reason === "string" ? reason : String(reason ?? "unknown");
+}
+
+async function loadLiveKitRoom() {
+  const { Room } = await import("livekit-client");
+  return new Room() as unknown as RoomLike;
 }
 
 function createE2eLiveKitConversation() {
@@ -264,6 +291,7 @@ function createE2eLiveKitConversation() {
 }
 
 export function createLiveKitConversation({
+  loadRoom = loadLiveKitRoom,
   mountAudio = defaultMountAudio,
   room,
   token,
@@ -272,20 +300,21 @@ export function createLiveKitConversation({
   if (token === E2E_PARTICIPANT_TOKEN && url === E2E_LIVEKIT_URL) {
     return createE2eLiveKitConversation();
   }
-  const activeRoom = room ?? (new Room() as unknown as RoomLike);
+  let activeRoom = room ?? null;
   const listeners = new Set<Listener>();
   const attachments = new Map<TrackLike, AudioElementLike>();
   let connected = false;
   let disconnected = false;
+  let listenersAttached = false;
   let assistantSpeaking = false;
 
   function publish(event: ConversationTransportEvent) {
     for (const listener of listeners) listener(event);
   }
 
-  const eventListeners = new Map<RoomEvent, EventListener>([
+  const eventListeners = new Map<ConversationRoomEvent, EventListener>([
     [
-      RoomEvent.ActiveSpeakersChanged,
+      LIVEKIT_CONVERSATION_EVENTS.activeSpeakers,
       (participants) => {
         const remoteAssistantSpeaking =
           Array.isArray(participants) &&
@@ -301,7 +330,7 @@ export function createLiveKitConversation({
       },
     ],
     [
-      RoomEvent.ParticipantAttributesChanged,
+      LIVEKIT_CONVERSATION_EVENTS.participantAttributes,
       (changedAttributes, participant) => {
         const local =
           participant !== null &&
@@ -330,10 +359,16 @@ export function createLiveKitConversation({
         }
       },
     ],
-    [RoomEvent.Reconnecting, () => publish({ type: "state", state: "reconnecting" })],
-    [RoomEvent.Reconnected, () => publish({ type: "state", state: "connected" })],
     [
-      RoomEvent.Disconnected,
+      LIVEKIT_CONVERSATION_EVENTS.reconnecting,
+      () => publish({ type: "state", state: "reconnecting" }),
+    ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.reconnected,
+      () => publish({ type: "state", state: "connected" }),
+    ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.disconnected,
       (reason) =>
         publish({
           type: "disconnected",
@@ -341,7 +376,7 @@ export function createLiveKitConversation({
         }),
     ],
     [
-      RoomEvent.TranscriptionReceived,
+      LIVEKIT_CONVERSATION_EVENTS.transcription,
       (segments, participant) => {
         const local =
           participant !== null &&
@@ -364,7 +399,7 @@ export function createLiveKitConversation({
       },
     ],
     [
-      RoomEvent.TrackSubscribed,
+      LIVEKIT_CONVERSATION_EVENTS.trackSubscribed,
       (candidate) => {
         const track = candidate as TrackLike;
         if (track.kind !== "audio" || typeof track.attach !== "function") return;
@@ -375,31 +410,54 @@ export function createLiveKitConversation({
     ],
   ]);
 
-  for (const [event, listener] of eventListeners) activeRoom.on(event, listener);
+  function attachListeners(target: RoomLike) {
+    if (listenersAttached) return;
+    listenersAttached = true;
+    for (const [event, listener] of eventListeners) target.on(event, listener);
+  }
+
+  function detachListeners(target: RoomLike) {
+    if (!listenersAttached) return;
+    listenersAttached = false;
+    for (const [event, listener] of eventListeners) target.off(event, listener);
+  }
+
+  if (activeRoom) attachListeners(activeRoom);
 
   return {
     async commitUserTurn() {
-      if (!connected) throw new Error("Connect before ending a turn.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before ending a turn.");
+      }
       await activeRoom.localParticipant.sendText(COMMIT_USER_TURN_COMMAND, {
         topic: "lk.chat",
       });
     },
 
     async connect() {
-      if (connected) return;
+      if (connected || disconnected) return;
       publish({ type: "state", state: "connecting" });
-      await activeRoom.connect(url, token);
+      const target = activeRoom ?? (await loadRoom());
+      if (disconnected) return;
+      activeRoom = target;
+      attachListeners(target);
+      await target.connect(url, token);
+      if (disconnected) return;
       connected = true;
       publish({ type: "state", state: "connected" });
     },
 
     async setMicrophoneEnabled(enabled: boolean) {
-      if (!connected) throw new Error("Connect before changing the microphone.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before changing the microphone.");
+      }
       await activeRoom.localParticipant.setMicrophoneEnabled(enabled);
     },
 
     async repeatLastAudio() {
-      if (!connected) throw new Error("Connect before repeating audio.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before repeating audio.");
+      }
       await activeRoom.localParticipant.sendText(REPEAT_LAST_AUDIO_COMMAND, {
         topic: "lk.chat",
       });
@@ -409,23 +467,23 @@ export function createLiveKitConversation({
       const trimmed = text.trim();
       if (!trimmed) throw new Error("Type a short answer first.");
       if (trimmed.length > 1_000) throw new Error("Please use 1000 characters or fewer.");
-      if (!connected) throw new Error("Connect before sending an answer.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before sending an answer.");
+      }
       await activeRoom.localParticipant.sendText(trimmed, { topic: "lk.chat" });
     },
 
     async disconnect() {
       if (disconnected) return;
       disconnected = true;
-      for (const [event, listener] of eventListeners) {
-        activeRoom.off(event, listener);
-      }
+      if (activeRoom) detachListeners(activeRoom);
       for (const [track, element] of attachments) {
         track.detach?.();
         element.remove();
       }
       attachments.clear();
       listeners.clear();
-      await activeRoom.disconnect();
+      await activeRoom?.disconnect();
       connected = false;
     },
 

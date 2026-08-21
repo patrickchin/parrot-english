@@ -56,7 +56,7 @@ for (const viewport of viewports) {
     const captions = page.getByRole("region", {
       name: "Conversation captions",
     });
-    const turn = page.getByRole("button", { name: "Start my turn" });
+    const turn = page.getByRole("button", { name: "Tap, then talk" });
     const peppa = page.getByRole("img", { exact: true, name: "Peppa" });
 
     await expect(turn).toBeVisible();
@@ -88,12 +88,12 @@ for (const viewport of viewports) {
     await page.goto("/talk-to-peppa");
     await startSmallChat(page);
 
-    const start = page.getByRole("button", { name: "Start my turn" });
+    const start = page.getByRole("button", { name: "Tap, then talk" });
     const before = await box(start);
     await start.click();
     await page.mouse.move(1, 1);
 
-    const end = page.getByRole("button", { name: "End my turn" });
+    const end = page.getByRole("button", { name: "I’m done" });
     await waitForControlMotion(end);
     const afterStart = await box(end);
     expectSameBox(before, afterStart);
@@ -131,7 +131,7 @@ test("short landscape gives Peppa and the conversation their own columns", async
   const controls = await box(
     page.getByRole("group", { name: "Conversation controls" }),
   );
-  const turn = await box(page.getByRole("button", { name: "Start my turn" }));
+  const turn = await box(page.getByRole("button", { name: "Tap, then talk" }));
 
   expect(peppa.height).toBeGreaterThanOrEqual(150);
   expect(peppa.x + peppa.width).toBeLessThanOrEqual(captions.x);
@@ -153,7 +153,7 @@ test("a long landscape reply grows upward without moving the turn control", asyn
     page.getByRole("region", { name: "Conversation captions" }),
   );
   const normalTurn = await box(
-    page.getByRole("button", { name: "Start my turn" }),
+    page.getByRole("button", { name: "Tap, then talk" }),
   );
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=long");
@@ -163,7 +163,7 @@ test("a long landscape reply grows upward without moving the turn control", asyn
     page.getByRole("region", { name: "Conversation captions" }),
   );
   const longTurn = await box(
-    page.getByRole("button", { name: "Start my turn" }),
+    page.getByRole("button", { name: "Tap, then talk" }),
   );
 
   expect(longBubble.height).toBeGreaterThanOrEqual(normalBubble.height + 40);

@@ -187,13 +187,10 @@ test("the start state introduces the lesson without premature scene UI", async (
   await expect(
     introduction.getByRole("heading", { name: "Peppa's High Ball" }),
   ).toBeVisible();
-  await expect(introduction.getByText("5 scenes", { exact: true })).toBeVisible();
-  await expect(
-    introduction.getByText(
-      "Listen to the story, then speak when it is your turn.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  await expect(introduction.getByText("5 parts", { exact: true })).toBeVisible();
+  const directions = introduction.getByRole("list", { name: "How to play" });
+  await expect(directions.getByText("1. Listen", { exact: true })).toBeVisible();
+  await expect(directions.getByText("2. Talk", { exact: true })).toBeVisible();
 
   const start = page.getByRole("button", { name: "Start lesson" });
   await expect(start).toBeFocused();
@@ -253,14 +250,14 @@ for (const viewport of viewports) {
       page.getByRole("region", { name: "Lesson introduction" }),
     ).toBeHidden();
     const playbackControls = page.getByRole("navigation", {
-      name: "Story playback controls",
+      name: "Lesson playback controls",
     });
     await expectInsideViewport(playbackControls, viewport);
     const previous = playbackControls.getByRole("button", {
       name: "Previous scene",
     });
     const pause = playbackControls.getByRole("button", {
-      name: "Pause story",
+      name: "Pause lesson",
     });
     const next = playbackControls.getByRole("button", { name: "Next scene" });
     await expect(previous).toBeDisabled();
@@ -333,7 +330,7 @@ test("playback controls pause, resume, and navigate between scenes", async ({
   await page.getByRole("button", { name: "Start lesson" }).click();
 
   const controls = page.getByRole("navigation", {
-    name: "Story playback controls",
+    name: "Lesson playback controls",
   });
   await expect
     .poll(() =>
@@ -344,15 +341,15 @@ test("playback controls pause, resume, and navigate between scenes", async ({
       ),
     )
     .toBe(1);
-  await controls.getByRole("button", { name: "Pause story" }).click();
+  await controls.getByRole("button", { name: "Pause lesson" }).click();
   await expect(
-    controls.getByRole("button", { name: "Resume story" }),
+    controls.getByRole("button", { name: "Resume lesson" }),
   ).toBeVisible();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeVisible();
 
-  await controls.getByRole("button", { name: "Resume story" }).click();
+  await controls.getByRole("button", { name: "Resume lesson" }).click();
   await expect(
-    controls.getByRole("button", { name: "Pause story" }),
+    controls.getByRole("button", { name: "Pause lesson" }),
   ).toBeVisible();
   await expect
     .poll(() =>
@@ -403,7 +400,7 @@ test("narration is distinct from character speech", async ({ page }) => {
   });
   await page.getByRole("button", { name: "Start lesson" }).click();
 
-  const narration = page.getByRole("status", { name: "Story narration" });
+  const narration = page.getByRole("status", { name: "Lesson narration" });
   await expect(narration).toContainText("Let's copy Dolly!", {
     timeout: 3_000,
   });
@@ -413,6 +410,7 @@ test("narration is distinct from character speech", async ({ page }) => {
 test("checking and feedback replace the speaking action", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(lessonPath);
+  await installAudioDelay(page, 10);
   await page.getByRole("button", { name: "Start lesson" }).click();
   const microphone = await waitForLearnerTurn(page);
 
@@ -429,9 +427,62 @@ test("checking and feedback replace the speaking action", async ({ page }) => {
   const feedback = page.getByRole("region", { name: "Speaking feedback" });
   await expect(feedback).toContainText("You did it!", { timeout: 3_000 });
   await expect(feedback).toContainText("Great job!");
+  await page.waitForTimeout(800);
+  await expect(feedback).toBeVisible();
+  await expect(feedback).toBeHidden({ timeout: 3_000 });
   await expect(
     page.getByRole("navigation", { name: "Speaking controls" }),
   ).toBeHidden();
+});
+
+test("microphone setup gives immediate feedback and blocks duplicate actions", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(lessonPath);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: () =>
+          new Promise<MediaStream>((resolve) => {
+            const testWindow = window as Window & {
+              __resolveLessonMicrophone?: () => void;
+            };
+            testWindow.__resolveLessonMicrophone = () => {
+              const track = { stop() {} } as MediaStreamTrack;
+              resolve({
+                getAudioTracks: () => [track],
+                getTracks: () => [track],
+              } as unknown as MediaStream);
+            };
+          }),
+      },
+    });
+  });
+
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const microphone = await waitForLearnerTurn(page);
+  const skip = page.getByRole("button", { name: "Skip speaking turn" });
+  const prompt = page.getByRole("region", { name: "Your turn" });
+  await microphone.click();
+
+  await expect(microphone).toContainText("Opening mic…");
+  await expect(microphone).toHaveAttribute("aria-busy", "true");
+  await expect(microphone).toBeDisabled();
+  await expect(skip).toBeDisabled();
+  await expect(prompt).toContainText("Opening mic");
+
+  await page.evaluate(() => {
+    const testWindow = window as Window & {
+      __resolveLessonMicrophone?: () => void;
+    };
+    testWindow.__resolveLessonMicrophone?.();
+  });
+  await expect(microphone).toContainText("Tap when done");
+  await expect(microphone).toHaveAttribute("aria-pressed", "true");
+  await expect(prompt).toContainText("Listening");
+  await microphone.click();
 });
 
 test("completion becomes a focused end screen and replay restarts the story", async ({
@@ -453,7 +504,7 @@ test("completion becomes a focused end screen and replay restarts the story", as
   }
 
   const completion = page.getByRole("region", { name: "Lesson completion" });
-  await expect(completion).toContainText("Story complete!", {
+  await expect(completion).toContainText("Lesson complete!", {
     timeout: 5_000,
   });
   await expect(completion).toContainText("You finished Peppa's High Ball!");

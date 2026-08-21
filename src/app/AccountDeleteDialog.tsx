@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { ActionButton, fieldClassName } from "../shared/ui";
+import { useDialogFocus } from "./useDialogFocus";
 
 const DELETE_ACCOUNT_ERROR_MESSAGE =
   "Unable to delete the account. The account and private story art were kept. Please try again.";
@@ -7,26 +8,26 @@ const DELETE_ACCOUNT_ERROR_MESSAGE =
 export function AccountDeleteDialog({
   onClose,
   onDelete,
+  returnFocusRef,
 }: {
   onClose: () => void;
   onDelete: (password: string) => Promise<string | null>;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const [error, setError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [password, setPassword] = useState("");
   const isDeletingRef = useRef(false);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    passwordRef.current?.focus();
-
-    function closeFromEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isDeletingRef.current) onClose();
-    }
-
-    document.addEventListener("keydown", closeFromEscape);
-    return () => document.removeEventListener("keydown", closeFromEscape);
-  }, [onClose]);
+  useDialogFocus({
+    canClose: () => !isDeletingRef.current,
+    dialogRef,
+    initialFocusRef: passwordRef,
+    onClose,
+    returnFocusRef,
+  });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +62,9 @@ export function AccountDeleteDialog({
         aria-labelledby="delete-account-title"
         aria-modal="true"
         className="grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
       >
         <header className="grid gap-2">
           <p className="m-0 text-xs font-black uppercase tracking-widest text-red-700">

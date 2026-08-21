@@ -3,6 +3,8 @@
 import { ChevronLeft } from "lucide-react";
 import {
   createContext,
+  lazy,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -47,6 +49,7 @@ import {
 import {
   isAbortError,
   playAudioLine,
+  waitForAbortableDelay,
   type PlaybackControl,
 } from "../media/audio-playback";
 import {
@@ -71,6 +74,7 @@ import {
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
 import { HeaderButton, RouteHeader } from "./AppHeader";
+import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
@@ -82,25 +86,9 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import {
-  BoxedFullSceneStage,
-  LessonCharacters,
-  LessonCompletion,
-  LessonErrorBanner,
-  LessonFeedback,
-  LessonHud,
-  LessonIntroduction,
-  LessonPlaybackControls,
-  LessonSpeakingControls,
-  LessonSpeech,
-  LessonStage,
-  LessonUserPrompt,
-} from "../lessons/LessonPlayerUi";
-import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
 } from "../lessons/full-scene-lessons";
-import { LessonCreator } from "../lessons/LessonCreator";
-import { LessonEditor } from "../lessons/LessonEditor";
 import { playDeviceSpeech } from "../media/device-speech";
 import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
@@ -111,18 +99,97 @@ import {
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
-import { StoryList } from "../stories/StoryList";
-import { PersonalizedStoryArtPanel } from "../stories/PersonalizedStoryArtPanel";
 import {
   PERSONALIZED_STORY_ID,
 } from "../stories/personalized-story-art-client";
-import { StoryReader } from "../stories/StoryReader";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
+
+type LessonPlayerUiModule = typeof import("../lessons/LessonPlayerUi");
+
+function lazyLessonPlayerComponent<Name extends keyof LessonPlayerUiModule>(
+  name: Name,
+) {
+  return lazy(() =>
+    import("../lessons/LessonPlayerUi").then((module) => ({
+      default: module[name],
+    })),
+  ) as unknown as LessonPlayerUiModule[Name];
+}
+
+const lessonPlayerUiModule = import.meta.env.SSR
+  ? await import("../lessons/LessonPlayerUi")
+  : null;
+const BoxedFullSceneStage = lessonPlayerUiModule?.BoxedFullSceneStage ??
+  lazyLessonPlayerComponent("BoxedFullSceneStage");
+const LessonCharacters = lessonPlayerUiModule?.LessonCharacters ??
+  lazyLessonPlayerComponent("LessonCharacters");
+const LessonCompletion = lessonPlayerUiModule?.LessonCompletion ??
+  lazyLessonPlayerComponent("LessonCompletion");
+const LessonErrorBanner = lessonPlayerUiModule?.LessonErrorBanner ??
+  lazyLessonPlayerComponent("LessonErrorBanner");
+const LessonFeedback = lessonPlayerUiModule?.LessonFeedback ??
+  lazyLessonPlayerComponent("LessonFeedback");
+const LessonHud = lessonPlayerUiModule?.LessonHud ??
+  lazyLessonPlayerComponent("LessonHud");
+const LessonIntroduction = lessonPlayerUiModule?.LessonIntroduction ??
+  lazyLessonPlayerComponent("LessonIntroduction");
+const LessonPlaybackControls = lessonPlayerUiModule?.LessonPlaybackControls ??
+  lazyLessonPlayerComponent("LessonPlaybackControls");
+const LessonSpeakingControls = lessonPlayerUiModule?.LessonSpeakingControls ??
+  lazyLessonPlayerComponent("LessonSpeakingControls");
+const LessonSpeech = lessonPlayerUiModule?.LessonSpeech ??
+  lazyLessonPlayerComponent("LessonSpeech");
+const LessonStage = lessonPlayerUiModule?.LessonStage ??
+  lazyLessonPlayerComponent("LessonStage");
+const LessonUserPrompt = lessonPlayerUiModule?.LessonUserPrompt ??
+  lazyLessonPlayerComponent("LessonUserPrompt");
+
+const LessonCreator = import.meta.env.SSR
+  ? (await import("../lessons/LessonCreator")).LessonCreator
+  : lazy(() =>
+      import("../lessons/LessonCreator").then(({ LessonCreator }) => ({
+        default: LessonCreator,
+      })),
+    );
+const LessonEditor = import.meta.env.SSR
+  ? (await import("../lessons/LessonEditor")).LessonEditor
+  : lazy(() =>
+      import("../lessons/LessonEditor").then(({ LessonEditor }) => ({
+        default: LessonEditor,
+      })),
+    );
+const PersonalizedStoryArtPanel = import.meta.env.SSR
+  ? (await import("../stories/PersonalizedStoryArtPanel"))
+      .PersonalizedStoryArtPanel
+  : lazy(() =>
+      import("../stories/PersonalizedStoryArtPanel").then(
+        ({ PersonalizedStoryArtPanel }) => ({
+          default: PersonalizedStoryArtPanel,
+        }),
+      ),
+    );
+const StoryList = import.meta.env.SSR
+  ? (await import("../stories/StoryList")).StoryList
+  : lazy(() =>
+      import("../stories/StoryList").then(({ StoryList }) => ({
+        default: StoryList,
+      })),
+    );
+const StoryReader = import.meta.env.SSR
+  ? (await import("../stories/StoryReader")).StoryReader
+  : lazy(() =>
+      import("../stories/StoryReader").then(({ StoryReader }) => ({
+        default: StoryReader,
+      })),
+    );
 
 const RECORDING_UNSUPPORTED_MESSAGE =
   "This browser does not support audio recording. Try the latest Chrome or Safari.";
 const MICROPHONE_ACCESS_MESSAGE =
   "Please allow microphone access, then tap the microphone again.";
+const LESSON_AUDIO_ERROR_MESSAGE =
+  "The sound stopped. Try it again or skip this sound.";
+const MINIMUM_LESSON_FEEDBACK_MS = 1_500;
 
 type LessonEvent =
   | { type: "PLAY_SCENE" }
@@ -199,7 +266,9 @@ export function LessonPlayer({
     { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
   const [error, setError] = useState("");
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [historyPopSequence, setHistoryPopSequence] = useState(0);
+  const [audioRetrySequence, setAudioRetrySequence] = useState(0);
   const stateRef = useRef(state);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
@@ -227,6 +296,7 @@ export function LessonPlayer({
   }, [state]);
 
   const cancelPendingWork = useCallback(() => {
+    setIsStartingRecording(false);
     recordingActiveRef.current = false;
     recordingSequenceRef.current += 1;
     playbackGenerationRef.current += 1;
@@ -413,10 +483,8 @@ export function LessonPlayer({
         startPlayback = (signal, onPlaybackControl) =>
           playAudioLine({ ...audioLine, onPlaybackControl, signal });
       }
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error ? caughtError.message : "Audio is unavailable.";
-      setError(`Audio unavailable: ${message}`);
+    } catch {
+      setError(LESSON_AUDIO_ERROR_MESSAGE);
       return;
     }
     const generation = playbackGenerationRef.current + 1;
@@ -429,16 +497,15 @@ export function LessonPlayer({
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         dispatchLessonEvent(completionEvent);
       },
-      onFailed: (caughtError) => {
+      onFailed: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        const message =
-          caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
-        setError(`Audio unavailable: ${message}`);
+        setError(LESSON_AUDIO_ERROR_MESSAGE);
       },
     });
 
     let cancelled = false;
     const controller = new AbortController();
+    const playbackStartedAt = Date.now();
     playbackControllerRef.current = controller;
     setError("");
     void startPlayback(controller.signal, (control) => {
@@ -446,7 +513,18 @@ export function LessonPlayer({
         playbackControlRef.current = control;
       }
     })
-      .then(() => playbackOperation.complete())
+      .then(async () => {
+        if (playbackPhase === LessonPhase.Responding) {
+          await waitForAbortableDelay(
+            Math.max(
+              0,
+              MINIMUM_LESSON_FEEDBACK_MS - (Date.now() - playbackStartedAt),
+            ),
+            controller.signal,
+          );
+        }
+        playbackOperation.complete();
+      })
       .catch((caughtError: unknown) => {
         if (cancelled || isAbortError(caughtError)) return;
         playbackOperation.fail(caughtError);
@@ -466,6 +544,7 @@ export function LessonPlayer({
       }
     };
   }, [
+    audioRetrySequence,
     audioMode,
     currentLesson,
     dispatchLessonEvent,
@@ -500,6 +579,23 @@ export function LessonPlayer({
       | "REPLAY_LESSON"
   ) {
     dispatchLessonEvent({ type }, { cancel: true });
+  }
+
+  function handleRetryAudio() {
+    cancelPendingWork();
+    setError("");
+    setAudioRetrySequence((current) => current + 1);
+  }
+
+  function handleSkipAudio() {
+    if (!playbackPhase) return;
+    cancelPendingWork();
+    setError("");
+    dispatchLessonEvent(
+      playbackPhase === LessonPhase.Responding
+        ? { type: "RESPONSE_DONE" }
+        : { type: "LINE_DONE" },
+    );
   }
 
   function handleStartAction() {
@@ -539,6 +635,7 @@ export function LessonPlayer({
     }
 
     recordingActiveRef.current = true;
+    setIsStartingRecording(true);
     const sequence = recordingSequenceRef.current + 1;
     recordingSequenceRef.current = sequence;
     const routeGeneration = routeActivityGuardRef.current.capture();
@@ -557,10 +654,15 @@ export function LessonPlayer({
         return;
       }
       recordingRef.current = session;
+      setIsStartingRecording(false);
       dispatch({ type: "MIC_STARTED" });
     } catch (caughtError) {
+      setIsStartingRecording(false);
       if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-      if (isAbortError(caughtError)) return;
+      if (isAbortError(caughtError)) {
+        recordingActiveRef.current = false;
+        return;
+      }
       recordingActiveRef.current = false;
       setError(getMicrophoneErrorMessage(caughtError));
     }
@@ -573,6 +675,7 @@ export function LessonPlayer({
     const generation = recordingSequenceRef.current;
     const session = recordingRef.current;
     const recordingController = recordingControllerRef.current;
+    setIsStartingRecording(false);
     if (recordingRef.current === session) {
       recordingRef.current = null;
     }
@@ -708,6 +811,15 @@ export function LessonPlayer({
             <LessonUserPrompt
               dialogue={currentStep.dialogue}
               portrait={promptPortrait}
+              status={
+                isStartingRecording
+                  ? "opening"
+                  : isEvaluating
+                  ? "checking"
+                  : isRecording
+                    ? "recording"
+                    : "ready"
+              }
             />
           ) : isResponding ? (
             <LessonFeedback
@@ -727,6 +839,7 @@ export function LessonPlayer({
             <LessonSpeakingControls
               isEvaluating={isEvaluating}
               isRecording={isRecording}
+              isStartingRecording={isStartingRecording}
               onSkip={handleSkipUser}
               onToggleRecording={handleToggleRecording}
             />
@@ -741,7 +854,19 @@ export function LessonPlayer({
               onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
             />
           ) : null}
-          <LessonErrorBanner error={error} />
+          <LessonErrorBanner
+            error={error}
+            onRetry={
+              error === LESSON_AUDIO_ERROR_MESSAGE
+                ? handleRetryAudio
+                : undefined
+            }
+            onSkip={
+              error === LESSON_AUDIO_ERROR_MESSAGE
+                ? handleSkipAudio
+                : undefined
+            }
+          />
         </>
       ) : null}
 
@@ -979,7 +1104,18 @@ function StoryPageRoute() {
 
 export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
-    <Routes>
+    <>
+      <RouteFocusManager />
+      <Suspense
+        fallback={
+          <FeaturePlaceholder
+            busy
+            description="Getting your activity ready."
+            title="Loading…"
+          />
+        }
+      >
+        <Routes>
       <Route element={<HomeMenu />} path="/" />
       <Route
         element={
@@ -1033,7 +1169,9 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
       <Route element={null} path="/profile/setup" />
       <Route element={null} path="/profile" />
       <Route element={<Navigate replace to="/" />} path="*" />
-    </Routes>
+        </Routes>
+      </Suspense>
+    </>
   );
 }
 

@@ -1,4 +1,11 @@
-import { ArrowLeft, BookOpen, Pencil, Play, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  LockKeyhole,
+  Pencil,
+  Play,
+  Plus,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
 import {
@@ -15,6 +22,7 @@ import {
   ActionButton,
   ActionLink,
   cardClassName,
+  InteractiveCardLink,
   TextLink,
 } from "../shared/ui";
 import {
@@ -25,10 +33,10 @@ import {
 type LessonCard = {
   id: string;
   title: string;
-  summary: string;
   sceneCount: number;
   artworkSrc: string;
   artworkAlt: string;
+  practiceText: string;
 };
 
 type LessonArtwork = {
@@ -40,9 +48,20 @@ const readyMadeArtwork = new Map<string, LessonArtwork>(
   lessonCovers.map(({ alt, id, src }) => [id, { alt, src }]),
 );
 
+const READY_MADE_PRACTICE_TEXT = new Map([
+  ["01-peppas-high-ball", "Say: Can you help me?"],
+  ["02-garden-colors", "Say: It is red."],
+  ["03-snack-time", "Say: May I have an apple?"],
+  ["04-playground-words", "Say: Can I have a turn?"],
+  ["05-market-day", "Say: Two apples, please."],
+  ["06-picnic-time", "Say: Yes, please."],
+  ["07-bedtime-story", "Say: Good night."],
+]);
+
 function createAvailableLessonCard(
   entry: LessonCatalogEntry,
   preferredArtwork?: LessonArtwork,
+  practiceText = "A lesson made for you.",
 ): LessonCard {
   const firstScene = entry.lesson.scenes[0];
   const artwork =
@@ -58,10 +77,10 @@ function createAvailableLessonCard(
   return {
     id: entry.id,
     title: entry.lesson.title,
-    summary: entry.lesson.summary,
     sceneCount: entry.lesson.scenes.length,
     artworkSrc: artwork.src,
     artworkAlt: artwork.alt,
+    practiceText,
   };
 }
 
@@ -81,57 +100,59 @@ function LessonCardView({
   lesson: LessonCard;
   source: "my" | "parrot";
 }) {
+  const lessonPath = getLessonScenePath(source, lesson.id, 0);
+
   return (
-    <article
-      className={cardClassName({
-        className:
-          "flex min-w-0 items-center gap-2 overflow-hidden p-2 sm:gap-3",
-      })}
-    >
-      <div className="relative size-19 shrink-0 overflow-hidden rounded-xl min-[360px]:size-[5.375rem] sm:h-24 sm:w-32 lg:w-40">
-        <img
-          alt={lesson.artworkAlt}
-          className="h-full w-full object-cover"
-          src={lesson.artworkSrc}
-        />
-        <span className="absolute bottom-1 left-1 grid size-5 place-items-center rounded-full border-2 border-white bg-brand-pink text-[0.625rem] font-black text-white shadow-control-pink sm:size-6 sm:text-xs">
-          {index + 1}
-        </span>
-      </div>
-
-      <div className="grid min-w-0 flex-1 content-center gap-0.5">
-        <h3 className="m-0 line-clamp-2 text-base leading-tight text-brand-navy sm:text-lg">
-          {lesson.title}
-        </h3>
-        <p className="m-0 hidden text-xs font-bold leading-snug text-slate-700 min-[360px]:block min-[360px]:truncate sm:text-sm">
-          {lesson.summary}
-        </p>
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="inline-flex min-w-0 items-center gap-1 text-xs font-black text-sky-900 sm:text-sm">
-            <BookOpen aria-hidden="true" className="size-4" />{" "}
-            {lesson.sceneCount} scenes
-          </span>
-          {source === "my" ? (
-            <TextLink
-              aria-label={`Edit lesson: ${lesson.title}`}
-              className="min-w-0 gap-1 text-xs sm:text-sm"
-              to={getMyLessonEditPath(lesson.id)}
-            >
-              <Pencil aria-hidden="true" className="size-3.5 shrink-0" />
-              Edit
-            </TextLink>
-          ) : null}
-        </div>
-      </div>
-
-      <ActionLink
+    <article className="grid min-w-0 gap-1.5">
+      <InteractiveCardLink
         aria-label={`Start lesson: ${lesson.title}`}
-        size="cardAction"
-        to={getLessonScenePath(source, lesson.id, 0)}
+        className="group grid h-full min-h-32 grid-cols-[6.5rem_minmax(0,1fr)] overflow-hidden p-0 text-left min-[360px]:grid-cols-1"
+        to={lessonPath}
+        tone="solid"
       >
-        <Play aria-hidden="true" className="size-5 shrink-0" />
-        <span className="hidden min-[360px]:inline">Start</span>
-      </ActionLink>
+        <div className="relative min-h-32 overflow-hidden bg-sky-100 min-[360px]:aspect-[4/3] min-[360px]:min-h-0">
+          <img
+            alt={lesson.artworkAlt}
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none"
+            decoding="async"
+            fetchPriority={source === "parrot" && index === 0 ? "high" : undefined}
+            loading={source === "parrot" && index < 2 ? "eager" : "lazy"}
+            src={lesson.artworkSrc}
+          />
+        </div>
+
+        <div className="grid min-w-0 grid-rows-[auto_1fr_auto] gap-1.5 p-3 min-[360px]:gap-2 min-[360px]:p-3.5 sm:p-4">
+          <h3 className="m-0 line-clamp-2 text-lg leading-tight text-brand-navy sm:text-xl">
+            {lesson.title}
+          </h3>
+          <p className="m-0 text-sm font-extrabold leading-snug text-slate-700 sm:text-base">
+            {lesson.practiceText}
+          </p>
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <span className="inline-flex min-w-0 items-center gap-1 text-xs font-black text-sky-900 sm:text-sm">
+              <BookOpen aria-hidden="true" className="size-4 shrink-0" />
+              {lesson.sceneCount} parts
+            </span>
+            <span
+              aria-hidden="true"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full bg-brand-pink px-3 text-sm font-black text-white shadow-control-pink"
+            >
+              <Play aria-hidden="true" className="size-4 fill-current" />
+              <span className="hidden sm:inline">Play</span>
+            </span>
+          </div>
+        </div>
+      </InteractiveCardLink>
+      {source === "my" ? (
+        <TextLink
+          aria-label={`Edit lesson: ${lesson.title}`}
+          className="mx-2 gap-1 text-xs sm:text-sm"
+          to={getMyLessonEditPath(lesson.id)}
+        >
+          <Pencil aria-hidden="true" className="size-3.5 shrink-0" />
+          Grown-up: edit
+        </TextLink>
+      ) : null}
     </article>
   );
 }
@@ -143,12 +164,16 @@ export function LessonListView({
   onRetryMyLessons,
 }: LessonListViewProps) {
   const cards = LESSONS.map((entry) =>
-    createAvailableLessonCard(entry, readyMadeArtwork.get(entry.id)),
+    createAvailableLessonCard(
+      entry,
+      readyMadeArtwork.get(entry.id),
+      READY_MADE_PRACTICE_TEXT.get(entry.id) ?? "Listen and speak.",
+    ),
   );
   const myCards = myLessons.map((entry) => createAvailableLessonCard(entry));
 
   return (
-    <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-lesson-list px-3 pb-12 pt-24 short:pt-20 sm:px-4 md:px-8 md:pb-16 md:pt-32 lg:px-16">
+    <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-lesson-list px-3 pb-10 pt-21 short:pt-18 sm:px-4 md:px-8 md:pb-16 md:pt-28 lg:px-16">
       <RouteHeader>
         <HeaderLink
           aria-label="Back to home"
@@ -159,26 +184,20 @@ export function LessonListView({
         </HeaderLink>
       </RouteHeader>
 
-      <header className="mx-auto mb-6 w-full max-w-6xl text-center md:mb-10">
-        <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-navy sm:text-6xl lg:text-8xl">
-          Lessons
+      <header className="mx-auto mb-5 w-full max-w-6xl text-center md:mb-8">
+        <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-navy sm:text-6xl lg:text-7xl">
+          Pick a lesson
         </h1>
-        <p className="mx-auto mb-0 mt-2 max-w-xl text-sm font-extrabold leading-relaxed text-brand-blue sm:mt-3 sm:text-lg">
-          Choose a story and start speaking.
+        <p className="mx-auto mb-0 mt-2 max-w-xl text-base font-extrabold leading-snug text-brand-blue sm:mt-3 sm:text-lg">
+          Listen. Then speak.
         </p>
       </header>
 
       <section
-        aria-labelledby="parrot-lessons-title"
-        className="mx-auto mb-12 w-full max-w-6xl md:mb-16"
+        aria-label="Lessons"
+        className="mx-auto w-full max-w-6xl"
       >
-        <h2
-          className="mb-4 mt-0 text-2xl leading-none text-brand-navy sm:text-3xl md:mb-5 md:text-4xl"
-          id="parrot-lessons-title"
-        >
-          Ready-made lessons
-        </h2>
-        <div className="grid gap-2 sm:gap-3">
+        <div className="grid gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
           {cards.map((lesson, index) => (
             <LessonCardView
               index={index}
@@ -190,26 +209,18 @@ export function LessonListView({
         </div>
       </section>
 
-      <section
-        aria-labelledby="my-lessons-title"
-        className="mx-auto w-full max-w-6xl"
-      >
-        <div className="mb-4 flex flex-col gap-3 min-[360px]:flex-row min-[360px]:items-center min-[360px]:justify-between md:mb-5">
+      {myCards.length > 0 ? (
+        <section
+          aria-labelledby="my-lessons-title"
+          className="mx-auto mt-10 w-full max-w-6xl md:mt-14"
+        >
           <h2
-            className="m-0 text-2xl leading-none text-brand-navy sm:text-3xl md:text-4xl"
+            className="mb-4 mt-0 text-2xl leading-none text-brand-navy sm:text-3xl md:mb-5 md:text-4xl"
             id="my-lessons-title"
           >
-            My lessons
+            Made for you
           </h2>
-          <ActionLink
-            className="w-full shrink-0 gap-2 rounded-full border-4 border-white min-[360px]:w-auto"
-            to="/lessons/my/create"
-          >
-            <Plus aria-hidden="true" /> Create custom lesson
-          </ActionLink>
-        </div>
-        {myCards.length > 0 ? (
-          <div className="grid gap-2 sm:gap-3">
+          <div className="grid gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
             {myCards.map((lesson, index) => (
               <LessonCardView
                 index={index}
@@ -219,38 +230,60 @@ export function LessonListView({
               />
             ))}
           </div>
-        ) : (
-          <div className="flex min-h-36 flex-col items-stretch justify-between gap-5 rounded-3xl border-4 border-dashed border-brand-navy/50 bg-white/65 p-6 md:flex-row md:items-center md:p-9">
-            <div className="grid gap-2">
-              <p
-                className="m-0 text-lg font-extrabold text-brand-blue md:text-xl"
-                role={isLoadingMyLessons ? "status" : myLessonsError ? "alert" : undefined}
-              >
-                {isLoadingMyLessons
-                  ? "Loading your custom lessons…"
-                  : myLessonsError || "No custom lessons yet."}
-              </p>
-              {!isLoadingMyLessons && !myLessonsError ? (
-                <p className="m-0 max-w-xl font-bold leading-relaxed text-slate-700">
-                  A grown-up can make a lesson about something you want to
-                  practice.
-                </p>
-              ) : null}
-              {myLessonsError ? (
-                <ActionButton
-                  className="mt-1 w-fit"
-                  onClick={onRetryMyLessons}
-                  size="compact"
-                  type="button"
-                  variant="navy"
-                >
-                  Try again
-                </ActionButton>
-              ) : null}
-            </div>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
+
+      <aside
+        aria-labelledby="grown-up-tools-title"
+        className={cardClassName({
+          className:
+            "mx-auto mt-10 flex w-full max-w-6xl flex-col items-stretch justify-between gap-4 border-dashed border-brand-navy/45 p-5 min-[360px]:flex-row min-[360px]:items-center md:mt-14 md:p-7",
+          elevation: "soft",
+          tone: "muted",
+        })}
+      >
+        <div className="grid min-w-0 gap-1.5">
+          <h2
+            className="m-0 flex items-center gap-2 text-xl leading-none text-brand-navy sm:text-2xl"
+            id="grown-up-tools-title"
+          >
+            <LockKeyhole aria-hidden="true" className="size-5 shrink-0" />
+            Grown-up tools
+          </h2>
+          <p className="m-0 font-bold leading-snug text-slate-700">
+            Make a new lesson.
+          </p>
+          <p
+            className="m-0 text-sm font-extrabold leading-snug text-brand-blue"
+            role={isLoadingMyLessons ? "status" : myLessonsError ? "alert" : undefined}
+          >
+            {isLoadingMyLessons
+              ? "Loading your lessons…"
+              : myLessonsError ||
+                (myCards.length > 0
+                  ? `${myCards.length} made-for-you ${myCards.length === 1 ? "lesson" : "lessons"}.`
+                  : "No made-for-you lessons yet.")}
+          </p>
+          {myLessonsError ? (
+            <ActionButton
+              className="mt-1 w-fit"
+              onClick={onRetryMyLessons}
+              size="compact"
+              type="button"
+              variant="navy"
+            >
+              Try again
+            </ActionButton>
+          ) : null}
+        </div>
+        <ActionLink
+          aria-label="Create custom lesson"
+          className="w-full shrink-0 gap-2 min-[360px]:w-auto"
+          to="/lessons/my/create"
+        >
+          <Plus aria-hidden="true" /> Make a lesson
+        </ActionLink>
+      </aside>
     </main>
   );
 }

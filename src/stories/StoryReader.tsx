@@ -3,7 +3,6 @@ import {
   BookOpenCheck,
   ChevronLeft,
   ChevronRight,
-  Music2,
   Pause,
   Play,
   RotateCcw,
@@ -18,15 +17,21 @@ import {
   playAudioLine,
   type PlaybackControl,
 } from "../media/audio-playback";
+import { playDeviceSpeech } from "../media/device-speech";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
 import {
   getPersonalizedStoryArtOverride,
   type PersonalizedStoryArtMetadata,
 } from "./personalized-story-art-client";
 import { StoryArtwork } from "./StoryArtwork";
-import { getStoryLevel, type Story } from "./story-catalog";
+import type { Story } from "./story-catalog";
 
-type NarrationState = "complete" | "idle" | "paused" | "playing";
+type NarrationState =
+  | "complete"
+  | "idle"
+  | "join-in"
+  | "paused"
+  | "playing";
 
 export function StoryReader({
   backToStories,
@@ -50,6 +55,7 @@ export function StoryReader({
   const abortControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
+  const resumeNarrationStateRef = useRef<"join-in" | "playing">("playing");
   const pageTextRef = useRef<HTMLParagraphElement | null>(null);
   const page = story.pages[pageIndex];
   const personalizedOverride = getPersonalizedStoryArtOverride(
@@ -59,8 +65,6 @@ export function StoryReader({
   );
   const isFirstPage = pageIndex === 0;
   const isLastPage = pageIndex === story.pages.length - 1;
-  const hasNarration = page.narrationAudioId !== null;
-  const storyLevel = getStoryLevel(story.level);
 
   const stopNarration = useCallback(() => {
     playbackGenerationRef.current += 1;
@@ -83,47 +87,70 @@ export function StoryReader({
   }, [pageIndex, story.id]);
 
   function startNarration() {
-    if (!page.narrationAudioId) return;
-
     stopNarration();
     const controller = new AbortController();
     const generation = playbackGenerationRef.current;
-    let narration;
-
-    try {
-      narration = getStaticAudioLineForSpeech(
-        "narrator",
-        `${page.text} ${page.joinIn}`,
-      );
-      if (narration.id !== page.narrationAudioId) {
-        throw new Error(
-          `Expected ${page.narrationAudioId}, received ${narration.id}`,
-        );
-      }
-    } catch {
-      setNarrationState("idle");
-      setError(
-        "Story audio is not available right now. You can still turn the pages and read together.",
-      );
-      return;
-    }
 
     abortControllerRef.current = controller;
     setError("");
     setNarrationState("playing");
+    resumeNarrationStateRef.current = "playing";
 
-    void playAudioLine({
-      audioId: narration.id,
-      audioSrc: narration.src,
-      lang: narration.lang,
-      onPlaybackControl: (control) => {
-        if (generation === playbackGenerationRef.current) {
-          playbackControlRef.current = control;
+    const onPlaybackControl = (control: PlaybackControl | null) => {
+      if (generation === playbackGenerationRef.current) {
+        playbackControlRef.current = control;
+      }
+    };
+
+    let narrationPromise: Promise<void>;
+    try {
+      if (page.narrationAudioId) {
+        const narration = getStaticAudioLineForSpeech(
+          "narrator",
+          `${page.text} ${page.joinIn}`,
+        );
+        if (narration.id !== page.narrationAudioId) {
+          throw new Error(
+            `Expected ${page.narrationAudioId}, received ${narration.id}`,
+          );
         }
-      },
-      signal: controller.signal,
-      text: narration.text,
-    })
+        narrationPromise = playAudioLine({
+          audioId: narration.id,
+          audioSrc: narration.src,
+          lang: narration.lang,
+          onPlaybackControl,
+          signal: controller.signal,
+          text: narration.text,
+        });
+      } else {
+        narrationPromise = (async () => {
+          await playDeviceSpeech({
+            onPlaybackControl,
+            signal: controller.signal,
+            speaker: "narrator",
+            text: page.text,
+          });
+          if (generation !== playbackGenerationRef.current) return;
+          resumeNarrationStateRef.current = "join-in";
+          setNarrationState("join-in");
+          await playDeviceSpeech({
+            onPlaybackControl,
+            signal: controller.signal,
+            speaker: "narrator",
+            text: page.joinIn,
+          });
+        })();
+      }
+    } catch {
+      abortControllerRef.current = null;
+      setNarrationState("idle");
+      setError(
+        "I can’t read aloud on this device. You can still read together.",
+      );
+      return;
+    }
+
+    void narrationPromise
       .then(() => {
         if (generation !== playbackGenerationRef.current) return;
         abortControllerRef.current = null;
@@ -141,20 +168,21 @@ export function StoryReader({
         playbackControlRef.current = null;
         setNarrationState("idle");
         setError(
-          "Story audio is not available right now. You can still turn the pages and read together.",
+          "I can’t read aloud on this device. You can still read together.",
         );
       });
   }
 
   function toggleNarration() {
-    if (narrationState === "playing") {
+    if (narrationState === "playing" || narrationState === "join-in") {
+      resumeNarrationStateRef.current = narrationState;
       playbackControlRef.current?.pause();
       setNarrationState("paused");
       return;
     }
     if (narrationState === "paused") {
       playbackControlRef.current?.resume();
-      setNarrationState("playing");
+      setNarrationState(resumeNarrationStateRef.current);
       return;
     }
     startNarration();
@@ -186,7 +214,7 @@ export function StoryReader({
           </HeaderLink>
         </RouteHeader>
         <section
-          aria-label="Story complete"
+          aria-label="Story finished"
           className="my-auto grid w-full max-w-3xl overflow-hidden rounded-[2rem] border-4 border-white bg-white/95 text-center shadow-card sm:grid-cols-[minmax(0,1fr)_minmax(18rem,0.9fr)]"
         >
           <StoryArtwork
@@ -201,10 +229,10 @@ export function StoryReader({
             />
             <div>
               <p className="m-0 text-sm font-black uppercase tracking-wider text-brand-green">
-                The end
+                The end!
               </p>
               <h1 className="mb-0 mt-1 text-3xl leading-none text-brand-ink sm:text-4xl">
-                You finished the story!
+                Great job!
               </h1>
               <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-700">
                 {story.completionText}
@@ -217,14 +245,14 @@ export function StoryReader({
                 type="button"
                 variant="success"
               >
-                <RotateCcw aria-hidden="true" className="size-5" /> Read again
+                <RotateCcw aria-hidden="true" className="size-5" /> Listen again
               </ActionButton>
               <ActionLink
                 className="w-full rounded-full border-4 border-white"
                 to={backToStories}
                 variant="surface"
               >
-                Back to the story shelf
+                Pick another story
               </ActionLink>
             </div>
           </div>
@@ -234,13 +262,13 @@ export function StoryReader({
   }
 
   const narrationLabel =
-    narrationState === "playing"
+    narrationState === "playing" || narrationState === "join-in"
       ? "Pause story"
       : narrationState === "paused"
         ? "Resume story"
         : narrationState === "complete"
-          ? "Read again"
-          : "Read to me";
+          ? "Listen again"
+          : "Listen";
 
   return (
     <main className="relative h-dvh w-screen overflow-hidden bg-story-reader px-2.5 pb-4 pt-20 short:pt-16 sm:px-4 md:px-7 md:pb-7 md:pt-24">
@@ -271,28 +299,18 @@ export function StoryReader({
           </figcaption>
         </figure>
 
-        <div className="grid content-start gap-3 p-4 pb-20 short:p-3 short:pb-20 short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-20 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
+        <div className="grid content-start gap-3 p-4 pb-24 short:p-3 short:pb-24 short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-24 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
           <div className="grid gap-3 sm:gap-4">
-            {personalizationPanel}
-            <header>
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-brand-blue">
-                    {storyLevel.label}
-                  </span>
-                  <span className="text-xs font-black text-brand-blue">
-                    {story.category}
-                  </span>
-                </div>
-                <span className="text-xs font-black text-brand-blue">
-                  {pageIndex + 1} / {story.pages.length}
-                </span>
-              </div>
+            <header className="grid gap-2.5">
+              <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
+                {story.title}
+              </h1>
               <div
                 aria-label="Story progress"
                 aria-valuemax={story.pages.length}
                 aria-valuemin={1}
                 aria-valuenow={pageIndex + 1}
+                aria-valuetext={`Page ${pageIndex + 1} of ${story.pages.length}`}
                 className="h-2 overflow-hidden rounded-full bg-sky-100"
                 role="progressbar"
               >
@@ -303,36 +321,54 @@ export function StoryReader({
                   }}
                 />
               </div>
-              <h1 className="mb-0 mt-3 text-2xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
-                {story.title}
-              </h1>
-              <p className="mb-0 mt-2 text-xs font-extrabold leading-relaxed text-brand-blue sm:text-sm">
-                <span className="font-black">Words to notice:</span>{" "}
-                {story.targetWords.join(" · ")}
-              </p>
             </header>
 
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
-              className="m-0 text-base font-bold leading-relaxed text-slate-800 outline-none focus-visible:ring-4 focus-visible:ring-sky-300 sm:text-lg lg:text-xl lg:leading-[1.65]"
+              className="m-0 text-[1.35rem] font-black leading-snug text-slate-800 outline-none focus-visible:rounded-lg focus-visible:ring-4 focus-visible:ring-sky-300 sm:text-2xl lg:text-3xl lg:leading-snug"
               ref={pageTextRef}
               tabIndex={-1}
             >
               {page.text}
             </p>
 
-            <aside className="flex items-start gap-2 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-sm font-black leading-relaxed text-amber-950 sm:text-base">
+            <aside
+              aria-label={`Say it: ${page.joinIn}`}
+              className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 sm:p-4"
+            >
               <Sparkles
                 aria-hidden="true"
-                className="mt-0.5 size-5 shrink-0 text-amber-700"
+                className="mt-0.5 size-6 shrink-0 text-amber-700"
               />
-              <span>
-                <span className="mr-1 uppercase tracking-wide text-amber-800">
-                  Join in:
+              <div className="grid gap-0.5">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-800">
+                  {narrationState === "complete"
+                    ? "Your turn"
+                    : narrationState === "join-in"
+                      ? "Listen and say it"
+                      : narrationState === "playing"
+                        ? "Listen"
+                        : narrationState === "paused"
+                          ? "Story paused"
+                          : "Tap Listen"}
                 </span>
-                “{page.joinIn}”
-              </span>
+                <span className="text-lg font-black leading-snug sm:text-xl">
+                  {page.joinIn}
+                </span>
+              </div>
             </aside>
+
+            {personalizationPanel ? (
+              <details className="group">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-sky-100 px-3 text-sm font-black text-brand-blue [&::-webkit-details-marker]:hidden">
+                  Grown-up options
+                  <span aria-hidden="true" className="group-open:rotate-180">
+                    ▾
+                  </span>
+                </summary>
+                <div className="mt-3">{personalizationPanel}</div>
+              </details>
+            ) : null}
 
             {error ? (
               <p
@@ -345,21 +381,23 @@ export function StoryReader({
             <p className="sr-only" aria-live="polite">
               {narrationState === "playing"
                 ? `Reading page ${pageIndex + 1} of ${story.pages.length}.`
+                : narrationState === "join-in"
+                  ? `Listen, then say: ${page.joinIn}`
                 : narrationState === "paused"
                   ? "Story paused."
                   : narrationState === "complete"
-                    ? "Page finished."
+                    ? `Your turn. Say: ${page.joinIn}`
                     : ""}
             </p>
           </div>
 
           <nav
-            aria-label="Story playback controls"
-            className="fixed bottom-2 left-2 right-2 z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-2 rounded-2xl border-3 border-white bg-[#fffaf0]/95 p-2 shadow-card short-wide:static short-wide:rounded-none short-wide:border-x-0 short-wide:border-b-0 short-wide:border-t-3 short-wide:border-sky-100 short-wide:bg-transparent short-wide:p-0 short-wide:pt-3 short-wide:shadow-none sm:gap-3 lg:static lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t-3 lg:border-sky-100 lg:bg-transparent lg:p-0 lg:pt-4 lg:shadow-none"
+            aria-label="Story controls"
+            className="fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-2 rounded-2xl border-3 border-white bg-[#fffaf0]/95 p-2 shadow-card short-wide:static short-wide:rounded-none short-wide:border-x-0 short-wide:border-b-0 short-wide:border-t-3 short-wide:border-sky-100 short-wide:bg-transparent short-wide:p-0 short-wide:pt-3 short-wide:shadow-none sm:gap-3 lg:static lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t-3 lg:border-sky-100 lg:bg-transparent lg:p-0 lg:pt-4 lg:shadow-none"
           >
             <ActionButton
               aria-label="Previous page"
-              className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-sm shadow-control-surface"
+              className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-xs shadow-control-surface min-[360px]:text-sm"
               disabled={isFirstPage}
               frame="none"
               onClick={() => navigatePage(pageIndex - 1)}
@@ -369,16 +407,15 @@ export function StoryReader({
               variant="surface"
             >
               <ChevronLeft aria-hidden="true" className="size-5 shrink-0" />
-              <span className="hidden min-[360px]:inline">Previous</span>
+              <span>Back</span>
             </ActionButton>
 
             <ActionButton
-              aria-label={hasNarration ? narrationLabel : "Audio placeholder"}
+              aria-label={narrationLabel}
               className={cx(
-                "min-h-12 min-w-0 gap-1.5 rounded-xl px-2 text-sm",
+                "min-h-12 min-w-0 gap-1.5 rounded-xl px-1 text-xs min-[360px]:px-2 min-[360px]:text-sm",
                 narrationState === "paused" && "bg-brand-navy shadow-control-navy",
               )}
-              disabled={!hasNarration}
               frame="none"
               onClick={toggleNarration}
               shape="rounded"
@@ -386,9 +423,7 @@ export function StoryReader({
               type="button"
               variant={narrationState === "paused" ? "navy" : "brand"}
             >
-              {!hasNarration ? (
-                <Music2 aria-hidden="true" className="size-5 shrink-0" />
-              ) : narrationState === "playing" ? (
+              {narrationState === "playing" || narrationState === "join-in" ? (
                 <Pause aria-hidden="true" className="size-5 shrink-0 fill-current" />
               ) : narrationState === "complete" ? (
                 <RotateCcw aria-hidden="true" className="size-5 shrink-0" />
@@ -397,14 +432,12 @@ export function StoryReader({
               ) : (
                 <Volume2 aria-hidden="true" className="size-5 shrink-0" />
               )}
-              <span className="truncate">
-                {hasNarration ? narrationLabel : "Audio later"}
-              </span>
+              <span className="leading-tight">{narrationLabel}</span>
             </ActionButton>
 
             <ActionButton
               aria-label={isLastPage ? "Finish story" : "Next page"}
-              className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-sm"
+              className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-xs min-[360px]:text-sm"
               frame="none"
               onClick={() =>
                 isLastPage ? finishStory() : navigatePage(pageIndex + 1)
@@ -412,11 +445,9 @@ export function StoryReader({
               shape="rounded"
               size="inline"
               type="button"
-              variant="success"
+              variant={narrationState === "complete" ? "success" : "surface"}
             >
-              <span className="hidden min-[360px]:inline">
-                {isLastPage ? "Finish" : "Next"}
-              </span>
+              <span>{isLastPage ? "Done" : "Next"}</span>
               {isLastPage ? (
                 <BookOpenCheck aria-hidden="true" className="size-5 shrink-0" />
               ) : (

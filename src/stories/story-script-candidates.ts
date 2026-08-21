@@ -26,11 +26,19 @@ type PrototypeStory = Pick<
   promptExperiment: StoryPromptExperiment;
 };
 
-function placeholderArtwork(prompt: string, alt: string): StoryArtwork {
+function pageArtwork({
+  alt,
+  prompt,
+  src,
+}: {
+  alt: string;
+  prompt: string;
+  src: string | null;
+}): StoryArtwork {
   return {
     alt,
     prompt,
-    src: null,
+    src,
   };
 }
 
@@ -52,10 +60,14 @@ function makePrototypeStory({
     cover: coverArtwork(story.id, coverPrompt),
     pages: pages.map(({ artworkPrompt, ...page }, pageIndex) => ({
       ...page,
-      artwork: placeholderArtwork(
-        artworkPrompt,
-        `Artwork placeholder for ${story.title}, page ${pageIndex + 1}`,
-      ),
+      artwork: pageArtwork({
+        alt: `${artworkPrompt} in ${story.title}, page ${pageIndex + 1}`,
+        prompt: artworkPrompt,
+        src:
+          story.level === "first-words"
+            ? `/assets/story-pages/${story.id}-${page.id}.webp`
+            : null,
+      }),
       narrationAudioId: null,
     })),
   };
@@ -831,17 +843,17 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
     category: "Colours",
     durationMinutes: 1,
     level: "first-words",
-    summary: "Try red, blue, and yellow hats, then choose one.",
+    summary: "Try red, blue, and yellow hats, then wear the yellow one.",
     targetWords: ["hat", "red", "blue", "yellow", "head"],
     assumedKnownWords: ["see", "three"],
     coverPrompt: "Three simple hats in red, blue, and yellow",
-    completionText: "My hat is on my head!",
+    completionText: "My yellow hat is on my head!",
     promptExperiment: {
       focus: "One-word substitution",
       instruction:
-        "Repeat one substitution sentence, changing only the colour. Finish with a choice the child can answer.",
+        "Repeat one substitution sentence, changing only the colour. Finish by putting on the yellow hat.",
       hypothesis:
-        "A one-word substitution frame isolates colour vocabulary and encourages prediction.",
+        "A one-word substitution frame isolates colour vocabulary and makes the final yellow-hat reveal predictable.",
     },
     pages: [
       {
@@ -870,9 +882,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
       },
       {
         id: "hat-on-head",
-        artworkPrompt: "The smiling child wearing their chosen hat, with the colour left open",
-        text: "My hat is on my head!",
-        joinIn: "My hat!",
+        artworkPrompt: "The smiling child wearing the yellow hat",
+        text: "My yellow hat is on my head!",
+        joinIn: "Yellow hat!",
       },
     ],
   }),

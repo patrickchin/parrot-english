@@ -1,7 +1,7 @@
 {
   "name": "Parrot English",
   "short_name": "Parrot",
-  "description": "A one-page English speaking practice lesson for young learners.",
+  "description": "Short listening, speaking, and story activities for young English learners.",
   "lang": "zh-CN",
   "start_url": "/",
   "scope": "/",

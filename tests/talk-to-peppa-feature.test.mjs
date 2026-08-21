@@ -41,6 +41,6 @@ test("ending a learner turn immediately exposes Peppa's response-loading state",
 
   assert.match(controller, /setStatus\(["']thinking["']\)/);
   assert.match(surface, /status === ["']thinking["']/);
-  assert.match(surface, /Peppa is thinking/);
+  assert.match(surface, /selectConversationWaitFeedback/);
   assert.match(surface, /Waiting for Peppa/);
 });

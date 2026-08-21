@@ -193,6 +193,11 @@ function ConversationHookHarness({
     ),
     createElement(
       "output",
+      { "aria-label": "Microphone busy" },
+      String(conversation.microphoneBusy),
+    ),
+    createElement(
+      "output",
       { "aria-label": "Peppa response latency" },
       conversation.responseLatencyMs ?? "",
     ),
@@ -220,6 +225,7 @@ function conversationSurfaceProps(overrides = {}) {
     canFinish: true,
     error: "",
     liveTranscript: "",
+    microphoneBusy: false,
     microphoneEnabled: false,
     onBack() {},
     onFinish() {},
@@ -364,6 +370,10 @@ function installControlledAudio() {
 
     finish() {
       this.onended?.(new window.Event("ended"));
+    }
+
+    fail() {
+      this.onerror?.(new window.Event("error"));
     }
   }
 
@@ -537,7 +547,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Loading your questions…/);
   });
 
-  it("enables the learner's turn while Peppa says her opening", async () => {
+  it("opens the learner's turn only after Peppa finishes her opening", async () => {
     let disconnectCalls = 0;
     let listener = () => {};
     const microphoneCalls = [];
@@ -600,10 +610,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(
       document.querySelector('output[aria-label="Learner turn ready"]')
         .textContent,
-      "true",
+      "false",
     );
     await click(button("Start my turn"));
-    await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
+    assert.deepEqual(microphoneCalls, [false]);
 
     await act(async () => {
       listener({
@@ -638,6 +648,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "true",
     );
+    await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
   });
@@ -676,9 +687,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     };
 
     await mountStrict(createElement(StandaloneConversationRouteHarness));
-    await waitFor(() => text(/Start chat/));
+    await waitFor(() => text(/Talk to Peppa/));
     await click(button("Start chat"));
-    await waitFor(() => text(/Start my turn/));
+    await waitFor(() => text(/Tap, then talk/));
 
     await click(button("Back"));
 
@@ -686,9 +697,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/VOICE CHAT UNAVAILABLE/);
 
     await click(button("Talk to Peppa"));
-    await waitFor(() => text(/Start chat/));
+    await waitFor(() => text(/Talk to Peppa/));
     await click(button("Start chat"));
-    await waitFor(() => text(/Start my turn/));
+    await waitFor(() => text(/Tap, then talk/));
     assert.equal(conversationStarts, 2);
   });
 
@@ -912,6 +923,173 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "listening",
     );
+  });
+
+  it("coalesces rapid microphone taps while an async change is pending", async () => {
+    let listener = () => {};
+    let turnCommits = 0;
+    let disabledCalls = 0;
+    const startChange = deferred();
+    const endChange = deferred();
+    const microphoneCalls = [];
+    const transport = {
+      async commitUserTurn() {
+        turnCommits += 1;
+      },
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+        if (enabled) return startChange.promise;
+        disabledCalls += 1;
+        if (disabledCalls > 1) return endChange.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-rapid-taps" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+
+    await act(async () => {
+      button("Start my turn").click();
+      button("Start my turn").click();
+      await flush();
+    });
+    assert.deepEqual(microphoneCalls, [false, true]);
+    assert.equal(
+      document.querySelector('output[aria-label="Microphone busy"]')
+        .textContent,
+      "true",
+    );
+
+    startChange.resolve();
+    await waitFor(() => assert.equal(button("End my turn").textContent, "End my turn"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Microphone busy"]')
+          .textContent,
+        "false",
+      ),
+    );
+
+    await act(async () => {
+      button("End my turn").click();
+      button("End my turn").click();
+      await flush();
+    });
+    assert.deepEqual(microphoneCalls, [false, true, false]);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "thinking",
+    );
+
+    endChange.resolve();
+    await waitFor(() => assert.equal(turnCommits, 1));
+    assert.deepEqual(microphoneCalls, [false, true, false]);
+  });
+
+  it("recovers the learner turn with simple copy when microphone access fails", async () => {
+    let listener = () => {};
+    const transport = {
+      async commitUserTurn() {},
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        if (enabled) throw new Error("Permission denied by browser");
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-microphone-error" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await click(button("Start my turn"));
+
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation error"]')
+          .textContent,
+        "Please ask a grown-up to let Peppa use the microphone.",
+      ),
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "listening",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "true",
+    );
+    assert.equal(button("Start my turn").textContent, "Start my turn");
   });
 
   it("toggles the learner turn with Space without hijacking focused controls", async () => {
@@ -1331,7 +1509,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       applicationRoutesInMemory({ initialEntries: ["/lessons"] }),
     );
-    text(/Choose a story and start speaking/);
+    text(/Listen\. Then speak\./);
     await click(
       document.querySelector('a[aria-label^="Start lesson:"]'),
     );
@@ -1341,7 +1519,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await click(button("Back to lesson list"));
     await waitFor(() => assert.equal(currentRoute().path, "/lessons"));
-    text(/Choose a story and start speaking/);
+    text(/Listen\. Then speak\./);
 
     await click(
       document.querySelector('a[aria-label^="Start lesson:"]'),
@@ -1392,6 +1570,31 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() =>
       assert.equal(document.activeElement, button("Start lesson")),
     );
+  });
+
+  it("offers retry and skip when lesson sound stops", async () => {
+    const ControlledAudio = installControlledAudio();
+
+    await mountStrict(
+      applicationRoutesInMemory({ initialEntries: [lessonScenePath(1)] }),
+    );
+    await click(button("Start lesson"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
+
+    await act(async () => ControlledAudio.instances[0].fail());
+    await waitFor(() => text(/The sound stopped/));
+    assert.ok(button("Try sound"));
+    assert.ok(button("Skip sound"));
+
+    await click(button("Try sound"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 2));
+    noText(/The sound stopped/);
+
+    await act(async () => ControlledAudio.instances[1].fail());
+    await waitFor(() => text(/The sound stopped/));
+    await click(button("Skip sound"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 3));
+    noText(/The sound stopped/);
   });
 
   it("moves a mounted learner turn through recording, checking, and feedback", async () => {

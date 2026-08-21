@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { access, readFile, readdir, stat } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 
 const publicAssetsDir = fileURLToPath(new URL("../public/assets", import.meta.url));
 const backgroundCatalogFile = fileURLToPath(
@@ -56,5 +57,22 @@ describe("web asset formats", () => {
     await assert.rejects(access(join(publicAssetsDir, "backgrounds")), {
       code: "ENOENT",
     });
+  });
+
+  it("ships responsive conversation character images for small screens", async () => {
+    const peppaDir = join(publicAssetsDir, "characters", "peppa");
+
+    for (const pose of ["happy", "listening", "sad", "surprised", "talking"]) {
+      for (const width of [384, 768, 1024]) {
+        const filePath = join(peppaDir, `peppa-${pose}-${width}.webp`);
+        const [metadata, file] = await Promise.all([
+          sharp(filePath).metadata(),
+          stat(filePath),
+        ]);
+        assert.equal(metadata.width, width);
+        assert.equal(metadata.height, width);
+        assert.ok(file.size < 64 * 1024, `${filePath} is unexpectedly large`);
+      }
+    }
   });
 });

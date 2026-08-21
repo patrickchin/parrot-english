@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
 import { describe, it } from "node:test";
+import sharp from "sharp";
 import {
   auditStoryVocabulary,
   countStoryWords,
@@ -160,7 +161,7 @@ describe("story script catalog", () => {
     }
   });
 
-  it("uses generated covers while keeping page artwork and audio as placeholders", () => {
+  it("fully illustrates First words while keeping later page art and narration explicit", async () => {
     for (const story of STORIES) {
       assert.equal(
         story.cover.src,
@@ -176,13 +177,35 @@ describe("story script catalog", () => {
       assert.doesNotMatch(story.cover.alt, /placeholder/i);
 
       for (const page of story.pages) {
-        assert.equal(page.artwork.src, null, `${story.title}/${page.id} image source`);
+        if (story.level === "first-words") {
+          assert.equal(
+            page.artwork.src,
+            `/assets/story-pages/${story.id}-${page.id}.webp`,
+            `${story.title}/${page.id} image source`,
+          );
+          const imagePath = `public${page.artwork.src}`;
+          assert.ok(
+            existsSync(imagePath),
+            `${story.title}/${page.id} image file exists`,
+          );
+          const metadata = await sharp(imagePath).metadata();
+          assert.equal(metadata.format, "webp");
+          assert.equal(metadata.width, 768);
+          assert.equal(metadata.height, 512);
+        } else {
+          assert.equal(
+            page.artwork.src,
+            null,
+            `${story.title}/${page.id} image source`,
+          );
+        }
         assert.equal(
           page.narrationAudioId,
           null,
           `${story.title}/${page.id} audio ID`,
         );
         assert.ok(page.artwork.alt.trim(), `${story.title}/${page.id} image alt`);
+        assert.doesNotMatch(page.artwork.alt, /placeholder/i);
         assert.ok(page.artwork.prompt.trim(), `${story.title}/${page.id} image prompt`);
       }
     }

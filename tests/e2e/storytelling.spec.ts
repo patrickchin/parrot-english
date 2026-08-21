@@ -21,17 +21,58 @@ async function installStoryMediaGuard(page: Page) {
       configurable: true,
       value: ForbiddenStoryAudio,
     });
+    const storySpeech = {
+      cancelled: 0,
+      paused: 0,
+      resumed: 0,
+      spoken: [] as string[],
+    };
+    class StorySpeechUtterance {
+      lang = "";
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      pitch = 1;
+      rate = 1;
+      text: string;
+      voice = null;
+      volume = 1;
+
+      constructor(text: string) {
+        this.text = text;
+      }
+    }
+    Object.defineProperty(window, "SpeechSynthesisUtterance", {
+      configurable: true,
+      value: StorySpeechUtterance,
+    });
+    Object.defineProperty(window, "__storySpeech", {
+      configurable: true,
+      value: storySpeech,
+    });
     Object.defineProperty(window, "speechSynthesis", {
       configurable: true,
       value: {
-        cancel() {},
-        getVoices() {
-          return [];
+        cancel() {
+          storySpeech.cancelled += 1;
         },
-        pause() {},
-        resume() {},
-        speak() {
-          throw new Error("A script-only story tried to use browser speech.");
+        getVoices() {
+          return [
+            {
+              default: true,
+              lang: "en-US",
+              localService: true,
+              name: "Test English",
+            },
+          ];
+        },
+        pause() {
+          storySpeech.paused += 1;
+        },
+        resume() {
+          storySpeech.resumed += 1;
+        },
+        speak(utterance: StorySpeechUtterance) {
+          storySpeech.spoken.push(utterance.text);
         },
       },
     });
@@ -63,28 +104,27 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the shelf shows one clear reading level at a time", async ({
+test("the shelf shows beginner pictures before grown-up level choices", async ({
   page,
 }) => {
   await page.goto("/stories");
 
   await expect(
-    page.getByRole("heading", { exact: true, name: "Choose a story" }),
+    page.getByRole("heading", { exact: true, name: "Pick a story" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const levelTabs = shelf.getByRole("tablist", {
-    name: "Choose a reading level",
-  });
-  const firstWordsTab = levelTabs.getByRole("tab", { name: /First words/ });
-  let panel = shelf.getByRole("region", { name: /First words stories/ });
+  let panel = shelf.getByRole("region", { name: /Start here stories/ });
 
-  await expect(firstWordsTab).toHaveAttribute("aria-selected", "true");
-  await expect(firstWordsTab).toHaveAttribute("tabindex", "0");
+  const grownUpOptions = shelf.getByText("Grown-up options", { exact: true });
+  const levelTabs = shelf.getByRole("tablist", {
+    name: "Pick a story group",
+  });
+  await expect(levelTabs).toBeHidden();
   await expect(panel.getByRole("article")).toHaveCount(5);
-  await expect(panel.getByRole("link", { name: /^Read story:/ })).toHaveCount(5);
+  await expect(panel.getByRole("link", { name: /^Listen to story:/ })).toHaveCount(5);
 
   await expect(
-    panel.getByRole("link", { name: "Read story: The Red Ball" }),
+    panel.getByRole("link", { name: "Listen to story: The Red Ball" }),
   ).toHaveAttribute("href", firstStoryPath);
   const firstCover = panel.getByRole("img", {
     name: "A bright red ball beside a smiling young child",
@@ -98,32 +138,42 @@ test("the shelf shows one clear reading level at a time", async ({
   ).toHaveAttribute("loading", "lazy");
 
   const redBallCard = panel.getByRole("article", { name: "The Red Ball" });
+  await expect(redBallCard.getByText("Listen", { exact: true })).toBeVisible();
   await expect(
-    redBallCard.getByText("5 pages", { exact: true }),
-  ).toBeVisible();
-  await expect(redBallCard.getByText(/Teaching notes|Prompt test/)).toHaveCount(0);
+    redBallCard.getByText(/pages|Teaching notes|Prompt test/),
+  ).toHaveCount(0);
+  await expect(
+    redBallCard.getByText(
+      "Follow one red ball as it rolls away and comes home.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
 
+  await grownUpOptions.click();
+  const firstWordsTab = levelTabs.getByRole("tab", { name: /Start here/ });
+  await expect(firstWordsTab).toHaveAttribute("aria-selected", "true");
+  await expect(firstWordsTab).toHaveAttribute("tabindex", "0");
   await firstWordsTab.focus();
   await firstWordsTab.press("ArrowRight");
   const patternsTab = levelTabs.getByRole("tab", {
-    name: /Repeating patterns/,
+    name: /Say it again/,
   });
   await expect(patternsTab).toBeFocused();
   await expect(patternsTab).toHaveAttribute("aria-selected", "true");
   await expect(page).toHaveURL(/\/stories\?level=repeating-patterns$/);
-  panel = shelf.getByRole("region", { name: /Repeating patterns stories/ });
+  panel = shelf.getByRole("region", { name: /Say it again stories/ });
   await expect(panel.getByRole("article")).toHaveCount(5);
   await expect(
-    panel.getByRole("link", { name: "Read story: Boots in the Rain" }),
+    panel.getByRole("link", { name: "Listen to story: Boots in the Rain" }),
   ).toBeVisible();
 
   for (const level of [
     {
       id: "tiny-stories",
-      name: "Tiny stories",
+      name: "Little stories",
       story: "The Lantern Trail",
     },
-    { id: "early-a1", name: "Early A1", story: "The Moon Bus" },
+    { id: "early-a1", name: "Big adventures", story: "The Moon Bus" },
   ]) {
     await levelTabs.getByRole("tab", { name: new RegExp(level.name) }).click();
     await expect(page).toHaveURL(new RegExp(`\\?level=${level.id}$`));
@@ -132,7 +182,7 @@ test("the shelf shows one clear reading level at a time", async ({
     });
     await expect(panel.getByRole("article")).toHaveCount(5);
     await expect(
-      panel.getByRole("link", { name: `Read story: ${level.story}` }),
+      panel.getByRole("link", { name: `Listen to story: ${level.story}` }),
     ).toBeVisible();
   }
 
@@ -141,7 +191,7 @@ test("the shelf shows one clear reading level at a time", async ({
   await page.goto("/stories?level=not-a-level");
   await expect(page).toHaveURL(/\/stories$/);
   await expect(
-    shelf.getByRole("tab", { name: /First words/ }),
+    shelf.getByRole("tab", { name: /Start here/ }),
   ).toHaveAttribute("aria-selected", "true");
 });
 
@@ -150,7 +200,7 @@ test("returning from a story restores its shelf level", async ({ page }) => {
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
   await shelf
-    .getByRole("link", { name: "Read story: The Lantern Trail" })
+    .getByRole("link", { name: "Listen to story: The Lantern Trail" })
     .click();
 
   const backToStories = page.getByRole("link", { name: "Back to stories" });
@@ -161,36 +211,53 @@ test("returning from a story restores its shelf level", async ({ page }) => {
   await backToStories.click();
   await expect(page).toHaveURL(/\/stories\?level=tiny-stories$/);
   await expect(
-    page.getByRole("tab", { name: /Tiny stories/ }),
+    page.getByRole("tab", { name: /Little stories/ }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(
-    page.getByRole("region", { name: /Tiny stories/ }),
+    page.getByRole("region", { name: /Little stories/ }),
   ).toContainText("The Lantern Trail");
 });
 
-test("a phone uses one compact reading-level picker", async ({ page }) => {
+test("a phone puts story pictures before secondary level choices", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const levelPicker = shelf.getByRole("combobox", { name: "Reading level" });
-  await expect(levelPicker).toHaveValue("first-words");
-  await expect(
-    shelf.getByRole("tablist", { name: "Choose a reading level" }),
-  ).toBeHidden();
+  const levelTabs = shelf.getByRole("tablist", { name: "Pick a story group" });
+  const redBall = shelf.getByRole("link", {
+    name: "Listen to story: The Red Ball",
+  });
+  const grownUpOptions = shelf.getByText("Grown-up options", { exact: true });
+  await expect(redBall).toBeVisible();
+  await expect(levelTabs).toBeHidden();
+  const [storyBox, optionsBox] = await Promise.all([
+    redBall.boundingBox(),
+    grownUpOptions.boundingBox(),
+  ]);
+  expect(storyBox).not.toBeNull();
+  expect(optionsBox).not.toBeNull();
+  expect(storyBox!.y).toBeLessThan(optionsBox!.y);
 
-  await levelPicker.selectOption("early-a1");
-  await expect(page).toHaveURL(/\/stories\?level=early-a1$/);
-  await expect(levelPicker).toHaveValue("early-a1");
+  await grownUpOptions.click();
+  await expect(levelTabs).toBeVisible();
+  await expect(levelTabs.getByRole("tab")).toHaveCount(4);
   await expect(
-    shelf.getByRole("region", { name: "Early A1 stories" }),
+    levelTabs.getByRole("tab", { name: "Start here" }),
+  ).toHaveAttribute("aria-selected", "true");
+
+  await levelTabs.getByRole("tab", { name: "Big adventures" }).click();
+  await expect(page).toHaveURL(/\/stories\?level=early-a1$/);
+  await expect(
+    shelf.getByRole("region", { name: "Big adventures stories" }),
   ).toContainText("The Moon Bus");
 
   await page.reload();
-  await expect(levelPicker).toHaveValue("early-a1");
+  await expect(
+    levelTabs.getByRole("tab", { name: "Big adventures" }),
+  ).toHaveAttribute("aria-selected", "true");
 });
 
-test("a first-words script exposes placeholders, targets, and page navigation", async ({
+test("a script-only story has descriptive art, read-aloud, and obvious page controls", async ({
   page,
 }) => {
   await page.goto(firstStoryPath);
@@ -200,30 +267,55 @@ test("a first-words script exposes placeholders, targets, and page navigation", 
     name: "Story progress",
   });
   const controls = reader.getByRole("navigation", {
-    name: "Story playback controls",
+    name: "Story controls",
   });
 
   await expect(
     reader.getByRole("heading", { exact: true, name: "The Red Ball" }),
   ).toBeVisible();
-  await expect(reader.getByText("First words", { exact: true })).toBeVisible();
-  await expect(reader.getByText(/Words to notice:.*red.*ball.*roll/)).toBeVisible();
+  await expect(reader.getByText(/Words to notice|First words|One object/)).toHaveCount(0);
   await expect(progress).toHaveAttribute("aria-valuemin", "1");
   await expect(progress).toHaveAttribute("aria-valuemax", "5");
   await expect(progress).toHaveAttribute("aria-valuenow", "1");
   await expect(reader.getByText("Page 1 of 5", { exact: true })).toBeVisible();
   await expect(
     reader.getByRole("img", {
-      name: "Artwork placeholder for The Red Ball, page 1",
+      name: "A child holding one bright red ball",
     }),
   ).toBeVisible();
-  await expect(reader.getByText("Picture coming later", { exact: true })).toBeVisible();
   await expect(
-    reader.getByText("A child holding one bright red ball", { exact: true }),
+    reader.getByText(/Artwork placeholder|Picture coming later/),
   ).toHaveCount(0);
-  await expect(controls.getByRole("button", { name: "Audio placeholder" })).toBeDisabled();
-  await expect(controls.getByText("Audio later", { exact: true })).toBeVisible();
+  const readToMe = controls.getByRole("button", { name: "Listen" });
+  await expect(readToMe).toBeEnabled();
+  await expect(controls.getByText("Back", { exact: true })).toBeVisible();
+  await expect(controls.getByText("Next", { exact: true })).toBeVisible();
   await expect(controls.getByRole("button", { name: "Previous page" })).toBeDisabled();
+
+  await readToMe.click();
+  await expect(
+    controls.getByRole("button", { name: "Pause story" }),
+  ).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              __storySpeech: { spoken: string[] };
+            }
+          ).__storySpeech.spoken,
+      ),
+    )
+    .toEqual(["Here is my red ball."]);
+  await controls.getByRole("button", { name: "Pause story" }).click();
+  await expect(
+    controls.getByRole("button", { name: "Resume story" }),
+  ).toBeVisible();
+  await controls.getByRole("button", { name: "Resume story" }).click();
+  await expect(
+    controls.getByRole("button", { name: "Pause story" }),
+  ).toBeVisible();
 
   await controls.getByRole("button", { name: "Next page" }).click();
   await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/2$/);
@@ -255,8 +347,8 @@ test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) =
   await expect(reader.getByText(/Glow, Flicker, glow!/)).toBeVisible();
   await expect(reader.getByText(/At sunset|moonlight|lantern tree/i)).toHaveCount(0);
   await expect(
-    reader.getByRole("button", { name: "Audio placeholder" }),
-  ).toBeDisabled();
+    reader.getByRole("button", { name: "Listen" }),
+  ).toBeEnabled();
 });
 
 test("the retired original Lantern Trail returns to the story shelf", async ({
@@ -266,7 +358,7 @@ test("the retired original Lantern Trail returns to the story shelf", async ({
 
   await expect(page).toHaveURL("/stories");
   await expect(
-    page.getByRole("heading", { exact: true, name: "Choose a story" }),
+    page.getByRole("heading", { exact: true, name: "Pick a story" }),
   ).toBeVisible();
 });
 
@@ -275,18 +367,19 @@ test("finishing a prototype uses story-owned completion copy", async ({ page }) 
 
   await page.getByRole("button", { name: "Finish story" }).click();
 
-  const complete = page.getByRole("region", { name: "Story complete" });
+  const complete = page.getByRole("region", { name: "Story finished" });
   await expect(
-    complete.getByRole("heading", { name: "You finished the story!" }),
+    complete.getByRole("heading", { name: "Great job!" }),
   ).toBeVisible();
+  await expect(complete.getByText("The end!", { exact: true })).toBeVisible();
   await expect(complete.getByText("The red ball is home.", { exact: true })).toBeVisible();
   await expect(
     complete.getByRole("img", {
       name: "A bright red ball beside a smiling young child",
     }),
   ).toBeVisible();
-  await expect(complete.getByRole("button", { name: "Read again" })).toBeEnabled();
-  await expect(complete.getByRole("link", { name: "Back to the story shelf" })).toHaveAttribute(
+  await expect(complete.getByRole("button", { name: "Listen again" })).toBeEnabled();
+  await expect(complete.getByRole("link", { name: "Pick another story" })).toHaveAttribute(
     "href",
     "/stories",
   );
@@ -300,9 +393,9 @@ for (const viewport of viewports) {
     await page.goto("/stories");
 
     const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-    const panel = shelf.getByRole("region", { name: /First words stories/ });
+    const panel = shelf.getByRole("region", { name: /Start here stories/ });
     const readStory = shelf.getByRole("link", {
-      name: "Read story: The Red Ball",
+      name: "Listen to story: The Red Ball",
     });
     await expect(panel.getByRole("article")).toHaveCount(5);
     await expect(
@@ -311,17 +404,13 @@ for (const viewport of viewports) {
       }).first(),
     ).toBeHidden();
     await expectInsideViewportHorizontally(shelf, page);
-    if (viewport.width < 640) {
-      await expectInsideViewportHorizontally(
-        shelf.getByRole("combobox", { name: "Reading level" }),
-        page,
-      );
-    } else {
-      await expectInsideViewportHorizontally(
-        shelf.getByRole("tablist", { name: "Choose a reading level" }),
-        page,
-      );
-    }
+    const grownUpOptions = shelf.getByText("Grown-up options", { exact: true });
+    await expectInsideViewportHorizontally(grownUpOptions, page);
+    await grownUpOptions.click();
+    await expectInsideViewportHorizontally(
+      shelf.getByRole("tablist", { name: "Pick a story group" }),
+      page,
+    );
     await expectInsideViewportHorizontally(readStory, page);
     await expectNoHorizontalOverflow(page);
 
@@ -332,13 +421,13 @@ for (const viewport of viewports) {
       name: "Story progress",
     });
     const controls = reader.getByRole("navigation", {
-      name: "Story playback controls",
+      name: "Story controls",
     });
     await expectInsideViewportHorizontally(reader, page);
     await expectInsideViewportHorizontally(progress, page);
     await expectInsideViewportHorizontally(controls, page);
     await expectInsideViewportHorizontally(
-      controls.getByRole("button", { name: "Audio placeholder" }),
+      controls.getByRole("button", { name: "Listen" }),
       page,
     );
     await expectNoHorizontalOverflow(page);

@@ -333,5 +333,10 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    rolldownOptions: {
+      output: {
+        codeSplitting: true,
+      },
+    },
   },
 });

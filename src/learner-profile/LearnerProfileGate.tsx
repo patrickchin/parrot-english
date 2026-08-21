@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -40,7 +42,7 @@ import {
 } from "./LearnerProfileQuestion";
 import { ProfileEditorView } from "./ProfileEditor";
 import { recordSpeechClip } from "../media/speech-recorder";
-import { ConversationSurface } from "../conversation/ConversationSurface";
+import type { ConversationSurface as ConversationSurfaceComponent } from "../conversation/ConversationSurface";
 import {
   selectLearnerProfileExperience,
   usePeppaConversation,
@@ -50,9 +52,35 @@ import { ActionButton, TextButton } from "../shared/ui";
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+const LazyConversationSurface = import.meta.env.SSR
+  ? (await import("../conversation/ConversationSurface")).ConversationSurface
+  : lazy(() =>
+      import("../conversation/ConversationSurface").then(
+        ({ ConversationSurface }) => ({ default: ConversationSurface }),
+      ),
+    );
+
 type QuestionProps = ComponentProps<typeof LearnerProfileQuestionView>;
 type ProfileEditorProps = ComponentProps<typeof ProfileEditorView>;
-type ConversationProps = ComponentProps<typeof ConversationSurface>;
+type ConversationProps = ComponentProps<typeof ConversationSurfaceComponent>;
+
+function ConversationSurface(props: ConversationProps) {
+  return (
+    <Suspense
+      fallback={
+        <LearnerProfileScreen>
+          <LearnerProfileStatusCard aria-busy="true" role="status">
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              Loading voice chat…
+            </p>
+          </LearnerProfileStatusCard>
+        </LearnerProfileScreen>
+      }
+    >
+      <LazyConversationSurface {...props} />
+    </Suspense>
+  );
+}
 
 type AcknowledgmentView = {
   acknowledgment: Acknowledgment;

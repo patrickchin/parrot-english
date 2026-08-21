@@ -12,11 +12,12 @@ Neither playback mode adds audio fields to the lesson-authoring format.
 
 Storytelling candidates use a separate text-first contract. Every catalog story
 has a generated cover WebP; individual pages carry a nullable narration audio
-ID and nullable artwork source. A null page value is an intentional placeholder:
-the reader disables narration and renders a visual placeholder without
-requesting a missing file. Do not add static-audio entries or page illustrations
-while script wording is still being compared. Artwork production prompts remain
-catalogue metadata and are not rendered as extra child-facing reading text.
+ID and nullable artwork source. The five approved `first-words` stories also
+have complete page illustration sets under `public/assets/story-pages`. Later
+levels retain a null source while their scripts are still being compared, and
+the reader renders an accessible story-themed fallback without requesting a
+missing file. Artwork production prompts remain catalogue metadata and are not
+rendered as extra child-facing reading text.
 
 ## Sources of Truth
 
@@ -34,6 +35,7 @@ catalogue metadata and are not rendered as extra child-facing reading text.
 - Build output: `dist/assets/audio`
 - Story script candidates: `src/stories/story-script-candidates.ts`
 - Generated story covers: `public/assets/stories/*-cover.webp`
+- Approved First words page art: `public/assets/story-pages/*.webp`
 - Story language and prompt research:
   `docs/design/young-learner-storytelling.md`
 
@@ -79,8 +81,10 @@ only by the `my` lesson source and is cancelled on scene or route changes.
 
 For Storytelling, saved playback is attempted only when a page declares a
 non-null narration audio ID. The resolved exact-text cache entry must match that
-ID. Prototype pages with null IDs show Audio later and never call the saved
-audio resolver.
+ID. Pages with null IDs use the reader's explicit English fallback rather than
+requesting a missing saved-audio asset. That fallback reads the page text and
+the child join-in phrase as separate utterances, then leaves a visible **Your
+turn** cue instead of treating both lines as one uninterrupted paragraph.
 
 ## ElevenLabs Generation
 
@@ -156,6 +160,7 @@ URL rather than overwriting an existing object.
 - Confirm each audio metadata path exists under `public`.
 - Run `npm run verify:backgrounds` after any background catalog change.
 - Run focused lesson/audio tests.
-- Confirm every story cover path resolves to a checked-in WebP while page media
-  remains explicitly nullable.
+- Confirm every First words page path resolves to a 768x512 checked-in WebP and
+  later page media remains explicitly nullable.
+- Confirm each conversation pose has 384, 768, and 1024 px responsive WebPs.
 - Run `npm run build` so Vite copies the source assets into `dist`.
