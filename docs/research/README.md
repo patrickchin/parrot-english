@@ -28,6 +28,7 @@ Last reviewed: 2026-08-21
 - [Child-first UX integration audit](./child-first-ux-integration.md)
 - [Contrast-safe child actions](./contrast-safe-child-actions.md)
 - [Enabled pink action content contrast](./contrast-safe-child-actions-implementation.md)
+- [Shared focus visibility guidance](./shared-focus-visibility-guidance.md)
 - [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Repeated Talk failure: picture-led lesson fallback](./repeated-talk-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
