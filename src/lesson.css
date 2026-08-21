@@ -30,3 +30,108 @@
     top: 108px;
   }
 }
+
+@media (min-width: 560px) and (max-height: 620px) {
+  [data-presentation="boxed"] .lesson-full-scene-art {
+    left: 27%;
+    top: calc(50% + 1.25rem);
+    max-height: 76dvh;
+    width: min(calc(54% - 1.5rem), 134dvh, 56rem);
+  }
+
+  [data-presentation="boxed"] .lesson-hud,
+  [data-presentation="boxed"] .lesson-dialogue-overlay,
+  [data-presentation="boxed"] .lesson-playback-controls,
+  [data-presentation="boxed"] .lesson-speaking-controls,
+  [data-presentation="boxed"] .lesson-error-banner {
+    right: 0.75rem;
+    left: auto;
+    width: calc(46% - 1.125rem);
+    max-width: none;
+    translate: none;
+    transform: none;
+  }
+
+  [data-presentation="boxed"] .lesson-hud {
+    top: 4rem;
+  }
+
+  [data-presentation="boxed"] .lesson-dialogue-overlay {
+    top: 8rem;
+    max-height: calc(100dvh - 13rem);
+    overflow: hidden;
+  }
+
+  [data-presentation="boxed"] .lesson-dialogue-overlay > p,
+  [data-presentation="boxed"] .lesson-user-prompt-copy > p {
+    max-height: calc(100dvh - 16.25rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  [data-presentation="boxed"] .lesson-playback-controls,
+  [data-presentation="boxed"] .lesson-speaking-controls {
+    bottom: 0.75rem;
+    justify-content: center;
+  }
+
+  [data-presentation="boxed"] .lesson-error-banner {
+    bottom: 5rem;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 620px) {
+  [data-presentation="boxed"] .lesson-full-scene-art {
+    top: calc(50% + 2rem);
+  }
+
+  [data-presentation="boxed"] .lesson-hud {
+    top: 5rem;
+  }
+
+  [data-presentation="boxed"] .lesson-dialogue-overlay {
+    top: 9.875rem;
+    max-height: calc(100dvh - 15.375rem);
+  }
+
+  [data-presentation="boxed"] .lesson-dialogue-overlay > p,
+  [data-presentation="boxed"] .lesson-user-prompt-copy > p {
+    max-height: calc(100dvh - 18.5rem);
+  }
+
+  [data-presentation="boxed"] .lesson-error-banner {
+    bottom: 5.75rem;
+  }
+}
+
+@media (min-width: 560px) and (max-height: 420px) {
+  [data-presentation="boxed"] .lesson-dialogue-overlay {
+    border-radius: 1rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  [data-presentation="boxed"] .lesson-dialogue-overlay > p,
+  [data-presentation="boxed"] .lesson-user-prompt-copy > p {
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  [data-presentation="boxed"] .lesson-user-prompt-with-portrait {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: left;
+  }
+
+  [data-presentation="boxed"] .lesson-user-portrait {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin: 0;
+    flex: 0 0 auto;
+    border-radius: 1rem;
+  }
+
+  [data-presentation="boxed"] .lesson-user-prompt-copy {
+    flex: 1 1 auto;
+  }
+}

@@ -69,6 +69,7 @@ export function LessonStage({
           "relative isolate h-full w-full overflow-hidden bg-sky-300",
           presentation === "boxed" && "bg-conversation",
         )}
+        data-presentation={presentation}
       >
         {presentation === "layered" ? (
           <>
@@ -94,7 +95,7 @@ export function BoxedFullSceneStage({ image }: { image: FullSceneImage }) {
   return (
     <section
       aria-label="Lesson artwork"
-      className="absolute left-1/2 top-1/2 z-10 aspect-video max-h-[52dvh] w-[min(calc(100%_-_2rem),92dvh,56rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card"
+      className="lesson-full-scene-art absolute left-1/2 top-1/2 z-10 aspect-video max-h-[52dvh] w-[min(calc(100%_-_2rem),92dvh,56rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card"
       role="region"
     >
       <img
@@ -384,30 +385,35 @@ export function LessonUserPrompt({
   return (
     <section
       aria-label="Your turn"
-      className="lesson-dialogue-overlay lesson-user-prompt absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface short:top-32 min-[340px]:px-4 min-[340px]:py-3 md:top-28 md:px-7 md:py-4"
+      className={cx(
+        "lesson-dialogue-overlay lesson-user-prompt absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface short:top-32 min-[340px]:px-4 min-[340px]:py-3 md:top-28 md:px-7 md:py-4",
+        portrait && "lesson-user-prompt-with-portrait",
+      )}
       role="region"
     >
       {portrait ? (
         <img
           alt="You in storybook style"
-          className="mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24"
+          className="lesson-user-portrait mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24"
           src={portrait.src}
         />
       ) : null}
-      <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
-        {status === "checking" || status === "opening" ? (
-          <LoaderCircle
-            aria-hidden="true"
-            className="size-4 animate-spin motion-reduce:animate-none"
-          />
-        ) : (
-          <Mic aria-hidden="true" className="size-4" />
-        )}
-        {promptLabel}
-      </span>
-      <p className="m-0 text-base font-black leading-[1.15] min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]">
-        {dialogue}
-      </p>
+      <div className="lesson-user-prompt-copy min-w-0">
+        <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
+          {status === "checking" || status === "opening" ? (
+            <LoaderCircle
+              aria-hidden="true"
+              className="size-4 animate-spin motion-reduce:animate-none"
+            />
+          ) : (
+            <Mic aria-hidden="true" className="size-4" />
+          )}
+          {promptLabel}
+        </span>
+        <p className="m-0 text-base font-black leading-[1.15] min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]">
+          {dialogue}
+        </p>
+      </div>
     </section>
   );
 }
@@ -475,7 +481,7 @@ export function LessonPlaybackControls({
   return (
     <nav
       aria-label="Lesson playback controls"
-      className="absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 md:bottom-6 md:gap-3"
+      className="lesson-playback-controls absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 md:bottom-6 md:gap-3"
     >
       <IconButton
         aria-label="Previous scene"
@@ -536,7 +542,7 @@ export function LessonSpeakingControls({
   return (
     <nav
       aria-label="Speaking controls"
-      className="absolute bottom-3 left-1/2 z-40 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 justify-center gap-2 md:bottom-6 md:max-w-lg md:gap-2.5"
+      className="lesson-speaking-controls absolute bottom-3 left-1/2 z-40 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 justify-center gap-2 md:bottom-6 md:max-w-lg md:gap-2.5"
     >
       {isEvaluating ? (
         <span
@@ -615,7 +621,7 @@ export function LessonErrorBanner({
 
   return (
     <div
-      className="absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white bg-red-800 px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base"
+      className="lesson-error-banner absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white bg-red-800 px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base"
       role="alert"
     >
       <p className="m-0">{error}</p>

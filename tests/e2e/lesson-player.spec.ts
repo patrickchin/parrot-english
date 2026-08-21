@@ -11,6 +11,13 @@ const viewports = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
+const boxedLandscapeViewports = [
+  { name: "small phone landscape", width: 640, height: 360 },
+  { name: "large phone landscape", width: 768, height: 360 },
+  { name: "wide short window", width: 1280, height: 360 },
+  { name: "short tablet", width: 768, height: 600 },
+];
+
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
@@ -65,6 +72,20 @@ async function expectNoPageOverflow(page: Page) {
       })),
     )
     .toEqual({ horizontal: false, vertical: false });
+}
+
+async function expectContainedBy(child: Locator, parent: Locator) {
+  const childBox = await visibleBox(child);
+  const parentBox = await visibleBox(parent);
+
+  expect(childBox.x).toBeGreaterThanOrEqual(parentBox.x);
+  expect(childBox.y).toBeGreaterThanOrEqual(parentBox.y);
+  expect(childBox.x + childBox.width).toBeLessThanOrEqual(
+    parentBox.x + parentBox.width,
+  );
+  expect(childBox.y + childBox.height).toBeLessThanOrEqual(
+    parentBox.y + parentBox.height,
+  );
 }
 
 async function installAudioDelay(
@@ -172,6 +193,47 @@ async function mockLongDialogueLesson(page: Page) {
       }),
     });
   });
+}
+
+async function mockSavedLessonPortrait(page: Page) {
+  await page.route(
+    /\/api\/stories\/the-red-ball\/personalized-art(?:\/asset)?(?:\?.*)?$/,
+    async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (pathname.endsWith("/asset")) {
+        await route.fulfill({
+          body: [
+            '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">',
+            '<rect width="96" height="96" rx="20" fill="#ffcf40"/>',
+            '<circle cx="48" cy="39" r="20" fill="#f5b895"/>',
+            '<path d="M20 96c2-25 16-36 28-36s26 11 28 36" fill="#315f89"/>',
+            "</svg>",
+          ].join(""),
+          contentType: "image/svg+xml",
+        });
+        return;
+      }
+
+      await route.fulfill({
+        body: JSON.stringify({
+          enabled: true,
+          hasStoredArt: true,
+          stories: {
+            "the-red-ball": {
+              pages: {
+                "my-red-ball": {
+                  alt: "A child holding a bright red ball",
+                  src: "/api/stories/the-red-ball/personalized-art/asset?v=1787276800000",
+                },
+              },
+            },
+          },
+          updatedAt: "2026-08-21T00:00:00.000Z",
+        }),
+        contentType: "application/json",
+      });
+    },
+  );
 }
 
 test("the start state introduces the lesson without premature scene UI", async ({
@@ -320,6 +382,106 @@ for (const viewport of viewports) {
     await expectNoPageOverflow(page);
   });
 }
+
+for (const viewport of boxedLandscapeViewports) {
+  test(`boxed lesson keeps its learning layers separate on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(lessonPath);
+    await installAudioDelay(page, 5_000);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status").filter({
+      hasText: "Look! My ball!",
+    });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+
+    const artworkBox = await expectInsideViewport(artwork, viewport);
+    expect(artworkBox.width).toBeGreaterThanOrEqual(300);
+    expect(artworkBox.height).toBeGreaterThanOrEqual(165);
+    await expectInsideViewport(hud, viewport);
+    await expectInsideViewport(speech, viewport);
+    await expectInsideViewport(controls, viewport);
+    await expectLeftOf(artwork, hud);
+    await expectLeftOf(artwork, speech);
+    await expectLeftOf(artwork, controls);
+    await expectNoOverlap(artwork, hud);
+    await expectNoOverlap(artwork, speech);
+    await expectNoOverlap(artwork, controls);
+    await expectBefore(hud, speech);
+    await expectNoOverlap(speech, controls);
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "small phone landscape", width: 640, height: 360 },
+  { name: "large phone landscape", width: 768, height: 360 },
+]) {
+  test(`the longest built-in lesson line stays readable on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    const finalLine =
+      "Great job, Bella! Peppa and Dolly are playing together!";
+    await page.setViewportSize(viewport);
+    await page.goto("/lessons/parrot/04-playground-words/scenes/5");
+    await installAudioDelay(page, 25, {
+      delayMs: 5_000,
+      source: "playground-narrator-finished-bella",
+    });
+    await page.getByRole("button", { name: "Start lesson" }).click();
+    await waitForLearnerTurn(page);
+    await page.getByRole("button", { name: "Skip speaking turn" }).click();
+
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const narration = page.getByRole("status", { name: "Lesson narration" });
+    const line = narration.getByText(finalLine, { exact: true });
+
+    await expect(line).toBeVisible();
+    await expectInsideViewport(narration, viewport);
+    await expectLeftOf(artwork, narration);
+    await expectNoOverlap(artwork, narration);
+    await expect
+      .poll(() =>
+        line.evaluate(
+          (element) => element.scrollHeight <= element.clientHeight,
+        ),
+      )
+      .toBe(true);
+  });
+}
+
+test("a saved portrait stays inside a boxed learner turn in short landscape", async ({
+  page,
+}) => {
+  const viewport = { width: 640, height: 360 };
+  await page.setViewportSize(viewport);
+  await mockSavedLessonPortrait(page);
+  await page.goto(lessonPath);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  await waitForLearnerTurn(page);
+
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  const prompt = page.getByRole("region", { name: "Your turn" });
+  const portrait = prompt.getByRole("img", { name: "You in storybook style" });
+  const controls = page.getByRole("navigation", { name: "Speaking controls" });
+
+  const portraitBox = await expectInsideViewport(portrait, viewport);
+  expect(portraitBox.width).toBeGreaterThanOrEqual(44);
+  expect(portraitBox.height).toBeGreaterThanOrEqual(44);
+  await expectContainedBy(portrait, prompt);
+  await expectLeftOf(artwork, prompt);
+  await expectLeftOf(artwork, controls);
+  await expectNoOverlap(artwork, prompt);
+  await expectNoOverlap(artwork, controls);
+  await expectNoOverlap(prompt, controls);
+  await expectNoPageOverflow(page);
+});
 
 test("playback controls pause, resume, and navigate between scenes", async ({
   page,

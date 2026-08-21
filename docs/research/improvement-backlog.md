@@ -73,11 +73,13 @@ the picture and controls fixed and lets only the right content pane scroll.
 Complete control containment now passes at 640×360 and 1280×360 without a test
 helper scrolling first.
 
-The next visual branch is `codex/lesson-speech-short-landscape`. The same audit
-found that the active lesson speech panel can obscure most of the scene art in
-a short landscape. The investigation should preserve the spoken line, speaker
-identity, progress, and controls while keeping enough unobscured picture context
-for a beginner to understand the line.
+The next stacked visual branch, `codex/lesson-speech-short-landscape`, is
+implemented for ready-made boxed lessons. The same audit found that the active
+lesson speech panel covered 53–59% of the scene artwork at 360 px height. Its
+two-pane layout preserves the complete spoken line, speaker identity, progress,
+controls, and picture context. The generated layered presentation remains the
+next visual follow-up because its character distribution and speech tail need a
+coordinated placement decision.
 
 ### Hand-off record
 
@@ -126,6 +128,21 @@ Retain, revise, or reject: retain
 Next question: Can short-landscape lesson speech preserve both legible words and enough picture context?
 ```
 
+```text
+Branch: codex/lesson-speech-short-landscape
+Base branch / dependency: codex/story-controls-short-landscape
+Commit: pending hand-off commit
+Hypothesis: stable picture and learning panes let a beginner see what a spoken line means without removing its words, state, progress, or controls
+Changed: boxed-stage presentation hook, two-pane short-wide geometry, compact portrait prompt, true non-overlap browser assertions, longest-line and saved-portrait cases, screenshots, research memo
+Not changed: layered generated-lesson geometry, lesson scripts, audio timing, normal-height presentation
+Tests: 23 focused lesson-player Chromium cases passed; 610 unit/lifecycle passed; 118 Chromium passed in 36.9 seconds with four workers; build passed; lint 0 errors with 2 pre-existing generated-file warnings
+Screenshots / traces: artifacts/ux-review/lesson-speech-short-landscape at 560×360, 640×360, 768×360, 1280×360, and 768×600
+Measured result: 640×360 artwork coverage changed from 53.2% to 0%; art is 321.6×180.9 px with an 18 px gutter and stable right-pane controls
+Risks / limitations: layered lessons still overlap at 640×360; safe-area and direct child comprehension remain untested
+Retain, revise, or reject: retain for boxed lessons
+Next question: Can layered characters and speech form the same stable relationship without a misleading speech tail?
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -137,7 +154,9 @@ branches.
 2. **High: story controls are initially off-screen at 640×360.** Fixed on
    `codex/story-controls-short-landscape` at `445dad4`.
 3. **High: short-landscape lesson speech obscures most of the scene artwork.**
-   Audit the `short-wide` speech placement after story controls.
+   Fixed for ready-made boxed lessons on
+   `codex/lesson-speech-short-landscape`; layered generated lessons remain the
+   next stacked visual branch.
 4. **High: all ready-made retry lines call the signed-in learner Mia “Bella.”**
    Separate authored character data from the current learner name, or use
    name-free retry language.
