@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-08-21
 Status: implemented on `codex/lesson-speech-short-landscape`
-Implementation commit: pending hand-off commit
+Implementation commit: `257b41c`
 Audience: young beginner English learners using ready-made lessons sideways
 
 ## Question and scope

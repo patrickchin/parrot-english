@@ -131,7 +131,7 @@ Next question: Can short-landscape lesson speech preserve both legible words and
 ```text
 Branch: codex/lesson-speech-short-landscape
 Base branch / dependency: codex/story-controls-short-landscape
-Commit: pending hand-off commit
+Commit: 257b41c
 Hypothesis: stable picture and learning panes let a beginner see what a spoken line means without removing its words, state, progress, or controls
 Changed: boxed-stage presentation hook, two-pane short-wide geometry, compact portrait prompt, true non-overlap browser assertions, longest-line and saved-portrait cases, screenshots, research memo
 Not changed: layered generated-lesson geometry, lesson scripts, audio timing, normal-height presentation
