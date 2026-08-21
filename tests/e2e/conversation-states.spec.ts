@@ -72,18 +72,18 @@ test("each purpose has its own framing and only profile flows offer save complet
   ).toBeVisible();
 });
 
-test("the cold-start state gives an honest wait without showing turn controls", async ({
+test("the start tap immediately gives a literal wait without showing turn controls", async ({
   page,
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
   await startSmallChat(page);
 
   await expect(page.getByRole("status")).toContainText(
-    "Waking up Peppa",
+    "Getting ready",
   );
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("Peppa is waking up");
+  ).toContainText("Starting the voice chat");
   await expect(
     page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
@@ -109,10 +109,10 @@ test("reconnecting and error states keep recovery language in the same stage", a
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
   await startSmallChat(page);
-  await expect(page.getByRole("status")).toContainText("Connecting again");
+  await expect(page.getByRole("status")).toContainText("Trying again");
   await expect(
     page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("Your words are safe");
+  ).toContainText("The connection stopped");
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
   await startSmallChat(page);
