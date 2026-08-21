@@ -164,6 +164,17 @@ and all target viewports. Screen-reader announcement order, real autoplay and
 permission behavior, after-state visual review, and child/caregiver
 comprehension remain explicit validation gates.
 
+The parallel first-use language, timing, and visual audits are complete on
+`codex/first-use-ux-audit`. Their synthesis selects
+`codex/profile-acknowledgment-control` as the next bounded branch: optional
+audio must never navigate, the existing **Next** action becomes the sole
+advance owner, and the acknowledgment heading receives focus when it replaces
+the submitted question. The following stacked branch is
+`codex/profile-fallback-viewport-stability`, which reserves the profile art and
+keeps profile context and actions visible at the four responsive targets. This
+order fixes deterministic content loss before layout and lets the layout branch
+test a stable, child-paced acknowledgment boundary.
+
 ### Hand-off record
 
 ```text
@@ -422,6 +433,19 @@ Measured result: pending feedback renders below 100 ms in deterministic in-page 
 Risks / limitations: local in-app Browser and deterministic transport only; no target-browser clean autoplay profile, real permission prompt/media device, VoiceOver/TalkBack/NVDA/switch observation, localization review, or direct child/caregiver study
 Retain, revise, or reject: retain provisionally pending the documented platform, assistive-technology, visual, and formative checks
 Next question: Which remaining first-use surface causes the largest avoidable content shift, hidden action, or language burden for a young English beginner?
+```
+
+```text
+Branch: codex/first-use-ux-audit
+Base branch / dependency: codex/talk-direct-action-feedback documentation hand-off 7e3bf1d
+Evidence commits: b570605, 29d66b0, 691afeb; Talk visual follow-up fc09750
+Changed: durable language, timing, and visual audits; first-use synthesis; source-register and backlog decisions; eight genuine after-state Talk screenshots
+Not changed: product UI, profile flow, APIs, audio, persistence, telemetry, dependencies, or child-facing copy
+Observed: acknowledgment navigation is owned by audio end/error/rejection or a 1.8-second timer; focus falls to BODY; profile setup shifts 208px and hides its 640x360 action; retained scroll hides the next heading; 280px question controls cross the fold
+Selected next branch: codex/profile-acknowledgment-control
+Next stacked branch: codex/profile-fallback-viewport-stability
+Risks / limitations: deterministic local browser and source evidence only; no child/caregiver, target-AT, target-device, production-latency, or broad localization study
+Next question: Can explicit Next preserve every acknowledgment and hand focus to each new step without adding copy or changing audio?
 ```
 
 ## Newly observed defects

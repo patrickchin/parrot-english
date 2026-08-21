@@ -29,6 +29,9 @@ Last reviewed: 2026-08-21
 - [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Repeated Talk failure: picture-led lesson fallback](./repeated-talk-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
+- [First-use UX audit synthesis](./first-use-ux-audit-synthesis.md)
+- [First-use timing and state-stability audit](./first-use-timing-stability-audit.md)
+- [First-use visual hierarchy audit](./first-use-visual-hierarchy-audit.md)
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Lesson start state stability](./lesson-start-stability.md)
 - [Lesson speech in short landscape](./lesson-speech-short-landscape.md)
@@ -43,6 +46,7 @@ Last reviewed: 2026-08-21
 - [Story controls in short landscape](./story-controls-short-landscape.md)
 - [Direct Talk action feedback: sound and microphone](./talk-direct-action-feedback.md)
 - [Talk state clarity: one primary signal at a time](./talk-state-clarity.md)
+- [Child-facing interface language audit](./child-interface-language-audit.md)
 - [Literal voice-state feedback implementation](./voice-state-feedback.md)
 - [Voice fallback speaking practice](./voice-fallback-practice.md)
 
