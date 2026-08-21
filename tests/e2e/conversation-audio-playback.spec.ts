@@ -89,7 +89,9 @@ for (const viewport of viewports) {
     await expectNoPageScroll(page);
 
     await expect(status).toHaveText(/Peppa’s turn/);
-    await expect(page.getByRole("button", { name: "Listen to Peppa" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Listen to Peppa" }),
+    ).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Tap for sound" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Tap, then talk" })).toBeVisible({
       timeout: 3_000,

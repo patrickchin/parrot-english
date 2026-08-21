@@ -103,7 +103,7 @@ export function selectConversationWaitFeedback({
   if (status === "reconnecting") {
     if (stage === 0) return {
       label: "Trying again",
-      text: "The connection stopped. Trying again.",
+      text: "The chat stopped.",
     };
     if (stage === 1) return {
       label: "Trying again",
@@ -122,22 +122,22 @@ export function selectConversationWaitFeedback({
     return savingProfile
       ? {
           label: "Saving your answers",
-          text: "Lovely chat! Saving your answers…",
+          text: "Lovely chat!",
         }
       : {
           label: "Finishing chat",
-          text: "That was fun! Finishing up…",
+          text: "That was fun!",
         };
   }
   if (stage === 1) {
     return savingProfile
       ? {
           label: "Saving your answers",
-          text: "Still saving your answers…",
+          text: "Still working.",
         }
       : {
           label: "Finishing chat",
-          text: "Still finishing the chat…",
+          text: "Still working.",
         };
   }
   return {

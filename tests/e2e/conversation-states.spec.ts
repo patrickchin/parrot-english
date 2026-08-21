@@ -1,41 +1,24 @@
 import { expect, test, type Page } from "@playwright/test";
-import { startSmallChat } from "./conversation-helpers";
+import {
+  startSmallChat,
+  useIncompleteProfile,
+} from "./conversation-helpers";
 
-const incompleteProfile = {
-  canBypass: false,
-  experienceMode: "realtime",
-  mode: "full",
-  profile: {
-    age: null,
-    answers: {
-      legacyAnswers: null,
-      questionnaireVersion: 2,
-      responses: {},
-      schemaVersion: 2,
-    },
-    completedAt: null,
-    currentQuestionKey: "name",
-    name: null,
-    profileStatus: "not_started",
-    questionnaireVersion: 2,
-  },
-  progress: { answered: 0, current: 1, total: 6 },
-  question: {
-    answerKey: "name",
-    audio: null,
-    maxLength: 120,
-    position: 1,
-    promptEn: "What is your name?",
-    promptZh: "你叫什么名字？",
-    required: true,
-  },
-  questionnaire: { version: 2 },
-};
-
-async function useIncompleteProfile(page: Page) {
-  await page.route("**/api/learner-profile", async (route) => {
-    await route.fulfill({ json: incompleteProfile, status: 200 });
-  });
+async function expectAnimationCount(
+  page: Page,
+  count: number,
+  locator = page.getByRole("main"),
+) {
+  await expect
+    .poll(() =>
+      locator.evaluate(
+        (element) =>
+          element
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.playState === "running").length,
+      ),
+    )
+    .toBe(count);
 }
 
 test("each purpose has its own framing and only profile flows offer save completion", async ({
@@ -82,12 +65,24 @@ test("the start tap immediately gives a literal wait without showing turn contro
   await expect(page.getByRole("status")).toContainText(
     "Getting ready",
   );
+  const captions = page.getByRole("region", {
+    name: "Conversation captions",
+  });
+  await expect(captions).toContainText("Starting the voice chat");
+  await expect(captions).not.toContainText("Getting ready");
+  await expect(page.getByText("Getting ready", { exact: true })).toHaveCount(1);
   await expect(
-    page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("Starting the voice chat");
+    page.getByRole("group", { name: "Conversation controls" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
+  await expectAnimationCount(
+    page,
+    0,
+    page.getByRole("img", { exact: true, name: "Peppa" }),
+  );
+  await expectAnimationCount(page, 1);
 });
 
 test("opening audio keeps the learner waiting until Peppa finishes", async ({
@@ -99,7 +94,10 @@ test("opening audio keeps the learner waiting until Peppa finishes", async ({
   await expect(page.getByRole("status")).toContainText("Peppa’s turn");
   await expect(
     page.getByRole("button", { name: "Listen to Peppa" }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Conversation captions" }),
+  ).toContainText("Hello again!");
   await expect(
     page.getByRole("button", { name: "Tap, then talk" }),
   ).toHaveCount(0);
@@ -111,9 +109,20 @@ test("reconnecting and error states keep recovery language in the same stage", a
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
   await startSmallChat(page);
   await expect(page.getByRole("status")).toContainText("Trying again");
+  const reconnectingCaptions = page.getByRole("region", {
+    name: "Conversation captions",
+  });
+  await expect(reconnectingCaptions).toContainText("The chat stopped");
+  await expect(reconnectingCaptions).not.toContainText("Trying again");
   await expect(
-    page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("The connection stopped");
+    page.getByRole("button", { name: "Trying again" }),
+  ).toHaveCount(0);
+  await expectAnimationCount(
+    page,
+    0,
+    page.getByRole("img", { exact: true, name: "Peppa" }),
+  );
+  await expectAnimationCount(page, 1);
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
   await startSmallChat(page);
@@ -187,9 +196,17 @@ test("profile completion uses the stable saving stage", async ({ page }) => {
   await page.goto("/profile/setup?parrotE2eConversation=saving");
 
   await expect(page.getByRole("status")).toContainText("Saving your answers");
-  await expect(
-    page.getByRole("region", { name: "Conversation captions" }),
-  ).toContainText("Saving your answers");
+  const captions = page.getByRole("region", {
+    name: "Conversation captions",
+  });
+  await expect(captions).toContainText("Lovely chat!");
+  await expect(captions).not.toContainText("Saving your answers");
+  await expectAnimationCount(
+    page,
+    0,
+    page.getByRole("img", { exact: true, name: "Peppa" }),
+  );
+  await expectAnimationCount(page, 1);
   await expect(
     page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);

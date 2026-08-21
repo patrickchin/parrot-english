@@ -3,6 +3,7 @@ import { startSmallChat } from "./conversation-helpers";
 
 const viewports = [
   { height: 568, name: "narrow phone", width: 280 },
+  { height: 844, name: "phone", width: 390 },
   { height: 360, name: "short landscape", width: 640 },
   { height: 900, name: "desktop", width: 1440 },
 ];
@@ -22,6 +23,22 @@ function expectSameBox(
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
   expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(1);
   expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(1);
+}
+
+async function controlSlotBox(captions: Locator) {
+  const value = await captions.evaluate((element) => {
+    const slot = element.parentElement?.nextElementSibling;
+    if (!(slot instanceof HTMLElement)) return null;
+    const rect = slot.getBoundingClientRect();
+    return {
+      height: rect.height,
+      width: rect.width,
+      x: rect.x,
+      y: rect.y,
+    };
+  });
+  expect(value).not.toBeNull();
+  return value!;
 }
 
 async function waitForControlMotion(locator: Locator) {
@@ -89,7 +106,13 @@ for (const viewport of viewports) {
     await startSmallChat(page);
 
     const start = page.getByRole("button", { name: "Tap, then talk" });
+    const controls = page.getByRole("group", {
+      name: "Conversation controls",
+    });
+    const finish = page.getByRole("button", { name: "Finish chat" });
     const before = await box(start);
+    const controlsBefore = await box(controls);
+    const finishBefore = await box(finish);
     await start.click();
     await page.mouse.move(1, 1);
 
@@ -106,10 +129,43 @@ for (const viewport of viewports) {
 
     await end.click();
     await page.mouse.move(1, 1);
-    const waiting = page.getByRole("button", { name: "Waiting for Peppa" });
-    await waitForControlMotion(waiting);
-    const afterEnd = await box(waiting);
-    expectSameBox(before, afterEnd);
+    await expect(page.getByRole("status")).toHaveText("Thinking");
+    await expect(
+      page.getByRole("button", { name: "Waiting for Peppa" }),
+    ).toHaveCount(0);
+    expectSameBox(controlsBefore, await box(controls));
+    expectSameBox(finishBefore, await box(finish));
+    await expectNoPageScroll(page);
+  });
+
+  test(`remote wait, Peppa speech, and learner turn keep their slots stable on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+
+    await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
+    await startSmallChat(page);
+    await expect(page.getByRole("status")).toContainText("Getting ready");
+    const captions = page.getByRole("region", {
+      name: "Conversation captions",
+    });
+    const waitingCaption = await box(captions);
+    const waitingControls = await controlSlotBox(captions);
+
+    await page.goto("/talk-to-peppa?parrotE2eConversation=opening-speaking");
+    await startSmallChat(page);
+    await expect(page.getByRole("status")).toContainText("Peppa’s turn");
+    expectSameBox(waitingCaption, await box(captions));
+    expectSameBox(waitingControls, await controlSlotBox(captions));
+
+    await page.goto("/talk-to-peppa");
+    await startSmallChat(page);
+    await expect(
+      page.getByRole("button", { name: "Tap, then talk" }),
+    ).toBeVisible();
+    await expect(page.getByRole("status")).toContainText("Your turn");
+    expectSameBox(waitingCaption, await box(captions));
+    expectSameBox(waitingControls, await controlSlotBox(captions));
     await expectNoPageScroll(page);
   });
 }

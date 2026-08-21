@@ -159,6 +159,23 @@ describe("accessible realtime conversation surface", () => {
     });
     assert.match(connecting, /Getting ready/);
     assert.match(connecting, /Starting the voice chat/);
+    const document = new Window().document;
+    document.body.innerHTML = connecting;
+    const status = document.querySelector('[role="status"]');
+    const captions = document.querySelector(
+      '[aria-label="Conversation captions"]',
+    );
+    assert.ok(status);
+    assert.ok(captions);
+    assert.equal(
+      status.textContent.replace(/\s+/g, " ").trim(),
+      "Getting ready. Starting the voice chat.",
+    );
+    assert.doesNotMatch(captions.textContent, /Getting ready/);
+    assert.equal(
+      document.querySelector('[role="group"][aria-label="Conversation controls"]'),
+      null,
+    );
     assert.doesNotMatch(connecting, /Tap, then talk|I’m done/);
     assert.doesNotMatch(connecting, /Repeat Peppa|Response latency|Timing…/);
     assert.doesNotMatch(connecting, /Type instead|Type your answer|>Send</);
@@ -255,7 +272,8 @@ describe("accessible realtime conversation surface", () => {
       ],
     });
     assert.match(openingSpeech, /Peppa’s turn/);
-    assert.match(openingSpeech, /Listen to Peppa/);
+    assert.match(openingSpeech, /Hello! I am Peppa\./);
+    assert.doesNotMatch(openingSpeech, /Listen to Peppa/);
     assert.doesNotMatch(openingSpeech, /Tap, then talk|I’m done/);
 
     const reconnecting = render({
@@ -293,6 +311,12 @@ describe("accessible realtime conversation surface", () => {
 
     assert.match(html, /Listen to Peppa/);
     assert.doesNotMatch(html, /What is your name/);
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    assert.equal(
+      document.querySelector('button[aria-label="Listen to Peppa"]'),
+      null,
+    );
   });
 
   it("keeps growing transcripts visual and announces the stable turn status once", () => {
@@ -379,11 +403,20 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /aria-live="polite"/);
     assert.doesNotMatch(html, /aria-busy/);
     assert.match(html, /Thinking/);
-    assert.match(html, /Waiting for Peppa/);
     assert.match(html, /Your turn is done. Wait for Peppa/);
+    assert.doesNotMatch(html, /aria-label="Waiting for Peppa"/);
     assert.doesNotMatch(html, /What do you like to do/);
     assert.doesNotMatch(html, /response latency|Reply:|Timing…/i);
     assert.doesNotMatch(html, /Tap, then talk|I’m done/);
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    assert.equal(
+      document
+        .querySelector('[role="status"]')
+        ?.textContent.replace(/\s+/g, " ")
+        .trim(),
+      "Thinking. Your turn is done. Wait for Peppa.",
+    );
   });
 
   it("shows only Peppa's latest speech and removes transcript history and developer controls", () => {
@@ -509,6 +542,24 @@ describe("accessible realtime conversation surface", () => {
     });
 
     assert.match(html, /Saving your answers/);
+    assert.match(html, /Lovely chat!/);
+    const document = new Window().document;
+    document.body.innerHTML = html;
+    const status = document.querySelector('[role="status"]');
+    const captions = document.querySelector(
+      '[aria-label="Conversation captions"]',
+    );
+    assert.ok(status);
+    assert.ok(captions);
+    assert.equal(
+      status.textContent.replace(/\s+/g, " ").trim(),
+      "Saving your answers. Lovely chat!",
+    );
+    assert.doesNotMatch(captions.textContent, /Saving your answers/);
+    assert.equal(
+      document.querySelector('[role="group"][aria-label="Conversation controls"]'),
+      null,
+    );
     assert.doesNotMatch(html, /Here’s what I heard/);
     assert.doesNotMatch(html, /aria-label="Edit About this learner"/);
     assert.doesNotMatch(html, /<textarea/);

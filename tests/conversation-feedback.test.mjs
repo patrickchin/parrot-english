@@ -80,10 +80,16 @@ describe("child-friendly conversation wait feedback", () => {
 
   it("distinguishes ordinary chat finishing from profile saving", () => {
     assert.equal(feedback("saving", 0).label, "Finishing chat");
+    assert.equal(feedback("saving", 0).text, "That was fun!");
     assert.equal(
       feedback("saving", 0, { purpose: "onboarding" }).label,
       "Saving your answers",
     );
+    assert.equal(
+      feedback("saving", 0, { purpose: "onboarding" }).text,
+      "Lovely chat!",
+    );
+    assert.equal(feedback("saving", 8_000).text, "Still working.");
     assert.equal(feedback("saving", 18_000).action, "leave");
     assert.equal(feedback("reconnecting", 18_000).action, "retry");
     assert.equal(
@@ -91,6 +97,10 @@ describe("child-friendly conversation wait feedback", () => {
       "lesson",
     );
     assert.equal(feedback("reconnecting", 0).label, "Trying again");
+    assert.equal(
+      feedback("reconnecting", 0).text,
+      "The chat stopped.",
+    );
     assert.equal(feedback("reconnecting", 8_000).label, "Trying again");
     assert.doesNotMatch(feedback("reconnecting", 0).text, /safe|saved/i);
     assert.equal(

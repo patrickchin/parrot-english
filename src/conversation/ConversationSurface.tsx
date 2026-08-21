@@ -241,6 +241,7 @@ function ConversationStatus({
   purpose,
   status,
   waitFeedback,
+  waitDetailIsVisibleTranscript,
 }: {
   audioPlaybackBlocked: boolean;
   audioPlaybackBusy: boolean;
@@ -250,8 +251,15 @@ function ConversationStatus({
   purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
   waitFeedback: ConversationWaitFeedback | null;
+  waitDetailIsVisibleTranscript: boolean;
 }) {
   const waitComplete = Boolean(waitFeedback?.action);
+  const announceWaitDetail = Boolean(
+    waitFeedback &&
+      !waitDetailIsVisibleTranscript &&
+      !audioPlaybackBlocked &&
+      !audioPlaybackBusy,
+  );
   const busy =
     audioPlaybackBusy ||
     (!audioPlaybackBlocked &&
@@ -307,23 +315,27 @@ function ConversationStatus({
           )}
         />
       )}
-      {statusLabel(
-        audioPlaybackBlocked,
-        audioPlaybackBusy,
-        status,
-        microphoneBusy,
-        microphoneEnabled,
-        purpose,
-        waitFeedback,
-      )}
-      {waitComplete && !audioPlaybackBlocked && !audioPlaybackBusy ? (
+      <span>
+        {statusLabel(
+          audioPlaybackBlocked,
+          audioPlaybackBusy,
+          status,
+          microphoneBusy,
+          microphoneEnabled,
+          purpose,
+          waitFeedback,
+        )}
+      </span>
+      {announceWaitDetail ? (
         <span className="sr-only">
           . {waitFeedback?.text}{" "}
           {waitFeedback?.action === "retry"
             ? "Try chat again."
             : waitFeedback?.action === "lesson"
               ? "Play a lesson."
-              : "Back."}
+              : waitComplete
+                ? "Back."
+                : null}
         </span>
       ) : null}
     </p>
@@ -331,7 +343,7 @@ function ConversationStatus({
 }
 
 type Caption = {
-  label: string;
+  label: string | null;
   role: "alert" | undefined;
   text: string;
   transcript: "final" | "live" | null;
@@ -397,7 +409,7 @@ function selectCaption({
   }
   if (status === "connecting") {
     return {
-      label: waitFeedback?.label ?? "Getting ready",
+      label: null,
       role: undefined,
       text: waitFeedback?.text ?? "Starting the voice chat.",
       transcript: null,
@@ -405,17 +417,17 @@ function selectCaption({
   }
   if (status === "reconnecting") {
     return {
-      label: waitFeedback?.label ?? "Trying again",
+      label: null,
       role: undefined,
-      text: waitFeedback?.text ?? "The connection stopped. Trying again.",
+      text: waitFeedback?.text ?? "The connection stopped.",
       transcript: null,
     };
   }
   if (status === "saving") {
     return {
-      label: waitFeedback?.label ?? "Finishing",
+      label: null,
       role: undefined,
-      text: waitFeedback?.text ?? "Finishing up…",
+      text: waitFeedback?.text ?? "That was fun!",
       transcript: null,
     };
   }
@@ -432,11 +444,7 @@ function selectCaption({
       liveTranscript && waitFeedback?.showLearnerAnswer,
     );
     return {
-      label: showLearnerAnswer
-        ? "You said"
-        : waitFeedback?.action
-          ? waitFeedback.label
-          : "Please wait",
+      label: showLearnerAnswer ? "You said" : null,
       role: undefined,
       text: showLearnerAnswer
         ? liveTranscript
@@ -522,11 +530,16 @@ function ConversationCaptions({
             className="min-w-0"
             role={caption.label === "Peppa" ? "blockquote" : undefined}
           >
-            <span className="text-xs font-black uppercase tracking-wide opacity-70 short:text-[0.65rem] sm:text-sm">
-              {caption.label}
-            </span>
+            {caption.label ? (
+              <span className="text-xs font-black uppercase tracking-wide opacity-70 short:text-[0.65rem] sm:text-sm">
+                {caption.label}
+              </span>
+            ) : null}
             <p
-              className="m-0 mt-1 text-base font-black leading-snug sm:text-xl"
+              className={cx(
+                "m-0 text-base font-black leading-snug sm:text-xl",
+                caption.label && "mt-1",
+              )}
               role={caption.role}
             >
               {caption.text}
@@ -550,35 +563,6 @@ function ConversationCaptions({
         </div>
       </div>
     </div>
-  );
-}
-
-function WaitingTurnControl({ status }: { status: ConversationSurfaceStatus }) {
-  const speaking = status === "speaking";
-  return (
-    <ActionButton
-      aria-label={speaking ? "Listen to Peppa" : "Waiting for Peppa"}
-      className="whitespace-nowrap short:gap-2 short:px-2 short:text-sm"
-      disabled
-      fullWidth
-      size="large"
-      type="button"
-      variant="surface"
-    >
-      {speaking ? (
-        <Volume2 aria-hidden="true" />
-      ) : (
-        <LoaderCircle
-          aria-hidden="true"
-          className="animate-spin motion-reduce:animate-none"
-        />
-      )}
-      {status === "reconnecting"
-        ? "Trying again"
-        : speaking
-          ? "Listen to Peppa"
-          : "Wait for Peppa"}
-    </ActionButton>
   );
 }
 
@@ -665,11 +649,20 @@ export function ConversationSurface({
   const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
   const recoveryAction = recoveryFeedback?.action;
   const peppaStatus = recoveryAction ? "error" : status;
+  const peppaIsStatic = isTimedStatus(status);
   const showFinish =
     canFinish &&
     finishLabel &&
     !recoveryAction &&
     !["ready", "connecting", "error", "saving"].includes(status);
+  const hasConversationControls = Boolean(
+    showPromptStyleSetup ||
+      recoveryAction ||
+      status === "error" ||
+      showAudioRecovery ||
+      showTurnControl ||
+      showFinish,
+  );
 
   useEffect(() => {
     if (!turnInteractive) return;
@@ -707,6 +700,7 @@ export function ConversationSurface({
           purpose={purpose}
           status={status}
           waitFeedback={recoveryFeedback}
+          waitDetailIsVisibleTranscript={caption.transcript === "final"}
         />
 
         <figure className="m-0 grid h-full min-h-0 w-full place-items-center short-wide:col-start-1 short-wide:row-span-4 short-wide:row-start-1">
@@ -726,7 +720,11 @@ export function ConversationSurface({
           ) : (
             <img
               alt="Peppa"
-              className="h-full min-h-0 w-full max-w-sm animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-w-32 short-wide:max-w-56 sm:max-w-md"
+              className={cx(
+                "h-full min-h-0 w-full max-w-sm object-contain drop-shadow-lg short:max-w-32 short-wide:max-w-56 sm:max-w-md",
+                !peppaIsStatic &&
+                  "animate-float motion-reduce:animate-none",
+              )}
               decoding="async"
               height={1024}
               sizes="(max-height: 420px) 14rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
@@ -750,14 +748,16 @@ export function ConversationSurface({
         />
 
         <div
-          aria-label="Conversation controls"
+          aria-label={
+            hasConversationControls ? "Conversation controls" : undefined
+          }
           className={cx(
-            "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12",
+            "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12 md:min-h-16",
             showFinish &&
               "grid-cols-[minmax(0,1fr)_auto]",
             "short-wide:col-start-2 short-wide:row-start-4",
           )}
-          role="group"
+          role={hasConversationControls ? "group" : undefined}
         >
           {showPromptStyleSetup ? (
             <div className="grid w-full gap-1.5">
@@ -932,10 +932,11 @@ export function ConversationSurface({
                 </small>
               </span>
             </ActionButton>
-          ) : ["thinking", "speaking", "reconnecting"].includes(status) ? (
-            <WaitingTurnControl status={status} />
           ) : (
-            <span aria-hidden="true" className="block h-14 short:h-12" />
+            <span
+              aria-hidden="true"
+              className="block h-14 short:h-12 md:h-16"
+            />
           )}
 
           {showFinish ? (

@@ -1,5 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { startSmallChat } from "./conversation-helpers";
+import {
+  startSmallChat,
+  useIncompleteProfile,
+} from "./conversation-helpers";
 
 const viewports = [
   { height: 568, name: "narrow phone", width: 280 },
@@ -52,7 +55,10 @@ async function expectAnimationCount(locator: Locator, count: number) {
   await expect
     .poll(() =>
       locator.evaluate(
-        (element) => element.getAnimations({ subtree: true }).length,
+        (element) =>
+          element
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.playState === "running").length,
       ),
     )
     .toBe(count);
@@ -93,18 +99,23 @@ for (const viewport of viewports) {
       name: "Conversation controls",
     });
     const status = page.getByRole("status");
-    const waiting = page.getByRole("button", { name: "Waiting for Peppa" });
+    const peppa = page.getByRole("img", { exact: true, name: "Peppa" });
 
     await expect(status).toContainText("Thinking");
     await expectNoBusyAttribute(status);
     await expectActiveAnimation(status);
+    await expectAnimationCount(peppa, 0);
+    await expectAnimationCount(controls, 0);
+    await expectAnimationCount(page.getByRole("main"), 1);
     await expect(captions).toContainText("You said");
     await expect(captions).toContainText("My name is Mia");
     await expect(
       page.getByRole("button", { name: "Finish chat" }),
     ).toBeVisible();
-    const waitingBox = await box(waiting);
     const controlsBox = await box(controls);
+    await expect(
+      page.getByRole("button", { name: "Waiting for Peppa" }),
+    ).toHaveCount(0);
 
     await page.clock.fastForward(1_800);
     await expect(captions).toContainText("Wait for Peppa.");
@@ -120,14 +131,16 @@ for (const viewport of viewports) {
     await expect(status).toContainText("Try chat again");
     await expectNoBusyAttribute(status);
     await expectAnimationCount(status, 0);
-    await expect(captions).toContainText("Chat paused");
+    await expect(captions).not.toContainText("Chat paused");
     await expect(captions).toContainText(
       "Peppa did not answer.",
     );
     await expect(captions).not.toContainText("Tap Try chat again");
     await expect(captions).not.toContainText("My name is Mia");
     await expect(retry).toBeVisible();
-    await expect(waiting).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Waiting for Peppa" }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Finish chat" }),
     ).toBeHidden();
@@ -138,8 +151,8 @@ for (const viewport of viewports) {
     );
 
     const retryBox = await box(retry);
-    expectSameControlRow(waitingBox, retryBox);
-    expect(retryBox.width).toBeGreaterThanOrEqual(waitingBox.width);
+    expectSameControlRow(controlsBox, retryBox);
+    expect(retryBox.width).toBeGreaterThanOrEqual(controlsBox.width - 2);
     expectSameBox(controlsBox, await box(controls));
     expect(retryBox.height).toBeGreaterThanOrEqual(44);
     expect(retryBox.x).toBeGreaterThanOrEqual(0);
@@ -178,15 +191,20 @@ test("a timed-out connection gets one retry before a lesson alternative", async 
   const captions = page.getByRole("region", {
     name: "Conversation captions",
   });
-  const controls = page.getByRole("group", {
-    name: "Conversation controls",
-  });
   const status = page.getByRole("status");
-  const controlsBox = await box(controls);
+  const captionsBox = await box(captions);
 
   await expect(status).toContainText("Getting ready");
   await expectNoBusyAttribute(status);
   await expectActiveAnimation(status);
+  await expectAnimationCount(
+    page.getByRole("img", { exact: true, name: "Peppa" }),
+    0,
+  );
+  await expect(
+    page.getByRole("group", { name: "Conversation controls" }),
+  ).toHaveCount(0);
+  await expectAnimationCount(page.getByRole("main"), 1);
   await page.clock.fastForward(12_000);
 
   const retry = page.getByRole("button", { name: "Try chat again" });
@@ -199,13 +217,21 @@ test("a timed-out connection gets one retry before a lesson alternative", async 
     "The chat did not start.",
   );
   await expect(page.getByRole("alert")).toHaveCount(0);
-  expectSameBox(controlsBox, await box(controls));
+  expectSameBox(captionsBox, await box(captions));
 
   await retry.click();
   await expect(retry).toBeHidden();
   await expect(status).toContainText("Getting ready");
   await expectNoBusyAttribute(status);
   await expectActiveAnimation(status);
+  await expectAnimationCount(
+    page.getByRole("img", { exact: true, name: "Peppa" }),
+    0,
+  );
+  await expect(
+    page.getByRole("group", { name: "Conversation controls" }),
+  ).toHaveCount(0);
+  await expectAnimationCount(page.getByRole("main"), 1);
   await expect(captions).toContainText("Starting the voice chat.");
   await expect(captions).not.toContainText("did not start");
 
@@ -213,6 +239,7 @@ test("a timed-out connection gets one retry before a lesson alternative", async 
   await expect(captions).toContainText("Starting the voice chat.");
   await page.clock.fastForward(1_100);
   await expect(captions).toContainText("Still getting ready.");
+  await expect(status).toContainText("Still getting ready.");
   await page.clock.fastForward(8_000);
   const lesson = page.getByRole("button", { name: "Play a lesson" });
   const lessonCover = page.getByRole("img", {
@@ -229,7 +256,10 @@ test("a timed-out connection gets one retry before a lesson alternative", async 
   await expectAnimationCount(status, 0);
   await expectAnimationCount(lessonCover, 0);
   await expectAnimationCount(lesson, 0);
-  expectSameBox(controlsBox, await box(controls));
+  expectSameBox(captionsBox, await box(captions));
+  await expect(
+    page.getByRole("group", { name: "Conversation controls" }),
+  ).toContainText("Play a lesson");
   expect((await box(lesson)).height).toBeGreaterThanOrEqual(44);
   await expectNoPageScroll(page);
 
@@ -352,4 +382,37 @@ test("reduced motion keeps terminal recovery static and understandable", async (
   for (const locator of [status, peppa, retry]) {
     await expectAnimationCount(locator, 0);
   }
+  await expectAnimationCount(page.getByRole("main"), 0);
+});
+
+test("reduced motion keeps every active remote wait static and named", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 568, width: 280 });
+
+  await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
+  await startSmallChat(page);
+  await expect(page.getByRole("status")).toContainText("Getting ready");
+  await expectAnimationCount(page.getByRole("main"), 0);
+
+  await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
+  await page.getByRole("button", { name: "Tap, then talk" }).click();
+  await expect(page.getByLabel("Live transcript")).toContainText(
+    "My name is Mia",
+  );
+  await page.getByRole("button", { name: "I’m done" }).click();
+  await expect(page.getByRole("status")).toContainText("Thinking");
+  await expectAnimationCount(page.getByRole("main"), 0);
+
+  await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
+  await startSmallChat(page);
+  await expect(page.getByRole("status")).toContainText("Trying again");
+  await expectAnimationCount(page.getByRole("main"), 0);
+
+  await useIncompleteProfile(page);
+  await page.goto("/profile/setup?parrotE2eConversation=saving");
+  await expect(page.getByRole("status")).toContainText("Saving your answers");
+  await expectAnimationCount(page.getByRole("main"), 0);
 });
