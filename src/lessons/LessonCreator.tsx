@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { getLessonLanguageWarnings } from "../../lib/lesson-language";
 import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
@@ -76,7 +77,7 @@ export function LessonPreview({
           <dd className="m-0 mt-1 font-bold">{lesson.scenes.length}</dd>
         </div>
       </dl>
-      <LessonWarnings warnings={warnings} />
+      <LessonWarnings lesson={lesson} warnings={warnings} />
       <ActionButton
         disabled={isSaving}
         fullWidth
@@ -91,21 +92,36 @@ export function LessonPreview({
   );
 }
 
-export function LessonWarnings({ warnings }: { warnings: string[] }) {
-  if (warnings.length === 0) return null;
+export function LessonWarnings({
+  lesson,
+  warnings,
+}: {
+  lesson?: Lesson;
+  warnings: string[];
+}) {
+  const reviewWarnings = [
+    ...new Set([
+      ...warnings,
+      ...(lesson ? getLessonLanguageWarnings(lesson) : []),
+    ]),
+  ];
+  if (reviewWarnings.length === 0) return null;
   return (
     <section
       aria-label="Draft warnings"
       className="rounded-2xl border-3 border-amber-300 bg-amber-50 p-4 text-amber-950"
-      role="status"
+      role={warnings.length > 0 ? "status" : undefined}
     >
       <h3 className="m-0 text-xl">Draft warnings</h3>
       <p className="mb-0 mt-2 font-bold">
-        Safe defaults were applied. You can adjust the lesson fields or save
-        them as-is.
+        Review these notes before saving.{" "}
+        {warnings.length > 0
+          ? "Safe repairs may have changed some fields. "
+          : null}
+        Language suggestions do not change the draft or block saving.
       </p>
       <ul className="mb-0 mt-3 grid gap-1 pl-5 font-semibold">
-        {warnings.map((warning, index) => (
+        {reviewWarnings.map((warning, index) => (
           <li key={`${index}-${warning}`}>{warning}</li>
         ))}
       </ul>
@@ -527,7 +543,7 @@ export function LessonCreator() {
               lesson={lesson}
               onChange={updateLesson}
             />
-            <LessonWarnings warnings={warnings} />
+            <LessonWarnings lesson={lesson} warnings={warnings} />
             <ActionButton
               className="w-full justify-self-stretch sm:w-auto sm:justify-self-end"
               disabled={busyAction === "save"}
