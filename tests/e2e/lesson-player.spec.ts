@@ -1542,6 +1542,28 @@ test("an old microphone rejection cannot clear a newer pending lesson request", 
   await expectRememberedMicrophoneNode(recording);
 });
 
+for (const key of ["Enter", "Space"] as const) {
+  test(`${key} starts exactly one focused microphone request`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+    const microphone = await waitForLearnerTurn(page);
+    await microphone.focus();
+    await rememberMicrophoneNode(microphone);
+
+    await microphone.press(key);
+
+    const pending = page.getByRole("button", { name: "Opening mic…" });
+    await expect(pending).toBeFocused();
+    await expectRememberedMicrophoneNode(pending);
+    await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+      pending: 1,
+      requests: 1,
+    });
+    await settleLessonMicrophone(page, "reject");
+  });
+}
+
 test("microphone pending feedback has no running motion when reduced motion is requested", async ({
   page,
 }) => {
