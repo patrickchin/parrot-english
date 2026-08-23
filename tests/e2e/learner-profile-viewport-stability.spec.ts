@@ -38,6 +38,40 @@ async function expectMinimumTarget(locator: Locator) {
   expect(box.width).toBeGreaterThanOrEqual(44);
 }
 
+async function expectTargetSize(
+  locator: Locator,
+  expected: { height: number; width: number },
+) {
+  const box = await rect(locator);
+  expect(box.height).toBe(expected.height);
+  expect(box.width).toBe(expected.width);
+}
+
+async function expectFocusPaintInsideViewport(page: Page, target: Locator) {
+  const indicator = await target.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      focusVisible: element.matches(":focus-visible"),
+      paint:
+        Number.parseFloat(style.outlineOffset) +
+        Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.focusVisible).toBe(true);
+
+  const targetPaint = expandRect(await rect(target), indicator.paint);
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  expect(targetPaint.x).toBeGreaterThanOrEqual(0);
+  expect(targetPaint.y).toBeGreaterThanOrEqual(0);
+  expect(targetPaint.x + targetPaint.width).toBeLessThanOrEqual(
+    viewport!.width,
+  );
+  expect(targetPaint.y + targetPaint.height).toBeLessThanOrEqual(
+    viewport!.height,
+  );
+}
+
 async function expectSingleTextLine(locator: Locator) {
   const lineCount = await locator.evaluate((element) => {
     const range = document.createRange();
@@ -766,6 +800,7 @@ for (const viewport of [
     await expectMinimumTarget(replay);
     await expectInsideViewport(next, viewport);
     await expectMinimumTarget(next);
+    await expectTargetSize(next, { height: 52, width: 144 });
     await expectAccountClearOf(page, [replay]);
     await expectTextBlockLineCount(
       page.getByText("Question 1 of 6", { exact: true }),
@@ -784,6 +819,7 @@ for (const viewport of [
       await expectInsideViewport(target, viewport);
       await expectMinimumTarget(target);
     }
+    await expectFocusPaintInsideViewport(page, next);
 
     await expectMainAtOrigin(page);
     await expectNoHorizontalOverflow(page);

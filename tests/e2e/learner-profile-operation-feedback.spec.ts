@@ -217,6 +217,34 @@ async function expectFocusPaintInsideViewport(page: Page, locator: Locator) {
   expect(result.bottom).toBeLessThanOrEqual(viewport!.height);
 }
 
+async function expectCompactNextDiscovery(
+  page: Page,
+  next: Locator,
+  phase: string,
+) {
+  const viewport = page.viewportSize();
+  expect(viewport).toEqual({ height: 640, width: 320 });
+  const box = await next.boundingBox();
+  expect(box, `${phase} Next geometry`).not.toBeNull();
+  expect(box!.height, `${phase} Next height`).toBe(52);
+  expect(box!.width, `${phase} Next width`).toBe(144);
+  expect(box!.x, `${phase} Next left edge`).toBeGreaterThanOrEqual(0);
+  expect(box!.y, `${phase} Next top edge`).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width, `${phase} Next right edge`).toBeLessThanOrEqual(
+    viewport!.width,
+  );
+  expect(
+    box!.y + box!.height,
+    `${phase} Next bottom edge`,
+  ).toBeLessThanOrEqual(viewport!.height);
+  await expect
+    .poll(
+      () => page.getByRole("main").evaluate((element) => element.scrollTop),
+      { message: `${phase} should not depend on focus scrolling` },
+    )
+    .toBe(0);
+}
+
 async function measurePendingFeedback(action: Locator, expectedStatus: string) {
   return action.evaluate(async (element, expected) => {
     const region = element.closest("section");
@@ -1016,6 +1044,9 @@ for (const viewport of viewports) {
       await expectMinimumTarget(target);
     }
     const idle = await geometrySnapshot(page, anchors);
+    if (viewport.width === 320) {
+      await expectCompactNextDiscovery(page, next, "idle");
+    }
 
     await microphone.focus();
     await microphone.press("Enter");
@@ -1026,6 +1057,9 @@ for (const viewport of viewports) {
       await geometrySnapshot(page, anchors),
       "opening",
     );
+    if (viewport.width === 320) {
+      await expectCompactNextDiscovery(page, next, "opening");
+    }
 
     await settlePhase(page, "opening");
     await expectSingleStatus(question, "Listening…");
@@ -1034,6 +1068,9 @@ for (const viewport of viewports) {
       await geometrySnapshot(page, anchors),
       "listening",
     );
+    if (viewport.width === 320) {
+      await expectCompactNextDiscovery(page, next, "listening");
+    }
 
     await settlePhase(page, "listening");
     await expectSingleStatus(question, "Writing…");
@@ -1042,6 +1079,9 @@ for (const viewport of viewports) {
       await geometrySnapshot(page, anchors),
       "writing",
     );
+    if (viewport.width === 320) {
+      await expectCompactNextDiscovery(page, next, "writing");
+    }
 
     await settlePhase(page, "writing");
     await expectSingleStatus(question, "Ready.");
@@ -1050,6 +1090,9 @@ for (const viewport of viewports) {
       await geometrySnapshot(page, anchors),
       "ready",
     );
+    if (viewport.width === 320) {
+      await expectCompactNextDiscovery(page, next, "ready");
+    }
 
     await next.focus();
     await next.press("Enter");
@@ -1060,5 +1103,8 @@ for (const viewport of viewports) {
       await geometrySnapshot(page, anchors),
       "thinking",
     );
+    if (viewport.width === 320) {
+      await expectCompactNextDiscovery(page, next, "thinking");
+    }
   });
 }
