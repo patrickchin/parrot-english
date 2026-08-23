@@ -1,6 +1,6 @@
 # Profile heading reading-position cue guidance
 
-Status: researched; candidate selected; implementation pending
+Status: implemented and provisionally retained
 
 Branch: `codex/profile-heading-reading-cue`
 
@@ -8,6 +8,10 @@ Base: `codex/lesson-microphone-direct-action-feedback` documentation hand-off
 at `9739789`
 
 Research date: 2026-08-24
+
+Implementation commit: `0cd03f6`
+
+Review hardening: `3d28aec`
 
 ## Question
 
@@ -17,11 +21,13 @@ static words resemble a text field?
 
 **Selected candidate:** preserve the existing heading-focus lifecycle and give
 all setup, question, and acknowledgment headings one shared, static reading-
-position cue: a four-CSS-pixel brand-blue rule whose outer edge starts eight
-pixels before the heading's inline start, leaving four clear pixels before the
-heading box. Cap the rule at 96 px for defensive long copy. Apply it on
-`:focus`, not only `:focus-visible`, and replace it with a real two-pixel,
-system-mapped outline in forced-colors mode.
+position cue: a four-CSS-pixel brand-blue rule whose outer edge normally starts
+twelve pixels before the heading's left edge, leaving eight clear pixels before
+the heading box. The compact portrait question alone uses an eight-pixel
+offset, preserving four pixels to both the card's inner border and heading box.
+Cap the rule at 96 px for defensive long copy. Apply it on `:focus`, not only
+`:focus-visible`, and replace it with a real two-pixel, system-mapped outline in
+forced-colors mode.
 
 The cue means **the new step starts here**. It is not a control, caret,
 selection, validation state, progress signal, or narration tracker. It adds no
@@ -30,18 +36,27 @@ words, icon, motion, sound, timer, or new sequential Tab stop.
 ## Decision revision, 2026-08-24
 
 The research candidate used an eight-pixel outer offset and extended the marker
-through the complete heading height. The first coded pass temporarily copied
-the Story Reader completion heading's twelve-pixel offset. Genuine in-app
-Browser comparison settled both details before the candidate was retained:
+through the complete heading height. Genuine in-app Browser comparison and
+independent review revised both details before retention:
 
 1. At 280×568, the question card's inner border begins at x=18 and its heading
-   begins at x=30. The twelve-pixel candidate occupied x=18…22 and touched the
-   card border. The retained eight-pixel offset occupies x=22…26, leaving four
-   pixels to the inner border and four pixels before the heading box.
-2. At the same viewport, the retained 160-character compatibility
+   begins at x=30. A uniform twelve-pixel offset occupied x=18…22 and touched
+   the card border. An interim uniform eight-pixel offset occupied x=22…26 and
+   provided four pixels of clearance on each side.
+2. That interim spacing was too tight where the heading shrink-wraps or aligns
+   left. At 280×568 acknowledgment and 640×360 question/acknowledgment, the
+   rail visually joined the first glyph as `|Thank you!` or
+   `|What's your name?`, repeating a treatment already rejected for Story
+   Reader completion.
+3. The retained rule therefore uses the Story Reader's twelve-pixel offset by
+   default, giving eight pixels before the heading box and first glyph in those
+   tight states. Only the compact portrait question keeps the eight-pixel
+   offset needed for card containment. Setup at 280 pixels still keeps four
+   pixels to the card border with the default spacing.
+4. At the same viewport, the retained 160-character compatibility
    acknowledgment is 212×300 px. A 300 px rule occupied 61.5% of its 488 px
    card and looked like a quotation bar rather than a calm arrival cue.
-3. The revised marker uses the same 96 px maximum as the ordinary three-line
+5. The revised marker uses the same 96 px maximum as the ordinary three-line
    setup heading. It remains full height on current production setup, question,
    and short acknowledgment copy, but marks only the beginning of defensive
    long copy. A rendered regression requires zero changed marker-strip pixels
@@ -234,11 +249,15 @@ focus later.
 Use the established Story Reader completion grammar:
 
 - a four-pixel `brand-blue` vertical rule;
-- place its outer edge eight pixels before the heading box, leaving four pixels
-  of card surface before that box;
+- normally place its outer edge twelve pixels before the heading box, leaving
+  eight pixels before that box and first glyph in shrink-wrapped/left-aligned
+  states;
+- use an eight-pixel offset only for the compact portrait question, leaving
+  four pixels to both its card's inner border and heading box;
 - keep it full height for ordinary headings and top-align it with a 96 px cap
   for defensive long copy;
 - show it on `:focus` and clear it immediately on blur;
+- give it no animation or transition;
 - remove the UA outline in normal colors;
 - hide the decorative rule and expose a real two-pixel outline with a two-pixel
   offset in forced colors;
@@ -272,27 +291,32 @@ assert Tailwind class strings or CSS source.
 1. Setup, question, normal acknowledgment, and 160-character acknowledgment
    retain native level-one heading semantics, exact visible names, existing
    IDs where present, `tabIndex=-1`, and programmatic focus.
-2. Pointer and keyboard transitions both render the same open marker even when
-   Chromium reports `:focus-visible=false` after pointer activation.
+2. Pointer and keyboard transitions both render the same open marker. The
+   contract must not depend on asserting a particular user-agent
+   `:focus-visible` heuristic; baseline reproduction separately records
+   Chromium's pointer-false and keyboard-true outcomes.
 3. Normal-color screenshot deltas contain at least a three-pixel-equivalent
    area at 3:1 or better in the exact left marker strip, across the heading
-   height up to 96 px. The marker-to-heading gap, the same strip below that
-   cap, and the right edge must have no qualifying change; a complete perimeter
-   may not qualify as the normal cue.
+   height up to 96 px, with qualifying width in every row except a one-pixel
+   raster tolerance. The marker-to-heading gap, the same strip below that cap,
+   and the right edge must have no qualifying change; a complete perimeter may
+   not qualify as the normal cue.
 4. Moving focus to the first ordinary destination clears the marker. Forward
    Tab remains setup → **Set up profile**, question → **Your answer**, and
    acknowledgment → **Next**.
 5. Forced-colors emulation hides the decorative rule and leaves a computed
    non-`none` outline at least two CSS pixels wide. Rendered qualifying pixels
    must occur on both vertical edges; do not assert a particular system color.
-6. Focus and blur do not change heading, glyph, card, textarea, art, or action
+6. In the representative cue states at 280×568 and 640×360, focus and blur do
+   not change heading, text-range, complete card, textarea, art, or action
    rectangles by more than one CSS pixel, change line counts, move the main
-   scroll origin, or create horizontal overflow at any target viewport.
+   scroll origin, or create horizontal overflow. The existing profile viewport
+   suite separately preserves complete composition at all four target sizes.
 7. The normal marker stays inside the card, remains separated from the first
    glyph and card border, stays full-height on ordinary current copy, and never
    exceeds 96 px on defensive long copy.
-8. The cue has no CSS transition or animation and looks identical under
-   reduced-motion preference.
+8. Under ordinary and reduced-motion preferences, the rendered pseudo-element
+   has no animation name and no transition property.
 9. Existing profile persistence, acknowledgment, viewport, shared focus, and
    route suites remain green.
 
@@ -302,7 +326,7 @@ Capture focused and marker-cleared states in the genuine in-app Browser:
 
 - setup at 280×568;
 - question after pointer **Set up profile** at 390×844;
-- question after keyboard activation at 640×360;
+- question at 640×360, with keyboard behavior owned by the automated contract;
 - acknowledgment after pointer submission at 280×568;
 - acknowledgment at 640×360;
 - the capped 160-character acknowledgment at 280×568; and

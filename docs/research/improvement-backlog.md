@@ -646,6 +646,25 @@ Retain, revise, or reject: retain provisionally after independent code, accessib
 Next branch: advance codex/profile-heading-reading-cue to this documentation hand-off before work; separately research Story Reader paragraph semantics and completion replay focus clipping
 ```
 
+```text
+Branch: codex/profile-heading-reading-cue
+Base branch / dependency: codex/lesson-microphone-direct-action-feedback documentation hand-off 9739789
+Research commit: 24f1a33
+Rendered contract commit: 998d4c5
+Implementation commit: 0cd03f6
+Review hardening: 3d28aec
+Hypothesis: one open reading-position cue on actual heading focus can make all thirteen profile step arrivals visible across input modalities without making static words look like a field or adding language for a young beginner
+Verified baseline: the native non-sequential h1 focus lifecycle, main scroll reset, and geometry were correct, but initial/keyboard transitions could show a closed one-pixel UA outline while pointer transitions could show no cue because focus-visible was false; forced-colors emulation retained that pointer gap
+Changed: centralized setup/question/acknowledgment headings in one native shared component; added a four-pixel brand-blue focus rail with a default eight-pixel heading gap and one compact-question four-pixel containment exception, a 96-pixel long-copy cap, no transition/animation, and a real two-pixel forced-colors outline; added rendered pixel-delta, semantics/text/ID, modality, Tab-order, full-scene geometry, row-continuity, overflow, motion, cap, and forced-colors contracts
+Not changed: heading text/IDs/semantics, focus timing/ownership, question order, acknowledgment timing/audio, persistence, route behavior, typography, card geometry, controls, dependencies, or global CSS
+Tests: 41/41 focused profile/focus Chromium; 280/280 full Chromium; 678/678 unit/integration/lifecycle/safety; TypeScript and production build passed; lint 0 errors with 2 generated warnings; 446 local links across 59 Markdown evidence files with 0 missing; 13/13 JPEG types/dimensions/digests verified
+Screenshots / traces: three genuine in-app Browser baseline and ten retained-candidate JPEGs with viewport/state provenance, measurements, and SHA-256 integrity in artifacts/ux-review/profile-heading-reading-cue at 280x568, 390x844, 640x360, and 1440x900
+Measured result: the 280-pixel question rail occupies x=22…26, four pixels from the card's inner border and heading box; ordinary shrink-wrapped/left-aligned headings use an eight-pixel text gap; ordinary headings retain complete 30–96-pixel rails; the defensive 300-pixel heading uses a top-aligned 96-pixel rail instead of a full-height quotation-like bar; focus/blur preserves heading text, card, art, textarea, actions, overflow, and main scroll origin
+Risks / limitations: deterministic local Chromium and English LTR only; no Safari/Firefox, real High Contrast, safe-area, zoom/text-spacing, target AT/switch/voice-control, localization/RTL, or child/caregiver comprehension; acknowledgment focus remains inside a polite live region pending target AT study
+Retain, revise, or reject: retain provisionally after independent code, accessibility, and final recaptured visual-evidence review found no remaining actionable issue
+Next branch: select from the highest-value reproduced backlog defect after this documentation hand-off; keep Story Reader paragraph semantics and completion replay focus clipping as bounded candidates
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -724,17 +743,18 @@ branches.
     bounds, not observed production latency. Groq enrichment and D1 persistence
     remain on the save path.
 17. **Medium: programmatically focused profile headings use browser-dependent
-    feedback.** Fresh Chromium reproduction found a tight closed one-pixel UA
-    outline after initial-load and keyboard transitions, but no visible cue
-    after pointer transitions because the focused static heading did not match
-    `:focus-visible`; forced-colors emulation retained the pointer gap. This
-    affects one setup, six question, and six acknowledgment arrivals in the
-    complete flow, and the closed variant sits directly above a genuine
-    outlined textarea on question screens. A separated, `:focus`-keyed reading
-    marker with a real forced-colors fallback is researched in
-    [the profile-heading guidance](./profile-heading-reading-cue-guidance.md) on
-    `codex/profile-heading-reading-cue`; implementation is pending without copy,
-    timing, focus-lifecycle, or geometry changes.
+    feedback.** Fixed provisionally on `codex/profile-heading-reading-cue` at
+    `0cd03f6`, with review hardening at `3d28aec`. One shared native heading
+    component keeps the existing focus
+    lifecycle and non-sequential semantics while rendering an open four-pixel
+    `:focus` rail across setup, six questions, and six acknowledgments. The
+    rail is separated from the card and heading, capped at 96 pixels for
+    defensive long copy, and replaced by a real two-pixel outline in forced
+    colors. Rendered tests cover pointer/keyboard parity, open shape, blur,
+    exact Tab order, geometry, overflow, cap behavior, and both forced-color
+    outline edges without changing copy or timing. See the
+    [guidance](./profile-heading-reading-cue-guidance.md) and
+    [implementation evidence](./profile-heading-reading-cue-implementation.md).
 18. **High: finishing a story removes the focused control and leaves the
     completion screen focused on `BODY`.** Verified after pointer and keyboard
     Finish at 280×568, 390×844, 640×360, and 1280×800. The heading and primary
