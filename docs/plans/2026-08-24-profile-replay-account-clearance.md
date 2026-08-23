@@ -14,7 +14,7 @@ Research contract:
 Make the saved-audio Replay action completely visible, focus-visible, and
 pointer-operable beside the fixed Account control at compact profile-question
 viewports, without shrinking targets, moving actions off-screen, changing the
-question flow, or altering the `sm`-and-up composition.
+question flow, or altering the tall/non-short-wide `sm`-and-up composition.
 
 ## Task 1: establish an enabled failing fixture
 

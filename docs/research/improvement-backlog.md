@@ -685,6 +685,25 @@ Retain, revise, or reject: retain provisionally after three independent reviews 
 Next branch: codex/profile-replay-account-clearance stacked on this documentation hand-off; separately research whether the four unused preference answers should be removed or receive an explicit editable purpose
 ```
 
+```text
+Branch: codex/profile-replay-account-clearance
+Base branch / dependency: codex/profile-setup-plain-language documentation hand-off 22cbc9b
+Research commit: 9321fbf
+Rendered contract commit: bb93711
+Implementation and review hardening: e78f7fd
+Hypothesis: grouping progress with its question-audio action at compact sizes can keep both Replay and the fixed Account control fully visible, focus-visible, and independently operable without shrinking targets or moving question content
+Verified baseline: Account covered Replay by 44×9.25 CSS px at 280×568, 48×19.5 at 360×640, and 21.78×24 at 640×360; Account won pointer hit testing; a truthful enabled-audio fixture made four responsive cases fail before production changed
+Changed: compact progress/Replay alignment and tracking; eight-pixel focus-safe gap; production-derived saved-audio fixture; border/focus/pointer/activation/Account-Escape/320-reachability/forced-colors contracts; ten visual evidence captures; durable guidance and implementation evidence
+Review correction: the first four-pixel candidate cleared Account but let Replay focus paint cover the final progress digit; independent visual/accessibility review required the retained eight-pixel gap, and code review expanded actual interaction and one-axis reachability evidence
+Not changed: DOM/reading order, wording, target sizes, playback implementation/timing, prompts/translations, form fields/actions, account header/menu, routes, persistence, audio assets, dependencies, or tall/non-short-wide sm-and-up layout
+Tests: 45/45 responsive Replay/focus cases; 680/680 unit/integration/lifecycle/safety; 292/292 full Chromium; TypeScript and production build passed; lint 0 errors with 2 generated warnings; 619 local links across 92 Markdown files with 0 missing; 10/10 JPEG types, dimensions, and digests verified
+Screenshots / traces: two inherited genuine in-app Browser baselines and eight retained genuine in-app Browser JPEGs with provenance, geometry, dimensions, and SHA-256 integrity in artifacts/ux-review/profile-replay-account-clearance at 280×568, 360×640, 390×844, 640×360, and 1440×900
+Measured result: at 280px the focused Replay paint occupies x=134.53125…194.53125, meets but does not cover progress, and retains 1.6875px before Account; at 640×360 the existing main scroll range remains 13px; horizontal overflow stays zero
+Risks / limitations: current Mia label only; local deterministic Chromium and English LTR; no physical device/audio, Safari/Firefox, target AT, safe-area, zoom/text spacing, localization/RTL, or child symbol-comprehension evidence
+Retain, revise, or reject: retain provisionally after three independent reviews and focus/activation corrections
+Next branch: separate the profile answer textarea and microphone accessible names without moving their visible layout; then investigate stable profile-save pending feedback and focus ownership
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -848,12 +867,15 @@ branches.
     direct entry and restore destination focus without stealing it after the
     learner has moved to a surviving header action.
 26. **High: the account control obscures the profile replay-question action at
-    compact widths.** The production-copy bilingual fixture exposed a 44×9.25
+    compact widths.** Fixed provisionally on
+    `codex/profile-replay-account-clearance` at `e78f7fd`. The production-copy
+    bilingual fixture exposed a 44×9.25
     CSS px overlap at 280×568 and a 21.78×24 CSS px overlap at 640×360 between
     **Account for Mia** and **Replay question**. The account control paints over
-    the replay action. Isolate a stacked responsive-layout branch that keeps
-    both complete, operable, and focus-visible without hiding the account,
-    shrinking either 44×44 target, or moving question content off-screen.
+    the replay action. The retained compact group keeps both complete,
+    independently operable, and focus-visible without hiding Account, shrinking
+    either 44×44 target, or moving question content off-screen. Arbitrary long
+    Account labels remain a shared-header follow-up.
 27. **Medium: profile setup used relationship, timing, and product jargon before
     the bilingual questions.** Fixed provisionally on
     `codex/profile-setup-plain-language` at `0c8df94`. Fresh setup now names the
@@ -861,6 +883,18 @@ branches.
     states its remaining count and uses **Continue questions**. Review narrowed
     an unsupported chats/lessons and all-answers-editable promise to the actual
     repository boundary. Direct child/caregiver comprehension remains untested.
+28. **Medium: a long account label can invalidate local compact clearance.** The
+    retained Replay fix proves full separation for **Mia**, while Account owns a
+    fixed higher layer and can extend left as its visible label grows. Research
+    a shared header/content arbitration rule with long names, localization,
+    safe-area, and every account-owning route before adding another local
+    offset or hiding the label.
+29. **Medium: the 320×640 profile question needs 113 CSS pixels of vertical main
+    scroll.** Every field and action is reachable in one axis with zero
+    horizontal overflow, which satisfies the branch's reflow contract, but Next
+    is not initially visible. Test task discovery with young beginners before
+    deciding whether a denser 320px composition is better than ordinary
+    vertical scrolling.
 
 ### Test-infrastructure observation
 

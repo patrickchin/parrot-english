@@ -130,7 +130,7 @@ untestable disabled state rather than the product interaction.
 2. At widths below `sm`, the row is start-packed, uses an eight-pixel gap, and
    removes only the progress label's decorative tracking.
 3. In `short-wide`, the row is start-packed with its current compact eight-pixel
-   gap. The `sm`-and-up tall and desktop placement remains unchanged; the
+   gap. Tall/non-short-wide `sm`-and-up placement remains unchanged; the
    390px regular-phone guard intentionally uses the compact composition.
 4. Replay and Account each remain at least 44x44 CSS pixels, visible, named,
    enabled when saved question audio exists, and independently operable.
