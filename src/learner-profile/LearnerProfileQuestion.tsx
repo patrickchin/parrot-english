@@ -1,5 +1,5 @@
 import { Mic, Volume2 } from "lucide-react";
-import type { FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, type FormEvent } from "react";
 import { playAudioLine } from "../media/audio-playback";
 import {
   transcribeLearnerProfileAudio,
@@ -13,12 +13,20 @@ import {
 } from "./LearnerProfileLayout";
 import {
   ActionButton,
+  cx,
   fieldClassName,
   IconButton,
   TextButton,
 } from "../shared/ui";
 
-export type QuestionStatus = "idle" | "recording" | "saving" | "transcribing";
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+export type QuestionPendingAction =
+  "microphone" | "skip" | "skip-question" | "submit" | null;
+
+export type QuestionStatus =
+  "idle" | "opening" | "ready" | "recording" | "saving" | "transcribing";
 
 type LearnerProfileQuestionViewProps = {
   fieldError: string;
@@ -29,6 +37,8 @@ type LearnerProfileQuestionViewProps = {
   onSubmit: () => void;
   onTranscribe: () => void;
   onValueChange: (value: string) => void;
+  pendingAction: QuestionPendingAction;
+  playbackPending: boolean;
   progress: { answered: number; current: number; total: number };
   question: LearnerProfileQuestion;
   status: QuestionStatus;
@@ -44,16 +54,48 @@ export function LearnerProfileQuestionView({
   onSubmit,
   onTranscribe,
   onValueChange,
+  pendingAction,
+  playbackPending,
   progress,
   question,
   status,
   value,
 }: LearnerProfileQuestionViewProps) {
-  const disabled = status !== "idle";
+  const pending = status !== "idle" && status !== "ready";
+  const pendingMessage =
+    status === "opening"
+      ? "Opening mic…"
+      : status === "recording"
+        ? "Listening…"
+        : status === "transcribing"
+          ? "Writing…"
+          : status === "saving"
+            ? "Thinking…"
+            : status === "ready"
+              ? "Ready."
+              : "";
   const inputId = `learner-profile-answer-${question.answerKey}`;
+  const formRef = useRef<HTMLFormElement>(null);
+  const microphoneOwnsPending = pending && pendingAction === "microphone";
+  const skipOwnsPending = pending && pendingAction === "skip";
+  const skipQuestionOwnsPending = pending && pendingAction === "skip-question";
+  const submitOwnsPending = pending && pendingAction === "submit";
+
+  useIsomorphicLayoutEffect(() => {
+    if (!fieldError) return;
+    const active = document.activeElement;
+    if (
+      !(active instanceof HTMLElement) ||
+      !formRef.current?.contains(active)
+    ) {
+      return;
+    }
+    active.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [fieldError]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     onSubmit();
   }
 
@@ -68,9 +110,13 @@ export function LearnerProfileQuestionView({
         </p>
         <IconButton
           aria-label="Replay question"
-          disabled={disabled || !question.audio}
-          onClick={onReplay}
-          className="short:size-11"
+          aria-disabled={playbackPending || undefined}
+          disabled={pending || !question.audio}
+          onClick={playbackPending ? undefined : onReplay}
+          className={cx(
+            "scroll-m-2 short:size-11",
+            playbackPending && "aria-disabled:opacity-100",
+          )}
           type="button"
         >
           <Volume2 aria-hidden="true" className="size-6" />
@@ -104,20 +150,33 @@ export function LearnerProfileQuestionView({
       <form
         className="short-wide:col-start-2 short-wide:row-start-3"
         onSubmit={submit}
+        ref={formRef}
       >
-        <fieldset
-          className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75 short:gap-2"
-          disabled={disabled}
-        >
+        <fieldset className="m-0 grid min-w-0 gap-4 border-0 p-0 short:gap-2">
           <div className="grid gap-2 font-black text-brand-ink short:gap-1">
-            <label htmlFor={inputId}>Your answer</label>
+            <div className="flex min-h-6 items-center justify-between gap-2">
+              <label className="shrink-0" htmlFor={inputId}>
+                Your answer
+              </label>
+              <p
+                aria-atomic="true"
+                className={cx(
+                  "m-0 min-h-6 whitespace-nowrap text-sm font-extrabold leading-6 text-brand-navy",
+                  pendingMessage && "rounded-full bg-sky-100 px-2",
+                )}
+                role="status"
+              >
+                {pendingMessage}
+              </p>
+            </div>
             <span className="flex items-stretch gap-2">
               <textarea
                 className={fieldClassName({
                   className:
-                    "min-h-28 min-w-0 flex-1 resize-y leading-relaxed short:h-20 short:min-h-20",
+                    "min-h-28 min-w-0 flex-1 scroll-m-2 resize-y leading-relaxed short:h-20 short:min-h-20",
                 })}
                 id={inputId}
+                disabled={pending}
                 maxLength={question.maxLength}
                 onChange={(event) => onValueChange(event.target.value)}
                 rows={4}
@@ -125,9 +184,14 @@ export function LearnerProfileQuestionView({
               />
               <IconButton
                 aria-label="Speak your answer"
-                className="shrink-0"
+                aria-disabled={microphoneOwnsPending || undefined}
+                className={cx(
+                  "shrink-0 scroll-m-2",
+                  microphoneOwnsPending && "aria-disabled:opacity-100",
+                )}
+                disabled={pending && !microphoneOwnsPending}
                 frame="none"
-                onClick={onTranscribe}
+                onClick={pending ? undefined : onTranscribe}
                 shape="rounded"
                 size="field"
                 type="button"
@@ -138,21 +202,11 @@ export function LearnerProfileQuestionView({
             </span>
           </div>
 
-          {status === "recording" ? (
-            <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
-              Listening…
-            </p>
-          ) : status === "transcribing" ? (
-            <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
-              Writing what I heard…
-            </p>
-          ) : status === "saving" ? (
-            <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
-              Peppa is thinking…
-            </p>
-          ) : null}
           {fieldError ? (
-            <p className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
+            <p
+              className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
+              role="alert"
+            >
               {fieldError}
             </p>
           ) : null}
@@ -160,26 +214,42 @@ export function LearnerProfileQuestionView({
           <div className="mt-2 flex flex-wrap items-center justify-end gap-4 short:mt-0 short:gap-2 max-sm:justify-between">
             {mode === "learner-profile" && !question.required ? (
               <TextButton
-                onClick={onSkipQuestion}
+                aria-disabled={skipQuestionOwnsPending || undefined}
+                className={cx(
+                  "scroll-m-2",
+                  skipQuestionOwnsPending && "aria-disabled:opacity-100",
+                )}
+                disabled={pending && !skipQuestionOwnsPending}
+                onClick={pending ? undefined : onSkipQuestion}
                 type="button"
               >
                 Skip question
               </TextButton>
             ) : null}
             {mode === "learner-profile" ? (
-              <TextButton onClick={onSkip} type="button">
+              <TextButton
+                aria-disabled={skipOwnsPending || undefined}
+                className={cx(
+                  "scroll-m-2",
+                  skipOwnsPending && "aria-disabled:opacity-100",
+                )}
+                disabled={pending && !skipOwnsPending}
+                onClick={pending ? undefined : onSkip}
+                type="button"
+              >
                 Skip for now
               </TextButton>
             ) : null}
             <ActionButton
-              className="short:min-h-11 short:min-w-20 short:px-3"
+              aria-disabled={submitOwnsPending || undefined}
+              className={cx(
+                "scroll-m-2 short:min-h-11 short:min-w-20 short:px-3",
+                submitOwnsPending && "aria-disabled:opacity-100",
+              )}
+              disabled={pending && !submitOwnsPending}
               type="submit"
             >
-              {status === "saving"
-                ? "Peppa is thinking…"
-                : mode === "profile"
-                  ? "Save"
-                  : "Next"}
+              {mode === "profile" ? "Save" : "Next"}
             </ActionButton>
           </div>
         </fieldset>
@@ -197,11 +267,16 @@ function playbackLine(audio: LearnerProfileAudio) {
 export async function playLearnerProfileStart({
   playLine = playAudioLine,
   questionAudio,
+  signal,
 }: {
   playLine?: PlayLine;
   questionAudio: LearnerProfileAudio;
+  signal?: AbortSignal;
 }) {
-  await playLine(playbackLine(questionAudio));
+  await playLine({
+    ...playbackLine(questionAudio),
+    ...(signal ? { signal } : {}),
+  });
 }
 
 export async function replayLearnerProfileQuestion(

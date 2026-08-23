@@ -32,9 +32,7 @@ type ControlVisualProps = {
   variant?: ControlVariant;
 };
 
-export function cx(
-  ...classes: Array<string | false | null | undefined>
-) {
+export function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
@@ -117,15 +115,9 @@ export function controlClassName({
     elevation === "raised" &&
       (variant === "brand" || variant === "rose") &&
       "shadow-control-pink",
-    elevation === "raised" &&
-      variant === "navy" &&
-      "shadow-control-navy",
-    elevation === "raised" &&
-      variant === "success" &&
-      "shadow-control-green",
-    elevation === "raised" &&
-      variant === "surface" &&
-      "shadow-control-surface",
+    elevation === "raised" && variant === "navy" && "shadow-control-navy",
+    elevation === "raised" && variant === "success" && "shadow-control-green",
+    elevation === "raised" && variant === "surface" && "shadow-control-surface",
     className,
   );
 }
@@ -227,7 +219,7 @@ export function ActionLink({
 
 function textControlClassName(className?: string) {
   return cx(
-    "inline-flex min-h-11 touch-manipulation items-center justify-center border-0 bg-transparent px-1 font-ui font-black text-brand-blue underline underline-offset-4 transition-colors duration-150 hover:text-brand-navy disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex min-h-11 touch-manipulation items-center justify-center border-0 bg-transparent px-1 font-ui font-black text-brand-blue underline underline-offset-4 transition-colors duration-150 hover:text-brand-navy aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-60 disabled:cursor-not-allowed disabled:opacity-60",
     focusClassName,
     className,
   );
@@ -403,13 +395,10 @@ export function cardClassName({
   tone?: CardTone;
 } = {}) {
   return cx(
-    tone === "glass" &&
-      "rounded-3xl border-4 border-white bg-white/95",
+    tone === "glass" && "rounded-3xl border-4 border-white bg-white/95",
     tone === "solid" && "rounded-3xl border-4 border-white bg-white",
-    tone === "muted" &&
-      "rounded-3xl border-4 border-white bg-white/75",
-    tone === "inset" &&
-      "rounded-2xl border-3 border-sky-200 bg-white",
+    tone === "muted" && "rounded-3xl border-4 border-white bg-white/75",
+    tone === "inset" && "rounded-2xl border-3 border-sky-200 bg-white",
     elevation === "flat" && "shadow-none",
     elevation === "soft" && "shadow-sm",
     elevation === "raised" && "shadow-card",

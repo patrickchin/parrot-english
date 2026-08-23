@@ -279,8 +279,9 @@ async function installProfileMicrophoneCounter(page: Page) {
     const measuredWindow = window as Window & {
       __parrotE2eProfileMicrophoneRequests?: number;
     };
-    const originalGetUserMedia =
-      navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(
+      navigator.mediaDevices,
+    );
     measuredWindow.__parrotE2eProfileMicrophoneRequests = 0;
     navigator.mediaDevices.getUserMedia = (constraints) => {
       measuredWindow.__parrotE2eProfileMicrophoneRequests! += 1;
@@ -327,7 +328,9 @@ test("profile setup names the task and saved-answer facts in literal language", 
   await expectSingleTextLine(page.getByText("A grown-up", { exact: true }));
   await expectSingleTextLine(page.getByText("name and age.", { exact: true }));
   await expect(start).toBeVisible();
-  await expect(page.getByRole("button", { name: "Skip for now" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Skip for now" }),
+  ).toBeVisible();
   await expect(main).not.toContainText(
     /Help Peppa get to know you|personalize|Learner profile|\bquick\b|Set up profile/i,
   );
@@ -410,13 +413,14 @@ test("profile answer and microphone keep separate native labels and controls", a
   await expect.poll(microphoneRequests).toBe(1);
   await expect(page.getByRole("status")).toHaveText("Listening…");
   await expect(answer).toBeDisabled();
-  await expect(speak).toBeDisabled();
+  await expect(speak).toHaveAttribute("aria-disabled", "true");
+  await expect(speak).not.toBeDisabled();
   expect(
     await answer.evaluate(
       (element) =>
         (element.closest("fieldset") as HTMLFieldSetElement | null)?.disabled,
     ),
-  ).toBe(true);
+  ).toBe(false);
 
   for (const key of ["Enter", "Space"]) {
     await openFirstProfileQuestion(page, viewport);
@@ -429,7 +433,9 @@ test("profile answer and microphone keep separate native labels and controls", a
     await page.keyboard.press(key);
     await expect.poll(keyboardRequests).toBe(1);
     await expect(page.getByRole("status")).toHaveText("Listening…");
-    await expect(keyboardSpeak).toBeDisabled();
+    await expect(keyboardSpeak).toHaveAttribute("aria-disabled", "true");
+    await expect(keyboardSpeak).not.toBeDisabled();
+    await expect(keyboardSpeak).toBeFocused();
   }
 });
 
@@ -486,7 +492,9 @@ for (const viewport of targetViewports) {
       name: "Hi! I'm Peppa. What's your name?",
     });
     const replay = page.getByRole("button", { name: "Replay question" });
-    await expect(page.getByText("你好！我是佩奇。你叫什么名字？", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("你好！我是佩奇。你叫什么名字？", { exact: true }),
+    ).toBeVisible();
     const answerLabel = page.getByText("Your answer", { exact: true });
     const answer = page.getByRole("textbox", {
       exact: true,
@@ -587,7 +595,9 @@ for (const viewport of targetViewports) {
     const ageSkip = page.getByRole("button", { name: "Skip for now" });
     const ageNext = page.getByRole("button", { exact: true, name: "Next" });
     await expect(ageHeading).toBeFocused();
-    await expect(page.getByText("Question 2 of 6", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Question 2 of 6", { exact: true }),
+    ).toBeVisible();
     await expectMainAtOrigin(page);
     for (const target of [
       ageHeading,
@@ -658,8 +668,12 @@ for (const viewport of targetViewports) {
     });
 
     await page.goto("/profile?parrotE2eProfile=viewport-stability");
-    const editorHeading = page.getByRole("heading", { name: "Learner profile" });
-    const redoHeading = page.getByRole("heading", { name: "Redo learner setup" });
+    const editorHeading = page.getByRole("heading", {
+      name: "Learner profile",
+    });
+    const redoHeading = page.getByRole("heading", {
+      name: "Redo learner setup",
+    });
     await expect(editorHeading).toBeVisible();
     await expectDelayedImageKeepsGeometry({
       anchors: [
@@ -681,6 +695,7 @@ test("profile Replay and Account remain independently operable", async ({
   await page.getByRole("button", { name: "Start questions" }).click();
 
   const replay = page.getByRole("button", { name: "Replay question" });
+  await expect(replay).toBeDisabled();
   await expect(replay).toBeEnabled();
   await page.evaluate(() => {
     const measuredWindow = window as Window & {
@@ -706,6 +721,8 @@ test("profile Replay and Account remain independently operable", async ({
   });
   await expect.poll(replayCount).toBe(1);
   await expect(replay).toBeFocused();
+  await expect(replay).toBeDisabled();
+  await expect(replay).toBeEnabled();
   await page.keyboard.press("Enter");
   await expect.poll(replayCount).toBe(2);
 

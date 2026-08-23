@@ -17,6 +17,13 @@ const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
 const E2E_PROFILE_OPERATION_SCENARIO = "held";
+const E2E_PROFILE_VISUAL_PHASES = new Set([
+  "listening",
+  "opening",
+  "ready",
+  "thinking",
+  "writing",
+]);
 const E2E_LONG_ACKNOWLEDGMENT =
   "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!";
 const E2E_SAVED_ACKNOWLEDGMENT_AUDIO = {
@@ -237,6 +244,28 @@ function hasHeldE2eProfileOperations() {
   );
 }
 
+function hasHeldE2eProfilePlayback() {
+  return (
+    new URL(window.location.href).searchParams.get(
+      "parrotE2eProfilePlayback",
+    ) === "held"
+  );
+}
+
+function keepsAbortedE2eProfileOperationsSettleable() {
+  return (
+    new URL(window.location.href).searchParams.get("parrotE2eProfileAbort") ===
+    "settle-late"
+  );
+}
+
+function getE2eProfileVisualPhase() {
+  const phase = new URL(window.location.href).searchParams.get(
+    "parrotE2eProfileVisualPhase",
+  );
+  return phase && E2E_PROFILE_VISUAL_PHASES.has(phase) ? phase : null;
+}
+
 type E2EProfileOperation =
   | "answerSave"
   | "questionSkip"
@@ -259,6 +288,7 @@ type E2EOperationCounters = {
 
 type PendingProfileOperation = {
   abort: () => void;
+  abortObserved: boolean;
   defaultPayload: unknown;
   reject: (reason?: unknown) => void;
   resolve: (response: Response) => void;
@@ -295,6 +325,7 @@ const profileOperationCounters = Object.fromEntries(
 ) as Record<E2EProfileOperation, E2EOperationCounters>;
 
 const profileRecordingCounters = createOperationCounters();
+const profilePlaybackCounters = createOperationCounters();
 const pendingProfileOperations: Record<
   E2EProfileOperation,
   PendingProfileOperation[]
@@ -380,16 +411,20 @@ function holdProfileOperation(
     return Promise.reject(createProfileOperationAbortError());
   }
 
+  const keepAbortSettleable = keepsAbortedE2eProfileOperationsSettleable();
   return new Promise<Response>((resolve, reject) => {
     const request: PendingProfileOperation = {
       abort() {
         const index = pending.indexOf(request);
-        if (index === -1) return;
+        if (index === -1 || request.abortObserved) return;
+        request.abortObserved = true;
+        counters.aborted += 1;
+        if (keepAbortSettleable) return;
         pending.splice(index, 1);
         updateProfileOperationPending(operation);
-        counters.aborted += 1;
         reject(createProfileOperationAbortError());
       },
+      abortObserved: false,
       defaultPayload,
       reject,
       resolve,
@@ -481,6 +516,14 @@ function installE2eProfileFetchMock() {
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
     const profileOperation = profileOperationForRequest(url, method);
 
+    const visualPhase = getE2eProfileVisualPhase();
+    const shouldResolveReadyTranscription =
+      visualPhase === "ready" && profileOperation === "transcription";
+
+    if (shouldResolveReadyTranscription) {
+      return e2eJson(defaultProfileOperationPayload("transcription", profileScenario));
+    }
+
     if (hasHeldE2eProfileOperations() && profileOperation) {
       const signal = init?.signal ?? request?.signal ?? null;
       return holdProfileOperation(
@@ -545,16 +588,52 @@ function getMockAudioDelayMs(src: string) {
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
   onerror: RecorderHandler<Event> = null;
+  private held = false;
 
   constructor(readonly src: string) {}
 
-  pause() {}
+  pause() {
+    if (!this.held) return;
+    this.held = false;
+    pendingProfilePlayback.delete(this);
+    profilePlaybackCounters.pending = pendingProfilePlayback.size;
+    profilePlaybackCounters.aborted += 1;
+  }
+
+  finish() {
+    if (!this.held) return false;
+    this.held = false;
+    pendingProfilePlayback.delete(this);
+    profilePlaybackCounters.pending = pendingProfilePlayback.size;
+    profilePlaybackCounters.resolved += 1;
+    this.onended?.(new Event("ended"));
+    return true;
+  }
 
   async play() {
+    if (
+      hasHeldE2eProfilePlayback() &&
+      this.src.includes("learner-profile")
+    ) {
+      if (!this.held) {
+        this.held = true;
+        pendingProfilePlayback.add(this);
+        profilePlaybackCounters.pending = pendingProfilePlayback.size;
+        profilePlaybackCounters.requests += 1;
+      }
+      return;
+    }
     window.setTimeout(() => {
       this.onended?.(new Event("ended"));
     }, getMockAudioDelayMs(this.src));
   }
+}
+
+const pendingProfilePlayback = new Set<MockAudioElement>();
+
+function resolveNextProfilePlayback() {
+  const playback = pendingProfilePlayback.values().next().value;
+  return playback?.finish() ?? false;
 }
 
 class MockMediaRecorder {
@@ -576,6 +655,10 @@ class MockMediaRecorder {
     this.state = "recording";
     if (hasHeldE2eProfileOperations()) {
       trackHeldProfileRecording(this);
+      const visualPhase = getE2eProfileVisualPhase();
+      if (visualPhase === "ready" || visualPhase === "writing") {
+        queueMicrotask(() => this.stop());
+      }
       return;
     }
     window.setTimeout(() => {
@@ -724,6 +807,7 @@ const e2eProfileOperations = {
     return {
       answerSave: operationSnapshot(profileOperationCounters.answerSave),
       microphone: microphoneSnapshot(),
+      playback: operationSnapshot(profilePlaybackCounters),
       questionSkip: operationSnapshot(profileOperationCounters.questionSkip),
       recording: {
         ...operationSnapshot(profileRecordingCounters),
@@ -733,6 +817,7 @@ const e2eProfileOperations = {
       transcription: operationSnapshot(profileOperationCounters.transcription),
     };
   },
+  releasePlayback: resolveNextProfilePlayback,
   stopRecording: stopNextProfileRecording,
 };
 
