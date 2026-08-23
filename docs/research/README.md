@@ -46,6 +46,7 @@ Last reviewed: 2026-08-24
 - [First-use visual hierarchy audit](./first-use-visual-hierarchy-audit.md)
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Lesson start state stability](./lesson-start-stability.md)
+- [Lesson microphone direct-action feedback guidance](./lesson-microphone-direct-action-feedback-guidance.md)
 - [Lesson speech in short landscape](./lesson-speech-short-landscape.md)
 - [Layered lessons in short landscape](./layered-lesson-short-landscape.md)
 - [My Lessons error recovery](./my-lessons-recovery.md)
