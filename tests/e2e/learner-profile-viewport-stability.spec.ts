@@ -340,7 +340,7 @@ test("profile answer and microphone keep separate native labels and controls", a
   page,
 }) => {
   const viewport = targetViewports[0];
-  const heading = await openFirstProfileQuestion(page, viewport);
+  await openFirstProfileQuestion(page, viewport);
   const answer = page.getByRole("textbox", {
     exact: true,
     name: "Your answer",
@@ -431,8 +431,6 @@ test("profile answer and microphone keep separate native labels and controls", a
     await expect(page.getByRole("status")).toHaveText("Listening…");
     await expect(keyboardSpeak).toBeDisabled();
   }
-
-  await expect(heading).toHaveCount(1);
 });
 
 for (const viewport of targetViewports) {

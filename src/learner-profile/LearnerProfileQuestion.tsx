@@ -109,11 +109,8 @@ export function LearnerProfileQuestionView({
           className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75 short:gap-2"
           disabled={disabled}
         >
-          <label
-            className="grid gap-2 font-black text-brand-ink short:gap-1"
-            htmlFor={inputId}
-          >
-            <span>Your answer</span>
+          <div className="grid gap-2 font-black text-brand-ink short:gap-1">
+            <label htmlFor={inputId}>Your answer</label>
             <span className="flex items-stretch gap-2">
               <textarea
                 className={fieldClassName({
@@ -139,7 +136,7 @@ export function LearnerProfileQuestionView({
                 <Mic aria-hidden="true" className="size-6" />
               </IconButton>
             </span>
-          </label>
+          </div>
 
           {status === "recording" ? (
             <p className="m-0 rounded-2xl bg-sky-100 px-3 py-2.5 font-extrabold text-brand-navy" role="status">
