@@ -623,6 +623,9 @@ for (const viewport of completionViewports) {
       });
       await expect(sentence).toBeFocused();
       await expect(reader.getByLabel("Grown-up options")).toHaveCount(0);
+      await expect(
+        reader.getByRole("region", { name: "Personalized story art" }),
+      ).toHaveCount(0);
 
       for (const name of scenario.controls) {
         await page.keyboard.press("Tab");
@@ -630,10 +633,10 @@ for (const viewport of completionViewports) {
         await expect(control).toBeFocused();
         await expectFullyInsideViewportWithoutScrolling(control, page);
       }
-      await page.keyboard.press("Shift+Tab");
-      await expect(
-        controls.getByRole("button", { name: "Listen" }),
-      ).toBeFocused();
+      for (const name of [...scenario.controls].reverse().slice(1)) {
+        await page.keyboard.press("Shift+Tab");
+        await expect(controls.getByRole("button", { name })).toBeFocused();
+      }
 
       await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
       expect(
@@ -1010,6 +1013,10 @@ for (const viewport of [
     expectStablePosition(
       initialControlsBox,
       await expectContainedWithoutScrolling(reader, controls),
+    );
+    expectStablePosition(
+      initialArtworkBox,
+      await visibleBoxWithoutScrolling(artwork),
     );
     await expect(
       reader.evaluate((element) => element.scrollTop),

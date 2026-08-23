@@ -15,7 +15,7 @@ const tinyPng = Buffer.from(
   "base64",
 );
 
-type PhotoState = "deleted" | "empty" | "ready";
+type PhotoState = "cleanup-only" | "deleted" | "empty" | "ready";
 
 function readyPhotoPayload() {
   return {
@@ -92,6 +92,7 @@ async function mockPersonalizedStoryArtApis(
   initialState: PhotoState = "empty",
 ) {
   let state = initialState;
+  let deleteCount = 0;
 
   await page.route(
     /\/api\/stories\/the-red-ball\/personalized-art(?:\/asset)?(?:\?.*)?$/,
@@ -107,6 +108,15 @@ async function mockPersonalizedStoryArtApis(
           body: JSON.stringify(
             state === "ready"
               ? readyPhotoPayload()
+              : state === "cleanup-only"
+                ? {
+                    enabled: false,
+                    guardianConsentVersion:
+                      "guardian-photo-cloudflare-v1",
+                    hasStoredArt: true,
+                    stories: {},
+                    updatedAt: "2026-08-09T12:00:00.000Z",
+                  }
               : {
                   enabled: true,
                   guardianConsentVersion: "guardian-photo-cloudflare-v1",
@@ -146,6 +156,7 @@ async function mockPersonalizedStoryArtApis(
         pathname === "/api/stories/the-red-ball/personalized-art" &&
         method === "DELETE"
       ) {
+        deleteCount += 1;
         state = "deleted";
         await route.fulfill({ body: "", status: 204 });
         return;
@@ -173,6 +184,8 @@ async function mockPersonalizedStoryArtApis(
       await route.continue();
     },
   );
+
+  return { deleteCount: () => deleteCount };
 }
 
 async function mockSpeakingTurnLesson(page: Page) {
@@ -247,6 +260,39 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
     panel.getByRole("img", { name: personalizedStoryAlt }),
     page,
   );
+  await expectNoHorizontalOverflow(page);
+});
+
+test("disabled generation keeps one cleanup path and confirms deletion", async ({
+  page,
+}) => {
+  await installStoryMediaGuard(page);
+  await page.setViewportSize(narrowPhone);
+  const requests = await mockPersonalizedStoryArtApis(page, "cleanup-only");
+  await page.goto("/stories");
+  await page.getByLabel("Grown-up options").click();
+
+  const panel = page.getByRole("region", { name: "Personalized story art" });
+  await expect(panel).toBeVisible();
+  await expect(
+    panel.getByRole("button", { name: "Delete stored story art" }),
+  ).toBeVisible();
+  await expect(panel.getByLabel("Upload learner photo")).toHaveCount(0);
+  await expect(
+    panel.getByRole("button", { name: "Generate story art" }),
+  ).toHaveCount(0);
+
+  await panel
+    .getByRole("button", { name: "Delete stored story art" })
+    .click();
+
+  await expect(
+    page.getByText("Personalized story art removed.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Delete stored story art" }),
+  ).toHaveCount(0);
+  expect(requests.deleteCount()).toBe(1);
   await expectNoHorizontalOverflow(page);
 });
 

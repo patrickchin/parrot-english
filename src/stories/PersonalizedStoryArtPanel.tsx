@@ -16,7 +16,6 @@ export function PersonalizedStoryArtPanel({
   onGenerate,
   onRemove,
   personalizedArtwork,
-  showPreviewArtwork = true,
   statusMessage = "",
   storyTitle,
 }: {
@@ -33,45 +32,50 @@ export function PersonalizedStoryArtPanel({
   onGenerate: () => void;
   onRemove: () => void;
   personalizedArtwork: PersonalizedStoryArtwork | null;
-  showPreviewArtwork?: boolean;
   statusMessage?: string;
   storyTitle: string;
 }) {
   const cleanupOnly = hasStoredArt && (!featureEnabled || !personalizedArtwork);
-  if (!featureEnabled && !cleanupOnly) return null;
+  const cleanupComplete =
+    !featureEnabled && !hasStoredArt && Boolean(statusMessage);
+  if (!featureEnabled && !cleanupOnly && !cleanupComplete) return null;
 
-  if (cleanupOnly) {
+  if (cleanupOnly || cleanupComplete) {
     return (
       <section
         aria-label="Personalized story art"
         className="rounded-[1.5rem] border-4 border-white bg-white/95 p-4 shadow-card sm:p-5"
       >
         <div className="grid gap-3">
-          <p className="m-0 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand-blue">
-            <ShieldCheck aria-hidden="true" className="size-4" />
-            Private art cleanup
-          </p>
-          <h2 className="m-0 text-xl leading-tight text-brand-navy sm:text-2xl">
-            Remove stored story art
-          </h2>
-          <p className="m-0 text-sm font-bold leading-relaxed text-slate-700">
-            New generation is unavailable, but your private derivative can still
-            be deleted. If an earlier purge failed, this retries it.
-          </p>
-          <div>
-            <ActionButton
-              className="gap-2 rounded-full border-4 border-white"
-              disabled={isGenerating}
-              onClick={onRemove}
-              type="button"
-              variant="surface"
-            >
-              <Trash2 aria-hidden="true" className="size-5" />
-              {isGenerating
-                ? "Deleting stored story art"
-                : "Delete stored story art"}
-            </ActionButton>
-          </div>
+          {cleanupOnly ? (
+            <>
+              <p className="m-0 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand-blue">
+                <ShieldCheck aria-hidden="true" className="size-4" />
+                Private art cleanup
+              </p>
+              <h2 className="m-0 text-xl leading-tight text-brand-navy sm:text-2xl">
+                Remove stored story art
+              </h2>
+              <p className="m-0 text-sm font-bold leading-relaxed text-slate-700">
+                New generation is unavailable, but your private derivative can
+                still be deleted. If an earlier purge failed, this retries it.
+              </p>
+              <div>
+                <ActionButton
+                  className="gap-2 rounded-full border-4 border-white"
+                  disabled={isGenerating}
+                  onClick={onRemove}
+                  type="button"
+                  variant="surface"
+                >
+                  <Trash2 aria-hidden="true" className="size-5" />
+                  {isGenerating
+                    ? "Deleting stored story art"
+                    : "Delete stored story art"}
+                </ActionButton>
+              </div>
+            </>
+          ) : null}
           {error ? (
             <p
               className="m-0 rounded-2xl bg-red-50 px-3 py-2 text-sm font-extrabold text-red-800"
@@ -199,27 +203,12 @@ export function PersonalizedStoryArtPanel({
         </div>
 
         <div className="overflow-hidden rounded-[1.4rem] border-3 border-white bg-[radial-gradient(circle_at_top_left,#fef3c7_0,#dbeafe_45%,#fce7f3_100%)] shadow-control-surface">
-          {personalizedArtwork && showPreviewArtwork ? (
+          {personalizedArtwork ? (
             <img
               alt={personalizedArtwork.alt}
               className="aspect-square h-full w-full object-cover"
               src={personalizedArtwork.src}
             />
-          ) : personalizedArtwork ? (
-            <div
-              aria-label="Story art ready preview hidden"
-              className="grid aspect-square place-items-center p-6 text-center"
-              role="img"
-            >
-              <div className="grid gap-2">
-                <span className="text-sm font-black uppercase tracking-wider text-brand-blue">
-                  Story art ready
-                </span>
-                <p className="m-0 text-base font-extrabold leading-snug text-slate-700">
-                  The personalized page art is active in this story.
-                </p>
-              </div>
-            </div>
           ) : (
             <div
               aria-label="Storybook portrait preview"

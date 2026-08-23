@@ -172,7 +172,8 @@ export function StoryList() {
             </div>
 
             {personalizedStoryArt.featureEnabled ||
-            personalizedStoryArt.metadata.hasStoredArt ? (
+            personalizedStoryArt.metadata.hasStoredArt ||
+            personalizedStoryArt.statusMessage ? (
               <PersonalizedStoryArtPanel
                 consentChecked={personalizedStoryArt.consentChecked}
                 error={personalizedStoryArt.error}
