@@ -19,8 +19,10 @@ const completionViewports = [
 
 async function installStoryMediaGuard(page: Page) {
   await page.addInitScript(() => {
+    let forbiddenStoryAudioConstructions = 0;
     class ForbiddenStoryAudio {
       constructor() {
+        forbiddenStoryAudioConstructions += 1;
         throw new Error("A script-only story tried to create audio.");
       }
     }
@@ -64,6 +66,10 @@ async function installStoryMediaGuard(page: Page) {
     Object.defineProperty(window, "__storySpeech", {
       configurable: true,
       value: storySpeech,
+    });
+    Object.defineProperty(window, "__storyAudioConstructions", {
+      configurable: true,
+      get: () => forbiddenStoryAudioConstructions,
     });
     Object.defineProperty(window, "speechSynthesis", {
       configurable: true,
@@ -245,6 +251,7 @@ async function storySpeechState(page: Page) {
   return page.evaluate(() => {
     const speech = (
       window as unknown as {
+        __storyAudioConstructions: number;
         __storySpeech: {
           cancelled: number;
           endCallbacks: Array<() => void>;
@@ -262,6 +269,9 @@ async function storySpeechState(page: Page) {
       }
     ).__storySpeech;
     return {
+      audioConstructions: (
+        window as unknown as { __storyAudioConstructions: number }
+      ).__storyAudioConstructions,
       callbackCounts: {
         end: speech.endCallbacks.length,
         error: speech.errorCallbacks.length,
@@ -1145,6 +1155,82 @@ test("keyboard completion and replay return to silent page-one context", async (
     window: 0,
   });
   expect((await storySpeechState(page)).spoken).toEqual([]);
+});
+
+test("replay resets a deliberately scrolled completion screen", async ({
+  page,
+}) => {
+  await installStoryMediaGuard(page);
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/stories/the-red-ball/pages/5");
+  await page.getByRole("button", { name: "Finish story" }).click();
+
+  const complete = page.getByRole("region", { name: "Story finished" });
+  const completionMain = page.locator("main");
+  await completionMain.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect
+    .poll(() => completionMain.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  await complete.getByRole("button", { name: "Listen again" }).click();
+
+  await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/1$/);
+  const reader = page.getByRole("region", { name: "Story reader" });
+  await expect(reader.getByText("Here is my red ball.", { exact: true })).toBeFocused();
+  await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
+  const promptGeometry = await readingPaneGeometry(
+    reader.getByLabel("Say it: Red ball!"),
+  );
+  expect(promptGeometry.paneScrollTop).toBe(0);
+  expect(promptGeometry.documentScrollTop).toBe(0);
+  expect(await storyPageScrollState(page)).toEqual({
+    body: 0,
+    document: 0,
+    main: 0,
+    scrollingElement: 0,
+    window: 0,
+  });
+  expect((await storySpeechState(page)).spoken).toEqual([]);
+});
+
+test("completion cancels active narration and ignores its stale callback", async ({
+  page,
+}) => {
+  await installStoryMediaGuard(page);
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/stories/the-red-ball/pages/5");
+
+  await page.getByRole("button", { name: "Listen" }).click();
+  await expect
+    .poll(async () => (await storySpeechState(page)).callbackCounts.end)
+    .toBe(1);
+  const beforeFinish = await storySpeechState(page);
+  expect(beforeFinish.spoken).toEqual(["My red ball is home."]);
+  expect(beforeFinish.audioConstructions).toBe(0);
+
+  await page.getByRole("button", { name: "Finish story" }).click();
+  const complete = page.getByRole("region", { name: "Story finished" });
+  const heading = complete.getByRole("heading", {
+    exact: true,
+    name: "Great job!",
+  });
+  await expect(heading).toBeFocused();
+  const afterFinish = await storySpeechState(page);
+  expect(afterFinish.cancelled).toBeGreaterThan(beforeFinish.cancelled);
+  expect(afterFinish.spoken).toEqual(["My red ball is home."]);
+  expect(afterFinish.audioConstructions).toBe(0);
+
+  await invokeStorySpeechCallback(page, "end", 0);
+  await expect(heading).toBeFocused();
+  await expect(complete).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Story reader" }),
+  ).toBeHidden();
+  const afterStaleCallback = await storySpeechState(page);
+  expect(afterStaleCallback.spoken).toEqual(["My red ball is home."]);
+  expect(afterStaleCallback.callbackCounts.end).toBe(1);
+  expect(afterStaleCallback.audioConstructions).toBe(0);
 });
 
 for (const viewport of viewports) {
