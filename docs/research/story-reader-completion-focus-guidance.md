@@ -143,8 +143,9 @@ keyed to completion state and should not run on unrelated rerenders.
 
 ## Visual decision
 
-Use an open four-pixel brand-blue rule in the heading's left margin, separated
-from the glyphs. This reuses the Story Reader's established visual grammar for
+Use an open four-pixel brand-blue rule in the heading's left margin, with eight
+pixels of cream between the rule and the first glyph. This reuses the Story
+Reader's established visual grammar for
 “reading/context arrived here.” It avoids a closed outline that could make the
 static heading resemble a button or form field, and it requires no icon, color
 name, or explanatory copy.
@@ -156,6 +157,26 @@ a real two-pixel outline with two-pixel offset. Automated and visual review
 must confirm the marker is not clipped, does not touch the first glyph, does
 not change wrapping or card geometry, and does not make the heading appear
 interactive.
+
+### Visual-review revision, 2026-08-24
+
+The first implemented candidate copied the page-text marker's four-pixel glyph
+gap. Functional checks passed, but independent review of both retained Browser
+captures found that a full heading-height bar at that distance optically joined
+the text as `|Great job!`. It could be decoded as a capital **I**, caret, or
+stray glyph rather than a location cue.
+
+The selected treatment keeps the same open four-pixel rule and moves it four
+pixels farther left, leaving eight pixels of cream before the unchanged title.
+The rejected captures remain in the artifact manifest. The revision changes no
+text position, wrapping, card or action geometry, focus behavior, or timing.
+
+The heading focus box intentionally shrink-wraps the rendered title instead of
+spanning its parent column. That keeps the normal-color marker and forced-color
+outline local to the words. It changes the focused element's box, but not the
+visible glyph position or any surrounding layout. Matched before/after decoded
+images and action/card rectangles, rather than a CSS-source assertion, own the
+no-visible-shift claim.
 
 ## Options considered
 
@@ -226,7 +247,8 @@ Automated rendered behavior should prove:
   at origin at 280×568, 390×844, 640×360, and 1280×800;
 - the next forward Tab focuses **Listen again**;
 - the open marker renders with the expected position, separation, and contrast
-  without changing heading, card, or action geometry;
+  without moving the rendered heading glyphs, card, or actions or introducing
+  horizontal overflow;
 - forced colors retains a visible focus fallback;
 - completion does not start narration;
 - pointer and keyboard **Listen again** return to page 1, focus its sentence,

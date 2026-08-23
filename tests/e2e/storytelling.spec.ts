@@ -10,6 +10,13 @@ const viewports = [
   { height: 800, name: "desktop", width: 1280 },
 ];
 
+const completionViewports = [
+  { height: 568, name: "ultra-narrow phone", width: 280 },
+  { height: 844, name: "regular phone", width: 390 },
+  { height: 360, name: "short-wide reader", width: 640 },
+  { height: 800, name: "desktop", width: 1280 },
+] as const;
+
 async function installStoryMediaGuard(page: Page) {
   await page.addInitScript(() => {
     class ForbiddenStoryAudio {
@@ -171,6 +178,31 @@ async function visibleBoxWithoutScrolling(locator: Locator) {
   const box = await locator.boundingBox();
   expect(box).not.toBeNull();
   return box!;
+}
+
+async function expectFullyInsideViewportWithoutScrolling(
+  locator: Locator,
+  page: Page,
+) {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
+  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+}
+
+async function storyPageScrollState(page: Page) {
+  return page.evaluate(() => ({
+    body: document.body.scrollTop,
+    document: document.documentElement.scrollTop,
+    main: document.querySelector("main")?.scrollTop ?? null,
+    scrollingElement: document.scrollingElement?.scrollTop ?? null,
+    window: window.scrollY,
+  }));
 }
 
 async function readingPaneGeometry(locator: Locator) {
@@ -1013,6 +1045,106 @@ test("finishing a prototype uses story-owned completion copy", async ({ page }) 
     "href",
     "/stories",
   );
+});
+
+for (const viewport of completionViewports) {
+  test(`story completion owns a visible, useful focus location on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await installStoryMediaGuard(page);
+    await page.setViewportSize(viewport);
+    await page.goto("/stories/the-red-ball/pages/5");
+
+    await page.getByRole("button", { name: "Finish story" }).click();
+
+    const complete = page.getByRole("region", { name: "Story finished" });
+    const heading = complete.getByRole("heading", {
+      exact: true,
+      name: "Great job!",
+    });
+    const replay = complete.getByRole("button", { name: "Listen again" });
+    await expect(heading).toBeFocused();
+    await expect(heading).toHaveAttribute("tabindex", "-1");
+    await expectFullyInsideViewportWithoutScrolling(heading, page);
+    await expectFullyInsideViewportWithoutScrolling(replay, page);
+    expect(await storyPageScrollState(page)).toEqual({
+      body: 0,
+      document: 0,
+      main: 0,
+      scrollingElement: 0,
+      window: 0,
+    });
+    expect((await storySpeechState(page)).spoken).toEqual([]);
+    await expectNoHorizontalOverflow(page);
+
+    await page.keyboard.press("Tab");
+    await expect(replay).toBeFocused();
+    await replay.click();
+
+    await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/1$/);
+    const reader = page.getByRole("region", { name: "Story reader" });
+    const sentence = reader.getByText("Here is my red ball.", { exact: true });
+    await expect(sentence).toBeFocused();
+    await expect(reader.getByRole("button", { name: "Listen" })).toBeEnabled();
+    await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
+    const promptGeometry = await readingPaneGeometry(
+      reader.getByLabel("Say it: Red ball!"),
+    );
+    expect(promptGeometry.paneScrollTop).toBe(0);
+    expect(promptGeometry.documentScrollTop).toBe(0);
+    expect(await storyPageScrollState(page)).toEqual({
+      body: 0,
+      document: 0,
+      main: 0,
+      scrollingElement: 0,
+      window: 0,
+    });
+    expect((await storySpeechState(page)).spoken).toEqual([]);
+    await expectNoHorizontalOverflow(page);
+  });
+}
+
+test("keyboard completion and replay return to silent page-one context", async ({
+  page,
+}) => {
+  await installStoryMediaGuard(page);
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/stories/the-red-ball/pages/5");
+
+  const finish = page.getByRole("button", { name: "Finish story" });
+  await finish.focus();
+  await page.keyboard.press("Enter");
+
+  const complete = page.getByRole("region", { name: "Story finished" });
+  const heading = complete.getByRole("heading", {
+    exact: true,
+    name: "Great job!",
+  });
+  await expect(heading).toBeFocused();
+  await page.keyboard.press("Tab");
+  const replay = complete.getByRole("button", { name: "Listen again" });
+  await expect(replay).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/1$/);
+  const sentence = page.getByText("Here is my red ball.", { exact: true });
+  await expect(sentence).toBeFocused();
+  await expect(page.getByRole("button", { name: "Listen" })).toBeEnabled();
+  const reader = page.getByRole("region", { name: "Story reader" });
+  await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
+  const promptGeometry = await readingPaneGeometry(
+    page.getByLabel("Say it: Red ball!"),
+  );
+  expect(promptGeometry.paneScrollTop).toBe(0);
+  expect(promptGeometry.documentScrollTop).toBe(0);
+  expect(await storyPageScrollState(page)).toEqual({
+    body: 0,
+    document: 0,
+    main: 0,
+    scrollingElement: 0,
+    window: 0,
+  });
+  expect((await storySpeechState(page)).spoken).toEqual([]);
 });
 
 for (const viewport of viewports) {

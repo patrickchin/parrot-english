@@ -183,12 +183,14 @@ function renderedScreenshotDelta({
   borderRadius,
   box,
   focused,
+  markerOffset = -8,
   unfocused,
   viewport,
 }: {
   borderRadius: number;
   box: NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>;
   focused: Awaited<ReturnType<typeof decodedScreenshot>>;
+  markerOffset?: number;
   unfocused: Awaited<ReturnType<typeof decodedScreenshot>>;
   viewport: NonNullable<ReturnType<Page["viewportSize"]>>;
 }) {
@@ -209,10 +211,13 @@ function renderedScreenshotDelta({
     focused.info.height,
     Math.ceil((box.y + box.height + padding) * scaleY),
   );
-  const markerLeft = Math.max(0, Math.floor((box.x - 8) * scaleX));
+  const markerLeft = Math.max(
+    0,
+    Math.floor((box.x + markerOffset) * scaleX),
+  );
   const markerRight = Math.min(
     focused.info.width,
-    Math.ceil((box.x - 4) * scaleX),
+    Math.ceil((box.x + markerOffset + 4) * scaleX),
   );
   const outlineLeftLeft = Math.max(0, Math.floor((box.x - 4) * scaleX));
   const outlineLeftRight = Math.min(
@@ -348,7 +353,11 @@ async function renderedFocusDelta(page: Page, target: Locator) {
   return renderedScreenshotDelta({ ...geometry, focused, unfocused });
 }
 
-async function renderedInitialFocusDelta(page: Page, target: Locator) {
+async function renderedInitialFocusDelta(
+  page: Page,
+  target: Locator,
+  markerOffset = -8,
+) {
   await expect(target).toBeVisible();
   await expect(target).toBeFocused();
   const geometry = await focusGeometry(page, target);
@@ -357,7 +366,12 @@ async function renderedInitialFocusDelta(page: Page, target: Locator) {
   await expect(target).not.toBeFocused();
   const unfocused = await decodedScreenshot(page);
 
-  return renderedScreenshotDelta({ ...geometry, focused, unfocused });
+  return renderedScreenshotDelta({
+    ...geometry,
+    focused,
+    markerOffset,
+    unfocused,
+  });
 }
 
 function expectRenderedFocusTarget(
@@ -455,6 +469,24 @@ test("programmatic story focus stays visible on a narrow phone", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test("programmatic story completion focus uses the open reading marker", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/stories/the-red-ball/pages/5");
+  await page.getByRole("button", { name: "Finish story" }).click();
+  const heading = page.getByRole("heading", {
+    exact: true,
+    name: "Great job!",
+  });
+
+  expectRenderedReadingMarker(
+    await renderedInitialFocusDelta(page, heading, -12),
+    "Story Reader completion heading",
+  );
 });
 
 test("story page changes retain the visible reading marker after pointer input", async ({
@@ -608,6 +640,34 @@ for (const scenario of [
     );
   });
 }
+
+test("story completion focus retains a real indicator in forced colors", async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/stories/the-red-ball/pages/5");
+  await page.getByRole("button", { name: "Finish story" }).click();
+  const heading = page.getByRole("heading", {
+    exact: true,
+    name: "Great job!",
+  });
+
+  await expect(heading).toBeFocused();
+  const indicator = await heading.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.outlineStyle).not.toBe("none");
+  expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
+  expectRenderedForcedReadingOutline(
+    await renderedInitialFocusDelta(page, heading),
+    "forced-colors Story Reader completion heading",
+  );
+});
 
 test("dark-surface focus does not fade in or linger after moving", async ({
   page,

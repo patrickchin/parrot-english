@@ -84,6 +84,7 @@ export function StoryReader({
   const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
   const resumeNarrationStateRef = useRef<"join-in" | "playing">("playing");
+  const completionHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const errorRef = useRef<HTMLParagraphElement | null>(null);
   const joinInPromptRef = useRef<HTMLElement | null>(null);
   const pageTextRef = useRef<HTMLParagraphElement | null>(null);
@@ -117,6 +118,12 @@ export function StoryReader({
     if (readingPaneRef.current) readingPaneRef.current.scrollTop = 0;
     pageTextRef.current?.focus({ preventScroll: true });
   }, [pageIndex, story.id]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (isStoryComplete) {
+      completionHeadingRef.current?.focus({ preventScroll: true });
+    }
+  }, [isStoryComplete]);
 
   useIsomorphicLayoutEffect(() => {
     if (error) revealWithinPane(readingPaneRef.current, errorRef.current);
@@ -275,7 +282,11 @@ export function StoryReader({
               <p className="m-0 text-sm font-black uppercase tracking-wider text-brand-green">
                 The end!
               </p>
-              <h1 className="mb-0 mt-1 text-3xl leading-none text-brand-ink sm:text-4xl">
+              <h1
+                className="relative mx-auto mb-0 mt-1 w-fit text-3xl leading-none text-brand-ink outline-none before:absolute before:inset-y-0 before:-left-3 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-4xl"
+                ref={completionHeadingRef}
+                tabIndex={-1}
+              >
                 Great job!
               </h1>
               <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-700">
