@@ -181,8 +181,12 @@ is implemented on `codex/shared-focus-visibility` at `d5e1bdc`. The stacked
 route-specific Story Reader page-arrival cue is implemented on
 `codex/story-reader-page-focus-visibility` at `8c300aa`: static prose now uses
 an open, separated reading marker rather than a pale closed ring, without
-changing any current story's geometry. The generated-feedback language
-contract follows this visual repair.
+changing any current story's geometry. The later deterministic profile
+acknowledgment and static acknowledgment-audio branches remove generated copy
+drift and its redundant runtime speech request. The current stacked
+`codex/story-reader-join-in-visibility` branch exposes each yellow speaking
+task at its narration phase while preserving sentence-first arrival and fixed
+artwork/controls.
 
 ### Hand-off record
 
@@ -568,6 +572,23 @@ Retain, revise, or reject: retain provisionally pending human listening and targ
 Next branch: codex/story-reader-join-in-visibility stacked on this documentation hand-off; then codex/profile-heading-reading-cue
 ```
 
+```text
+Branch: codex/story-reader-join-in-visibility
+Base branch / dependency: codex/static-profile-acknowledgment-audio documentation hand-off 6ca36e7
+Research commit: 160ac63
+Implementation commit: 5464b9d
+Review coverage follow-up: af4c9d5
+Hypothesis: moving only the existing inner reading pane at the real narration boundary can expose the complete child speaking task without shrinking text, adding instructions, moving focus, or moving artwork and controls
+Changed: phase-aware minimum-distance prompt reveal; page/replay origin reset; adjacent error reveal; saved-audio completion contract; device-phase, pause/resume, replay, stale-callback, error, fixed-layout, viewport, reduced-motion, and complete-catalog browser coverage; three visual evidence captures; guidance and implementation research
+Not changed: story words, labels, art, narration rate, audio assets, focus order, target sizes, outer layout, animation, routes, APIs, persistence, telemetry, dependencies, or translations
+Tests: 678/678 unit/integration/lifecycle/safety tests; 244/244 Chromium tests including all 122 current story pages; TypeScript and production build passed; lint 0 errors with 2 generated-file warnings; 399 local Markdown links, JPEG integrity, and diff checks passed
+Screenshots / traces: one baseline and two retained genuine in-app Browser JPEGs with integrity manifest in artifacts/ux-review/story-reader-join-in-visibility at 640×360
+Measured result: baseline 47 full / 74 partial / 1 hidden prompt at arrival; retained phase exposes every current prompt before its join-in utterance and at Your turn; Kite exposes 67.5/67.5 px at scrollTop 63.5 and Picnic 95/95 px at scrollTop 121 while outer reader, artwork, controls, document, and focus remain stable
+Risks / limitations: deterministic local Chromium and English LTR only; no target browser/device/AT, zoom/text-spacing, localization/RTL, physical-audio, or child/caregiver evidence; combined saved narration has no phrase cue and can reveal honestly only at completion
+Retain, revise, or reject: retain provisionally after three independent reviews and two accepted test-coverage revisions, pending documented formative/platform follow-ups
+Next question: reproduce the completion-to-replay sentence-focus concern, then compare it with the queued profile-heading reading cue
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -630,14 +651,13 @@ branches.
     four-pixel page-arrival marker and real forced-colors fallback. The
     retained pair is 6.451:1; all 122 current pages preserve baseline geometry.
 15. **High: the Story Reader join-in prompt is partly or wholly hidden on most
-    pages at 640×360.**
-    A subsequent 122-page geometry sweep found 47 prompts fully visible, 74
-    partial, and one wholly hidden; 26 pages expose none of the prompt label or
-    phrase text. Kite, Come Back! page 4 retains only 4 of 67.5 pixels even when
-    narration reaches **Your turn**. The page-focus branch causes zero prompt or
-    scroll-geometry change. Repair phase-appropriate visibility separately
-    without reducing story font size or silently moving focus away from the
-    sentence on `codex/story-reader-join-in-visibility`.
+    pages at 640×360.** Fixed provisionally on
+    `codex/story-reader-join-in-visibility` at `5464b9d`. The baseline
+    122-page sweep found 47 prompts fully visible, 74 partial, and one wholly
+    hidden; 26 pages exposed none of the label or phrase. The retained behavior
+    resets to the sentence at arrival/replay, then minimally moves only the
+    inner reading pane before the current join-in utterance and keeps all 122
+    prompts complete at **Your turn** without moving focus, art, or controls.
 16. **High: deterministic form-profile saves still waited for redundant runtime
     acknowledgment synthesis.** Fixed on
     `codex/static-profile-acknowledgment-audio` at `41bb210`. The Worker now

@@ -310,17 +310,25 @@ confusion, not time-on-app or child audio.
 
 ## Branch record
 
-Research commit: this branch's first commit after `6ca36e7`
+Research commit: `160ac63`
 
-Implementation commit: pending
+Implementation commit: `5464b9d`
 
-Tests: baseline 1/1 focused Node behavior and 13/13 Storytelling Chromium pass;
-candidate evidence pending
+Review coverage follow-up: `af4c9d5`
 
-Screenshots: baseline Browser JPEG and manifest under
-`artifacts/ux-review/story-reader-join-in-visibility`; retained captures pending
+Tests: 678/678 unit, integration, lifecycle, and safety tests; 244/244 full
+Chromium tests, including an executable 122-page current-catalog sweep;
+TypeScript and production build passed; lint reported zero errors and two
+pre-existing generated-file warnings; 399 local Markdown links, three JPEG
+payloads/dimensions/digests, and `git diff --check` passed
 
-Retain, revise, or reject: pending implementation and review
+Screenshots: one baseline and two retained in-app Browser JPEGs with SHA-256
+digests under `artifacts/ux-review/story-reader-join-in-visibility`
 
-Next question: after the child task is reliably visible, should the queued
-profile-heading reading cue remain the highest-impact independent improvement?
+Retain, revise, or reject: retain provisionally as a phase-aware inner-pane
+visibility repair, pending the implementation memo's direct child, device,
+browser, and assistive-technology follow-ups
+
+Next question: reproduce the independent completion-to-replay focus concern,
+then compare its impact with the queued profile-heading reading cue before
+selecting the next stacked implementation.

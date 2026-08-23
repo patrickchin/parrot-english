@@ -5,7 +5,7 @@ is not to make the product look "research-backed." It is to make assumptions,
 trade-offs, unknowns, and evidence inspectable by the next person who changes
 the product.
 
-Last reviewed: 2026-08-22
+Last reviewed: 2026-08-24
 
 ## Start here
 
@@ -33,6 +33,7 @@ Last reviewed: 2026-08-22
 - [Story Reader page-focus visibility guidance](./story-reader-page-focus-guidance.md)
 - [Story Reader page-arrival focus implementation](./story-reader-page-focus-implementation.md)
 - [Story Reader join-in visibility guidance](./story-reader-join-in-visibility-guidance.md)
+- [Story Reader join-in visibility implementation](./story-reader-join-in-visibility-implementation.md)
 - [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Repeated Talk failure: picture-led lesson fallback](./repeated-talk-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)
