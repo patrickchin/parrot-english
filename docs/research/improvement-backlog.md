@@ -810,6 +810,23 @@ branches.
     learner-turn status stays stable; `a541fdf` moves that stable **Your turn**
     label to its single progress-label source of truth, and `b7a3a48` makes
     initial Enter/Space request behavior durable.
+23. **High: the profile answer textarea and microphone share one HTML label.**
+    The microphone button is nested inside the textarea's `<label>`, and current
+    Chromium accessibility exposure names the textbox **Your answer Speak your
+    answer**. Research and implement a neutral field wrapper plus a dedicated
+    textarea label, preserving visible geometry, label-click focus, exact
+    separate textbox/button names, and native Tab order.
+24. **High: form-profile save can discard the learner's focus and duplicate
+    pending feedback.** Saving disables the fieldset containing the activated
+    action, can move focus to `BODY`, and renders **Peppa is thinking…** in more
+    than one place. Define stable pending ownership, exactly-once activation,
+    success/error focus hand-off, retry, route-exit cleanup, and stale-settlement
+    behavior before implementation.
+25. **High: direct Story shelf reveal can finish with focus on `BODY`.** The
+    pathname-keyed route focus manager can focus the Suspense fallback and does
+    not rerun when the lazy Story shelf replaces it. Reproduce fast and delayed
+    direct entry and restore destination focus without stealing it after the
+    learner has moved to a surviving header action.
 
 ### Test-infrastructure observation
 
