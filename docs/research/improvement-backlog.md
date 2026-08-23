@@ -827,6 +827,13 @@ branches.
     not rerun when the lazy Story shelf replaces it. Reproduce fast and delayed
     direct entry and restore destination focus without stealing it after the
     learner has moved to a surviving header action.
+26. **High: the account control obscures the profile replay-question action at
+    compact widths.** The production-copy bilingual fixture exposed a 44×9.25
+    CSS px overlap at 280×568 and a 21.78×24 CSS px overlap at 640×360 between
+    **Account for Mia** and **Replay question**. The account control paints over
+    the replay action. Isolate a stacked responsive-layout branch that keeps
+    both complete, operable, and focus-visible without hiding the account,
+    shrinking either 44×44 target, or moving question content off-screen.
 
 ### Test-infrastructure observation
 

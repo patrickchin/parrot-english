@@ -1,3 +1,5 @@
+import questionnaire from "../../content/learner-profile/questionnaire-v2.json";
+
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
 
 const MOCK_AUDIO_DELAY_MS = 200;
@@ -12,6 +14,7 @@ const E2E_MICROPHONE_SCENARIOS = new Set([
 ]);
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
 const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
+const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
 const E2E_LONG_ACKNOWLEDGMENT =
   "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!";
@@ -23,6 +26,7 @@ const E2E_SAVED_ACKNOWLEDGMENT_AUDIO = {
 const E2E_PROFILE_SCENARIOS = new Set([
   E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO,
   E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO,
+  E2E_PROFILE_RESUME_SCENARIO,
   E2E_PROFILE_VIEWPORT_SCENARIO,
 ]);
 
@@ -88,14 +92,20 @@ const E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT = {
   },
 };
 
+const E2E_VIEWPORT_QUESTIONS = questionnaire.questions.map((question) => ({
+  answerKey: question.answerKey,
+  audio: null,
+  maxLength: question.maxLength,
+  position: question.position,
+  promptEn: question.promptEn,
+  promptZh: question.promptZh,
+  required: question.required,
+}));
+
 const E2E_VIEWPORT_INCOMPLETE_PROFILE = {
   ...E2E_INCOMPLETE_PROFILE,
   progress: { answered: 0, current: 1, total: 6 },
-  question: {
-    ...E2E_INCOMPLETE_PROFILE.question,
-    promptEn: "Hi! I'm Peppa. What's your name?",
-    promptZh: "你好！我是佩奇。你叫什么名字？",
-  },
+  question: E2E_VIEWPORT_QUESTIONS[0],
 };
 
 const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
@@ -113,7 +123,7 @@ const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
           acknowledgment: "Thank you!",
           answeredAt: "2026-07-10T08:00:00.000Z",
           enrichmentStatus: "generated",
-          question: "What's your name?",
+          question: E2E_VIEWPORT_QUESTIONS[0].promptEn,
           rawAnswer: "Mia",
           summary: "Mia",
         },
@@ -124,20 +134,52 @@ const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
     profileStatus: "in_progress",
   },
   progress: { answered: 1, current: 2, total: 6 },
-  question: {
-    answerKey: "age",
-    audio: null,
-    maxLength: 120,
-    position: 2,
-    promptEn: "How old are you?",
-    promptZh: null,
-    required: true,
-  },
+  question: E2E_VIEWPORT_QUESTIONS[1],
 };
+
+const E2E_VIEWPORT_RESUMED_PROFILE = {
+  canBypass: E2E_VIEWPORT_PROFILE_AFTER_NAME.canBypass,
+  experienceMode: E2E_VIEWPORT_PROFILE_AFTER_NAME.experienceMode,
+  mode: E2E_VIEWPORT_PROFILE_AFTER_NAME.mode,
+  profile: E2E_VIEWPORT_PROFILE_AFTER_NAME.profile,
+  progress: E2E_VIEWPORT_PROFILE_AFTER_NAME.progress,
+  question: E2E_VIEWPORT_PROFILE_AFTER_NAME.question,
+  questionnaire: E2E_VIEWPORT_PROFILE_AFTER_NAME.questionnaire,
+};
+
+const E2E_VIEWPORT_RAW_ANSWERS = [
+  "Mia",
+  "8",
+  "Bluey",
+  "pandas",
+  "drawing",
+  "animal stories",
+];
+
+const E2E_VIEWPORT_COMPLETED_RESPONSES = Object.fromEntries(
+  E2E_VIEWPORT_QUESTIONS.map((question, index) => {
+    const answer = E2E_VIEWPORT_RAW_ANSWERS[index];
+    return [
+      question.answerKey,
+      {
+        acknowledgment: "Thank you!",
+        answeredAt: "2026-07-10T08:00:00.000Z",
+        enrichmentStatus: "generated",
+        question: question.promptEn,
+        rawAnswer: answer,
+        summary: answer,
+      },
+    ];
+  }),
+);
 
 const E2E_VIEWPORT_EDITOR_PROFILE = {
   ...E2E_VIEWPORT_PROFILE_AFTER_NAME.profile,
   age: 8,
+  answers: {
+    ...E2E_VIEWPORT_PROFILE_AFTER_NAME.profile.answers,
+    responses: E2E_VIEWPORT_COMPLETED_RESPONSES,
+  },
   completedAt: "2026-07-10T08:00:00.000Z",
   currentQuestionKey: null,
   profileStatus: "completed",
@@ -148,14 +190,14 @@ const E2E_VIEWPORT_EDITOR_GATE = {
   experienceMode: "form",
   mode: "full",
   profile: E2E_VIEWPORT_EDITOR_PROFILE,
-  progress: { answered: 2, current: 2, total: 6 },
+  progress: { answered: 6, current: 6, total: 6 },
   question: null,
   questionnaire: { version: 2 },
 };
 
 const E2E_VIEWPORT_EDITOR_STATE = {
   profile: E2E_VIEWPORT_EDITOR_PROFILE,
-  questions: [],
+  questions: E2E_VIEWPORT_QUESTIONS,
 };
 
 function getE2eScenario() {
@@ -214,11 +256,13 @@ function installE2eProfileFetchMock() {
       method === "GET"
     ) {
       return json(
-        profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
-          ? window.location.pathname === "/profile"
-            ? E2E_VIEWPORT_EDITOR_GATE
-            : E2E_VIEWPORT_INCOMPLETE_PROFILE
-          : E2E_INCOMPLETE_PROFILE,
+        profileScenario === E2E_PROFILE_RESUME_SCENARIO
+          ? E2E_VIEWPORT_RESUMED_PROFILE
+          : profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
+            ? window.location.pathname === "/profile"
+              ? E2E_VIEWPORT_EDITOR_GATE
+              : E2E_VIEWPORT_INCOMPLETE_PROFILE
+            : E2E_INCOMPLETE_PROFILE,
       );
     }
 

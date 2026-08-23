@@ -989,7 +989,7 @@ describe("onboarding and profile gate", () => {
     assert.match(start, /Answer 6 questions/);
     assert.match(
       start,
-      /We save your answers for chats and lessons\. A grown-up can change your answers\./,
+      /We save your answers\. A grown-up can change your name and age\./,
     );
     assert.match(start, />Start questions</);
     assert.match(start, />Skip for now</);
@@ -1011,6 +1011,25 @@ describe("onboarding and profile gate", () => {
 
     assert.match(start, /Answer 1 question/);
     assert.doesNotMatch(start, /Answer 1 questions/);
+  });
+
+  it("names the remaining task when setup resumes", () => {
+    const resumed = renderGate({
+      data: fullState({
+        progress: { answered: 1, current: 2, total: 6 },
+      }),
+    });
+    assert.match(resumed, /Answer 5 more questions/);
+    assert.match(resumed, />Continue questions</);
+    assert.doesNotMatch(resumed, />Start questions</);
+
+    const lastQuestion = renderGate({
+      data: fullState({
+        progress: { answered: 5, current: 6, total: 6 },
+      }),
+    });
+    assert.match(lastQuestion, /Answer 1 more question/);
+    assert.doesNotMatch(lastQuestion, /Answer 1 more questions/);
   });
 
   it("shows acknowledgment before the next question or completed lesson", () => {

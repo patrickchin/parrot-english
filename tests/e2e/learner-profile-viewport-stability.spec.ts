@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const profilePath = "/profile/setup?parrotE2eProfile=viewport-stability";
+const resumeProfilePath = "/profile/setup?parrotE2eProfile=viewport-resume";
 const peppaPath = "/assets/characters/peppa/peppa-happy.webp";
 
 const targetViewports = [
@@ -182,7 +183,7 @@ test("profile setup names the task and saved-answer facts in literal language", 
   await expect(heading).toBeFocused();
   await expect(
     page.getByText(
-      "We save your answers for chats and lessons. A grown-up can change your answers.",
+      "We save your answers. A grown-up can change your name and age.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -195,6 +196,36 @@ test("profile setup names the task and saved-answer facts in literal language", 
   await page.keyboard.press("Tab");
   await expect(start).toBeFocused();
 });
+
+for (const viewport of targetViewports) {
+  test(`profile setup names the remaining task on resume on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(resumeProfilePath);
+    const heading = page.getByRole("heading", {
+      name: "Answer 5 more questions",
+    });
+    const resume = page.getByRole("button", { name: "Continue questions" });
+    const skip = page.getByRole("button", { name: "Skip for now" });
+
+    await expect(heading).toBeFocused();
+    await expect(resume).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Start questions" }),
+    ).toHaveCount(0);
+    for (const target of [heading, resume, skip]) {
+      await expectInsideViewport(target, viewport);
+    }
+    await expectMinimumTarget(resume);
+    await expectMinimumTarget(skip);
+    await expectAccountClearOf(page, [heading, resume, skip]);
+    await expectNoHorizontalOverflow(page);
+
+    await page.keyboard.press("Tab");
+    await expect(resume).toBeFocused();
+  });
+}
 
 for (const viewport of targetViewports) {
   test(`profile setup keeps each transition usable on a ${viewport.name}`, async ({

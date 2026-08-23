@@ -116,14 +116,21 @@ type LearnerProfileGateViewProps = {
 };
 
 function LearnerProfileSetupView({
+  answeredQuestionCount,
   onSkip,
   onStart,
   questionCount,
 }: {
+  answeredQuestionCount: number;
   onSkip: () => void;
   onStart: () => void;
   questionCount: number;
 }) {
+  const isResuming = answeredQuestionCount > 0;
+  const visibleQuestionCount = isResuming
+    ? questionCount - answeredQuestionCount
+    : questionCount;
+
   return (
     <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
       <img
@@ -137,15 +144,15 @@ function LearnerProfileSetupView({
         className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
         stepKey="setup"
       >
-        Answer {questionCount} {questionCount === 1 ? "question" : "questions"}
+        Answer {visibleQuestionCount}{isResuming ? " more" : ""}{" "}
+        {visibleQuestionCount === 1 ? "question" : "questions"}
       </LearnerProfileStepHeading>
       <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
-        We save your answers for chats and lessons. A grown-up can change your
-        answers.
+        We save your answers. A grown-up can change your name and age.
       </p>
       <div className="grid justify-items-center gap-1 short-wide:col-start-2 short-wide:row-start-3 short-wide:flex short-wide:items-center short-wide:justify-self-start short-wide:gap-4">
         <ActionButton onClick={onStart} type="button">
-          Start questions
+          {isResuming ? "Continue questions" : "Start questions"}
         </ActionButton>
         <TextButton onClick={onSkip} type="button">
           Skip for now
@@ -339,6 +346,7 @@ export function LearnerProfileGateView({
     return (
       <LearnerProfileScreen>
         <LearnerProfileSetupView
+          answeredQuestionCount={fullData.progress.answered}
           onSkip={onSkip}
           onStart={onStart}
           questionCount={fullData.progress.total}
