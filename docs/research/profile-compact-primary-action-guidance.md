@@ -7,8 +7,12 @@ Branch: `codex/profile-compact-primary-action`
 Stacked base: `codex/profile-operation-pending-focus` documentation hand-off at
 `7e6d75a`
 
-Status: researched implementation contract; it does not claim an implemented
-result, WCAG conformance, or child comprehension
+Status: implemented and provisionally retained; it does not claim WCAG
+conformance or child comprehension
+
+Implementation: `5b2fa73`; acceptance hardening: `7978833`; see the
+[implementation record](./profile-compact-primary-action-implementation.md)
+and [visual manifest](../../artifacts/ux-review/profile-compact-primary-action/manifest.md)
 
 ## Question and boundary
 
@@ -74,8 +78,8 @@ The failure is a breakpoint gap rather than unavoidable content length:
 A width scan found the three-line English heading and hidden action through
 346 pixels. The action becomes complete around 348 pixels because the footer
 reflows, and the English heading becomes two lines at 360 pixels. A local
-`max-width: 359px` rule covers the fragile interval and leaves the existing
-360px guard unchanged.
+below-360px rule covers the fragile interval and leaves the existing 360px
+composition unchanged.
 
 These are deterministic CSS-pixel observations in one local Chromium build,
 not device prevalence, production analytics, physical target measurements, or
@@ -99,10 +103,14 @@ proof that a child will understand **Next**.
 ### Do not assume touch or prompts are universal skills
 
 A study of 90 children aged two to eight reported that 57% of its four-to-six
-group completed the tested simple gestures and 63% followed its animation
-prompt. A separate study of 60 children aged four to six found high trained
-success with explicit off-screen directional prompts and that an arrow was
-faster than a mini-map or border thumbnail. See [UX-05 and UX-06](./source-register.md).
+group tapped the intended stationary target and that 63% followed one or more
+in-app prompts. Only 37% had animation as the most difficult prompt they
+actually followed, and the analysis assumed that a child who followed a harder
+prompt could follow every easier one. A separate study of 60 children aged
+four to six found over 90% trained success with three explicit off-screen
+directional prompts. Its mini-map took significantly longer than both the
+arrow and border thumbnail; there was no significant arrow-versus-border
+completion-time difference. See [UX-05 and UX-06](./source-register.md).
 
 These adjacent studies caution against relying on unprompted discovery and
 show that an explicit cue can be a fallback. They do not test page scrolling,
@@ -143,8 +151,9 @@ At 280x568 the values duplicate the already-active `short` utilities. The
 excluded and already fits. The prototype preserved the 130-pixel answer area
 and moved Replay farther from Account.
 
-This is the smallest change that fixes action discovery without reducing
-learning or interaction space.
+This is the smallest change that fixes the reproduced initial-visibility
+failure without reducing learning or interaction space. Whether it improves
+discovery for actual learners remains a direct-research question.
 
 ### 2. Compact the form and textarea — rejected
 
@@ -181,17 +190,19 @@ not carry the cue alone.
 2. Replay, answer, microphone, Skip, and Next retain their DOM and sequential
    keyboard order. Traversing from the heading through Next does not move the
    main scroll from zero.
-3. Replay, microphone, Skip, and Next remain at least 44x44 CSS pixels. Next
-   remains 144x52 rather than inheriting the smaller short-screen button size.
+3. Replay, microphone, Skip, and Next remain at least 44x44 CSS pixels. At
+   320x640 and 359x640, Next remains 144x52 rather than inheriting the smaller
+   short-screen button size used by the existing 280x568 composition.
 4. The change is question-local and uses Tailwind utilities in the component;
    it does not change shared controls or global breakpoint definitions.
 5. At 280x568, 360x640, 390x844, 640x360, and 1440x900, the existing containment,
    focus, account-clearance, reflow, layout-stability, and short-landscape
    scroll contracts continue to pass.
 6. At 320x640, required and optional questions keep the complete Next target
-   and focus paint visible during idle and every pending phase. An inserted
-   error may minimally scroll its already-focused retry into view under the
-   existing error contract.
+   visible during idle and every pending phase. Its focus paint is complete
+   when Next owns focus in required keyboard traversal or optional thinking.
+   An inserted error may minimally scroll its already-focused retry into view
+   under the existing error contract.
 7. There is no horizontal overflow, nested scroll container, sticky region,
    new animation, new copy, or automatic scroll.
 
@@ -225,4 +236,5 @@ the success measure.
 - Should exceptional localization or enlarged-text overflow use an explicit
   cue, a differently composed card, or both?
 - Does the compact visual density feel calm on physical 320px-class devices?
-
+- What shared-header rule keeps arbitrary name/email Account labels clear of
+  Replay and other route content at narrow widths?

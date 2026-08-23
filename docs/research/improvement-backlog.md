@@ -910,19 +910,25 @@ branches.
     repository boundary. Direct child/caregiver comprehension remains untested.
 28. **Medium: a long account label can invalidate local compact clearance.** The
     retained Replay fix proves full separation for **Mia**, while Account owns a
-    fixed higher layer and can extend left as its visible label grows. Research
-    a shared header/content arbitration rule with long names, localization,
-    safe-area, and every account-owning route before adding another local
-    offset or hiding the label.
+    fixed higher layer and can extend left as its visible label grows. An
+    independent visual review raised a specific long-label overlap risk, but
+    its exploratory probe was not preserved with a deterministic fixture,
+    geometry, or screenshot and is not treated as reproduced evidence here.
+    First reproduce or reject it, then research a shared header/content
+    arbitration rule with long names, emails, localization, safe-area, and
+    every account-owning route before adding another local offset or hiding the
+    label. Selected as the next bounded stacked improvement after item 29.
 29. **Medium: the 320×640 profile question needs 113 CSS pixels of vertical main
-    scroll.** Selected for a bounded stacked repair on
-    `codex/profile-compact-primary-action`. Initial measurement puts Next wholly
-    below the viewport at y=658.5...710.5. The researched contract reuses only
-    existing short-screen decorative spacing below 360px while preserving text,
-    the 130px answer area, the 144x52 Next target, normal flow, and control
-    order. Sticky and cue designs remain contingencies; direct child task
-    discovery is still untested. See the
-    [guidance](./profile-compact-primary-action-guidance.md).
+    scroll.** Fixed provisionally on `codex/profile-compact-primary-action` at
+    `5b2fa73`, with acceptance hardening at `7978833`. The retained normal-flow
+    reflow keeps the required-question main at origin and the complete 144x52
+    Next target and focus paint initially visible at 320x640 and 359x640. The
+    optional pending fixture keeps every action visible at origin with its
+    pre-existing 17px range but does not depend on focus scrolling. Text, the
+    130px answer area, control order, and wider layouts remain intact. Sticky
+    and cue designs remain contingencies; direct child task discovery is still
+    untested. See the [guidance](./profile-compact-primary-action-guidance.md)
+    and [implementation record](./profile-compact-primary-action-implementation.md).
 30. **Medium: profile operation failures can expose arbitrary technical English
     to a child.** The form question alert ultimately renders `Error.message`.
     Map known microphone, transcription, save, and skip failures to fixed,
