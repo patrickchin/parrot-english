@@ -988,7 +988,7 @@ describe("onboarding and profile gate", () => {
     const start = renderGate({ data: fullState() });
     assert.match(start, /Answer 6 questions/);
     assert.match(
-      start,
+      start.replace(/<[^>]+>/g, ""),
       /We save your answers\. A grown-up can change your name and age\./,
     );
     assert.match(start, />Start questions</);

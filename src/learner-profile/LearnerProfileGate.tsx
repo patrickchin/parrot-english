@@ -148,7 +148,9 @@ function LearnerProfileSetupView({
         {visibleQuestionCount === 1 ? "question" : "questions"}
       </LearnerProfileStepHeading>
       <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
-        We save your answers. A grown-up can change your name and age.
+        We save your answers.{" "}
+        <span className="whitespace-nowrap">A grown-up</span> can change your{" "}
+        <span className="whitespace-nowrap">name and age.</span>
       </p>
       <div className="grid justify-items-center gap-1 short-wide:col-start-2 short-wide:row-start-3 short-wide:flex short-wide:items-center short-wide:justify-self-start short-wide:gap-4">
         <ActionButton onClick={onStart} type="button">

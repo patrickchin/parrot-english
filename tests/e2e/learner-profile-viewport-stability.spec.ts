@@ -37,6 +37,17 @@ async function expectMinimumTarget(locator: Locator) {
   expect(box.width).toBeGreaterThanOrEqual(44);
 }
 
+async function expectSingleTextLine(locator: Locator) {
+  const lineCount = await locator.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    return Array.from(range.getClientRects()).filter(
+      (rect) => rect.width > 0 && rect.height > 0,
+    ).length;
+  });
+  expect(lineCount).toBe(1);
+}
+
 function boxesOverlap(first: Rect, second: Rect) {
   return !(
     first.x + first.width <= second.x ||
@@ -187,6 +198,8 @@ test("profile setup names the task and saved-answer facts in literal language", 
       { exact: true },
     ),
   ).toBeVisible();
+  await expectSingleTextLine(page.getByText("A grown-up", { exact: true }));
+  await expectSingleTextLine(page.getByText("name and age.", { exact: true }));
   await expect(start).toBeVisible();
   await expect(page.getByRole("button", { name: "Skip for now" })).toBeVisible();
   await expect(main).not.toContainText(

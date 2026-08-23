@@ -812,6 +812,9 @@ async function expectProfileOpenReadingCue(
 ) {
   await expect(target).toBeFocused();
   await expect(target).toHaveAttribute("tabindex", "-1");
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) animation.pause();
+  });
   const focused = await profileHeadingGeometry(target);
   expect(
     focused.heading.x + markerOffset - focused.cardInnerLeft,
@@ -837,6 +840,11 @@ async function expectProfileOpenReadingCue(
   );
 
   const blurred = await profileHeadingGeometry(target);
+  if (focused.art && blurred.art) {
+    // Chromium can requantize a paused transform by one hundredth of a pixel.
+    expect(Math.abs(blurred.art.y - focused.art.y)).toBeLessThanOrEqual(0.02);
+    blurred.art.y = focused.art.y;
+  }
   expect(blurred).toEqual(focused);
   expect(
     await page.evaluate(
