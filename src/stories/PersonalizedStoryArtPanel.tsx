@@ -1,6 +1,16 @@
 import { ImagePlus, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type FocusEvent,
+} from "react";
 import { ActionButton, fieldClassName } from "../shared/ui";
 import type { PersonalizedStoryArtwork } from "./personalized-story-art-client";
+
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+const REMOVED_STATUS = "Personalized story art removed.";
 
 export function PersonalizedStoryArtPanel({
   consentChecked,
@@ -35,9 +45,35 @@ export function PersonalizedStoryArtPanel({
   statusMessage?: string;
   storyTitle: string;
 }) {
+  const removeActionRef = useRef<HTMLButtonElement | null>(null);
+  const removeFocusHandoffRef = useRef(false);
+  const statusRef = useRef<HTMLParagraphElement | null>(null);
   const cleanupOnly = hasStoredArt && (!featureEnabled || !personalizedArtwork);
   const cleanupComplete =
     !featureEnabled && !hasStoredArt && Boolean(statusMessage);
+  const removalComplete = statusMessage === REMOVED_STATUS;
+
+  useIsomorphicLayoutEffect(() => {
+    if (!removalComplete || !removeFocusHandoffRef.current) return;
+    removeFocusHandoffRef.current = false;
+    if (document.hasFocus() && document.activeElement === document.body) {
+      statusRef.current?.focus({ preventScroll: true });
+    }
+  }, [removalComplete]);
+
+  function remove() {
+    if (isGenerating) return;
+    removeFocusHandoffRef.current =
+      document.activeElement === removeActionRef.current;
+    onRemove();
+  }
+
+  function preserveIntentOnBlur(event: FocusEvent<HTMLButtonElement>) {
+    if (event.relatedTarget instanceof Element) {
+      removeFocusHandoffRef.current = false;
+    }
+  }
+
   if (!featureEnabled && !cleanupOnly && !cleanupComplete) return null;
 
   if (cleanupOnly || cleanupComplete) {
@@ -62,9 +98,11 @@ export function PersonalizedStoryArtPanel({
               </p>
               <div>
                 <ActionButton
+                  aria-disabled={isGenerating ? true : undefined}
                   className="gap-2 rounded-full border-4 border-white"
-                  disabled={isGenerating}
-                  onClick={onRemove}
+                  onBlur={preserveIntentOnBlur}
+                  onClick={isGenerating ? undefined : remove}
+                  ref={removeActionRef}
                   type="button"
                   variant="surface"
                 >
@@ -86,8 +124,10 @@ export function PersonalizedStoryArtPanel({
           ) : null}
           {statusMessage ? (
             <p
-              className="m-0 rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-extrabold text-emerald-900"
+              className="m-0 rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-extrabold text-emerald-900 focus:outline-4 focus:outline-offset-2 focus:outline-brand-ink"
+              ref={statusRef}
               role="status"
+              tabIndex={removalComplete ? -1 : undefined}
             >
               {statusMessage}
             </p>
@@ -172,8 +212,11 @@ export function PersonalizedStoryArtPanel({
             </ActionButton>
             {personalizedArtwork ? (
               <ActionButton
+                aria-disabled={isGenerating ? true : undefined}
                 className="gap-2 rounded-full border-4 border-white"
-                onClick={onRemove}
+                onBlur={preserveIntentOnBlur}
+                onClick={isGenerating ? undefined : remove}
+                ref={removeActionRef}
                 type="button"
                 variant="surface"
               >
@@ -194,8 +237,10 @@ export function PersonalizedStoryArtPanel({
 
           {statusMessage ? (
             <p
-              className="m-0 rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-extrabold text-emerald-900"
+              className="m-0 rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-extrabold text-emerald-900 focus:outline-4 focus:outline-offset-2 focus:outline-brand-ink"
+              ref={statusRef}
               role="status"
+              tabIndex={removalComplete ? -1 : undefined}
             >
               {statusMessage}
             </p>
