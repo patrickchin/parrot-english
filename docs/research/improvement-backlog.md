@@ -608,6 +608,20 @@ Retain, revise, or reject: retain provisionally after three independent reviews 
 Next branch: codex/story-reader-child-first-tab-order stacked on this hand-off; codex/profile-heading-reading-cue remains queued separately
 ```
 
+```text
+Branch: codex/story-reader-child-first-tab-order
+Base branch / dependency: codex/story-reader-completion-focus documentation hand-off c2a0a24
+Research commit: pending
+Implementation commit: pending
+Hypothesis: removing the duplicate caregiver editor from active reading will let the sentence lead directly into child controls, while the shelf retains complete personalization and saved art remains visible in the story
+Verified baseline: Red Ball sentence focus Tabs first to Grown-up options in enabled and disabled states; an open editor adds two interactive adult stops; first-page Listen takes 2 moves closed and 4 open; middle/final Listen takes 3 and 5
+Measured movement: closed adult focus moves the 640x360 reading pane about 50 px and removes the title; open traversal can hide sentence and prompt at outer reader scrollTop 513 on 280x568 and 652 on 1280x800, persisting through playback
+Selected change: remove the reader-only editor/disclosure; keep the complete shelf editor, privacy cleanup, hook, saved overrides, and read-only personalized artwork
+Not changing: story language, child controls, sentence/completion focus, art generation/consent/persistence, APIs, data, routes, audio, timing, dependencies, translations, or shelf editor
+Status: research recorded; implementation and final evidence pending
+Next branch: codex/profile-heading-reading-cue remains queued separately
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -703,13 +717,15 @@ branches.
     scroll, active narration, stale callbacks, media construction, rendered
     focus, forced colors, and horizontal overflow.
 19. **High: the first Tab after Story Reader page arrival skips the child's
-    Listen action for Grown-up options.** Independently reproduced after
-    page-one arrival and replay: the sentence receives the intended programmatic
-    focus, but the next sequential destination is the earlier-in-DOM secondary
-    personalization disclosure. Investigate a child-first DOM sequence on
-    `codex/story-reader-child-first-tab-order`, preserving Back–Listen–Next or
-    Finish order and keeping the grown-up panel fully reachable without
-    positive `tabIndex` or key interception.
+    controls for Grown-up options.** Independently reproduced across four
+    viewports and first/middle/final pages: closed first-page **Listen** takes
+    two moves and open takes four; later pages take three and five. At 640x360,
+    merely focusing the closed adult summary moves the reading pane about 50 px
+    and removes the title; open traversal can hide the sentence and prompt
+    persistently at 280x568 and 1280x800. Research on
+    `codex/story-reader-child-first-tab-order` selected removal of the duplicate
+    reader editor while preserving the complete shelf editor and read-only
+    saved art. Implementation evidence is pending.
 20. **Medium: the focused Story Reader sentence uses an accessible name on a
     name-prohibited paragraph role.** The visible page text is a `<p>` with
     `aria-label`; some pre-existing tests also locate it through that label.
