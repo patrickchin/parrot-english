@@ -626,6 +626,26 @@ Status: implemented and provisionally retained after independent code, behavior,
 Next branch: codex/lesson-microphone-direct-action-feedback stacked on this documentation hand-off; codex/profile-heading-reading-cue remains the strongest visual follow-up
 ```
 
+```text
+Branch: codex/lesson-microphone-direct-action-feedback
+Base branch / dependency: codex/story-reader-child-first-tab-order documentation hand-off 1957e6d
+Research commit: 1091e89
+Deterministic fixture commit: 04f3c1e
+Implementation commit: be8692d
+Review hardening: a541fdf
+Review coverage: b7a3a48
+Hypothesis: one stable focused microphone action can acknowledge browser setup without duplicating the learner prompt, losing interaction context, or allowing repeated input to create extra permission requests
+Verified baseline: all 32 boxed/layered state and viewport observations lost focus to BODY and showed two pending owners/spinners; a twelve-click burst created six unresolved requests; the old fixture passed 47/50 at eight workers
+Changed: prompt-stable pending presentation; visible/accessibility-name alignment; focusable opaque aria-disabled action; rendered and domain duplicate guards; Skip race guard; stale-resolution cleanup; one dedicated failure status; stable Your turn lesson status; deterministic delayed-request fixture; timing, telemetry, cleanup, reduced-motion, responsive, and visual evidence
+Not changed: permission timing or policy, recorded media, speech evaluation, scene order/progression model outside the corrected pending Skip race, the microphone button's Opening mic wording, browser permission UI, audio, routes, event payload shape, data, dependencies, translations, or artwork
+Tests: 16/16 focused Chromium review contracts; 2/2 initial keyboard activation contracts; 15/15 repeated race contracts; 75/75 Lesson Player and event cases; 94/94 lower-level review set; 678/678 unit/integration/lifecycle/safety; 275/275 full Chromium; TypeScript and production build passed; lint 0 errors with 2 generated warnings; 422 local links across 56 research Markdown files with 0 missing
+Screenshots / traces: eight genuine in-app Browser before/after JPEGs with provenance, measurements, and SHA-256 integrity in artifacts/ux-review/lesson-microphone-direct-action-feedback at 280x568, 390x844, 640x360, and 1440x900
+Measured result: candidate activation-to-DOM nearest-rank p50 3.1 ms / p95 3.3 ms and next-frame nearest-rank p50 5.6 ms / p95 7.8 ms; one request and one ready event after a twelve-click/Skip burst; one stopped track after completion or late route-exit resolution; same node/focus through settlement and same rectangle through ready, pending, and recording success
+Risks / limitations: deterministic local Chromium and English LTR only; no real browser permission sheet, physical capture, Safari/Firefox, safe-area, zoom/text-spacing, target AT/switch/voice-control, localization/RTL, production timing, or child/caregiver comprehension; animation-frame callback is not paint latency
+Retain, revise, or reject: retain provisionally after independent code, accessibility, and four-size visual review
+Next branch: advance codex/profile-heading-reading-cue to this documentation hand-off before work; separately research Story Reader paragraph semantics and completion replay focus clipping
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -755,10 +775,16 @@ branches.
     `disabled`, moves focus to `BODY`, and shows **Opening mic** in both the
     prompt and button with two spinners. Focus remains on `BODY` after success
     and failure. Repeated activation can also cancel the authored pending UI
-    while the permission request remains unresolved. Repair the single action
-    owner, focus continuity, duplicate guard, reduced motion, and timing on
-    `codex/lesson-microphone-direct-action-feedback` without changing the
-    permission or recording policy.
+    while the permission request remains unresolved. Fixed provisionally on
+    `codex/lesson-microphone-direct-action-feedback`: `04f3c1e` adds the
+    deterministic held-request fixture and `be8692d` implements one stable,
+    focused pending action with visible/accessibility-name alignment, duplicate
+    and Skip guards, stale-settlement cleanup, reduced-motion and responsive
+    coverage, and exactly-once event evidence. A review follow-up also gives
+    microphone failure one always-mounted short status while the general
+    learner-turn status stays stable; `a541fdf` moves that stable **Your turn**
+    label to its single progress-label source of truth, and `b7a3a48` makes
+    initial Enter/Space request behavior durable.
 
 ### Test-infrastructure observation
 

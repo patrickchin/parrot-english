@@ -1,11 +1,21 @@
 # Lesson microphone direct-action feedback guidance
 
-Status: selected for implementation
+Status: implemented and provisionally retained
 
 Branch: `codex/lesson-microphone-direct-action-feedback`
 
 Base: `codex/story-reader-child-first-tab-order` documentation hand-off at
 `1957e6d`
+
+Research commit: `1091e89`
+
+Deterministic fixture commit: `04f3c1e`
+
+Implementation commit: `be8692d`
+
+Review hardening: `a541fdf`
+
+Review coverage: `b7a3a48`
 
 Research date: 2026-08-24
 
@@ -20,12 +30,20 @@ same microphone button own the one visible pending signal: **Opening mic…**
 with one spinner. Keep that exact button focused and in place with
 `aria-disabled="true"`, suppress every later activation in both the rendered
 control and the recording domain, and reactivate the same node as **Tap when
-done** or **Try mic** when the request settles.
+done** or **Try mic** when the request settles. Put failure copy in a dedicated,
+always-mounted **Speaking updates** status while keeping the ordinary lesson
+status unchanged and the matching visible help panel non-live. The ordinary
+learner-turn status uses stable **Your turn. Say…** context derived from the
+visible **Your turn** prompt and practice phrase, instead of an instruction that
+becomes false when the microphone fails. This leaves one durable failure-
+announcement owner rather than two new live copies.
 
 This is a bounded feedback and interaction repair. It does not change when
 Parrot requests permission, what is recorded, how speech is evaluated, the
-browser's permission prompt, lesson progression, or the visible pending words.
-The words remain an explicit research question for children who know little
+browser's permission prompt, or the event payload shape.
+The scene order and progression model outside the corrected pending-setup Skip
+race remain unchanged, as does the microphone button's **Opening mic…** wording.
+That wording remains an explicit research question for children who know little
 English.
 
 ## Audience and scope
@@ -167,9 +185,11 @@ escape, and no countdown. It does not prescribe Parrot's feedback design or
 browser prompt. See [VOICE-01](./source-register.md).
 
 Google's RAIL model treats roughly 100 ms as a general immediate-response
-budget. Parrot reuses p95 <=100 ms from activation to pending paint as a product
-heuristic only. Human permission time is explicitly excluded. This is neither
-a developmental threshold nor a production SLO. See
+budget. Parrot reuses p95 <=100 ms from activation to the complete pending DOM
+mutation and next animation-frame callback as a product heuristic only. That
+callback runs before the frame is painted; it does not measure photon latency.
+Human permission time is explicitly excluded. This is neither a developmental
+threshold nor a production SLO. See
 [PERF-02](./source-register.md).
 
 W3C supplemental cognitive-accessibility guidance favors clear visible labels,
@@ -190,7 +210,9 @@ sample was small, convenience recruited, and clinically specific. See
 ## Selected product contract
 
 1. The prompt remains **Your turn**, with its microphone icon and practice
-   sentence, throughout microphone setup.
+   sentence, throughout microphone setup. The ordinary polite lesson status
+   likewise uses stable **Your turn. Say…** context throughout ready, pending,
+   fallback, and retry.
 2. The existing microphone button owns the only visible **Opening mic…** label
    and spinner.
 3. The same button node, rectangle, and focus remain stable while the request
@@ -209,9 +231,11 @@ sample was small, convenience recruited, and clinically specific. See
    request, route, scene, or feedback state.
 9. Success reactivates the same focused button as **Tap when done**. Failure
    reactivates it as **Try mic** without moving focus back if the learner has
-   deliberately focused something else.
-10. Pending paints on the first render after activation; no fake remaining
-    time is shown.
+   deliberately focused something else. A persistent, failure-only **Speaking
+   updates** status receives the short copy; the ordinary lesson status stays
+   invariant and the matching visible help panel is a labeled non-live region.
+10. The pending DOM state is complete before the next measured animation-frame
+    callback after activation; no fake remaining time is shown.
 11. Reduced motion retains the icon, text, state, and layout but removes spinner
     animation.
 12. The prompt, controls, artwork, and viewport remain free of new shift,
@@ -246,10 +270,13 @@ cleanup research.
 
 ### Announce a second live-region sentence
 
-Deferred pending target assistive-technology testing. The changing focused
-button name may be sufficient; a simultaneous status may echo it. The existing
-Lesson updates region includes full scene context and should not atomically
-reannounce that content for this short boundary.
+Rejected for the pending state pending target assistive-technology testing. The
+changing focused button name may be sufficient, while a simultaneous status may
+echo it. For a settled failure, however, the branch uses an always-mounted,
+otherwise-empty **Speaking updates** status for the short recovery sentence and
+makes the matching visible help panel non-live. The ordinary **Lesson updates**
+content stays invariant through failure and retry. This preserves one
+announcement owner even when focus has deliberately moved away.
 
 ### Change **Opening mic…** now
 
@@ -265,7 +292,7 @@ evaluate.
    controllable held microphone promise and exact request count.
 2. In `tests/e2e/lesson-player.spec.ts`, first encode pending ownership,
    accessible names/states, same-node focus, repeated-activation guards,
-   success/failure settlement, first-paint timing, reduced motion, and
+   success/failure settlement, DOM/next-frame timing, reduced motion, and
    responsive geometry. Confirm the product assertions fail on this base.
 3. In `src/lessons/LessonPlayerUi.tsx`, remove the prompt's opening phase and
    duplicate spinner, then replace native microphone disabling and fixed ARIA
@@ -287,7 +314,8 @@ Rendered behavior must establish:
 
 - exactly one visible **Opening mic…** owner and one running spinner;
 - unchanged **Your turn** prompt and practice sentence;
-- pending feedback on the next frame and in under 100 ms locally;
+- the complete pending DOM mutation and next animation-frame callback in under
+  100 ms locally, without claiming actual paint presentation;
 - no running spinner animation with reduced motion;
 - one `getUserMedia()` request after pointer, Enter, Space, repeated synthetic
   activation, or a mixed same-task activation burst;
@@ -297,6 +325,9 @@ Rendered behavior must establish:
 - the pending accessible name contains its visible label and exposes
   `aria-disabled=true`, without native disabled, busy, or pressed semantics;
 - success exposes **Tap when done** and failure exposes **Try mic** on that node;
+- failure updates the persistent, failure-only **Speaking updates** live status
+  without changing the ordinary lesson status, moving focus, or making the
+  visible help panel a second live region;
 - Skip cannot advance during the render gap or pending state, while Back still
   exits safely;
 - no stale request changes a later scene or newer request;
