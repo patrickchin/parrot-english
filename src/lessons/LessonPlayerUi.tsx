@@ -446,14 +446,12 @@ export function LessonUserPrompt({
 }: {
   dialogue: string;
   portrait?: PersonalizedStoryArtwork | null;
-  status?: "checking" | "opening" | "ready" | "recording";
+  status?: "checking" | "ready" | "recording";
 }) {
   const overflowText = useOverflowText(dialogue);
   const promptLabel =
     status === "recording"
       ? "Listening"
-      : status === "opening"
-        ? "Opening mic"
       : status === "checking"
         ? "Checking"
         : "Your turn";
@@ -476,7 +474,7 @@ export function LessonUserPrompt({
       ) : null}
       <div className="lesson-user-prompt-copy min-w-0">
         <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
-          {status === "checking" || status === "opening" ? (
+          {status === "checking" ? (
             <LoaderCircle
               aria-hidden="true"
               className="size-4 animate-spin motion-reduce:animate-none"
@@ -664,17 +662,13 @@ export function LessonSpeakingControls({
             </ActionButton>
           ) : null}
           <ActionButton
-            aria-label={
-              usePracticeFallback ? "Try microphone again" : "Microphone"
-            }
-            aria-pressed={isRecording}
-            aria-busy={isStartingRecording || undefined}
+            aria-disabled={isStartingRecording || undefined}
             className={cx(
               usePracticeFallback ? "shrink-0" : "min-w-0 flex-1",
+              isStartingRecording && "aria-disabled:opacity-100",
               isRecording && "animate-pulse motion-reduce:animate-none",
             )}
-            disabled={isStartingRecording}
-            onClick={onToggleRecording}
+            onClick={isStartingRecording ? undefined : onToggleRecording}
             size="large"
             type="button"
             variant={
@@ -737,7 +731,7 @@ export function LessonErrorBanner({
         tone === "help" ? "bg-brand-navy" : "bg-red-800",
       )}
       data-tone={tone}
-      role={tone === "help" ? "status" : "alert"}
+      role={tone === "help" ? "region" : "alert"}
     >
       <p className="m-0">{error}</p>
       {onRetry && onSkip ? (

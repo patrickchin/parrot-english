@@ -572,17 +572,17 @@ async function advanceToLearnerTurn(ControlledAudio) {
     await act(async () => ControlledAudio.instances[index].finish());
   }
   await waitFor(() => {
-    const microphone = button("Microphone");
-    assert.equal(microphone.getAttribute("aria-pressed"), "false");
+    const microphone = button("Tap to talk");
+    assert.equal(microphone.hasAttribute("aria-pressed"), false);
     assert.match(microphone.textContent, /Tap to talk/);
   });
 }
 
 async function recordLearnerTurn() {
-  const microphone = button("Microphone");
+  const microphone = button("Tap to talk");
   await click(microphone);
   await waitFor(() => {
-    assert.equal(microphone.getAttribute("aria-pressed"), "true");
+    assert.equal(microphone.hasAttribute("aria-pressed"), false);
     assert.match(microphone.textContent, /Tap when done/);
   });
 

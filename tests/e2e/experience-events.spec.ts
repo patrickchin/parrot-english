@@ -119,15 +119,58 @@ test("lesson success events keep exact identifier-free keys", async ({
 }) => {
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
+  await page.goto(
+    "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eMicrophone=delayed",
+  );
   await installPageLocalExperienceTrace(page);
   await installFastLessonAudio(page);
 
   await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = page.getByRole("button", { name: "Microphone" });
+  const controls = page.getByRole("navigation", {
+    name: "Speaking controls",
+  });
+  const microphone = controls.getByRole("button").first();
   await expect(microphone).toBeVisible({ timeout: 8_000 });
-  await microphone.click();
-  await expect(microphone).toHaveAttribute("aria-pressed", "true");
+  await expect(microphone).toHaveAccessibleName("Tap to talk");
+
+  await controls.getByRole("button").evaluateAll((buttons) => {
+    const [microphoneButton, skipButton] = buttons as HTMLButtonElement[];
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      microphoneButton.click();
+    }
+    skipButton.click();
+  });
+  await expect(microphone).toHaveAccessibleName("Opening mic…");
+  await expect(
+    page.evaluate(() => {
+      const controller = (
+        window as Window & {
+          __parrotE2eLessonMicrophone?: {
+            pending: number;
+            requests: number;
+            resolveNext: () => boolean;
+          };
+        }
+      ).__parrotE2eLessonMicrophone;
+      if (!controller) throw new Error("Microphone controller is missing.");
+      return {
+        pending: controller.pending,
+        requests: controller.requests,
+      };
+    }),
+  ).resolves.toEqual({ pending: 1, requests: 1 });
+  await page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMicrophone?: { resolveNext: () => boolean };
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!controller?.resolveNext()) {
+      throw new Error("Pending microphone request is missing.");
+    }
+  });
+  await expect(microphone).toHaveAccessibleName("Tap when done");
+  await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
   await microphone.click();
 
   await expect
@@ -157,6 +200,25 @@ test("lesson success events keep exact identifier-free keys", async ({
   expect(JSON.stringify([microphoneEvent, speechCheckEvent])).not.toMatch(
     /Mia|high-ball|It is up high|parrot-e2e-audio|correct/i,
   );
+  await expect(
+    page.evaluate(() => {
+      const controller = (
+        window as Window & {
+          __parrotE2eLessonMicrophone?: {
+            requests: number;
+            resolved: number;
+            stoppedTracks: number;
+          };
+        }
+      ).__parrotE2eLessonMicrophone;
+      if (!controller) throw new Error("Microphone controller is missing.");
+      return {
+        requests: controller.requests,
+        resolved: controller.resolved,
+        stoppedTracks: controller.stoppedTracks,
+      };
+    }),
+  ).resolves.toEqual({ requests: 1, resolved: 1, stoppedTracks: 1 });
   expect(pageErrors).toEqual([]);
 });
 
@@ -172,11 +234,15 @@ test("a failed measurement sink cannot break microphone recovery", async ({
   await installFastLessonAudio(page);
 
   await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = page.getByRole("button", { name: "Microphone" });
+  const microphone = page
+    .getByRole("navigation", { name: "Speaking controls" })
+    .getByRole("button")
+    .first();
   await expect(microphone).toBeVisible({ timeout: 8_000 });
+  await expect(microphone).toHaveAccessibleName("Tap to talk");
   await microphone.click();
   await expect(
-    page.getByRole("status", { name: "Speaking help" }),
+    page.getByRole("region", { name: "Speaking help" }),
   ).toContainText("The mic is off. Say the words. Then tap Done.");
 
   await expect

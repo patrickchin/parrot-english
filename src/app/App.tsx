@@ -590,6 +590,7 @@ export function LessonPlayer({
   }
 
   function handleSkipUser() {
+    if (recordingActiveRef.current && !recordingRef.current) return;
     dispatchLessonEvent({ type: "SKIP_USER" }, { cancel: true });
   }
 
@@ -636,10 +637,16 @@ export function LessonPlayer({
       }
       dispatch({ type: "MIC_STARTED" });
     } catch (caughtError) {
-      setIsStartingRecording(false);
-      if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) {
+      if (
+        !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
+        recordingSequenceRef.current !== sequence
+      ) {
         microphoneTimeline.cancel();
         return;
+      }
+      setIsStartingRecording(false);
+      if (recordingControllerRef.current === controller) {
+        recordingControllerRef.current = null;
       }
       if (isAbortError(caughtError)) {
         recordingActiveRef.current = false;
@@ -737,7 +744,7 @@ export function LessonPlayer({
   }
 
   function handleToggleRecording() {
-    if (recordingActiveRef.current) {
+    if (recordingRef.current) {
       void finishRecording();
       return;
     }
@@ -817,9 +824,7 @@ export function LessonPlayer({
               dialogue={currentStep.dialogue}
               portrait={promptPortrait}
               status={
-                isStartingRecording
-                  ? "opening"
-                  : isEvaluating
+                isEvaluating
                   ? "checking"
                   : isRecording
                     ? "recording"
@@ -883,19 +888,23 @@ export function LessonPlayer({
         className="sr-only"
         role="status"
       >
-        {speechFallback
-          ? ""
-          : isIdle || isFinished
-            ? progressLabel
-            : `${progressLabel}.${
-                showUserTurn ? ` Say: ${currentStep.dialogue}.` : ""
-              } Scene ${state.sceneIndex + 1} of ${
-                currentLesson.scenes.length
-              }. ${scene.settingDescription}`}
-        {!speechFallback && state.transcript
-          ? ` Heard: ${state.transcript}.`
-          : ""}
+        {isIdle || isFinished
+          ? progressLabel
+          : `${progressLabel}.${
+              showUserTurn ? ` Say: ${currentStep.dialogue}.` : ""
+            } Scene ${state.sceneIndex + 1} of ${
+              currentLesson.scenes.length
+            }. ${scene.settingDescription}`}
+        {state.transcript ? ` Heard: ${state.transcript}.` : ""}
         {error ? ` ${error}` : ""}
+      </div>
+      <div
+        aria-label="Speaking updates"
+        aria-live="polite"
+        className="sr-only"
+        role="status"
+      >
+        {speechFallback}
       </div>
     </LessonStage>
   );

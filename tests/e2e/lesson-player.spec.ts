@@ -15,6 +15,13 @@ const viewports = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
+const microphoneViewports = [
+  { name: "ultra-narrow phone", width: 280, height: 568 },
+  { name: "regular phone", width: 390, height: 844 },
+  { name: "short landscape", width: 640, height: 360 },
+  { name: "desktop", width: 1440, height: 900 },
+];
+
 const boxedLandscapeViewports = [
   { name: "small phone landscape", width: 640, height: 360 },
   { name: "large phone landscape", width: 768, height: 360 },
@@ -83,6 +90,199 @@ async function expectNoPageOverflow(page: Page) {
       })),
     )
     .toEqual({ horizontal: false, vertical: false });
+}
+
+async function expectAnimationCount(locator: Locator, count: number) {
+  await expect
+    .poll(() =>
+      locator.evaluate(
+        (element) =>
+          element
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.playState === "running").length,
+      ),
+    )
+    .toBe(count);
+}
+
+async function observeMicrophonePendingFeedback(action: Locator) {
+  await action.evaluate((button) => {
+    const metrics = window as Window & {
+      parrotLessonMicrophoneFeedbackMs?: number;
+      parrotLessonMicrophoneFeedbackFrameMs?: number;
+      parrotLessonMicrophoneFeedbackStart?: number;
+    };
+    metrics.parrotLessonMicrophoneFeedbackMs = undefined;
+    metrics.parrotLessonMicrophoneFeedbackFrameMs = undefined;
+    metrics.parrotLessonMicrophoneFeedbackStart = undefined;
+    button.addEventListener(
+      "click",
+      () => {
+        metrics.parrotLessonMicrophoneFeedbackStart = performance.now();
+      },
+      { capture: true, once: true },
+    );
+    const observer = new MutationObserver(() => {
+      if (
+        button.textContent?.includes("Opening mic") &&
+        button.getAttribute("aria-disabled") === "true" &&
+        metrics.parrotLessonMicrophoneFeedbackStart !== undefined
+      ) {
+        metrics.parrotLessonMicrophoneFeedbackMs =
+          performance.now() - metrics.parrotLessonMicrophoneFeedbackStart;
+        requestAnimationFrame(() => {
+          metrics.parrotLessonMicrophoneFeedbackFrameMs =
+            performance.now() - metrics.parrotLessonMicrophoneFeedbackStart!;
+        });
+        observer.disconnect();
+      }
+    });
+    observer.observe(button, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  });
+}
+
+async function expectImmediateMicrophoneFeedback(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & {
+            parrotLessonMicrophoneFeedbackMs?: number;
+          }).parrotLessonMicrophoneFeedbackMs ?? null,
+      ),
+    )
+    .not.toBeNull();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & {
+            parrotLessonMicrophoneFeedbackFrameMs?: number;
+          }).parrotLessonMicrophoneFeedbackFrameMs ?? null,
+      ),
+    )
+    .not.toBeNull();
+  const timing = await page.evaluate(() => {
+    const metrics = window as Window & {
+      parrotLessonMicrophoneFeedbackMs?: number;
+      parrotLessonMicrophoneFeedbackFrameMs?: number;
+    };
+    return {
+      mutationMs: metrics.parrotLessonMicrophoneFeedbackMs!,
+      nextFrameMs: metrics.parrotLessonMicrophoneFeedbackFrameMs!,
+    };
+  });
+  expect(timing.mutationMs).toBeLessThan(100);
+  expect(timing.nextFrameMs).toBeLessThan(100);
+}
+
+function expectSameControlSlot(
+  before: Awaited<ReturnType<typeof visibleBox>>,
+  after: Awaited<ReturnType<typeof visibleBox>>,
+) {
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(2);
+}
+
+async function expectFocusPaintContained(
+  action: Locator,
+  viewport: { height: number; width: number },
+  nextControl?: Locator,
+) {
+  const box = await visibleBox(action);
+  const indicator = await action.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      offset: Number.parseFloat(style.outlineOffset),
+      width: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.width).toBeGreaterThanOrEqual(4);
+  expect(indicator.offset).toBeGreaterThanOrEqual(4);
+  const extent = indicator.width + indicator.offset;
+  expect(box.x - extent).toBeGreaterThanOrEqual(0);
+  expect(box.y - extent).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width + extent).toBeLessThanOrEqual(viewport.width);
+  expect(box.y + box.height + extent).toBeLessThanOrEqual(viewport.height);
+  if (nextControl) {
+    const nextBox = await visibleBox(nextControl);
+    expect(box.x + box.width + extent).toBeLessThanOrEqual(nextBox.x + 1);
+  }
+}
+
+type LessonMicrophoneController = {
+  pending: number;
+  rejected: number;
+  rejectNext: () => boolean;
+  requests: number;
+  resolved: number;
+  resolveNext: () => boolean;
+  stoppedTracks: number;
+};
+
+async function readLessonMicrophoneController(page: Page) {
+  return page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMicrophone?: LessonMicrophoneController;
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    return {
+      pending: controller.pending,
+      rejected: controller.rejected,
+      requests: controller.requests,
+      resolved: controller.resolved,
+      stoppedTracks: controller.stoppedTracks,
+    };
+  });
+}
+
+async function settleLessonMicrophone(
+  page: Page,
+  outcome: "reject" | "resolve",
+) {
+  const settled = await page.evaluate((nextOutcome) => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMicrophone?: LessonMicrophoneController;
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    return nextOutcome === "resolve"
+      ? controller.resolveNext()
+      : controller.rejectNext();
+  }, outcome);
+  expect(settled).toBe(true);
+}
+
+async function rememberMicrophoneNode(action: Locator) {
+  await action.evaluate((button) => {
+    (
+      window as Window & { __parrotE2eLessonMicrophoneNode?: Element }
+    ).__parrotE2eLessonMicrophoneNode = button;
+  });
+}
+
+async function expectRememberedMicrophoneNode(action: Locator) {
+  await expect
+    .poll(() =>
+      action.evaluate(
+        (button) =>
+          button ===
+          (
+            window as Window & { __parrotE2eLessonMicrophoneNode?: Element }
+          ).__parrotE2eLessonMicrophoneNode,
+      ),
+    )
+    .toBe(true);
 }
 
 async function expectContainedBy(child: Locator, parent: Locator) {
@@ -234,8 +434,12 @@ async function installDeviceSpeechDelay(page: Page, delayMs = 5_000) {
 }
 
 async function waitForLearnerTurn(page: Page) {
-  const microphone = page.getByRole("button", { name: "Microphone" });
+  const microphone = page
+    .getByRole("navigation", { name: "Speaking controls" })
+    .getByRole("button")
+    .first();
   await expect(microphone).toBeVisible({ timeout: 8_000 });
+  await expect(microphone).toHaveAccessibleName("Tap to talk");
   return microphone;
 }
 
@@ -533,7 +737,7 @@ for (const viewport of viewports) {
       page.getByRole("status", { name: "Lesson updates" }),
     ).toContainText("Say: It is up high!");
     await expect(microphone).toContainText("Tap to talk");
-    await expect(microphone).toHaveAttribute("aria-pressed", "false");
+    await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
     await expect(skip).toContainText("Skip");
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(controls, viewport);
@@ -1042,8 +1246,9 @@ test("checking and feedback replace the speaking action", async ({ page }) => {
   const microphone = await waitForLearnerTurn(page);
 
   await microphone.click();
-  await expect(microphone).toHaveAttribute("aria-pressed", "true");
   await expect(microphone).toContainText("Tap when done");
+  await expect(microphone).toHaveAccessibleName("Tap when done");
+  await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
 
   await microphone.click();
   await expect(
@@ -1086,55 +1291,317 @@ test("retry feedback uses universal, name-free copy", async ({ page }) => {
   await expect(feedback).not.toContainText("Bella");
 });
 
-test("microphone setup gives immediate feedback and blocks duplicate actions", async ({
+test("microphone setup keeps one immediate focused action and blocks every duplicate activation", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(lessonPath);
-  await page.evaluate(() => {
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: {
-        getUserMedia: () =>
-          new Promise<MediaStream>((resolve) => {
-            const testWindow = window as Window & {
-              __resolveLessonMicrophone?: () => void;
-            };
-            testWindow.__resolveLessonMicrophone = () => {
-              const track = { stop() {} } as MediaStreamTrack;
-              resolve({
-                getAudioTracks: () => [track],
-                getTracks: () => [track],
-              } as unknown as MediaStream);
-            };
-          }),
-      },
-    });
-  });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
 
   await page.getByRole("button", { name: "Start lesson" }).click();
   const microphone = await waitForLearnerTurn(page);
-  const skip = page.getByRole("button", { name: "Skip speaking turn" });
+  const controls = page.getByRole("navigation", { name: "Speaking controls" });
+  const skip = controls.getByRole("button", { name: "Skip speaking turn" });
   const prompt = page.getByRole("region", { name: "Your turn" });
-  await microphone.click();
+  const initialBox = await visibleBox(microphone);
+  await microphone.focus();
+  await rememberMicrophoneNode(microphone);
+  await observeMicrophonePendingFeedback(microphone);
 
-  await expect(microphone).toContainText("Opening mic…");
-  await expect(microphone).toHaveAttribute("aria-busy", "true");
-  await expect(microphone).toBeDisabled();
-  await expect(skip).toBeDisabled();
-  await expect(prompt).toContainText("Opening mic");
-
-  await page.evaluate(() => {
-    const testWindow = window as Window & {
-      __resolveLessonMicrophone?: () => void;
-    };
-    testWindow.__resolveLessonMicrophone?.();
+  await controls.getByRole("button").evaluateAll((buttons) => {
+    const [microphoneButton, skipButton] = buttons as HTMLButtonElement[];
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      microphoneButton.click();
+    }
+    skipButton.click();
   });
-  await expect(microphone).toContainText("Tap when done");
-  await expect(microphone).toHaveAttribute("aria-pressed", "true");
+
+  const pending = controls.getByRole("button", { name: "Opening mic…" });
+  await expect(pending).toHaveAttribute("aria-disabled", "true");
+  await expect(pending).not.toHaveAttribute("disabled", "");
+  await expect(pending).not.toHaveAttribute("aria-busy", /.+/);
+  await expect(pending).not.toHaveAttribute("aria-pressed", /.+/);
+  await expect(pending).toHaveCSS("opacity", "1");
+  await expect(pending).toBeFocused();
+  await expectRememberedMicrophoneNode(pending);
+  await expect(skip).toBeDisabled();
+  await expect(prompt).toContainText("Your turn");
+  await expect(prompt).not.toContainText("Opening mic");
+  await expect(page.getByText(/Opening mic/)).toHaveCount(1);
+  await expectAnimationCount(prompt, 0);
+  await expectAnimationCount(pending, 1);
+  await expectAnimationCount(page.getByRole("main"), 1);
+  expectSameControlSlot(initialBox, await visibleBox(pending));
+  await expectFocusPaintContained(pending, { width: 390, height: 844 }, skip);
+  await expectImmediateMicrophoneFeedback(page);
+  await expect(page).toHaveURL(/\/scenes\/1\?parrotE2eMicrophone=delayed$/);
+  await expect
+    .poll(() => readLessonMicrophoneController(page))
+    .toEqual({
+      pending: 1,
+      rejected: 0,
+      requests: 1,
+      resolved: 0,
+      stoppedTracks: 0,
+    });
+
+  await pending.press("Enter");
+  await pending.press("Space");
+  await pending.evaluate((button: HTMLButtonElement) => {
+    button.click();
+  });
+  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+    pending: 1,
+    requests: 1,
+  });
+  await expect(pending).toBeFocused();
+
+  await settleLessonMicrophone(page, "resolve");
+  const recording = controls.getByRole("button", { name: "Tap when done" });
+  await expect(recording).toBeFocused();
+  await expectRememberedMicrophoneNode(recording);
+  await expect(recording).not.toHaveAttribute("aria-disabled", /.+/);
+  await expect(recording).not.toHaveAttribute("aria-pressed", /.+/);
+  expectSameControlSlot(initialBox, await visibleBox(recording));
   await expect(prompt).toContainText("Listening");
-  await microphone.click();
+  await recording.click();
+  await expect
+    .poll(() => readLessonMicrophoneController(page))
+    .toMatchObject({ stoppedTracks: 1 });
 });
+
+test("a rejected microphone request reactivates the same focused retry", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 280, height: 568 });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const microphone = await waitForLearnerTurn(page);
+  const lessonUpdates = page.getByRole("status", { name: "Lesson updates" });
+  const lessonContext = await lessonUpdates.textContent();
+  await microphone.focus();
+  await rememberMicrophoneNode(microphone);
+  await microphone.click();
+  const pending = page.getByRole("button", { name: "Opening mic…" });
+  await expect(pending).toBeFocused();
+
+  await settleLessonMicrophone(page, "reject");
+  const controls = page.getByRole("navigation", { name: "Speaking controls" });
+  const retry = controls.getByRole("button", { name: "Try mic" });
+  await expect(retry).toBeVisible();
+  await expect(retry).toBeFocused();
+  await expectRememberedMicrophoneNode(retry);
+  await expect(retry).not.toHaveAttribute("disabled", "");
+  await expect(retry).not.toHaveAttribute("aria-disabled", /.+/);
+  await expect(retry).not.toHaveAttribute("aria-busy", /.+/);
+  await expect(retry).not.toHaveAttribute("aria-pressed", /.+/);
+  await expect(
+    page.getByRole("region", { name: "Speaking help" }),
+  ).toContainText("The mic is off. Say the words. Then tap Done.");
+  await expect(
+    page.getByRole("status", { name: "Speaking updates" }),
+  ).toContainText("The mic is off. Say the words. Then tap Done.");
+  await expect(lessonUpdates).toHaveText(lessonContext ?? "");
+  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+    pending: 0,
+    rejected: 1,
+    requests: 1,
+  });
+
+  await retry.click();
+  await expect(
+    controls.getByRole("button", { name: "Opening mic…" }),
+  ).toHaveAttribute("aria-disabled", "true");
+  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+    pending: 1,
+    requests: 2,
+  });
+  await expect(
+    page.getByRole("status", { name: "Speaking updates" }),
+  ).toHaveText("");
+  await expect(lessonUpdates).toHaveText(lessonContext ?? "");
+  await settleLessonMicrophone(page, "reject");
+});
+
+test("a microphone failure is announced without stealing moved focus", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const microphone = await waitForLearnerTurn(page);
+  const lessonUpdates = page.getByRole("status", { name: "Lesson updates" });
+  const speakingUpdates = page.getByRole("status", {
+    name: "Speaking updates",
+  });
+  await expect(speakingUpdates).toBeAttached();
+  await expect(speakingUpdates).toHaveText("");
+  const lessonContext = await lessonUpdates.textContent();
+  await microphone.click();
+  const back = page.getByRole("button", { name: "Back to lesson list" });
+  await back.focus();
+  await expect(back).toBeFocused();
+
+  await settleLessonMicrophone(page, "reject");
+  await expect(back).toBeFocused();
+  await expect(
+    page.getByRole("region", { name: "Speaking help" }),
+  ).toContainText("The mic is off. Say the words. Then tap Done.");
+  await expect(speakingUpdates).toContainText(
+    "The mic is off. Say the words. Then tap Done.",
+  );
+  await expect(lessonUpdates).toHaveText(lessonContext ?? "");
+});
+
+test("a late microphone resolution after leaving stops its media track", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  await (await waitForLearnerTurn(page)).click();
+  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+    pending: 1,
+    requests: 1,
+  });
+
+  await page.getByRole("button", { name: "Back to lesson list" }).click();
+  await expect(
+    page.getByRole("link", { name: "Start lesson: Peppa's High Ball" }),
+  ).toBeVisible();
+  await settleLessonMicrophone(page, "resolve");
+
+  await expect
+    .poll(() => readLessonMicrophoneController(page))
+    .toEqual({
+      pending: 0,
+      rejected: 0,
+      requests: 1,
+      resolved: 1,
+      stoppedTracks: 1,
+    });
+  await expect(page.getByRole("button", { name: "Tap when done" })).toHaveCount(
+    0,
+  );
+});
+
+test("an old microphone rejection cannot clear a newer pending lesson request", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const oldMicrophone = await waitForLearnerTurn(page);
+  await oldMicrophone.click();
+  await expect(
+    page.getByRole("button", { name: "Opening mic…" }),
+  ).toHaveAttribute("aria-disabled", "true");
+
+  await page.getByRole("button", { name: "Back to lesson list" }).click();
+  const lessonLink = page.getByRole("link", {
+    name: "Start lesson: Peppa's High Ball",
+  });
+  await expect(lessonLink).toBeVisible();
+  await lessonLink.click();
+  await expect(page.getByRole("button", { name: "Start lesson" })).toBeVisible();
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("parrotE2eMicrophone", "delayed");
+    window.history.replaceState(window.history.state, "", url);
+  });
+
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const currentMicrophone = await waitForLearnerTurn(page);
+  await currentMicrophone.focus();
+  await rememberMicrophoneNode(currentMicrophone);
+  await currentMicrophone.click();
+  const currentPending = page.getByRole("button", { name: "Opening mic…" });
+  await expect(currentPending).toBeFocused();
+  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+    pending: 2,
+    requests: 2,
+  });
+
+  await settleLessonMicrophone(page, "reject");
+  await expect(currentPending).toHaveAttribute("aria-disabled", "true");
+  await expect(currentPending).toBeFocused();
+  await expectRememberedMicrophoneNode(currentPending);
+  await expect(page).toHaveURL(/\/scenes\/1\?parrotE2eMicrophone=delayed$/);
+  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+    pending: 1,
+    rejected: 1,
+    requests: 2,
+  });
+
+  await settleLessonMicrophone(page, "resolve");
+  const recording = page.getByRole("button", { name: "Tap when done" });
+  await expect(recording).toBeFocused();
+  await expectRememberedMicrophoneNode(recording);
+});
+
+test("microphone pending feedback has no running motion when reduced motion is requested", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const microphone = await waitForLearnerTurn(page);
+
+  await microphone.focus();
+  await microphone.click();
+  const pending = page.getByRole("button", { name: "Opening mic…" });
+  await expect(pending).toHaveAttribute("aria-disabled", "true");
+  await expect(pending).toBeFocused();
+  await expectAnimationCount(page.getByRole("main"), 0);
+});
+
+for (const presentation of ["boxed", "layered"] as const) {
+  for (const viewport of microphoneViewports) {
+    test(`${presentation} microphone pending action stays stable on a ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      if (presentation === "layered") await mockLongDialogueLesson(page);
+      const route =
+        presentation === "boxed"
+          ? lessonPath
+          : "/lessons/my/long-dialogue/scenes/1";
+      await page.goto(`${route}?parrotE2eMicrophone=delayed`);
+      await page.getByRole("button", { name: "Start lesson" }).click();
+
+      const microphone = await waitForLearnerTurn(page);
+      const prompt = page.getByRole("region", { name: "Your turn" });
+      const controls = page.getByRole("navigation", {
+        name: "Speaking controls",
+      });
+      const initialBox = await visibleBox(microphone);
+      await microphone.focus();
+      await microphone.click();
+
+      const pending = controls.getByRole("button", { name: "Opening mic…" });
+      const skip = controls.getByRole("button", {
+        name: "Skip speaking turn",
+      });
+      await expect(pending).toBeFocused();
+      await expect(pending).toHaveAttribute("aria-disabled", "true");
+      await expect(prompt).toContainText("Your turn");
+      await expect(prompt).not.toContainText("Opening mic");
+      await expect(page.getByText(/Opening mic/)).toHaveCount(1);
+      await expectAnimationCount(pending, 1);
+      expectSameControlSlot(initialBox, await visibleBox(pending));
+      await expectFocusPaintContained(pending, viewport, skip);
+      await expectInsideViewport(prompt, viewport);
+      await expectInsideViewport(controls, viewport);
+      await expectNoOverlap(prompt, controls);
+      await expectNoPageOverflow(page);
+      await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
+        pending: 1,
+        requests: 1,
+      });
+    });
+  }
+}
 
 test("completion becomes a focused end screen and replay restarts the story", async ({
   page,
@@ -1147,7 +1614,8 @@ test("completion becomes a focused end screen and replay restarts the story", as
   for (let turn = 0; turn < 6; turn += 1) {
     const microphone = await waitForLearnerTurn(page);
     await microphone.click();
-    await expect(microphone).toHaveAttribute("aria-pressed", "true");
+    await expect(microphone).toHaveAccessibleName("Tap when done");
+    await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
     await microphone.click();
     if (turn === 0) {
       await expect(page).toHaveURL(/\/scenes\/2$/, { timeout: 4_000 });
@@ -1234,13 +1702,13 @@ test("a denied microphone offers calm unscored practice on a narrow phone", asyn
   const microphone = await waitForLearnerTurn(page);
   await microphone.click();
 
-  const help = page.getByRole("status", { name: "Speaking help" });
+  const help = page.getByRole("region", { name: "Speaking help" });
   const controls = page.getByRole("navigation", {
     name: "Speaking controls",
   });
   const done = controls.getByRole("button", { name: "Done with speaking" });
   const retry = controls.getByRole("button", {
-    name: "Try microphone again",
+    name: "Try mic",
   });
   await expect(help).toContainText(
     "The mic is off. Say the words. Then tap Done.",
@@ -1287,14 +1755,14 @@ for (const viewport of [
 
     const prompt = page.getByRole("region", { name: "Your turn" });
     const phrase = prompt.getByText(longDialogue, { exact: true });
-    const help = page.getByRole("status", { name: "Speaking help" });
+    const help = page.getByRole("region", { name: "Speaking help" });
     const controls = page.getByRole("navigation", { name: "Speaking controls" });
     const done = controls.getByRole("button", { name: "Done with speaking" });
     await expect(help).toContainText(
       "No mic here. Say the words. Then tap Done.",
     );
     await expect(
-      controls.getByRole("button", { name: "Try microphone again" }),
+      controls.getByRole("button", { name: "Try mic" }),
     ).toBeVisible();
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(phrase, viewport);
@@ -1339,7 +1807,7 @@ test("generated fallback keeps long practice words clear in short landscape", as
 
   const prompt = page.getByRole("region", { name: "Your turn" });
   const phrase = prompt.getByText(longDialogue, { exact: true });
-  const help = page.getByRole("status", { name: "Speaking help" });
+  const help = page.getByRole("region", { name: "Speaking help" });
   const controls = page.getByRole("navigation", { name: "Speaking controls" });
   const peppa = page.getByRole("img", { name: /^Peppa / });
   const dolly = page.getByRole("img", { name: /^Dolly / });
@@ -1381,7 +1849,7 @@ test("a failed speech check preserves the turn and offers unscored progress", as
   await microphone.click();
   await microphone.click();
 
-  const help = page.getByRole("status", { name: "Speaking help" });
+  const help = page.getByRole("region", { name: "Speaking help" });
   await expect(help).toContainText(
     "We could not check your words. Tap Done to keep going.",
     { timeout: 3_000 },
