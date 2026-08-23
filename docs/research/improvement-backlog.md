@@ -881,9 +881,14 @@ branches.
     fixed Account control instead of the active task. Recording and
     transcription inherit this behavior. Saving can likewise disable the
     activated control and also renders **Peppa is thinking…** in more than one
-    place. Define one stable pending owner, exactly-once activation,
-    phase-appropriate focus behavior, success/error hand-off, retry, route-exit
-    cleanup, and stale-settlement behavior before implementation.
+    place. Research selected on `codex/profile-operation-pending-focus`: one
+    synchronous abortable owner, same-node `aria-disabled` focus, individually
+    disabled non-owners, one stable label-line status, truthful opening/
+    listening/writing/thinking phases, exactly-once activation, route-exit
+    cleanup, and stale-settlement quarantine. Baseline review also reproduced
+    same-task duplicate microphone/save/skip requests, stranded pending UI,
+    post-exit stale writes, and 52–60 px pending layout growth. Implementation
+    and retained evidence remain pending.
 25. **High: direct Story shelf reveal can finish with focus on `BODY`.** The
     pathname-keyed route focus manager can focus the Suspense fallback and does
     not rerun when the lazy Story shelf replaces it. Reproduce fast and delayed
