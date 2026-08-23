@@ -915,11 +915,14 @@ branches.
     safe-area, and every account-owning route before adding another local
     offset or hiding the label.
 29. **Medium: the 320×640 profile question needs 113 CSS pixels of vertical main
-    scroll.** Every field and action is reachable in one axis with zero
-    horizontal overflow, which satisfies the branch's reflow contract, but Next
-    is not initially visible. Test task discovery with young beginners before
-    deciding whether a denser 320px composition is better than ordinary
-    vertical scrolling.
+    scroll.** Selected for a bounded stacked repair on
+    `codex/profile-compact-primary-action`. Initial measurement puts Next wholly
+    below the viewport at y=658.5...710.5. The researched contract reuses only
+    existing short-screen decorative spacing below 360px while preserving text,
+    the 130px answer area, the 144x52 Next target, normal flow, and control
+    order. Sticky and cue designs remain contingencies; direct child task
+    discovery is still untested. See the
+    [guidance](./profile-compact-primary-action-guidance.md).
 30. **Medium: profile operation failures can expose arbitrary technical English
     to a child.** The form question alert ultimately renders `Error.message`.
     Map known microphone, transcription, save, and skip failures to fixed,
