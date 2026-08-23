@@ -34,6 +34,7 @@ Last reviewed: 2026-08-24
 - [Story Reader page-arrival focus implementation](./story-reader-page-focus-implementation.md)
 - [Story Reader join-in visibility guidance](./story-reader-join-in-visibility-guidance.md)
 - [Story Reader join-in visibility implementation](./story-reader-join-in-visibility-implementation.md)
+- [Story Reader completion focus guidance](./story-reader-completion-focus-guidance.md)
 - [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Repeated Talk failure: picture-led lesson fallback](./repeated-talk-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)

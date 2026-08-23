@@ -586,7 +586,21 @@ Screenshots / traces: one baseline and two retained genuine in-app Browser JPEGs
 Measured result: baseline 47 full / 74 partial / 1 hidden prompt at arrival; retained phase exposes every current prompt before its join-in utterance and at Your turn; Kite exposes 67.5/67.5 px at scrollTop 63.5 and Picnic 95/95 px at scrollTop 121 while outer reader, artwork, controls, document, and focus remain stable
 Risks / limitations: deterministic local Chromium and English LTR only; no target browser/device/AT, zoom/text-spacing, localization/RTL, physical-audio, or child/caregiver evidence; combined saved narration has no phrase cue and can reveal honestly only at completion
 Retain, revise, or reject: retain provisionally after three independent reviews and two accepted test-coverage revisions, pending documented formative/platform follow-ups
-Next question: reproduce the completion-to-replay sentence-focus concern, then compare it with the queued profile-heading reading cue
+Next question: completion replay focus was reproduced as correct; repair the separately verified body-focus state on completion entry, then return to the queued profile-heading reading cue
+```
+
+```text
+Branch: codex/story-reader-completion-focus
+Base branch / dependency: codex/story-reader-join-in-visibility documentation hand-off 9d891a7
+Research commit: pending
+Implementation commit: pending
+Hypothesis: focusing the existing completion heading once can orient a child after Finish replaces the reader, while keeping Listen again one Tab away and preserving silent page-one replay
+Verified baseline: pointer and keyboard Finish leave BODY focused at 280×568, 390×844, 640×360, and 1280×800; heading and Listen again remain visible; all scroll owners stay at origin
+Disproved concern: pointer and keyboard replay already route to page 1, focus its sentence, show its reading marker, and reset every owned scroll position; pointer replay passed all 20 current stories
+Selected change: completion-only heading focus with an open reading-position marker and forced-colors fallback; add replay regression coverage without changing replay production code
+Not changing: completion words, actions, art, sound, timing, routes, page focus behavior, narration, APIs, data, dependencies, translations, or shared focus primitives
+Status: research recorded; implementation and final evidence pending
+Next branch: codex/profile-heading-reading-cue remains queued separately
 ```
 
 ## Newly observed defects
@@ -673,6 +687,13 @@ branches.
     reading-position marker that preserves focus and forced-colors feedback
     without changing copy, timing, or geometry on
     `codex/profile-heading-reading-cue`.
+18. **High: finishing a story removes the focused control and leaves the
+    completion screen focused on `BODY`.** Verified after pointer and keyboard
+    Finish at 280×568, 390×844, 640×360, and 1280×800. The heading and primary
+    replay action are visible and scroll remains at origin, but the new state
+    has no meaningful or visible product focus location. Research selected a
+    one-time, non-sequential **Great job!** heading hand-off on
+    `codex/story-reader-completion-focus`; implementation evidence is pending.
 
 ## Parked ideas
 
