@@ -1198,3 +1198,53 @@ test("forced colors keeps a visible keyboard focus indicator", async ({ page }) 
   expect(indicator.outlineStyle).not.toBe("none");
   expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
 });
+
+test("forced colors keeps the profile Replay focus fully clear", async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 568, width: 280 });
+  await openProfileQuestion(page);
+  const replay = page.getByRole("button", { name: "Replay question" });
+
+  expectRenderedFocusTarget(
+    await renderedFocusDelta(page, replay),
+    "forced-colors profile replay action",
+  );
+
+  const account = page.getByRole("button", { name: "Account for Mia" });
+  const progress = page.getByText("Question 1 of 6", { exact: true });
+  const [accountBox, progressBox, replayBox] = await Promise.all([
+    account.boundingBox(),
+    progress.boundingBox(),
+    replay.boundingBox(),
+  ]);
+  expect(accountBox).not.toBeNull();
+  expect(progressBox).not.toBeNull();
+  expect(replayBox).not.toBeNull();
+  const focusPaint = await replay.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return (
+      Number.parseFloat(style.outlineOffset) +
+      Number.parseFloat(style.outlineWidth)
+    );
+  });
+  const replayPaint = {
+    height: replayBox!.height + focusPaint * 2,
+    width: replayBox!.width + focusPaint * 2,
+    x: replayBox!.x - focusPaint,
+    y: replayBox!.y - focusPaint,
+  };
+  for (const [label, box] of [
+    ["Account", accountBox!],
+    ["progress text", progressBox!],
+  ] as const) {
+    const overlaps = !(
+      replayPaint.x + replayPaint.width <= box.x ||
+      box.x + box.width <= replayPaint.x ||
+      replayPaint.y + replayPaint.height <= box.y ||
+      box.y + box.height <= replayPaint.y
+    );
+    expect(overlaps, `${label} overlaps Replay focus paint`).toBe(false);
+  }
+});

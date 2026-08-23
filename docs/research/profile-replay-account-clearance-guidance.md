@@ -79,8 +79,10 @@ Primary pages checked for this decision:
 At compact portrait and short-wide sizes, keep the source and visible sequence
 **Question _n_ of _n_** then **Replay**, but place the two items together at the
 start of the card. At narrow widths, remove only the decorative letter spacing
-from the uppercase progress label and use a four-pixel gap. At short-wide sizes,
-the full tracked label and eight-pixel gap already fit.
+from the uppercase progress label and use an eight-pixel gap. At short-wide
+sizes, the full tracked label and eight-pixel gap already fit. When both media
+conditions apply, the short-wide placement and eight-pixel gap combine with the
+narrow normal tracking.
 
 This keeps the complete wording, DOM/reading order, 44/48-pixel button, card
 height, prompt, input, actions, and desktop/tall composition. Calculating from
@@ -125,14 +127,16 @@ untestable disabled state rather than the product interaction.
 
 1. The compact question utility row keeps **Question _n_ of _n_** before Replay
    in DOM and visible order.
-2. At widths below `sm`, the row is start-packed, uses a four-pixel gap, and
+2. At widths below `sm`, the row is start-packed, uses an eight-pixel gap, and
    removes only the progress label's decorative tracking.
 3. In `short-wide`, the row is start-packed with its current compact eight-pixel
-   gap. Tall `sm` and desktop placement remains unchanged.
+   gap. The `sm`-and-up tall and desktop placement remains unchanged; the
+   390px regular-phone guard intentionally uses the compact composition.
 4. Replay and Account each remain at least 44x44 CSS pixels, visible, named,
    enabled when saved question audio exists, and independently operable.
 5. Replay's border box expanded by the shared four-pixel outline plus four-pixel
-   offset is disjoint from the higher-layer account border box at 280x568,
+   offset is disjoint from both the progress text and the higher-layer account
+   border box at 280x568,
    320x640, 360x640, 390x844, 640x360, and 1440x900. Normal and forced-colors
    focus treatments remain visible; Account's own focus treatment remains
    intact when it is the active control.

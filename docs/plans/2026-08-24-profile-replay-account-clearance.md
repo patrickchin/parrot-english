@@ -14,7 +14,7 @@ Research contract:
 Make the saved-audio Replay action completely visible, focus-visible, and
 pointer-operable beside the fixed Account control at compact profile-question
 viewports, without shrinking targets, moving actions off-screen, changing the
-question flow, or altering tall-screen composition.
+question flow, or altering the `sm`-and-up composition.
 
 ## Task 1: establish an enabled failing fixture
 
@@ -29,7 +29,8 @@ Steps:
 1. Derive a saved audio object for each viewport question from its production
    `audioId` and English prompt; do not copy Mandarin into `src`.
 2. Add Replay to viewport, target-size, and account-clearance checks.
-3. Check Replay's eight-pixel expanded focus footprint against Account.
+3. Check Replay's eight-pixel expanded focus footprint against both progress
+   text and Account.
 4. Sample Replay pointer hit ownership at its center and inset corners.
 5. Add a rendered-focus scenario for enabled Replay and preserve the existing
    focused-heading → Tab → answer contract; use Shift+Tab for Replay.
@@ -55,7 +56,7 @@ Steps:
 
 1. Keep progress then Replay in markup.
 2. Start-pack the utility row below `sm` and in `short-wide`.
-3. Use a four-pixel narrow gap and normal narrow tracking; retain the current
+3. Use an eight-pixel narrow gap and normal narrow tracking; retain the current
    short-wide gap and tall-screen split placement.
 4. Make no size, label, audio, focus, route, state, or timing change.
 5. Run the focused tests and adjust only from rendered evidence.

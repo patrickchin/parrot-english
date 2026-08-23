@@ -62,8 +62,8 @@ export function LearnerProfileQuestionView({
       className="p-6 short:p-3 short-wide:grid short-wide:grid-cols-[7rem_minmax(0,1fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:gap-x-4 sm:p-10"
       aria-labelledby="learner-profile-question-title"
     >
-      <header className="flex items-center justify-between gap-4 short:gap-2 short-wide:col-start-2 short-wide:row-start-1">
-        <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-rose">
+      <header className="flex items-center justify-between gap-4 max-sm:justify-start max-sm:gap-2 short-wide:col-start-2 short-wide:row-start-1 short-wide:justify-start short-wide:gap-2">
+        <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-rose max-sm:tracking-normal">
           Question {progress.current} of {progress.total}
         </p>
         <IconButton

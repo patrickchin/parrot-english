@@ -13,7 +13,7 @@ const targetViewports = [
 ] as const;
 
 type Rect = { height: number; width: number; x: number; y: number };
-type Viewport = (typeof targetViewports)[number];
+type Viewport = { height: number; name: string; width: number };
 
 async function rect(locator: Locator): Promise<Rect> {
   return locator.evaluate((element) => {
@@ -98,8 +98,9 @@ async function expectAccountClearOf(page: Page, targets: Locator[]) {
   }
 }
 
-async function expectFocusPaintClearOfAccount(page: Page, target: Locator) {
+async function expectReplayFocusPaintClear(page: Page, target: Locator) {
   const account = page.getByRole("button", { name: /^Account for / });
+  const progress = page.getByText(/^Question \d+ of \d+$/);
   const indicator = await target.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -119,6 +120,10 @@ async function expectFocusPaintClearOfAccount(page: Page, target: Locator) {
   expect(
     boxesOverlap(await rect(account), targetPaint),
     "Account control overlaps the Replay focus paint",
+  ).toBe(false);
+  expect(
+    boxesOverlap(await rect(progress), targetPaint),
+    "Progress text overlaps the Replay focus paint",
   ).toBe(false);
 
   const viewport = page.viewportSize();
@@ -395,7 +400,7 @@ for (const viewport of targetViewports) {
 
     await page.keyboard.press("Shift+Tab");
     await expect(replay).toBeFocused();
-    await expectFocusPaintClearOfAccount(page, replay);
+    await expectReplayFocusPaintClear(page, replay);
     await page.keyboard.press("Tab");
     await expect(answer).toBeFocused();
 
@@ -527,6 +532,52 @@ for (const viewport of targetViewports) {
   });
 }
 
+test("profile Replay and Account remain independently operable", async ({
+  page,
+}) => {
+  const viewport = targetViewports[0];
+  await openSetup(page, viewport);
+  await page.getByRole("button", { name: "Start questions" }).click();
+
+  const replay = page.getByRole("button", { name: "Replay question" });
+  await expect(replay).toBeEnabled();
+  await page.evaluate(() => {
+    const measuredWindow = window as Window & {
+      __parrotE2eProfileReplayCount?: number;
+    };
+    const originalPlay = window.Audio.prototype.play;
+    measuredWindow.__parrotE2eProfileReplayCount = 0;
+    window.Audio.prototype.play = function play() {
+      measuredWindow.__parrotE2eProfileReplayCount! += 1;
+      return originalPlay.call(this);
+    };
+  });
+  const replayCount = () =>
+    page.evaluate(
+      () =>
+        (window as Window & { __parrotE2eProfileReplayCount?: number })
+          .__parrotE2eProfileReplayCount ?? 0,
+    );
+
+  const replayBox = await rect(replay);
+  await replay.click({
+    position: { x: replayBox.width / 2, y: replayBox.height / 2 },
+  });
+  await expect.poll(replayCount).toBe(1);
+  await expect(replay).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect.poll(replayCount).toBe(2);
+
+  const account = page.getByRole("button", { name: /^Account for / });
+  await account.click();
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("menuitem").first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(account).toBeFocused();
+});
+
 test("profile Replay remains operable at the 320px reflow width", async ({
   page,
 }) => {
@@ -538,6 +589,9 @@ test("profile Replay remains operable at the 320px reflow width", async ({
     name: "Hi! I'm Peppa. What's your name?",
   });
   const replay = page.getByRole("button", { name: "Replay question" });
+  const answer = page.getByRole("textbox", { name: "Your answer" });
+  const speak = page.getByRole("button", { name: "Speak your answer" });
+  const skip = page.getByRole("button", { name: "Skip for now" });
   const next = page.getByRole("button", { exact: true, name: "Next" });
 
   await expect(heading).toBeFocused();
@@ -554,10 +608,12 @@ test("profile Replay remains operable at the 320px reflow width", async ({
 
   await page.keyboard.press("Shift+Tab");
   await expect(replay).toBeFocused();
-  await expectFocusPaintClearOfAccount(page, replay);
+  await expectReplayFocusPaintClear(page, replay);
 
-  await next.scrollIntoViewIfNeeded();
-  await expectInsideViewport(next, viewport);
-  await expectMinimumTarget(next);
-  await expectNoHorizontalOverflow(page);
+  for (const target of [replay, answer, speak, skip, next]) {
+    await target.scrollIntoViewIfNeeded();
+    await expectInsideViewport(target, viewport);
+    await expectMinimumTarget(target);
+    await expectNoHorizontalOverflow(page);
+  }
 });
