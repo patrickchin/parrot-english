@@ -240,6 +240,7 @@ function renderedScreenshotDelta({
   let changedPixels = 0;
   let contrastingPixels = 0;
   let leftMarkerContrastingPixels = 0;
+  let markerGapChangedPixels = 0;
   let leftOutlineContrastingPixels = 0;
   let rightOutlineContrastingPixels = 0;
   let strongestContrast = 1;
@@ -268,6 +269,9 @@ function renderedScreenshotDelta({
       if (channelChange < 12) continue;
 
       changedPixels += 1;
+      if (x >= markerRight && x < outlineLeftRight) {
+        markerGapChangedPixels += 1;
+      }
       const ratio = contrast(after, before);
       strongestContrast = Math.max(strongestContrast, ratio);
       if (ratio >= 3) {
@@ -311,6 +315,8 @@ function renderedScreenshotDelta({
     contrastingArea: contrastingPixels / renderedPixelsPerCssPixel,
     leftMarkerContrastingArea:
       leftMarkerContrastingPixels / renderedPixelsPerCssPixel,
+    markerGapChangedArea:
+      markerGapChangedPixels / renderedPixelsPerCssPixel,
     leftOutlineContrastingArea:
       leftOutlineContrastingPixels / renderedPixelsPerCssPixel,
     rightOutlineContrastingArea:
@@ -411,6 +417,25 @@ function expectRenderedReadingMarker(
     focus.leftMarkerContrastingArea,
     `${name} has ${focus.leftMarkerContrastingArea.toFixed(0)} CSS px² at 3:1 or better in its four-pixel marker strip; ${focus.readingCueArea.toFixed(0)} CSS px² required`,
   ).toBeGreaterThanOrEqual(focus.readingCueArea);
+}
+
+function expectRenderedOpenReadingMarker(
+  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
+  name: string,
+) {
+  expectRenderedReadingMarker(focus, name);
+  expect(
+    focus.markerGapChangedArea,
+    `${name} changes ${focus.markerGapChangedArea.toFixed(0)} CSS px² in the clear marker-to-heading gap`,
+  ).toBeLessThan(1);
+  expect(
+    focus.leftOutlineContrastingArea,
+    `${name} retains ${focus.leftOutlineContrastingArea.toFixed(0)} CSS px² of a closed left perimeter`,
+  ).toBeLessThan(Math.max(1, focus.forcedOutlineEdgeArea / 15));
+  expect(
+    focus.rightOutlineContrastingArea,
+    `${name} retains ${focus.rightOutlineContrastingArea.toFixed(0)} CSS px² of a closed right perimeter`,
+  ).toBeLessThan(Math.max(1, focus.forcedOutlineEdgeArea / 15));
 }
 
 function expectRenderedForcedReadingOutline(
@@ -667,6 +692,259 @@ test("story completion focus retains a real indicator in forced colors", async (
     await renderedInitialFocusDelta(page, heading),
     "forced-colors Story Reader completion heading",
   );
+});
+
+async function profileHeadingGeometry(target: Locator) {
+  return target.evaluate((element) => {
+    const heading = element.getBoundingClientRect();
+    const card = element.closest("section")?.getBoundingClientRect();
+    if (!card) throw new Error("Profile heading card was not found.");
+    const style = getComputedStyle(element);
+    return {
+      cardLeft: card.left,
+      cardRight: card.right,
+      heading: {
+        height: heading.height,
+        width: heading.width,
+        x: heading.x,
+        y: heading.y,
+      },
+      lineCount: Math.round(heading.height / Number.parseFloat(style.lineHeight)),
+      mainScrollLeft: element.closest("main")?.scrollLeft ?? null,
+      mainScrollTop: element.closest("main")?.scrollTop ?? null,
+    };
+  });
+}
+
+async function expectProfileOpenReadingCue(
+  page: Page,
+  target: Locator,
+  name: string,
+) {
+  await expect(target).toBeFocused();
+  await expect(target).toHaveAttribute("tabindex", "-1");
+  const focused = await profileHeadingGeometry(target);
+  expect(focused.heading.x - 12).toBeGreaterThanOrEqual(focused.cardLeft);
+  expect(focused.heading.x + focused.heading.width).toBeLessThanOrEqual(
+    focused.cardRight + 1,
+  );
+  expect(focused.mainScrollLeft).toBe(0);
+  expect(focused.mainScrollTop).toBe(0);
+
+  expectRenderedOpenReadingMarker(
+    await renderedInitialFocusDelta(page, target, -12),
+    name,
+  );
+
+  const blurred = await profileHeadingGeometry(target);
+  expect(blurred).toEqual(focused);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+}
+
+async function expectProfileForcedReadingCue(
+  page: Page,
+  target: Locator,
+  name: string,
+) {
+  await expect(target).toBeFocused();
+  await expect(target).toHaveAttribute("tabindex", "-1");
+  const indicator = await target.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.outlineStyle).not.toBe("none");
+  expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
+
+  const focus = await renderedInitialFocusDelta(page, target, -12);
+  expectRenderedForcedReadingOutline(focus, name);
+  expect(
+    focus.leftMarkerContrastingArea,
+    `${name} retains the decorative normal-color marker in forced colors`,
+  ).toBeLessThan(1);
+}
+
+test("profile steps keep one open reading cue through pointer transitions", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 568, width: 280 });
+  await openProfileSetup(page);
+
+  const setupHeading = page.getByRole("heading", {
+    name: "Help Peppa get to know you",
+  });
+  await expectProfileOpenReadingCue(page, setupHeading, "profile setup heading");
+
+  await page.getByRole("button", { name: "Set up profile" }).click();
+  const questionHeading = page.getByRole("heading", {
+    name: "What's your name?",
+  });
+  await expect(questionHeading).toBeFocused();
+  expect(
+    await questionHeading.evaluate((element) =>
+      element.matches(":focus-visible"),
+    ),
+  ).toBe(false);
+  await expectProfileOpenReadingCue(
+    page,
+    questionHeading,
+    "pointer-arrived profile question heading",
+  );
+
+  await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
+  await page.getByRole("button", { exact: true, name: "Next" }).click();
+  const acknowledgmentHeading = page.getByRole("heading", {
+    name: "Thank you!",
+  });
+  await expect(acknowledgmentHeading).toBeFocused();
+  expect(
+    await acknowledgmentHeading.evaluate((element) =>
+      element.matches(":focus-visible"),
+    ),
+  ).toBe(false);
+  await expectProfileOpenReadingCue(
+    page,
+    acknowledgmentHeading,
+    "pointer-arrived profile acknowledgment heading",
+  );
+});
+
+test("keyboard profile transitions retain the same open reading cue", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  await openProfileSetup(page);
+
+  const setup = page.getByRole("button", { name: "Set up profile" });
+  await focusWithKeyboard(page, setup);
+  await page.keyboard.press("Enter");
+  const questionHeading = page.getByRole("heading", {
+    name: "What's your name?",
+  });
+  await expect(questionHeading).toBeFocused();
+  expect(
+    await questionHeading.evaluate((element) =>
+      element.matches(":focus-visible"),
+    ),
+  ).toBe(true);
+  await expectProfileOpenReadingCue(
+    page,
+    questionHeading,
+    "keyboard-arrived profile question heading",
+  );
+
+  const answer = page.getByRole("textbox", { name: "Your answer" });
+  await answer.fill("Mia");
+  const next = page.getByRole("button", { exact: true, name: "Next" });
+  await focusWithKeyboard(page, next);
+  await page.keyboard.press("Enter");
+  const acknowledgmentHeading = page.getByRole("heading", {
+    name: "Thank you!",
+  });
+  await expect(acknowledgmentHeading).toBeFocused();
+  expect(
+    await acknowledgmentHeading.evaluate((element) =>
+      element.matches(":focus-visible"),
+    ),
+  ).toBe(true);
+  await expectProfileOpenReadingCue(
+    page,
+    acknowledgmentHeading,
+    "keyboard-arrived profile acknowledgment heading",
+  );
+});
+
+test("profile headings keep a real indicator through forced-color pointer transitions", async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  await openProfileSetup(page);
+
+  const setupHeading = page.getByRole("heading", {
+    name: "Help Peppa get to know you",
+  });
+  await expectProfileForcedReadingCue(
+    page,
+    setupHeading,
+    "forced-colors profile setup heading",
+  );
+
+  await page.getByRole("button", { name: "Set up profile" }).click();
+  const questionHeading = page.getByRole("heading", {
+    name: "What's your name?",
+  });
+  await expectProfileForcedReadingCue(
+    page,
+    questionHeading,
+    "forced-colors pointer-arrived profile question heading",
+  );
+
+  await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
+  await page.getByRole("button", { exact: true, name: "Next" }).click();
+  await expectProfileForcedReadingCue(
+    page,
+    page.getByRole("heading", { name: "Thank you!" }),
+    "forced-colors pointer-arrived profile acknowledgment heading",
+  );
+});
+
+test("the long profile acknowledgment keeps its open marker contained", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/profile/setup?parrotE2eProfile=long-acknowledgment");
+  await page.getByRole("button", { name: "Set up profile" }).click();
+  await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
+  await page.getByRole("button", { exact: true, name: "Next" }).click();
+
+  await expectProfileOpenReadingCue(
+    page,
+    page.getByRole("heading", {
+      name: "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!",
+    }),
+    "long profile acknowledgment heading",
+  );
+});
+
+test("profile reading targets stay out of the ordinary Tab sequence", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await openProfileSetup(page);
+  await page.keyboard.press("Tab");
+  const setup = page.getByRole("button", { name: "Set up profile" });
+  await expect(setup).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  const questionHeading = page.getByRole("heading", {
+    name: "What's your name?",
+  });
+  await expect(questionHeading).toBeFocused();
+  await page.keyboard.press("Tab");
+  const answer = page.getByRole("textbox", { name: "Your answer" });
+  await expect(answer).toBeFocused();
+
+  await answer.fill("Mia");
+  const next = page.getByRole("button", { exact: true, name: "Next" });
+  await focusWithKeyboard(page, next);
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Thank you!" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { exact: true, name: "Next" }),
+  ).toBeFocused();
 });
 
 test("dark-surface focus does not fade in or linger after moving", async ({
