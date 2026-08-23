@@ -822,41 +822,39 @@ test("every current device-speech story prompt is fully visible at join-in and Y
   test.setTimeout(180_000);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ height: 360, width: 640 });
-  const deviceStories = STORIES.filter((story) =>
-    story.pages.every(({ narrationAudioId }) => narrationAudioId === null),
-  );
-
-  for (const story of deviceStories) {
+  for (const story of STORIES) {
     await page.goto(`/stories/${story.id}/pages/1`);
     for (const [pageIndex, storyPage] of story.pages.entries()) {
       const route = `/stories/${story.id}/pages/${pageIndex + 1}`;
       await expect(page).toHaveURL(new RegExp(`${route}$`));
       const reader = page.getByRole("region", { name: "Story reader" });
-      const prompt = reader.getByLabel(`Say it: ${storyPage.joinIn}`);
       const controls = reader.getByRole("navigation", {
         name: "Story controls",
       });
-      const callbackStart = (await storySpeechState(page)).callbackCounts.end;
-      await controls.getByRole("button", { name: "Listen" }).click();
-      await invokeStorySpeechCallback(page, "end", callbackStart);
-      await expect
-        .poll(async () => (await storySpeechState(page)).snapshots.length)
-        .toBe(callbackStart + 2);
-      expect(
-        (await storySpeechState(page)).snapshots[callbackStart + 1]
-          .promptFullyVisible,
-        `${route} must expose its prompt before the join-in utterance starts.`,
-      ).toBe(true);
-      await expectFullyVisibleInReadingPane(prompt);
+      if (storyPage.narrationAudioId === null) {
+        const prompt = reader.getByLabel(`Say it: ${storyPage.joinIn}`);
+        const callbackStart = (await storySpeechState(page)).callbackCounts.end;
+        await controls.getByRole("button", { name: "Listen" }).click();
+        await invokeStorySpeechCallback(page, "end", callbackStart);
+        await expect
+          .poll(async () => (await storySpeechState(page)).snapshots.length)
+          .toBe(callbackStart + 2);
+        expect(
+          (await storySpeechState(page)).snapshots[callbackStart + 1]
+            .promptFullyVisible,
+          `${route} must expose its prompt before the join-in utterance starts.`,
+        ).toBe(true);
+        await expectFullyVisibleInReadingPane(prompt);
 
-      await invokeStorySpeechCallback(page, "end", callbackStart + 1);
-      await expect(
-        prompt.getByText("Your turn", { exact: true }),
-      ).toBeVisible();
-      await expectFullyVisibleInReadingPane(prompt);
-      await expect(
-        reader.evaluate((element) => element.scrollTop),
-      ).resolves.toBe(0);
+        await invokeStorySpeechCallback(page, "end", callbackStart + 1);
+        await expect(
+          prompt.getByText("Your turn", { exact: true }),
+        ).toBeVisible();
+        await expectFullyVisibleInReadingPane(prompt);
+        await expect(
+          reader.evaluate((element) => element.scrollTop),
+        ).resolves.toBe(0);
+      }
 
       if (pageIndex < story.pages.length - 1) {
         await controls.getByRole("button", { name: "Next page" }).click();
@@ -883,6 +881,7 @@ for (const viewport of [
     const artwork = reader.getByRole("img", {
       name: "A child holding one bright red ball",
     });
+    const prompt = reader.getByLabel("Say it: Red ball!");
     const grownUpOptions = reader.getByLabel("Grown-up options");
 
     await expect(
@@ -922,14 +921,31 @@ for (const viewport of [
       await visibleBoxWithoutScrolling(artwork),
     );
 
+    const callbackStart = (await storySpeechState(page)).callbackCounts.end;
     await controls.getByRole("button", { name: "Listen" }).click();
     await expect(
       controls.getByRole("button", { name: "Pause story" }),
     ).toBeVisible();
+    await invokeStorySpeechCallback(page, "end", callbackStart);
+    await expect
+      .poll(async () => (await storySpeechState(page)).snapshots.length)
+      .toBe(callbackStart + 2);
+    expect(
+      (await storySpeechState(page)).snapshots[callbackStart + 1]
+        .promptFullyVisible,
+    ).toBe(true);
+    await expectFullyVisibleInReadingPane(prompt);
+    await invokeStorySpeechCallback(page, "end", callbackStart + 1);
+    await expect(prompt.getByText("Your turn", { exact: true })).toBeVisible();
+    await expectFullyVisibleInReadingPane(prompt);
     expectStablePosition(
       initialControlsBox,
       await expectContainedWithoutScrolling(reader, controls),
     );
+    await expect(
+      reader.evaluate((element) => element.scrollTop),
+    ).resolves.toBe(0);
+    expect((await readingPaneGeometry(prompt)).documentScrollTop).toBe(0);
 
     await controls.getByRole("button", { name: "Next page" }).click();
     await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/2$/);
