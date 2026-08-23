@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { STORIES } from "../../src/stories/story-catalog";
 
 const firstStoryPath = "/stories/the-red-ball/pages/1";
 
@@ -23,9 +24,17 @@ async function installStoryMediaGuard(page: Page) {
     });
     const storySpeech = {
       cancelled: 0,
+      endCallbacks: [] as Array<() => void>,
+      errorCallbacks: [] as Array<() => void>,
       paused: 0,
       resumed: 0,
+      snapshots: [] as Array<{
+        promptFullyVisible: boolean;
+        scrollTop: number | null;
+        text: string;
+      }>,
       spoken: [] as string[],
+      throwOnSpeak: false,
     };
     class StorySpeechUtterance {
       lang = "";
@@ -72,7 +81,45 @@ async function installStoryMediaGuard(page: Page) {
           storySpeech.resumed += 1;
         },
         speak(utterance: StorySpeechUtterance) {
+          if (storySpeech.throwOnSpeak) {
+            storySpeech.throwOnSpeak = false;
+            throw new Error("Simulated speech start failure.");
+          }
+
+          const prompt = document.querySelector<HTMLElement>(
+            '[aria-label^="Say it:"]',
+          );
+          let pane = prompt?.parentElement ?? null;
+          while (pane) {
+            const overflowY = getComputedStyle(pane).overflowY;
+            if (overflowY === "auto" || overflowY === "scroll") break;
+            pane = pane.parentElement;
+          }
+          const promptBox = prompt?.getBoundingClientRect();
+          const paneBox = pane?.getBoundingClientRect();
+          const visibleHeight =
+            promptBox && paneBox
+              ? Math.max(
+                  0,
+                  Math.min(promptBox.bottom, paneBox.bottom) -
+                    Math.max(promptBox.top, paneBox.top),
+                )
+              : 0;
+
           storySpeech.spoken.push(utterance.text);
+          storySpeech.snapshots.push({
+            promptFullyVisible: Boolean(
+              promptBox && visibleHeight >= promptBox.height - 1,
+            ),
+            scrollTop: pane?.scrollTop ?? null,
+            text: utterance.text,
+          });
+          if (utterance.onend) {
+            storySpeech.endCallbacks.push(utterance.onend);
+          }
+          if (utterance.onerror) {
+            storySpeech.errorCallbacks.push(utterance.onerror);
+          }
         },
       },
     });
@@ -124,6 +171,106 @@ async function visibleBoxWithoutScrolling(locator: Locator) {
   const box = await locator.boundingBox();
   expect(box).not.toBeNull();
   return box!;
+}
+
+async function readingPaneGeometry(locator: Locator) {
+  return locator.evaluate((element) => {
+    let pane = element.parentElement;
+    while (pane) {
+      const overflowY = getComputedStyle(pane).overflowY;
+      if (overflowY === "auto" || overflowY === "scroll") break;
+      pane = pane.parentElement;
+    }
+    if (!pane) throw new Error("Expected a vertical reading pane.");
+
+    const paneBox = pane.getBoundingClientRect();
+    const targetBox = element.getBoundingClientRect();
+    return {
+      documentScrollTop: document.documentElement.scrollTop,
+      paneClientHeight: pane.clientHeight,
+      paneScrollHeight: pane.scrollHeight,
+      paneScrollTop: pane.scrollTop,
+      targetHeight: targetBox.height,
+      targetVisibleHeight: Math.max(
+        0,
+        Math.min(targetBox.bottom, paneBox.bottom) -
+          Math.max(targetBox.top, paneBox.top),
+      ),
+    };
+  });
+}
+
+async function expectFullyVisibleInReadingPane(locator: Locator) {
+  await expect
+    .poll(async () => {
+      const geometry = await readingPaneGeometry(locator);
+      return geometry.targetVisibleHeight >= geometry.targetHeight - 1;
+    })
+    .toBe(true);
+}
+
+async function storySpeechState(page: Page) {
+  return page.evaluate(() => {
+    const speech = (
+      window as unknown as {
+        __storySpeech: {
+          cancelled: number;
+          endCallbacks: Array<() => void>;
+          errorCallbacks: Array<() => void>;
+          paused: number;
+          resumed: number;
+          snapshots: Array<{
+            promptFullyVisible: boolean;
+            scrollTop: number | null;
+            text: string;
+          }>;
+          spoken: string[];
+          throwOnSpeak: boolean;
+        };
+      }
+    ).__storySpeech;
+    return {
+      callbackCounts: {
+        end: speech.endCallbacks.length,
+        error: speech.errorCallbacks.length,
+      },
+      cancelled: speech.cancelled,
+      paused: speech.paused,
+      resumed: speech.resumed,
+      snapshots: speech.snapshots,
+      spoken: speech.spoken,
+    };
+  });
+}
+
+async function invokeStorySpeechCallback(
+  page: Page,
+  kind: "end" | "error",
+  index: number,
+) {
+  await page.evaluate(
+    ({ callbackIndex, callbackKind }) => {
+      const speech = (
+        window as unknown as {
+          __storySpeech: {
+            endCallbacks: Array<() => void>;
+            errorCallbacks: Array<() => void>;
+          };
+        }
+      ).__storySpeech;
+      const callback =
+        callbackKind === "end"
+          ? speech.endCallbacks[callbackIndex]
+          : speech.errorCallbacks[callbackIndex];
+      if (!callback) {
+        throw new Error(
+          `Missing ${callbackKind} callback ${callbackIndex}.`,
+        );
+      }
+      callback();
+    },
+    { callbackIndex: index, callbackKind: kind },
+  );
 }
 
 async function expectContainedWithoutScrolling(
@@ -396,6 +543,326 @@ test("a script-only story has descriptive art, read-aloud, and obvious page cont
     "Page 2 of 5. Roll, red ball, roll.",
   );
   await expect(controls.getByRole("button", { name: "Previous page" })).toBeEnabled();
+});
+
+test("a short-wide story reveals the join-in task at its speaking phase and resets it for replay", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/stories/kite-come-back/pages/4");
+
+  const reader = page.getByRole("region", { name: "Story reader" });
+  const controls = reader.getByRole("navigation", {
+    name: "Story controls",
+  });
+  const artwork = reader.getByRole("img", {
+    name: "Ana giving the kite string one small pull",
+  });
+  const text = reader.getByText(
+    "Ana gives the string one small pull. It will not move.",
+    { exact: true },
+  );
+  const prompt = reader.getByLabel("Say it: Stop and ask!");
+  const initialArtworkBox = await visibleBoxWithoutScrolling(artwork);
+  const initialControlsBox = await expectContainedWithoutScrolling(
+    reader,
+    controls,
+  );
+
+  await expect(text).toBeFocused();
+  await expectFullyVisibleInReadingPane(text);
+  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
+
+  await controls.getByRole("button", { name: "Listen" }).click();
+  await expect(
+    controls.getByRole("button", { name: "Pause story" }),
+  ).toBeFocused();
+  await expect
+    .poll(async () => (await storySpeechState(page)).snapshots.length)
+    .toBe(1);
+  expect((await storySpeechState(page)).snapshots[0]).toMatchObject({
+    scrollTop: 0,
+    text: "Ana gives the string one small pull. It will not move.",
+  });
+
+  await invokeStorySpeechCallback(page, "end", 0);
+  await expect(
+    prompt.getByText("Listen and say it", { exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await storySpeechState(page)).snapshots.length)
+    .toBe(2);
+  const joinInSnapshot = (await storySpeechState(page)).snapshots[1];
+  expect(joinInSnapshot).toMatchObject({
+    promptFullyVisible: true,
+    text: "Stop and ask!",
+  });
+  expect(joinInSnapshot.scrollTop).toBeGreaterThan(0);
+  await expectFullyVisibleInReadingPane(prompt);
+  await expect(
+    controls.getByRole("button", { name: "Pause story" }),
+  ).toBeFocused();
+
+  const joinInScrollTop = (await readingPaneGeometry(prompt)).paneScrollTop;
+  await controls.getByRole("button", { name: "Pause story" }).click();
+  await expect(
+    controls.getByRole("button", { name: "Resume story" }),
+  ).toBeFocused();
+  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(
+    joinInScrollTop,
+  );
+  await controls.getByRole("button", { name: "Resume story" }).click();
+  await expect(
+    controls.getByRole("button", { name: "Pause story" }),
+  ).toBeFocused();
+  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(
+    joinInScrollTop,
+  );
+
+  await invokeStorySpeechCallback(page, "end", 1);
+  await expect(prompt.getByText("Your turn", { exact: true })).toBeVisible();
+  await expectFullyVisibleInReadingPane(prompt);
+  await expect(
+    controls.getByRole("button", { name: "Listen again" }),
+  ).toBeFocused();
+
+  expectStablePosition(
+    initialArtworkBox,
+    await visibleBoxWithoutScrolling(artwork),
+  );
+  expectStablePosition(
+    initialControlsBox,
+    await expectContainedWithoutScrolling(reader, controls),
+  );
+  await expect(
+    reader.evaluate((element) => element.scrollTop),
+  ).resolves.toBe(0);
+  expect((await readingPaneGeometry(prompt)).documentScrollTop).toBe(0);
+
+  await controls.getByRole("button", { name: "Listen again" }).click();
+  await expect(
+    controls.getByRole("button", { name: "Pause story" }),
+  ).toBeFocused();
+  await expect
+    .poll(async () => (await storySpeechState(page)).snapshots.length)
+    .toBe(3);
+  expect((await storySpeechState(page)).snapshots[2]).toMatchObject({
+    scrollTop: 0,
+    text: "Ana gives the string one small pull. It will not move.",
+  });
+  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
+  await expectFullyVisibleInReadingPane(text);
+});
+
+test("a stale sentence completion cannot reveal or speak on the next page", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/stories/kite-come-back/pages/4");
+  const reader = page.getByRole("region", { name: "Story reader" });
+  const controls = reader.getByRole("navigation", {
+    name: "Story controls",
+  });
+
+  await controls.getByRole("button", { name: "Listen" }).click();
+  await expect
+    .poll(async () => (await storySpeechState(page)).callbackCounts.end)
+    .toBe(1);
+  await page.evaluate(() => {
+    const speech = (
+      window as unknown as {
+        __storySpeech: { endCallbacks: Array<() => void> };
+      }
+    ).__storySpeech;
+    const next = document.querySelector<HTMLButtonElement>(
+      '[aria-label="Next page"]',
+    );
+    if (!next) throw new Error("Expected the next-page action.");
+    speech.endCallbacks[0]();
+    next.click();
+    speech.endCallbacks[0]();
+  });
+
+  await expect(page).toHaveURL(/\/stories\/kite-come-back\/pages\/5$/);
+  const kite = STORIES.find(({ id }) => id === "kite-come-back");
+  if (!kite) throw new Error("Expected Kite, Come Back! in the catalog.");
+  const nextText = reader.getByText(kite.pages[4].text, { exact: true });
+  await expect(nextText).toBeFocused();
+  await expectFullyVisibleInReadingPane(nextText);
+  expect((await storySpeechState(page)).spoken).toEqual([
+    "Ana gives the string one small pull. It will not move.",
+  ]);
+  const nextPrompt = reader.getByLabel(`Say it: ${kite.pages[4].joinIn}`);
+  expect((await readingPaneGeometry(nextPrompt)).paneScrollTop).toBe(0);
+  await expect(
+    controls.getByRole("button", { name: "Listen" }),
+  ).toBeVisible();
+});
+
+test("read-aloud failure keeps the child prompt beside recovery when grown-up options are open", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await enablePersonalizedStoryArtPanel(page);
+  await page.goto(firstStoryPath);
+
+  const reader = page.getByRole("region", { name: "Story reader" });
+  const controls = reader.getByRole("navigation", {
+    name: "Story controls",
+  });
+  const artwork = reader.getByRole("img", {
+    name: "A child holding one bright red ball",
+  });
+  const prompt = reader.getByLabel("Say it: Red ball!");
+  const grownUpOptions = reader.getByLabel("Grown-up options");
+  await grownUpOptions.click();
+  await expect
+    .poll(() =>
+      grownUpOptions.evaluate(
+        (element) =>
+          (element.parentElement as HTMLDetailsElement | null)?.open,
+      ),
+    )
+    .toBe(true);
+  const initialArtworkBox = await visibleBoxWithoutScrolling(artwork);
+  const initialControlsBox = await expectContainedWithoutScrolling(
+    reader,
+    controls,
+  );
+
+  await page.evaluate(() => {
+    (
+      window as unknown as {
+        __storySpeech: { throwOnSpeak: boolean };
+      }
+    ).__storySpeech.throwOnSpeak = true;
+  });
+  await controls.getByRole("button", { name: "Listen" }).click();
+  let alert = reader.getByRole("alert");
+  await expect(alert).toHaveText(
+    "I can’t read aloud on this device. You can still read together.",
+  );
+  await expectFullyVisibleInReadingPane(prompt);
+  await expectFullyVisibleInReadingPane(alert);
+  await expect(
+    controls.getByRole("button", { name: "Listen" }),
+  ).toBeFocused();
+
+  await controls.getByRole("button", { name: "Listen" }).click();
+  await expect
+    .poll(async () => (await storySpeechState(page)).callbackCounts.error)
+    .toBe(1);
+  await invokeStorySpeechCallback(page, "error", 0);
+  alert = reader.getByRole("alert");
+  await expect(alert).toHaveText(
+    "I can’t read aloud on this device. You can still read together.",
+  );
+  await expectFullyVisibleInReadingPane(prompt);
+  await expectFullyVisibleInReadingPane(alert);
+  await expect(
+    controls.getByRole("button", { name: "Listen" }),
+  ).toBeFocused();
+  await expect
+    .poll(() =>
+      grownUpOptions.evaluate(
+        (element) =>
+          (element.parentElement as HTMLDetailsElement | null)?.open,
+      ),
+    )
+    .toBe(true);
+
+  expectStablePosition(
+    initialArtworkBox,
+    await visibleBoxWithoutScrolling(artwork),
+  );
+  expectStablePosition(
+    initialControlsBox,
+    await expectContainedWithoutScrolling(reader, controls),
+  );
+  await expect(
+    reader.evaluate((element) => element.scrollTop),
+  ).resolves.toBe(0);
+  expect((await readingPaneGeometry(alert)).documentScrollTop).toBe(0);
+});
+
+for (const viewport of [
+  { height: 844, name: "portrait", width: 390 },
+  { height: 800, name: "desktop", width: 1280 },
+]) {
+  test(`a ${viewport.name} story does not scroll when its join-in task already fits`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/stories/kite-come-back/pages/4");
+    const reader = page.getByRole("region", { name: "Story reader" });
+    const prompt = reader.getByLabel("Say it: Stop and ask!");
+    const controls = reader.getByRole("navigation", {
+      name: "Story controls",
+    });
+
+    await controls.getByRole("button", { name: "Listen" }).click();
+    await invokeStorySpeechCallback(page, "end", 0);
+    await expect
+      .poll(async () => (await storySpeechState(page)).snapshots.length)
+      .toBe(2);
+    expect((await storySpeechState(page)).snapshots[1]).toMatchObject({
+      promptFullyVisible: true,
+      scrollTop: 0,
+      text: "Stop and ask!",
+    });
+    await expectFullyVisibleInReadingPane(prompt);
+    expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
+  });
+}
+
+test("every current device-speech story prompt is fully visible at join-in and Your turn", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  const deviceStories = STORIES.filter((story) =>
+    story.pages.every(({ narrationAudioId }) => narrationAudioId === null),
+  );
+
+  for (const story of deviceStories) {
+    await page.goto(`/stories/${story.id}/pages/1`);
+    for (const [pageIndex, storyPage] of story.pages.entries()) {
+      const route = `/stories/${story.id}/pages/${pageIndex + 1}`;
+      await expect(page).toHaveURL(new RegExp(`${route}$`));
+      const reader = page.getByRole("region", { name: "Story reader" });
+      const prompt = reader.getByLabel(`Say it: ${storyPage.joinIn}`);
+      const controls = reader.getByRole("navigation", {
+        name: "Story controls",
+      });
+      const callbackStart = (await storySpeechState(page)).callbackCounts.end;
+      await controls.getByRole("button", { name: "Listen" }).click();
+      await invokeStorySpeechCallback(page, "end", callbackStart);
+      await expect
+        .poll(async () => (await storySpeechState(page)).snapshots.length)
+        .toBe(callbackStart + 2);
+      expect(
+        (await storySpeechState(page)).snapshots[callbackStart + 1]
+          .promptFullyVisible,
+        `${route} must expose its prompt before the join-in utterance starts.`,
+      ).toBe(true);
+      await expectFullyVisibleInReadingPane(prompt);
+
+      await invokeStorySpeechCallback(page, "end", callbackStart + 1);
+      await expect(
+        prompt.getByText("Your turn", { exact: true }),
+      ).toBeVisible();
+      await expectFullyVisibleInReadingPane(prompt);
+      await expect(
+        reader.evaluate((element) => element.scrollTop),
+      ).resolves.toBe(0);
+
+      if (pageIndex < story.pages.length - 1) {
+        await controls.getByRole("button", { name: "Next page" }).click();
+      }
+    }
+  }
 });
 
 for (const viewport of [
