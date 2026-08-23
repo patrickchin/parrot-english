@@ -852,9 +852,13 @@ branches.
 23. **High: the profile answer textarea and microphone share one HTML label.**
     The microphone button is nested inside the textarea's `<label>`, and current
     Chromium accessibility exposure names the textbox **Your answer Speak your
-    answer**. Research and implement a neutral field wrapper plus a dedicated
-    textarea label, preserving visible geometry, label-click focus, exact
-    separate textbox/button names, and native Tab order.
+    answer**. Selected and researched on
+    `codex/profile-answer-separate-labels`: use a neutral field wrapper plus a
+    dedicated native textarea label, preserving visible geometry, label-click
+    focus, exact separate textbox/button names, native Tab order, activation,
+    and fieldset-disabled behavior. This is a definite HTML content-model and
+    reproduced Chromium-name defect, not a blanket WCAG or child-comprehension
+    claim.
 24. **High: form-profile save can discard the learner's focus and duplicate
     pending feedback.** Saving disables the fieldset containing the activated
     action, can move focus to `BODY`, and renders **Peppa is thinking…** in more
