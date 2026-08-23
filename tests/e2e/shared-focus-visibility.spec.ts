@@ -54,7 +54,10 @@ const focusScenarios: Array<{
     name: "profile answer field",
     prepare: async (page) => {
       await openProfileQuestion(page);
-      return page.getByRole("textbox", { name: "Your answer" });
+      return page.getByRole("textbox", {
+        exact: true,
+        name: "Your answer",
+      });
     },
     viewport: { height: 568, width: 280 },
   },
@@ -921,7 +924,9 @@ test("profile steps keep one open reading cue through pointer transitions", asyn
     { markerHeight: 96 },
   );
 
-  await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
+  await page
+    .getByRole("textbox", { exact: true, name: "Your answer" })
+    .fill("Mia");
   await page.getByRole("button", { exact: true, name: "Next" }).click();
   const acknowledgmentHeading = profileStepHeading(page, "Thank you!");
   await expectProfileHeadingContract(acknowledgmentHeading, "Thank you!");
@@ -956,7 +961,10 @@ test("keyboard profile transitions retain the same open reading cue", async ({
     { markerOffset: -12 },
   );
 
-  const answer = page.getByRole("textbox", { name: "Your answer" });
+  const answer = page.getByRole("textbox", {
+    exact: true,
+    name: "Your answer",
+  });
   await answer.fill("Mia");
   const next = page.getByRole("button", { exact: true, name: "Next" });
   await focusWithKeyboard(page, next);
@@ -998,7 +1006,9 @@ test("profile headings keep a real indicator through forced-color pointer transi
     -12,
   );
 
-  await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
+  await page
+    .getByRole("textbox", { exact: true, name: "Your answer" })
+    .fill("Mia");
   await page.getByRole("button", { exact: true, name: "Next" }).click();
   await expectProfileForcedReadingCue(
     page,
@@ -1015,7 +1025,9 @@ test("the long profile acknowledgment keeps its open marker contained", async ({
   await page.setViewportSize({ height: 568, width: 280 });
   await page.goto("/profile/setup?parrotE2eProfile=long-acknowledgment");
   await page.getByRole("button", { name: "Start questions" }).click();
-  await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
+  await page
+    .getByRole("textbox", { exact: true, name: "Your answer" })
+    .fill("Mia");
   await page.getByRole("button", { exact: true, name: "Next" }).click();
 
   const acknowledgmentText =
@@ -1046,7 +1058,10 @@ test("profile reading targets stay out of the ordinary Tab sequence", async ({
   );
   await expect(questionHeading).toBeFocused();
   await page.keyboard.press("Tab");
-  const answer = page.getByRole("textbox", { name: "Your answer" });
+  const answer = page.getByRole("textbox", {
+    exact: true,
+    name: "Your answer",
+  });
   await expect(answer).toBeFocused();
 
   await answer.fill("Mia");

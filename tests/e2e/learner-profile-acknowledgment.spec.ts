@@ -25,7 +25,9 @@ async function openAcknowledgment(
   await page
     .getByRole("button", { name: "Start questions" })
     .click();
-  await page.getByRole("textbox", { name: /Your answer/ }).fill("Mia");
+  await page
+    .getByRole("textbox", { exact: true, name: "Your answer" })
+    .fill("Mia");
   await page.getByRole("button", { exact: true, name: "Next" }).click();
 
   const heading = page.getByRole("heading", {
@@ -147,7 +149,9 @@ test("saved acknowledgment audio cannot block its visible Next action", async ({
     });
   });
 
-  await page.getByRole("textbox", { name: /Your answer/ }).fill("Mia");
+  await page
+    .getByRole("textbox", { exact: true, name: "Your answer" })
+    .fill("Mia");
   await page.getByRole("button", { exact: true, name: "Next" }).click();
 
   const heading = page.getByRole("heading", { name: "Thank you!" });

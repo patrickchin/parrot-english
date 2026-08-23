@@ -274,6 +274,41 @@ async function openSetup(page: Page, viewport: Viewport) {
   return heading;
 }
 
+async function installProfileMicrophoneCounter(page: Page) {
+  await page.evaluate(() => {
+    const measuredWindow = window as Window & {
+      __parrotE2eProfileMicrophoneRequests?: number;
+    };
+    const originalGetUserMedia =
+      navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    measuredWindow.__parrotE2eProfileMicrophoneRequests = 0;
+    navigator.mediaDevices.getUserMedia = (constraints) => {
+      measuredWindow.__parrotE2eProfileMicrophoneRequests! += 1;
+      return originalGetUserMedia(constraints);
+    };
+  });
+
+  return () =>
+    page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __parrotE2eProfileMicrophoneRequests?: number;
+          }
+        ).__parrotE2eProfileMicrophoneRequests ?? 0,
+    );
+}
+
+async function openFirstProfileQuestion(page: Page, viewport: Viewport) {
+  await openSetup(page, viewport);
+  await page.getByRole("button", { name: "Start questions" }).click();
+  const heading = page.getByRole("heading", {
+    name: "Hi! I'm Peppa. What's your name?",
+  });
+  await expect(heading).toBeFocused();
+  return heading;
+}
+
 test("profile setup names the task and saved-answer facts in literal language", async ({
   page,
 }) => {
@@ -299,6 +334,105 @@ test("profile setup names the task and saved-answer facts in literal language", 
 
   await page.keyboard.press("Tab");
   await expect(start).toBeFocused();
+});
+
+test("profile answer and microphone keep separate native labels and controls", async ({
+  page,
+}) => {
+  const viewport = targetViewports[0];
+  const heading = await openFirstProfileQuestion(page, viewport);
+  const answer = page.getByRole("textbox", {
+    exact: true,
+    name: "Your answer",
+  });
+  const combinedAnswer = page.getByRole("textbox", {
+    exact: true,
+    name: "Your answer Speak your answer",
+  });
+  const speak = page.getByRole("button", {
+    exact: true,
+    name: "Speak your answer",
+  });
+
+  await expect(answer).toHaveCount(1);
+  await expect(answer).toHaveAccessibleName("Your answer");
+  await expect(combinedAnswer).toHaveCount(0);
+  await expect(speak).toHaveCount(1);
+  await expect(speak).toHaveAccessibleName("Speak your answer");
+
+  const relationships = await answer.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    const label = textarea.labels?.item(0) ?? null;
+    const microphone = document.querySelector<HTMLButtonElement>(
+      'button[aria-label="Speak your answer"]',
+    );
+
+    return {
+      buttonLabels: microphone?.labels?.length ?? -1,
+      buttonType: microphone?.type ?? null,
+      controlMatches: label?.control === textarea,
+      labelFor: label?.htmlFor ?? null,
+      labelableDescendants:
+        label?.querySelectorAll(
+          "button, input, meter, output, progress, select, textarea",
+        ).length ?? -1,
+      labelText: label?.textContent?.trim() ?? null,
+      labels: textarea.labels?.length ?? -1,
+      microphoneInsideLabel: Boolean(microphone?.closest("label")),
+    };
+  });
+  expect(relationships).toEqual({
+    buttonLabels: 0,
+    buttonType: "button",
+    controlMatches: true,
+    labelFor: await answer.getAttribute("id"),
+    labelableDescendants: 0,
+    labelText: "Your answer",
+    labels: 1,
+    microphoneInsideLabel: false,
+  });
+
+  await page.keyboard.press("Tab");
+  await expect(answer).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(speak).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(answer).toBeFocused();
+
+  const visibleLabel = page.getByText("Your answer", { exact: true });
+  await visibleLabel.click();
+  await expect(answer).toBeFocused();
+
+  const microphoneRequests = await installProfileMicrophoneCounter(page);
+  await answer.click();
+  await expect.poll(microphoneRequests).toBe(0);
+  await speak.click();
+  await expect.poll(microphoneRequests).toBe(1);
+  await expect(page.getByRole("status")).toHaveText("Listening…");
+  await expect(answer).toBeDisabled();
+  await expect(speak).toBeDisabled();
+  expect(
+    await answer.evaluate(
+      (element) =>
+        (element.closest("fieldset") as HTMLFieldSetElement | null)?.disabled,
+    ),
+  ).toBe(true);
+
+  for (const key of ["Enter", "Space"]) {
+    await openFirstProfileQuestion(page, viewport);
+    const keyboardSpeak = page.getByRole("button", {
+      exact: true,
+      name: "Speak your answer",
+    });
+    const keyboardRequests = await installProfileMicrophoneCounter(page);
+    await keyboardSpeak.focus();
+    await page.keyboard.press(key);
+    await expect.poll(keyboardRequests).toBe(1);
+    await expect(page.getByRole("status")).toHaveText("Listening…");
+    await expect(keyboardSpeak).toBeDisabled();
+  }
+
+  await expect(heading).toHaveCount(1);
 });
 
 for (const viewport of targetViewports) {
@@ -356,7 +490,10 @@ for (const viewport of targetViewports) {
     const replay = page.getByRole("button", { name: "Replay question" });
     await expect(page.getByText("你好！我是佩奇。你叫什么名字？", { exact: true })).toBeVisible();
     const answerLabel = page.getByText("Your answer", { exact: true });
-    const answer = page.getByRole("textbox", { name: "Your answer" });
+    const answer = page.getByRole("textbox", {
+      exact: true,
+      name: "Your answer",
+    });
     const speak = page.getByRole("button", { name: "Speak your answer" });
     const questionSkip = page.getByRole("button", { name: "Skip for now" });
     const questionNext = page.getByRole("button", {
@@ -444,7 +581,10 @@ for (const viewport of targetViewports) {
 
     await acknowledgmentNext.click();
     const ageHeading = page.getByRole("heading", { name: "How old are you?" });
-    const ageAnswer = page.getByRole("textbox", { name: "Your answer" });
+    const ageAnswer = page.getByRole("textbox", {
+      exact: true,
+      name: "Your answer",
+    });
     const ageSpeak = page.getByRole("button", { name: "Speak your answer" });
     const ageSkip = page.getByRole("button", { name: "Skip for now" });
     const ageNext = page.getByRole("button", { exact: true, name: "Next" });
@@ -492,7 +632,10 @@ for (const viewport of targetViewports) {
     const nameHeading = page.getByRole("heading", {
       name: "Hi! I'm Peppa. What's your name?",
     });
-    const answer = page.getByRole("textbox", { name: "Your answer" });
+    const answer = page.getByRole("textbox", {
+      exact: true,
+      name: "Your answer",
+    });
     await expectDelayedImageKeepsGeometry({
       anchors: [nameHeading, answer],
       image: page.getByRole("img", { name: "Peppa, your English host" }),
@@ -589,7 +732,10 @@ test("profile Replay remains operable at the 320px reflow width", async ({
     name: "Hi! I'm Peppa. What's your name?",
   });
   const replay = page.getByRole("button", { name: "Replay question" });
-  const answer = page.getByRole("textbox", { name: "Your answer" });
+  const answer = page.getByRole("textbox", {
+    exact: true,
+    name: "Your answer",
+  });
   const speak = page.getByRole("button", { name: "Speak your answer" });
   const skip = page.getByRole("button", { name: "Skip for now" });
   const next = page.getByRole("button", { exact: true, name: "Next" });
