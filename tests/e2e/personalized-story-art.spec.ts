@@ -262,6 +262,7 @@ test("The Red Ball page 1 uses personalized story art instead of the placeholder
   const personalized = reader.getByRole("img", { name: personalizedStoryAlt });
 
   await expect(personalized).toBeVisible();
+  await expect(reader.getByLabel("Grown-up options")).toHaveCount(0);
   await expectInsideViewportHorizontally(personalized, page);
   await expect(
     reader.getByRole("img", { name: defaultArtworkAlt }),

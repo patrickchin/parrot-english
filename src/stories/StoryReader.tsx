@@ -15,7 +15,6 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
@@ -65,14 +64,12 @@ export function StoryReader({
   backToStories,
   onNavigatePage,
   pageIndex,
-  personalizationPanel,
   personalizedOverrides,
   story,
 }: {
   backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
-  personalizationPanel?: ReactNode;
   personalizedOverrides?: PersonalizedStoryArtMetadata["stories"];
   story: Story;
 }) {
@@ -425,21 +422,6 @@ export function StoryReader({
               >
                 {error}
               </p>
-            ) : null}
-
-            {personalizationPanel ? (
-              <details className="group min-w-0">
-                <summary
-                  aria-label="Grown-up options"
-                  className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-sky-100 px-3 text-sm font-black text-brand-blue [&::-webkit-details-marker]:hidden"
-                >
-                  Grown-up options
-                  <span aria-hidden="true" className="group-open:rotate-180">
-                    ▾
-                  </span>
-                </summary>
-                <div className="mt-3">{personalizationPanel}</div>
-              </details>
             ) : null}
 
             <p className="sr-only" aria-live="polite">

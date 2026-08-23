@@ -528,6 +528,7 @@ test("a script-only story has descriptive art, read-aloud, and obvious page cont
   await expect(
     reader.getByRole("heading", { exact: true, name: "The Red Ball" }),
   ).toBeVisible();
+  await expect(reader.getByLabel("Grown-up options")).toHaveCount(0);
   await expect(reader.getByText(/Words to notice|First words|One object/)).toHaveCount(0);
   await expect(progress).toHaveAttribute("aria-valuemin", "1");
   await expect(progress).toHaveAttribute("aria-valuemax", "5");
@@ -586,6 +587,72 @@ test("a script-only story has descriptive art, read-aloud, and obvious page cont
   );
   await expect(controls.getByRole("button", { name: "Previous page" })).toBeEnabled();
 });
+
+for (const viewport of completionViewports) {
+  test(`Story Reader keeps child controls directly after each page on the ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await enablePersonalizedStoryArtPanel(page);
+    const redBall = STORIES.find(({ id }) => id === "the-red-ball");
+    if (!redBall) throw new Error("Expected The Red Ball in the story catalog.");
+
+    for (const scenario of [
+      {
+        controls: ["Listen", "Next page"],
+        pageIndex: 0,
+      },
+      {
+        controls: ["Previous page", "Listen", "Next page"],
+        pageIndex: 2,
+      },
+      {
+        controls: ["Previous page", "Listen", "Finish story"],
+        pageIndex: redBall.pages.length - 1,
+      },
+    ] as const) {
+      const storyPage = redBall.pages[scenario.pageIndex];
+      await page.goto(
+        `/stories/the-red-ball/pages/${scenario.pageIndex + 1}`,
+      );
+
+      const reader = page.getByRole("region", { name: "Story reader" });
+      const sentence = reader.getByText(storyPage.text, { exact: true });
+      const controls = reader.getByRole("navigation", {
+        name: "Story controls",
+      });
+      await expect(sentence).toBeFocused();
+      await expect(reader.getByLabel("Grown-up options")).toHaveCount(0);
+
+      for (const name of scenario.controls) {
+        await page.keyboard.press("Tab");
+        const control = controls.getByRole("button", { name });
+        await expect(control).toBeFocused();
+        await expectFullyInsideViewportWithoutScrolling(control, page);
+      }
+      await page.keyboard.press("Shift+Tab");
+      await expect(
+        controls.getByRole("button", { name: "Listen" }),
+      ).toBeFocused();
+
+      await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
+      expect(
+        (await readingPaneGeometry(
+          reader.getByLabel(`Say it: ${storyPage.joinIn}`),
+        )).paneScrollTop,
+      ).toBe(0);
+      expect(await storyPageScrollState(page)).toEqual({
+        body: 0,
+        document: 0,
+        main: 0,
+        scrollingElement: 0,
+        window: 0,
+      });
+      expect((await storySpeechState(page)).spoken).toEqual([]);
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+}
 
 test("a short-wide story reveals the join-in task at its speaking phase and resets it for replay", async ({
   page,
@@ -742,11 +809,10 @@ test("a stale sentence completion cannot reveal or speak on the next page", asyn
   ).toBeVisible();
 });
 
-test("read-aloud failure keeps the child prompt beside recovery when grown-up options are open", async ({
+test("read-aloud failure keeps the child prompt beside recovery", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
-  await enablePersonalizedStoryArtPanel(page);
   await page.goto(firstStoryPath);
 
   const reader = page.getByRole("region", { name: "Story reader" });
@@ -757,16 +823,6 @@ test("read-aloud failure keeps the child prompt beside recovery when grown-up op
     name: "A child holding one bright red ball",
   });
   const prompt = reader.getByLabel("Say it: Red ball!");
-  const grownUpOptions = reader.getByLabel("Grown-up options");
-  await grownUpOptions.click();
-  await expect
-    .poll(() =>
-      grownUpOptions.evaluate(
-        (element) =>
-          (element.parentElement as HTMLDetailsElement | null)?.open,
-      ),
-    )
-    .toBe(true);
   const initialArtworkBox = await visibleBoxWithoutScrolling(artwork);
   const initialControlsBox = await expectContainedWithoutScrolling(
     reader,
@@ -805,14 +861,6 @@ test("read-aloud failure keeps the child prompt beside recovery when grown-up op
   await expect(
     controls.getByRole("button", { name: "Listen" }),
   ).toBeFocused();
-  await expect
-    .poll(() =>
-      grownUpOptions.evaluate(
-        (element) =>
-          (element.parentElement as HTMLDetailsElement | null)?.open,
-      ),
-    )
-    .toBe(true);
 
   expectStablePosition(
     initialArtworkBox,
@@ -909,11 +957,10 @@ for (const viewport of [
   { height: 360, name: "compact landscape", width: 640 },
   { height: 360, name: "wide short screen", width: 1280 },
 ]) {
-  test(`a ${viewport.name} keeps story art and child controls fixed while secondary content scrolls`, async ({
+  test(`a ${viewport.name} keeps story art and child controls fixed through narration and page changes`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await enablePersonalizedStoryArtPanel(page);
     await page.goto(firstStoryPath);
 
     const reader = page.getByRole("region", { name: "Story reader" });
@@ -924,7 +971,6 @@ for (const viewport of [
       name: "A child holding one bright red ball",
     });
     const prompt = reader.getByLabel("Say it: Red ball!");
-    const grownUpOptions = reader.getByLabel("Grown-up options");
 
     await expect(
       reader.evaluate((element) => ({
@@ -943,25 +989,6 @@ for (const viewport of [
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
-
-    await grownUpOptions.click();
-    const personalization = reader.getByRole("region", {
-      name: "Personalized story art",
-    });
-    await expect(personalization).toBeVisible();
-    await expect(
-      personalization.evaluate(
-        (element) => element.scrollWidth <= element.clientWidth,
-      ),
-    ).resolves.toBe(true);
-    expectStablePosition(
-      initialControlsBox,
-      await expectContainedWithoutScrolling(reader, controls),
-    );
-    expectStablePosition(
-      initialArtworkBox,
-      await visibleBoxWithoutScrolling(artwork),
-    );
 
     const callbackStart = (await storySpeechState(page)).callbackCounts.end;
     await controls.getByRole("button", { name: "Listen" }).click();
@@ -1111,6 +1138,9 @@ for (const viewport of completionViewports) {
     });
     expect((await storySpeechState(page)).spoken).toEqual([]);
     await expectNoHorizontalOverflow(page);
+
+    await page.keyboard.press("Tab");
+    await expect(reader.getByRole("button", { name: "Listen" })).toBeFocused();
   });
 }
 

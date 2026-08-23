@@ -113,9 +113,6 @@ import {
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
-import {
-  PERSONALIZED_STORY_ID,
-} from "../stories/personalized-story-art-client";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { experienceEvents } from "../experience/experience-events";
 
@@ -132,16 +129,6 @@ const LessonEditor = import.meta.env.SSR
       import("../lessons/LessonEditor").then(({ LessonEditor }) => ({
         default: LessonEditor,
       })),
-    );
-const PersonalizedStoryArtPanel = import.meta.env.SSR
-  ? (await import("../stories/PersonalizedStoryArtPanel"))
-      .PersonalizedStoryArtPanel
-  : lazy(() =>
-      import("../stories/PersonalizedStoryArtPanel").then(
-        ({ PersonalizedStoryArtPanel }) => ({
-          default: PersonalizedStoryArtPanel,
-        }),
-      ),
     );
 const StoryList = import.meta.env.SSR
   ? (await import("../stories/StoryList")).StoryList
@@ -1079,28 +1066,6 @@ function StoryRouteDecisionView({
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }
       pageIndex={decision.pageIndex}
-      personalizationPanel={
-        decision.story.id === PERSONALIZED_STORY_ID ? (
-          <PersonalizedStoryArtPanel
-            consentChecked={personalizedStoryArt.consentChecked}
-            error={personalizedStoryArt.error}
-            featureEnabled={personalizedStoryArt.featureEnabled}
-            fileName={personalizedStoryArt.selectedFileName}
-            hasSelectedPhoto={personalizedStoryArt.hasSelectedPhoto}
-            hasStoredArt={Boolean(personalizedStoryArt.metadata.hasStoredArt)}
-            generateDisabled={personalizedStoryArt.generateDisabled}
-            isGenerating={personalizedStoryArt.isGenerating}
-            onConsentChange={personalizedStoryArt.setConsentChecked}
-            onFileChange={personalizedStoryArt.setSelectedFile}
-            onGenerate={() => void personalizedStoryArt.generate()}
-            onRemove={() => void personalizedStoryArt.remove()}
-            personalizedArtwork={personalizedStoryArt.personalizedArtwork}
-            showPreviewArtwork={false}
-            statusMessage={personalizedStoryArt.statusMessage}
-            storyTitle={personalizedStoryArt.storyTitle}
-          />
-        ) : null
-      }
       personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
       key={`${location.key}:${decision.story.id}:${decision.pageIndex}`}
