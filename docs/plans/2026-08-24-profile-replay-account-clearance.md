@@ -74,8 +74,9 @@ Checks:
 1. 280x568, 320x640, 360x640, 390x844, 640x360, and 1440x900.
 2. Replay and Account boxes/targets, expanded focus clearance, pointer ownership,
    progress line count, initial heading focus, Tab/Shift+Tab behavior, action
-   containment, horizontal overflow, main origin, short-landscape scroll
-   extent, and normal/forced-colors focus visibility.
+   containment at existing guardrails, one-axis reachability at 320px,
+   horizontal overflow, main origin, short-landscape scroll extent, and
+   normal/forced-colors focus visibility.
 3. Existing delayed-art and same-route transition checks.
 
 ## Task 4: capture and review evidence

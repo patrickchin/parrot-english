@@ -142,10 +142,12 @@ untestable disabled state rather than the product interaction.
    still reaches the answer field; Shift+Tab reaches Replay and exposes the
    shared visible focus treatment. Native keyboard and one pointer activation
    each initiate one replay; Account still opens and returns focus on Escape.
-8. Progress remains one rendered line. Prompt, translation, art, answer field,
-   microphone, Skip, and Next remain in the viewport with no horizontal
-   overflow. The short-landscape main scroll extent must not exceed its 13px
-   baseline.
+8. Progress remains one rendered line, and no state gains horizontal overflow.
+   Prompt, translation, art, answer field, microphone, Skip, and Next remain
+   initially contained at the existing 280x568, 360x640, 390x844, 640x360, and
+   1440x900 guardrails. At the normative 320px reflow probe, its pre-existing
+   vertical flow may scroll, but every action remains reachable in one axis.
+   The short-landscape main scroll extent must not exceed its 13px baseline.
 
 ### Fixture and evidence boundary
 

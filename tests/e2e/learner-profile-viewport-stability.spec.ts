@@ -6,6 +6,7 @@ const peppaPath = "/assets/characters/peppa/peppa-happy.webp";
 
 const targetViewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
+  { height: 640, name: "compact phone", width: 360 },
   { height: 844, name: "regular phone", width: 390 },
   { height: 360, name: "short landscape", width: 640 },
   { height: 900, name: "desktop", width: 1440 },
@@ -48,6 +49,17 @@ async function expectSingleTextLine(locator: Locator) {
   expect(lineCount).toBe(1);
 }
 
+async function expectTextBlockLineCount(locator: Locator, expected: number) {
+  const lineCount = await locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return Math.round(
+      element.getBoundingClientRect().height /
+        Number.parseFloat(style.lineHeight),
+    );
+  });
+  expect(lineCount).toBe(expected);
+}
+
 function boxesOverlap(first: Rect, second: Rect) {
   return !(
     first.x + first.width <= second.x ||
@@ -55,6 +67,15 @@ function boxesOverlap(first: Rect, second: Rect) {
     first.y + first.height <= second.y ||
     second.y + second.height <= first.y
   );
+}
+
+function expandRect(box: Rect, amount: number): Rect {
+  return {
+    height: box.height + amount * 2,
+    width: box.width + amount * 2,
+    x: box.x - amount,
+    y: box.y - amount,
+  };
 }
 
 async function expectAccountClearOf(page: Page, targets: Locator[]) {
@@ -65,12 +86,71 @@ async function expectAccountClearOf(page: Page, targets: Locator[]) {
   for (const target of targets) {
     await expect(target).toBeVisible();
     const label = await target.evaluate(
-      (element) => element.getAttribute("alt") ?? element.textContent?.trim(),
+      (element) =>
+        element.getAttribute("aria-label") ??
+        element.getAttribute("alt") ??
+        element.textContent?.trim(),
     );
     expect(
       boxesOverlap(accountBox, await rect(target)),
       `Account control overlaps ${label}`,
     ).toBe(false);
+  }
+}
+
+async function expectFocusPaintClearOfAccount(page: Page, target: Locator) {
+  const account = page.getByRole("button", { name: /^Account for / });
+  const indicator = await target.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      focusVisible: element.matches(":focus-visible"),
+      outlineOffset: Number.parseFloat(style.outlineOffset),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.focusVisible).toBe(true);
+  expect(indicator.outlineStyle).not.toBe("none");
+
+  const targetPaint = expandRect(
+    await rect(target),
+    indicator.outlineOffset + indicator.outlineWidth,
+  );
+  expect(
+    boxesOverlap(await rect(account), targetPaint),
+    "Account control overlaps the Replay focus paint",
+  ).toBe(false);
+
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  expect(targetPaint.x).toBeGreaterThanOrEqual(0);
+  expect(targetPaint.y).toBeGreaterThanOrEqual(0);
+  expect(targetPaint.x + targetPaint.width).toBeLessThanOrEqual(
+    viewport!.width,
+  );
+  expect(targetPaint.y + targetPaint.height).toBeLessThanOrEqual(
+    viewport!.height,
+  );
+}
+
+async function expectPointerOwnedBy(target: Locator) {
+  const box = await rect(target);
+  const points = [
+    { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+    { x: box.x + box.width * 0.6, y: box.y + 2 },
+    { x: box.x + box.width - 2, y: box.y + box.height / 2 },
+  ];
+
+  for (const point of points) {
+    expect(
+      await target.evaluate(
+        (element, sample) =>
+          document.elementFromPoint(sample.x, sample.y)?.closest("button") ===
+          element,
+        point,
+      ),
+      `Replay does not own pointer sample ${JSON.stringify(point)}`,
+    ).toBe(true);
   }
 }
 
@@ -92,6 +172,12 @@ async function expectMainAtOrigin(page: Page) {
   await expect
     .poll(() => page.getByRole("main").evaluate((element) => element.scrollTop))
     .toBe(0);
+}
+
+async function mainScrollRange(page: Page) {
+  return page
+    .getByRole("main")
+    .evaluate((element) => element.scrollHeight - element.clientHeight);
 }
 
 function maxRectDelta(before: Rect[], after: Rect[]) {
@@ -262,6 +348,7 @@ for (const viewport of targetViewports) {
     const nameHeading = page.getByRole("heading", {
       name: "Hi! I'm Peppa. What's your name?",
     });
+    const replay = page.getByRole("button", { name: "Replay question" });
     await expect(page.getByText("你好！我是佩奇。你叫什么名字？", { exact: true })).toBeVisible();
     const answerLabel = page.getByText("Your answer", { exact: true });
     const answer = page.getByRole("textbox", { name: "Your answer" });
@@ -273,8 +360,10 @@ for (const viewport of targetViewports) {
     });
 
     await expect(nameHeading).toBeFocused();
+    await expect(replay).toBeEnabled();
     await expectMainAtOrigin(page);
     for (const target of [
+      replay,
       nameHeading,
       answerLabel,
       answer,
@@ -284,10 +373,11 @@ for (const viewport of targetViewports) {
     ]) {
       await expectInsideViewport(target, viewport);
     }
-    for (const target of [speak, questionSkip, questionNext]) {
+    for (const target of [replay, speak, questionSkip, questionNext]) {
       await expectMinimumTarget(target);
     }
     await expectAccountClearOf(page, [
+      replay,
       page.getByRole("img", { name: "Peppa, your English host" }),
       nameHeading,
       answerLabel,
@@ -296,7 +386,25 @@ for (const viewport of targetViewports) {
       questionSkip,
       questionNext,
     ]);
+    await expectTextBlockLineCount(
+      page.getByText("Question 1 of 6", { exact: true }),
+      1,
+    );
+    await expectPointerOwnedBy(replay);
     await expectNoHorizontalOverflow(page);
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(replay).toBeFocused();
+    await expectFocusPaintClearOfAccount(page, replay);
+    await page.keyboard.press("Tab");
+    await expect(answer).toBeFocused();
+
+    if (viewport.width === 640 && viewport.height === 360) {
+      expect(
+        await mainScrollRange(page),
+        "Compact-header reflow increased the 13px short-landscape scroll extent",
+      ).toBeLessThanOrEqual(13);
+    }
 
     await answer.fill("Mia");
     const main = page.getByRole("main");
@@ -418,3 +526,38 @@ for (const viewport of targetViewports) {
     });
   });
 }
+
+test("profile Replay remains operable at the 320px reflow width", async ({
+  page,
+}) => {
+  const viewport = { height: 640, name: "320px reflow phone", width: 320 };
+  await openSetup(page, viewport);
+  await page.getByRole("button", { name: "Start questions" }).click();
+
+  const heading = page.getByRole("heading", {
+    name: "Hi! I'm Peppa. What's your name?",
+  });
+  const replay = page.getByRole("button", { name: "Replay question" });
+  const next = page.getByRole("button", { exact: true, name: "Next" });
+
+  await expect(heading).toBeFocused();
+  await expect(replay).toBeEnabled();
+  await expectInsideViewport(replay, viewport);
+  await expectMinimumTarget(replay);
+  await expectAccountClearOf(page, [replay]);
+  await expectTextBlockLineCount(
+    page.getByText("Question 1 of 6", { exact: true }),
+    1,
+  );
+  await expectPointerOwnedBy(replay);
+  await expectNoHorizontalOverflow(page);
+
+  await page.keyboard.press("Shift+Tab");
+  await expect(replay).toBeFocused();
+  await expectFocusPaintClearOfAccount(page, replay);
+
+  await next.scrollIntoViewIfNeeded();
+  await expectInsideViewport(next, viewport);
+  await expectMinimumTarget(next);
+  await expectNoHorizontalOverflow(page);
+});

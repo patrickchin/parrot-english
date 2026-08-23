@@ -94,7 +94,11 @@ const E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT = {
 
 const E2E_VIEWPORT_QUESTIONS = questionnaire.questions.map((question) => ({
   answerKey: question.answerKey,
-  audio: null,
+  audio: {
+    id: question.audioId,
+    src: `/assets/audio/${question.audioId}.mp3`,
+    text: question.promptEn,
+  },
   maxLength: question.maxLength,
   position: question.position,
   promptEn: question.promptEn,

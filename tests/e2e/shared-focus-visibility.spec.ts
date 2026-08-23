@@ -67,6 +67,14 @@ const focusScenarios: Array<{
     viewport: { height: 568, width: 280 },
   },
   {
+    name: "profile replay icon action",
+    prepare: async (page) => {
+      await openProfileQuestion(page);
+      return page.getByRole("button", { name: "Replay question" });
+    },
+    viewport: { height: 568, width: 280 },
+  },
+  {
     name: "story shelf card",
     prepare: async (page) => {
       await page.goto("/stories");
