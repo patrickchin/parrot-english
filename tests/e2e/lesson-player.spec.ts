@@ -1437,6 +1437,8 @@ test("a microphone failure is announced without stealing moved focus", async ({
   });
   await expect(speakingUpdates).toBeAttached();
   await expect(speakingUpdates).toHaveText("");
+  await expect(lessonUpdates).toContainText("Your turn. Say: It is up high!");
+  await expect(lessonUpdates).not.toContainText("Tap the microphone");
   const lessonContext = await lessonUpdates.textContent();
   await microphone.click();
   const back = page.getByRole("button", { name: "Back to lesson list" });

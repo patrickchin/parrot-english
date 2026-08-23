@@ -33,7 +33,7 @@ describe("lesson progress label", () => {
 
   it("describes every user interaction phase in English", () => {
     const labels = [
-      [LessonPhase.WaitingForUser, "Tap the microphone to start speaking"],
+      [LessonPhase.WaitingForUser, "Your turn"],
       [LessonPhase.Recording, "Tap the microphone when you're finished"],
       [LessonPhase.Evaluating, "Checking your speech"],
       [LessonPhase.Finished, "Lesson complete"],
