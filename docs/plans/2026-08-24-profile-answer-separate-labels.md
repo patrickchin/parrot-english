@@ -119,4 +119,3 @@ Also verify every local Markdown link and every evidence file's type,
 dimensions, and SHA-256. Write an implementation evidence memo, update the
 research index/source register/backlog, make reviewable commits, and leave the
 branch clean before selecting the next stacked improvement.
-

@@ -704,6 +704,24 @@ Retain, revise, or reject: retain provisionally after three independent reviews 
 Next branch: separate the profile answer textarea and microphone accessible names without moving their visible layout; then investigate stable profile-save pending feedback and focus ownership
 ```
 
+```text
+Branch: codex/profile-answer-separate-labels
+Base branch / dependency: codex/profile-replay-account-clearance documentation hand-off 4e3f9b8
+Research commit: 828acc9
+Rendered contract commit: b739796
+Implementation commit: fbf7ef2
+Hypothesis: a dedicated native textarea label outside the microphone subtree can expose two short exact control names without moving the visible answer composition or changing its interaction
+Verified baseline: the shared label contained both textarea and button; Chromium exposed textbox Your answer Speak your answer plus button Speak your answer, and an exact textbox Your answer lookup returned zero
+Changed: neutral field wrapper; dedicated explicit textarea label; exact accessible locators across three profile suites; native association, label-click, traversal, pointer/Enter/Space exactly-once activation, disabled-state, and combined-name rejection contracts; eight genuine Browser evidence images; durable guidance and implementation evidence
+Not changed: visible copy, grid/flex/classes, control order, textarea/microphone, target size, transcription, fieldset/status ownership, questions, audio, timing, persistence, routes, art, dependencies, translations, or responsive composition
+Tests: focused red exact-name reproduction then green; 10/10 independent parallel repeats; 54/54 directly affected Chromium cases; 680/680 unit/integration/lifecycle/safety; 293/293 full Chromium; TypeScript and production build passed; lint 0 errors with 2 generated warnings; 636 local links across 96 Markdown files with 0 missing; eight JPEG types/dimensions/digests verified
+Screenshots / traces: genuine in-app Browser paired base/candidate views at 280x568 and 640x360 plus retained 390x844 and 1440x900 guards in artifacts/ux-review/profile-answer-separate-labels
+Measured result: exact textbox Your answer and button Speak your answer; one textarea label with zero labelable descendants; zero microphone labels; zero CSS-pixel answer-composition delta at five measured responsive sizes; unchanged zero horizontal overflow, 13px short-landscape focus scroll, and 113px 320x640 vertical flow
+Risks / limitations: deterministic Chromium and English LTR only; no target AT, physical device/microphone, other browser, safe-area, zoom/text spacing, localization/RTL, or direct child/caregiver comprehension; microphone activation still inherits the pre-existing disabled-control focus loss now broadened in item 24
+Retain, revise, or reject: retain provisionally after independent code, accessibility, and original-resolution visual review
+Next branch: research and implement stable profile-operation pending feedback and focus ownership across recording, transcription, and saving
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -850,21 +868,22 @@ branches.
     label to its single progress-label source of truth, and `b7a3a48` makes
     initial Enter/Space request behavior durable.
 23. **High: the profile answer textarea and microphone share one HTML label.**
-    The microphone button is nested inside the textarea's `<label>`, and current
-    Chromium accessibility exposure names the textbox **Your answer Speak your
-    answer**. Selected and researched on
-    `codex/profile-answer-separate-labels`: use a neutral field wrapper plus a
-    dedicated native textarea label, preserving visible geometry, label-click
-    focus, exact separate textbox/button names, native Tab order, activation,
-    and fieldset-disabled behavior. This is a definite HTML content-model and
-    reproduced Chromium-name defect, not a blanket WCAG or child-comprehension
-    claim.
-24. **High: form-profile save can discard the learner's focus and duplicate
-    pending feedback.** Saving disables the fieldset containing the activated
-    action, can move focus to `BODY`, and renders **Peppa is thinking…** in more
-    than one place. Define stable pending ownership, exactly-once activation,
-    success/error focus hand-off, retry, route-exit cleanup, and stale-settlement
-    behavior before implementation.
+    Fixed provisionally on `codex/profile-answer-separate-labels` at `fbf7ef2`.
+    A neutral wrapper and dedicated native label now expose exact textbox
+    **Your answer** and button **Speak your answer** while preserving label
+    click, traversal, activation, disabled behavior, and zero-pixel composition
+    at five measured sizes. This fixes the HTML content-model and reproduced
+    Chromium-name defect without claiming WCAG conformance, exact screen-reader
+    speech, or child comprehension.
+24. **High: form-profile operations can discard the learner's focus and
+    duplicate pending feedback.** Activating the microphone disables the
+    fieldset and immediately moves focus to `BODY`; the next Tab can reach the
+    fixed Account control instead of the active task. Recording and
+    transcription inherit this behavior. Saving can likewise disable the
+    activated control and also renders **Peppa is thinking…** in more than one
+    place. Define one stable pending owner, exactly-once activation,
+    phase-appropriate focus behavior, success/error hand-off, retry, route-exit
+    cleanup, and stale-settlement behavior before implementation.
 25. **High: direct Story shelf reveal can finish with focus on `BODY`.** The
     pathname-keyed route focus manager can focus the Suspense fallback and does
     not rerun when the lazy Story shelf replaces it. Reproduce fast and delayed
