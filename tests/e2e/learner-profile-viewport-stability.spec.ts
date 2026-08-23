@@ -756,9 +756,12 @@ test("profile Replay remains operable at the 320px reflow width", async ({
   const next = page.getByRole("button", { exact: true, name: "Next" });
 
   await expect(heading).toBeFocused();
+  await expectMainAtOrigin(page);
   await expect(replay).toBeEnabled();
   await expectInsideViewport(replay, viewport);
   await expectMinimumTarget(replay);
+  await expectInsideViewport(next, viewport);
+  await expectMinimumTarget(next);
   await expectAccountClearOf(page, [replay]);
   await expectTextBlockLineCount(
     page.getByText("Question 1 of 6", { exact: true }),
@@ -771,10 +774,13 @@ test("profile Replay remains operable at the 320px reflow width", async ({
   await expect(replay).toBeFocused();
   await expectReplayFocusPaintClear(page, replay);
 
-  for (const target of [replay, answer, speak, skip, next]) {
-    await target.scrollIntoViewIfNeeded();
+  for (const target of [answer, speak, skip, next]) {
+    await page.keyboard.press("Tab");
+    await expect(target).toBeFocused();
     await expectInsideViewport(target, viewport);
     await expectMinimumTarget(target);
-    await expectNoHorizontalOverflow(page);
   }
+
+  await expectMainAtOrigin(page);
+  await expectNoHorizontalOverflow(page);
 });
