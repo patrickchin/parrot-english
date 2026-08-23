@@ -183,6 +183,7 @@ function renderedScreenshotDelta({
   borderRadius,
   box,
   focused,
+  markerHeight,
   markerOffset = -8,
   unfocused,
   viewport,
@@ -190,6 +191,7 @@ function renderedScreenshotDelta({
   borderRadius: number;
   box: NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>;
   focused: Awaited<ReturnType<typeof decodedScreenshot>>;
+  markerHeight?: number;
   markerOffset?: number;
   unfocused: Awaited<ReturnType<typeof decodedScreenshot>>;
   viewport: NonNullable<ReturnType<Page["viewportSize"]>>;
@@ -224,8 +226,13 @@ function renderedScreenshotDelta({
     focused.info.width,
     Math.ceil(box.x * scaleX),
   );
+  const renderedMarkerHeight = Math.min(markerHeight ?? box.height, box.height);
   const markerTop = Math.max(0, Math.floor(box.y * scaleY));
   const markerBottom = Math.min(
+    focused.info.height,
+    Math.ceil((box.y + renderedMarkerHeight) * scaleY),
+  );
+  const headingBottom = Math.min(
     focused.info.height,
     Math.ceil((box.y + box.height) * scaleY),
   );
@@ -241,6 +248,7 @@ function renderedScreenshotDelta({
   let contrastingPixels = 0;
   let leftMarkerContrastingPixels = 0;
   let markerGapChangedPixels = 0;
+  let belowMarkerChangedPixels = 0;
   let leftOutlineContrastingPixels = 0;
   let rightOutlineContrastingPixels = 0;
   let strongestContrast = 1;
@@ -271,6 +279,14 @@ function renderedScreenshotDelta({
       changedPixels += 1;
       if (x >= markerRight && x < outlineLeftRight) {
         markerGapChangedPixels += 1;
+      }
+      if (
+        x >= markerLeft &&
+        x < markerRight &&
+        y >= markerBottom &&
+        y < headingBottom
+      ) {
+        belowMarkerChangedPixels += 1;
       }
       const ratio = contrast(after, before);
       strongestContrast = Math.max(strongestContrast, ratio);
@@ -317,12 +333,14 @@ function renderedScreenshotDelta({
       leftMarkerContrastingPixels / renderedPixelsPerCssPixel,
     markerGapChangedArea:
       markerGapChangedPixels / renderedPixelsPerCssPixel,
+    belowMarkerChangedArea:
+      belowMarkerChangedPixels / renderedPixelsPerCssPixel,
     leftOutlineContrastingArea:
       leftOutlineContrastingPixels / renderedPixelsPerCssPixel,
     rightOutlineContrastingArea:
       rightOutlineContrastingPixels / renderedPixelsPerCssPixel,
     forcedOutlineEdgeArea: 1.5 * box.height,
-    readingCueArea: 3 * box.height,
+    readingCueArea: 3 * renderedMarkerHeight,
     requiredArea:
       4 * (box.width + box.height) - (16 - 4 * Math.PI) * radius,
     strongestContrast,
@@ -363,6 +381,7 @@ async function renderedInitialFocusDelta(
   page: Page,
   target: Locator,
   markerOffset = -8,
+  markerHeight?: number,
 ) {
   await expect(target).toBeVisible();
   await expect(target).toBeFocused();
@@ -375,6 +394,7 @@ async function renderedInitialFocusDelta(
   return renderedScreenshotDelta({
     ...geometry,
     focused,
+    markerHeight,
     markerOffset,
     unfocused,
   });
@@ -429,9 +449,9 @@ function expectRenderedOpenReadingMarker(
     `${name} changes ${focus.markerGapChangedArea.toFixed(0)} CSS px² in the clear marker-to-heading gap`,
   ).toBeLessThan(1);
   expect(
-    focus.leftOutlineContrastingArea,
-    `${name} retains ${focus.leftOutlineContrastingArea.toFixed(0)} CSS px² of a closed left perimeter`,
-  ).toBeLessThan(Math.max(1, focus.forcedOutlineEdgeArea / 15));
+    focus.belowMarkerChangedArea,
+    `${name} changes ${focus.belowMarkerChangedArea.toFixed(0)} CSS px² below the reading-marker cap`,
+  ).toBeLessThan(1);
   expect(
     focus.rightOutlineContrastingArea,
     `${name} retains ${focus.rightOutlineContrastingArea.toFixed(0)} CSS px² of a closed right perimeter`,
@@ -697,10 +717,15 @@ test("story completion focus retains a real indicator in forced colors", async (
 async function profileHeadingGeometry(target: Locator) {
   return target.evaluate((element) => {
     const heading = element.getBoundingClientRect();
-    const card = element.closest("section")?.getBoundingClientRect();
-    if (!card) throw new Error("Profile heading card was not found.");
+    const cardElement = element.closest("section");
+    const card = cardElement?.getBoundingClientRect();
+    if (!card || !cardElement) {
+      throw new Error("Profile heading card was not found.");
+    }
+    const cardStyle = getComputedStyle(cardElement);
     const style = getComputedStyle(element);
     return {
+      cardInnerLeft: card.left + Number.parseFloat(cardStyle.borderLeftWidth),
       cardLeft: card.left,
       cardRight: card.right,
       heading: {
@@ -720,11 +745,14 @@ async function expectProfileOpenReadingCue(
   page: Page,
   target: Locator,
   name: string,
+  markerHeight?: number,
 ) {
   await expect(target).toBeFocused();
   await expect(target).toHaveAttribute("tabindex", "-1");
   const focused = await profileHeadingGeometry(target);
-  expect(focused.heading.x - 12).toBeGreaterThanOrEqual(focused.cardLeft);
+  expect(focused.heading.x - 8 - focused.cardInnerLeft).toBeGreaterThanOrEqual(
+    4,
+  );
   expect(focused.heading.x + focused.heading.width).toBeLessThanOrEqual(
     focused.cardRight + 1,
   );
@@ -732,7 +760,7 @@ async function expectProfileOpenReadingCue(
   expect(focused.mainScrollTop).toBe(0);
 
   expectRenderedOpenReadingMarker(
-    await renderedInitialFocusDelta(page, target, -12),
+    await renderedInitialFocusDelta(page, target, -8, markerHeight),
     name,
   );
 
@@ -762,7 +790,7 @@ async function expectProfileForcedReadingCue(
   expect(indicator.outlineStyle).not.toBe("none");
   expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
 
-  const focus = await renderedInitialFocusDelta(page, target, -12);
+  const focus = await renderedInitialFocusDelta(page, target, -8);
   expectRenderedForcedReadingOutline(focus, name);
   expect(
     focus.leftMarkerContrastingArea,
@@ -913,6 +941,7 @@ test("the long profile acknowledgment keeps its open marker contained", async ({
       name: "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!",
     }),
     "long profile acknowledgment heading",
+    96,
   );
 });
 

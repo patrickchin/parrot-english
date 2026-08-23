@@ -32,8 +32,8 @@ import { LearnerProfileAcknowledgment } from "./LearnerProfileAcknowledgment";
 import {
   LearnerProfileCard,
   LearnerProfileScreen,
+  LearnerProfileStepHeading,
   LearnerProfileStatusCard,
-  useLearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import {
   LearnerProfileQuestionView,
@@ -122,8 +122,6 @@ function LearnerProfileSetupView({
   onSkip: () => void;
   onStart: () => void;
 }) {
-  const headingRef = useLearnerProfileStepHeading("setup");
-
   return (
     <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
       <img
@@ -133,13 +131,12 @@ function LearnerProfileSetupView({
         src="/assets/characters/peppa/peppa-happy.webp"
         width={1024}
       />
-      <h1
+      <LearnerProfileStepHeading
         className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
-        ref={headingRef}
-        tabIndex={-1}
+        stepKey="setup"
       >
         Help Peppa get to know you
-      </h1>
+      </LearnerProfileStepHeading>
       <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
         Answer a few quick questions to personalize chats and lessons. You can
         change these later in Learner profile.

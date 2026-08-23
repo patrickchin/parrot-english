@@ -17,13 +17,38 @@ static words resemble a text field?
 
 **Selected candidate:** preserve the existing heading-focus lifecycle and give
 all setup, question, and acknowledgment headings one shared, static reading-
-position cue: a four-CSS-pixel brand-blue rule placed eight pixels before the
-heading's inline start. Apply it on `:focus`, not only `:focus-visible`, and
-replace it with a real two-pixel, system-mapped outline in forced-colors mode.
+position cue: a four-CSS-pixel brand-blue rule whose outer edge starts eight
+pixels before the heading's inline start, leaving four clear pixels before the
+heading box. Cap the rule at 96 px for defensive long copy. Apply it on
+`:focus`, not only `:focus-visible`, and replace it with a real two-pixel,
+system-mapped outline in forced-colors mode.
 
 The cue means **the new step starts here**. It is not a control, caret,
 selection, validation state, progress signal, or narration tracker. It adds no
 words, icon, motion, sound, timer, or new sequential Tab stop.
+
+## Decision revision, 2026-08-24
+
+The research candidate used an eight-pixel outer offset and extended the marker
+through the complete heading height. The first coded pass temporarily copied
+the Story Reader completion heading's twelve-pixel offset. Genuine in-app
+Browser comparison settled both details before the candidate was retained:
+
+1. At 280×568, the question card's inner border begins at x=18 and its heading
+   begins at x=30. The twelve-pixel candidate occupied x=18…22 and touched the
+   card border. The retained eight-pixel offset occupies x=22…26, leaving four
+   pixels to the inner border and four pixels before the heading box.
+2. At the same viewport, the retained 160-character compatibility
+   acknowledgment is 212×300 px. A 300 px rule occupied 61.5% of its 488 px
+   card and looked like a quotation bar rather than a calm arrival cue.
+3. The revised marker uses the same 96 px maximum as the ordinary three-line
+   setup heading. It remains full height on current production setup, question,
+   and short acknowledgment copy, but marks only the beginning of defensive
+   long copy. A rendered regression requires zero changed marker-strip pixels
+   below that cap.
+
+The forced-colors fallback remains a complete real outline. That mode favors a
+robust system-mapped focus location over the normal-color visual distinction.
 
 ## Audience and scope
 
@@ -148,9 +173,10 @@ not clearly a user-interface component, so this branch will not label its
 current presentation a proven SC 1.4.11 or 2.4.13 failure.
 
 Parrot will voluntarily require the normal marker to render at least a three-
-CSS-pixel-equivalent full-height changed area at 3:1 or better against the
-actual composited card surface. This is a testable usability guardrail, not
-child-comprehension evidence or whole-page conformance.
+CSS-pixel-equivalent changed area across the heading height up to a 96 px cap,
+at 3:1 or better against the actual composited card surface. This is a testable
+usability guardrail, not child-comprehension evidence or whole-page
+conformance.
 
 ### Forced colors needs a real outline
 
@@ -208,8 +234,10 @@ focus later.
 Use the established Story Reader completion grammar:
 
 - a four-pixel `brand-blue` vertical rule;
-- place its near edge four pixels before the heading box, leaving four more
-  pixels of card surface between the rule and the first glyph;
+- place its outer edge eight pixels before the heading box, leaving four pixels
+  of card surface before that box;
+- keep it full height for ordinary headings and top-align it with a 96 px cap
+  for defensive long copy;
 - show it on `:focus` and clear it immediately on blur;
 - remove the UA outline in normal colors;
 - hide the decorative rule and expose a real two-pixel outline with a two-pixel
@@ -247,8 +275,10 @@ assert Tailwind class strings or CSS source.
 2. Pointer and keyboard transitions both render the same open marker even when
    Chromium reports `:focus-visible=false` after pointer activation.
 3. Normal-color screenshot deltas contain at least a three-pixel-equivalent
-   full-height area at 3:1 or better in the exact left marker strip. Neither
-   right-edge nor complete-perimeter deltas may qualify as the normal cue.
+   area at 3:1 or better in the exact left marker strip, across the heading
+   height up to 96 px. The marker-to-heading gap, the same strip below that
+   cap, and the right edge must have no qualifying change; a complete perimeter
+   may not qualify as the normal cue.
 4. Moving focus to the first ordinary destination clears the marker. Forward
    Tab remains setup → **Set up profile**, question → **Your answer**, and
    acknowledgment → **Next**.
@@ -259,7 +289,8 @@ assert Tailwind class strings or CSS source.
    rectangles by more than one CSS pixel, change line counts, move the main
    scroll origin, or create horizontal overflow at any target viewport.
 7. The normal marker stays inside the card, remains separated from the first
-   glyph and card border, and stays visible for the full heading height.
+   glyph and card border, stays full-height on ordinary current copy, and never
+   exceeds 96 px on defensive long copy.
 8. The cue has no CSS transition or animation and looks identical under
    reduced-motion preference.
 9. Existing profile persistence, acknowledgment, viewport, shared focus, and
@@ -273,7 +304,8 @@ Capture focused and marker-cleared states in the genuine in-app Browser:
 - question after pointer **Set up profile** at 390×844;
 - question after keyboard activation at 640×360;
 - acknowledgment after pointer submission at 280×568;
-- acknowledgment at 640×360; and
+- acknowledgment at 640×360;
+- the capped 160-character acknowledgment at 280×568; and
 - setup or question at 1440×900.
 
 At original resolution, review marker-to-glyph separation, complete marker

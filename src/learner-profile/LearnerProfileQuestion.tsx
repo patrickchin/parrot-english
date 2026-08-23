@@ -9,7 +9,7 @@ import {
 import { recordSpeechClip } from "../media/speech-recorder";
 import {
   LearnerProfileCard,
-  useLearnerProfileStepHeading,
+  LearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import {
   ActionButton,
@@ -51,7 +51,6 @@ export function LearnerProfileQuestionView({
 }: LearnerProfileQuestionViewProps) {
   const disabled = status !== "idle";
   const inputId = `learner-profile-answer-${question.answerKey}`;
-  const headingRef = useLearnerProfileStepHeading(question.answerKey);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,14 +86,13 @@ export function LearnerProfileQuestionView({
           width={1024}
         />
         <div className="short-wide:col-start-2 short-wide:row-start-2 sm:col-span-3">
-          <h1
+          <LearnerProfileStepHeading
             className="m-0 text-3xl leading-tight text-brand-ink short:text-3xl sm:text-4xl"
             id="learner-profile-question-title"
-            ref={headingRef}
-            tabIndex={-1}
+            stepKey={question.answerKey}
           >
             {question.promptEn}
-          </h1>
+          </LearnerProfileStepHeading>
           {question.promptZh ? (
             <p className="mb-0 mt-2.5 font-bold text-slate-500">
               {question.promptZh}

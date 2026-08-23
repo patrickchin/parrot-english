@@ -6,7 +6,7 @@ import type {
 import { playAudioLine } from "../media/audio-playback";
 import {
   LearnerProfileCard,
-  useLearnerProfileStepHeading,
+  LearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import { ActionButton, cx } from "../shared/ui";
 
@@ -67,7 +67,6 @@ export function LearnerProfileAcknowledgment({
   onNext: () => void;
   operationId: number;
 }) {
-  const headingRef = useLearnerProfileStepHeading(operationId);
   const hasLongAcknowledgment = acknowledgment.text.length > 120;
 
   useEffect(
@@ -90,16 +89,15 @@ export function LearnerProfileAcknowledgment({
         src="/assets/characters/peppa/peppa-happy.webp"
         width={1024}
       />
-      <h1
+      <LearnerProfileStepHeading
         className={cx(
           "m-0 max-w-xl break-words text-3xl leading-tight text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:justify-self-start short:text-2xl",
           hasLongAcknowledgment ? "sm:text-4xl" : "sm:text-5xl",
         )}
-        ref={headingRef}
-        tabIndex={-1}
+        stepKey={operationId}
       >
         {acknowledgment.text}
-      </h1>
+      </LearnerProfileStepHeading>
       <ActionButton
         className="short-wide:col-start-2 short-wide:row-start-2 short-wide:justify-self-start"
         onClick={onNext}
