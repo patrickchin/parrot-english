@@ -87,7 +87,7 @@ export function LearnerProfileQuestionView({
         />
         <div className="short-wide:col-start-2 short-wide:row-start-2 sm:col-span-3">
           <LearnerProfileStepHeading
-            className="m-0 text-3xl leading-tight text-brand-ink short:text-3xl sm:text-4xl"
+            className="m-0 text-3xl leading-tight text-brand-ink short:before:-left-2 short-wide:before:-left-3 short:text-3xl sm:text-4xl"
             id="learner-profile-question-title"
             stepKey={question.answerKey}
           >
