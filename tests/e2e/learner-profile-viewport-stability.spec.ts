@@ -736,51 +736,56 @@ test("profile Replay and Account remain independently operable", async ({
   await expect(account).toBeFocused();
 });
 
-test("profile Replay remains operable at the 320px reflow width", async ({
-  page,
-}) => {
-  const viewport = { height: 640, name: "320px reflow phone", width: 320 };
-  await openSetup(page, viewport);
-  await page.getByRole("button", { name: "Start questions" }).click();
+for (const viewport of [
+  { height: 640, name: "320px reflow phone", width: 320 },
+  { height: 640, name: "359px compact boundary", width: 359 },
+]) {
+  test(`profile controls stay discoverable at the ${viewport.name}`, async ({
+    page,
+  }) => {
+    await openSetup(page, viewport);
+    await page.getByRole("button", { name: "Start questions" }).click();
 
-  const heading = page.getByRole("heading", {
-    name: "Hi! I'm Peppa. What's your name?",
+    const heading = page.getByRole("heading", {
+      name: "Hi! I'm Peppa. What's your name?",
+    });
+    const replay = page.getByRole("button", { name: "Replay question" });
+    const answer = page.getByRole("textbox", {
+      exact: true,
+      name: "Your answer",
+    });
+    const speak = page.getByRole("button", { name: "Speak your answer" });
+    const skip = page.getByRole("button", { name: "Skip for now" });
+    const next = page.getByRole("button", { exact: true, name: "Next" });
+
+    await expect(heading).toBeFocused();
+    await expectMainAtOrigin(page);
+    expect(await mainScrollRange(page)).toBe(0);
+    await expect(replay).toBeEnabled();
+    await expectInsideViewport(replay, viewport);
+    await expectMinimumTarget(replay);
+    await expectInsideViewport(next, viewport);
+    await expectMinimumTarget(next);
+    await expectAccountClearOf(page, [replay]);
+    await expectTextBlockLineCount(
+      page.getByText("Question 1 of 6", { exact: true }),
+      1,
+    );
+    await expectPointerOwnedBy(replay);
+    await expectNoHorizontalOverflow(page);
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(replay).toBeFocused();
+    await expectReplayFocusPaintClear(page, replay);
+
+    for (const target of [answer, speak, skip, next]) {
+      await page.keyboard.press("Tab");
+      await expect(target).toBeFocused();
+      await expectInsideViewport(target, viewport);
+      await expectMinimumTarget(target);
+    }
+
+    await expectMainAtOrigin(page);
+    await expectNoHorizontalOverflow(page);
   });
-  const replay = page.getByRole("button", { name: "Replay question" });
-  const answer = page.getByRole("textbox", {
-    exact: true,
-    name: "Your answer",
-  });
-  const speak = page.getByRole("button", { name: "Speak your answer" });
-  const skip = page.getByRole("button", { name: "Skip for now" });
-  const next = page.getByRole("button", { exact: true, name: "Next" });
-
-  await expect(heading).toBeFocused();
-  await expectMainAtOrigin(page);
-  await expect(replay).toBeEnabled();
-  await expectInsideViewport(replay, viewport);
-  await expectMinimumTarget(replay);
-  await expectInsideViewport(next, viewport);
-  await expectMinimumTarget(next);
-  await expectAccountClearOf(page, [replay]);
-  await expectTextBlockLineCount(
-    page.getByText("Question 1 of 6", { exact: true }),
-    1,
-  );
-  await expectPointerOwnedBy(replay);
-  await expectNoHorizontalOverflow(page);
-
-  await page.keyboard.press("Shift+Tab");
-  await expect(replay).toBeFocused();
-  await expectReplayFocusPaintClear(page, replay);
-
-  for (const target of [answer, speak, skip, next]) {
-    await page.keyboard.press("Tab");
-    await expect(target).toBeFocused();
-    await expectInsideViewport(target, viewport);
-    await expectMinimumTarget(target);
-  }
-
-  await expectMainAtOrigin(page);
-  await expectNoHorizontalOverflow(page);
-});
+}

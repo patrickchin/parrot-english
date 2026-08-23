@@ -101,7 +101,7 @@ export function LearnerProfileQuestionView({
 
   return (
     <LearnerProfileCard
-      className="p-6 short:p-3 short-wide:grid short-wide:grid-cols-[7rem_minmax(0,1fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:gap-x-4 sm:p-10"
+      className="p-6 max-[360px]:p-3 short:p-3 short-wide:grid short-wide:grid-cols-[7rem_minmax(0,1fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:gap-x-4 sm:p-10"
       aria-labelledby="learner-profile-question-title"
     >
       <header className="flex items-center justify-between gap-4 max-sm:justify-start max-sm:gap-2 short-wide:col-start-2 short-wide:row-start-1 short-wide:justify-start short-wide:gap-2">
@@ -123,7 +123,7 @@ export function LearnerProfileQuestionView({
         </IconButton>
       </header>
 
-      <div className="my-5 grid items-center gap-4 text-center short:my-2 short:gap-2 short-wide:contents sm:grid-cols-4 sm:gap-8 sm:text-left">
+      <div className="my-5 grid items-center gap-4 text-center max-[360px]:my-2 max-[360px]:gap-2 short:my-2 short:gap-2 short-wide:contents sm:grid-cols-4 sm:gap-8 sm:text-left">
         <img
           alt="Peppa, your English host"
           className="mx-auto aspect-square max-h-40 w-24 animate-float object-contain motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-28 sm:col-span-1 sm:w-full"
@@ -211,7 +211,7 @@ export function LearnerProfileQuestionView({
             </p>
           ) : null}
 
-          <div className="mt-2 flex flex-wrap items-center justify-end gap-4 short:mt-0 short:gap-2 max-sm:justify-between">
+          <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-[360px]:mt-0 max-[360px]:gap-2 short:mt-0 short:gap-2 max-sm:justify-between">
             {mode === "learner-profile" && !question.required ? (
               <TextButton
                 aria-disabled={skipQuestionOwnsPending || undefined}
