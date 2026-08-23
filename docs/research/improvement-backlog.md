@@ -665,6 +665,26 @@ Retain, revise, or reject: retain provisionally after independent code, accessib
 Next branch: select from the highest-value reproduced backlog defect after this documentation hand-off; keep Story Reader paragraph semantics and completion replay focus clipping as bounded candidates
 ```
 
+```text
+Branch: codex/profile-setup-plain-language
+Base branch / dependency: codex/profile-heading-reading-cue documentation hand-off eaaff12
+Research commit: fb17e6e
+Language-contract commit: 7d88707
+Initial implementation commit: cec4860
+Review hardening: a10e839, 0c8df94
+Hypothesis: a literal task, truthful saved-data fact, and remaining-work resume state can reduce avoidable English and ambiguity before the bilingual questionnaire without changing collection, timing, or learner choice
+Verified baseline: fresh and resumed setup both used 30 words of relationship/timing/product language; a one-answer resume still said Set up profile before opening question 2; the 280x568 fresh card used a three-line heading, five-line explanation, and approximately 464 CSS pixels
+Changed: dynamic fresh/remaining heading; Start/Continue questions action; two-sentence bounded saved-data copy with two intact short meaning units; total/answered presentation input; coherent six-question production-copy fixture and resume state; exact copy/count/action/focus/target/containment coverage; ten visual evidence captures; durable guidance and implementation evidence
+Review correction: independent code and accessibility review rejected the first claim that all answers personalize chats/lessons and are editable; current chats receive only name, age, and separate About, lessons receive name, and the four stored preference answers are not directly editable, so the retained sentence claims only saving plus grown-up name/age editing
+Not changed: persistence, API payloads, questions/order/requirements, answer enrichment, acknowledgment, audio, timing, routes, art, card primitives, focus lifecycle/cue, action order, Skip, dependencies, translations, or grown-up copy
+Tests: 38/38 profile component cases; 13/13 responsive viewport cases; 20/20 repeated focus-geometry stabilization cases; 680/680 full unit/integration/lifecycle/safety; 285/285 full Chromium; TypeScript and production build passed; lint 0 errors with 2 generated warnings
+Screenshots / traces: three baseline and seven retained-candidate genuine in-app Browser JPEGs with provenance, measurements, and SHA-256 integrity in artifacts/ux-review/profile-setup-plain-language at 280x568, 640x360, and 1440x900
+Measured result: fresh-state visible words fall 30 to 20; 280x568 fresh card falls approximately 464 to 382 CSS pixels and keeps both actions complete; resumed 280x568 card is 412 pixels with a 206x52 Continue questions action; all setup states retain focus, origin, containment, and zero horizontal overflow
+Risks / limitations: exact English remains an unvalidated child/caregiver hypothesis; deterministic local Chromium only; no target browser/device/AT, safe-area, zoom/text spacing, localization/RTL, actual audio, or direct comprehension evidence; four preference answers remain stored without current chat/lesson consumption or direct editing
+Retain, revise, or reject: retain provisionally after three independent reviews and truthfulness/resume corrections
+Next branch: codex/profile-replay-account-clearance stacked on this documentation hand-off; separately research whether the four unused preference answers should be removed or receive an explicit editable purpose
+```
+
 ## Newly observed defects
 
 These findings came from the 2026-08-21 visual first-use audit and browser
@@ -834,6 +854,13 @@ branches.
     the replay action. Isolate a stacked responsive-layout branch that keeps
     both complete, operable, and focus-visible without hiding the account,
     shrinking either 44×44 target, or moving question content off-screen.
+27. **Medium: profile setup used relationship, timing, and product jargon before
+    the bilingual questions.** Fixed provisionally on
+    `codex/profile-setup-plain-language` at `0c8df94`. Fresh setup now names the
+    six-question task and retained data boundary in 20 words; resumed setup
+    states its remaining count and uses **Continue questions**. Review narrowed
+    an unsupported chats/lessons and all-answers-editable promise to the actual
+    repository boundary. Direct child/caregiver comprehension remains untested.
 
 ### Test-infrastructure observation
 

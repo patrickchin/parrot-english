@@ -65,6 +65,7 @@ Last reviewed: 2026-08-24
 - [Profile heading reading-position cue guidance](./profile-heading-reading-cue-guidance.md)
 - [Profile heading reading-position cue implementation](./profile-heading-reading-cue-implementation.md)
 - [Profile setup plain-language guidance](./profile-setup-plain-language-guidance.md)
+- [Profile setup plain-language implementation](./profile-setup-plain-language-implementation.md)
 - [Remote audio playback readiness and honest feedback](./remote-audio-playback.md)
 - [Responsive lesson and story shelf artwork](./responsive-shelf-art.md)
 - [Story controls in short landscape](./story-controls-short-landscape.md)

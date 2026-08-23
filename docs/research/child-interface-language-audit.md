@@ -136,17 +136,25 @@ time are additional, and deployed configuration is unknown.
 Update 2026-08-22: the saved-audio branch removed the runtime acknowledgment
 synthesis call and its timeout. Groq enrichment and persistence remain.
 
-A simpler, more literal intro hypothesis for later testing is:
+A simpler, more literal intro hypothesis was selected for implementation:
 
 - heading: **Answer 6 questions**;
-- body: **We save your answers for chats and lessons. A grown-up can change
-  them.**;
+- body: **We save your answers. A grown-up can change your name and age.**;
 - primary action: **Start questions**; and
 - secondary action: **Skip for now**.
 
 This is a prototype, not approved privacy or consent wording. It is more direct
 about saving, removes the relationship metaphor and timing promise, and keeps
 the consequential adult explanation in the grown-up surface.
+
+Update 2026-08-24: repository review rejected an earlier draft that said every
+answer shaped chats and lessons and could be changed. Current chat and lesson
+paths consume only a subset, and the grown-up editor directly exposes name,
+age, and About rather than the four preference responses. The retained
+[plain-language implementation](./profile-setup-plain-language-implementation.md)
+uses the bounded sentence above and changes an interrupted setup to **Answer 5
+more questions** / **Continue questions**. Exact child and caregiver
+comprehension remains untested.
 
 #### 2. Question language is mostly short, but some prompts assume categories
 

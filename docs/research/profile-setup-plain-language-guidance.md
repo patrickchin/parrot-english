@@ -27,6 +27,11 @@ action with a literal, progress-aware version:
   after at least one saved answer; and
 - secondary action: keep **Skip for now**.
 
+The visible wording uses normal spaces, while the short meaning units **A
+grown-up** and **name and age** stay together when the paragraph wraps. This
+avoids stranding the article or the last noun without changing what assistive
+technology reads.
+
 The exact words are a product hypothesis backed by current interface evidence
 and general guidance. They are not proof that a five-year-old understands the
 screen, not a privacy notice, and not a consent mechanism. Retain the change
@@ -234,14 +239,16 @@ safe access to AI features.
    grown-up can change your name and age.**
 5. The primary action is **Start questions** initially and **Continue
    questions** on resume.
-6. **Skip for now**, art, card composition, heading focus lifecycle/reading cue,
+6. **A grown-up** and **name and age** each remain on one rendered text line at
+   the narrow guardrail without changing their visible text.
+7. **Skip for now**, art, card composition, heading focus lifecycle/reading cue,
    action order, and focus order remain unchanged.
-7. The setup contains none of **personalize**, **Learner profile**, **quick**, or
+8. The setup contains none of **personalize**, **Learner profile**, **quick**, or
    **get to know you**.
-8. The viewport fixture reads the six production questions and bilingual copy
+9. The viewport fixture reads the six production questions and bilingual copy
    from the versioned questionnaire, keeps a coherent six-answer completed
    profile, and provides an explicit one-answer resume state.
-9. Do not change persistence, API payloads, route behavior, question order,
+10. Do not change persistence, API payloads, route behavior, question order,
    answer requirements, acknowledgment, audio, timing, dependencies, or grown-up
    copy.
 
