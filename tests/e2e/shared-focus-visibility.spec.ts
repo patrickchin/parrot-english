@@ -6,15 +6,17 @@ type Rgb = { blue: number; green: number; red: number };
 async function openProfileSetup(page: Page) {
   await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
   await expect(
-    page.getByRole("heading", { name: "Help Peppa get to know you" }),
+    page.getByRole("heading", { name: "Answer 6 questions" }),
   ).toBeFocused();
 }
 
 async function openProfileQuestion(page: Page) {
   await openProfileSetup(page);
-  await page.getByRole("button", { name: "Set up profile" }).click();
+  await page.getByRole("button", { name: "Start questions" }).click();
   await expect(
-    page.getByRole("heading", { name: "What's your name?" }),
+    page.getByRole("heading", {
+      name: "Hi! I'm Peppa. What's your name?",
+    }),
   ).toBeFocused();
 }
 
@@ -36,7 +38,7 @@ const focusScenarios: Array<{
     name: "light profile setup",
     prepare: async (page) => {
       await openProfileSetup(page);
-      return page.getByRole("button", { name: "Set up profile" });
+      return page.getByRole("button", { name: "Start questions" });
     },
     viewport: { height: 568, width: 280 },
   },
@@ -876,20 +878,23 @@ test("profile steps keep one open reading cue through pointer transitions", asyn
   await page.setViewportSize({ height: 568, width: 280 });
   await openProfileSetup(page);
 
-  const setupHeading = profileStepHeading(page, "Help Peppa get to know you");
+  const setupHeading = profileStepHeading(page, "Answer 6 questions");
   await expectProfileHeadingContract(
     setupHeading,
-    "Help Peppa get to know you",
+    "Answer 6 questions",
   );
   await expectProfileOpenReadingCue(page, setupHeading, "profile setup heading", {
     markerOffset: -12,
   });
 
-  await page.getByRole("button", { name: "Set up profile" }).click();
-  const questionHeading = profileStepHeading(page, "What's your name?");
+  await page.getByRole("button", { name: "Start questions" }).click();
+  const questionHeading = profileStepHeading(
+    page,
+    "Hi! I'm Peppa. What's your name?",
+  );
   await expectProfileHeadingContract(
     questionHeading,
-    "What's your name?",
+    "Hi! I'm Peppa. What's your name?",
     "learner-profile-question-title",
   );
   await expect(questionHeading).toBeFocused();
@@ -897,6 +902,7 @@ test("profile steps keep one open reading cue through pointer transitions", asyn
     page,
     questionHeading,
     "pointer-arrived profile question heading",
+    { markerHeight: 96 },
   );
 
   await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
@@ -919,10 +925,13 @@ test("keyboard profile transitions retain the same open reading cue", async ({
   await page.setViewportSize({ height: 360, width: 640 });
   await openProfileSetup(page);
 
-  const setup = page.getByRole("button", { name: "Set up profile" });
+  const setup = page.getByRole("button", { name: "Start questions" });
   await focusWithKeyboard(page, setup);
   await page.keyboard.press("Enter");
-  const questionHeading = profileStepHeading(page, "What's your name?");
+  const questionHeading = profileStepHeading(
+    page,
+    "Hi! I'm Peppa. What's your name?",
+  );
   await expect(questionHeading).toBeFocused();
   await expectProfileOpenReadingCue(
     page,
@@ -953,7 +962,7 @@ test("profile headings keep a real indicator through forced-color pointer transi
   await page.setViewportSize({ height: 360, width: 640 });
   await openProfileSetup(page);
 
-  const setupHeading = profileStepHeading(page, "Help Peppa get to know you");
+  const setupHeading = profileStepHeading(page, "Answer 6 questions");
   await expectProfileForcedReadingCue(
     page,
     setupHeading,
@@ -961,8 +970,11 @@ test("profile headings keep a real indicator through forced-color pointer transi
     -12,
   );
 
-  await page.getByRole("button", { name: "Set up profile" }).click();
-  const questionHeading = profileStepHeading(page, "What's your name?");
+  await page.getByRole("button", { name: "Start questions" }).click();
+  const questionHeading = profileStepHeading(
+    page,
+    "Hi! I'm Peppa. What's your name?",
+  );
   await expectProfileForcedReadingCue(
     page,
     questionHeading,
@@ -986,7 +998,7 @@ test("the long profile acknowledgment keeps its open marker contained", async ({
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ height: 568, width: 280 });
   await page.goto("/profile/setup?parrotE2eProfile=long-acknowledgment");
-  await page.getByRole("button", { name: "Set up profile" }).click();
+  await page.getByRole("button", { name: "Start questions" }).click();
   await page.getByRole("textbox", { name: "Your answer" }).fill("Mia");
   await page.getByRole("button", { exact: true, name: "Next" }).click();
 
@@ -1008,11 +1020,14 @@ test("profile reading targets stay out of the ordinary Tab sequence", async ({
   await page.setViewportSize({ height: 844, width: 390 });
   await openProfileSetup(page);
   await page.keyboard.press("Tab");
-  const setup = page.getByRole("button", { name: "Set up profile" });
+  const setup = page.getByRole("button", { name: "Start questions" });
   await expect(setup).toBeFocused();
 
   await page.keyboard.press("Enter");
-  const questionHeading = profileStepHeading(page, "What's your name?");
+  const questionHeading = profileStepHeading(
+    page,
+    "Hi! I'm Peppa. What's your name?",
+  );
   await expect(questionHeading).toBeFocused();
   await page.keyboard.press("Tab");
   const answer = page.getByRole("textbox", { name: "Your answer" });
@@ -1150,7 +1165,7 @@ test("forced colors keeps a visible keyboard focus indicator", async ({ page }) 
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize({ height: 568, width: 280 });
   await openProfileSetup(page);
-  const setup = page.getByRole("button", { name: "Set up profile" });
+  const setup = page.getByRole("button", { name: "Start questions" });
   await blurActiveElement(page);
   await focusWithKeyboard(page, setup);
 

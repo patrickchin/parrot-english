@@ -165,11 +165,36 @@ async function openSetup(page: Page, viewport: Viewport) {
   await page.setViewportSize(viewport);
   await page.goto(profilePath);
   const heading = page.getByRole("heading", {
-    name: "Help Peppa get to know you",
+    name: "Answer 6 questions",
   });
   await expect(heading).toBeVisible();
   return heading;
 }
+
+test("profile setup names the task and saved-answer facts in literal language", async ({
+  page,
+}) => {
+  const viewport = targetViewports[0];
+  const heading = await openSetup(page, viewport);
+  const main = page.getByRole("main");
+  const start = page.getByRole("button", { name: "Start questions" });
+
+  await expect(heading).toBeFocused();
+  await expect(
+    page.getByText(
+      "We save your answers for chats and lessons. A grown-up can change your answers.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(start).toBeVisible();
+  await expect(page.getByRole("button", { name: "Skip for now" })).toBeVisible();
+  await expect(main).not.toContainText(
+    /Help Peppa get to know you|personalize|Learner profile|\bquick\b|Set up profile/i,
+  );
+
+  await page.keyboard.press("Tab");
+  await expect(start).toBeFocused();
+});
 
 for (const viewport of targetViewports) {
   test(`profile setup keeps each transition usable on a ${viewport.name}`, async ({
@@ -177,7 +202,7 @@ for (const viewport of targetViewports) {
   }) => {
     const setupHeading = await openSetup(page, viewport);
     const setupImage = page.getByRole("img", { name: "Peppa waving hello" });
-    const setup = page.getByRole("button", { name: "Set up profile" });
+    const setup = page.getByRole("button", { name: "Start questions" });
     const skip = page.getByRole("button", { name: "Skip for now" });
 
     await expectMainAtOrigin(page);
@@ -190,7 +215,10 @@ for (const viewport of targetViewports) {
     await expectNoHorizontalOverflow(page);
 
     await setup.click();
-    const nameHeading = page.getByRole("heading", { name: "What's your name?" });
+    const nameHeading = page.getByRole("heading", {
+      name: "Hi! I'm Peppa. What's your name?",
+    });
+    await expect(page.getByText("你好！我是佩奇。你叫什么名字？", { exact: true })).toBeVisible();
     const answerLabel = page.getByText("Your answer", { exact: true });
     const answer = page.getByRole("textbox", { name: "Your answer" });
     const speak = page.getByRole("button", { name: "Speak your answer" });
@@ -264,7 +292,7 @@ for (const viewport of targetViewports) {
     const ageSkip = page.getByRole("button", { name: "Skip for now" });
     const ageNext = page.getByRole("button", { exact: true, name: "Next" });
     await expect(ageHeading).toBeFocused();
-    await expect(page.getByText("Question 2 of 2", { exact: true })).toBeVisible();
+    await expect(page.getByText("Question 2 of 6", { exact: true })).toBeVisible();
     await expectMainAtOrigin(page);
     for (const target of [
       ageHeading,
@@ -295,7 +323,7 @@ for (const viewport of targetViewports) {
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     const setupHeading = await openSetup(page, viewport);
-    const setup = page.getByRole("button", { name: "Set up profile" });
+    const setup = page.getByRole("button", { name: "Start questions" });
     await expectDelayedImageKeepsGeometry({
       anchors: [setupHeading, setup],
       image: page.getByRole("img", { name: "Peppa waving hello" }),
@@ -304,7 +332,9 @@ for (const viewport of targetViewports) {
     });
 
     await setup.click();
-    const nameHeading = page.getByRole("heading", { name: "What's your name?" });
+    const nameHeading = page.getByRole("heading", {
+      name: "Hi! I'm Peppa. What's your name?",
+    });
     const answer = page.getByRole("textbox", { name: "Your answer" });
     await expectDelayedImageKeepsGeometry({
       anchors: [nameHeading, answer],

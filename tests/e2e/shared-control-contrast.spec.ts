@@ -362,11 +362,11 @@ for (const viewport of viewports) {
   }) => {
     await preparePage(page, viewport);
     await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
-    const setup = page.getByRole("button", { name: "Set up profile" });
+    const setup = page.getByRole("button", { name: "Start questions" });
     await expectPointerStateContrast({
       interaction: setup,
       minimum: 4.5,
-      name: "Set up profile button",
+      name: "Start questions button",
       page,
     });
   });
@@ -376,9 +376,11 @@ for (const viewport of viewports) {
   }) => {
     await preparePage(page, viewport);
     await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
-    await page.getByRole("button", { name: "Set up profile" }).click();
+    await page.getByRole("button", { name: "Start questions" }).click();
     await expect(
-      page.getByRole("heading", { name: "What's your name?" }),
+      page.getByRole("heading", {
+        name: "Hi! I'm Peppa. What's your name?",
+      }),
     ).toBeVisible();
     const speak = page.getByRole("button", { name: "Speak your answer" });
     await expectPointerStateContrast({

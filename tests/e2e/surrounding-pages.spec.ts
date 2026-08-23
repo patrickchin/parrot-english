@@ -660,10 +660,10 @@ test("an incomplete learner sees a skippable profile setup before the requested 
     "/profile/setup?returnTo=%2Flessons",
   );
   await expect(
-    page.getByRole("heading", { name: "Help Peppa get to know you" }),
+    page.getByRole("heading", { name: "Answer 6 questions" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Set up profile" }),
+    page.getByRole("button", { name: "Start questions" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Skip for now" }),

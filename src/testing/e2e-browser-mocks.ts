@@ -90,7 +90,12 @@ const E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT = {
 
 const E2E_VIEWPORT_INCOMPLETE_PROFILE = {
   ...E2E_INCOMPLETE_PROFILE,
-  progress: { answered: 0, current: 1, total: 2 },
+  progress: { answered: 0, current: 1, total: 6 },
+  question: {
+    ...E2E_INCOMPLETE_PROFILE.question,
+    promptEn: "Hi! I'm Peppa. What's your name?",
+    promptZh: "你好！我是佩奇。你叫什么名字？",
+  },
 };
 
 const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
@@ -118,7 +123,7 @@ const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
     name: "Mia",
     profileStatus: "in_progress",
   },
-  progress: { answered: 1, current: 2, total: 2 },
+  progress: { answered: 1, current: 2, total: 6 },
   question: {
     answerKey: "age",
     audio: null,
@@ -143,7 +148,7 @@ const E2E_VIEWPORT_EDITOR_GATE = {
   experienceMode: "form",
   mode: "full",
   profile: E2E_VIEWPORT_EDITOR_PROFILE,
-  progress: { answered: 2, current: 2, total: 2 },
+  progress: { answered: 2, current: 2, total: 6 },
   question: null,
   questionnaire: { version: 2 },
 };

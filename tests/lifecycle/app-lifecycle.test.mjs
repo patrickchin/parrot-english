@@ -696,10 +696,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await waitFor(() => assert.equal(requests, 2));
     text(/Loading your questions…/);
-    noText(/Help Peppa get to know you/);
+    noText(/Answer 1 question/);
 
     response.resolve(json(fullLearnerProfileState()));
-    await waitFor(() => text(/Help Peppa get to know you/));
+    await waitFor(() => text(/Answer 1 question/));
     noText(/Loading your questions…/);
   });
 
@@ -4085,7 +4085,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Questions are taking a break/));
     await click(button("Retry"));
-    await waitFor(() => text(/Help Peppa get to know you/));
+    await waitFor(() => text(/Answer 1 question/));
     await click(button("Skip for now"));
     await waitFor(() => text(/BYPASSED LESSONS/));
 
@@ -4119,8 +4119,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "COMPLETED LESSONS"),
       ),
     );
-    await waitFor(() => text(/Help Peppa get to know you/));
-    await click(button("Set up profile"));
+    await waitFor(() => text(/Answer 1 question/));
+    await click(button("Start questions"));
     await waitFor(() => text(/What's your name/));
     await input(document.querySelector("#learner-profile-answer-name"), "Mia");
     await click(button("Next"));

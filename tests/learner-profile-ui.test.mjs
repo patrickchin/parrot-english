@@ -986,13 +986,31 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(failed, /LESSON CONTENT/);
 
     const start = renderGate({ data: fullState() });
-    assert.match(start, /Help Peppa get to know you/);
-    assert.match(start, /a few quick questions/i);
-    assert.match(start, /change these later.*Learner profile/is);
-    assert.match(start, />Set up profile</);
+    assert.match(start, /Answer 6 questions/);
+    assert.match(
+      start,
+      /We save your answers for chats and lessons\. A grown-up can change your answers\./,
+    );
+    assert.match(start, />Start questions</);
+    assert.match(start, />Skip for now</);
+    assert.doesNotMatch(
+      start,
+      /Help Peppa get to know you|personalize|Learner profile|\bquick\b|Set up profile/i,
+    );
     assert.doesNotMatch(start, /PARROT ENGLISH/);
     assert.doesNotMatch(start, /What&#x27;s your name\?/);
     assert.doesNotMatch(start, /LESSON CONTENT/);
+  });
+
+  it("uses the loaded question count with singular grammar", () => {
+    const start = renderGate({
+      data: fullState({
+        progress: { answered: 0, current: 1, total: 1 },
+      }),
+    });
+
+    assert.match(start, /Answer 1 question/);
+    assert.doesNotMatch(start, /Answer 1 questions/);
   });
 
   it("shows acknowledgment before the next question or completed lesson", () => {
