@@ -5,6 +5,13 @@ Status: implemented on `codex/story-controls-short-landscape`
 Implementation commit: `445dad4`
 Audience: young learners using a phone or small tablet sideways
 
+Superseded boundary note (2026-08-24): this memo records the historical layout
+decision that kept the reader-local caregiver panel reachable inside a
+dedicated scroller. A later direct sequential-focus audit found that the panel
+duplicated the complete shelf editor and displaced the child's task. The
+reader-local panel was removed on `codex/story-reader-child-first-tab-order`;
+the fixed artwork and child-control layout documented here remains retained.
+
 ## Question and scope
 
 Can a child see the story picture, current words, and real Back/Listen/Next

@@ -611,15 +611,19 @@ Next branch: codex/story-reader-child-first-tab-order stacked on this hand-off; 
 ```text
 Branch: codex/story-reader-child-first-tab-order
 Base branch / dependency: codex/story-reader-completion-focus documentation hand-off c2a0a24
-Research commit: pending
-Implementation commit: pending
+Research commit: 1e8222e
+Implementation commit: 9f74815
+Review hardening: 41697d8, 3aa57dd
 Hypothesis: removing the duplicate caregiver editor from active reading will let the sentence lead directly into child controls, while the shelf retains complete personalization and saved art remains visible in the story
 Verified baseline: Red Ball sentence focus Tabs first to Grown-up options in enabled and disabled states; an open editor adds two interactive adult stops; first-page Listen takes 2 moves closed and 4 open; middle/final Listen takes 3 and 5
 Measured movement: closed adult focus moves the 640x360 reading pane about 50 px and removes the title; open traversal can hide sentence and prompt at outer reader scrollTop 513 on 280x568 and 652 on 1280x800, persisting through playback
-Selected change: remove the reader-only editor/disclosure; keep the complete shelf editor, privacy cleanup, hook, saved overrides, and read-only personalized artwork
+Changed: removed the reader-only editor/disclosure and its dead preview-hiding API; added exact first/middle/final forward/reverse focus-order coverage at four viewports; retained saved overrides and read-only art; integrated the shelf's generation-disabled privacy cleanup with visible confirmation and pending/failure/success focus ownership
 Not changing: story language, child controls, sentence/completion focus, art generation/consent/persistence, APIs, data, routes, audio, timing, dependencies, translations, or shelf editor
-Status: research recorded; implementation and final evidence pending
-Next branch: codex/profile-heading-reading-cue remains queued separately
+Tests: 4/4 exact responsive reader-order cases; 7/7 personalized-art journeys; independent 27/27 reader matrix; 678/678 unit/integration/lifecycle/safety; TypeScript and production build passed; lint 0 errors with 2 generated-file warnings; full Chromium 259/260 with only the separately recorded pre-existing microphone transition race
+Measured result: the first Tab now reaches Listen on page 1 without moving any scroll owner; later pages enter Back, Listen, then Next/Finish; 640x360 pane scroll height falls from 211 to 161 px while learning-content geometry stays stable; all four visual candidates passed independent review
+Screenshots / traces: four baseline, four responsive child-only, two actual-Tab focused-Listen, and one focused cleanup-confirmation JPEG with provenance and SHA-256 integrity in artifacts/ux-review/story-reader-child-first-tab-order
+Status: implemented and provisionally retained after independent code, behavior, standards, and four-size visual review
+Next branch: codex/lesson-microphone-direct-action-feedback stacked on this documentation hand-off; codex/profile-heading-reading-cue remains the strongest visual follow-up
 ```
 
 ## Newly observed defects
@@ -723,23 +727,48 @@ branches.
     merely focusing the closed adult summary moves the reading pane about 50 px
     and removes the title; open traversal can hide the sentence and prompt
     persistently at 280x568 and 1280x800. Research on
-    `codex/story-reader-child-first-tab-order` selected removal of the duplicate
-    reader editor while preserving the complete shelf editor and read-only
-    saved art. Implementation evidence is pending.
+    `codex/story-reader-child-first-tab-order` removed the duplicate reader
+    editor while preserving the complete shelf editor and read-only saved art.
+    Fixed provisionally at `9f74815`; review hardening at `41697d8` adds exact
+    reverse order, restores art-stability evidence, removes the dead hidden-
+    preview API, and protects the sole generation-disabled privacy-cleanup
+    path. Follow-up `3aa57dd` retains pending/retry focus, gives successful
+    deletion a visible status hand-off, and avoids stealing focus after the
+    caregiver moves away.
 20. **Medium: the focused Story Reader sentence uses an accessible name on a
     name-prohibited paragraph role.** The visible page text is a `<p>` with
     `aria-label`; some pre-existing tests also locate it through that label.
     Research a nameable wrapper or valid description relationship with target
     assistive-technology output and locator migration before changing the
     existing focus contract.
+21. **Low: the Story Reader completion replay action clips two pixels of its
+    focus paint at 640x360.** Independent verification measured **Listen
+    again** at y 302...354; the shared four-pixel outline plus four-pixel offset
+    extends to y 362 in a 360-pixel viewport. The complete button and most of
+    its focus indicator remain visible, so this is not an entirely obscured
+    target. Existing containment checks measure only the border box. Research
+    a bounded completion-spacing or focus-paint adjustment without weakening
+    the shared focus ring or changing completion focus ownership.
+22. **High: Lesson Player microphone setup loses the child's interaction
+    context and repeats pending feedback.** At 280x568, 390x844, 640x360, and
+    1440x900, activating **Tap to talk** changes the focused button to native
+    `disabled`, moves focus to `BODY`, and shows **Opening mic** in both the
+    prompt and button with two spinners. Focus remains on `BODY` after success
+    and failure. Repeated activation can also cancel the authored pending UI
+    while the permission request remains unresolved. Repair the single action
+    owner, focus continuity, duplicate guard, reduced motion, and timing on
+    `codex/lesson-microphone-direct-action-feedback` without changing the
+    permission or recording policy.
 
 ### Test-infrastructure observation
 
-One full-browser run exposed a concurrency-sensitive Lesson Player microphone
-fixture: the mock could advance from **Opening mic...** to **Tap when done**
-before the intermediate-state assertion. A ten-run parallel diagnostic passed
-7/10; subsequent clean full runs passed. Keep this separate from product UX
-branches and harden the test around an owned transition boundary.
+The child-first Story Reader branch's final full-browser run passed 259/260.
+The only failure was the existing Lesson Player microphone test advancing from
+**Opening mic...** to **Tap when done** before the intermediate-state assertion.
+A ten-run parallel diagnostic passed 5/10. This is both a fixture-ownership
+problem and evidence that the pending product feedback is too transient under
+load; the selected microphone branch must give the test an explicit request
+boundary rather than extending a timer or retrying the suite.
 
 ## Parked ideas
 

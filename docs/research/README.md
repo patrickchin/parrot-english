@@ -37,6 +37,7 @@ Last reviewed: 2026-08-24
 - [Story Reader completion focus guidance](./story-reader-completion-focus-guidance.md)
 - [Story Reader completion focus implementation](./story-reader-completion-focus-implementation.md)
 - [Story Reader child-first control order guidance](./story-reader-child-first-tab-order-guidance.md)
+- [Story Reader child-first control order implementation](./story-reader-child-first-tab-order-implementation.md)
 - [Conversation wait and terminal recovery](./conversation-wait-recovery.md)
 - [Repeated Talk failure: picture-led lesson fallback](./repeated-talk-recovery.md)
 - [Feedback, voice latency, and experience measurement](./feedback-and-latency.md)

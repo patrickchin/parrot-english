@@ -1,11 +1,17 @@
 # Story Reader child-first control order guidance
 
-Status: selected for implementation
+Status: implemented and provisionally retained
 
 Branch: `codex/story-reader-child-first-tab-order`
 
 Base: `codex/story-reader-completion-focus` documentation hand-off at
 `c2a0a24`
+
+Research commit: `1e8222e`
+
+Implementation commit: `9f74815`
+
+Review hardening: `41697d8`, `3aa57dd`
 
 Research date: 2026-08-24
 
@@ -35,8 +41,8 @@ three controls that operate the story. A photo-upload and guardian-consent form
 serves a different user, purpose, language level, and privacy decision.
 
 The same sequential path can also be used by a keyboard, keyboard emulator, or
-switch-style input. An avoidable stop matters more when each move is a distinct
-action and when moving focus also moves the reading surface.
+switch-style input. An avoidable stop may increase effort when each move is a
+distinct action and when moving focus also moves the reading surface.
 
 In scope:
 
@@ -190,10 +196,11 @@ disclosure, empty placeholder, or related focus stop.
 
 Rejected in favor of the simpler boundary. The current short-wide layout keeps
 the editor in an independently scrolling row and the controls in a fixed
-sibling row. A true source-and-visual reorder requires moving or rebuilding
-that relationship with sticky positioning, a portal, popover, or new grid
-ownership. It preserves in-context editing but adds meaningful layout,
-obscuration, and cross-browser risk for a duplicate feature.
+sibling row. Under that fixed-control structure, a true source-and-visual
+reorder would likely require moving or rebuilding the relationship with sticky
+positioning, a portal, popover, or new grid ownership. It preserves in-context
+editing but adds meaningful layout, obscuration, and cross-browser risk for a
+duplicate feature.
 
 ### Change only the feature-disabled state
 
@@ -284,6 +291,9 @@ Rendered behavior should prove:
 Genuine in-app Browser review should compare 280x568 and 640x360 before/after
 captures, then inspect 390x844 and desktop. The visual question is whether the
 reader becomes calmer without looking broken or leaving an unexplained gap.
+
+The selected contract, measured result, review corrections, and validation are
+recorded in the [implementation memo](./story-reader-child-first-tab-order-implementation.md).
 
 ## Limits and rollback
 
