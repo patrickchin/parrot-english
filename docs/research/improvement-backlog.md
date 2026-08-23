@@ -723,13 +723,18 @@ branches.
     synthesis loop. The removed 10-second default and 30-second cap were code
     bounds, not observed production latency. Groq enrichment and D1 persistence
     remain on the save path.
-17. **Medium: programmatically focused profile headings resemble text fields.**
-    The closed browser outline appears on setup, every question, and every
-    acknowledgment—13 arrivals in a complete six-question flow—and sits directly
-    above a genuine outlined textarea on question screens. Research a separated
-    reading-position marker that preserves focus and forced-colors feedback
-    without changing copy, timing, or geometry on
-    `codex/profile-heading-reading-cue`.
+17. **Medium: programmatically focused profile headings use browser-dependent
+    feedback.** Fresh Chromium reproduction found a tight closed one-pixel UA
+    outline after initial-load and keyboard transitions, but no visible cue
+    after pointer transitions because the focused static heading did not match
+    `:focus-visible`; forced-colors emulation retained the pointer gap. This
+    affects one setup, six question, and six acknowledgment arrivals in the
+    complete flow, and the closed variant sits directly above a genuine
+    outlined textarea on question screens. A separated, `:focus`-keyed reading
+    marker with a real forced-colors fallback is researched in
+    [the profile-heading guidance](./profile-heading-reading-cue-guidance.md) on
+    `codex/profile-heading-reading-cue`; implementation is pending without copy,
+    timing, focus-lifecycle, or geometry changes.
 18. **High: finishing a story removes the focused control and leaves the
     completion screen focused on `BODY`.** Verified after pointer and keyboard
     Finish at 280×568, 390×844, 640×360, and 1280×800. The heading and primary
