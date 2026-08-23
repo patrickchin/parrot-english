@@ -1,6 +1,6 @@
 # Story Reader completion focus guidance
 
-Status: selected for implementation
+Status: implemented and provisionally retained
 
 Branch: `codex/story-reader-completion-focus`
 
@@ -8,6 +8,14 @@ Base: `codex/story-reader-join-in-visibility` documentation hand-off at
 `9d891a7`
 
 Research date: 2026-08-24
+
+Research commit: `bbf68ce`
+
+Implementation commit: `cedd6c8`
+
+Review coverage follow-up: `9ee4223`
+
+Review date: 2026-08-24
 
 ## Question
 
@@ -239,6 +247,10 @@ trap should be inferred from that comparison.
 
 ## Acceptance evidence
 
+The final measured results are recorded in the
+[implementation memo](./story-reader-completion-focus-implementation.md). The
+acceptance contract below was used to decide whether to retain the candidate.
+
 Automated rendered behavior should prove:
 
 - pointer and Enter activation of **Finish story** focus the completion heading
@@ -266,11 +278,11 @@ new action.
 The existing focused page sentence is a `<p>` with `aria-label`.
 [WAI-ARIA 1.2](https://www.w3.org/TR/wai-aria-1.2/#namefromprohibited)
 classifies the paragraph role as name-prohibited. That implementation predates
-this branch and replay currently depends on its accessible locator. Do not
+this branch, and some existing focus tests assert the prohibited label. Do not
 silently bundle a semantic rewrite into the completion repair. Record a
 separate investigation of a nameable current-page wrapper or a valid
-description relationship, including actual screen-reader output and locator
-migration, before changing it.
+description relationship, including actual screen-reader output and test-
+locator migration, before changing it.
 
 ## Evidence limits and rollback
 

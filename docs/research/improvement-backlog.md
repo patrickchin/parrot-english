@@ -1,6 +1,6 @@
 # Evidence-Ranked Improvement Backlog
 
-Last ranked: 2026-08-22
+Last ranked: 2026-08-24
 
 This is a decision queue, not a promise that every feature will be built. Scores
 are relative and should change when observation, implementation, or direct
@@ -592,15 +592,20 @@ Next question: completion replay focus was reproduced as correct; repair the sep
 ```text
 Branch: codex/story-reader-completion-focus
 Base branch / dependency: codex/story-reader-join-in-visibility documentation hand-off 9d891a7
-Research commit: pending
-Implementation commit: pending
+Research commit: bbf68ce
+Implementation commit: cedd6c8
+Review coverage follow-up: 9ee4223
 Hypothesis: focusing the existing completion heading once can orient a child after Finish replaces the reader, while keeping Listen again one Tab away and preserving silent page-one replay
 Verified baseline: pointer and keyboard Finish leave BODY focused at 280×568, 390×844, 640×360, and 1280×800; heading and Listen again remain visible; all scroll owners stay at origin
 Disproved concern: pointer and keyboard replay already route to page 1, focus its sentence, show its reading marker, and reset every owned scroll position; pointer replay passed all 20 current stories
-Selected change: completion-only heading focus with an open reading-position marker and forced-colors fallback; add replay regression coverage without changing replay production code
-Not changing: completion words, actions, art, sound, timing, routes, page focus behavior, narration, APIs, data, dependencies, translations, or shared focus primitives
-Status: research recorded; implementation and final evidence pending
-Next branch: codex/profile-heading-reading-cue remains queued separately
+Changed: completion-only prepaint heading focus with a separated open reading-position marker and forced-colors fallback; pointer/keyboard replay, scroll-origin, overflow, active-narration, stale-callback, media-construction, and rendered-indicator coverage without changing replay production code
+Not changed: completion words, actions, art, sound, timing, routes, page focus behavior, APIs, data, dependencies, translations, or shared focus primitives
+Tests: 9/9 focused Chromium cases; 253/253 full Chromium; 678/678 unit/integration/lifecycle/safety; production TypeScript and build passed; lint 0 errors with 2 generated-file warnings
+Screenshots / traces: two baseline, two rejected, and two retained genuine in-app Browser JPEGs with provenance and integrity manifest in artifacts/ux-review/story-reader-completion-focus
+Measured result: Finish now focuses the visible Great job! heading at all four target sizes, the next Tab reaches Listen again, and replay restores silent page-one context and every owned scroll origin; decoded before/after evidence confines strong pixel change to the four-pixel marker
+Risks / limitations: deterministic local Chromium and English LTR only; no target browser/device/AT, touch/switch, zoom/text-spacing, localization, or child/caregiver evidence; DOM focus does not prove announcement order
+Retain, revise, or reject: retain provisionally after three independent reviews and one visual spacing revision
+Next branch: codex/story-reader-child-first-tab-order stacked on this hand-off; codex/profile-heading-reading-cue remains queued separately
 ```
 
 ## Newly observed defects
@@ -691,9 +696,34 @@ branches.
     completion screen focused on `BODY`.** Verified after pointer and keyboard
     Finish at 280×568, 390×844, 640×360, and 1280×800. The heading and primary
     replay action are visible and scroll remains at origin, but the new state
-    has no meaningful or visible product focus location. Research selected a
-    one-time, non-sequential **Great job!** heading hand-off on
-    `codex/story-reader-completion-focus`; implementation evidence is pending.
+    has no meaningful or visible product focus location. Fixed provisionally
+    on `codex/story-reader-completion-focus` at `cedd6c8` with a one-time,
+    non-sequential **Great job!** heading hand-off. Review hardening at
+    `9ee4223` covers pointer/keyboard replay, every scroll owner, adversarial
+    scroll, active narration, stale callbacks, media construction, rendered
+    focus, forced colors, and horizontal overflow.
+19. **High: the first Tab after Story Reader page arrival skips the child's
+    Listen action for Grown-up options.** Independently reproduced after
+    page-one arrival and replay: the sentence receives the intended programmatic
+    focus, but the next sequential destination is the earlier-in-DOM secondary
+    personalization disclosure. Investigate a child-first DOM sequence on
+    `codex/story-reader-child-first-tab-order`, preserving Back–Listen–Next or
+    Finish order and keeping the grown-up panel fully reachable without
+    positive `tabIndex` or key interception.
+20. **Medium: the focused Story Reader sentence uses an accessible name on a
+    name-prohibited paragraph role.** The visible page text is a `<p>` with
+    `aria-label`; some pre-existing tests also locate it through that label.
+    Research a nameable wrapper or valid description relationship with target
+    assistive-technology output and locator migration before changing the
+    existing focus contract.
+
+### Test-infrastructure observation
+
+One full-browser run exposed a concurrency-sensitive Lesson Player microphone
+fixture: the mock could advance from **Opening mic...** to **Tap when done**
+before the intermediate-state assertion. A ten-run parallel diagnostic passed
+7/10; subsequent clean full runs passed. Keep this separate from product UX
+branches and harden the test around an owned transition boundary.
 
 ## Parked ideas
 
