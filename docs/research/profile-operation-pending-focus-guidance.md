@@ -1,11 +1,16 @@
 # Profile question operation feedback and focus guidance
 
-Status: research selected; implementation pending
+Status: implemented and provisionally retained
 
 Branch: `codex/profile-operation-pending-focus`
 
 Stacked base: `codex/profile-answer-separate-labels` documentation hand-off at
 `8eb3149`
+
+Implementation: `1625fff`
+
+Outcome evidence:
+[`profile-operation-pending-focus-implementation.md`](./profile-operation-pending-focus-implementation.md)
 
 Research date: 2026-08-24
 
@@ -88,13 +93,13 @@ reaches the fixed Account control instead of continuing from the active task.
 The pending paragraph is a new grid row. It changes both the card's intrinsic
 height and its centered position:
 
-| Viewport | Idle to held-microphone result |
-| --- | --- |
-| 280x568 | Card height 510.5 to 562.5 px; main scroll 0 to 23 px; prompt/field move up 14.75 px; actions move down 37.25 px; card bottom clips |
-| 320x640 | Card height 724.5 to 784.5 px; scroll 113 to 173 px; Skip and Next begin below the viewport |
-| 390x844 | Card height 603 to 663 px; centered content moves 30 px up and actions 30 px down |
-| 640x360 | Card height 345 to 397 px; scroll 13 to 65 px; only the top 9 px of the actions remains in view |
-| 1440x900 | Card height 538 to 598 px; centered content moves 30 px up and actions 30 px down |
+| Viewport | Idle to held-microphone result                                                                                                      |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 280x568  | Card height 510.5 to 562.5 px; main scroll 0 to 23 px; prompt/field move up 14.75 px; actions move down 37.25 px; card bottom clips |
+| 320x640  | Card height 724.5 to 784.5 px; scroll 113 to 173 px; Skip and Next begin below the viewport                                         |
+| 390x844  | Card height 603 to 663 px; centered content moves 30 px up and actions 30 px down                                                   |
+| 640x360  | Card height 345 to 397 px; scroll 13 to 65 px; only the top 9 px of the actions remains in view                                     |
+| 1440x900 | Card height 538 to 598 px; centered content moves 30 px up and actions 30 px down                                                   |
 
 Horizontal overflow remained zero, but lack of horizontal overflow does not
 make the vertical movement harmless. The blanket fieldset opacity is 0.75;
@@ -225,6 +230,12 @@ and the next animation-frame callback, not photons or child perception. See
 14. Card, prompt, textarea, microphone, action, and scroll geometry differ by
     at most one CSS pixel between idle and every pending phase at the five
     target viewports; horizontal overflow remains zero.
+15. Start and Replay audio use their own abortable single owner. Replay keeps
+    its node and name, exposes full-contrast `aria-disabled` while owned, and
+    question work aborts audio before opening the microphone.
+16. If an error inserts a row while the initiating form control still owns
+    focus, scroll that existing control only to the nearest visible position.
+    Do not move focus or scroll for Account/outside focus.
 
 ## Options considered
 
@@ -335,3 +346,14 @@ this work. Do not call it a WCAG failure without assessing the typed
 alternative and timing exceptions, but test whether slow young L2 speakers can
 finish naturally and whether an explicit stop action is calmer than a fixed
 cutoff.
+
+## 2026-08-24 implementation revision
+
+The selected contract was implemented at `1625fff` and independently reviewed.
+The implementation added an explicit Start/Replay playback boundary after code
+review found prompt audio could otherwise overlap recording. Accessibility
+review then changed two details: focused pending owners remain full opacity,
+and an inserted error scrolls only the still-focused in-form retry into nearest
+view. Red-then-green Chromium evidence covers the latter at 280x568, 320x640,
+and 640x360. See the [implementation memo](./profile-operation-pending-focus-implementation.md)
+and [visual manifest](../../artifacts/ux-review/profile-operation-pending-focus/manifest.md).

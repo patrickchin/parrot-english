@@ -69,6 +69,7 @@ Last reviewed: 2026-08-24
 - [Separate profile answer labels guidance](./profile-answer-separate-labels-guidance.md)
 - [Separate profile answer labels implementation](./profile-answer-separate-labels-implementation.md)
 - [Profile question operation feedback and focus guidance](./profile-operation-pending-focus-guidance.md)
+- [Profile question operation feedback and focus implementation](./profile-operation-pending-focus-implementation.md)
 - [Profile setup plain-language guidance](./profile-setup-plain-language-guidance.md)
 - [Profile setup plain-language implementation](./profile-setup-plain-language-implementation.md)
 - [Remote audio playback readiness and honest feedback](./remote-audio-playback.md)

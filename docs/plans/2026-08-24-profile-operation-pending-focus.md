@@ -1,5 +1,8 @@
 # Profile question operation feedback and focus implementation plan
 
+Status: completed at implementation commit `1625fff`; documentation and final
+verification recorded in the stacked hand-off
+
 Date: 2026-08-24
 
 Branch: `codex/profile-operation-pending-focus`
@@ -138,3 +141,14 @@ Also verify every local Markdown link, every evidence file's type/dimensions/
 hash, the branch diff from `8eb3149`, and a clean worktree. Write an
 implementation evidence memo, update the research index/source register/
 backlog, make reviewable commits, and then select the next stacked improvement.
+
+## Outcome
+
+Tasks 1–6 were executed test-first. Independent review added an abortable
+question-playback owner, full-contrast focused owners, explicit keyboard and
+form-burst coverage, cancellation-ignoring late settlements, route-exit
+coverage, and a scoped error-path visibility repair at three short viewports.
+The durable outcome is in
+[`profile-operation-pending-focus-implementation.md`](../research/profile-operation-pending-focus-implementation.md),
+with genuine in-app Browser evidence in the
+[artifact manifest](../../artifacts/ux-review/profile-operation-pending-focus/manifest.md).

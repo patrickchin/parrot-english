@@ -876,19 +876,16 @@ branches.
     Chromium-name defect without claiming WCAG conformance, exact screen-reader
     speech, or child comprehension.
 24. **High: form-profile operations can discard the learner's focus and
-    duplicate pending feedback.** Activating the microphone disables the
-    fieldset and immediately moves focus to `BODY`; the next Tab can reach the
-    fixed Account control instead of the active task. Recording and
-    transcription inherit this behavior. Saving can likewise disable the
-    activated control and also renders **Peppa is thinking…** in more than one
-    place. Research selected on `codex/profile-operation-pending-focus`: one
-    synchronous abortable owner, same-node `aria-disabled` focus, individually
-    disabled non-owners, one stable label-line status, truthful opening/
-    listening/writing/thinking phases, exactly-once activation, route-exit
-    cleanup, and stale-settlement quarantine. Baseline review also reproduced
-    same-task duplicate microphone/save/skip requests, stranded pending UI,
-    post-exit stale writes, and 52–60 px pending layout growth. Implementation
-    and retained evidence remain pending.
+    duplicate pending feedback.** Fixed provisionally on
+    `codex/profile-operation-pending-focus` at `1625fff`. One synchronous,
+    abortable owner now keeps the initiating mic/Next/skip action on the same
+    focused full-contrast `aria-disabled` node, native-disables competitors,
+    exposes one stable label-line status, and names opening/listening/writing/
+    thinking truthfully. It suppresses same-task and mixed activation bursts,
+    aborts Start/Replay before recording, propagates cancellation through
+    recording and fetch work, quarantines late settlements, and keeps an
+    inserted-error retry visible without stealing focus. Genuine in-app
+    evidence shows zero candidate phase growth after the base added 52–104px.
 25. **High: direct Story shelf reveal can finish with focus on `BODY`.** The
     pathname-keyed route focus manager can focus the Suspense fallback and does
     not rerun when the lazy Story shelf replaces it. Reproduce fast and delayed
@@ -923,6 +920,17 @@ branches.
     is not initially visible. Test task discovery with young beginners before
     deciding whether a denser 320px composition is better than ordinary
     vertical scrolling.
+30. **Medium: profile operation failures can expose arbitrary technical English
+    to a child.** The form question alert ultimately renders `Error.message`.
+    Map known microphone, transcription, save, and skip failures to fixed,
+    short beginner-safe actions while retaining diagnostics outside the child
+    surface. Test server and browser failures without claiming that one English
+    sentence works across home languages.
+31. **Medium: “Skip question” and “Skip for now” may not communicate different
+    consequences to a five-year-old beginner.** Both appear as equal text
+    actions on optional questions. Test comprehension and action prediction
+    before choosing a small consequence cue, bilingual support, or a workflow
+    change; do not add explanatory paragraphs speculatively.
 
 ### Test-infrastructure observation
 
