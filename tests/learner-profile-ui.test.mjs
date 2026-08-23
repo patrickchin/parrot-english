@@ -116,19 +116,46 @@ describe("one-question prose onboarding view", () => {
     );
   });
 
-  it("keeps the editable fallback through listening, transcription, and thinking", () => {
-    const recording = renderQuestion({ status: "recording" });
+  it("keeps one stable status and the editable fallback through every operation phase", () => {
+    const idle = renderQuestion();
+    assert.equal((idle.match(/role="status"/g) ?? []).length, 1);
+    assert.doesNotMatch(idle, /Opening mic…|Listening…|Writing…|Thinking…|Ready\./);
+
+    const opening = renderQuestion({
+      pendingAction: "microphone",
+      status: "opening",
+    });
+    assert.match(opening, /Opening mic…/);
+    assert.equal((opening.match(/role="status"/g) ?? []).length, 1);
+    assert.match(opening, /aria-label="Speak your answer"[^>]*aria-disabled="true"/);
+    assert.doesNotMatch(opening, /<fieldset[^>]*disabled/);
+    assert.match(opening, /<textarea[^>]*disabled/);
+
+    const recording = renderQuestion({
+      pendingAction: "microphone",
+      status: "recording",
+    });
     assert.match(recording, /Listening…/);
     assert.match(recording, /<textarea/);
 
-    const transcribing = renderQuestion({ status: "transcribing" });
-    assert.match(transcribing, /Writing what I heard…/);
+    const transcribing = renderQuestion({
+      pendingAction: "microphone",
+      status: "transcribing",
+    });
+    assert.match(transcribing, /Writing…/);
     assert.match(transcribing, /<textarea/);
 
-    const saving = renderQuestion({ status: "saving" });
-    assert.match(saving, /Peppa is thinking…/);
-    assert.match(saving, /disabled=""/);
+    const saving = renderQuestion({ pendingAction: "submit", status: "saving" });
+    assert.equal((saving.match(/Thinking…/g) ?? []).length, 1);
+    assert.match(saving, /<button[^>]*aria-disabled="true"[^>]*type="submit"/);
+    assert.match(saving, />Next</);
+    assert.doesNotMatch(saving, /Peppa is thinking…/);
+    assert.doesNotMatch(saving, /<fieldset[^>]*disabled/);
     assert.match(saving, /<textarea/);
+
+    const ready = renderQuestion({ status: "ready" });
+    assert.match(ready, /Ready\./);
+    assert.equal((ready.match(/role="status"/g) ?? []).length, 1);
   });
 
   it("shows field errors and only offers per-question skip when optional", () => {
@@ -1127,16 +1154,21 @@ describe("onboarding and profile gate", () => {
       },
       acknowledgment: { text: "Lovely stories!", audio: null },
     });
+    const controller = new AbortController();
     let calls = 0;
+    let receivedSignal;
     const result = await saveQuestionAndAdvance({
       questionKey: "favoriteStoryTopics",
       rawAnswer: "I like space stories",
-      async save() {
+      signal: controller.signal,
+      async save(_questionKey, _rawAnswer, options) {
         calls += 1;
+        receivedSignal = options?.signal;
         return completed;
       },
     });
     assert.equal(calls, 1);
+    assert.equal(receivedSignal, controller.signal);
     assert.equal(result, completed);
   });
 

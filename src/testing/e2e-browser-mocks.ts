@@ -16,6 +16,7 @@ const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
 const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
+const E2E_PROFILE_OPERATION_SCENARIO = "held";
 const E2E_LONG_ACKNOWLEDGMENT =
   "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!";
 const E2E_SAVED_ACKNOWLEDGMENT_AUDIO = {
@@ -228,15 +229,247 @@ function getE2eProfileScenario() {
   return scenario && E2E_PROFILE_SCENARIOS.has(scenario) ? scenario : null;
 }
 
+function hasHeldE2eProfileOperations() {
+  return (
+    new URL(window.location.href).searchParams.get(
+      "parrotE2eProfileOperation",
+    ) === E2E_PROFILE_OPERATION_SCENARIO
+  );
+}
+
+type E2EProfileOperation =
+  | "answerSave"
+  | "questionSkip"
+  | "skipForNow"
+  | "transcription";
+
+type E2EProfileOperationPhase =
+  | "listening"
+  | "opening"
+  | "thinking"
+  | "writing";
+
+type E2EOperationCounters = {
+  aborted: number;
+  pending: number;
+  rejected: number;
+  requests: number;
+  resolved: number;
+};
+
+type PendingProfileOperation = {
+  abort: () => void;
+  defaultPayload: unknown;
+  reject: (reason?: unknown) => void;
+  resolve: (response: Response) => void;
+  signal: AbortSignal | null;
+};
+
+type PendingProfileRecorder = {
+  fail: () => void;
+  stop: () => void;
+};
+
+const E2E_PROFILE_OPERATIONS: E2EProfileOperation[] = [
+  "transcription",
+  "answerSave",
+  "questionSkip",
+  "skipForNow",
+];
+
+function createOperationCounters(): E2EOperationCounters {
+  return {
+    aborted: 0,
+    pending: 0,
+    rejected: 0,
+    requests: 0,
+    resolved: 0,
+  };
+}
+
+const profileOperationCounters = Object.fromEntries(
+  E2E_PROFILE_OPERATIONS.map((operation) => [
+    operation,
+    createOperationCounters(),
+  ]),
+) as Record<E2EProfileOperation, E2EOperationCounters>;
+
+const profileRecordingCounters = createOperationCounters();
+const pendingProfileOperations: Record<
+  E2EProfileOperation,
+  PendingProfileOperation[]
+> = {
+  answerSave: [],
+  questionSkip: [],
+  skipForNow: [],
+  transcription: [],
+};
+const pendingProfileRecorders: PendingProfileRecorder[] = [];
+
+function e2eJson(payload: unknown) {
+  return Response.json(payload, {
+    headers: {
+      "Cache-Control": "no-store",
+      "X-Parrot-Mock-Api": "browser",
+    },
+  });
+}
+
+function createProfileOperationAbortError() {
+  return new DOMException("The operation was aborted.", "AbortError");
+}
+
+function answerSavePayload(profileScenario: string | null) {
+  return profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
+    ? E2E_VIEWPORT_PROFILE_AFTER_NAME
+    : profileScenario === E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO
+      ? E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT
+      : E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT;
+}
+
+function defaultProfileOperationPayload(
+  operation: E2EProfileOperation,
+  profileScenario: string | null,
+) {
+  if (operation === "transcription") return { transcript: "Mia" };
+  if (operation === "skipForNow") {
+    return { canBypass: true, mode: "bypass-only" };
+  }
+  return answerSavePayload(profileScenario);
+}
+
+function profileOperationForRequest(
+  url: URL,
+  method: string,
+): E2EProfileOperation | null {
+  if (url.origin !== window.location.origin) return null;
+  if (url.pathname === "/api/learner-profile/transcribe" && method === "POST") {
+    return "transcription";
+  }
+  if (url.pathname === "/api/learner-profile/answer" && method === "PUT") {
+    return "answerSave";
+  }
+  if (
+    url.pathname === "/api/learner-profile/question/skip" &&
+    method === "POST"
+  ) {
+    return "questionSkip";
+  }
+  if (url.pathname === "/api/learner-profile/skip" && method === "POST") {
+    return "skipForNow";
+  }
+  return null;
+}
+
+function updateProfileOperationPending(operation: E2EProfileOperation) {
+  profileOperationCounters[operation].pending =
+    pendingProfileOperations[operation].length;
+}
+
+function holdProfileOperation(
+  operation: E2EProfileOperation,
+  signal: AbortSignal | null,
+  defaultPayload: unknown,
+) {
+  const counters = profileOperationCounters[operation];
+  const pending = pendingProfileOperations[operation];
+  counters.requests += 1;
+
+  if (signal?.aborted) {
+    counters.aborted += 1;
+    return Promise.reject(createProfileOperationAbortError());
+  }
+
+  return new Promise<Response>((resolve, reject) => {
+    const request: PendingProfileOperation = {
+      abort() {
+        const index = pending.indexOf(request);
+        if (index === -1) return;
+        pending.splice(index, 1);
+        updateProfileOperationPending(operation);
+        counters.aborted += 1;
+        reject(createProfileOperationAbortError());
+      },
+      defaultPayload,
+      reject,
+      resolve,
+      signal,
+    };
+
+    pending.push(request);
+    updateProfileOperationPending(operation);
+    signal?.addEventListener("abort", request.abort, { once: true });
+  });
+}
+
+function takePendingProfileOperation(operation: E2EProfileOperation) {
+  const request = pendingProfileOperations[operation].shift();
+  if (!request) return null;
+  request.signal?.removeEventListener("abort", request.abort);
+  updateProfileOperationPending(operation);
+  return request;
+}
+
+function resolveNextProfileOperation(
+  operation: E2EProfileOperation,
+  payload?: unknown,
+) {
+  const request = takePendingProfileOperation(operation);
+  if (!request) return false;
+  profileOperationCounters[operation].resolved += 1;
+  request.resolve(
+    e2eJson(payload === undefined ? request.defaultPayload : payload),
+  );
+  return true;
+}
+
+function rejectNextProfileOperation(
+  operation: E2EProfileOperation,
+  message = "Held profile operation failed.",
+) {
+  const request = takePendingProfileOperation(operation);
+  if (!request) return false;
+  profileOperationCounters[operation].rejected += 1;
+  request.reject(new Error(message));
+  return true;
+}
+
+function trackHeldProfileRecording(recorder: PendingProfileRecorder) {
+  profileRecordingCounters.requests += 1;
+  pendingProfileRecorders.push(recorder);
+  profileRecordingCounters.pending = pendingProfileRecorders.length;
+}
+
+function finishHeldProfileRecording(
+  recorder: PendingProfileRecorder,
+  outcome: "rejected" | "resolved",
+) {
+  const index = pendingProfileRecorders.indexOf(recorder);
+  if (index === -1) return;
+  pendingProfileRecorders.splice(index, 1);
+  profileRecordingCounters.pending = pendingProfileRecorders.length;
+  profileRecordingCounters[outcome] += 1;
+}
+
+function stopNextProfileRecording() {
+  const recorder = pendingProfileRecorders[0];
+  if (!recorder) return false;
+  recorder.stop();
+  return true;
+}
+
+function rejectNextProfileRecording() {
+  const recorder = pendingProfileRecorders[0];
+  if (!recorder) return false;
+  recorder.fail();
+  return true;
+}
+
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
 
   window.fetch = async (input, init) => {
     const profileScenario = getE2eProfileScenario();
-    if (!profileScenario) {
-      return nativeFetch(input, init);
-    }
-
     const request = input instanceof Request ? input : null;
     const source =
       typeof input === "string"
@@ -246,27 +479,39 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
-    const json = (payload: unknown) =>
-      Response.json(payload, {
-        headers: {
-          "Cache-Control": "no-store",
-          "X-Parrot-Mock-Api": "browser",
-        },
-      });
+    const profileOperation = profileOperationForRequest(url, method);
+
+    if (hasHeldE2eProfileOperations() && profileOperation) {
+      const signal = init?.signal ?? request?.signal ?? null;
+      return holdProfileOperation(
+        profileOperation,
+        signal,
+        defaultProfileOperationPayload(profileOperation, profileScenario),
+      );
+    }
+
+    if (!profileScenario) return nativeFetch(input, init);
 
     if (
       url.origin === window.location.origin &&
       url.pathname === "/api/learner-profile" &&
       method === "GET"
     ) {
-      return json(
+      const profileState =
         profileScenario === E2E_PROFILE_RESUME_SCENARIO
           ? E2E_VIEWPORT_RESUMED_PROFILE
           : profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
             ? window.location.pathname === "/profile"
               ? E2E_VIEWPORT_EDITOR_GATE
               : E2E_VIEWPORT_INCOMPLETE_PROFILE
-            : E2E_INCOMPLETE_PROFILE,
+            : E2E_INCOMPLETE_PROFILE;
+      return e2eJson(
+        hasHeldE2eProfileOperations() && profileState.question
+          ? {
+              ...profileState,
+              question: { ...profileState.question, required: false },
+            }
+          : profileState,
       );
     }
 
@@ -276,7 +521,7 @@ function installE2eProfileFetchMock() {
       url.pathname === "/api/profile" &&
       method === "GET"
     ) {
-      return json(E2E_VIEWPORT_EDITOR_STATE);
+      return e2eJson(E2E_VIEWPORT_EDITOR_STATE);
     }
 
     if (
@@ -284,13 +529,7 @@ function installE2eProfileFetchMock() {
       url.pathname === "/api/learner-profile/answer" &&
       method === "PUT"
     ) {
-      return json(
-        profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
-          ? E2E_VIEWPORT_PROFILE_AFTER_NAME
-          : profileScenario === E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO
-            ? E2E_COMPLETED_PROFILE_WITH_LONG_ACKNOWLEDGMENT
-            : E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT,
-      );
+      return e2eJson(answerSavePayload(profileScenario));
     }
 
     return nativeFetch(input, init);
@@ -324,6 +563,7 @@ class MockMediaRecorder {
   }
 
   ondataavailable: RecorderHandler<BlobEvent> = null;
+  onerror: RecorderHandler<Event> = null;
   onstop: RecorderHandler<Event> = null;
   state: RecordingState = "inactive";
 
@@ -334,15 +574,27 @@ class MockMediaRecorder {
 
   start() {
     this.state = "recording";
+    if (hasHeldE2eProfileOperations()) {
+      trackHeldProfileRecording(this);
+      return;
+    }
     window.setTimeout(() => {
       if (this.state === "recording") this.stop();
     }, MOCK_RECORDING_DELAY_MS);
+  }
+
+  fail() {
+    if (this.state === "inactive") return;
+    this.state = "inactive";
+    finishHeldProfileRecording(this, "rejected");
+    this.onerror?.(new Event("error"));
   }
 
   stop() {
     if (this.state === "inactive") return;
 
     this.state = "inactive";
+    finishHeldProfileRecording(this, "resolved");
     const data = new Blob([`parrot-e2e-audio:${getE2eScenario()}`], {
       type: "audio/webm",
     });
@@ -406,10 +658,95 @@ const e2eLessonMicrophone = {
   },
 };
 
+function operationSnapshot(counters: E2EOperationCounters) {
+  return { ...counters };
+}
+
+function microphoneSnapshot() {
+  return {
+    aborted: 0,
+    pending: e2eLessonMicrophone.pending,
+    rejected: e2eLessonMicrophone.rejected,
+    requests: e2eLessonMicrophone.requests,
+    resolved: e2eLessonMicrophone.resolved,
+  };
+}
+
+function resolveThinkingOperation() {
+  const operation = ([
+    "answerSave",
+    "questionSkip",
+    "skipForNow",
+  ] as E2EProfileOperation[]).find(
+    (candidate) => pendingProfileOperations[candidate].length > 0,
+  );
+  return operation ? resolveNextProfileOperation(operation) : false;
+}
+
+function rejectThinkingOperation() {
+  const operation = ([
+    "answerSave",
+    "questionSkip",
+    "skipForNow",
+  ] as E2EProfileOperation[]).find(
+    (candidate) => pendingProfileOperations[candidate].length > 0,
+  );
+  return operation ? rejectNextProfileOperation(operation) : false;
+}
+
+const e2eProfileOperations = {
+  reject(phase: E2EProfileOperationPhase) {
+    if (phase === "opening") return e2eLessonMicrophone.rejectNext();
+    if (phase === "listening") return rejectNextProfileRecording();
+    if (phase === "writing") {
+      return rejectNextProfileOperation("transcription");
+    }
+    return rejectThinkingOperation();
+  },
+  rejectNext(
+    operation: E2EProfileOperation,
+    message = "Held profile operation failed.",
+  ) {
+    return rejectNextProfileOperation(operation, message);
+  },
+  release(phase: E2EProfileOperationPhase) {
+    if (phase === "opening") return e2eLessonMicrophone.resolveNext();
+    if (phase === "listening") return stopNextProfileRecording();
+    if (phase === "writing") {
+      return resolveNextProfileOperation("transcription");
+    }
+    return resolveThinkingOperation();
+  },
+  resolveNext(operation: E2EProfileOperation, payload?: unknown) {
+    return resolveNextProfileOperation(operation, payload);
+  },
+  snapshot() {
+    return {
+      answerSave: operationSnapshot(profileOperationCounters.answerSave),
+      microphone: microphoneSnapshot(),
+      questionSkip: operationSnapshot(profileOperationCounters.questionSkip),
+      recording: {
+        ...operationSnapshot(profileRecordingCounters),
+        stoppedTracks: e2eLessonMicrophone.stoppedTracks,
+      },
+      skipForNow: operationSnapshot(profileOperationCounters.skipForNow),
+      transcription: operationSnapshot(profileOperationCounters.transcription),
+    };
+  },
+  stopRecording: stopNextProfileRecording,
+};
+
 Object.defineProperty(window, "__parrotE2eLessonMicrophone", {
   configurable: true,
   value: e2eLessonMicrophone,
 });
+
+if (hasHeldE2eProfileOperations()) {
+  Object.defineProperty(window, "__parrotE2eProfileOperations", {
+    configurable: true,
+    value: e2eProfileOperations,
+  });
+}
 
 Object.defineProperty(window, "Audio", {
   configurable: true,
