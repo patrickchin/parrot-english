@@ -118,9 +118,11 @@ type LearnerProfileGateViewProps = {
 function LearnerProfileSetupView({
   onSkip,
   onStart,
+  questionCount,
 }: {
   onSkip: () => void;
   onStart: () => void;
+  questionCount: number;
 }) {
   return (
     <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
@@ -135,15 +137,15 @@ function LearnerProfileSetupView({
         className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
         stepKey="setup"
       >
-        Help Peppa get to know you
+        Answer {questionCount} {questionCount === 1 ? "question" : "questions"}
       </LearnerProfileStepHeading>
       <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
-        Answer a few quick questions to personalize chats and lessons. You can
-        change these later in Learner profile.
+        We save your answers for chats and lessons. A grown-up can change your
+        answers.
       </p>
       <div className="grid justify-items-center gap-1 short-wide:col-start-2 short-wide:row-start-3 short-wide:flex short-wide:items-center short-wide:justify-self-start short-wide:gap-4">
         <ActionButton onClick={onStart} type="button">
-          Set up profile
+          Start questions
         </ActionButton>
         <TextButton onClick={onSkip} type="button">
           Skip for now
@@ -336,7 +338,11 @@ export function LearnerProfileGateView({
   if (fullData && !started) {
     return (
       <LearnerProfileScreen>
-        <LearnerProfileSetupView onSkip={onSkip} onStart={onStart} />
+        <LearnerProfileSetupView
+          onSkip={onSkip}
+          onStart={onStart}
+          questionCount={fullData.progress.total}
+        />
       </LearnerProfileScreen>
     );
   }
