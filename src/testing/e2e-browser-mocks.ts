@@ -5,7 +5,11 @@ const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
 const MOCK_RECORDING_DELAY_MS = 5000;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
-const E2E_MICROPHONE_SCENARIOS = new Set(["denied", "unsupported"]);
+const E2E_MICROPHONE_SCENARIOS = new Set([
+  "delayed",
+  "denied",
+  "unsupported",
+]);
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
 const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
@@ -294,13 +298,18 @@ class MockMediaRecorder {
   }
 }
 
-function createMockStream() {
+function createMockStream(onStop?: () => void) {
+  let stopped = false;
   const track = {
     enabled: true,
     kind: "audio",
     label: "Parrot E2E microphone",
     readyState: "live",
-    stop() {},
+    stop() {
+      if (stopped) return;
+      stopped = true;
+      onStop?.();
+    },
   } as MediaStreamTrack;
 
   return {
@@ -309,6 +318,45 @@ function createMockStream() {
     getTracks: () => [track],
   } as unknown as MediaStream;
 }
+
+type PendingMicrophoneRequest = {
+  reject: (reason?: unknown) => void;
+  resolve: (stream: MediaStream) => void;
+};
+
+const pendingMicrophoneRequests: PendingMicrophoneRequest[] = [];
+const e2eLessonMicrophone = {
+  pending: 0,
+  rejected: 0,
+  requests: 0,
+  resolved: 0,
+  stoppedTracks: 0,
+  rejectNext() {
+    const request = pendingMicrophoneRequests.shift();
+    if (!request) return false;
+    this.pending = pendingMicrophoneRequests.length;
+    this.rejected += 1;
+    request.reject(new DOMException("Permission denied", "NotAllowedError"));
+    return true;
+  },
+  resolveNext() {
+    const request = pendingMicrophoneRequests.shift();
+    if (!request) return false;
+    this.pending = pendingMicrophoneRequests.length;
+    this.resolved += 1;
+    request.resolve(
+      createMockStream(() => {
+        this.stoppedTracks += 1;
+      }),
+    );
+    return true;
+  },
+};
+
+Object.defineProperty(window, "__parrotE2eLessonMicrophone", {
+  configurable: true,
+  value: e2eLessonMicrophone,
+});
 
 Object.defineProperty(window, "Audio", {
   configurable: true,
@@ -329,6 +377,13 @@ Object.defineProperty(navigator, "mediaDevices", {
     getUserMedia: async () => {
       if (getE2eMicrophoneScenario() === "denied") {
         throw new DOMException("Permission denied", "NotAllowedError");
+      }
+      if (getE2eMicrophoneScenario() === "delayed") {
+        e2eLessonMicrophone.requests += 1;
+        return new Promise<MediaStream>((resolve, reject) => {
+          pendingMicrophoneRequests.push({ reject, resolve });
+          e2eLessonMicrophone.pending = pendingMicrophoneRequests.length;
+        });
       }
       return createMockStream();
     },
