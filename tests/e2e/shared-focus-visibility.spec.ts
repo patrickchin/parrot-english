@@ -1411,6 +1411,9 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/");
+  await expect(
+    page.getByRole("heading", { exact: true, level: 1, name: "Tap a picture." }),
+  ).toBeFocused();
   await page.getByRole("button", { name: "Account for Mia" }).click();
   const profile = page.getByRole("menuitem", { name: "Learner profile" });
   await expect(profile).toBeFocused();

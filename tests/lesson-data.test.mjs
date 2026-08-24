@@ -173,7 +173,9 @@ describe("lesson data contract", () => {
 
     assert.equal(characters.some((character) => character.id === "user"), false);
     assert.equal(
-      existsSync(new URL("../publichttps://media.parrotbook.com/assets/v2/characters/user/", import.meta.url)),
+      existsSync(
+        new URL("../public/assets/characters/user/", import.meta.url),
+      ),
       false
     );
 

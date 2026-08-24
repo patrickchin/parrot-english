@@ -939,6 +939,9 @@ test("forced colors keeps both account exit actions visibly focused", async ({
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize(viewport);
   await page.goto("/lessons");
+  await expect(
+    page.getByRole("heading", { exact: true, level: 1, name: "Pick a lesson" }),
+  ).toBeFocused();
 
   const trigger = page.getByRole("button", { name: "Account for Mia" });
   await trigger.press("ArrowDown");

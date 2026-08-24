@@ -190,6 +190,16 @@ async function expectPointerStateContrast({
     `${name} hover contrast (${hover.ratio.toFixed(3)}:1; ${hover.filter}; opacity ${hover.opacity})`,
   ).toBeGreaterThanOrEqual(minimum);
 
+  await page.evaluate(() => {
+    document.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },
+      { capture: true, once: true },
+    );
+  });
   await page.mouse.down();
   try {
     const active = await renderedControlContrast(visual);
@@ -198,8 +208,8 @@ async function expectPointerStateContrast({
       `${name} active contrast (${active.ratio.toFixed(3)}:1; ${active.filter}; opacity ${active.opacity})`,
     ).toBeGreaterThanOrEqual(minimum);
   } finally {
-    await page.mouse.move(0, 0);
     await page.mouse.up();
+    await page.mouse.move(0, 0);
   }
 
   await interaction.focus();

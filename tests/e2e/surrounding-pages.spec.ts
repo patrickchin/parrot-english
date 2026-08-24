@@ -127,7 +127,9 @@ test("ready-made lessons show distinct story-specific artwork", async ({
           new URL(element.currentSrc).pathname,
         ),
     )
-    .toMatch(/\/assets\/lesson-covers\/01-peppas-high-ball-(384|768)\.webp$/);
+    .toMatch(
+      /\/assets\/v2\/lesson-covers\/01-peppas-high-ball-(384|768)\.webp$/,
+    );
 });
 
 test("every ready-made lesson exposes one canonical start link", async ({

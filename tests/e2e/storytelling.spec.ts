@@ -384,7 +384,7 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
         new URL(element.currentSrc).pathname,
       ),
     )
-    .toMatch(/\/assets\/stories\/the-red-ball-cover-(384|768)\.webp$/);
+    .toMatch(/\/assets\/v2\/stories\/the-red-ball-cover-(384|768)\.webp$/);
   await expect(
     panel.getByRole("img", {
       name: "Three simple hats in red, blue, and yellow",

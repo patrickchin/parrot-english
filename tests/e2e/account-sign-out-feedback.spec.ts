@@ -303,27 +303,12 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
   });
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
-  await page.evaluate(() => {
-    class HeldAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-
-      pause() {}
-
-      play() {
-        return Promise.resolve();
-      }
-    }
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: HeldAudio,
-    });
-  });
   await page.getByRole("button", { name: "Start lesson" }).click();
+  const speech = page.getByRole("region", { name: "Your turn" });
+  await expect(speech).toContainText("It is up high!");
   await waitForVisualAssets(page);
 
   const hud = page.getByRole("region", { name: "Lesson progress" });
-  const speech = page.getByRole("status").filter({ hasText: "Look! My ball!" });
   const [hudBefore, speechBefore] = await Promise.all([
     hud.boundingBox(),
     speech.boundingBox(),
@@ -409,28 +394,13 @@ test("sign-out recovery keeps text-spacing focus clear of the lesson HUD", async
   await page.route("**/api/auth/sign-out", (route) => route.abort("failed"));
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
-  await page.evaluate(() => {
-    class HeldAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-
-      pause() {}
-
-      play() {
-        return Promise.resolve();
-      }
-    }
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: HeldAudio,
-    });
-  });
   await page.getByRole("button", { name: "Start lesson" }).click();
+  const speech = page.getByRole("region", { name: "Your turn" });
+  await expect(speech).toContainText("It is up high!");
   await waitForVisualAssets(page);
   await applyTextSpacing(page);
 
   const hud = page.getByRole("region", { name: "Lesson progress" });
-  const speech = page.getByRole("status").filter({ hasText: "Look! My ball!" });
   const account = page.getByRole("button", { name: "Account for Mia" });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
