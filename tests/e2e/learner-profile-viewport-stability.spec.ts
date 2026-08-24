@@ -115,7 +115,7 @@ function expandRect(box: Rect, amount: number): Rect {
 }
 
 async function expectAccountClearOf(page: Page, targets: Locator[]) {
-  const account = page.getByRole("button", { name: /^Account for / });
+  const account = page.getByRole("button", { name: /^Profile for / });
   await expect(account).toBeVisible();
   const accountBox = await rect(account);
 
@@ -135,7 +135,7 @@ async function expectAccountClearOf(page: Page, targets: Locator[]) {
 }
 
 async function expectReplayFocusPaintClear(page: Page, target: Locator) {
-  const account = page.getByRole("button", { name: /^Account for / });
+  const account = page.getByRole("button", { name: /^Profile for / });
   const progress = page.getByText(/^Question \d+ of \d+$/);
   const indicator = await target.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -175,7 +175,7 @@ async function expectReplayFocusPaintClear(page: Page, target: Locator) {
 }
 
 async function expectAccountFocusPaintClearOf(page: Page, targets: Locator[]) {
-  const account = page.getByRole("button", { name: /^Account for / });
+  const account = page.getByRole("button", { name: /^Profile for / });
   const indicator = await account.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -760,7 +760,9 @@ for (const viewport of targetViewports) {
       token: `${viewport.width}-acknowledgment`,
     });
 
-    await page.goto("/profile?parrotE2eProfile=viewport-stability");
+    await page.goto(
+      "/profile?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
+    );
     const editorHeading = page.getByRole("heading", {
       name: "Learner profile",
     });
@@ -780,7 +782,7 @@ for (const viewport of targetViewports) {
   });
 }
 
-test("profile Replay and Account remain independently operable", async ({
+test("profile Replay and learner mode switch remain independently operable", async ({
   page,
 }) => {
   const viewport = targetViewports[0];
@@ -819,17 +821,18 @@ test("profile Replay and Account remain independently operable", async ({
   await page.keyboard.press("Enter");
   await expect.poll(replayCount).toBe(2);
 
-  const account = page.getByRole("button", { name: /^Account for / });
+  const account = page.getByRole("button", { name: /^Profile for / });
   await account.click();
-  const menu = page.getByRole("menu", { name: "Account menu" });
-  await expect(menu).toBeVisible();
-  await expect(menu.getByRole("menuitem").first()).toBeFocused();
+  const switcher = page.getByRole("group", { name: "Choose profile mode" });
+  await expect(switcher).toBeVisible();
+  await expect(switcher.getByRole("button", { name: "Guardian" })).toBeVisible();
+  await expect(account).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(menu).toBeHidden();
+  await expect(switcher).toBeHidden();
   await expect(account).toBeFocused();
 });
 
-test("a fallback email cannot cover profile Replay or progress", async ({
+test("a fallback account email stays hidden from learner profile controls", async ({
   page,
 }) => {
   await installFallbackAccountIdentity(page);
@@ -855,8 +858,9 @@ test("a fallback email cannot cover profile Replay or progress", async ({
     const progress = page.getByText("Question 1 of 6", { exact: true });
     const account = page.getByRole("button", {
       exact: true,
-      name: `Account for ${longAccountEmail}`,
+      name: "Profile for Learner, learner mode",
     });
+    await expect(page.getByText(longAccountEmail, { exact: true })).toHaveCount(0);
 
     await expect(replay).toBeDisabled();
     await expect(replay).toBeEnabled();

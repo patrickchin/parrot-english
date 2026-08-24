@@ -11,23 +11,16 @@ async function expectNoHorizontalOverflow(page: Page) {
     .toBe(true);
 }
 
+function guardianPath(path: string) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}parrotE2eGuardian=guardian`;
+}
+
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
   expect(box).not.toBeNull();
   return box!;
-}
-
-function boxesOverlap(
-  first: { height: number; width: number; x: number; y: number },
-  second: { height: number; width: number; x: number; y: number },
-) {
-  return !(
-    first.x + first.width <= second.x ||
-    second.x + second.width <= first.x ||
-    first.y + first.height <= second.y ||
-    second.y + second.height <= first.y
-  );
 }
 
 async function expectContained(parent: Locator, child: Locator) {
@@ -246,14 +239,12 @@ for (const viewport of [
     await expect
       .poll(() => main.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await expect(
-      page.getByRole("heading", { name: "Grown-up tools" }),
-    ).toBeVisible();
+    await expect(page.getByText("Grown-up tools", { exact: true })).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Create custom lesson" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Account for Mia" }),
+      page.getByRole("button", { name: "Profile for Mia, learner mode" }),
     ).toBeVisible();
   });
 }
@@ -388,40 +379,31 @@ for (const viewport of [
 
     const main = page.getByRole("main");
     await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
-    const panel = page.getByRole("complementary", {
-      name: "Grown-up tools",
-    });
-    const heading = panel.getByRole("heading", { name: "Grown-up tools" });
+    const panel = page.getByRole("region", { name: "Saved lesson status" });
     const status = panel.getByRole("status");
     const retry = panel.getByRole("button", { name: "Try again" });
-    const create = panel.getByRole("link", { name: "Create custom lesson" });
 
     await expect(status).toHaveText("We couldn't load My Lessons.");
     await expect(status).toHaveAttribute("aria-live", "polite");
     await expect(status).toHaveAttribute("aria-atomic", "true");
     await expect(retry).toBeVisible();
-    await expect(create).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Create custom lesson" }),
+    ).toHaveCount(0);
     await expect(
       page.getByText(
         /Cannot read properties|TypeError|invalid_response|database_unavailable|D1 binding/i,
       ),
     ).toHaveCount(0);
     const panelBox = await visibleBox(panel);
-    const headingBox = await visibleBox(heading);
     const statusBox = await visibleBox(status);
     const retryBox = await visibleBox(retry);
-    const createBox = await visibleBox(create);
-    expect(headingBox.height).toBeLessThanOrEqual(32);
-    expect(statusBox.width).toBeGreaterThanOrEqual(200);
+    expect(statusBox.width).toBeGreaterThanOrEqual(44);
     expect(retryBox.height).toBeGreaterThanOrEqual(44);
     expect(retryBox.width).toBeGreaterThanOrEqual(44);
-    expect(createBox.height).toBeGreaterThanOrEqual(44);
-    expect(createBox.width).toBeGreaterThanOrEqual(44);
-    expect(boxesOverlap(retryBox, createBox)).toBe(false);
     expect(panelBox.y).toBeGreaterThanOrEqual(0);
     expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
     await expectContained(panel, retry);
-    await expectContained(panel, create);
     await expectNoHorizontalOverflow(page);
     expect(pageErrors).toEqual([]);
 
@@ -482,17 +464,13 @@ for (const viewport of [
     expect(attempts).toBe(attemptsBeforeRetry + 1);
     await expect(page).toHaveURL("/lessons");
     expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-    expect(
-      boxesOverlap(await visibleBox(retry), await visibleBox(create)),
-    ).toBe(false);
     await expectContained(panel, retry);
-    await expectContained(panel, create);
     await expectNoHorizontalOverflow(page);
 
     releaseRetry();
     await expect(status).toHaveText("No made-for-you lessons yet.");
     await expect(retry).toHaveCount(0);
-    await expect(heading).toBeFocused();
+    await expect(status).toBeFocused();
     await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
     expect(pageErrors).toEqual([]);
   });
@@ -550,15 +528,15 @@ test("My Lessons keeps recovery stable across a failed retry and populated succe
   const readyMadeLessons = page
     .getByRole("region", { name: "Lessons" })
     .getByRole("article");
-  const panel = page.getByRole("complementary", { name: "Grown-up tools" });
-  const heading = panel.getByRole("heading", { name: "Grown-up tools" });
+  const panel = page.getByRole("region", { name: "Saved lesson status" });
   const status = panel.getByRole("status");
   const retry = panel.getByRole("button", { name: "Try again" });
-  const create = panel.getByRole("link", { name: "Create custom lesson" });
   await expect(status).toHaveText("We couldn't load My Lessons.");
   await panel.scrollIntoViewIfNeeded();
   await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-  await expect(create).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Create custom lesson" }),
+  ).toHaveCount(0);
 
   const attemptsBeforeFailedRetry = attempts;
   phase = "retry-failure";
@@ -575,7 +553,6 @@ test("My Lessons keeps recovery stable across a failed retry and populated succe
   await expect(retry).not.toHaveAttribute("aria-disabled", "true");
   await expect(retry).toBeFocused();
   await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-  await expect(create).toBeVisible();
   await expect(
     page.getByText(/database_unavailable|D1 binding|503|TypeError/i),
   ).toHaveCount(0);
@@ -590,9 +567,8 @@ test("My Lessons keeps recovery stable across a failed retry and populated succe
     page.getByRole("link", { name: "Start lesson: Recovered Garden" }),
   ).toBeVisible();
   expect(attempts).toBe(attemptsBeforeSuccess + 1);
-  await expect(heading).toBeFocused();
+  await expect(status).toBeFocused();
   await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-  await expect(create).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 
@@ -672,11 +648,13 @@ test("an incomplete learner sees a skippable profile setup before the requested 
   ).toBeVisible();
 });
 
-test("learner profile has a clear home exit and distinguishes setup from chat", async ({
+test("guardian learner profile has a clear dashboard exit and distinguishes setup from chat", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 568, width: 320 });
-  await page.goto("/profile");
+  await page.goto(
+    guardianPath("/profile?returnTo=%2Fguardian"),
+  );
 
   await expect(
     page.getByRole("heading", { name: "Learner profile" }),
@@ -686,19 +664,26 @@ test("learner profile has a clear home exit and distinguishes setup from chat", 
   ).toBeVisible();
   await expect(page.getByText(/normal chat/i)).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/guardian");
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
 });
 
-test("learner profile returns to the page that opened it", async ({ page }) => {
-  await page.goto("/lessons");
-  await page.getByRole("button", { name: "Account for Mia" }).click();
+test("guardian learner profile returns to the manager that opened it", async ({ page }) => {
+  await page.goto(guardianPath("/guardian/lessons"));
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
   await page.getByRole("menuitem", { name: "Learner profile" }).click();
 
-  await expect(page).toHaveURL("/profile?returnTo=%2Flessons");
+  await expect(page).toHaveURL(
+    "/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
+  );
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/lessons");
+  await expect(page).toHaveURL(guardianPath("/guardian/lessons"));
   await expect(
-    page.getByRole("heading", { exact: true, name: "Pick a lesson" }),
+    page.getByRole("heading", { exact: true, name: "My Lessons" }),
   ).toBeVisible();
 });
 
@@ -727,15 +712,17 @@ test("account menu separates learner profile from account sign-out", async ({
     }
     await route.continue();
   });
-  await page.goto("/");
+  await page.goto(guardianPath("/guardian"));
 
-  await page.getByRole("button", { name: "Account for Mia" }).click();
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem", { name: "Learner profile" })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
 
-  await expect(page).toHaveURL("/login?returnTo=%2F");
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian/);
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeFocused();
 });
 
@@ -766,9 +753,11 @@ test("account deletion requires the password and returns to sign in only after p
     }
     await route.continue();
   });
-  await page.goto("/");
+  await page.goto(guardianPath("/guardian"));
 
-  await page.getByRole("button", { name: "Account for Mia" }).click();
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
   await page.getByRole("menuitem", { name: "Delete account" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
@@ -780,7 +769,7 @@ test("account deletion requires the password and returns to sign in only after p
   await expect(confirm).toBeEnabled();
   await confirm.click();
 
-  await expect(page).toHaveURL("/login?returnTo=%2F");
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian/);
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeFocused();
   expect(deletePayload).toEqual({ password: "parent-password" });
 });

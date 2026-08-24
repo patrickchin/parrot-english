@@ -162,7 +162,7 @@ export function GuardianUnlockDialog({
       <section
         aria-label="Unlock guardian mode"
         aria-modal="true"
-        className="grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+        className="grid max-h-[calc(100dvh-2rem)] w-full max-w-lg gap-5 overflow-y-auto rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}

@@ -11,6 +11,7 @@ Browser
   -> Cloudflare Worker
        -> /api/auth/* -> Better Auth -> Drizzle -> D1
        -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
+       -> /api/guardian-access -> Better Auth password check -> D1
        -> /api/conversations/* -> LiveKit -> D1
        -> /api/lessons/my/* -> OpenAI -> D1
        -> /api/evaluate-speech -> Groq
@@ -27,36 +28,59 @@ prototype build entry in the shipped product.
 - `src/app/app-routes.ts` owns canonical paths, safe return targets, and route
   decisions.
 - `src/app/HomeMenu.tsx` exposes the three learner activities.
-- `src/auth` owns Better Auth session and account UI.
+- `src/auth` owns the Better Auth session, account UI, guardian-access state,
+  password unlock, fixed expiry, and learner/guardian route boundaries.
 - `src/learner-profile` owns onboarding and profile editing.
 - `src/conversation` owns the learner-controlled LiveKit conversation surface.
-- `src/lessons` owns the lesson catalog, player UI, custom lesson creation, and
-  editing.
-- `src/stories` owns the levelled story shelf and reader.
+- `src/lessons` owns the learner catalog/player and guardian-only custom lesson
+  manager, creation, and editing.
+- `src/stories` owns the stored-level learner shelf/reader and guardian-only
+  story settings and personalized-art controls.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
-Top-level navigation stays small. Custom lesson creation is reachable from
-`/lessons`, not the learner home. Retired experiment routes resolve through the
-wildcard home redirect and are not accepted as authentication return targets.
+Top-level learner navigation stays small. Management starts at `/guardian`,
+with custom lesson authoring at `/guardian/lessons` and story controls at
+`/guardian/stories`. Retired experiment routes resolve through the wildcard
+home redirect and are not accepted as authentication return targets.
 
 ## Worker Responsibilities
 
 `worker/index.ts` authenticates protected requests, applies endpoint-specific
 rate limits, and delegates to focused handlers. It exposes authentication,
-learner profile, conversations, My Lessons, build information, and speech
-evaluation. Static assets are the final fallback.
+guardian access, learner profile, conversations, My Lessons, story art, build
+information, and speech evaluation. Static assets are the final fallback.
+
+`GET`, `POST`, and `DELETE /api/guardian-access` read, unlock, and lock the
+current Better Auth session. Unlock verifies the current account password on
+the server, is rate-limited, writes a fixed 15-minute expiry, and returns
+`Cache-Control: no-store`. Expired rows are treated as absent and cleaned up
+lazily. No password, guardian token, or mode history is stored.
+
+One Worker dispatch guard returns `403 { "error": "guardian_required" }`
+before profile reads/updates, profile preference changes, custom-lesson
+creation/generation/updates, and personalized-art mutations when the current
+session lacks a live unlock. Profile-edit conversation start/review/finalize
+uses the same check inside the purpose-aware conversation handler. Owner
+scoping, request validation, rate limits, and art consent still run after the
+mode check; learner-safe reads remain available.
 
 The Worker and browser share the Drizzle schema in `src/db/schema.ts`. Better
-Auth and product data use one D1 database, while each product handler enforces
-owner scoping at its boundary.
+Auth and product data use one D1 database. `guardian_session_unlock` is keyed
+to the Better Auth session and stores `unlocked_at` plus indexed `expires_at`;
+session deletion cascades to the unlock. `learner_profile.story_level` stores
+one of the four supported IDs and defaults to `first-words` for existing and
+new learners.
 
 ## Durable and Transient State
 
 URLs are authoritative for durable screens, lesson scenes, story pages, and
-story shelf levels. Lesson playback phase, recording, evaluation, and current
-step are transient React state. Route changes invalidate pending audio and
-recording work before a new scene is selected.
+guardian management. The learner story shelf URL is canonicalized to the
+profile's stored `story_level`. Guardian mode is server state for the current
+auth session, not a client-only role or long-lived account permission. Lesson
+playback phase, recording, evaluation, and current step are transient React
+state. Route changes invalidate pending audio and recording work before a new
+scene is selected.
 
 ```text
 /
@@ -64,11 +88,14 @@ recording work before a new scene is selected.
 ├── /lessons
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/:lessonId/scenes/:sceneNumber
-│   ├── /lessons/my/create
-│   └── /lessons/my/:lessonId/edit
+│   ├── /lessons/my/create                       (guardian)
+│   └── /lessons/my/:lessonId/edit               (guardian)
 ├── /stories
 │   └── /stories/:storyId/pages/:pageNumber
-├── /profile
+├── /guardian
+│   ├── /guardian/lessons
+│   └── /guardian/stories
+├── /profile                         (guardian after initial setup)
 ├── /profile/setup
 └── /login
 ```
@@ -114,4 +141,7 @@ npm run test:browser
 
 Responsive browser coverage includes the home, headers, lesson catalog, lesson
 player, story shelf, story reader, conversation surface, custom lesson flows,
-and authentication/profile boundaries from 280 px through desktop widths.
+authentication/profile boundaries, learner/guardian switching, unlock errors,
+lock errors, refresh persistence, expiry, and protected deep links from 280 px
+through desktop widths. Guardian/learner responsive gates explicitly cover
+280x568, 320x568, 390x844, 640x360, and 1440x900.

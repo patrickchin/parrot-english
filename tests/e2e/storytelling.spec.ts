@@ -347,7 +347,7 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the shelf shows beginner pictures before grown-up level choices", async ({
+test("the learner shelf shows only the saved beginner story level", async ({
   page,
 }) => {
   await page.goto("/stories");
@@ -356,13 +356,12 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
     page.getByRole("heading", { exact: true, name: "Pick a story" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  let panel = shelf.getByRole("region", { name: /Start here stories/ });
+  const panel = shelf.getByRole("region", { name: /Start here stories/ });
 
-  const grownUpOptions = shelf.getByLabel("Grown-up options");
-  const levelTabs = shelf.getByRole("tablist", {
-    name: "Pick a story group",
-  });
-  await expect(levelTabs).toBeHidden();
+  await expect(shelf.getByRole("tablist")).toHaveCount(0);
+  await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Generate story art/ })).toHaveCount(0);
+  await expect(page.getByLabel("Upload learner photo")).toHaveCount(0);
   await expect(panel.getByRole("article")).toHaveCount(5);
   await expect(panel.getByRole("link", { name: /^Listen to story:/ })).toHaveCount(5);
 
@@ -403,113 +402,45 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
     ),
   ).toHaveCount(0);
 
-  await grownUpOptions.click();
-  const firstWordsTab = levelTabs.getByRole("tab", { name: /Start here/ });
-  await expect(firstWordsTab).toHaveAttribute("aria-selected", "true");
-  await expect(firstWordsTab).toHaveAttribute("tabindex", "0");
-  await firstWordsTab.focus();
-  await firstWordsTab.press("ArrowRight");
-  const patternsTab = levelTabs.getByRole("tab", {
-    name: /Say it again/,
-  });
-  await expect(patternsTab).toBeFocused();
-  await expect(patternsTab).toHaveAttribute("aria-selected", "true");
-  await expect(page).toHaveURL(/\/stories\?level=repeating-patterns$/);
-  panel = shelf.getByRole("region", { name: /Say it again stories/ });
-  await expect(panel.getByRole("article")).toHaveCount(5);
-  await expect(
-    panel.getByRole("link", { name: "Listen to story: Boots in the Rain" }),
-  ).toBeVisible();
-
-  for (const level of [
-    {
-      id: "tiny-stories",
-      name: "Little stories",
-      story: "The Lantern Trail",
-    },
-    { id: "early-a1", name: "Big adventures", story: "The Moon Bus" },
-  ]) {
-    await levelTabs.getByRole("tab", { name: new RegExp(level.name) }).click();
-    await expect(page).toHaveURL(new RegExp(`\\?level=${level.id}$`));
-    panel = shelf.getByRole("region", {
-      name: new RegExp(`${level.name} stories`),
-    });
-    await expect(panel.getByRole("article")).toHaveCount(5);
-    await expect(
-      panel.getByRole("link", { name: `Listen to story: ${level.story}` }),
-    ).toBeVisible();
-  }
-
-  await expect(levelTabs.getByRole("tab")).toHaveCount(4);
-
   await page.goto("/stories?level=not-a-level");
   await expect(page).toHaveURL(/\/stories$/);
-  await shelf.getByLabel("Grown-up options").click();
-  await expect(
-    shelf.getByRole("tab", { name: /Start here/ }),
-  ).toHaveAttribute("aria-selected", "true");
+  await expect(shelf.getByRole("region", { name: /Start here stories/ })).toBeVisible();
 });
 
-test("returning from a story restores its shelf level", async ({ page }) => {
+test("a stale shelf level query returns to the learner's saved level", async ({ page }) => {
   await page.goto("/stories?level=tiny-stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  await expect(page).toHaveURL("/stories");
   await shelf
-    .getByRole("link", { name: "Listen to story: The Lantern Trail" })
+    .getByRole("link", { name: "Listen to story: The Red Ball" })
     .click();
 
   const backToStories = page.getByRole("link", { name: "Back to stories" });
   await expect(backToStories).toHaveAttribute(
     "href",
-    "/stories?level=tiny-stories",
+    "/stories",
   );
   await backToStories.click();
-  await expect(page).toHaveURL(/\/stories\?level=tiny-stories$/);
+  await expect(page).toHaveURL("/stories");
   await expect(
-    page.getByRole("tab", { name: /Little stories/ }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(
-    page.getByRole("region", { name: /Little stories/ }),
-  ).toContainText("The Lantern Trail");
+    page.getByRole("region", { name: /Start here stories/ }),
+  ).toContainText("The Red Ball");
 });
 
-test("a phone puts story pictures before secondary level choices", async ({ page }) => {
+test("a phone keeps learner story cards contained without management controls", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const levelTabs = shelf.getByRole("tablist", { name: "Pick a story group" });
   const redBall = shelf.getByRole("link", {
     name: "Listen to story: The Red Ball",
   });
-  const grownUpOptions = shelf.getByLabel("Grown-up options");
   await expect(redBall).toBeVisible();
-  await expect(levelTabs).toBeHidden();
-  const [storyBox, optionsBox] = await Promise.all([
-    redBall.boundingBox(),
-    grownUpOptions.boundingBox(),
-  ]);
-  expect(storyBox).not.toBeNull();
-  expect(optionsBox).not.toBeNull();
-  expect(storyBox!.y).toBeLessThan(optionsBox!.y);
-
-  await grownUpOptions.click();
-  await expect(levelTabs).toBeVisible();
-  await expect(levelTabs.getByRole("tab")).toHaveCount(4);
-  await expect(
-    levelTabs.getByRole("tab", { name: "Start here" }),
-  ).toHaveAttribute("aria-selected", "true");
-
-  await levelTabs.getByRole("tab", { name: "Big adventures" }).click();
-  await expect(page).toHaveURL(/\/stories\?level=early-a1$/);
-  await expect(
-    shelf.getByRole("region", { name: "Big adventures stories" }),
-  ).toContainText("The Moon Bus");
-
-  await page.reload();
-  await expect(
-    levelTabs.getByRole("tab", { name: "Big adventures" }),
-  ).toHaveAttribute("aria-selected", "true");
+  await expect(shelf.getByRole("tablist")).toHaveCount(0);
+  await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
+  await expectInsideViewportHorizontally(redBall, page);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("a script-only story has descriptive art, read-aloud, and obvious page controls", async ({
@@ -1289,13 +1220,8 @@ for (const viewport of viewports) {
       }).first(),
     ).toBeHidden();
     await expectInsideViewportHorizontally(shelf, page);
-    const grownUpOptions = shelf.getByLabel("Grown-up options");
-    await expectInsideViewportHorizontally(grownUpOptions, page);
-    await grownUpOptions.click();
-    await expectInsideViewportHorizontally(
-      shelf.getByRole("tablist", { name: "Pick a story group" }),
-      page,
-    );
+    await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
+    await expect(shelf.getByRole("tablist")).toHaveCount(0);
     await expectInsideViewportHorizontally(readStory, page);
     await expectNoHorizontalOverflow(page);
 
