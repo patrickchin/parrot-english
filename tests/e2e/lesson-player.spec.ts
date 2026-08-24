@@ -36,6 +36,28 @@ const boxedLandscapeViewports = [
   { name: "short tablet", width: 768, height: 600 },
 ];
 
+const boxedResponsiveViewports = [
+  { name: "ultra-narrow phone", width: 280, height: 568 },
+  { name: "regular phone", width: 390, height: 844 },
+  { name: "compact portrait window", width: 430, height: 600 },
+  { name: "small phone landscape", width: 640, height: 360 },
+  { name: "large phone landscape", width: 768, height: 360 },
+  { name: "portrait tablet", width: 768, height: 1024 },
+  { name: "small desktop", width: 1024, height: 768 },
+  { name: "compact laptop", width: 1280, height: 720 },
+  { name: "regular laptop", width: 1366, height: 768 },
+  { name: "large laptop", width: 1440, height: 900 },
+  { name: "full HD desktop", width: 1920, height: 1080 },
+  { name: "large desktop", width: 2560, height: 1440 },
+];
+
+function usesBoxedSideBySideLayout(viewport: {
+  width: number;
+  height: number;
+}) {
+  return viewport.width >= 560 && viewport.width > viewport.height;
+}
+
 function usesLayeredLearningPane(viewport: { width: number; height: number }) {
   return (
     (viewport.width >= 560 && viewport.height <= 420) ||
@@ -434,6 +456,31 @@ async function installAudioDelay(
     },
     { defaultDelay: delayMs, held: heldAudio },
   );
+}
+
+async function installAudioFailure(page: Page) {
+  await page
+    .getByRole("button", { name: /Start lesson|Replay lesson/ })
+    .waitFor();
+  await page.evaluate(() => {
+    class FailedAudio {
+      onended: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      constructor(readonly src = "") {}
+
+      pause() {}
+
+      async play() {
+        throw new Error("Audio playback failed.");
+      }
+    }
+
+    Object.defineProperty(window, "Audio", {
+      configurable: true,
+      value: FailedAudio,
+    });
+  });
 }
 
 async function installDeviceSpeechDelay(page: Page, delayMs = 5_000) {
@@ -928,6 +975,104 @@ for (const viewport of boxedLandscapeViewports) {
   });
 }
 
+for (const viewport of boxedResponsiveViewports) {
+  test(`boxed artwork stays large and clear while listening on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(lessonPath);
+    await installAudioDelay(page, 5_000);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status").filter({
+      hasText: "Look! My ball!",
+    });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+
+    const artworkBox = await expectInsideViewport(artwork, viewport);
+    await expectInsideViewport(hud, viewport);
+    await expectInsideViewport(speech, viewport);
+    await expectInsideViewport(controls, viewport);
+    await expectNoOverlap(artwork, hud);
+    await expectNoOverlap(artwork, speech);
+    await expectNoOverlap(artwork, controls);
+    await expectNoOverlap(speech, controls);
+
+    if (usesBoxedSideBySideLayout(viewport)) {
+      await expectLeftOf(artwork, hud);
+      await expectLeftOf(artwork, speech);
+      await expectLeftOf(artwork, controls);
+      if (viewport.height > 620) {
+        expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width * 0.55);
+      }
+    } else {
+      await expectBefore(hud, artwork);
+      await expectBefore(artwork, speech);
+      await expectBefore(speech, controls);
+      expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width - 24);
+    }
+
+    expect(artworkBox.width / artworkBox.height).toBeCloseTo(16 / 9, 1);
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "compact portrait window", width: 430, height: 600 },
+  { name: "small desktop", width: 1024, height: 768 },
+  { name: "compact laptop", width: 1280, height: 720 },
+  { name: "large laptop", width: 1440, height: 900 },
+  { name: "large desktop", width: 2560, height: 1440 },
+]) {
+  test(`boxed artwork stays clear through learner and feedback states on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(lessonPath);
+    await installAudioDelay(page, 25, {
+      delayMs: 5_000,
+      source: "feedback-",
+    });
+    await page.getByRole("button", { name: "Start lesson" }).click();
+    await waitForLearnerTurn(page);
+
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const prompt = page.getByRole("region", { name: "Your turn" });
+    const speakingControls = page.getByRole("navigation", {
+      name: "Speaking controls",
+    });
+
+    await expectInsideViewport(artwork, viewport);
+    await expectInsideViewport(prompt, viewport);
+    await expectInsideViewport(speakingControls, viewport);
+    await expectNoOverlap(artwork, hud);
+    await expectNoOverlap(artwork, prompt);
+    await expectNoOverlap(artwork, speakingControls);
+    await expectNoOverlap(prompt, speakingControls);
+
+    const microphone = speakingControls.getByRole("button").first();
+    await microphone.click();
+    await microphone.click();
+
+    const feedback = page.getByRole("region", { name: "Speaking feedback" });
+    const playbackControls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    await expect(feedback).toBeVisible();
+    await expectInsideViewport(feedback, viewport);
+    await expectInsideViewport(playbackControls, viewport);
+    await expectNoOverlap(artwork, feedback);
+    await expectNoOverlap(artwork, playbackControls);
+    await expectNoOverlap(feedback, playbackControls);
+    await expectNoPageOverflow(page);
+  });
+}
+
 for (const fixture of [
   {
     characters: ["dolly"] as Array<"dolly" | "peppa">,
@@ -1069,7 +1214,10 @@ for (const viewport of [
     const peppa = page.getByRole("img", { name: /^Peppa / });
     const dolly = page.getByRole("img", { name: /^Dolly / });
 
-    await expectInsideViewport(hud, viewport);
+    const hudBox = await expectInsideViewport(hud, viewport);
+    if (viewport.height === 600) {
+      expect(hudBox.height).toBeGreaterThanOrEqual(68);
+    }
     await expectInsideViewport(speech, viewport);
     await expectInsideViewport(controls, viewport);
     await expectBefore(hud, speech);
@@ -1880,6 +2028,9 @@ test("a denied microphone offers calm unscored practice on a narrow phone", asyn
   const microphone = await waitForLearnerTurn(page);
   await microphone.click();
 
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  const hud = page.getByRole("region", { name: "Lesson progress" });
+  const prompt = page.getByRole("region", { name: "Your turn" });
   const help = page.getByRole("region", { name: "Speaking help" });
   const controls = page.getByRole("navigation", {
     name: "Speaking controls",
@@ -1896,7 +2047,18 @@ test("a denied microphone offers calm unscored practice on a narrow phone", asyn
   await expect(page.getByText(/allow microphone access/i)).toHaveCount(0);
   await expect(done).toContainText("Done");
   await expect(retry).toContainText("Try mic");
+  await expectInsideViewport(artwork, viewport);
+  await expectInsideViewport(hud, viewport);
+  await expectInsideViewport(prompt, viewport);
   await expectInsideViewport(help, viewport);
+  for (const surface of [hud, prompt, help, controls]) {
+    await expectNoOverlap(artwork, surface);
+  }
+  for (const [index, surface] of [hud, prompt, help, controls].entries()) {
+    for (const nextSurface of [hud, prompt, help, controls].slice(index + 1)) {
+      await expectNoOverlap(surface, nextSurface);
+    }
+  }
   const [doneBox, retryBox] = await Promise.all([
     expectInsideViewport(done, viewport),
     expectInsideViewport(retry, viewport),
@@ -1913,6 +2075,47 @@ test("a denied microphone offers calm unscored practice on a narrow phone", asyn
   await expect(
     page.getByRole("region", { name: "Speaking feedback" }),
   ).toBeHidden();
+});
+
+test("a boxed sound error stays clear in short landscape", async ({ page }) => {
+  const viewport = { width: 640, height: 360 };
+  await page.setViewportSize(viewport);
+  await page.goto(lessonPath);
+  await installAudioFailure(page);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  const hud = page.getByRole("region", { name: "Lesson progress" });
+  const speech = page.getByRole("status").filter({
+    hasText: "Look! My ball!",
+  });
+  const notice = page.getByRole("alert").filter({
+    hasText: "The sound stopped.",
+  });
+  const controls = page.getByRole("navigation", {
+    name: "Lesson playback controls",
+  });
+
+  await expect(notice).toContainText(
+    "The sound stopped. Try it again or skip this sound.",
+  );
+  await expectInsideViewport(artwork, viewport);
+  for (const surface of [hud, speech, notice, controls]) {
+    await expectInsideViewport(surface, viewport);
+    await expectLeftOf(artwork, surface);
+    await expectNoOverlap(artwork, surface);
+  }
+  for (const [index, surface] of [hud, speech, notice, controls].entries()) {
+    for (const nextSurface of [hud, speech, notice, controls].slice(index + 1)) {
+      await expectNoOverlap(surface, nextSurface);
+    }
+  }
+  for (const button of await notice.getByRole("button").all()) {
+    const buttonBox = await expectInsideViewport(button, viewport);
+    expect(buttonBox.width).toBeGreaterThanOrEqual(44);
+    expect(buttonBox.height).toBeGreaterThanOrEqual(44);
+  }
+  await expectNoPageOverflow(page);
 });
 
 for (const viewport of [

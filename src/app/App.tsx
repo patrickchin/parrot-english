@@ -91,6 +91,7 @@ import {
 } from "../lessons/full-scene-lessons";
 import {
   BoxedFullSceneStage,
+  BoxedLessonSceneLayout,
   LessonCharacters,
   LessonCompletion,
   LessonErrorBanner,
@@ -730,12 +731,80 @@ export function LessonPlayer({
   if (fullSceneArtwork && !fullScene) {
     throw new Error(`Lesson artwork is missing scene ${state.sceneIndex + 1}.`);
   }
+  const reserved = Boolean(fullScene);
+  const activeHud = (
+    <LessonHud
+      currentScene={state.sceneIndex + 1}
+      reserved={reserved}
+      sceneCount={currentLesson.scenes.length}
+      title={scene.title}
+    />
+  );
+  const activeDialogue = showUserTurn ? (
+    <LessonUserPrompt
+      dialogue={currentStep.dialogue}
+      portrait={promptPortrait}
+      reserved={reserved}
+      status={
+        isEvaluating ? "checking" : isRecording ? "recording" : "ready"
+      }
+    />
+  ) : isResponding ? (
+    <LessonFeedback
+      outcome={state.responseOutcome}
+      reserved={reserved}
+      speech={scene.speech}
+    />
+  ) : (
+    <LessonSpeech
+      characterCount={scene.characters.length}
+      characterIndex={speechCharacterIndex}
+      reserved={reserved}
+      showTail={!fullScene}
+      speech={scene.speech}
+    />
+  );
+  const activeControls = showUserTurn ? (
+    <LessonSpeakingControls
+      isEvaluating={isEvaluating}
+      isRecording={isRecording}
+      isStartingRecording={isStartingRecording}
+      onSkip={handleSkipUser}
+      onToggleRecording={handleToggleRecording}
+      reserved={reserved}
+      usePracticeFallback={Boolean(speechFallback)}
+    />
+  ) : showPlaybackControls ? (
+    <LessonPlaybackControls
+      atFinalScene={atFinalScene}
+      atFirstScene={atFirstScene}
+      isPaused={isPaused}
+      onNext={() => dispatchSceneControl("SCENE_NEXT")}
+      onPauseResume={handlePauseResume}
+      onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
+      reserved={reserved}
+    />
+  ) : null;
+  const activeNotice =
+    speechFallback || error ? (
+      <LessonErrorBanner
+        error={speechFallback || error}
+        onRetry={
+          error === LESSON_AUDIO_ERROR_MESSAGE ? handleRetryAudio : undefined
+        }
+        onSkip={
+          error === LESSON_AUDIO_ERROR_MESSAGE ? handleSkipAudio : undefined
+        }
+        reserved={reserved}
+        tone={speechFallback ? "help" : "error"}
+      />
+    ) : null;
   return (
     <LessonStage
       background={scene.backgroundAsset}
       presentation={fullScene ? "boxed" : "layered"}
     >
-      {fullScene && !isFinished ? <BoxedFullSceneStage image={fullScene} /> : null}
+      {fullScene && isIdle ? <BoxedFullSceneStage image={fullScene} /> : null}
       <RouteHeader>
         <HeaderButton
           aria-label="Back to lesson list"
@@ -766,75 +835,23 @@ export function LessonPlayer({
       ) : null}
 
       {showActiveScene ? (
-        <>
-          <LessonHud
-            currentScene={state.sceneIndex + 1}
-            sceneCount={currentLesson.scenes.length}
-            title={scene.title}
+        fullScene ? (
+          <BoxedLessonSceneLayout
+            controls={activeControls}
+            dialogue={activeDialogue}
+            hud={activeHud}
+            image={fullScene}
+            notice={activeNotice}
           />
-          {fullScene ? null : <LessonCharacters characters={scene.characters} />}
-
-          {showUserTurn ? (
-            <LessonUserPrompt
-              dialogue={currentStep.dialogue}
-              portrait={promptPortrait}
-              status={
-                isEvaluating
-                  ? "checking"
-                  : isRecording
-                    ? "recording"
-                    : "ready"
-              }
-            />
-          ) : isResponding ? (
-            <LessonFeedback
-              outcome={state.responseOutcome}
-              speech={scene.speech}
-            />
-          ) : (
-            <LessonSpeech
-              characterCount={scene.characters.length}
-              characterIndex={speechCharacterIndex}
-              showTail={!fullScene}
-              speech={scene.speech}
-            />
-          )}
-
-          {showUserTurn ? (
-            <LessonSpeakingControls
-              isEvaluating={isEvaluating}
-              isRecording={isRecording}
-              isStartingRecording={isStartingRecording}
-              onSkip={handleSkipUser}
-              onToggleRecording={handleToggleRecording}
-              usePracticeFallback={Boolean(speechFallback)}
-            />
-          ) : null}
-          {showPlaybackControls ? (
-            <LessonPlaybackControls
-              atFinalScene={atFinalScene}
-              atFirstScene={atFirstScene}
-              isPaused={isPaused}
-              onNext={() => dispatchSceneControl("SCENE_NEXT")}
-              onPauseResume={handlePauseResume}
-              onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
-            />
-          ) : null}
-          <LessonErrorBanner
-            error={speechFallback || error}
-            onRetry={
-              error === LESSON_AUDIO_ERROR_MESSAGE
-                ? handleRetryAudio
-                : undefined
-            }
-            onSkip={
-              error === LESSON_AUDIO_ERROR_MESSAGE
-                ? handleSkipAudio
-                : undefined
-            }
-            tone={speechFallback ? "help" : "error"}
-          />
-        </>
+        ) : (
+          <>
+            {activeHud}
+            <LessonCharacters characters={scene.characters} />
+            {activeDialogue}
+            {activeControls}
+            {activeNotice}
+          </>
+        )
       ) : null}
 
       <div
