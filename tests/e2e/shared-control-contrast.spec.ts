@@ -303,6 +303,27 @@ async function preparePage(
 }
 
 for (const viewport of viewports) {
+  test(`account menu actions keep rendered contrast on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await preparePage(page, viewport);
+    await page.goto("/lessons");
+    await page.getByRole("button", { name: "Account for Mia" }).click();
+
+    await expectPointerStateContrast({
+      interaction: page.getByRole("menuitem", { name: "Sign out" }),
+      minimum: 4.5,
+      name: "Neutral Sign out",
+      page,
+    });
+    await expectPointerStateContrast({
+      interaction: page.getByRole("menuitem", { name: "Delete account" }),
+      minimum: 4.5,
+      name: "Muted Delete account",
+      page,
+    });
+  });
+
   test(`default brand link keeps rendered contrast on a ${viewport.name}`, async ({
     page,
   }) => {
@@ -321,7 +342,7 @@ for (const viewport of viewports) {
     });
   });
 
-  test(`opaque-dialog brand focus and disabled state stay distinct on a ${viewport.name}`, async ({
+  test(`opaque-dialog destructive focus and disabled state stay distinct on a ${viewport.name}`, async ({
     page,
   }) => {
     await preparePage(page, viewport);
@@ -345,7 +366,15 @@ for (const viewport of viewports) {
       disabledAppearance,
     );
 
+    await expectPointerStateContrast({
+      interaction: deleteAccount,
+      minimum: 4.5,
+      name: "Delete account confirmation",
+      page,
+    });
+
     await page.mouse.move(0, 0);
+    await password.focus();
     await focusWithKeyboard(page, deleteAccount);
     await expect(deleteAccount).toBeFocused();
     const focus = await renderedFocusContrast(deleteAccount);

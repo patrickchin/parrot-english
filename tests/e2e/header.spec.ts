@@ -154,6 +154,39 @@ async function renderedFocusOutline(locator: Locator) {
   });
 }
 
+async function renderedColors(locator: Locator) {
+  await expect(locator).toBeVisible();
+  return locator.evaluate((element) => {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Canvas color conversion is unavailable");
+    canvas.width = 1;
+    canvas.height = 1;
+
+    const toRgba = (value: string) => {
+      context.clearRect(0, 0, 1, 1);
+      context.fillStyle = value;
+      context.fillRect(0, 0, 1, 1);
+      return [...context.getImageData(0, 0, 1, 1).data];
+    };
+    const style = getComputedStyle(element);
+    return {
+      background: toRgba(style.backgroundColor),
+      foreground: toRgba(style.color),
+    };
+  });
+}
+
+function relativeLuminance([red, green, blue]: number[]) {
+  const linear = (channel: number) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+}
+
 async function installAccountIdentity(
   page: Page,
   currentIdentity: () => AccountIdentity,
@@ -573,6 +606,113 @@ test("the learner name opens the account menu", async ({ page }) => {
     page.getByRole("menuitem", { name: "AI and saved data" }),
   ).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+});
+
+test("account actions separate routine sign out from staged deletion", async ({
+  page,
+}) => {
+  const viewports: Viewport[] = [
+    { height: 568, name: "ultra narrow", width: 280 },
+    { height: 844, name: "regular phone", width: 390 },
+    { height: 360, name: "short landscape", width: 640 },
+    { height: 900, name: "desktop", width: 1440 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/lessons");
+    await page.getByRole("button", { name: "Account for Mia" }).click();
+
+    const menu = page.getByRole("menu", { name: "Account menu" });
+    const items = menu.getByRole("menuitem");
+    await expect(items).toHaveText([
+      "Learner profile",
+      "AI and saved data",
+      "Sign out",
+      "Delete account",
+    ]);
+
+    const about = menu.getByRole("menuitem", { name: "AI and saved data" });
+    const signOut = menu.getByRole("menuitem", { name: "Sign out" });
+    const deleteAccount = menu.getByRole("menuitem", {
+      name: "Delete account",
+    });
+    const [aboutColors, signOutColors, deleteColors] = await Promise.all([
+      renderedColors(about),
+      renderedColors(signOut),
+      renderedColors(deleteAccount),
+    ]);
+
+    expect(signOutColors).toEqual(aboutColors);
+    expect(deleteColors.background).not.toEqual(signOutColors.background);
+    expect(deleteColors.foreground).not.toEqual(signOutColors.foreground);
+    expect(relativeLuminance(deleteColors.background)).toBeGreaterThan(0.8);
+
+    const itemBoxes = [];
+    for (let index = 0; index < (await items.count()); index += 1) {
+      const box = await visibleBox(items.nth(index));
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      itemBoxes.push(box);
+    }
+    const ordinaryGap = itemBoxes[2].y - (itemBoxes[1].y + itemBoxes[1].height);
+    const destructiveGap =
+      itemBoxes[3].y - (itemBoxes[2].y + itemBoxes[2].height);
+    expect(ordinaryGap).toBeGreaterThanOrEqual(4);
+    expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 4);
+
+    await page.keyboard.press("End");
+    await expect(deleteAccount).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(signOut).toBeFocused();
+
+    if (viewport.name === "regular phone") {
+      const menuDeleteColors = deleteColors;
+      await deleteAccount.click();
+      const dialog = page.getByRole("dialog", { name: "Delete account" });
+      await dialog.getByLabel("Password").fill("not-submitted");
+      const cancel = dialog.getByRole("button", { name: "Cancel" });
+      const confirm = dialog.getByRole("button", {
+        name: "Delete account now",
+      });
+      await expect(confirm).toBeEnabled();
+      const [cancelColors, confirmColors] = await Promise.all([
+        renderedColors(cancel),
+        renderedColors(confirm),
+      ]);
+      expect(confirmColors).not.toEqual(cancelColors);
+      expect(confirmColors).not.toEqual(menuDeleteColors);
+      await cancel.click();
+    }
+  }
+});
+
+test("forced colors keeps both account exit actions visibly focused", async ({
+  page,
+}) => {
+  const viewport = { height: 360, name: "short landscape", width: 640 };
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.setViewportSize(viewport);
+  await page.goto("/lessons");
+
+  const trigger = page.getByRole("button", { name: "Account for Mia" });
+  await trigger.press("ArrowDown");
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  const panel = menu.locator("..");
+  const signOut = menu.getByRole("menuitem", { name: "Sign out" });
+  const deleteAccount = menu.getByRole("menuitem", {
+    name: "Delete account",
+  });
+
+  await page.keyboard.press("End");
+  for (const action of [deleteAccount, signOut]) {
+    await action.focus();
+    await expect(action).toBeFocused();
+    const outline = await renderedFocusOutline(action);
+    expect(outline.style).not.toBe("none");
+    expect(Number.parseFloat(outline.width)).toBeGreaterThanOrEqual(2);
+    expectBoxInside(await focusedPaintBox(action), await overflowClipBox(panel));
+  }
 });
 
 test("AI and saved data explains caregiver facts before optional technical details", async ({

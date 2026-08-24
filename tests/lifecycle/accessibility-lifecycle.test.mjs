@@ -373,13 +373,17 @@ describe("keyboard accessibility lifecycles", () => {
     const items = [...document.querySelectorAll('[role="menuitem"]')];
     assert.deepEqual(
       items.map((item) => item.textContent.trim()),
-      ["Learner profile", "AI and saved data", "Delete account", "Sign out"],
+      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
     );
     await waitFor(() => assert.equal(document.activeElement, items[0]));
 
     await press(items[0], "ArrowDown");
     assert.equal(document.activeElement, items[1]);
     await press(items[1], "End");
+    assert.equal(document.activeElement, items[3]);
+    await press(items[3], "ArrowUp");
+    assert.equal(document.activeElement, items[2]);
+    await press(items[2], "ArrowDown");
     assert.equal(document.activeElement, items[3]);
     await press(items[3], "ArrowDown");
     assert.equal(document.activeElement, items[0]);
