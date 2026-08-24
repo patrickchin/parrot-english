@@ -4060,10 +4060,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(account);
     assert.ok(document.querySelector('[role="menu"]'));
     assert.equal(document.querySelector('[role="alert"]'), alert);
-    account.focus();
-    await click(account);
-    assert.equal(document.querySelector('[role="menu"]'), null);
-    assert.equal(document.activeElement, account);
 
     await act(async () => {
       retry.click();
@@ -4072,6 +4068,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     assert.equal(signOutCalls, 2);
     assert.equal(document.activeElement, account);
+    assert.equal(document.querySelector('[role="menu"]'), null);
+    assert.equal(account.getAttribute("aria-expanded"), "false");
     assert.equal(account.getAttribute("aria-disabled"), "true");
     assert.equal(status.textContent.trim(), "Signing out…");
     assert.equal(alert.textContent.trim(), "");

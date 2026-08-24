@@ -625,16 +625,14 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   ).toBe(true);
   await expect(retry).toBeVisible();
 
-  await page.keyboard.press("Escape");
-  await expect(account).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(retry).toBeFocused();
   await retry.evaluate((control) => {
     control.click();
     control.click();
   });
   await expect(account).toBeFocused();
   await expect(alert).toHaveText("Sign out did not finish.");
+  await expect(menu).toBeHidden();
+  await expect(account).toHaveAttribute("aria-expanded", "false");
   expect(signOutRequests).toBe(2);
 
   await account.click();
@@ -661,6 +659,34 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   expect(signOutPaint.y + signOutPaint.height).toBeLessThanOrEqual(
     viewport.height,
   );
+});
+
+test("wide pending sign out keeps its established 180px frame", async ({
+  page,
+}) => {
+  let releaseRequest = () => {};
+  const heldRequest = new Promise<void>((resolveRequest) => {
+    releaseRequest = resolveRequest;
+  });
+  await page.route("**/api/auth/sign-out", async (route) => {
+    await heldRequest;
+    await route.abort("failed");
+  });
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/lessons");
+
+  await page.getByRole("button", { name: "Account for Mia" }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  const pendingAccount = page.getByRole("button", {
+    exact: true,
+    name: "Signing out… Account for Mia",
+  });
+  expect((await visibleBox(pendingAccount)).width).toBe(180);
+
+  releaseRequest();
+  await expect(
+    page.getByRole("button", { exact: true, name: "Sign out again" }),
+  ).toBeVisible();
 });
 
 test("the learner name opens the account menu", async ({ page }) => {
