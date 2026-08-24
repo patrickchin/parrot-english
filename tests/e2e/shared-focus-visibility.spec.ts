@@ -198,6 +198,7 @@ function renderedScreenshotDelta({
   focused,
   markerHeight,
   markerOffset = -8,
+  markerTopOffset = 0,
   unfocused,
   viewport,
 }: {
@@ -206,6 +207,7 @@ function renderedScreenshotDelta({
   focused: Awaited<ReturnType<typeof decodedScreenshot>>;
   markerHeight?: number;
   markerOffset?: number;
+  markerTopOffset?: number;
   unfocused: Awaited<ReturnType<typeof decodedScreenshot>>;
   viewport: NonNullable<ReturnType<Page["viewportSize"]>>;
 }) {
@@ -239,11 +241,20 @@ function renderedScreenshotDelta({
     focused.info.width,
     Math.ceil(box.x * scaleX),
   );
-  const renderedMarkerHeight = Math.min(markerHeight ?? box.height, box.height);
-  const markerTop = Math.max(0, Math.floor(box.y * scaleY));
+  const renderedMarkerHeight = Math.min(
+    markerHeight ?? box.height,
+    Math.max(0, box.height - markerTopOffset),
+  );
+  const headingTop = Math.max(0, Math.floor(box.y * scaleY));
+  const markerTop = Math.max(
+    0,
+    Math.floor((box.y + markerTopOffset) * scaleY),
+  );
   const markerBottom = Math.min(
     focused.info.height,
-    Math.ceil((box.y + renderedMarkerHeight) * scaleY),
+    Math.ceil(
+      (box.y + markerTopOffset + renderedMarkerHeight) * scaleY,
+    ),
   );
   const headingBottom = Math.min(
     focused.info.height,
@@ -260,6 +271,7 @@ function renderedScreenshotDelta({
   let changedPixels = 0;
   let contrastingPixels = 0;
   let leftMarkerContrastingPixels = 0;
+  let aboveMarkerChangedPixels = 0;
   let markerGapChangedPixels = 0;
   let belowMarkerChangedPixels = 0;
   let leftOutlineContrastingPixels = 0;
@@ -295,6 +307,14 @@ function renderedScreenshotDelta({
       changedPixels += 1;
       if (x >= markerRight && x < outlineLeftRight) {
         markerGapChangedPixels += 1;
+      }
+      if (
+        x >= markerLeft &&
+        x < markerRight &&
+        y >= headingTop &&
+        y < markerTop
+      ) {
+        aboveMarkerChangedPixels += 1;
       }
       if (
         x >= markerLeft &&
@@ -353,6 +373,8 @@ function renderedScreenshotDelta({
     contrastingArea: contrastingPixels / renderedPixelsPerCssPixel,
     leftMarkerContrastingArea:
       leftMarkerContrastingPixels / renderedPixelsPerCssPixel,
+    aboveMarkerChangedArea:
+      aboveMarkerChangedPixels / renderedPixelsPerCssPixel,
     markerGapChangedArea:
       markerGapChangedPixels / renderedPixelsPerCssPixel,
     belowMarkerChangedArea:
@@ -406,6 +428,7 @@ async function renderedInitialFocusDelta(
   target: Locator,
   markerOffset = -8,
   markerHeight?: number,
+  markerTopOffset = 0,
 ) {
   await expect(target).toBeVisible();
   await expect(target).toBeFocused();
@@ -420,6 +443,7 @@ async function renderedInitialFocusDelta(
     focused,
     markerHeight,
     markerOffset,
+    markerTopOffset,
     unfocused,
   });
 }
@@ -455,6 +479,7 @@ function expectRenderedReadingCue(
 function expectRenderedReadingMarker(
   focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
   name: string,
+  { markerEndTolerance = 1 }: { markerEndTolerance?: number } = {},
 ) {
   expectRenderedReadingCue(focus, name);
   expect(
@@ -463,18 +488,23 @@ function expectRenderedReadingMarker(
   ).toBeGreaterThanOrEqual(focus.readingCueArea);
   expect(
     focus.markerContrastingHeight,
-    `${name} has ${focus.markerContrastingHeight.toFixed(1)} CSS pixels of continuous marker rows; ${focus.readingCueHeight.toFixed(1)} expected`,
-  ).toBeGreaterThanOrEqual(focus.readingCueHeight - 1);
+    `${name} has ${focus.markerContrastingHeight.toFixed(1)} CSS pixels of continuous marker rows; ${focus.readingCueHeight.toFixed(1)} expected within ${markerEndTolerance.toFixed(1)} CSS pixels`,
+  ).toBeGreaterThanOrEqual(focus.readingCueHeight - markerEndTolerance);
 }
 
 function expectRenderedOpenReadingMarker(
   focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
   name: string,
+  { markerEndTolerance = 1 }: { markerEndTolerance?: number } = {},
 ) {
-  expectRenderedReadingMarker(focus, name);
+  expectRenderedReadingMarker(focus, name, { markerEndTolerance });
   expect(
     focus.markerGapChangedArea,
     `${name} changes ${focus.markerGapChangedArea.toFixed(0)} CSS px² in the clear marker-to-heading gap`,
+  ).toBeLessThan(1);
+  expect(
+    focus.aboveMarkerChangedArea,
+    `${name} changes ${focus.aboveMarkerChangedArea.toFixed(0)} CSS px² above the reading marker`,
   ).toBeLessThan(1);
   expect(
     focus.belowMarkerChangedArea,
@@ -810,6 +840,13 @@ async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
         animationName: cue.animationName,
         transitionProperty: cue.transitionProperty,
       },
+      cueShape: {
+        borderRadius: Number.parseFloat(cue.borderTopLeftRadius),
+        height: Number.parseFloat(cue.height),
+        left: Number.parseFloat(cue.left),
+        top: Number.parseFloat(cue.top),
+        width: Number.parseFloat(cue.width),
+      },
       documentScroll: {
         left: document.documentElement.scrollLeft,
         top: document.documentElement.scrollTop,
@@ -843,17 +880,29 @@ async function expectLessonShelfOpenReadingCue(
   await expect(heading).toHaveAttribute("tabindex", "-1");
   const focused = await lessonShelfHeadingGeometry(page, heading);
   expect(focused.heading.width - focused.text.width).toBeLessThanOrEqual(1);
-  expect(focused.heading.x - 12).toBeGreaterThanOrEqual(4);
+  expect(focused.heading.x - 16).toBeGreaterThanOrEqual(4);
   expect(focused.mainScroll).toEqual({ left: 0, top: 0 });
   expect(focused.documentScroll).toEqual({ left: 0, top: 0 });
   expect(focused.cueMotion).toEqual({
     animationName: "none",
     transitionProperty: "none",
   });
+  expect(focused.cueShape.left).toBe(-16);
+  expect(focused.cueShape.width).toBe(4);
+  expect(focused.cueShape.height / focused.heading.height).toBeCloseTo(0.6, 2);
+  expect(focused.cueShape.top / focused.heading.height).toBeCloseTo(0.2, 2);
+  expect(focused.cueShape.borderRadius).toBeGreaterThanOrEqual(2);
 
   expectRenderedOpenReadingMarker(
-    await renderedInitialFocusDelta(page, heading, -12, 96),
+    await renderedInitialFocusDelta(
+      page,
+      heading,
+      -16,
+      focused.heading.height * 0.6,
+      focused.heading.height * 0.2,
+    ),
     name,
+    { markerEndTolerance: 2 },
   );
 
   expect(await lessonShelfHeadingGeometry(page, heading)).toEqual(focused);
