@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
+import { STORIES } from "../src/stories/story-catalog.ts";
 
 const getStaticAudioLineForSpeech =
   staticAudio.getStaticAudioLineForSpeech ?? (() => undefined);
@@ -63,6 +64,28 @@ describe("static audio cache metadata", () => {
       const line = getStaticAudioLineForSpeech(speaker, text);
       assert.ok(line, `${speaker}: ${text}`);
       assert.equal(line.text, text);
+    }
+  });
+
+  it("resolves every story page to separate saved narration and join-in audio", () => {
+    for (const story of STORIES) {
+      for (const page of story.pages) {
+        const narration = getStaticAudioLineForSpeech(
+          "narrator",
+          page.text,
+        );
+        assert.equal(narration.id, page.narrationAudioId);
+        assert.equal(
+          narration.src,
+          `/assets/audio/${page.narrationAudioId}.mp3`,
+        );
+        const joinIn = getStaticAudioLineForSpeech("narrator", page.joinIn);
+        assert.equal(joinIn.id, page.joinInAudioId);
+        assert.equal(
+          joinIn.src,
+          `/assets/audio/${page.joinInAudioId}.mp3`,
+        );
+      }
     }
   });
 

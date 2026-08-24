@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement } from "react";
+import { act, createElement, useState } from "react";
 import { MemoryRouter } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
@@ -105,6 +105,17 @@ describe("child-first story reader behavior", () => {
       },
     });
 
+    const deviceSpeechStory = {
+      ...firstStory,
+      pages: [
+        {
+          ...firstStory.pages[0],
+          joinInAudioId: null,
+          narrationAudioId: null,
+        },
+      ],
+    };
+
     const container = await mountStrict(
       createElement(
         MemoryRouter,
@@ -113,7 +124,7 @@ describe("child-first story reader behavior", () => {
           backToStories: "/stories",
           onNavigatePage() {},
           pageIndex: 0,
-          story: firstStory,
+          story: deviceSpeechStory,
         }),
       ),
     );
@@ -159,12 +170,18 @@ describe("child-first story reader behavior", () => {
     assert.match(container.textContent, /Your turn/);
   });
 
-  it("keeps a combined saved narration on the sentence until completion reveals the prompt", async () => {
+  it("reveals the prompt between separate saved narration and join-in clips", async () => {
     const events = [];
-    let finishAudio;
+    const finishAudio = [];
+    let createdCount = 0;
 
     class TestAudio {
       constructor(url) {
+        createdCount += 1;
+        this.url = url;
+      }
+
+      set src(url) {
         this.url = url;
       }
 
@@ -174,7 +191,8 @@ describe("child-first story reader behavior", () => {
 
       play() {
         events.push(`play:${this.url}`);
-        finishAudio = () => this.onended?.(new window.Event("ended"));
+        const onended = this.onended;
+        finishAudio.push(() => onended?.(new window.Event("ended")));
         return Promise.resolve();
       }
     }
@@ -189,9 +207,10 @@ describe("child-first story reader behavior", () => {
       pages: [
         {
           ...firstStory.pages[0],
-          joinIn: "Dolly!",
+          joinIn: "Let's copy Peppa!",
+          joinInAudioId: "narrator-copy-peppa",
           narrationAudioId: "narrator-copy-dolly",
-          text: "Let's copy",
+          text: "Let's copy Dolly!",
         },
       ],
     };
@@ -208,7 +227,7 @@ describe("child-first story reader behavior", () => {
       ),
     );
     const prompt = container.querySelector(
-      '[aria-label="Say it: Dolly!"]',
+      '[aria-label="Say it: Let\'s copy Peppa!"]',
     );
     assert.ok(prompt);
     const pane = prompt.parentElement;
@@ -222,17 +241,102 @@ describe("child-first story reader behavior", () => {
     const readButton = container.querySelector('[aria-label="Listen"]');
     assert.ok(readButton);
     await click(readButton);
-    await waitFor(() => assert.equal(typeof finishAudio, "function"));
+    await waitFor(() => assert.equal(finishAudio.length, 1));
     assert.equal(pane.scrollTop, 0);
     assert.deepEqual(events, [
       "play:/assets/audio/narrator-copy-dolly.mp3",
     ]);
 
-    await act(async () => finishAudio());
+    await act(async () => finishAudio.shift()());
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.equal(pane.scrollTop, 40);
+    assert.match(container.textContent, /Listen and say it/);
+    assert.deepEqual(events, [
+      "play:/assets/audio/narrator-copy-dolly.mp3",
+      "play:/assets/audio/narrator-copy-peppa.mp3",
+    ]);
+    assert.equal(createdCount, 1);
+
+    await act(async () => finishAudio.shift()());
     await waitFor(() =>
       assert.ok(container.querySelector('[aria-label="Listen again"]')),
     );
     assert.equal(pane.scrollTop, 40);
     assert.match(container.textContent, /Your turn/);
+  });
+
+  it("starts and advances when whole-story playback is enabled", async () => {
+    const navigatedPages = [];
+    const finishAudio = [];
+    const playedUrls = [];
+    let createdCount = 0;
+
+    class TestAudio {
+      constructor(url) {
+        createdCount += 1;
+        this.url = url;
+      }
+
+      set src(url) {
+        this.url = url;
+      }
+
+      pause() {}
+
+      play() {
+        playedUrls.push(this.url);
+        const onended = this.onended;
+        finishAudio.push(() => onended?.(new window.Event("ended")));
+        return Promise.resolve();
+      }
+    }
+
+    Object.defineProperty(globalThis, "Audio", {
+      configurable: true,
+      value: TestAudio,
+    });
+
+    function WholeStoryHarness() {
+      const [pageIndex, setPageIndex] = useState(0);
+      return createElement(StoryReader, {
+        backToStories: "/stories",
+        onNavigatePage(pageIndex) {
+          navigatedPages.push(pageIndex);
+          setPageIndex(pageIndex);
+        },
+        pageIndex,
+        story: firstStory,
+      });
+    }
+
+    const container = await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/stories/the-red-ball/pages/1"] },
+        createElement(WholeStoryHarness),
+      ),
+    );
+
+    const wholeStoryButton = container.querySelector(
+      '[aria-label="Play whole story"]',
+    );
+    assert.ok(wholeStoryButton);
+    await click(wholeStoryButton);
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.equal(wholeStoryButton.getAttribute("aria-pressed"), "true");
+
+    await act(async () => finishAudio.shift()());
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.match(container.textContent, /Listen and say it/);
+
+    await act(async () => finishAudio.shift()());
+    await waitFor(() => assert.deepEqual(navigatedPages, [1]));
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.equal(createdCount, 1);
+    assert.deepEqual(playedUrls, [
+      `/assets/audio/${firstStory.pages[0].narrationAudioId}.mp3`,
+      `/assets/audio/${firstStory.pages[0].joinInAudioId}.mp3`,
+      `/assets/audio/${firstStory.pages[1].narrationAudioId}.mp3`,
+    ]);
   });
 });
