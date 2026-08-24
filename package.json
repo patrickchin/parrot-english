@@ -26,6 +26,7 @@
     "deploy:agent": "node scripts/deploy-livekit-agent.mjs",
     "deploy:worker": "node scripts/deploy-cloudflare-worker.mjs",
     "publish:backgrounds": "node scripts/publish-backgrounds.mjs",
+    "publish:static-media": "node scripts/publish-static-media.mjs",
     "verify:backgrounds": "node scripts/verify-background-media.mjs",
     "generate:audio": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",

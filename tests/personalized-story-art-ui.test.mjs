@@ -116,7 +116,7 @@ describe("personalized story art UI", () => {
     const artwork = {
       alt: "A red ball",
       prompt: "A red ball",
-      src: "https://media.parrotbook.com/assets/v2/stories/the-red-ball-cover.webp",
+      src: "https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover.webp",
     };
     const sizes = "(max-width: 519px) calc(100vw - 24px), 273px";
 
@@ -124,7 +124,7 @@ describe("personalized story art UI", () => {
     assert.match(publicHtml, new RegExp(`sizes="${sizes.replace(/[()]/g, "\\$&")}"`));
     assert.match(
       publicHtml,
-      /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v2\/stories\/the-red-ball-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v2\/stories\/the-red-ball-cover-768\.webp 768w"/,
+      /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v3\/stories\/the-red-ball-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v3\/stories\/the-red-ball-cover-768\.webp 768w"/,
     );
 
     const privateHtml = renderStoryArtwork({
@@ -146,7 +146,7 @@ describe("personalized story art UI", () => {
     const catalogArtworkSource = story.pages[0].artwork.src;
     assert.equal(
       catalogArtworkSource,
-      "https://media.parrotbook.com/assets/v2/story-pages/the-red-ball-my-red-ball.webp",
+      "https://media.parrotbook.com/assets/v3/story-pages/the-red-ball-my-red-ball.webp",
     );
 
     const html = renderStoryReader({

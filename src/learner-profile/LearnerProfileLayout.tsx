@@ -11,9 +11,9 @@ const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 const PROFILE_PEPPA_HAPPY_SRC =
-  "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy-384.webp";
+  "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-happy-384.webp";
 const PROFILE_PEPPA_HAPPY_SRC_SET =
-  "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy-384.webp 384w, https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy-768.webp 768w";
+  "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-happy-384.webp 384w, https://media.parrotbook.com/assets/v3/characters/peppa/peppa-happy-768.webp 768w";
 
 export function LearnerProfilePeppaArt({
   sizes,

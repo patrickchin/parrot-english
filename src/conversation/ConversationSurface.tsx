@@ -80,14 +80,14 @@ type ConversationSurfaceProps = {
 };
 
 const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
-  ready: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp",
-  connecting: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp",
-  listening: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-listening.webp",
-  thinking: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-listening.webp",
-  speaking: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-talking.webp",
-  reconnecting: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-surprised.webp",
-  error: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-sad.webp",
-  saving: "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp",
+  ready: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-happy.webp",
+  connecting: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-happy.webp",
+  listening: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-listening.webp",
+  thinking: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-listening.webp",
+  speaking: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-talking.webp",
+  reconnecting: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-surprised.webp",
+  error: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-sad.webp",
+  saving: "https://media.parrotbook.com/assets/v3/characters/peppa/peppa-happy.webp",
 };
 
 function responsivePeppaAsset(src: string, width: 384 | 768 | 1024) {

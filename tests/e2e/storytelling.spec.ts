@@ -376,7 +376,7 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
   await expect(firstCover).toHaveAttribute("loading", "eager");
   await expect(firstCover).toHaveAttribute(
     "srcset",
-    "https://media.parrotbook.com/assets/v2/stories/the-red-ball-cover-384.webp 384w, https://media.parrotbook.com/assets/v2/stories/the-red-ball-cover-768.webp 768w",
+    "https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-384.webp 384w, https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-768.webp 768w",
   );
   await expect
     .poll(() =>
@@ -384,7 +384,7 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
         new URL(element.currentSrc).pathname,
       ),
     )
-    .toMatch(/\/assets\/v2\/stories\/the-red-ball-cover-(384|768)\.webp$/);
+    .toMatch(/\/assets\/v3\/stories\/the-red-ball-cover-(384|768)\.webp$/);
   await expect(
     panel.getByRole("img", {
       name: "Three simple hats in red, blue, and yellow",

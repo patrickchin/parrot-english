@@ -5,17 +5,24 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      media_only:
+        description: Publish and verify R2 media without deploying the app
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-workers-${{ github.ref }}
+  group: cloudflare-workers
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -34,19 +41,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-
-      - name: Typecheck LiveKit agent
-        run: npm run build:agent
-
       - name: Verify Cloudflare credentials
         run: |
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           test -n "$CLOUDFLARE_API_TOKEN"
 
+      - name: Publish and verify immutable static media
+        env:
+          PARROT_MEDIA_ORIGIN: https://media.parrotbook.com
+          PARROT_MEDIA_PUBLIC_BUCKET: parrot-english-media
+        run: npm run publish:static-media -- --apply
+
+      - name: Build
+        if: ${{ inputs.media_only != true }}
+        run: npm run build
+
+      - name: Typecheck LiveKit agent
+        if: ${{ inputs.media_only != true }}
+        run: npm run build:agent
+
       - name: Apply D1 migrations
+        if: ${{ inputs.media_only != true }}
         run: npx wrangler d1 migrations apply parrot-english --remote
 
       - name: Deploy to Cloudflare Workers
+        if: ${{ inputs.media_only != true }}
         run: npm run deploy:worker

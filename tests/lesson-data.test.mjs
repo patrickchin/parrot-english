@@ -10,7 +10,7 @@ function createAssets(id) {
     EMOTES.map((emote) => [
       emote,
       {
-        src: `https://media.parrotbook.com/assets/v2/characters/${id}/${id}-${emote}.webp`,
+        src: `https://media.parrotbook.com/assets/v3/characters/${id}/${id}-${emote}.webp`,
         alt: `${id} ${emote}`,
       },
     ])
@@ -485,7 +485,7 @@ describe("lesson data contract", () => {
         const asset = character.assets[emote];
         assert.equal(
           asset.src,
-          `https://media.parrotbook.com/assets/v2/characters/${character.id}/${character.id}-${emote}.webp`
+          `https://media.parrotbook.com/assets/v3/characters/${character.id}/${character.id}-${emote}.webp`
         );
         assert.ok(asset.alt, `${character.id}.${emote} alt text`);
       }
