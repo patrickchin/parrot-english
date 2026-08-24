@@ -353,6 +353,7 @@ const profileOperationCounters = Object.fromEntries(
 
 const profileRecordingCounters = createOperationCounters();
 const profilePlaybackCounters = createOperationCounters();
+const dubPreviewPlaybackCounters = createOperationCounters();
 const pendingProfileOperations: Record<
   E2EProfileOperation,
   PendingProfileOperation[]
@@ -729,16 +730,24 @@ function getMockAudioDelayMs(src: string) {
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
   onerror: RecorderHandler<Event> = null;
+  private dubPreviewTimer: number | null = null;
   private held = false;
 
   constructor(readonly src: string) {}
 
   pause() {
-    if (!this.held) return;
-    this.held = false;
-    pendingProfilePlayback.delete(this);
-    profilePlaybackCounters.pending = pendingProfilePlayback.size;
-    profilePlaybackCounters.aborted += 1;
+    if (this.held) {
+      this.held = false;
+      pendingProfilePlayback.delete(this);
+      profilePlaybackCounters.pending = pendingProfilePlayback.size;
+      profilePlaybackCounters.aborted += 1;
+    }
+    if (this.dubPreviewTimer !== null) {
+      window.clearTimeout(this.dubPreviewTimer);
+      this.dubPreviewTimer = null;
+      dubPreviewPlaybackCounters.pending -= 1;
+      dubPreviewPlaybackCounters.aborted += 1;
+    }
   }
 
   finish() {
@@ -752,6 +761,17 @@ class MockAudioElement {
   }
 
   async play() {
+    if (getE2eDubScenario() && this.src.startsWith("blob:") && this.dubPreviewTimer === null) {
+      dubPreviewPlaybackCounters.pending += 1;
+      dubPreviewPlaybackCounters.requests += 1;
+      this.dubPreviewTimer = window.setTimeout(() => {
+        this.dubPreviewTimer = null;
+        dubPreviewPlaybackCounters.pending -= 1;
+        dubPreviewPlaybackCounters.resolved += 1;
+        this.onended?.(new Event("ended"));
+      }, MOCK_AUDIO_DELAY_MS);
+      return;
+    }
     if (
       hasHeldE2eProfilePlayback() &&
       this.src.includes("learner-profile")
@@ -1022,6 +1042,21 @@ if (hasHeldE2eProfileOperations()) {
   Object.defineProperty(window, "__parrotE2eProfileOperations", {
     configurable: true,
     value: e2eProfileOperations,
+  });
+}
+
+if (getE2eDubScenario()) {
+  Object.defineProperty(window, "__parrotE2eDubPreview", {
+    configurable: true,
+    value: {
+      snapshot() {
+        return {
+          pending: dubPreviewPlaybackCounters.pending,
+          requests: dubPreviewPlaybackCounters.requests,
+          resolved: dubPreviewPlaybackCounters.resolved,
+        };
+      },
+    },
   });
 }
 

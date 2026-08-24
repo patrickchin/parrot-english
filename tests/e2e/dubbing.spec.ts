@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type Rect = { height: number; width: number; x: number; y: number };
+type DubPreviewSnapshot = { pending: number; requests: number; resolved: number };
 
 const studioViewports = [
   { height: 568, width: 280 },
@@ -30,6 +31,18 @@ function boxesOverlap(first: Rect, second: Rect) {
   );
 }
 
+async function dubPreviewSnapshot(page: Page) {
+  const snapshot = await page.evaluate(() =>
+    (
+      window as typeof window & {
+        __parrotE2eDubPreview?: { snapshot(): DubPreviewSnapshot };
+      }
+    ).__parrotE2eDubPreview?.snapshot(),
+  );
+  expect(snapshot).toBeDefined();
+  return snapshot!;
+}
+
 test("records, saves, reviews, and resumes the nine-line dub at line 2", async ({
   page,
 }) => {
@@ -40,8 +53,16 @@ test("records, saves, reviews, and resumes the nine-line dub at line 2", async (
   await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Stop recording line 1" }).click();
   await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
+  expect(await dubPreviewSnapshot(page)).toEqual({ pending: 0, requests: 0, resolved: 0 });
   await page.getByRole("button", { name: "Hear my take" }).click();
+  await expect.poll(() => dubPreviewSnapshot(page)).toEqual({
+    pending: 0,
+    requests: 1,
+    resolved: 1,
+  });
   await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
+  await page.getByRole("button", { name: "Next line" }).click();
+  await expect(page.getByText("Line 2 of 9", { exact: true })).toBeVisible();
 
   await page.reload();
   await enterStudio(page, "Continue dubbing");
@@ -71,6 +92,12 @@ test("replays, stops, retakes, and deletes a complete private dub", async ({ pag
 
   await page.getByRole("button", { name: "Record a line again" }).click();
   await expect(page.getByRole("button", { name: "Record line 1" })).toBeVisible();
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+  await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
+  await page.getByRole("button", { name: "Next line" }).click();
+  await expect(page.getByRole("button", { name: "Watch my dub" })).toBeVisible();
   await page.getByRole("button", { name: "Watch my dub" }).click();
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
   await page.getByRole("button", { name: "Stop playback" }).click();
@@ -106,6 +133,18 @@ for (const microphone of ["denied", "unsupported"] as const) {
     await expect(record).toBeFocused();
   });
 }
+
+test("keeps the desktop intro action inside the initial viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 800, width: 1280 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+
+  const consent = page.getByRole("checkbox", { name: /I’m the grown-up/ });
+  const start = page.getByRole("button", { name: "Start dubbing" });
+  await expect(consent).toBeVisible();
+  await expect(start).toBeVisible();
+  await expect(consent).toBeInViewport();
+  await expect(start).toBeInViewport();
+});
 
 for (const viewport of studioViewports) {
   test(`contains the studio without header, stage, or action overlap at ${viewport.width}x${viewport.height}`, async ({

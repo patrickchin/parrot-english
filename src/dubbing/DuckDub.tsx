@@ -223,7 +223,7 @@ export function DuckDubView({
       </RouteHeader>
       <section
         aria-labelledby="dub-title"
-        className="mx-auto grid w-full max-w-6xl gap-4 short-wide:grid-cols-[minmax(0,1.45fr)_minmax(16rem,0.8fr)]"
+        className="mx-auto grid w-full max-w-6xl gap-4 short-wide:grid-cols-[minmax(0,1.45fr)_minmax(16rem,0.8fr)] lg:grid-cols-[minmax(0,1.45fr)_minmax(16rem,0.8fr)]"
       >
         <DuckScene line={line} playing={state.phase === "final-playing"} />
         <section className="grid content-center gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">

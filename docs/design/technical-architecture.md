@@ -96,7 +96,7 @@ against the same contract and stored in D1. Story scripts retain internal
 vocabulary and prompt metadata for validation, but the learner UI consumes only
 level, cover, title, summary, pages, and join-in content.
 
-Five Little Ducks voice clips use nine fixed extensionless objects beneath the
+Five Little Ducks voice clips use nine format-agnostic fixed keys beneath the
 existing private account-purge prefix:
 
 ```text
