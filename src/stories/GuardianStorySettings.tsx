@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import { saveStoryLevel } from "../learner-profile/learner-profile-api";
@@ -76,8 +76,8 @@ export function GuardianStorySettingsView({
             {STORY_LEVELS.map((level, levelIndex) => (
               <SegmentedButton
                 aria-controls="guardian-story-level-status"
+                aria-disabled={isSaving ? true : undefined}
                 className="min-h-14 justify-start px-2 text-left text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm sm:justify-center"
-                disabled={isSaving}
                 key={level.id}
                 onClick={() => onSelectLevel(level.id)}
                 role="tab"
@@ -149,9 +149,11 @@ export function GuardianStorySettings() {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const savingRef = useRef(false);
 
   async function selectLevel(level: StoryLevelId) {
-    if (isSaving || level === profile.storyLevel) return;
+    if (savingRef.current || level === profile.storyLevel) return;
+    savingRef.current = true;
     setError("");
     setStatusMessage("");
     setIsSaving(true);
@@ -166,6 +168,7 @@ export function GuardianStorySettings() {
           : "Story settings could not be saved.",
       );
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   }

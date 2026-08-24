@@ -155,6 +155,12 @@ function levelButton(container, name) {
   return button;
 }
 
+function assertPendingFocusable(button) {
+  assert.equal(button.disabled, false);
+  assert.equal(button.getAttribute("aria-disabled"), "true");
+  assert.equal(document.activeElement, button);
+}
+
 function installArtFetch(preferenceResponse) {
   const preferenceBodies = [];
   globalThis.fetch = async (path, init = {}) => {
@@ -202,6 +208,8 @@ test("saves a level before replacing the loaded profile and announces success wi
 
   tinyStories.focus();
   await click(tinyStories);
+  assertPendingFocusable(tinyStories);
+  await click(tinyStories);
   assert.deepEqual(preferenceBodies, [{ storyLevel: "tiny-stories" }]);
   assert.equal(firstWords.getAttribute("aria-selected"), "true");
   assert.equal(
@@ -217,6 +225,8 @@ test("saves a level before replacing the loaded profile and announces success wi
     }),
   );
   await waitFor(() => assert.equal(tinyStories.getAttribute("aria-selected"), "true"));
+  assert.equal(tinyStories.getAttribute("aria-disabled"), null);
+  assert.equal(tinyStories.disabled, false);
   assert.equal(
     container.querySelector('output[aria-label="Saved story level"]')
       ?.textContent,
@@ -234,18 +244,23 @@ for (const [status, message] of [
   [500, "Story settings could not be saved."],
 ]) {
   test(`retains the prior level after a ${status} preference failure`, async () => {
-    installArtFetch(() =>
-      Response.json(
-        { error: "save_failed", message },
-        { status },
-      ),
-    );
+    const preference = deferred();
+    const preferenceBodies = installArtFetch(() => preference.promise);
     const container = await mountStrict(settingsHarness());
     const firstWords = levelButton(container, "Start here");
     const earlyA1 = levelButton(container, "Big adventures");
 
     earlyA1.focus();
     await click(earlyA1);
+    assertPendingFocusable(earlyA1);
+    await click(earlyA1);
+    assert.deepEqual(preferenceBodies, [{ storyLevel: "early-a1" }]);
+    preference.resolve(
+      Response.json(
+        { error: "save_failed", message },
+        { status },
+      ),
+    );
     await waitFor(() =>
       assert.match(
         container.querySelector('[role="alert"]')?.textContent ?? "",
@@ -253,6 +268,8 @@ for (const [status, message] of [
       ),
     );
 
+    assert.equal(earlyA1.getAttribute("aria-disabled"), null);
+    assert.equal(earlyA1.disabled, false);
     assert.equal(firstWords.getAttribute("aria-selected"), "true");
     assert.equal(
       container.querySelector('output[aria-label="Saved story level"]')
