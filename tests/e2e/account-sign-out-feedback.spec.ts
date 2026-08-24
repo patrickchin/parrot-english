@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 const artifactDirectory = resolve(
   "artifacts/ux-review/account-sign-out-feedback/implementation",
 );
+const shouldCaptureEvidence =
+  process.env.PARROT_CAPTURE_SIGN_OUT_EVIDENCE === "1";
 
 const viewports = [
   { height: 568, width: 280 },
@@ -112,14 +114,16 @@ for (const viewport of viewports) {
     );
     expect(requestCount).toBe(1);
 
-    mkdirSync(artifactDirectory, { recursive: true });
-    await page.screenshot({
-      animations: "disabled",
-      path: resolve(
-        artifactDirectory,
-        `signing-out-${viewport.width}x${viewport.height}.png`,
-      ),
-    });
+    if (shouldCaptureEvidence) {
+      mkdirSync(artifactDirectory, { recursive: true });
+      await page.screenshot({
+        animations: "disabled",
+        path: resolve(
+          artifactDirectory,
+          `signing-out-${viewport.width}x${viewport.height}.png`,
+        ),
+      });
+    }
 
     releaseRequest();
     await expect(page.getByRole("alert")).toBeVisible();
@@ -175,14 +179,16 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   expect(focusStyle.outlineStyle).not.toBe("none");
   expect(focusStyle.outlineWidth).toBeGreaterThanOrEqual(2);
 
-  mkdirSync(artifactDirectory, { recursive: true });
-  await page.screenshot({
-    animations: "disabled",
-    path: resolve(
-      artifactDirectory,
-      "signing-out-forced-colors-reduced-motion-640x360.png",
-    ),
-  });
+  if (shouldCaptureEvidence) {
+    mkdirSync(artifactDirectory, { recursive: true });
+    await page.screenshot({
+      animations: "disabled",
+      path: resolve(
+        artifactDirectory,
+        "signing-out-forced-colors-reduced-motion-640x360.png",
+      ),
+    });
+  }
 
   releaseRequest();
   await expect(page.getByRole("alert")).toBeVisible();
@@ -242,14 +248,16 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
 
-  mkdirSync(artifactDirectory, { recursive: true });
-  await page.screenshot({
-    animations: "disabled",
-    path: resolve(
-      artifactDirectory,
-      "signing-out-lesson-player-640x360.png",
-    ),
-  });
+  if (shouldCaptureEvidence) {
+    mkdirSync(artifactDirectory, { recursive: true });
+    await page.screenshot({
+      animations: "disabled",
+      path: resolve(
+        artifactDirectory,
+        "signing-out-lesson-player-640x360.png",
+      ),
+    });
+  }
 
   releaseRequest();
   await expect(page.getByRole("alert")).toBeVisible();
