@@ -1,10 +1,16 @@
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronDown,
+  CircleUserRound,
+  LoaderCircle,
+  TriangleAlert,
+} from "lucide-react";
 import {
   useEffect,
   useId,
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
 import type { LinkProps } from "react-router";
@@ -16,11 +22,31 @@ function HeaderLabel({ children }: { children: ReactNode }) {
   return <span className="hidden wide:inline">{children}</span>;
 }
 
+function AccountError({
+  className,
+  error,
+}: {
+  className?: string;
+  error: string;
+}) {
+  return (
+    <span
+      className={cx(
+        "rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md",
+        className,
+      )}
+      role="alert"
+    >
+      {error}
+    </span>
+  );
+}
+
 export function RouteHeader({ children }: { children: ReactNode }) {
   return (
     <nav
       aria-label="Page navigation"
-      className="absolute left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-7 md:top-6"
+      className="absolute left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7"
     >
       {children}
     </nav>
@@ -73,6 +99,7 @@ export function AccountHeader({
   onDeleteAccount,
   onOpenProfile,
   onSignOut,
+  signOutError,
   userEmail,
   userLabel,
 }: {
@@ -81,6 +108,7 @@ export function AccountHeader({
   onDeleteAccount: (password: string) => Promise<string | null>;
   onOpenProfile: (() => void) | null;
   onSignOut: () => void;
+  signOutError: string;
   userEmail: string;
   userLabel: string;
 }) {
@@ -88,14 +116,20 @@ export function AccountHeader({
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
+  const signOutAlertId = useId();
 
   useEffect(() => {
     if (!isMenuOpen) return;
 
-    accountRef.current
-      ?.querySelector<HTMLButtonElement>("[role='menuitem']:not(:disabled)")
-      ?.focus();
+    const menuItems = accountRef.current?.querySelectorAll<HTMLButtonElement>(
+      "[role='menuitem']:not(:disabled)",
+    );
+    menuItems?.[
+      menuFocusRef.current === "last" ? menuItems.length - 1 : 0
+    ]?.focus();
 
     function closeFromOutside(event: PointerEvent) {
       if (!accountRef.current?.contains(event.target as Node)) {
@@ -105,9 +139,9 @@ export function AccountHeader({
 
     function closeFromEscape(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
+      event.preventDefault();
       setIsMenuOpen(false);
-      accountRef.current?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
-        ?.focus();
+      accountButtonRef.current?.focus();
     }
 
     document.addEventListener("pointerdown", closeFromOutside);
@@ -124,63 +158,187 @@ export function AccountHeader({
     action();
   }
 
+  function selectSignOut() {
+    setIsMenuOpen(false);
+    accountButtonRef.current?.focus();
+    onSignOut();
+  }
+
   function closeAbout() {
     setIsAboutOpen(false);
-    accountRef.current
-      ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
-      ?.focus();
   }
 
   function closeDelete() {
     setIsDeleteOpen(false);
-    accountRef.current
-      ?.querySelector<HTMLButtonElement>("[aria-haspopup='menu']")
-      ?.focus();
+  }
+
+  function openMenu(focus: "first" | "last" = "first") {
+    menuFocusRef.current = focus;
+    setIsMenuOpen(true);
+  }
+
+  function handleAccountKeyDown(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+  ) {
+    if (isSigningOut) return;
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    openMenu(event.key === "ArrowUp" ? "last" : "first");
+  }
+
+  function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      return;
+    }
+
+    const items = [
+      ...event.currentTarget.querySelectorAll<HTMLButtonElement>(
+        "[role='menuitem']:not(:disabled)",
+      ),
+    ];
+    if (items.length === 0) return;
+    event.preventDefault();
+
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+    let nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    else if (event.key === "ArrowDown") {
+      nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+    } else if (event.key === "ArrowUp") {
+      nextIndex =
+        currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+    }
+    items[nextIndex]?.focus();
   }
 
   return (
     <aside
-      aria-busy={isSigningOut}
       aria-label="Account"
-      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-7 md:top-6 md:max-w-xl"
+      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7"
       ref={accountRef}
     >
-      <ActionButton
-        aria-label={`Account for ${userLabel}`}
-        aria-controls={menuId}
-        aria-expanded={isMenuOpen}
-        aria-haspopup="menu"
-        className="max-w-full"
-        onClick={() => setIsMenuOpen((current) => !current)}
-        size="headerAccount"
-        title={userEmail}
-        type="button"
-        variant="navy"
+      <div
+        className={cx(
+          "relative inline-flex max-w-full flex-row-reverse items-start gap-4",
+          isSigningOut && "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
+          Boolean(signOutError) &&
+            "w-[12.875rem] !gap-3 min-[360px]:w-[13.375rem] md:w-[13.875rem] wide:w-auto",
+        )}
       >
-        <span className="min-w-0 truncate">{userLabel}</span>
-        <ChevronDown
-          aria-hidden="true"
+        <ActionButton
+          aria-disabled={isSigningOut || undefined}
+          aria-label={
+            isSigningOut
+              ? `Signing out… Account for ${userLabel}`
+              : `Account for ${userLabel}`
+          }
+          aria-controls={menuId}
+          aria-expanded={isMenuOpen}
+          aria-haspopup="menu"
           className={cx(
-            "size-5 shrink-0 transition-transform",
-            isMenuOpen && "rotate-180",
+            "max-w-full shrink-0",
+            isSigningOut &&
+              "!w-full aria-disabled:!pointer-events-auto aria-disabled:!cursor-wait aria-disabled:!opacity-100 wide:!w-full",
           )}
-          strokeWidth={3}
-        />
-      </ActionButton>
-      {isMenuOpen ? (
-        <div
-          className="absolute right-0 top-full mt-2 grid min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy"
+          onClick={() => {
+            if (isSigningOut) return;
+            if (!isMenuOpen) menuFocusRef.current = "first";
+            setIsMenuOpen((current) => !current);
+          }}
+          onKeyDown={handleAccountKeyDown}
+          ref={accountButtonRef}
+          size="header"
+          title={isSigningOut ? undefined : "Account"}
+          type="button"
+          variant="navy"
         >
-          <p
-            className="m-0 truncate px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
-            title={userEmail}
+          <span
+            aria-hidden={isSigningOut || undefined}
+            className={cx("contents", isSigningOut && "invisible")}
           >
-            {userEmail}
-          </p>
+            <span aria-hidden="true" className="size-6 shrink-0">
+              <CircleUserRound className="size-6" strokeWidth={3} />
+            </span>
+            <HeaderLabel>Account</HeaderLabel>
+            <ChevronDown
+              aria-hidden="true"
+              className={cx(
+                "hidden size-5 shrink-0 transition-transform wide:block",
+                isMenuOpen && "rotate-180",
+              )}
+              strokeWidth={3}
+            />
+          </span>
+        </ActionButton>
+        {signOutError && !isSigningOut ? (
+          <ActionButton
+            aria-describedby={signOutAlertId}
+            className="!min-w-0 flex-1 !gap-0.5 !px-0.5 !py-0 leading-tight whitespace-nowrap short:!min-h-11 wide:flex-none wide:!gap-1 wide:!px-3"
+            onClick={selectSignOut}
+            size="compact"
+            type="button"
+            variant="navy"
+          >
+            <TriangleAlert
+              aria-hidden="true"
+              className="size-4 shrink-0 text-brand-yellow"
+              strokeWidth={3}
+            />
+            <span>Sign out again</span>
+          </ActionButton>
+        ) : null}
+        <span
+          aria-atomic="true"
+          aria-live="polite"
+          className={cx(
+            !isSigningOut && "sr-only",
+            isSigningOut &&
+              "pointer-events-none absolute inset-0 inline-flex items-center justify-center gap-2 px-3 text-sm text-white short:text-sm md:px-4 md:text-base",
+          )}
+          role="status"
+        >
+          {isSigningOut ? (
+            <>
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-5 shrink-0 animate-spin motion-reduce:animate-none"
+                strokeWidth={3}
+              />
+              <span>Signing out…</span>
+            </>
+          ) : (
+            ""
+          )}
+        </span>
+      </div>
+      <span
+        aria-atomic="true"
+        className="sr-only"
+        id={signOutAlertId}
+        role="alert"
+      >
+        {signOutError}
+      </span>
+      {isMenuOpen && !isSigningOut ? (
+        <div
+          className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"
+        >
+          <div className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100">
+            <p className="m-0 min-w-0 break-words" dir="auto">
+              {userLabel}
+            </p>
+            {userLabel !== userEmail ? (
+              <p className="m-0 min-w-0 break-words" dir="auto">
+                {userEmail}
+              </p>
+            ) : null}
+          </div>
+          {error ? <AccountError error={error} /> : null}
           <div
             aria-label="Account menu"
-            className="grid gap-1"
+            className="grid gap-1 [&>button]:scroll-my-2"
             id={menuId}
+            onKeyDown={handleMenuKeyDown}
             role="menu"
           >
             {onOpenProfile ? (
@@ -197,43 +355,47 @@ export function AccountHeader({
               role="menuitem"
               type="button"
             >
-              About
+              AI and saved data
             </MenuButton>
             <MenuButton
+              disabled={isSigningOut}
+              onClick={selectSignOut}
+              role="menuitem"
+              type="button"
+            >
+              {isSigningOut ? "Signing out…" : "Sign out"}
+            </MenuButton>
+            <MenuButton
+              className="mt-2"
               disabled={isSigningOut}
               onClick={() => selectAction(() => setIsDeleteOpen(true))}
               role="menuitem"
               type="button"
-              variant="brand"
+              variant="dangerSurface"
             >
               Delete account
-            </MenuButton>
-            <MenuButton
-              disabled={isSigningOut}
-              onClick={() => selectAction(onSignOut)}
-              role="menuitem"
-              type="button"
-              variant="brand"
-            >
-              {isSigningOut ? "Signing out…" : "Sign out"}
             </MenuButton>
           </div>
         </div>
       ) : null}
-      {isAboutOpen ? <AboutDialog onClose={closeAbout} /> : null}
-      {isDeleteOpen ? (
-        <AccountDeleteDialog onClose={closeDelete} onDelete={onDeleteAccount} />
+      {isAboutOpen ? (
+        <AboutDialog
+          onClose={closeAbout}
+          returnFocusRef={accountButtonRef}
+        />
       ) : null}
-      {error ? (
-        <span
-          className={cx(
-            "absolute right-0 top-full mt-2 w-64 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md sm:w-80",
-            isMenuOpen && "mt-56",
-          )}
-          role="alert"
-        >
-          {error}
-        </span>
+      {isDeleteOpen ? (
+        <AccountDeleteDialog
+          onClose={closeDelete}
+          onDelete={onDeleteAccount}
+          returnFocusRef={accountButtonRef}
+        />
+      ) : null}
+      {error && !isMenuOpen ? (
+        <AccountError
+          className="absolute right-0 top-full mt-2 w-64 sm:w-80"
+          error={error}
+        />
       ) : null}
     </aside>
   );

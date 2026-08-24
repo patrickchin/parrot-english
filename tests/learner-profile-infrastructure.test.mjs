@@ -164,18 +164,37 @@ describe("learner-profile infrastructure", () => {
       definition.questions.map(({ canonicalField }) => canonicalField),
       ["name", "age", null, null, null, null],
     );
+    assert.deepEqual(
+      definition.questions.map(({ fallbackAcknowledgment }) =>
+        fallbackAcknowledgment
+      ),
+      Array(6).fill("Thank you!"),
+    );
     assert.ok(Object.isFrozen(definition));
     assert.ok(Object.isFrozen(definition.questions));
     assert.ok(definition.questions.every(Object.isFrozen));
   });
 
-  it("rejects duplicate positions and unknown definition fields", () => {
+  it("rejects duplicate positions, unknown fields, and public-copy drift", () => {
     assert.throws(
       () =>
         validateLearnerProfileQuestionnaire({
           ...questionnaireV2,
           questions: questionnaireV2.questions.map((entry, index) =>
             index === 1 ? { ...entry, position: 1, mystery: true } : entry,
+          ),
+        }),
+      /Invalid learner-profile questionnaire/,
+    );
+
+    assert.throws(
+      () =>
+        validateLearnerProfileQuestionnaire({
+          ...questionnaireV2,
+          questions: questionnaireV2.questions.map((entry, index) =>
+            index === 0
+              ? { ...entry, fallbackAcknowledgment: "Great job!" }
+              : entry,
           ),
         }),
       /Invalid learner-profile questionnaire/,
@@ -383,18 +402,36 @@ describe("checked-in questionnaire deployment", () => {
     );
   });
 
-  it("documents the runtime secret, JSON snapshots, and dormant legacy tables", () => {
-    const documentation = [
-      readFileSync(new URL("../README.md", import.meta.url), "utf8"),
-      readFileSync(
-        new URL("../docs/design/technical-architecture.md", import.meta.url),
-        "utf8",
-      ),
+  it("uses saved acknowledgment audio without a runtime TTS boundary", () => {
+    const questionnaireSource = readFileSync(
+      new URL("../lib/learner-profile-questionnaire.js", import.meta.url),
+      "utf8",
+    );
+    const workerSource = [
+      readFileSync(new URL("../worker/index.ts", import.meta.url), "utf8"),
+      readFileSync(new URL("../worker/learner-profile.ts", import.meta.url), "utf8"),
     ].join("\n");
 
-    assert.match(documentation, /wrangler secret put ELEVENLABS_API_KEY/);
-    assert.match(documentation, /answers_json/);
-    assert.match(documentation, /checked-in.*questionnaire/i);
-    assert.match(documentation, /dormant/i);
+    assert.equal(
+      existsSync(
+        new URL(
+          "../worker/learner-profile-acknowledgment-audio.ts",
+          import.meta.url,
+        ),
+      ),
+      false,
+    );
+    assert.doesNotMatch(
+      workerSource,
+      /synthesizeAcknowledgment|synthesizeAudio|ElevenLabsEnv|ELEVENLABS_(?:API_KEY|REQUEST_TIMEOUT_MS)|api\.elevenlabs\.io/,
+    );
+    assert.match(
+      questionnaireSource,
+      /LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID\s*=\s*"peppa-thank-you"/,
+    );
+    assert.match(
+      workerSource,
+      /resolveAudio\(LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID, text\)/,
+    );
   });
 });

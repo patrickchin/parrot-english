@@ -33,7 +33,8 @@ const STORY_CONFIG = {
     prompt:
       "Use image 0 for the exact composition and hand-painted style. Use image 1 only as the learner reference. Replace only the child with the learner. Preserve the red ball, action, background, and 3:2 crop. Soft hand-painted watercolor. No photo texture, no text, no logos, no extra people.",
     promptVersion: "red-ball-v1",
-    sceneAssetPath: "/assets/personalization/the-red-ball-scene-reference.webp",
+    sceneAssetUrl:
+      "https://media.parrotbook.com/assets/v1/personalization/the-red-ball-scene-reference.webp",
   },
 } as const;
 
@@ -72,6 +73,7 @@ type StoredImage = {
 type HandlerDependencies = {
   createId: () => string;
   createObjectId: () => string;
+  fetchMedia: typeof fetch;
   generateImage: (input: {
     prompt: string;
     sceneImage: File;
@@ -190,10 +192,11 @@ function parseStoryRoute(pathname: string) {
   };
 }
 
-async function loadSceneReference(env: PersonalizedStoryArtEnv, config: StoryConfig) {
-  const response = await env.ASSETS.fetch(
-    new Request(`https://assets.example${config.sceneAssetPath}`),
-  );
+async function loadSceneReference(
+  fetchMedia: typeof fetch,
+  config: StoryConfig,
+) {
+  const response = await fetchMedia(new Request(config.sceneAssetUrl));
   if (!response.ok) {
     throw new PersonalizedStoryArtApiError(
       502,
@@ -342,6 +345,7 @@ export async function handlePersonalizedStoryArtRequest(
   const createId = overrides.createId ?? (() => crypto.randomUUID());
   const createObjectId =
     overrides.createObjectId ?? (() => crypto.randomUUID());
+  const fetchMedia = overrides.fetchMedia ?? globalThis.fetch;
   const generateImage =
     overrides.generateImage ??
     (async ({
@@ -562,7 +566,7 @@ export async function handlePersonalizedStoryArtRequest(
           sceneImage:
             overrides.generateImage
               ? new File([], "scene-placeholder.webp", { type: "image/webp" })
-              : await loadSceneReference(input.env, config),
+              : await loadSceneReference(fetchMedia, config),
           sourceImage,
           storyId: route.storyId,
         });

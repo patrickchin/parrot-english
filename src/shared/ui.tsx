@@ -7,14 +7,19 @@ import type {
 } from "react";
 import { Link } from "react-router";
 
-export type ControlVariant = "brand" | "navy" | "success" | "surface";
+export type ControlVariant =
+  | "brand"
+  | "dangerSurface"
+  | "navy"
+  | "rose"
+  | "success"
+  | "surface";
 export type ControlSize =
   | "compact"
   | "default"
   | "large"
   | "hero"
   | "header"
-  | "headerAccount"
   | "cardAction"
   | "inline"
   | "menu";
@@ -32,14 +37,12 @@ type ControlVisualProps = {
   variant?: ControlVariant;
 };
 
-export function cx(
-  ...classes: Array<string | false | null | undefined>
-) {
+export function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
 const focusClassName =
-  "focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink";
+  "focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-focus-dark focus-visible:ring-4 focus-visible:ring-focus-light";
 
 export function fieldClassName({
   className,
@@ -71,12 +74,22 @@ export function controlClassName({
   size?: ControlSize | "none";
 } = {}) {
   return cx(
-    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter,box-shadow] duration-150 ease-out motion-reduce:transition-none",
+    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter] duration-150 ease-out motion-reduce:transition-none",
     focusClassName,
     interaction === "button" &&
-      "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:hover:brightness-105 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
+      "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
+    interaction === "button" &&
+      "aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:transition-none aria-disabled:hover:translate-y-0 aria-disabled:hover:brightness-100 aria-disabled:active:translate-y-0 aria-disabled:active:brightness-100",
     interaction === "link" &&
-      "cursor-pointer hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+      "cursor-pointer hover:-translate-y-0.5 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+    interaction === "button" &&
+      (variant === "rose" || variant === "dangerSurface"
+        ? "enabled:hover:brightness-95"
+        : "enabled:hover:brightness-105"),
+    interaction === "link" &&
+      (variant === "rose" || variant === "dangerSurface"
+        ? "hover:brightness-95"
+        : "hover:brightness-105"),
     "disabled:cursor-not-allowed disabled:opacity-60",
     align === "center" && "justify-center text-center",
     align === "start" && "justify-start text-left",
@@ -94,28 +107,24 @@ export function controlClassName({
       "min-h-16 gap-2 px-6 py-2 text-xl md:min-h-20 md:text-2xl",
     size === "header" &&
       "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-11 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5",
-    size === "headerAccount" &&
-      "min-h-13 min-w-0 gap-1.5 px-3 py-0 text-base short:min-h-11 short:px-2 short:text-sm md:min-h-16 md:gap-2 md:px-5 md:text-base",
     size === "cardAction" &&
       "size-12 min-h-0 min-w-0 shrink-0 gap-1 p-0 text-sm min-[360px]:w-auto min-[360px]:min-w-20 sm:min-w-21",
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
     size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
-    variant === "brand" && "bg-brand-pink text-white",
+    variant === "brand" && "bg-brand-pink text-brand-action-ink",
+    variant === "dangerSurface" && "bg-rose-50 text-red-800",
     variant === "navy" && "bg-brand-navy text-white",
+    variant === "rose" && "bg-brand-rose text-white",
     variant === "success" && "bg-brand-green text-white",
     variant === "surface" && "bg-white/90 text-brand-blue",
     elevation === "flat" && "shadow-none",
     elevation === "raised" &&
-      variant === "brand" &&
+      (variant === "brand" || variant === "rose") &&
       "shadow-control-pink",
+    elevation === "raised" && variant === "navy" && "shadow-control-navy",
+    elevation === "raised" && variant === "success" && "shadow-control-green",
     elevation === "raised" &&
-      variant === "navy" &&
-      "shadow-control-navy",
-    elevation === "raised" &&
-      variant === "success" &&
-      "shadow-control-green",
-    elevation === "raised" &&
-      variant === "surface" &&
+      (variant === "surface" || variant === "dangerSurface") &&
       "shadow-control-surface",
     className,
   );
@@ -218,7 +227,7 @@ export function ActionLink({
 
 function textControlClassName(className?: string) {
   return cx(
-    "inline-flex min-h-11 touch-manipulation items-center justify-center border-0 bg-transparent px-1 font-ui font-black text-brand-blue underline underline-offset-4 transition-colors duration-150 hover:text-brand-navy disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex min-h-11 touch-manipulation items-center justify-center border-0 bg-transparent px-1 font-ui font-black text-brand-blue underline underline-offset-4 transition-colors duration-150 hover:text-brand-navy aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-60 disabled:cursor-not-allowed disabled:opacity-60",
     focusClassName,
     className,
   );
@@ -365,7 +374,7 @@ export function SegmentedButton({
       aria-pressed={role === "tab" ? undefined : selected}
       aria-selected={role === "tab" ? selected : undefined}
       className={cx(
-        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[translate,filter,box-shadow] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[translate,filter] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
         focusClassName,
         selected
           ? "bg-brand-navy text-white shadow-control-navy"
@@ -394,13 +403,10 @@ export function cardClassName({
   tone?: CardTone;
 } = {}) {
   return cx(
-    tone === "glass" &&
-      "rounded-3xl border-4 border-white bg-white/95",
+    tone === "glass" && "rounded-3xl border-4 border-white bg-white/95",
     tone === "solid" && "rounded-3xl border-4 border-white bg-white",
-    tone === "muted" &&
-      "rounded-3xl border-4 border-white bg-white/75",
-    tone === "inset" &&
-      "rounded-2xl border-3 border-sky-200 bg-white",
+    tone === "muted" && "rounded-3xl border-4 border-white bg-white/75",
+    tone === "inset" && "rounded-2xl border-3 border-sky-200 bg-white",
     elevation === "flat" && "shadow-none",
     elevation === "soft" && "shadow-sm",
     elevation === "raised" && "shadow-card",

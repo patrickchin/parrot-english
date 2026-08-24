@@ -39,17 +39,28 @@ const vite = await createServer({
 
 let ApplicationRoutes;
 let ConversationSurface;
+let experienceEvents;
+let maxExperienceDurationMs;
+let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let usePeppaConversation;
 let createAuthGate;
 let firstLesson;
 let firstLessonId;
+let restoreExperienceSink = () => {};
 
 before(async () => {
+  ({
+    experienceEvents,
+    MAX_EXPERIENCE_DURATION_MS: maxExperienceDurationMs,
+  } = await vite.ssrLoadModule("/src/experience/experience-events.ts"));
   ({ ConversationSurface } = await vite.ssrLoadModule(
     "/src/conversation/ConversationSurface.tsx",
   ));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
+  ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
+    "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
+  ));
   ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx"));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
@@ -61,6 +72,8 @@ before(async () => {
 });
 
 afterEach(async () => {
+  restoreExperienceSink();
+  restoreExperienceSink = () => {};
   await cleanupMountedRoots();
   document.body.replaceChildren();
   globalThis.fetch = originalFetch;
@@ -141,6 +154,38 @@ function json(payload, status = 200) {
   return Response.json(payload, { status });
 }
 
+function conversationStartResponse(id) {
+  return json({
+    conversation: { id },
+    livekit: {
+      participantToken: "participant-token",
+      url: "wss://livekit.example.test",
+    },
+    scenario: {
+      key: "small-chat",
+      maxOptionalExchanges: 3,
+      requiredDetails: [],
+      summaryMode: "none",
+      version: 1,
+    },
+  });
+}
+
+function installConversationFetch(id) {
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/conversations" && init.method === "POST") {
+      return conversationStartResponse(id);
+    }
+    if (
+      path === `/api/conversations/${id}/finish` &&
+      init.method === "POST"
+    ) {
+      return json({ conversation: {} });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+}
+
 function abortError() {
   const error = new Error("The request was aborted.");
   error.name = "AbortError";
@@ -157,6 +202,12 @@ function button(name) {
   return match;
 }
 
+function output(name) {
+  const match = document.querySelector(`output[aria-label="${name}"]`);
+  assert.ok(match, `Expected an output named ${name}.`);
+  return match;
+}
+
 function learnerProfileRouteProps(completedLearnerProfileFallback) {
   return {
     completedLearnerProfileFallback,
@@ -164,6 +215,7 @@ function learnerProfileRouteProps(completedLearnerProfileFallback) {
     isProfileRoute: false,
     learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
     onCloseProfileRoute() {},
+    onOpenLessons() {},
     onOpenProfileRoute() {},
   };
 }
@@ -171,6 +223,8 @@ function learnerProfileRouteProps(completedLearnerProfileFallback) {
 function ConversationHookHarness({
   createTransport,
   now,
+  onBack = () => {},
+  onChooseLesson = () => {},
   onCompleted = async () => {},
   purpose = "onboarding",
 }) {
@@ -178,7 +232,8 @@ function ConversationHookHarness({
     active: true,
     createTransport,
     now,
-    onBack() {},
+    onBack,
+    onChooseLesson,
     onCompleted,
     purpose,
   });
@@ -193,6 +248,26 @@ function ConversationHookHarness({
     ),
     createElement(
       "output",
+      { "aria-label": "Microphone busy" },
+      String(conversation.microphoneBusy),
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Audio playback blocked" },
+      String(conversation.audioPlaybackBlocked),
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Audio playback busy" },
+      String(conversation.audioPlaybackBusy),
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Audio playback error" },
+      conversation.audioPlaybackError,
+    ),
+    createElement(
+      "output",
       { "aria-label": "Peppa response latency" },
       conversation.responseLatencyMs ?? "",
     ),
@@ -203,15 +278,85 @@ function ConversationHookHarness({
     ),
     createElement(
       "output",
+      { "aria-label": "Wait cycle" },
+      String(conversation.waitCycle),
+    ),
+    createElement(
+      "output",
       { "aria-label": "Conversation error" },
       conversation.error,
     ),
+    createElement(
+      "output",
+      { "aria-label": "Conversation recovery phase" },
+      conversation.recoveryPhase ?? "",
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Voice retry used" },
+      String(conversation.voiceRetryUsed),
+    ),
     createElement("button", { onClick: conversation.onStart, type: "button" }, "Start voice"),
+    createElement(
+      "button",
+      { onClick: conversation.onRetryVoice, type: "button" },
+      "Retry voice",
+    ),
+    createElement(
+      "button",
+      {
+        disabled: conversation.audioPlaybackBusy,
+        onClick: conversation.onStartAudio,
+        type: "button",
+      },
+      "Start sound",
+    ),
     createElement(
       "button",
       { onClick: conversation.onToggleMicrophone, type: "button" },
       conversation.microphoneEnabled ? "End my turn" : "Start my turn",
     ),
+    createElement(
+      "button",
+      { onClick: conversation.onRepeatAudio, type: "button" },
+      "Repeat voice",
+    ),
+    createElement(
+      "button",
+      { onClick: conversation.onFinish, type: "button" },
+      "Finish voice",
+    ),
+    createElement(
+      "button",
+      { onClick: conversation.onBack, type: "button" },
+      "Back voice",
+    ),
+    createElement(
+      "button",
+      { onClick: conversation.onChooseLesson, type: "button" },
+      "Choose lesson",
+    ),
+  );
+}
+
+function RemountingConversationHookHarness({ createTransport }) {
+  const [generation, setGeneration] = useState(0);
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "button",
+      {
+        onClick: () => setGeneration((current) => current + 1),
+        type: "button",
+      },
+      "Remount voice",
+    ),
+    createElement(ConversationHookHarness, {
+      createTransport,
+      key: generation,
+      purpose: "small-chat",
+    }),
   );
 }
 
@@ -220,25 +365,31 @@ function conversationSurfaceProps(overrides = {}) {
     canFinish: true,
     error: "",
     liveTranscript: "",
+    microphoneBusy: false,
     microphoneEnabled: false,
     onBack() {},
+    onChooseLesson() {},
     onFinish() {},
     onPromptStyleChange() {},
     onRepeatAudio() {},
+    onRetryVoice() {},
     onStart() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
     promptStyle: "tiny-turns",
+    recoveryPhase: null,
     responseLatencyMs: null,
     status: "listening",
     turnReady: true,
     turns: [],
+    voiceRetryUsed: false,
+    waitCycle: 0,
     ...overrides,
   };
 }
 
-function ProfileRouteHarness({ children }) {
-  const [route, setRoute] = useState("/");
+function ProfileRouteHarness({ children, initialRoute = "/" }) {
+  const [route, setRoute] = useState(initialRoute);
 
   return createElement(
     LearnerProfileGate,
@@ -248,6 +399,7 @@ function ProfileRouteHarness({ children }) {
       isProfileRoute: route === "/profile",
       learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
       onCloseProfileRoute: () => setRoute("/"),
+      onOpenLessons() {},
       onOpenProfileRoute: () => setRoute("/profile"),
     },
     children,
@@ -268,6 +420,7 @@ function StandaloneConversationRouteHarness() {
       learnerProfileFallback: createElement("p", null, "LEARNER PROFILE ROUTE"),
       onCloseProfileRoute() {},
       onConversationCompleted: () => setRoute("/"),
+      onOpenLessons: () => setRoute("/lessons"),
       onOpenProfileRoute() {},
       onRedoCompleted() {},
       onRedoLearnerProfileRoute() {},
@@ -365,6 +518,10 @@ function installControlledAudio() {
     finish() {
       this.onended?.(new window.Event("ended"));
     }
+
+    fail() {
+      this.onerror?.(new window.Event("error"));
+    }
   }
 
   globalThis.Audio = ControlledAudio;
@@ -415,17 +572,17 @@ async function advanceToLearnerTurn(ControlledAudio) {
     await act(async () => ControlledAudio.instances[index].finish());
   }
   await waitFor(() => {
-    const microphone = button("Microphone");
-    assert.equal(microphone.getAttribute("aria-pressed"), "false");
+    const microphone = button("Tap to talk");
+    assert.equal(microphone.hasAttribute("aria-pressed"), false);
     assert.match(microphone.textContent, /Tap to talk/);
   });
 }
 
 async function recordLearnerTurn() {
-  const microphone = button("Microphone");
+  const microphone = button("Tap to talk");
   await click(microphone);
   await waitFor(() => {
-    assert.equal(microphone.getAttribute("aria-pressed"), "true");
+    assert.equal(microphone.hasAttribute("aria-pressed"), false);
     assert.match(microphone.textContent, /Tap when done/);
   });
 
@@ -435,6 +592,15 @@ async function recordLearnerTurn() {
 
 function text(value) {
   assert.match(document.body.textContent, value);
+}
+
+function captureExperienceEvents() {
+  const events = [];
+  restoreExperienceSink();
+  restoreExperienceSink = experienceEvents.installSink((event) => {
+    events.push(event);
+  });
+  return events;
 }
 
 function noText(value) {
@@ -453,6 +619,7 @@ function createSessionClient(initialState) {
   }
 
   const client = {
+    publish,
     retry,
     signInCalls,
     signIn: {
@@ -530,14 +697,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await waitFor(() => assert.equal(requests, 2));
     text(/Loading your questions…/);
-    noText(/Help Peppa get to know you/);
+    noText(/Answer 1 question/);
 
     response.resolve(json(fullLearnerProfileState()));
-    await waitFor(() => text(/Help Peppa get to know you/));
+    await waitFor(() => text(/Answer 1 question/));
     noText(/Loading your questions…/);
   });
 
-  it("enables the learner's turn while Peppa says her opening", async () => {
+  it("opens the learner's turn only after Peppa finishes her opening", async () => {
+    const experienceTrace = captureExperienceEvents();
     let disconnectCalls = 0;
     let listener = () => {};
     const microphoneCalls = [];
@@ -600,10 +768,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(
       document.querySelector('output[aria-label="Learner turn ready"]')
         .textContent,
-      "true",
+      "false",
     );
     await click(button("Start my turn"));
-    await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
+    assert.deepEqual(microphoneCalls, [false]);
 
     await act(async () => {
       listener({
@@ -638,12 +806,2146 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "true",
     );
+    await waitFor(() => {
+      const startup = experienceTrace.find(
+        (event) =>
+          event.name === "conversation_start" && event.outcome === "ready",
+      );
+      assert.ok(startup);
+      assert.equal(startup.surface, "learner_profile");
+      assert.ok(startup.apiReadyMs <= startup.roomReadyMs);
+      assert.ok(startup.roomReadyMs <= startup.microphoneMutedMs);
+      assert.ok(startup.microphoneMutedMs <= startup.learnerTurnReadyMs);
+      assert.deepEqual(Object.keys(startup).sort(), [
+        "apiReadyMs",
+        "learnerTurnReadyMs",
+        "microphoneMutedMs",
+        "name",
+        "outcome",
+        "roomReadyMs",
+        "schemaVersion",
+        "surface",
+      ]);
+    });
+    await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
   });
 
+  it("keeps the learner turn closed until blocked sound is recovered and replayed", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const startAudioRequest = deferred();
+    const microphoneCalls = [];
+    let listener = () => {};
+    let now = 1_000;
+    let repeatCalls = 0;
+    let startAudioCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      startAudio() {
+        startAudioCalls += 1;
+        return startAudioRequest.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("conversation-audio-blocked");
+      }
+      if (path.endsWith("/finish") && init.method === "POST") {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        now: () => now,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      listener({
+        type: "transcription",
+        id: "private-opening-id",
+        text: "Hi Mia, this is a private opening.",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    now = 1_120;
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+
+    assert.equal(output("Audio playback blocked").textContent, "true");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Learner turn ready").textContent, "false");
+    await click(button("Start my turn"));
+    assert.deepEqual(microphoneCalls, [false]);
+    await waitFor(() => {
+      const playbackEvents = experienceTrace.filter(
+        (event) => event.name === "conversation_audio_playback",
+      );
+      assert.deepEqual(playbackEvents, [
+        {
+          durationMs: 120,
+          name: "conversation_audio_playback",
+          outcome: "blocked",
+          schemaVersion: 1,
+          surface: "talk",
+        },
+      ]);
+      assert.doesNotMatch(
+        JSON.stringify(playbackEvents),
+        /Mia|private-opening-id|private opening|conversation-audio-blocked/i,
+      );
+    });
+
+    await click(button("Start sound"));
+    assert.equal(startAudioCalls, 1);
+    assert.equal(output("Audio playback busy").textContent, "true");
+    assert.equal(output("Learner turn ready").textContent, "false");
+    assert.equal(button("Start sound").disabled, true);
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "ready" });
+      await flush();
+    });
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(repeatCalls, 1);
+
+    startAudioRequest.resolve();
+    await flush();
+    assert.equal(repeatCalls, 1);
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      listener({ type: "speech-started", role: "assistant" });
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Learner turn ready").textContent, "true"),
+    );
+    assert.equal(output("Conversation status").textContent, "listening");
+    assert.equal(repeatCalls, 1);
+  });
+
+  it("restores the sound action with fixed copy when playback recovery fails", async () => {
+    const microphoneCalls = [];
+    let listener = () => {};
+    let startAudioCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {},
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      async startAudio() {
+        startAudioCalls += 1;
+        throw new Error("NotAllowedError for Mia and secret-room-token");
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("conversation-audio-rejected");
+      }
+      if (path.endsWith("/finish") && init.method === "POST") {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+
+    await click(button("Start sound"));
+    await waitFor(() => {
+      assert.equal(output("Audio playback blocked").textContent, "true");
+      assert.equal(output("Audio playback busy").textContent, "false");
+      assert.equal(
+        output("Audio playback error").textContent,
+        "Sound did not start. Tap again.",
+      );
+    });
+    assert.equal(button("Start sound").disabled, false);
+    assert.equal(output("Conversation error").textContent, "");
+    assert.doesNotMatch(
+      document.body.textContent,
+      /NotAllowedError|Mia|secret-room-token/,
+    );
+
+    await click(button("Start sound"));
+    await waitFor(() => assert.equal(startAudioCalls, 2));
+    assert.equal(button("Start sound").disabled, false);
+    assert.equal(
+      output("Audio playback error").textContent,
+      "Sound did not start. Tap again.",
+    );
+  });
+
+  it("does not restore a sound block when native playback wins a late rejection", async () => {
+    const startAudioRequest = deferred();
+    const microphoneCalls = [];
+    let listener = () => {};
+    let repeatCalls = 0;
+    let startAudioCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      startAudio() {
+        startAudioCalls += 1;
+        return startAudioRequest.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    installConversationFetch("conversation-audio-late-rejection");
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+    await click(button("Start sound"));
+    assert.equal(startAudioCalls, 1);
+    assert.equal(output("Audio playback busy").textContent, "true");
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      await flush();
+    });
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Audio playback error").textContent, "");
+
+    startAudioRequest.reject(
+      new Error("NotAllowedError with private-room-token"),
+    );
+    await flush();
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Audio playback error").textContent, "");
+    assert.equal(repeatCalls, 0);
+    assert.doesNotMatch(document.body.textContent, /private-room-token/);
+  });
+
+  it("keeps a newer sound recovery pending when an older request rejects", async () => {
+    const firstStartAudio = deferred();
+    const secondStartAudio = deferred();
+    const microphoneCalls = [];
+    let listener = () => {};
+    let startAudioCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {},
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      startAudio() {
+        startAudioCalls += 1;
+        return startAudioCalls === 1
+          ? firstStartAudio.promise
+          : secondStartAudio.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    installConversationFetch("conversation-audio-recovery-epochs");
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+    await click(button("Start sound"));
+    assert.equal(startAudioCalls, 1);
+    assert.equal(output("Audio playback busy").textContent, "true");
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "ready" });
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+    assert.equal(output("Audio playback blocked").textContent, "true");
+    assert.equal(output("Audio playback busy").textContent, "false");
+
+    await click(button("Start sound"));
+    assert.equal(startAudioCalls, 2);
+    assert.equal(output("Audio playback busy").textContent, "true");
+    assert.equal(output("Audio playback error").textContent, "");
+
+    firstStartAudio.reject(
+      new Error("NotAllowedError from stale private-room-token"),
+    );
+    await flush();
+    assert.equal(output("Audio playback blocked").textContent, "true");
+    assert.equal(output("Audio playback busy").textContent, "true");
+    assert.equal(output("Audio playback error").textContent, "");
+    assert.equal(button("Start sound").disabled, true);
+    assert.doesNotMatch(document.body.textContent, /private-room-token/);
+
+    secondStartAudio.resolve();
+    await waitFor(() =>
+      assert.equal(output("Audio playback busy").textContent, "false"),
+    );
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback error").textContent, "");
+    assert.equal(startAudioCalls, 2);
+  });
+
+  it("coalesces rapid sound taps while playback recovery is pending", async () => {
+    const startAudioRequest = deferred();
+    const microphoneCalls = [];
+    let listener = () => {};
+    let startAudioCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {},
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      startAudio() {
+        startAudioCalls += 1;
+        return startAudioRequest.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    installConversationFetch("conversation-audio-rapid-taps");
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+
+    const sound = button("Start sound");
+    await act(async () => {
+      sound.click();
+      sound.click();
+      await flush();
+    });
+    assert.equal(startAudioCalls, 1);
+    assert.equal(output("Audio playback busy").textContent, "true");
+    assert.equal(button("Start sound").disabled, true);
+
+    startAudioRequest.resolve();
+    await waitFor(() =>
+      assert.equal(output("Audio playback busy").textContent, "false"),
+    );
+    assert.equal(startAudioCalls, 1);
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback error").textContent, "");
+  });
+
+  it("recovers an established track from ready and a fulfilled sound request", async () => {
+    const startAudioRequest = deferred();
+    const microphoneCalls = [];
+    let listener = () => {};
+    let repeatCalls = 0;
+    let startAudioCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      startAudio() {
+        startAudioCalls += 1;
+        return startAudioRequest.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    installConversationFetch("conversation-audio-established-track");
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      listener({
+        type: "transcription",
+        id: "established-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Learner turn ready").textContent, "true"),
+    );
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+    assert.equal(output("Audio playback blocked").textContent, "true");
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    await click(button("Start sound"));
+    assert.equal(startAudioCalls, 1);
+    assert.equal(output("Audio playback busy").textContent, "true");
+    await act(async () => {
+      listener({ type: "audio-playback", state: "ready" });
+      await flush();
+    });
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Learner turn ready").textContent, "true");
+
+    startAudioRequest.resolve();
+    await flush();
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Audio playback error").textContent, "");
+    assert.equal(output("Conversation status").textContent, "listening");
+    assert.equal(repeatCalls, 0);
+  });
+
+  it("does not infer a missed opening from a delayed native playback signal", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const microphoneCalls = [];
+    let listener = () => {};
+    let now = 2_000;
+    let repeatCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      async startAudio() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("conversation-audio-delayed");
+      }
+      if (path.endsWith("/finish") && init.method === "POST") {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        now: () => now,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "ready" });
+      listener({ type: "speech-started", role: "assistant" });
+      listener({
+        type: "transcription",
+        id: "opening-before-native-playing",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    assert.equal(output("Learner turn ready").textContent, "false");
+    assert.equal(repeatCalls, 0);
+    assert.deepEqual(
+      experienceTrace.filter(
+        (event) => event.name === "conversation_audio_playback",
+      ),
+      [],
+    );
+
+    now = 2_400;
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Learner turn ready").textContent, "true"),
+    );
+    assert.equal(repeatCalls, 0);
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      await flush();
+    });
+    assert.equal(repeatCalls, 0);
+    await waitFor(() => {
+      const playbackEvents = experienceTrace.filter(
+        (event) => event.name === "conversation_audio_playback",
+      );
+      assert.deepEqual(playbackEvents, [
+        {
+          durationMs: 400,
+          name: "conversation_audio_playback",
+          outcome: "ready",
+          schemaVersion: 1,
+          surface: "talk",
+        },
+      ]);
+    });
+
+    assert.equal(output("Conversation status").textContent, "listening");
+    assert.equal(repeatCalls, 0);
+  });
+
+  it("replays once when playback stops during speech and a replacement starts", async () => {
+    const microphoneCalls = [];
+    let listener = () => {};
+    let repeatCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      async startAudio() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    installConversationFetch("conversation-audio-replacement-track");
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      listener({
+        type: "transcription",
+        id: "opening-before-replacement",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Learner turn ready").textContent, "true"),
+    );
+
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      listener({ type: "audio-playback", state: "stopped" });
+      await flush();
+    });
+    assert.equal(output("Learner turn ready").textContent, "false");
+    assert.equal(output("Conversation status").textContent, "connecting");
+    assert.equal(repeatCalls, 0);
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      listener({ type: "audio-playback", state: "started" });
+      await flush();
+    });
+    assert.equal(repeatCalls, 0);
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await waitFor(() => assert.equal(repeatCalls, 1));
+    assert.equal(output("Conversation status").textContent, "speaking");
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Learner turn ready").textContent, "true"),
+    );
+    assert.equal(output("Conversation status").textContent, "listening");
+    assert.equal(repeatCalls, 1);
+  });
+
+  it("ignores the repeat callback while playback is blocked", async () => {
+    const microphoneCalls = [];
+    let listener = () => {};
+    let repeatCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      async startAudio() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    installConversationFetch("conversation-audio-repeat-blocked");
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      listener({
+        type: "transcription",
+        id: "opening-before-repeat-block",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Learner turn ready").textContent, "true"),
+    );
+
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+    assert.equal(output("Audio playback blocked").textContent, "true");
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    await click(button("Repeat voice"));
+    assert.equal(repeatCalls, 0);
+    assert.equal(output("Audio playback blocked").textContent, "true");
+    assert.equal(output("Conversation error").textContent, "");
+    assert.equal(output("Learner turn ready").textContent, "false");
+  });
+
+  it("ignores a stale sound-start completion after Back", async () => {
+    const startAudioRequest = deferred();
+    const microphoneCalls = [];
+    let backCalls = 0;
+    let disconnectCalls = 0;
+    let listener = () => {};
+    let repeatCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {
+        disconnectCalls += 1;
+      },
+      async repeatLastAudio() {
+        repeatCalls += 1;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      startAudio() {
+        return startAudioRequest.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("conversation-audio-back");
+      }
+      if (path.endsWith("/finish") && init.method === "POST") {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        onBack: () => {
+          backCalls += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "blocked" });
+      await flush();
+    });
+    await click(button("Start sound"));
+    assert.equal(output("Audio playback busy").textContent, "true");
+
+    await click(button("Back voice"));
+    assert.equal(backCalls, 1);
+    assert.equal(disconnectCalls, 1);
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    startAudioRequest.resolve();
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      await flush();
+    });
+    assert.equal(repeatCalls, 0);
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+    assert.equal(output("Audio playback error").textContent, "");
+    assert.equal(output("Learner turn ready").textContent, "false");
+  });
+
+  it("disconnects immediately on Finish and ignores a stale replay completion", async () => {
+    const finishRequest = deferred();
+    const repeatRequest = deferred();
+    const microphoneCalls = [];
+    let completedCalls = 0;
+    let disconnectCalls = 0;
+    let finishCalls = 0;
+    let listener = () => {};
+    let repeatCalls = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {
+        disconnectCalls += 1;
+      },
+      repeatLastAudio() {
+        repeatCalls += 1;
+        return repeatRequest.promise;
+      },
+      setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      async startAudio() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("conversation-audio-finish");
+      }
+      if (
+        path === "/api/conversations/conversation-audio-finish/finish" &&
+        init.method === "POST"
+      ) {
+        const { reason } = JSON.parse(init.body);
+        if (reason === "finished_by_learner") {
+          finishCalls += 1;
+          return finishRequest.promise;
+        }
+        return json({ conversation: {} });
+      }
+      if (
+        path === "/api/conversations/conversation-audio-finish" &&
+        init.method === "GET"
+      ) {
+        return json({ conversation: { turns: [] } });
+      }
+      if (
+        path === "/api/conversations/conversation-audio-finish/review" &&
+        init.method === "PUT"
+      ) {
+        return json({
+          bypassed: false,
+          conversationId: "conversation-audio-finish",
+          profileCompleted: false,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        onCompleted: async () => {
+          completedCalls += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      listener({ type: "audio-playback", state: "blocked" });
+      listener({
+        type: "transcription",
+        id: "opening-before-finish",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await click(button("Start sound"));
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      await flush();
+    });
+    await waitFor(() => assert.equal(repeatCalls, 1));
+    assert.equal(output("Learner turn ready").textContent, "false");
+
+    await click(button("Finish voice"));
+    assert.equal(finishCalls, 1);
+    assert.equal(disconnectCalls, 1);
+    assert.equal(completedCalls, 0);
+    assert.equal(output("Conversation status").textContent, "saving");
+    assert.equal(output("Audio playback blocked").textContent, "false");
+    assert.equal(output("Audio playback busy").textContent, "false");
+
+    repeatRequest.resolve();
+    await act(async () => {
+      listener({ type: "audio-playback", state: "started" });
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    assert.equal(repeatCalls, 1);
+    assert.equal(output("Learner turn ready").textContent, "false");
+    assert.equal(output("Conversation status").textContent, "saving");
+
+    finishRequest.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(completedCalls, 1));
+    assert.equal(disconnectCalls, 1);
+  });
+
+  it("acknowledges Start before the conversation request finishes", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const response = deferred();
+    globalThis.fetch = async () => response.promise;
+
+    await mountStrict(
+      createElement(ConversationHookHarness, { purpose: "small-chat" }),
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "ready",
+    );
+
+    await act(async () => {
+      button("Start voice").click();
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "connecting",
+    );
+
+    response.resolve(json({}, 500));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "error",
+      ),
+    );
+    await waitFor(() =>
+      assert.deepEqual(
+        experienceTrace.map(({ name, outcome, stage, surface }) => ({
+          name,
+          outcome,
+          stage,
+          surface,
+        })),
+        [
+          {
+            name: "conversation_start",
+            outcome: "failed",
+            stage: "api",
+            surface: "talk",
+          },
+        ],
+      ),
+    );
+  });
+
+  it("allows one voice retry and coalesces another rapid activation", async () => {
+    let starts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return json({}, 500);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, { purpose: "small-chat" }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(output("Conversation recovery phase").textContent, "restart");
+    assert.equal(output("Voice retry used").textContent, "false");
+
+    await act(async () => {
+      button("Retry voice").click();
+      button("Retry voice").click();
+      await flush();
+    });
+    await waitFor(() => assert.equal(starts, 2));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(output("Conversation recovery phase").textContent, "restart");
+    assert.equal(output("Voice retry used").textContent, "true");
+  });
+
+  for (const purpose of ["onboarding", "profile-edit"]) {
+    it(`keeps ${purpose} voice recovery reusable after repeated failures`, async () => {
+      let starts = 0;
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/conversations" && init.method === "POST") {
+          starts += 1;
+          return json({}, 500);
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(createElement(ConversationHookHarness, { purpose }));
+      await waitFor(() => assert.equal(starts, 1));
+      await waitFor(() =>
+        assert.equal(output("Conversation status").textContent, "error"),
+      );
+
+      await click(button("Retry voice"));
+      await waitFor(() => assert.equal(starts, 2));
+      await waitFor(() =>
+        assert.equal(output("Conversation status").textContent, "error"),
+      );
+
+      await click(button("Retry voice"));
+      await waitFor(() => assert.equal(starts, 3));
+      await waitFor(() =>
+        assert.equal(output("Conversation status").textContent, "error"),
+      );
+      assert.equal(output("Voice retry used").textContent, "false");
+    });
+  }
+
+  it("keeps finish recovery separate from voice restart recovery", async () => {
+    let completedCalls = 0;
+    let finishAttempts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("finish-error-conversation");
+      }
+      if (
+        path === "/api/conversations/finish-error-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finishAttempts += 1;
+        return finishAttempts === 1 ? json({}, 503) : json({ conversation: {} });
+      }
+      if (
+        path === "/api/conversations/finish-error-conversation" &&
+        init.method === "GET"
+      ) {
+        return json({ conversation: { turns: [] } });
+      }
+      if (
+        path === "/api/conversations/finish-error-conversation/review" &&
+        init.method === "PUT"
+      ) {
+        return json({
+          bypassed: false,
+          conversationId: "finish-error-conversation",
+          profileCompleted: false,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => ({
+          async connect() {},
+          async disconnect() {},
+          async setMicrophoneEnabled() {},
+          subscribe() {
+            return () => {};
+          },
+        }),
+        onCompleted: async () => {
+          completedCalls += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Finish voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(output("Conversation recovery phase").textContent, "finish");
+    assert.equal(output("Voice retry used").textContent, "false");
+    assert.match(
+      output("Conversation error").textContent,
+      /Finish chat again/,
+    );
+
+    await click(button("Finish voice"));
+    await waitFor(() => assert.equal(completedCalls, 1));
+    assert.equal(finishAttempts, 2);
+    assert.equal(output("Conversation recovery phase").textContent, "");
+  });
+
+  it("keeps the retry used through the opening and resets it on Peppa's reply", async () => {
+    let listener = () => {};
+    let starts = 0;
+    const transport = {
+      async commitUserTurn() {},
+      async connect() {},
+      async disconnect() {},
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? json({}, 500)
+          : conversationStartResponse("recovered-conversation");
+      }
+      if (path.endsWith("/finish") && init.method === "POST") {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    await click(button("Retry voice"));
+    await waitFor(() => assert.equal(starts, 2));
+
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "listening"),
+    );
+    assert.equal(output("Voice retry used").textContent, "true");
+
+    await click(button("Start my turn"));
+    await click(button("End my turn"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "thinking"),
+    );
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    assert.equal(output("Voice retry used").textContent, "false");
+  });
+
+  it("leaves for lessons with the same one-shot conversation cleanup as Back", async () => {
+    const finished = [];
+    let lessonChoices = 0;
+    let disconnects = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        return conversationStartResponse("lesson-fallback-conversation");
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => ({
+          async connect() {},
+          async disconnect() {
+            disconnects += 1;
+          },
+          async setMicrophoneEnabled() {},
+          subscribe() {
+            return () => {};
+          },
+        }),
+        onChooseLesson: () => {
+          lessonChoices += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Choose lesson"));
+
+    assert.equal(lessonChoices, 1);
+    assert.equal(disconnects, 1);
+    assert.equal(output("Voice retry used").textContent, "false");
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        {
+          id: "lesson-fallback-conversation",
+          reason: "left_conversation",
+        },
+      ]),
+    );
+  });
+
+  it("detaches a hung retry and retires its stale predecessor before choosing lessons", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let lessonChoices = 0;
+    let starts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          throw new Error("A detached Start must not create a transport.");
+        },
+        onChooseLesson: () => {
+          lessonChoices += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Retry voice"));
+    assert.equal(starts, 2);
+    assert.equal(output("Voice retry used").textContent, "true");
+
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await act(async () => {
+      await flush();
+    });
+    assert.deepEqual(finished, []);
+
+    await click(button("Choose lesson"));
+    assert.equal(lessonChoices, 1);
+    assert.equal(output("Voice retry used").textContent, "false");
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("closes a late start response after a newer retry supersedes it", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async setMicrophoneEnabled() {},
+      subscribe() {
+        return () => {};
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return transport;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    assert.equal(output("Wait cycle").textContent, "1");
+    await click(button("Start voice"));
+    assert.equal(output("Wait cycle").textContent, "2");
+    assert.equal(starts, 2);
+
+    secondStart.resolve(conversationStartResponse("current-conversation"));
+    await waitFor(() =>
+      assert.equal(transports, 1),
+    );
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("lets later retries progress when a superseded Start never settles", async () => {
+    const firstStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        if (starts === 1) return firstStart.promise;
+        return conversationStartResponse(
+          starts === 2 ? "current-conversation" : "replacement-conversation",
+        );
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+    assert.equal(starts, 2);
+
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 2));
+    assert.equal(starts, 3);
+    assert.deepEqual(finished, [
+      { id: "current-conversation", reason: "restarted_after_error" },
+    ]);
+  });
+
+  for (const responseOrder of ["current-first", "stale-first"]) {
+    it(`keeps a reused current conversation open when the ${responseOrder} response arrives first`, async () => {
+      const firstStart = deferred();
+      const secondStart = deferred();
+      const finished = [];
+      let starts = 0;
+      let transports = 0;
+      const transport = {
+        async connect() {},
+        async disconnect() {},
+        async setMicrophoneEnabled() {},
+        subscribe() {
+          return () => {};
+        },
+      };
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/conversations" && init.method === "POST") {
+          starts += 1;
+          return starts === 1 ? firstStart.promise : secondStart.promise;
+        }
+        const finishMatch = String(path).match(
+          /^\/api\/conversations\/([^/]+)\/finish$/,
+        );
+        if (finishMatch && init.method === "POST") {
+          finished.push({
+            id: decodeURIComponent(finishMatch[1]),
+            reason: JSON.parse(init.body).reason,
+          });
+          return json({ conversation: {} });
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        createElement(ConversationHookHarness, {
+          createTransport: () => {
+            transports += 1;
+            return transport;
+          },
+          purpose: "small-chat",
+        }),
+      );
+      await click(button("Start voice"));
+      await click(button("Start voice"));
+      assert.equal(starts, 2);
+
+      const responses =
+        responseOrder === "current-first"
+          ? [secondStart, firstStart]
+          : [firstStart, secondStart];
+      responses[0].resolve(conversationStartResponse("shared-conversation"));
+      await act(async () => {
+        await flush();
+      });
+      if (responseOrder === "current-first") {
+        await waitFor(() => assert.equal(transports, 1));
+      } else {
+        assert.equal(transports, 0);
+      }
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+
+      responses[1].resolve(conversationStartResponse("shared-conversation"));
+      await waitFor(() => assert.equal(transports, 1));
+      await act(async () => {
+        await flush();
+      });
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+    });
+  }
+
+  for (const responseOrder of ["current-first", "stale-first"]) {
+    it(`keeps a reused conversation open across remount when the ${responseOrder} response arrives first`, async () => {
+      const firstStart = deferred();
+      const secondStart = deferred();
+      const finished = [];
+      let starts = 0;
+      let transports = 0;
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/conversations" && init.method === "POST") {
+          starts += 1;
+          return starts === 1 ? firstStart.promise : secondStart.promise;
+        }
+        const finishMatch = String(path).match(
+          /^\/api\/conversations\/([^/]+)\/finish$/,
+        );
+        if (finishMatch && init.method === "POST") {
+          finished.push({
+            id: decodeURIComponent(finishMatch[1]),
+            reason: JSON.parse(init.body).reason,
+          });
+          return json({ conversation: {} });
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        createElement(RemountingConversationHookHarness, {
+          createTransport: () => {
+            transports += 1;
+            return {
+              async connect() {},
+              async disconnect() {},
+              async setMicrophoneEnabled() {},
+              subscribe() {
+                return () => {};
+              },
+            };
+          },
+        }),
+      );
+      await click(button("Start voice"));
+      await click(button("Remount voice"));
+      await click(button("Start voice"));
+      assert.equal(starts, 2);
+
+      const responses =
+        responseOrder === "current-first"
+          ? [secondStart, firstStart]
+          : [firstStart, secondStart];
+      responses[0].resolve(conversationStartResponse("shared-conversation"));
+      await act(async () => {
+        await flush();
+      });
+      if (responseOrder === "current-first") {
+        await waitFor(() => assert.equal(transports, 1));
+      } else {
+        assert.equal(transports, 0);
+      }
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+
+      responses[1].resolve(conversationStartResponse("shared-conversation"));
+      await waitFor(() => assert.equal(transports, 1));
+      await act(async () => {
+        await flush();
+      });
+      assert.deepEqual(
+        finished.filter(({ reason }) => reason === "superseded_start"),
+        [],
+      );
+    });
+  }
+
+  it("retires a distinct stale response only after a remounted Start settles", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(RemountingConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Remount voice"));
+    await click(button("Start voice"));
+
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await act(async () => {
+      await flush();
+    });
+    assert.deepEqual(finished, []);
+
+    secondStart.resolve(conversationStartResponse("current-conversation"));
+    await waitFor(() => assert.equal(transports, 1));
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("retires a distinct stale Start when Back detaches a hung newer request", async () => {
+    const firstStart = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1 ? firstStart.promise : secondStart.promise;
+      }
+      const finishMatch = String(path).match(
+        /^\/api\/conversations\/([^/]+)\/finish$/,
+      );
+      if (finishMatch && init.method === "POST") {
+        finished.push({
+          id: decodeURIComponent(finishMatch[1]),
+          reason: JSON.parse(init.body).reason,
+        });
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          throw new Error("A detached Start must not create a transport.");
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await click(button("Start voice"));
+    assert.equal(starts, 2);
+
+    firstStart.resolve(conversationStartResponse("stale-conversation"));
+    await act(async () => {
+      await flush();
+    });
+    assert.deepEqual(finished, []);
+
+    await click(button("Back voice"));
+    await waitFor(() =>
+      assert.deepEqual(finished, [
+        { id: "stale-conversation", reason: "superseded_start" },
+      ]),
+    );
+  });
+
+  it("waits for an unmounted conversation to retire before remount start", async () => {
+    const retirement = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("unmounted-conversation")
+          : secondStart.promise;
+      }
+      if (
+        path === "/api/conversations/unmounted-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finished.push(JSON.parse(init.body).reason);
+        return retirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(RemountingConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+    await click(button("Remount voice"));
+    await waitFor(() =>
+      assert.deepEqual(finished, ["component_unmounted"]),
+    );
+
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+    retirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    secondStart.resolve(conversationStartResponse("remounted-conversation"));
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("retires the previous conversation before requesting its replacement", async () => {
+    const retirement = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let starts = 0;
+    let transports = 0;
+    const createTransport = () => {
+      transports += 1;
+      return {
+        async connect() {},
+        async disconnect() {},
+        async setMicrophoneEnabled() {},
+        subscribe() {
+          return () => {};
+        },
+      };
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("previous-conversation")
+          : secondStart.promise;
+      }
+      if (
+        path === "/api/conversations/previous-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finished.push(JSON.parse(init.body).reason);
+        return retirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.deepEqual(finished, ["restarted_after_error"]),
+    );
+    assert.equal(starts, 1);
+
+    retirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    secondStart.resolve(conversationStartResponse("replacement-conversation"));
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("retries a failed retirement before requesting a replacement", async () => {
+    const successfulRetirement = deferred();
+    const replacementStart = deferred();
+    let retirementCalls = 0;
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("retirement-failure-conversation")
+          : replacementStart.promise;
+      }
+      if (
+        path ===
+          "/api/conversations/retirement-failure-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        retirementCalls += 1;
+        assert.equal(JSON.parse(init.body).reason, "restarted_after_error");
+        return retirementCalls === 1
+          ? json({ error: "finish_failed" }, 503)
+          : successfulRetirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(output("Conversation status").textContent, "error"),
+    );
+    assert.equal(retirementCalls, 1);
+    assert.equal(starts, 1);
+
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(retirementCalls, 2));
+    assert.equal(starts, 1);
+    successfulRetirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    replacementStart.resolve(
+      conversationStartResponse("replacement-after-retirement-retry"),
+    );
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("waits for Back cleanup before reopening the same chat", async () => {
+    const retirement = deferred();
+    const secondStart = deferred();
+    const finished = [];
+    let backCalls = 0;
+    let starts = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? conversationStartResponse("left-conversation")
+          : secondStart.promise;
+      }
+      if (
+        path === "/api/conversations/left-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        finished.push(JSON.parse(init.body).reason);
+        return retirement.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => {
+          transports += 1;
+          return {
+            async connect() {},
+            async disconnect() {},
+            async setMicrophoneEnabled() {},
+            subscribe() {
+              return () => {};
+            },
+          };
+        },
+        onBack: () => {
+          backCalls += 1;
+        },
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(transports, 1));
+
+    await click(button("Back voice"));
+    assert.equal(backCalls, 1);
+    await waitFor(() => assert.deepEqual(finished, ["left_conversation"]));
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+
+    retirement.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(starts, 2));
+    secondStart.resolve(conversationStartResponse("reopened-conversation"));
+    await waitFor(() => assert.equal(transports, 2));
+  });
+
+  it("attributes startup failure after room connection to the initial mute control", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {
+        throw new Error("Initial microphone setup failed");
+      },
+      subscribe() {
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-microphone-startup-error" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation status"]')
+          .textContent,
+        "error",
+      ),
+    );
+    await waitFor(() =>
+      assert.deepEqual(
+        experienceTrace.map(({ name, outcome, stage, surface }) => ({
+          name,
+          outcome,
+          stage,
+          surface,
+        })),
+        [
+          {
+            name: "conversation_start",
+            outcome: "failed",
+            stage: "microphone_mute",
+            surface: "talk",
+          },
+        ],
+      ),
+    );
+  });
+
+  it("does not revive startup when the room disconnects during initial mute", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const initialMute = deferred();
+    let listener = () => {};
+    let muteStarted = false;
+    const transport = {
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled() {
+        muteStarted = true;
+        return initialMute.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-disconnected-during-mute" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(muteStarted, true));
+    await act(async () => {
+      listener({ type: "disconnected", reason: "SERVER_SHUTDOWN" });
+      await flush();
+    });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "error",
+    );
+
+    initialMute.resolve();
+    await act(async () => flush());
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "error",
+    );
+    assert.deepEqual(
+      experienceTrace.map(({ name, outcome, stage }) => ({
+        name,
+        outcome,
+        stage,
+      })),
+      [
+        {
+          name: "conversation_start",
+          outcome: "failed",
+          stage: "microphone_mute",
+        },
+      ],
+    );
+  });
+
+  it("quarantines a stale Finish after the learner leaves and reopens chat", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const finishRequest = deferred();
+    let listener = () => {};
+    const microphoneCalls = [];
+    let conversationStarts = 0;
+    let transportStarts = 0;
+    const disconnectCalls = [0, 0];
+    const transports = disconnectCalls.map((_, index) => ({
+      async connect() {},
+      async disconnect() {
+        disconnectCalls[index] += 1;
+      },
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    }));
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        conversationStarts += 1;
+        return json({
+          conversation: {
+            id:
+              conversationStarts === 1
+                ? "conversation-finished-during-opening"
+                : "conversation-reopened",
+          },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "small-chat",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      if (
+        path ===
+          "/api/conversations/conversation-finished-during-opening/finish" &&
+        init.method === "POST"
+      ) {
+        const { reason } = JSON.parse(init.body);
+        return reason === "finished_by_learner"
+          ? finishRequest.promise
+          : json({ conversation: {} });
+      }
+      if (
+        path === "/api/conversations/conversation-reopened/finish" &&
+        init.method === "POST"
+      ) {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transports[transportStarts++],
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await click(button("Finish voice"));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "late-opening",
+        text: "Hello after Finish",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
+    );
+    assert.equal(
+      experienceTrace.some((event) => event.name === "conversation_start"),
+      false,
+    );
+
+    await click(button("Back voice"));
+    await click(button("Start voice"));
+    await waitFor(() => {
+      assert.equal(conversationStarts, 2);
+      assert.equal(transportStarts, 2);
+      assert.deepEqual(microphoneCalls, [false, false]);
+    });
+    finishRequest.resolve(json({ conversation: {} }));
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.deepEqual(disconnectCalls, [1, 0]);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "connecting",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
+    );
+  });
+
   it("returns a standalone conversation to the main menu and allows reopening it", async () => {
     let conversationStarts = 0;
+    const conversationLifecycle = [];
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/learner-profile" && init.method === "GET") {
         return json({
@@ -653,6 +2955,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/conversations" && init.method === "POST") {
         conversationStarts += 1;
+        conversationLifecycle.push(`start-${conversationStarts}`);
         assert.deepEqual(JSON.parse(init.body), {
           promptStyle: "tiny-turns",
           purpose: "small-chat",
@@ -672,13 +2975,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           },
         });
       }
+      if (
+        path === "/api/conversations/conversation-route-1/finish" &&
+        init.method === "POST"
+      ) {
+        conversationLifecycle.push(
+          `finish-1:${JSON.parse(init.body).reason}`,
+        );
+        return json({ conversation: {} });
+      }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
 
     await mountStrict(createElement(StandaloneConversationRouteHarness));
-    await waitFor(() => text(/Start chat/));
+    await waitFor(() => text(/Talk to Peppa/));
     await click(button("Start chat"));
-    await waitFor(() => text(/Start my turn/));
+    await waitFor(() => text(/Tap, then talk/));
 
     await click(button("Back"));
 
@@ -686,10 +2998,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/VOICE CHAT UNAVAILABLE/);
 
     await click(button("Talk to Peppa"));
-    await waitFor(() => text(/Start chat/));
+    await waitFor(() => text(/Talk to Peppa/));
     await click(button("Start chat"));
-    await waitFor(() => text(/Start my turn/));
+    await waitFor(() => text(/Tap, then talk/));
     assert.equal(conversationStarts, 2);
+    assert.deepEqual(conversationLifecycle, [
+      "start-1",
+      "finish-1:left_conversation",
+      "start-2",
+    ]);
   });
 
   it("updates and preserves the latest learner transcript after a microphone turn", async () => {
@@ -785,8 +3102,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
+    const experienceTrace = captureExperienceEvents();
+    const finishRequest = deferred();
     let listener = () => {};
     let now = 1_000;
+    let reviewCalls = 0;
     let turnCommits = 0;
     const microphoneCalls = [];
     const transport = {
@@ -805,22 +3125,46 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     };
     globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/conversations");
-      assert.equal(init.method, "POST");
-      return json({
-        conversation: { id: "conversation-response-loading" },
-        livekit: {
-          participantToken: "participant-token",
-          url: "wss://livekit.example.test",
-        },
-        scenario: {
-          key: "small-chat",
-          maxOptionalExchanges: 3,
-          requiredDetails: ["name", "age"],
-          summaryMode: "prose",
-          version: 1,
-        },
-      });
+      if (path === "/api/conversations" && init.method === "POST") {
+        return json({
+          conversation: { id: "conversation-response-loading" },
+          livekit: {
+            participantToken: "participant-token",
+            url: "wss://livekit.example.test",
+          },
+          scenario: {
+            key: "small-chat",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        });
+      }
+      if (
+        path === "/api/conversations/conversation-response-loading/finish" &&
+        init.method === "POST"
+      ) {
+        return finishRequest.promise;
+      }
+      if (
+        path === "/api/conversations/conversation-response-loading" &&
+        init.method === "GET"
+      ) {
+        return json({ conversation: { turns: [] } });
+      }
+      if (
+        path === "/api/conversations/conversation-response-loading/review" &&
+        init.method === "PUT"
+      ) {
+        reviewCalls += 1;
+        return json({
+          bypassed: false,
+          conversationId: "conversation-response-loading",
+          profileCompleted: false,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
 
     await mountStrict(
@@ -869,6 +3213,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "1254",
     );
+    await waitFor(() => {
+      const response = experienceTrace.find(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.deepEqual(response, {
+        durationMs: 1_254,
+        name: "conversation_turn_response",
+        outcome: "assistant_signal",
+        schemaVersion: 1,
+        surface: "learner_profile",
+      });
+      assert.doesNotMatch(
+        JSON.stringify(experienceTrace),
+        /Mia|conversation-response-loading|peppa-reply/,
+      );
+    });
 
     await act(async () => {
       listener({
@@ -907,6 +3267,437 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       listener({ type: "speech-ended", role: "assistant" });
       await flush();
     });
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "listening",
+    );
+
+    await click(button("Start my turn"));
+    await waitFor(() =>
+      assert.deepEqual(microphoneCalls, [false, true, false, true]),
+    );
+    await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 2));
+    now += maxExperienceDurationMs + 1_000;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    await waitFor(() => {
+      const responses = experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.equal(responses.length, 2);
+      assert.equal(responses[1].durationMs, maxExperienceDurationMs);
+    });
+
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await click(button("Start my turn"));
+    await waitFor(() =>
+      assert.deepEqual(
+        microphoneCalls,
+        [false, true, false, true, false, true],
+      ),
+    );
+    await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 3));
+
+    const replacementTrace = [];
+    restoreExperienceSink();
+    restoreExperienceSink = experienceEvents.installSink((event) => {
+      replacementTrace.push(event);
+    });
+    now += 100;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.deepEqual(replacementTrace, []);
+    assert.equal(
+      experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      ).length,
+      2,
+    );
+
+    await act(async () => {
+      listener({ type: "speech-ended", role: "assistant" });
+      await flush();
+    });
+    await click(button("Start my turn"));
+    await waitFor(() =>
+      assert.deepEqual(
+        microphoneCalls,
+        [false, true, false, true, false, true, false, true],
+      ),
+    );
+    await click(button("End my turn"));
+    await waitFor(() => assert.equal(turnCommits, 4));
+    await click(button("Finish voice"));
+    now += 100;
+    await act(async () => {
+      listener({ type: "speech-started", role: "assistant" });
+      await flush();
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.deepEqual(replacementTrace, []);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "saving",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "false",
+    );
+
+    finishRequest.resolve(json({ conversation: {} }));
+    await waitFor(() => assert.equal(reviewCalls, 1));
+  });
+
+  it("distinguishes microphone-stop failure from turn-send failure", async () => {
+    const experienceTrace = captureExperienceEvents();
+    let listener = () => {};
+    let disableCalls = 0;
+    let commitCalls = 0;
+    const transport = {
+      async commitUserTurn() {
+        commitCalls += 1;
+        throw new Error("Turn commit failed");
+      },
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        if (!enabled) {
+          disableCalls += 1;
+          if (disableCalls === 2) {
+            throw new Error("Microphone stop failed");
+          }
+        }
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-turn-failures" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await waitFor(() => assert.equal(disableCalls, 1));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await click(button("Start my turn"));
+    await click(button("End my turn"));
+    await waitFor(() => {
+      const responseEvents = experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.equal(responseEvents.length, 1);
+      assert.equal(responseEvents[0].outcome, "microphone_stop_failed");
+      assert.equal(commitCalls, 0);
+    });
+
+    await click(button("End my turn"));
+    await waitFor(() => {
+      const responseEvents = experienceTrace.filter(
+        (event) => event.name === "conversation_turn_response",
+      );
+      assert.deepEqual(
+        responseEvents.map((event) => ({
+          keys: Object.keys(event).sort(),
+          outcome: event.outcome,
+          surface: event.surface,
+        })),
+        [
+          {
+            keys: [
+              "durationMs",
+              "name",
+              "outcome",
+              "schemaVersion",
+              "surface",
+            ],
+            outcome: "microphone_stop_failed",
+            surface: "talk",
+          },
+          {
+            keys: [
+              "durationMs",
+              "name",
+              "outcome",
+              "schemaVersion",
+              "surface",
+            ],
+            outcome: "send_failed",
+            surface: "talk",
+          },
+        ],
+      );
+      assert.equal(commitCalls, 1);
+    });
+  });
+
+  it("coalesces rapid microphone taps while an async change is pending", async () => {
+    let listener = () => {};
+    let turnCommits = 0;
+    let disabledCalls = 0;
+    const startChange = deferred();
+    const endChange = deferred();
+    const microphoneCalls = [];
+    const transport = {
+      async commitUserTurn() {
+        turnCommits += 1;
+      },
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        microphoneCalls.push(enabled);
+        if (enabled) return startChange.promise;
+        disabledCalls += 1;
+        if (disabledCalls > 1) return endChange.promise;
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-rapid-taps" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await waitFor(() => assert.deepEqual(microphoneCalls, [false]));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+
+    await act(async () => {
+      button("Start my turn").click();
+      button("Start my turn").click();
+      await flush();
+    });
+    assert.deepEqual(microphoneCalls, [false, true]);
+    assert.equal(
+      document.querySelector('output[aria-label="Microphone busy"]')
+        .textContent,
+      "true",
+    );
+
+    startChange.resolve();
+    await waitFor(() => assert.equal(button("End my turn").textContent, "End my turn"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Microphone busy"]')
+          .textContent,
+        "false",
+      ),
+    );
+
+    await act(async () => {
+      button("End my turn").click();
+      button("End my turn").click();
+      await flush();
+    });
+    assert.deepEqual(microphoneCalls, [false, true, false]);
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "thinking",
+    );
+
+    endChange.resolve();
+    await waitFor(() => assert.equal(turnCommits, 1));
+    assert.deepEqual(microphoneCalls, [false, true, false]);
+  });
+
+  it("recovers the learner turn with simple copy when microphone access fails", async () => {
+    let listener = () => {};
+    const transport = {
+      async commitUserTurn() {},
+      async connect() {},
+      async disconnect() {},
+      async sendText() {},
+      async setMicrophoneEnabled(enabled) {
+        if (enabled) throw new Error("Permission denied by browser");
+      },
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-microphone-error" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: ["name", "age"],
+          summaryMode: "prose",
+          version: 1,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+      }),
+    );
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await click(button("Start my turn"));
+
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation error"]')
+          .textContent,
+        "Ask a grown-up to turn on the microphone.",
+      ),
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Conversation status"]')
+        .textContent,
+      "listening",
+    );
+    assert.equal(
+      document.querySelector('output[aria-label="Learner turn ready"]')
+        .textContent,
+      "true",
+    );
+    assert.equal(button("Start my turn").textContent, "Start my turn");
+  });
+
+  it("hides transport detail when repeating Peppa's voice fails", async () => {
+    let listener = () => {};
+    const transport = {
+      async commitUserTurn() {},
+      async connect() {},
+      async disconnect() {},
+      async repeatLastAudio() {
+        throw new Error("LiveKit data packet send failed");
+      },
+      async setMicrophoneEnabled() {},
+      subscribe(nextListener) {
+        listener = nextListener;
+        return () => {};
+      },
+    };
+    globalThis.fetch = async () =>
+      json({
+        conversation: { id: "conversation-repeat-error" },
+        livekit: {
+          participantToken: "participant-token",
+          url: "wss://livekit.example.test",
+        },
+        scenario: {
+          key: "small-chat",
+          maxOptionalExchanges: 3,
+          requiredDetails: [],
+          summaryMode: "none",
+          version: 2,
+        },
+      });
+
+    await mountStrict(
+      createElement(ConversationHookHarness, {
+        createTransport: () => transport,
+        purpose: "small-chat",
+      }),
+    );
+    await click(button("Start voice"));
+    await act(async () => {
+      listener({
+        type: "transcription",
+        id: "peppa-opening",
+        text: "Hello!",
+        final: true,
+        language: "en",
+        role: "assistant",
+      });
+      await flush();
+    });
+    await click(button("Repeat voice"));
+
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Conversation error"]')
+          .textContent,
+        "Peppa could not say that again. Keep talking.",
+      ),
+    );
     assert.equal(
       document.querySelector('output[aria-label="Conversation status"]')
         .textContent,
@@ -1154,7 +3945,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.match(
       document.querySelector('output[aria-label="Conversation error"]')
         .textContent,
-      /disconnected before the conversation finished/i,
+      /chat stopped\. Tap Try again/i,
     );
   });
 
@@ -1194,6 +3985,359 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/AUTHENTICATED APP/);
   });
 
+  it("keeps Account available and retries sign out from one persistent alert", async () => {
+    const failure = deferred();
+    const secondFailure = deferred();
+    let signOutCalls = 0;
+    const client = createSessionClient({
+      data: { user: { email: "mia@example.com", name: "Mia" } },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction() {
+        signOutCalls += 1;
+        return signOutCalls === 1 ? failure.promise : secondFailure.promise;
+      },
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+
+    const account = button("Account for Mia");
+    const status = document.querySelector('[role="status"]');
+    const alert = document.querySelector('[role="alert"]');
+    assert.ok(status, "Expected the sign-out status to be pre-mounted.");
+    assert.ok(alert, "Expected the sign-out alert to be pre-mounted.");
+    assert.equal(status.textContent.trim(), "");
+    assert.equal(alert.textContent.trim(), "");
+    assert.equal(alert.getAttribute("aria-atomic"), "true");
+    assert.equal(status.closest('[aria-busy="true"]'), null);
+
+    account.focus();
+    await click(account);
+    const signOut = button("Sign out");
+    await act(async () => {
+      signOut.click();
+      signOut.click();
+      await flush();
+    });
+
+    assert.equal(document.querySelector('[role="menu"]'), null);
+    assert.equal(document.activeElement, account);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(document.querySelector('[role="status"]'), status);
+    assert.equal(status.textContent.trim(), "Signing out…");
+    assert.equal(status.closest('[aria-busy="true"]'), null);
+    assert.equal(signOutCalls, 1);
+
+    await click(account);
+    assert.equal(document.querySelector('[role="menu"]'), null);
+    assert.equal(signOutCalls, 1);
+
+    failure.resolve("Sign out did not finish.");
+    await waitFor(() => {
+      assert.equal(account.getAttribute("aria-disabled"), null);
+      assert.equal(status.textContent.trim(), "");
+      assert.equal(alert.textContent.trim(), "Sign out did not finish.");
+    });
+    assert.equal(document.activeElement, account);
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    const retry = button("Sign out again");
+    assert.ok(alert.id, "Expected the persistent alert to have an ID.");
+    assert.equal(retry.getAttribute("aria-describedby"), alert.id);
+    const documentPositionFollowing =
+      account.ownerDocument.defaultView.Node.DOCUMENT_POSITION_FOLLOWING;
+    assert.equal(
+      account.compareDocumentPosition(retry) & documentPositionFollowing,
+      documentPositionFollowing,
+    );
+
+    await click(account);
+    assert.ok(document.querySelector('[role="menu"]'));
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+
+    await act(async () => {
+      retry.click();
+      retry.click();
+      await flush();
+    });
+    assert.equal(signOutCalls, 2);
+    assert.equal(document.activeElement, account);
+    assert.equal(document.querySelector('[role="menu"]'), null);
+    assert.equal(account.getAttribute("aria-expanded"), "false");
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(status.textContent.trim(), "Signing out…");
+    assert.equal(alert.textContent.trim(), "");
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    noText(/Sign out again/);
+
+    secondFailure.resolve("Sign out did not finish.");
+    await waitFor(() => {
+      assert.equal(account.getAttribute("aria-disabled"), null);
+      assert.equal(status.textContent.trim(), "");
+      assert.equal(alert.textContent.trim(), "Sign out did not finish.");
+    });
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    assert.equal(document.activeElement, account);
+    button("Sign out again");
+  });
+
+  it("ignores a stale sign-out result after session re-entry", async () => {
+    const firstAttempt = deferred();
+    const secondAttempt = deferred();
+    let signOutCalls = 0;
+    const client = createSessionClient({
+      data: { user: { email: "mia@example.com", name: "Mia" } },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction() {
+        signOutCalls += 1;
+        if (signOutCalls === 1) return firstAttempt.promise;
+        if (signOutCalls === 2) return secondAttempt.promise;
+        return Promise.resolve(null);
+      },
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 1);
+
+    await act(async () => {
+      client.publish({ data: null, error: null, isPending: false });
+    });
+    await waitFor(() => text(/Welcome back/));
+
+    await act(async () => {
+      client.publish({
+        data: { user: { email: "mia@example.com", name: "Mia" } },
+        error: null,
+        isPending: false,
+      });
+    });
+    await waitFor(() => text(/AUTHENTICATED APP/));
+    const account = button("Account for Mia");
+    assert.equal(account.getAttribute("aria-disabled"), null);
+
+    await click(account);
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 2);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+
+    firstAttempt.resolve("Sign out did not finish.");
+    await flush();
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(
+      document.querySelector('[role="status"]').textContent.trim(),
+      "Signing out…",
+    );
+    noText(/Sign out did not finish/);
+
+    secondAttempt.reject(new Error("offline"));
+    await waitFor(() => {
+      assert.equal(account.getAttribute("aria-disabled"), null);
+      assert.equal(document.querySelector('[role="status"]').textContent.trim(), "");
+    });
+    text(/Sign out did not finish/);
+
+    await click(button("Sign out again"));
+    assert.equal(signOutCalls, 3);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+  });
+
+  it("isolates pending sign out when the authenticated identity changes directly", async () => {
+    const firstAttempt = deferred();
+    const secondAttempt = deferred();
+    let signOutCalls = 0;
+    const client = createSessionClient({
+      data: {
+        user: { email: "mia@example.com", id: "user-mia", name: "Mia" },
+      },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction() {
+        signOutCalls += 1;
+        return signOutCalls === 1 ? firstAttempt.promise : secondAttempt.promise;
+      },
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
+    assert.equal(button("Signing out… Account for Mia").getAttribute("aria-disabled"), "true");
+
+    await act(async () => {
+      client.publish({
+        data: {
+          user: { email: "noah@example.com", id: "user-noah", name: "Noah" },
+        },
+        error: null,
+        isPending: false,
+      });
+    });
+    const noahAccount = await waitFor(() => button("Account for Noah"));
+    assert.equal(noahAccount.getAttribute("aria-disabled"), null);
+    noText(/Signing out|Sign out did not finish|Sign out again/);
+
+    await click(noahAccount);
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 2);
+    assert.equal(noahAccount.getAttribute("aria-disabled"), "true");
+
+    firstAttempt.resolve("Sign out did not finish.");
+    await flush();
+    assert.equal(noahAccount.getAttribute("aria-disabled"), "true");
+    noText(/Sign out did not finish|Sign out again/);
+
+    secondAttempt.resolve("Sign out did not finish.");
+    await waitFor(() => {
+      assert.equal(noahAccount.getAttribute("aria-disabled"), null);
+      text(/Sign out did not finish/);
+      button("Sign out again");
+    });
+  });
+
+  it("clears failed sign out when the authenticated identity changes directly", async () => {
+    const client = createSessionClient({
+      data: {
+        user: { email: "mia@example.com", id: "user-mia", name: "Mia" },
+      },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction: async () => "Sign out did not finish.",
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
+    await waitFor(() => button("Sign out again"));
+
+    await act(async () => {
+      client.publish({
+        data: {
+          user: { email: "noah@example.com", id: "user-noah", name: "Noah" },
+        },
+        error: null,
+        isPending: false,
+      });
+    });
+    const noahAccount = await waitFor(() => button("Account for Noah"));
+    assert.equal(noahAccount.getAttribute("aria-disabled"), null);
+    noText(/Sign out did not finish|Sign out again/);
+  });
+
+  it("keeps a mounted acknowledgment until Next and focuses each new message once", async () => {
+    const firstAcknowledgment = {
+      text: "Dinosaurs are very stompy!",
+      audio: null,
+    };
+    const secondAcknowledgment = {
+      text: "Drawing dragons sounds fun!",
+      audio: null,
+    };
+    let advanceCalls = 0;
+    let rerenderSameAcknowledgment;
+
+    function AcknowledgmentHarness() {
+      const [view, setView] = useState({
+        acknowledgment: firstAcknowledgment,
+        operationId: 11,
+        revision: 0,
+      });
+      rerenderSameAcknowledgment = () =>
+        setView((current) => ({
+          ...current,
+          revision: current.revision + 1,
+        }));
+      return createElement(LearnerProfileAcknowledgment, {
+        acknowledgment: view.acknowledgment,
+        onNext() {
+          advanceCalls += 1;
+          if (view.operationId === 11) {
+            setView({
+              acknowledgment: secondAcknowledgment,
+              operationId: 12,
+              revision: 0,
+            });
+          }
+        },
+        operationId: view.operationId,
+      });
+    }
+
+    const headingFocuses = [];
+    const originalFocus = window.HTMLElement.prototype.focus;
+    window.HTMLElement.prototype.focus = function focus(options) {
+      if (this.tagName === "H1") headingFocuses.push(this.textContent);
+      return originalFocus.call(this, options);
+    };
+
+    try {
+      await mountStrict(createElement(AcknowledgmentHarness));
+      const firstHeading = document.querySelector("h1");
+      assert.ok(firstHeading);
+      assert.equal(firstHeading.tabIndex, -1);
+      await waitFor(() => assert.equal(document.activeElement, firstHeading));
+      assert.deepEqual(headingFocuses, ["Dinosaurs are very stompy!"]);
+
+      const next = button("Next");
+      assert.equal(next.tabIndex, 0);
+      next.focus();
+      await act(async () => rerenderSameAcknowledgment());
+      assert.equal(document.activeElement, next);
+      assert.deepEqual(headingFocuses, ["Dinosaurs are very stompy!"]);
+      assert.equal(advanceCalls, 0);
+      text(/Dinosaurs are very stompy!/);
+
+      await click(next);
+      const secondHeading = document.querySelector("h1");
+      assert.ok(secondHeading);
+      await waitFor(() => assert.equal(document.activeElement, secondHeading));
+      assert.deepEqual(headingFocuses, [
+        "Dinosaurs are very stompy!",
+        "Drawing dragons sounds fun!",
+      ]);
+      assert.equal(advanceCalls, 1);
+    } finally {
+      window.HTMLElement.prototype.focus = originalFocus;
+    }
+  });
+
   it("moves onboarding through retry, bypass, and final-answer completion", async () => {
     let loadAttempts = 0;
     globalThis.fetch = async (path, init = {}) => {
@@ -1218,7 +4362,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Questions are taking a break/));
     await click(button("Retry"));
-    await waitFor(() => text(/Help Peppa get to know you/));
+    await waitFor(() => text(/Answer 1 question/));
     await click(button("Skip for now"));
     await waitFor(() => text(/BYPASSED LESSONS/));
 
@@ -1232,7 +4376,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       if (path === "/api/learner-profile/answer" && init.method === "PUT") {
         return json({
           ...completed,
-          acknowledgment: { text: "Mia is a lovely name!", audio: null },
+          acknowledgment: {
+            text: "Thank you!",
+            audio: {
+              id: "peppa-thank-you",
+              src: "/assets/audio/peppa-thank-you.mp3",
+              text: "Thank you!",
+            },
+          },
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -1245,12 +4396,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "COMPLETED LESSONS"),
       ),
     );
-    await waitFor(() => text(/Help Peppa get to know you/));
-    await click(button("Set up profile"));
+    await waitFor(() => text(/Answer 1 question/));
+    await click(button("Start questions"));
     await waitFor(() => text(/What's your name/));
     await input(document.querySelector("#learner-profile-answer-name"), "Mia");
     await click(button("Next"));
-    await waitFor(() => text(/Mia is a lovely name!/));
+    await waitFor(() => text(/Thank you!/));
     await click(button("Next"));
     await waitFor(() => text(/COMPLETED LESSONS/));
   });
@@ -1325,13 +4476,97 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     ]);
   });
 
+  it("paces saved profile acknowledgments one Next action at a time", async () => {
+    const profileState = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: 8,
+        description: "Mia is eight and likes dinosaurs.",
+      },
+      questions: [question()],
+    };
+    let saveCalls = 0;
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(profileState);
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        saveCalls += 1;
+        return json({
+          ...profileState,
+          acknowledgments: [
+            {
+              text: "Thank you!",
+              audio: {
+                id: "peppa-thank-you",
+                src: "/assets/audio/peppa-thank-you.mp3",
+                text: "Thank you!",
+              },
+            },
+            {
+              text: "Thank you!",
+              audio: {
+                id: "peppa-thank-you",
+                src: "/assets/audio/peppa-thank-you.mp3",
+                text: "Thank you!",
+              },
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        ProfileRouteHarness,
+        { initialRoute: "/profile" },
+        createElement("p", null, "PROFILE LESSONS"),
+      ),
+    );
+    await waitFor(() => text(/Learner profile/));
+    await click(button("Save changes"));
+
+    await waitFor(() => text(/Thank you!/));
+    noText(/PROFILE LESSONS/);
+    await waitFor(() =>
+      assert.equal(document.activeElement, document.querySelector("h1")),
+    );
+
+    const firstNext = button("Next");
+    let renewedHeadingFocuses = 0;
+    const countHeadingFocus = (event) => {
+      if (event.target?.tagName === "H1") renewedHeadingFocuses += 1;
+    };
+    document.addEventListener("focusin", countHeadingFocus);
+    firstNext.focus();
+    assert.equal(document.activeElement, firstNext);
+    await click(firstNext);
+    await waitFor(() => assert.equal(renewedHeadingFocuses, 1));
+    text(/Thank you!/);
+    noText(/PROFILE LESSONS/);
+    await waitFor(() =>
+      assert.equal(document.activeElement, document.querySelector("h1")),
+    );
+    document.removeEventListener("focusin", countHeadingFocus);
+    assert.equal(saveCalls, 1);
+
+    await click(button("Next"));
+    await waitFor(() => text(/PROFILE LESSONS/));
+    assert.equal(saveCalls, 1);
+  });
+
   it("navigates production lesson routes and isolates stale playback", async () => {
     const ControlledAudio = installControlledAudio();
 
     await mountStrict(
       applicationRoutesInMemory({ initialEntries: ["/lessons"] }),
     );
-    text(/Choose a story and start speaking/);
+    text(/Listen\. Then speak\./);
     await click(
       document.querySelector('a[aria-label^="Start lesson:"]'),
     );
@@ -1341,7 +4576,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await click(button("Back to lesson list"));
     await waitFor(() => assert.equal(currentRoute().path, "/lessons"));
-    text(/Choose a story and start speaking/);
+    text(/Listen\. Then speak\./);
 
     await click(
       document.querySelector('a[aria-label^="Start lesson:"]'),
@@ -1394,7 +4629,33 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
+  it("offers retry and skip when lesson sound stops", async () => {
+    const ControlledAudio = installControlledAudio();
+
+    await mountStrict(
+      applicationRoutesInMemory({ initialEntries: [lessonScenePath(1)] }),
+    );
+    await click(button("Start lesson"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
+
+    await act(async () => ControlledAudio.instances[0].fail());
+    await waitFor(() => text(/The sound stopped/));
+    assert.ok(button("Try sound"));
+    assert.ok(button("Skip sound"));
+
+    await click(button("Try sound"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 2));
+    noText(/The sound stopped/);
+
+    await act(async () => ControlledAudio.instances[1].fail());
+    await waitFor(() => text(/The sound stopped/));
+    await click(button("Skip sound"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 3));
+    noText(/The sound stopped/);
+  });
+
   it("moves a mounted learner turn through recording, checking, and feedback", async () => {
+    const experienceTrace = captureExperienceEvents();
     const ControlledAudio = installControlledAudio();
     installSpeechRecorder();
     const evaluation = deferred();
@@ -1419,9 +4680,26 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
     await waitFor(() => text(/Great job!/));
+    await waitFor(() => {
+      const lessonEvents = experienceTrace.filter((event) =>
+        event.name.startsWith("lesson_"),
+      );
+      assert.deepEqual(
+        lessonEvents.map(({ name, outcome }) => ({ name, outcome })),
+        [
+          { name: "lesson_microphone", outcome: "ready" },
+          { name: "lesson_speech_check", outcome: "completed" },
+        ],
+      );
+      assert.doesNotMatch(
+        JSON.stringify(lessonEvents),
+        /It is up high|recorded audio|correct/,
+      );
+    });
   });
 
   it("aborts a stale evaluation when browser history changes the lesson route", async () => {
+    const experienceTrace = captureExperienceEvents();
     const ControlledAudio = installControlledAudio();
     installSpeechRecorder();
     const evaluation = deferred();
@@ -1480,5 +4758,17 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(new RegExp(firstLesson.scenes[1].title));
     noText(/Checking your words|Great job!|Speech check failed|Audio unavailable/);
     assert.equal(document.activeElement, button("Start lesson"));
+    await waitFor(() =>
+      assert.ok(
+        experienceTrace.some(
+          (event) =>
+            event.name === "lesson_microphone" && event.outcome === "ready",
+        ),
+      ),
+    );
+    assert.equal(
+      experienceTrace.some((event) => event.name === "lesson_speech_check"),
+      false,
+    );
   });
 });

@@ -1,15 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import sharp from "sharp";
 import test, { after } from "node:test";
 import { createServer } from "vite";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
-const publicDir = fileURLToPath(new URL("../public", import.meta.url));
 const expectedLessonIds = [
   "01-peppas-high-ball",
   "02-garden-colors",
@@ -42,7 +39,7 @@ after(async () => vite.close());
 const stageFixture = {
   image: {
     alt: "Peppa and Dolly look at colorful flowers in the garden",
-    src: "/assets/full-scenes/02-garden-colors/01-colorful-flowers.webp",
+    src: "https://media.parrotbook.com/assets/v1/full-scenes/02-garden-colors/01-colorful-flowers.webp",
   },
 };
 
@@ -118,7 +115,7 @@ test("every ready-made lesson has one five-scene artwork set", async () => {
     for (const scene of artwork.scenes) {
       assert.match(
         scene.src,
-        new RegExp(`^/assets/full-scenes/${lessonId}/.+\\.webp$`),
+        new RegExp(`^https://media.parrotbook.com/assets/v1/full-scenes/${lessonId}/.+\\.webp$`),
       );
       assert.ok(
         scene.alt.trim(),
@@ -136,7 +133,7 @@ test("every ready-made lesson has one five-scene artwork set", async () => {
   );
 });
 
-test("every declared ready-made full-scene source is an existing 1672x941 WebP file", async () => {
+test("every declared ready-made full-scene source is a clean versioned media URL", () => {
   const lessons = getDeclaredReadyMadeLessons();
   const allSources = lessons.flatMap((lesson) =>
     lesson.scenes.map((scene) => scene.src),
@@ -151,16 +148,12 @@ test("every declared ready-made full-scene source is an existing 1672x941 WebP f
   assert.equal(new Set(allSources).size, allSources.length);
 
   for (const source of allSources) {
-    const filePath = join(publicDir, source.replace(/^\//, ""));
-    const bytes = await readFile(filePath);
-
-    assert.equal(bytes.subarray(0, 4).toString("ascii"), "RIFF");
-    assert.equal(bytes.subarray(8, 12).toString("ascii"), "WEBP");
-
-    const metadata = await sharp(filePath).metadata();
-    assert.equal(metadata.format, "webp");
-    assert.equal(metadata.width, 1672, `Expected ${source} width`);
-    assert.equal(metadata.height, 941, `Expected ${source} height`);
+    const url = new URL(source);
+    assert.equal(url.protocol, "https:");
+    assert.equal(url.hostname, "media.parrotbook.com");
+    assert.match(url.pathname, /^\/assets\/v1\/full-scenes\/.+\.webp$/);
+    assert.equal(url.search, "");
+    assert.equal(url.hash, "");
   }
 });
 

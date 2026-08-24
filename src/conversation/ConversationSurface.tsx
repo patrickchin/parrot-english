@@ -3,10 +3,12 @@ import {
   LoaderCircle,
   Mic,
   MicOff,
+  Play,
   RotateCcw,
   Volume2,
+  VolumeX,
 } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
 import {
   isTalkToPeppaPromptStyle,
@@ -15,6 +17,7 @@ import {
   type TalkToPeppaPromptStyle,
 } from "../../lib/talk-to-peppa-prompt-style";
 import { HeaderButton, RouteHeader } from "../app/AppHeader";
+import { LESSON_LEARNING_PATH } from "../app/learning-paths";
 import {
   ActionButton,
   cx,
@@ -22,6 +25,12 @@ import {
   IconButton,
   TextButton,
 } from "../shared/ui";
+import {
+  conversationFeedbackMilestones,
+  selectConversationWaitFeedback,
+  type ConversationWaitFeedback,
+  type TimedConversationStatus,
+} from "./conversation-feedback";
 
 export type ConversationSurfaceStatus =
   | "ready"
@@ -33,6 +42,8 @@ export type ConversationSurfaceStatus =
   | "error"
   | "saving";
 
+export type ConversationRecoveryPhase = "finish" | "restart" | null;
+
 export type ConversationSurfaceTurn = {
   id: string;
   role: "user" | "assistant";
@@ -40,34 +51,54 @@ export type ConversationSurfaceTurn = {
 };
 
 type ConversationSurfaceProps = {
+  audioPlaybackBlocked: boolean;
+  audioPlaybackBusy: boolean;
+  audioPlaybackError: string;
   canFinish: boolean;
   error: string;
   liveTranscript: string;
+  microphoneBusy: boolean;
   microphoneEnabled: boolean;
   onBack: () => void;
+  onChooseLesson: () => void;
   onFinish: () => void;
   onPromptStyleChange: (style: TalkToPeppaPromptStyle) => void;
   onRepeatAudio: () => void;
+  onRetryVoice: () => void;
   onStart: () => void;
+  onStartAudio: () => void;
   onToggleMicrophone: () => void;
   purpose: ConversationPurpose;
   promptStyle: TalkToPeppaPromptStyle;
+  recoveryPhase: ConversationRecoveryPhase;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
   turnReady: boolean;
   turns: ConversationSurfaceTurn[];
+  voiceRetryUsed: boolean;
+  waitCycle: number;
 };
 
 const PEPPA_ASSETS: Record<ConversationSurfaceStatus, string> = {
-  ready: "/assets/characters/peppa/peppa-happy.webp",
-  connecting: "/assets/characters/peppa/peppa-happy.webp",
-  listening: "/assets/characters/peppa/peppa-listening.webp",
-  thinking: "/assets/characters/peppa/peppa-listening.webp",
-  speaking: "/assets/characters/peppa/peppa-talking.webp",
-  reconnecting: "/assets/characters/peppa/peppa-surprised.webp",
-  error: "/assets/characters/peppa/peppa-sad.webp",
-  saving: "/assets/characters/peppa/peppa-happy.webp",
+  ready: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp",
+  connecting: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp",
+  listening: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-listening.webp",
+  thinking: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-listening.webp",
+  speaking: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-talking.webp",
+  reconnecting: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-surprised.webp",
+  error: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-sad.webp",
+  saving: "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp",
 };
+
+function responsivePeppaAsset(src: string, width: 384 | 768 | 1024) {
+  return src.replace(/\.webp$/, `-${width}.webp`);
+}
+
+function responsivePeppaSrcSet(src: string) {
+  return ([384, 768, 1024] as const)
+    .map((width) => `${responsivePeppaAsset(src, width)} ${width}w`)
+    .join(", ");
+}
 
 const PURPOSE_COPY: Record<
   ConversationPurpose,
@@ -87,19 +118,63 @@ const PURPOSE_COPY: Record<
   },
 };
 
-function latestAssistantSpeech(turns: ConversationSurfaceTurn[]) {
+function latestConversationTurn(turns: ConversationSurfaceTurn[]) {
   for (let index = turns.length - 1; index >= 0; index -= 1) {
-    if (turns[index].role === "assistant" && turns[index].text.trim()) {
-      return turns[index].text;
-    }
+    if (turns[index].text.trim()) return turns[index];
   }
   return null;
+}
+
+function isTimedStatus(
+  status: ConversationSurfaceStatus,
+): status is TimedConversationStatus {
+  return ["connecting", "thinking", "reconnecting", "saving"].includes(
+    status,
+  );
+}
+
+function useConversationWaitFeedback(
+  purpose: ConversationPurpose,
+  responseLatencyMs: number | null,
+  status: ConversationSurfaceStatus,
+  voiceRetryUsed: boolean,
+  waitCycle: number,
+) {
+  const [clock, setClock] = useState({ elapsedMs: 0, status, waitCycle });
+  const elapsedMs =
+    clock.status === status && clock.waitCycle === waitCycle
+      ? clock.elapsedMs
+      : 0;
+
+  useEffect(() => {
+    if (!isTimedStatus(status)) return;
+    const timers = conversationFeedbackMilestones(
+      status,
+      responseLatencyMs,
+    ).map((milestone) =>
+      window.setTimeout(
+        () => setClock({ elapsedMs: milestone, status, waitCycle }),
+        milestone,
+      ),
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [responseLatencyMs, status, waitCycle]);
+
+  return isTimedStatus(status)
+    ? selectConversationWaitFeedback({
+        elapsedMs,
+        purpose,
+        responseLatencyMs,
+        status,
+        voiceRetryUsed,
+      })
+    : null;
 }
 
 function isInteractiveSpaceTarget(target: EventTarget | null) {
   return target instanceof Element && Boolean(
     target.closest(
-      "button, input, textarea, select, [contenteditable='true'], [role='button']",
+      "a[href], area[href], button, input, textarea, select, summary, audio[controls], video[controls], [contenteditable]:not([contenteditable='false']), [tabindex]:not([tabindex='-1']), [role='button'], [role='link']",
     ),
   );
 }
@@ -128,48 +203,83 @@ function ConversationScreen({ children }: { children: ReactNode }) {
 }
 
 function statusLabel(
+  audioPlaybackBlocked: boolean,
   status: ConversationSurfaceStatus,
   microphoneEnabled: boolean,
   purpose: ConversationPurpose,
+  waitFeedback: ConversationWaitFeedback | null,
 ) {
+  if (audioPlaybackBlocked) return "Sound is off";
   if (status === "ready" && purpose === "small-chat") {
-    return "Choose how Peppa talks";
+    return "Ready to talk";
   }
-  if (status === "ready" || status === "connecting") {
-    return "Peppa is getting ready";
+  if (status === "ready") return "Getting ready";
+  if (status === "connecting" || status === "thinking") {
+    return waitFeedback?.label ?? "Please wait";
   }
   if (status === "listening") {
-    return microphoneEnabled ? "Listening to you" : "Your turn";
+    return microphoneEnabled ? "Listening" : "Your turn";
   }
-  if (status === "thinking") return "Peppa is thinking";
-  if (status === "speaking") return "Peppa is talking";
-  if (status === "reconnecting") return "Reconnecting";
-  if (status === "error") return "Chat paused";
-  return "Conversation ended";
+  if (status === "speaking") return "Peppa’s turn";
+  if (status === "reconnecting" || status === "saving") {
+    return waitFeedback?.label ?? "Please wait";
+  }
+  if (status === "error") return waitFeedback?.label ?? "Chat paused";
+  return "Finishing chat";
 }
 
 function ConversationStatus({
+  audioPlaybackBlocked,
+  audioPlaybackError,
   className,
+  directActionAnnouncement,
   microphoneEnabled,
   purpose,
   status,
+  waitFeedback,
+  waitDetailIsVisibleTranscript,
 }: {
+  audioPlaybackBlocked: boolean;
+  audioPlaybackError: string;
   className?: string;
+  directActionAnnouncement: string | null;
   microphoneEnabled: boolean;
   purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
+  waitFeedback: ConversationWaitFeedback | null;
+  waitDetailIsVisibleTranscript: boolean;
 }) {
+  const waitComplete = Boolean(waitFeedback?.action);
+  const announceWaitDetail = Boolean(
+    waitFeedback &&
+      !waitDetailIsVisibleTranscript &&
+      !audioPlaybackBlocked &&
+      !directActionAnnouncement,
+  );
   const busy =
+    !audioPlaybackBlocked &&
+    !waitComplete &&
     !(status === "ready" && purpose === "small-chat") &&
     ["ready", "connecting", "thinking", "reconnecting", "saving"].includes(
       status,
     );
+  const learnerTurn =
+    status === "listening" && !audioPlaybackBlocked;
+  const visibleLabel = statusLabel(
+    audioPlaybackBlocked,
+    status,
+    microphoneEnabled,
+    purpose,
+    waitFeedback,
+  );
 
   return (
     <p
+      aria-atomic="true"
       aria-live="polite"
       className={cx(
-        "m-0 inline-flex min-h-7 items-center gap-2 rounded-full bg-brand-ink/90 px-3 py-1 text-center text-sm font-black leading-tight text-white shadow-sm short:min-h-6 short:text-xs sm:text-base",
+        "m-0 inline-flex min-h-8 min-w-40 max-w-full items-center justify-center gap-2 rounded-full px-3 py-1 text-center text-sm font-black leading-tight text-white shadow-sm short:min-h-7 short:text-xs sm:text-base",
+        learnerTurn ? "bg-brand-green" : "bg-brand-ink/90",
         className,
       )}
       role="status"
@@ -179,6 +289,18 @@ function ConversationStatus({
           aria-hidden="true"
           className="size-4 shrink-0 animate-spin motion-reduce:animate-none"
         />
+      ) : audioPlaybackBlocked ? (
+        <VolumeX aria-hidden="true" className="size-4 shrink-0" />
+      ) : waitFeedback?.action === "retry" ? (
+        <RotateCcw aria-hidden="true" className="size-4 shrink-0" />
+      ) : waitFeedback?.action === "lesson" ? (
+        <Play aria-hidden="true" className="size-4 shrink-0 fill-current" />
+      ) : waitFeedback?.action === "leave" ? (
+        <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
+      ) : status === "listening" ? (
+        <Mic aria-hidden="true" className="size-4 shrink-0" />
+      ) : status === "speaking" ? (
+        <Volume2 aria-hidden="true" className="size-4 shrink-0" />
       ) : (
         <span
           aria-hidden="true"
@@ -192,115 +314,173 @@ function ConversationStatus({
           )}
         />
       )}
-      {statusLabel(status, microphoneEnabled, purpose)}
+      <span aria-hidden={directActionAnnouncement ? true : undefined}>
+        {visibleLabel}
+      </span>
+      {directActionAnnouncement ? (
+        <span className="sr-only">{directActionAnnouncement}.</span>
+      ) : null}
+      {!directActionAnnouncement && audioPlaybackError ? (
+        <span className="sr-only">. {audioPlaybackError}</span>
+      ) : null}
+      {announceWaitDetail ? (
+        <span className="sr-only">
+          . {waitFeedback?.text}{" "}
+          {waitFeedback?.action === "retry"
+            ? "Try chat again."
+            : waitFeedback?.action === "lesson"
+              ? "Play a lesson."
+              : waitComplete
+                ? "Back."
+                : null}
+        </span>
+      ) : null}
     </p>
   );
 }
 
 type Caption = {
-  label: string;
-  liveTranscript: boolean;
+  label: string | null;
   role: "alert" | undefined;
   text: string;
+  transcript: "final" | "live" | null;
 };
 
 function selectCaption({
-  assistantSpeech,
+  audioPlaybackBlocked,
+  audioPlaybackBusy,
+  audioPlaybackError,
   error,
+  latestTurn,
   liveTranscript,
   microphoneEnabled,
-  promptStyle,
   purpose,
   status,
+  waitFeedback,
 }: {
-  assistantSpeech: string | null;
+  audioPlaybackBlocked: boolean;
+  audioPlaybackBusy: boolean;
+  audioPlaybackError: string;
   error: string;
+  latestTurn: ConversationSurfaceTurn | null;
   liveTranscript: string;
   microphoneEnabled: boolean;
-  promptStyle: TalkToPeppaPromptStyle;
   purpose: ConversationPurpose;
   status: ConversationSurfaceStatus;
+  waitFeedback: ConversationWaitFeedback | null;
 }): Caption {
-  if (status === "error") {
+  if (status === "error" || error) {
     return {
-      label: "Something went wrong",
-      liveTranscript: false,
-      role: "alert",
-      text: error || "The voice room took a break. Try again.",
+      label:
+        status === "error"
+          ? waitFeedback?.label ?? "Chat paused"
+          : "Please try again",
+      role: waitFeedback?.action ? undefined : "alert",
+      text:
+        waitFeedback?.text ||
+        error ||
+        "The voice room took a break. Try again.",
+      transcript: null,
+    };
+  }
+  if (audioPlaybackBlocked || audioPlaybackBusy) {
+    if (audioPlaybackError) {
+      return {
+        label: "Please try again",
+        role: undefined,
+        text: audioPlaybackError,
+        transcript: null,
+      };
+    }
+    const peppaTurn =
+      latestTurn?.role === "assistant" ? latestTurn : null;
+    return {
+      label: peppaTurn ? "Peppa" : null,
+      role: undefined,
+      text: peppaTurn?.text ?? "Peppa is here.",
+      transcript: null,
     };
   }
   if (status === "ready") {
     return {
-      label: purpose === "small-chat" ? "Your choice" : "Peppa",
-      liveTranscript: false,
+      label: "Peppa",
       role: undefined,
       text:
         purpose === "small-chat"
-          ? talkToPeppaPromptStyleOption(promptStyle).description
-          : "Getting our chat ready…",
+          ? "Tap Talk to Peppa."
+          : "Wait here. The voice chat is getting ready…",
+      transcript: null,
     };
   }
   if (status === "connecting") {
     return {
-      label: "Almost there",
-      liveTranscript: false,
+      label: null,
       role: undefined,
-      text: "Peppa is getting ready. This can take about 25 seconds.",
+      text: waitFeedback?.text ?? "Starting the voice chat.",
+      transcript: null,
     };
   }
   if (status === "reconnecting") {
     return {
-      label: "Connection update",
-      liveTranscript: false,
+      label: null,
       role: undefined,
-      text: "The connection wobbled. Your answers are safe.",
+      text: waitFeedback?.text ?? "The connection stopped.",
+      transcript: null,
     };
   }
   if (status === "saving") {
     return {
-      label: "All done",
-      liveTranscript: false,
+      label: null,
       role: undefined,
-      text:
-        purpose === "small-chat"
-          ? "That was fun! See you next time."
-          : "Lovely chat! I'll remember that.",
+      text: waitFeedback?.text ?? "That was fun!",
+      transcript: null,
     };
   }
-  if (microphoneEnabled) {
+  if (status === "listening" && microphoneEnabled) {
     return {
-      label: "You’re saying",
-      liveTranscript: true,
+      label: "Your words",
       role: undefined,
-      text: liveTranscript || "Listening for your words…",
+      text: liveTranscript || "Say your answer.",
+      transcript: "live",
     };
   }
-  if (status === "thinking" && liveTranscript) {
+  if (status === "thinking") {
+    const showLearnerAnswer = Boolean(
+      liveTranscript && waitFeedback?.showLearnerAnswer,
+    );
     return {
-      label: "You said",
-      liveTranscript: true,
+      label: showLearnerAnswer ? "You said" : null,
       role: undefined,
-      text: liveTranscript,
+      text: showLearnerAnswer
+        ? liveTranscript
+        : waitFeedback?.text || "Wait for Peppa.",
+      transcript: showLearnerAnswer ? "final" : null,
     };
   }
-  if (assistantSpeech) {
+  if (status === "speaking") {
     return {
       label: "Peppa",
-      liveTranscript: false,
       role: undefined,
-      text: assistantSpeech,
+      text:
+        latestTurn?.role === "assistant"
+          ? latestTurn.text
+          : "Listen to Peppa.",
+      transcript: null,
+    };
+  }
+  if (latestTurn?.role === "assistant") {
+    return {
+      label: "Peppa",
+      role: undefined,
+      text: latestTurn.text,
+      transcript: null,
     };
   }
   return {
     label: "Peppa",
-    liveTranscript: false,
     role: undefined,
-    text:
-      status === "thinking"
-        ? "I'm getting my reply ready…"
-        : status === "speaking"
-          ? "I'm talking…"
-          : "I'm listening!",
+    text: "Tap the green button. Then talk.",
+    transcript: null,
   };
 }
 
@@ -308,17 +488,19 @@ function ConversationCaptions({
   caption,
   className,
   onRepeatAudio,
+  regionRef,
   showRepeat,
 }: {
   caption: Caption;
   className?: string;
   onRepeatAudio: () => void;
+  regionRef?: Ref<HTMLDivElement>;
   showRepeat: boolean;
 }) {
   return (
     <div
       className={cx(
-        "relative h-24 w-full max-w-xl short:h-18",
+        "relative h-28 w-full max-w-xl short:h-24",
         className,
       )}
     >
@@ -330,17 +512,24 @@ function ConversationCaptions({
         aria-label="Conversation captions"
         className="relative z-10 h-full w-full overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-white/95 px-4 py-3 text-center text-brand-ink shadow-control-surface short:rounded-2xl short:px-3 short:py-2 sm:px-5 sm:py-4"
         role="region"
+        ref={regionRef}
         tabIndex={0}
       >
         <div
           aria-label={
-            caption.liveTranscript ? "Live transcript" : "Peppa's message"
+            caption.transcript === "live"
+              ? "Live transcript"
+              : caption.transcript === "final"
+                ? "Your answer"
+                : caption.label === "Peppa"
+                  ? "Peppa's message"
+                  : "Conversation message"
           }
           className={cx(
             "relative grid min-h-full items-center",
             showRepeat && "grid-cols-[minmax(0,1fr)_auto] gap-x-2",
           )}
-          role={caption.liveTranscript ? undefined : "group"}
+          role={caption.transcript ? undefined : "group"}
         >
           <div
             aria-label={
@@ -349,12 +538,16 @@ function ConversationCaptions({
             className="min-w-0"
             role={caption.label === "Peppa" ? "blockquote" : undefined}
           >
-            <span className="text-xs font-black uppercase tracking-wide opacity-65 short:text-[0.65rem] sm:text-sm">
-              {caption.label}
-            </span>
+            {caption.label ? (
+              <span className="text-xs font-black uppercase tracking-wide opacity-70 short:text-[0.65rem] sm:text-sm">
+                {caption.label}
+              </span>
+            ) : null}
             <p
-              aria-live="polite"
-              className="m-0 mt-1 text-base font-black leading-snug sm:text-xl"
+              className={cx(
+                "m-0 text-base font-black leading-snug sm:text-xl",
+                caption.label && "mt-1",
+              )}
               role={caption.role}
             >
               {caption.text}
@@ -381,72 +574,121 @@ function ConversationCaptions({
   );
 }
 
-function WaitingTurnControl({ status }: { status: ConversationSurfaceStatus }) {
-  return (
-    <ActionButton
-      aria-label="Waiting for Peppa"
-      className="whitespace-nowrap short:gap-2 short:px-2 short:text-sm"
-      disabled
-      fullWidth
-      size="large"
-      type="button"
-      variant="surface"
-    >
-      <LoaderCircle
-        aria-hidden="true"
-        className="animate-spin motion-reduce:animate-none"
-      />
-      {status === "reconnecting"
-        ? "Reconnecting"
-        : status === "speaking"
-          ? "Peppa is talking"
-          : "Peppa is thinking"}
-    </ActionButton>
-  );
-}
-
 export function ConversationSurface({
+  audioPlaybackBlocked,
+  audioPlaybackBusy,
+  audioPlaybackError,
   canFinish,
   error,
   liveTranscript,
+  microphoneBusy,
   microphoneEnabled,
   onBack,
+  onChooseLesson,
   onFinish,
   onPromptStyleChange,
   onRepeatAudio,
+  onRetryVoice,
   onStart,
+  onStartAudio,
   onToggleMicrophone,
   purpose,
   promptStyle,
+  recoveryPhase,
+  responseLatencyMs,
   status,
   turnReady,
   turns,
+  voiceRetryUsed,
+  waitCycle,
 }: ConversationSurfaceProps) {
+  const captionRegionRef = useRef<HTMLDivElement>(null);
+  const soundActionRef = useRef<HTMLButtonElement>(null);
+  const soundFocusHandoffRef = useRef(false);
+  const turnActionRef = useRef<HTMLButtonElement>(null);
+  const showAudioRecovery =
+    (audioPlaybackBlocked || audioPlaybackBusy) &&
+    !microphoneEnabled &&
+    !["error", "reconnecting", "saving"].includes(status);
+  const showTurnControl =
+    (turnReady || microphoneEnabled) && status === "listening";
+  const openingMicrophone =
+    showTurnControl && microphoneBusy && !microphoneEnabled;
+  const directActionAnnouncement =
+    showAudioRecovery && audioPlaybackBusy
+      ? "Starting sound"
+      : openingMicrophone
+        ? "Opening microphone"
+        : null;
+  const turnControlLabel = openingMicrophone
+    ? "Opening microphone"
+    : microphoneEnabled
+      ? "I’m done"
+      : "Tap, then talk";
   const turnInteractive =
-    turnReady && (status === "listening" || status === "speaking");
-  const assistantSpeech = latestAssistantSpeech(turns);
+    showTurnControl && !microphoneBusy && !showAudioRecovery;
+  const latestTurn = latestConversationTurn(turns);
+  const waitFeedback = useConversationWaitFeedback(
+    purpose,
+    responseLatencyMs,
+    status,
+    voiceRetryUsed,
+    waitCycle,
+  );
+  const repeatedErrorFeedback: ConversationWaitFeedback | null =
+    purpose === "small-chat" &&
+    status === "error" &&
+    recoveryPhase === "restart" &&
+    voiceRetryUsed
+      ? {
+          action: "lesson",
+          label: "Chat paused",
+          text: "Peppa cannot talk now.",
+        }
+      : null;
+  const recoveryFeedback = repeatedErrorFeedback ?? waitFeedback;
   const caption = selectCaption({
-    assistantSpeech,
+    audioPlaybackBlocked: showAudioRecovery && audioPlaybackBlocked,
+    audioPlaybackBusy: showAudioRecovery && audioPlaybackBusy,
+    audioPlaybackError: showAudioRecovery ? audioPlaybackError : "",
     error,
+    latestTurn,
     liveTranscript,
     microphoneEnabled,
-    promptStyle,
     purpose,
     status,
+    waitFeedback: recoveryFeedback,
   });
   const showRepeat = Boolean(
-    assistantSpeech &&
+    latestTurn?.role === "assistant" &&
       status === "listening" &&
       turnReady &&
+      !showAudioRecovery &&
+      !microphoneBusy &&
       !microphoneEnabled,
   );
   const expandLandscapeCaption = caption.text.length > 100;
   const { finishLabel, title } = PURPOSE_COPY[purpose];
+  const finishRetryLabel = finishLabel ? `${finishLabel} again` : "Finish again";
   const showPromptStyleSetup = purpose === "small-chat" && status === "ready";
+  const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
+  const recoveryAction = recoveryFeedback?.action;
+  const peppaStatus = recoveryAction ? "error" : status;
+  const peppaIsStatic =
+    isTimedStatus(status) || showAudioRecovery || openingMicrophone;
   const showFinish =
     canFinish &&
     finishLabel &&
-    !["ready", "connecting", "saving"].includes(status);
+    !recoveryAction &&
+    !["ready", "connecting", "error", "saving"].includes(status);
+  const hasConversationControls = Boolean(
+    showPromptStyleSetup ||
+      recoveryAction ||
+      status === "error" ||
+      showAudioRecovery ||
+      showTurnControl ||
+      showFinish,
+  );
 
   useEffect(() => {
     if (!turnInteractive) return;
@@ -467,6 +709,16 @@ export function ConversationSurface({
     return () => window.removeEventListener("keydown", toggleTurnWithSpace);
   }, [onToggleMicrophone, turnInteractive]);
 
+  useEffect(() => {
+    if (showAudioRecovery || !soundFocusHandoffRef.current) return;
+    soundFocusHandoffRef.current = false;
+    if (document.hasFocus() && document.activeElement === document.body) {
+      (turnActionRef.current ?? captionRegionRef.current)?.focus({
+        preventScroll: true,
+      });
+    }
+  }, [showAudioRecovery]);
+
   return (
     <ConversationScreen>
       <ConversationHeader onBack={onBack} />
@@ -476,18 +728,47 @@ export function ConversationSurface({
         </h1>
 
         <ConversationStatus
+          audioPlaybackBlocked={showAudioRecovery && audioPlaybackBlocked}
+          audioPlaybackError={showAudioRecovery ? audioPlaybackError : ""}
           className="short-wide:col-start-2 short-wide:row-start-2 short-wide:self-start"
+          directActionAnnouncement={directActionAnnouncement}
           microphoneEnabled={microphoneEnabled}
           purpose={purpose}
           status={status}
+          waitFeedback={recoveryFeedback}
+          waitDetailIsVisibleTranscript={caption.transcript === "final"}
         />
 
         <figure className="m-0 grid h-full min-h-0 w-full place-items-center short-wide:col-start-1 short-wide:row-span-4 short-wide:row-start-1">
-          <img
-            alt="Peppa"
-            className="h-full min-h-0 w-full max-w-sm animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:max-w-32 short-wide:max-w-56 sm:max-w-md"
-            src={PEPPA_ASSETS[status]}
-          />
+          {recoveryAction === "lesson" ? (
+            <div className="relative aspect-[4/3] max-h-full w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short:max-w-56 short:rounded-2xl short-wide:max-w-sm sm:max-w-md">
+              <img
+                alt={LESSON_LEARNING_PATH.imageAlt}
+                className="size-full object-cover"
+                decoding="async"
+                height={LESSON_LEARNING_PATH.imageHeight}
+                sizes="(max-height: 420px) 24rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
+                src={LESSON_LEARNING_PATH.imageSrc}
+                srcSet={LESSON_LEARNING_PATH.imageSrcSet}
+                width={LESSON_LEARNING_PATH.imageWidth}
+              />
+            </div>
+          ) : (
+            <img
+              alt="Peppa"
+              className={cx(
+                "h-full min-h-0 w-full max-w-sm object-contain drop-shadow-lg short:max-w-32 short-wide:max-w-56 sm:max-w-md",
+                !peppaIsStatic &&
+                  "animate-float motion-reduce:animate-none",
+              )}
+              decoding="async"
+              height={1024}
+              sizes="(max-height: 420px) 14rem, (max-width: 639px) min(24rem, calc(100vw - 1.5rem)), 28rem"
+              src={responsivePeppaAsset(PEPPA_ASSETS[peppaStatus], 768)}
+              srcSet={responsivePeppaSrcSet(PEPPA_ASSETS[peppaStatus])}
+              width={1024}
+            />
+          )}
         </figure>
 
         <ConversationCaptions
@@ -499,91 +780,204 @@ export function ConversationSurface({
               : "short-wide:h-28 short-wide:self-end",
           )}
           onRepeatAudio={onRepeatAudio}
+          regionRef={captionRegionRef}
           showRepeat={showRepeat}
         />
 
         <div
-          aria-label="Conversation controls"
+          aria-label={
+            hasConversationControls ? "Conversation controls" : undefined
+          }
           className={cx(
-            "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12",
-            (showFinish || showPromptStyleSetup) &&
+            "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12 md:min-h-16",
+            showFinish &&
               "grid-cols-[minmax(0,1fr)_auto]",
             "short-wide:col-start-2 short-wide:row-start-4",
           )}
-          role="group"
+          role={hasConversationControls ? "group" : undefined}
         >
           {showPromptStyleSetup ? (
-            <>
-              <label className="min-w-0 text-left" htmlFor="peppa-prompt-style">
-                <span className="sr-only">Chat style</span>
-                <select
-                  className={fieldClassName({
-                    className:
-                      "min-h-14 truncate short:min-h-12 short:rounded-xl short:px-2 short:py-1 short:text-sm",
-                  })}
-                  id="peppa-prompt-style"
-                  onChange={(event) => {
-                    if (isTalkToPeppaPromptStyle(event.target.value)) {
-                      onPromptStyleChange(event.target.value);
-                    }
-                  }}
-                  value={promptStyle}
-                >
-                  {TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="grid w-full gap-1.5">
               <ActionButton
-                className="min-h-14 min-w-24 px-3 short:min-h-12 short:min-w-20 short:rounded-xl short:px-2 short:text-sm"
+                aria-label="Start chat"
+                className="min-h-14 short:min-h-12 short:rounded-xl"
+                fullWidth
                 onClick={onStart}
-                size="compact"
+                size="large"
                 type="button"
               >
-                Start chat
+                Talk to Peppa
               </ActionButton>
-            </>
+              <details className="group relative">
+                <summary
+                  aria-label={`Grown-up chat style: ${promptStyleOption.label}`}
+                  className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-white/70 px-3 text-xs font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden"
+                >
+                  Grown-up: {promptStyleOption.label}
+                  <span aria-hidden="true" className="group-open:rotate-180">
+                    ▾
+                  </span>
+                </summary>
+                <div
+                  className="absolute bottom-full left-0 z-50 mb-2 grid w-full min-w-0 gap-1 rounded-2xl border-3 border-white bg-white/95 p-2 text-left shadow-card"
+                >
+                  <label
+                    className="text-xs font-black text-brand-blue"
+                    htmlFor="peppa-prompt-style"
+                  >
+                    Chat style
+                  </label>
+                  <select
+                    aria-describedby="peppa-prompt-style-description"
+                    className={fieldClassName({
+                      className:
+                        "min-h-12 truncate rounded-xl px-3 py-1 text-sm",
+                    })}
+                    id="peppa-prompt-style"
+                    onChange={(event) => {
+                      if (isTalkToPeppaPromptStyle(event.target.value)) {
+                        onPromptStyleChange(event.target.value);
+                        const details = event.currentTarget.closest("details");
+                        details?.removeAttribute("open");
+                        details?.querySelector("summary")?.focus();
+                      }
+                    }}
+                    value={promptStyle}
+                  >
+                    {TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span
+                    className="text-xs font-bold leading-snug text-brand-blue"
+                    id="peppa-prompt-style-description"
+                  >
+                    {promptStyleOption.description}
+                  </span>
+                </div>
+              </details>
+            </div>
+          ) : recoveryAction === "lesson" ? (
+            <ActionButton
+              fullWidth
+              onClick={onChooseLesson}
+              size="large"
+              type="button"
+              variant="rose"
+            >
+              <Play aria-hidden="true" className="fill-current" />
+              {LESSON_LEARNING_PATH.label}
+            </ActionButton>
+          ) : status === "error" && recoveryPhase === "finish" ? (
+            <ActionButton
+              fullWidth
+              onClick={onFinish}
+              size="large"
+              type="button"
+            >
+              {finishRetryLabel}
+            </ActionButton>
           ) : status === "error" ? (
             <ActionButton
               fullWidth
-              onClick={onStart}
+              onClick={onRetryVoice}
               size="large"
               type="button"
             >
               <RotateCcw aria-hidden="true" />
               Try again
             </ActionButton>
-          ) : turnInteractive ? (
+          ) : showAudioRecovery ? (
             <ActionButton
-              aria-keyshortcuts="Space"
-              aria-pressed={microphoneEnabled}
+              aria-disabled={audioPlaybackBusy ? true : undefined}
+              fullWidth
+              onBlur={(event) => {
+                if (event.relatedTarget instanceof Element) {
+                  soundFocusHandoffRef.current = false;
+                }
+              }}
+              onClick={
+                audioPlaybackBusy
+                  ? undefined
+                  : () => {
+                      soundFocusHandoffRef.current =
+                        document.activeElement === soundActionRef.current;
+                      onStartAudio();
+                    }
+              }
+              ref={soundActionRef}
+              size="large"
+              type="button"
+            >
+              {audioPlaybackBusy ? (
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                />
+              ) : (
+                <Volume2 aria-hidden="true" />
+              )}
+              {audioPlaybackBusy ? "Starting sound" : "Tap for sound"}
+            </ActionButton>
+          ) : recoveryAction === "retry" ? (
+            <ActionButton
+              fullWidth
+              onClick={onRetryVoice}
+              size="large"
+              type="button"
+            >
+              <RotateCcw aria-hidden="true" />
+              Try chat again
+            </ActionButton>
+          ) : recoveryAction === "leave" ? (
+            <ActionButton
+              fullWidth
+              onClick={onBack}
+              size="large"
+              type="button"
+              variant="navy"
+            >
+              Back
+            </ActionButton>
+          ) : showTurnControl ? (
+            <ActionButton
+              aria-disabled={microphoneBusy ? true : undefined}
+              aria-keyshortcuts={microphoneBusy ? undefined : "Space"}
+              aria-label={turnControlLabel}
               className="whitespace-nowrap short:gap-2 short:px-2 short:text-sm"
               fullWidth
-              onClick={onToggleMicrophone}
+              onClick={microphoneBusy ? undefined : onToggleMicrophone}
+              ref={turnActionRef}
               size="large"
               type="button"
               variant={microphoneEnabled ? "brand" : "success"}
             >
-              {microphoneEnabled ? (
+              {openingMicrophone ? (
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="animate-spin motion-reduce:animate-none"
+                />
+              ) : microphoneEnabled ? (
                 <MicOff aria-hidden="true" />
               ) : (
                 <Mic aria-hidden="true" />
               )}
               <span className="grid justify-items-start leading-tight">
-                <strong>
-                  {microphoneEnabled ? "End my turn" : "Start my turn"}
-                </strong>
-                <small className="hidden text-xs font-bold leading-none opacity-85 md:mt-0.5 md:block">
-                  Click or press Space
-                </small>
+                <strong>{turnControlLabel}</strong>
+                {!microphoneBusy ? (
+                  <small className="hidden text-xs font-bold leading-none opacity-85 md:mt-0.5 md:block">
+                    Tap or press Space
+                  </small>
+                ) : null}
               </span>
             </ActionButton>
-          ) : ["thinking", "speaking", "reconnecting"].includes(status) ? (
-            <WaitingTurnControl status={status} />
           ) : (
-            <span aria-hidden="true" className="block h-14 short:h-12" />
+            <span
+              aria-hidden="true"
+              className="block h-14 short:h-12 md:h-16"
+            />
           )}
 
           {showFinish ? (

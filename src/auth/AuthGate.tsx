@@ -1,4 +1,6 @@
 import {
+  useEffect,
+  useRef,
   useState,
   type ComponentProps,
   type ComponentType,
@@ -57,7 +59,6 @@ interface SubmitAuthFormOptions {
 
 interface SignOutSessionOptions {
   client: AuthActionClient;
-  refetch: () => Promise<unknown>;
 }
 
 interface DeleteAccountSessionOptions {
@@ -66,7 +67,7 @@ interface DeleteAccountSessionOptions {
   refetch: () => Promise<unknown>;
 }
 
-const SIGN_OUT_ERROR_MESSAGE = "Unable to sign you out. Please try again.";
+const SIGN_OUT_ERROR_MESSAGE = "Sign out did not finish.";
 const DELETE_ACCOUNT_ERROR_MESSAGE =
   "Unable to delete the account. The account and private story art were kept. Please try again.";
 
@@ -140,13 +141,11 @@ export async function submitAuthForm({
 
 export async function signOutSession({
   client,
-  refetch,
 }: SignOutSessionOptions): Promise<string | null> {
   try {
     const result = await client.signOut();
     if (result.error) return SIGN_OUT_ERROR_MESSAGE;
 
-    await refetch();
     return null;
   } catch {
     return SIGN_OUT_ERROR_MESSAGE;
@@ -172,6 +171,7 @@ export async function deleteAccountSession({
 interface AuthSession {
   user: {
     email: string;
+    id?: string | null;
     name?: string | null;
   };
 }
@@ -195,6 +195,7 @@ interface AuthGateViewProps {
   profileError: string;
   session: AuthSession | null;
   sessionError: unknown;
+  signOutError: string;
   signedOutFallback: ReactNode | null;
 }
 
@@ -217,6 +218,7 @@ export function AuthGateView({
   profileError,
   session,
   sessionError,
+  signOutError,
   signedOutFallback,
 }: AuthGateViewProps) {
   if (isPending || isRetrying) {
@@ -406,6 +408,7 @@ export function AuthGateView({
         onDeleteAccount={onDeleteAccount}
         onOpenProfile={onOpenProfile}
         onSignOut={onSignOut}
+        signOutError={signOutError}
         userEmail={session.user.email}
         userLabel={userLabel}
       />
@@ -420,6 +423,26 @@ interface AuthGateProps {
 }
 
 const EMPTY_FIELDS: AuthFields = { name: "", email: "", password: "" };
+
+interface SignOutState {
+  error: string;
+  isPending: boolean;
+  owner: string | null;
+}
+
+const EMPTY_SIGN_OUT_STATE: SignOutState = {
+  error: "",
+  isPending: false,
+  owner: null,
+};
+
+function getSessionIdentity(session: AuthSession | null) {
+  if (!session) return null;
+  const id = session.user.id?.trim();
+  return id
+    ? `id:${id}`
+    : `email:${session.user.email.trim().toLowerCase()}`;
+}
 
 interface AuthGateClient extends AuthActionClient {
   useSession(): {
@@ -460,10 +483,26 @@ export function createAuthGate({
     const [fields, setFields] = stateHook<AuthFields>(EMPTY_FIELDS);
     const [formError, setFormError] = stateHook("");
     const [isSubmitting, setIsSubmitting] = stateHook(false);
-    const [isSigningOut, setIsSigningOut] = stateHook(false);
+    const [signOutState, setSignOutState] =
+      stateHook<SignOutState>(EMPTY_SIGN_OUT_STATE);
     const [isRetrying, setIsRetrying] = stateHook(false);
     const [profileAction, setProfileAction] =
       stateHook<ProfileAccountAction>(null);
+    const signOutAttemptRef = useRef<{ owner: string } | null>(null);
+    const sessionIdentity = getSessionIdentity(session);
+    const ownsSignOutState =
+      sessionIdentity !== null && signOutState.owner === sessionIdentity;
+
+    useEffect(() => {
+      if (
+        signOutState.owner === null ||
+        signOutState.owner === sessionIdentity
+      ) {
+        return;
+      }
+      signOutAttemptRef.current = null;
+      setSignOutState(EMPTY_SIGN_OUT_STATE);
+    }, [sessionIdentity, setSignOutState, signOutState.owner]);
 
     function selectMode(nextMode: AuthMode) {
       setMode(nextMode);
@@ -502,18 +541,31 @@ export function createAuthGate({
     }
 
     async function handleSignOut() {
-      setIsSigningOut(true);
+      if (sessionIdentity === null) return;
+      if (signOutAttemptRef.current?.owner === sessionIdentity) return;
+      const attempt = { owner: sessionIdentity };
+      signOutAttemptRef.current = attempt;
+      setSignOutState({
+        error: "",
+        isPending: true,
+        owner: sessionIdentity,
+      });
       setFormError("");
 
+      let nextError: string | null;
       try {
-        const nextError = await signOutAction({
-          client,
-          refetch,
-        });
-        setFormError(nextError ?? "");
-      } finally {
-        setIsSigningOut(false);
+        nextError = await signOutAction({ client });
+      } catch {
+        nextError = SIGN_OUT_ERROR_MESSAGE;
       }
+
+      if (signOutAttemptRef.current !== attempt || nextError === null) return;
+      signOutAttemptRef.current = null;
+      setSignOutState({
+        error: nextError,
+        isPending: false,
+        owner: sessionIdentity,
+      });
     }
 
     async function handleDeleteAccount(password: string) {
@@ -527,7 +579,7 @@ export function createAuthGate({
           formError={formError}
           isPending={isPending}
           isRetrying={isRetrying}
-          isSigningOut={isSigningOut}
+          isSigningOut={ownsSignOutState && signOutState.isPending}
           isSubmitting={isSubmitting}
           mode={mode}
           onDeleteAccount={handleDeleteAccount}
@@ -540,6 +592,7 @@ export function createAuthGate({
           profileError={profileAction?.error ?? ""}
           session={session}
           sessionError={error}
+          signOutError={ownsSignOutState ? signOutState.error : ""}
           signedOutFallback={signedOutFallback ?? null}
         >
           {children}

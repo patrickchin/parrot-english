@@ -287,6 +287,67 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("loads the generation scene reference from immutable public R2 media", async () => {
+    const state = seedDatabase();
+    const sourcePng = await sharp({
+      create: {
+        width: 2,
+        height: 2,
+        channels: 4,
+        background: { r: 20, g: 40, b: 60, alpha: 1 },
+      },
+    })
+      .png()
+      .toBuffer();
+    const generatedWebp = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 0, g: 180, b: 120, alpha: 1 },
+      },
+    })
+      .webp()
+      .toBuffer();
+    const formData = uploadForm();
+    formData.set(
+      "source",
+      new File([sourcePng], "source.png", { type: "image/png" }),
+    );
+    let requestedUrl = null;
+
+    try {
+      const response = await call(
+        state,
+        {
+          ai: {
+            async run() {
+              return { image: generatedWebp.toString("base64") };
+            },
+          },
+          body: formData,
+          method: "POST",
+        },
+        {
+          async fetchMedia(request) {
+            requestedUrl = request.url;
+            return new Response(new Uint8Array([1]), {
+              headers: { "Content-Type": "image/webp" },
+            });
+          },
+        },
+      );
+
+      assert.equal(response.status, 201);
+      assert.equal(
+        requestedUrl,
+        "https://media.parrotbook.com/assets/v1/personalization/the-red-ball-scene-reference.webp",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("returns not found for malformed encoded story identifiers", async () => {
     const state = seedDatabase();
     try {

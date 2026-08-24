@@ -61,6 +61,8 @@ describe("architecture cleanup contracts", () => {
     assert.match(playerUi, /characters\.map/);
     assert.match(app, /ChevronLeft|ChevronRight/);
     assert.match(app, /SCENE_NEXT|SCENE_PREVIOUS/);
+    assert.match(app, /from "\.\.\/lessons\/LessonPlayerUi"/);
+    assert.doesNotMatch(app, /lazyLessonPlayerComponent/);
   });
 
   it("keeps the active lesson experience English-only", () => {
@@ -125,15 +127,20 @@ describe("architecture cleanup contracts", () => {
     assert.doesNotMatch(scene, /futureSrc|sparkle/);
   });
 
-  it("documents durable transcripts without raw-audio retention", () => {
-    const readme = readProjectFile("README.md");
+  it("persists durable transcripts without recording raw conversation audio", () => {
     const agent = readProjectFile("agent/index.ts");
+    const agentPolicy = readProjectFile("agent/peppa-conversation.ts");
+    const repository = readProjectFile("worker/conversation-repository.ts");
     const worker = readProjectFile("worker/conversations.ts");
 
-    assert.match(readme, /finalized conversation transcript/i);
-    assert.match(readme, /raw audio is\s+not stored/i);
+    assert.match(agent, /persistence\.persistConversationItem\(event\.item\)/);
+    assert.match(repository, /database\.insert\(conversationTurn\)/);
+    assert.match(agentPolicy, /record:\s*false/);
     assert.match(agent, /record:\s*AGENT_SESSION_START_OPTIONS\.record/);
-    assert.doesNotMatch(worker, /audio(?:Blob|Base64|Bytes)|rawAudio/i);
+    assert.doesNotMatch(
+      `${worker}\n${repository}`,
+      /audio(?:Blob|Base64|Bytes)|rawAudio/i,
+    );
   });
 
   it("type-checks the shared lesson contract modules", () => {

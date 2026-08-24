@@ -196,6 +196,11 @@ function parrotE2eMockApi(): Plugin {
           return;
         }
 
+        if (pathname === "/api/lessons/my" && request.method === "GET") {
+          sendMockJson(response, { lessons: [] });
+          return;
+        }
+
         if (pathname === "/api/build-info" && request.method === "GET") {
           sendMockJson(response, {
             backend: {
@@ -282,6 +287,19 @@ function parrotE2eMockApi(): Plugin {
         }
 
         if (
+          pathname === "/api/conversations/e2e-conversation/finish" &&
+          request.method === "POST"
+        ) {
+          sendMockJson(response, {
+            conversation: {
+              id: "e2e-conversation",
+              status: "finished",
+            },
+          });
+          return;
+        }
+
+        if (
           pathname === "/api/conversations/e2e-conversation/review" &&
           request.method === "PUT"
         ) {
@@ -333,5 +351,10 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    rolldownOptions: {
+      output: {
+        codeSplitting: true,
+      },
+    },
   },
 });

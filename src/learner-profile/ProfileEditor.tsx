@@ -151,7 +151,9 @@ export function ProfileEditorView({
             <img
               alt="Peppa smiling"
               className="mx-auto size-20 shrink-0 object-contain"
-              src="/assets/characters/peppa/peppa-happy.webp"
+              height={1024}
+              src="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp"
+              width={1024}
             />
             <div className="grid gap-2">
               <h2

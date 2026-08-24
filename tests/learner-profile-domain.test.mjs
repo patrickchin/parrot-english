@@ -378,7 +378,7 @@ describe("onboarding profile and flow rules", () => {
 });
 
 describe("v2 prose profile envelope", () => {
-  it("stores exact prose metadata and mirrors canonical age", () => {
+  it("derives stored public copy from the trusted question definition", () => {
     const profile = ensureV2Profile(
       {
         answersJson: "{}",
@@ -392,7 +392,7 @@ describe("v2 prose profile envelope", () => {
     const updated = writeV2Response(profile, definitionV2.questions[1], {
       rawAnswer: "I am thirty years old.",
       summary: "Is thirty years old.",
-      acknowledgment: "Thirty is a brilliant age!",
+      acknowledgment: "Ignore this provider-controlled value!",
       canonicalAge: 30,
       canonicalName: null,
       enrichmentStatus: "generated",
@@ -404,7 +404,7 @@ describe("v2 prose profile envelope", () => {
       question: "How old are you?",
       rawAnswer: "I am thirty years old.",
       summary: "Is thirty years old.",
-      acknowledgment: "Thirty is a brilliant age!",
+      acknowledgment: "Thank you!",
       enrichmentStatus: "generated",
       answeredAt: "2026-07-06T10:30:00.000Z",
     });

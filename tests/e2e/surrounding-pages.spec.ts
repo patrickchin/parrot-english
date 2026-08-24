@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
@@ -17,47 +18,72 @@ async function visibleBox(locator: Locator) {
   return box!;
 }
 
+function boxesOverlap(
+  first: { height: number; width: number; x: number; y: number },
+  second: { height: number; width: number; x: number; y: number },
+) {
+  return !(
+    first.x + first.width <= second.x ||
+    second.x + second.width <= first.x ||
+    first.y + first.height <= second.y ||
+    second.y + second.height <= first.y
+  );
+}
+
+async function expectContained(parent: Locator, child: Locator) {
+  const parentBox = await visibleBox(parent);
+  const childBox = await visibleBox(child);
+  expect(childBox.x).toBeGreaterThanOrEqual(parentBox.x - 1);
+  expect(childBox.y).toBeGreaterThanOrEqual(parentBox.y - 1);
+  expect(childBox.x + childBox.width).toBeLessThanOrEqual(
+    parentBox.x + parentBox.width + 1,
+  );
+  expect(childBox.y + childBox.height).toBeLessThanOrEqual(
+    parentBox.y + parentBox.height + 1,
+  );
+}
+
 const readyMadeArtwork = [
   {
     alt: "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
     id: "01-peppas-high-ball",
-    src: "/assets/lesson-covers/01-peppas-high-ball.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/01-peppas-high-ball.webp",
     title: "Peppa's High Ball",
   },
   {
     alt: "Peppa and Dolly choosing a red flower for their basket",
     id: "02-garden-colors",
-    src: "/assets/lesson-covers/02-garden-colors.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/02-garden-colors.webp",
     title: "The Red Flower",
   },
   {
     alt: "Dolly handing Peppa an apple from a snack basket",
     id: "03-snack-time",
-    src: "/assets/lesson-covers/03-snack-time.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/03-snack-time.webp",
     title: "Peppa's Apple Snack",
   },
   {
     alt: "Peppa waiting beside a swing while Dolly takes her turn",
     id: "04-playground-words",
-    src: "/assets/lesson-covers/04-playground-words.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/04-playground-words.webp",
     title: "A Turn on the Swing",
   },
   {
     alt: "Peppa buying two red apples from Dolly's fruit stand",
     id: "05-market-day",
-    src: "/assets/lesson-covers/05-market-day.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/05-market-day.webp",
     title: "Two Apples for Peppa",
   },
   {
     alt: "Dolly pouring juice for Peppa on a picnic blanket",
     id: "06-picnic-time",
-    src: "/assets/lesson-covers/06-picnic-time.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/06-picnic-time.webp",
     title: "Juice at the Picnic",
   },
   {
     alt: "Peppa tucked under a blanket while Dolly reads beside a lantern",
     id: "07-bedtime-story",
-    src: "/assets/lesson-covers/07-bedtime-story.webp",
+    src: "https://media.parrotbook.com/assets/v1/lesson-covers/07-bedtime-story.webp",
     title: "Good Night, Peppa",
   },
 ];
@@ -75,7 +101,7 @@ test("ready-made lessons show distinct story-specific artwork", async ({
   await page.goto("/lessons");
 
   const readyMadeLessons = page
-    .getByRole("region", { name: "Ready-made lessons" })
+    .getByRole("region", { name: "Lessons" })
     .getByRole("article");
 
   for (const [index, artwork] of readyMadeArtwork.entries()) {
@@ -83,10 +109,25 @@ test("ready-made lessons show distinct story-specific artwork", async ({
       .nth(index)
       .getByRole("img", { name: artwork.alt });
     await expect(image).toHaveAttribute("src", artwork.src);
+    await expect(image).toHaveAttribute(
+      "srcset",
+      `${artwork.src.replace(/\.webp$/, "-384.webp")} 384w, ${artwork.src.replace(/\.webp$/, "-768.webp")} 768w`,
+    );
     await expect
       .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
       .toBeGreaterThan(0);
   }
+
+  await expect
+    .poll(() =>
+      readyMadeLessons
+        .first()
+        .getByRole("img")
+        .evaluate((element: HTMLImageElement) =>
+          new URL(element.currentSrc).pathname,
+        ),
+    )
+    .toMatch(/\/assets\/lesson-covers\/01-peppas-high-ball-(384|768)\.webp$/);
 });
 
 test("every ready-made lesson exposes one canonical start link", async ({
@@ -102,7 +143,7 @@ test("every ready-made lesson exposes one canonical start link", async ({
   await page.goto("/lessons");
 
   const cards = page
-    .getByRole("region", { name: "Ready-made lessons" })
+    .getByRole("region", { name: "Lessons" })
     .getByRole("article");
   await expect(cards).toHaveCount(readyMadeArtwork.length);
 
@@ -122,29 +163,11 @@ test("every ready-made lesson exposes one canonical start link", async ({
 });
 
 for (const viewport of [
-  {
-    artworkSize: 76,
-    height: 568,
-    maxCardHeight: 106,
-    maxStartWidth: 52,
-    width: 280,
-  },
-  {
-    artworkSize: 86,
-    height: 640,
-    maxCardHeight: 116,
-    maxStartWidth: 84,
-    width: 360,
-  },
-  {
-    artworkSize: 86,
-    height: 844,
-    maxCardHeight: 116,
-    maxStartWidth: 84,
-    width: 390,
-  },
+  { height: 568, width: 280 },
+  { height: 640, width: 360 },
+  { height: 844, width: 390 },
 ]) {
-  test(`lesson discovery stays compact and readable at ${viewport.width}px`, async ({
+  test(`lesson discovery is picture-led and reachable at ${viewport.width}px`, async ({
     page,
   }) => {
     await page.route("**/api/lessons/my", async (route) => {
@@ -158,61 +181,62 @@ for (const viewport of [
     await page.goto("/lessons");
 
     const readyMadeLessons = page
-      .getByRole("region", { name: "Ready-made lessons" })
+      .getByRole("region", { name: "Lessons" })
       .getByRole("article");
     const firstLesson = readyMadeLessons.first();
+    const secondLesson = readyMadeLessons.nth(1);
     const thirdLesson = readyMadeLessons.nth(2);
     const title = firstLesson.getByRole("heading", {
       name: "Peppa's High Ball",
     });
     const artwork = firstLesson.getByRole("img");
-    const summary = firstLesson.getByText(
-      /Peppa asks Dolly to help retrieve a ball/i,
+    const practiceLine = firstLesson.getByText(
+      "Say: Can you help me?",
+      { exact: true },
     );
     const start = firstLesson.getByRole("link", {
       name: "Start lesson: Peppa's High Ball",
     });
     const cardBox = await visibleBox(firstLesson);
+    const secondCardBox = await visibleBox(secondLesson);
+    const thirdCardBox = await visibleBox(thirdLesson);
     const artworkBox = await visibleBox(artwork);
     const titleBox = await visibleBox(title);
+    const practiceBox = await visibleBox(practiceLine);
     const startBox = await visibleBox(start);
-    const thirdCardBox = await visibleBox(thirdLesson);
-    const cardBoxes = await Promise.all(
-      Array.from({ length: 7 }, (_, index) =>
-        visibleBox(readyMadeLessons.nth(index)),
-      ),
-    );
 
-    expect(Math.max(...cardBoxes.map((box) => box.height))).toBeLessThanOrEqual(
-      viewport.maxCardHeight,
-    );
-    expect(artworkBox.width).toBeGreaterThanOrEqual(
-      viewport.artworkSize - 1,
-    );
-    expect(artworkBox.height).toBeGreaterThanOrEqual(
-      viewport.artworkSize - 1,
-    );
-    expect(artworkBox.x + artworkBox.width).toBeLessThanOrEqual(titleBox.x);
-    expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(startBox.x);
-    expect(startBox.x).toBeGreaterThan(artworkBox.x + artworkBox.width);
+    expect(startBox.x).toBeGreaterThanOrEqual(cardBox.x);
     expect(startBox.y).toBeGreaterThanOrEqual(cardBox.y);
-    expect(startBox.y + startBox.height).toBeLessThanOrEqual(
-      cardBox.y + cardBox.height,
-    );
-    expect(startBox.height).toBeGreaterThanOrEqual(48);
+    expect(startBox.width).toBeGreaterThanOrEqual(cardBox.width - 1);
+    expect(startBox.height).toBeGreaterThanOrEqual(128);
     expect(startBox.width).toBeGreaterThanOrEqual(
-      viewport.width < 360 ? 48 : 80,
+      viewport.width < 360 ? 240 : 150,
     );
-    expect(startBox.width).toBeLessThanOrEqual(viewport.maxStartWidth);
+    expect(artworkBox.width).toBeGreaterThanOrEqual(102);
+    expect(artworkBox.height).toBeGreaterThanOrEqual(110);
+    expect(practiceBox.x).toBeGreaterThanOrEqual(titleBox.x);
     expect(thirdCardBox.y).toBeLessThan(viewport.height);
 
     if (viewport.width < 360) {
-      await expect(summary).toBeHidden();
+      expect(artworkBox.x + artworkBox.width).toBeLessThanOrEqual(titleBox.x);
+      expect(secondCardBox.y).toBeGreaterThanOrEqual(
+        cardBox.y + cardBox.height,
+      );
     } else {
-      const summaryBox = await visibleBox(summary);
-      expect(summaryBox.x).toBeGreaterThanOrEqual(titleBox.x);
-      expect(summaryBox.x + summaryBox.width).toBeLessThanOrEqual(startBox.x);
+      expect(Math.abs(cardBox.y - secondCardBox.y)).toBeLessThanOrEqual(2);
+      expect(secondCardBox.x).toBeGreaterThanOrEqual(
+        cardBox.x + cardBox.width,
+      );
+      expect(thirdCardBox.y).toBeGreaterThanOrEqual(
+        cardBox.y + cardBox.height,
+      );
+      expect(titleBox.y).toBeGreaterThanOrEqual(
+        artworkBox.y + artworkBox.height,
+      );
     }
+    await expect(
+      firstLesson.getByText(/retrieve a ball from a high tree branch/i),
+    ).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
     const main = page.getByRole("main");
@@ -220,7 +244,9 @@ for (const viewport of [
     await expect
       .poll(() => main.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await expect(page.getByRole("heading", { name: "My lessons" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Grown-up tools" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Create custom lesson" }),
     ).toBeVisible();
@@ -231,20 +257,10 @@ for (const viewport of [
 }
 
 for (const viewport of [
-  {
-    artworkWidth: 128,
-    height: 900,
-    maxCardHeight: 124,
-    width: 687,
-  },
-  {
-    artworkWidth: 160,
-    height: 900,
-    maxCardHeight: 124,
-    width: 1440,
-  },
+  { height: 900, width: 687 },
+  { height: 900, width: 1440 },
 ]) {
-  test(`lesson discovery remains one compact vertical list at ${viewport.width}px`, async ({
+  test(`lesson discovery becomes a roomy visual grid at ${viewport.width}px`, async ({
     page,
   }) => {
     await page.route("**/api/lessons/my", async (route) => {
@@ -258,11 +274,14 @@ for (const viewport of [
     await page.goto("/lessons");
 
     const lessons = page
-      .getByRole("region", { name: "Ready-made lessons" })
+      .getByRole("region", { name: "Lessons" })
       .getByRole("article");
     const firstCard = lessons.nth(0);
     const firstCardBox = await visibleBox(firstCard);
     const secondCardBox = await visibleBox(lessons.nth(1));
+    const nextRowCardBox = await visibleBox(
+      lessons.nth(viewport.width >= 1024 ? 4 : 3),
+    );
     const fifthCardBox = await visibleBox(lessons.nth(4));
     const titleBox = await visibleBox(
       firstCard.getByRole("heading", { name: "Peppa's High Ball" }),
@@ -274,25 +293,306 @@ for (const viewport of [
       }),
     );
 
-    expect(Math.abs(firstCardBox.x - secondCardBox.x)).toBeLessThanOrEqual(2);
-    expect(Math.abs(firstCardBox.width - secondCardBox.width)).toBeLessThanOrEqual(
-      2,
+    expect(Math.abs(firstCardBox.y - secondCardBox.y)).toBeLessThanOrEqual(2);
+    expect(secondCardBox.x).toBeGreaterThanOrEqual(
+      firstCardBox.x + firstCardBox.width,
     );
-    expect(secondCardBox.y).toBeGreaterThanOrEqual(
+    expect(nextRowCardBox.y).toBeGreaterThanOrEqual(
       firstCardBox.y + firstCardBox.height,
     );
-    expect(firstCardBox.height).toBeLessThanOrEqual(viewport.maxCardHeight);
-    expect(artworkBox.width).toBeGreaterThanOrEqual(
-      viewport.artworkWidth - 1,
-    );
-    expect(artworkBox.height).toBeGreaterThanOrEqual(95);
-    expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(startBox.x);
-    expect(startBox.width).toBeGreaterThanOrEqual(80);
-    expect(startBox.width).toBeLessThanOrEqual(88);
+    expect(firstCardBox.width).toBeGreaterThanOrEqual(180);
+    expect(artworkBox.width).toBeGreaterThanOrEqual(firstCardBox.width - 10);
+    expect(artworkBox.height).toBeGreaterThanOrEqual(130);
+    expect(titleBox.y).toBeGreaterThanOrEqual(artworkBox.y + artworkBox.height);
+    expect(startBox.width).toBeGreaterThanOrEqual(firstCardBox.width - 1);
+    expect(startBox.height).toBeGreaterThanOrEqual(240);
     expect(fifthCardBox.y).toBeLessThan(viewport.height);
     await expectNoHorizontalOverflow(page);
   });
 }
+
+for (const viewport of [
+  {
+    failureBody: "null",
+    failureContentType: "application/json",
+    failureStatus: 200,
+    height: 568,
+    width: 280,
+  },
+  {
+    failureBody: JSON.stringify({
+      error: "database_unavailable",
+      message: "D1 binding LESSON_DB is missing.",
+    }),
+    failureContentType: "application/json",
+    failureStatus: 500,
+    height: 844,
+    width: 390,
+  },
+  {
+    failureBody: "<html>not json</html>",
+    failureContentType: "text/html",
+    failureStatus: 200,
+    height: 360,
+    width: 640,
+  },
+]) {
+  test(`My Lessons recovers safely at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    let attempts = 0;
+    let retryMode = false;
+    let releaseRetry = () => {};
+    let reportRetryStarted = () => {};
+    const retryGate = new Promise<void>((resolve) => {
+      releaseRetry = resolve;
+    });
+    const retryStarted = new Promise<void>((resolve) => {
+      reportRetryStarted = resolve;
+    });
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await page.route("**/api/lessons/my", async (route) => {
+      attempts += 1;
+      if (!retryMode) {
+        await route.fulfill({
+          body: viewport.failureBody,
+          contentType: viewport.failureContentType,
+          status: viewport.failureStatus,
+        });
+        return;
+      }
+
+      reportRetryStarted();
+      await retryGate;
+      await route.fulfill({
+        body: JSON.stringify({ lessons: [] }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+    await page.setViewportSize(viewport);
+    await page.goto("/lessons");
+
+    const readyMadeLessons = page
+      .getByRole("region", { name: "Lessons" })
+      .getByRole("article");
+    await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+    await expect(
+      readyMadeLessons.first().getByRole("link", {
+        name: "Start lesson: Peppa's High Ball",
+      }),
+    ).toBeVisible();
+
+    const main = page.getByRole("main");
+    await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+    const panel = page.getByRole("complementary", {
+      name: "Grown-up tools",
+    });
+    const heading = panel.getByRole("heading", { name: "Grown-up tools" });
+    const status = panel.getByRole("status");
+    const retry = panel.getByRole("button", { name: "Try again" });
+    const create = panel.getByRole("link", { name: "Create custom lesson" });
+
+    await expect(status).toHaveText("We couldn't load My Lessons.");
+    await expect(status).toHaveAttribute("aria-live", "polite");
+    await expect(status).toHaveAttribute("aria-atomic", "true");
+    await expect(retry).toBeVisible();
+    await expect(create).toBeVisible();
+    await expect(
+      page.getByText(
+        /Cannot read properties|TypeError|invalid_response|database_unavailable|D1 binding/i,
+      ),
+    ).toHaveCount(0);
+    const panelBox = await visibleBox(panel);
+    const headingBox = await visibleBox(heading);
+    const statusBox = await visibleBox(status);
+    const retryBox = await visibleBox(retry);
+    const createBox = await visibleBox(create);
+    expect(headingBox.height).toBeLessThanOrEqual(32);
+    expect(statusBox.width).toBeGreaterThanOrEqual(200);
+    expect(retryBox.height).toBeGreaterThanOrEqual(44);
+    expect(retryBox.width).toBeGreaterThanOrEqual(44);
+    expect(createBox.height).toBeGreaterThanOrEqual(44);
+    expect(createBox.width).toBeGreaterThanOrEqual(44);
+    expect(boxesOverlap(retryBox, createBox)).toBe(false);
+    expect(panelBox.y).toBeGreaterThanOrEqual(0);
+    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
+    await expectContained(panel, retry);
+    await expectContained(panel, create);
+    await expectNoHorizontalOverflow(page);
+    expect(pageErrors).toEqual([]);
+
+    const attemptsBeforeRetry = attempts;
+    retryMode = true;
+    await retry.evaluate((button) => {
+      const statusElement = document.getElementById("my-lessons-status");
+      const metrics = window as Window & {
+        parrotMyLessonsFeedbackMs?: number;
+        parrotMyLessonsFeedbackStart?: number;
+      };
+      metrics.parrotMyLessonsFeedbackMs = undefined;
+      button.addEventListener(
+        "click",
+        () => {
+          metrics.parrotMyLessonsFeedbackStart = performance.now();
+        },
+        { capture: true, once: true },
+      );
+      const observer = new MutationObserver(() => {
+        if (
+          statusElement?.textContent === "Loading My Lessons…" &&
+          metrics.parrotMyLessonsFeedbackStart !== undefined
+        ) {
+          metrics.parrotMyLessonsFeedbackMs =
+            performance.now() - metrics.parrotMyLessonsFeedbackStart;
+          observer.disconnect();
+        }
+      });
+      observer.observe(statusElement!, {
+        characterData: true,
+        childList: true,
+        subtree: true,
+      });
+    });
+    await retry.click();
+    await expect(status).toHaveText("Loading My Lessons…", { timeout: 500 });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (window as Window & { parrotMyLessonsFeedbackMs?: number })
+              .parrotMyLessonsFeedbackMs ?? null,
+        ),
+      )
+      .not.toBeNull();
+    const feedbackMs = await page.evaluate(
+      () =>
+        (window as Window & { parrotMyLessonsFeedbackMs?: number })
+          .parrotMyLessonsFeedbackMs!,
+    );
+    expect(feedbackMs).toBeLessThan(100);
+    await retryStarted;
+    await expect(retry).toHaveAttribute("aria-disabled", "true");
+    await expect(retry).toBeFocused();
+    expect(attempts).toBe(attemptsBeforeRetry + 1);
+    await retry.press("Enter");
+    expect(attempts).toBe(attemptsBeforeRetry + 1);
+    await expect(page).toHaveURL("/lessons");
+    expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    expect(
+      boxesOverlap(await visibleBox(retry), await visibleBox(create)),
+    ).toBe(false);
+    await expectContained(panel, retry);
+    await expectContained(panel, create);
+    await expectNoHorizontalOverflow(page);
+
+    releaseRetry();
+    await expect(status).toHaveText("No made-for-you lessons yet.");
+    await expect(retry).toHaveCount(0);
+    await expect(heading).toBeFocused();
+    await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+    expect(pageErrors).toEqual([]);
+  });
+}
+
+test("My Lessons keeps recovery stable across a failed retry and populated success", async ({
+  page,
+}) => {
+  const savedLesson = {
+    id: "recovered-garden",
+    lesson: createLessonScript({ title: "Recovered Garden" }),
+    source: "uploaded",
+  };
+  let attempts = 0;
+  let phase: "initial-failure" | "retry-failure" | "success" =
+    "initial-failure";
+  let releaseRetryFailure = () => {};
+  let reportRetryFailureStarted = () => {};
+  const retryFailureGate = new Promise<void>((resolve) => {
+    releaseRetryFailure = resolve;
+  });
+  const retryFailureStarted = new Promise<void>((resolve) => {
+    reportRetryFailureStarted = resolve;
+  });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("**/api/lessons/my", async (route) => {
+    attempts += 1;
+    if (phase === "initial-failure") {
+      await route.abort("failed");
+      return;
+    }
+    if (phase === "retry-failure") {
+      reportRetryFailureStarted();
+      await retryFailureGate;
+      await route.fulfill({
+        body: JSON.stringify({
+          error: "database_unavailable",
+          message: "D1 binding LESSON_DB is missing.",
+        }),
+        contentType: "application/json",
+        status: 503,
+      });
+      return;
+    }
+    await route.fulfill({
+      body: JSON.stringify({ lessons: [savedLesson] }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/lessons");
+
+  const readyMadeLessons = page
+    .getByRole("region", { name: "Lessons" })
+    .getByRole("article");
+  const panel = page.getByRole("complementary", { name: "Grown-up tools" });
+  const heading = panel.getByRole("heading", { name: "Grown-up tools" });
+  const status = panel.getByRole("status");
+  const retry = panel.getByRole("button", { name: "Try again" });
+  const create = panel.getByRole("link", { name: "Create custom lesson" });
+  await expect(status).toHaveText("We couldn't load My Lessons.");
+  await panel.scrollIntoViewIfNeeded();
+  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+  await expect(create).toBeVisible();
+
+  const attemptsBeforeFailedRetry = attempts;
+  phase = "retry-failure";
+  await retry.click();
+  await expect(status).toHaveText("Loading My Lessons…", { timeout: 500 });
+  await retryFailureStarted;
+  await expect(retry).toHaveAttribute("aria-disabled", "true");
+  await expect(retry).toBeFocused();
+  await retry.press("Enter");
+  expect(attempts).toBe(attemptsBeforeFailedRetry + 1);
+  releaseRetryFailure();
+
+  await expect(status).toHaveText("We couldn't load My Lessons.");
+  await expect(retry).not.toHaveAttribute("aria-disabled", "true");
+  await expect(retry).toBeFocused();
+  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+  await expect(create).toBeVisible();
+  await expect(
+    page.getByText(/database_unavailable|D1 binding|503|TypeError/i),
+  ).toHaveCount(0);
+
+  const attemptsBeforeSuccess = attempts;
+  phase = "success";
+  await retry.click();
+  await expect(
+    page.getByRole("heading", { name: "Recovered Garden" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Start lesson: Recovered Garden" }),
+  ).toBeVisible();
+  expect(attempts).toBe(attemptsBeforeSuccess + 1);
+  await expect(heading).toBeFocused();
+  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
+  await expect(create).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
 
 test("signed-out protected routes preserve the destination and show account access", async ({
   page,
@@ -360,10 +660,10 @@ test("an incomplete learner sees a skippable profile setup before the requested 
     "/profile/setup?returnTo=%2Flessons",
   );
   await expect(
-    page.getByRole("heading", { name: "Help Peppa get to know you" }),
+    page.getByRole("heading", { name: "Answer 6 questions" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Set up profile" }),
+    page.getByRole("button", { name: "Start questions" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Skip for now" }),
@@ -396,7 +696,7 @@ test("learner profile returns to the page that opened it", async ({ page }) => {
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page).toHaveURL("/lessons");
   await expect(
-    page.getByRole("heading", { exact: true, name: "Lessons" }),
+    page.getByRole("heading", { exact: true, name: "Pick a lesson" }),
   ).toBeVisible();
 });
 
@@ -470,9 +770,9 @@ test("account deletion requires the password and returns to sign in only after p
   await page.getByRole("menuitem", { name: "Delete account" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "Your profile, lessons, conversations, and private story art will be permanently deleted.",
+    "This removes your account, learner profile, My Lessons, saved conversation text, and private story art from Parrot.",
   );
-  const confirm = dialog.getByRole("button", { name: "Permanently delete account" });
+  const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();
   await dialog.getByLabel("Password").fill("parent-password");
   await expect(confirm).toBeEnabled();

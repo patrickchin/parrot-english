@@ -6,7 +6,7 @@ test("Back returns home and Talk to Peppa can be opened again", async ({
 }) => {
   await page.goto("/talk-to-peppa");
   await startSmallChat(page);
-  await expect(page.getByRole("button", { name: "Start my turn" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tap, then talk" })).toBeVisible();
 
   await page.getByRole("button", { exact: true, name: "Back" }).click();
 
@@ -22,11 +22,11 @@ test("Back returns home and Talk to Peppa can be opened again", async ({
 
   await expect(page).toHaveURL("/talk-to-peppa");
   await startSmallChat(page);
-  const turnButton = page.getByRole("button", { name: "Start my turn" });
+  const turnButton = page.getByRole("button", { name: "Tap, then talk" });
   await expect(turnButton).toBeVisible();
   await turnButton.click();
   await expect(
-    page.getByRole("button", { name: "End my turn" }),
+    page.getByRole("button", { name: "I’m done" }),
   ).toBeVisible();
 });
 
@@ -34,16 +34,17 @@ test("the learner sees a streamed transcript while speaking", async ({ page }) =
   await page.goto("/talk-to-peppa");
   await startSmallChat(page);
 
-  await page.getByRole("button", { name: "Start my turn" }).click();
+  await page.getByRole("button", { name: "Tap, then talk" }).click();
 
   const transcript = page.getByLabel("Live transcript");
   await expect(transcript).toBeVisible();
   await expect(transcript).toContainText("My name is Mia");
 
-  await page.getByRole("button", { name: "End my turn" }).click();
-  await expect(transcript).toBeVisible();
-  await expect(transcript).toContainText("You said");
-  await expect(transcript).toContainText("My name is Mia");
+  await page.getByRole("button", { name: "I’m done" }).click();
+  const answer = page.getByLabel("Your answer");
+  await expect(answer).toBeVisible();
+  await expect(answer).toContainText("You said");
+  await expect(answer).toContainText("My name is Mia");
 });
 
 test("the latest Peppa message repeats from its bottom-right audio control", async ({
@@ -84,6 +85,8 @@ test("the latest Peppa message repeats from its bottom-right audio control", asy
 
   await repeat.click();
   await expect(repeat).toBeHidden();
-  await expect(page.getByRole("status")).toContainText("Peppa is talking");
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "Peppa’s turn",
+  );
   await expect(repeat).toBeVisible();
 });

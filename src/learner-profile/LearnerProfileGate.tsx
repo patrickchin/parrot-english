@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -30,6 +32,7 @@ import { LearnerProfileAcknowledgment } from "./LearnerProfileAcknowledgment";
 import {
   LearnerProfileCard,
   LearnerProfileScreen,
+  LearnerProfileStepHeading,
   LearnerProfileStatusCard,
 } from "./LearnerProfileLayout";
 import {
@@ -37,10 +40,13 @@ import {
   captureLearnerProfileAnswer,
   playLearnerProfileStart,
   replayLearnerProfileQuestion,
+  type QuestionPendingAction,
+  type QuestionStatus,
 } from "./LearnerProfileQuestion";
 import { ProfileEditorView } from "./ProfileEditor";
+import { isAbortError } from "../media/audio-playback";
 import { recordSpeechClip } from "../media/speech-recorder";
-import { ConversationSurface } from "../conversation/ConversationSurface";
+import type { ConversationSurface as ConversationSurfaceComponent } from "../conversation/ConversationSurface";
 import {
   selectLearnerProfileExperience,
   usePeppaConversation,
@@ -50,9 +56,56 @@ import { ActionButton, TextButton } from "../shared/ui";
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+const LazyConversationSurface = import.meta.env.SSR
+  ? (await import("../conversation/ConversationSurface")).ConversationSurface
+  : lazy(() =>
+      import("../conversation/ConversationSurface").then(
+        ({ ConversationSurface }) => ({ default: ConversationSurface }),
+      ),
+    );
+
 type QuestionProps = ComponentProps<typeof LearnerProfileQuestionView>;
 type ProfileEditorProps = ComponentProps<typeof ProfileEditorView>;
-type ConversationProps = ComponentProps<typeof ConversationSurface>;
+type ConversationProps = ComponentProps<typeof ConversationSurfaceComponent>;
+
+type ActiveQuestionOperation = {
+  controller: AbortController;
+  operation: number;
+  owner: Exclude<QuestionPendingAction, null>;
+};
+
+type ActiveQuestionPlayback = {
+  controller: AbortController;
+  operation: number;
+};
+
+type QuestionPresentation = {
+  pendingAction: QuestionPendingAction;
+  status: QuestionStatus;
+};
+
+const IDLE_QUESTION_PRESENTATION: QuestionPresentation = {
+  pendingAction: null,
+  status: "idle",
+};
+
+function ConversationSurface(props: ConversationProps) {
+  return (
+    <Suspense
+      fallback={
+        <LearnerProfileScreen>
+          <LearnerProfileStatusCard aria-busy="true" role="status">
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              Loading voice chat…
+            </p>
+          </LearnerProfileStatusCard>
+        </LearnerProfileScreen>
+      }
+    >
+      <LazyConversationSurface {...props} />
+    </Suspense>
+  );
+}
 
 type AcknowledgmentView = {
   acknowledgment: Acknowledgment;
@@ -86,6 +139,56 @@ type LearnerProfileGateViewProps = {
   started: boolean;
 };
 
+function LearnerProfileSetupView({
+  answeredQuestionCount,
+  onSkip,
+  onStart,
+  questionCount,
+}: {
+  answeredQuestionCount: number;
+  onSkip: () => void;
+  onStart: () => void;
+  questionCount: number;
+}) {
+  const isResuming = answeredQuestionCount > 0;
+  const visibleQuestionCount = isResuming
+    ? questionCount - answeredQuestionCount
+    : questionCount;
+
+  return (
+    <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
+      <img
+        alt="Peppa waving hello"
+        className="aspect-square max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-44 sm:w-52"
+        height={1024}
+        src="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp"
+        width={1024}
+      />
+      <LearnerProfileStepHeading
+        className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
+        stepKey="setup"
+      >
+        Answer {visibleQuestionCount}
+        {isResuming ? " more" : ""}{" "}
+        {visibleQuestionCount === 1 ? "question" : "questions"}
+      </LearnerProfileStepHeading>
+      <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
+        We save your answers.{" "}
+        <span className="whitespace-nowrap">A grown-up</span> can change your{" "}
+        <span className="whitespace-nowrap">name and age.</span>
+      </p>
+      <div className="grid justify-items-center gap-1 short-wide:col-start-2 short-wide:row-start-3 short-wide:flex short-wide:items-center short-wide:justify-self-start short-wide:gap-4">
+        <ActionButton onClick={onStart} type="button">
+          {isResuming ? "Continue questions" : "Start questions"}
+        </ActionButton>
+        <TextButton onClick={onSkip} type="button">
+          Skip for now
+        </TextButton>
+      </div>
+    </LearnerProfileCard>
+  );
+}
+
 export function LearnerProfileGateView({
   acknowledgment,
   children,
@@ -115,10 +218,11 @@ export function LearnerProfileGateView({
   const fullData = data?.mode === "full" ? data : null;
   const learnerProfileComplete = Boolean(
     fullData &&
-      (fullData.canBypass ||
-        fullData.profile.profileStatus === "completed"),
+    (fullData.canBypass || fullData.profile.profileStatus === "completed"),
   );
-  const canAccessProtectedRoutes = Boolean(data?.canBypass || learnerProfileComplete);
+  const canAccessProtectedRoutes = Boolean(
+    data?.canBypass || learnerProfileComplete,
+  );
   const canEditProfile = learnerProfileComplete;
 
   if (isLoading) {
@@ -149,10 +253,7 @@ export function LearnerProfileGateView({
           </p>
           <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
             {isConversationRoute ? (
-              <TextButton
-                onClick={onCloseConversationRoute}
-                type="button"
-              >
+              <TextButton onClick={onCloseConversationRoute} type="button">
                 Back to home
               </TextButton>
             ) : (
@@ -185,7 +286,11 @@ export function LearnerProfileGateView({
     return <>{learnerProfileFallback}</>;
   }
 
-  if (canAccessProtectedRoutes && isLearnerProfileRoute && !redoLearnerProfile) {
+  if (
+    canAccessProtectedRoutes &&
+    isLearnerProfileRoute &&
+    !redoLearnerProfile
+  ) {
     return <>{completedLearnerProfileFallback}</>;
   }
 
@@ -217,10 +322,7 @@ export function LearnerProfileGateView({
               {profileLoadError}
             </p>
             <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
-              <TextButton
-                onClick={onCloseProfileRoute}
-                type="button"
-              >
+              <TextButton onClick={onCloseProfileRoute} type="button">
                 Back to home
               </TextButton>
               <ActionButton onClick={onRetryProfile} type="button">
@@ -269,26 +371,12 @@ export function LearnerProfileGateView({
   if (fullData && !started) {
     return (
       <LearnerProfileScreen>
-        <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center sm:p-12">
-          <img
-            alt="Peppa waving hello"
-            className="max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-52"
-            src="/assets/characters/peppa/peppa-happy.webp"
-          />
-          <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
-            Help Peppa get to know you
-          </h1>
-          <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
-            Answer a few quick questions to personalize chats and lessons. You
-            can change these later in Learner profile.
-          </p>
-          <ActionButton className="mt-2" onClick={onStart} type="button">
-            Set up profile
-          </ActionButton>
-          <TextButton onClick={onSkip} type="button">
-            Skip for now
-          </TextButton>
-        </LearnerProfileCard>
+        <LearnerProfileSetupView
+          answeredQuestionCount={fullData.progress.answered}
+          onSkip={onSkip}
+          onStart={onStart}
+          questionCount={fullData.progress.total}
+        />
       </LearnerProfileScreen>
     );
   }
@@ -312,7 +400,10 @@ export function LearnerProfileGateView({
   );
 }
 
-type ProfileWithAnswers = Pick<LearnerProfileSummary, "age" | "answers" | "name">;
+type ProfileWithAnswers = Pick<
+  LearnerProfileSummary,
+  "age" | "answers" | "name"
+>;
 
 export function answerForQuestion(
   profile: ProfileWithAnswers,
@@ -362,12 +453,14 @@ export async function saveQuestionAndAdvance({
   questionKey,
   rawAnswer,
   save = saveLearnerProfileAnswer,
+  signal,
 }: {
   questionKey: string;
   rawAnswer: string;
-  save?: (questionKey: string, rawAnswer: string) => Promise<LearnerProfileState>;
+  save?: typeof saveLearnerProfileAnswer;
+  signal?: AbortSignal;
 }) {
-  return save(questionKey, rawAnswer);
+  return save(questionKey, rawAnswer, signal ? { signal } : undefined);
 }
 
 function readableError(error: unknown) {
@@ -392,9 +485,7 @@ type PendingAcknowledgment =
       next: ProfileState;
     };
 
-export function createProfileOperationBoundary(
-  nextOperation: () => number,
-) {
+export function createProfileOperationBoundary(nextOperation: () => number) {
   let activeController: AbortController | null = null;
 
   return {
@@ -502,6 +593,7 @@ type LearnerProfileGateProps = {
   learnerProfileFallback: ReactNode;
   onCloseProfileRoute: () => void;
   onConversationCompleted: () => void;
+  onOpenLessons: () => void;
   onOpenProfileRoute: () => void;
   onRedoCompleted: () => void;
   onRedoLearnerProfileRoute: () => void;
@@ -517,6 +609,7 @@ export function LearnerProfileGate({
   learnerProfileFallback,
   onCloseProfileRoute,
   onConversationCompleted,
+  onOpenLessons,
   onOpenProfileRoute,
   onRedoCompleted,
   onRedoLearnerProfileRoute,
@@ -529,9 +622,13 @@ export function LearnerProfileGate({
   const [useFormFallback, setUseFormFallback] = useState(false);
   const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState("");
-  const [status, setStatus] = useState<QuestionProps["status"]>("idle");
+  const [questionPresentation, setQuestionPresentation] =
+    useState<QuestionPresentation>(IDLE_QUESTION_PRESENTATION);
+  const [questionPlaybackPending, setQuestionPlaybackPending] = useState(false);
   const [profileState, setProfileState] = useState<ProfileState | null>(null);
-  const [profileDrafts, setProfileDrafts] = useState<Record<string, string>>({});
+  const [profileDrafts, setProfileDrafts] = useState<Record<string, string>>(
+    {},
+  );
   const [profileFieldErrors, setProfileFieldErrors] = useState<
     Record<string, string>
   >({});
@@ -542,6 +639,8 @@ export function LearnerProfileGate({
   const [pendingAcknowledgment, setPendingAcknowledgment] =
     useState<PendingAcknowledgment | null>(null);
   const operationRef = useRef(0);
+  const questionOperationRef = useRef<ActiveQuestionOperation | null>(null);
+  const questionPlaybackRef = useRef<ActiveQuestionPlayback | null>(null);
   const profileLoadOperationRef = useRef<number | null>(null);
   const profileOperationBoundaryRef = useRef<ReturnType<
     typeof createProfileOperationBoundary
@@ -586,9 +685,125 @@ export function LearnerProfileGate({
     [],
   );
 
+  const abortQuestionPlayback = useCallback(
+    (resetPresentation = true) => {
+      const active = questionPlaybackRef.current;
+      if (!active) return;
+      questionPlaybackRef.current = null;
+      active.controller.abort();
+      if (isCurrentOperation(active.operation)) nextOperation();
+      if (resetPresentation) setQuestionPlaybackPending(false);
+    },
+    [isCurrentOperation, nextOperation],
+  );
+
+  const abortQuestionOperation = useCallback(
+    (resetPresentation = true) => {
+      const active = questionOperationRef.current;
+      if (!active) return;
+      questionOperationRef.current = null;
+      active.controller.abort();
+      if (isCurrentOperation(active.operation)) nextOperation();
+      if (resetPresentation) {
+        setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
+      }
+    },
+    [isCurrentOperation, nextOperation],
+  );
+
+  const beginQuestionOperation = useCallback(
+    (
+      owner: Exclude<QuestionPendingAction, null>,
+      status: Exclude<QuestionStatus, "idle" | "ready">,
+    ) => {
+      if (questionOperationRef.current) return null;
+      abortQuestionPlayback();
+      const active: ActiveQuestionOperation = {
+        controller: new AbortController(),
+        operation: nextOperation(),
+        owner,
+      };
+      questionOperationRef.current = active;
+      setFieldError("");
+      setQuestionPresentation({ pendingAction: owner, status });
+      return active;
+    },
+    [abortQuestionPlayback, nextOperation],
+  );
+
+  const beginQuestionPlayback = useCallback(() => {
+    if (questionOperationRef.current || questionPlaybackRef.current) {
+      return null;
+    }
+    const active: ActiveQuestionPlayback = {
+      controller: new AbortController(),
+      operation: nextOperation(),
+    };
+    questionPlaybackRef.current = active;
+    setQuestionPlaybackPending(true);
+    return active;
+  }, [nextOperation]);
+
+  const isCurrentQuestionPlayback = useCallback(
+    (active: ActiveQuestionPlayback) =>
+      questionPlaybackRef.current === active &&
+      !active.controller.signal.aborted &&
+      isCurrentOperation(active.operation),
+    [isCurrentOperation],
+  );
+
+  const finishQuestionPlayback = useCallback(
+    (active: ActiveQuestionPlayback) => {
+      if (questionPlaybackRef.current !== active) return false;
+      questionPlaybackRef.current = null;
+      setQuestionPlaybackPending(false);
+      return (
+        !active.controller.signal.aborted &&
+        isCurrentOperation(active.operation)
+      );
+    },
+    [isCurrentOperation],
+  );
+
+  const isCurrentQuestionOperation = useCallback(
+    (active: ActiveQuestionOperation) =>
+      questionOperationRef.current === active &&
+      !active.controller.signal.aborted &&
+      isCurrentOperation(active.operation),
+    [isCurrentOperation],
+  );
+
+  const updateQuestionOperation = useCallback(
+    (
+      active: ActiveQuestionOperation,
+      status: Exclude<QuestionStatus, "idle" | "ready">,
+    ) => {
+      if (!isCurrentQuestionOperation(active)) return;
+      setQuestionPresentation({ pendingAction: active.owner, status });
+    },
+    [isCurrentQuestionOperation],
+  );
+
+  const finishQuestionOperation = useCallback(
+    (active: ActiveQuestionOperation, status: "idle" | "ready" = "idle") => {
+      if (questionOperationRef.current !== active) return false;
+      questionOperationRef.current = null;
+      if (
+        active.controller.signal.aborted ||
+        !isCurrentOperation(active.operation)
+      ) {
+        return false;
+      }
+      setQuestionPresentation({ pendingAction: null, status });
+      return true;
+    },
+    [isCurrentOperation],
+  );
+
   const isCurrentProfileOperation = useCallback(
     (profileOperation: ProfileOperation) =>
-      profileOperationOwnershipRef.current?.isCurrent(profileOperation) ?? false,
+      profileOperationOwnershipRef.current?.isCurrent(profileOperation) ??
+      false,
     [],
   );
 
@@ -602,9 +817,19 @@ export function LearnerProfileGate({
     ownership?.mount();
     return () => {
       ownership?.unmount();
+      abortQuestionPlayback(false);
+      abortQuestionOperation(false);
       teardownProfileResources();
     };
-  }, [teardownProfileResources]);
+  }, [abortQuestionOperation, abortQuestionPlayback, teardownProfileResources]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isLearnerProfileRoute) {
+      abortQuestionPlayback();
+      abortQuestionOperation();
+      setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
+    }
+  }, [abortQuestionOperation, abortQuestionPlayback, isLearnerProfileRoute]);
 
   const refresh = useCallback(
     async (signal?: AbortSignal) => {
@@ -618,7 +843,8 @@ export function LearnerProfileGate({
         if (error instanceof Error && error.name === "AbortError") return;
         if (isCurrentOperation(operation)) setLoadError(readableError(error));
       } finally {
-        if (isCurrentOperation(operation) && !signal?.aborted) setIsLoading(false);
+        if (isCurrentOperation(operation) && !signal?.aborted)
+          setIsLoading(false);
       }
     },
     [isCurrentOperation, nextOperation],
@@ -670,9 +896,8 @@ export function LearnerProfileGate({
   ]);
   const conversationRouteAvailable = Boolean(
     isConversationRoute &&
-      fullData &&
-      (fullData.canBypass ||
-        fullData.profile.profileStatus === "completed"),
+    fullData &&
+    (fullData.canBypass || fullData.profile.profileStatus === "completed"),
   );
   const conversationPurpose = selectConversationPurpose({
     isProfileEdit: redoLearnerProfile,
@@ -681,14 +906,15 @@ export function LearnerProfileGate({
   const conversationProps = usePeppaConversation({
     active: Boolean(
       selectedExperience === "realtime" &&
-        fullData &&
-        (conversationRouteAvailable ||
-          (isLearnerProfileRoute &&
-            (redoLearnerProfile ||
-              (!fullData.canBypass &&
-                fullData.profile.profileStatus !== "completed")))),
+      fullData &&
+      (conversationRouteAvailable ||
+        (isLearnerProfileRoute &&
+          (redoLearnerProfile ||
+            (!fullData.canBypass &&
+              fullData.profile.profileStatus !== "completed")))),
     ),
     onBack: handleConversationBack,
+    onChooseLesson: onOpenLessons,
     onCompleted: handleConversationCompleted,
     purpose: conversationPurpose,
   });
@@ -698,117 +924,180 @@ export function LearnerProfileGate({
 
   useEffect(() => {
     if (!shouldSyncActiveQuestion(activeProfile, activeQuestion)) return;
+    abortQuestionPlayback();
+    abortQuestionOperation(false);
     nextOperation();
     setDraft(answerForQuestion(activeProfile!, activeQuestion!));
     setFieldError("");
-    setStatus("idle");
-  }, [activeProfile, activeQuestion, activeQuestionKey, nextOperation]);
+    setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
+  }, [
+    abortQuestionOperation,
+    abortQuestionPlayback,
+    activeProfile,
+    activeQuestion,
+    activeQuestionKey,
+    nextOperation,
+  ]);
 
   async function handleStart() {
     if (!fullData?.question) return;
-    const operation = nextOperation();
+    const active = beginQuestionPlayback();
+    if (!active) return;
     setStarted(true);
     setFieldError("");
-    if (!fullData.question.audio) return;
+    if (!fullData.question.audio) {
+      finishQuestionPlayback(active);
+      return;
+    }
     try {
-      await playLearnerProfileStart({ questionAudio: fullData.question.audio });
-    } catch {
-      if (isCurrentOperation(operation)) {
-        setFieldError("Audio is unavailable. You can keep going or use Replay.");
+      await playLearnerProfileStart({
+        questionAudio: fullData.question.audio,
+        signal: active.controller.signal,
+      });
+    } catch (error) {
+      if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
+        setFieldError(
+          "Audio is unavailable. You can keep going or use Replay.",
+        );
       }
+    } finally {
+      finishQuestionPlayback(active);
     }
   }
 
   async function handleReplay() {
-    if (!activeQuestion?.audio) return;
-    const operation = nextOperation();
+    if (questionOperationRef.current || !activeQuestion?.audio) return;
+    const active = beginQuestionPlayback();
+    if (!active) return;
     setFieldError("");
     try {
-      await replayLearnerProfileQuestion(activeQuestion.audio);
-    } catch {
-      if (isCurrentOperation(operation)) {
+      await replayLearnerProfileQuestion(activeQuestion.audio, {
+        signal: active.controller.signal,
+      });
+    } catch (error) {
+      if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
         setFieldError("Audio is unavailable. Please try Replay again.");
       }
+    } finally {
+      finishQuestionPlayback(active);
     }
   }
 
   async function handleTranscribe() {
     if (!activeQuestion) return;
-    const operation = nextOperation();
-    setFieldError("");
-    setStatus("recording");
+    const active = beginQuestionOperation("microphone", "opening");
+    if (!active) return;
+    let settledStatus: "idle" | "ready" = "idle";
     try {
       const transcript = await captureLearnerProfileAnswer({
-        record: () => recordSpeechClip(),
-        transcribe: async (audio) => {
-          if (isCurrentOperation(operation)) setStatus("transcribing");
-          return transcribeLearnerProfileAudio(audio);
+        record: ({ signal } = {}) =>
+          recordSpeechClip({
+            onRecordingStart: () =>
+              updateQuestionOperation(active, "recording"),
+            signal,
+          }),
+        signal: active.controller.signal,
+        transcribe: async (audio, options) => {
+          updateQuestionOperation(active, "transcribing");
+          return transcribeLearnerProfileAudio(audio, options);
         },
       });
-      if (isCurrentOperation(operation)) setDraft(transcript);
+      if (isCurrentQuestionOperation(active)) {
+        setDraft(transcript);
+        settledStatus = "ready";
+      }
     } catch (error) {
-      if (isCurrentOperation(operation)) {
-        setFieldError(`${readableError(error)} You can still type your answer.`);
+      if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
+        setFieldError(
+          `${readableError(error)} You can still type your answer.`,
+        );
       }
     } finally {
-      if (isCurrentOperation(operation)) setStatus("idle");
+      finishQuestionOperation(active, settledStatus);
     }
   }
 
   async function handleSubmit() {
     if (!activeQuestion) return;
-    const operation = nextOperation();
-    setStatus("saving");
-    setFieldError("");
+    const active = beginQuestionOperation("submit", "saving");
+    if (!active) return;
     try {
       const next = await saveQuestionAndAdvance({
         questionKey: activeQuestion.answerKey,
         rawAnswer: draft,
+        signal: active.controller.signal,
       });
-      if (!isCurrentOperation(operation)) return;
+      if (!isCurrentQuestionOperation(active)) return;
       if (next.mode !== "full" || !next.acknowledgment) {
         throw new Error("Peppa could not answer just now.");
       }
       setPendingAcknowledgment({
         kind: "learner-profile",
-        operationId: operation,
+        operationId: active.operation,
         acknowledgment: next.acknowledgment,
         next,
       });
     } catch (error) {
-      if (isCurrentOperation(operation)) setFieldError(readableError(error));
+      if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
+        setFieldError(readableError(error));
+      }
     } finally {
-      if (isCurrentOperation(operation)) setStatus("idle");
+      finishQuestionOperation(active);
     }
   }
 
   async function handleSkip() {
-    const operation = nextOperation();
+    if (questionOperationRef.current) return;
+    const active =
+      started && activeQuestion && isLearnerProfileRoute
+        ? beginQuestionOperation("skip", "saving")
+        : null;
+    const operation = active?.operation ?? nextOperation();
     setLoadError("");
     setFieldError("");
     try {
-      const next = await skipLearnerProfile();
-      if (isCurrentOperation(operation)) setData(next);
+      const next = await skipLearnerProfile(
+        active ? { signal: active.controller.signal } : undefined,
+      );
+      if (
+        active
+          ? isCurrentQuestionOperation(active)
+          : isCurrentOperation(operation)
+      ) {
+        setData(next);
+      }
     } catch (error) {
-      if (!isCurrentOperation(operation)) return;
+      if (active && isAbortError(error)) return;
+      if (
+        active
+          ? !isCurrentQuestionOperation(active)
+          : !isCurrentOperation(operation)
+      ) {
+        return;
+      }
       const message = readableError(error);
       if (data) setFieldError(message);
       else setLoadError(message);
+    } finally {
+      if (active) finishQuestionOperation(active);
     }
   }
 
   async function handleSkipQuestion() {
     if (!activeQuestion || activeQuestion.required) return;
-    const operation = nextOperation();
-    setStatus("saving");
-    setFieldError("");
+    const active = beginQuestionOperation("skip-question", "saving");
+    if (!active) return;
     try {
-      const next = await skipLearnerProfileQuestion(activeQuestion.answerKey);
-      if (isCurrentOperation(operation)) setData(next);
+      const next = await skipLearnerProfileQuestion(activeQuestion.answerKey, {
+        signal: active.controller.signal,
+      });
+      if (isCurrentQuestionOperation(active)) setData(next);
     } catch (error) {
-      if (isCurrentOperation(operation)) setFieldError(readableError(error));
+      if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
+        setFieldError(readableError(error));
+      }
     } finally {
-      if (isCurrentOperation(operation)) setStatus("idle");
+      finishQuestionOperation(active);
     }
   }
 
@@ -860,10 +1149,7 @@ export function LearnerProfileGate({
   }, [clearProfileEditor, isActiveProfileRoute, onRedoLearnerProfileRoute]);
 
   const handleOpenProfile = useCallback(async () => {
-    if (
-      !isActiveProfileRoute() ||
-      profileLoadOperationRef.current !== null
-    ) {
+    if (!isActiveProfileRoute() || profileLoadOperationRef.current !== null) {
       return;
     }
     const boundary = profileOperationBoundaryRef.current;
@@ -899,7 +1185,9 @@ export function LearnerProfileGate({
   }
 
   function handleProfileValueChange(answerKey: string, value: string) {
-    setProfileDrafts((current) => updateProfileDraft(current, answerKey, value));
+    setProfileDrafts((current) =>
+      updateProfileDraft(current, answerKey, value),
+    );
     setProfileFieldError(answerKey, "");
   }
 
@@ -942,7 +1230,8 @@ export function LearnerProfileGate({
       }
     } catch (error) {
       if (!isCurrentProfileOperation(profileOperation)) return;
-      const errors = error instanceof LearnerProfileApiError ? error.fieldErrors : {};
+      const errors =
+        error instanceof LearnerProfileApiError ? error.fieldErrors : {};
       setProfileFieldErrors(errors);
       if (Object.keys(errors).length === 0) {
         setProfilePageError(readableError(error));
@@ -992,7 +1281,7 @@ export function LearnerProfileGate({
 
   const canEditProfile = Boolean(
     fullData &&
-      (fullData.canBypass || fullData.profile.profileStatus === "completed"),
+    (fullData.canBypass || fullData.profile.profileStatus === "completed"),
   );
   useEffect(() => {
     if (
@@ -1035,16 +1324,26 @@ export function LearnerProfileGate({
         onSkipQuestion: () => void handleSkipQuestion(),
         onSubmit: () => void handleSubmit(),
         onTranscribe: () => void handleTranscribe(),
-        onValueChange: setDraft,
+        onValueChange: (value) => {
+          setDraft(value);
+          setQuestionPresentation((current) =>
+            current.status === "ready" ? IDLE_QUESTION_PRESENTATION : current,
+          );
+        },
+        pendingAction: questionPresentation.pendingAction,
+        playbackPending: questionPlaybackPending,
         progress,
         question: activeQuestion,
-        status,
+        status: questionPresentation.status,
         value: draft,
       }
     : null;
 
   let acknowledgment: AcknowledgmentView | null = null;
-  if (pendingAcknowledgment?.kind === "learner-profile" && isLearnerProfileRoute) {
+  if (
+    pendingAcknowledgment?.kind === "learner-profile" &&
+    isLearnerProfileRoute
+  ) {
     acknowledgment = {
       acknowledgment: pendingAcknowledgment.acknowledgment,
       operationId: pendingAcknowledgment.operationId,

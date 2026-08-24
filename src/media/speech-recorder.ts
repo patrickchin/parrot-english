@@ -10,7 +10,7 @@ export const MICROPHONE_CONSTRAINTS = {
 
 type SpeechRecorderConstructor = new (
   stream: MediaStream,
-  options?: MediaRecorderOptions
+  options?: MediaRecorderOptions,
 ) => MediaRecorder;
 
 type TimerId = ReturnType<typeof setTimeout>;
@@ -20,6 +20,7 @@ type SpeechRecorderOptions = {
   clearTimeout?: (timerId: TimerId) => void;
   getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream>;
   mimeType?: string;
+  onRecordingStart?: () => void;
   recordingMs?: number;
   setTimeout?: (callback: () => void, delay: number) => TimerId;
   signal?: AbortSignal;
@@ -68,7 +69,8 @@ function stopMediaStream(stream: MediaStream | null) {
 
 export async function requestMicrophoneAccess({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
-  getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(constraints),
+  getUserMedia = (constraints) =>
+    navigator.mediaDevices.getUserMedia(constraints),
   signal,
 }: MicrophoneAccessOptions = {}) {
   if (!MediaRecorderClass) {
@@ -95,7 +97,8 @@ export async function requestMicrophoneAccess({
 
 export async function startSpeechRecording({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
-  getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(constraints),
+  getUserMedia = (constraints) =>
+    navigator.mediaDevices.getUserMedia(constraints),
   mimeType = DEFAULT_MIME_TYPE,
   signal,
 }: SpeechRecordingSessionOptions = {}): Promise<SpeechRecordingSession> {
@@ -205,8 +208,10 @@ export async function startSpeechRecording({
 export async function recordSpeechClip({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
   clearTimeout: clearRecordingTimeout = globalThis.clearTimeout,
-  getUserMedia = (constraints) => navigator.mediaDevices.getUserMedia(constraints),
+  getUserMedia = (constraints) =>
+    navigator.mediaDevices.getUserMedia(constraints),
   mimeType = DEFAULT_MIME_TYPE,
+  onRecordingStart,
   recordingMs = DEFAULT_RECORDING_MS,
   setTimeout: setRecordingTimeout = globalThis.setTimeout,
   signal,
@@ -300,6 +305,7 @@ export async function recordSpeechClip({
 
     try {
       recorder.start();
+      onRecordingStart?.();
       if (stopSignal?.aborted) {
         stopRecording();
         return;

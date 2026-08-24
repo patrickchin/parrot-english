@@ -7,6 +7,10 @@ import {
   readV2Answers,
   writeV2Response,
 } from "../lib/learner-profile-responses.js";
+import {
+  LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID,
+  LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
+} from "../lib/learner-profile-questionnaire.js";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
@@ -15,10 +19,6 @@ import {
   handleLearnerProfileTranscription,
   type ApiEnv,
 } from "./groq.ts";
-import {
-  synthesizeAcknowledgment,
-  type ElevenLabsEnv,
-} from "./learner-profile-acknowledgment-audio.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
   enrichLearnerProfileAnswer,
@@ -39,16 +39,13 @@ export interface LearnerProfileIdentity {
 
 export interface LearnerProfileRequestInput {
   database: Database;
-  env: AuthEnv &
-    ApiEnv &
-    ElevenLabsEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
+  env: AuthEnv & ApiEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
   identity: LearnerProfileIdentity;
   request: Request;
 }
 
 type HandlerDependencies = {
   enrichAnswer: typeof enrichLearnerProfileAnswer;
-  synthesizeAudio: typeof synthesizeAcknowledgment;
   now: () => Date;
 };
 
@@ -108,6 +105,14 @@ function serializeQuestion(question: Question) {
   };
 }
 
+function serializeAcknowledgment(question: Question) {
+  const text = question.fallbackAcknowledgment;
+  return {
+    text,
+    audio: resolveAudio(LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID, text),
+  };
+}
+
 function isV2Profile(profile: Profile) {
   try {
     readV2Answers(profile);
@@ -123,7 +128,21 @@ function clientProfile(profile: Profile) {
     : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
-  const answers = readV2Answers(readable);
+  const storedAnswers = readV2Answers(readable);
+  const answers = {
+    ...storedAnswers,
+    responses: Object.fromEntries(
+      Object.entries(
+        storedAnswers.responses as Record<string, Record<string, unknown>>,
+      ).map(([answerKey, response]) => [
+        answerKey,
+        {
+          ...response,
+          acknowledgment: LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
+        },
+      ]),
+    ),
+  };
   return {
     name: profile.name,
     age: profile.age,
@@ -308,7 +327,6 @@ function savedEnrichment(profile: Profile, answerKey: string) {
   if (!response) return null;
   return {
     summary: response.summary,
-    acknowledgment: response.acknowledgment,
     canonicalName: answerKey === "name" ? profile.name : null,
     canonicalAge: answerKey === "age" ? profile.age : null,
     enrichmentStatus: response.enrichmentStatus,
@@ -380,15 +398,12 @@ async function saveAnswer({
   }
 
   let storedProfile = profile;
-  let acknowledgment = enrichment.acknowledgment;
   if (!sameAnswer) {
     const updated = writeV2Response(readable, question, {
-      rawAnswer,
       ...enrichment,
+      rawAnswer,
       answeredAt: dependencies.now().toISOString(),
     });
-    acknowledgment =
-      readV2Answers(updated).responses[question.answerKey].acknowledgment;
 
     if (profileEdit) {
       await repository.saveAnswer(profile.id, {
@@ -415,11 +430,10 @@ async function saveAnswer({
     storedProfile = await repository.loadProfile(input.identity);
   }
 
-  const audio = await dependencies.synthesizeAudio({
-    env: input.env,
-    text: acknowledgment,
-  });
-  return { profile: storedProfile, acknowledgment: { text: acknowledgment, audio } };
+  return {
+    profile: storedProfile,
+    acknowledgment: serializeAcknowledgment(question),
+  };
 }
 
 async function saveProfileAnswers({
@@ -476,7 +490,7 @@ async function saveProfileAnswers({
     }
   }
 
-  const changed: Array<{ question: Question; acknowledgment: string }> = [];
+  const changed: Question[] = [];
   for (const question of LEARNER_PROFILE_QUESTIONNAIRE.questions) {
     if (!(question.answerKey in answers)) continue;
     const submitted = answers[question.answerKey];
@@ -523,15 +537,11 @@ async function saveProfileAnswers({
 
     try {
       updated = writeV2Response(updated, question, {
-        rawAnswer,
         ...enrichment,
+        rawAnswer,
         answeredAt: dependencies.now().toISOString(),
       });
-      changed.push({
-        question,
-        acknowledgment:
-          readV2Answers(updated).responses[question.answerKey].acknowledgment,
-      });
+      changed.push(question);
     } catch {
       fieldErrors[question.answerKey] = "Please check this answer and try again.";
     }
@@ -552,14 +562,7 @@ async function saveProfileAnswers({
     storedProfile = await repository.loadProfile(input.identity);
   }
 
-  const acknowledgments = [];
-  for (const entry of changed) {
-    const audio = await dependencies.synthesizeAudio({
-      env: input.env,
-      text: entry.acknowledgment,
-    });
-    acknowledgments.push({ text: entry.acknowledgment, audio });
-  }
+  const acknowledgments = changed.map(serializeAcknowledgment);
   return { profile: storedProfile, acknowledgments };
 }
 
@@ -569,7 +572,6 @@ export async function handleLearnerProfileRequest(
 ): Promise<Response> {
   const dependencies: HandlerDependencies = {
     enrichAnswer: enrichLearnerProfileAnswer,
-    synthesizeAudio: synthesizeAcknowledgment,
     now: () => new Date(),
     ...dependencyOverrides,
   };

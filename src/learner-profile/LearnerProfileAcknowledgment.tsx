@@ -1,77 +1,61 @@
 import { useEffect } from "react";
-import type { LearnerProfileAcknowledgment as Acknowledgment } from "./learner-profile-api";
-import { LearnerProfileCard } from "./LearnerProfileLayout";
-import { ActionButton } from "../shared/ui";
+import type {
+  LearnerProfileAcknowledgment as Acknowledgment,
+  LearnerProfileAudio,
+} from "./learner-profile-api";
+import { playAudioLine } from "../media/audio-playback";
+import {
+  LearnerProfileCard,
+  LearnerProfileStepHeading,
+} from "./LearnerProfileLayout";
+import { ActionButton, cx } from "../shared/ui";
 
-type AudioLike = {
-  addEventListener: (event: "ended" | "error", listener: () => void) => void;
-  removeEventListener: (event: "ended" | "error", listener: () => void) => void;
-  pause: () => void;
-  play: () => Promise<void>;
-};
+type PlayLine = typeof playAudioLine;
 
-type Timer = ReturnType<typeof setTimeout>;
+function isSavedAcknowledgmentAudio(
+  audio: Acknowledgment["audio"],
+  expectedText: string,
+): audio is LearnerProfileAudio {
+  return (
+    audio != null &&
+    typeof audio === "object" &&
+    typeof audio.id === "string" &&
+    /^[a-z0-9-]+$/.test(audio.id) &&
+    typeof audio.src === "string" &&
+    audio.src === `/assets/audio/${audio.id}.mp3` &&
+    audio.text === expectedText
+  );
+}
 
 export function beginAcknowledgmentPlayback({
   acknowledgment,
-  clearTimer = clearTimeout,
-  createAudio = (source) => new Audio(source),
-  createObjectURL = (blob) => URL.createObjectURL(blob),
-  noAudioDelayMs = 1_800,
-  onAdvance,
-  revokeObjectURL = (url) => URL.revokeObjectURL(url),
-  setTimer = setTimeout,
+  createAbortController = () => new AbortController(),
+  playLine = playAudioLine,
 }: {
   acknowledgment: Acknowledgment;
-  clearTimer?: (timer: Timer) => void;
-  createAudio?: (source: string) => AudioLike;
-  createObjectURL?: (blob: Blob) => string;
-  noAudioDelayMs?: number;
-  onAdvance: () => void;
-  revokeObjectURL?: (url: string) => void;
-  setTimer?: (callback: () => void, delay: number) => Timer;
+  createAbortController?: () => AbortController;
+  playLine?: PlayLine;
 }) {
-  let active = true;
-  let advanced = false;
-  let audio: AudioLike | null = null;
-  let objectUrl = "";
-  let timer: Timer | null = null;
-
-  const advance = () => {
-    if (!active || advanced) return;
-    advanced = true;
-    onAdvance();
-  };
-
   const audioData = acknowledgment.audio;
-  if (audioData) {
-    try {
-      const binary = globalThis.atob(audioData.base64);
-      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-      objectUrl = createObjectURL(
-        new Blob([bytes], { type: audioData.contentType }),
-      );
-      audio = createAudio(objectUrl);
-      audio.addEventListener("ended", advance);
-      audio.addEventListener("error", advance);
-      void audio.play().catch(advance);
-    } catch {
-      timer = setTimer(advance, noAudioDelayMs);
-    }
-  } else {
-    timer = setTimer(advance, noAudioDelayMs);
+  if (!isSavedAcknowledgmentAudio(audioData, acknowledgment.text)) {
+    return () => {};
   }
 
-  return () => {
-    active = false;
-    if (timer !== null) clearTimer(timer);
-    if (audio) {
-      audio.removeEventListener("ended", advance);
-      audio.removeEventListener("error", advance);
-      audio.pause();
-    }
-    if (objectUrl) revokeObjectURL(objectUrl);
-  };
+  const controller = createAbortController();
+  try {
+    void playLine({
+      audioId: audioData.id,
+      audioSrc: audioData.src,
+      signal: controller.signal,
+      text: audioData.text,
+    }).catch(() => {
+      // Audio is optional feedback. The visible Next action owns navigation.
+    });
+  } catch {
+    // Audio is optional feedback. The visible Next action owns navigation.
+  }
+
+  return () => controller.abort();
 }
 
 export function LearnerProfileAcknowledgment({
@@ -83,29 +67,42 @@ export function LearnerProfileAcknowledgment({
   onNext: () => void;
   operationId: number;
 }) {
+  const hasLongAcknowledgment = acknowledgment.text.length > 120;
+
   useEffect(
     () =>
       beginAcknowledgmentPlayback({
         acknowledgment,
-        onAdvance: onNext,
       }),
-    [acknowledgment, onNext, operationId],
+    [acknowledgment, operationId],
   );
 
   return (
     <LearnerProfileCard
       aria-live="polite"
-      className="grid justify-items-center gap-5 p-8 text-center sm:p-14"
+      className="grid justify-items-center gap-5 p-8 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto] short-wide:items-center short-wide:gap-x-6 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-14"
     >
       <img
         alt="Peppa smiling"
-        className="max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none sm:w-56"
-        src="/assets/characters/peppa/peppa-happy.webp"
+        className="aspect-square max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-2 short-wide:row-start-1 short-wide:w-full short-wide:max-w-40 sm:w-56"
+        height={1024}
+        src="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp"
+        width={1024}
       />
-      <h1 className="m-0 max-w-xl text-3xl leading-tight text-brand-ink sm:text-5xl">
+      <LearnerProfileStepHeading
+        className={cx(
+          "m-0 max-w-xl break-words text-3xl leading-tight text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:justify-self-start short:text-2xl",
+          hasLongAcknowledgment ? "sm:text-4xl" : "sm:text-5xl",
+        )}
+        stepKey={operationId}
+      >
         {acknowledgment.text}
-      </h1>
-      <ActionButton onClick={onNext} type="button">
+      </LearnerProfileStepHeading>
+      <ActionButton
+        className="short-wide:col-start-2 short-wide:row-start-2 short-wide:justify-self-start"
+        onClick={onNext}
+        type="button"
+      >
         Next
       </ActionButton>
     </LearnerProfileCard>
