@@ -945,12 +945,15 @@ branches.
     before choosing a small consequence cue, bilingual support, or a workflow
     change; do not add explanatory paragraphs speculatively.
 32. **Medium: the lesson shelf's programmatic heading focus looks like a giant
-    interactive rectangle.** Independent visual review found the default blue
-    outline around **Pick a lesson** spans most of the content width at desktop
-    and competes with the heading at 280px. Reproduce pointer, keyboard,
-    direct-route, and forced-colors arrival, then compare the localized open
-    reading marker already retained for profile and Story Reader headings. Do
-    not remove the useful arrival target or forced-colors indicator.
+    interactive rectangle.** Reproduced at 280, 390, 640, 1280, and 1440
+    pixels on `codex/lesson-shelf-heading-reading-cue`: the default blue
+    outline around **Pick a lesson** spans nearly the complete content width
+    after direct/keyboard arrival, while pointer navigation focuses the same
+    heading with no visible cue. The selected test-first candidate preserves
+    the useful native arrival target and replaces only its presentation with
+    the localized open reading marker already retained for profile and Story
+    Reader headings, plus a real forced-colors outline. See the
+    [guidance](./lesson-shelf-heading-reading-cue-guidance.md).
 33. **Low: Account gives Sign out the same bright-pink weight as Delete
     account.** Both are caregiver actions, but identical emphasis weakens
     hierarchy and can make routine exit look destructive. Audit menu variants,
