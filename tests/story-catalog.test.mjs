@@ -160,7 +160,9 @@ describe("story script catalog", () => {
     }
   });
 
-  it("fully illustrates First words while keeping later page art and narration explicit", () => {
+  it("fully illustrates First words and assigns saved narration and join-in audio to every page", () => {
+    const joinInAudioByText = new Map();
+
     for (const story of STORIES) {
       assert.equal(
         story.cover.src,
@@ -187,21 +189,37 @@ describe("story script catalog", () => {
         }
         assert.equal(
           page.narrationAudioId,
-          null,
-          `${story.title}/${page.id} audio ID`,
+          `story-${story.id}-${page.id}-narration`,
+          `${story.title}/${page.id} narration audio ID`,
         );
+        assert.match(
+          page.joinInAudioId,
+          /^story-join-in-[a-z0-9]+(?:-[a-z0-9]+)*$/,
+          `${story.title}/${page.id} join-in audio ID`,
+        );
+        const priorJoinInId = joinInAudioByText.get(page.joinIn);
+        if (priorJoinInId) assert.equal(page.joinInAudioId, priorJoinInId);
+        else joinInAudioByText.set(page.joinIn, page.joinInAudioId);
         assert.ok(page.artwork.alt.trim(), `${story.title}/${page.id} image alt`);
         assert.doesNotMatch(page.artwork.alt, /placeholder/i);
         assert.ok(page.artwork.prompt.trim(), `${story.title}/${page.id} image prompt`);
       }
     }
 
-    const supersededLanternAssets = [
-      ...readdirSync("public/assets/audio").filter((filename) =>
-        filename.startsWith("story-lantern-trail-"),
+    const savedStoryAssets = new Set(
+      readdirSync("public/assets/audio").filter((filename) =>
+        filename.startsWith("story-"),
       ),
-    ];
-    assert.deepEqual(supersededLanternAssets, []);
+    );
+    const expectedStoryAssets = new Set(
+      STORIES.flatMap((story) =>
+        story.pages.flatMap((page) => [
+          `${page.narrationAudioId}.mp3`,
+          `${page.joinInAudioId}.mp3`,
+        ]),
+      ),
+    );
+    assert.deepEqual(savedStoryAssets, expectedStoryAssets);
     assert.equal(existsSync("public/assets/stories"), false);
   });
 

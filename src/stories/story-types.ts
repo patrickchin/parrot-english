@@ -20,6 +20,7 @@ export type StoryPage = {
   artwork: StoryArtwork;
   id: string;
   joinIn: string;
+  joinInAudioId: string | null;
   narrationAudioId: string | null;
   text: string;
 };

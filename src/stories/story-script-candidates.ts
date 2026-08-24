@@ -50,6 +50,15 @@ function coverArtwork(storyId: string, prompt: string): StoryArtwork {
   };
 }
 
+function joinInAudioId(text: string) {
+  const slug = text
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `story-join-in-${slug}`;
+}
+
 function makePrototypeStory({
   coverPrompt,
   pages,
@@ -68,7 +77,8 @@ function makePrototypeStory({
             ? `https://media.parrotbook.com/assets/v3/story-pages/${story.id}-${page.id}.webp`
             : null,
       }),
-      narrationAudioId: null,
+      joinInAudioId: joinInAudioId(page.joinIn),
+      narrationAudioId: `story-${story.id}-${page.id}-narration`,
     })),
   };
 }

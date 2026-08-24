@@ -1015,7 +1015,6 @@ function StoryRouteDecisionView({
 }: {
   decision: StoryRouteDecision;
 }) {
-  const location = useLocation();
   const navigate = useNavigate();
   const personalizedStoryArt = usePersonalizedStoryArt();
 
@@ -1032,7 +1031,6 @@ function StoryRouteDecisionView({
       pageIndex={decision.pageIndex}
       personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
-      key={`${location.key}:${decision.story.id}:${decision.pageIndex}`}
     />
   );
 }
