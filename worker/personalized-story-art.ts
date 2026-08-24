@@ -36,7 +36,7 @@ const STORY_CONFIG = {
       "Use image 0 for the exact composition and hand-painted style. Use image 1 only as the learner reference. Replace only the child with the learner. Preserve the red ball, action, background, and 3:2 crop. Soft hand-painted watercolor. No photo texture, no text, no logos, no extra people.",
     promptVersion: "red-ball-v1",
     sceneAssetUrl:
-      "https://media.parrotbook.com/assets/v2/personalization/the-red-ball-scene-reference.webp",
+      "https://media.parrotbook.com/assets/v3/personalization/the-red-ball-scene-reference.webp",
   },
 } as const;
 

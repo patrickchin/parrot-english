@@ -46,7 +46,7 @@ function coverArtwork(storyId: string, prompt: string): StoryArtwork {
   return {
     alt: prompt,
     prompt,
-    src: `https://media.parrotbook.com/assets/v2/stories/${storyId}-cover.webp`,
+    src: `https://media.parrotbook.com/assets/v3/stories/${storyId}-cover.webp`,
   };
 }
 
@@ -65,7 +65,7 @@ function makePrototypeStory({
         prompt: artworkPrompt,
         src:
           story.level === "first-words"
-            ? `https://media.parrotbook.com/assets/v2/story-pages/${story.id}-${page.id}.webp`
+            ? `https://media.parrotbook.com/assets/v3/story-pages/${story.id}-${page.id}.webp`
             : null,
       }),
       narrationAudioId: null,

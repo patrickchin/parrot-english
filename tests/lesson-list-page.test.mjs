@@ -45,31 +45,31 @@ function getParrotLessonHrefs(html) {
 
 const expectedReadyMadeArtwork = [
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/01-peppas-high-ball.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/01-peppas-high-ball.webp",
     "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
   ],
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/02-garden-colors.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/02-garden-colors.webp",
     "Peppa and Dolly choosing a red flower for their basket",
   ],
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/03-snack-time.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/03-snack-time.webp",
     "Dolly handing Peppa an apple from a snack basket",
   ],
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/04-playground-words.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/04-playground-words.webp",
     "Peppa waiting beside a swing while Dolly takes her turn",
   ],
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/05-market-day.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/05-market-day.webp",
     "Peppa buying two red apples from Dolly's fruit stand",
   ],
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/06-picnic-time.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/06-picnic-time.webp",
     "Dolly pouring juice for Peppa on a picnic blanket",
   ],
   [
-    "https://media.parrotbook.com/assets/v2/lesson-covers/07-bedtime-story.webp",
+    "https://media.parrotbook.com/assets/v3/lesson-covers/07-bedtime-story.webp",
     "Peppa tucked under a blanket while Dolly reads beside a lantern",
   ],
 ];
@@ -152,7 +152,7 @@ test("lesson artwork reserves its card space and defers off-screen images", () =
   assert.equal((html.match(/loading="lazy"/g) ?? []).length, 5);
   assert.match(
     html,
-    /<img[^>]*fetchPriority="high"[^>]*loading="eager"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v2\/lesson-covers\/01-peppas-high-ball\.webp"/,
+    /<img[^>]*fetchPriority="high"[^>]*loading="eager"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v3\/lesson-covers\/01-peppas-high-ball\.webp"/,
   );
   assert.match(
     html,
@@ -160,7 +160,7 @@ test("lesson artwork reserves its card space and defers off-screen images", () =
   );
   assert.match(
     html,
-    /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v2\/lesson-covers\/01-peppas-high-ball-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v2\/lesson-covers\/01-peppas-high-ball-768\.webp 768w"/,
+    /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v3\/lesson-covers\/01-peppas-high-ball-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v3\/lesson-covers\/01-peppas-high-ball-768\.webp 768w"/,
   );
 });
 

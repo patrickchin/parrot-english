@@ -39,7 +39,7 @@ after(async () => vite.close());
 const stageFixture = {
   image: {
     alt: "Peppa and Dolly look at colorful flowers in the garden",
-    src: "https://media.parrotbook.com/assets/v2/full-scenes/02-garden-colors/01-colorful-flowers.webp",
+    src: "https://media.parrotbook.com/assets/v3/full-scenes/02-garden-colors/01-colorful-flowers.webp",
   },
 };
 
@@ -115,7 +115,7 @@ test("every ready-made lesson has one five-scene artwork set", async () => {
     for (const scene of artwork.scenes) {
       assert.match(
         scene.src,
-        new RegExp(`^https://media.parrotbook.com/assets/v2/full-scenes/${lessonId}/.+\\.webp$`),
+        new RegExp(`^https://media.parrotbook.com/assets/v3/full-scenes/${lessonId}/.+\\.webp$`),
       );
       assert.ok(
         scene.alt.trim(),
@@ -151,7 +151,7 @@ test("every declared ready-made full-scene source is a clean versioned media URL
     const url = new URL(source);
     assert.equal(url.protocol, "https:");
     assert.equal(url.hostname, "media.parrotbook.com");
-    assert.match(url.pathname, /^\/assets\/v2\/full-scenes\/.+\.webp$/);
+    assert.match(url.pathname, /^\/assets\/v3\/full-scenes\/.+\.webp$/);
     assert.equal(url.search, "");
     assert.equal(url.hash, "");
   }

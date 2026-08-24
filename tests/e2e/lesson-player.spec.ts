@@ -1,6 +1,11 @@
+import { Buffer } from "node:buffer";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const lessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
+const tinySceneWebp = Buffer.from(
+  "UklGRh4AAABXRUJQVlA4TBEAAAAvDwACAAfQ5sp1vf+BiOh/AAA=",
+  "base64",
+);
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
 const longFeedback =
@@ -670,6 +675,21 @@ test("the start state introduces the lesson without premature scene UI", async (
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.route(
+    "https://media.parrotbook.com/**/full-scenes/**",
+    async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (!pathname.startsWith("/assets/v3/full-scenes/")) {
+        await route.abort("failed");
+        return;
+      }
+      await route.fulfill({
+        body: tinySceneWebp,
+        contentType: "image/webp",
+        status: 200,
+      });
+    },
+  );
   await page.goto(lessonPath);
 
   const introduction = page.getByRole("region", {
@@ -692,11 +712,18 @@ test("the start state introduces the lesson without premature scene UI", async (
   await expect(start).toBeFocused();
   const artwork = page.getByRole("region", { name: "Lesson artwork" });
   await expect(artwork).toBeVisible();
-  await expect(
-    artwork.getByAltText(
-      "Peppa and Dolly look up at the red ball caught high in the tree",
-    ),
-  ).toBeVisible();
+  const sceneImage = artwork.getByAltText(
+    "Peppa and Dolly look up at the red ball caught high in the tree",
+  );
+  await expect(sceneImage).toBeVisible();
+  await expect
+    .poll(() =>
+      sceneImage.evaluate(
+        (image: HTMLImageElement) =>
+          image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+      ),
+    )
+    .toBe(true);
   await expect(
     page.getByAltText("A sunny garden with flowers and a tall tree"),
   ).toBeHidden();
