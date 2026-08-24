@@ -1,6 +1,6 @@
 # Lesson shelf heading reading-position cue guidance
 
-Status: implemented candidate under final verification
+Status: implemented and provisionally retained
 
 Date: 2026-08-24  
 Branch: `codex/lesson-shelf-heading-reading-cue`  

@@ -945,15 +945,18 @@ branches.
     before choosing a small consequence cue, bilingual support, or a workflow
     change; do not add explanatory paragraphs speculatively.
 32. **Medium: the lesson shelf's programmatic heading focus looks like a giant
-    interactive rectangle.** Reproduced at 280, 390, 640, 1280, and 1440
-    pixels on `codex/lesson-shelf-heading-reading-cue`: the default blue
-    outline around **Pick a lesson** spans nearly the complete content width
-    after direct/keyboard arrival, while pointer navigation focuses the same
-    heading with no visible cue. The selected test-first candidate preserves
-    the useful native arrival target and replaces only its presentation with
-    the localized open reading marker already retained for profile and Story
-    Reader headings, plus a real forced-colors outline. See the
-    [guidance](./lesson-shelf-heading-reading-cue-guidance.md).
+    interactive rectangle.** Fixed provisionally on
+    `codex/lesson-shelf-heading-reading-cue` at `297bd4e`, with evidence at
+    `ef750d8`. The default blue outline around **Pick a lesson** spanned
+    258–1,154 pixels after direct/keyboard arrival, while pointer navigation
+    focused the same heading with no visible cue. The retained text-sized box
+    uses a static 4px rounded marker with a 12px gap on every arrival path and
+    a real forced-colors outline. Independent review rejected the first full-
+    height rail as caret-like, then cleared the centered 60%-height revision.
+    Final verification passed 686 unit/lifecycle and 325 Chromium cases. See
+    the [guidance](./lesson-shelf-heading-reading-cue-guidance.md),
+    [implementation record](./lesson-shelf-heading-reading-cue-implementation.md),
+    and [visual manifest](../../artifacts/ux-review/lesson-shelf-heading-reading-cue/manifest.md).
 33. **Low: Account gives Sign out the same bright-pink weight as Delete
     account.** Both are caregiver actions, but identical emphasis weakens
     hierarchy and can make routine exit look destructive. Audit menu variants,

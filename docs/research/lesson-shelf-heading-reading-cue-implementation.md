@@ -1,6 +1,6 @@
 # Lesson shelf heading reading-position cue implementation
 
-Status: implemented; final review and full-browser verification pending
+Status: implemented and provisionally retained
 
 Date: 2026-08-24  
 Branch: `codex/lesson-shelf-heading-reading-cue`  
@@ -10,6 +10,8 @@ Rendered-contract commit: `6fc3f3d`
 Implementation commit: `2081cea`
 
 Review-driven visual revision: `297bd4e`
+
+Evidence bundle commit: `ef750d8`
 
 ## Outcome
 
@@ -115,18 +117,24 @@ class strings or CSS source. They require:
 - a computed and rendered two-pixel forced-colors outline on both vertical
   edges, with the normal decorative marker absent.
 
-Focused surrounding verification currently passes:
+Final verification passed:
 
 - 7/7 new lesson-shelf cue cases;
-- the complete shared-focus cases, including delayed My Lessons settlement;
+- 34/34 complete shared-focus cases, including delayed My Lessons settlement;
 - 76/76 header, Home, surrounding-page, and Talk recovery cases;
 - 686/686 unit, integration, lifecycle, and safety cases;
+- 325/325 complete Chromium browser cases in 1.4 minutes;
 - production TypeScript/build; and
 - lint with zero errors and the two unchanged generated Worker declaration
   warnings.
 
-The required complete `npm run test:browser` run will be recorded after
-independent review and any resulting revision.
+The final unit, build, and lint commands were rerun after the visual revision.
+Three independent reviews covered code/tests, accessibility/evidence, and the
+complete visual matrix. The first review round found the caret-like rail and
+two missing high-value contracts; after the pill revision, forced-colors rail-
+suppression check, delayed-settlement focus check, file-format correction, and
+manifest, the final reviewers reported no actionable implementation or visual
+finding.
 
 ## Visual and geometry evidence
 
@@ -171,11 +179,28 @@ TalkBack, NVDA, switch, voice-control, Safari, Firefox, real Windows High
 Contrast, zoom/text-spacing, localization/RTL, physical safe-area, or physical-
 device results.
 
-Retain provisionally only if independent review and the complete browser suite
-stay clear. Revise or roll back if the rail reads as a caret/quotation bar,
+Retain provisionally while independent review and the complete browser suite
+stay clear. Revise or roll back if the marker reads as a caret/quotation bar,
 touches the title, loses forced-color visibility, moves the title/cards,
 changes the next Tab target, or obscures persistent header controls.
 
 The cheapest next external evidence remains a marker/default/no-cue comparison
 with low-English learners and caregivers. Ask them to point to what changed
 and what they would do next, without teaching or naming the marker first.
+
+## Hand-off record
+
+```text
+Branch: codex/lesson-shelf-heading-reading-cue
+Base branch / dependency: codex/profile-account-label-clearance at 86f5f72
+Commits: 6619248, 6fc3f3d, 2081cea, 449498a, 297bd4e, ef750d8
+Hypothesis: a localized, non-operable arrival marker can preserve useful route orientation without a page-wide interactive-looking outline or modality gap
+Changed: one lesson h1 focus box and paint; rendered screenshot helpers/contracts; durable source, decision, implementation, and visual evidence
+Not changed: route focus timing, copy, lesson cards, Talk recovery logic, audio, global headings, account/header behavior
+Tests: direct, pointer, keyboard, delayed My Lessons settlement, next Tab, reduced motion, forced colors, focus/blur geometry, surrounding routes, and full regression suite
+Screenshots / traces: artifacts/ux-review/lesson-shelf-heading-reading-cue/manifest.md
+Measured result: focus paint contracts from 258–1,154px closed/no cue to a 4x21.59–43.19px rounded marker with 12px box gap; no geometry or scroll movement
+Risks / limitations: direct child comprehension, target assistive technology, non-Chromium browsers, physical forced-colors and device behavior remain untested
+Retain, revise, or reject: retain provisionally after rejecting and revising the first caret-like candidate
+Next question: can low-English learners identify the new page and next action more reliably with this marker than with no normal-color cue?
+```
