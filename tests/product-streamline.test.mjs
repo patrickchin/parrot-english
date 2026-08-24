@@ -16,6 +16,9 @@ const vite = await createServer({
 });
 
 const { HomeMenu } = await vite.ssrLoadModule("/src/app/HomeMenu.tsx");
+const { GuardianDashboardView } = await vite
+  .ssrLoadModule("/src/app/GuardianDashboard.tsx")
+  .catch(() => ({}));
 const { LessonListView } = await vite.ssrLoadModule(
   "/src/lessons/LessonList.tsx",
 );
@@ -47,6 +50,43 @@ test("home gives children three clear, working learning choices", () => {
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
   );
+});
+
+test("guardian dashboard presents four focused grown-up destinations", () => {
+  assert.equal(
+    typeof GuardianDashboardView,
+    "function",
+    "Expected a rendered guardian dashboard view",
+  );
+  const html = renderInRouter(
+    createElement(GuardianDashboardView, {
+      error: "",
+      isSwitching: false,
+      learnerName: "Mia",
+      onSwitchToLearner() {},
+    }),
+    "/guardian",
+  );
+  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+
+  for (const heading of [
+    "Learner profile",
+    "My Lessons",
+    "Story settings",
+    "Account and privacy",
+  ]) {
+    assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
+  }
+  assert.deepEqual(hrefs, [
+    "/profile",
+    "/guardian/lessons",
+    "/guardian/stories",
+  ]);
+  assert.match(html, /Managing Mia/);
+  assert.match(html, /AI and saved data.*sign out.*delete/i);
+  assert.match(html, /Switch to learner/);
 });
 
 test("lesson catalog presents one canonical path without artwork experiments", () => {

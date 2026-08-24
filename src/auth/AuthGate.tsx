@@ -718,7 +718,10 @@ export function createAuthGate({
     }
 
     return (
-      <AccountActionProvider setProfileAction={setProfileAction}>
+      <AccountActionProvider
+        profileAction={profileAction}
+        setProfileAction={setProfileAction}
+      >
         <GuardianAccessBoundary
           key={sessionIdentity ?? "signed-out"}
           sessionIdentity={sessionIdentity}

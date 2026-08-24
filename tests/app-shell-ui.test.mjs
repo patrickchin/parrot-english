@@ -310,7 +310,7 @@ test("global Profile navigation exits the active lesson before routing", () => {
   );
   assert.match(
     app,
-    /const openProfileRoute = useCallback\(\(\) => \{\s*lessonRouteExitRegistryRef\.current\.exit\(\);\s*navigate\(getProfilePath\(requestedProtectedTarget\)\);\s*\}, \[navigate,\s*requestedProtectedTarget\]\)/,
+    /const openProfileRoute = useCallback\(\(\) => \{\s*onExitLessonRoute\(\);\s*navigate\(getProfilePath\(requestedProtectedTarget\)\);\s*\}, \[navigate,\s*onExitLessonRoute,\s*requestedProtectedTarget\]\)/,
   );
   assert.match(
     app,
