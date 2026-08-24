@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import { APIError } from "better-auth/api";
 import { createAuth } from "../worker/auth.ts";
 import { createDatabase } from "../worker/database.ts";
+import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import * as workerModule from "../worker/index.ts";
+import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const VALID_AUTH_SECRET = "R2F7cFlwMTVNSVZ1LzNZb1ZYVUs5ZDBnKzVYV25VSEk=";
 
@@ -408,33 +410,60 @@ describe("Worker authentication", () => {
     const authStub = createAuthStub({
       session: { session: { id: "session-1" }, user: { id: "user-1" } },
     });
-    const { env } = createEnvironment();
-    const limitedPaths = [];
-    let learnerProfileCalls = 0;
-    const worker = createTestWorker({
-      createAuth: () => authStub.auth,
-      checkLearnerProfileEnrichmentRateLimit(request, _env, userId) {
-        limitedPaths.push([new URL(request.url).pathname, userId]);
-        return Response.json({ error: "rate_limited" }, { status: 429 });
-      },
-      async handleLearnerProfileRequest() {
-        learnerProfileCalls += 1;
-        return Response.json({ saved: true });
-      },
-    });
-
-    for (const path of ["/api/learner-profile/answer", "/api/profile"]) {
-      const response = await worker.fetch(
-        new Request(`https://example.test${path}`, { method: "PUT" }),
-        env,
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite
+        .prepare(
+          "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)",
+        )
+        .run("user-1", "Parent", "parent@example.test", timestamp, timestamp);
+      state.sqlite
+        .prepare(
+          "INSERT INTO session (id, expires_at, token, created_at, updated_at, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          "session-1",
+          timestamp + 86_400_000,
+          "token-1",
+          timestamp,
+          timestamp,
+          "user-1",
+        );
+      await createGuardianAccessRepository(createDatabase(state.d1)).unlock(
+        "session-1",
       );
-      assert.equal(response.status, 429, path);
+      const { env } = createEnvironment();
+      env.DB = state.d1;
+      const limitedPaths = [];
+      let learnerProfileCalls = 0;
+      const worker = createTestWorker({
+        createAuth: () => authStub.auth,
+        checkLearnerProfileEnrichmentRateLimit(request, _env, userId) {
+          limitedPaths.push([new URL(request.url).pathname, userId]);
+          return Response.json({ error: "rate_limited" }, { status: 429 });
+        },
+        async handleLearnerProfileRequest() {
+          learnerProfileCalls += 1;
+          return Response.json({ saved: true });
+        },
+      });
+
+      for (const path of ["/api/learner-profile/answer", "/api/profile"]) {
+        const response = await worker.fetch(
+          new Request(`https://example.test${path}`, { method: "PUT" }),
+          env,
+        );
+        assert.equal(response.status, 429, path);
+      }
+      assert.deepEqual(limitedPaths, [
+        ["/api/learner-profile/answer", "user-1"],
+        ["/api/profile", "user-1"],
+      ]);
+      assert.equal(learnerProfileCalls, 0);
+    } finally {
+      state.close();
     }
-    assert.deepEqual(limitedPaths, [
-      ["/api/learner-profile/answer", "user-1"],
-      ["/api/profile", "user-1"],
-    ]);
-    assert.equal(learnerProfileCalls, 0);
   });
 
   it("rejects anonymous guardian access without running protected dependencies", async () => {

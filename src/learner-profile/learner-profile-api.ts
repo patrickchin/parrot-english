@@ -1,3 +1,5 @@
+import type { StoryLevelId } from "../../lib/story-level.ts";
+
 export type LearnerProfileAudio = {
   id: string;
   src: string;
@@ -39,6 +41,7 @@ export type LearnerProfileAcknowledgment = {
 export type LearnerProfileSummary = {
   name: string | null;
   age: number | null;
+  storyLevel: StoryLevelId;
   description: string | null;
   answers: LearnerProfileAnswers;
   questionnaireVersion: number;
@@ -258,6 +261,21 @@ export function saveProfileAnswers(
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ answers }),
+    },
+    options,
+  );
+}
+
+export function saveStoryLevel(
+  storyLevel: StoryLevelId,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requestJson<ProfileState>(
+    "/api/profile/preferences",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ storyLevel }),
     },
     options,
   );

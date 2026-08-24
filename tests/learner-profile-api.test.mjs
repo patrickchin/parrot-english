@@ -118,6 +118,26 @@ describe("learnerProfile browser API", () => {
     });
   });
 
+  it("saves exactly one story-level preference", async () => {
+    assert.equal(typeof learnerProfileApi.saveStoryLevel, "function");
+    const payload = { profile: { storyLevel: "tiny-stories" }, questions: [] };
+    const request = jsonFetch(payload);
+
+    assert.deepEqual(
+      await learnerProfileApi.saveStoryLevel("tiny-stories", {
+        fetch: request.fetch,
+      }),
+      payload,
+    );
+    assert.equal(request.calls[0][0], "/api/profile/preferences");
+    assert.deepEqual(request.calls[0][1], {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: '{"storyLevel":"tiny-stories"}',
+      signal: undefined,
+    });
+  });
+
   it("posts skip and completion transitions", async () => {
     const skipped = jsonFetch({ canBypass: true });
     await skipLearnerProfile({ fetch: skipped.fetch });

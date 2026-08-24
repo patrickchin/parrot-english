@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import { describe, it } from "node:test";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import { createDatabase } from "../worker/database.ts";
+import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import {
   handleConversationRequest,
 } from "../worker/conversations.ts";
@@ -161,6 +162,69 @@ async function callConversation(
 }
 
 describe("conversation persistence and API", () => {
+  it("guards only profile-edit starts and stored profile-edit reviews", async () => {
+    const state = createSeededDatabase();
+    try {
+      const lockedStart = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      assert.equal(lockedStart.status, 403);
+      assert.deepEqual(await lockedStart.json(), { error: "guardian_required" });
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        0,
+      );
+
+      for (const purpose of ["onboarding", "small-chat"]) {
+        const started = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { purpose },
+        );
+        assert.equal(started.status, 201, purpose);
+        const conversation = (await started.json()).conversation;
+        const reviewed = await callConversation(
+          state.database,
+          `/api/conversations/${conversation.id}/review`,
+          "PUT",
+          {},
+        );
+        assert.equal(reviewed.status, 200, purpose);
+      }
+
+      const access = createGuardianAccessRepository(state.database);
+      await access.unlock("session-1");
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      assert.equal(started.status, 201);
+      const conversation = (await started.json()).conversation;
+      await access.lock("session-1");
+
+      const lockedReview = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(lockedReview.status, 403);
+      assert.deepEqual(await lockedReview.json(), {
+        error: "guardian_required",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
   it("does not mint a conversation token while realtime rollout is disabled", async () => {
     const state = createSeededDatabase();
     try {
@@ -236,6 +300,7 @@ describe("conversation persistence and API", () => {
     const state = createSeededDatabase();
     const tokenPurposes = [];
     try {
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       for (const purpose of ["onboarding", "profile-edit", "small-chat"]) {
         const response = await callConversation(
           state.database,
@@ -849,6 +914,7 @@ describe("conversation persistence and API", () => {
   it("rejects private details at the reusable profile persistence boundary", async () => {
     const state = createSeededDatabase();
     try {
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       state.sqlite
         .prepare(
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1005,6 +1071,7 @@ describe("conversation persistence and API", () => {
   it("finishes without rewriting an unchanged legacy-private profile", async () => {
     const state = createSeededDatabase();
     try {
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       state.sqlite
         .prepare(
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",

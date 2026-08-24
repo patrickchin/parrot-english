@@ -18,6 +18,7 @@ import {
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
+import { isStoryLevelId } from "../lib/story-level.ts";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
 import type { Database } from "./database.ts";
@@ -152,6 +153,7 @@ function clientProfile(profile: Profile) {
   return {
     name: profile.name,
     age: profile.age,
+    storyLevel: profile.storyLevel,
     description:
       typeof answers.description === "string" ? answers.description : null,
     answers,
@@ -859,13 +861,36 @@ export async function handleLearnerProfileRequest(
       });
     }
 
+    if (
+      url.pathname === "/api/profile/preferences" &&
+      input.request.method === "PUT"
+    ) {
+      const record = await readJsonRecord(input.request);
+      if (
+        Object.keys(record).length !== 1 ||
+        !isStoryLevelId(record.storyLevel)
+      ) {
+        throw new ApiError(
+          400,
+          "invalid_story_level",
+          "Choose an available story level.",
+        );
+      }
+      const profile = await repository.saveStoryLevel(
+        input.identity.userId,
+        record.storyLevel,
+      );
+      return jsonResponse(profilePayload(profile));
+    }
+
     const recognized =
       url.pathname === "/api/learner-profile" ||
       url.pathname === "/api/learner-profile/answer" ||
       url.pathname === "/api/learner-profile/question/skip" ||
       url.pathname === "/api/learner-profile/skip" ||
       url.pathname === "/api/learner-profile/complete" ||
-      url.pathname === "/api/profile";
+      url.pathname === "/api/profile" ||
+      url.pathname === "/api/profile/preferences";
     return jsonResponse(
       { error: recognized ? "method_not_allowed" : "not_found" },
       { status: recognized ? 405 : 404 }

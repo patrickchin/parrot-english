@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { createDatabase } from "../worker/database.ts";
+import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
+import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 function authStub(session) {
   return {
@@ -13,6 +16,33 @@ function environment() {
   return {
     ASSETS: { async fetch() { return new Response("asset"); } },
     DB: {},
+  };
+}
+
+function authenticatedEnvironment() {
+  const state = createTestD1Database();
+  const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+  state.sqlite
+    .prepare(
+      "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)",
+    )
+    .run("user-1", "Parent", "parent@example.test", timestamp, timestamp);
+  state.sqlite
+    .prepare(
+      "INSERT INTO session (id, expires_at, token, created_at, updated_at, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+    )
+    .run(
+      "session-1",
+      timestamp + 86_400_000,
+      "token-1",
+      timestamp,
+      timestamp,
+      "user-1",
+    );
+  return {
+    state,
+    env: { ...environment(), DB: state.d1 },
+    database: createDatabase(state.d1),
   };
 }
 
@@ -80,28 +110,45 @@ describe("My Lessons Worker routing", () => {
       session: { id: "session-1" },
       user: { id: "user-1", name: "Parent", email: "parent@example.test" },
     };
-    const worker = createWorker({
-      createAuth: () => authStub(session),
-      async checkLessonGenerationRateLimit(_request, _env, userId) {
-        limiterCalls += 1;
-        assert.equal(userId, "user-1");
-        return Response.json({ error: "rate_limited" }, { status: 429 });
-      },
-      async handleMyLessonRequest() {
-        handlerCalls += 1;
-        return Response.json({ ok: true });
-      },
-    });
+    const { state, env, database } = authenticatedEnvironment();
+    try {
+      const worker = createWorker({
+        createAuth: () => authStub(session),
+        async checkLessonGenerationRateLimit(_request, _env, userId) {
+          limiterCalls += 1;
+          assert.equal(userId, "user-1");
+          return Response.json({ error: "rate_limited" }, { status: 429 });
+        },
+        async handleMyLessonRequest() {
+          handlerCalls += 1;
+          return Response.json({ ok: true });
+        },
+      });
 
-    const response = await worker.fetch(
-      new Request("https://example.test/api/lessons/my/generate", {
-        method: "POST",
-      }),
-      environment(),
-    );
+      const locked = await worker.fetch(
+        new Request("https://example.test/api/lessons/my/generate", {
+          method: "POST",
+        }),
+        env,
+      );
+      assert.equal(locked.status, 403);
+      assert.deepEqual(await locked.json(), { error: "guardian_required" });
+      assert.equal(limiterCalls, 0);
+      assert.equal(handlerCalls, 0);
 
-    assert.equal(response.status, 429);
-    assert.equal(limiterCalls, 1);
-    assert.equal(handlerCalls, 0);
+      await createGuardianAccessRepository(database).unlock("session-1");
+      const response = await worker.fetch(
+        new Request("https://example.test/api/lessons/my/generate", {
+          method: "POST",
+        }),
+        env,
+      );
+
+      assert.equal(response.status, 429);
+      assert.equal(limiterCalls, 1);
+      assert.equal(handlerCalls, 0);
+    } finally {
+      state.close();
+    }
   });
 });

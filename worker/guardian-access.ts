@@ -175,3 +175,25 @@ export async function requireGuardianAccess(input: {
   if (await repository.require(input.sessionId)) return null;
   return json({ error: "guardian_required" }, { status: 403 });
 }
+
+export function requiresGuardianAccess(pathname: string, method: string) {
+  if (pathname === "/api/profile") {
+    return method === "GET" || method === "PUT";
+  }
+  if (pathname === "/api/profile/preferences") {
+    return method === "PUT";
+  }
+  if (pathname === "/api/lessons/my") {
+    return method === "POST";
+  }
+  if (pathname === "/api/lessons/my/generate") {
+    return method === "POST";
+  }
+  if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
+    return method === "PUT";
+  }
+  return (
+    /^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname) &&
+    (method === "POST" || method === "DELETE")
+  );
+}

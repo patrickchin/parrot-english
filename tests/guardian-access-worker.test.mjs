@@ -1,13 +1,34 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
+import * as guardianAccess from "../worker/guardian-access.ts";
 import {
   GUARDIAN_ACCESS_TTL_MS,
   createGuardianAccessRepository,
   handleGuardianAccessRequest,
   requireGuardianAccess,
 } from "../worker/guardian-access.ts";
+import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
+
+const GUARDED_REQUESTS = [
+  ["GET", "/api/profile"],
+  ["PUT", "/api/profile"],
+  ["PUT", "/api/profile/preferences"],
+  ["POST", "/api/lessons/my"],
+  ["POST", "/api/lessons/my/generate"],
+  ["PUT", "/api/lessons/my/lesson-1"],
+  ["POST", "/api/stories/the-red-ball/personalized-art"],
+  ["DELETE", "/api/stories/the-red-ball/personalized-art"],
+];
+
+const LEARNER_SAFE_REQUESTS = [
+  ["GET", "/api/learner-profile"],
+  ["GET", "/api/lessons/my"],
+  ["GET", "/api/lessons/my/lesson-1"],
+  ["GET", "/api/stories/the-red-ball/personalized-art"],
+  ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
+];
 
 function insertIdentity(sqlite, sessionId, userId = `user-for-${sessionId}`) {
   const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
@@ -112,6 +133,94 @@ describe("guardian access repository", () => {
     assert.equal(denied.status, 403);
     assert.equal(denied.headers.get("Cache-Control"), "no-store");
     assert.deepEqual(await denied.json(), { error: "guardian_required" });
+  });
+});
+
+describe("guardian management authorization", () => {
+  it("classifies only the management method and path combinations", () => {
+    assert.equal(typeof guardianAccess.requiresGuardianAccess, "function");
+    const requiresGuardianAccess = guardianAccess.requiresGuardianAccess;
+
+    for (const [method, path] of GUARDED_REQUESTS) {
+      assert.equal(requiresGuardianAccess(path, method), true, `${method} ${path}`);
+    }
+    for (const [method, path] of LEARNER_SAFE_REQUESTS) {
+      assert.equal(requiresGuardianAccess(path, method), false, `${method} ${path}`);
+    }
+  });
+
+  it("blocks every locked management request before rate limits and handlers", async () => {
+    const state = createTestD1Database();
+    try {
+      insertIdentity(state.sqlite, "session-1", "user-1");
+      let handlerCalls = 0;
+      let limiterCalls = 0;
+      const routed = async () => {
+        handlerCalls += 1;
+        return Response.json({ routed: true });
+      };
+      const worker = createWorker({
+        createAuth: () => ({
+          api: {
+            async getSession() {
+              return {
+                session: { id: "session-1" },
+                user: { id: "user-1", name: "Guardian" },
+              };
+            },
+          },
+          async handler() {
+            return new Response("auth");
+          },
+        }),
+        async checkLessonGenerationRateLimit() {
+          limiterCalls += 1;
+          return null;
+        },
+        async checkLearnerProfileEnrichmentRateLimit() {
+          limiterCalls += 1;
+          return null;
+        },
+        async checkPersonalizedStoryArtRateLimit() {
+          limiterCalls += 1;
+          return null;
+        },
+        handleLearnerProfileRequest: routed,
+        handleMyLessonRequest: routed,
+        handlePersonalizedStoryArtRequest: routed,
+      });
+      const env = {
+        ASSETS: { async fetch() { return new Response("asset"); } },
+        DB: state.d1,
+      };
+
+      for (const [method, path] of GUARDED_REQUESTS) {
+        const response = await worker.fetch(
+          new Request(`https://example.test${path}`, { method }),
+          env,
+        );
+        assert.equal(response.status, 403, `${method} ${path}`);
+        assert.deepEqual(await response.json(), { error: "guardian_required" });
+      }
+      assert.equal(handlerCalls, 0);
+      assert.equal(limiterCalls, 0);
+
+      await createGuardianAccessRepository(createDatabase(state.d1)).unlock(
+        "session-1",
+      );
+      for (const [method, path] of GUARDED_REQUESTS) {
+        const response = await worker.fetch(
+          new Request(`https://example.test${path}`, { method }),
+          env,
+        );
+        assert.equal(response.status, 200, `${method} ${path}`);
+        assert.deepEqual(await response.json(), { routed: true });
+      }
+      assert.equal(handlerCalls, GUARDED_REQUESTS.length);
+      assert.equal(limiterCalls, 3);
+    } finally {
+      state.close();
+    }
   });
 });
 

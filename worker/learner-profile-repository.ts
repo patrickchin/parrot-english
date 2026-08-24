@@ -3,6 +3,7 @@ import {
   learnerProfile,
   profileSessionBypass,
 } from "../src/db/schema.ts";
+import type { StoryLevelId } from "../lib/story-level.ts";
 import type { Database } from "./database.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 
@@ -107,6 +108,16 @@ export function createLearnerProfileRepository(
       .where(eq(learnerProfile.id, profileId));
   }
 
+  async function saveStoryLevel(userId: string, storyLevel: StoryLevelId) {
+    await database
+      .update(learnerProfile)
+      .set({ storyLevel, updatedAt: now() })
+      .where(eq(learnerProfile.authUserId, userId));
+    const profile = await findProfile(userId);
+    if (!profile) throw new Error("Learner profile could not be updated.");
+    return profile;
+  }
+
   async function saveTransition(
     profileId: string,
     values: {
@@ -166,6 +177,7 @@ export function createLearnerProfileRepository(
     findProfile,
     loadProfile,
     saveAnswer,
+    saveStoryLevel,
     saveTransition,
     skip,
     skipSession,

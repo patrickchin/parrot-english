@@ -14,6 +14,7 @@ import {
   type ConversationProfileState,
 } from "./conversation-profile-finalization.ts";
 import type { Database } from "./database.ts";
+import { requireGuardianAccess } from "./guardian-access.ts";
 import type { ApiEnv } from "./groq.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
@@ -172,6 +173,15 @@ export async function handleConversationRequest(
       if (!isConversationPurpose(purpose)) {
         throw new ConversationApiError(400, "invalid_conversation_purpose");
       }
+      if (purpose === "profile-edit") {
+        const denied = await requireGuardianAccess({
+          database: input.database,
+          sessionId: input.identity.sessionId,
+        });
+        if (denied) {
+          throw new ConversationApiError(403, "guardian_required");
+        }
+      }
       let promptStyle: TalkToPeppaPromptStyle | undefined;
       if (purpose === "small-chat") {
         promptStyle =
@@ -298,6 +308,15 @@ export async function handleConversationRequest(
       if (!loaded) throw new ConversationApiError(404, "not_found");
       if (!isConversationPurpose(loaded.conversation.scenarioKey)) {
         throw new ConversationApiError(500, "invalid_stored_data");
+      }
+      if (loaded.conversation.scenarioKey === "profile-edit") {
+        const denied = await requireGuardianAccess({
+          database: input.database,
+          sessionId: input.identity!.sessionId,
+        });
+        if (denied) {
+          throw new ConversationApiError(403, "guardian_required");
+        }
       }
       if (
         loaded.conversation.status !== "completed" &&
