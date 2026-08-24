@@ -53,6 +53,7 @@ import {
   usePeppaConversation,
 } from "../conversation/usePeppaConversation";
 import { ActionButton, TextButton } from "../shared/ui";
+import { LearnerProfileProvider } from "./LearnerProfileContext";
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -654,6 +655,15 @@ export function LearnerProfileGate({
   const nextOperation = useCallback(() => {
     operationRef.current += 1;
     return operationRef.current;
+  }, []);
+
+  const replaceProfile = useCallback((profile: LearnerProfileSummary) => {
+    setData((current) =>
+      current?.mode === "full" ? { ...current, profile } : current,
+    );
+    setProfileState((current) =>
+      current ? { ...current, profile } : current,
+    );
   }, []);
 
   if (!profileOperationBoundaryRef.current) {
@@ -1357,6 +1367,18 @@ export function LearnerProfileGate({
     };
   }
 
+  const protectedChildren =
+    data?.mode === "full" ? (
+      <LearnerProfileProvider
+        profile={data.profile}
+        replaceProfile={replaceProfile}
+      >
+        {children}
+      </LearnerProfileProvider>
+    ) : (
+      children
+    );
+
   return (
     <LearnerProfileGateView
       acknowledgment={acknowledgment}
@@ -1399,7 +1421,7 @@ export function LearnerProfileGate({
       redoLearnerProfile={redoLearnerProfile}
       started={started}
     >
-      {children}
+      {protectedChildren}
     </LearnerProfileGateView>
   );
 }

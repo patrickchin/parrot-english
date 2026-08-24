@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
-import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { MemoryRouter, useLocation } from "react-router";
+import { after, afterEach, describe, it } from "node:test";
+import { createServer } from "vite";
 import {
   auditStoryVocabulary,
   countStoryWords,
@@ -10,8 +14,130 @@ import {
   STORY_VOCABULARY_PROFILES,
   resolveStory,
 } from "../src/stories/story-catalog.ts";
+import {
+  cleanupMountedRoots,
+  installDom,
+  mountStrict,
+  waitFor,
+} from "./helpers/react-lifecycle.mjs";
+
+const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+const restoreDom = installDom();
+const vite = await createServer({
+  appType: "custom",
+  logLevel: "silent",
+  root: projectRoot,
+  server: { middlewareMode: true },
+});
+const { StoryList } = await vite
+  .ssrLoadModule("/src/stories/StoryList.tsx")
+  .catch(() => ({}));
+const { LearnerProfileProvider } = await vite
+  .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+  .catch(() => ({}));
+
+afterEach(async () => {
+  await cleanupMountedRoots();
+  document.body.replaceChildren();
+});
+
+after(async () => {
+  await vite.close();
+  restoreDom();
+});
+
+function learnerProfile(storyLevel) {
+  return {
+    age: 6,
+    answers: {
+      legacyAnswers: null,
+      questionnaireVersion: 2,
+      responses: {},
+      schemaVersion: 2,
+    },
+    completedAt: "2026-08-25T08:00:00.000Z",
+    currentQuestionKey: null,
+    description: "Likes animals",
+    name: "Mia",
+    profileStatus: "completed",
+    questionnaireVersion: 2,
+    storyLevel,
+  };
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return createElement(
+    "output",
+    { "aria-label": "Current story route" },
+    `${location.pathname}${location.search}`,
+  );
+}
+
+function storyListAt(storyLevel, initialEntry) {
+  assert.equal(typeof StoryList, "function", "Expected learner StoryList");
+  assert.equal(
+    typeof LearnerProfileProvider,
+    "function",
+    "Expected the loaded-profile context provider",
+  );
+  return createElement(
+    LearnerProfileProvider,
+    { profile: learnerProfile(storyLevel), replaceProfile() {} },
+    createElement(
+      MemoryRouter,
+      { initialEntries: [initialEntry] },
+      createElement(StoryList),
+      createElement(LocationProbe),
+    ),
+  );
+}
 
 describe("story script catalog", () => {
+  it("renders the saved learner shelf without grown-up controls", async () => {
+    const container = await mountStrict(
+      storyListAt("tiny-stories", "/stories"),
+    );
+
+    assert.match(container.textContent, /Little stories/);
+    assert.doesNotMatch(container.textContent, /Big adventures/);
+    assert.doesNotMatch(
+      container.textContent,
+      /Grown-up options|Pick a story level|Guardian consent|Upload learner photo|Generate story art/,
+    );
+  });
+
+  it("replaces a mismatched story query with the saved shelf without rendering the requested shelf", async () => {
+    const container = await mountStrict(
+      storyListAt("tiny-stories", "/stories?level=early-a1"),
+    );
+
+    assert.match(container.textContent, /Little stories/);
+    assert.doesNotMatch(container.textContent, /Big adventures/);
+    await waitFor(() =>
+      assert.equal(
+        container.querySelector('output[aria-label="Current story route"]')
+          ?.textContent,
+        "/stories?level=tiny-stories",
+      ),
+    );
+  });
+
+  it("replaces an invalid story query with the saved shelf", async () => {
+    const container = await mountStrict(
+      storyListAt("repeating-patterns", "/stories?level=expert"),
+    );
+
+    assert.match(container.textContent, /Say it again/);
+    await waitFor(() =>
+      assert.equal(
+        container.querySelector('output[aria-label="Current story route"]')
+          ?.textContent,
+        "/stories?level=repeating-patterns",
+      ),
+    );
+  });
+
   it("publishes 20 stories across four learner levels", () => {
     assert.equal(STORIES.length, 20);
     assert.equal(STORY_LEVELS.length, 4);

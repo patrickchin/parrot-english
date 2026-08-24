@@ -46,6 +46,7 @@ let AccountActionProvider;
 let ConversationSurface;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
+let useLearnerProfile;
 let usePeppaConversation;
 let createAuthGate;
 let createGuardianAccessProvider;
@@ -75,6 +76,9 @@ before(async () => {
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
   ));
   ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx"));
+  ({ useLearnerProfile } = await vite
+    .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+    .catch(() => ({})));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
   ));
@@ -142,6 +146,8 @@ function fullLearnerProfileState(overrides = {}) {
     profile: {
       name: null,
       age: null,
+      storyLevel: "first-words",
+      description: null,
       answers: emptyAnswers(),
       questionnaireVersion: 2,
       currentQuestionKey: "name",
@@ -448,6 +454,20 @@ function ProfileRouteHarness({ children, initialRoute = "/" }) {
       onOpenProfileRoute: () => setRoute("/profile"),
     },
     children,
+  );
+}
+
+function LoadedProfileHarness() {
+  assert.equal(
+    typeof useLearnerProfile,
+    "function",
+    "Expected protected descendants to read the loaded learner profile",
+  );
+  const { profile } = useLearnerProfile();
+  return createElement(
+    "output",
+    { "aria-label": "Loaded profile story level" },
+    profile.storyLevel,
   );
 }
 
@@ -1174,6 +1194,48 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     response.resolve(json(fullLearnerProfileState()));
     await waitFor(() => text(/Answer 1 question/));
     noText(/Loading your questions…/);
+  });
+
+  it("provides the already-loaded learner profile to protected descendants without another request", async () => {
+    let profileRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      profileRequests += 1;
+      return json({
+        ...completedLearnerProfileState(),
+        profile: {
+          ...completedLearnerProfileState().profile,
+          storyLevel: "tiny-stories",
+        },
+      });
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(LoadedProfileHarness),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.equal(output("Loaded profile story level").textContent, "tiny-stories"),
+    );
+    assert.equal(profileRequests, 2, "StrictMode performs only the gate load cycle");
   });
 
   it("opens the learner's turn only after Peppa finishes her opening", async () => {

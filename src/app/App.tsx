@@ -175,6 +175,13 @@ const StoryList = import.meta.env.SSR
         default: StoryList,
       })),
     );
+const GuardianStorySettings = import.meta.env.SSR
+  ? (await import("../stories/GuardianStorySettings")).GuardianStorySettings
+  : lazy(() =>
+      import("../stories/GuardianStorySettings").then(
+        ({ GuardianStorySettings }) => ({ default: GuardianStorySettings }),
+      ),
+    );
 const StoryReader = import.meta.env.SSR
   ? (await import("../stories/StoryReader")).StoryReader
   : lazy(() =>
@@ -1129,14 +1136,7 @@ export function ApplicationRoutes({
           path="/guardian/lessons"
         />
         <Route
-          element={
-            <FeaturePlaceholder
-              actionLabel="Back to guardian dashboard"
-              actionTo="/guardian"
-              description="Story settings are getting ready."
-              title="Story settings"
-            />
-          }
+          element={<GuardianStorySettings />}
           path="/guardian/stories"
         />
         <Route element={<HomeMenu />} path="/" />

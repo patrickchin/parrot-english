@@ -20,6 +20,9 @@ const placeholderModule = await vite
   .ssrLoadModule("/src/app/FeaturePlaceholder.tsx")
   .catch(() => ({}));
 const appModule = await vite.ssrLoadModule("/src/app/App.tsx").catch(() => ({}));
+const { LearnerProfileProvider } = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerProfileContext.tsx",
+);
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
 const { ApplicationRoutes } = appModule;
@@ -45,7 +48,29 @@ function renderApplicationRoute(initialEntry) {
     "Expected an executable ApplicationRoutes tree",
   );
   return renderInRouter(
-    createElement(ApplicationRoutes, { loginTarget: "/" }),
+    createElement(
+      LearnerProfileProvider,
+      {
+        profile: {
+          age: 6,
+          answers: {
+            legacyAnswers: null,
+            questionnaireVersion: 2,
+            responses: {},
+            schemaVersion: 2,
+          },
+          completedAt: "2026-08-25T08:00:00.000Z",
+          currentQuestionKey: null,
+          description: "Likes animals",
+          name: "Mia",
+          profileStatus: "completed",
+          questionnaireVersion: 2,
+          storyLevel: "first-words",
+        },
+        replaceProfile() {},
+      },
+      createElement(ApplicationRoutes, { loginTarget: "/" }),
+    ),
     initialEntry,
   );
 }
