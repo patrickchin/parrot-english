@@ -16,12 +16,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-workers-${{ github.ref }}
+  group: cloudflare-workers
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

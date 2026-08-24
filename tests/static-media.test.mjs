@@ -86,7 +86,11 @@ describe("static media publishing", () => {
       },
       fetch: async (url, init) => {
         const parsed = new URL(url);
-        requests.push({ method: init?.method ?? "GET", url: parsed });
+        requests.push({
+          method: init?.method ?? "GET",
+          redirect: init?.redirect,
+          url: parsed,
+        });
         if (init?.method === "HEAD") {
           const phase = parsed.searchParams.get("parrot-media-check");
           if (
@@ -140,6 +144,7 @@ describe("static media publishing", () => {
         ["/assets/v3/brand/icon-192.png", "verify-fixture"],
       ],
     );
+    assert.ok(requests.every(({ redirect }) => redirect === "error"));
     assert.equal(commands.length, 1);
     assert.deepEqual(commands[0], {
       args: [
@@ -198,5 +203,39 @@ describe("static media publishing", () => {
       /already exists with invalid immutable metadata; use a new asset version/,
     );
     assert.equal(commandCount, 0);
+  });
+
+  it("rejects contradictory cache directives on an existing object", async () => {
+    await assert.rejects(
+      runStaticMediaPublisher({
+        args: ["--apply"],
+        assets: [
+          {
+            contentType: "image/webp",
+            path: "characters/peppa/peppa-idle.webp",
+          },
+        ],
+        cacheBust: "fixture",
+        env: {
+          PARROT_MEDIA_ORIGIN: "https://media.example.com",
+          PARROT_MEDIA_PUBLIC_BUCKET: "parrot-english-media",
+        },
+        fetch: async () =>
+          new Response(null, {
+            headers: {
+              "cache-control":
+                "private, no-store, max-age=31536000, immutable",
+              "content-length": "482193",
+              "content-type": "image/webp",
+            },
+            status: 200,
+          }),
+        runCommand() {
+          throw new Error("An existing immutable key must not be overwritten");
+        },
+        writeOutput() {},
+      }),
+      /already exists with invalid immutable metadata; use a new asset version/,
+    );
   });
 });

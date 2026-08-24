@@ -283,10 +283,24 @@ export function createStaticMediaPublishPlan(assetsValue, optionsValue) {
 }
 
 function hasImmutableYearCache(value) {
-  const maxAge = /(?:^|,)\s*max-age=(\d+)\s*(?:,|$)/i.exec(value);
+  const directives = value
+    .split(",")
+    .map((directive) => directive.trim().toLowerCase())
+    .filter(Boolean);
+  const maxAges = directives.flatMap((directive) => {
+    const match = /^max-age\s*=\s*"?(\d+)"?$/.exec(directive);
+    return match ? [Number(match[1])] : [];
+  });
   return (
-    /(?:^|,)\s*immutable\s*(?:,|$)/i.test(value) &&
-    Number(maxAge?.[1] ?? 0) >= 31_536_000
+    directives.filter((directive) => directive === "public").length === 1 &&
+    directives.filter((directive) => directive === "immutable").length === 1 &&
+    !directives.some((directive) =>
+      ["private", "no-cache", "no-store"].includes(
+        directive.split("=", 1)[0],
+      ),
+    ) &&
+    maxAges.length === 1 &&
+    maxAges[0] >= 31_536_000
   );
 }
 
@@ -303,7 +317,7 @@ async function inspectTargets(plan, { cacheBust, fetch, phase }) {
       try {
         response = await fetch(
           checkedUrl(asset.targetUrl, phase, cacheBust),
-          { method: "HEAD" },
+          { method: "HEAD", redirect: "error" },
         );
       } catch (error) {
         return { asset, error: `could not be requested: ${error.message}` };
@@ -400,7 +414,7 @@ export async function ensureStaticMedia(
   for (const { asset } of preflight.invalid.filter(({ missing }) => missing)) {
     const sourceResponse = await fetch(
       checkedUrl(asset.sourceUrl, "source", token),
-      { method: "GET" },
+      { method: "GET", redirect: "error" },
     );
     if (!sourceResponse.ok) {
       throw new Error(`${asset.path} source returned HTTP ${sourceResponse.status}`);
