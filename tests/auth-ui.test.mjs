@@ -449,7 +449,7 @@ test("signed-in views expose signing-out progress on the persistent account cont
     /<button[^>]*aria-label="Signing out… Account for learner@example.com"[\s\S]*?<\/button>/,
   )?.[0];
   assert.ok(accountButton);
-  assert.match(accountButton, /title="Account"/);
+  assert.doesNotMatch(accountButton, /title=/);
   assert.doesNotMatch(accountButton, />Signing out…</);
 });
 

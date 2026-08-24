@@ -239,7 +239,7 @@ export function AccountHeader({
           onKeyDown={handleAccountKeyDown}
           ref={accountButtonRef}
           size="header"
-          title="Account"
+          title={isSigningOut ? undefined : "Account"}
           type="button"
           variant="navy"
         >

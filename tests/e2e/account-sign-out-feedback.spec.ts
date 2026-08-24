@@ -48,25 +48,25 @@ for (const viewport of viewports) {
 
     const account = page.getByRole("button", { name: "Account for Mia" });
     const heading = page.getByRole("heading", { name: "Pick a lesson" });
-    const headingBefore = await heading.boundingBox();
-    await account.click();
-    const startedAt = Date.now();
-    await page.getByRole("menuitem", { name: "Sign out" }).click();
-    await requestStarted;
-    expect(Date.now() - startedAt).toBeLessThan(500);
-
     const status = page
       .getByRole("complementary", { name: "Account" })
       .getByRole("status");
+    const headingBefore = await heading.boundingBox();
+    await account.click();
+    const feedbackStartedAt = Date.now();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+    await expect(status).toHaveText("Signing out…", { timeout: 500 });
+    await expect(status).toBeVisible({ timeout: 500 });
+    expect(Date.now() - feedbackStartedAt).toBeLessThan(500);
+    await requestStarted;
+
     const pendingAccount = page.getByRole("button", {
       exact: true,
       name: "Signing out… Account for Mia",
     });
-    await expect(status).toHaveText("Signing out…");
-    await expect(status).toBeVisible();
     await expect(pendingAccount).toBeFocused();
     await expect(pendingAccount).toHaveAttribute("aria-disabled", "true");
-    await expect(pendingAccount).toHaveAttribute("title", "Account");
+    expect(await pendingAccount.getAttribute("title")).toBeNull();
     await expect(pendingAccount.getByText("Signing out…")).toHaveCount(0);
     expect(
       await status.evaluate((message) => getComputedStyle(message).color),
