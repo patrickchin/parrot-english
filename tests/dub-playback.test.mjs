@@ -281,7 +281,7 @@ describe("duck dub playback", () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const controller = new AbortController();
-    const playback = await startDubPlayback({
+    await startDubPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -295,9 +295,6 @@ describe("duck dub playback", () => {
 
     context.currentTime = 11.12;
     raf.runNext();
-    controller.abort();
-    playback.stop();
-    await Promise.resolve();
 
     assert.equal(raf.callbacks.size, 0);
     assert.equal(context.closeCalls, 1);
@@ -327,8 +324,6 @@ describe("duck dub playback", () => {
     assert.equal(raf.callbacks.size, 1);
     context.currentTime = 12.12;
     raf.runNext();
-    playback.stop();
-    await Promise.resolve();
 
     assert.equal(tickCount, 2);
     assert.equal(raf.callbacks.size, 0);
