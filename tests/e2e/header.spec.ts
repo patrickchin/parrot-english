@@ -585,6 +585,9 @@ test("a failed sign out keeps Account beside one specific retry", async ({
     exact: true,
     name: "Sign out again",
   });
+  const alertId = await alert.getAttribute("id");
+  expect(alertId).toBeTruthy();
+  await expect(retry).toHaveAttribute("aria-describedby", alertId!);
   const accountBox = await expectInsideViewport(account, viewport);
   const retryBox = await expectInsideViewport(retry, viewport);
   expect(retryBox.x + retryBox.width).toBeLessThanOrEqual(accountBox.x);

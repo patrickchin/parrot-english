@@ -4050,6 +4050,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(document.activeElement, account);
     assert.equal(document.querySelector('[role="alert"]'), alert);
     const retry = button("Sign out again");
+    assert.ok(alert.id, "Expected the persistent alert to have an ID.");
+    assert.equal(retry.getAttribute("aria-describedby"), alert.id);
     assert.equal(
       account.compareDocumentPosition(retry) & Node.DOCUMENT_POSITION_FOLLOWING,
       Node.DOCUMENT_POSITION_FOLLOWING,
