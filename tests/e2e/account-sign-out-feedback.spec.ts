@@ -92,6 +92,18 @@ async function applyTextSpacing(page: Page) {
   });
 }
 
+async function waitForVisualAssets(page: Page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      [...document.images].map((image) => image.decode().catch(() => {})),
+    );
+    await new Promise<void>((resolvePaint) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolvePaint()));
+    });
+  });
+}
+
 const viewports = [
   { height: 568, width: 280 },
   { height: 844, width: 390 },
@@ -121,14 +133,7 @@ for (const viewport of viewports) {
     });
     await page.setViewportSize(viewport);
     await page.goto("/lessons");
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      await Promise.all(
-        [...document.images].map((image) =>
-          image.complete ? Promise.resolve() : image.decode().catch(() => {}),
-        ),
-      );
-    });
+    await waitForVisualAssets(page);
 
     const account = page.getByRole("button", { name: "Account for Mia" });
     const heading = page.getByRole("heading", { name: "Pick a lesson" });
@@ -508,14 +513,7 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   });
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/lessons");
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all(
-      [...document.images].map((image) =>
-        image.complete ? Promise.resolve() : image.decode().catch(() => {}),
-      ),
-    );
-  });
+  await waitForVisualAssets(page);
 
   const account = page.getByRole("button", { name: "Account for Mia" });
   await account.focus();
@@ -624,6 +622,7 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
     });
   });
   await page.getByRole("button", { name: "Start lesson" }).click();
+  await waitForVisualAssets(page);
 
   const hud = page.getByRole("region", { name: "Lesson progress" });
   const speech = page.getByRole("status").filter({ hasText: "Look! My ball!" });
@@ -770,6 +769,7 @@ test("sign-out recovery keeps text-spacing focus clear of the lesson HUD", async
     });
   });
   await page.getByRole("button", { name: "Start lesson" }).click();
+  await waitForVisualAssets(page);
   await applyTextSpacing(page);
 
   const hud = page.getByRole("region", { name: "Lesson progress" });
