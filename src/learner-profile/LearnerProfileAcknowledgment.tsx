@@ -86,7 +86,7 @@ export function LearnerProfileAcknowledgment({
         alt="Peppa smiling"
         className="aspect-square max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-2 short-wide:row-start-1 short-wide:w-full short-wide:max-w-40 sm:w-56"
         height={1024}
-        src="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp"
+        src="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp"
         width={1024}
       />
       <LearnerProfileStepHeading

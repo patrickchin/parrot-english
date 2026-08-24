@@ -95,7 +95,7 @@ describe("web asset formats", () => {
       readFile(manifestFile, "utf8").then(JSON.parse),
     ]);
     const brandMediaPattern =
-      /^https:\/\/media\.parrotbook\.com\/assets\/v1\/brand\/[a-z0-9-]+\.png$/;
+      /^https:\/\/media\.parrotbook\.com\/assets\/v2\/brand\/[a-z0-9-]+\.png$/;
     const indexMedia = [...indexHtml.matchAll(/(?:href|content)="(https:[^"]+\.png)"/g)]
       .map((match) => match[1]);
 

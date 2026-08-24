@@ -128,7 +128,7 @@ export function LearnerProfileQuestionView({
           alt="Peppa, your English host"
           className="mx-auto aspect-square max-h-40 w-24 animate-float object-contain motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-28 sm:col-span-1 sm:w-full"
           height={1024}
-          src="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp"
+          src="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp"
           width={1024}
         />
         <div className="short-wide:col-start-2 short-wide:row-start-2 sm:col-span-3">

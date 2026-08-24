@@ -341,7 +341,7 @@ describe("personalized story art Worker handler", () => {
       assert.equal(response.status, 201);
       assert.equal(
         requestedUrl,
-        "https://media.parrotbook.com/assets/v1/personalization/the-red-ball-scene-reference.webp",
+        "https://media.parrotbook.com/assets/v2/personalization/the-red-ball-scene-reference.webp",
       );
     } finally {
       state.close();

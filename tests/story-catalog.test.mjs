@@ -164,7 +164,7 @@ describe("story script catalog", () => {
     for (const story of STORIES) {
       assert.equal(
         story.cover.src,
-        `https://media.parrotbook.com/assets/v1/stories/${story.id}-cover.webp`,
+        `https://media.parrotbook.com/assets/v2/stories/${story.id}-cover.webp`,
         `${story.title} cover source`,
       );
       assert.ok(story.cover.alt.trim(), `${story.title} cover alt`);
@@ -175,7 +175,7 @@ describe("story script catalog", () => {
         if (story.level === "first-words") {
           assert.equal(
             page.artwork.src,
-            `https://media.parrotbook.com/assets/v1/story-pages/${story.id}-${page.id}.webp`,
+            `https://media.parrotbook.com/assets/v2/story-pages/${story.id}-${page.id}.webp`,
             `${story.title}/${page.id} image source`,
           );
         } else {

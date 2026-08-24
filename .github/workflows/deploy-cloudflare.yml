@@ -50,7 +50,7 @@ jobs:
           MEDIA_SOURCE_COMMIT: 2fe8e5ef8e82254a0bc271dfb620d1c7811b6a8a
         run: |
           set -euo pipefail
-          sample="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-idle.webp"
+          sample="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-idle.webp"
           if curl --fail --silent --show-error --head "$sample" | tr -d '\r' | grep -Eqi '^cache-control:.*max-age=31536000.*immutable'; then
             exit 0
           fi
@@ -65,7 +65,7 @@ jobs:
           test "${#media_paths[@]}" -eq 171
 
           for path in "${media_paths[@]}"; do
-            object="parrot-english-media/assets/v1/${path#public/assets/}"
+            object="parrot-english-media/assets/v2/${path#public/assets/}"
             git show "$MEDIA_SOURCE_COMMIT:$path" | npx wrangler r2 object put "$object" \
               --pipe \
               --remote \
@@ -89,7 +89,7 @@ jobs:
             icon-512.png \
             social-card.png
           do
-            object="parrot-english-media/assets/v1/brand/$file"
+            object="parrot-english-media/assets/v2/brand/$file"
             expected="$({ git show "$BRAND_SOURCE_COMMIT:public/$file" || exit 1; } | sha256sum | cut -d ' ' -f 1)"
 
             if actual="$(npx wrangler r2 object get "$object" --pipe --remote 2>/dev/null | sha256sum | cut -d ' ' -f 1)"; then

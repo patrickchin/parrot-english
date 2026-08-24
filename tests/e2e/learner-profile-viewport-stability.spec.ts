@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const profilePath = "/profile/setup?parrotE2eProfile=viewport-stability";
 const resumeProfilePath = "/profile/setup?parrotE2eProfile=viewport-resume";
-const peppaPath = "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp";
+const peppaPath = "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp";
 const longAccountEmail =
   "family.account.for.alexandria.montgomery@example.test";
 

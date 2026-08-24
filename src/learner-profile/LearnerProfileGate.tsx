@@ -161,7 +161,7 @@ function LearnerProfileSetupView({
         alt="Peppa waving hello"
         className="aspect-square max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-44 sm:w-52"
         height={1024}
-        src="https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp"
+        src="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp"
         width={1024}
       />
       <LearnerProfileStepHeading

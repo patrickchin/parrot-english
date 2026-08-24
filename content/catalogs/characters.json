@@ -4,27 +4,27 @@
     "name": "Peppa",
     "assets": {
       "idle": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-idle.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-idle.webp",
         "alt": "Peppa waiting"
       },
       "talking": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-talking.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-talking.webp",
         "alt": "Peppa talking"
       },
       "listening": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-listening.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-listening.webp",
         "alt": "Peppa listening"
       },
       "happy": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-happy.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp",
         "alt": "Peppa feeling happy"
       },
       "sad": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-sad.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-sad.webp",
         "alt": "Peppa feeling sad"
       },
       "surprised": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/peppa/peppa-surprised.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-surprised.webp",
         "alt": "Peppa feeling surprised"
       }
     }
@@ -34,27 +34,27 @@
     "name": "Dolly",
     "assets": {
       "idle": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/dolly/dolly-idle.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/dolly/dolly-idle.webp",
         "alt": "Dolly waiting"
       },
       "talking": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/dolly/dolly-talking.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/dolly/dolly-talking.webp",
         "alt": "Dolly talking"
       },
       "listening": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/dolly/dolly-listening.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/dolly/dolly-listening.webp",
         "alt": "Dolly listening"
       },
       "happy": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/dolly/dolly-happy.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/dolly/dolly-happy.webp",
         "alt": "Dolly feeling happy"
       },
       "sad": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/dolly/dolly-sad.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/dolly/dolly-sad.webp",
         "alt": "Dolly feeling sad"
       },
       "surprised": {
-        "src": "https://media.parrotbook.com/assets/v1/characters/dolly/dolly-surprised.webp",
+        "src": "https://media.parrotbook.com/assets/v2/characters/dolly/dolly-surprised.webp",
         "alt": "Dolly feeling surprised"
       }
     }

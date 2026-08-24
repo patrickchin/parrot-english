@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 
-const mediaBaseUrl = "https://media.parrotbook.com/assets/v1/characters";
+const mediaBaseUrl = "https://media.parrotbook.com/assets/v2/characters";
 let charactersDir = "";
 const dwebpAvailable = spawnSync("dwebp", ["-version"], {
   stdio: "ignore",
