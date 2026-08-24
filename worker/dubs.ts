@@ -13,6 +13,7 @@ const GENERATION_MARKER = ".dub-generation";
 const LEGACY_GENERATION = "legacy";
 const FENCE_FORMAT = "parrot-dub-fence-v1";
 const AUDIO_FORMAT = "parrot-dub-audio-v1";
+const AUDIO_FORMAT_V2 = "parrot-dub-audio-v2";
 const R2_WRITE_INTERVAL_MS = 1_050;
 const MAX_R2_WRITE_ATTEMPTS = 3;
 const MAX_CAS_CONFLICTS = 16;
@@ -42,6 +43,7 @@ export interface DubRequestInput {
 
 type DubHandlerOverrides = {
   createGeneration?: () => string;
+  createUploadNonce?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
   now?: () => Date;
   wait?: (delay: number) => Promise<void>;
@@ -62,7 +64,12 @@ type DubMarker =
 
 type AudioStorage =
   | { kind: "legacy" }
-  | { generation: string; kind: "enveloped"; prefix: Uint8Array };
+  | {
+      generation: string;
+      kind: "enveloped";
+      prefix: Uint8Array;
+      uploadNonce: string | undefined;
+    };
 
 class DubApiError extends Error {
   readonly code: string;
@@ -174,12 +181,14 @@ function fenceBody(kind: "marker" | "slot", generation: string, state: string) {
   return encoded([FENCE_FORMAT, kind, generation, state]);
 }
 
-function audioPrefix(generation: string) {
-  return encoded([AUDIO_FORMAT, generation]);
+function audioPrefix(generation: string, uploadNonce?: string) {
+  return uploadNonce === undefined
+    ? encoded([AUDIO_FORMAT, generation])
+    : encoded([AUDIO_FORMAT_V2, generation, uploadNonce]);
 }
 
-function audioBody(generation: string, audio: Uint8Array) {
-  const prefix = audioPrefix(generation);
+function audioBody(generation: string, uploadNonce: string, audio: Uint8Array) {
+  const prefix = audioPrefix(generation, uploadNonce);
   const body = new Uint8Array(prefix.byteLength + audio.byteLength);
   body.set(prefix);
   body.set(audio, prefix.byteLength);
@@ -247,13 +256,16 @@ function audioStorage(
     ready === null &&
     metadata?.generation === undefined &&
     metadata?.state === undefined &&
-    metadata?.payloadOffset === undefined
+    metadata?.payloadOffset === undefined &&
+    metadata?.uploadNonce === undefined
   ) {
     return object.size > 0 ? { kind: "legacy" } : null;
   }
 
   const generation = ready ?? LEGACY_GENERATION;
-  const prefix = audioPrefix(generation);
+  const uploadNonce = metadata?.uploadNonce;
+  if (uploadNonce === "") return null;
+  const prefix = audioPrefix(generation, uploadNonce);
   if (
     metadata?.generation !== generation ||
     metadata.state !== "audio" ||
@@ -263,7 +275,7 @@ function audioStorage(
   ) {
     return null;
   }
-  return { generation, kind: "enveloped", prefix };
+  return { generation, kind: "enveloped", prefix, uploadNonce };
 }
 
 function hasBody(object: R2Object | R2ObjectBody | null): object is R2ObjectBody {
@@ -290,7 +302,8 @@ async function validateAudioPrefix(
     !hasBody(prefixObject) ||
     !hasState(prefixObject, storage.generation, "audio") ||
     prefixObject.customMetadata?.payloadOffset !==
-      String(storage.prefix.byteLength)
+      String(storage.prefix.byteLength) ||
+    prefixObject.customMetadata?.uploadNonce !== storage.uploadNonce
   ) {
     return null;
   }
@@ -323,7 +336,8 @@ async function getAudioPayload(
     !hasBody(payload) ||
     !hasState(payload, storage.generation, "audio") ||
     payload.customMetadata?.payloadOffset !==
-      String(storage.prefix.byteLength)
+      String(storage.prefix.byteLength) ||
+    payload.customMetadata?.uploadNonce !== storage.uploadNonce
   ) {
     return null;
   }
@@ -417,6 +431,43 @@ async function fenceAccountDeletingSlot(
   throw new Error("Dub account-deletion cleanup contention exceeded.");
 }
 
+async function fenceUncertainDeletionSlot(
+  bucket: R2Bucket,
+  key: string,
+  stored: R2Object,
+  token: string,
+  wait: Wait,
+) {
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      await bucket.put(
+        key,
+        fenceBody("slot", token, "account-deleting"),
+        {
+          customMetadata: { generation: token, state: "account-deleting" },
+          onlyIf: { etagMatches: stored.etag },
+        },
+      );
+      return;
+    } catch (error) {
+      if (!isR2WriteRateError(error)) return;
+      let current: R2Object | null;
+      try {
+        current = await bucket.head(key);
+      } catch {
+        return;
+      }
+      if (!sameObject(current, stored)) return;
+      if (attempt === MAX_R2_WRITE_ATTEMPTS - 1) return;
+      try {
+        await wait(retryDelay(attempt));
+      } catch {
+        return;
+      }
+    }
+  }
+}
+
 function normalizeContentType(request: Request) {
   return request.headers
     .get("Content-Type")
@@ -443,6 +494,8 @@ export async function handleDubRequest(
 ) {
   const createGeneration =
     overrides.createGeneration ?? (() => crypto.randomUUID());
+  const createUploadNonce =
+    overrides.createUploadNonce ?? (() => crypto.randomUUID());
   const isDeletionPending =
     overrides.isDeletionPending ?? isAccountDeletionPending;
   const now = overrides.now ?? (() => new Date());
@@ -605,7 +658,9 @@ export async function handleDubRequest(
       throw new DubApiError(409, "dub_reset_in_progress");
     }
     const recordedAt = now();
-    const encodedAudio = audioBody(generation, bytes);
+    const uploadNonce = createUploadNonce();
+    if (!uploadNonce) throw new Error("Dub upload nonce is required.");
+    const encodedAudio = audioBody(generation, uploadNonce, bytes);
     const stored = await conditionalPut(
       bucket,
       key,
@@ -619,6 +674,7 @@ export async function handleDubRequest(
           payloadOffset: String(encodedAudio.payloadOffset),
           recordedAt: recordedAt.toISOString(),
           state: "audio",
+          uploadNonce,
         },
       },
       previous,
@@ -626,7 +682,21 @@ export async function handleDubRequest(
     );
     if (!stored) throw new DubApiError(409, "dub_reset_in_progress");
     const throwIfAccountDeletionPending = async () => {
-      if (!await isDeletionPending(input.database, userId)) return;
+      let pending: boolean;
+      try {
+        pending = await isDeletionPending(input.database, userId);
+      } catch (error) {
+        try {
+          const token = createGeneration();
+          if (token) {
+            await fenceUncertainDeletionSlot(bucket, key, stored, token, wait);
+          }
+        } catch {
+          // Preserve the D1 failure after best-effort exact-write fencing.
+        }
+        throw error;
+      }
+      if (!pending) return;
       const token = createGeneration();
       if (!token) throw new Error("Dub cleanup generation is required.");
       await fenceAccountDeletingSlot(bucket, key, stored, token, wait);

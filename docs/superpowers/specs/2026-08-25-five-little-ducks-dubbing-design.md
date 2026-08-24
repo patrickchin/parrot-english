@@ -127,20 +127,24 @@ when its retention, residency, or access policy differs from private story art.
 R2 is the source of truth. `list` determines saved slots, `put` conditionally
 replaces a slot, and `get` streams owner-only audio. Reset keeps the nine fixed
 keys but replaces each with a small, opaque non-audio generation tombstone. The
-marker, tombstones, and private audio envelope all include their generation in
-the object body. This is required because R2 single-part ETags are
-content-derived: custom metadata or generation-independent empty bodies cannot
-prevent an ETag ABA when a reset rewrites a key. The audio endpoint validates
-the exact envelope prefix with an ETag-conditioned bounded range read, then
-streams an ETag-conditioned payload range, so the learner receives the exact
-uploaded clip without buffering it again. Raw pre-marker audio remains readable
-only when all envelope coordination metadata is absent. Enveloped objects are
-also rejected when their total size exceeds the exact generation prefix plus
-the 512 KiB upload ceiling.
+marker and tombstones include their generation in the object body. Each newly
+written private audio envelope includes both that generation and a
+request-unique upload nonce. This is required because R2 single-part ETags are
+content-derived: custom metadata or generation-independent bodies cannot
+prevent an ETag ABA when a reset rewrites a key, and identical takes in the same
+generation otherwise cannot be distinguished by ETag. The audio endpoint
+validates the exact v2 envelope prefix with an ETag-conditioned bounded range
+read, then streams an ETag-conditioned payload range, so the learner receives
+the exact uploaded clip without buffering it again. It retains read
+compatibility with the earlier generation-only v1 envelope. Raw pre-marker
+audio remains readable only when all envelope coordination metadata is absent.
+Enveloped objects are also rejected when their total size exceeds the exact
+prefix plus the 512 KiB upload ceiling.
 
 HTTP metadata stores the normalized content type. Audio custom metadata stores
-the reset generation, audio state, payload offset, consent version, line ID, and
-recording timestamp. The `.dub-generation` coordination object also stores its
+the reset generation, request-unique upload nonce, audio state, payload offset,
+consent version, line ID, and recording timestamp. The `.dub-generation`
+coordination object also stores its
 unique reset generation and `deleting` or `ready` state in custom metadata.
 Conditional R2 writes serialize the marker and every fixed slot. Uploads capture
 the ready generation and slot ETag, then conditionally replace only that observed
@@ -172,14 +176,18 @@ If deletion begins during a write after the prefix sweep has already passed,
 the request conditionally replaces exactly the object version it wrote with a
 request-unique opaque `account-deleting` fence. It re-heads and retries on a CAS
 loss or transient hot-key error until the slot is absent or demonstrably
-non-audio. After any successful audio write, this D1 check runs before the
-marker result is interpreted and is repeated after either a marker conflict or
-a successful marker check. It never unconditionally deletes a shared fixed
-slot that a newer writer could own. Because dub keys live below the existing
-per-user purge prefix, Better Auth's normal sweep removes tracked clips and
-coordination objects. A late opaque account-deleting fence may remain when its
-write lands after that sweep, but it cannot be served or counted as audio and
-the permanent D1 tombstone prevents a new legitimate upload for that account.
+non-audio. If a post-write D1 read itself fails, the deletion state is uncertain:
+the request makes only a bounded, conditional attempt to fence its exact
+nonce-bearing object and never takes over a slot after CAS loss, so it cannot
+replace a newer writer. Cleanup failure does not hide the original D1 error.
+After any successful audio write, this D1 check runs before the marker result is
+interpreted and is repeated after either a marker conflict or a successful
+marker check. It never unconditionally deletes a shared fixed slot that a newer
+writer could own. Because dub keys live below the existing per-user purge
+prefix, Better Auth's normal sweep removes tracked clips and coordination
+objects. A late opaque account-deleting fence may remain when its write lands
+after that sweep, but it cannot be served or counted as audio and the permanent
+D1 tombstone prevents a new legitimate upload for that account.
 
 Recordings are never sent to speech recognition, analytics, a public bucket,
 or a third-party media player. The UI makes no claim that a checkbox alone is
