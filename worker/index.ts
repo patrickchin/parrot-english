@@ -1,4 +1,6 @@
+import { APIError } from "better-auth/api";
 import {
+  checkGuardianUnlockRateLimit,
   checkPersonalizedStoryArtRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
@@ -14,6 +16,7 @@ import {
   type BuildInfoEnv,
 } from "./build-info.ts";
 import { handleEvaluateSpeech } from "./groq.ts";
+import { handleGuardianAccessRequest } from "./guardian-access.ts";
 import { handleLearnerProfileRequest } from "./learner-profile.ts";
 import {
   handleConversationRequest,
@@ -48,11 +51,13 @@ interface Env
 interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
+  checkGuardianUnlockRateLimit: typeof checkGuardianUnlockRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
   checkLessonGenerationRateLimit: typeof checkLessonGenerationRateLimit;
   checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
+  handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
@@ -88,6 +93,8 @@ export function createWorker(
 ) {
   const rateLimit =
     dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
+  const guardianUnlockRateLimit =
+    dependencies.checkGuardianUnlockRateLimit ?? checkGuardianUnlockRateLimit;
   const learnerProfileTranscriptionRateLimit =
     dependencies.checkLearnerProfileTranscriptionRateLimit ??
     checkLearnerProfileTranscriptionRateLimit;
@@ -101,6 +108,8 @@ export function createWorker(
     checkPersonalizedStoryArtRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
+  const guardianAccessRequest =
+    dependencies.handleGuardianAccessRequest ?? handleGuardianAccessRequest;
   const learnerProfileRequest =
     dependencies.handleLearnerProfileRequest ?? handleLearnerProfileRequest;
   const conversationRequest =
@@ -134,6 +143,50 @@ export function createWorker(
         url.pathname.startsWith("/api/auth/")
       ) {
         return authFactory(env).handler(request);
+      }
+
+      if (url.pathname === "/api/guardian-access") {
+        const auth = authFactory(env);
+        const session = await auth.api.getSession({ headers: request.headers });
+        if (!session) {
+          return Response.json(
+            { error: "unauthorized" },
+            { status: 401, headers: { "Cache-Control": "no-store" } },
+          );
+        }
+        if (request.method === "POST") {
+          const rateLimited = await guardianUnlockRateLimit(
+            request,
+            env,
+            session.user.id,
+          );
+          if (rateLimited) return rateLimited;
+        }
+        return guardianAccessRequest({
+          database: createDatabase(env.DB),
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+          },
+          request,
+          verifyPassword: async (password) => {
+            try {
+              const verified = await auth.api.verifyPassword({
+                body: { password },
+                headers: request.headers,
+              });
+              return Boolean(verified);
+            } catch (error) {
+              if (
+                error instanceof APIError &&
+                error.body?.code === "INVALID_PASSWORD"
+              ) {
+                return false;
+              }
+              throw error;
+            }
+          },
+        });
       }
 
       if (isLearnerProfilePath(url.pathname)) {

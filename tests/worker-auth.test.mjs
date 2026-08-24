@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { APIError } from "better-auth/api";
 import { createAuth } from "../worker/auth.ts";
 import { createDatabase } from "../worker/database.ts";
 import * as workerModule from "../worker/index.ts";
@@ -32,9 +33,14 @@ function createEnvironment(assetResponse = new Response("asset")) {
   };
 }
 
-function createAuthStub({ session = null, response = new Response("auth") } = {}) {
+function createAuthStub({
+  session = null,
+  response = new Response("auth"),
+  verifyPassword = async () => ({ status: true }),
+} = {}) {
   let handlerCalls = 0;
   let sessionCalls = 0;
+  const passwordCalls = [];
 
   return {
     auth: {
@@ -47,10 +53,15 @@ function createAuthStub({ session = null, response = new Response("auth") } = {}
           sessionCalls += 1;
           return session;
         },
+        async verifyPassword(input) {
+          passwordCalls.push(input);
+          return verifyPassword(input);
+        },
       },
     },
     getHandlerCalls: () => handlerCalls,
     getSessionCalls: () => sessionCalls,
+    getPasswordCalls: () => passwordCalls,
   };
 }
 
@@ -424,6 +435,163 @@ describe("Worker authentication", () => {
       ["/api/profile", "user-1"],
     ]);
     assert.equal(learnerProfileCalls, 0);
+  });
+
+  it("rejects anonymous guardian access without running protected dependencies", async () => {
+    const authStub = createAuthStub();
+    const { env } = createEnvironment();
+    let rateLimitCalls = 0;
+    let handlerCalls = 0;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      checkGuardianUnlockRateLimit() {
+        rateLimitCalls += 1;
+        return null;
+      },
+      async handleGuardianAccessRequest() {
+        handlerCalls += 1;
+        return Response.json({ mode: "learner" });
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/guardian-access", { method: "POST" }),
+      env,
+    );
+
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.deepEqual(await response.json(), { error: "unauthorized" });
+    assert.equal(authStub.getSessionCalls(), 1);
+    assert.equal(rateLimitCalls, 0);
+    assert.equal(handlerCalls, 0);
+  });
+
+  it("uses one request-scoped auth instance for session and password verification", async () => {
+    const authStub = createAuthStub({
+      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+    });
+    const { env } = createEnvironment();
+    let authFactoryCalls = 0;
+    let receivedIdentity;
+    const worker = createTestWorker({
+      createAuth() {
+        authFactoryCalls += 1;
+        return authStub.auth;
+      },
+      checkGuardianUnlockRateLimit: async () => null,
+      async handleGuardianAccessRequest(input) {
+        receivedIdentity = input.identity;
+        assert.equal(await input.verifyPassword("guardian-secret"), true);
+        return Response.json({ mode: "guardian" });
+      },
+    });
+    const headers = new globalThis.Headers({
+      Cookie: "better-auth.session_token=test",
+    });
+    const request = new Request("https://example.test/api/guardian-access", {
+      method: "POST",
+      headers,
+    });
+
+    const response = await worker.fetch(
+      request,
+      env,
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(authFactoryCalls, 1);
+    assert.deepEqual(receivedIdentity, {
+      sessionId: "session-1",
+      userId: "user-1",
+    });
+    assert.equal(authStub.getSessionCalls(), 1);
+    assert.equal(authStub.getPasswordCalls().length, 1);
+    assert.deepEqual(authStub.getPasswordCalls()[0].body, {
+      password: "guardian-secret",
+    });
+    assert.equal(authStub.getPasswordCalls()[0].headers, request.headers);
+  });
+
+  it("stops rate-limited guardian unlocks before password verification", async () => {
+    const authStub = createAuthStub({
+      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+    });
+    const { env } = createEnvironment();
+    let rateLimitUserId;
+    let handlerCalls = 0;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      checkGuardianUnlockRateLimit(_request, _env, userId) {
+        rateLimitUserId = userId;
+        return Response.json({ error: "rate_limited" }, { status: 429 });
+      },
+      async handleGuardianAccessRequest() {
+        handlerCalls += 1;
+        return Response.json({ mode: "guardian" });
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/guardian-access", { method: "POST" }),
+      env,
+    );
+
+    assert.equal(response.status, 429);
+    assert.equal(rateLimitUserId, "user-1");
+    assert.equal(handlerCalls, 0);
+    assert.equal(authStub.getPasswordCalls().length, 0);
+  });
+
+  it("normalizes only Better Auth invalid-password errors", async () => {
+    const invalidPassword = new APIError("BAD_REQUEST", {
+      code: "INVALID_PASSWORD",
+      message: "Invalid password",
+    });
+    const authStub = createAuthStub({
+      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      verifyPassword: async () => {
+        throw invalidPassword;
+      },
+    });
+    const { env } = createEnvironment();
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      checkGuardianUnlockRateLimit: async () => null,
+      async handleGuardianAccessRequest(input) {
+        return Response.json({ verified: await input.verifyPassword("wrong") });
+      },
+    });
+
+    const invalidResponse = await worker.fetch(
+      new Request("https://example.test/api/guardian-access", { method: "POST" }),
+      env,
+    );
+    assert.deepEqual(await invalidResponse.json(), { verified: false });
+
+    const unexpected = new Error("database unavailable");
+    const brokenAuth = createAuthStub({
+      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      verifyPassword: async () => {
+        throw unexpected;
+      },
+    });
+    const brokenWorker = createTestWorker({
+      createAuth: () => brokenAuth.auth,
+      checkGuardianUnlockRateLimit: async () => null,
+      async handleGuardianAccessRequest(input) {
+        await input.verifyPassword("secret");
+        return Response.json({ mode: "guardian" });
+      },
+    });
+
+    await assert.rejects(
+      brokenWorker.fetch(
+        new Request("https://example.test/api/guardian-access", { method: "POST" }),
+        env,
+      ),
+      (error) => error === unexpected,
+    );
   });
 
   it("keeps non-auth and non-speech requests on the static asset fallback", async () => {

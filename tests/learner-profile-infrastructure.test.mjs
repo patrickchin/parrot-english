@@ -132,6 +132,11 @@ describe("learner-profile infrastructure", () => {
         namespace_id: "104205",
         simple: { limit: 2, period: 60 },
       },
+      {
+        name: "GUARDIAN_UNLOCK_RATE_LIMITER",
+        namespace_id: "104206",
+        simple: { limit: 5, period: 60 },
+      },
     ]);
   });
 

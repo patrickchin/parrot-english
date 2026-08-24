@@ -123,4 +123,35 @@ describe("API security", () => {
       "user-1:203.0.113.42",
     ]);
   });
+
+  it("rate limits guardian password attempts by user and client address", async () => {
+    const limiter = fakeLimiter([true, false]);
+    const env = { GUARDIAN_UNLOCK_RATE_LIMITER: limiter };
+
+    assert.equal(
+      await apiSecurity.checkGuardianUnlockRateLimit(
+        request("/api/guardian-access"),
+        env,
+        "user-1",
+      ),
+      null,
+    );
+    const limited = await apiSecurity.checkGuardianUnlockRateLimit(
+      request("/api/guardian-access"),
+      env,
+      "user-1",
+    );
+
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get("Cache-Control"), "no-store");
+    assert.equal(limited.headers.get("Retry-After"), "60");
+    assert.deepEqual(await limited.json(), {
+      error: "rate_limited",
+      message: "Too many password attempts. Wait a minute, then try again.",
+    });
+    assert.deepEqual(limiter.keys, [
+      "user-1:203.0.113.42",
+      "user-1:203.0.113.42",
+    ]);
+  });
 });
