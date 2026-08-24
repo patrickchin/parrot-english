@@ -34,14 +34,14 @@ describe("guardian access persistence", () => {
     const database = createMigratedDatabase();
     const sql = tableSql(database, "guardian_session_unlock");
     assert.match(sql, /session_id[^,]*PRIMARY KEY/i);
-    assert.match(sql, /REFERENCES [`\"]?session[`\"]?\s*\([`\"]?id[`\"]?\).*ON DELETE cascade/i);
+    assert.match(sql, /REFERENCES [`"]?session[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
     assert.match(sql, /expires_at[^,]*NOT NULL/i);
   });
 
   it("adds a constrained default story level to learner profiles", () => {
     const database = createMigratedDatabase();
     const sql = tableSql(database, "learner_profile");
-    assert.match(sql, /story_level[^,]*DEFAULT ['\"]first-words['\"][^,]*NOT NULL/i);
+    assert.match(sql, /story_level[^,]*DEFAULT ['"]first-words['"][^,]*NOT NULL/i);
     assert.match(sql, /story_level[^\n]*first-words[^\n]*early-a1/i);
   });
 });
