@@ -280,7 +280,7 @@ export function AccountHeader({
               {isSigningOut ? "Signing out…" : "Sign out"}
             </MenuButton>
             <MenuButton
-              className="mt-1"
+              className="mt-2"
               disabled={isSigningOut}
               onClick={() => selectAction(() => setIsDeleteOpen(true))}
               role="menuitem"

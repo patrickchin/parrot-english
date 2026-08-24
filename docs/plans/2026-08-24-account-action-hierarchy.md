@@ -48,8 +48,8 @@ Steps:
 1. Add one shared muted-destructive surface variant using Tailwind's pale rose
    background and dark red foreground.
 2. Render Sign out before Delete with the existing neutral surface.
-3. Render Delete last with the shared muted treatment and four pixels of extra
-   top margin, creating an eight-pixel total gap.
+3. Render Delete last with the shared muted treatment and eight pixels of extra
+   top margin, creating the final review-driven twelve-pixel total gap.
 4. Reuse the existing filled rose variant for the final confirmation.
 5. Change no label, callback, request, disabled rule, focus hook, or timing.
 

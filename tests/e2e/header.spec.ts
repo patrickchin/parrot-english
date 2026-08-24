@@ -498,6 +498,9 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     identity = currentCase.identity;
     await page.setViewportSize(currentCase.viewport);
     await page.goto("/lessons");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Pick a lesson" }),
+    ).toBeFocused();
 
     const account = page.getByRole("button", { name: /^Account for / });
     await account.click();
@@ -521,6 +524,15 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     });
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
+    const deleteAccount = page.getByRole("menuitem", {
+      name: "Delete account",
+    });
+    await expect(deleteAccount).toBeFocused();
+    const deletePaint = await focusedPaintBox(deleteAccount);
+    expectBoxInside(deletePaint, await overflowClipBox(panel));
+    await expectPointerCenterOwnedBy(deleteAccount);
+
+    await page.keyboard.press("ArrowUp");
     const signOut = page.getByRole("menuitem", { name: "Sign out" });
     await expect(signOut).toBeFocused();
     const signOutPaint = await focusedPaintBox(signOut);
@@ -574,6 +586,10 @@ test("a failed account action stays separate from the reopened identity menu", a
   );
 
   await page.keyboard.press("End");
+  await expect(
+    page.getByRole("menuitem", { name: "Delete account" }),
+  ).toBeFocused();
+  await page.keyboard.press("ArrowUp");
   const signOut = page.getByRole("menuitem", { name: "Sign out" });
   await expect(signOut).toBeFocused();
   const signOutPaint = await focusedPaintBox(signOut);
@@ -659,7 +675,7 @@ test("account actions separate routine sign out from staged deletion", async ({
     const destructiveGap =
       itemBoxes[3].y - (itemBoxes[2].y + itemBoxes[2].height);
     expect(ordinaryGap).toBeGreaterThanOrEqual(4);
-    expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 4);
+    expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 8);
 
     await page.keyboard.press("End");
     await expect(deleteAccount).toBeFocused();

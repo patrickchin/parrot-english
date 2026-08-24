@@ -958,10 +958,52 @@ branches.
     [implementation record](./lesson-shelf-heading-reading-cue-implementation.md),
     and [visual manifest](../../artifacts/ux-review/lesson-shelf-heading-reading-cue/manifest.md).
 33. **Low: Account gives Sign out the same bright-pink weight as Delete
-    account.** Both are caregiver actions, but identical emphasis weakens
-    hierarchy and can make routine exit look destructive. Audit menu variants,
-    confirmation behavior, contrast, and caregiver prediction before making
-    Sign out neutral; preserve 44px targets and visible keyboard focus.
+    account.** Fixed provisionally on `codex/account-action-hierarchy`. Sign out
+    now shares the neutral utility surface; a last-position, pale-rose Delete
+    row follows a twelve-pixel structural break; and the filled danger treatment
+    appears only on the existing password-enabled final confirmation. All
+    targets remain 184x44, the short-landscape panel retains 28px of bottom
+    clearance, and focus keeps a visible navy separator after review increased
+    the selected prototype's gap from 8px to 12px. See the
+    [guidance](./account-action-hierarchy-guidance.md),
+    [implementation record](./account-action-hierarchy-implementation.md), and
+    [visual manifest](../../artifacts/ux-review/account-action-hierarchy/manifest.md).
+    Weak-English caregiver prediction and child attention remain untested.
+34. **Medium: Account declares menu semantics but still Tabs through native
+    menu-item buttons.** Arrow, Home, End, Escape, and focus entry work, but the
+    WAI-ARIA APG composite-menu pattern expects items outside the ordinary Tab
+    sequence and Tab/Shift+Tab to close and move out. Compare a complete roving-
+    focus action menu with honest disclosure/native-button semantics; test
+    browser and target assistive-technology output before choosing, and do not
+    treat current arrow coverage as proof of pattern conformance.
+35. **Medium: Sign out hides its own pending words as soon as it starts.** The
+    row conditionally says **Signing out…**, but selecting it closes the menu
+    before that state is visible. Measure a delayed success and failure, then
+    expose immediate stable feedback on the persistent Account surface without
+    reopening the menu, shifting the child activity, or adding confirmation
+    friction to routine exit.
+36. **Medium: the deletion confirmation uses abstract caregiver English.**
+    **Cannot be undone**, **saved conversation text**, **private story art**,
+    and especially **deletion marker** may be hard for caregivers with limited
+    English. Audit the actual deletion/retention boundary and localization plan,
+    then comprehension-test a shorter disclosure without hiding the retained
+    marker or weakening the password-confirmed safeguard.
+37. **Low: route-arrival heading focus can race an immediate Account
+    activation before settlement.** A parallel stress run reproduced one
+    heading-over-menu focus win in 25 attempts; waiting for the existing first-
+    paint heading boundary passed 25/25 and stabilized the hierarchy test.
+    Separately test whether deferred route focus should cancel after genuine
+    pointer or keyboard intent, while preserving the reading-position cue and
+    assistive route announcement on ordinary navigation.
+38. **Medium: deletion-dialog entry does not prove its consequence is announced
+    before password input.** Initial focus goes to Password, while the warning
+    and loss paragraph are not the dialog's accessible description; Enter can
+    submit after password entry without focus visiting the named final action.
+    This is not by itself a proven WCAG 3.3.4 failure because the separate
+    confirmation, password, and Cancel path remain. Test VoiceOver and NVDA with
+    initial focus on Cancel versus a concise static warning/title target, and
+    test any `aria-describedby` association for useful rather than overwhelming
+    output while preserving focus trap, Enter behavior, and opener focus return.
 
 ### Test-infrastructure observation
 

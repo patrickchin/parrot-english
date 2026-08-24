@@ -1,6 +1,6 @@
 # Account action hierarchy guidance
 
-Status: selected for implementation
+Status: implemented and provisionally retained
 
 Date: 2026-08-24
 
@@ -67,16 +67,25 @@ device, or assistive-technology evidence.
 
 | Evidence | Product inference | Limit |
 | --- | --- | --- |
-| WCAG 2.2 requires a visible alternative when color conveys meaning, visible keyboard focus, logical focus order, and a safeguard before user-controlled stored data is irreversibly deleted. See [A11Y-17, A11Y-22, A11Y-26, A11Y-30, and A11Y-31](./source-register.md). | Preserve literal labels, DOM/visual order, shared focus, 44px targets, and the password-confirmed deletion step. Use spacing and staged consequence in addition to hue. | The cited Understanding and APG documents are informative, and this review is not a whole-product conformance audit. WCAG does not prescribe Parrot's colors or exact menu order. |
+| WCAG 2.2 requires a visible alternative when color conveys meaning, visible keyboard focus, logical focus order, and a safeguard before user-controlled stored data is irreversibly deleted. See [A11Y-17, A11Y-22, A11Y-23, A11Y-26, and A11Y-31](./source-register.md). | Preserve literal labels, DOM/visual order, shared focus, 44px targets, and the password-confirmed deletion step. Use spacing and staged consequence in addition to hue. | The cited Understanding documents are informative, and this review is not a whole-product conformance audit. WCAG does not prescribe Parrot's colors or exact menu order. |
+| WAI-ARIA APG describes a menu button whose open popup owns focus as a composite: arrows move between items, while Tab/Shift+Tab close it and move out; menu items use scripted focus rather than the ordinary Tab sequence. Disclosure is the alternative when the popup is not a menu. See [A11Y-30](./source-register.md). | Preserve the current declared roles and working first/last/arrow/Home/End/Escape behavior on this visual branch, but do not call the pattern complete. Audit roving focus plus Tab exit/close against an honest disclosure alternative separately. | APG is informative rather than WCAG itself. Current native menu-item buttons remain tabbable, and direct target assistive-technology behavior is untested. |
 | GOV.UK recommends **Sign out** for leaving an account, a non-warning initial deletion trigger, a warning treatment only at final confirmation, and context in addition to red. See [UX-07](./source-register.md). | Make Sign out neutral, keep the initial Delete entry restrained, and reserve the filled danger treatment for **Delete account now**. | Public-service guidance is neither a web standard nor a Parrot caregiver study. |
-| Apple distinguishes normal and destructive roles, warns against making a destructive action primary, and recommends explicit result labels, confirmation, Cancel, pressed feedback, and a 44x44-point hit region. See [UX-08](./source-register.md). | Do not leave Delete as the menu's sole saturated row. Retain the literal deletion label and existing confirmation escape path. | Apple platform conventions are informative for this web UI; points do not establish CSS-pixel physical size, and action-sheet ordering does not decide an ARIA menu's order. |
-| USWDS advises against mixing destructive and non-destructive actions in one fused button group because it can increase input mistakes. See [UX-09](./source-register.md). | Put the routine action before deletion and add a visible grouping break before the last destructive entry. | The source discusses button groups, not ARIA menus. Exact order and spacing remain a product inference. |
+| Apple distinguishes normal and destructive roles, warns against making a destructive action primary, and recommends explicit result labels, confirmation, Cancel, pressed feedback, and a 44x44-point hit region. See [UX-08](./source-register.md). | Do not leave Delete as the menu's sole saturated row. Retain the literal deletion label and existing confirmation escape path. | Apple platform conventions are informative for this web UI; points do not establish CSS-pixel physical size, and Apple platform ordering does not decide an ARIA menu's order. |
+| USWDS asks teams to consider another structure when destructive and non-destructive actions would otherwise be mixed in one button group because grouping can increase input mistakes. See [UX-09](./source-register.md). | Put the routine action before deletion and add a visible grouping break before the last destructive entry. | The source discusses button groups, not ARIA menus. Exact order and spacing remain a product inference. |
 | W3C COGA favors clear visible labels, familiar control affordances, consistent design, and direct testing. See [A11Y-01, A11Y-02, and A11Y-18](./source-register.md). | Keep bold, filled, button-like rows and visible words; do not replace **Sign out** with an icon or make neutral mean faint. | COGA is supplemental guidance and does not prove that a weak-English caregiver or young child predicts either result. |
 
 No authoritative source establishes whether **Sign out** or **Log out** is
 universally clearer for second-language English speakers. Preserve the existing
 literal label on this branch and compare it with a localized caregiver-language
 label in future research instead of guessing from English alone.
+
+The irreversible dialog has a clear title, warning, loss paragraph, password
+step, Cancel, and named final action, but its initial focus is the password and
+the warning copy is not currently its accessible description. Those safeguards
+do not prove a screen-reader user perceives the consequence before entering
+data or pressing Enter. A separate assistive-technology review must compare
+initial focus on Cancel or concise static warning/title content, and test any
+`aria-describedby` association for useful rather than overwhelming output.
 
 ## Real-code prototype comparison
 
@@ -98,17 +107,27 @@ bottom clearance. Its final deep-rose/white confirmation measures about 4.67:1
 for normal text. Complete prototype screenshots remain in
 `artifacts/ux-review/account-action-hierarchy/prototypes/`.
 
+Independent original-resolution review selected B2's hierarchy but noticed
+that the complete keyboard focus paint exactly consumed its eight-pixel
+break. A review-driven red contract therefore required twelve pixels. The
+final implementation adds eight pixels of top margin to the ordinary four-
+pixel grid gap, leaving four visible navy pixels between focused Sign out and
+Delete. The panel is 208x270 and retains 28 pixels of bottom clearance at
+640x360. This final refinement was recaptured at every target viewport.
+
 These comparisons establish relative rendered hierarchy, not first-gaze eye
 tracking, action prediction, or emotional response. Descriptions such as
 “dominates” and “calm” are expert visual judgments to be tested with people.
 
 ## Selected design contract
 
-1. Preserve the Account menu's native button/menu semantics and exact visible
-   labels.
+1. Preserve the Account popup's existing declared roles, native buttons,
+   visible labels, focus entry, arrow/Home/End behavior, and Escape return on
+   this visual branch. Do not treat that preservation as proof of a complete
+   APG composite-menu Tab pattern.
 2. Keep **Learner profile** and **AI and saved data** first. Move routine
    **Sign out** before deletion and keep it on the existing neutral surface.
-3. Put **Delete account** last in the DOM and visual order. Give it an eight-
+3. Put **Delete account** last in the DOM and visual order. Give it a twelve-
    pixel total break from Sign out plus a quiet pale-rose surface and dark-red
    text. Keep its full filled row, bold label, pressed state, and 44px target so
    “muted” cannot look disabled or become plain text.
@@ -155,31 +174,45 @@ behavior, not Tailwind source or class strings.
 
 ## Timing, measurement, and rollback
 
-The selected change is static CSS and DOM order. It adds no request, script,
-timer, transition, or animation, so it cannot lengthen the authentication or
-deletion path. It changes panel geometry by four CSS pixels and should paint in
-the same frame as the existing open menu.
+The change adds no new request, event handler, timer, animation, or programmed
+wait and does not alter post-activation authentication or deletion request
+logic. Shared controls retain their existing interaction transitions. The
+reviewed version changes panel geometry by eight CSS pixels and can still
+change human finding and selection time.
+
+A candidate-only 20-sample local Chromium two-`requestAnimationFrame`
+settlement proxy at 390x844 measured a 13.8 ms median and 14.22 ms p95 for menu
+opening, and a 12.6 ms median and 14.57 ms p95 for the deletion dialog. Without
+a paired baseline, this is neither a paint timestamp nor evidence of equal
+latency or field performance; see the visual manifest for method and limits.
 
 The current sign-out flow closes the menu before its **Signing out…** label can
 be seen. That separate response-feedback concern belongs in the next timing
 branch; it must not be hidden inside this visual hierarchy change.
 
-For formative caregiver research, recruit six to eight caregivers, at least
-half of whom use English as an additional language, and include narrow-phone
-use. Ask participants to use a different account, then separately to remove the
-account and learning data. Record first selection, predicted result, hesitation,
-task completion, and whether any neutral row looks disabled. Do not use a live
-valuable account or expose a child to an executable deletion task.
+For the first formative comparison, recruit exactly eight caregivers and
+screen for actual difficulty or comfort reading account-settings English;
+record preferred language and English-as-an-additional-language status without
+using EAL status as the weak-English proxy. Compare baseline and candidate
+within participant, counterbalancing order four/four. Use synthetic resettable
+accounts, identical unprimed tasks, narrow phones, and instructions in each
+participant's preferred language so task misunderstanding is not mistaken for
+label failure. Ask participants to leave an account and, in a separate reset
+state, to remove the account and learning data. Define finding time from the
+menu becoming fully visible to first selection. Record first selection,
+predicted result, hesitation, completion, and whether any neutral row looks
+disabled. Do not expose a child to an executable deletion task.
 
 Revise or roll back if any rendered target shrinks, focus clips, the short menu
 loses an action, Sign out looks unavailable, Delete again becomes the first-
 gaze primary action, deletion loses its confirmation, or forced colors loses a
-real indicator. In formative testing, revise if anyone chooses Delete for the
-sign-out task, two or more of eight caregivers overlook Sign out or call it
-disabled, or median sign-out finding time increases by more than two seconds
-against the baseline comparison.
+real indicator. The formative cutoffs are provisional product guardrails, not
+validated population thresholds: revise if anyone chooses Delete for the sign-
+out task, two or more of eight caregivers overlook Sign out or call it
+disabled, or paired median sign-out finding time increases by more than two
+seconds against baseline.
 
 Remaining evidence includes weak-English caregiver comprehension, child
-attention, localization and RTL, screen readers, switch and voice control,
-Safari, Firefox, real Windows High Contrast palettes, zoom/text spacing, and
-physical devices.
+attention, localization and RTL, dialog-entry announcements, screen readers,
+switch and voice control, Safari, Firefox, real Windows High Contrast palettes,
+zoom/text spacing, and physical devices.
