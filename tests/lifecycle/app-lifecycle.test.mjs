@@ -3985,7 +3985,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/AUTHENTICATED APP/);
   });
 
-  it("keeps sign-out feedback available until the session disappears", async () => {
+  it("keeps Account available and retries sign out from one persistent alert", async () => {
     const failure = deferred();
     const success = deferred();
     let signOutCalls = 0;
@@ -4012,8 +4012,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     const account = button("Account for Mia");
     const status = document.querySelector('[role="status"]');
+    const alert = document.querySelector('[role="alert"]');
     assert.ok(status, "Expected the sign-out status to be pre-mounted.");
+    assert.ok(alert, "Expected the sign-out alert to be pre-mounted.");
     assert.equal(status.textContent.trim(), "");
+    assert.equal(alert.textContent.trim(), "");
+    assert.equal(alert.getAttribute("aria-atomic"), "true");
     assert.equal(status.closest('[aria-busy="true"]'), null);
 
     account.focus();
@@ -4037,19 +4041,38 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(document.querySelector('[role="menu"]'), null);
     assert.equal(signOutCalls, 1);
 
-    failure.resolve("Unable to sign you out. Please try again.");
+    failure.resolve("Sign out did not finish.");
     await waitFor(() => {
       assert.equal(account.getAttribute("aria-disabled"), null);
       assert.equal(status.textContent.trim(), "");
+      assert.equal(alert.textContent.trim(), "Sign out did not finish.");
     });
     assert.equal(document.activeElement, account);
-    text(/Unable to sign you out/);
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    const retry = button("Sign out again");
+    assert.equal(
+      account.compareDocumentPosition(retry) & Node.DOCUMENT_POSITION_FOLLOWING,
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
 
     await click(account);
-    await click(button("Sign out"));
+    assert.ok(document.querySelector('[role="menu"]'));
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    await press(document.activeElement, "Escape");
+    assert.equal(document.activeElement, account);
+
+    await act(async () => {
+      retry.click();
+      retry.click();
+      await flush();
+    });
     assert.equal(signOutCalls, 2);
+    assert.equal(document.activeElement, account);
     assert.equal(account.getAttribute("aria-disabled"), "true");
     assert.equal(status.textContent.trim(), "Signing out…");
+    assert.equal(alert.textContent.trim(), "");
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    noText(/Sign out again/);
 
     success.resolve(null);
     await flush();
@@ -4116,24 +4139,23 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(signOutCalls, 2);
     assert.equal(account.getAttribute("aria-disabled"), "true");
 
-    firstAttempt.resolve("Unable to sign you out. Please try again.");
+    firstAttempt.resolve("Sign out did not finish.");
     await flush();
     assert.equal(account.getAttribute("aria-disabled"), "true");
     assert.equal(
       document.querySelector('[role="status"]').textContent.trim(),
       "Signing out…",
     );
-    noText(/Unable to sign you out/);
+    noText(/Sign out did not finish/);
 
     secondAttempt.reject(new Error("offline"));
     await waitFor(() => {
       assert.equal(account.getAttribute("aria-disabled"), null);
       assert.equal(document.querySelector('[role="status"]').textContent.trim(), "");
     });
-    text(/Unable to sign you out/);
+    text(/Sign out did not finish/);
 
-    await click(account);
-    await click(button("Sign out"));
+    await click(button("Sign out again"));
     assert.equal(signOutCalls, 3);
     assert.equal(account.getAttribute("aria-disabled"), "true");
   });

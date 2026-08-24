@@ -555,35 +555,95 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
   }
 });
 
-test("a failed account action stays separate from the reopened identity menu", async ({
+test("a failed sign out keeps Account beside one specific retry", async ({
   page,
 }) => {
   const viewport = { height: 568, name: "ultra narrow", width: 280 };
   const identity = { email: longAccountEmail, name: longAccountName };
+  let signOutRequests = 0;
   await installAccountIdentity(page, () => identity);
   await page.route("**/api/auth/sign-out", async (route) => {
+    signOutRequests += 1;
     await route.abort("failed");
   });
   await page.setViewportSize(viewport);
   await page.goto("/lessons");
 
   const account = page.getByRole("button", { name: /^Account for / });
+  const alert = page.getByRole("alert");
+  await expect(alert).toBeAttached();
+  await expect(alert).toHaveText("");
+  await alert.evaluate((element) => {
+    (window as Window & { signOutAlert?: Element }).signOutAlert = element;
+  });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
-  const alert = page.getByRole("alert");
-  await expect(alert).toHaveText("Unable to sign you out. Please try again.");
-  await expectInsideViewport(alert, viewport);
+  await expect(alert).toHaveText("Sign out did not finish.");
+  await expect(account).toBeFocused();
+
+  const retry = page.getByRole("button", {
+    exact: true,
+    name: "Sign out again",
+  });
+  const accountBox = await expectInsideViewport(account, viewport);
+  const retryBox = await expectInsideViewport(retry, viewport);
+  expect(retryBox.x + retryBox.width).toBeLessThanOrEqual(accountBox.x);
+  expect(retryBox.height).toBeGreaterThanOrEqual(44);
+  expect(retryBox.width).toBeGreaterThanOrEqual(44);
+  expect(
+    await account.evaluate(
+      (element) => element.nextElementSibling?.textContent?.trim(),
+    ),
+  ).toBe("Sign out again");
+  await page.keyboard.press("Tab");
+  await expect(retry).toBeFocused();
+  const retryPaint = await focusedPaintBox(retry);
+  expectBoxInside(retryPaint, {
+    height: viewport.height,
+    width: viewport.width,
+    x: 0,
+    y: 0,
+  });
+  const back = page.getByRole("link", { name: "Back to home" });
+  expect(boxesOverlap(retryPaint, await visibleBox(back))).toBe(false);
+  await page.keyboard.press("Shift+Tab");
+  await expect(account).toBeFocused();
 
   await account.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   const panel = menu.locator("..");
   await expectInsideViewport(panel, viewport);
-  await expect(panel.getByRole("alert")).toHaveText(
-    "Unable to sign you out. Please try again.",
-  );
-  expect(boxesOverlap(await visibleBox(alert), await visibleBox(menu))).toBe(
-    false,
-  );
+  await expect(panel.getByRole("alert")).toHaveCount(0);
+  expect(
+    await alert.evaluate(
+      (element) =>
+        (window as Window & { signOutAlert?: Element }).signOutAlert === element,
+    ),
+  ).toBe(true);
+  await expect(retry).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(account).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(retry).toBeFocused();
+  await retry.evaluate((control) => {
+    control.click();
+    control.click();
+  });
+  await expect(account).toBeFocused();
+  await expect(alert).toHaveText("Sign out did not finish.");
+  expect(signOutRequests).toBe(2);
+
+  await account.click();
+  await expect(menu).toBeVisible();
+  expect(
+    await alert.evaluate(
+      (element) =>
+        (window as Window & { signOutAlert?: Element }).signOutAlert === element,
+    ),
+  ).toBe(true);
+  await expect(panel.getByRole("alert")).toHaveCount(0);
+  await expect(retry).toBeVisible();
 
   await page.keyboard.press("End");
   await expect(

@@ -63,6 +63,7 @@ function renderAuthGate(overrides = {}) {
     profileError: "",
     session: null,
     sessionError: null,
+    signOutError: "",
     signedOutFallback: null,
     ...overrides,
   };
@@ -187,6 +188,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   assert.equal(capturedProps.formError, "");
   assert.equal(capturedProps.isSubmitting, false);
   assert.equal(capturedProps.isSigningOut, false);
+  assert.equal(capturedProps.signOutError, "");
 
   capturedProps.onRetry();
   assert.equal(refetchCalls, 1);
@@ -453,6 +455,42 @@ test("signed-in views expose signing-out progress on the persistent account cont
   assert.doesNotMatch(accountButton, />Signing out…</);
 });
 
+test("signed-in views pre-mount one sign-out alert and keep Account beside a specific retry", () => {
+  const ordinary = renderAuthGate({
+    session: { user: { email: "learner@example.com", name: "Mia" } },
+  });
+  const ordinaryBar = ordinary.match(
+    /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
+  )?.[0];
+
+  assert.ok(ordinaryBar);
+  assert.match(
+    ordinaryBar,
+    /<span[^>]*aria-atomic="true"[^>]*role="alert"[^>]*><\/span>/,
+  );
+  assert.doesNotMatch(ordinaryBar, /Sign out again/);
+
+  const failed = renderAuthGate({
+    session: { user: { email: "learner@example.com", name: "Mia" } },
+    signOutError: "Sign out did not finish.",
+  });
+  const failedBar = failed.match(
+    /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
+  )?.[0];
+
+  assert.ok(failedBar);
+  assert.match(
+    failedBar,
+    /<span[^>]*aria-atomic="true"[^>]*role="alert"[^>]*>Sign out did not finish\.<\/span>/,
+  );
+  assert.match(
+    failedBar,
+    /aria-label="Account for Mia"[\s\S]*Sign out again[\s\S]*<\/button>/,
+  );
+  assert.equal((failedBar.match(/role="alert"/g) ?? []).length, 1);
+  assert.doesNotMatch(failedBar, /Unable to sign you out|Please try again/);
+});
+
 test("renders a clearly labeled account trigger without conflating learner profile", () => {
   const html = renderAuthGate({
     onOpenProfile() {},
@@ -579,7 +617,7 @@ test("sign-out maps failures and lets the reactive session own successful refres
     }),
     refetch,
   });
-  assert.equal(failure, "Unable to sign you out. Please try again.");
+  assert.equal(failure, "Sign out did not finish.");
   assert.equal(refetchCalls, 0);
 
   const thrownFailure = await signOutSession({
@@ -590,7 +628,7 @@ test("sign-out maps failures and lets the reactive session own successful refres
     }),
     refetch,
   });
-  assert.equal(thrownFailure, "Unable to sign you out. Please try again.");
+  assert.equal(thrownFailure, "Sign out did not finish.");
   assert.equal(refetchCalls, 0);
 
   const success = await signOutSession({
