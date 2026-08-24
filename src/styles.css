@@ -2,7 +2,7 @@
 @import "./lesson.css";
 
 @theme {
-  --font-ui: ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-ui: "Arial Rounded MT Bold", Arial, "Liberation Sans", sans-serif;
   --color-brand-ink: #173c67;
   --color-brand-navy: #204c7f;
   --color-brand-blue: #315f89;
