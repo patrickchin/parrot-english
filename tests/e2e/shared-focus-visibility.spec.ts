@@ -790,6 +790,18 @@ function firstLessonLink(page: Page) {
     .getByRole("link", { name: "Start lesson: Peppa's High Ball" });
 }
 
+async function settleLessonShelf(page: Page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      Array.from(document.images, (image) => image.decode().catch(() => {})),
+    );
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
+}
+
 async function openSettledLessonShelf(page: Page) {
   await page.route("**/api/lessons/my", async (route) => {
     await route.fulfill({
@@ -801,15 +813,7 @@ async function openSettledLessonShelf(page: Page) {
   await page.goto("/lessons");
   await expect(lessonShelfHeading(page)).toBeFocused();
   await expect(firstLessonLink(page)).toBeVisible();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all(
-      Array.from(document.images, (image) => image.decode().catch(() => {})),
-    );
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
-  });
+  await settleLessonShelf(page);
 }
 
 async function roundedLocatorBox(target: Locator) {
@@ -960,12 +964,7 @@ for (const activation of ["pointer", "keyboard"] as const) {
 
     await expect(page).toHaveURL("/lessons");
     await expect(firstLessonLink(page)).toBeVisible();
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-    });
+    await settleLessonShelf(page);
     await expectLessonShelfOpenReadingCue(
       page,
       lessonShelfHeading(page),
