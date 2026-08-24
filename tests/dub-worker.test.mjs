@@ -7,10 +7,36 @@ const CONSENT_HEADERS = {
   "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
 };
 const LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
+const OWNER_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/";
+const MARKER_KEY = `${OWNER_PREFIX}.dub-generation`;
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((settle) => { resolve = settle; });
+  return { promise, resolve };
+}
 
 function createBucket(seed = []) {
-  const stored = new Map(seed);
-  const calls = { delete: [], get: [], list: [], put: [] };
+  const stored = new Map(seed.map(([key, value], index) => [
+    key,
+    { ...value, etag: value.etag ?? `seed-${index + 1}` },
+  ]));
+  const calls = { delete: [], get: [], head: [], list: [], put: [] };
+  let etagSequence = 0;
+
+  function object(key, item) {
+    return {
+      customMetadata: item.options.customMetadata,
+      etag: item.etag,
+      key,
+      uploaded: item.uploaded,
+      writeHttpMetadata(headers) {
+        const contentType = item.options.httpMetadata?.contentType;
+        if (contentType) headers.set("Content-Type", contentType);
+      },
+    };
+  }
+
   return {
     calls,
     stored,
@@ -23,11 +49,14 @@ function createBucket(seed = []) {
       const item = stored.get(key);
       if (!item) return null;
       return {
+        ...object(key, item),
         body: new Response(item.bytes).body,
-        writeHttpMetadata(headers) {
-          headers.set("Content-Type", item.options.httpMetadata.contentType);
-        },
       };
+    },
+    async head(key) {
+      calls.head.push(key);
+      const item = stored.get(key);
+      return item ? object(key, item) : null;
     },
     async list(options) {
       calls.list.push(options);
@@ -44,11 +73,27 @@ function createBucket(seed = []) {
     },
     async put(key, bytes, options) {
       calls.put.push({ bytes, key, options });
-      stored.set(key, {
-        bytes: new Uint8Array(bytes),
+      const current = stored.get(key);
+      if (
+        options?.onlyIf?.etagMatches !== undefined &&
+        current?.etag !== options.onlyIf.etagMatches
+      ) {
+        return null;
+      }
+      if (
+        options?.onlyIf?.etagDoesNotMatch === "*" &&
+        current !== undefined
+      ) {
+        return null;
+      }
+      const item = {
+        bytes: bytes === null ? new Uint8Array() : new Uint8Array(bytes),
+        etag: `etag-${++etagSequence}`,
         options,
         uploaded: new Date("2026-08-25T10:00:00.000Z"),
-      });
+      };
+      stored.set(key, item);
+      return object(key, item);
     },
   };
 }
@@ -60,6 +105,7 @@ async function callDub({
   method,
   path,
   pending = async () => false,
+  generation = () => "generation-1",
   userId = "user-1",
 }) {
   const { handleDubRequest } = await import("../worker/dubs.ts");
@@ -72,6 +118,7 @@ async function callDub({
     identity: { sessionId: "session-1", userId, userName: "Parent" },
     request: new Request(`https://example.test${path}`, init),
   }, {
+    createGeneration: generation,
     isDeletionPending: pending,
     now: () => new Date("2026-08-25T10:00:00.000Z"),
   });
@@ -207,6 +254,237 @@ describe("private learner dub API", () => {
       "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/line-8.audio",
       "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/line-9.audio",
     ]]);
+  });
+
+  it("fences a held upload so reset succeeds without leaving a stale clip", async () => {
+    const bucket = createBucket();
+    const linePutStarted = deferred();
+    const releaseLinePut = deferred();
+    const put = bucket.put.bind(bucket);
+    bucket.put = async (key, bytes, options) => {
+      if (key === `${OWNER_PREFIX}line-1.audio`) {
+        linePutStarted.resolve();
+        await releaseLinePut.promise;
+      }
+      return put(key, bytes, options);
+    };
+
+    const uploadPromise = callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+    await linePutStarted.promise;
+
+    const reset = await callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    releaseLinePut.resolve();
+    const upload = await uploadPromise;
+
+    assert.equal(reset.status, 204);
+    assert.equal(upload.status, 409);
+    assert.equal(bucket.stored.has(`${OWNER_PREFIX}line-1.audio`), false);
+  });
+
+  it("rejects an upload while reset is deleting and permits a new take after reset", async () => {
+    const bucket = createBucket();
+    const deleteStarted = deferred();
+    const releaseDelete = deferred();
+    const remove = bucket.delete.bind(bucket);
+    bucket.delete = async (keys) => {
+      if (Array.isArray(keys)) {
+        deleteStarted.resolve();
+        await releaseDelete.promise;
+      }
+      return remove(keys);
+    };
+
+    const resetPromise = callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    await deleteStarted.promise;
+
+    const duringReset = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+    releaseDelete.resolve();
+    const reset = await resetPromise;
+
+    assert.equal(duringReset.status, 409);
+    assert.equal(
+      bucket.calls.put.some(({ key }) => key === `${OWNER_PREFIX}line-1.audio`),
+      false,
+    );
+    assert.equal(reset.status, 204);
+
+    const afterReset = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+    assert.equal(afterReset.status, 201);
+    assert.equal(bucket.stored.has(`${OWNER_PREFIX}line-1.audio`), true);
+  });
+
+  it("allows only one concurrent reset to claim the deleting generation", async () => {
+    const bucket = createBucket();
+    const deleteStarted = deferred();
+    const releaseDelete = deferred();
+    const remove = bucket.delete.bind(bucket);
+    let heldFirstDelete = false;
+    bucket.delete = async (keys) => {
+      if (Array.isArray(keys) && !heldFirstDelete) {
+        heldFirstDelete = true;
+        deleteStarted.resolve();
+        await releaseDelete.promise;
+      }
+      return remove(keys);
+    };
+
+    const firstResetPromise = callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    await deleteStarted.promise;
+    const secondReset = await callDub({
+      bucket,
+      generation: () => "reset-2",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    releaseDelete.resolve();
+    const firstReset = await firstResetPromise;
+
+    assert.equal(secondReset.status, 409);
+    assert.equal(firstReset.status, 204);
+    assert.deepEqual(bucket.stored.get(MARKER_KEY).options.customMetadata, {
+      generation: "reset-1",
+      state: "ready",
+    });
+  });
+
+  it("fails closed when the reset marker cannot reach ready", async () => {
+    const bucket = createBucket();
+    const put = bucket.put.bind(bucket);
+    bucket.put = async (key, bytes, options) => {
+      if (
+        key === MARKER_KEY &&
+        options?.customMetadata?.state === "ready"
+      ) {
+        throw new Error("marker write failed");
+      }
+      return put(key, bytes, options);
+    };
+
+    await assert.rejects(
+      callDub({
+        bucket,
+        generation: () => "reset-1",
+        method: "DELETE",
+        path: DUB_PATH,
+      }),
+      /marker write failed/,
+    );
+    assert.deepEqual(bucket.stored.get(MARKER_KEY).options.customMetadata, {
+      generation: "reset-1",
+      state: "deleting",
+    });
+
+    const upload = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+    assert.equal(upload.status, 409);
+    assert.equal(bucket.stored.has(`${OWNER_PREFIX}line-1.audio`), false);
+  });
+
+  it("keeps the reset marker private, purge-scoped, and outside status rows", async () => {
+    const bucket = createBucket();
+    const reset = await callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    assert.equal(reset.status, 204);
+    assert.equal(MARKER_KEY.startsWith("personalized-story-art/user-1/"), true);
+    assert.equal(MARKER_KEY.endsWith(".audio"), false);
+
+    const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
+    const payload = await status.json();
+    assert.equal(payload.lines.length, 9);
+    assert.deepEqual(payload.lines.map(({ id }) => id), LINE_IDS);
+    assert.equal(payload.lines.every(({ saved }) => !saved), true);
+
+    const accountObjects = await bucket.list({
+      prefix: "personalized-story-art/user-1/",
+    });
+    assert.deepEqual(accountObjects.objects.map(({ key }) => key), [MARKER_KEY]);
+    await bucket.delete(accountObjects.objects.map(({ key }) => key));
+    assert.equal(bucket.stored.size, 0);
+  });
+
+  it("rejects malformed reset marker metadata without writing audio", async () => {
+    const bucket = createBucket([[MARKER_KEY, {
+      bytes: new Uint8Array(),
+      options: { customMetadata: { state: "ready" } },
+      uploaded: new Date("2026-08-25T10:00:00.000Z"),
+    }]]);
+
+    const response = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+
+    assert.equal(response.status, 409);
+    assert.equal(
+      bucket.calls.put.some(({ key }) => key.endsWith(".audio")),
+      false,
+    );
+  });
+
+  it("removes a new deleting marker when account purge begins during reset", async () => {
+    const bucket = createBucket();
+    let checks = 0;
+
+    const response = await callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+      pending: async () => ++checks > 1,
+    });
+
+    assert.equal(response.status, 409);
+    assert.equal(checks, 2);
+    assert.equal(bucket.stored.has(MARKER_KEY), false);
+    assert.equal(
+      bucket.calls.delete.some((keys) => Array.isArray(keys)),
+      false,
+    );
   });
 
   it("normalizes type parameters and accepts WebM, MP4, and Ogg signatures", async () => {

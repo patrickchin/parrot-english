@@ -115,11 +115,12 @@ its already-purged account prefix:
 
 ```text
 personalized-story-art/{encoded-user-id}/learner-dubs/
+  five-little-ducks-v1/.dub-generation
   five-little-ducks-v1/{line-id}.audio
 ```
 
 This deliberately avoids a new bucket, D1 table, migration, and account-delete
-pipeline. The fixed extensionless key is the current slot, so replacing a take
+pipeline. Each fixed `.audio` key is the current slot, so replacing a take
 cannot orphan an older browser format. Split voice data into its own bucket
 when its retention, residency, or access policy differs from private story art.
 
@@ -127,6 +128,12 @@ R2 is the source of truth. `list` determines saved slots, `put` atomically
 replaces a slot, `get` streams owner-only audio, and deleting the dub removes
 the nine exact keys. HTTP metadata stores the normalized content type; custom
 metadata stores the consent version, line ID, and recording timestamp.
+The zero-byte `.dub-generation` coordination object stores only a unique reset
+generation and `deleting` or `ready` state in custom metadata. Conditional R2
+writes serialize resets; uploads capture and recheck the ready generation so a
+reset cannot return success while an older upload recreates a clip. Status and
+audio routes expose only the nine canonical line keys, while account deletion
+sweeps the marker through the same owner prefix.
 
 ## Validation, Privacy, and Failure Handling
 

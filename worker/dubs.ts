@@ -9,6 +9,7 @@ import {
 
 const CONSENT_VERSION = "guardian-voice-r2-v1";
 const MAX_CLIP_BYTES = 512 * 1024;
+const GENERATION_MARKER = ".dub-generation";
 const MIME_SIGNATURES = {
   "audio/webm": (bytes: Uint8Array) =>
     bytes[0] === 0x1a &&
@@ -34,9 +35,20 @@ export interface DubRequestInput {
 }
 
 type DubHandlerOverrides = {
+  createGeneration?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
   now?: () => Date;
 };
+
+type DubMarker =
+  | { kind: "absent" }
+  | { etag: string; kind: "malformed" }
+  | {
+      etag: string;
+      generation: string;
+      kind: "valid";
+      state: "deleting" | "ready";
+    };
 
 class DubApiError extends Error {
   readonly code: string;
@@ -85,6 +97,52 @@ function objectKey(userId: string, lineId: string) {
   return `${objectPrefix(userId)}${lineId}.audio`;
 }
 
+function markerKey(userId: string) {
+  return `${objectPrefix(userId)}${GENERATION_MARKER}`;
+}
+
+async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> {
+  const marker = await bucket.head(markerKey(userId));
+  if (!marker) return { kind: "absent" };
+  const generation = marker.customMetadata?.generation;
+  const state = marker.customMetadata?.state;
+  if (
+    !generation ||
+    (state !== "deleting" && state !== "ready")
+  ) {
+    return { etag: marker.etag, kind: "malformed" };
+  }
+  return { etag: marker.etag, generation, kind: "valid", state };
+}
+
+async function readyGeneration(bucket: R2Bucket, userId: string) {
+  const marker = await readMarker(bucket, userId);
+  if (marker.kind === "absent") return null;
+  if (marker.kind !== "valid" || marker.state !== "ready") {
+    throw new DubApiError(409, "dub_reset_in_progress");
+  }
+  return marker.generation;
+}
+
+async function beginReset(
+  bucket: R2Bucket,
+  userId: string,
+  generation: string,
+) {
+  const current = await readMarker(bucket, userId);
+  if (current.kind === "valid" && current.state === "deleting") {
+    throw new DubApiError(409, "dub_reset_in_progress");
+  }
+  const marker = await bucket.put(markerKey(userId), null, {
+    customMetadata: { generation, state: "deleting" },
+    onlyIf: current.kind === "absent"
+      ? { etagDoesNotMatch: "*" }
+      : { etagMatches: current.etag },
+  });
+  if (!marker) throw new DubApiError(409, "dub_reset_in_progress");
+  return marker;
+}
+
 function normalizeContentType(request: Request) {
   return request.headers
     .get("Content-Type")
@@ -109,6 +167,8 @@ export async function handleDubRequest(
   input: DubRequestInput,
   overrides: DubHandlerOverrides = {},
 ) {
+  const createGeneration =
+    overrides.createGeneration ?? (() => crypto.randomUUID());
   const isDeletionPending =
     overrides.isDeletionPending ?? isAccountDeletionPending;
   const now = overrides.now ?? (() => new Date());
@@ -146,9 +206,34 @@ export async function handleDubRequest(
       }
 
       if (input.request.method === "DELETE") {
+        if (await isDeletionPending(input.database, userId)) {
+          throw new DubApiError(409, "account_deletion_pending");
+        }
+        const generation = createGeneration();
+        if (!generation) throw new Error("Dub reset generation is required.");
+        const deletingMarker = await beginReset(bucket, userId, generation);
+        if (await isDeletionPending(input.database, userId)) {
+          await bucket.delete(markerKey(userId));
+          throw new DubApiError(409, "account_deletion_pending");
+        }
         await bucket.delete(
           DUB_LINES.map(({ id }) => objectKey(userId, id)),
         );
+        if (await isDeletionPending(input.database, userId)) {
+          await bucket.delete(markerKey(userId));
+          throw new DubApiError(409, "account_deletion_pending");
+        }
+        const readyMarker = await bucket.put(markerKey(userId), null, {
+          customMetadata: { generation, state: "ready" },
+          onlyIf: { etagMatches: deletingMarker.etag },
+        });
+        if (!readyMarker) {
+          throw new DubApiError(409, "dub_reset_in_progress");
+        }
+        if (await isDeletionPending(input.database, userId)) {
+          await bucket.delete(markerKey(userId));
+          throw new DubApiError(409, "account_deletion_pending");
+        }
         return new Response(null, {
           headers: { "Cache-Control": "private, no-store" },
           status: 204,
@@ -177,6 +262,7 @@ export async function handleDubRequest(
     if (await isDeletionPending(input.database, userId)) {
       throw new DubApiError(409, "account_deletion_pending");
     }
+    const generation = await readyGeneration(bucket, userId);
     if (
       input.request.headers.get("X-Parrot-Guardian-Consent-Version") !==
       CONSENT_VERSION
@@ -208,6 +294,17 @@ export async function handleDubRequest(
         recordedAt: recordedAt.toISOString(),
       },
     });
+    let currentGeneration: string | null;
+    try {
+      currentGeneration = await readyGeneration(bucket, userId);
+    } catch (error) {
+      await bucket.delete(key);
+      throw error;
+    }
+    if (currentGeneration !== generation) {
+      await bucket.delete(key);
+      throw new DubApiError(409, "dub_reset_in_progress");
+    }
     if (await isDeletionPending(input.database, userId)) {
       await bucket.delete(key);
       throw new DubApiError(409, "account_deletion_pending");
