@@ -17,6 +17,26 @@ function HeaderLabel({ children }: { children: ReactNode }) {
   return <span className="hidden wide:inline">{children}</span>;
 }
 
+function AccountError({
+  className,
+  error,
+}: {
+  className?: string;
+  error: string;
+}) {
+  return (
+    <span
+      className={cx(
+        "rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md",
+        className,
+      )}
+      role="alert"
+    >
+      {error}
+    </span>
+  );
+}
+
 export function RouteHeader({ children }: { children: ReactNode }) {
   return (
     <nav
@@ -215,7 +235,7 @@ export function AccountHeader({
       </ActionButton>
       {isMenuOpen ? (
         <div
-          className="absolute right-0 top-full mt-2 grid min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy"
+          className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"
         >
           <div className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100">
             <p className="m-0 min-w-0 break-words" dir="auto">
@@ -227,6 +247,7 @@ export function AccountHeader({
               </p>
             ) : null}
           </div>
+          {error ? <AccountError error={error} /> : null}
           <div
             aria-label="Account menu"
             className="grid gap-1"
@@ -284,16 +305,11 @@ export function AccountHeader({
           returnFocusRef={accountButtonRef}
         />
       ) : null}
-      {error ? (
-        <span
-          className={cx(
-            "absolute right-0 top-full mt-2 w-64 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md sm:w-80",
-            isMenuOpen && "mt-56",
-          )}
-          role="alert"
-        >
-          {error}
-        </span>
+      {error && !isMenuOpen ? (
+        <AccountError
+          className="absolute right-0 top-full mt-2 w-64 sm:w-80"
+          error={error}
+        />
       ) : null}
     </aside>
   );

@@ -342,7 +342,7 @@ test("arbitrary account identity cannot cover the compact Back action", async ({
 test("Account keeps identity in its menu instead of the persistent header", async ({
   page,
 }) => {
-  const identity = {
+  let identity = {
     email: longAccountEmail,
     name: longAccountName,
   };
@@ -389,6 +389,144 @@ test("Account keeps identity in its menu instead of the persistent header", asyn
   });
   await expect(wideAccount).toContainText("Account");
   await expect(wideAccount).not.toContainText(longAccountName);
+
+  identity = { email: longAccountEmail, name: "   " };
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/lessons");
+  await page
+    .getByRole("button", {
+      exact: true,
+      name: `Account for ${longAccountEmail}`,
+    })
+    .click();
+  await expect(page.getByText(longAccountEmail, { exact: true })).toHaveCount(
+    1,
+  );
+});
+
+test("Account menu keeps arbitrary identity and every action reachable in short viewports", async ({
+  page,
+}) => {
+  let identity: AccountIdentity = {
+    email: longAccountEmail,
+    name: longAccountName,
+  };
+  await installAccountIdentity(page, () => identity);
+
+  const cases: Array<{
+    direction: "ltr" | "rtl";
+    identity: AccountIdentity;
+    viewport: Viewport;
+  }> = [
+    {
+      direction: "ltr",
+      identity,
+      viewport: { height: 360, name: "short landscape", width: 640 },
+    },
+    {
+      direction: "ltr",
+      identity: {
+        email: longAccountEmail,
+        name: "家庭学习者🦜".repeat(35),
+      },
+      viewport: { height: 480, name: "short CJK phone", width: 280 },
+    },
+    {
+      direction: "rtl",
+      identity: {
+        email: longAccountEmail,
+        name: "اسم-العائلة-".repeat(24),
+      },
+      viewport: { height: 480, name: "short RTL phone", width: 280 },
+    },
+  ];
+
+  for (const currentCase of cases) {
+    identity = currentCase.identity;
+    await page.setViewportSize(currentCase.viewport);
+    await page.goto("/lessons");
+
+    const account = page.getByRole("button", { name: /^Account for / });
+    await account.click();
+    const menu = page.getByRole("menu", { name: "Account menu" });
+    const panel = menu.locator("..");
+    await expectInsideViewport(panel, currentCase.viewport);
+    expect(
+      await panel.evaluate(
+        (element) => element.scrollHeight > element.clientHeight,
+      ),
+    ).toBe(true);
+
+    const name = page.getByText(currentCase.identity.name, { exact: true });
+    await expect(name).toHaveAttribute("dir", "auto");
+    expect(
+      await name.evaluate((element) => getComputedStyle(element).direction),
+    ).toBe(currentCase.direction);
+
+    const firstAction = page.getByRole("menuitem", {
+      name: "Learner profile",
+    });
+    await expect(firstAction).toBeFocused();
+    await page.keyboard.press("End");
+    const signOut = page.getByRole("menuitem", { name: "Sign out" });
+    await expect(signOut).toBeFocused();
+    const signOutPaint = await focusedPaintBox(signOut);
+    expect(signOutPaint.x).toBeGreaterThanOrEqual(0);
+    expect(signOutPaint.y).toBeGreaterThanOrEqual(0);
+    expect(signOutPaint.x + signOutPaint.width).toBeLessThanOrEqual(
+      currentCase.viewport.width,
+    );
+    expect(signOutPaint.y + signOutPaint.height).toBeLessThanOrEqual(
+      currentCase.viewport.height,
+    );
+    await expectPointerCenterOwnedBy(signOut);
+    expect(await panel.evaluate((element) => element.scrollTop)).toBeGreaterThan(
+      0,
+    );
+
+    await page.keyboard.press("Escape");
+    await expect(account).toBeFocused();
+  }
+});
+
+test("a failed account action stays separate from the reopened identity menu", async ({
+  page,
+}) => {
+  const viewport = { height: 568, name: "ultra narrow", width: 280 };
+  const identity = { email: longAccountEmail, name: longAccountName };
+  await installAccountIdentity(page, () => identity);
+  await page.route("**/api/auth/sign-out", async (route) => {
+    await route.abort("failed");
+  });
+  await page.setViewportSize(viewport);
+  await page.goto("/lessons");
+
+  const account = page.getByRole("button", { name: /^Account for / });
+  await account.click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  const alert = page.getByRole("alert");
+  await expect(alert).toHaveText("Unable to sign you out. Please try again.");
+  await expectInsideViewport(alert, viewport);
+
+  await account.click();
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  const panel = menu.locator("..");
+  await expectInsideViewport(panel, viewport);
+  await expect(panel.getByRole("alert")).toHaveText(
+    "Unable to sign you out. Please try again.",
+  );
+  expect(boxesOverlap(await visibleBox(alert), await visibleBox(menu))).toBe(
+    false,
+  );
+
+  await page.keyboard.press("End");
+  const signOut = page.getByRole("menuitem", { name: "Sign out" });
+  await expect(signOut).toBeFocused();
+  const signOutPaint = await focusedPaintBox(signOut);
+  expect(signOutPaint.y).toBeGreaterThanOrEqual(0);
+  expect(signOutPaint.y + signOutPaint.height).toBeLessThanOrEqual(
+    viewport.height,
+  );
 });
 
 test("the learner name opens the account menu", async ({ page }) => {
