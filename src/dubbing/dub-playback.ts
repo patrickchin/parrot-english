@@ -189,6 +189,7 @@ export async function startDubPlayback({
       frameId = null;
       const elapsedMs = Math.max(0, (context.currentTime - startAt) * 1_000);
       onTick(Math.min(DUB_DURATION_MS, elapsedMs));
+      if (stopped) return;
       if (elapsedMs >= DUB_DURATION_MS) {
         void stopPlayback();
         return;

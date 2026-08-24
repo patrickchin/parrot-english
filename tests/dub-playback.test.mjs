@@ -277,6 +277,66 @@ describe("duck dub playback", () => {
     assert.equal(audio.contexts[0].closeCalls, 1);
   });
 
+  it("does not queue another frame when onTick aborts playback", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const controller = new AbortController();
+    const playback = await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      onTick() {
+        controller.abort();
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal: controller.signal,
+    });
+    const context = audio.contexts[0];
+
+    context.currentTime = 11.12;
+    raf.runNext();
+    controller.abort();
+    playback.stop();
+    await Promise.resolve();
+
+    assert.equal(raf.callbacks.size, 0);
+    assert.equal(context.closeCalls, 1);
+    assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
+    assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
+  });
+
+  it("does not queue another frame when onTick stops the returned playback", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    let playback;
+    let tickCount = 0;
+    playback = await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      onTick() {
+        tickCount += 1;
+        if (tickCount === 2) playback.stop();
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+    const context = audio.contexts[0];
+
+    context.currentTime = 11.12;
+    raf.runNext();
+    assert.equal(raf.callbacks.size, 1);
+    context.currentTime = 12.12;
+    raf.runNext();
+    playback.stop();
+    await Promise.resolve();
+
+    assert.equal(tickCount, 2);
+    assert.equal(raf.callbacks.size, 0);
+    assert.equal(context.closeCalls, 1);
+    assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
+    assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
+  });
+
   it("cleans up fetch and decode failures before rejecting", async () => {
     const cases = [
       ["fetch", createAudioHarness({ fetchStatus: 404 })],
