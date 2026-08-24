@@ -40,8 +40,9 @@ test("home gives children three clear, working learning choices", () => {
     ([, href]) => href,
   );
 
-  assert.deepEqual(hrefs, ["/talk-to-peppa", "/lessons", "/stories"]);
-  assert.match(html, /Choose how you want to practice/i);
+  assert.deepEqual(hrefs, ["/lessons", "/talk-to-peppa", "/stories"]);
+  assert.match(html, /Tap a picture\./i);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 3);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
@@ -51,16 +52,16 @@ test("home gives children three clear, working learning choices", () => {
 test("lesson catalog presents one canonical path without artwork experiments", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [],
-      myLessonsError: "",
+      myLessonsLoadPhase: "ready",
       onRetryMyLessons() {},
     }),
     "/lessons",
   );
 
-  assert.match(html, /Ready-made lessons/);
-  assert.match(html, /Create custom lesson/);
+  assert.match(html, /Pick a lesson/);
+  assert.match(html, /Grown-up tools/);
+  assert.match(html, /aria-label="Create custom lesson"/);
   assert.doesNotMatch(html, /full-scene|same lesson, same audio|comparison/i);
 });
 
@@ -70,10 +71,13 @@ test("story shelf presents a curated learner library without research controls",
   assert.equal(STORY_LEVELS.length, 4);
   assert.equal(STORIES.length, 20);
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
-  assert.match(html, /Choose a story/);
+  assert.match(html, /Pick a story/);
+  assert.match(html, /Tap a picture\. I can read it to you\./);
+  assert.match(html, /Start here/);
+  assert.match(html, /Say it again/);
   assert.doesNotMatch(
     html,
-    /Flask|Teaching notes|Prompt test|Assumes familiar|Original baseline|Uncontrolled comparison|experiment/i,
+    /CEFR|Pre-A1|reading level|Flask|Teaching notes|Prompt test|Assumes familiar|Original baseline|Uncontrolled comparison|experiment/i,
   );
 });
 

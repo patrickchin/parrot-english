@@ -2,14 +2,17 @@
 @import "./lesson.css";
 
 @theme {
-  --font-ui: ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-ui: "Arial Rounded MT Bold", Arial, "Liberation Sans", sans-serif;
   --color-brand-ink: #173c67;
   --color-brand-navy: #204c7f;
   --color-brand-blue: #315f89;
   --color-brand-pink: #ff467b;
+  --color-brand-action-ink: #061f3b;
   --color-brand-rose: #d62f70;
   --color-brand-green: #087451;
   --color-brand-yellow: #ffcf40;
+  --color-focus-light: #ffffff;
+  --color-focus-dark: #061f3b;
   --shadow-card:
     0 8px 0 rgb(31 76 126 / 22%), 0 22px 48px rgb(27 83 123 / 20%);
   --shadow-control-navy: 0 6px 0 rgb(18 55 92 / 45%);
@@ -184,8 +187,9 @@
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
-    outline: 4px solid var(--color-brand-ink);
+    outline: 4px solid var(--color-focus-dark);
     outline-offset: 4px;
+    box-shadow: 0 0 0 4px var(--color-focus-light);
   }
 }
 

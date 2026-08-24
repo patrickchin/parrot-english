@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
@@ -71,6 +72,7 @@ describe("static audio cache metadata", () => {
       assert.ok(allowedSpeakers.has(line.speaker), `${id} speaker`);
       assert.equal(line.lang, "en-US", `${id} language`);
       assert.doesNotMatch(line.text, /[\u3400-\u9fff]/u, `${id} text`);
+      assert.doesNotMatch(line.text, /\bBella\b/i, `${id} fixed learner name`);
       assert.match(line.src, /^\/assets\/audio\/.+\.mp3$/, `${id} source`);
     }
   });
@@ -132,5 +134,31 @@ describe("static audio cache metadata", () => {
     ]) {
       assert.equal(staticAudio.STATIC_AUDIO_LINES[legacyId], undefined, legacyId);
     }
+  });
+
+  it("pins the selected Peppa profile acknowledgment asset", () => {
+    const line = staticAudio.STATIC_AUDIO_LINES["peppa-thank-you"];
+    const asset = new URL(
+      "../public/assets/audio/peppa-thank-you.mp3",
+      import.meta.url,
+    );
+    const bytes = readFileSync(asset);
+
+    assert.deepEqual(line, {
+      speaker: "peppa",
+      lang: "en-US",
+      src: "/assets/audio/peppa-thank-you.mp3",
+      text: "Thank you!",
+      style: "character",
+    });
+    assert.deepEqual(getStaticAudioLineForSpeech("peppa", "Thank you!"), {
+      id: "peppa-thank-you",
+      ...line,
+    });
+    assert.equal(bytes.byteLength, 17_598);
+    assert.equal(
+      createHash("sha256").update(bytes).digest("hex"),
+      "4b90bc530f89e28e972d0c8ea92faad4728266523dca56a4719c94cf2f3abc8a",
+    );
   });
 });

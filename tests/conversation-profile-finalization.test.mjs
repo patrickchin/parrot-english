@@ -122,6 +122,71 @@ describe("deferred conversation profile finalization", () => {
     assert.deepEqual(result, initialState);
   });
 
+  it("does not persist private details from unsafe structured output", async () => {
+    const initialState = createLearnerProfileConversationState({
+      profileAge: 8,
+      profileName: "Mia",
+      profileSummary: "Mia is eight years old and likes pandas.",
+    });
+    const unsafeDescriptions = [
+      "Mia attends Rainbow School.",
+      "Mia lives at 14 River Road.",
+      "Mia's phone number is +44 7700 900123.",
+      "Mia can be reached at mia@example.com.",
+      "Mia's password is dragon123.",
+      "Mia's surname is Smith.",
+      "Mia Smith likes pandas.",
+    ];
+
+    for (const description of unsafeDescriptions) {
+      const result = await deriveConversationProfileState({
+        env: { GROQ_API_KEY: "test-key" },
+        fetch: async () =>
+          providerResponse({ name: "Mia", age: 8, description }),
+        initialState,
+        purpose: "profile-edit",
+        turns: [{ role: "user", text: description }],
+      });
+
+      assert.deepEqual(result, initialState, description);
+    }
+
+    const fullName = await deriveConversationProfileState({
+      env: { GROQ_API_KEY: "test-key" },
+      fetch: async () =>
+        providerResponse({
+          name: "Mia Smith",
+          age: 8,
+          description: "Mia likes pandas.",
+        }),
+      initialState,
+      purpose: "profile-edit",
+      turns: [{ role: "user", text: "My full name is Mia Smith." }],
+    });
+    assert.deepEqual(fullName, initialState);
+  });
+
+  it("keeps harmless privacy-adjacent interests", async () => {
+    const initialState = createLearnerProfileConversationState({
+      profileAge: 8,
+      profileName: "Mia",
+      profileSummary: "Mia likes pandas.",
+    });
+    const description =
+      "Mia likes school buses, secret-agent stories, and contact sports.";
+
+    const result = await deriveConversationProfileState({
+      env: { GROQ_API_KEY: "test-key" },
+      fetch: async () =>
+        providerResponse({ name: "Mia", age: 8, description }),
+      initialState,
+      purpose: "profile-edit",
+      turns: [{ role: "user", text: description }],
+    });
+
+    assert.equal(result.profileSummary, description);
+  });
+
   it("preserves the saved profile when the provider fails", async () => {
     const initialState = createLearnerProfileConversationState({
       profileAge: 8,

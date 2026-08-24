@@ -33,10 +33,7 @@ export type LearnerProfileAnswers = {
 
 export type LearnerProfileAcknowledgment = {
   text: string;
-  audio: {
-    contentType: "audio/mpeg";
-    base64: string;
-  } | null;
+  audio?: LearnerProfileAudio | null;
 };
 
 export type LearnerProfileSummary = {

@@ -3,6 +3,8 @@
 import { ChevronLeft } from "lucide-react";
 import {
   createContext,
+  lazy,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -47,6 +49,7 @@ import {
 import {
   isAbortError,
   playAudioLine,
+  waitForAbortableDelay,
   type PlaybackControl,
 } from "../media/audio-playback";
 import {
@@ -71,6 +74,7 @@ import {
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
 import { HeaderButton, RouteHeader } from "./AppHeader";
+import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
@@ -81,6 +85,10 @@ import {
   type LessonCatalogEntry,
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
+import {
+  FULL_SCENE_LESSONS,
+  type FullSceneImage,
+} from "../lessons/full-scene-lessons";
 import {
   BoxedFullSceneStage,
   LessonCharacters,
@@ -95,12 +103,6 @@ import {
   LessonStage,
   LessonUserPrompt,
 } from "../lessons/LessonPlayerUi";
-import {
-  FULL_SCENE_LESSONS,
-  type FullSceneImage,
-} from "../lessons/full-scene-lessons";
-import { LessonCreator } from "../lessons/LessonCreator";
-import { LessonEditor } from "../lessons/LessonEditor";
 import { playDeviceSpeech } from "../media/device-speech";
 import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
@@ -111,18 +113,48 @@ import {
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
-import { StoryList } from "../stories/StoryList";
-import { PersonalizedStoryArtPanel } from "../stories/PersonalizedStoryArtPanel";
-import {
-  PERSONALIZED_STORY_ID,
-} from "../stories/personalized-story-art-client";
-import { StoryReader } from "../stories/StoryReader";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 
+const LessonCreator = import.meta.env.SSR
+  ? (await import("../lessons/LessonCreator")).LessonCreator
+  : lazy(() =>
+      import("../lessons/LessonCreator").then(({ LessonCreator }) => ({
+        default: LessonCreator,
+      })),
+    );
+const LessonEditor = import.meta.env.SSR
+  ? (await import("../lessons/LessonEditor")).LessonEditor
+  : lazy(() =>
+      import("../lessons/LessonEditor").then(({ LessonEditor }) => ({
+        default: LessonEditor,
+      })),
+    );
+const StoryList = import.meta.env.SSR
+  ? (await import("../stories/StoryList")).StoryList
+  : lazy(() =>
+      import("../stories/StoryList").then(({ StoryList }) => ({
+        default: StoryList,
+      })),
+    );
+const StoryReader = import.meta.env.SSR
+  ? (await import("../stories/StoryReader")).StoryReader
+  : lazy(() =>
+      import("../stories/StoryReader").then(({ StoryReader }) => ({
+        default: StoryReader,
+      })),
+    );
+
 const RECORDING_UNSUPPORTED_MESSAGE =
-  "This browser does not support audio recording. Try the latest Chrome or Safari.";
+  "No mic here. Say the words. Then tap Done.";
 const MICROPHONE_ACCESS_MESSAGE =
-  "Please allow microphone access, then tap the microphone again.";
+  "The mic is off. Say the words. Then tap Done.";
+const MICROPHONE_ERROR_MESSAGE =
+  "The mic did not work. Say the words. Then tap Done.";
+const SPEECH_CHECK_ERROR_MESSAGE =
+  "We could not check your words. Tap Done to keep going.";
+const LESSON_AUDIO_ERROR_MESSAGE =
+  "The sound stopped. Try it again or skip this sound.";
+const MINIMUM_LESSON_FEEDBACK_MS = 1_500;
 
 type LessonEvent =
   | { type: "PLAY_SCENE" }
@@ -173,9 +205,7 @@ function getMicrophoneErrorMessage(caughtError: unknown) {
   if (caughtError instanceof MicrophoneAccessError) {
     return MICROPHONE_ACCESS_MESSAGE;
   }
-  return caughtError instanceof Error
-    ? caughtError.message
-    : "The microphone could not start.";
+  return MICROPHONE_ERROR_MESSAGE;
 }
 
 export function LessonPlayer({
@@ -199,7 +229,10 @@ export function LessonPlayer({
     { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
   const [error, setError] = useState("");
+  const [speechFallback, setSpeechFallback] = useState("");
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [historyPopSequence, setHistoryPopSequence] = useState(0);
+  const [audioRetrySequence, setAudioRetrySequence] = useState(0);
   const stateRef = useRef(state);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
@@ -227,6 +260,7 @@ export function LessonPlayer({
   }, [state]);
 
   const cancelPendingWork = useCallback(() => {
+    setIsStartingRecording(false);
     recordingActiveRef.current = false;
     recordingSequenceRef.current += 1;
     playbackGenerationRef.current += 1;
@@ -303,6 +337,7 @@ export function LessonPlayer({
       if (targetSceneIndex !== null) {
         invalidateRouteActivity();
         setError("");
+        setSpeechFallback("");
         pendingHistoryPopTokenRef.current = null;
         pendingRoutedEventRef.current = {
           event,
@@ -315,6 +350,7 @@ export function LessonPlayer({
       if (cancel) {
         cancelPendingWork();
         setError("");
+        setSpeechFallback("");
       }
       dispatch(event);
     },
@@ -346,6 +382,7 @@ export function LessonPlayer({
 
     cancelPendingWork();
     setError("");
+    setSpeechFallback("");
     dispatch(reconciliationEvent);
   }, [
     cancelPendingWork,
@@ -413,10 +450,8 @@ export function LessonPlayer({
         startPlayback = (signal, onPlaybackControl) =>
           playAudioLine({ ...audioLine, onPlaybackControl, signal });
       }
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error ? caughtError.message : "Audio is unavailable.";
-      setError(`Audio unavailable: ${message}`);
+    } catch {
+      setError(LESSON_AUDIO_ERROR_MESSAGE);
       return;
     }
     const generation = playbackGenerationRef.current + 1;
@@ -429,16 +464,15 @@ export function LessonPlayer({
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         dispatchLessonEvent(completionEvent);
       },
-      onFailed: (caughtError) => {
+      onFailed: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        const message =
-          caughtError instanceof Error ? caughtError.message : "Audio playback failed.";
-        setError(`Audio unavailable: ${message}`);
+        setError(LESSON_AUDIO_ERROR_MESSAGE);
       },
     });
 
     let cancelled = false;
     const controller = new AbortController();
+    const playbackStartedAt = Date.now();
     playbackControllerRef.current = controller;
     setError("");
     void startPlayback(controller.signal, (control) => {
@@ -446,7 +480,18 @@ export function LessonPlayer({
         playbackControlRef.current = control;
       }
     })
-      .then(() => playbackOperation.complete())
+      .then(async () => {
+        if (playbackPhase === LessonPhase.Responding) {
+          await waitForAbortableDelay(
+            Math.max(
+              0,
+              MINIMUM_LESSON_FEEDBACK_MS - (Date.now() - playbackStartedAt),
+            ),
+            controller.signal,
+          );
+        }
+        playbackOperation.complete();
+      })
       .catch((caughtError: unknown) => {
         if (cancelled || isAbortError(caughtError)) return;
         playbackOperation.fail(caughtError);
@@ -466,6 +511,7 @@ export function LessonPlayer({
       }
     };
   }, [
+    audioRetrySequence,
     audioMode,
     currentLesson,
     dispatchLessonEvent,
@@ -502,6 +548,23 @@ export function LessonPlayer({
     dispatchLessonEvent({ type }, { cancel: true });
   }
 
+  function handleRetryAudio() {
+    cancelPendingWork();
+    setError("");
+    setAudioRetrySequence((current) => current + 1);
+  }
+
+  function handleSkipAudio() {
+    if (!playbackPhase) return;
+    cancelPendingWork();
+    setError("");
+    dispatchLessonEvent(
+      playbackPhase === LessonPhase.Responding
+        ? { type: "RESPONSE_DONE" }
+        : { type: "LINE_DONE" },
+    );
+  }
+
   function handleStartAction() {
     if (state.phase === LessonPhase.Finished) {
       dispatchSceneControl("REPLAY_LESSON");
@@ -526,6 +589,7 @@ export function LessonPlayer({
   }
 
   function handleSkipUser() {
+    if (recordingActiveRef.current && !recordingRef.current) return;
     dispatchLessonEvent({ type: "SKIP_USER" }, { cancel: true });
   }
 
@@ -539,12 +603,14 @@ export function LessonPlayer({
     }
 
     recordingActiveRef.current = true;
+    setIsStartingRecording(true);
     const sequence = recordingSequenceRef.current + 1;
     recordingSequenceRef.current = sequence;
     const routeGeneration = routeActivityGuardRef.current.capture();
     const controller = new AbortController();
     recordingControllerRef.current = controller;
     setError("");
+    setSpeechFallback("");
 
     try {
       const session = await startSpeechRecording({ signal: controller.signal });
@@ -557,12 +623,25 @@ export function LessonPlayer({
         return;
       }
       recordingRef.current = session;
+      setIsStartingRecording(false);
       dispatch({ type: "MIC_STARTED" });
     } catch (caughtError) {
-      if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-      if (isAbortError(caughtError)) return;
+      if (
+        !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
+        recordingSequenceRef.current !== sequence
+      ) {
+        return;
+      }
+      setIsStartingRecording(false);
+      if (recordingControllerRef.current === controller) {
+        recordingControllerRef.current = null;
+      }
+      if (isAbortError(caughtError)) {
+        recordingActiveRef.current = false;
+        return;
+      }
       recordingActiveRef.current = false;
-      setError(getMicrophoneErrorMessage(caughtError));
+      setSpeechFallback(getMicrophoneErrorMessage(caughtError));
     }
   }
 
@@ -573,6 +652,7 @@ export function LessonPlayer({
     const generation = recordingSequenceRef.current;
     const session = recordingRef.current;
     const recordingController = recordingControllerRef.current;
+    setIsStartingRecording(false);
     if (recordingRef.current === session) {
       recordingRef.current = null;
     }
@@ -598,23 +678,13 @@ export function LessonPlayer({
           transcript: result.transcript,
         });
       },
-      onFailed: (caughtError) => {
+      onFailed: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         if (currentStep.check) {
-          setError(
-            caughtError instanceof Error && caughtError.message.includes("GROQ_API_KEY")
-              ? "Speech checking is not configured."
-              : `Speech check failed: ${
-                  caughtError instanceof Error ? caughtError.message : "Unknown error."
-                }`
-          );
+          setSpeechFallback(SPEECH_CHECK_ERROR_MESSAGE);
           dispatch({ type: "EVALUATION_FAILED" });
         } else {
-          setError(
-            `Recording failed: ${
-              caughtError instanceof Error ? caughtError.message : "Unknown error."
-            }`,
-          );
+          setError("The mic stopped. Try it again.");
         }
       },
       onReleased: () => {
@@ -629,7 +699,7 @@ export function LessonPlayer({
   }
 
   function handleToggleRecording() {
-    if (recordingActiveRef.current) {
+    if (recordingRef.current) {
       void finishRecording();
       return;
     }
@@ -708,6 +778,13 @@ export function LessonPlayer({
             <LessonUserPrompt
               dialogue={currentStep.dialogue}
               portrait={promptPortrait}
+              status={
+                isEvaluating
+                  ? "checking"
+                  : isRecording
+                    ? "recording"
+                    : "ready"
+              }
             />
           ) : isResponding ? (
             <LessonFeedback
@@ -727,8 +804,10 @@ export function LessonPlayer({
             <LessonSpeakingControls
               isEvaluating={isEvaluating}
               isRecording={isRecording}
+              isStartingRecording={isStartingRecording}
               onSkip={handleSkipUser}
               onToggleRecording={handleToggleRecording}
+              usePracticeFallback={Boolean(speechFallback)}
             />
           ) : null}
           {showPlaybackControls ? (
@@ -741,7 +820,20 @@ export function LessonPlayer({
               onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
             />
           ) : null}
-          <LessonErrorBanner error={error} />
+          <LessonErrorBanner
+            error={speechFallback || error}
+            onRetry={
+              error === LESSON_AUDIO_ERROR_MESSAGE
+                ? handleRetryAudio
+                : undefined
+            }
+            onSkip={
+              error === LESSON_AUDIO_ERROR_MESSAGE
+                ? handleSkipAudio
+                : undefined
+            }
+            tone={speechFallback ? "help" : "error"}
+          />
         </>
       ) : null}
 
@@ -760,6 +852,14 @@ export function LessonPlayer({
             }. ${scene.settingDescription}`}
         {state.transcript ? ` Heard: ${state.transcript}.` : ""}
         {error ? ` ${error}` : ""}
+      </div>
+      <div
+        aria-label="Speaking updates"
+        aria-live="polite"
+        className="sr-only"
+        role="status"
+      >
+        {speechFallback}
       </div>
     </LessonStage>
   );
@@ -930,28 +1030,6 @@ function StoryRouteDecisionView({
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }
       pageIndex={decision.pageIndex}
-      personalizationPanel={
-        decision.story.id === PERSONALIZED_STORY_ID ? (
-          <PersonalizedStoryArtPanel
-            consentChecked={personalizedStoryArt.consentChecked}
-            error={personalizedStoryArt.error}
-            featureEnabled={personalizedStoryArt.featureEnabled}
-            fileName={personalizedStoryArt.selectedFileName}
-            hasSelectedPhoto={personalizedStoryArt.hasSelectedPhoto}
-            hasStoredArt={Boolean(personalizedStoryArt.metadata.hasStoredArt)}
-            generateDisabled={personalizedStoryArt.generateDisabled}
-            isGenerating={personalizedStoryArt.isGenerating}
-            onConsentChange={personalizedStoryArt.setConsentChecked}
-            onFileChange={personalizedStoryArt.setSelectedFile}
-            onGenerate={() => void personalizedStoryArt.generate()}
-            onRemove={() => void personalizedStoryArt.remove()}
-            personalizedArtwork={personalizedStoryArt.personalizedArtwork}
-            showPreviewArtwork={false}
-            statusMessage={personalizedStoryArt.statusMessage}
-            storyTitle={personalizedStoryArt.storyTitle}
-          />
-        ) : null
-      }
       personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
       key={`${location.key}:${decision.story.id}:${decision.pageIndex}`}
@@ -979,61 +1057,63 @@ function StoryPageRoute() {
 
 export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   return (
-    <Routes>
-      <Route element={<HomeMenu />} path="/" />
-      <Route
-        element={
-          <FeaturePlaceholder
-            actionLabel="Choose a lesson"
-            actionTo="/lessons"
-            description="Voice chat isn't available right now. You can choose a lesson or try again soon."
-            secondaryActionLabel="Back to home"
-            secondaryActionTo="/"
-            title="Peppa is taking a break"
-          />
-        }
-        path="/talk-to-peppa"
-      />
-      <Route element={<LessonList />} path="/lessons" />
-      <Route
-        element={<LessonCreator />}
-        path="/lessons/my/create"
-      />
-      <Route
-        element={<LessonEditor />}
-        path="/lessons/my/:lessonId/edit"
-      />
-      <Route
-        element={<ParrotLessonRedirect />}
-        path="/lessons/parrot/:lessonId"
-      />
-      <Route
-        element={<ParrotLessonSceneRoute />}
-        path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
-      />
-      <Route
-        element={<MyLessonRoute />}
-        path="/lessons/my/:lessonId"
-      />
-      <Route
-        element={<MyLessonRoute />}
-        path="/lessons/my/:lessonId/scenes/:sceneNumber"
-      />
-      <Route
-        element={<Navigate replace to="/" />}
-        path="/progress"
-      />
-      <Route element={<StoryList />} path="/stories" />
-      <Route element={<StoryRedirect />} path="/stories/:storyId" />
-      <Route
-        element={<StoryPageRoute />}
-        path="/stories/:storyId/pages/:pageNumber"
-      />
-      <Route element={<Navigate replace to={loginTarget} />} path="/login" />
-      <Route element={null} path="/profile/setup" />
-      <Route element={null} path="/profile" />
-      <Route element={<Navigate replace to="/" />} path="*" />
-    </Routes>
+    <Suspense
+      fallback={
+        <FeaturePlaceholder
+          busy
+          description="Getting your activity ready."
+          title="Loading…"
+        />
+      }
+    >
+      <RouteFocusManager />
+      <Routes>
+        <Route element={<HomeMenu />} path="/" />
+        <Route
+          element={
+            <FeaturePlaceholder
+              actionLabel="Choose a lesson"
+              actionTo="/lessons"
+              description="Voice chat isn't available right now. You can choose a lesson or try again soon."
+              secondaryActionLabel="Back to home"
+              secondaryActionTo="/"
+              title="Peppa is taking a break"
+            />
+          }
+          path="/talk-to-peppa"
+        />
+        <Route element={<LessonList />} path="/lessons" />
+        <Route element={<LessonCreator />} path="/lessons/my/create" />
+        <Route
+          element={<LessonEditor />}
+          path="/lessons/my/:lessonId/edit"
+        />
+        <Route
+          element={<ParrotLessonRedirect />}
+          path="/lessons/parrot/:lessonId"
+        />
+        <Route
+          element={<ParrotLessonSceneRoute />}
+          path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
+        />
+        <Route element={<MyLessonRoute />} path="/lessons/my/:lessonId" />
+        <Route
+          element={<MyLessonRoute />}
+          path="/lessons/my/:lessonId/scenes/:sceneNumber"
+        />
+        <Route element={<Navigate replace to="/" />} path="/progress" />
+        <Route element={<StoryList />} path="/stories" />
+        <Route element={<StoryRedirect />} path="/stories/:storyId" />
+        <Route
+          element={<StoryPageRoute />}
+          path="/stories/:storyId/pages/:pageNumber"
+        />
+        <Route element={<Navigate replace to={loginTarget} />} path="/login" />
+        <Route element={null} path="/profile/setup" />
+        <Route element={null} path="/profile" />
+        <Route element={<Navigate replace to="/" />} path="*" />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -1094,6 +1174,7 @@ function RoutedApplication() {
             navigate(safeReturnTo, { replace: true })
           }
           onConversationCompleted={() => navigate("/", { replace: true })}
+          onOpenLessons={() => navigate("/lessons", { replace: true })}
           onOpenProfileRoute={openProfileRoute}
           onRedoCompleted={() =>
             navigate(safeReturnTo, { replace: true })

@@ -5,6 +5,9 @@ import * as speechRecorder from "../src/media/speech-recorder.ts";
 const startSpeechRecording =
   speechRecorder.startSpeechRecording ??
   (() => Promise.reject(new Error("startSpeechRecording is missing")));
+const recordSpeechClip =
+  speechRecorder.recordSpeechClip ??
+  (() => Promise.reject(new Error("recordSpeechClip is missing")));
 
 function createTrack() {
   return {
@@ -26,7 +29,7 @@ function createStream(track = createTrack()) {
   };
 }
 
-function createRecorderClass() {
+function createRecorderClass({ onStart, startError } = {}) {
   const instances = [];
   class FakeMediaRecorder {
     constructor(stream, options) {
@@ -38,7 +41,9 @@ function createRecorderClass() {
     }
 
     start() {
+      if (startError) throw startError;
       this.state = "recording";
+      onStart?.();
     }
 
     stop() {
@@ -93,6 +98,114 @@ describe("hold-to-talk speech recorder", () => {
     assert.equal(await blob.text(), "child audio");
     assert.equal(track.stopped, true);
     assert.equal(instances[0].stopCalls, 1);
+  });
+
+  it("reports recording once only after permission and recorder start succeed", async () => {
+    const events = [];
+    const { stream } = createStream();
+    const { FakeMediaRecorder } = createRecorderClass({
+      onStart() {
+        events.push("recorder started");
+      },
+    });
+    let allowMicrophone;
+    let finishRecording;
+    const pending = recordSpeechClip({
+      clearTimeout() {},
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: () =>
+        new Promise((resolve) => {
+          allowMicrophone = resolve;
+        }),
+      onRecordingStart() {
+        events.push("callback");
+      },
+      setTimeout(callback) {
+        finishRecording = callback;
+        return 1;
+      },
+    });
+
+    await Promise.resolve();
+    assert.deepEqual(events, []);
+
+    allowMicrophone(stream);
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.deepEqual(events, ["recorder started", "callback"]);
+
+    finishRecording();
+    await pending;
+    assert.deepEqual(events, ["recorder started", "callback"]);
+  });
+
+  it("does not report recording when microphone permission fails", async () => {
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    let callbackCalls = 0;
+
+    await assert.rejects(
+      recordSpeechClip({
+        MediaRecorder: FakeMediaRecorder,
+        getUserMedia: () => Promise.reject(new Error("permission denied")),
+        onRecordingStart() {
+          callbackCalls += 1;
+        },
+      }),
+      speechRecorder.MicrophoneAccessError
+    );
+
+    assert.equal(callbackCalls, 0);
+    assert.equal(instances.length, 0);
+  });
+
+  it("does not report recording when aborted before recorder creation", async () => {
+    const controller = new AbortController();
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    let allowMicrophone;
+    let callbackCalls = 0;
+    const pending = recordSpeechClip({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: () =>
+        new Promise((resolve) => {
+          allowMicrophone = resolve;
+        }),
+      onRecordingStart() {
+        callbackCalls += 1;
+      },
+      signal: controller.signal,
+    });
+
+    await Promise.resolve();
+    controller.abort();
+    allowMicrophone(stream);
+
+    await assert.rejects(pending, { name: "AbortError" });
+    assert.equal(callbackCalls, 0);
+    assert.equal(instances.length, 0);
+    assert.equal(track.stopped, true);
+  });
+
+  it("does not report recording when recorder start fails", async () => {
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder } = createRecorderClass({
+      startError: new Error("recorder start failed"),
+    });
+    let callbackCalls = 0;
+
+    await assert.rejects(
+      recordSpeechClip({
+        MediaRecorder: FakeMediaRecorder,
+        getUserMedia: () => Promise.resolve(stream),
+        onRecordingStart() {
+          callbackCalls += 1;
+        },
+      }),
+      /recorder start failed/
+    );
+
+    assert.equal(callbackCalls, 0);
+    assert.equal(track.stopped, true);
   });
 
   it("cancels an active session with an AbortError and stops tracks", async () => {

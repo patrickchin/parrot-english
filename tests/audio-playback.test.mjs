@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { playAudioLine, playAudioSequence } from "../src/media/audio-playback.ts";
+import {
+  playAudioLine,
+  playAudioSequence,
+  waitForAbortableDelay,
+} from "../src/media/audio-playback.ts";
 
 describe("audio playback", () => {
   it("plays saved audio assets directly", async () => {
@@ -66,6 +70,45 @@ describe("audio playback", () => {
     assert.deepEqual(events, ["play", "pause", "play"]);
   });
 
+  it("cleans up shared media handlers after media and play failures", async () => {
+    for (const failure of ["media-error", "async-play-error", "sync-play-error"]) {
+      let audio;
+      const controls = [];
+      const operation = playAudioLine({
+        audioSrc: "/assets/audio/peppa-thank-you.mp3",
+        text: "Thank you!",
+        env: {
+          createAudio() {
+            audio = {
+              play() {
+                if (failure === "async-play-error") {
+                  return Promise.reject(new Error("Playback was rejected."));
+                }
+                if (failure === "sync-play-error") {
+                  throw new Error("Playback setup failed.");
+                }
+                return Promise.resolve();
+              },
+            };
+            return audio;
+          },
+        },
+        onPlaybackControl(control) {
+          controls.push(control === null ? "cleared" : "ready");
+        },
+      });
+
+      if (failure === "media-error") {
+        audio.onerror?.();
+      }
+
+      await assert.rejects(operation, /Audio playback failed|Playback/);
+      assert.equal(audio.onended, null, failure);
+      assert.equal(audio.onerror, null, failure);
+      assert.deepEqual(controls, ["ready", "cleared"], failure);
+    }
+  });
+
   it("requires a saved audio source", async () => {
     await assert.rejects(
       playAudioLine({
@@ -123,5 +166,14 @@ describe("audio playback", () => {
       "wait:350",
       "play:/assets/audio/parrot-here-you-are.mp3",
     ]);
+  });
+
+  it("cancels a pending visual dwell when the learner leaves", async () => {
+    const controller = new AbortController();
+    const pending = waitForAbortableDelay(10_000, controller.signal);
+
+    controller.abort();
+
+    await assert.rejects(pending, { name: "AbortError" });
   });
 });

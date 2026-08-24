@@ -846,6 +846,236 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("rejects private details at the reusable profile persistence boundary", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          "profile-1",
+          "user-1",
+          "Mia",
+          8,
+          JSON.stringify({
+            schemaVersion: 2,
+            questionnaireVersion: 2,
+            responses: {},
+            legacyAnswers: null,
+            description: "Mia is eight years old and loves pandas.",
+          }),
+          "completed",
+          2_000,
+          1_000,
+          2_000,
+        );
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      const { conversation } = await started.json();
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+
+      const staged = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/facts`,
+        "POST",
+        {
+          controllerState: {
+            ...conversation.controllerState,
+            profileSummary:
+              "Mia attends Rainbow School and lives at 14 River Road.",
+            profileName: "Mia",
+            profileAge: 8,
+            learnedName: true,
+            learnedAge: true,
+          },
+          candidates: [],
+        },
+        agentOptions,
+      );
+      assert.equal(staged.status, 200);
+
+      const ended = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "conversation_complete", status: "completed" },
+        agentOptions,
+      );
+
+      assert.equal(ended.status, 400);
+      assert.deepEqual(await ended.json(), { error: "private_profile_details" });
+      const profile = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(
+        JSON.parse(profile.answers_json).description,
+        "Mia is eight years old and loves pandas.",
+      );
+
+      const review = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(review.status, 400);
+      assert.deepEqual(await review.json(), {
+        error: "private_profile_details",
+      });
+      const profileAfterReview = state.sqlite
+        .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
+        .get("user-1");
+      assert.equal(
+        JSON.parse(profileAfterReview.answers_json).description,
+        "Mia is eight years old and loves pandas.",
+      );
+
+      const stagedSurnameSummary = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/facts`,
+        "POST",
+        {
+          controllerState: {
+            ...conversation.controllerState,
+            profileSummary: "Mia Smith likes pandas.",
+            profileName: "Mia",
+            profileAge: 8,
+            learnedName: true,
+            learnedAge: true,
+          },
+          candidates: [],
+        },
+        agentOptions,
+      );
+      assert.equal(stagedSurnameSummary.status, 200);
+      const surnameSummaryEnd = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "conversation_complete", status: "completed" },
+        agentOptions,
+      );
+      assert.equal(surnameSummaryEnd.status, 400);
+      assert.deepEqual(await surnameSummaryEnd.json(), {
+        error: "preferred_name_required",
+      });
+
+      const stagedFullName = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/facts`,
+        "POST",
+        {
+          controllerState: {
+            ...conversation.controllerState,
+            profileSummary: "Mia likes pandas.",
+            profileName: "Mia Smith",
+            profileAge: 8,
+            learnedName: true,
+            learnedAge: true,
+          },
+          candidates: [],
+        },
+        agentOptions,
+      );
+      assert.equal(stagedFullName.status, 200);
+      const fullNameEnd = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "conversation_complete", status: "completed" },
+        agentOptions,
+      );
+      assert.equal(fullNameEnd.status, 400);
+      assert.deepEqual(await fullNameEnd.json(), {
+        error: "preferred_name_required",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
+  it("finishes without rewriting an unchanged legacy-private profile", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run(
+          "profile-1",
+          "user-1",
+          "Mia Smith",
+          8,
+          JSON.stringify({
+            schemaVersion: 2,
+            questionnaireVersion: 2,
+            responses: {},
+            legacyAnswers: null,
+            description: "Mia attends Rainbow School.",
+          }),
+          "completed",
+          2_000,
+          1_000,
+          2_000,
+        );
+      const profileStatement = state.sqlite.prepare(
+        "SELECT name, age, answers_json, onboarding_status, completed_at, updated_at FROM learner_profile WHERE auth_user_id = ?",
+      );
+      const before = profileStatement.get("user-1");
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      const { conversation } = await started.json();
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+
+      const ended = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/end`,
+        "POST",
+        { finishReason: "conversation_complete", status: "completed" },
+        agentOptions,
+      );
+      assert.equal(ended.status, 200);
+      assert.deepEqual(profileStatement.get("user-1"), before);
+
+      const reviewed = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(reviewed.status, 200);
+      assert.deepEqual(await reviewed.json(), {
+        bypassed: false,
+        conversationId: conversation.id,
+        profileCompleted: true,
+      });
+      assert.deepEqual(profileStatement.get("user-1"), before);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT status FROM conversation_session WHERE id = ?")
+          .get(conversation.id).status,
+        "completed",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("creates a completed learner profile from a fresh conversation snapshot", async () => {
     const state = createSeededDatabase();
     try {

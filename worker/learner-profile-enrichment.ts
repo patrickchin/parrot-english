@@ -3,28 +3,27 @@ import {
   getGroqRequestTimeoutMs,
   type ApiEnv,
 } from "./groq.ts";
+import {
+  containsLikelyFullLearnerName,
+  containsPrivateLearnerProfileDetails,
+  PREFERRED_NAME_FIELD_ERROR,
+  PRIVATE_PROFILE_FIELD_ERROR,
+} from "../lib/learner-profile-privacy.ts";
 import { LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT } from "./prompts/learner-profile-enrichment.ts";
 
 const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
-const OUTPUT_KEYS = new Set([
-  "summary",
-  "acknowledgment",
-  "canonicalName",
-  "canonicalAge",
-]);
+const OUTPUT_KEYS = new Set(["summary", "canonicalName", "canonicalAge"]);
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u;
 
 type LearnerProfileQuestion = {
   promptEn: string;
   canonicalField: "name" | "age" | null;
   maxLength: number;
-  fallbackAcknowledgment: string;
 };
 
 export type LearnerProfileEnrichment = {
   summary: string;
-  acknowledgment: string;
   canonicalName: string | null;
   canonicalAge: number | null;
   enrichmentStatus: "generated" | "fallback";
@@ -32,7 +31,10 @@ export type LearnerProfileEnrichment = {
 
 export type LearnerProfileEnrichmentResult =
   | LearnerProfileEnrichment
-  | { fieldError: string };
+  | {
+      errorCode?: "preferred_name_required" | "private_profile_details";
+      fieldError: string;
+    };
 
 type EnrichmentInput = {
   env: ApiEnv;
@@ -45,7 +47,6 @@ const RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     summary: { type: "string", maxLength: 240 },
-    acknowledgment: { type: "string", maxLength: 160 },
     canonicalName: {
       anyOf: [{ type: "string", maxLength: 80 }, { type: "null" }],
     },
@@ -56,7 +57,7 @@ const RESPONSE_SCHEMA = {
       ],
     },
   },
-  required: ["summary", "acknowledgment", "canonicalName", "canonicalAge"],
+  required: ["summary", "canonicalName", "canonicalAge"],
   additionalProperties: false,
 } as const;
 
@@ -85,10 +86,17 @@ function fallbackCanonical(
   fieldError: string;
 } {
   if (question.canonicalField === "name") {
-    if (!validName(rawAnswer)) {
+    const canonicalName = rawAnswer
+      .replace(
+        /^(?:my\s+name\s+is|i\s+am|i['’]m|call\s+me|\u6211\u53eb|\u6211\u7684\u540d\u5b57\u662f|\u53eb\u6211)\s*/iu,
+        "",
+      )
+      .replace(/[.!?]+$/u, "")
+      .trim();
+    if (!validName(canonicalName)) {
       return { fieldError: "Please tell me the name you would like us to use." };
     }
-    return { canonicalName: rawAnswer, canonicalAge: null };
+    return { canonicalName, canonicalAge: null };
   }
   if (question.canonicalField === "age") {
     const match = rawAnswer.match(/(?:^|[^\d.-])(\d+)(?![\d.])/);
@@ -103,6 +111,30 @@ function fallbackCanonical(
   return { canonicalName: null, canonicalAge: null };
 }
 
+function safeEnrichment(
+  enrichment: LearnerProfileEnrichmentResult,
+): LearnerProfileEnrichmentResult {
+  if ("fieldError" in enrichment) return enrichment;
+  if (containsPrivateLearnerProfileDetails(enrichment.summary)) {
+    return {
+      errorCode: "private_profile_details",
+      fieldError: PRIVATE_PROFILE_FIELD_ERROR,
+    };
+  }
+  if (
+    containsLikelyFullLearnerName(
+      enrichment.canonicalName,
+      enrichment.summary,
+    )
+  ) {
+    return {
+      errorCode: "preferred_name_required",
+      fieldError: PREFERRED_NAME_FIELD_ERROR,
+    };
+  }
+  return enrichment;
+}
+
 function fallback(
   question: LearnerProfileQuestion,
   rawAnswer: string
@@ -111,7 +143,6 @@ function fallback(
   if ("fieldError" in canonical) return canonical;
   return {
     summary: truncate(rawAnswer, 240),
-    acknowledgment: question.fallbackAcknowledgment,
     ...canonical,
     enrichmentStatus: "fallback",
   };
@@ -133,17 +164,7 @@ function parseGenerated(
   }
 
   const summary = typeof output.summary === "string" ? output.summary.trim() : "";
-  const acknowledgment =
-    typeof output.acknowledgment === "string"
-      ? output.acknowledgment.trim()
-      : "";
-  if (
-    summary.length === 0 ||
-    summary.length > 240 ||
-    acknowledgment.length === 0 ||
-    acknowledgment.length > 160 ||
-    acknowledgment.includes("?")
-  ) {
+  if (summary.length === 0 || summary.length > 240) {
     return null;
   }
 
@@ -161,7 +182,6 @@ function parseGenerated(
 
   return {
     summary,
-    acknowledgment,
     canonicalName:
       typeof output.canonicalName === "string" ? output.canonicalName : null,
     canonicalAge:
@@ -179,7 +199,25 @@ export async function enrichLearnerProfileAnswer({
   if (answer.length === 0 || answer.length > Math.min(question.maxLength, 500)) {
     return { fieldError: `Please use ${Math.min(question.maxLength, 500)} characters or fewer.` };
   }
-  if (!env.GROQ_API_KEY) return fallback(question, answer);
+  if (containsPrivateLearnerProfileDetails(answer)) {
+    return {
+      errorCode: "private_profile_details",
+      fieldError: PRIVATE_PROFILE_FIELD_ERROR,
+    };
+  }
+  if (question.canonicalField === "name") {
+    const localCanonical = fallbackCanonical(question, answer);
+    if (
+      !("fieldError" in localCanonical) &&
+      containsLikelyFullLearnerName(localCanonical.canonicalName)
+    ) {
+      return {
+        errorCode: "preferred_name_required",
+        fieldError: PREFERRED_NAME_FIELD_ERROR,
+      };
+    }
+  }
+  if (!env.GROQ_API_KEY) return safeEnrichment(fallback(question, answer));
 
   try {
     const upstream = await fetchWithTimeout(
@@ -215,7 +253,7 @@ export async function enrichLearnerProfileAnswer({
       },
       getGroqRequestTimeoutMs(env)
     );
-    if (!upstream.ok) return fallback(question, answer);
+    if (!upstream.ok) return safeEnrichment(fallback(question, answer));
 
     const payload = (await upstream.json()) as {
       choices?: Array<{
@@ -224,12 +262,12 @@ export async function enrichLearnerProfileAnswer({
     };
     const message = payload.choices?.[0]?.message;
     if (message?.refusal || typeof message?.content !== "string") {
-      return fallback(question, answer);
+      return safeEnrichment(fallback(question, answer));
     }
     const parsed = parseGenerated(JSON.parse(message.content), question);
-    if (!parsed) return fallback(question, answer);
-    return { ...parsed, enrichmentStatus: "generated" };
+    if (!parsed) return safeEnrichment(fallback(question, answer));
+    return safeEnrichment({ ...parsed, enrichmentStatus: "generated" });
   } catch {
-    return fallback(question, answer);
+    return safeEnrichment(fallback(question, answer));
   }
 }

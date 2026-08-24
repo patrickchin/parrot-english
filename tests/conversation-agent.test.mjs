@@ -432,6 +432,7 @@ describe("purpose-scoped learner-profile agent tools", () => {
       "endConversation",
     ]);
     const updateTool = task.toolCtx.functionTools.updateLearnerProfile;
+    assert.match(updateTool.description, /preferred name/i);
     const schema = llm.toJsonSchema(updateTool.parameters, true, true);
     assert.deepEqual(Object.keys(schema.properties ?? {}).sort(), [
       "about",
@@ -472,6 +473,10 @@ describe("purpose-scoped learner-profile agent tools", () => {
     assert.match(
       CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
       /updateLearnerProfile[\s\S]*name[\s\S]*age[\s\S]*about/i,
+    );
+    assert.match(
+      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
+      /first or preferred name/i,
     );
     assert.match(task._instructions, /Mia/);
     assert.match(task._instructions, /fast red cars/);

@@ -1,21 +1,29 @@
-import { DisconnectReason, Room, RoomEvent } from "livekit-client";
 import {
   COMMIT_USER_TURN_COMMAND,
   REPEAT_LAST_AUDIO_COMMAND,
 } from "../../lib/conversation-audio.js";
 
 export const LIVEKIT_CONVERSATION_EVENTS = {
-  activeSpeakers: RoomEvent.ActiveSpeakersChanged,
-  disconnected: RoomEvent.Disconnected,
-  participantAttributes: RoomEvent.ParticipantAttributesChanged,
-  reconnected: RoomEvent.Reconnected,
-  reconnecting: RoomEvent.Reconnecting,
-  trackSubscribed: RoomEvent.TrackSubscribed,
-  transcription: RoomEvent.TranscriptionReceived,
+  activeSpeakers: "activeSpeakersChanged",
+  audioPlayback: "audioPlaybackChanged",
+  disconnected: "disconnected",
+  participantAttributes: "participantAttributesChanged",
+  reconnected: "reconnected",
+  reconnecting: "reconnecting",
+  trackSubscribed: "trackSubscribed",
+  trackUnsubscribed: "trackUnsubscribed",
+  transcription: "transcriptionReceived",
 } as const;
+
+type ConversationRoomEvent =
+  (typeof LIVEKIT_CONVERSATION_EVENTS)[keyof typeof LIVEKIT_CONVERSATION_EVENTS];
 
 export type ConversationTransportEvent =
   | { type: "state"; state: "connecting" | "connected" | "reconnecting" }
+  | {
+      type: "audio-playback";
+      state: "blocked" | "ready" | "started" | "stopped";
+    }
   | { type: "speech-started"; role: "assistant" }
   | { type: "speech-ended"; role: "assistant" }
   | {
@@ -30,8 +38,18 @@ export type ConversationTransportEvent =
 
 type Listener = (event: ConversationTransportEvent) => void;
 type EventListener = (...args: unknown[]) => void;
+type MediaEventListener = () => void;
 
-type AudioElementLike = { remove(): void };
+type AudioElementLike = {
+  addEventListener(type: "playing", listener: MediaEventListener): void;
+  remove(): void;
+  removeEventListener(type: "playing", listener: MediaEventListener): void;
+};
+type AudioAttachment = {
+  element: AudioElementLike;
+  onPlaying: MediaEventListener;
+  started: boolean;
+};
 type TrackLike = {
   kind?: unknown;
   attach?: () => AudioElementLike;
@@ -45,11 +63,13 @@ type RoomLike = {
     setMicrophoneEnabled(enabled: boolean): Promise<unknown>;
     sendText(text: string, options: { topic: string }): Promise<unknown>;
   };
-  on(event: RoomEvent, listener: EventListener): unknown;
-  off(event: RoomEvent, listener: EventListener): unknown;
+  on(event: ConversationRoomEvent, listener: EventListener): unknown;
+  off(event: ConversationRoomEvent, listener: EventListener): unknown;
+  startAudio(): Promise<void>;
 };
 
 type CreateLiveKitConversationOptions = {
+  loadRoom?: () => Promise<RoomLike>;
   mountAudio?: (element: AudioElementLike) => void;
   room?: RoomLike;
   token: string;
@@ -58,10 +78,34 @@ type CreateLiveKitConversationOptions = {
 
 const E2E_PARTICIPANT_TOKEN = "parrot-e2e-participant-token";
 const E2E_LIVEKIT_URL = "wss://parrot-e2e.invalid";
+const DISCONNECT_REASON_NAMES = [
+  "UNKNOWN_REASON",
+  "CLIENT_INITIATED",
+  "DUPLICATE_IDENTITY",
+  "SERVER_SHUTDOWN",
+  "PARTICIPANT_REMOVED",
+  "ROOM_DELETED",
+  "STATE_MISMATCH",
+  "JOIN_FAILURE",
+  "MIGRATION",
+  "SIGNAL_CLOSE",
+  "ROOM_CLOSED",
+  "USER_UNAVAILABLE",
+  "USER_REJECTED",
+  "SIP_TRUNK_FAILURE",
+  "CONNECTION_TIMEOUT",
+  "MEDIA_FAILURE",
+  "AGENT_ERROR",
+] as const;
 const E2E_CONVERSATION_SCENARIOS = new Set([
+  "audio-blocked",
+  "audio-delayed",
+  "audio-established-blocked",
+  "audio-rejected",
   "connecting",
   "error",
   "long",
+  "microphone-delayed",
   "opening-speaking",
   "reconnecting",
   "saving",
@@ -99,9 +143,14 @@ function segmentRecords(value: unknown) {
 
 function readableDisconnectReason(reason: unknown) {
   if (typeof reason === "number") {
-    return DisconnectReason[reason] ?? String(reason);
+    return DISCONNECT_REASON_NAMES[reason] ?? String(reason);
   }
   return typeof reason === "string" ? reason : String(reason ?? "unknown");
+}
+
+async function loadLiveKitRoom() {
+  const { Room } = await import("livekit-client");
+  return new Room() as unknown as RoomLike;
 }
 
 function createE2eLiveKitConversation() {
@@ -119,9 +168,26 @@ function createE2eLiveKitConversation() {
       : "Hello again! What's your name?";
   let learnerTurnId: string | null = null;
   let learnerTurnSequence = 0;
+  let audioStartAttempts = 0;
+  let audioPlaybackStarted = false;
+  let audioPlaybackPermission: "blocked" | "ready" | null = null;
+  let disconnected = false;
 
   function publish(event: ConversationTransportEvent) {
+    if (disconnected) return;
     for (const listener of listeners) listener(event);
+  }
+
+  function setAudioPlaybackPermission(state: "blocked" | "ready") {
+    if (audioPlaybackPermission === state) return;
+    audioPlaybackPermission = state;
+    publish({ type: "audio-playback", state });
+  }
+
+  function startAudioPlayback() {
+    if (audioPlaybackStarted) return;
+    audioPlaybackStarted = true;
+    publish({ type: "audio-playback", state: "started" });
   }
 
   function clearTranscriptTimers() {
@@ -153,6 +219,14 @@ function createE2eLiveKitConversation() {
     eventTimers.add(timer);
   }
 
+  function scheduleAudioPlayback(delayMs: number) {
+    const timer = setTimeout(() => {
+      eventTimers.delete(timer);
+      startAudioPlayback();
+    }, delayMs);
+    eventTimers.add(timer);
+  }
+
   return {
     async commitUserTurn() {
       if (!learnerTurnId) return;
@@ -176,6 +250,13 @@ function createE2eLiveKitConversation() {
       }
       publish({ type: "state", state: "connected" });
       if (scenario === "connecting") return;
+      if (scenario === "audio-blocked" || scenario === "audio-rejected") {
+        setAudioPlaybackPermission("blocked");
+      } else if (scenario === "audio-delayed") {
+        scheduleAudioPlayback(500);
+      } else {
+        startAudioPlayback();
+      }
       if (scenario === "opening-speaking") {
         publish({ type: "speech-started", role: "assistant" });
         publish({
@@ -196,6 +277,13 @@ function createE2eLiveKitConversation() {
         language: "en",
         role: "assistant",
       });
+      if (scenario === "audio-established-blocked") {
+        const timer = setTimeout(() => {
+          eventTimers.delete(timer);
+          setAudioPlaybackPermission("blocked");
+        }, 50);
+        eventTimers.add(timer);
+      }
       if (scenario === "reconnecting") {
         scheduleEvent({ type: "state", state: "reconnecting" }, 50);
       }
@@ -209,6 +297,15 @@ function createE2eLiveKitConversation() {
 
     async setMicrophoneEnabled(enabled: boolean) {
       if (enabled) {
+        if (scenario === "microphone-delayed") {
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(() => {
+              eventTimers.delete(timer);
+              resolve();
+            }, 1_500);
+            eventTimers.add(timer);
+          });
+        }
         clearTranscriptTimers();
         learnerTurnSequence += 1;
         learnerTurnId = `e2e-learner-${learnerTurnSequence}`;
@@ -248,7 +345,39 @@ function createE2eLiveKitConversation() {
       });
     },
 
+    startAudio() {
+      if (
+        scenario === "audio-blocked" ||
+        scenario === "audio-established-blocked" ||
+        scenario === "audio-rejected"
+      ) {
+        if (audioPlaybackPermission === "ready" && audioPlaybackStarted) {
+          return Promise.resolve();
+        }
+        const attempt = ++audioStartAttempts;
+        return new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(() => {
+            eventTimers.delete(timer);
+            if (scenario === "audio-rejected" && attempt === 1) {
+              reject(new Error("Synthetic audio recovery failure"));
+              return;
+            }
+            setAudioPlaybackPermission("ready");
+            startAudioPlayback();
+            resolve();
+          }, 750);
+          eventTimers.add(timer);
+        });
+      }
+      return Promise.resolve();
+    },
+
     async disconnect() {
+      if (disconnected) return;
+      if (audioPlaybackStarted) {
+        publish({ type: "audio-playback", state: "stopped" });
+      }
+      disconnected = true;
       clearTranscriptTimers();
       for (const timer of eventTimers) clearTimeout(timer);
       eventTimers.clear();
@@ -264,6 +393,7 @@ function createE2eLiveKitConversation() {
 }
 
 export function createLiveKitConversation({
+  loadRoom = loadLiveKitRoom,
   mountAudio = defaultMountAudio,
   room,
   token,
@@ -272,20 +402,51 @@ export function createLiveKitConversation({
   if (token === E2E_PARTICIPANT_TOKEN && url === E2E_LIVEKIT_URL) {
     return createE2eLiveKitConversation();
   }
-  const activeRoom = room ?? (new Room() as unknown as RoomLike);
+  let activeRoom = room ?? null;
   const listeners = new Set<Listener>();
-  const attachments = new Map<TrackLike, AudioElementLike>();
+  const attachments = new Map<TrackLike, AudioAttachment>();
   let connected = false;
   let disconnected = false;
+  let listenersAttached = false;
   let assistantSpeaking = false;
+  let audioPlaybackPermission: "blocked" | "ready" | null = null;
 
   function publish(event: ConversationTransportEvent) {
+    if (disconnected) return;
     for (const listener of listeners) listener(event);
   }
 
-  const eventListeners = new Map<RoomEvent, EventListener>([
+  function removeAudioAttachment(
+    track: TrackLike,
+    { detach = false }: { detach?: boolean } = {},
+  ) {
+    const attachment = attachments.get(track);
+    if (!attachment) return;
+    attachments.delete(track);
+    attachment.element.removeEventListener("playing", attachment.onPlaying);
+    if (detach) track.detach?.();
+    attachment.element.remove();
+    if (
+      attachment.started &&
+      ![...attachments.values()].some((candidate) => candidate.started)
+    ) {
+      publish({ type: "audio-playback", state: "stopped" });
+    }
+  }
+
+  const eventListeners = new Map<ConversationRoomEvent, EventListener>([
     [
-      RoomEvent.ActiveSpeakersChanged,
+      LIVEKIT_CONVERSATION_EVENTS.audioPlayback,
+      (canPlayback) => {
+        if (typeof canPlayback !== "boolean") return;
+        const state = canPlayback ? "ready" : "blocked";
+        if (audioPlaybackPermission === state) return;
+        audioPlaybackPermission = state;
+        publish({ type: "audio-playback", state });
+      },
+    ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.activeSpeakers,
       (participants) => {
         const remoteAssistantSpeaking =
           Array.isArray(participants) &&
@@ -301,7 +462,7 @@ export function createLiveKitConversation({
       },
     ],
     [
-      RoomEvent.ParticipantAttributesChanged,
+      LIVEKIT_CONVERSATION_EVENTS.participantAttributes,
       (changedAttributes, participant) => {
         const local =
           participant !== null &&
@@ -330,10 +491,16 @@ export function createLiveKitConversation({
         }
       },
     ],
-    [RoomEvent.Reconnecting, () => publish({ type: "state", state: "reconnecting" })],
-    [RoomEvent.Reconnected, () => publish({ type: "state", state: "connected" })],
     [
-      RoomEvent.Disconnected,
+      LIVEKIT_CONVERSATION_EVENTS.reconnecting,
+      () => publish({ type: "state", state: "reconnecting" }),
+    ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.reconnected,
+      () => publish({ type: "state", state: "connected" }),
+    ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.disconnected,
       (reason) =>
         publish({
           type: "disconnected",
@@ -341,7 +508,7 @@ export function createLiveKitConversation({
         }),
     ],
     [
-      RoomEvent.TranscriptionReceived,
+      LIVEKIT_CONVERSATION_EVENTS.transcription,
       (segments, participant) => {
         const local =
           participant !== null &&
@@ -364,42 +531,86 @@ export function createLiveKitConversation({
       },
     ],
     [
-      RoomEvent.TrackSubscribed,
+      LIVEKIT_CONVERSATION_EVENTS.trackSubscribed,
       (candidate) => {
         const track = candidate as TrackLike;
-        if (track.kind !== "audio" || typeof track.attach !== "function") return;
+        if (
+          track.kind !== "audio" ||
+          typeof track.attach !== "function" ||
+          attachments.has(track)
+        ) {
+          return;
+        }
         const element = track.attach();
-        attachments.set(track, element);
+        const attachment: AudioAttachment = {
+          element,
+          onPlaying: () => {
+            if (disconnected || attachment.started) return;
+            if (attachments.get(track) !== attachment) return;
+            attachment.started = true;
+            publish({ type: "audio-playback", state: "started" });
+          },
+          started: false,
+        };
+        element.addEventListener("playing", attachment.onPlaying);
+        attachments.set(track, attachment);
         mountAudio(element);
       },
     ],
+    [
+      LIVEKIT_CONVERSATION_EVENTS.trackUnsubscribed,
+      (candidate) => removeAudioAttachment(candidate as TrackLike),
+    ],
   ]);
 
-  for (const [event, listener] of eventListeners) activeRoom.on(event, listener);
+  function attachListeners(target: RoomLike) {
+    if (listenersAttached) return;
+    listenersAttached = true;
+    for (const [event, listener] of eventListeners) target.on(event, listener);
+  }
+
+  function detachListeners(target: RoomLike) {
+    if (!listenersAttached) return;
+    listenersAttached = false;
+    for (const [event, listener] of eventListeners) target.off(event, listener);
+  }
+
+  if (activeRoom) attachListeners(activeRoom);
 
   return {
     async commitUserTurn() {
-      if (!connected) throw new Error("Connect before ending a turn.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before ending a turn.");
+      }
       await activeRoom.localParticipant.sendText(COMMIT_USER_TURN_COMMAND, {
         topic: "lk.chat",
       });
     },
 
     async connect() {
-      if (connected) return;
+      if (connected || disconnected) return;
       publish({ type: "state", state: "connecting" });
-      await activeRoom.connect(url, token);
+      const target = activeRoom ?? (await loadRoom());
+      if (disconnected) return;
+      activeRoom = target;
+      attachListeners(target);
+      await target.connect(url, token);
+      if (disconnected) return;
       connected = true;
       publish({ type: "state", state: "connected" });
     },
 
     async setMicrophoneEnabled(enabled: boolean) {
-      if (!connected) throw new Error("Connect before changing the microphone.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before changing the microphone.");
+      }
       await activeRoom.localParticipant.setMicrophoneEnabled(enabled);
     },
 
     async repeatLastAudio() {
-      if (!connected) throw new Error("Connect before repeating audio.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before repeating audio.");
+      }
       await activeRoom.localParticipant.sendText(REPEAT_LAST_AUDIO_COMMAND, {
         topic: "lk.chat",
       });
@@ -409,23 +620,28 @@ export function createLiveKitConversation({
       const trimmed = text.trim();
       if (!trimmed) throw new Error("Type a short answer first.");
       if (trimmed.length > 1_000) throw new Error("Please use 1000 characters or fewer.");
-      if (!connected) throw new Error("Connect before sending an answer.");
+      if (!connected || !activeRoom) {
+        throw new Error("Connect before sending an answer.");
+      }
       await activeRoom.localParticipant.sendText(trimmed, { topic: "lk.chat" });
+    },
+
+    startAudio() {
+      if (!connected || !activeRoom) {
+        return Promise.reject(new Error("Connect before starting audio."));
+      }
+      return activeRoom.startAudio();
     },
 
     async disconnect() {
       if (disconnected) return;
+      if (activeRoom) detachListeners(activeRoom);
+      for (const track of attachments.keys()) {
+        removeAudioAttachment(track, { detach: true });
+      }
       disconnected = true;
-      for (const [event, listener] of eventListeners) {
-        activeRoom.off(event, listener);
-      }
-      for (const [track, element] of attachments) {
-        track.detach?.();
-        element.remove();
-      }
-      attachments.clear();
       listeners.clear();
-      await activeRoom.disconnect();
+      await activeRoom?.disconnect();
       connected = false;
     },
 

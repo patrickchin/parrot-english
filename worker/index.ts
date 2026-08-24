@@ -43,8 +43,6 @@ interface Env
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
-  ELEVENLABS_API_KEY?: string;
-  ELEVENLABS_REQUEST_TIMEOUT_MS?: string;
 }
 
 interface WorkerDependencies {

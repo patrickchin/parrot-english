@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
+import { after, before, describe, it } from "node:test";
 
-const charactersDir = fileURLToPath(
-  new URL("../public/assets/characters", import.meta.url)
-);
+const mediaBaseUrl = "https://media.parrotbook.com/assets/v2/characters";
+let charactersDir = "";
 const dwebpAvailable = spawnSync("dwebp", ["-version"], {
   stdio: "ignore",
 }).status === 0;
@@ -124,14 +124,41 @@ const expectedAssets = {
   },
 };
 
-function assetPath(fileName, character) {
-  return join(charactersDir, character, fileName);
+before(async () => {
+  if (!dwebpAvailable) return;
+
+  charactersDir = await mkdtemp(join(tmpdir(), "parrot-character-sprites-"));
+  await Promise.all(
+    Object.entries(expectedAssets).map(async ([fileName, expected]) => {
+      const response = await globalThis.fetch(
+        `${mediaBaseUrl}/${expected.character}/${fileName}`,
+      );
+      assert.equal(response.ok, true, `${fileName} is published`);
+      assert.equal(
+        response.headers.get("content-type")?.split(";", 1)[0],
+        "image/webp",
+        `${fileName} content type`,
+      );
+      await writeFile(
+        join(charactersDir, fileName),
+        Buffer.from(await response.arrayBuffer()),
+      );
+    }),
+  );
+});
+
+after(async () => {
+  if (charactersDir) await rm(charactersDir, { force: true, recursive: true });
+});
+
+function assetPath(fileName) {
+  return join(charactersDir, fileName);
 }
 
-function decodePam(fileName, expected) {
+function decodePam(fileName) {
   const pam = execFileSync(
     "dwebp",
-    [assetPath(fileName, expected.character), "-pam", "-o", "-"],
+    [assetPath(fileName), "-pam", "-o", "-"],
     { maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] }
   );
   const headerEnd = pam.indexOf(Buffer.from("ENDHDR\n")) + "ENDHDR\n".length;
@@ -319,7 +346,7 @@ function hasTransparentNeighbor(decoded, x, y, radius = 2) {
 describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
   it("normalizes every asset to one transparent canvas", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
-      const decoded = decodePam(fileName, expected);
+      const decoded = decodePam(fileName);
       const target = targetGeometry[expected.character];
       const cornerAlphas = [
         decoded.rgba[3],
@@ -336,7 +363,7 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
 
   it("uses a consistent scale, center, and baseline for each character", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
-      const decoded = decodePam(fileName, expected);
+      const decoded = decodePam(fileName);
       const target = targetGeometry[expected.character];
       const measured = measureBodyGeometry(decoded, expected.character);
       const tolerance = target.tolerance;
@@ -361,8 +388,8 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
   });
 
   it("confines partial alpha to a two-pixel artwork boundary", () => {
-    for (const [fileName, expected] of Object.entries(expectedAssets)) {
-      const decoded = decodePam(fileName, expected);
+    for (const fileName of Object.keys(expectedAssets)) {
+      const decoded = decodePam(fileName);
       for (let y = 0; y < decoded.height; y += 1) {
         for (let x = 0; x < decoded.width; x += 1) {
           const alpha = decoded.rgba[(y * decoded.width + x) * 4 + 3];
@@ -379,7 +406,7 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
   it("renders repaired sclera as opaque white while preserving pupils", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
       if (!expected.sourceEyes) continue;
-      const decoded = decodePam(fileName, expected);
+      const decoded = decodePam(fileName);
 
       for (const [eyeIndex, sourceEye] of expected.sourceEyes.entries()) {
         const eyePixels = pixelsInRegion(
@@ -411,7 +438,7 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
   it("does not promote low-alpha checkerboard fringe into artwork", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
       if (!expected.sourceExteriorSamples) continue;
-      const decoded = decodePam(fileName, expected);
+      const decoded = decodePam(fileName);
       const transform = normalizationTransform(expected);
 
       for (const sample of expected.sourceExteriorSamples) {
@@ -430,7 +457,7 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
   it("keeps gray Dolly tails free of warm line contamination", () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
       if (!expected.sourceGrayTail) continue;
-      const decoded = decodePam(fileName, expected);
+      const decoded = decodePam(fileName);
       const tailPixels = pixelsInRegion(
         decoded,
         transformRegion(expected, expected.sourceGrayTail)
@@ -451,7 +478,7 @@ describe("character sprite artwork", { skip: !dwebpAvailable }, () => {
     for (const [fileName, expected] of Object.entries(expectedAssets)) {
       if (!expected.rgbSha256) continue;
       assert.equal(
-        rgbSha256(decodePam(fileName, expected).rgba),
+        rgbSha256(decodePam(fileName).rgba),
         expected.rgbSha256,
         `${fileName} RGB`
       );

@@ -45,52 +45,49 @@ function getParrotLessonHrefs(html) {
 
 const expectedReadyMadeArtwork = [
   [
-    "/assets/lesson-covers/01-peppas-high-ball.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/01-peppas-high-ball.webp",
     "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
   ],
   [
-    "/assets/lesson-covers/02-garden-colors.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/02-garden-colors.webp",
     "Peppa and Dolly choosing a red flower for their basket",
   ],
   [
-    "/assets/lesson-covers/03-snack-time.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/03-snack-time.webp",
     "Dolly handing Peppa an apple from a snack basket",
   ],
   [
-    "/assets/lesson-covers/04-playground-words.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/04-playground-words.webp",
     "Peppa waiting beside a swing while Dolly takes her turn",
   ],
   [
-    "/assets/lesson-covers/05-market-day.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/05-market-day.webp",
     "Peppa buying two red apples from Dolly's fruit stand",
   ],
   [
-    "/assets/lesson-covers/06-picnic-time.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/06-picnic-time.webp",
     "Dolly pouring juice for Peppa on a picnic blanket",
   ],
   [
-    "/assets/lesson-covers/07-bedtime-story.webp",
+    "https://media.parrotbook.com/assets/v2/lesson-covers/07-bedtime-story.webp",
     "Peppa tucked under a blanket while Dolly reads beside a lantern",
   ],
 ];
 
-test("lesson list separates ready-made lessons from custom lessons", () => {
+test("lesson list gives children one simple picture-led lesson path", () => {
   const html = renderLessonList();
   const expectedHrefs = LESSONS.map(
     (entry) => `/lessons/parrot/${encodeURIComponent(entry.id)}/scenes/1`,
   );
 
-  assert.match(html, /<h1[^>]*>Lessons<\/h1>/);
-  assert.match(html, /Choose a story and start speaking/i);
+  assert.match(html, /<h1[^>]*>Pick a lesson<\/h1>/);
+  assert.match(html, /Listen\. Then speak\./i);
   assert.match(
     html,
-    /<h2[^>]*id="parrot-lessons-title"[^>]*>Ready-made lessons<\/h2>/,
+    /<section[^>]*aria-label="Lessons"/,
   );
-  assert.match(
-    html,
-    /<h2[^>]*id="my-lessons-title"[^>]*>My lessons<\/h2>/,
-  );
-  assert.equal((html.match(/<h2/g) ?? []).length, 2);
+  assert.match(html, /<h2[^>]*id="grown-up-tools-title"[^>]*>[\s\S]*Grown-up tools<\/h2>/);
+  assert.doesNotMatch(html, /id="my-lessons-title"/);
   assert.equal((html.match(/<h3/g) ?? []).length, 7);
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.equal((html.match(/<article/g) ?? []).length, 7);
@@ -99,6 +96,18 @@ test("lesson list separates ready-made lessons from custom lessons", () => {
     (html.match(/aria-label="Start lesson: [^"]+"/g) ?? []).length,
     7,
   );
+  for (const practiceLine of [
+    "Say: Can you help me?",
+    "Say: It is red.",
+    "Say: May I have an apple?",
+    "Say: Can I have a turn?",
+    "Say: Two apples, please.",
+    "Say: Yes, please.",
+    "Say: Good night.",
+  ]) {
+    assert.match(html, new RegExp(practiceLine.replace(/[?.]/g, "\\$&")));
+  }
+  assert.doesNotMatch(html, /retrieve a ball from a high tree branch/i);
   assert.doesNotMatch(html, /disabled=""|Coming soon/);
 });
 
@@ -121,41 +130,76 @@ test("ready-made lessons use distinct story-specific artwork", () => {
 test("lesson list keeps custom creation secondary and explains who it is for", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [],
-      myLessonsError: "",
+      myLessonsLoadPhase: "ready",
       onRetryMyLessons() {},
     }),
   );
 
-  assert.match(html, /No custom lessons yet\./);
-  assert.match(html, /grown-up/i);
+  assert.match(html, /No made-for-you lessons yet\./);
+  assert.match(html, /Grown-up tools/);
   assert.match(
     html,
-    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create custom lesson<\/a>/s,
+    /<a[^>]*aria-label="Create custom lesson"[^>]*href="\/lessons\/my\/create"[^>]*>.*Make a lesson<\/a>/s,
+  );
+});
+
+test("lesson artwork reserves its card space and defers off-screen images", () => {
+  const html = renderLessonList();
+
+  assert.equal((html.match(/decoding="async"/g) ?? []).length, 7);
+  assert.equal((html.match(/loading="eager"/g) ?? []).length, 2);
+  assert.equal((html.match(/loading="lazy"/g) ?? []).length, 5);
+  assert.match(
+    html,
+    /<img[^>]*fetchPriority="high"[^>]*loading="eager"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v2\/lesson-covers\/01-peppas-high-ball\.webp"/,
+  );
+  assert.match(
+    html,
+    /sizes="\(max-width: 359px\) 104px,[^"]+"/,
+  );
+  assert.match(
+    html,
+    /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v2\/lesson-covers\/01-peppas-high-ball-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v2\/lesson-covers\/01-peppas-high-ball-768\.webp 768w"/,
   );
 });
 
 test("a failed custom-lesson list offers retry without hiding ready-made lessons", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [],
-      myLessonsError: "Your custom lessons could not be loaded.",
+      myLessonsLoadPhase: "error",
       onRetryMyLessons() {},
     }),
   );
 
-  assert.match(html, /role="alert"/);
-  assert.match(html, /Your custom lessons could not be loaded\./);
+  assert.match(html, /role="status"/);
+  assert.match(html, /aria-live="polite"/);
+  assert.match(html, /aria-atomic="true"/);
+  assert.match(html, /We couldn&#x27;t load My Lessons\./);
   assert.match(html, /<button[^>]*>Try again<\/button>/);
   assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.match(html, /aria-label="Create custom lesson"/);
+  assert.doesNotMatch(html, /Cannot read properties|TypeError|request_failed/);
+});
+
+test("retry keeps one focusable unavailable action beside loading feedback", () => {
+  const html = renderInRouter(
+    createElement(LessonListView, {
+      myLessons: [],
+      myLessonsLoadPhase: "retrying",
+      onRetryMyLessons() {},
+    }),
+  );
+
+  assert.match(html, /Loading My Lessons…/);
+  assert.match(html, /<button[^>]*aria-disabled="true"[^>]*>Try again<\/button>/);
+  assert.doesNotMatch(html, /<button[^>]* disabled=""/);
 });
 
 test("saved lessons keep distinct play, edit, and create actions", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
-      isLoadingMyLessons: false,
       myLessons: [
         {
           id: "lesson/id",
@@ -163,18 +207,21 @@ test("saved lessons keep distinct play, edit, and create actions", () => {
           source: "uploaded",
         },
       ],
-      myLessonsError: "",
+      myLessonsLoadPhase: "ready",
       onRetryMyLessons() {},
     }),
   );
 
   assert.match(html, /aria-label="Start lesson: Editable Garden"/);
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
+  assert.match(html, /Made for you/);
+  assert.match(html, /A lesson made for you\./);
   assert.match(html, /aria-label="Edit lesson: Editable Garden"/);
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/edit"/);
+  assert.match(html, /Grown-up: edit/);
   assert.match(
     html,
-    /<a[^>]*href="\/lessons\/my\/create"[^>]*>.*Create custom lesson<\/a>/s,
+    /<a[^>]*aria-label="Create custom lesson"[^>]*href="\/lessons\/my\/create"[^>]*>.*Make a lesson<\/a>/s,
   );
 });
 

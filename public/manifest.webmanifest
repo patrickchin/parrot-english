@@ -1,7 +1,7 @@
 {
   "name": "Parrot English",
   "short_name": "Parrot",
-  "description": "A one-page English speaking practice lesson for young learners.",
+  "description": "Short listening, speaking, and story activities for young English learners.",
   "lang": "zh-CN",
   "start_url": "/",
   "scope": "/",
@@ -11,19 +11,19 @@
   "categories": ["education", "kids"],
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "https://media.parrotbook.com/assets/v2/brand/favicon.png",
       "sizes": "64x64",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "https://media.parrotbook.com/assets/v2/brand/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "https://media.parrotbook.com/assets/v2/brand/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

@@ -56,6 +56,8 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
 }) => {
   const generatedLesson = createLessonScript({ title: "AI Garden Lesson" });
   generatedLesson.scenes = generatedLesson.scenes.slice(0, 1);
+  generatedLesson.scenes[0].steps[0].dialogue =
+    "Can you please point to the little red flower beside Peppa?";
   let savedLesson = generatedLesson;
 
   await page.route("**/api/lessons/my/generate", async (route) => {
@@ -119,6 +121,17 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
     .fill("asking for help in a garden");
   await page.getByRole("button", { exact: true, name: "Make lesson" }).click();
   await expect(page.getByRole("button", { name: "Start over" })).toBeVisible();
+  const languageNotes = page.getByLabel("Draft warnings");
+  await expect(languageNotes).toContainText("question has 11 words");
+  await expect(languageNotes).not.toHaveAttribute("role", "status");
+  await expect(
+    page.getByRole("button", { exact: true, name: "Save and play lesson" }),
+  ).toBeEnabled();
+  await page
+    .getByRole("group", { name: "Dialogue 1" })
+    .getByRole("textbox", { name: "Dialogue", exact: true })
+    .fill("Can you help me?");
+  await expect(languageNotes).toHaveCount(0);
   await page.getByText("Lesson setup and goals", { exact: true }).click();
   await expect(titleField).toHaveValue("AI Garden Lesson");
   await expect(

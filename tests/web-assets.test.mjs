@@ -4,11 +4,33 @@ import { extname, join, relative } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const publicAssetsDir = fileURLToPath(new URL("../public/assets", import.meta.url));
+const publicDir = fileURLToPath(new URL("../public", import.meta.url));
+const publicAssetsDir = join(publicDir, "assets");
+const indexFile = fileURLToPath(new URL("../index.html", import.meta.url));
+const manifestFile = fileURLToPath(
+  new URL("../public/manifest.webmanifest", import.meta.url),
+);
 const backgroundCatalogFile = fileURLToPath(
   new URL("../content/catalogs/backgrounds.json", import.meta.url),
 );
+const characterCatalogFile = fileURLToPath(
+  new URL("../content/catalogs/characters.json", import.meta.url),
+);
+const lessonCoverCatalogFile = fileURLToPath(
+  new URL("../content/catalogs/lesson-covers.json", import.meta.url),
+);
 const webAssetExtensions = new Set([".mp3", ".svg", ".webp"]);
+const staticImageExtensions = new Set([
+  ".avif",
+  ".gif",
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".svg",
+  ".webp",
+]);
+const runtimeMediaPattern =
+  /^https:\/\/media\.parrotbook\.com\/assets\/v[1-9]\d*\/[a-z0-9/_-]+\.webp$/;
 
 function isSupportedAsset(filePath) {
   return webAssetExtensions.has(extname(filePath));
@@ -56,5 +78,47 @@ describe("web asset formats", () => {
     await assert.rejects(access(join(publicAssetsDir, "backgrounds")), {
       code: "ENOENT",
     });
+  });
+
+  it("keeps static runtime imagery in R2 instead of the deployment bundle", async () => {
+    const files = await listAssetFiles(publicDir);
+    const bundledImages = files
+      .map((filePath) => relative(publicDir, filePath))
+      .filter((filePath) => staticImageExtensions.has(extname(filePath)));
+
+    assert.deepEqual(bundledImages, []);
+  });
+
+  it("uses versioned R2 URLs for app icons and social previews", async () => {
+    const [indexHtml, manifest] = await Promise.all([
+      readFile(indexFile, "utf8"),
+      readFile(manifestFile, "utf8").then(JSON.parse),
+    ]);
+    const brandMediaPattern =
+      /^https:\/\/media\.parrotbook\.com\/assets\/v2\/brand\/[a-z0-9-]+\.png$/;
+    const indexMedia = [...indexHtml.matchAll(/(?:href|content)="(https:[^"]+\.png)"/g)]
+      .map((match) => match[1]);
+
+    assert.equal(indexMedia.length, 5);
+    for (const src of [...indexMedia, ...manifest.icons.map((icon) => icon.src)]) {
+      assert.match(src, brandMediaPattern);
+    }
+  });
+
+  it("uses immutable R2 URLs for character and lesson-cover catalogs", async () => {
+    const [characters, lessonCovers] = await Promise.all([
+      readFile(characterCatalogFile, "utf8").then(JSON.parse),
+      readFile(lessonCoverCatalogFile, "utf8").then(JSON.parse),
+    ]);
+    const characterImages = characters.flatMap((character) =>
+      Object.values(character.assets).map((asset) => asset.src),
+    );
+
+    for (const src of [
+      ...characterImages,
+      ...lessonCovers.map((cover) => cover.src),
+    ]) {
+      assert.match(src, runtimeMediaPattern);
+    }
   });
 });

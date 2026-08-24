@@ -35,13 +35,13 @@ describe("lesson audio", () => {
           phase: LessonPhase.Responding,
           response: {
             speaker: "narrator",
-            dialogue: "Almost! Try again, Bella.",
+            dialogue: "Almost! Try again.",
             after: "retry",
           },
         },
         lesson,
       ),
-      { speaker: "narrator", text: "Almost! Try again, Bella." },
+      { speaker: "narrator", text: "Almost! Try again." },
     );
   });
 
@@ -78,6 +78,25 @@ describe("lesson audio", () => {
     assert.equal(line.speaker, "dolly");
     assert.equal(line.text, "Here you are!");
     assert.equal(line.audioSrc, "/assets/audio/dolly-here-you-are.mp3");
+  });
+
+  it("resolves name-free retry feedback to saved narration", () => {
+    const line = getLessonAudioLine(
+      {
+        ...createInitialLessonState(),
+        phase: LessonPhase.Responding,
+        response: {
+          speaker: "narrator",
+          dialogue: "Almost! Try again.",
+          after: "retry",
+        },
+        responseOutcome: "incorrect",
+      },
+      lesson,
+    );
+
+    assert.equal(line.text, "Almost! Try again.");
+    assert.equal(line.audioSrc, "/assets/audio/narrator-feedback-retry.mp3");
   });
 
   it("stays silent for user interaction and idle phases", () => {

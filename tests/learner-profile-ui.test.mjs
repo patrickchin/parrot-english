@@ -12,7 +12,9 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const questionModule = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileQuestion.tsx");
+const questionModule = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerProfileQuestion.tsx",
+);
 const {
   LearnerProfileQuestionView,
   captureLearnerProfileAnswer,
@@ -24,9 +26,13 @@ const acknowledgmentModule = await vite.ssrLoadModule(
 );
 const { LearnerProfileAcknowledgment, beginAcknowledgmentPlayback } =
   acknowledgmentModule;
-const profileModule = await vite.ssrLoadModule("/src/learner-profile/ProfileEditor.tsx");
+const profileModule = await vite.ssrLoadModule(
+  "/src/learner-profile/ProfileEditor.tsx",
+);
 const { ProfileEditorView } = profileModule;
-const gateModule = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx");
+const gateModule = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerProfileGate.tsx",
+);
 const {
   LearnerProfileGateView,
   answerForQuestion,
@@ -40,7 +46,10 @@ const {
   teardownProfileOperationResources,
   updateProfileDraft,
 } = gateModule;
-const appSource = readFileSync(new URL("../src/app/App.tsx", import.meta.url), "utf8");
+const appSource = readFileSync(
+  new URL("../src/app/App.tsx", import.meta.url),
+  "utf8",
+);
 const questionSource = readFileSync(
   new URL("../src/learner-profile/LearnerProfileQuestion.tsx", import.meta.url),
   "utf8",
@@ -81,6 +90,8 @@ function questionProps(overrides = {}) {
     onSubmit() {},
     onTranscribe() {},
     onValueChange() {},
+    pendingAction: null,
+    playbackPending: false,
     progress: { answered: 1, current: 2, total: 6 },
     question: question(),
     status: "idle",
@@ -102,12 +113,18 @@ describe("one-question prose onboarding view", () => {
     assert.equal((html.match(/<h1/g) ?? []).length, 1);
     assert.match(html, /How old are you\?/);
     assert.match(html, /你几岁了？/);
+    assert.match(html, /<p[^>]*lang="zh-CN"[^>]*>你几岁了？<\/p>/);
     assert.match(html, /Question 2 of 6/);
     assert.match(html, /<textarea/);
     assert.match(html, /maxlength="120"/i);
     assert.match(html, /I am six/);
     assert.match(html, /aria-label="Replay question"/);
     assert.match(html, /aria-label="Speak your answer"/);
+    assert.match(html, /src="[^"]*peppa-happy-384\.webp"/);
+    assert.match(
+      html,
+      /srcSet="[^"]*peppa-happy-384\.webp 384w, [^"]*peppa-happy-768\.webp 768w"/,
+    );
     assert.match(html, />Next</);
     assert.match(html, />Skip for now</);
     assert.doesNotMatch(
@@ -116,19 +133,73 @@ describe("one-question prose onboarding view", () => {
     );
   });
 
-  it("keeps the editable fallback through listening, transcription, and thinking", () => {
-    const recording = renderQuestion({ status: "recording" });
+  it("keeps one stable status and the editable fallback through every operation phase", () => {
+    const idle = renderQuestion();
+    assert.equal((idle.match(/role="status"/g) ?? []).length, 1);
+    assert.doesNotMatch(
+      idle,
+      /Opening mic…|Listening…|Writing…|Thinking…|Ready\./,
+    );
+
+    const opening = renderQuestion({
+      pendingAction: "microphone",
+      status: "opening",
+    });
+    assert.match(opening, /Opening mic…/);
+    assert.equal((opening.match(/role="status"/g) ?? []).length, 1);
+    assert.match(
+      opening,
+      /aria-label="Speak your answer"[^>]*aria-disabled="true"/,
+    );
+    assert.doesNotMatch(opening, /<fieldset[^>]*disabled/);
+    assert.match(opening, /<textarea[^>]*disabled/);
+
+    const recording = renderQuestion({
+      pendingAction: "microphone",
+      status: "recording",
+    });
     assert.match(recording, /Listening…/);
     assert.match(recording, /<textarea/);
 
-    const transcribing = renderQuestion({ status: "transcribing" });
-    assert.match(transcribing, /Writing what I heard…/);
+    const transcribing = renderQuestion({
+      pendingAction: "microphone",
+      status: "transcribing",
+    });
+    assert.match(transcribing, /Writing…/);
     assert.match(transcribing, /<textarea/);
 
-    const saving = renderQuestion({ status: "saving" });
-    assert.match(saving, /Peppa is thinking…/);
-    assert.match(saving, /disabled=""/);
+    const saving = renderQuestion({
+      pendingAction: "submit",
+      status: "saving",
+    });
+    assert.equal((saving.match(/Thinking…/g) ?? []).length, 1);
+    assert.match(saving, /<button[^>]*aria-disabled="true"[^>]*type="submit"/);
+    assert.match(saving, />Next</);
+    assert.doesNotMatch(saving, /Peppa is thinking…/);
+    assert.doesNotMatch(saving, /<fieldset[^>]*disabled/);
     assert.match(saving, /<textarea/);
+
+    const ready = renderQuestion({ status: "ready" });
+    assert.match(ready, /Ready\./);
+    assert.equal((ready.match(/role="status"/g) ?? []).length, 1);
+  });
+
+  it("keeps Replay on one node while question audio owns playback", () => {
+    const idle = renderQuestion();
+    const playing = renderQuestion({ playbackPending: true });
+
+    assert.doesNotMatch(
+      idle,
+      /aria-label="Replay question"[^>]*aria-disabled="true"/,
+    );
+    assert.match(
+      playing,
+      /aria-label="Replay question"[^>]*aria-disabled="true"/,
+    );
+    assert.doesNotMatch(
+      playing,
+      /aria-label="Replay question"[^>]*disabled=""/,
+    );
   });
 
   it("shows field errors and only offers per-question skip when optional", () => {
@@ -144,7 +215,10 @@ describe("one-question prose onboarding view", () => {
     );
     assert.doesNotMatch(renderQuestion(), />Skip question</);
     assert.doesNotMatch(
-      renderQuestion({ mode: "profile", question: question({ required: false }) }),
+      renderQuestion({
+        mode: "profile",
+        question: question({ required: false }),
+      }),
       /Skip for now|Skip question/,
     );
   });
@@ -177,6 +251,21 @@ describe("onboarding prompt and transcription helpers", () => {
         text: "How old are you?",
       },
     ]);
+  });
+
+  it("forwards cancellation while playing the first question", async () => {
+    const controller = new AbortController();
+    let startSignal;
+
+    await playLearnerProfileStart({
+      questionAudio: question().audio,
+      signal: controller.signal,
+      async playLine(options) {
+        startSignal = options.signal;
+      },
+    });
+
+    assert.equal(startSignal, controller.signal);
   });
 
   it("replays only the current question", async () => {
@@ -257,71 +346,129 @@ describe("Peppa acknowledgment", () => {
     assert.doesNotMatch(html, /<textarea/);
   });
 
-  it("plays base64 MP3, advances on completion, and revokes its URL", async () => {
-    let ended;
-    let playCalls = 0;
-    let advanced = 0;
-    let revoked = "";
+  it("plays the saved source directly and aborts pending playback on cleanup", async () => {
+    let playback;
+    let abortEvents = 0;
     const cleanup = beginAcknowledgmentPlayback({
       acknowledgment: {
-        text: "Dinosaurs are very stompy!",
-        audio: { contentType: "audio/mpeg", base64: "AQID" },
+        text: "Thank you!",
+        audio: {
+          id: "peppa-thank-you",
+          src: "/assets/audio/peppa-thank-you.mp3",
+          text: "Thank you!",
+        },
       },
-      createAudio(src) {
-        assert.equal(src, "blob:acknowledgment");
-        return {
-          addEventListener(event, listener) {
-            if (event === "ended") ended = listener;
-          },
-          pause() {},
-          play() {
-            playCalls += 1;
-            return Promise.resolve();
-          },
-          removeEventListener() {},
-        };
-      },
-      createObjectURL(blob) {
-        assert.equal(blob.type, "audio/mpeg");
-        assert.equal(blob.size, 3);
-        return "blob:acknowledgment";
-      },
-      onAdvance() {
-        advanced += 1;
-      },
-      revokeObjectURL(url) {
-        revoked = url;
+      playLine(options) {
+        playback = options;
+        return new Promise((_resolve, reject) => {
+          options.signal.addEventListener("abort", () => {
+            abortEvents += 1;
+            const error = new Error("Audio playback was cancelled.");
+            error.name = "AbortError";
+            reject(error);
+          });
+        });
       },
     });
 
-    await Promise.resolve();
-    assert.equal(playCalls, 1);
-    ended();
-    assert.equal(advanced, 1);
+    assert.equal(playback.audioId, "peppa-thank-you");
+    assert.equal(playback.audioSrc, "/assets/audio/peppa-thank-you.mp3");
+    assert.equal(playback.text, "Thank you!");
+    assert.equal(playback.signal.aborted, false);
+
     cleanup();
-    assert.equal(revoked, "blob:acknowledgment");
+    cleanup();
+    await Promise.resolve();
+    assert.equal(playback.signal.aborted, true);
+    assert.equal(abortEvents, 1);
   });
 
-  it("uses a readable no-audio delay and ignores stale playback", () => {
-    let scheduled;
-    let advanced = 0;
-    const cleanup = beginAcknowledgmentPlayback({
-      acknowledgment: { text: "Lovely!", audio: null },
-      onAdvance() {
-        advanced += 1;
+  it("keeps optional playback rejection and setup failure out of navigation", async () => {
+    const acknowledgment = {
+      text: "Thank you!",
+      audio: {
+        id: "peppa-thank-you",
+        src: "/assets/audio/peppa-thank-you.mp3",
+        text: "Thank you!",
       },
-      setTimer(callback, delay) {
-        assert.ok(delay >= 1_500);
-        scheduled = callback;
-        return 7;
-      },
-      clearTimer(id) {
-        assert.equal(id, 7);
+    };
+    let rejectedCalls = 0;
+    const rejectedCleanup = beginAcknowledgmentPlayback({
+      acknowledgment,
+      async playLine() {
+        rejectedCalls += 1;
+        const error = new Error("Autoplay is unavailable.");
+        error.name = "NotAllowedError";
+        throw error;
       },
     });
-    cleanup();
-    scheduled();
-    assert.equal(advanced, 0);
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(rejectedCalls, 1);
+    assert.doesNotThrow(rejectedCleanup);
+
+    assert.doesNotThrow(() => {
+      const cleanup = beginAcknowledgmentPlayback({
+        acknowledgment,
+        playLine() {
+          throw new Error("Audio setup is unavailable.");
+        },
+      });
+      cleanup();
+    });
+  });
+
+  it("skips missing, legacy, mismatched, and third-party media without timers", () => {
+    const scheduledDelays = [];
+    const playedSources = [];
+    const originalSetTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = (_callback, delay) => {
+      scheduledDelays.push(delay);
+      return 7;
+    };
+
+    try {
+      const playLine = ({ audioSrc }) => {
+        playedSources.push(audioSrc);
+        return Promise.resolve();
+      };
+      for (const audio of [
+        undefined,
+        null,
+        { contentType: "audio/mpeg", base64: "AQID" },
+        {
+          id: "peppa-thank-you",
+          src: "https://tracker.invalid/thank-you.mp3",
+          text: "Thank you!",
+        },
+        {
+          id: "peppa-thank-you",
+          src: "//tracker.invalid/thank-you.mp3",
+          text: "Thank you!",
+        },
+        {
+          id: "peppa-thank-you",
+          src: "/assets/audio/other.mp3",
+          text: "Thank you!",
+        },
+        {
+          id: "peppa-thank-you",
+          src: "/assets/audio/peppa-thank-you.mp3",
+          text: "A different phrase!",
+        },
+      ]) {
+        const cleanup = beginAcknowledgmentPlayback({
+          acknowledgment: { text: "Thank you!", audio },
+          playLine,
+        });
+        cleanup();
+      }
+    } finally {
+      globalThis.setTimeout = originalSetTimeout;
+    }
+
+    assert.deepEqual(playedSources, []);
+    assert.deepEqual(scheduledDelays, []);
   });
 });
 
@@ -358,7 +505,10 @@ describe("profile summary editor", () => {
     );
     assert.match(html, /value="Mia"/);
     assert.match(html, /value="30"/);
-    assert.match(html, /<label[^>]*for="profile-description"[^>]*>.*About Mia/s);
+    assert.match(
+      html,
+      /<label[^>]*for="profile-description"[^>]*>.*About Mia/s,
+    );
     assert.match(
       html,
       /<textarea[^>]*id="profile-description"[^>]*maxlength="2000"[^>]*>Mia is thirty and loves pandas and fast red cars\.<\/textarea>/i,
@@ -367,7 +517,10 @@ describe("profile summary editor", () => {
       html.indexOf("Mia is thirty and loves pandas") >
         html.indexOf('id="profile-age"'),
     );
-    assert.match(html, /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy\.webp/);
+    assert.match(
+      html,
+      /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy-384\.webp/,
+    );
     assert.match(html, /Redo learner setup/);
     assert.match(html, />Redo setup questions</);
     assert.match(html, /normal chat.*Home.*Talk to Peppa/is);
@@ -394,14 +547,10 @@ describe("profile summary editor", () => {
         pageError: "",
       }),
     );
-    const close = html.match(
-      /<button[^>]*aria-label="Back"[^>]*>/,
-    )?.[0];
+    const close = html.match(/<button[^>]*aria-label="Back"[^>]*>/)?.[0];
     const cancel = html.match(/<button[^>]*>Cancel<\/button>/)?.[0];
     const save = html.match(/<button[^>]*>Save changes<\/button>/)?.[0];
-    const redo = html.match(
-      /<button[^>]*>Redo setup questions<\/button>/,
-    )?.[0];
+    const redo = html.match(/<button[^>]*>Redo setup questions<\/button>/)?.[0];
 
     assert.doesNotMatch(html, /<fieldset disabled="">/);
     assert.doesNotMatch(close, /\sdisabled(?:=""|(?=[ >]))/);
@@ -431,9 +580,7 @@ describe("profile summary editor", () => {
     const buttons = [
       html.match(/<button[^>]*aria-label="Back"[^>]*>/)?.[0],
       html.match(/<button[^>]*>Cancel<\/button>/)?.[0],
-      html.match(
-        /<button[^>]*>Redo setup questions<\/button>/,
-      )?.[0],
+      html.match(/<button[^>]*>Redo setup questions<\/button>/)?.[0],
       html.match(/<button[^>]*>Saving…<\/button>/)?.[0],
     ];
 
@@ -928,13 +1075,50 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(failed, /LESSON CONTENT/);
 
     const start = renderGate({ data: fullState() });
-    assert.match(start, /Help Peppa get to know you/);
-    assert.match(start, /a few quick questions/i);
-    assert.match(start, /change these later.*Learner profile/is);
-    assert.match(start, />Set up profile</);
+    assert.match(start, /Answer 6 questions/);
+    assert.match(
+      start.replace(/<[^>]+>/g, ""),
+      /We save your answers\. A grown-up can change your name and age\./,
+    );
+    assert.match(start, />Start questions</);
+    assert.match(start, />Skip for now</);
+    assert.doesNotMatch(
+      start,
+      /Help Peppa get to know you|personalize|Learner profile|\bquick\b|Set up profile/i,
+    );
     assert.doesNotMatch(start, /PARROT ENGLISH/);
     assert.doesNotMatch(start, /What&#x27;s your name\?/);
     assert.doesNotMatch(start, /LESSON CONTENT/);
+  });
+
+  it("uses the loaded question count with singular grammar", () => {
+    const start = renderGate({
+      data: fullState({
+        progress: { answered: 0, current: 1, total: 1 },
+      }),
+    });
+
+    assert.match(start, /Answer 1 question/);
+    assert.doesNotMatch(start, /Answer 1 questions/);
+  });
+
+  it("names the remaining task when setup resumes", () => {
+    const resumed = renderGate({
+      data: fullState({
+        progress: { answered: 1, current: 2, total: 6 },
+      }),
+    });
+    assert.match(resumed, /Answer 5 more questions/);
+    assert.match(resumed, />Continue questions</);
+    assert.doesNotMatch(resumed, />Start questions</);
+
+    const lastQuestion = renderGate({
+      data: fullState({
+        progress: { answered: 5, current: 6, total: 6 },
+      }),
+    });
+    assert.match(lastQuestion, /Answer 1 more question/);
+    assert.doesNotMatch(lastQuestion, /Answer 1 more questions/);
   });
 
   it("shows acknowledgment before the next question or completed lesson", () => {
@@ -1014,7 +1198,10 @@ describe("onboarding and profile gate", () => {
         },
       }),
     };
-    assert.equal(answerForQuestion(profile, question({ answerKey: "name" })), "Mia");
+    assert.equal(
+      answerForQuestion(profile, question({ answerKey: "name" })),
+      "Mia",
+    );
     assert.equal(answerForQuestion(profile, question()), "8");
     assert.equal(
       answerForQuestion(profile, question({ answerKey: "favoriteAnimals" })),
@@ -1032,26 +1219,31 @@ describe("onboarding and profile gate", () => {
       },
       acknowledgment: { text: "Lovely stories!", audio: null },
     });
+    const controller = new AbortController();
     let calls = 0;
+    let receivedSignal;
     const result = await saveQuestionAndAdvance({
       questionKey: "favoriteStoryTopics",
       rawAnswer: "I like space stories",
-      async save() {
+      signal: controller.signal,
+      async save(_questionKey, _rawAnswer, options) {
         calls += 1;
+        receivedSignal = options?.signal;
         return completed;
       },
     });
     assert.equal(calls, 1);
+    assert.equal(receivedSignal, controller.signal);
     assert.equal(result, completed);
   });
 
   it("composes route-aware onboarding inside the authenticated shell", () => {
+    assert.match(appSource, /<AuthGate\s+signedOutFallback=\{/);
+    assert.doesNotMatch(appSource, /compactSessionBar/);
     assert.match(
       appSource,
-      /<AuthGate\s+signedOutFallback=\{/,
+      /<LearnerProfileGate[\s\S]*?isLearnerProfileRoute=/,
     );
-    assert.doesNotMatch(appSource, /compactSessionBar/);
-    assert.match(appSource, /<LearnerProfileGate[\s\S]*?isLearnerProfileRoute=/);
     assert.match(appSource, /completedLearnerProfileFallback=/);
     assert.match(appSource, /learnerProfileFallback=/);
     assert.match(appSource, /isProfileRoute=/);

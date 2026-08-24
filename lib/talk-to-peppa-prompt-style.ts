@@ -12,17 +12,17 @@ export const DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE: TalkToPeppaPromptStyle =
 
 export const TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS = [
   {
-    description: "The fewest words, with lots of time for you.",
+    description: "Peppa says just a few words. You get lots of time.",
     id: "tiny-turns",
     label: "Tiny turns",
   },
   {
-    description: "Simple sentence help and two easy choices.",
+    description: "Peppa helps you say one easy sentence.",
     id: "gentle-guide",
     label: "Gentle guide",
   },
   {
-    description: "Silly reactions that stay short and easy.",
+    description: "Peppa is silly. Her words stay easy.",
     id: "playful-pal",
     label: "Playful pal",
   },

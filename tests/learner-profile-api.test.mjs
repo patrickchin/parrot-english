@@ -45,8 +45,12 @@ describe("learnerProfile browser API", () => {
     const payload = {
       question: null,
       acknowledgment: {
-        text: "Dinosaurs are very stompy!",
-        audio: { contentType: "audio/mpeg", base64: "AQID" },
+        text: "Thank you!",
+        audio: {
+          id: "peppa-thank-you",
+          src: "/assets/audio/peppa-thank-you.mp3",
+          text: "Thank you!",
+        },
       },
     };
     const learnerProfile = jsonFetch(payload);
@@ -79,7 +83,14 @@ describe("learnerProfile browser API", () => {
     const payload = {
       profile: { name: "Maya" },
       acknowledgments: [
-        { text: "Maya is a lovely name!", audio: null },
+        {
+          text: "Thank you!",
+          audio: {
+            id: "peppa-thank-you",
+            src: "/assets/audio/peppa-thank-you.mp3",
+            text: "Thank you!",
+          },
+        },
       ],
     };
     const request = jsonFetch(payload);
@@ -221,7 +232,7 @@ describe("learnerProfile browser API", () => {
       question: question.promptEn,
       rawAnswer: "I like dinosaurs",
       summary: "Likes dinosaurs.",
-      acknowledgment: "Dinosaurs are very stompy!",
+      acknowledgment: "Thank you!",
       enrichmentStatus: "generated",
       answeredAt: "2026-07-06T10:30:00.000Z",
     };

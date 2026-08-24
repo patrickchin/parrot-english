@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   normalizeSpeechText,
   scoreSpeechTranscript,
+  YOUNG_LEARNER_SIMILARITY_THRESHOLD,
 } from "../lib/speech-scoring.js";
 
 describe("speech scoring", () => {
@@ -34,11 +35,18 @@ describe("speech scoring", () => {
     assert.ok(result.similarity > 0.9);
   });
 
+  it("does not punish a likely recognizer omission of one short word", () => {
+    const result = scoreSpeechTranscript("Here are", "Here you are!");
+
+    assert.equal(result.outcome, "correct");
+    assert.ok(result.similarity >= YOUNG_LEARNER_SIMILARITY_THRESHOLD);
+  });
+
   it("asks for a retry when the transcript is too different", () => {
     const result = scoreSpeechTranscript("yellow ball", "Thank you!");
 
     assert.equal(result.outcome, "incorrect");
-    assert.ok(result.similarity < 0.74);
+    assert.ok(result.similarity < YOUNG_LEARNER_SIMILARITY_THRESHOLD);
   });
 
   it("distinguishes no input from an incorrect transcript", () => {

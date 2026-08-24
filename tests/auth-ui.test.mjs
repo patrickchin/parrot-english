@@ -63,6 +63,7 @@ function renderAuthGate(overrides = {}) {
     profileError: "",
     session: null,
     sessionError: null,
+    signOutError: "",
     signedOutFallback: null,
     ...overrides,
   };
@@ -187,6 +188,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   assert.equal(capturedProps.formError, "");
   assert.equal(capturedProps.isSubmitting, false);
   assert.equal(capturedProps.isSigningOut, false);
+  assert.equal(capturedProps.signOutError, "");
 
   capturedProps.onRetry();
   assert.equal(refetchCalls, 1);
@@ -240,8 +242,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   await capturedProps.onSignOut();
   assert.equal(signOutCalls.length, 1);
-  assert.equal(signOutCalls[0].client, client);
-  assert.equal(signOutCalls[0].refetch, refetch);
+  assert.deepEqual(signOutCalls[0], { client });
 });
 
 test("auth gate container forwards an optional signed-out fallback", () => {
@@ -383,7 +384,7 @@ test("background session refetches preserve mounted lesson children", () => {
   );
 
   assert.match(html, /BACKGROUND REFRESH CHILD/);
-  assert.match(html, /cached@example\.com/);
+  assert.match(html, /aria-label="Account for 缓存用户"/);
   assert.doesNotMatch(html, /Checking your session…/);
 });
 
@@ -426,17 +427,68 @@ test("failed form state preserves values and disables controls while submitting"
   assert.match(html, /role="alert"/);
 });
 
-test("signed-in views keep signing-out progress on the collapsed account", () => {
+test("signed-in views expose signing-out progress on the persistent account control", () => {
   const html = renderAuthGate({
     isSigningOut: true,
     session: { user: { email: "learner@example.com", name: null } },
   });
 
   assert.match(html, /LESSON CONTENT/);
-  assert.match(html, /learner@example.com/);
-  assert.match(html, /<aside[^>]*aria-busy="true"/);
+  assert.match(
+    html,
+    /aria-label="Signing out… Account for learner@example.com"/,
+  );
+  assert.match(html, /aria-disabled="true"/);
+  assert.match(
+    html,
+    /aria-atomic="true" aria-live="polite"[^>]*role="status"/,
+  );
+  assert.match(html, /role="status"[\s\S]*Signing out…/);
+  assert.match(html, />Signing out…</);
   assert.match(html, /aria-expanded="false"/);
-  assert.doesNotMatch(html, /Signing out…/);
+  assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
+  const accountButton = html.match(
+    /<button[^>]*aria-label="Signing out… Account for learner@example.com"[\s\S]*?<\/button>/,
+  )?.[0];
+  assert.ok(accountButton);
+  assert.doesNotMatch(accountButton, /title=/);
+  assert.doesNotMatch(accountButton, />Signing out…</);
+});
+
+test("signed-in views pre-mount one sign-out alert and keep Account beside a specific retry", () => {
+  const ordinary = renderAuthGate({
+    session: { user: { email: "learner@example.com", name: "Mia" } },
+  });
+  const ordinaryBar = ordinary.match(
+    /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
+  )?.[0];
+
+  assert.ok(ordinaryBar);
+  assert.match(
+    ordinaryBar,
+    /<span[^>]*aria-atomic="true"[^>]*role="alert"[^>]*><\/span>/,
+  );
+  assert.doesNotMatch(ordinaryBar, /Sign out again/);
+
+  const failed = renderAuthGate({
+    session: { user: { email: "learner@example.com", name: "Mia" } },
+    signOutError: "Sign out did not finish.",
+  });
+  const failedBar = failed.match(
+    /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
+  )?.[0];
+
+  assert.ok(failedBar);
+  assert.match(
+    failedBar,
+    /<span[^>]*aria-atomic="true"[^>]*role="alert"[^>]*>Sign out did not finish\.<\/span>/,
+  );
+  assert.match(
+    failedBar,
+    /aria-label="Account for Mia"[\s\S]*Sign out again[\s\S]*<\/button>/,
+  );
+  assert.equal((failedBar.match(/role="alert"/g) ?? []).length, 1);
+  assert.doesNotMatch(failedBar, /Unable to sign you out|Please try again/);
 });
 
 test("renders a clearly labeled account trigger without conflating learner profile", () => {
@@ -453,7 +505,8 @@ test("renders a clearly labeled account trigger without conflating learner profi
     bar,
     /<button[^>]*aria-label="Account for Mia"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
   );
-  assert.match(bar, />Mia</);
+  assert.match(bar, />Account</);
+  assert.doesNotMatch(bar, />Mia</);
   assert.doesNotMatch(bar, /aria-label="Edit learner profile"/);
   assert.doesNotMatch(bar, />Sign out|>Log out</);
 });
@@ -551,7 +604,7 @@ test("sign-in maps result errors, omits the name, and does not refetch", async (
   assert.equal(refetchCalls, 0);
 });
 
-test("sign-out maps failures without refetching and refetches success", async () => {
+test("sign-out maps failures and lets the reactive session own successful refresh", async () => {
   assert.equal(typeof signOutSession, "function", "Expected executable sign-out actions");
   let refetchCalls = 0;
   const refetch = async () => {
@@ -564,7 +617,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     }),
     refetch,
   });
-  assert.equal(failure, "Unable to sign you out. Please try again.");
+  assert.equal(failure, "Sign out did not finish.");
   assert.equal(refetchCalls, 0);
 
   const thrownFailure = await signOutSession({
@@ -575,7 +628,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     }),
     refetch,
   });
-  assert.equal(thrownFailure, "Unable to sign you out. Please try again.");
+  assert.equal(thrownFailure, "Sign out did not finish.");
   assert.equal(refetchCalls, 0);
 
   const success = await signOutSession({
@@ -583,7 +636,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     refetch,
   });
   assert.equal(success, null);
-  assert.equal(refetchCalls, 1);
+  assert.equal(refetchCalls, 0);
 });
 
 test("account deletion sends the password, fails closed, and refetches only after success", async () => {

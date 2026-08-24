@@ -160,29 +160,38 @@ describe("story script catalog", () => {
     }
   });
 
-  it("uses generated covers while keeping page artwork and audio as placeholders", () => {
+  it("fully illustrates First words while keeping later page art and narration explicit", () => {
     for (const story of STORIES) {
       assert.equal(
         story.cover.src,
-        `/assets/stories/${story.id}-cover.webp`,
+        `https://media.parrotbook.com/assets/v2/stories/${story.id}-cover.webp`,
         `${story.title} cover source`,
-      );
-      assert.ok(
-        existsSync(`public${story.cover.src}`),
-        `${story.title} cover file exists`,
       );
       assert.ok(story.cover.alt.trim(), `${story.title} cover alt`);
       assert.ok(story.cover.prompt.trim(), `${story.title} cover prompt`);
       assert.doesNotMatch(story.cover.alt, /placeholder/i);
 
       for (const page of story.pages) {
-        assert.equal(page.artwork.src, null, `${story.title}/${page.id} image source`);
+        if (story.level === "first-words") {
+          assert.equal(
+            page.artwork.src,
+            `https://media.parrotbook.com/assets/v2/story-pages/${story.id}-${page.id}.webp`,
+            `${story.title}/${page.id} image source`,
+          );
+        } else {
+          assert.equal(
+            page.artwork.src,
+            null,
+            `${story.title}/${page.id} image source`,
+          );
+        }
         assert.equal(
           page.narrationAudioId,
           null,
           `${story.title}/${page.id} audio ID`,
         );
         assert.ok(page.artwork.alt.trim(), `${story.title}/${page.id} image alt`);
+        assert.doesNotMatch(page.artwork.alt, /placeholder/i);
         assert.ok(page.artwork.prompt.trim(), `${story.title}/${page.id} image prompt`);
       }
     }
@@ -191,11 +200,9 @@ describe("story script catalog", () => {
       ...readdirSync("public/assets/audio").filter((filename) =>
         filename.startsWith("story-lantern-trail-"),
       ),
-      ...readdirSync("public/assets/stories").filter((filename) =>
-        /^the-lantern-trail-0[1-6]\.webp$/.test(filename),
-      ),
     ];
     assert.deepEqual(supersededLanternAssets, []);
+    assert.equal(existsSync("public/assets/stories"), false);
   });
 
   it("keeps unknown words unknown instead of guessing their lemmas", () => {

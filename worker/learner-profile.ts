@@ -7,6 +7,16 @@ import {
   readV2Answers,
   writeV2Response,
 } from "../lib/learner-profile-responses.js";
+import {
+  LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID,
+  LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
+} from "../lib/learner-profile-questionnaire.js";
+import {
+  containsLikelyFullLearnerName,
+  containsPrivateLearnerProfileDetails,
+  PREFERRED_NAME_FIELD_ERROR,
+  PRIVATE_PROFILE_FIELD_ERROR,
+} from "../lib/learner-profile-privacy.ts";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
@@ -15,10 +25,6 @@ import {
   handleLearnerProfileTranscription,
   type ApiEnv,
 } from "./groq.ts";
-import {
-  synthesizeAcknowledgment,
-  type ElevenLabsEnv,
-} from "./learner-profile-acknowledgment-audio.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
   enrichLearnerProfileAnswer,
@@ -39,16 +45,13 @@ export interface LearnerProfileIdentity {
 
 export interface LearnerProfileRequestInput {
   database: Database;
-  env: AuthEnv &
-    ApiEnv &
-    ElevenLabsEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
+  env: AuthEnv & ApiEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
   identity: LearnerProfileIdentity;
   request: Request;
 }
 
 type HandlerDependencies = {
   enrichAnswer: typeof enrichLearnerProfileAnswer;
-  synthesizeAudio: typeof synthesizeAcknowledgment;
   now: () => Date;
 };
 
@@ -108,6 +111,14 @@ function serializeQuestion(question: Question) {
   };
 }
 
+function serializeAcknowledgment(question: Question) {
+  const text = question.fallbackAcknowledgment;
+  return {
+    text,
+    audio: resolveAudio(LEARNER_PROFILE_ACKNOWLEDGMENT_AUDIO_ID, text),
+  };
+}
+
 function isV2Profile(profile: Profile) {
   try {
     readV2Answers(profile);
@@ -123,7 +134,21 @@ function clientProfile(profile: Profile) {
     : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
         forProfileEdit: true,
       });
-  const answers = readV2Answers(readable);
+  const storedAnswers = readV2Answers(readable);
+  const answers = {
+    ...storedAnswers,
+    responses: Object.fromEntries(
+      Object.entries(
+        storedAnswers.responses as Record<string, Record<string, unknown>>,
+      ).map(([answerKey, response]) => [
+        answerKey,
+        {
+          ...response,
+          acknowledgment: LEARNER_PROFILE_ACKNOWLEDGMENT_TEXT,
+        },
+      ]),
+    ),
+  };
   return {
     name: profile.name,
     age: profile.age,
@@ -308,11 +333,51 @@ function savedEnrichment(profile: Profile, answerKey: string) {
   if (!response) return null;
   return {
     summary: response.summary,
-    acknowledgment: response.acknowledgment,
     canonicalName: answerKey === "name" ? profile.name : null,
     canonicalAge: answerKey === "age" ? profile.age : null,
     enrichmentStatus: response.enrichmentStatus,
   } satisfies LearnerProfileEnrichment;
+}
+
+function enrichmentFieldError(enrichment: LearnerProfileEnrichment) {
+  if (containsPrivateLearnerProfileDetails(enrichment.summary)) {
+    return {
+      code: "private_profile_details",
+      message: PRIVATE_PROFILE_FIELD_ERROR,
+    };
+  }
+  if (
+    containsLikelyFullLearnerName(
+      enrichment.canonicalName,
+      enrichment.summary,
+    )
+  ) {
+    return {
+      code: "preferred_name_required",
+      message: PREFERRED_NAME_FIELD_ERROR,
+    };
+  }
+  return null;
+}
+
+function storedRawAnswer(
+  question: Question,
+  enrichment: LearnerProfileEnrichment,
+  rawAnswer: string,
+) {
+  if (
+    question.canonicalField === "name" &&
+    typeof enrichment.canonicalName === "string"
+  ) {
+    return enrichment.canonicalName;
+  }
+  if (
+    question.canonicalField === "age" &&
+    Number.isSafeInteger(enrichment.canonicalAge)
+  ) {
+    return String(enrichment.canonicalAge);
+  }
+  return rawAnswer;
 }
 
 async function getEnrichment(
@@ -368,6 +433,19 @@ async function saveAnswer({
     question.answerKey,
     rawAnswer
   );
+  if (sameAnswer) {
+    return {
+      profile,
+      acknowledgment: serializeAcknowledgment(question),
+    };
+  }
+  if (containsPrivateLearnerProfileDetails(rawAnswer)) {
+    throw new ApiError(
+      400,
+      "private_profile_details",
+      PRIVATE_PROFILE_FIELD_ERROR,
+    );
+  }
   const enrichment = await getEnrichment(
     input,
     dependencies,
@@ -376,50 +454,52 @@ async function saveAnswer({
     rawAnswer
   );
   if ("fieldError" in enrichment) {
-    throw new ApiError(400, "invalid_answer", enrichment.fieldError);
+    throw new ApiError(
+      400,
+      enrichment.errorCode ?? "invalid_answer",
+      enrichment.fieldError,
+    );
+  }
+  const enrichmentError = enrichmentFieldError(enrichment);
+  if (enrichmentError) {
+    throw new ApiError(400, enrichmentError.code, enrichmentError.message);
   }
 
   let storedProfile = profile;
-  let acknowledgment = enrichment.acknowledgment;
-  if (!sameAnswer) {
-    const updated = writeV2Response(readable, question, {
-      rawAnswer,
-      ...enrichment,
-      answeredAt: dependencies.now().toISOString(),
-    });
-    acknowledgment =
-      readV2Answers(updated).responses[question.answerKey].acknowledgment;
-
-    if (profileEdit) {
-      await repository.saveAnswer(profile.id, {
-        age: updated.age,
-        answersJson: updated.answersJson,
-        name: updated.name,
-        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
-      });
-    } else {
-      const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
-      const completed = next === null && isV2Complete(
-        updated,
-        LEARNER_PROFILE_QUESTIONNAIRE
-      );
-      await repository.saveTransition(profile.id, {
-        age: updated.age,
-        answersJson: updated.answersJson,
-        completed,
-        currentQuestionKey: next?.answerKey ?? null,
-        name: updated.name,
-        skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
-      });
-    }
-    storedProfile = await repository.loadProfile(input.identity);
-  }
-
-  const audio = await dependencies.synthesizeAudio({
-    env: input.env,
-    text: acknowledgment,
+  const updated = writeV2Response(readable, question, {
+    ...enrichment,
+    rawAnswer: storedRawAnswer(question, enrichment, rawAnswer),
+    answeredAt: dependencies.now().toISOString(),
   });
-  return { profile: storedProfile, acknowledgment: { text: acknowledgment, audio } };
+
+  if (profileEdit) {
+    await repository.saveAnswer(profile.id, {
+      age: updated.age,
+      answersJson: updated.answersJson,
+      name: updated.name,
+      skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+    });
+  } else {
+    const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
+    const completed = next === null && isV2Complete(
+      updated,
+      LEARNER_PROFILE_QUESTIONNAIRE
+    );
+    await repository.saveTransition(profile.id, {
+      age: updated.age,
+      answersJson: updated.answersJson,
+      completed,
+      currentQuestionKey: next?.answerKey ?? null,
+      name: updated.name,
+      skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+    });
+  }
+  storedProfile = await repository.loadProfile(input.identity);
+
+  return {
+    profile: storedProfile,
+    acknowledgment: serializeAcknowledgment(question),
+  };
 }
 
 async function saveProfileAnswers({
@@ -439,6 +519,7 @@ async function saveProfileAnswers({
     forProfileEdit: true,
   });
   const fieldErrors: Record<string, string> = Object.create(null);
+  const errorCodes = new Set<string>();
   const knownKeys = new Set(
     [
       ...LEARNER_PROFILE_QUESTIONNAIRE.questions.map((question) => question.answerKey),
@@ -464,19 +545,24 @@ async function saveProfileAnswers({
       const currentDescription =
         typeof envelope.description === "string" ? envelope.description : "";
       if (description !== currentDescription) {
-        updated = {
-          ...updated,
-          answersJson: JSON.stringify({
-            ...envelope,
-            description: description || null,
-          }),
-        };
-        descriptionChanged = true;
+        if (containsPrivateLearnerProfileDetails(description)) {
+          fieldErrors.description = PRIVATE_PROFILE_FIELD_ERROR;
+          errorCodes.add("private_profile_details");
+        } else {
+          updated = {
+            ...updated,
+            answersJson: JSON.stringify({
+              ...envelope,
+              description: description || null,
+            }),
+          };
+          descriptionChanged = true;
+        }
       }
     }
   }
 
-  const changed: Array<{ question: Question; acknowledgment: string }> = [];
+  const changed: Question[] = [];
   for (const question of LEARNER_PROFILE_QUESTIONNAIRE.questions) {
     if (!(question.answerKey in answers)) continue;
     const submitted = answers[question.answerKey];
@@ -511,6 +597,12 @@ async function saveProfileAnswers({
       continue;
     }
 
+    if (containsPrivateLearnerProfileDetails(rawAnswer)) {
+      fieldErrors[question.answerKey] = PRIVATE_PROFILE_FIELD_ERROR;
+      errorCodes.add("private_profile_details");
+      continue;
+    }
+
     const enrichment = await dependencies.enrichAnswer({
       env: input.env,
       question,
@@ -518,27 +610,35 @@ async function saveProfileAnswers({
     });
     if ("fieldError" in enrichment) {
       fieldErrors[question.answerKey] = enrichment.fieldError;
+      errorCodes.add(enrichment.errorCode ?? "invalid_answer");
+      continue;
+    }
+    const enrichmentError = enrichmentFieldError(enrichment);
+    if (enrichmentError) {
+      fieldErrors[question.answerKey] = enrichmentError.message;
+      errorCodes.add(enrichmentError.code);
       continue;
     }
 
     try {
       updated = writeV2Response(updated, question, {
-        rawAnswer,
         ...enrichment,
+        rawAnswer: storedRawAnswer(question, enrichment, rawAnswer),
         answeredAt: dependencies.now().toISOString(),
       });
-      changed.push({
-        question,
-        acknowledgment:
-          readV2Answers(updated).responses[question.answerKey].acknowledgment,
-      });
+      changed.push(question);
     } catch {
       fieldErrors[question.answerKey] = "Please check this answer and try again.";
     }
   }
 
   if (Object.keys(fieldErrors).length > 0) {
-    throw new ApiError(400, "invalid_profile", undefined, { fieldErrors });
+    const code = errorCodes.has("private_profile_details")
+      ? "private_profile_details"
+      : errorCodes.has("preferred_name_required")
+        ? "preferred_name_required"
+        : "invalid_profile";
+    throw new ApiError(400, code, undefined, { fieldErrors });
   }
 
   let storedProfile = profile;
@@ -552,14 +652,7 @@ async function saveProfileAnswers({
     storedProfile = await repository.loadProfile(input.identity);
   }
 
-  const acknowledgments = [];
-  for (const entry of changed) {
-    const audio = await dependencies.synthesizeAudio({
-      env: input.env,
-      text: entry.acknowledgment,
-    });
-    acknowledgments.push({ text: entry.acknowledgment, audio });
-  }
+  const acknowledgments = changed.map(serializeAcknowledgment);
   return { profile: storedProfile, acknowledgments };
 }
 
@@ -569,7 +662,6 @@ export async function handleLearnerProfileRequest(
 ): Promise<Response> {
   const dependencies: HandlerDependencies = {
     enrichAnswer: enrichLearnerProfileAnswer,
-    synthesizeAudio: synthesizeAcknowledgment,
     now: () => new Date(),
     ...dependencyOverrides,
   };

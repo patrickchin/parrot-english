@@ -76,6 +76,22 @@ function renderSetupPanel(props) {
 }
 
 describe("personalized story art UI", () => {
+  it("renders script-only artwork as an accessible storybook scene without prototype copy", () => {
+    const html = renderStoryArtwork({
+      artwork: {
+        alt: "Artwork placeholder for The Red Ball, page 1",
+        prompt: "A child holding one bright red ball",
+        src: null,
+      },
+    });
+
+    assert.match(
+      html,
+      /role="img"[^>]*aria-label="A child holding one bright red ball"|aria-label="A child holding one bright red ball"[^>]*role="img"/,
+    );
+    assert.doesNotMatch(html, /Artwork placeholder|Picture coming later/);
+  });
+
   it("lets StoryArtwork prefer a private override image over the catalog placeholder", () => {
     const html = renderStoryArtwork({
       artwork: {
@@ -96,15 +112,41 @@ describe("personalized story art UI", () => {
     assert.doesNotMatch(html, /Artwork placeholder|Picture coming later/);
   });
 
-  it("lets StoryReader render one private override for The Red Ball page 1 without mutating the catalog story", () => {
+  it("offers responsive public cover art without rewriting a private override", () => {
+    const artwork = {
+      alt: "A red ball",
+      prompt: "A red ball",
+      src: "https://media.parrotbook.com/assets/v2/stories/the-red-ball-cover.webp",
+    };
+    const sizes = "(max-width: 519px) calc(100vw - 24px), 273px";
+
+    const publicHtml = renderStoryArtwork({ artwork, sizes });
+    assert.match(publicHtml, new RegExp(`sizes="${sizes.replace(/[()]/g, "\\$&")}"`));
+    assert.match(
+      publicHtml,
+      /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v2\/stories\/the-red-ball-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v2\/stories\/the-red-ball-cover-768\.webp 768w"/,
+    );
+
+    const privateHtml = renderStoryArtwork({
+      artwork,
+      personalizedOverride: {
+        alt: "You holding a red ball",
+        src: "/api/stories/the-red-ball/personalized-art/asset",
+      },
+      sizes,
+    });
+    assert.doesNotMatch(privateHtml, /srcSet=|sizes=/);
+  });
+
+  it("lets StoryReader render one private override for The Red Ball page 1 without mutating the illustrated catalog story", () => {
     assert.ok(Array.isArray(STORIES), "Expected story catalog stories");
     const story = STORIES.find(({ id }) => id === "the-red-ball");
     assert.ok(story, "Expected The Red Ball in the story catalog");
     assert.equal(story.pages[0].id, "my-red-ball");
+    const catalogArtworkSource = story.pages[0].artwork.src;
     assert.equal(
-      story.pages[0].artwork.src,
-      null,
-      "Catalog JSON should remain placeholder-only for page one",
+      catalogArtworkSource,
+      "https://media.parrotbook.com/assets/v2/story-pages/the-red-ball-my-red-ball.webp",
     );
 
     const html = renderStoryReader({
@@ -124,13 +166,17 @@ describe("personalized story art UI", () => {
       story,
     });
 
+    assert.equal(story.pages[0].artwork.src, catalogArtworkSource);
+
     assert.match(html, /The Red Ball/);
     assert.match(
       html,
       /<img[^>]*alt="You holding a bright red ball"[^>]*src="\/api\/stories\/the-red-ball\/personalized-art\/asset"/,
     );
     assert.doesNotMatch(html, /Picture coming later/);
-    assert.match(html, /Words to notice:.*red.*ball.*roll/s);
+    assert.match(html, /Tap Listen/);
+    assert.match(html, /aria-label="Listen"/);
+    assert.doesNotMatch(html, /Words to notice|First words|One object/);
   });
 
   it("lets LessonUserPrompt show the same private art as an accessible storybook portrait during user turns", () => {
@@ -197,11 +243,11 @@ describe("personalized story art UI", () => {
       },
       storyTitle: "The Red Ball",
     });
-    assert.match(removable, /Delete learner photo/);
+    assert.match(removable, /Delete story art/);
     assert.match(removable, /You holding a bright red ball/);
   });
 
-  it("keeps private-art deletion available when generation is disabled or a purge is pending", () => {
+  it("keeps private-art cleanup available and confirms it when generation is disabled", () => {
     const html = renderSetupPanel({
       consentChecked: false,
       featureEnabled: false,
@@ -218,5 +264,25 @@ describe("personalized story art UI", () => {
     assert.match(html, /aria-label="Personalized story art"/);
     assert.match(html, /Delete stored story art/);
     assert.doesNotMatch(html, /Upload learner photo|Generate story art/);
+
+    const completed = renderSetupPanel({
+      consentChecked: false,
+      featureEnabled: false,
+      hasStoredArt: false,
+      isGenerating: false,
+      onConsentChange() {},
+      onFileChange() {},
+      onGenerate() {},
+      onRemove() {},
+      personalizedArtwork: null,
+      statusMessage: "Personalized story art removed.",
+      storyTitle: "The Red Ball",
+    });
+
+    assert.match(completed, /Personalized story art removed\./);
+    assert.doesNotMatch(
+      completed,
+      /Delete stored story art|Upload learner photo|Generate story art/,
+    );
   });
 });

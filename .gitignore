@@ -62,5 +62,17 @@ Peppa & Dolly assets-*.zip
 *.tmp
 *.temp
 /public/assets/audio/*.tmp.*
+/public/assets/**/*.avif
+/public/assets/**/*.gif
+/public/assets/**/*.jpeg
+/public/assets/**/*.jpg
+/public/assets/**/*.png
+/public/assets/**/*.webp
+/public/*.avif
+/public/*.gif
+/public/*.jpeg
+/public/*.jpg
+/public/*.png
+/public/*.svg
 /.worktrees/
 /.playwright-mcp/

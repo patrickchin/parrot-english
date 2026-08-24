@@ -124,10 +124,9 @@ export const STORY_VOCABULARY_PROFILES: readonly StoryVocabularyProfile[] = [
 export const STORY_LEVELS: readonly StoryLevel[] = [
   {
     id: "first-words",
-    label: "First words",
+    label: "Start here",
     cefrReference: "Entry Pre-A1",
-    description:
-      "One pictured idea at a time, very short lines, and an immediately repeatable refrain.",
+    description: "Very short. One idea on each page.",
     maxAssumedKnownWords: 3,
     maxNarrativeWordsPerPage: 8,
     maxNarrativeWordsTotal: 36,
@@ -136,10 +135,9 @@ export const STORY_LEVELS: readonly StoryLevel[] = [
   },
   {
     id: "repeating-patterns",
-    label: "Repeating patterns",
+    label: "Say it again",
     cefrReference: "Supported Pre-A1",
-    description:
-      "Familiar routines and mirrored sentence frames with a small, visible teaching set.",
+    description: "The same words come back.",
     maxAssumedKnownWords: 5,
     maxNarrativeWordsPerPage: 12,
     maxNarrativeWordsTotal: 58,
@@ -148,10 +146,9 @@ export const STORY_LEVELS: readonly StoryLevel[] = [
   },
   {
     id: "tiny-stories",
-    label: "Tiny stories",
+    label: "Little stories",
     cefrReference: "Secure Pre-A1",
-    description:
-      "A small problem or sequence, short dialogue, and literal language supported page by page.",
+    description: "A little story with short lines.",
     maxAssumedKnownWords: 12,
     maxNarrativeWordsPerPage: 12,
     maxNarrativeWordsTotal: 65,
@@ -160,10 +157,9 @@ export const STORY_LEVELS: readonly StoryLevel[] = [
   },
   {
     id: "early-a1",
-    label: "Early A1",
+    label: "Big adventures",
     cefrReference: "Pre-A1 to A1 bridge",
-    description:
-      "A complete but compact story arc with simple connectors, directions, or light fantasy.",
+    description: "A longer story with more words.",
     maxAssumedKnownWords: 18,
     maxNarrativeWordsPerPage: 14,
     maxNarrativeWordsTotal: 80,

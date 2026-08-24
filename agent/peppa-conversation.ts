@@ -3,6 +3,11 @@ import { z } from "zod";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
 import {
+  containsLikelyFullLearnerName,
+  containsPrivateLearnerProfileDetails,
+  PREFERRED_NAME_FIELD_ERROR,
+} from "../lib/learner-profile-privacy.ts";
+import {
   DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   type TalkToPeppaPromptStyle,
 } from "../lib/talk-to-peppa-prompt-style.ts";
@@ -100,14 +105,14 @@ function createProfileEditTool({
   return llm.tool({
     name: "updateLearnerProfile",
     description:
-      "Save the learner's complete current name, age, and About paragraph, then end the profile-edit conversation.",
+      "Save the learner's current preferred name, age, and About paragraph, then end the profile-edit conversation.",
     parameters: z.object({
       name: z
         .string()
         .trim()
         .min(1)
         .max(120)
-        .describe("The learner's complete current name."),
+        .describe("The learner's first name or nickname only."),
       age: z
         .number()
         .int()
@@ -124,6 +129,24 @@ function createProfileEditTool({
     }),
     execute: async ({ about, age, name }) => {
       const completeTask = getCompleteTask();
+      const hasPrivateDetails = containsPrivateLearnerProfileDetails(name, about);
+      const hasFullName = containsLikelyFullLearnerName(name, about);
+      if (hasPrivateDetails || hasFullName) {
+        const isUnchangedSavedProfile =
+          state.learnedName &&
+          state.learnedAge &&
+          name === state.profileName &&
+          age === state.profileAge &&
+          about === state.profileSummary;
+        if (!isUnchangedSavedProfile) {
+          if (hasPrivateDetails) {
+            throw new Error("Learner profiles cannot include private details.");
+          }
+          throw new Error(PREFERRED_NAME_FIELD_ERROR);
+        }
+        completeTask({ finishReason: "conversation_complete" });
+        return { ending: true, saved: true };
+      }
       state = {
         ...state,
         learnedAge: true,

@@ -195,5 +195,22 @@ test("draft warnings are visible without blocking save", () => {
   assert.match(html, /Draft warnings/);
   assert.match(html, /Missing title/);
   assert.match(html, /Unknown background/);
+  assert.match(html, /do not change the draft or block saving/i);
   assert.doesNotMatch(html, /disabled/);
+});
+
+test("child-language notes appear in the existing draft warning surface", () => {
+  const lesson = createLessonScript();
+  lesson.scenes = lesson.scenes.slice(0, 1);
+  lesson.scenes[0].steps[0].dialogue =
+    "Can you please point to the little red flower beside Peppa?";
+  const html = renderToStaticMarkup(
+    createElement(LessonWarnings, { lesson, warnings: [] }),
+  );
+
+  assert.match(html, /Draft warnings/);
+  assert.match(html, /question has 11 words/i);
+  assert.match(html, /about 7 words or fewer/i);
+  assert.match(html, /do not change the draft or block saving/i);
+  assert.doesNotMatch(html, /role="status"/);
 });

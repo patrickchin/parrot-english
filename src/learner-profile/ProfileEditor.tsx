@@ -1,7 +1,11 @@
 import { ArrowLeft } from "lucide-react";
 import type { FormEvent } from "react";
 import { HeaderButton, RouteHeader } from "../app/AppHeader";
-import { LearnerProfileCard, LearnerProfileScreen } from "./LearnerProfileLayout";
+import {
+  LearnerProfileCard,
+  LearnerProfilePeppaArt,
+  LearnerProfileScreen,
+} from "./LearnerProfileLayout";
 import {
   ActionButton,
   fieldClassName,
@@ -148,10 +152,10 @@ export function ProfileEditorView({
             aria-labelledby="redo-learner-setup-title"
             className="mt-5 grid gap-4 rounded-3xl bg-sky-50 p-4 sm:grid-cols-[auto_1fr] sm:items-center"
           >
-            <img
+            <LearnerProfilePeppaArt
               alt="Peppa smiling"
               className="mx-auto size-20 shrink-0 object-contain"
-              src="/assets/characters/peppa/peppa-happy.webp"
+              sizes="5rem"
             />
             <div className="grid gap-2">
               <h2

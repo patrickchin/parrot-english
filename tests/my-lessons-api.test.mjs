@@ -69,6 +69,115 @@ describe("My Lessons browser API", () => {
     assert.equal(detail.calls[0][0], "/api/lessons/my/lesson%2Fid");
   });
 
+  it("rejects a malformed successful lesson detail response", async () => {
+    const detail = jsonFetch({
+      lesson: {
+        id: "lesson-1",
+        lesson: {},
+        source: "generated",
+      },
+    });
+
+    await assert.rejects(
+      loadMyLesson("lesson-1", { fetch: detail.fetch }),
+      (error) => {
+        assert.ok(error instanceof MyLessonsApiError);
+        assert.equal(error.status, 200);
+        assert.equal(error.code, "invalid_response");
+        assert.equal(error.message, "The My Lessons response was invalid.");
+        assert.ok(error.cause instanceof Error);
+        return true;
+      },
+    );
+  });
+
+  it("rejects malformed successful list responses with typed diagnostics", async () => {
+    const lesson = createLessonScript();
+    const descriptor = {
+      id: "lesson-1",
+      lesson,
+      source: "generated",
+    };
+    const cases = [
+      ["null payload", null],
+      ["missing lessons", {}],
+      ["non-array lessons", { lessons: {} }],
+      ["null descriptor", { lessons: [null] }],
+      ["blank ID", { lessons: [{ ...descriptor, id: " " }] }],
+      ["dot ID", { lessons: [{ ...descriptor, id: "." }] }],
+      ["parent-dot ID", { lessons: [{ ...descriptor, id: ".." }] }],
+      ["unencodable ID", { lessons: [{ ...descriptor, id: "\ud800" }] }],
+      ["unknown source", { lessons: [{ ...descriptor, source: "legacy" }] }],
+      ["invalid timestamp", { lessons: [{ ...descriptor, updatedAt: 7 }] }],
+      ["invalid lesson", { lessons: [{ ...descriptor, lesson: {} }] }],
+      ["duplicate IDs", { lessons: [descriptor, descriptor] }],
+    ];
+
+    for (const [name, payload] of cases) {
+      const request = jsonFetch(payload);
+      await assert.rejects(
+        loadMyLessons({ fetch: request.fetch }),
+        (error) => {
+          assert.ok(error instanceof MyLessonsApiError, name);
+          assert.equal(error.status, 200, name);
+          assert.equal(error.code, "invalid_response", name);
+          assert.equal(error.message, "The My Lessons response was invalid.", name);
+          assert.ok(error.cause instanceof Error, name);
+          return true;
+        },
+      );
+    }
+  });
+
+  it("retains the JSON parser failure without exposing response content", async () => {
+    const fetch = async () =>
+      new Response("<html>SECRET_LESSON_DATA</html>", {
+        headers: { "Content-Type": "text/html" },
+        status: 200,
+      });
+
+    await assert.rejects(loadMyLessons({ fetch }), (error) => {
+      assert.ok(error instanceof MyLessonsApiError);
+      assert.equal(error.code, "invalid_response");
+      assert.ok(error.cause instanceof SyntaxError);
+      assert.equal(
+        error.cause.message,
+        "The My Lessons response was not valid JSON.",
+      );
+      assert.doesNotMatch(
+        `${error.message} ${error.cause.message}`,
+        /html|SECRET_LESSON_DATA/i,
+      );
+      return true;
+    });
+  });
+
+  it("accepts optional timestamps and ignores unknown descriptor metadata", async () => {
+    const lesson = createLessonScript();
+    const request = jsonFetch({
+      lessons: [
+        {
+          createdAt: "2026-08-21T00:00:00.000Z",
+          futureMetadata: { keptByServer: true },
+          id: "lesson-1",
+          lesson,
+          source: "uploaded",
+          updatedAt: "2026-08-21T01:00:00.000Z",
+        },
+      ],
+    });
+
+    assert.deepEqual(await loadMyLessons({ fetch: request.fetch }), [
+      {
+        createdAt: "2026-08-21T00:00:00.000Z",
+        id: "lesson-1",
+        lesson,
+        source: "uploaded",
+        updatedAt: "2026-08-21T01:00:00.000Z",
+      },
+    ]);
+  });
+
   it("updates an encoded learner lesson ID with a same-origin PUT request", async () => {
     const lesson = createLessonScript({ title: "Edited Garden Help" });
     const descriptor = { id: "lesson/id", lesson, source: "uploaded" };
@@ -102,5 +211,44 @@ describe("My Lessons browser API", () => {
         return true;
       },
     );
+
+    const listFailure = jsonFetch(
+      {
+        error: "database_unavailable",
+        message: "D1 binding LESSON_DB is missing.",
+      },
+      500,
+    );
+    await assert.rejects(
+      loadMyLessons({ fetch: listFailure.fetch }),
+      (error) => {
+        assert.ok(error instanceof MyLessonsApiError);
+        assert.equal(error.status, 500);
+        assert.equal(error.code, "database_unavailable");
+        assert.equal(error.message, "D1 binding LESSON_DB is missing.");
+        return true;
+      },
+    );
+
+    const malformedFailure = async () =>
+      new Response("<html>SECRET_SERVER_DETAIL</html>", {
+        headers: { "Content-Type": "text/html" },
+        status: 500,
+      });
+    await assert.rejects(loadMyLessons({ fetch: malformedFailure }), (error) => {
+      assert.ok(error instanceof MyLessonsApiError);
+      assert.equal(error.status, 500);
+      assert.equal(error.code, "request_failed");
+      assert.ok(error.cause instanceof SyntaxError);
+      assert.equal(
+        error.cause.message,
+        "The My Lessons response was not valid JSON.",
+      );
+      assert.doesNotMatch(
+        `${error.message} ${error.cause.message}`,
+        /html|SECRET_SERVER_DETAIL/i,
+      );
+      return true;
+    });
   });
 });
