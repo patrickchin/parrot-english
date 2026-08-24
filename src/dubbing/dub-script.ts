@@ -8,11 +8,11 @@ export type DubVisualBeat =
   | "lily-circle" | "one-calls" | "mama-calls" | "five-return";
 
 export type DubLine = {
-  cueMs: number;
-  duckCount: number;
-  id: `line-${number}`;
-  text: string;
-  visualBeat: DubVisualBeat;
+  readonly cueMs: number;
+  readonly duckCount: number;
+  readonly id: `line-${number}`;
+  readonly text: string;
+  readonly visualBeat: DubVisualBeat;
 };
 
 const texts = [
@@ -29,13 +29,13 @@ const texts = [
 const beats: DubVisualBeat[] = ["five-enter", "hill", "frog", "four-splash", "reeds", "lily-circle", "one-calls", "mama-calls", "five-return"];
 const counts = [5, 5, 4, 4, 3, 2, 1, 1, 5];
 
-export const DUB_LINES: readonly DubLine[] = texts.map((text, index) => ({
+export const DUB_LINES: readonly DubLine[] = Object.freeze(texts.map((text, index) => Object.freeze({
   cueMs: 800 + index * 6_000,
   duckCount: counts[index],
-  id: `line-${index + 1}`,
+  id: `line-${index + 1}` as `line-${number}`,
   text,
   visualBeat: beats[index],
-}));
+})));
 
 export function getDubLineAtElapsed(elapsedMs: number): DubLine {
   return [...DUB_LINES].reverse().find(({ cueMs }) => elapsedMs >= cueMs) ?? DUB_LINES[0];
