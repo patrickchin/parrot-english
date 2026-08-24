@@ -43,6 +43,7 @@ let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let usePeppaConversation;
 let createAuthGate;
+let createGuardianAccessProvider;
 let firstLesson;
 let firstLessonId;
 
@@ -51,6 +52,9 @@ before(async () => {
     "/src/conversation/ConversationSurface.tsx",
   ));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
+  ({ createGuardianAccessProvider } = await vite.ssrLoadModule(
+    "/src/auth/GuardianAccess.tsx",
+  ));
   ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
   ));
@@ -143,6 +147,29 @@ function completedLearnerProfileState() {
 
 function json(payload, status = 200) {
   return Response.json(payload, { status });
+}
+
+function guardianAccessBoundary() {
+  return createGuardianAccessProvider({
+    api: {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+    },
+    schedule: () => () => {},
+  });
 }
 
 function conversationStartResponse(id) {
@@ -3738,7 +3765,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       error: new Error("session unavailable"),
       isPending: false,
     });
-    const TestAuthGate = createAuthGate({ client });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
+    });
 
     await mountStrict(
       createElement(
@@ -3762,7 +3792,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
     await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
@@ -3770,16 +3800,21 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("remounts guardian state before rendering a changed account identity", async () => {
     const boundaryRenders = [];
+    const Provider = guardianAccessBoundary();
     function GuardianBoundary({ children, sessionIdentity }) {
       const [owner] = useState(sessionIdentity);
       boundaryRenders.push({ owner, sessionIdentity });
       return createElement(
-        "output",
-        {
-          "aria-label": "Guardian boundary owner",
-          "data-owner": owner ?? "signed-out",
-        },
-        children,
+        Provider,
+        { sessionIdentity },
+        createElement(
+          "output",
+          {
+            "aria-label": "Guardian boundary owner",
+            "data-owner": owner ?? "signed-out",
+          },
+          children,
+        ),
       );
     }
     const client = createSessionClient({
@@ -3823,6 +3858,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction() {
         signOutCalls += 1;
         return signOutCalls === 1 ? failure.promise : secondFailure.promise;
@@ -3837,7 +3873,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    const account = button("Account for Mia");
+    const account = await waitFor(() =>
+      button("Profile for Mia, guardian mode"),
+    );
     const status = document.querySelector('[role="status"]');
     const alert = document.querySelector('[role="alert"]');
     assert.ok(status, "Expected the sign-out status to be pre-mounted.");
@@ -3927,6 +3965,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction() {
         signOutCalls += 1;
         if (signOutCalls === 1) return firstAttempt.promise;
@@ -3943,7 +3982,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
     assert.equal(signOutCalls, 1);
 
@@ -3960,7 +3999,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
     });
     await waitFor(() => text(/AUTHENTICATED APP/));
-    const account = button("Account for Mia");
+    const account = await waitFor(() =>
+      button("Profile for Mia, guardian mode"),
+    );
     assert.equal(account.getAttribute("aria-disabled"), null);
 
     await click(account);
@@ -4002,6 +4043,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction() {
         signOutCalls += 1;
         return signOutCalls === 1 ? firstAttempt.promise : secondAttempt.promise;
@@ -4015,9 +4057,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
-    assert.equal(button("Signing out… Account for Mia").getAttribute("aria-disabled"), "true");
+    assert.equal(
+      button("Signing out… Profile for Mia, guardian mode").getAttribute(
+        "aria-disabled",
+      ),
+      "true",
+    );
 
     await act(async () => {
       client.publish({
@@ -4028,7 +4075,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         isPending: false,
       });
     });
-    const noahAccount = await waitFor(() => button("Account for Noah"));
+    const noahAccount = await waitFor(() =>
+      button("Profile for Noah, guardian mode"),
+    );
     assert.equal(noahAccount.getAttribute("aria-disabled"), null);
     noText(/Signing out|Sign out did not finish|Sign out again/);
 
@@ -4060,6 +4109,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction: async () => "Sign out did not finish.",
     });
 
@@ -4070,7 +4120,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
     await waitFor(() => button("Sign out again"));
 
@@ -4083,7 +4133,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         isPending: false,
       });
     });
-    const noahAccount = await waitFor(() => button("Account for Noah"));
+    const noahAccount = await waitFor(() =>
+      button("Profile for Noah, guardian mode"),
+    );
     assert.equal(noahAccount.getAttribute("aria-disabled"), null);
     noText(/Sign out did not finish|Sign out again/);
   });
@@ -4239,7 +4291,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       error: null,
       isPending: false,
     });
-    const TestAuthGate = createAuthGate({ client });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
+    });
     const profileQuestion = question();
     const profileState = {
       profile: {
@@ -4281,7 +4336,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/PROFILE LESSONS/));
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Learner profile"));
     await waitFor(() => text(/Learner profile/));
     await input(document.querySelector("#profile-name"), "Maya");

@@ -7,21 +7,26 @@ import {
   type SetStateAction,
 } from "react";
 
-export type ProfileAccountAction = {
+export type AccountExperience = {
   error: string;
-  onOpen: () => void;
-} | null;
+  learnerName: string | null;
+  onOpenProfile: (() => void) | null;
+};
 
-type ProfileActionSetter = Dispatch<SetStateAction<ProfileAccountAction>>;
+type AccountExperienceSetter = Dispatch<
+  SetStateAction<AccountExperience | null>
+>;
 
-const AccountActionContext = createContext<ProfileActionSetter | null>(null);
+const AccountActionContext = createContext<AccountExperienceSetter | null>(
+  null,
+);
 
 export function AccountActionProvider({
   children,
   setProfileAction,
 }: {
   children: ReactNode;
-  setProfileAction: ProfileActionSetter;
+  setProfileAction: AccountExperienceSetter;
 }) {
   return (
     <AccountActionContext.Provider value={setProfileAction}>
@@ -30,7 +35,7 @@ export function AccountActionProvider({
   );
 }
 
-export function useProfileAccountAction(action: ProfileAccountAction) {
+export function useProfileAccountAction(action: AccountExperience | null) {
   const setProfileAction = useContext(AccountActionContext);
 
   useEffect(() => {

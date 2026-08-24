@@ -2,6 +2,7 @@ import {
   ChevronDown,
   CircleUserRound,
   LoaderCircle,
+  ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -14,7 +15,14 @@ import {
   type ReactNode,
 } from "react";
 import type { LinkProps } from "react-router";
-import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
+import {
+  ActionButton,
+  ActionLink,
+  cx,
+  MenuButton,
+  SegmentedButton,
+  SegmentedControl,
+} from "../shared/ui";
 import { AboutDialog } from "./AboutDialog";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 
@@ -94,23 +102,35 @@ export function HeaderLink({
 }
 
 export function AccountHeader({
+  activeMode,
   error,
+  guardianLabel,
+  isDialogOpen = false,
+  isModePending,
   isSigningOut,
+  learnerLabel,
   onDeleteAccount,
   onOpenProfile,
+  onSelectGuardian,
+  onSelectLearner,
   onSignOut,
   signOutError,
   userEmail,
-  userLabel,
 }: {
+  activeMode: "guardian" | "learner";
   error: string;
+  guardianLabel: string;
+  isDialogOpen?: boolean;
+  isModePending: boolean;
   isSigningOut: boolean;
+  learnerLabel: string;
   onDeleteAccount: (password: string) => Promise<string | null>;
   onOpenProfile: (() => void) | null;
+  onSelectGuardian: (button: HTMLButtonElement) => void;
+  onSelectLearner: () => void;
   onSignOut: () => void;
   signOutError: string;
   userEmail: string;
-  userLabel: string;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -120,6 +140,9 @@ export function AccountHeader({
   const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
   const signOutAlertId = useId();
+  const activeLabel = activeMode === "guardian" ? guardianLabel : learnerLabel;
+  const activeModeLabel = activeMode === "guardian" ? "Guardian" : "Learner";
+  const profileLabel = `Profile for ${activeLabel}, ${activeMode} mode`;
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -132,12 +155,14 @@ export function AccountHeader({
     ]?.focus();
 
     function closeFromOutside(event: PointerEvent) {
+      if (isDialogOpen) return;
       if (!accountRef.current?.contains(event.target as Node)) {
         setIsMenuOpen(false);
       }
     }
 
     function closeFromEscape(event: KeyboardEvent) {
+      if (isDialogOpen) return;
       if (event.key !== "Escape") return;
       event.preventDefault();
       setIsMenuOpen(false);
@@ -151,7 +176,7 @@ export function AccountHeader({
       document.removeEventListener("pointerdown", closeFromOutside);
       document.removeEventListener("keydown", closeFromEscape);
     };
-  }, [isMenuOpen]);
+  }, [isDialogOpen, isMenuOpen]);
 
   function selectAction(action: () => void) {
     setIsMenuOpen(false);
@@ -229,8 +254,8 @@ export function AccountHeader({
           aria-disabled={isSigningOut || undefined}
           aria-label={
             isSigningOut
-              ? `Signing out… Account for ${userLabel}`
-              : `Account for ${userLabel}`
+              ? `Signing out… ${profileLabel}`
+              : profileLabel
           }
           aria-controls={menuId}
           aria-expanded={isMenuOpen}
@@ -257,9 +282,18 @@ export function AccountHeader({
             className={cx("contents", isSigningOut && "invisible")}
           >
             <span aria-hidden="true" className="size-6 shrink-0">
-              <CircleUserRound className="size-6" strokeWidth={3} />
+              {activeMode === "guardian" ? (
+                <ShieldCheck className="size-6" strokeWidth={3} />
+              ) : (
+                <CircleUserRound className="size-6" strokeWidth={3} />
+              )}
             </span>
-            <HeaderLabel>Account</HeaderLabel>
+            <span className="hidden min-w-0 leading-tight wide:grid">
+              <span className="max-w-40 truncate">{activeLabel}</span>
+              <span className="text-[0.65rem] uppercase tracking-wider text-sky-100">
+                {activeModeLabel}
+              </span>
+            </span>
             <ChevronDown
               aria-hidden="true"
               className={cx(
@@ -325,14 +359,38 @@ export function AccountHeader({
         >
           <div className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100">
             <p className="m-0 min-w-0 break-words" dir="auto">
-              {userLabel}
+              {activeLabel}
             </p>
-            {userLabel !== userEmail ? (
+            <p className="m-0 text-[0.65rem] uppercase tracking-wider">
+              {activeModeLabel}
+            </p>
+            {activeMode === "guardian" && guardianLabel !== userEmail ? (
               <p className="m-0 min-w-0 break-words" dir="auto">
                 {userEmail}
               </p>
             ) : null}
           </div>
+          <SegmentedControl
+            aria-label="Choose profile mode"
+            className="grid-cols-2"
+          >
+            <SegmentedButton
+              disabled={isModePending}
+              onClick={onSelectLearner}
+              selected={activeMode === "learner"}
+              type="button"
+            >
+              Learner
+            </SegmentedButton>
+            <SegmentedButton
+              disabled={isModePending}
+              onClick={(event) => onSelectGuardian(event.currentTarget)}
+              selected={activeMode === "guardian"}
+              type="button"
+            >
+              Guardian
+            </SegmentedButton>
+          </SegmentedControl>
           {error ? <AccountError error={error} /> : null}
           <div
             aria-label="Account menu"
@@ -341,7 +399,7 @@ export function AccountHeader({
             onKeyDown={handleMenuKeyDown}
             role="menu"
           >
-            {onOpenProfile ? (
+            {activeMode === "guardian" && onOpenProfile ? (
               <MenuButton
                 onClick={() => selectAction(onOpenProfile)}
                 role="menuitem"
@@ -350,31 +408,35 @@ export function AccountHeader({
                 Learner profile
               </MenuButton>
             ) : null}
-            <MenuButton
-              onClick={() => selectAction(() => setIsAboutOpen(true))}
-              role="menuitem"
-              type="button"
-            >
-              AI and saved data
-            </MenuButton>
-            <MenuButton
-              disabled={isSigningOut}
-              onClick={selectSignOut}
-              role="menuitem"
-              type="button"
-            >
-              {isSigningOut ? "Signing out…" : "Sign out"}
-            </MenuButton>
-            <MenuButton
-              className="mt-2"
-              disabled={isSigningOut}
-              onClick={() => selectAction(() => setIsDeleteOpen(true))}
-              role="menuitem"
-              type="button"
-              variant="dangerSurface"
-            >
-              Delete account
-            </MenuButton>
+            {activeMode === "guardian" ? (
+              <>
+                <MenuButton
+                  onClick={() => selectAction(() => setIsAboutOpen(true))}
+                  role="menuitem"
+                  type="button"
+                >
+                  AI and saved data
+                </MenuButton>
+                <MenuButton
+                  disabled={isSigningOut}
+                  onClick={selectSignOut}
+                  role="menuitem"
+                  type="button"
+                >
+                  {isSigningOut ? "Signing out…" : "Sign out"}
+                </MenuButton>
+                <MenuButton
+                  className="mt-2"
+                  disabled={isSigningOut}
+                  onClick={() => selectAction(() => setIsDeleteOpen(true))}
+                  role="menuitem"
+                  type="button"
+                  variant="dangerSurface"
+                >
+                  Delete account
+                </MenuButton>
+              </>
+            ) : null}
           </div>
         </div>
       ) : null}

@@ -28,6 +28,21 @@ const {
   signOutSession,
   submitAuthForm,
 } = authGateModule;
+const { AccountHeader } = await vite.ssrLoadModule("/src/app/AppHeader.tsx");
+const { createGuardianAccessProvider } = await vite.ssrLoadModule(
+  "/src/auth/GuardianAccess.tsx",
+);
+const StaticGuardianAccessProvider = createGuardianAccessProvider({
+  api: {
+    loadGuardianAccess: async () => ({ mode: "learner" }),
+    lockGuardianAccess: async () => ({ mode: "learner" }),
+    unlockGuardianAccess: async () => ({
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      mode: "guardian",
+    }),
+  },
+  schedule: () => () => {},
+});
 
 test.after(async () => {
   await vite.close();
@@ -53,9 +68,11 @@ function renderAuthGate(overrides = {}) {
     isRetrying: false,
     isSigningOut: false,
     isSubmitting: false,
+    learnerName: "Mia",
     mode: "sign-in",
     onFieldChange() {},
     onModeChange() {},
+    onNavigate() {},
     onOpenProfile: null,
     onRetry() {},
     onSignOut() {},
@@ -68,12 +85,40 @@ function renderAuthGate(overrides = {}) {
     ...overrides,
   };
 
+  return renderAuthGateView(
+    props,
+    createElement("div", { "data-lesson-child": true }, "LESSON CONTENT"),
+  );
+}
+
+function renderAuthGateView(props, children = props.children) {
   return renderToStaticMarkup(
     createElement(
-      AuthGateView,
-      props,
-      createElement("div", { "data-lesson-child": true }, "LESSON CONTENT"),
+      StaticGuardianAccessProvider,
+      { sessionIdentity: "id:test" },
+      createElement(AuthGateView, props, children),
     ),
+  );
+}
+
+function renderAccountHeader(overrides = {}) {
+  return renderToStaticMarkup(
+    createElement(AccountHeader, {
+      activeMode: "learner",
+      error: "",
+      guardianLabel: "Patrick",
+      isModePending: false,
+      isSigningOut: false,
+      learnerLabel: "Mia",
+      onDeleteAccount: async () => null,
+      onOpenProfile() {},
+      onSelectGuardian() {},
+      onSelectLearner() {},
+      onSignOut() {},
+      signOutError: "",
+      userEmail: "patrick@example.test",
+      ...overrides,
+    }),
   );
 }
 
@@ -195,9 +240,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   renderContainer();
   assert.equal(capturedProps.isRetrying, true);
-  const retryHtml = renderToStaticMarkup(
-    createElement(AuthGateView, capturedProps),
-  );
+  const retryHtml = renderAuthGateView(capturedProps);
   assert.match(retryHtml, /Checking your session…/);
   assert.doesNotMatch(retryHtml, /CONTAINER CHILD/);
 
@@ -207,9 +250,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   await Promise.resolve();
   renderContainer();
   assert.equal(capturedProps.isRetrying, false);
-  const retrySuccessHtml = renderToStaticMarkup(
-    createElement(AuthGateView, capturedProps),
-  );
+  const retrySuccessHtml = renderAuthGateView(capturedProps);
   assert.match(retrySuccessHtml, /CONTAINER CHILD/);
   assert.doesNotMatch(retrySuccessHtml, /Checking your session…/);
 
@@ -294,6 +335,7 @@ test("auth gate mounts one guardian boundary with the current session identity",
   const TestAuthGate = createAuthGate({
     client,
     GuardianAccessBoundary: CaptureGuardianBoundary,
+    View: ({ children }) => children,
   });
 
   renderToStaticMarkup(createElement(TestAuthGate, null, "SIGNED IN"));
@@ -421,7 +463,7 @@ test("background session refetches preserve mounted lesson children", () => {
   );
 
   assert.match(html, /BACKGROUND REFRESH CHILD/);
-  assert.match(html, /aria-label="Account for 缓存用户"/);
+  assert.match(html, /aria-label="Profile for Learner, learner mode"/);
   assert.doesNotMatch(html, /Checking your session…/);
 });
 
@@ -473,7 +515,7 @@ test("signed-in views expose signing-out progress on the persistent account cont
   assert.match(html, /LESSON CONTENT/);
   assert.match(
     html,
-    /aria-label="Signing out… Account for learner@example.com"/,
+    /aria-label="Signing out… Profile for Mia, learner mode"/,
   );
   assert.match(html, /aria-disabled="true"/);
   assert.match(
@@ -485,7 +527,7 @@ test("signed-in views expose signing-out progress on the persistent account cont
   assert.match(html, /aria-expanded="false"/);
   assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
   const accountButton = html.match(
-    /<button[^>]*aria-label="Signing out… Account for learner@example.com"[\s\S]*?<\/button>/,
+    /<button[^>]*aria-label="Signing out… Profile for Mia, learner mode"[\s\S]*?<\/button>/,
   )?.[0];
   assert.ok(accountButton);
   assert.doesNotMatch(accountButton, /title=/);
@@ -522,17 +564,14 @@ test("signed-in views pre-mount one sign-out alert and keep Account beside a spe
   );
   assert.match(
     failedBar,
-    /aria-label="Account for Mia"[\s\S]*Sign out again[\s\S]*<\/button>/,
+    /aria-label="Profile for Mia, learner mode"[\s\S]*Sign out again[\s\S]*<\/button>/,
   );
   assert.equal((failedBar.match(/role="alert"/g) ?? []).length, 1);
   assert.doesNotMatch(failedBar, /Unable to sign you out|Please try again/);
 });
 
-test("renders a clearly labeled account trigger without conflating learner profile", () => {
-  const html = renderAuthGate({
-    onOpenProfile() {},
-    session: { user: { email: "mia@example.test", name: "Mia" } },
-  });
+test("learner mode names the active learner in the compact profile trigger", () => {
+  const html = renderAccountHeader();
   const bar = html.match(
     /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
   )?.[0];
@@ -540,12 +579,21 @@ test("renders a clearly labeled account trigger without conflating learner profi
   assert.ok(bar);
   assert.match(
     bar,
-    /<button[^>]*aria-label="Account for Mia"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
+    /<button[^>]*aria-label="Profile for Mia, learner mode"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
   );
-  assert.match(bar, />Account</);
-  assert.doesNotMatch(bar, />Mia</);
-  assert.doesNotMatch(bar, /aria-label="Edit learner profile"/);
+  assert.match(bar, />Mia</);
+  assert.match(bar, />Learner</);
+  assert.doesNotMatch(bar, />Patrick</);
   assert.doesNotMatch(bar, />Sign out|>Log out</);
+});
+
+test("guardian mode names the account holder in the compact profile trigger", () => {
+  const html = renderAccountHeader({ activeMode: "guardian" });
+
+  assert.match(html, /aria-label="Profile for Patrick, guardian mode"/);
+  assert.match(html, />Patrick</);
+  assert.match(html, />Guardian</);
+  assert.doesNotMatch(html, /aria-label="Profile for Mia, learner mode"/);
 });
 
 test("auth submission validates before calling the client", async () => {

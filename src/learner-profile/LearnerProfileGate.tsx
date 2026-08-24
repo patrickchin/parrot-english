@@ -1303,13 +1303,15 @@ export function LearnerProfileGate({
 
   const profileAction = useMemo(
     () =>
-      canEditProfile && !isProfileRoute
+      fullData && fullData.profile.profileStatus === "completed"
         ? {
             error: "",
-            onOpen: onOpenProfileRoute,
+            learnerName: fullData.profile.name,
+            onOpenProfile:
+              canEditProfile && !isProfileRoute ? onOpenProfileRoute : null,
           }
         : null,
-    [canEditProfile, isProfileRoute, onOpenProfileRoute],
+    [canEditProfile, fullData, isProfileRoute, onOpenProfileRoute],
   );
   useProfileAccountAction(profileAction);
 
