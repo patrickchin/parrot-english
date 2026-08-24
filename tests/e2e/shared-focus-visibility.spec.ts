@@ -218,7 +218,11 @@ function renderedScreenshotDelta({
   const scaleX = focused.info.width / viewport.width;
   const scaleY = focused.info.height / viewport.height;
   const padding = 12;
-  const left = Math.max(0, Math.floor((box.x - padding) * scaleX));
+  const leftPadding = Math.max(padding, Math.max(0, -markerOffset));
+  const left = Math.max(
+    0,
+    Math.floor((box.x - leftPadding) * scaleX),
+  );
   const right = Math.min(
     focused.info.width,
     Math.ceil((box.x + box.width + padding) * scaleX),
@@ -982,6 +986,63 @@ test("lesson shelf heading remains outside the ordinary Tab sequence", async ({
   await expect(heading).not.toBeFocused();
 });
 
+test("lesson shelf arrival cue survives My Lessons settlement", async ({
+  page,
+}) => {
+  let releaseLessons = () => {};
+  let reportRequest = () => {};
+  const lessonsGate = new Promise<void>((resolve) => {
+    releaseLessons = resolve;
+  });
+  const requestStarted = new Promise<void>((resolve) => {
+    reportRequest = resolve;
+  });
+  await page.route("**/api/lessons/my", async (route) => {
+    reportRequest();
+    await lessonsGate;
+    await route.fulfill({
+      body: JSON.stringify({ lessons: [] }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/lessons");
+  await requestStarted;
+  const heading = lessonShelfHeading(page);
+  const status = page
+    .getByRole("complementary", { name: "Grown-up tools" })
+    .getByRole("status");
+  await expect(status).toHaveText("Loading My Lessons…");
+  await expect(heading).toBeFocused();
+  const loadingCue = await heading.evaluate((element) => {
+    const cue = getComputedStyle(element, "::before");
+    return {
+      backgroundColor: cue.backgroundColor,
+      height: cue.height,
+      left: cue.left,
+      top: cue.top,
+      width: cue.width,
+    };
+  });
+
+  releaseLessons();
+  await expect(status).toHaveText("No made-for-you lessons yet.");
+  await expect(heading).toBeFocused();
+  expect(
+    await heading.evaluate((element) => {
+      const cue = getComputedStyle(element, "::before");
+      return {
+        backgroundColor: cue.backgroundColor,
+        height: cue.height,
+        left: cue.left,
+        top: cue.top,
+        width: cue.width,
+      };
+    }),
+  ).toEqual(loadingCue);
+});
+
 test("lesson shelf arrival keeps a real localized indicator in forced colors", async ({
   page,
 }) => {
@@ -992,17 +1053,21 @@ test("lesson shelf arrival keeps a real localized indicator in forced colors", a
   const indicator = await heading.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
+      cueDisplay: getComputedStyle(element, "::before").display,
       outlineStyle: style.outlineStyle,
       outlineWidth: Number.parseFloat(style.outlineWidth),
     };
   });
 
+  expect(indicator.cueDisplay).toBe("none");
   expect(indicator.outlineStyle).not.toBe("none");
   expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
-  expectRenderedForcedReadingOutline(
-    await renderedInitialFocusDelta(page, heading, -12),
-    "forced-colors lesson shelf heading",
-  );
+  const focus = await renderedInitialFocusDelta(page, heading, -16);
+  expectRenderedForcedReadingOutline(focus, "forced-colors lesson shelf heading");
+  expect(
+    focus.leftMarkerContrastingArea,
+    "forced-colors lesson shelf heading retains the decorative rail",
+  ).toBeLessThan(1);
 });
 
 async function profileHeadingGeometry(target: Locator) {

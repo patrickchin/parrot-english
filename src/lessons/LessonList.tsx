@@ -205,7 +205,7 @@ export function LessonListView({
 
       <header className="mx-auto mb-5 w-full max-w-6xl text-center md:mb-8">
         <h1
-          className="relative mx-auto my-0 w-fit max-w-full text-4xl leading-none tracking-tight text-brand-navy outline-none before:absolute before:top-0 before:-left-3 before:h-full before:max-h-24 before:w-1 before:transition-none before:content-[''] focus:before:bg-brand-blue sm:text-6xl lg:text-7xl forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2"
+          className="relative mx-auto my-0 w-fit max-w-full text-4xl leading-none tracking-tight text-brand-navy outline-none before:absolute before:top-[20%] before:-left-4 before:h-[60%] before:max-h-24 before:w-1 before:rounded-full before:transition-none before:content-[''] focus:before:bg-brand-blue sm:text-6xl lg:text-7xl forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2"
           tabIndex={-1}
         >
           Pick a lesson
