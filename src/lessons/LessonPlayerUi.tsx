@@ -152,11 +152,22 @@ export function LessonStage({
   );
 }
 
-export function BoxedFullSceneStage({ image }: { image: FullSceneImage }) {
+export function BoxedFullSceneStage({
+  image,
+  reserved = false,
+}: {
+  image: FullSceneImage;
+  reserved?: boolean;
+}) {
   return (
     <section
       aria-label="Lesson artwork"
-      className="lesson-full-scene-art absolute left-1/2 top-1/2 z-10 aspect-video max-h-[52dvh] w-[min(calc(100%_-_2rem),92dvh,56rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border-4 border-white bg-white/90 shadow-card"
+      className={cx(
+        "lesson-full-scene-art z-10 aspect-video overflow-hidden rounded-2xl border-4 border-white bg-white/90 shadow-card md:rounded-3xl",
+        reserved
+          ? "relative h-[min(100cqh,56.25cqw)] w-[min(100cqw,177.78cqh)]"
+          : "absolute left-1/2 top-1/2 max-h-[52dvh] w-[min(calc(100%_-_2rem),92dvh,56rem)] -translate-x-1/2 -translate-y-1/2",
+      )}
       role="region"
     >
       <img
@@ -169,12 +180,53 @@ export function BoxedFullSceneStage({ image }: { image: FullSceneImage }) {
   );
 }
 
+export function BoxedLessonSceneLayout({
+  controls,
+  dialogue,
+  hud,
+  image,
+  notice,
+}: {
+  controls: ReactNode;
+  dialogue: ReactNode;
+  hud: ReactNode;
+  image: FullSceneImage;
+  notice: ReactNode;
+}) {
+  return (
+    <section
+      aria-label="Active lesson content"
+      className="absolute inset-x-2 bottom-2 top-20 z-10 grid min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_minmax(0,auto)_auto_auto] gap-1.5 short:top-16 md:inset-x-3 md:bottom-4 md:top-24 md:gap-3 short-wide:inset-x-2 short-wide:bottom-2 short-wide:top-16 short-wide:gap-2 min-[560px]:landscape:grid-cols-[minmax(0,3fr)_minmax(14rem,2fr)] min-[560px]:landscape:grid-rows-[auto_minmax(0,1fr)_auto_auto] lg:landscape:grid-cols-[minmax(0,5fr)_minmax(20rem,3fr)] wide:inset-x-6 wide:gap-4"
+    >
+      <div className="col-start-1 row-start-1 min-w-0 min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-1">
+        {hud}
+      </div>
+      <div className="row-start-2 grid min-h-0 min-w-0 place-items-center [container-type:size] min-[560px]:landscape:col-start-1 min-[560px]:landscape:row-span-4 min-[560px]:landscape:row-start-1">
+        <BoxedFullSceneStage image={image} reserved />
+      </div>
+      <div className="col-start-1 row-start-3 flex min-h-0 min-w-0 items-start overflow-hidden min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-2">
+        {dialogue}
+      </div>
+      {notice ? (
+        <div className="col-start-1 row-start-4 min-w-0 min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-3">
+          {notice}
+        </div>
+      ) : null}
+      <div className="col-start-1 row-start-5 min-w-0 min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-4">
+        {controls}
+      </div>
+    </section>
+  );
+}
+
 export function LessonHud({
   currentScene,
+  reserved = false,
   sceneCount,
   title,
 }: {
   currentScene: number;
+  reserved?: boolean;
   sceneCount: number;
   title: string;
 }) {
@@ -183,15 +235,36 @@ export function LessonHud({
   return (
     <header
       aria-label="Lesson progress"
-      className="lesson-hud absolute left-1/2 top-20 z-30 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 short:top-16 md:top-5 md:max-w-xl"
+      className={cx(
+        "lesson-hud z-30",
+        reserved
+          ? "relative w-full min-w-0 max-w-none"
+          : "absolute left-1/2 top-20 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 short:top-16 md:top-5 md:max-w-xl",
+      )}
       role="region"
     >
-      <div className="flex min-h-11 min-w-0 items-center gap-2 rounded-full border-3 border-white bg-white/95 px-3 py-1.5 text-brand-ink shadow-md md:min-h-14 md:gap-3 md:px-4">
-        <span className="shrink-0 text-xs font-black uppercase tracking-wide text-brand-rose md:text-sm">
+      <div
+        className={cx(
+          "flex min-h-11 min-w-0 items-center gap-2 rounded-full border-3 border-white bg-white/95 px-3 py-1.5 text-brand-ink shadow-md md:min-h-14 md:gap-3 md:px-4",
+          reserved &&
+            "short-wide:min-h-11 short-wide:gap-2 short-wide:px-3 short-wide:py-1",
+        )}
+      >
+        <span
+          className={cx(
+            "shrink-0 text-xs font-black uppercase tracking-wide text-brand-rose md:text-sm",
+            reserved && "short-wide:text-xs",
+          )}
+        >
           Scene {currentScene} of {sceneCount}
         </span>
         <span aria-hidden="true" className="h-5 w-px shrink-0 bg-sky-200" />
-        <h1 className="m-0 min-w-0 flex-1 truncate text-base font-black leading-tight md:text-xl">
+        <h1
+          className={cx(
+            "m-0 min-w-0 flex-1 truncate text-base font-black leading-tight md:text-xl",
+            reserved && "short-wide:text-base",
+          )}
+        >
           {title}
         </h1>
       </div>
@@ -200,7 +273,11 @@ export function LessonHud({
         aria-valuemax={sceneCount}
         aria-valuemin={1}
         aria-valuenow={currentScene}
-        className="mx-5 mt-1.5 h-2 overflow-hidden rounded-full border border-white/90 bg-white/65 shadow-sm md:mx-7 md:h-2.5"
+        className={cx(
+          "mx-5 mt-1.5 h-2 overflow-hidden rounded-full border border-white/90 bg-white/65 shadow-sm md:mx-7 md:h-2.5",
+          reserved &&
+            "short-wide:mx-4 short-wide:mt-1 short-wide:h-1.5",
+        )}
         role="progressbar"
       >
         <span
@@ -366,11 +443,13 @@ export function LessonCharacters({
 export function LessonSpeech({
   characterCount,
   characterIndex,
+  reserved = false,
   showTail = true,
   speech,
 }: {
   characterCount: number;
   characterIndex: number;
+  reserved?: boolean;
   showTail?: boolean;
   speech: LessonSpeechPresentation;
 }) {
@@ -389,7 +468,10 @@ export function LessonSpeech({
       aria-label={isNarration ? "Lesson narration" : `${speakerName} is speaking`}
       aria-live="polite"
       className={cx(
-        "lesson-dialogue-overlay absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface short:top-32 md:top-28 md:px-7 md:py-4",
+        "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface md:px-7 md:py-4",
+        reserved
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5"
+          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
         isNarration
           ? "bg-brand-navy/95 text-white shadow-control-navy"
           : cx(
@@ -425,6 +507,8 @@ export function LessonSpeech({
       <p
         className={cx(
           "m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 md:max-h-40",
+          reserved &&
+            "min-h-0 overscroll-contain short-wide:text-xl lg:landscape:text-[clamp(1.25rem,2.4vw,2rem)]",
           isNarration
             ? "focus-visible:outline-brand-yellow"
             : "focus-visible:outline-brand-ink",
@@ -442,10 +526,12 @@ export function LessonSpeech({
 export function LessonUserPrompt({
   dialogue,
   portrait,
+  reserved = false,
   status = "ready",
 }: {
   dialogue: string;
   portrait?: PersonalizedStoryArtwork | null;
+  reserved?: boolean;
   status?: "checking" | "ready" | "recording";
 }) {
   const overflowText = useOverflowText(dialogue);
@@ -460,7 +546,10 @@ export function LessonUserPrompt({
     <section
       aria-label="Your turn"
       className={cx(
-        "lesson-dialogue-overlay lesson-user-prompt absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface short:top-32 min-[340px]:px-4 min-[340px]:py-3 md:top-28 md:px-7 md:py-4",
+        "lesson-dialogue-overlay lesson-user-prompt z-30 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 min-[340px]:py-3 md:px-7 md:py-4",
+        reserved
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5"
+          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
         portrait && "lesson-user-prompt-with-portrait",
       )}
       role="region"
@@ -472,7 +561,12 @@ export function LessonUserPrompt({
           src={portrait.src}
         />
       ) : null}
-      <div className="lesson-user-prompt-copy min-w-0">
+      <div
+        className={cx(
+          "lesson-user-prompt-copy min-w-0",
+          reserved && "grid min-h-0 grid-rows-[auto_minmax(0,1fr)]",
+        )}
+      >
         <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
           {status === "checking" ? (
             <LoaderCircle
@@ -485,7 +579,11 @@ export function LessonUserPrompt({
           {promptLabel}
         </span>
         <p
-          className="m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]"
+          className={cx(
+            "m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]",
+            reserved &&
+              "min-h-0 overflow-y-auto overscroll-contain short-wide:text-xl lg:landscape:text-[clamp(1.25rem,2.4vw,2rem)]",
+          )}
           onKeyDown={scrollOverflowText}
           ref={overflowText.ref}
           tabIndex={overflowText.tabIndex}
@@ -499,9 +597,11 @@ export function LessonUserPrompt({
 
 export function LessonFeedback({
   outcome,
+  reserved = false,
   speech,
 }: {
   outcome: LessonFeedbackOutcome;
+  reserved?: boolean;
   speech: LessonSpeechPresentation;
 }) {
   const overflowText = useOverflowText(speech.text);
@@ -517,7 +617,10 @@ export function LessonFeedback({
     <section
       aria-label="Speaking feedback"
       className={cx(
-        "lesson-dialogue-overlay absolute left-1/2 top-36 z-30 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 rounded-3xl border-4 border-white px-4 py-3 text-center text-white shadow-control-navy short:top-32 md:top-28 md:px-7 md:py-4",
+        "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center text-white shadow-control-navy md:px-7 md:py-4",
+        reserved
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5"
+          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
         isCorrect
           ? "bg-emerald-700/95"
           : isRetry
@@ -532,7 +635,11 @@ export function LessonFeedback({
       </span>
       <p
         aria-live="polite"
-        className="m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow"
+        className={cx(
+          "m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
+          reserved &&
+            "min-h-0 max-h-32 overflow-y-auto overscroll-contain md:max-h-40 short-wide:text-xl lg:landscape:text-[clamp(1.25rem,2.4vw,2rem)]",
+        )}
         onKeyDown={scrollOverflowText}
         ref={overflowText.ref}
         role="status"
@@ -551,6 +658,7 @@ export function LessonPlaybackControls({
   onNext,
   onPauseResume,
   onPrevious,
+  reserved = false,
 }: {
   atFinalScene: boolean;
   atFirstScene: boolean;
@@ -558,13 +666,19 @@ export function LessonPlaybackControls({
   onNext: () => void;
   onPauseResume: () => void;
   onPrevious: () => void;
+  reserved?: boolean;
 }) {
   const pauseLabel = isPaused ? "Resume lesson" : "Pause lesson";
 
   return (
     <nav
       aria-label="Lesson playback controls"
-      className="lesson-playback-controls absolute bottom-3 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2.5 md:bottom-6 md:gap-3"
+      className={cx(
+        "lesson-playback-controls z-40 flex items-center gap-2.5 md:gap-3",
+        reserved
+          ? "relative w-full justify-center"
+          : "absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-6",
+      )}
     >
       <IconButton
         aria-label="Previous scene"
@@ -615,6 +729,7 @@ export function LessonSpeakingControls({
   isStartingRecording,
   onSkip,
   onToggleRecording,
+  reserved = false,
   usePracticeFallback = false,
 }: {
   isEvaluating: boolean;
@@ -622,12 +737,18 @@ export function LessonSpeakingControls({
   isStartingRecording: boolean;
   onSkip: () => void;
   onToggleRecording: () => void;
+  reserved?: boolean;
   usePracticeFallback?: boolean;
 }) {
   return (
     <nav
       aria-label="Speaking controls"
-      className="lesson-speaking-controls absolute bottom-3 left-1/2 z-40 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 justify-center gap-2 md:bottom-6 md:max-w-lg md:gap-2.5"
+      className={cx(
+        "lesson-speaking-controls z-40 flex justify-center gap-2 md:gap-2.5",
+        reserved
+          ? "relative w-full min-w-0 max-w-none"
+          : "absolute bottom-3 left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-6 md:max-w-lg",
+      )}
     >
       {isEvaluating ? (
         <span
@@ -714,11 +835,13 @@ export function LessonErrorBanner({
   error,
   onRetry,
   onSkip,
+  reserved = false,
   tone = "error",
 }: {
   error: string;
   onRetry?: () => void;
   onSkip?: () => void;
+  reserved?: boolean;
   tone?: "error" | "help";
 }) {
   if (!error) return null;
@@ -727,7 +850,10 @@ export function LessonErrorBanner({
     <div
       aria-label={tone === "help" ? "Speaking help" : undefined}
       className={cx(
-        "lesson-error-banner absolute bottom-24 left-1/2 z-50 grid w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 gap-3 rounded-2xl border-4 border-white px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:bottom-30 md:text-base",
+        "lesson-error-banner z-50 grid gap-3 rounded-2xl border-4 border-white px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:text-base",
+        reserved
+          ? "relative w-full min-w-0 max-w-none short-wide:gap-2 short-wide:px-3 short-wide:py-2 short-wide:text-sm"
+          : "absolute bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-30",
         tone === "help" ? "bg-brand-navy" : "bg-red-800",
       )}
       data-tone={tone}
