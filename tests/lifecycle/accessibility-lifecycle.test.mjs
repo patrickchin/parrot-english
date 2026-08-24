@@ -529,6 +529,76 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
+  it("keeps all guardian actions before the learner experience registers", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi({
+        async loadGuardianAccess() {
+          return {
+            expiresAt: "2099-01-01T00:00:00.000Z",
+            mode: "guardian",
+          };
+        },
+      }),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
+
+    await click(await waitFor(() => button("Profile for Patrick, guardian mode")));
+    assert.deepEqual(
+      [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
+        item.textContent.trim(),
+      ),
+      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+    );
+  });
+
+  it("keeps all guardian actions when the profile route registers no opener", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi({
+        async loadGuardianAccess() {
+          return {
+            expiresAt: "2099-01-01T00:00:00.000Z",
+            mode: "guardian",
+          };
+        },
+      }),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    const profileRouteExperience = {
+      error: "",
+      learnerName: "Mia",
+      onOpenProfile: null,
+    };
+    const navigations = [];
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        { navigate: (path) => navigations.push(path) },
+        createElement(AccountExperienceRegistration, {
+          experience: profileRouteExperience,
+        }),
+      ),
+    );
+
+    await click(button("Profile for Patrick, guardian mode"));
+    assert.deepEqual(
+      [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
+        item.textContent.trim(),
+      ),
+      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+    );
+    await click(button("Learner profile"));
+    assert.deepEqual(navigations, ["/profile"]);
+  });
+
   it("clears only the exact account experience registered by a profile", async () => {
     const first = {
       error: "",
@@ -753,6 +823,66 @@ describe("keyboard accessibility lifecycles", () => {
       document.body.textContent,
       /Guardian mode unlocked for 15 minutes/,
     );
+  });
+
+  it("announces every successful unlock in one mounted account experience", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi(),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
+    const liveStatuses = document.querySelectorAll(
+      'span[role="status"][aria-live="polite"]',
+    );
+    const liveStatus = liveStatuses[liveStatuses.length - 1];
+    const announcements = [];
+    const observer = new window.MutationObserver(() => {
+      const message = liveStatus.textContent.trim();
+      if (message) announcements.push(message);
+    });
+    observer.observe(liveStatus, {
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+
+    async function unlock() {
+      let guardian = [...document.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent.trim() === "Guardian",
+      );
+      if (!guardian) {
+        await click(
+          await waitFor(() => button("Profile for Learner, learner mode")),
+        );
+        guardian = button("Guardian");
+      }
+      await click(guardian);
+      const password = document.querySelector('input[name="password"]');
+      await input(password, "correct-password");
+      await click(button("Unlock guardian mode"));
+      await waitFor(() =>
+        assert.equal(
+          liveStatus.textContent.trim(),
+          "Guardian mode unlocked for 15 minutes",
+        ),
+      );
+    }
+
+    await unlock();
+    await click(await waitFor(() => button("Learner")));
+    await waitFor(() => button("Profile for Learner, learner mode"));
+    await unlock();
+    await waitFor(() => assert.equal(announcements.length, 2));
+    observer.disconnect();
+
+    assert.deepEqual(announcements, [
+      "Guardian mode unlocked for 15 minutes",
+      "Guardian mode unlocked for 15 minutes",
+    ]);
   });
 
   it("keeps the profile switch mounted while the unlock dialog owns interaction", async () => {

@@ -243,12 +243,18 @@ function AccountExperienceHeader({
   const unlockButtonRef = useRef<HTMLButtonElement>(null);
   const activeMode = access.mode === "guardian" ? "guardian" : "learner";
 
+  useEffect(() => {
+    if (access.mode !== "guardian") setAnnouncement("");
+  }, [access.mode]);
+
   async function selectLearner() {
     if (access.mode !== "guardian" || isModePending) return;
     setIsModePending(true);
     try {
       const lockError = await access.lock();
-      if (!lockError) onNavigate("/");
+      if (!lockError) {
+        onNavigate("/");
+      }
     } finally {
       setIsModePending(false);
     }
@@ -265,7 +271,7 @@ function AccountExperienceHeader({
         isSigningOut={isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
         onDeleteAccount={onDeleteAccount}
-        onOpenProfile={onOpenProfile}
+        onOpenProfile={onOpenProfile ?? (() => onNavigate("/profile"))}
         onSelectGuardian={(button) => {
           if (access.mode !== "guardian") {
             unlockButtonRef.current = button;

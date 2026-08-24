@@ -125,7 +125,7 @@ export function AccountHeader({
   isSigningOut: boolean;
   learnerLabel: string;
   onDeleteAccount: (password: string) => Promise<string | null>;
-  onOpenProfile: (() => void) | null;
+  onOpenProfile: () => void;
   onSelectGuardian: (button: HTMLButtonElement) => void;
   onSelectLearner: () => void;
   onSignOut: () => void;
@@ -399,7 +399,7 @@ export function AccountHeader({
             onKeyDown={handleMenuKeyDown}
             role="menu"
           >
-            {activeMode === "guardian" && onOpenProfile ? (
+            {activeMode === "guardian" ? (
               <MenuButton
                 onClick={() => selectAction(onOpenProfile)}
                 role="menuitem"
