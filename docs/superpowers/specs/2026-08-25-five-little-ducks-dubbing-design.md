@@ -134,7 +134,9 @@ prevent an ETag ABA when a reset rewrites a key. The audio endpoint validates
 the exact envelope prefix with an ETag-conditioned bounded range read, then
 streams an ETag-conditioned payload range, so the learner receives the exact
 uploaded clip without buffering it again. Raw pre-marker audio remains readable
-only when all envelope coordination metadata is absent.
+only when all envelope coordination metadata is absent. Enveloped objects are
+also rejected when their total size exceeds the exact generation prefix plus
+the 512 KiB upload ceiling.
 
 HTTP metadata stores the normalized content type. Audio custom metadata stores
 the reset generation, audio state, payload offset, consent version, line ID, and
@@ -170,12 +172,14 @@ If deletion begins during a write after the prefix sweep has already passed,
 the request conditionally replaces exactly the object version it wrote with a
 request-unique opaque `account-deleting` fence. It re-heads and retries on a CAS
 loss or transient hot-key error until the slot is absent or demonstrably
-non-audio; it never unconditionally deletes a shared fixed slot that a newer
-writer could own. Because dub keys live below the existing per-user purge
-prefix, Better Auth's normal sweep removes tracked clips and coordination
-objects. A late opaque account-deleting fence may remain when its write lands
-after that sweep, but it cannot be served or counted as audio and the permanent
-D1 tombstone prevents a new legitimate upload for that account.
+non-audio. After any successful audio write, this D1 check runs before the
+marker result is interpreted and is repeated after either a marker conflict or
+a successful marker check. It never unconditionally deletes a shared fixed
+slot that a newer writer could own. Because dub keys live below the existing
+per-user purge prefix, Better Auth's normal sweep removes tracked clips and
+coordination objects. A late opaque account-deleting fence may remain when its
+write lands after that sweep, but it cannot be served or counted as audio and
+the permanent D1 tombstone prevents a new legitimate upload for that account.
 
 Recordings are never sent to speech recognition, analytics, a public bucket,
 or a third-party media player. The UI makes no claim that a checkbox alone is

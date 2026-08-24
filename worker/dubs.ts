@@ -258,7 +258,8 @@ function audioStorage(
     metadata?.generation !== generation ||
     metadata.state !== "audio" ||
     metadata.payloadOffset !== String(prefix.byteLength) ||
-    object.size <= prefix.byteLength
+    object.size <= prefix.byteLength ||
+    object.size > prefix.byteLength + MAX_CLIP_BYTES
   ) {
     return null;
   }
@@ -624,15 +625,27 @@ export async function handleDubRequest(
       wait,
     );
     if (!stored) throw new DubApiError(409, "dub_reset_in_progress");
-    if (await readyGeneration(bucket, userId) !== ready) {
-      throw new DubApiError(409, "dub_reset_in_progress");
-    }
-    if (await isDeletionPending(input.database, userId)) {
+    const throwIfAccountDeletionPending = async () => {
+      if (!await isDeletionPending(input.database, userId)) return;
       const token = createGeneration();
       if (!token) throw new Error("Dub cleanup generation is required.");
       await fenceAccountDeletingSlot(bucket, key, stored, token, wait);
       throw new DubApiError(409, "account_deletion_pending");
+    };
+    await throwIfAccountDeletionPending();
+    let markerConflict: unknown;
+    try {
+      if (await readyGeneration(bucket, userId) !== ready) {
+        markerConflict = new DubApiError(409, "dub_reset_in_progress");
+      }
+    } catch (error) {
+      markerConflict = error;
     }
+    if (markerConflict !== undefined) {
+      await throwIfAccountDeletionPending();
+      throw markerConflict;
+    }
+    await throwIfAccountDeletionPending();
     return json(
       { lineId: route.lineId, recordedAt: recordedAt.toISOString() },
       { status: 201 },

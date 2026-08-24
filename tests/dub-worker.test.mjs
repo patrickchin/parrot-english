@@ -1081,6 +1081,53 @@ describe("private learner dub API", () => {
     }
   });
 
+  it("rejects stored envelopes above the upload limit at the exact boundary", async () => {
+    const generation = "reset-1";
+    const atLimit = envelopedAudio(generation, new Uint8Array(512 * 1024));
+    const aboveLimit = envelopedAudio(
+      generation,
+      new Uint8Array(512 * 1024 + 1),
+    );
+    const stored = (envelope) => ({
+      bytes: envelope.bytes,
+      options: {
+        customMetadata: {
+          generation,
+          payloadOffset: String(envelope.payloadOffset),
+          state: "audio",
+        },
+        httpMetadata: { contentType: "audio/webm" },
+      },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    });
+    const bucket = createBucket([
+      [MARKER_KEY, {
+        bytes: fenceBytes("marker", generation, "ready"),
+        options: { customMetadata: { generation, state: "ready" } },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+      [slotKey("line-1"), stored(aboveLimit)],
+      [slotKey("line-2"), stored(atLimit)],
+    ]);
+
+    const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
+    const lines = (await status.json()).lines;
+    assert.equal(lines[0].saved, false);
+    assert.equal(lines[1].saved, true);
+    assert.equal((await callDub({
+      bucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    })).status, 404);
+    const boundary = await callDub({
+      bucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-2/audio`,
+    });
+    assert.equal(boundary.status, 200);
+    assert.equal((await boundary.arrayBuffer()).byteLength, 512 * 1024);
+  });
+
   it("requires an envelope for explicit legacy audio metadata", async () => {
     const raw = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 8]);
     const bucket = createBucket([[slotKey("line-1"), {
@@ -1437,6 +1484,98 @@ describe("private learner dub API", () => {
       bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
       "account-deleting",
     );
+  });
+
+  it("fences an upload after account deletion sweeps its ready marker", async () => {
+    const generation = "reset-1";
+    const bucket = createBucket([[MARKER_KEY, {
+      bytes: fenceBytes("marker", generation, "ready"),
+      options: { customMetadata: { generation, state: "ready" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    const audioPutStarted = deferred();
+    const releaseAudioPut = deferred();
+    const put = bucket.put.bind(bucket);
+    let cleanupFailures = 1;
+    bucket.put = async (key, bytes, options) => {
+      if (options?.customMetadata?.state === "audio") {
+        audioPutStarted.resolve();
+        await releaseAudioPut.promise;
+      }
+      if (
+        options?.customMetadata?.state === "account-deleting" &&
+        cleanupFailures-- > 0
+      ) {
+        throw new Error("put: TooManyRequests (10058)");
+      }
+      return put(key, bytes, options);
+    };
+    let pending = false;
+
+    const responsePromise = callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 6]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+      pending: async () => pending,
+    });
+    await audioPutStarted.promise;
+    pending = true;
+    const swept = await bucket.list({ prefix: "personalized-story-art/user-1/" });
+    await bucket.delete(swept.objects.map(({ key }) => key));
+    assert.equal(bucket.stored.has(MARKER_KEY), false);
+    releaseAudioPut.resolve();
+    const response = await responsePromise;
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(bucket.calls.delete, [[MARKER_KEY]]);
+    assert.equal(
+      bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
+      "account-deleting",
+    );
+    assert.equal(cleanupFailures, -1);
+    assert.equal((await response.json()).error, "account_deletion_pending");
+  });
+
+  it("rechecks account deletion after a post-store marker conflict", async () => {
+    const generation = "reset-1";
+    const bucket = createBucket([[MARKER_KEY, {
+      bytes: fenceBytes("marker", generation, "ready"),
+      options: { customMetadata: { generation, state: "ready" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    const markerReadStarted = deferred();
+    const releaseMarkerRead = deferred();
+    const head = bucket.head.bind(bucket);
+    let markerReads = 0;
+    bucket.head = async (key) => {
+      if (key === MARKER_KEY && ++markerReads === 3) {
+        markerReadStarted.resolve();
+        await releaseMarkerRead.promise;
+      }
+      return head(key);
+    };
+    let pending = false;
+
+    const responsePromise = callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 7]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+      pending: async () => pending,
+    });
+    await markerReadStarted.promise;
+    pending = true;
+    const swept = await bucket.list({ prefix: "personalized-story-art/user-1/" });
+    await bucket.delete(swept.objects.map(({ key }) => key));
+    releaseMarkerRead.resolve();
+    const response = await responsePromise;
+
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, "account_deletion_pending");
+    assert.equal(bucket.stored.has(slotKey("line-1")), false);
   });
 
   it("takes account cleanup over after CAS loss to another old writer", async () => {
