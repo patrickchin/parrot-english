@@ -218,7 +218,11 @@ export function AccountHeader({
       >
         <ActionButton
           aria-disabled={isSigningOut || undefined}
-          aria-label={`Account for ${userLabel}`}
+          aria-label={
+            isSigningOut
+              ? `Signing out… Account for ${userLabel}`
+              : `Account for ${userLabel}`
+          }
           aria-controls={menuId}
           aria-expanded={isMenuOpen}
           aria-haspopup="menu"

@@ -56,19 +56,25 @@ for (const viewport of viewports) {
     const status = page
       .getByRole("complementary", { name: "Account" })
       .getByRole("status");
+    const pendingAccount = page.getByRole("button", {
+      exact: true,
+      name: "Signing out… Account for Mia",
+    });
     await expect(status).toHaveText("Signing out…");
     await expect(status).toBeVisible();
-    await expect(account).toBeFocused();
-    await expect(account).toHaveAttribute("aria-disabled", "true");
-    await expect(account).toHaveAttribute("title", "Account");
-    await expect(account.getByText("Signing out…")).toHaveCount(0);
+    await expect(pendingAccount).toBeFocused();
+    await expect(pendingAccount).toHaveAttribute("aria-disabled", "true");
+    await expect(pendingAccount).toHaveAttribute("title", "Account");
+    await expect(pendingAccount.getByText("Signing out…")).toHaveCount(0);
     expect(
       await status.evaluate((message) => getComputedStyle(message).color),
-    ).toBe(await account.evaluate((control) => getComputedStyle(control).color));
+    ).toBe(
+      await pendingAccount.evaluate((control) => getComputedStyle(control).color),
+    );
     await expect(page.getByRole("menu", { name: "Account menu" })).toBeHidden();
 
     const [accountBox, statusBox, headingDuring] = await Promise.all([
-      account.boundingBox(),
+      pendingAccount.boundingBox(),
       status.boundingBox(),
       heading.boundingBox(),
     ]);
@@ -84,13 +90,13 @@ for (const viewport of viewports) {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(viewport.width);
-    await account.hover();
-    expect(await account.boundingBox()).toEqual(accountBox);
+    await pendingAccount.hover();
+    expect(await pendingAccount.boundingBox()).toEqual(accountBox);
     expect(
-      await account.evaluate((control) => getComputedStyle(control).cursor),
+      await pendingAccount.evaluate((control) => getComputedStyle(control).cursor),
     ).toBe("wait");
     expect(
-      await account.evaluate((control) => {
+      await pendingAccount.evaluate((control) => {
         const bounds = control.getBoundingClientRect();
         const hit = document.elementFromPoint(
           bounds.left + bounds.width / 2,
@@ -146,14 +152,18 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   await page.getByRole("menuitem", { name: "Sign out" }).press("Enter");
 
   const status = page.getByRole("status").filter({ hasText: "Signing out…" });
+  const pendingAccount = page.getByRole("button", {
+    exact: true,
+    name: "Signing out… Account for Mia",
+  });
   await expect(status).toBeVisible();
-  await expect(account).toBeFocused();
+  await expect(pendingAccount).toBeFocused();
   expect(
     await status.locator("svg").evaluate((spinner) =>
       getComputedStyle(spinner).animationName,
     ),
   ).toBe("none");
-  const focusStyle = await account.evaluate((control) => {
+  const focusStyle = await pendingAccount.evaluate((control) => {
     const style = getComputedStyle(control);
     return {
       focusVisible: control.matches(":focus-visible"),
@@ -220,8 +230,12 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
   await page.getByRole("menuitem", { name: "Sign out" }).click();
 
   const pending = page.getByRole("status").filter({ hasText: "Signing out…" });
+  const pendingAccount = page.getByRole("button", {
+    exact: true,
+    name: "Signing out… Account for Mia",
+  });
   await expect(pending).toBeVisible();
-  await expect(account).toBeFocused();
+  await expect(pendingAccount).toBeFocused();
   expect(await hud.boundingBox()).toEqual(hudBefore);
   expect(await speech.boundingBox()).toEqual(speechBefore);
   expect(
