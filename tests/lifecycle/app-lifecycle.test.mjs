@@ -619,6 +619,7 @@ function createSessionClient(initialState) {
   }
 
   const client = {
+    publish,
     retry,
     signInCalls,
     signIn: {
@@ -3981,6 +3982,85 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Account for Mia"));
     await click(button("Sign out"));
     await waitFor(() => text(/Welcome back/));
+    noText(/AUTHENTICATED APP/);
+  });
+
+  it("keeps sign-out feedback available until the session disappears", async () => {
+    const failure = deferred();
+    const success = deferred();
+    let signOutCalls = 0;
+    const client = createSessionClient({
+      data: { user: { email: "mia@example.com", name: "Mia" } },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction() {
+        signOutCalls += 1;
+        return signOutCalls === 1 ? failure.promise : success.promise;
+      },
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+
+    const account = button("Account for Mia");
+    const status = document.querySelector('[role="status"]');
+    assert.ok(status, "Expected the sign-out status to be pre-mounted.");
+    assert.equal(status.textContent.trim(), "");
+    assert.equal(status.closest('[aria-busy="true"]'), null);
+
+    account.focus();
+    await click(account);
+    const signOut = button("Sign out");
+    await act(async () => {
+      signOut.click();
+      signOut.click();
+      await flush();
+    });
+
+    assert.equal(document.querySelector('[role="menu"]'), null);
+    assert.equal(document.activeElement, account);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(document.querySelector('[role="status"]'), status);
+    assert.equal(status.textContent.trim(), "Signing out…");
+    assert.equal(status.closest('[aria-busy="true"]'), null);
+    assert.equal(signOutCalls, 1);
+
+    await click(account);
+    assert.equal(document.querySelector('[role="menu"]'), null);
+    assert.equal(signOutCalls, 1);
+
+    failure.resolve("Unable to sign you out. Please try again.");
+    await waitFor(() => {
+      assert.equal(account.getAttribute("aria-disabled"), null);
+      assert.equal(status.textContent.trim(), "");
+    });
+    assert.equal(document.activeElement, account);
+    text(/Unable to sign you out/);
+
+    await click(account);
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 2);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(status.textContent.trim(), "Signing out…");
+
+    success.resolve(null);
+    await flush();
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(status.textContent.trim(), "Signing out…");
+
+    await act(async () => {
+      client.publish({ data: null, error: null, isPending: false });
+    });
+    await waitFor(() => text(/Welcome back/));
+    assert.equal(document.querySelector('[role="status"]'), null);
     noText(/AUTHENTICATED APP/);
   });
 

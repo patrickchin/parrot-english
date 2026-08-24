@@ -426,17 +426,22 @@ test("failed form state preserves values and disables controls while submitting"
   assert.match(html, /role="alert"/);
 });
 
-test("signed-in views keep signing-out progress on the collapsed account", () => {
+test("signed-in views expose signing-out progress on the persistent account control", () => {
   const html = renderAuthGate({
     isSigningOut: true,
     session: { user: { email: "learner@example.com", name: null } },
   });
 
   assert.match(html, /LESSON CONTENT/);
-  assert.match(html, /learner@example.com/);
-  assert.match(html, /<aside[^>]*aria-busy="true"/);
+  assert.match(html, /aria-label="Account for learner@example.com"/);
+  assert.match(html, /aria-disabled="true"/);
+  assert.match(
+    html,
+    /aria-atomic="true" aria-live="polite"[^>]*role="status"[^>]*>Signing out…/,
+  );
+  assert.match(html, />Signing out…</);
   assert.match(html, /aria-expanded="false"/);
-  assert.doesNotMatch(html, /Signing out…/);
+  assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
 });
 
 test("renders a clearly labeled account trigger without conflating learner profile", () => {
