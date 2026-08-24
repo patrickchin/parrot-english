@@ -1,6 +1,6 @@
 # Lesson shelf heading reading-position cue guidance
 
-Status: selected for test-first implementation
+Status: implemented candidate under final verification
 
 Date: 2026-08-24  
 Branch: `codex/lesson-shelf-heading-reading-cue`  
@@ -76,7 +76,7 @@ technology evidence.
 | Selectors Level 4 makes `:focus` deterministic while `:focus-visible` uses user-agent heuristics; WCAG Technique C45 notes pointer interactions generally do not trigger `:focus-visible`. See [A11Y-18 and A11Y-25](./source-register.md). | Key route-arrival paint to actual `:focus` so pointer, keyboard, direct load, and Talk recovery agree. | This is a Parrot interaction decision, not a reason to replace `:focus-visible` for ordinary controls. |
 | Focus Appearance gives a useful two-pixel-perimeter and 3:1 changed-pixel reference but explicitly excludes focused non-operable headings. See [A11Y-17](./source-register.md). | Use rendered contrast and continuity as voluntary visual-QA guardrails. | Do not claim the old heading fails or the new heading satisfies WCAG 2.4.13. |
 | CSS Color Adjustment maps outlines into the forced user palette and suppresses some decorative paint. See [A11Y-18](./source-register.md). | Hide the decorative blue rail in forced colors and expose a real two-pixel outline. | Chromium emulation cannot prove every Windows palette, browser, or physical display. |
-| W3C COGA recommends clear steps, stable visual patterns, and restrained page structure; Google's children's-app guidance recommends simple consistent interaction, essential feedback, and important content near the top. See [A11Y-03, A11Y-18, A11Y-20, and UX-04](./source-register.md). | Reuse Parrot's established open reading marker without adding more words or attention demands. | These sources are supplemental/practitioner guidance, not trials of this marker with multilingual five-year-olds. Google's page also notes that many under-fives cannot read. |
+| W3C COGA recommends clear steps, stable visual patterns, and restrained page structure; Google's children's-app guidance recommends simple consistent interaction, essential feedback, and important content near the top. See [A11Y-03, A11Y-18, A11Y-20, and UX-04](./source-register.md). | Adapt Parrot's established open reading-marker pattern without adding more words or attention demands. | These sources are supplemental/practitioner guidance, not trials of this marker with multilingual five-year-olds. Reuse does not prove that a child has learned its meaning. Google's page also notes that many under-fives cannot read. |
 
 The HTML-AAM citation in A11Y-25 was rechecked against the 2026-08-05 Working
 Draft. No new source ID is needed.
@@ -91,7 +91,30 @@ Draft. No new source ID is needed.
 | Focus the first lesson card | Defer | It skips destination context and needs target assistive-technology and learner evidence. |
 | Add words, icon, pulse, sound, or delayed animation | Reject | Each adds language, sensory, timing, or attention cost without clarifying the existing heading. |
 | Apply one global route-heading style | Reject for now | Other routes have different lifecycle and layout contracts; Story shelf also has a documented direct-load focus race. |
-| Localized open reading marker | Select | It reuses a learned Parrot grammar, makes every input path consistent, and can be CSS-only. |
+| Localized open reading marker | Select and revise | It relates to an established Parrot pattern, makes every input path consistent, and can be CSS-only. Its exact shape still requires visual and learner validation. |
+
+## Decision revision after independent visual review
+
+The first implemented candidate used the profile/Story Reader rule literally:
+a full-heading-height four-pixel rail with an eight-pixel gap. Independent
+visual and accessibility reviewers both found that it read as the literal
+prefix `|Pick a lesson`, especially at 280x568 and 640x360. That triggered this
+memo's own caret/quotation-bar rejection signal before retention.
+
+Nine runtime-only comparisons tested a twelve-pixel gap with three shapes at
+280x568, 640x360, and 1440x900:
+
+- the full-height rail remained a caret/blockquote bar;
+- a centered, rounded 50%-height, six-pixel-wide pill became a small bullet and
+  was easier to miss at 280 pixels; and
+- a centered, rounded 60%-height, four-pixel-wide pill broke the shared
+  baseline/full-line silhouette while remaining visible at every size.
+
+The revised candidate therefore uses the last option and widens the clear gap
+from eight to twelve pixels. Its rendered heights are about 21.6, 36, and 43.2
+pixels in the 36, 60, and 72-pixel heading boxes. This is expert visual
+judgment backed by deterministic comparison, not evidence that a child
+understands the marker. The rejected prototypes remain in the artifact set.
 
 ## Selected design contract
 
@@ -100,9 +123,10 @@ Draft. No new source ID is needed.
 2. Shrink-wrap the heading's focus box while keeping the title centered and
    preserving its text range, line wrapping, subtitle, first card, header, and
    scroll geometry.
-3. On actual `:focus`, render a static four-pixel `brand-blue` vertical rail.
-   Its outer edge starts twelve pixels before the heading box, leaving eight
-   clear pixels between rail and box. Top-align it and cap it at 96 pixels.
+3. On actual `:focus`, render a static four-pixel `brand-blue` vertical pill.
+   Its outer edge starts sixteen pixels before the heading box, leaving twelve
+   clear pixels between marker and box. Center it vertically at 60% of the
+   heading height, round both ends, and retain the 96-pixel defensive cap.
 4. In normal colors, remove the UA outline. The rail clears immediately on
    blur and has no transition or animation under either motion preference.
 5. In forced colors, hide the decorative rail and restore a real two-pixel,
@@ -125,9 +149,10 @@ not assert Tailwind class strings or CSS source.
 2. Direct, pointer, and keyboard entry render the same open marker even when
    Chromium reports different `:focus-visible` states.
 3. Screenshot deltas show at least a three-pixel-equivalent qualifying strip
-   across the expected marker height at 3:1 or better, with a clear marker-to-
-   heading gap, no closed right edge, and no changed strip below the 96-pixel
-   cap.
+   across the centered 60%-height marker at 3:1 or better, allowing only the
+   rounded end pixels. They require a clear twelve-pixel marker-to-heading gap,
+   no changed marker-strip pixels above or below the pill, and no closed right
+   edge.
 4. Focus and blur preserve title text-range, heading, subtitle, first-card,
    Account, and Back geometry. The shrink-wrapped box must contain the glyphs
    without again spanning the shelf's full content width.

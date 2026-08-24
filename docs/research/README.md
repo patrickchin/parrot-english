@@ -49,6 +49,7 @@ Last reviewed: 2026-08-24
 - [Lesson microphone direct-action feedback guidance](./lesson-microphone-direct-action-feedback-guidance.md)
 - [Lesson microphone direct-action feedback implementation](./lesson-microphone-direct-action-feedback-implementation.md)
 - [Lesson shelf heading reading-position cue guidance](./lesson-shelf-heading-reading-cue-guidance.md)
+- [Lesson shelf heading reading-position cue implementation](./lesson-shelf-heading-reading-cue-implementation.md)
 - [Lesson speech in short landscape](./lesson-speech-short-landscape.md)
 - [Layered lessons in short landscape](./layered-lesson-short-landscape.md)
 - [My Lessons error recovery](./my-lessons-recovery.md)
