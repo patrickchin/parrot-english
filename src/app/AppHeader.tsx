@@ -1,4 +1,4 @@
-import { ChevronDown, CircleUserRound } from "lucide-react";
+import { ChevronDown, CircleUserRound, LoaderCircle } from "lucide-react";
 import {
   useEffect,
   useId,
@@ -150,6 +150,12 @@ export function AccountHeader({
     action();
   }
 
+  function selectSignOut() {
+    setIsMenuOpen(false);
+    accountButtonRef.current?.focus();
+    onSignOut();
+  }
+
   function closeAbout() {
     setIsAboutOpen(false);
   }
@@ -166,6 +172,7 @@ export function AccountHeader({
   function handleAccountKeyDown(
     event: ReactKeyboardEvent<HTMLButtonElement>,
   ) {
+    if (isSigningOut) return;
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
     openMenu(event.key === "ArrowUp" ? "last" : "first");
@@ -198,42 +205,83 @@ export function AccountHeader({
 
   return (
     <aside
-      aria-busy={isSigningOut}
       aria-label="Account"
       className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7"
       ref={accountRef}
     >
-      <ActionButton
-        aria-label={`Account for ${userLabel}`}
-        aria-controls={menuId}
-        aria-expanded={isMenuOpen}
-        aria-haspopup="menu"
-        className="max-w-full"
-        onClick={() => {
-          if (!isMenuOpen) menuFocusRef.current = "first";
-          setIsMenuOpen((current) => !current);
-        }}
-        onKeyDown={handleAccountKeyDown}
-        ref={accountButtonRef}
-        size="header"
-        title="Account"
-        type="button"
-        variant="navy"
+      <div
+        className={cx(
+          "relative inline-flex max-w-full",
+          isSigningOut &&
+            "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
+        )}
       >
-        <span aria-hidden="true" className="size-6 shrink-0">
-          <CircleUserRound className="size-6" strokeWidth={3} />
-        </span>
-        <HeaderLabel>Account</HeaderLabel>
-        <ChevronDown
-          aria-hidden="true"
+        <ActionButton
+          aria-disabled={isSigningOut || undefined}
+          aria-label={`Account for ${userLabel}`}
+          aria-controls={menuId}
+          aria-expanded={isMenuOpen}
+          aria-haspopup="menu"
           className={cx(
-            "hidden size-5 shrink-0 transition-transform wide:block",
-            isMenuOpen && "rotate-180",
+            "max-w-full",
+            isSigningOut &&
+              "!w-full aria-disabled:!pointer-events-auto aria-disabled:!cursor-wait aria-disabled:!opacity-100 wide:!w-full",
           )}
-          strokeWidth={3}
-        />
-      </ActionButton>
-      {isMenuOpen ? (
+          onClick={() => {
+            if (isSigningOut) return;
+            if (!isMenuOpen) menuFocusRef.current = "first";
+            setIsMenuOpen((current) => !current);
+          }}
+          onKeyDown={handleAccountKeyDown}
+          ref={accountButtonRef}
+          size="header"
+          title="Account"
+          type="button"
+          variant="navy"
+        >
+          <span
+            aria-hidden={isSigningOut || undefined}
+            className={cx("contents", isSigningOut && "invisible")}
+          >
+            <span aria-hidden="true" className="size-6 shrink-0">
+              <CircleUserRound className="size-6" strokeWidth={3} />
+            </span>
+            <HeaderLabel>Account</HeaderLabel>
+            <ChevronDown
+              aria-hidden="true"
+              className={cx(
+                "hidden size-5 shrink-0 transition-transform wide:block",
+                isMenuOpen && "rotate-180",
+              )}
+              strokeWidth={3}
+            />
+          </span>
+        </ActionButton>
+        <span
+          aria-atomic="true"
+          aria-live="polite"
+          className={cx(
+            !isSigningOut && "sr-only",
+            isSigningOut &&
+              "pointer-events-none absolute inset-0 inline-flex items-center justify-center gap-2 px-3 text-sm text-white short:text-sm md:px-4 md:text-base",
+          )}
+          role="status"
+        >
+          {isSigningOut ? (
+            <>
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-5 shrink-0 animate-spin motion-reduce:animate-none"
+                strokeWidth={3}
+              />
+              <span>Signing out…</span>
+            </>
+          ) : (
+            ""
+          )}
+        </span>
+      </div>
+      {isMenuOpen && !isSigningOut ? (
         <div
           className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"
         >
@@ -273,7 +321,7 @@ export function AccountHeader({
             </MenuButton>
             <MenuButton
               disabled={isSigningOut}
-              onClick={() => selectAction(onSignOut)}
+              onClick={selectSignOut}
               role="menuitem"
               type="button"
             >

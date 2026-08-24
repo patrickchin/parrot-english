@@ -1,4 +1,6 @@
 import {
+  useEffect,
+  useRef,
   useState,
   type ComponentProps,
   type ComponentType,
@@ -57,7 +59,6 @@ interface SubmitAuthFormOptions {
 
 interface SignOutSessionOptions {
   client: AuthActionClient;
-  refetch: () => Promise<unknown>;
 }
 
 interface DeleteAccountSessionOptions {
@@ -140,13 +141,11 @@ export async function submitAuthForm({
 
 export async function signOutSession({
   client,
-  refetch,
 }: SignOutSessionOptions): Promise<string | null> {
   try {
     const result = await client.signOut();
     if (result.error) return SIGN_OUT_ERROR_MESSAGE;
 
-    await refetch();
     return null;
   } catch {
     return SIGN_OUT_ERROR_MESSAGE;
@@ -464,6 +463,13 @@ export function createAuthGate({
     const [isRetrying, setIsRetrying] = stateHook(false);
     const [profileAction, setProfileAction] =
       stateHook<ProfileAccountAction>(null);
+    const signOutAttemptRef = useRef<object | null>(null);
+
+    useEffect(() => {
+      if (session !== null || signOutAttemptRef.current === null) return;
+      signOutAttemptRef.current = null;
+      setIsSigningOut(false);
+    }, [session, setIsSigningOut]);
 
     function selectMode(nextMode: AuthMode) {
       setMode(nextMode);
@@ -502,18 +508,23 @@ export function createAuthGate({
     }
 
     async function handleSignOut() {
+      if (signOutAttemptRef.current !== null) return;
+      const attempt = {};
+      signOutAttemptRef.current = attempt;
       setIsSigningOut(true);
       setFormError("");
 
+      let nextError: string | null;
       try {
-        const nextError = await signOutAction({
-          client,
-          refetch,
-        });
-        setFormError(nextError ?? "");
-      } finally {
-        setIsSigningOut(false);
+        nextError = await signOutAction({ client });
+      } catch {
+        nextError = SIGN_OUT_ERROR_MESSAGE;
       }
+
+      if (signOutAttemptRef.current !== attempt || nextError === null) return;
+      signOutAttemptRef.current = null;
+      setFormError(nextError);
+      setIsSigningOut(false);
     }
 
     async function handleDeleteAccount(password: string) {

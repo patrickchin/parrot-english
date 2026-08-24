@@ -4064,6 +4064,80 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/AUTHENTICATED APP/);
   });
 
+  it("ignores a stale sign-out result after session re-entry", async () => {
+    const firstAttempt = deferred();
+    const secondAttempt = deferred();
+    let signOutCalls = 0;
+    const client = createSessionClient({
+      data: { user: { email: "mia@example.com", name: "Mia" } },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction() {
+        signOutCalls += 1;
+        if (signOutCalls === 1) return firstAttempt.promise;
+        if (signOutCalls === 2) return secondAttempt.promise;
+        return Promise.resolve(null);
+      },
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 1);
+
+    await act(async () => {
+      client.publish({ data: null, error: null, isPending: false });
+    });
+    await waitFor(() => text(/Welcome back/));
+
+    await act(async () => {
+      client.publish({
+        data: { user: { email: "mia@example.com", name: "Mia" } },
+        error: null,
+        isPending: false,
+      });
+    });
+    await waitFor(() => text(/AUTHENTICATED APP/));
+    const account = button("Account for Mia");
+    assert.equal(account.getAttribute("aria-disabled"), null);
+
+    await click(account);
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 2);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+
+    firstAttempt.resolve("Unable to sign you out. Please try again.");
+    await flush();
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+    assert.equal(
+      document.querySelector('[role="status"]').textContent.trim(),
+      "Signing out…",
+    );
+    noText(/Unable to sign you out/);
+
+    secondAttempt.reject(new Error("offline"));
+    await waitFor(() => {
+      assert.equal(account.getAttribute("aria-disabled"), null);
+      assert.equal(document.querySelector('[role="status"]').textContent.trim(), "");
+    });
+    text(/Unable to sign you out/);
+
+    await click(account);
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 3);
+    assert.equal(account.getAttribute("aria-disabled"), "true");
+  });
+
   it("keeps a mounted acknowledgment until Next and focuses each new message once", async () => {
     const firstAcknowledgment = {
       text: "Dinosaurs are very stompy!",

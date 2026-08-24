@@ -240,8 +240,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   await capturedProps.onSignOut();
   assert.equal(signOutCalls.length, 1);
-  assert.equal(signOutCalls[0].client, client);
-  assert.equal(signOutCalls[0].refetch, refetch);
+  assert.deepEqual(signOutCalls[0], { client });
 });
 
 test("auth gate container forwards an optional signed-out fallback", () => {
@@ -437,11 +436,18 @@ test("signed-in views expose signing-out progress on the persistent account cont
   assert.match(html, /aria-disabled="true"/);
   assert.match(
     html,
-    /aria-atomic="true" aria-live="polite"[^>]*role="status"[^>]*>Signing out…/,
+    /aria-atomic="true" aria-live="polite"[^>]*role="status"/,
   );
+  assert.match(html, /role="status"[\s\S]*Signing out…/);
   assert.match(html, />Signing out…</);
   assert.match(html, /aria-expanded="false"/);
   assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
+  const accountButton = html.match(
+    /<button[^>]*aria-label="Account for learner@example.com"[\s\S]*?<\/button>/,
+  )?.[0];
+  assert.ok(accountButton);
+  assert.match(accountButton, /title="Account"/);
+  assert.doesNotMatch(accountButton, /Signing out…/);
 });
 
 test("renders a clearly labeled account trigger without conflating learner profile", () => {
@@ -557,7 +563,7 @@ test("sign-in maps result errors, omits the name, and does not refetch", async (
   assert.equal(refetchCalls, 0);
 });
 
-test("sign-out maps failures without refetching and refetches success", async () => {
+test("sign-out maps failures and lets the reactive session own successful refresh", async () => {
   assert.equal(typeof signOutSession, "function", "Expected executable sign-out actions");
   let refetchCalls = 0;
   const refetch = async () => {
@@ -589,7 +595,7 @@ test("sign-out maps failures without refetching and refetches success", async ()
     refetch,
   });
   assert.equal(success, null);
-  assert.equal(refetchCalls, 1);
+  assert.equal(refetchCalls, 0);
 });
 
 test("account deletion sends the password, fails closed, and refetches only after success", async () => {
