@@ -12,6 +12,17 @@ interface Viewport {
   width: number;
 }
 
+interface AccountIdentity {
+  email: string;
+  name: string;
+}
+
+type Rect = { height: number; width: number; x: number; y: number };
+
+const longAccountName = "Alexandria-Montgomery-Washington";
+const longAccountEmail =
+  "family.account.for.alexandria.montgomery@example.test";
+
 const routes: HeaderRoute[] = [
   {
     name: "conversation",
@@ -85,7 +96,9 @@ async function focusWithKeyboard(page: Page, locator: Locator) {
 
   for (let index = 0; index < 20; index += 1) {
     await page.keyboard.press("Tab");
-    if (await locator.evaluate((element) => element === document.activeElement)) {
+    if (
+      await locator.evaluate((element) => element === document.activeElement)
+    ) {
       return;
     }
   }
@@ -141,6 +154,65 @@ async function renderedFocusOutline(locator: Locator) {
   });
 }
 
+async function installAccountIdentity(
+  page: Page,
+  currentIdentity: () => AccountIdentity,
+) {
+  await page.route("**/api/auth/get-session", async (route) => {
+    const response = await route.fetch();
+    const payload = (await response.json()) as {
+      user: { email: string; name?: string | null };
+    };
+    const identity = currentIdentity();
+    payload.user.name = identity.name;
+    payload.user.email = identity.email;
+    await route.fulfill({ response, json: payload });
+  });
+}
+
+function boxesOverlap(first: Rect, second: Rect) {
+  return !(
+    first.x + first.width <= second.x ||
+    second.x + second.width <= first.x ||
+    first.y + first.height <= second.y ||
+    second.y + second.height <= first.y
+  );
+}
+
+async function focusedPaintBox(locator: Locator): Promise<Rect> {
+  const box = await visibleBox(locator);
+  const indicator = await locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      focusVisible: element.matches(":focus-visible"),
+      outlineOffset: Number.parseFloat(style.outlineOffset),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.focusVisible).toBe(true);
+  expect(indicator.outlineStyle).not.toBe("none");
+  const extent = indicator.outlineOffset + indicator.outlineWidth;
+  return {
+    height: box.height + extent * 2,
+    width: box.width + extent * 2,
+    x: box.x - extent,
+    y: box.y - extent,
+  };
+}
+
+async function expectPointerCenterOwnedBy(locator: Locator) {
+  const box = await visibleBox(locator);
+  expect(
+    await locator.evaluate(
+      (element, point) =>
+        document.elementFromPoint(point.x, point.y)?.closest("a, button") ===
+        element,
+      { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+    ),
+  ).toBe(true);
+}
+
 for (const route of routes) {
   for (const viewport of mobileViewports) {
     test(`${route.name} header stays in one unobstructed row on a ${viewport.name}`, async ({
@@ -180,7 +252,9 @@ for (const route of routes) {
       );
 
       expect(Math.abs(controlBox.y - accountBox.y)).toBeLessThanOrEqual(1);
-      expect(Math.abs(controlBox.height - accountBox.height)).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(controlBox.height - accountBox.height),
+      ).toBeLessThanOrEqual(1);
       expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(accountBox.x);
 
       await expect
@@ -193,6 +267,124 @@ for (const route of routes) {
     });
   }
 }
+
+test("arbitrary account identity cannot cover the compact Back action", async ({
+  page,
+}) => {
+  let identity: AccountIdentity = {
+    email: "alexandria@example.test",
+    name: longAccountName,
+  };
+  await installAccountIdentity(page, () => identity);
+
+  const identities: AccountIdentity[] = [
+    identity,
+    { email: longAccountEmail, name: "   " },
+  ];
+  const compactViewports: Viewport[] = [
+    { height: 568, name: "ultra narrow", width: 280 },
+    { height: 640, name: "small reflow", width: 320 },
+    { height: 640, name: "compact boundary", width: 359 },
+    { height: 640, name: "first regular pixel", width: 360 },
+    { height: 844, name: "regular phone", width: 390 },
+    { height: 360, name: "short landscape", width: 640 },
+    { height: 621, name: "first post-short tablet pixel", width: 768 },
+    { height: 900, name: "last compact desktop pixel", width: 1359 },
+  ];
+
+  for (const nextIdentity of identities) {
+    identity = nextIdentity;
+    for (const viewport of compactViewports) {
+      await page.setViewportSize(viewport);
+      await page.goto("/lessons");
+
+      const account = page.getByRole("button", { name: /^Account for / });
+      const back = page.getByRole("link", {
+        exact: true,
+        name: "Back to home",
+      });
+      const accountBox = await expectInsideViewport(account, viewport);
+      const backBox = await expectInsideViewport(back, viewport);
+
+      expect(accountBox.width).toBe(accountBox.height);
+      expect(accountBox.width).toBe(backBox.width);
+      expect(accountBox.height).toBe(backBox.height);
+      expect(boxesOverlap(accountBox, backBox)).toBe(false);
+      await expectPointerCenterOwnedBy(back);
+
+      await focusWithKeyboard(page, back);
+      const backPaint = await focusedPaintBox(back);
+      expect(boxesOverlap(accountBox, backPaint)).toBe(false);
+
+      await page.keyboard.press("Shift+Tab");
+      await expect(account).toBeFocused();
+      const accountPaint = await focusedPaintBox(account);
+      expect(boxesOverlap(accountPaint, backBox)).toBe(false);
+      expect(accountPaint.x).toBeGreaterThanOrEqual(0);
+      expect(accountPaint.y).toBeGreaterThanOrEqual(0);
+      expect(accountPaint.x + accountPaint.width).toBeLessThanOrEqual(
+        viewport.width,
+      );
+      expect(accountPaint.y + accountPaint.height).toBeLessThanOrEqual(
+        viewport.height,
+      );
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        )
+        .toBe(true);
+    }
+  }
+});
+
+test("Account keeps identity in its menu instead of the persistent header", async ({
+  page,
+}) => {
+  const identity = {
+    email: longAccountEmail,
+    name: longAccountName,
+  };
+  await installAccountIdentity(page, () => identity);
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/lessons");
+
+  const account = page.getByRole("button", {
+    exact: true,
+    name: `Account for ${longAccountName}`,
+  });
+  await expect(account).not.toContainText(longAccountName);
+  const closedBox = await visibleBox(account);
+  expect(closedBox.width).toBe(closedBox.height);
+
+  await account.click();
+  const name = page.getByText(longAccountName, { exact: true });
+  const email = page.getByText(longAccountEmail, { exact: true });
+  await expect(name).toBeVisible();
+  await expect(email).toBeVisible();
+  await expect(name).toHaveAttribute("dir", "auto");
+  await expect(email).toHaveAttribute("dir", "auto");
+  for (const value of [name, email]) {
+    expect(
+      await value.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth,
+      ),
+    ).toBe(true);
+  }
+
+  await page.keyboard.press("Escape");
+  await expect(account).toBeFocused();
+
+  await page.setViewportSize({ height: 900, width: 1360 });
+  await page.goto("/lessons");
+  const wideAccount = page.getByRole("button", {
+    exact: true,
+    name: `Account for ${longAccountName}`,
+  });
+  await expect(wideAccount).toContainText("Account");
+  await expect(wideAccount).not.toContainText(longAccountName);
+});
 
 test("the learner name opens the account menu", async ({ page }) => {
   await page.goto("/lessons");
@@ -243,10 +435,9 @@ test("AI and saved data explains caregiver facts before optional technical detai
     }),
   ).toBeVisible();
   await expect(
-    about.getByText(
-      "Talk to Peppa does not change the learner profile.",
-      { exact: false },
-    ),
+    about.getByText("Talk to Peppa does not change the learner profile.", {
+      exact: false,
+    }),
   ).toBeVisible();
   await expect(about.getByRole("heading", { name: "Web app" })).toBeHidden();
 
@@ -274,7 +465,9 @@ test("AI and saved data explains caregiver facts before optional technical detai
   await expect(about.getByText("e2e-web", { exact: true })).toBeVisible();
   await expect(about.getByText("e2e-api", { exact: true })).toBeVisible();
   await expect(about.getByText("e2e-agent", { exact: true })).toBeVisible();
-  await expect(about.getByText("Worker deployment e2e-deployment")).toBeVisible();
+  await expect(
+    about.getByText("Worker deployment e2e-deployment"),
+  ).toBeVisible();
   await expect(about.getByText("Lesson script LLM")).toBeVisible();
   await expect(about.getByText("openai/gpt-5.6-luna")).toBeVisible();
   await expect(about.getByText("Realtime voice model")).toBeVisible();
@@ -292,7 +485,11 @@ test("AI and saved data explains caregiver facts before optional technical detai
 test("AI and saved data stays usable on a 280px by 480px screen when technical details fail", async ({
   page,
 }) => {
-  const viewport = { name: "short ultra-narrow phone", width: 280, height: 480 };
+  const viewport = {
+    name: "short ultra-narrow phone",
+    width: 280,
+    height: 480,
+  };
   await page.setViewportSize(viewport);
   await page.route("**/api/build-info", async (route) => {
     await route.fulfill({ body: "", status: 503 });
@@ -319,10 +516,12 @@ test("AI and saved data stays usable on a 280px by 480px screen when technical d
   expect(technicalBox.height).toBeGreaterThanOrEqual(44);
   await technicalDetails.click();
   await expect(
-    about.getByText(
-      "Technical details could not load. The AI and saved data notes above are still available.",
-      { exact: true },
-    ).first(),
+    about
+      .getByText(
+        "Technical details could not load. The AI and saved data notes above are still available.",
+        { exact: true },
+      )
+      .first(),
   ).toBeVisible();
 
   const done = about.getByRole("button", { name: "Done" });
@@ -351,14 +550,14 @@ test("account menu stays visible after scrolling a short lesson list", async ({
   const main = page.getByRole("main");
   await expect
     .poll(() =>
-      main.evaluate(
-        (element) => element.scrollHeight > element.clientHeight,
-      ),
+      main.evaluate((element) => element.scrollHeight > element.clientHeight),
     )
     .toBe(true);
 
   await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
-  await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect
+    .poll(() => main.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
 
   const accountMenu = page.getByRole("button", {
     exact: true,

@@ -3,6 +3,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const profilePath = "/profile/setup?parrotE2eProfile=viewport-stability";
 const resumeProfilePath = "/profile/setup?parrotE2eProfile=viewport-resume";
 const peppaPath = "/assets/characters/peppa/peppa-happy.webp";
+const longAccountEmail =
+  "family.account.for.alexandria.montgomery@example.test";
 
 const targetViewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
@@ -170,6 +172,55 @@ async function expectReplayFocusPaintClear(page: Page, target: Locator) {
   expect(targetPaint.y + targetPaint.height).toBeLessThanOrEqual(
     viewport!.height,
   );
+}
+
+async function expectAccountFocusPaintClearOf(page: Page, targets: Locator[]) {
+  const account = page.getByRole("button", { name: /^Account for / });
+  const indicator = await account.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      focusVisible: element.matches(":focus-visible"),
+      outlineOffset: Number.parseFloat(style.outlineOffset),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.focusVisible).toBe(true);
+  expect(indicator.outlineStyle).not.toBe("none");
+  const accountPaint = expandRect(
+    await rect(account),
+    indicator.outlineOffset + indicator.outlineWidth,
+  );
+
+  for (const target of targets) {
+    expect(
+      boxesOverlap(accountPaint, await rect(target)),
+      `Account focus paint overlaps ${(await target.getAttribute("aria-label")) ?? (await target.textContent())?.trim()}`,
+    ).toBe(false);
+  }
+
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  expect(accountPaint.x).toBeGreaterThanOrEqual(0);
+  expect(accountPaint.y).toBeGreaterThanOrEqual(0);
+  expect(accountPaint.x + accountPaint.width).toBeLessThanOrEqual(
+    viewport!.width,
+  );
+  expect(accountPaint.y + accountPaint.height).toBeLessThanOrEqual(
+    viewport!.height,
+  );
+}
+
+async function installFallbackAccountIdentity(page: Page) {
+  await page.route("**/api/auth/get-session", async (route) => {
+    const response = await route.fetch();
+    const payload = (await response.json()) as {
+      user: { email: string; name?: string | null };
+    };
+    payload.user.name = "   ";
+    payload.user.email = longAccountEmail;
+    await route.fulfill({ response, json: payload });
+  });
 }
 
 async function expectPointerOwnedBy(target: Locator) {
@@ -768,6 +819,56 @@ test("profile Replay and Account remain independently operable", async ({
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
   await expect(account).toBeFocused();
+});
+
+test("a fallback email cannot cover profile Replay or progress", async ({
+  page,
+}) => {
+  await installFallbackAccountIdentity(page);
+  const viewports = [
+    { height: 568, name: "ultra-narrow phone", width: 280 },
+    { height: 640, name: "small reflow phone", width: 320 },
+    { height: 640, name: "compact focus boundary", width: 359 },
+    { height: 640, name: "first regular pixel", width: 360 },
+    { height: 844, name: "regular phone", width: 390 },
+    { height: 360, name: "short landscape", width: 640 },
+    { height: 621, name: "first post-short tablet pixel", width: 768 },
+    { height: 641, name: "last vertical focus seam", width: 768 },
+  ];
+
+  for (const viewport of viewports) {
+    await openSetup(page, viewport);
+    await page.getByRole("button", { name: "Start questions" }).click();
+
+    const heading = page.getByRole("heading", {
+      name: "Hi! I'm Peppa. What's your name?",
+    });
+    const replay = page.getByRole("button", { name: "Replay question" });
+    const progress = page.getByText("Question 1 of 6", { exact: true });
+    const account = page.getByRole("button", {
+      exact: true,
+      name: `Account for ${longAccountEmail}`,
+    });
+
+    await expect(replay).toBeDisabled();
+    await expect(replay).toBeEnabled();
+    await expect(heading).toBeFocused();
+    await expectAccountClearOf(page, [replay, progress]);
+    await expectMinimumTarget(account);
+    const accountBox = await rect(account);
+    expect(accountBox.width).toBe(accountBox.height);
+    await expectPointerOwnedBy(replay);
+    await expectNoHorizontalOverflow(page);
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(replay).toBeFocused();
+    await expectReplayFocusPaintClear(page, replay);
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(account).toBeFocused();
+    await expectAccountFocusPaintClearOf(page, [replay, progress]);
+    await expectNoHorizontalOverflow(page);
+  }
 });
 
 for (const viewport of [

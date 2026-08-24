@@ -7,6 +7,8 @@ const longFeedback =
   "You kept trying and said the whole picnic sentence clearly, so Peppa and Dolly can carry the basket to the big tree with you now.";
 const reviewedCharacterLine =
   "Peppa and Dolly see one bright red kite over the green garden today.";
+const longAccountEmail =
+  "family.account.for.alexandria.montgomery@example.test";
 
 const viewports = [
   { name: "ultra-narrow phone", width: 280, height: 568 },
@@ -81,6 +83,46 @@ async function expectNoOverlap(first: Locator, second: Locator) {
   expect(horizontalOverlap > 0 && verticalOverlap > 0).toBe(false);
 }
 
+async function expectFocusedPaintClearOf(focused: Locator, obstacle: Locator) {
+  const focusedBox = await visibleBox(focused);
+  const obstacleBox = await visibleBox(obstacle);
+  const indicator = await focused.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      focusVisible: element.matches(":focus-visible"),
+      offset: Number.parseFloat(style.outlineOffset),
+      style: style.outlineStyle,
+      width: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(indicator.focusVisible).toBe(true);
+  expect(indicator.style).not.toBe("none");
+  const extent = indicator.offset + indicator.width;
+  const horizontalOverlap =
+    Math.min(
+      focusedBox.x + focusedBox.width + extent,
+      obstacleBox.x + obstacleBox.width,
+    ) - Math.max(focusedBox.x - extent, obstacleBox.x);
+  const verticalOverlap =
+    Math.min(
+      focusedBox.y + focusedBox.height + extent,
+      obstacleBox.y + obstacleBox.height,
+    ) - Math.max(focusedBox.y - extent, obstacleBox.y);
+  expect(horizontalOverlap > 0 && verticalOverlap > 0).toBe(false);
+}
+
+async function installFallbackAccountIdentity(page: Page) {
+  await page.route("**/api/auth/get-session", async (route) => {
+    const response = await route.fetch();
+    const payload = (await response.json()) as {
+      user: { email: string; name?: string | null };
+    };
+    payload.user.name = "   ";
+    payload.user.email = longAccountEmail;
+    await route.fulfill({ response, json: payload });
+  });
+}
+
 async function expectNoPageOverflow(page: Page) {
   await expect
     .poll(() =>
@@ -151,9 +193,11 @@ async function expectImmediateMicrophoneFeedback(page: Page) {
     .poll(() =>
       page.evaluate(
         () =>
-          (window as Window & {
-            parrotLessonMicrophoneFeedbackMs?: number;
-          }).parrotLessonMicrophoneFeedbackMs ?? null,
+          (
+            window as Window & {
+              parrotLessonMicrophoneFeedbackMs?: number;
+            }
+          ).parrotLessonMicrophoneFeedbackMs ?? null,
       ),
     )
     .not.toBeNull();
@@ -161,9 +205,11 @@ async function expectImmediateMicrophoneFeedback(page: Page) {
     .poll(() =>
       page.evaluate(
         () =>
-          (window as Window & {
-            parrotLessonMicrophoneFeedbackFrameMs?: number;
-          }).parrotLessonMicrophoneFeedbackFrameMs ?? null,
+          (
+            window as Window & {
+              parrotLessonMicrophoneFeedbackFrameMs?: number;
+            }
+          ).parrotLessonMicrophoneFeedbackFrameMs ?? null,
       ),
     )
     .not.toBeNull();
@@ -234,7 +280,8 @@ async function readLessonMicrophoneController(page: Page) {
         __parrotE2eLessonMicrophone?: LessonMicrophoneController;
       }
     ).__parrotE2eLessonMicrophone;
-    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    if (!controller)
+      throw new Error("Lesson microphone controller is missing.");
     return {
       pending: controller.pending,
       rejected: controller.rejected,
@@ -255,7 +302,8 @@ async function settleLessonMicrophone(
         __parrotE2eLessonMicrophone?: LessonMicrophoneController;
       }
     ).__parrotE2eLessonMicrophone;
-    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    if (!controller)
+      throw new Error("Lesson microphone controller is missing.");
     return nextOutcome === "resolve"
       ? controller.resolveNext()
       : controller.rejectNext();
@@ -277,9 +325,8 @@ async function expectRememberedMicrophoneNode(action: Locator) {
       action.evaluate(
         (button) =>
           button ===
-          (
-            window as Window & { __parrotE2eLessonMicrophoneNode?: Element }
-          ).__parrotE2eLessonMicrophoneNode,
+          (window as Window & { __parrotE2eLessonMicrophoneNode?: Element })
+            .__parrotE2eLessonMicrophoneNode,
       ),
     )
     .toBe(true);
@@ -333,104 +380,110 @@ async function installAudioDelay(
   await page
     .getByRole("button", { name: /Start lesson|Replay lesson/ })
     .waitFor();
-  await page.evaluate(({ defaultDelay, held }) => {
-    class DelayedAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-      private remainingMs: number;
-      private startedAt = 0;
-      private timeoutId: number | null = null;
+  await page.evaluate(
+    ({ defaultDelay, held }) => {
+      class DelayedAudio {
+        onended: ((event: Event) => void) | null = null;
+        onerror: ((event: Event) => void) | null = null;
+        private remainingMs: number;
+        private startedAt = 0;
+        private timeoutId: number | null = null;
 
-      constructor(readonly src = "") {
-        const testWindow = window as Window & {
-          __lessonAudioCreations?: number;
-        };
-        testWindow.__lessonAudioCreations =
-          (testWindow.__lessonAudioCreations ?? 0) + 1;
-        this.remainingMs =
-          held && this.src.includes(held.source)
-            ? held.delayMs
-            : defaultDelay;
-      }
+        constructor(readonly src = "") {
+          const testWindow = window as Window & {
+            __lessonAudioCreations?: number;
+          };
+          testWindow.__lessonAudioCreations =
+            (testWindow.__lessonAudioCreations ?? 0) + 1;
+          this.remainingMs =
+            held && this.src.includes(held.source)
+              ? held.delayMs
+              : defaultDelay;
+        }
 
-      pause() {
-        if (this.timeoutId === null) return;
-        window.clearTimeout(this.timeoutId);
-        this.timeoutId = null;
-        this.remainingMs = Math.max(
-          0,
-          this.remainingMs - (performance.now() - this.startedAt),
-        );
-      }
-
-      async play() {
-        if (this.timeoutId !== null) return;
-        this.startedAt = performance.now();
-        this.timeoutId = window.setTimeout(() => {
+        pause() {
+          if (this.timeoutId === null) return;
+          window.clearTimeout(this.timeoutId);
           this.timeoutId = null;
-          this.remainingMs = 0;
-          this.onended?.(new Event("ended"));
-        }, this.remainingMs);
-      }
-    }
+          this.remainingMs = Math.max(
+            0,
+            this.remainingMs - (performance.now() - this.startedAt),
+          );
+        }
 
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: DelayedAudio,
-    });
-  }, { defaultDelay: delayMs, held: heldAudio });
+        async play() {
+          if (this.timeoutId !== null) return;
+          this.startedAt = performance.now();
+          this.timeoutId = window.setTimeout(() => {
+            this.timeoutId = null;
+            this.remainingMs = 0;
+            this.onended?.(new Event("ended"));
+          }, this.remainingMs);
+        }
+      }
+
+      Object.defineProperty(window, "Audio", {
+        configurable: true,
+        value: DelayedAudio,
+      });
+    },
+    { defaultDelay: delayMs, held: heldAudio },
+  );
 }
 
 async function installDeviceSpeechDelay(page: Page, delayMs = 5_000) {
-  await page.addInitScript(({ delay }) => {
-    class DelayedSpeechUtterance {
-      lang = "";
-      onend: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      pitch = 1;
-      rate = 1;
-      text: string;
-      voice = null;
-      volume = 1;
+  await page.addInitScript(
+    ({ delay }) => {
+      class DelayedSpeechUtterance {
+        lang = "";
+        onend: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        pitch = 1;
+        rate = 1;
+        text: string;
+        voice = null;
+        volume = 1;
 
-      constructor(text: string) {
-        this.text = text;
+        constructor(text: string) {
+          this.text = text;
+        }
       }
-    }
 
-    let pendingTimer: number | null = null;
-    Object.defineProperty(window, "SpeechSynthesisUtterance", {
-      configurable: true,
-      value: DelayedSpeechUtterance,
-    });
-    Object.defineProperty(window, "speechSynthesis", {
-      configurable: true,
-      value: {
-        cancel() {
-          if (pendingTimer !== null) window.clearTimeout(pendingTimer);
-          pendingTimer = null;
-        },
-        getVoices() {
-          return [
-            {
-              default: true,
-              lang: "en-US",
-              localService: true,
-              name: "Test English",
-            },
-          ];
-        },
-        pause() {},
-        resume() {},
-        speak(utterance: DelayedSpeechUtterance) {
-          pendingTimer = window.setTimeout(() => {
+      let pendingTimer: number | null = null;
+      Object.defineProperty(window, "SpeechSynthesisUtterance", {
+        configurable: true,
+        value: DelayedSpeechUtterance,
+      });
+      Object.defineProperty(window, "speechSynthesis", {
+        configurable: true,
+        value: {
+          cancel() {
+            if (pendingTimer !== null) window.clearTimeout(pendingTimer);
             pendingTimer = null;
-            utterance.onend?.();
-          }, delay);
+          },
+          getVoices() {
+            return [
+              {
+                default: true,
+                lang: "en-US",
+                localService: true,
+                name: "Test English",
+              },
+            ];
+          },
+          pause() {},
+          resume() {},
+          speak(utterance: DelayedSpeechUtterance) {
+            pendingTimer = window.setTimeout(() => {
+              pendingTimer = null;
+              utterance.onend?.();
+            }, delay);
+          },
         },
-      },
-    });
-  }, { delay: delayMs });
+      });
+    },
+    { delay: delayMs },
+  );
 }
 
 async function waitForLearnerTurn(page: Page) {
@@ -626,9 +679,13 @@ test("the start state introduces the lesson without premature scene UI", async (
   await expect(
     introduction.getByRole("heading", { name: "Peppa's High Ball" }),
   ).toBeVisible();
-  await expect(introduction.getByText("5 parts", { exact: true })).toBeVisible();
+  await expect(
+    introduction.getByText("5 parts", { exact: true }),
+  ).toBeVisible();
   const directions = introduction.getByRole("list", { name: "How to play" });
-  await expect(directions.getByText("1. Listen", { exact: true })).toBeVisible();
+  await expect(
+    directions.getByText("1. Listen", { exact: true }),
+  ).toBeVisible();
   await expect(directions.getByText("2. Talk", { exact: true })).toBeVisible();
 
   const start = page.getByRole("button", { name: "Start lesson" });
@@ -644,12 +701,18 @@ test("the start state introduces the lesson without premature scene UI", async (
     page.getByAltText("A sunny garden with flowers and a tall tree"),
   ).toBeHidden();
   await expect(page.getByText(/Wide · 16:9|Full-scene artwork/)).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
+  await expect(
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toBeHidden();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeHidden();
   await expect(artwork.getByRole("img")).toHaveCount(1);
-  await expect(page.getByRole("navigation", { name: "Speaking controls" })).toBeHidden();
+  await expect(
+    page.getByRole("navigation", { name: "Speaking controls" }),
+  ).toBeHidden();
   await expect(page.getByLabel(/Build version/)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Previous scene" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Previous scene" }),
+  ).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Next scene" })).toHaveCount(0);
   await expectNoPageOverflow(page);
 });
@@ -760,6 +823,47 @@ for (const viewport of viewports) {
   });
 }
 
+test("Account stays clear of the lesson HUD across the short-header seam", async ({
+  page,
+}) => {
+  await installFallbackAccountIdentity(page);
+  const boundaryViewports = [
+    { height: 620, name: "last short pixel", width: 768 },
+    { height: 621, name: "first post-short pixel", width: 768 },
+    { height: 641, name: "profile focus seam", width: 768 },
+    { height: 900, name: "last compact desktop pixel", width: 1359 },
+    { height: 900, name: "first wide pixel", width: 1360 },
+    { height: 900, name: "wide desktop", width: 1440 },
+  ];
+
+  for (const viewport of boundaryViewports) {
+    await page.setViewportSize(viewport);
+    await page.goto(lessonPath);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const account = page.getByRole("button", {
+      exact: true,
+      name: `Account for ${longAccountEmail}`,
+    });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const accountBox = await expectInsideViewport(account, viewport);
+    await expectInsideViewport(hud, viewport);
+    await expectNoOverlap(account, hud);
+    if (viewport.width < 1360) {
+      expect(accountBox.width).toBe(accountBox.height);
+    } else {
+      await expect(account).toContainText("Account");
+      await expect(account).not.toContainText(longAccountEmail);
+    }
+
+    await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+    await page.keyboard.press("Tab");
+    await expect(account).toBeFocused();
+    await expectFocusedPaintClearOf(account, hud);
+    await expectNoPageOverflow(page);
+  }
+});
+
 for (const viewport of boxedLandscapeViewports) {
   test(`boxed lesson keeps its learning layers separate on a ${viewport.name}`, async ({
     page,
@@ -801,13 +905,21 @@ for (const fixture of [
     characters: ["dolly"] as Array<"dolly" | "peppa">,
     dialogue: "Look at the red kite!",
     id: "one-character-landscape",
-    viewport: { name: "one character at the boundary", width: 560, height: 360 },
+    viewport: {
+      name: "one character at the boundary",
+      width: 560,
+      height: 360,
+    },
   },
   {
     characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
     dialogue: "Look at the red kite!",
     id: "two-character-boundary",
-    viewport: { name: "two characters at the boundary", width: 560, height: 360 },
+    viewport: {
+      name: "two characters at the boundary",
+      width: 560,
+      height: 360,
+    },
   },
   ...[
     { name: "421px-tall phone landscape", width: 844, height: 421 },
@@ -855,7 +967,9 @@ for (const fixture of [
     });
     const characterImages = characters.map((character) =>
       page.getByRole("img", {
-        name: new RegExp(`^${character[0].toUpperCase()}${character.slice(1)} `),
+        name: new RegExp(
+          `^${character[0].toUpperCase()}${character.slice(1)} `,
+        ),
       }),
     );
 
@@ -1506,7 +1620,9 @@ test("an old microphone rejection cannot clear a newer pending lesson request", 
   });
   await expect(lessonLink).toBeVisible();
   await lessonLink.click();
-  await expect(page.getByRole("button", { name: "Start lesson" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start lesson" }),
+  ).toBeVisible();
   await page.evaluate(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("parrotE2eMicrophone", "delayed");
@@ -1543,7 +1659,9 @@ test("an old microphone rejection cannot clear a newer pending lesson request", 
 });
 
 for (const key of ["Enter", "Space"] as const) {
-  test(`${key} starts exactly one focused microphone request`, async ({ page }) => {
+  test(`${key} starts exactly one focused microphone request`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
     await page.getByRole("button", { name: "Start lesson" }).click();
@@ -1619,10 +1737,12 @@ for (const presentation of ["boxed", "layered"] as const) {
       await expectInsideViewport(controls, viewport);
       await expectNoOverlap(prompt, controls);
       await expectNoPageOverflow(page);
-      await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-        pending: 1,
-        requests: 1,
-      });
+      await expect(readLessonMicrophoneController(page)).resolves.toMatchObject(
+        {
+          pending: 1,
+          requests: 1,
+        },
+      );
     });
   }
 }
@@ -1651,8 +1771,12 @@ test("completion becomes a focused end screen and replay restarts the story", as
     timeout: 5_000,
   });
   await expect(completion).toContainText("You finished Peppa's High Ball!");
-  await expect(page.getByRole("region", { name: "Lesson progress" })).toBeHidden();
-  await expect(page.getByRole("navigation", { name: "Speaking controls" })).toBeHidden();
+  await expect(
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("navigation", { name: "Speaking controls" }),
+  ).toBeHidden();
   await expect(page.getByAltText(/Peppa/)).toBeHidden();
   await expect(page.getByText("Great job!", { exact: true })).toBeHidden();
 
@@ -1660,7 +1784,9 @@ test("completion becomes a focused end screen and replay restarts the story", as
   await completion.getByRole("button", { name: "Replay lesson" }).click();
   await expect(completion).toBeHidden();
   await expect(page).toHaveURL(/\/scenes\/1$/);
-  await expect(page.getByRole("region", { name: "Lesson progress" })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toBeVisible();
   await expect(page.getByText("Look! My ball!", { exact: true })).toBeVisible();
 });
 
@@ -1780,7 +1906,9 @@ for (const viewport of [
     const prompt = page.getByRole("region", { name: "Your turn" });
     const phrase = prompt.getByText(longDialogue, { exact: true });
     const help = page.getByRole("region", { name: "Speaking help" });
-    const controls = page.getByRole("navigation", { name: "Speaking controls" });
+    const controls = page.getByRole("navigation", {
+      name: "Speaking controls",
+    });
     const done = controls.getByRole("button", { name: "Done with speaking" });
     await expect(help).toContainText(
       "No mic here. Say the words. Then tap Done.",
