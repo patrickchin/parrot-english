@@ -908,17 +908,20 @@ branches.
     states its remaining count and uses **Continue questions**. Review narrowed
     an unsupported chats/lessons and all-answers-editable promise to the actual
     repository boundary. Direct child/caregiver comprehension remains untested.
-28. **Medium: a long account label can invalidate local compact clearance.** The
-    retained Replay fix proves full separation for **Mia**, while Account owns a
-    fixed higher layer and can extend left as its visible label grows. Now
-    reproduced deterministically with a fixture-preserving session intercept:
-    a long email completely covers **Back** at 280, 320, and 390px portrait;
-    profile collisions include a border failure at 280/320/360 and a
-    focus-only failure at 359; even **Mia** overlaps the active lesson HUD at
-    the 768x621 `short`/`md` seam. Selected design makes the closed trigger a
-    stable shared Account control, moves full identity into its existing menu,
-    and protects compact header geometry. TDD implementation is pending. See
-    the [guidance](./profile-account-label-clearance-guidance.md).
+28. **Medium: a long account label can invalidate local compact clearance.**
+    Fixed provisionally on `codex/profile-account-label-clearance` at
+    `3d96aa0`. The closed trigger now uses the bounded shared header size,
+    exposes only the functional **Account** label at `wide`, and moves complete
+    name/email detail into wrapping `dir="auto"` menu rows. Mirrored compact
+    insets keep the target and its focus paint clear of Back, profile Replay,
+    progress, and the lesson HUD at the 768x621 seam. Screenshot review caught
+    and the acceptance test now prevents a grid max-content escape inside the
+    280px menu. See the [guidance](./profile-account-label-clearance-guidance.md)
+    and [implementation record](./profile-account-label-clearance-implementation.md).
+    Review follow-ups `1db0a3e` and `1fd1242` bound exceptional Latin,
+    CJK/emoji, and RTL menu height, keep every action and its complete focus
+    paint reachable, move failed-action feedback into the open flow, and lock
+    the single fallback-email row.
 29. **Medium: the 320×640 profile question needs 113 CSS pixels of vertical main
     scroll.** Fixed provisionally on `codex/profile-compact-primary-action` at
     `5b2fa73`, with acceptance hardening at `7978833`. The retained normal-flow
@@ -941,6 +944,18 @@ branches.
     actions on optional questions. Test comprehension and action prediction
     before choosing a small consequence cue, bilingual support, or a workflow
     change; do not add explanatory paragraphs speculatively.
+32. **Medium: the lesson shelf's programmatic heading focus looks like a giant
+    interactive rectangle.** Independent visual review found the default blue
+    outline around **Pick a lesson** spans most of the content width at desktop
+    and competes with the heading at 280px. Reproduce pointer, keyboard,
+    direct-route, and forced-colors arrival, then compare the localized open
+    reading marker already retained for profile and Story Reader headings. Do
+    not remove the useful arrival target or forced-colors indicator.
+33. **Low: Account gives Sign out the same bright-pink weight as Delete
+    account.** Both are caregiver actions, but identical emphasis weakens
+    hierarchy and can make routine exit look destructive. Audit menu variants,
+    confirmation behavior, contrast, and caregiver prediction before making
+    Sign out neutral; preserve 44px targets and visible keyboard focus.
 
 ### Test-infrastructure observation
 

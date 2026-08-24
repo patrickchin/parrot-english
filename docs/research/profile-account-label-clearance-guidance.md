@@ -1,6 +1,6 @@
 # Shared account-label clearance guidance
 
-Status: selected design; implementation pending  
+Status: implemented and provisionally retained
 Date: 2026-08-24  
 Branch: `codex/profile-account-label-clearance`  
 Base branch / dependency: `codex/profile-compact-primary-action` at `f83e7ce`
@@ -160,14 +160,14 @@ inset causes a new edge/central-content collision.
 ```text
 Branch: codex/profile-account-label-clearance
 Base branch / dependency: codex/profile-compact-primary-action at f83e7ce
-Commit: pending
+Commits: 3d96aa0, 1db0a3e, 1fd1242
 Hypothesis: a stable functional Account trigger plus disclosed identity keeps secondary account text from obscuring the child's current task without removing caregiver access
-Changed: pending
+Changed: bounded shared Account trigger, functional wide label, wrapped and viewport-scrollable identity menu, in-flow open-menu errors, complete scrolled focus paint, and mirrored compact insets
 Not changed: authentication, identity storage, account switching, network timing, global translation, physical safe-area behavior
-Tests: pending
-Screenshots / traces: pending
+Tests: arbitrary Latin/CJK/emoji/RTL identity; route, profile, lesson-HUD, viewport and overflow-clip focus paint, pointer, boundary, menu/error, fallback deduplication, and accessible-name coverage
+Screenshots / traces: artifacts/ux-review/profile-account-label-clearance/manifest.md
 Measured result: deterministic failure and runtime geometry prototype recorded above
 Risks / limitations: icon comprehension and physical-device/screen-reader behavior remain untested
-Retain, revise, or reject: selected for TDD implementation
+Retain, revise, or reject: retain provisionally after implementation and focused verification
 Next question: can a small child/caregiver comparison confirm the icon-plus-Account model across the supported languages and devices?
 ```
