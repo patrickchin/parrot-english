@@ -958,10 +958,11 @@ branches.
     [implementation record](./lesson-shelf-heading-reading-cue-implementation.md),
     and [visual manifest](../../artifacts/ux-review/lesson-shelf-heading-reading-cue/manifest.md).
 33. **Low: Account gives Sign out the same bright-pink weight as Delete
-    account.** Fixed provisionally on `codex/account-action-hierarchy`. Sign out
-    now shares the neutral utility surface; a last-position, pale-rose Delete
-    row follows a twelve-pixel structural break; and the filled danger treatment
-    appears only on the existing password-enabled final confirmation. All
+    account.** Fixed provisionally on `codex/account-action-hierarchy` at
+    `8ab298a`. Sign out now shares the neutral utility surface; a last-position,
+    pale-rose Delete row follows a twelve-pixel structural break; and the filled
+    danger treatment appears only on the existing password-enabled final
+    confirmation. All
     targets remain 184x44, the short-landscape panel retains 28px of bottom
     clearance, and focus keeps a visible navy separator after review increased
     the selected prototype's gap from 8px to 12px. See the

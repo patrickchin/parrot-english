@@ -9,6 +9,9 @@ Branch: `codex/account-action-hierarchy`
 Base branch / dependency: `codex/lesson-shelf-heading-reading-cue` at
 `080dbbb`
 
+Implementation: `b73a92c`; review-driven twelve-pixel refinement and evidence:
+`8ab298a`
+
 ## Question and scope
 
 Can Parrot make routine **Sign out** visibly different from irreversible

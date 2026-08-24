@@ -15,6 +15,8 @@ Rendered behavior contract: `a2fb815`
 
 Initial implementation: `b73a92c`
 
+Review-driven refinement and evidence: `8ab298a`
+
 Research contract:
 [`account-action-hierarchy-guidance.md`](./account-action-hierarchy-guidance.md)
 
@@ -207,6 +209,29 @@ The source register and guidance now state those limits, and each product
 question has a dedicated backlog entry. Final clean-tree verification is
 recorded in the completed hand-off below.
 
+## Final verification
+
+The final commands ran against source/evidence commit `8ab298a` after the
+twelve-pixel refinement and screenshot recapture:
+
+- `npm test`: 686/686 tests in 89 suites passed;
+- `npm run test:browser`: 329/329 Chromium cases passed in 1.4 minutes;
+- `npm run build`: TypeScript and Vite production build passed; the existing
+  chunk-size advisory remained informational;
+- `npm run lint`: zero errors and the same two generated Worker declaration
+  warnings;
+- final affected header/contrast run: 52/52 passed;
+- accessibility lifecycle run: 7/7 passed;
+- post-settlement long-identity stress run: 25/25 passed;
+- all 41 manifest entries decoded with the named format and dimensions and
+  matched SHA-256;
+- all 99 local links across the seven branch Markdown files resolved; and
+- `git diff --check` passed.
+
+Three independent final reviews covered code/tests, original-resolution visual
+evidence, and accessibility/research claims. After the documented review-driven
+changes, each reported no remaining actionable finding.
+
 ## Limits and follow-up
 
 This branch establishes deterministic hierarchy and interaction behavior in
@@ -242,7 +267,7 @@ executable deletion task.
 ```text
 Branch: codex/account-action-hierarchy
 Base branch / dependency: codex/lesson-shelf-heading-reading-cue at 080dbbb
-Commits: 796f875, a2fb815, b73a92c, plus final review/evidence commits recorded in Git history
+Commits: 796f875, a2fb815, b73a92c, 8ab298a
 Hypothesis: separating routine exit from staged deletion can improve consequence prediction without making deletion the menu's visual primary
 Changed: shared muted-destructive surface; menu order and 12px group break; final confirmation color role; rendered contracts and evidence
 Not changed: visible labels, account identity, auth/deletion callbacks or requests, password gate, focus algorithms, routes, child activity content, audio

@@ -8,8 +8,7 @@ Baseline commit: `080dbbb`
 
 Initial implementation commit: `b73a92c`
 
-Final twelve-pixel candidate source: review/evidence hand-off commit recorded in
-the branch history
+Final twelve-pixel candidate source: `8ab298a`
 
 ## Capture conditions
 
