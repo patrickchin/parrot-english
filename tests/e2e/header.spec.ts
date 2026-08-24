@@ -905,6 +905,7 @@ test("account actions separate routine sign out from staged deletion", async ({
     expect(ordinaryGap).toBeGreaterThanOrEqual(4);
     expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 8);
 
+    await expect(items.first()).toBeFocused();
     await page.keyboard.press("End");
     await expect(deleteAccount).toBeFocused();
     await page.keyboard.press("ArrowUp");
