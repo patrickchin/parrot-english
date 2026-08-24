@@ -41,6 +41,7 @@ const vite = await createServer({
 });
 
 let ApplicationRoutes;
+let AuthenticatedApplication;
 let AccountActionProvider;
 let ConversationSurface;
 let LearnerProfileAcknowledgment;
@@ -77,7 +78,9 @@ before(async () => {
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
   ));
-  ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/app/App.tsx"));
+  ({ ApplicationRoutes, AuthenticatedApplication } = await vite.ssrLoadModule(
+    "/src/app/App.tsx",
+  ));
   ({ RouteFocusManager } = await vite.ssrLoadModule(
     "/src/app/RouteFocusManager.tsx",
   ));
@@ -618,6 +621,33 @@ function modeRoutesInMemory({
   );
 }
 
+function authenticatedApplicationInMemory({ api, initialEntry }) {
+  const Provider = createGuardianAccessProvider({
+    api,
+    schedule: () => () => {},
+  });
+
+  return createElement(
+    AccountActionProvider,
+    {
+      profileAction: registeredLearnerExperience,
+      setProfileAction() {},
+    },
+    createElement(
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: [initialEntry] },
+        createElement(AuthenticatedApplication, {
+          onExitLessonRoute() {},
+        }),
+        createElement(RouterHistoryControls),
+      ),
+    ),
+  );
+}
+
 const registeredLearnerExperience = {
   error: "",
   learnerName: "Mia",
@@ -829,6 +859,36 @@ function createSessionClient(initialState) {
 }
 
 describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
+  it("lets unknown guardian-mode URLs reach the wildcard redirect", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "learner" };
+      },
+    };
+
+    for (const initialEntry of [
+      "/guardianish",
+      "/guardian/lessons/extra",
+      "/unknown",
+    ]) {
+      await mountStrict(
+        authenticatedApplicationInMemory({ api, initialEntry }),
+      );
+      await waitFor(() => assert.equal(currentRoute().path, "/"));
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
+  });
+
   it("exposes the registered learner name to guardian routes", async () => {
     assert.equal(
       typeof useAccountExperience,

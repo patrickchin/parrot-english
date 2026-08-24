@@ -15,6 +15,7 @@ import {
   useState,
 } from "react";
 import {
+  matchPath,
   Navigate,
   Route,
   Routes,
@@ -130,6 +131,35 @@ const LessonCreator = import.meta.env.SSR
         default: LessonCreator,
       })),
     );
+
+const APPLICATION_ROUTE_PATTERNS = [
+  "/",
+  "/guardian",
+  "/guardian/lessons",
+  "/guardian/stories",
+  "/talk-to-peppa",
+  "/lessons",
+  "/lessons/my/create",
+  "/lessons/my/:lessonId/edit",
+  "/lessons/parrot/:lessonId",
+  "/lessons/parrot/:lessonId/scenes/:sceneNumber",
+  "/lessons/my/:lessonId",
+  "/lessons/my/:lessonId/scenes/:sceneNumber",
+  "/progress",
+  "/stories",
+  "/stories/:storyId",
+  "/stories/:storyId/pages/:pageNumber",
+  "/login",
+  "/profile/setup",
+  "/profile",
+];
+
+function isDeclaredApplicationRoute(pathname: string) {
+  return APPLICATION_ROUTE_PATTERNS.some((path) =>
+    matchPath({ end: true, path }, pathname),
+  );
+}
+
 const LessonEditor = import.meta.env.SSR
   ? (await import("../lessons/LessonEditor")).LessonEditor
   : lazy(() =>
@@ -1164,7 +1194,7 @@ export function ApplicationRoutes({
   );
 }
 
-function AuthenticatedApplication({
+export function AuthenticatedApplication({
   onExitLessonRoute,
 }: {
   onExitLessonRoute: () => void;
@@ -1190,6 +1220,13 @@ function AuthenticatedApplication({
     navigate(getProfilePath(requestedProtectedTarget));
   }, [navigate, onExitLessonRoute, requestedProtectedTarget]);
 
+  const applicationRoutes = (
+    <ApplicationRoutes
+      learnerName={accountExperience?.learnerName?.trim() || "Learner"}
+      loginTarget={safeReturnTo}
+      onBeforeModeNavigate={onExitLessonRoute}
+    />
+  );
   const routeContent = (
     <LearnerProfileGate
       completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
@@ -1212,13 +1249,13 @@ function AuthenticatedApplication({
       }
       redoLearnerProfile={redoLearnerProfile}
     >
-      <ApplicationRoutes
-        learnerName={accountExperience?.learnerName?.trim() || "Learner"}
-        loginTarget={safeReturnTo}
-        onBeforeModeNavigate={onExitLessonRoute}
-      />
+      {applicationRoutes}
     </LearnerProfileGate>
   );
+
+  if (!isDeclaredApplicationRoute(location.pathname)) {
+    return applicationRoutes;
+  }
 
   if (onLoginRoute || (isLearnerProfileRoute && !redoLearnerProfile)) {
     return routeContent;
