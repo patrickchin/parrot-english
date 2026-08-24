@@ -37,6 +37,7 @@ afterEach(async () => {
   mountedRoot = null;
   container?.remove();
   container = null;
+  Reflect.deleteProperty(document, "visibilityState");
 });
 
 after(async () => {
@@ -142,9 +143,23 @@ describe("guardian access provider", { concurrency: false }, () => {
 
     await clock.runAt("2026-08-25T08:15:00.000Z");
     assert.equal(states.at(-1).mode, "learner");
-    await act(async () =>
-      document.dispatchEvent(new window.Event("visibilitychange")),
-    );
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+    await act(async () => {
+      document.dispatchEvent(new window.Event("visibilitychange"));
+    });
+    assert.equal(api.loadCalls, 1);
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
+    await act(async () => {
+      document.dispatchEvent(new window.Event("visibilitychange"));
+    });
     assert.equal(api.loadCalls, 2);
     assert.equal(states.at(-1).mode, "learner");
   });
@@ -266,8 +281,12 @@ describe("guardian access provider", { concurrency: false }, () => {
     await act(async () => {
       result = await states.at(-1).lock();
     });
-    assert.equal(result, "Lock did not finish.");
+    assert.equal(
+      result,
+      "Could not lock guardian mode. Try again before handing over the device.",
+    );
     assert.equal(states.at(-1).mode, "guardian");
+    assert.equal(states.at(-1).error, result);
 
     await act(async () => {
       result = await states.at(-1).lock();
@@ -303,7 +322,47 @@ describe("guardian access provider", { concurrency: false }, () => {
       expiresAt: "2099-08-25T08:15:00.000Z",
     });
     await act(async () => unlockPromise);
-    assert.equal(unlockResult, null);
+    assert.equal(typeof unlockResult, "string");
+    assert.ok(unlockResult.length > 0);
+    assert.equal(states.at(-1).mode, "learner");
+  });
+
+  it("returns an error to a stale lock caller without mutating synchronized learner state", async () => {
+    const pendingLock = deferred();
+    const states = [];
+    const clock = createClock("2026-08-25T08:00:00.000Z");
+    const api = createApi({
+      async loadGuardianAccess() {
+        this.loadCalls += 1;
+        return { mode: "guardian", expiresAt: "2026-08-25T08:15:00.000Z" };
+      },
+      lockGuardianAccess() {
+        this.lockCalls += 1;
+        return pendingLock.promise;
+      },
+    });
+    const Provider = createGuardianAccessProvider({
+      api,
+      now: () => clock.now,
+      schedule: clock.schedule,
+    });
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+
+    let lockResult;
+    let lockPromise;
+    await act(async () => {
+      lockPromise = states.at(-1).lock().then((result) => {
+        lockResult = result;
+      });
+      await Promise.resolve();
+    });
+    await act(async () => notifyGuardianAccessRequired());
+    assert.equal(states.at(-1).mode, "learner");
+
+    pendingLock.resolve({ mode: "learner" });
+    await act(async () => lockPromise);
+    assert.equal(typeof lockResult, "string");
+    assert.ok(lockResult.length > 0);
     assert.equal(states.at(-1).mode, "learner");
   });
 });

@@ -56,6 +56,9 @@ const GuardianAccessContext = createContext<GuardianAccessContextValue | null>(
   null,
 );
 const FALLBACK_ERROR = "Guardian access could not be checked. Please try again.";
+const LOCK_ERROR =
+  "Could not lock guardian mode. Try again before handing over the device.";
+const STALE_OPERATION_ERROR = "Guardian access changed. Please try again.";
 
 function initialSnapshot(identity: string | null): AccessSnapshot {
   return {
@@ -189,7 +192,9 @@ export function createGuardianAccessProvider({
 
     useEffect(() => {
       if (sessionIdentity === null || typeof document === "undefined") return;
-      const recheck = () => void load();
+      const recheck = () => {
+        if (document.visibilityState === "visible") void load();
+      };
       document.addEventListener("visibilitychange", recheck);
       return () => document.removeEventListener("visibilitychange", recheck);
     }, [load, sessionIdentity]);
@@ -244,10 +249,15 @@ export function createGuardianAccessProvider({
           const state = await api.unlockGuardianAccess(password, {
             signal: controller.signal,
           });
+          if (!isCurrent(operation, identity, controller.signal)) {
+            return STALE_OPERATION_ERROR;
+          }
           applyState(state, identity, operation, controller.signal);
           return null;
         } catch (error) {
-          if (!isCurrent(operation, identity, controller.signal)) return null;
+          if (!isCurrent(operation, identity, controller.signal)) {
+            return STALE_OPERATION_ERROR;
+          }
           const message = messageFor(error);
           setSnapshot({
             error: message,
@@ -268,15 +278,21 @@ export function createGuardianAccessProvider({
       );
       try {
         const state = await api.lockGuardianAccess({ signal: controller.signal });
+        if (!isCurrent(operation, identity, controller.signal)) {
+          return STALE_OPERATION_ERROR;
+        }
         applyState(state, identity, operation, controller.signal);
         return null;
-      } catch (error) {
-        if (!isCurrent(operation, identity, controller.signal)) return null;
-        const message = messageFor(error);
+      } catch {
+        if (!isCurrent(operation, identity, controller.signal)) {
+          return STALE_OPERATION_ERROR;
+        }
         setSnapshot((current) =>
-          current.identity === identity ? { ...current, error: message } : current,
+          current.identity === identity
+            ? { ...current, error: LOCK_ERROR }
+            : current,
         );
-        return message;
+        return LOCK_ERROR;
       }
     }, [applyState, beginOperation, isCurrent, sessionIdentity]);
 
