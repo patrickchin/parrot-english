@@ -13,6 +13,9 @@ const GENERATION_MARKER = ".dub-generation";
 const LEGACY_GENERATION = "legacy";
 const FENCE_FORMAT = "parrot-dub-fence-v1";
 const AUDIO_FORMAT = "parrot-dub-audio-v1";
+const R2_WRITE_INTERVAL_MS = 1_050;
+const MAX_R2_WRITE_ATTEMPTS = 3;
+const MAX_CAS_CONFLICTS = 16;
 const MIME_SIGNATURES = {
   "audio/webm": (bytes: Uint8Array) =>
     bytes[0] === 0x1a &&
@@ -41,17 +44,25 @@ type DubHandlerOverrides = {
   createGeneration?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
   now?: () => Date;
+  wait?: (delay: number) => Promise<void>;
 };
+
+type Wait = NonNullable<DubHandlerOverrides["wait"]>;
 
 type DubMarker =
   | { kind: "absent" }
-  | { etag: string; kind: "malformed" }
+  | { etag: string; kind: "malformed"; object: R2Object }
   | {
       etag: string;
       generation: string;
       kind: "valid";
+      object: R2Object;
       state: "deleting" | "ready";
     };
+
+type AudioStorage =
+  | { kind: "legacy" }
+  | { generation: string; kind: "enveloped"; prefix: Uint8Array };
 
 class DubApiError extends Error {
   readonly code: string;
@@ -113,14 +124,20 @@ async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> 
     !generation ||
     (state !== "deleting" && state !== "ready")
   ) {
-    return { etag: marker.etag, kind: "malformed" };
+    return { etag: marker.etag, kind: "malformed", object: marker };
   }
-  return { etag: marker.etag, generation, kind: "valid", state };
+  return {
+    etag: marker.etag,
+    generation,
+    kind: "valid",
+    object: marker,
+    state,
+  };
 }
 
 async function readyGeneration(bucket: R2Bucket, userId: string) {
   const marker = await readMarker(bucket, userId);
-  if (marker.kind === "absent") return LEGACY_GENERATION;
+  if (marker.kind === "absent") return null;
   if (marker.kind !== "valid" || marker.state !== "ready") {
     throw new DubApiError(409, "dub_reset_in_progress");
   }
@@ -131,17 +148,19 @@ async function beginReset(
   bucket: R2Bucket,
   userId: string,
   generation: string,
+  wait: Wait,
 ) {
   const current = await readMarker(bucket, userId);
-  const marker = await bucket.put(
+  const marker = await conditionalPut(
+    bucket,
     markerKey(userId),
     fenceBody("marker", generation, "deleting"),
     {
       customMetadata: { generation, state: "deleting" },
-      onlyIf: current.kind === "absent"
-        ? { etagDoesNotMatch: "*" }
-        : { etagMatches: current.etag },
     },
+    current.kind === "absent" ? null : current.object,
+    wait,
+    (object) => hasState(object, generation, "deleting"),
   );
   if (!marker) throw new DubApiError(409, "dub_reset_in_progress");
   return marker;
@@ -155,8 +174,12 @@ function fenceBody(kind: "marker" | "slot", generation: string, state: string) {
   return encoded([FENCE_FORMAT, kind, generation, state]);
 }
 
+function audioPrefix(generation: string) {
+  return encoded([AUDIO_FORMAT, generation]);
+}
+
 function audioBody(generation: string, audio: Uint8Array) {
-  const prefix = encoded([AUDIO_FORMAT, generation]);
+  const prefix = audioPrefix(generation);
   const body = new Uint8Array(prefix.byteLength + audio.byteLength);
   body.set(prefix);
   body.set(audio, prefix.byteLength);
@@ -169,15 +192,141 @@ function conditionalWrite(object: R2Object | null) {
     : { etagDoesNotMatch: "*" };
 }
 
-function isCurrentAudio(object: R2Object, generation: string) {
+function sameObject(left: R2Object | null, right: R2Object | null) {
+  return left === null || right === null
+    ? left === right
+    : left.etag === right.etag && left.version === right.version;
+}
+
+function hasState(object: R2Object, generation: string, state: string) {
   const metadata = object.customMetadata;
-  if (generation === LEGACY_GENERATION) {
-    return (
-      (metadata?.generation === LEGACY_GENERATION && metadata.state === "audio") ||
-      (metadata?.generation === undefined && metadata?.state === undefined)
-    );
+  return metadata?.generation === generation && metadata.state === state;
+}
+
+function isR2WriteRateError(error: unknown) {
+  return error instanceof Error && /\(10058\)\s*$/.test(error.message);
+}
+
+function retryDelay(attempt: number) {
+  return R2_WRITE_INTERVAL_MS + attempt * 100 + Math.floor(Math.random() * 100);
+}
+
+async function conditionalPut(
+  bucket: R2Bucket,
+  key: string,
+  value: Uint8Array,
+  options: R2PutOptions,
+  observed: R2Object | null,
+  wait: Wait,
+  isDesired?: (object: R2Object) => boolean,
+) {
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      return await bucket.put(key, value, {
+        ...options,
+        onlyIf: conditionalWrite(observed),
+      });
+    } catch (error) {
+      if (!isR2WriteRateError(error)) throw error;
+      const current = await bucket.head(key);
+      if (current && isDesired?.(current)) return current;
+      if (!sameObject(current, observed)) return null;
+      if (attempt === MAX_R2_WRITE_ATTEMPTS - 1) throw error;
+      await wait(retryDelay(attempt));
+    }
   }
-  return metadata?.generation === generation && metadata.state === "audio";
+  throw new Error("R2 conditional write retry limit exceeded.");
+}
+
+function audioStorage(
+  object: R2Object,
+  ready: string | null,
+): AudioStorage | null {
+  const metadata = object.customMetadata;
+  if (
+    ready === null &&
+    metadata?.generation === undefined &&
+    metadata?.state === undefined &&
+    metadata?.payloadOffset === undefined
+  ) {
+    return object.size > 0 ? { kind: "legacy" } : null;
+  }
+
+  const generation = ready ?? LEGACY_GENERATION;
+  const prefix = audioPrefix(generation);
+  if (
+    metadata?.generation !== generation ||
+    metadata.state !== "audio" ||
+    metadata.payloadOffset !== String(prefix.byteLength) ||
+    object.size <= prefix.byteLength
+  ) {
+    return null;
+  }
+  return { generation, kind: "enveloped", prefix };
+}
+
+function hasBody(object: R2Object | R2ObjectBody | null): object is R2ObjectBody {
+  return object !== null && "body" in object;
+}
+
+function equalBytes(left: Uint8Array, right: Uint8Array) {
+  return left.byteLength === right.byteLength &&
+    left.every((value, index) => value === right[index]);
+}
+
+async function validateAudioPrefix(
+  bucket: R2Bucket,
+  key: string,
+  object: R2Object,
+  storage: AudioStorage,
+) {
+  if (storage.kind === "legacy") return object;
+  const prefixObject = await bucket.get(key, {
+    onlyIf: { etagMatches: object.etag },
+    range: { length: storage.prefix.byteLength, offset: 0 },
+  });
+  if (
+    !hasBody(prefixObject) ||
+    !hasState(prefixObject, storage.generation, "audio") ||
+    prefixObject.customMetadata?.payloadOffset !==
+      String(storage.prefix.byteLength)
+  ) {
+    return null;
+  }
+  const bytes = await prefixObject.bytes();
+  return equalBytes(bytes, storage.prefix) ? prefixObject : null;
+}
+
+async function getAudioPayload(
+  bucket: R2Bucket,
+  key: string,
+  object: R2Object,
+  ready: string | null,
+) {
+  const storage = audioStorage(object, ready);
+  if (!storage) return null;
+  if (storage.kind === "legacy") {
+    const legacy = await bucket.get(key, {
+      onlyIf: { etagMatches: object.etag },
+    });
+    return hasBody(legacy) && audioStorage(legacy, ready)?.kind === "legacy"
+      ? legacy
+      : null;
+  }
+  if (!await validateAudioPrefix(bucket, key, object, storage)) return null;
+  const payload = await bucket.get(key, {
+    onlyIf: { etagMatches: object.etag },
+    range: { offset: storage.prefix.byteLength },
+  });
+  if (
+    !hasBody(payload) ||
+    !hasState(payload, storage.generation, "audio") ||
+    payload.customMetadata?.payloadOffset !==
+      String(storage.prefix.byteLength)
+  ) {
+    return null;
+  }
+  return payload;
 }
 
 async function assertResetOwner(
@@ -203,22 +352,68 @@ async function tombstoneSlot(
   lineId: string,
   generation: string,
   markerEtag: string,
+  wait: Wait,
 ) {
   const key = objectKey(userId, lineId);
-  while (true) {
+  for (let attempt = 0; attempt < MAX_CAS_CONFLICTS; attempt += 1) {
     await assertResetOwner(bucket, userId, generation, markerEtag);
     const current = await bucket.head(key);
     await assertResetOwner(bucket, userId, generation, markerEtag);
-    const tombstone = await bucket.put(
+    const tombstone = await conditionalPut(
+      bucket,
       key,
       fenceBody("slot", generation, "tombstone"),
       {
         customMetadata: { generation, state: "tombstone" },
-        onlyIf: conditionalWrite(current),
       },
+      current,
+      wait,
+      (object) => hasState(object, generation, "tombstone"),
     );
     if (tombstone) return;
   }
+  throw new DubApiError(409, "dub_reset_in_progress");
+}
+
+function isDemonstrablyNonAudio(object: R2Object) {
+  const state = object.customMetadata?.state;
+  return state !== undefined && state !== "audio";
+}
+
+async function fenceAccountDeletingSlot(
+  bucket: R2Bucket,
+  key: string,
+  stored: R2Object,
+  token: string,
+  wait: Wait,
+) {
+  let current: R2Object | null = stored;
+  let writeFailures = 0;
+  for (let attempt = 0; attempt < MAX_CAS_CONFLICTS; attempt += 1) {
+    if (!current || isDemonstrablyNonAudio(current)) return;
+    let tombstone: R2Object | null;
+    try {
+      tombstone = await conditionalPut(
+        bucket,
+        key,
+        fenceBody("slot", token, "account-deleting"),
+        { customMetadata: { generation: token, state: "account-deleting" } },
+        current,
+        wait,
+        (object) => hasState(object, token, "account-deleting"),
+      );
+    } catch (error) {
+      current = await bucket.head(key);
+      if (!current || isDemonstrablyNonAudio(current)) return;
+      writeFailures += 1;
+      if (writeFailures >= MAX_R2_WRITE_ATTEMPTS) throw error;
+      await wait(retryDelay(writeFailures));
+      continue;
+    }
+    if (tombstone) return;
+    current = await bucket.head(key);
+  }
+  throw new Error("Dub account-deletion cleanup contention exceeded.");
 }
 
 function normalizeContentType(request: Request) {
@@ -241,29 +436,6 @@ function safeRecordedAt(object: R2Object) {
   return Number.isNaN(object.uploaded.getTime()) ? null : object.uploaded.toISOString();
 }
 
-function payloadOffset(object: R2Object) {
-  const value = object.customMetadata?.payloadOffset;
-  if (value === undefined) return 0;
-  if (!/^[1-9]\d*$/.test(value)) return null;
-  const offset = Number(value);
-  return Number.isSafeInteger(offset) && offset < object.size ? offset : null;
-}
-
-function streamAfter(body: ReadableStream, offset: number) {
-  if (offset === 0) return body;
-  let remaining = offset;
-  return body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
-    transform(chunk, controller) {
-      if (remaining >= chunk.byteLength) {
-        remaining -= chunk.byteLength;
-        return;
-      }
-      controller.enqueue(chunk.subarray(remaining));
-      remaining = 0;
-    },
-  }));
-}
-
 export async function handleDubRequest(
   input: DubRequestInput,
   overrides: DubHandlerOverrides = {},
@@ -273,6 +445,7 @@ export async function handleDubRequest(
   const isDeletionPending =
     overrides.isDeletionPending ?? isAccountDeletionPending;
   const now = overrides.now ?? (() => new Date());
+  const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
   const route = parseDubRoute(new URL(input.request.url).pathname);
 
   try {
@@ -291,15 +464,24 @@ export async function handleDubRequest(
         const objects = new Map(
           page.objects.map((object) => [object.key, object]),
         );
-        const lines = DUB_LINES.map(({ id }) => {
+        const lines = await Promise.all(DUB_LINES.map(async ({ id }) => {
           const object = objects.get(objectKey(userId, id));
-          const saved = object !== undefined && isCurrentAudio(object, generation);
+          const storage = object && audioStorage(object, generation);
+          const current = object && storage
+            ? await validateAudioPrefix(
+                bucket,
+                objectKey(userId, id),
+                object,
+                storage,
+              )
+            : null;
+          const saved = current !== null;
           return {
             id,
-            recordedAt: saved ? safeRecordedAt(object) : null,
+            recordedAt: saved ? safeRecordedAt(current) : null,
             saved,
           };
-        });
+        }));
         if (await readyGeneration(bucket, userId) !== generation) {
           throw new DubApiError(409, "dub_reset_in_progress");
         }
@@ -317,9 +499,13 @@ export async function handleDubRequest(
         }
         const generation = createGeneration();
         if (!generation) throw new Error("Dub reset generation is required.");
-        const deletingMarker = await beginReset(bucket, userId, generation);
+        const deletingMarker = await beginReset(
+          bucket,
+          userId,
+          generation,
+          wait,
+        );
         if (await isDeletionPending(input.database, userId)) {
-          await bucket.delete(markerKey(userId));
           throw new DubApiError(409, "account_deletion_pending");
         }
         for (const { id } of DUB_LINES) {
@@ -329,25 +515,28 @@ export async function handleDubRequest(
             id,
             generation,
             deletingMarker.etag,
+            wait,
           );
         }
         if (await isDeletionPending(input.database, userId)) {
-          await bucket.delete(markerKey(userId));
           throw new DubApiError(409, "account_deletion_pending");
         }
-        const readyMarker = await bucket.put(
+        await wait(R2_WRITE_INTERVAL_MS);
+        const readyMarker = await conditionalPut(
+          bucket,
           markerKey(userId),
           fenceBody("marker", generation, "ready"),
           {
             customMetadata: { generation, state: "ready" },
-            onlyIf: { etagMatches: deletingMarker.etag },
           },
+          deletingMarker,
+          wait,
+          (object) => hasState(object, generation, "ready"),
         );
         if (!readyMarker) {
           throw new DubApiError(409, "dub_reset_in_progress");
         }
         if (await isDeletionPending(input.database, userId)) {
-          await bucket.delete(markerKey(userId));
           throw new DubApiError(409, "account_deletion_pending");
         }
         return new Response(null, {
@@ -364,12 +553,12 @@ export async function handleDubRequest(
         throw new DubApiError(405, "method_not_allowed");
       }
       const generation = await readyGeneration(bucket, userId);
-      const object = await bucket.get(objectKey(userId, route.lineId!));
-      if (!object || !isCurrentAudio(object, generation)) {
-        throw new DubApiError(404, "not_found");
-      }
-      const offset = payloadOffset(object);
-      if (offset === null) throw new DubApiError(404, "not_found");
+      const key = objectKey(userId, route.lineId!);
+      const head = await bucket.head(key);
+      const object = head
+        ? await getAudioPayload(bucket, key, head, generation)
+        : null;
+      if (!object) throw new DubApiError(404, "not_found");
       if (await readyGeneration(bucket, userId) !== generation) {
         throw new DubApiError(404, "not_found");
       }
@@ -377,7 +566,7 @@ export async function handleDubRequest(
       object.writeHttpMetadata(headers);
       headers.set("Cache-Control", "private, no-store");
       headers.set("X-Content-Type-Options", "nosniff");
-      return new Response(streamAfter(object.body, offset), { headers });
+      return new Response(object.body, { headers });
     }
 
     if (input.request.method !== "PUT") {
@@ -386,7 +575,8 @@ export async function handleDubRequest(
     if (await isDeletionPending(input.database, userId)) {
       throw new DubApiError(409, "account_deletion_pending");
     }
-    const generation = await readyGeneration(bucket, userId);
+    const ready = await readyGeneration(bucket, userId);
+    const generation = ready ?? LEGACY_GENERATION;
     if (
       input.request.headers.get("X-Parrot-Guardian-Consent-Version") !==
       CONSENT_VERSION
@@ -410,29 +600,37 @@ export async function handleDubRequest(
 
     const key = objectKey(userId, route.lineId!);
     const previous = await bucket.head(key);
-    if (await readyGeneration(bucket, userId) !== generation) {
+    if (await readyGeneration(bucket, userId) !== ready) {
       throw new DubApiError(409, "dub_reset_in_progress");
     }
     const recordedAt = now();
     const encodedAudio = audioBody(generation, bytes);
-    const stored = await bucket.put(key, encodedAudio.body, {
-      httpMetadata: { contentType },
-      customMetadata: {
-        generation,
-        guardianConsentVersion: CONSENT_VERSION,
-        lineId: route.lineId!,
-        payloadOffset: String(encodedAudio.payloadOffset),
-        recordedAt: recordedAt.toISOString(),
-        state: "audio",
+    const stored = await conditionalPut(
+      bucket,
+      key,
+      encodedAudio.body,
+      {
+        httpMetadata: { contentType },
+        customMetadata: {
+          generation,
+          guardianConsentVersion: CONSENT_VERSION,
+          lineId: route.lineId!,
+          payloadOffset: String(encodedAudio.payloadOffset),
+          recordedAt: recordedAt.toISOString(),
+          state: "audio",
+        },
       },
-      onlyIf: conditionalWrite(previous),
-    });
+      previous,
+      wait,
+    );
     if (!stored) throw new DubApiError(409, "dub_reset_in_progress");
-    if (await readyGeneration(bucket, userId) !== generation) {
+    if (await readyGeneration(bucket, userId) !== ready) {
       throw new DubApiError(409, "dub_reset_in_progress");
     }
     if (await isDeletionPending(input.database, userId)) {
-      await bucket.delete(key);
+      const token = createGeneration();
+      if (!token) throw new Error("Dub cleanup generation is required.");
+      await fenceAccountDeletingSlot(bucket, key, stored, token, wait);
       throw new DubApiError(409, "account_deletion_pending");
     }
     return json(

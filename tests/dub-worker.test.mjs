@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { ReadableStream } from "node:stream/web";
 import { describe, it } from "node:test";
 import { TextEncoder } from "node:util";
 
@@ -39,6 +40,22 @@ function deferred() {
   return { promise, resolve };
 }
 
+function createClock(iso = "2026-08-25T10:00:00.000Z") {
+  let milliseconds = Date.parse(iso);
+  const waits = [];
+  return {
+    advance(delay) {
+      milliseconds += delay;
+    },
+    now: () => new Date(milliseconds),
+    waits,
+    wait: async (delay) => {
+      waits.push(delay);
+      milliseconds += delay;
+    },
+  };
+}
+
 function assertResetTombstones(bucket, generation) {
   const marker = bucket.stored.get(MARKER_KEY);
   assert.deepEqual(marker?.bytes, fenceBytes("marker", generation, "ready"));
@@ -60,7 +77,10 @@ function contentEtag(bytes) {
   return createHash("md5").update(bytes).digest("hex");
 }
 
-function createBucket(seed = []) {
+function createBucket(seed = [], {
+  enforceWriteRate = false,
+  now = () => new Date("2026-08-25T10:00:00.000Z"),
+} = {}) {
   const stored = new Map(seed.map(([key, value], index) => [
     key,
     {
@@ -71,6 +91,9 @@ function createBucket(seed = []) {
     },
   ]));
   const calls = { delete: [], get: [], head: [], list: [], put: [] };
+  const lastWriteAt = new Map(seed
+    .filter(([, value]) => value.uploaded)
+    .map(([key, value]) => [key, value.uploaded.getTime()]));
   let versionSequence = 0;
 
   function object(key, item) {
@@ -95,13 +118,45 @@ function createBucket(seed = []) {
       calls.delete.push(keys);
       for (const key of Array.isArray(keys) ? keys : [keys]) stored.delete(key);
     },
-    async get(key) {
+    async get(key, options = {}) {
       calls.get.push(key);
       const item = stored.get(key);
       if (!item) return null;
+      if (
+        options.onlyIf?.etagMatches !== undefined &&
+        item.etag !== options.onlyIf.etagMatches
+      ) {
+        return object(key, item);
+      }
+      const range = options.range;
+      const offset = range
+        ? ("suffix" in range
+            ? Math.max(0, item.bytes.byteLength - range.suffix)
+            : (range.offset ?? 0))
+        : 0;
+      const bytes = range
+        ? item.bytes.subarray(
+            offset,
+            range.length === undefined
+              ? undefined
+              : offset + range.length,
+          )
+        : item.bytes;
+      const chunks = range ? [bytes] : (item.chunks ?? [bytes]);
       return {
         ...object(key, item),
-        body: new Response(item.bytes).body,
+        async arrayBuffer() {
+          return bytes.slice().buffer;
+        },
+        body: new ReadableStream({
+          start(controller) {
+            for (const chunk of chunks) controller.enqueue(chunk);
+            controller.close();
+          },
+        }),
+        async bytes() {
+          return bytes.slice();
+        },
       };
     },
     async head(key) {
@@ -114,11 +169,7 @@ function createBucket(seed = []) {
       return {
         objects: [...stored]
           .filter(([key]) => key.startsWith(options.prefix))
-          .map(([key, value]) => ({
-            customMetadata: value.options.customMetadata,
-            key,
-            uploaded: value.uploaded,
-          })),
+          .map(([key, value]) => object(key, value)),
         truncated: false,
       };
     },
@@ -137,14 +188,23 @@ function createBucket(seed = []) {
       ) {
         return null;
       }
+      const writtenAt = now();
+      if (
+        enforceWriteRate &&
+        lastWriteAt.has(key) &&
+        writtenAt.getTime() - lastWriteAt.get(key) < 1_000
+      ) {
+        throw new Error("put: TooManyRequests (10058)");
+      }
       const item = {
         bytes: bytes === null ? new Uint8Array() : new Uint8Array(bytes),
         etag: contentEtag(bytes === null ? new Uint8Array() : new Uint8Array(bytes)),
         options,
-        uploaded: new Date("2026-08-25T10:00:00.000Z"),
+        uploaded: writtenAt,
         version: `version-${++versionSequence}`,
       };
       stored.set(key, item);
+      lastWriteAt.set(key, writtenAt.getTime());
       return object(key, item);
     },
   };
@@ -158,6 +218,7 @@ async function callDub({
   path,
   pending = async () => false,
   generation = () => "generation-1",
+  wait = async () => {},
   userId = "user-1",
 }) {
   const { handleDubRequest } = await import("../worker/dubs.ts");
@@ -173,6 +234,7 @@ async function callDub({
     createGeneration: generation,
     isDeletionPending: pending,
     now: () => new Date("2026-08-25T10:00:00.000Z"),
+    wait,
   });
 }
 
@@ -317,6 +379,91 @@ describe("private learner dub API", () => {
     assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     assert.deepEqual(bucket.calls.delete, []);
     assertResetTombstones(bucket, "reset-1");
+  });
+
+  it("paces recent slot overwrites and reset marker finalization for R2 hot keys", async () => {
+    const clock = createClock();
+    const bucket = createBucket([], {
+      enforceWriteRate: true,
+      now: clock.now,
+    });
+    assert.equal((await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+      wait: clock.wait,
+    })).status, 201);
+
+    const reset = await callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+      wait: clock.wait,
+    });
+
+    assert.equal(reset.status, 204);
+    assert.equal(clock.waits.length >= 2, true);
+    assert.equal(clock.waits.every((delay) => delay >= 1_000), true);
+    assertResetTombstones(bucket, "reset-1");
+  });
+
+  it("retries an R2 10058 while finalizing the reset marker it still owns", async () => {
+    const clock = createClock();
+    const bucket = createBucket([], { now: clock.now });
+    const put = bucket.put.bind(bucket);
+    let failReady = true;
+    bucket.put = async (key, bytes, options) => {
+      if (
+        failReady &&
+        key === MARKER_KEY &&
+        options?.customMetadata?.state === "ready"
+      ) {
+        failReady = false;
+        throw new Error("put: TooManyRequests (10058)");
+      }
+      return put(key, bytes, options);
+    };
+
+    const response = await callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+      wait: clock.wait,
+    });
+
+    assert.equal(response.status, 204);
+    assert.equal(clock.waits.length >= 2, true);
+    assertResetTombstones(bucket, "reset-1");
+  });
+
+  it("paces takeover of a recently written deleting marker", async () => {
+    const clock = createClock();
+    const bucket = createBucket([[MARKER_KEY, {
+      bytes: fenceBytes("marker", "reset-1", "deleting"),
+      options: {
+        customMetadata: { generation: "reset-1", state: "deleting" },
+      },
+      uploaded: clock.now(),
+    }]], {
+      enforceWriteRate: true,
+      now: clock.now,
+    });
+
+    const response = await callDub({
+      bucket,
+      generation: () => "reset-2",
+      method: "DELETE",
+      path: DUB_PATH,
+      wait: clock.wait,
+    });
+
+    assert.equal(response.status, 204);
+    assert.equal(clock.waits.length >= 2, true);
+    assertResetTombstones(bucket, "reset-2");
   });
 
   it("makes a held old upload lose to reset without stale cleanup", async () => {
@@ -866,6 +1013,142 @@ describe("private learner dub API", () => {
     }
   });
 
+  it("marks malformed current envelopes unsaved and refuses their audio", async () => {
+    const generation = "reset-1";
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 4]);
+    const envelope = envelopedAudio(generation, audio);
+    const corrupted = envelope.bytes.slice();
+    corrupted[0] ^= 0xff;
+    const cases = [
+      ["line-1", envelope.bytes, {
+        generation,
+        state: "audio",
+      }],
+      ["line-2", envelope.bytes, {
+        generation,
+        payloadOffset: "1",
+        state: "audio",
+      }],
+      ["line-3", envelope.bytes, {
+        generation,
+        payloadOffset: String(envelope.payloadOffset + 1),
+        state: "audio",
+      }],
+      ["line-4", corrupted, {
+        generation,
+        payloadOffset: String(envelope.payloadOffset),
+        state: "audio",
+      }],
+      ["line-5", envelope.bytes.subarray(0, envelope.payloadOffset - 1), {
+        generation,
+        payloadOffset: String(envelope.payloadOffset),
+        state: "audio",
+      }],
+      ["line-6", envelope.bytes.subarray(0, envelope.payloadOffset), {
+        generation,
+        payloadOffset: String(envelope.payloadOffset),
+        state: "audio",
+      }],
+    ];
+    const bucket = createBucket([
+      [MARKER_KEY, {
+        bytes: fenceBytes("marker", generation, "ready"),
+        options: { customMetadata: { generation, state: "ready" } },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+      ...cases.map(([lineId, bytes, customMetadata]) => [slotKey(lineId), {
+        bytes,
+        options: {
+          customMetadata,
+          httpMetadata: { contentType: "audio/webm" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }]),
+    ]);
+
+    const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
+    const payload = await status.json();
+    assert.deepEqual(
+      payload.lines.filter(({ saved }) => saved).map(({ id }) => id),
+      [],
+    );
+    for (const [lineId] of cases) {
+      assert.equal((await callDub({
+        bucket,
+        method: "GET",
+        path: `${DUB_PATH}/lines/${lineId}/audio`,
+      })).status, 404, lineId);
+    }
+  });
+
+  it("requires an envelope for explicit legacy audio metadata", async () => {
+    const raw = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 8]);
+    const bucket = createBucket([[slotKey("line-1"), {
+      bytes: raw,
+      options: {
+        customMetadata: { generation: "legacy", state: "audio" },
+        httpMetadata: { contentType: "audio/webm" },
+      },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+
+    const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
+    assert.equal((await status.json()).lines[0].saved, false);
+    assert.equal((await callDub({
+      bucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    })).status, 404);
+  });
+
+  it("streams split validated envelopes and raw pre-marker legacy audio byte-exactly", async () => {
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10, 11]);
+    const envelope = envelopedAudio("legacy", audio);
+    const raw = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 12, 13]);
+    const bucket = createBucket([
+      [slotKey("line-1"), {
+        bytes: envelope.bytes,
+        chunks: [
+          envelope.bytes.subarray(0, 2),
+          envelope.bytes.subarray(2, envelope.payloadOffset + 2),
+          envelope.bytes.subarray(envelope.payloadOffset + 2),
+        ],
+        options: {
+          customMetadata: {
+            generation: "legacy",
+            payloadOffset: String(envelope.payloadOffset),
+            state: "audio",
+          },
+          httpMetadata: { contentType: "audio/webm" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+      [slotKey("line-2"), {
+        bytes: raw,
+        options: {
+          customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
+          httpMetadata: { contentType: "audio/webm" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+    ]);
+
+    const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
+    assert.deepEqual(
+      (await status.json()).lines.filter(({ saved }) => saved).map(({ id }) => id),
+      ["line-1", "line-2"],
+    );
+    for (const [lineId, expected] of [["line-1", audio], ["line-2", raw]]) {
+      const response = await callDub({
+        bucket,
+        method: "GET",
+        path: `${DUB_PATH}/lines/${lineId}/audio`,
+      });
+      assert.equal(response.status, 200, lineId);
+      assert.deepEqual(new Uint8Array(await response.arrayBuffer()), expected, lineId);
+    }
+  });
+
   it("counts and serves only current-generation audio while preserving legacy mode", async () => {
     const bucket = createBucket();
     assert.equal((await callDub({
@@ -937,7 +1220,7 @@ describe("private learner dub API", () => {
     assert.equal(bucket.stored.size, 0);
   });
 
-  it("removes a new deleting marker when account purge begins during reset", async () => {
+  it("leaves a non-audio marker when account purge begins during reset", async () => {
     const bucket = createBucket();
     let checks = 0;
     const response = await callDub({
@@ -950,8 +1233,47 @@ describe("private learner dub API", () => {
 
     assert.equal(response.status, 409);
     assert.equal(checks, 2);
-    assert.equal(bucket.stored.has(MARKER_KEY), false);
-    assert.equal(bucket.stored.size, 0);
+    assert.deepEqual(bucket.calls.delete, []);
+    assert.deepEqual(bucket.stored.get(MARKER_KEY).options.customMetadata, {
+      generation: "reset-1",
+      state: "deleting",
+    });
+    assert.equal(bucket.stored.size, 1);
+  });
+
+  it("does not let a pending retired reset delete its successor marker", async () => {
+    const bucket = createBucket();
+    const pendingCheckStarted = deferred();
+    const releasePendingCheck = deferred();
+    let oldChecks = 0;
+    const oldResetPromise = callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+      pending: async () => {
+        oldChecks += 1;
+        if (oldChecks === 1) return false;
+        pendingCheckStarted.resolve();
+        await releasePendingCheck.promise;
+        return true;
+      },
+    });
+    await pendingCheckStarted.promise;
+
+    const successor = await callDub({
+      bucket,
+      generation: () => "reset-2",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    releasePendingCheck.resolve();
+    const retired = await oldResetPromise;
+
+    assert.equal(successor.status, 204);
+    assert.equal(retired.status, 409);
+    assert.equal(bucket.calls.delete.some((key) => key === MARKER_KEY), false);
+    assertResetTombstones(bucket, "reset-2");
   });
 
   it("normalizes type parameters and accepts WebM, MP4, and Ogg signatures", async () => {
@@ -1063,25 +1385,114 @@ describe("private learner dub API", () => {
     assert.equal(bucket.calls.put.length, 0);
   });
 
-  it("deletes a just-written object when account deletion begins during put", async () => {
+  it("CAS-tombstones a held upload that lands after the account prefix sweep", async () => {
     const bucket = createBucket();
+    const audioPutStarted = deferred();
+    const releaseAudioPut = deferred();
+    const put = bucket.put.bind(bucket);
+    let cleanupFailures = 1;
+    bucket.put = async (key, bytes, options) => {
+      if (options?.customMetadata?.state === "audio") {
+        audioPutStarted.resolve();
+        await releaseAudioPut.promise;
+      }
+      if (
+        options?.customMetadata?.state === "account-deleting" &&
+        cleanupFailures-- > 0
+      ) {
+        throw Object.assign(new Error("put: TooManyRequests (10058)"), {
+          status: 429,
+        });
+      }
+      return put(key, bytes, options);
+    };
+    const remove = bucket.delete.bind(bucket);
+    bucket.delete = async (keys) => {
+      if (!Array.isArray(keys)) throw new Error("unsafe cleanup delete failed");
+      return remove(keys);
+    };
+    let pending = false;
+
+    const responsePromise = callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+      pending: async () => pending,
+    });
+    await audioPutStarted.promise;
+    const swept = await bucket.list({
+      prefix: "personalized-story-art/user-1/",
+    });
+    assert.deepEqual(swept.objects, []);
+    pending = true;
+    releaseAudioPut.resolve();
+    const response = await responsePromise;
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(bucket.calls.delete, []);
+    assert.equal(cleanupFailures, -1);
+    assert.deepEqual(
+      bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
+      "account-deleting",
+    );
+  });
+
+  it("takes account cleanup over after CAS loss to another old writer", async () => {
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 7]);
+    const bucket = createBucket();
+    const cleanupStarted = deferred();
+    const releaseCleanup = deferred();
+    const put = bucket.put.bind(bucket);
+    let held = false;
+    bucket.put = async (key, bytes, options) => {
+      if (options?.customMetadata?.state === "account-deleting" && !held) {
+        held = true;
+        cleanupStarted.resolve();
+        await releaseCleanup.promise;
+      }
+      return put(key, bytes, options);
+    };
+    const remove = bucket.delete.bind(bucket);
+    bucket.delete = async (keys) => {
+      if (!Array.isArray(keys)) {
+        cleanupStarted.resolve();
+        await releaseCleanup.promise;
+      }
+      return remove(keys);
+    };
     let checks = 0;
 
-    const response = await callDub({
-      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+    const responsePromise = callDub({
+      body: audio,
       bucket,
       headers: CONSENT_HEADERS,
       method: "PUT",
       path: `${DUB_PATH}/lines/line-1`,
       pending: async () => ++checks > 1,
     });
+    await cleanupStarted.promise;
+    const firstWriter = bucket.stored.get(slotKey("line-1"));
+    const racer = envelopedAudio("legacy-racer", audio);
+    await put(slotKey("line-1"), racer.bytes, {
+      customMetadata: {
+        generation: "legacy-racer",
+        payloadOffset: String(racer.payloadOffset),
+        state: "audio",
+      },
+      httpMetadata: { contentType: "audio/webm" },
+      onlyIf: { etagMatches: firstWriter.etag },
+    });
+    releaseCleanup.resolve();
+    const response = await responsePromise;
 
     assert.equal(response.status, 409);
-    assert.equal(bucket.calls.put.length, 1);
-    assert.deepEqual(bucket.calls.delete, [
-      "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/line-1.audio",
-    ]);
-    assert.equal(bucket.stored.size, 0);
+    assert.deepEqual(bucket.calls.delete, []);
+    assert.equal(
+      bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
+      "account-deleting",
+    );
   });
 
   it("returns private 404s for missing audio and route mismatches", async () => {
