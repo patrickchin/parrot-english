@@ -1,4 +1,9 @@
-import { ChevronDown, CircleUserRound, LoaderCircle } from "lucide-react";
+import {
+  ChevronDown,
+  CircleUserRound,
+  LoaderCircle,
+  TriangleAlert,
+} from "lucide-react";
 import {
   useEffect,
   useId,
@@ -94,6 +99,7 @@ export function AccountHeader({
   onDeleteAccount,
   onOpenProfile,
   onSignOut,
+  signOutError,
   userEmail,
   userLabel,
 }: {
@@ -102,6 +108,7 @@ export function AccountHeader({
   onDeleteAccount: (password: string) => Promise<string | null>;
   onOpenProfile: (() => void) | null;
   onSignOut: () => void;
+  signOutError: string;
   userEmail: string;
   userLabel: string;
 }) {
@@ -112,6 +119,7 @@ export function AccountHeader({
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
+  const signOutAlertId = useId();
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -211,9 +219,10 @@ export function AccountHeader({
     >
       <div
         className={cx(
-          "relative inline-flex max-w-full",
-          isSigningOut &&
+          "relative inline-flex max-w-full flex-row-reverse items-start gap-4",
+          (isSigningOut || Boolean(signOutError)) &&
             "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
+          Boolean(signOutError) && "wide:w-auto",
         )}
       >
         <ActionButton
@@ -227,7 +236,7 @@ export function AccountHeader({
           aria-expanded={isMenuOpen}
           aria-haspopup="menu"
           className={cx(
-            "max-w-full",
+            "max-w-full shrink-0",
             isSigningOut &&
               "!w-full aria-disabled:!pointer-events-auto aria-disabled:!cursor-wait aria-disabled:!opacity-100 wide:!w-full",
           )}
@@ -261,6 +270,23 @@ export function AccountHeader({
             />
           </span>
         </ActionButton>
+        {signOutError && !isSigningOut ? (
+          <ActionButton
+            aria-describedby={signOutAlertId}
+            className="!min-w-0 flex-1 !gap-1 !px-1 !py-0 leading-tight short:!min-h-11 wide:flex-none wide:!px-3"
+            onClick={selectSignOut}
+            size="compact"
+            type="button"
+            variant="navy"
+          >
+            <TriangleAlert
+              aria-hidden="true"
+              className="size-4 shrink-0 text-brand-yellow"
+              strokeWidth={3}
+            />
+            <span>Sign out again</span>
+          </ActionButton>
+        ) : null}
         <span
           aria-atomic="true"
           aria-live="polite"
@@ -285,6 +311,14 @@ export function AccountHeader({
           )}
         </span>
       </div>
+      <span
+        aria-atomic="true"
+        className="sr-only"
+        id={signOutAlertId}
+        role="alert"
+      >
+        {signOutError}
+      </span>
       {isMenuOpen && !isSigningOut ? (
         <div
           className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"

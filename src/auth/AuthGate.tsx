@@ -67,7 +67,7 @@ interface DeleteAccountSessionOptions {
   refetch: () => Promise<unknown>;
 }
 
-const SIGN_OUT_ERROR_MESSAGE = "Unable to sign you out. Please try again.";
+const SIGN_OUT_ERROR_MESSAGE = "Sign out did not finish.";
 const DELETE_ACCOUNT_ERROR_MESSAGE =
   "Unable to delete the account. The account and private story art were kept. Please try again.";
 
@@ -194,6 +194,7 @@ interface AuthGateViewProps {
   profileError: string;
   session: AuthSession | null;
   sessionError: unknown;
+  signOutError: string;
   signedOutFallback: ReactNode | null;
 }
 
@@ -216,6 +217,7 @@ export function AuthGateView({
   profileError,
   session,
   sessionError,
+  signOutError,
   signedOutFallback,
 }: AuthGateViewProps) {
   if (isPending || isRetrying) {
@@ -405,6 +407,7 @@ export function AuthGateView({
         onDeleteAccount={onDeleteAccount}
         onOpenProfile={onOpenProfile}
         onSignOut={onSignOut}
+        signOutError={signOutError}
         userEmail={session.user.email}
         userLabel={userLabel}
       />
@@ -460,16 +463,19 @@ export function createAuthGate({
     const [formError, setFormError] = stateHook("");
     const [isSubmitting, setIsSubmitting] = stateHook(false);
     const [isSigningOut, setIsSigningOut] = stateHook(false);
+    const [signOutError, setSignOutError] = stateHook("");
     const [isRetrying, setIsRetrying] = stateHook(false);
     const [profileAction, setProfileAction] =
       stateHook<ProfileAccountAction>(null);
     const signOutAttemptRef = useRef<object | null>(null);
 
     useEffect(() => {
-      if (session !== null || signOutAttemptRef.current === null) return;
+      if (session !== null) return;
+      setSignOutError("");
+      if (signOutAttemptRef.current === null) return;
       signOutAttemptRef.current = null;
       setIsSigningOut(false);
-    }, [session, setIsSigningOut]);
+    }, [session, setIsSigningOut, setSignOutError]);
 
     function selectMode(nextMode: AuthMode) {
       setMode(nextMode);
@@ -513,6 +519,7 @@ export function createAuthGate({
       signOutAttemptRef.current = attempt;
       setIsSigningOut(true);
       setFormError("");
+      setSignOutError("");
 
       let nextError: string | null;
       try {
@@ -523,7 +530,7 @@ export function createAuthGate({
 
       if (signOutAttemptRef.current !== attempt || nextError === null) return;
       signOutAttemptRef.current = null;
-      setFormError(nextError);
+      setSignOutError(nextError);
       setIsSigningOut(false);
     }
 
@@ -551,6 +558,7 @@ export function createAuthGate({
           profileError={profileAction?.error ?? ""}
           session={session}
           sessionError={error}
+          signOutError={signOutError}
           signedOutFallback={signedOutFallback ?? null}
         >
           {children}

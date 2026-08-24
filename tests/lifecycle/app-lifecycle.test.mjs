@@ -4060,7 +4060,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(account);
     assert.ok(document.querySelector('[role="menu"]'));
     assert.equal(document.querySelector('[role="alert"]'), alert);
-    await press(document.activeElement, "Escape");
+    account.focus();
+    await click(account);
+    assert.equal(document.querySelector('[role="menu"]'), null);
     assert.equal(document.activeElement, account);
 
     await act(async () => {
