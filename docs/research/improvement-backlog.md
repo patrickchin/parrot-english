@@ -1005,6 +1005,22 @@ branches.
     initial focus on Cancel versus a concise static warning/title target, and
     test any `aria-describedby` association for useful rather than overwhelming
     output while preserving focus trap, Enter behavior, and opener focus return.
+39. **Medium: successful sign-out reaches login with document-body focus.** The
+    authenticated route-focus manager unmounts with the protected shell, so the
+    resulting **Welcome back** screen does not inherit the normal route-heading
+    focus boundary. Test a signed-out-shell focus owner without double-focusing
+    ordinary login arrival or competing with password-manager and browser focus.
+40. **Medium: Sign out can discard unsaved custom-lesson work without a scoped
+    warning.** Ordinary sign-out should stay direct, but lesson creation and
+    editing can contain dirty local changes. Audit Back, route navigation, and
+    Sign out together, then introduce one shared dirty-exit boundary only if the
+    actual persistence model confirms loss. See UX-10 in the source register.
+41. **Medium: failed Sign out covers narrow page headings and requires an
+    inferred retry path.** The existing absolute alert covers all of **Pick a
+    lesson** at 280x568 and most of it at 390x844; keyboard focus remains on the
+    Account locus and the user must reopen the menu to retry. Compare a compact
+    anchored error plus explicit **Try again** against the existing alert without
+    weakening assertive announcement, retry guards, or arbitrary-identity fit.
 
 ### Test-infrastructure observation
 
