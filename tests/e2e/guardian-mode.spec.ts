@@ -87,9 +87,19 @@ for (const viewport of requiredViewports) {
       name: /Profile for Mia, learner mode/,
     });
     const switcher = await openModeSwitch(page, "learner");
+    const identity = page.getByRole("group", { name: "Active profile" });
 
     await expectInsideViewport(trigger, viewport);
     await expectInsideViewport(switcher, viewport);
+    const identityBox = await visibleBox(identity);
+    const switcherBox = await visibleBox(switcher);
+    await expect(identity.locator("xpath=following-sibling::*[1]")).toHaveAttribute(
+      "aria-label",
+      "Choose profile mode",
+    );
+    const switcherGap = switcherBox.y - (identityBox.y + identityBox.height);
+    expect(switcherGap).toBeGreaterThanOrEqual(0);
+    expect(switcherGap).toBeLessThanOrEqual(16);
     await expect(
       switcher.getByRole("button", { name: "Learner" }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -239,6 +249,28 @@ test("a valid guardian unlock resumes after refresh", async ({
   await expect(
     page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
   ).toBeVisible();
+});
+
+test("a seeded guardian expiry stays fixed across refresh", async ({ page }) => {
+  await page.goto(guardianUrl("/", "guardian"));
+  await expect(
+    page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
+  ).toBeVisible();
+  const expiresAtBeforeRefresh = await page.evaluate(async () => {
+    const response = await fetch("/api/guardian-access");
+    const access = (await response.json()) as { expiresAt?: string };
+    return access.expiresAt;
+  });
+
+  await page.reload();
+
+  const expiresAtAfterRefresh = await page.evaluate(async () => {
+    const response = await fetch("/api/guardian-access");
+    const access = (await response.json()) as { expiresAt?: string };
+    return access.expiresAt;
+  });
+  expect(expiresAtBeforeRefresh).toBeTruthy();
+  expect(expiresAtAfterRefresh).toBe(expiresAtBeforeRefresh);
 });
 
 test("an expired guardian session returns the same deep link to the password gate", async ({

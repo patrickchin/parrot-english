@@ -357,7 +357,11 @@ export function AccountHeader({
         <div
           className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"
         >
-          <div className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100">
+          <div
+            aria-label="Active profile"
+            className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
+            role="group"
+          >
             <p className="m-0 min-w-0 break-words" dir="auto">
               {activeLabel}
             </p>

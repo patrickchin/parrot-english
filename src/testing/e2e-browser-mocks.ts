@@ -416,7 +416,9 @@ function readGuardianAccess(): MockGuardianAccess {
       // Fall through to the deterministic scenario state.
     }
   }
-  return initialGuardianAccess();
+  const access = initialGuardianAccess();
+  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+  return access;
 }
 
 let guardianAccess = readGuardianAccess();

@@ -398,7 +398,7 @@ for (const viewport of [
     const panelBox = await visibleBox(panel);
     const statusBox = await visibleBox(status);
     const retryBox = await visibleBox(retry);
-    expect(statusBox.width).toBeGreaterThanOrEqual(44);
+    expect(statusBox.width).toBeGreaterThanOrEqual(180);
     expect(retryBox.height).toBeGreaterThanOrEqual(44);
     expect(retryBox.width).toBeGreaterThanOrEqual(44);
     expect(panelBox.y).toBeGreaterThanOrEqual(0);
