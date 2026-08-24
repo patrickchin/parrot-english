@@ -560,10 +560,15 @@ test("a failed sign out keeps Account beside one specific retry", async ({
 }) => {
   const viewport = { height: 568, name: "ultra narrow", width: 280 };
   const identity = { email: longAccountEmail, name: longAccountName };
+  let releaseRetry = () => {};
   let signOutRequests = 0;
+  const heldRetry = new Promise<void>((resolveRetry) => {
+    releaseRetry = resolveRetry;
+  });
   await installAccountIdentity(page, () => identity);
   await page.route("**/api/auth/sign-out", async (route) => {
     signOutRequests += 1;
+    if (signOutRequests === 2) await heldRetry;
     await route.abort("failed");
   });
   await page.setViewportSize(viewport);
@@ -624,16 +629,35 @@ test("a failed sign out keeps Account beside one specific retry", async ({
     ),
   ).toBe(true);
   await expect(retry).toBeVisible();
+  const readyAccountName = await account.getAttribute("aria-label");
+  expect(readyAccountName).toBeTruthy();
 
   await retry.evaluate((control) => {
-    control.click();
-    control.click();
+    (control as HTMLElement).click();
+    (control as HTMLElement).click();
   });
-  await expect(account).toBeFocused();
-  await expect(alert).toHaveText("Sign out did not finish.");
+  const pendingAccount = page.getByRole("button", {
+    exact: true,
+    name: `Signing out… ${readyAccountName}`,
+  });
+  await expect(pendingAccount).toBeFocused();
+  await expect(alert).toHaveText("");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Signing out…" }),
+  ).toBeVisible();
   await expect(menu).toBeHidden();
-  await expect(account).toHaveAttribute("aria-expanded", "false");
+  await expect(pendingAccount).toHaveAttribute("aria-expanded", "false");
   expect(signOutRequests).toBe(2);
+  expect(
+    await alert.evaluate(
+      (element) =>
+        (window as Window & { signOutAlert?: Element }).signOutAlert === element,
+    ),
+  ).toBe(true);
+
+  releaseRetry();
+  await expect(alert).toHaveText("Sign out did not finish.");
+  await expect(account).toBeFocused();
 
   await account.click();
   await expect(menu).toBeVisible();
@@ -660,6 +684,116 @@ test("a failed sign out keeps Account beside one specific retry", async ({
     viewport.height,
   );
 });
+
+for (const viewport of [
+  { height: 568, name: "ultra narrow", width: 280 },
+  { height: 844, name: "regular phone", width: 390 },
+  { height: 360, name: "short landscape", width: 640 },
+]) {
+  test(`sign-out recovery stays clear with text spacing on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.route("**/api/auth/sign-out", (route) =>
+      route.abort("failed"),
+    );
+    await page.setViewportSize(viewport);
+    await page.goto("/lessons");
+    await page.addStyleTag({
+      content: `
+        * {
+          letter-spacing: 0.12em !important;
+          line-height: 1.5 !important;
+          word-spacing: 0.16em !important;
+        }
+        p { margin-bottom: 2em !important; }
+      `,
+    });
+
+    const heading = page.getByRole("heading", { name: "Pick a lesson" });
+    const back = page.getByRole("link", { name: "Back to home" });
+    const account = page.getByRole("button", { name: "Account for Mia" });
+    await account.click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+
+    const retry = page.getByRole("button", {
+      exact: true,
+      name: "Sign out again",
+    });
+    const retryBox = await expectInsideViewport(retry, viewport);
+    expect(boxesOverlap(retryBox, await visibleBox(heading))).toBe(false);
+    expect(boxesOverlap(retryBox, await visibleBox(back))).toBe(false);
+    expect(boxesOverlap(retryBox, await visibleBox(account))).toBe(false);
+    const sizing = await retry.evaluate((control) => ({
+      clientHeight: control.clientHeight,
+      clientWidth: control.clientWidth,
+      scrollHeight: control.scrollHeight,
+      scrollWidth: control.scrollWidth,
+    }));
+    expect(sizing.scrollHeight).toBeLessThanOrEqual(sizing.clientHeight);
+    expect(sizing.scrollWidth).toBeLessThanOrEqual(sizing.clientWidth);
+    await page.keyboard.press("Tab");
+    await expect(retry).toBeFocused();
+    const retryPaint = await focusedPaintBox(retry);
+    expectBoxInside(retryPaint, {
+      height: viewport.height,
+      width: viewport.width,
+      x: 0,
+      y: 0,
+    });
+    expect(boxesOverlap(retryPaint, await visibleBox(heading))).toBe(false);
+    expect(boxesOverlap(retryPaint, await visibleBox(back))).toBe(false);
+    expect(boxesOverlap(retryPaint, await visibleBox(account))).toBe(false);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(viewport.width);
+  });
+}
+
+for (const key of ["Enter", "Space"]) {
+  test(`${key} starts one sign-out retry and pending absorbs another press`, async ({
+    page,
+  }) => {
+    let releaseRetry = () => {};
+    let signOutRequests = 0;
+    const heldRetry = new Promise<void>((resolveRetry) => {
+      releaseRetry = resolveRetry;
+    });
+    await page.route("**/api/auth/sign-out", async (route) => {
+      signOutRequests += 1;
+      if (signOutRequests === 2) await heldRetry;
+      await route.abort("failed");
+    });
+    await page.goto("/lessons");
+
+    const account = page.getByRole("button", { name: "Account for Mia" });
+    await account.click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+    const retry = page.getByRole("button", {
+      exact: true,
+      name: "Sign out again",
+    });
+    await page.keyboard.press("Tab");
+    await expect(retry).toBeFocused();
+    await retry.press(key);
+
+    const pendingAccount = page.getByRole("button", {
+      exact: true,
+      name: "Signing out… Account for Mia",
+    });
+    await expect(pendingAccount).toBeFocused();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Signing out…" }),
+    ).toBeVisible();
+    await page.keyboard.press(key);
+    expect(signOutRequests).toBe(2);
+
+    releaseRetry();
+    await expect(page.getByRole("alert")).toHaveText(
+      "Sign out did not finish.",
+    );
+    await expect(account).toBeFocused();
+  });
+}
 
 test("wide pending sign out keeps its established 180px frame", async ({
   page,

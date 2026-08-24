@@ -130,7 +130,7 @@ test("reconnecting and error states keep recovery language in the same stage", a
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
   await startSmallChat(page);
-  await expect(page.getByRole("alert")).toHaveText(
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Peppa cannot talk now. Tap Try again.",
   );
   await expect(page.getByText(/voice room/i)).toHaveCount(0);
@@ -157,7 +157,7 @@ test("a technical start response becomes one literal child recovery step", async
   await page.goto("/talk-to-peppa");
   await startSmallChat(page);
 
-  const alert = page.getByRole("alert");
+  const alert = page.getByRole("main").getByRole("alert");
   await expect(alert).toHaveText("Peppa cannot talk now. Tap Try again.");
   await expect(page.getByText(/LIVEKIT_URL|conversation request/i)).toHaveCount(
     0,
@@ -181,7 +181,7 @@ test("a technical finish response names the control that retries the save", asyn
   await startSmallChat(page);
   await page.getByRole("button", { name: "Finish chat" }).click();
 
-  await expect(page.getByRole("alert")).toHaveText(
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "The chat did not finish. Tap Finish chat again.",
   );
   await expect(page.getByText(/D1 transaction|conversation request/i)).toHaveCount(

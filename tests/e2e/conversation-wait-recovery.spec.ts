@@ -145,7 +145,7 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("button", { name: "Finish chat" }),
     ).toBeHidden();
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await expect(page.getByRole("img", { name: "Peppa" })).toHaveAttribute(
       "src",
       /peppa-sad-768\.webp$/,
@@ -218,7 +218,7 @@ test("a timed-out connection gets one retry before a lesson alternative", async 
   await expect(captions).toContainText(
     "The chat did not start.",
   );
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
   expectSameBox(captionsBox, await box(captions));
 
   await retry.click();
@@ -286,7 +286,7 @@ for (const viewport of [
 
     const retry = page.getByRole("button", { name: "Try again" });
     await expect(retry).toBeVisible();
-    await expect(page.getByRole("alert")).toHaveText(
+    await expect(page.getByRole("main").getByRole("alert")).toHaveText(
       "Peppa cannot talk now. Tap Try again.",
     );
     await retry.click();
@@ -306,7 +306,7 @@ for (const viewport of [
     await expect(lesson).toBeVisible();
     await expect(lessonCover).toBeVisible();
     await expect(retry).toBeHidden();
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Finish chat" }),
     ).toHaveCount(0);

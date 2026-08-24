@@ -3987,7 +3987,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
   it("keeps Account available and retries sign out from one persistent alert", async () => {
     const failure = deferred();
-    const success = deferred();
+    const secondFailure = deferred();
     let signOutCalls = 0;
     const client = createSessionClient({
       data: { user: { email: "mia@example.com", name: "Mia" } },
@@ -3998,7 +3998,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       client,
       signOutAction() {
         signOutCalls += 1;
-        return signOutCalls === 1 ? failure.promise : success.promise;
+        return signOutCalls === 1 ? failure.promise : secondFailure.promise;
       },
     });
 
@@ -4078,17 +4078,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(document.querySelector('[role="alert"]'), alert);
     noText(/Sign out again/);
 
-    success.resolve(null);
-    await flush();
-    assert.equal(account.getAttribute("aria-disabled"), "true");
-    assert.equal(status.textContent.trim(), "Signing out…");
-
-    await act(async () => {
-      client.publish({ data: null, error: null, isPending: false });
+    secondFailure.resolve("Sign out did not finish.");
+    await waitFor(() => {
+      assert.equal(account.getAttribute("aria-disabled"), null);
+      assert.equal(status.textContent.trim(), "");
+      assert.equal(alert.textContent.trim(), "Sign out did not finish.");
     });
-    await waitFor(() => text(/Welcome back/));
-    assert.equal(document.querySelector('[role="status"]'), null);
-    noText(/AUTHENTICATED APP/);
+    assert.equal(document.querySelector('[role="alert"]'), alert);
+    assert.equal(document.activeElement, account);
+    button("Sign out again");
   });
 
   it("ignores a stale sign-out result after session re-entry", async () => {
@@ -4162,6 +4160,105 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Sign out again"));
     assert.equal(signOutCalls, 3);
     assert.equal(account.getAttribute("aria-disabled"), "true");
+  });
+
+  it("isolates pending sign out when the authenticated identity changes directly", async () => {
+    const firstAttempt = deferred();
+    const secondAttempt = deferred();
+    let signOutCalls = 0;
+    const client = createSessionClient({
+      data: {
+        user: { email: "mia@example.com", id: "user-mia", name: "Mia" },
+      },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction() {
+        signOutCalls += 1;
+        return signOutCalls === 1 ? firstAttempt.promise : secondAttempt.promise;
+      },
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
+    assert.equal(button("Signing out… Account for Mia").getAttribute("aria-disabled"), "true");
+
+    await act(async () => {
+      client.publish({
+        data: {
+          user: { email: "noah@example.com", id: "user-noah", name: "Noah" },
+        },
+        error: null,
+        isPending: false,
+      });
+    });
+    const noahAccount = await waitFor(() => button("Account for Noah"));
+    assert.equal(noahAccount.getAttribute("aria-disabled"), null);
+    noText(/Signing out|Sign out did not finish|Sign out again/);
+
+    await click(noahAccount);
+    await click(button("Sign out"));
+    assert.equal(signOutCalls, 2);
+    assert.equal(noahAccount.getAttribute("aria-disabled"), "true");
+
+    firstAttempt.resolve("Sign out did not finish.");
+    await flush();
+    assert.equal(noahAccount.getAttribute("aria-disabled"), "true");
+    noText(/Sign out did not finish|Sign out again/);
+
+    secondAttempt.resolve("Sign out did not finish.");
+    await waitFor(() => {
+      assert.equal(noahAccount.getAttribute("aria-disabled"), null);
+      text(/Sign out did not finish/);
+      button("Sign out again");
+    });
+  });
+
+  it("clears failed sign out when the authenticated identity changes directly", async () => {
+    const client = createSessionClient({
+      data: {
+        user: { email: "mia@example.com", id: "user-mia", name: "Mia" },
+      },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      signOutAction: async () => "Sign out did not finish.",
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement("p", null, "AUTHENTICATED APP"),
+      ),
+    );
+    await click(button("Account for Mia"));
+    await click(button("Sign out"));
+    await waitFor(() => button("Sign out again"));
+
+    await act(async () => {
+      client.publish({
+        data: {
+          user: { email: "noah@example.com", id: "user-noah", name: "Noah" },
+        },
+        error: null,
+        isPending: false,
+      });
+    });
+    const noahAccount = await waitFor(() => button("Account for Noah"));
+    assert.equal(noahAccount.getAttribute("aria-disabled"), null);
+    noText(/Sign out did not finish|Sign out again/);
   });
 
   it("keeps a mounted acknowledgment until Next and focuses each new message once", async () => {

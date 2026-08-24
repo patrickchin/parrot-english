@@ -171,6 +171,7 @@ export async function deleteAccountSession({
 interface AuthSession {
   user: {
     email: string;
+    id?: string | null;
     name?: string | null;
   };
 }
@@ -423,6 +424,26 @@ interface AuthGateProps {
 
 const EMPTY_FIELDS: AuthFields = { name: "", email: "", password: "" };
 
+interface SignOutState {
+  error: string;
+  isPending: boolean;
+  owner: string | null;
+}
+
+const EMPTY_SIGN_OUT_STATE: SignOutState = {
+  error: "",
+  isPending: false,
+  owner: null,
+};
+
+function getSessionIdentity(session: AuthSession | null) {
+  if (!session) return null;
+  const id = session.user.id?.trim();
+  return id
+    ? `id:${id}`
+    : `email:${session.user.email.trim().toLowerCase()}`;
+}
+
 interface AuthGateClient extends AuthActionClient {
   useSession(): {
     data: AuthSession | null;
@@ -462,20 +483,26 @@ export function createAuthGate({
     const [fields, setFields] = stateHook<AuthFields>(EMPTY_FIELDS);
     const [formError, setFormError] = stateHook("");
     const [isSubmitting, setIsSubmitting] = stateHook(false);
-    const [isSigningOut, setIsSigningOut] = stateHook(false);
-    const [signOutError, setSignOutError] = stateHook("");
+    const [signOutState, setSignOutState] =
+      stateHook<SignOutState>(EMPTY_SIGN_OUT_STATE);
     const [isRetrying, setIsRetrying] = stateHook(false);
     const [profileAction, setProfileAction] =
       stateHook<ProfileAccountAction>(null);
-    const signOutAttemptRef = useRef<object | null>(null);
+    const signOutAttemptRef = useRef<{ owner: string } | null>(null);
+    const sessionIdentity = getSessionIdentity(session);
+    const ownsSignOutState =
+      sessionIdentity !== null && signOutState.owner === sessionIdentity;
 
     useEffect(() => {
-      if (session !== null) return;
-      setSignOutError("");
-      if (signOutAttemptRef.current === null) return;
+      if (
+        signOutState.owner === null ||
+        signOutState.owner === sessionIdentity
+      ) {
+        return;
+      }
       signOutAttemptRef.current = null;
-      setIsSigningOut(false);
-    }, [session, setIsSigningOut, setSignOutError]);
+      setSignOutState(EMPTY_SIGN_OUT_STATE);
+    }, [sessionIdentity, setSignOutState, signOutState.owner]);
 
     function selectMode(nextMode: AuthMode) {
       setMode(nextMode);
@@ -514,12 +541,16 @@ export function createAuthGate({
     }
 
     async function handleSignOut() {
-      if (signOutAttemptRef.current !== null) return;
-      const attempt = {};
+      if (sessionIdentity === null) return;
+      if (signOutAttemptRef.current?.owner === sessionIdentity) return;
+      const attempt = { owner: sessionIdentity };
       signOutAttemptRef.current = attempt;
-      setIsSigningOut(true);
+      setSignOutState({
+        error: "",
+        isPending: true,
+        owner: sessionIdentity,
+      });
       setFormError("");
-      setSignOutError("");
 
       let nextError: string | null;
       try {
@@ -530,8 +561,11 @@ export function createAuthGate({
 
       if (signOutAttemptRef.current !== attempt || nextError === null) return;
       signOutAttemptRef.current = null;
-      setSignOutError(nextError);
-      setIsSigningOut(false);
+      setSignOutState({
+        error: nextError,
+        isPending: false,
+        owner: sessionIdentity,
+      });
     }
 
     async function handleDeleteAccount(password: string) {
@@ -545,7 +579,7 @@ export function createAuthGate({
           formError={formError}
           isPending={isPending}
           isRetrying={isRetrying}
-          isSigningOut={isSigningOut}
+          isSigningOut={ownsSignOutState && signOutState.isPending}
           isSubmitting={isSubmitting}
           mode={mode}
           onDeleteAccount={handleDeleteAccount}
@@ -558,7 +592,7 @@ export function createAuthGate({
           profileError={profileAction?.error ?? ""}
           session={session}
           sessionError={error}
-          signOutError={signOutError}
+          signOutError={ownsSignOutState ? signOutState.error : ""}
           signedOutFallback={signedOutFallback ?? null}
         >
           {children}

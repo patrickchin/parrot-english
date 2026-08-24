@@ -220,9 +220,9 @@ export function AccountHeader({
       <div
         className={cx(
           "relative inline-flex max-w-full flex-row-reverse items-start gap-4",
-          (isSigningOut || Boolean(signOutError)) &&
-            "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
-          Boolean(signOutError) && "wide:w-auto",
+          isSigningOut && "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
+          Boolean(signOutError) &&
+            "w-[12.875rem] !gap-3 min-[360px]:w-[13.375rem] md:w-[13.875rem] wide:w-auto",
         )}
       >
         <ActionButton
@@ -273,7 +273,7 @@ export function AccountHeader({
         {signOutError && !isSigningOut ? (
           <ActionButton
             aria-describedby={signOutAlertId}
-            className="!min-w-0 flex-1 !gap-1 !px-1 !py-0 leading-tight short:!min-h-11 wide:flex-none wide:!px-3"
+            className="!min-w-0 flex-1 !gap-0.5 !px-0.5 !py-0 leading-tight whitespace-nowrap short:!min-h-11 wide:flex-none wide:!gap-1 wide:!px-3"
             onClick={selectSignOut}
             size="compact"
             type="button"

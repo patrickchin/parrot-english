@@ -1,6 +1,13 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
+
+const require = createRequire(import.meta.url);
+const playwrightVersion = (
+  require("@playwright/test/package.json") as { version: string }
+).version;
 
 const artifactDirectory = resolve(
   "artifacts/ux-review/account-sign-out-feedback/implementation",
@@ -70,6 +77,19 @@ function summarize(samples: number[]) {
     minimum: round(ordered[0] ?? 0),
     p95: round(percentile(0.95)),
   };
+}
+
+async function applyTextSpacing(page: Page) {
+  await page.addStyleTag({
+    content: `
+      * {
+        letter-spacing: 0.12em !important;
+        line-height: 1.5 !important;
+        word-spacing: 0.16em !important;
+      }
+      p { margin-bottom: 2em !important; }
+    `,
+  });
 }
 
 const viewports = [
@@ -258,8 +278,8 @@ for (const viewport of viewports) {
     }
 
     await retry.evaluate((control) => {
-      control.click();
-      control.click();
+      (control as HTMLElement).click();
+      (control as HTMLElement).click();
     });
     await expect(account).toBeFocused();
     await expect(alert).toHaveText("Sign out did not finish.");
@@ -272,6 +292,8 @@ for (const viewport of viewports) {
 
 if (shouldCaptureRecoveryEvidence) {
   test("records sign-out recovery geometry and local feedback timing", async ({
+    browser,
+    browserName,
     page,
   }) => {
     const geometry = [];
@@ -438,10 +460,18 @@ if (shouldCaptureRecoveryEvidence) {
     );
     const evidence = {
       capture: {
-        browser: "Playwright Chromium",
+        browser: browserName,
+        browserVersion: browser.version(),
+        captureSourceCommit: execFileSync("git", ["rev-parse", "HEAD"], {
+          encoding: "utf8",
+        }).trim(),
         conditions:
-          "Local Vite server; sign-out request aborted immediately; five fresh document loads per viewport.",
-        implementationCommit: "fdd5897e3a7a1e12dc76f74ed77c7ca1ac3ce8be",
+          "Local Vite server; one browser context and page reused; five fresh document loads per viewport; first load may warm browser cache; sign-out request aborted immediately.",
+        devicePixelRatio: await page.evaluate(() => window.devicePixelRatio),
+        headless: true,
+        node: process.version,
+        platform: `${process.platform}-${process.arch}`,
+        playwright: playwrightVersion,
       },
       geometry,
       timing: {
@@ -664,6 +694,105 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
       path: resolve(
         recoveryArtifactDirectory,
         "retry-focus-lesson-player-640x360.png",
+      ),
+    });
+  }
+});
+
+test("sign-out recovery keeps text-spacing focus clear of the narrow shelf", async ({
+  page,
+}) => {
+  await page.route("**/api/auth/sign-out", (route) => route.abort("failed"));
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/lessons");
+  await applyTextSpacing(page);
+
+  const heading = page.getByRole("heading", { name: "Pick a lesson" });
+  const account = page.getByRole("button", { name: "Account for Mia" });
+  await account.click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Sign out did not finish.",
+  );
+  await expect(account).toBeFocused();
+  const retry = page.getByRole("button", {
+    exact: true,
+    name: "Sign out again",
+  });
+  await page.keyboard.press("Tab");
+  await expect(retry).toBeFocused();
+  const retryPaint = await focusedPaintBox(retry);
+  expect(boxesOverlap(retryPaint, (await heading.boundingBox())!)).toBe(false);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(280);
+
+  if (shouldCaptureRecoveryEvidence) {
+    mkdirSync(recoveryArtifactDirectory, { recursive: true });
+    await page.screenshot({
+      animations: "disabled",
+      path: resolve(
+        recoveryArtifactDirectory,
+        "text-spacing-retry-focus-280x568.png",
+      ),
+    });
+  }
+});
+
+test("sign-out recovery keeps text-spacing focus clear of the lesson HUD", async ({
+  page,
+}) => {
+  await page.route("**/api/auth/sign-out", (route) => route.abort("failed"));
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
+  await page.evaluate(() => {
+    class HeldAudio {
+      onended: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      pause() {}
+
+      play() {
+        return Promise.resolve();
+      }
+    }
+    Object.defineProperty(window, "Audio", {
+      configurable: true,
+      value: HeldAudio,
+    });
+  });
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  await applyTextSpacing(page);
+
+  const hud = page.getByRole("region", { name: "Lesson progress" });
+  const speech = page.getByRole("status").filter({ hasText: "Look! My ball!" });
+  const account = page.getByRole("button", { name: "Account for Mia" });
+  await account.click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Sign out did not finish.",
+  );
+  await expect(account).toBeFocused();
+  const retry = page.getByRole("button", {
+    exact: true,
+    name: "Sign out again",
+  });
+  await page.keyboard.press("Tab");
+  await expect(retry).toBeFocused();
+  const retryPaint = await focusedPaintBox(retry);
+  expect(boxesOverlap(retryPaint, (await hud.boundingBox())!)).toBe(false);
+  expect(boxesOverlap(retryPaint, (await speech.boundingBox())!)).toBe(false);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(640);
+
+  if (shouldCaptureRecoveryEvidence) {
+    mkdirSync(recoveryArtifactDirectory, { recursive: true });
+    await page.screenshot({
+      animations: "disabled",
+      path: resolve(
+        recoveryArtifactDirectory,
+        "text-spacing-retry-focus-lesson-player-640x360.png",
       ),
     });
   }
