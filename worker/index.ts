@@ -27,6 +27,7 @@ import {
   handlePersonalizedStoryArtRequest,
   type PersonalizedStoryArtEnv,
 } from "./personalized-story-art.ts";
+import { handleDubRequest, type DubEnv } from "./dubs.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
 
 interface AssetFetcher {
@@ -39,7 +40,8 @@ interface Env
     RateLimitEnv,
     ConversationEnv,
     MyLessonsEnv,
-    PersonalizedStoryArtEnv {
+    PersonalizedStoryArtEnv,
+    DubEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
@@ -57,6 +59,7 @@ interface WorkerDependencies {
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
+  handleDubRequest: typeof handleDubRequest;
 }
 
 function isLearnerProfilePath(pathname: string) {
@@ -81,6 +84,10 @@ function isMyLessonPath(pathname: string) {
 
 function isPersonalizedStoryArtPath(pathname: string) {
   return /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname);
+}
+
+function isDubPath(pathname: string) {
+  return pathname === "/api/dubs" || pathname.startsWith("/api/dubs/");
 }
 
 export function createWorker(
@@ -110,6 +117,7 @@ export function createWorker(
   const personalizedStoryArtRequest =
     dependencies.handlePersonalizedStoryArtRequest ??
     handlePersonalizedStoryArtRequest;
+  const dubRequest = dependencies.handleDubRequest ?? handleDubRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
 
   return {
@@ -134,6 +142,31 @@ export function createWorker(
         url.pathname.startsWith("/api/auth/")
       ) {
         return authFactory(env).handler(request);
+      }
+
+      if (isDubPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json(
+            { error: "unauthorized" },
+            {
+              headers: { "Cache-Control": "private, no-store" },
+              status: 401,
+            },
+          );
+        }
+        return dubRequest({
+          database: createDatabase(env.DB),
+          env,
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+            userName: session.user.name?.trim() || null,
+          },
+          request,
+        });
       }
 
       if (isLearnerProfilePath(url.pathname)) {
