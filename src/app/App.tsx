@@ -89,6 +89,7 @@ import {
   type LessonCatalogEntry,
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
+import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
@@ -1124,14 +1125,7 @@ export function ApplicationRoutes({
           path={getGuardianPath()}
         />
         <Route
-          element={
-            <FeaturePlaceholder
-              actionLabel="Back to guardian dashboard"
-              actionTo="/guardian"
-              description="Custom lesson management is getting ready."
-              title="My Lessons"
-            />
-          }
+          element={<GuardianLessonManager />}
           path="/guardian/lessons"
         />
         <Route

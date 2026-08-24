@@ -1,22 +1,11 @@
 import {
   ArrowLeft,
   BookOpen,
-  LockKeyhole,
-  Pencil,
   Play,
-  Plus,
 } from "lucide-react";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
-import {
-  getLessonScenePath,
-  getMyLessonEditPath,
-} from "../app/app-routes";
+import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   LESSONS,
@@ -25,16 +14,14 @@ import {
 } from "./lesson-catalog";
 import {
   ActionButton,
-  ActionLink,
-  cardClassName,
   cx,
   InteractiveCardLink,
-  TextLink,
 } from "../shared/ui";
+import type { MyLessonDescriptor } from "./my-lessons-api";
 import {
-  loadMyLessons,
-  type MyLessonDescriptor,
-} from "./my-lessons-api";
+  useMyLessons,
+  type MyLessonsLoadPhase,
+} from "./useMyLessons";
 
 type LessonCard = {
   id: string;
@@ -100,13 +87,11 @@ function createAvailableLessonCard(
 }
 
 type LessonListViewProps = {
-  grownUpToolsHeadingRef?: RefObject<HTMLHeadingElement | null>;
+  myLessonsStatusRef?: RefObject<HTMLParagraphElement | null>;
   myLessons: MyLessonDescriptor[];
   myLessonsLoadPhase: MyLessonsLoadPhase;
   onRetryMyLessons: () => void;
 };
-
-type MyLessonsLoadPhase = "error" | "loading" | "ready" | "retrying";
 
 function LessonCardView({
   index,
@@ -120,7 +105,7 @@ function LessonCardView({
   const lessonPath = getLessonScenePath(source, lesson.id, 0);
 
   return (
-    <article className="grid min-w-0 gap-1.5">
+    <article className="grid min-w-0">
       <InteractiveCardLink
         aria-label={`Start lesson: ${lesson.title}`}
         className="group grid h-full min-h-32 grid-cols-[6.5rem_minmax(0,1fr)] overflow-hidden p-0 text-left min-[360px]:grid-cols-1"
@@ -162,22 +147,12 @@ function LessonCardView({
           </div>
         </div>
       </InteractiveCardLink>
-      {source === "my" ? (
-        <TextLink
-          aria-label={`Edit lesson: ${lesson.title}`}
-          className="mx-2 gap-1 text-xs sm:text-sm"
-          to={getMyLessonEditPath(lesson.id)}
-        >
-          <Pencil aria-hidden="true" className="size-3.5 shrink-0" />
-          Grown-up: edit
-        </TextLink>
-      ) : null}
     </article>
   );
 }
 
 export function LessonListView({
-  grownUpToolsHeadingRef,
+  myLessonsStatusRef,
   myLessons,
   myLessonsLoadPhase,
   onRetryMyLessons,
@@ -255,126 +230,77 @@ export function LessonListView({
         </section>
       ) : null}
 
-      <aside
-        aria-labelledby="grown-up-tools-title"
-        className={cardClassName({
-          className:
-            "mx-auto mt-10 flex w-full max-w-6xl flex-col items-stretch justify-between gap-4 border-dashed border-brand-navy/45 p-5 sm:flex-row sm:items-center md:mt-14 md:p-7",
-          elevation: "soft",
-          tone: "muted",
-        })}
+      <section
+        aria-label="Saved lesson status"
+        className="mx-auto mt-8 grid w-full max-w-6xl justify-items-center gap-2 text-center md:mt-10"
       >
-        <div className="grid min-w-0 gap-1.5 sm:min-w-50">
-          <h2
-            className="m-0 flex items-center gap-2 rounded-lg text-xl leading-none text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink sm:text-2xl"
-            id="grown-up-tools-title"
-            ref={grownUpToolsHeadingRef}
-            tabIndex={-1}
-          >
-            <LockKeyhole aria-hidden="true" className="size-5 shrink-0" />
-            Grown-up tools
-          </h2>
-          <p className="m-0 font-bold leading-snug text-slate-700">
-            Make a new lesson.
-          </p>
-          <p
-            aria-atomic="true"
-            aria-live="polite"
-            className="m-0 text-sm font-extrabold leading-snug text-brand-blue"
-            id="my-lessons-status"
-            role="status"
-          >
-            {myLessonsLoadPhase === "loading" ||
-            myLessonsLoadPhase === "retrying"
-              ? "Loading My Lessons…"
-              : myLessonsLoadPhase === "error"
-                ? "We couldn't load My Lessons."
-                : myCards.length > 0
-                  ? `${myCards.length} made-for-you ${myCards.length === 1 ? "lesson" : "lessons"}.`
-                  : "No made-for-you lessons yet."}
-          </p>
-          {myLessonsLoadPhase === "error" ||
-          myLessonsLoadPhase === "retrying" ? (
-            <ActionButton
-              aria-disabled={
-                myLessonsLoadPhase === "retrying" ? true : undefined
-              }
-              aria-describedby="my-lessons-status"
-              className={cx(
-                "mt-1 w-fit",
-                myLessonsLoadPhase === "retrying" &&
-                  "pointer-events-none opacity-60",
-              )}
-              onClick={
-                myLessonsLoadPhase === "error"
-                  ? onRetryMyLessons
-                  : undefined
-              }
-              size="compact"
-              type="button"
-              variant="navy"
-            >
-              Try again
-            </ActionButton>
-          ) : null}
-        </div>
-        <ActionLink
-          aria-label="Create custom lesson"
-          className="w-full shrink-0 gap-2 sm:w-auto"
-          to="/lessons/my/create"
+        <p
+          aria-atomic="true"
+          aria-live="polite"
+          className="m-0 rounded-lg text-sm font-extrabold leading-snug text-brand-blue outline-none focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink"
+          id="my-lessons-status"
+          ref={myLessonsStatusRef}
+          role="status"
+          tabIndex={-1}
         >
-          <Plus aria-hidden="true" /> Make a lesson
-        </ActionLink>
-      </aside>
+          {myLessonsLoadPhase === "loading" ||
+          myLessonsLoadPhase === "retrying"
+            ? "Loading My Lessons…"
+            : myLessonsLoadPhase === "error"
+              ? "We couldn't load My Lessons."
+              : myCards.length > 0
+                ? `${myCards.length} made-for-you ${myCards.length === 1 ? "lesson" : "lessons"}.`
+                : "No made-for-you lessons yet."}
+        </p>
+        {myLessonsLoadPhase === "error" ||
+        myLessonsLoadPhase === "retrying" ? (
+          <ActionButton
+            aria-disabled={
+              myLessonsLoadPhase === "retrying" ? true : undefined
+            }
+            aria-describedby="my-lessons-status"
+            className={cx(
+              "w-fit",
+              myLessonsLoadPhase === "retrying" &&
+                "pointer-events-none opacity-60",
+            )}
+            onClick={
+              myLessonsLoadPhase === "error" ? onRetryMyLessons : undefined
+            }
+            size="compact"
+            type="button"
+            variant="navy"
+          >
+            Try again
+          </ActionButton>
+        ) : null}
+      </section>
     </main>
   );
 }
 
 export function LessonList() {
-  const [myLessons, setMyLessons] = useState<MyLessonDescriptor[]>([]);
-  const [myLessonsLoadPhase, setMyLessonsLoadPhase] =
-    useState<MyLessonsLoadPhase>("loading");
-  const [reloadKey, setReloadKey] = useState(0);
+  const { lessons, phase, retry } = useMyLessons();
   const focusAfterRetryRef = useRef(false);
-  const grownUpToolsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const myLessonsStatusRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    setMyLessonsLoadPhase((current) =>
-      current === "retrying" ? current : "loading",
-    );
-    void loadMyLessons({ signal: controller.signal })
-      .then((lessons) => {
-        if (controller.signal.aborted) return;
-        setMyLessons(lessons);
-        setMyLessonsLoadPhase("ready");
-      })
-      .catch(() => {
-        if (controller.signal.aborted) return;
-        setMyLessons([]);
-        setMyLessonsLoadPhase("error");
-      });
-    return () => controller.abort();
-  }, [reloadKey]);
-
-  useEffect(() => {
-    if (myLessonsLoadPhase !== "ready" || !focusAfterRetryRef.current) return;
+    if (phase !== "ready" || !focusAfterRetryRef.current) return;
     focusAfterRetryRef.current = false;
-    grownUpToolsHeadingRef.current?.focus();
-  }, [myLessonsLoadPhase]);
+    myLessonsStatusRef.current?.focus();
+  }, [phase]);
 
   function retryMyLessons() {
-    if (myLessonsLoadPhase !== "error") return;
+    if (phase !== "error") return;
     focusAfterRetryRef.current = true;
-    setMyLessonsLoadPhase("retrying");
-    setReloadKey((current) => current + 1);
+    retry();
   }
 
   return (
     <LessonListView
-      grownUpToolsHeadingRef={grownUpToolsHeadingRef}
-      myLessons={myLessons}
-      myLessonsLoadPhase={myLessonsLoadPhase}
+      myLessons={lessons}
+      myLessonsLoadPhase={phase}
+      myLessonsStatusRef={myLessonsStatusRef}
       onRetryMyLessons={retryMyLessons}
     />
   );

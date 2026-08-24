@@ -100,8 +100,10 @@ test("lesson catalog presents one canonical path without artwork experiments", (
   );
 
   assert.match(html, /Pick a lesson/);
-  assert.match(html, /Grown-up tools/);
-  assert.match(html, /aria-label="Create custom lesson"/);
+  assert.doesNotMatch(
+    html,
+    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson/,
+  );
   assert.doesNotMatch(html, /full-scene|same lesson, same audio|comparison/i);
 });
 
