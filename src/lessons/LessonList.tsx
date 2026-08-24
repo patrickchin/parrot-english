@@ -204,7 +204,10 @@ export function LessonListView({
       </RouteHeader>
 
       <header className="mx-auto mb-5 w-full max-w-6xl text-center md:mb-8">
-        <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-navy sm:text-6xl lg:text-7xl">
+        <h1
+          className="relative mx-auto my-0 w-fit max-w-full text-4xl leading-none tracking-tight text-brand-navy outline-none before:absolute before:top-0 before:-left-3 before:h-full before:max-h-24 before:w-1 before:transition-none before:content-[''] focus:before:bg-brand-blue sm:text-6xl lg:text-7xl forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2"
+          tabIndex={-1}
+        >
           Pick a lesson
         </h1>
         <p className="mx-auto mb-0 mt-2 max-w-xl text-base font-extrabold leading-snug text-brand-blue sm:mt-3 sm:text-lg">
