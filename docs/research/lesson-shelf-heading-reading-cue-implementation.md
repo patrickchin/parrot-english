@@ -2,11 +2,16 @@
 
 Status: implemented and provisionally retained
 
-Date: 2026-08-24  
-Branch: `codex/lesson-shelf-heading-reading-cue`  
-Base branch / dependency: `codex/profile-account-label-clearance` at `86f5f72`  
-Research and baseline commit: `6619248`  
-Rendered-contract commit: `6fc3f3d`  
+Date: 2026-08-24
+
+Branch: `codex/lesson-shelf-heading-reading-cue`
+
+Base branch / dependency: `codex/profile-account-label-clearance` at `86f5f72`
+
+Research and baseline commit: `6619248`
+
+Rendered-contract commit: `6fc3f3d`
+
 Implementation commit: `2081cea`
 
 Review-driven visual revision: `297bd4e`

@@ -1,8 +1,11 @@
 # Lesson shelf heading reading-position cue visual manifest
 
-Date captured: 2026-08-24  
-Branch: `codex/lesson-shelf-heading-reading-cue`  
-Baseline commit: `86f5f72`  
+Date captured: 2026-08-24
+
+Branch: `codex/lesson-shelf-heading-reading-cue`
+
+Baseline commit: `86f5f72`
+
 Final candidate source commit: `297bd4e`
 
 ## Capture conditions
@@ -81,4 +84,3 @@ The prototype and final 1440x900 focused hashes are identical because the
 runtime-selected prototype was implemented without further visual changes at
 that viewport. The 280 and 640 final files were recaptured after implementation
 and differ only in capture settlement/compression, not intended geometry.
-

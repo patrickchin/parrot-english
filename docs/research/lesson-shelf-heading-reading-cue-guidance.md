@@ -2,8 +2,10 @@
 
 Status: implemented and provisionally retained
 
-Date: 2026-08-24  
-Branch: `codex/lesson-shelf-heading-reading-cue`  
+Date: 2026-08-24
+
+Branch: `codex/lesson-shelf-heading-reading-cue`
+
 Base branch / dependency: `codex/profile-account-label-clearance` at `86f5f72`
 
 ## Question and scope
