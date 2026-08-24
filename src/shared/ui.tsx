@@ -14,7 +14,6 @@ export type ControlSize =
   | "large"
   | "hero"
   | "header"
-  | "headerAccount"
   | "cardAction"
   | "inline"
   | "menu";
@@ -100,8 +99,6 @@ export function controlClassName({
       "min-h-16 gap-2 px-6 py-2 text-xl md:min-h-20 md:text-2xl",
     size === "header" &&
       "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-11 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5",
-    size === "headerAccount" &&
-      "min-h-13 min-w-0 gap-1.5 px-3 py-0 text-base short:min-h-11 short:px-2 short:text-sm md:min-h-16 md:gap-2 md:px-5 md:text-base",
     size === "cardAction" &&
       "size-12 min-h-0 min-w-0 shrink-0 gap-1 p-0 text-sm min-[360px]:w-auto min-[360px]:min-w-20 sm:min-w-21",
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",

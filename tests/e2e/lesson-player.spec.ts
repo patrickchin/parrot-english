@@ -856,8 +856,9 @@ test("Account stays clear of the lesson HUD across the short-header seam", async
       await expect(account).not.toContainText(longAccountEmail);
     }
 
-    await page.evaluate(() => (document.activeElement as HTMLElement)?.blur());
+    await account.focus();
     await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
     await expect(account).toBeFocused();
     await expectFocusedPaintClearOf(account, hud);
     await expectNoPageOverflow(page);

@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CircleUserRound } from "lucide-react";
 import {
   useEffect,
   useId,
@@ -21,7 +21,7 @@ export function RouteHeader({ children }: { children: ReactNode }) {
   return (
     <nav
       aria-label="Page navigation"
-      className="absolute left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-7 md:top-6"
+      className="absolute left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7"
     >
       {children}
     </nav>
@@ -180,7 +180,7 @@ export function AccountHeader({
     <aside
       aria-busy={isSigningOut}
       aria-label="Account"
-      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-7 md:top-6 md:max-w-xl"
+      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7"
       ref={accountRef}
     >
       <ActionButton
@@ -195,16 +195,19 @@ export function AccountHeader({
         }}
         onKeyDown={handleAccountKeyDown}
         ref={accountButtonRef}
-        size="headerAccount"
-        title={userEmail}
+        size="header"
+        title="Account"
         type="button"
         variant="navy"
       >
-        <span className="min-w-0 truncate">{userLabel}</span>
+        <span aria-hidden="true" className="size-6 shrink-0">
+          <CircleUserRound className="size-6" strokeWidth={3} />
+        </span>
+        <HeaderLabel>Account</HeaderLabel>
         <ChevronDown
           aria-hidden="true"
           className={cx(
-            "size-5 shrink-0 transition-transform",
+            "hidden size-5 shrink-0 transition-transform wide:block",
             isMenuOpen && "rotate-180",
           )}
           strokeWidth={3}
@@ -214,12 +217,16 @@ export function AccountHeader({
         <div
           className="absolute right-0 top-full mt-2 grid min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy"
         >
-          <p
-            className="m-0 truncate px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
-            title={userEmail}
-          >
-            {userEmail}
-          </p>
+          <div className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100">
+            <p className="m-0 min-w-0 break-words" dir="auto">
+              {userLabel}
+            </p>
+            {userLabel !== userEmail ? (
+              <p className="m-0 min-w-0 break-words" dir="auto">
+                {userEmail}
+              </p>
+            ) : null}
+          </div>
           <div
             aria-label="Account menu"
             className="grid gap-1"

@@ -366,6 +366,11 @@ test("Account keeps identity in its menu instead of the persistent header", asyn
   await expect(name).toHaveAttribute("dir", "auto");
   await expect(email).toHaveAttribute("dir", "auto");
   for (const value of [name, email]) {
+    await expectInsideViewport(value, {
+      height: 568,
+      name: "ultra narrow",
+      width: 280,
+    });
     expect(
       await value.evaluate(
         (element) => element.scrollWidth <= element.clientWidth,

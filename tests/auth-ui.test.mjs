@@ -383,7 +383,7 @@ test("background session refetches preserve mounted lesson children", () => {
   );
 
   assert.match(html, /BACKGROUND REFRESH CHILD/);
-  assert.match(html, /cached@example\.com/);
+  assert.match(html, /aria-label="Account for 缓存用户"/);
   assert.doesNotMatch(html, /Checking your session…/);
 });
 
@@ -453,7 +453,8 @@ test("renders a clearly labeled account trigger without conflating learner profi
     bar,
     /<button[^>]*aria-label="Account for Mia"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
   );
-  assert.match(bar, />Mia</);
+  assert.match(bar, />Account</);
+  assert.doesNotMatch(bar, />Mia</);
   assert.doesNotMatch(bar, /aria-label="Edit learner profile"/);
   assert.doesNotMatch(bar, />Sign out|>Log out</);
 });
