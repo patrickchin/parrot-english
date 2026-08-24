@@ -977,12 +977,23 @@ branches.
     focus action menu with honest disclosure/native-button semantics; test
     browser and target assistive-technology output before choosing, and do not
     treat current arrow coverage as proof of pattern conformance.
-35. **Medium: Sign out hides its own pending words as soon as it starts.** The
-    row conditionally says **Signing out…**, but selecting it closes the menu
-    before that state is visible. Measure a delayed success and failure, then
-    expose immediate stable feedback on the persistent Account surface without
-    reopening the menu, shifting the child activity, or adding confirmation
-    friction to routine exit.
+35. **Medium: Sign out hides its own pending words as soon as it starts.** Fixed
+    provisionally on `codex/account-sign-out-feedback` at `0dd76c4`. Selecting
+    Sign out now synchronously focuses an Account button whose pending name
+    begins with the visible **Signing out…** label, while one atomic status owns
+    the same visible words in the top-right frame. The authored unavailable
+    owner absorbs hit-testing, same-task and repeated activation issue one
+    request, attempt identity rejects stale outcomes, and Better Auth's reactive
+    session owns successful refresh. The 20-page local diagnostic measured
+    1.5ms pending-mutation p95 and 20.1ms next-frame-callback p95; the minimum
+    sampled frame is 152x44 with a 64px route gap, no horizontal overflow, and
+    no movement in the sampled shelf heading or dense lesson HUD/speech
+    anchors. See the
+    [guidance](./account-sign-out-feedback-guidance.md),
+    [implementation record](./account-sign-out-feedback-implementation.md), and
+    [visual manifest](../../artifacts/ux-review/account-sign-out-feedback/manifest.md).
+    Target AT speech, localization, field latency, and weak-English caregiver
+    or child comprehension remain untested.
 36. **Medium: the deletion confirmation uses abstract caregiver English.**
     **Cannot be undone**, **saved conversation text**, **private story art**,
     and especially **deletion marker** may be hard for caregivers with limited

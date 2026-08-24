@@ -2,9 +2,18 @@
 
 Date: 2026-08-24
 
-Status: implementation input; real-code visual prototypes under review
+Status: implemented; selected inline visual with state-aware Account semantics
 
 Baseline commit: `5dce79a`
+
+Implementation: `735aa45`; accessible-name refinement: `7733c9d`; final review
+refinement: `0dd76c4`
+
+Implementation evidence:
+[`account-sign-out-feedback-implementation.md`](./account-sign-out-feedback-implementation.md)
+
+Visual evidence:
+[`account-sign-out-feedback/manifest.md`](../../artifacts/ux-review/account-sign-out-feedback/manifest.md)
 
 ## Question
 
@@ -33,6 +42,12 @@ same state without receiving focus. The status must not sit inside an
 `aria-busy=true` ancestor because assistive technology may defer descendant
 changes while that ancestor is busy.
 
+Because the visible status occupies the button silhouette, treat it as the
+button's visible label for WCAG 2.5.3 even though it is a DOM sibling. While
+pending, begin the focused button's accessible name with **Signing out…** and
+then retain **Account for Mia** as its identity. This supports literal speech
+input without moving the visible status inside the button.
+
 Pending must last until one of two truthful boundaries:
 
 - a failure result restores Account and exposes the existing alert; or
@@ -56,8 +71,12 @@ The installed Better Auth 1.6.23 client adds a session signal after a successful
 experiment, those paths produced two session reads; the signal-driven read
 aborted the explicit read, its promise settled, and Parrot cleared pending
 before the winning session read had finished. This is an observed interaction
-between the installed dependency and Parrot's lifecycle, not a general claim
-about every Better Auth version.
+between the installed dependency and Parrot's lifecycle. Better Auth's official
+[Basic Usage](https://better-auth.com/docs/basic-usage) also describes
+`useSession` as reactive and says changes such as signing out are immediately
+reflected in the UI. The retained implementation therefore removes Parrot's
+duplicate explicit refresh. This is still not a general claim about every
+Better Auth version or custom auth client.
 
 ## Delayed baseline
 
@@ -92,6 +111,7 @@ and caregiver comprehension results.
 | --- | --- | --- |
 | W3C's [Understanding Status Messages](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html) includes application waiting states and asks that status changes which do not take focus be programmatically determinable. See A11Y-10. | Give the visible pending words a programmatic status equivalent without moving focus to the message. | The Understanding page is informative and does not require authors to invent a message where none is displayed. |
 | WAI-ARIA defines [`status`](https://www.w3.org/TR/wai-aria-1.2/#status) as polite, atomic advisory information that should not receive focus; [ARIA22](https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA22) tests a status container that exists before its text changes. See A11Y-07 and A11Y-08. | Keep one empty status mounted before activation, then replace its whole text with **Signing out…**. | Markup inspection cannot prove a particular browser and assistive-technology announcement. |
+| W3C's [Understanding Label in Name](https://www.w3.org/WAI/WCAG22/Understanding/label-in-name) treats text in close visual proximity as a potential control label and recommends putting the visible words first in the accessible name. See A11Y-24. | Treat the exactly overlaid status as Account's visible label: use **Signing out… Account for Mia** while pending. | A name change plus a live status may be announced twice by some browser/assistive-technology pairs; target testing remains required. |
 | WAI-ARIA says [`aria-busy=true`](https://www.w3.org/TR/wai-aria-1.2/#aria-busy) can cause descendant changes to be withheld until busy becomes false. See A11Y-10. | Remove the current busy Account ancestor rather than wrapping the live status in it. | `aria-busy` remains appropriate for batching some DOM updates; it is wrong here because the message itself is ready. |
 | W3C COGA recommends recognizable feedback and stable controls/content. See A11Y-03 and A11Y-11. | Use the fixed Account locus and an overlay or contained replacement; do not insert a new row into the child activity. | COGA is supplemental and does not validate Parrot's exact placement or words. |
 | GOV.UK documents slow feedback and repeated activation as causes of duplicate submissions. See UX-03. | Add immediate feedback plus both an authored UI guard and a synchronous domain guard. | Server-side idempotency and session revocation remain separate boundaries. |
@@ -103,8 +123,8 @@ and caregiver comprehension results.
 
 | Pattern | Strength | Main risk | Current disposition |
 | --- | --- | --- | --- |
-| Inline Account state | The focused trigger itself becomes a spinner plus **Signing out…**; one visual locus and no extra overlay. | Its width grows below the `wide` breakpoint and its temporary accessible identity changes. | Real-code isolated prototype; require header-clearance and label-in-name checks. |
-| Adjacent Account status | Account geometry and identity stay fixed; a separate visible `role=status` can sit immediately left. | Two simultaneous surfaces may feel redundant, and focus paint consumes the first eight pixels of their gap. | Real-code isolated prototype; require at least 12 px border-to-border separation. |
+| Inline Account state | One spinner plus **Signing out…** occupies the focused Account locus; one visual cause-and-effect surface and no extra overlay. | A naive implementation loses the Account identity, omits the visible text from the button name, or announces the state twice. | Selected visually; the sibling status is exactly aligned over a focused button named **Signing out… Account for Mia** while pending. |
+| Adjacent Account status | Account geometry and identity stay fixed; a separate visible `role=status` can sit immediately left. | Two simultaneous surfaces feel redundant, consume narrow header air, and leave Account looking available. | Rejected after four-viewport comparison; its synchronous focus and stable identity informed the retained hybrid. |
 | Compact status below Account | Reuses the current pending/error anchor and keeps status semantics visually direct. | That vertical zone already overlaps the lesson heading at narrow and short sizes. | Keep only if an actual compact capture beats the horizontal candidates. |
 | Keep the menu open | The original action row can retain focus and change in place. | A large overlay covers the child activity for the whole request and short-landscape recovery already scrolls. | Reject for this branch. |
 | Global toast or modal | Familiar infrastructure in products that already own a toast/dialog system. | Parrot has no toast host; either option adds a detached locus or unnecessary interruption. | Reject. |
@@ -118,9 +138,10 @@ Use held success and failure requests at 280x568, 390x844, 640x360, and
    message exists.
 2. One pre-mounted `role=status` has `aria-atomic=true`; no busy ancestor can
    defer it.
-3. The Account trigger retains focus, reports authored unavailability, and
-   cannot open the menu or start a second request by pointer, Enter, Space,
-   double click, or two same-task programmatic calls.
+3. The Account trigger retains focus; its pending name starts with the visible
+   **Signing out…** label and retains its Account identity. It reports authored
+   unavailability and cannot open the menu or start a second request by
+   pointer, Enter, Space, double click, or two same-task programmatic calls.
 4. Pending remains present after the sign-out response while session
    confirmation is held. It ends only on failure or authenticated-shell
    replacement.
@@ -128,8 +149,10 @@ Use held success and failure requests at 280x568, 390x844, 640x360, and
    and one alert appears. One deliberate retry may issue request two.
 6. The Account target remains at least 44x44 CSS pixels. Pending content and
    focus paint stay inside the viewport and do not overlap a route control.
-7. Primary content anchors, document scroll extent, and header controls move
-   no more than one CSS pixel. There is no horizontal overflow.
+7. Sampled primary-content anchors, document scroll extent, and unrelated
+   route controls move no more than one CSS pixel. Account's right edge stays
+   anchored while its pending frame expands left without overlap or horizontal
+   overflow.
 8. Forced colors preserves a real focus outline. Reduced motion removes the
    spinner animation without removing the icon or words.
 9. The pending update settles before two animation frames in the local harness;
@@ -142,7 +165,8 @@ Use held success and failure requests at 280x568, 390x844, 640x360, and
 ## Evidence boundary and follow-ups
 
 Browser and DOM checks cannot prove actual speech output. Manually check one
-pending announcement, status/focus order, and one failure announcement with
+pending announcement, possible duplication from the focused name change plus
+live status, status/focus order, and one failure announcement with
 VoiceOver/Safari and NVDA/Chrome or Firefox before treating assistive output as
 verified.
 

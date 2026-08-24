@@ -47,6 +47,8 @@ Last reviewed: 2026-08-24
 - [Grown-up AI and saved-data transparency](./grown-up-ai-transparency.md)
 - [Account action hierarchy guidance](./account-action-hierarchy-guidance.md)
 - [Account action hierarchy implementation](./account-action-hierarchy-implementation.md)
+- [Account sign-out feedback guidance](./account-sign-out-feedback-guidance.md)
+- [Account sign-out feedback implementation](./account-sign-out-feedback-implementation.md)
 - [Lesson start state stability](./lesson-start-stability.md)
 - [Lesson microphone direct-action feedback guidance](./lesson-microphone-direct-action-feedback-guidance.md)
 - [Lesson microphone direct-action feedback implementation](./lesson-microphone-direct-action-feedback-implementation.md)
