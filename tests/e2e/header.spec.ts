@@ -772,6 +772,11 @@ for (const key of ["Enter", "Space"]) {
       exact: true,
       name: "Sign out again",
     });
+    await expect(page.getByRole("alert")).toHaveText(
+      "Sign out did not finish.",
+    );
+    await expect(account).toBeFocused();
+    await expect(retry).toBeVisible();
     await page.keyboard.press("Tab");
     await expect(retry).toBeFocused();
     await retry.press(key);
