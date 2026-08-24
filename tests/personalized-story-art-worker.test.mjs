@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
+import { ReadableStream } from "node:stream/web";
 import { describe, it } from "node:test";
 import sharp from "sharp";
 import { createDatabase } from "../worker/database.ts";
@@ -141,6 +142,49 @@ function uploadForm({ consent = true } = {}) {
     formData.set("guardianConsentVersion", CONSENT_VERSION);
   }
   return formData;
+}
+
+async function validUploadInput() {
+  const png = await sharp({
+    create: {
+      width: 2,
+      height: 2,
+      channels: 4,
+      background: { r: 20, g: 40, b: 60, alpha: 1 },
+    },
+  })
+    .png()
+    .toBuffer();
+  const formData = uploadForm();
+  formData.set(
+    "source",
+    new File([png], "source.png", { type: "image/png" }),
+  );
+  return { formData, png };
+}
+
+async function generateWithSceneReference(state, createSceneReference) {
+  const { formData, png } = await validUploadInput();
+  let generationCalls = 0;
+  const response = await call(
+    state,
+    {
+      ai: {
+        async run() {
+          generationCalls += 1;
+          return { image: png.toString("base64") };
+        },
+      },
+      body: formData,
+      method: "POST",
+    },
+    {
+      async fetchMedia() {
+        return createSceneReference(png);
+      },
+    },
+  );
+  return { generationCalls, response };
 }
 
 function insertReadyArt(
@@ -331,7 +375,7 @@ describe("personalized story art Worker handler", () => {
         {
           async fetchMedia(request) {
             requestedUrl = request.url;
-            return new Response(new Uint8Array([1]), {
+            return new Response(generatedWebp, {
               headers: { "Content-Type": "image/webp" },
             });
           },
@@ -343,6 +387,91 @@ describe("personalized story art Worker handler", () => {
         requestedUrl,
         "https://media.parrotbook.com/assets/v2/personalization/the-red-ball-scene-reference.webp",
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects a scene reference whose content type is not an image", async () => {
+    const state = seedDatabase();
+    try {
+      const { generationCalls, response } = await generateWithSceneReference(
+        state,
+        (png) =>
+          new Response(png, {
+            headers: { "Content-Type": "text/html" },
+          }),
+      );
+
+      assert.equal(response.status, 502);
+      assert.deepEqual(await response.json(), {
+        error: "scene_reference_unavailable",
+        message: "The scene reference could not be loaded.",
+      });
+      assert.equal(generationCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects a scene reference whose bytes do not match its image type", async () => {
+    const state = seedDatabase();
+    try {
+      const { generationCalls, response } = await generateWithSceneReference(
+        state,
+        () =>
+          new Response(Buffer.from("not an image"), {
+            headers: { "Content-Type": "image/webp" },
+          }),
+      );
+
+      assert.equal(response.status, 502);
+      assert.deepEqual(await response.json(), {
+        error: "scene_reference_unavailable",
+        message: "The scene reference could not be loaded.",
+      });
+      assert.equal(generationCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("stops reading an oversized scene reference without a content length", async () => {
+    const state = seedDatabase();
+    const chunk = new Uint8Array(768 * 1024);
+    chunk.set(Buffer.from("RIFF"), 0);
+    chunk.set(Buffer.from("WEBP"), 8);
+    let chunksSent = 0;
+    let cancelled = false;
+    try {
+      const { generationCalls, response } = await generateWithSceneReference(
+        state,
+        () =>
+          new Response(
+            new ReadableStream({
+              cancel() {
+                cancelled = true;
+              },
+              pull(controller) {
+                if (chunksSent === 4) {
+                  controller.close();
+                  return;
+                }
+                controller.enqueue(chunk);
+                chunksSent += 1;
+              },
+            }),
+            { headers: { "Content-Type": "image/webp" } },
+          ),
+      );
+
+      assert.equal(response.status, 502);
+      assert.deepEqual(await response.json(), {
+        error: "scene_reference_unavailable",
+        message: "The scene reference could not be loaded.",
+      });
+      assert.equal(cancelled, true);
+      assert.equal(generationCalls, 0);
     } finally {
       state.close();
     }

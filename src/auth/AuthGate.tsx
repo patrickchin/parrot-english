@@ -221,6 +221,27 @@ export function AuthGateView({
   signOutError,
   signedOutFallback,
 }: AuthGateViewProps) {
+  const authHeadingRef = useRef<HTMLHeadingElement>(null);
+  const authHeadingKey =
+    isPending || isRetrying
+      ? null
+      : sessionError
+        ? "session-error"
+        : !session && !signedOutFallback
+          ? mode
+          : null;
+
+  useEffect(() => {
+    if (!authHeadingKey) return;
+    if (
+      document.activeElement !== document.body &&
+      document.activeElement !== document.documentElement
+    ) {
+      return;
+    }
+    authHeadingRef.current?.focus({ preventScroll: true });
+  }, [authHeadingKey]);
+
   if (isPending || isRetrying) {
     return (
       <AuthScreen>
@@ -244,7 +265,11 @@ export function AuthGateView({
           role="alert"
         >
           <AuthParrotMark />
-          <h1 className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl">
+          <h1
+            className="m-0 text-3xl leading-tight text-brand-ink outline-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-focus-dark focus-visible:ring-4 focus-visible:ring-focus-light sm:text-4xl"
+            ref={authHeadingRef}
+            tabIndex={-1}
+          >
             Sign-in is temporarily unavailable
           </h1>
           <p className="m-0 leading-relaxed">
@@ -276,8 +301,10 @@ export function AuthGateView({
           >
             <AuthParrotMark />
             <h1
-              className="m-0 text-3xl leading-tight text-brand-ink sm:text-4xl"
+              className="m-0 text-3xl leading-tight text-brand-ink outline-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-focus-dark focus-visible:ring-4 focus-visible:ring-focus-light sm:text-4xl"
               id="auth-title"
+              ref={authHeadingRef}
+              tabIndex={-1}
             >
               {isSignUp ? "Create your account" : "Welcome back"}
             </h1>

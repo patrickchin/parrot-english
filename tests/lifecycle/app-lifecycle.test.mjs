@@ -39,21 +39,14 @@ const vite = await createServer({
 
 let ApplicationRoutes;
 let ConversationSurface;
-let experienceEvents;
-let maxExperienceDurationMs;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let usePeppaConversation;
 let createAuthGate;
 let firstLesson;
 let firstLessonId;
-let restoreExperienceSink = () => {};
 
 before(async () => {
-  ({
-    experienceEvents,
-    MAX_EXPERIENCE_DURATION_MS: maxExperienceDurationMs,
-  } = await vite.ssrLoadModule("/src/experience/experience-events.ts"));
   ({ ConversationSurface } = await vite.ssrLoadModule(
     "/src/conversation/ConversationSurface.tsx",
   ));
@@ -72,8 +65,6 @@ before(async () => {
 });
 
 afterEach(async () => {
-  restoreExperienceSink();
-  restoreExperienceSink = () => {};
   await cleanupMountedRoots();
   document.body.replaceChildren();
   globalThis.fetch = originalFetch;
@@ -594,15 +585,6 @@ function text(value) {
   assert.match(document.body.textContent, value);
 }
 
-function captureExperienceEvents() {
-  const events = [];
-  restoreExperienceSink();
-  restoreExperienceSink = experienceEvents.installSink((event) => {
-    events.push(event);
-  });
-  return events;
-}
-
 function noText(value) {
   assert.doesNotMatch(document.body.textContent, value);
 }
@@ -705,7 +687,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("opens the learner's turn only after Peppa finishes her opening", async () => {
-    const experienceTrace = captureExperienceEvents();
     let disconnectCalls = 0;
     let listener = () => {};
     const microphoneCalls = [];
@@ -806,38 +787,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "true",
     );
-    await waitFor(() => {
-      const startup = experienceTrace.find(
-        (event) =>
-          event.name === "conversation_start" && event.outcome === "ready",
-      );
-      assert.ok(startup);
-      assert.equal(startup.surface, "learner_profile");
-      assert.ok(startup.apiReadyMs <= startup.roomReadyMs);
-      assert.ok(startup.roomReadyMs <= startup.microphoneMutedMs);
-      assert.ok(startup.microphoneMutedMs <= startup.learnerTurnReadyMs);
-      assert.deepEqual(Object.keys(startup).sort(), [
-        "apiReadyMs",
-        "learnerTurnReadyMs",
-        "microphoneMutedMs",
-        "name",
-        "outcome",
-        "roomReadyMs",
-        "schemaVersion",
-        "surface",
-      ]);
-    });
     await click(button("Start my turn"));
     await waitFor(() => assert.deepEqual(microphoneCalls, [false, true]));
     assert.equal(disconnectCalls, 0);
   });
 
   it("keeps the learner turn closed until blocked sound is recovered and replayed", async () => {
-    const experienceTrace = captureExperienceEvents();
     const startAudioRequest = deferred();
     const microphoneCalls = [];
     let listener = () => {};
-    let now = 1_000;
     let repeatCalls = 0;
     let startAudioCalls = 0;
     const transport = {
@@ -871,7 +829,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(ConversationHookHarness, {
         createTransport: () => transport,
-        now: () => now,
         purpose: "small-chat",
       }),
     );
@@ -890,7 +847,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
       await flush();
     });
-    now = 1_120;
     await act(async () => {
       listener({ type: "audio-playback", state: "blocked" });
       listener({ type: "speech-ended", role: "assistant" });
@@ -902,25 +858,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(output("Learner turn ready").textContent, "false");
     await click(button("Start my turn"));
     assert.deepEqual(microphoneCalls, [false]);
-    await waitFor(() => {
-      const playbackEvents = experienceTrace.filter(
-        (event) => event.name === "conversation_audio_playback",
-      );
-      assert.deepEqual(playbackEvents, [
-        {
-          durationMs: 120,
-          name: "conversation_audio_playback",
-          outcome: "blocked",
-          schemaVersion: 1,
-          surface: "talk",
-        },
-      ]);
-      assert.doesNotMatch(
-        JSON.stringify(playbackEvents),
-        /Mia|private-opening-id|private opening|conversation-audio-blocked/i,
-      );
-    });
-
     await click(button("Start sound"));
     assert.equal(startAudioCalls, 1);
     assert.equal(output("Audio playback busy").textContent, "true");
@@ -1291,10 +1228,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("does not infer a missed opening from a delayed native playback signal", async () => {
-    const experienceTrace = captureExperienceEvents();
     const microphoneCalls = [];
     let listener = () => {};
-    let now = 2_000;
     let repeatCalls = 0;
     const transport = {
       async connect() {},
@@ -1324,7 +1259,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(ConversationHookHarness, {
         createTransport: () => transport,
-        now: () => now,
         purpose: "small-chat",
       }),
     );
@@ -1346,14 +1280,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     assert.equal(output("Learner turn ready").textContent, "false");
     assert.equal(repeatCalls, 0);
-    assert.deepEqual(
-      experienceTrace.filter(
-        (event) => event.name === "conversation_audio_playback",
-      ),
-      [],
-    );
-
-    now = 2_400;
     await act(async () => {
       listener({ type: "audio-playback", state: "started" });
       await flush();
@@ -1367,21 +1293,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       await flush();
     });
     assert.equal(repeatCalls, 0);
-    await waitFor(() => {
-      const playbackEvents = experienceTrace.filter(
-        (event) => event.name === "conversation_audio_playback",
-      );
-      assert.deepEqual(playbackEvents, [
-        {
-          durationMs: 400,
-          name: "conversation_audio_playback",
-          outcome: "ready",
-          schemaVersion: 1,
-          surface: "talk",
-        },
-      ]);
-    });
-
     assert.equal(output("Conversation status").textContent, "listening");
     assert.equal(repeatCalls, 0);
   });
@@ -1718,7 +1629,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("acknowledges Start before the conversation request finishes", async () => {
-    const experienceTrace = captureExperienceEvents();
     const response = deferred();
     globalThis.fetch = async () => response.promise;
 
@@ -1747,24 +1657,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         document.querySelector('output[aria-label="Conversation status"]')
           .textContent,
         "error",
-      ),
-    );
-    await waitFor(() =>
-      assert.deepEqual(
-        experienceTrace.map(({ name, outcome, stage, surface }) => ({
-          name,
-          outcome,
-          stage,
-          surface,
-        })),
-        [
-          {
-            name: "conversation_start",
-            outcome: "failed",
-            stage: "api",
-            surface: "talk",
-          },
-        ],
       ),
     );
   });
@@ -2683,8 +2575,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(transports, 2));
   });
 
-  it("attributes startup failure after room connection to the initial mute control", async () => {
-    const experienceTrace = captureExperienceEvents();
+  it("shows a recoverable startup error when the initial mute control fails", async () => {
     const transport = {
       async connect() {},
       async disconnect() {},
@@ -2726,28 +2617,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         "error",
       ),
     );
-    await waitFor(() =>
-      assert.deepEqual(
-        experienceTrace.map(({ name, outcome, stage, surface }) => ({
-          name,
-          outcome,
-          stage,
-          surface,
-        })),
-        [
-          {
-            name: "conversation_start",
-            outcome: "failed",
-            stage: "microphone_mute",
-            surface: "talk",
-          },
-        ],
-      ),
+    assert.equal(
+      output("Conversation error").textContent,
+      "Peppa cannot talk now. Tap Try again.",
     );
   });
 
   it("does not revive startup when the room disconnects during initial mute", async () => {
-    const experienceTrace = captureExperienceEvents();
     const initialMute = deferred();
     let listener = () => {};
     let muteStarted = false;
@@ -2805,24 +2681,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "error",
     );
-    assert.deepEqual(
-      experienceTrace.map(({ name, outcome, stage }) => ({
-        name,
-        outcome,
-        stage,
-      })),
-      [
-        {
-          name: "conversation_start",
-          outcome: "failed",
-          stage: "microphone_mute",
-        },
-      ],
-    );
   });
 
   it("quarantines a stale Finish after the learner leaves and reopens chat", async () => {
-    const experienceTrace = captureExperienceEvents();
     const finishRequest = deferred();
     let listener = () => {};
     const microphoneCalls = [];
@@ -2916,11 +2777,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "false",
     );
-    assert.equal(
-      experienceTrace.some((event) => event.name === "conversation_start"),
-      false,
-    );
-
     await click(button("Back voice"));
     await click(button("Start voice"));
     await waitFor(() => {
@@ -3102,7 +2958,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("shows a response-loading state from the end of the learner turn until Peppa replies", async () => {
-    const experienceTrace = captureExperienceEvents();
     const finishRequest = deferred();
     let listener = () => {};
     let now = 1_000;
@@ -3213,23 +3068,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         .textContent,
       "1254",
     );
-    await waitFor(() => {
-      const response = experienceTrace.find(
-        (event) => event.name === "conversation_turn_response",
-      );
-      assert.deepEqual(response, {
-        durationMs: 1_254,
-        name: "conversation_turn_response",
-        outcome: "assistant_signal",
-        schemaVersion: 1,
-        surface: "learner_profile",
-      });
-      assert.doesNotMatch(
-        JSON.stringify(experienceTrace),
-        /Mia|conversation-response-loading|peppa-reply/,
-      );
-    });
-
     await act(async () => {
       listener({
         type: "transcription",
@@ -3279,17 +3117,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await click(button("End my turn"));
     await waitFor(() => assert.equal(turnCommits, 2));
-    now += maxExperienceDurationMs + 1_000;
     await act(async () => {
       listener({ type: "speech-started", role: "assistant" });
       await flush();
-    });
-    await waitFor(() => {
-      const responses = experienceTrace.filter(
-        (event) => event.name === "conversation_turn_response",
-      );
-      assert.equal(responses.length, 2);
-      assert.equal(responses[1].durationMs, maxExperienceDurationMs);
     });
 
     await act(async () => {
@@ -3306,24 +3136,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("End my turn"));
     await waitFor(() => assert.equal(turnCommits, 3));
 
-    const replacementTrace = [];
-    restoreExperienceSink();
-    restoreExperienceSink = experienceEvents.installSink((event) => {
-      replacementTrace.push(event);
-    });
-    now += 100;
     await act(async () => {
       listener({ type: "speech-started", role: "assistant" });
       await flush();
     });
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
-    assert.deepEqual(replacementTrace, []);
-    assert.equal(
-      experienceTrace.filter(
-        (event) => event.name === "conversation_turn_response",
-      ).length,
-      2,
-    );
 
     await act(async () => {
       listener({ type: "speech-ended", role: "assistant" });
@@ -3339,13 +3155,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("End my turn"));
     await waitFor(() => assert.equal(turnCommits, 4));
     await click(button("Finish voice"));
-    now += 100;
     await act(async () => {
       listener({ type: "speech-started", role: "assistant" });
       await flush();
     });
-    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
-    assert.deepEqual(replacementTrace, []);
     assert.equal(
       document.querySelector('output[aria-label="Conversation status"]')
         .textContent,
@@ -3361,8 +3174,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(reviewCalls, 1));
   });
 
-  it("distinguishes microphone-stop failure from turn-send failure", async () => {
-    const experienceTrace = captureExperienceEvents();
+  it("does not send after a microphone-stop failure and reports a later send failure", async () => {
     let listener = () => {};
     let disableCalls = 0;
     let commitCalls = 0;
@@ -3425,51 +3237,22 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Start my turn"));
     await click(button("End my turn"));
     await waitFor(() => {
-      const responseEvents = experienceTrace.filter(
-        (event) => event.name === "conversation_turn_response",
-      );
-      assert.equal(responseEvents.length, 1);
-      assert.equal(responseEvents[0].outcome, "microphone_stop_failed");
+      assert.equal(disableCalls, 2);
       assert.equal(commitCalls, 0);
+      assert.equal(
+        output("Conversation error").textContent,
+        "The microphone did not stop. Tap “I’m done” again.",
+      );
     });
 
     await click(button("End my turn"));
     await waitFor(() => {
-      const responseEvents = experienceTrace.filter(
-        (event) => event.name === "conversation_turn_response",
-      );
-      assert.deepEqual(
-        responseEvents.map((event) => ({
-          keys: Object.keys(event).sort(),
-          outcome: event.outcome,
-          surface: event.surface,
-        })),
-        [
-          {
-            keys: [
-              "durationMs",
-              "name",
-              "outcome",
-              "schemaVersion",
-              "surface",
-            ],
-            outcome: "microphone_stop_failed",
-            surface: "talk",
-          },
-          {
-            keys: [
-              "durationMs",
-              "name",
-              "outcome",
-              "schemaVersion",
-              "surface",
-            ],
-            outcome: "send_failed",
-            surface: "talk",
-          },
-        ],
-      );
+      assert.equal(disableCalls, 3);
       assert.equal(commitCalls, 1);
+      assert.equal(
+        output("Conversation error").textContent,
+        "Your words did not send. Please try again.",
+      );
     });
   });
 
@@ -4655,7 +4438,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("moves a mounted learner turn through recording, checking, and feedback", async () => {
-    const experienceTrace = captureExperienceEvents();
     const ControlledAudio = installControlledAudio();
     installSpeechRecorder();
     const evaluation = deferred();
@@ -4680,26 +4462,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
     await waitFor(() => text(/Great job!/));
-    await waitFor(() => {
-      const lessonEvents = experienceTrace.filter((event) =>
-        event.name.startsWith("lesson_"),
-      );
-      assert.deepEqual(
-        lessonEvents.map(({ name, outcome }) => ({ name, outcome })),
-        [
-          { name: "lesson_microphone", outcome: "ready" },
-          { name: "lesson_speech_check", outcome: "completed" },
-        ],
-      );
-      assert.doesNotMatch(
-        JSON.stringify(lessonEvents),
-        /It is up high|recorded audio|correct/,
-      );
-    });
   });
 
   it("aborts a stale evaluation when browser history changes the lesson route", async () => {
-    const experienceTrace = captureExperienceEvents();
     const ControlledAudio = installControlledAudio();
     installSpeechRecorder();
     const evaluation = deferred();
@@ -4758,17 +4523,5 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(new RegExp(firstLesson.scenes[1].title));
     noText(/Checking your words|Great job!|Speech check failed|Audio unavailable/);
     assert.equal(document.activeElement, button("Start lesson"));
-    await waitFor(() =>
-      assert.ok(
-        experienceTrace.some(
-          (event) =>
-            event.name === "lesson_microphone" && event.outcome === "ready",
-        ),
-      ),
-    );
-    assert.equal(
-      experienceTrace.some((event) => event.name === "lesson_speech_check"),
-      false,
-    );
   });
 });

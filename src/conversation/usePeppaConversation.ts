@@ -22,12 +22,6 @@ import {
   DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   type TalkToPeppaPromptStyle,
 } from "../../lib/talk-to-peppa-prompt-style";
-import {
-  experienceEvents,
-  type ConversationExperienceSurface,
-  type ConversationResponseOutcome,
-  type ExperienceTimeline,
-} from "../experience/experience-events";
 
 const COMPLETED_DISCONNECT_REASONS = new Set([
   "ROOM_DELETED",
@@ -241,21 +235,6 @@ type ConversationRuntime = {
   transportReady: boolean;
 };
 
-type ConversationStartMeasurement = {
-  apiReadyMs: number | null;
-  microphoneMutedMs: number | null;
-  operation: number;
-  roomReadyMs: number | null;
-  surface: ConversationExperienceSurface;
-  timeline: ExperienceTimeline;
-};
-
-type ConversationAudioPlaybackMeasurement = {
-  operation: number;
-  surface: ConversationExperienceSurface;
-  timeline: ExperienceTimeline;
-};
-
 function createConversationRuntime(): ConversationRuntime {
   return {
     assistantOutputBeforePlaybackReady: false,
@@ -271,12 +250,6 @@ function createConversationRuntime(): ConversationRuntime {
     repeatAfterInterruptedSpeech: false,
     transportReady: false,
   };
-}
-
-function conversationExperienceSurface(
-  purpose: ConversationPurpose,
-): ConversationExperienceSurface {
-  return purpose === "small-chat" ? "talk" : "learner_profile";
 }
 
 export function usePeppaConversation({
@@ -314,13 +287,6 @@ export function usePeppaConversation({
     () => Symbol("conversation-owner"),
   );
   const conversationIdRef = useRef<string | null>(null);
-  const conversationAudioPlaybackMeasurementRef =
-    useRef<ConversationAudioPlaybackMeasurement | null>(null);
-  const conversationStartMeasurementRef =
-    useRef<ConversationStartMeasurement | null>(null);
-  const responseExperienceTimelineRef = useRef<ExperienceTimeline | null>(null);
-  const responseExperienceSurfaceRef =
-    useRef<ConversationExperienceSurface | null>(null);
   const transportRef = useRef<LiveKitConversation | null>(null);
   const operationRef = useRef(0);
   const autoStartRef = useRef(false);
@@ -366,108 +332,20 @@ export function usePeppaConversation({
 
   const resetResponseLatency = useCallback(() => {
     responseLatencyTimer.reset();
-    responseExperienceTimelineRef.current?.cancel();
-    responseExperienceTimelineRef.current = null;
-    responseExperienceSurfaceRef.current = null;
     setResponseLatencyMs(null);
   }, [responseLatencyTimer]);
 
   const settleResponseLatency = useCallback((
-    outcome: ConversationResponseOutcome,
+    outcome:
+      | "assistant_signal"
+      | "disconnected"
+      | "microphone_stop_failed"
+      | "send_failed",
   ) => {
     const elapsedMs = responseLatencyTimer.finish();
-    const experienceTimeline = responseExperienceTimelineRef.current;
-    responseExperienceTimelineRef.current = null;
-    const experienceSurface = responseExperienceSurfaceRef.current;
-    responseExperienceSurfaceRef.current = null;
-    const experienceDurationMs = experienceTimeline?.finish() ?? null;
     if (elapsedMs === null) return;
     if (outcome === "assistant_signal") setResponseLatencyMs(elapsedMs);
-    if (experienceDurationMs !== null && experienceSurface !== null) {
-      experienceEvents.emit({
-        durationMs: experienceDurationMs,
-        name: "conversation_turn_response",
-        outcome,
-        surface: experienceSurface,
-      });
-    }
   }, [responseLatencyTimer]);
-
-  const cancelConversationStartMeasurement = useCallback(() => {
-    conversationStartMeasurementRef.current?.timeline.cancel();
-    conversationStartMeasurementRef.current = null;
-  }, []);
-
-  const cancelConversationAudioPlaybackMeasurement = useCallback(() => {
-    conversationAudioPlaybackMeasurementRef.current?.timeline.cancel();
-    conversationAudioPlaybackMeasurementRef.current = null;
-  }, []);
-
-  const settleConversationAudioPlaybackMeasurement = useCallback((
-    operation: number,
-    outcome: "blocked" | "ready",
-  ) => {
-    const measurement = conversationAudioPlaybackMeasurementRef.current;
-    if (!measurement || measurement.operation !== operation) return;
-    conversationAudioPlaybackMeasurementRef.current = null;
-    const durationMs = measurement.timeline.finish();
-    if (durationMs === null) return;
-    experienceEvents.emit({
-      durationMs,
-      name: "conversation_audio_playback",
-      outcome,
-      surface: measurement.surface,
-    });
-  }, []);
-
-  const failConversationStartMeasurement = useCallback((operation: number) => {
-    const measurement = conversationStartMeasurementRef.current;
-    if (!measurement || measurement.operation !== operation) return;
-    conversationStartMeasurementRef.current = null;
-    const durationMs = measurement.timeline.finish();
-    if (durationMs === null) return;
-    experienceEvents.emit({
-      durationMs,
-      name: "conversation_start",
-      outcome: "failed",
-      stage:
-        measurement.apiReadyMs === null
-          ? "api"
-          : measurement.roomReadyMs === null
-            ? "room"
-            : measurement.microphoneMutedMs === null
-              ? "microphone_mute"
-              : "opening",
-      surface: measurement.surface,
-    });
-  }, []);
-
-  const completeConversationStartMeasurement = useCallback(
-    (operation: number) => {
-      const measurement = conversationStartMeasurementRef.current;
-      if (!measurement || measurement.operation !== operation) return;
-      conversationStartMeasurementRef.current = null;
-      const learnerTurnReadyMs = measurement.timeline.finish();
-      if (
-        measurement.apiReadyMs === null ||
-        measurement.roomReadyMs === null ||
-        measurement.microphoneMutedMs === null ||
-        learnerTurnReadyMs === null
-      ) {
-        return;
-      }
-      experienceEvents.emit({
-        apiReadyMs: measurement.apiReadyMs,
-        learnerTurnReadyMs,
-        microphoneMutedMs: measurement.microphoneMutedMs,
-        name: "conversation_start",
-        outcome: "ready",
-        roomReadyMs: measurement.roomReadyMs,
-        surface: measurement.surface,
-      });
-    },
-    [],
-  );
 
   const loadSummary = useCallback(
     async (id: string, operation = operationRef.current) => {
@@ -517,9 +395,8 @@ export function usePeppaConversation({
       setMicrophoneBusy(false);
       setTurnReady(true);
       setStatus("listening");
-      completeConversationStartMeasurement(operation);
     },
-    [completeConversationStartMeasurement, isCurrent],
+    [isCurrent],
   );
 
   const repeatPossiblyInterruptedAudio = useCallback(
@@ -560,7 +437,6 @@ export function usePeppaConversation({
       const shouldReplay =
         runtimeRef.current.playbackInterruptionObserved &&
         runtimeRef.current.assistantOutputBeforePlaybackReady;
-      settleConversationAudioPlaybackMeasurement(operation, "ready");
       runtimeRef.current.audioPlaybackBlocked = false;
       runtimeRef.current.audioPlaybackReady = true;
       runtimeRef.current.assistantOutputBeforePlaybackReady = false;
@@ -592,12 +468,7 @@ export function usePeppaConversation({
         setStatus("listening");
       }
     },
-    [
-      isCurrent,
-      openLearnerTurn,
-      repeatPossiblyInterruptedAudio,
-      settleConversationAudioPlaybackMeasurement,
-    ],
+    [isCurrent, openLearnerTurn, repeatPossiblyInterruptedAudio],
   );
 
   const handleTransportEvent = useCallback(
@@ -605,7 +476,6 @@ export function usePeppaConversation({
       if (!isCurrent(operation)) return;
       if (event.type === "audio-playback") {
         if (event.state === "blocked") {
-          settleConversationAudioPlaybackMeasurement(operation, "blocked");
           runtimeRef.current.audioPlaybackBlocked = true;
           runtimeRef.current.audioPlaybackReady = false;
           runtimeRef.current.playbackInterruptionObserved = true;
@@ -680,8 +550,6 @@ export function usePeppaConversation({
         if (runtimeRef.current.awaitingResponse) {
           settleResponseLatency("disconnected");
         }
-        failConversationStartMeasurement(operation);
-        cancelConversationAudioPlaybackMeasurement();
         runtimeRef.current.awaitingResponse = false;
         runtimeRef.current.learnerTurnOpen = false;
         runtimeRef.current.transportReady = false;
@@ -811,15 +679,12 @@ export function usePeppaConversation({
       }
     },
     [
-      cancelConversationAudioPlaybackMeasurement,
-      failConversationStartMeasurement,
       isCurrent,
       loadSummary,
       markAudioPlaybackReady,
       openLearnerTurn,
       purpose,
       repeatPossiblyInterruptedAudio,
-      settleConversationAudioPlaybackMeasurement,
       settleResponseLatency,
       updateVoiceRetryUsed,
     ],
@@ -831,23 +696,6 @@ export function usePeppaConversation({
     detachConversationStarts(conversationLifecycleOwner);
     let startRequest: ConversationStartRequest | null = null;
     let returnedConversationId: string | null = null;
-    cancelConversationStartMeasurement();
-    cancelConversationAudioPlaybackMeasurement();
-    const conversationStartTimeline = experienceEvents.start();
-    const experienceSurface = conversationExperienceSurface(purpose);
-    conversationStartMeasurementRef.current = {
-      apiReadyMs: null,
-      microphoneMutedMs: null,
-      operation,
-      roomReadyMs: null,
-      surface: experienceSurface,
-      timeline: conversationStartTimeline,
-    };
-    conversationAudioPlaybackMeasurementRef.current = {
-      operation,
-      surface: experienceSurface,
-      timeline: experienceEvents.start(now),
-    };
     const previousConversationId = conversationIdRef.current;
     conversationIdRef.current = null;
     if (previousConversationId) {
@@ -916,10 +764,6 @@ export function usePeppaConversation({
       ) {
         throw new Error("Invalid conversation start response");
       }
-      const measurement = conversationStartMeasurementRef.current;
-      if (measurement?.operation === operation) {
-        measurement.apiReadyMs = measurement.timeline.mark();
-      }
       conversationIdRef.current = conversationId;
       settleConversationStart({
         conversationId,
@@ -950,9 +794,6 @@ export function usePeppaConversation({
         await transport.disconnect();
         return;
       }
-      if (measurement?.operation === operation) {
-        measurement.roomReadyMs = measurement.timeline.mark();
-      }
       await transport.setMicrophoneEnabled(false);
       if (
         !isCurrent(operation) ||
@@ -960,9 +801,6 @@ export function usePeppaConversation({
       ) {
         await transport.disconnect();
         return;
-      }
-      if (measurement?.operation === operation) {
-        measurement.microphoneMutedMs = measurement.timeline.mark();
       }
       runtimeRef.current.transportReady = true;
       setMicrophoneEnabled(false);
@@ -986,21 +824,15 @@ export function usePeppaConversation({
         });
       }
       if (!isCurrent(operation)) return;
-      failConversationStartMeasurement(operation);
-      cancelConversationAudioPlaybackMeasurement();
       setError(childFacingConversationError("start", purpose));
       setRecoveryPhase("restart");
       setStatus("error");
     }
   }, [
-    cancelConversationAudioPlaybackMeasurement,
-    cancelConversationStartMeasurement,
     conversationLifecycleOwner,
     createTransport,
-    failConversationStartMeasurement,
     handleTransportEvent,
     isCurrent,
-    now,
     openLearnerTurn,
     promptStyle,
     purpose,
@@ -1026,8 +858,6 @@ export function usePeppaConversation({
     operationRef.current = operation;
     detachConversationStarts(conversationLifecycleOwner);
     const transport = transportRef.current;
-    cancelConversationStartMeasurement();
-    cancelConversationAudioPlaybackMeasurement();
     resetResponseLatency();
     audioPlaybackBusyRef.current = false;
     audioPlaybackRequestRef.current += 1;
@@ -1057,8 +887,6 @@ export function usePeppaConversation({
       setStatus("error");
     }
   }, [
-    cancelConversationAudioPlaybackMeasurement,
-    cancelConversationStartMeasurement,
     conversationLifecycleOwner,
     isCurrent,
     loadSummary,
@@ -1076,8 +904,6 @@ export function usePeppaConversation({
     conversationIdRef.current = null;
     const transport = transportRef.current;
     transportRef.current = null;
-    cancelConversationStartMeasurement();
-    cancelConversationAudioPlaybackMeasurement();
     resetResponseLatency();
     setLiveTranscript("");
     setAudioPlaybackBlocked(false);
@@ -1098,8 +924,6 @@ export function usePeppaConversation({
     void transport?.disconnect();
     onLeave();
   }, [
-    cancelConversationAudioPlaybackMeasurement,
-    cancelConversationStartMeasurement,
     conversationLifecycleOwner,
     queueConversationRetirement,
     resetResponseLatency,
@@ -1135,10 +959,6 @@ export function usePeppaConversation({
     setError("");
     if (!enabled) {
       responseLatencyTimer.start();
-      responseExperienceTimelineRef.current?.cancel();
-      responseExperienceTimelineRef.current = experienceEvents.start(now);
-      responseExperienceSurfaceRef.current =
-        conversationExperienceSurface(purpose);
       runtimeRef.current.awaitingResponse = true;
       setMicrophoneEnabled(false);
       setTurnReady(false);
@@ -1147,9 +967,6 @@ export function usePeppaConversation({
     } else {
       setLiveTranscript("");
       responseLatencyTimer.reset();
-      responseExperienceTimelineRef.current?.cancel();
-      responseExperienceTimelineRef.current = null;
-      responseExperienceSurfaceRef.current = null;
     }
     try {
       await transport.setMicrophoneEnabled(enabled);
@@ -1191,7 +1008,7 @@ export function usePeppaConversation({
         setMicrophoneBusy(false);
       }
     }
-  }, [isCurrent, microphoneEnabled, now, purpose, responseLatencyTimer, settleResponseLatency]);
+  }, [isCurrent, microphoneEnabled, purpose, responseLatencyTimer, settleResponseLatency]);
 
   const startAudioPlayback = useCallback(async () => {
     const operation = operationRef.current;
@@ -1282,8 +1099,6 @@ export function usePeppaConversation({
     if (active) return;
     operationRef.current += 1;
     detachConversationStarts(conversationLifecycleOwner);
-    cancelConversationStartMeasurement();
-    cancelConversationAudioPlaybackMeasurement();
     autoStartRef.current = false;
     audioPlaybackBusyRef.current = false;
     audioPlaybackRequestRef.current += 1;
@@ -1319,8 +1134,6 @@ export function usePeppaConversation({
     void retireQueuedConversations().catch(() => {});
   }, [
     active,
-    cancelConversationAudioPlaybackMeasurement,
-    cancelConversationStartMeasurement,
     conversationLifecycleOwner,
     queueConversationRetirement,
     resetResponseLatency,
@@ -1332,8 +1145,6 @@ export function usePeppaConversation({
     () => () => {
       operationRef.current += 1;
       detachConversationStarts(conversationLifecycleOwner);
-      cancelConversationStartMeasurement();
-      cancelConversationAudioPlaybackMeasurement();
       autoStartRef.current = false;
       audioPlaybackBusyRef.current = false;
       audioPlaybackRequestRef.current += 1;
@@ -1341,9 +1152,6 @@ export function usePeppaConversation({
       runtimeRef.current = createConversationRuntime();
       voiceRetryUsedRef.current = false;
       responseLatencyTimer.reset();
-      responseExperienceTimelineRef.current?.cancel();
-      responseExperienceTimelineRef.current = null;
-      responseExperienceSurfaceRef.current = null;
       const transport = transportRef.current;
       transportRef.current = null;
       void transport?.disconnect();
@@ -1364,8 +1172,6 @@ export function usePeppaConversation({
       void retireQueuedConversations().catch(() => {});
     },
     [
-      cancelConversationAudioPlaybackMeasurement,
-      cancelConversationStartMeasurement,
       conversationLifecycleOwner,
       queueConversationRetirement,
       responseLatencyTimer,

@@ -113,12 +113,18 @@ describe("one-question prose onboarding view", () => {
     assert.equal((html.match(/<h1/g) ?? []).length, 1);
     assert.match(html, /How old are you\?/);
     assert.match(html, /你几岁了？/);
+    assert.match(html, /<p[^>]*lang="zh-CN"[^>]*>你几岁了？<\/p>/);
     assert.match(html, /Question 2 of 6/);
     assert.match(html, /<textarea/);
     assert.match(html, /maxlength="120"/i);
     assert.match(html, /I am six/);
     assert.match(html, /aria-label="Replay question"/);
     assert.match(html, /aria-label="Speak your answer"/);
+    assert.match(html, /src="[^"]*peppa-happy-384\.webp"/);
+    assert.match(
+      html,
+      /srcSet="[^"]*peppa-happy-384\.webp 384w, [^"]*peppa-happy-768\.webp 768w"/,
+    );
     assert.match(html, />Next</);
     assert.match(html, />Skip for now</);
     assert.doesNotMatch(
@@ -511,7 +517,10 @@ describe("profile summary editor", () => {
       html.indexOf("Mia is thirty and loves pandas") >
         html.indexOf('id="profile-age"'),
     );
-    assert.match(html, /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy\.webp/);
+    assert.match(
+      html,
+      /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy-384\.webp/,
+    );
     assert.match(html, /Redo learner setup/);
     assert.match(html, />Redo setup questions</);
     assert.match(html, /normal chat.*Home.*Talk to Peppa/is);

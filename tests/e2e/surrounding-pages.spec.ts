@@ -736,7 +736,7 @@ test("account menu separates learner profile from account sign-out", async ({
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
 
   await expect(page).toHaveURL("/login?returnTo=%2F");
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeFocused();
 });
 
 test("account deletion requires the password and returns to sign in only after private-data purge succeeds", async ({
@@ -781,6 +781,6 @@ test("account deletion requires the password and returns to sign in only after p
   await confirm.click();
 
   await expect(page).toHaveURL("/login?returnTo=%2F");
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeFocused();
   expect(deletePayload).toEqual({ password: "parent-password" });
 });

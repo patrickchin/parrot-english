@@ -11,9 +11,19 @@ export function RouteFocusManager() {
   useEffect(() => {
     if (hasLocalFocusLifecycle(pathname)) return;
 
+    const activeElement = document.activeElement;
+    const heading = document.querySelector("main h1");
+    const routeMain = heading?.closest("main");
     const frame = window.requestAnimationFrame(() => {
-      const heading = document.querySelector("main h1");
-      if (!(heading instanceof HTMLElement)) return;
+      if (
+        document.activeElement !== activeElement ||
+        !(heading instanceof HTMLElement) ||
+        !heading.isConnected ||
+        heading.closest("main") !== routeMain ||
+        document.querySelector("main") !== routeMain
+      ) {
+        return;
+      }
       heading.tabIndex = -1;
       heading.focus({ preventScroll: true });
     });

@@ -11,6 +11,10 @@ import {
 } from "../lib/conversation-purpose.ts";
 import type { TalkToPeppaPromptStyle } from "../lib/talk-to-peppa-prompt-style.ts";
 import {
+  containsLikelyFullLearnerName,
+  containsPrivateLearnerProfileDetails,
+} from "../lib/learner-profile-privacy.ts";
+import {
   ensureV2Profile,
   readV2Answers,
 } from "../lib/learner-profile-responses.js";
@@ -97,6 +101,37 @@ function completeProfileSnapshot(controllerStateJson: string) {
     profileName,
     profileSummary,
   };
+}
+
+function profilePrivacyError(profileName: unknown, profileSummary: unknown) {
+  if (containsLikelyFullLearnerName(profileName, profileSummary)) {
+    return "preferred_name_required";
+  }
+  if (containsPrivateLearnerProfileDetails(profileName, profileSummary)) {
+    return "private_profile_details";
+  }
+  return null;
+}
+
+function matchesStoredProfile(
+  profile: typeof learnerProfile.$inferSelect,
+  values: {
+    profileAge: unknown;
+    profileName: string | null;
+    profileSummary: string | null;
+  },
+) {
+  const readable = ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
+    forProfileEdit: true,
+  });
+  const answers = readV2Answers(readable);
+  const description =
+    typeof answers.description === "string" ? answers.description : null;
+  return (
+    profile.name === values.profileName &&
+    profile.age === values.profileAge &&
+    description === values.profileSummary
+  );
 }
 export function createConversationRepository(
   database: Database,
@@ -357,6 +392,16 @@ export function createConversationRepository(
       .from(learnerProfile)
       .where(eq(learnerProfile.authUserId, conversation.authUserId))
       .limit(1);
+    const privacyError = profilePrivacyError(
+      snapshot.profileName,
+      snapshot.profileSummary,
+    );
+    if (privacyError) {
+      if (storedProfile && matchesStoredProfile(storedProfile, snapshot)) {
+        return null;
+      }
+      throw new ConversationRepositoryError(400, privacyError);
+    }
 
     if (storedProfile) {
       const readableProfile = ensureV2Profile(
@@ -510,6 +555,39 @@ export function createConversationRepository(
     ) {
       throw new ConversationRepositoryError(400, "invalid_review");
     }
+    const profileRepository = createLearnerProfileRepository(database, { createId, now });
+    const existingProfile = await profileRepository.findProfile(identity.userId);
+    const privacyError = profilePrivacyError(profileName, profileSummary);
+    if (privacyError) {
+      if (
+        existingProfile &&
+        matchesStoredProfile(existingProfile, {
+          profileAge: learnedAge ? profileAge : null,
+          profileName,
+          profileSummary,
+        })
+      ) {
+        const timestamp = now();
+        await database
+          .update(conversationSession)
+          .set({
+            status: "completed",
+            finishReason: owned.conversation.finishReason ?? "reviewed",
+            endedAt: owned.conversation.endedAt ?? timestamp,
+            updatedAt: timestamp,
+          })
+          .where(eq(conversationSession.id, conversationId));
+        if (existingProfile.profileStatus !== "completed") {
+          await profileRepository.skipSession(identity);
+        }
+        return {
+          conversationId,
+          profileCompleted: existingProfile.profileStatus === "completed",
+          bypassed: existingProfile.profileStatus !== "completed",
+        };
+      }
+      throw new ConversationRepositoryError(400, privacyError);
+    }
     const profileCompleted = Boolean(
       profileSummary &&
         learnedName &&
@@ -517,8 +595,7 @@ export function createConversationRepository(
         profileName &&
         Number.isSafeInteger(profileAge),
     );
-    const profileRepository = createLearnerProfileRepository(database, { createId, now });
-    const profile = await profileRepository.ensureProfile(identity);
+    const profile = existingProfile ?? await profileRepository.ensureProfile(identity);
     const readableProfile = ensureV2Profile(
       profile,
       LEARNER_PROFILE_QUESTIONNAIRE,

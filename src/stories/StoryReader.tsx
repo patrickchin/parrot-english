@@ -297,7 +297,7 @@ export function StoryReader({
                 type="button"
                 variant="success"
               >
-                <RotateCcw aria-hidden="true" className="size-5" /> Listen again
+                <RotateCcw aria-hidden="true" className="size-5" /> Start again
               </ActionButton>
               <ActionLink
                 className="w-full rounded-full border-4 border-white"

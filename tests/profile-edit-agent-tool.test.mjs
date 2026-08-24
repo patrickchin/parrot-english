@@ -168,6 +168,113 @@ describe("Peppa profile-edit tool", () => {
     ]);
   });
 
+  it("does not persist private details supplied by the profile model", async () => {
+    const stateUpdates = [];
+    let completed;
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState(...args) {
+          stateUpdates.push(args);
+        },
+      }),
+      purpose: "profile-edit",
+      initialState: createLearnerProfileConversationState({
+        profileAge: 8,
+        profileName: "Mia",
+        profileSummary: "Mia is eight and likes pandas.",
+      }),
+    });
+
+    await task.hookAdapter.hooks.onEnter({
+      complete(result) {
+        completed = result;
+      },
+      session: {
+        generateReply() {},
+      },
+    });
+
+    await assert.rejects(
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
+        {
+          about:
+            "Mia attends Rainbow School, lives at 14 River Road, and can be reached at mia@example.com.",
+          age: 8,
+          name: "Mia",
+        },
+        {},
+      ),
+      /private details/i,
+    );
+    await assert.rejects(
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
+        {
+          about: "Mia likes pandas.",
+          age: 8,
+          name: "Mia Smith",
+        },
+        {},
+      ),
+      /first name or nickname/i,
+    );
+    await assert.rejects(
+      task.toolCtx.functionTools.updateLearnerProfile.execute(
+        {
+          about: "Mia Smith likes pandas.",
+          age: 8,
+          name: "Mia",
+        },
+        {},
+      ),
+      /first name or nickname/i,
+    );
+    assert.equal(stateUpdates.length, 0);
+    assert.equal(completed, undefined);
+  });
+
+  it("finishes an unchanged legacy-private profile without rewriting it", async () => {
+    const stateUpdates = [];
+    let completed;
+    const task = createGettingToKnowYouTask({
+      conversationId: "conversation-1",
+      ingest: ingest({
+        async updateState(...args) {
+          stateUpdates.push(args);
+        },
+      }),
+      purpose: "profile-edit",
+      initialState: createLearnerProfileConversationState({
+        profileAge: 8,
+        profileName: "Mia Smith",
+        profileSummary: "Mia attends Rainbow School.",
+      }),
+    });
+
+    await task.hookAdapter.hooks.onEnter({
+      complete(result) {
+        completed = result;
+      },
+      session: {
+        generateReply() {},
+      },
+    });
+
+    assert.deepEqual(
+      await task.toolCtx.functionTools.updateLearnerProfile.execute(
+        {
+          about: "Mia attends Rainbow School.",
+          age: 8,
+          name: "Mia Smith",
+        },
+        {},
+      ),
+      { ending: true, saved: true },
+    );
+    assert.deepEqual(completed, { finishReason: "conversation_complete" });
+    assert.equal(stateUpdates.length, 0);
+  });
+
   it("keeps the conversation open when the profile write fails", async () => {
     let completed;
     const task = createGettingToKnowYouTask({

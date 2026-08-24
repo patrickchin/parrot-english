@@ -9,6 +9,7 @@ import {
 import { recordSpeechClip } from "../media/speech-recorder";
 import {
   LearnerProfileCard,
+  LearnerProfilePeppaArt,
   LearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import {
@@ -124,12 +125,10 @@ export function LearnerProfileQuestionView({
       </header>
 
       <div className="my-5 grid items-center gap-4 text-center max-[360px]:my-2 max-[360px]:gap-2 short:my-2 short:gap-2 short-wide:contents sm:grid-cols-4 sm:gap-8 sm:text-left">
-        <img
+        <LearnerProfilePeppaArt
           alt="Peppa, your English host"
           className="mx-auto aspect-square max-h-40 w-24 animate-float object-contain motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-28 sm:col-span-1 sm:w-full"
-          height={1024}
-          src="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp"
-          width={1024}
+          sizes="(min-width: 640px) 10rem, 7rem"
         />
         <div className="short-wide:col-start-2 short-wide:row-start-2 sm:col-span-3">
           <LearnerProfileStepHeading
@@ -140,7 +139,10 @@ export function LearnerProfileQuestionView({
             {question.promptEn}
           </LearnerProfileStepHeading>
           {question.promptZh ? (
-            <p className="mb-0 mt-2.5 font-bold text-slate-500">
+            <p
+              className="mb-0 mt-2.5 font-bold text-slate-500"
+              lang="zh-CN"
+            >
               {question.promptZh}
             </p>
           ) : null}

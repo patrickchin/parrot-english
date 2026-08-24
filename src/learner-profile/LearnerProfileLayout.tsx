@@ -10,6 +10,31 @@ import { Card, cx } from "../shared/ui";
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
+const PROFILE_PEPPA_HAPPY_SRC =
+  "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy-384.webp";
+const PROFILE_PEPPA_HAPPY_SRC_SET =
+  "https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy-384.webp 384w, https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy-768.webp 768w";
+
+export function LearnerProfilePeppaArt({
+  sizes,
+  ...props
+}: Omit<
+  ComponentProps<"img">,
+  "decoding" | "height" | "sizes" | "src" | "srcSet" | "width"
+> & { sizes: string }) {
+  return (
+    <img
+      {...props}
+      decoding="async"
+      height={1024}
+      sizes={sizes}
+      src={PROFILE_PEPPA_HAPPY_SRC}
+      srcSet={PROFILE_PEPPA_HAPPY_SRC_SET}
+      width={1024}
+    />
+  );
+}
+
 export function useLearnerProfileStepHeading(stepKey: number | string) {
   const headingRef = useRef<HTMLHeadingElement>(null);
 

@@ -297,9 +297,13 @@ async function expectDelayedImageKeepsGeometry({
     .poll(() =>
       image.evaluate((element: HTMLImageElement) => element.naturalWidth),
     )
-    .toBe(1024);
+    .toBeGreaterThan(0);
 
-  await image.evaluate((element) => element.removeAttribute("src"));
+  await image.evaluate((element) => {
+    element.removeAttribute("sizes");
+    element.removeAttribute("srcset");
+    element.removeAttribute("src");
+  });
   await expect
     .poll(() =>
       image.evaluate((element: HTMLImageElement) => element.naturalWidth),
@@ -712,7 +716,7 @@ for (const viewport of targetViewports) {
     await expectNoHorizontalOverflow(page);
   });
 
-  test(`profile Peppa art reserves its 1024-square geometry on a ${viewport.name}`, async ({
+  test(`profile Peppa art reserves its square geometry on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });

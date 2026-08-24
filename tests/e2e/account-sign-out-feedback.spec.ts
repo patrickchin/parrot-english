@@ -290,6 +290,60 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
 
 });
 
+test("route heading focus does not override a faster account interaction", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const frames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 0;
+    Object.defineProperty(window, "__parrotDelayedRouteFocusFrames", {
+      configurable: true,
+      value: frames,
+    });
+    window.requestAnimationFrame = (callback) => {
+      nextFrame += 1;
+      frames.set(nextFrame, callback);
+      return nextFrame;
+    };
+    window.cancelAnimationFrame = (frame) => {
+      frames.delete(frame);
+    };
+  });
+
+  await page.goto("/lessons");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as Window & {
+              __parrotDelayedRouteFocusFrames: Map<
+                number,
+                FrameRequestCallback
+              >;
+            }
+          ).__parrotDelayedRouteFocusFrames.size,
+      ),
+    )
+    .toBeGreaterThan(0);
+
+  const account = page.getByRole("button", { name: "Account for Mia" });
+  await account.focus();
+  await expect(account).toBeFocused();
+
+  await page.evaluate(() => {
+    const frames = (
+      window as unknown as Window & {
+        __parrotDelayedRouteFocusFrames: Map<number, FrameRequestCallback>;
+      }
+    ).__parrotDelayedRouteFocusFrames;
+    for (const callback of frames.values()) callback(performance.now());
+    frames.clear();
+  });
+
+  await expect(account).toBeFocused();
+});
+
 test("sign-out feedback stays clear over the dense lesson player", async ({
   page,
 }) => {

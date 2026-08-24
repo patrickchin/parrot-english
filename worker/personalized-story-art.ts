@@ -12,6 +12,7 @@ import {
 } from "./personalized-story-art-image.ts";
 import { createPersonalizedStoryArtRepository } from "./personalized-story-art-repository.ts";
 import {
+  readBoundedBytes,
   readBoundedFormData,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
@@ -19,6 +20,7 @@ import {
 const CURRENT_GUARDIAN_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 const MAX_MULTIPART_BYTES = MAX_UPLOAD_BYTES + 64 * 1024;
+const MAX_SCENE_REFERENCE_BYTES = 2 * 1024 * 1024;
 const MAX_GENERATED_IMAGE_BYTES = 10 * 1024 * 1024;
 const PROVIDER = "cloudflare-workers-ai";
 const STORED_IMAGE_EXTENSIONS = {
@@ -196,17 +198,39 @@ async function loadSceneReference(
   fetchMedia: typeof fetch,
   config: StoryConfig,
 ) {
-  const response = await fetchMedia(new Request(config.sceneAssetUrl));
-  if (!response.ok) {
-    throw new PersonalizedStoryArtApiError(
-      502,
-      "scene_reference_unavailable",
-      "The scene reference could not be loaded.",
-    );
+  try {
+    const response = await fetchMedia(new Request(config.sceneAssetUrl));
+    if (!response.ok) throw sceneReferenceUnavailableError();
+    const contentType = response.headers
+      .get("Content-Type")
+      ?.split(";", 1)[0]
+      .trim()
+      .toLowerCase();
+    const extension =
+      STORED_IMAGE_EXTENSIONS[
+        contentType as keyof typeof STORED_IMAGE_EXTENSIONS
+      ];
+    if (!contentType || !extension) throw sceneReferenceUnavailableError();
+
+    const bytes = await readBoundedBytes(response, MAX_SCENE_REFERENCE_BYTES);
+    if (detectRasterFormat(bytes) !== contentType) {
+      throw sceneReferenceUnavailableError();
+    }
+    return new File([bytes], `scene-reference.${extension}`, {
+      type: contentType,
+    });
+  } catch (error) {
+    if (error instanceof PersonalizedStoryArtApiError) throw error;
+    throw sceneReferenceUnavailableError();
   }
-  const contentType = response.headers.get("Content-Type")?.split(";", 1)[0] ?? "image/webp";
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  return new File([bytes], "scene-reference.webp", { type: contentType });
+}
+
+function sceneReferenceUnavailableError() {
+  return new PersonalizedStoryArtApiError(
+    502,
+    "scene_reference_unavailable",
+    "The scene reference could not be loaded.",
+  );
 }
 
 async function readUploadForm(request: Request) {

@@ -1084,7 +1084,7 @@ test("finishing a prototype uses story-owned completion copy", async ({ page }) 
       name: "A bright red ball beside a smiling young child",
     }),
   ).toBeVisible();
-  await expect(complete.getByRole("button", { name: "Listen again" })).toBeEnabled();
+  await expect(complete.getByRole("button", { name: "Start again" })).toBeEnabled();
   await expect(complete.getByRole("link", { name: "Pick another story" })).toHaveAttribute(
     "href",
     "/stories",
@@ -1106,7 +1106,7 @@ for (const viewport of completionViewports) {
       exact: true,
       name: "Great job!",
     });
-    const replay = complete.getByRole("button", { name: "Listen again" });
+    const replay = complete.getByRole("button", { name: "Start again" });
     await expect(heading).toBeFocused();
     await expect(heading).toHaveAttribute("tabindex", "-1");
     await expectFullyInsideViewportWithoutScrolling(heading, page);
@@ -1151,7 +1151,7 @@ for (const viewport of completionViewports) {
   });
 }
 
-test("keyboard completion and replay return to silent page-one context", async ({
+test("keyboard completion and restart return to silent page-one context", async ({
   page,
 }) => {
   await installStoryMediaGuard(page);
@@ -1169,7 +1169,7 @@ test("keyboard completion and replay return to silent page-one context", async (
   });
   await expect(heading).toBeFocused();
   await page.keyboard.press("Tab");
-  const replay = complete.getByRole("button", { name: "Listen again" });
+  const replay = complete.getByRole("button", { name: "Start again" });
   await expect(replay).toBeFocused();
   await page.keyboard.press("Enter");
 
@@ -1210,7 +1210,7 @@ test("replay resets a deliberately scrolled completion screen", async ({
   await expect
     .poll(() => completionMain.evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0);
-  await complete.getByRole("button", { name: "Listen again" }).click();
+  await complete.getByRole("button", { name: "Start again" }).click();
 
   await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/1$/);
   const reader = page.getByRole("region", { name: "Story reader" });

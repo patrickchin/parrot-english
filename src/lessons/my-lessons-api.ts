@@ -234,12 +234,23 @@ export async function loadMyLesson(
   lessonId: string,
   options?: MyLessonsRequestOptions,
 ) {
-  const result = await requestJson<{ lesson: MyLessonDescriptor }>(
+  const response = await requestJson<unknown>(
     `/api/lessons/my/${encodeURIComponent(lessonId)}`,
     { method: "GET" },
     options,
   );
-  return result.payload.lesson;
+  try {
+    if (response.parseError) throw response.parseError;
+    const lesson = (response.payload as { lesson?: unknown } | null)?.lesson;
+    return requireMyLessonDescriptor(lesson, 0);
+  } catch (caughtError) {
+    throw new MyLessonsApiError(
+      response.status,
+      "invalid_response",
+      "The My Lessons response was invalid.",
+      { cause: caughtError },
+    );
+  }
 }
 
 export async function updateMyLesson(

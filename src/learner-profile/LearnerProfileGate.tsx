@@ -31,6 +31,7 @@ import {
 import { LearnerProfileAcknowledgment } from "./LearnerProfileAcknowledgment";
 import {
   LearnerProfileCard,
+  LearnerProfilePeppaArt,
   LearnerProfileScreen,
   LearnerProfileStepHeading,
   LearnerProfileStatusCard,
@@ -157,12 +158,10 @@ function LearnerProfileSetupView({
 
   return (
     <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
-      <img
+      <LearnerProfilePeppaArt
         alt="Peppa waving hello"
         className="aspect-square max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-44 sm:w-52"
-        height={1024}
-        src="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp"
-        width={1024}
+        sizes="(min-width: 640px) 13rem, 9rem"
       />
       <LearnerProfileStepHeading
         className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
@@ -957,7 +956,7 @@ export function LearnerProfileGate({
     } catch (error) {
       if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
         setFieldError(
-          "Audio is unavailable. You can keep going or use Replay.",
+          "Sound did not play. You can keep going or tap the speaker button.",
         );
       }
     } finally {
@@ -976,7 +975,7 @@ export function LearnerProfileGate({
       });
     } catch (error) {
       if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
-        setFieldError("Audio is unavailable. Please try Replay again.");
+        setFieldError("Sound did not play. Tap the speaker button again.");
       }
     } finally {
       finishQuestionPlayback(active);

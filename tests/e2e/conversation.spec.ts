@@ -47,6 +47,34 @@ test("the learner sees a streamed transcript while speaking", async ({ page }) =
   await expect(answer).toContainText("My name is Mia");
 });
 
+test("Chinese input shortcuts do not start the microphone", async ({ page }) => {
+  await page.goto("/talk-to-peppa");
+  await startSmallChat(page);
+
+  const startTurn = page.getByRole("button", { name: "Tap, then talk" });
+  await page.evaluate(() => {
+    document.body.tabIndex = -1;
+    document.body.focus();
+  });
+
+  await page.keyboard.press("Control+Space");
+  await expect(startTurn).toBeVisible();
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        bubbles: true,
+        code: "Space",
+        isComposing: true,
+        key: " ",
+      }),
+    );
+  });
+  await expect(startTurn).toBeVisible();
+
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("button", { name: "I’m done" })).toBeVisible();
+});
+
 test("the latest Peppa message repeats from its bottom-right audio control", async ({
   page,
 }) => {

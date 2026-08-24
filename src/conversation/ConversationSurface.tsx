@@ -695,7 +695,12 @@ export function ConversationSurface({
 
     function toggleTurnWithSpace(event: KeyboardEvent) {
       if (
+        event.altKey ||
+        event.ctrlKey ||
+        event.isComposing ||
+        event.metaKey ||
         event.repeat ||
+        event.shiftKey ||
         (event.code !== "Space" && event.key !== " ") ||
         isInteractiveSpaceTarget(event.target)
       ) {

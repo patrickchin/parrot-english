@@ -1,5 +1,9 @@
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
 import {
+  containsLikelyFullLearnerName,
+  containsPrivateLearnerProfileDetails,
+} from "../lib/learner-profile-privacy.ts";
+import {
   fetchWithTimeout,
   getGroqRequestTimeoutMs,
   type ApiEnv,
@@ -116,7 +120,9 @@ function parseGenerated(
     (description !== null &&
       (typeof description !== "string" ||
         description.length === 0 ||
-        description.length > 2_000)) ||
+        description.length > 2_000 ||
+        (containsPrivateLearnerProfileDetails(name, description) ||
+          containsLikelyFullLearnerName(name, description)))) ||
     ((name !== null || age !== null) && description === null)
   ) {
     return null;

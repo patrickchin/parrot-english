@@ -176,6 +176,13 @@ describe("onboarding answer enrichment", () => {
   });
 
   it("extracts safe canonical fallbacks and returns field errors when impossible", async () => {
+    const phrasedNameFallback = await enrichLearnerProfileAnswer({
+      env: {},
+      question: nameQuestion,
+      rawAnswer: "My name is Mia",
+    });
+    assert.equal(phrasedNameFallback.canonicalName, "Mia");
+
     const nameFallback = await enrichLearnerProfileAnswer({
       env: {},
       question: nameQuestion,
@@ -197,6 +204,88 @@ describe("onboarding answer enrichment", () => {
         rawAnswer: "I am very little",
       }),
       { fieldError: "Please tell me your age using a whole number." },
+    );
+  });
+
+  it("rejects private answers and likely full canonical names with usable errors", async () => {
+    let privateFetchCalls = 0;
+    assert.deepEqual(
+      await enrichLearnerProfileAnswer({
+        env: { GROQ_API_KEY: "test-key" },
+        fetch: async () => {
+          privateFetchCalls += 1;
+          throw new Error("private answers must not leave the Worker");
+        },
+        question: animalsQuestion,
+        rawAnswer: "I go to Rainbow School",
+      }),
+      {
+        errorCode: "private_profile_details",
+        fieldError:
+          "Do not share your school, home address, phone, email, or password.",
+      },
+    );
+    assert.equal(privateFetchCalls, 0);
+
+    let fullNameFetchCalls = 0;
+    assert.deepEqual(
+      await enrichLearnerProfileAnswer({
+        env: { GROQ_API_KEY: "test-key" },
+        fetch: async () => {
+          fullNameFetchCalls += 1;
+          throw new Error("full names must not leave the Worker");
+        },
+        question: nameQuestion,
+        rawAnswer: "My name is Mia Smith",
+      }),
+      {
+        errorCode: "preferred_name_required",
+        fieldError: "Please use only your first name or nickname.",
+      },
+    );
+    assert.equal(fullNameFetchCalls, 0);
+
+    let chineseFullNameFetchCalls = 0;
+    assert.deepEqual(
+      await enrichLearnerProfileAnswer({
+        env: { GROQ_API_KEY: "test-key" },
+        fetch: async () => {
+          chineseFullNameFetchCalls += 1;
+          throw new Error("Chinese full names must not leave the Worker");
+        },
+        question: nameQuestion,
+        rawAnswer: "我叫王小明",
+      }),
+      {
+        errorCode: "preferred_name_required",
+        fieldError: "Please use only your first name or nickname.",
+      },
+    );
+    assert.equal(chineseFullNameFetchCalls, 0);
+
+    const chineseNickname = await enrichLearnerProfileAnswer({
+      env: {},
+      question: nameQuestion,
+      rawAnswer: "我叫小明",
+    });
+    assert.equal(chineseNickname.canonicalName, "小明");
+
+    assert.deepEqual(
+      await enrichLearnerProfileAnswer({
+        env: { GROQ_API_KEY: "test-key" },
+        fetch: async () =>
+          providerResponse({
+            summary: "Mia Smith likes pandas.",
+            canonicalName: "Mia",
+            canonicalAge: null,
+          }),
+        question: nameQuestion,
+        rawAnswer: "Mia",
+      }),
+      {
+        errorCode: "preferred_name_required",
+        fieldError: "Please use only your first name or nickname.",
+      },
     );
   });
 

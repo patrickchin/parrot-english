@@ -71,10 +71,14 @@ function button(name) {
 
 async function press(target, key, options = {}) {
   const event = new window.KeyboardEvent("keydown", {
+    altKey: options.altKey ?? false,
     bubbles: true,
     cancelable: true,
     code: options.code ?? key,
+    ctrlKey: options.ctrlKey ?? false,
+    isComposing: options.isComposing ?? false,
     key,
+    metaKey: options.metaKey ?? false,
     repeat: options.repeat ?? false,
     shiftKey: options.shiftKey ?? false,
   });
@@ -217,6 +221,21 @@ describe("keyboard accessibility lifecycles", () => {
     const pageSpace = await press(window, " ", { code: "Space" });
     assert.deepEqual(toggles, ["toggle"]);
     assert.equal(pageSpace.defaultPrevented, true);
+
+    for (const modifiers of [
+      { altKey: true },
+      { ctrlKey: true },
+      { isComposing: true },
+      { metaKey: true },
+      { shiftKey: true },
+    ]) {
+      const modifiedSpace = await press(window, " ", {
+        code: "Space",
+        ...modifiers,
+      });
+      assert.deepEqual(toggles, ["toggle"]);
+      assert.equal(modifiedSpace.defaultPrevented, false);
+    }
 
     const captions = document.querySelector(
       '[role="region"][aria-label="Conversation captions"]',

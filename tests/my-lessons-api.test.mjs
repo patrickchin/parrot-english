@@ -69,6 +69,28 @@ describe("My Lessons browser API", () => {
     assert.equal(detail.calls[0][0], "/api/lessons/my/lesson%2Fid");
   });
 
+  it("rejects a malformed successful lesson detail response", async () => {
+    const detail = jsonFetch({
+      lesson: {
+        id: "lesson-1",
+        lesson: {},
+        source: "generated",
+      },
+    });
+
+    await assert.rejects(
+      loadMyLesson("lesson-1", { fetch: detail.fetch }),
+      (error) => {
+        assert.ok(error instanceof MyLessonsApiError);
+        assert.equal(error.status, 200);
+        assert.equal(error.code, "invalid_response");
+        assert.equal(error.message, "The My Lessons response was invalid.");
+        assert.ok(error.cause instanceof Error);
+        return true;
+      },
+    );
+  });
+
   it("rejects malformed successful list responses with typed diagnostics", async () => {
     const lesson = createLessonScript();
     const descriptor = {

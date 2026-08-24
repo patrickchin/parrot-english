@@ -6,6 +6,7 @@ import type {
 import { playAudioLine } from "../media/audio-playback";
 import {
   LearnerProfileCard,
+  LearnerProfilePeppaArt,
   LearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import { ActionButton, cx } from "../shared/ui";
@@ -82,12 +83,10 @@ export function LearnerProfileAcknowledgment({
       aria-live="polite"
       className="grid justify-items-center gap-5 p-8 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto] short-wide:items-center short-wide:gap-x-6 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-14"
     >
-      <img
+      <LearnerProfilePeppaArt
         alt="Peppa smiling"
         className="aspect-square max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-2 short-wide:row-start-1 short-wide:w-full short-wide:max-w-40 sm:w-56"
-        height={1024}
-        src="https://media.parrotbook.com/assets/v2/characters/peppa/peppa-happy.webp"
-        width={1024}
+        sizes="(min-width: 640px) 14rem, 10rem"
       />
       <LearnerProfileStepHeading
         className={cx(
