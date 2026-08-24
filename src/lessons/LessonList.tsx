@@ -264,7 +264,7 @@ export function LessonListView({
           tone: "muted",
         })}
       >
-        <div className="grid min-w-0 gap-1.5">
+        <div className="grid min-w-0 gap-1.5 sm:min-w-50">
           <h2
             className="m-0 flex items-center gap-2 rounded-lg text-xl leading-none text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink sm:text-2xl"
             id="grown-up-tools-title"
