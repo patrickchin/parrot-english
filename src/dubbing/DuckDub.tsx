@@ -1,7 +1,14 @@
 "use client";
 
 import { ChevronLeft, Mic, Play, Square, Volume2 } from "lucide-react";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { isAbortError } from "../media/audio-playback";
 import { playDeviceSpeech } from "../media/device-speech";
@@ -52,6 +59,7 @@ type DubControlsProps = {
   handlers: DubHandlers;
   isDeleting?: boolean;
   loadError?: string;
+  recordButtonRef?: RefObject<HTMLButtonElement | null>;
   state: DubState;
 };
 
@@ -60,6 +68,7 @@ function renderDubControls({
   handlers,
   isDeleting = false,
   loadError = "",
+  recordButtonRef,
   state,
 }: DubControlsProps) {
   const lineNumber = Math.max(0, DUB_LINES.findIndex(({ id }) => id === activeLine.id)) + 1;
@@ -144,6 +153,7 @@ function renderDubControls({
       <ActionButton
         aria-label={`Record line ${lineNumber}`}
         onClick={handlers.onRecord}
+        ref={recordButtonRef}
         variant="rose"
       >
         <Mic aria-hidden="true" /> Record
@@ -172,6 +182,7 @@ export function DuckDubView({
   onStopPlayback,
   onStopRecording,
   onWatch,
+  recordButtonRef,
   state,
 }: Omit<DubHandlers, "onRetryLoad"> & {
   confirmed: boolean;
@@ -180,6 +191,7 @@ export function DuckDubView({
   loadError?: string;
   onConfirm(confirmed: boolean): void;
   onRetryLoad?(): void;
+  recordButtonRef?: RefObject<HTMLButtonElement | null>;
   state: DubState;
 }) {
   const lineIndex = Math.max(0, DUB_LINES.findIndex(({ id }) => id === line.id));
@@ -255,6 +267,7 @@ export function DuckDubView({
                 handlers,
                 isDeleting,
                 loadError,
+                recordButtonRef,
                 state,
               })}
             </div>
@@ -306,6 +319,7 @@ export function DuckDub() {
   const deleteControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const recordingSessionRef = useRef<SpeechRecordingSession | null>(null);
+  const recordButtonRef = useRef<HTMLButtonElement>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
@@ -455,6 +469,11 @@ export function DuckDub() {
       pendingLineIdRef.current = null;
       dispatch({ type: "RETAKE" });
       setOperationError(microphoneMessage(error));
+      requestAnimationFrame(() => {
+        if (mountedRef.current && generation === generationRef.current) {
+          recordButtonRef.current?.focus();
+        }
+      });
     }
   }
 
@@ -630,6 +649,7 @@ export function DuckDub() {
       onStopPlayback={handleStopPlayback}
       onStopRecording={() => void finishRecording()}
       onWatch={() => void handleWatch()}
+      recordButtonRef={recordButtonRef}
       state={state.error || !operationError ? state : { ...state, error: operationError }}
     />
   );

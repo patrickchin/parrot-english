@@ -48,6 +48,11 @@ async function expectHomeOwnsVerticalScrolling(page: Page) {
 async function expectActivityPicturesLoaded(activities: Locator) {
   const pictures = activities.locator("img");
   await expect(pictures).toHaveCount(3);
+  await expect(
+    activities
+      .getByRole("link", { name: "Dub a rhyme" })
+      .locator('figure svg[aria-hidden="true"]'),
+  ).toHaveCount(1);
   await expect(activities.getByRole("img")).toHaveCount(0);
   await expect
     .poll(() =>
@@ -64,7 +69,7 @@ async function expectActivityPicturesLoaded(activities: Locator) {
 }
 
 for (const viewport of phoneViewports) {
-  test(`home presents three focused learning paths on a ${viewport.name} phone`, async ({
+  test(`home presents four focused learning paths in a 2x2 grid on a ${viewport.name} phone`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -78,7 +83,7 @@ for (const viewport of phoneViewports) {
       name: "Learning activities",
     });
     const links = activities.getByRole("link");
-    await expect(links).toHaveCount(3);
+    await expect(links).toHaveCount(4);
     await expect(
       activities.getByRole("link", { name: "Play a lesson" }),
     ).toHaveAttribute("href", "/lessons");
@@ -88,6 +93,9 @@ for (const viewport of phoneViewports) {
     await expect(
       activities.getByRole("link", { name: "Story time" }),
     ).toHaveAttribute("href", "/stories");
+    await expect(
+      activities.getByRole("link", { name: "Dub a rhyme" }),
+    ).toHaveAttribute("href", "/dubs/five-little-ducks");
     await expect(activities.getByRole("button")).toHaveCount(0);
     await expectActivityPicturesLoaded(activities);
 
@@ -104,12 +112,18 @@ for (const viewport of phoneViewports) {
     );
 
     await expectHomeOwnsVerticalScrolling(page);
+    const boxes = [];
     for (const activity of await links.all()) {
       await expectInsidePage(activity, page);
       const box = await activity.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.height).toBeGreaterThanOrEqual(96);
+      boxes.push(box!);
     }
+    expect(Math.abs(boxes[0].y - boxes[1].y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(boxes[2].y - boxes[3].y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(boxes[0].x - boxes[2].x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(boxes[1].x - boxes[3].x)).toBeLessThanOrEqual(1);
 
     await expect
       .poll(() =>
@@ -131,7 +145,7 @@ for (const viewport of shortLandscapeViewports) {
     const activities = page.getByRole("navigation", {
       name: "Learning activities",
     });
-    await expect(activities.getByRole("link")).toHaveCount(3);
+    await expect(activities.getByRole("link")).toHaveCount(4);
     const links = await activities.getByRole("link").all();
     await expectActivityPicturesLoaded(activities);
 
@@ -145,6 +159,13 @@ for (const viewport of shortLandscapeViewports) {
       expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
       expect(box!.height).toBeGreaterThanOrEqual(128);
     }
+
+    const boxes = await Promise.all(links.map((link) => link.boundingBox()));
+    for (const box of boxes) expect(box).not.toBeNull();
+    expect(
+      Math.max(...boxes.map((box) => box!.y)) -
+        Math.min(...boxes.map((box) => box!.y)),
+    ).toBeLessThanOrEqual(1);
 
     const scrollMetrics = await page.getByRole("main").evaluate((main) => ({
       clientHeight: main.clientHeight,
@@ -189,7 +210,7 @@ test("home uses responsive art for its lesson preview", async ({ page }) => {
     .toMatch(/01-peppas-high-ball-384\.webp$/);
 });
 
-test("desktop home gives the three learner paths equal visual weight", async ({
+test("desktop home gives the four learner paths equal visual weight in one row", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
@@ -198,7 +219,7 @@ test("desktop home gives the three learner paths equal visual weight", async ({
   const cardLinks = page
     .getByRole("navigation", { name: "Learning activities" })
     .getByRole("link");
-  await expect(cardLinks).toHaveCount(3);
+  await expect(cardLinks).toHaveCount(4);
   const cards = await cardLinks.all();
 
   const boxes = await Promise.all(cards.map((card) => card.boundingBox()));
@@ -210,6 +231,10 @@ test("desktop home gives the three learner paths equal visual weight", async ({
   expect(
     Math.max(...boxes.map((box) => box!.height)) -
       Math.min(...boxes.map((box) => box!.height)),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.max(...boxes.map((box) => box!.y)) -
+      Math.min(...boxes.map((box) => box!.y)),
   ).toBeLessThanOrEqual(1);
 
   await expect(page.getByText(/World Explorer|Pixel Lesson Lab/)).toHaveCount(0);

@@ -13,6 +13,7 @@ Browser
        -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
        -> /api/conversations/* -> LiveKit -> D1
        -> /api/lessons/my/* -> OpenAI -> D1
+       -> /api/dubs/five-little-ducks-v1/* -> private R2 clip slots
        -> /api/evaluate-speech -> Groq
        -> static Vite assets
 ```
@@ -26,13 +27,15 @@ prototype build entry in the shipped product.
 - `src/app/App.tsx` composes route guards and owns lesson playback effects.
 - `src/app/app-routes.ts` owns canonical paths, safe return targets, and route
   decisions.
-- `src/app/HomeMenu.tsx` exposes the three learner activities.
+- `src/app/HomeMenu.tsx` exposes the four learner activities.
 - `src/auth` owns Better Auth session and account UI.
 - `src/learner-profile` owns onboarding and profile editing.
 - `src/conversation` owns the learner-controlled LiveKit conversation surface.
 - `src/lessons` owns the lesson catalog, player UI, custom lesson creation, and
   editing.
 - `src/stories` owns the levelled story shelf and reader.
+- `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
+  client, and synchronized replay.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
@@ -45,7 +48,9 @@ wildcard home redirect and are not accepted as authentication return targets.
 `worker/index.ts` authenticates protected requests, applies endpoint-specific
 rate limits, and delegates to focused handlers. It exposes authentication,
 learner profile, conversations, My Lessons, build information, and speech
-evaluation. Static assets are the final fallback.
+evaluation. The authenticated `/api/dubs/five-little-ducks-v1/*` family owns
+status, raw clip upload, private clip streaming, and whole-dub reset. Static
+assets are the final fallback.
 
 The Worker and browser share the Drizzle schema in `src/db/schema.ts`. Better
 Auth and product data use one D1 database, while each product handler enforces
@@ -53,10 +58,11 @@ owner scoping at its boundary.
 
 ## Durable and Transient State
 
-URLs are authoritative for durable screens, lesson scenes, story pages, and
-story shelf levels. Lesson playback phase, recording, evaluation, and current
-step are transient React state. Route changes invalidate pending audio and
-recording work before a new scene is selected.
+URLs are authoritative for durable screens, lesson scenes, story pages, story
+shelf levels, and the Five Little Ducks dubbing studio. Lesson and dub playback
+phase, active recording, evaluation, and current step are transient React
+state. Route changes invalidate pending audio and recording work before a new
+scene is selected.
 
 ```text
 /
@@ -68,6 +74,7 @@ recording work before a new scene is selected.
 │   └── /lessons/my/:lessonId/edit
 ├── /stories
 │   └── /stories/:storyId/pages/:pageNumber
+├── /dubs/five-little-ducks
 ├── /profile
 ├── /profile/setup
 └── /login
@@ -88,6 +95,19 @@ Built-in lesson JSON never stores asset filenames. My Lessons are validated
 against the same contract and stored in D1. Story scripts retain internal
 vocabulary and prompt metadata for validation, but the learner UI consumes only
 level, cover, title, summary, pages, and join-in content.
+
+Five Little Ducks voice clips use nine fixed extensionless objects beneath the
+existing private account-purge prefix:
+
+```text
+personalized-story-art/{encoded-user-id}/learner-dubs/
+  five-little-ducks-v1/{line-id}.audio
+```
+
+R2 is the source of truth for saved slots. Replacement overwrites the fixed
+slot and reset deletes the nine exact keys. No D1 metadata or migration is used;
+the existing per-account R2 prefix sweep also deletes the clips with the
+account.
 
 ## Provider Boundaries
 

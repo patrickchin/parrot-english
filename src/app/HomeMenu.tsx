@@ -60,7 +60,7 @@ const LEARNING_PATHS: readonly LearningPath[] = [
 
 export function HomeMenu() {
   return (
-    <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-4 short:pt-17 sm:px-6 md:px-10 md:py-24 lg:px-16">
+    <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-4 short:pt-17 short-wide:!pb-0 sm:px-6 md:px-10 md:py-24 lg:px-16">
       <section className="mx-auto grid w-full max-w-5xl gap-5 short:gap-3.5 md:gap-9">
         <header className="mx-auto grid max-w-3xl gap-2 text-center short:gap-1 md:gap-3">
           <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue sm:text-sm md:text-base">

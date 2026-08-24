@@ -2,12 +2,13 @@
 
 ## Product Promise
 
-Parrot English helps young learners practice spoken English through three
+Parrot English helps young learners practice spoken English through four
 focused activities:
 
 1. **Talk to Peppa** for a short, learner-controlled conversation.
 2. **Speaking lessons** for guided listen-and-repeat practice inside a story.
 3. **Story time** for levelled read-aloud stories with simple join-in lines.
+4. **Dub a rhyme** for recording and replaying a private saved performance.
 
 The authenticated home presents only these learner activities. Custom lesson
 creation remains a secondary grown-up action inside the lesson catalog. Product
@@ -28,6 +29,7 @@ Durable learner routes are:
 - `/lessons/my/:lessonId/scenes/:sceneNumber`
 - `/stories`
 - `/stories/:storyId/pages/:pageNumber`
+- `/dubs/five-little-ducks`
 
 The account menu owns learner profile, build information, and sign-out. Each
 activity owns one consistent Back action. Retired experiment URLs fall back to
@@ -82,6 +84,18 @@ child-facing interface.
 The reader moves page by page, presents one join-in line, and keeps narration
 controls separate from page navigation. Returning from a story restores its
 levelled shelf.
+
+## Dub a Rhyme
+
+Five Little Ducks is a durable authenticated studio at
+`/dubs/five-little-ducks`. A grown-up confirms before the learner records the
+original nine-line rhyme one line at a time. Progress is saved to the signed-in
+account, resumes at the first missing line, and unlocks one synchronized final
+performance when every line is ready.
+
+Voice clips are private to the account. Each take can be replayed or replaced,
+the complete dub can be reset from the studio, and account deletion removes all
+saved clips. Recordings are not shared publicly or sent to speech recognition.
 
 ## Visual and Interaction Rules
 

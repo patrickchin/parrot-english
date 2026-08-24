@@ -7,6 +7,25 @@ const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
 const MOCK_RECORDING_DELAY_MS = 5000;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
+const E2E_DUB_SCENARIOS = new Set([
+  "empty",
+  "partial",
+  "complete",
+  "upload-failed",
+]);
+const E2E_DUB_LINE_IDS = [
+  "line-1",
+  "line-2",
+  "line-3",
+  "line-4",
+  "line-5",
+  "line-6",
+  "line-7",
+  "line-8",
+  "line-9",
+] as const;
+const E2E_DUB_API = "/api/dubs/five-little-ducks-v1";
+const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
 const E2E_MICROPHONE_SCENARIOS = new Set([
   "delayed",
   "denied",
@@ -228,6 +247,14 @@ function getE2eMicrophoneScenario() {
   return scenario && E2E_MICROPHONE_SCENARIOS.has(scenario) ? scenario : null;
 }
 
+function getE2eDubScenario() {
+  const scenario = new URL(window.location.href).searchParams.get(
+    "parrotE2eDub",
+  );
+
+  return scenario && E2E_DUB_SCENARIOS.has(scenario) ? scenario : null;
+}
+
 function getE2eProfileScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
     "parrotE2eProfile",
@@ -344,6 +371,111 @@ function e2eJson(payload: unknown) {
       "X-Parrot-Mock-Api": "browser",
     },
   });
+}
+
+function createE2eDubBlob(scenario = "correct") {
+  return new Blob(
+    [
+      new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00]),
+      `parrot-e2e-audio:${scenario}`,
+    ],
+    { type: "audio/webm" },
+  );
+}
+
+function initialE2eDubLineIds(scenario: string) {
+  if (scenario === "complete") return [...E2E_DUB_LINE_IDS];
+  if (scenario === "partial") return E2E_DUB_LINE_IDS.slice(0, 3);
+  return [];
+}
+
+function createE2eDubStore(scenario: string | null) {
+  if (!scenario) return null;
+  const savedKey = `parrot-e2e-dub:${scenario}:saved`;
+  const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
+  const persisted = sessionStorage.getItem(savedKey);
+  const savedLineIds = persisted
+    ? (JSON.parse(persisted) as string[])
+    : initialE2eDubLineIds(scenario);
+  if (persisted === null) sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
+
+  const clips = new Map(savedLineIds.map((id) => [id, createE2eDubBlob()]));
+  let failedUpload: Uint8Array | null = null;
+
+  function persist() {
+    sessionStorage.setItem(savedKey, JSON.stringify([...clips.keys()]));
+  }
+
+  return {
+    async handle(url: URL, method: string, request: Request) {
+      if (url.origin !== window.location.origin) return null;
+      if (url.pathname === E2E_DUB_API) {
+        if (method === "GET") {
+          return e2eJson({
+            complete: E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
+            dubId: "five-little-ducks-v1",
+            guardianConsentVersion: "guardian-voice-r2-v1",
+            lines: E2E_DUB_LINE_IDS.map((id) => ({
+              id,
+              recordedAt: clips.has(id) ? E2E_DUB_RECORDED_AT : null,
+              saved: clips.has(id),
+            })),
+          });
+        }
+        if (method === "DELETE") {
+          clips.clear();
+          persist();
+          return new Response(null, {
+            headers: { "Cache-Control": "private, no-store" },
+            status: 204,
+          });
+        }
+      }
+
+      const lineMatch = url.pathname.match(
+        /^\/api\/dubs\/five-little-ducks-v1\/lines\/(line-[1-9])(\/audio)?$/,
+      );
+      if (!lineMatch) return null;
+      const [, lineId, audioPath] = lineMatch;
+      if (method === "GET" && audioPath) {
+        const clip = clips.get(lineId);
+        return clip
+          ? new Response(clip, {
+              headers: {
+                "Cache-Control": "private, no-store",
+                "Content-Type": clip.type,
+              },
+            })
+          : new Response(null, { status: 404 });
+      }
+      if (method !== "PUT" || audioPath) return new Response(null, { status: 405 });
+
+      const clip = await request.blob();
+      const bytes = new Uint8Array(await clip.arrayBuffer());
+      const consent = request.headers.get("X-Parrot-Guardian-Consent-Version");
+      if (request.headers.get("Content-Type") !== "audio/webm" || consent !== "guardian-voice-r2-v1") {
+        return new Response(null, { status: 400 });
+      }
+      if (
+        scenario === "upload-failed" &&
+        sessionStorage.getItem(failureKey) !== "used"
+      ) {
+        failedUpload = bytes;
+        sessionStorage.setItem(failureKey, "used");
+        return new Response(null, { status: 503 });
+      }
+      if (
+        failedUpload &&
+        (failedUpload.length !== bytes.length ||
+          failedUpload.some((byte, index) => byte !== bytes[index]))
+      ) {
+        return new Response(null, { status: 409 });
+      }
+      clips.set(lineId, new Blob([bytes], { type: clip.type }));
+      persist();
+      return e2eJson({ recordedAt: E2E_DUB_RECORDED_AT });
+    },
+  };
 }
 
 function createProfileOperationAbortError() {
@@ -502,6 +634,7 @@ function rejectNextProfileRecording() {
 
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
+  const dubStore = createE2eDubStore(getE2eDubScenario());
 
   window.fetch = async (input, init) => {
     const profileScenario = getE2eProfileScenario();
@@ -514,6 +647,14 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+    if (dubStore) {
+      const dubResponse = await dubStore.handle(
+        url,
+        method,
+        request ?? new Request(url.href, init),
+      );
+      if (dubResponse) return dubResponse;
+    }
     const profileOperation = profileOperationForRequest(url, method);
 
     const visualPhase = getE2eProfileVisualPhase();
@@ -637,10 +778,11 @@ function resolveNextProfilePlayback() {
 }
 
 class MockMediaRecorder {
-  static isTypeSupported() {
-    return true;
+  static isTypeSupported(type: string) {
+    return type === "audio/webm;codecs=opus";
   }
 
+  readonly mimeType = "audio/webm";
   ondataavailable: RecorderHandler<BlobEvent> = null;
   onerror: RecorderHandler<Event> = null;
   onstop: RecorderHandler<Event> = null;
@@ -678,12 +820,62 @@ class MockMediaRecorder {
 
     this.state = "inactive";
     finishHeldProfileRecording(this, "resolved");
-    const data = new Blob([`parrot-e2e-audio:${getE2eScenario()}`], {
-      type: "audio/webm",
-    });
+    const data = createE2eDubBlob(getE2eScenario());
     this.ondataavailable?.({ data } as BlobEvent);
     this.onstop?.(new Event("stop"));
   }
+}
+
+class MockAudioParam {
+  value = 0;
+  linearRampToValueAtTime(value: number) {
+    this.value = value;
+  }
+  setValueAtTime(value: number) {
+    this.value = value;
+  }
+}
+
+class MockAudioNode {
+  connect() {
+    return this;
+  }
+}
+
+class MockScheduledAudioNode extends MockAudioNode {
+  buffer: AudioBuffer | null = null;
+  frequency = new MockAudioParam();
+  type: OscillatorType = "sine";
+  start() {}
+  stop() {}
+}
+
+class MockGainNode extends MockAudioNode {
+  gain = new MockAudioParam();
+}
+
+class MockAudioContext {
+  readonly destination = new MockAudioNode();
+  private readonly startedAt = performance.now();
+
+  get currentTime() {
+    return ((performance.now() - this.startedAt) / 1_000) * 20;
+  }
+
+  async close() {}
+  createBufferSource() {
+    return new MockScheduledAudioNode();
+  }
+  createGain() {
+    return new MockGainNode();
+  }
+  createOscillator() {
+    return new MockScheduledAudioNode();
+  }
+  async decodeAudioData() {
+    return {} as AudioBuffer;
+  }
+  async resume() {}
 }
 
 function createMockStream(onStop?: () => void) {
@@ -836,6 +1028,11 @@ if (hasHeldE2eProfileOperations()) {
 Object.defineProperty(window, "Audio", {
   configurable: true,
   value: MockAudioElement,
+});
+
+Object.defineProperty(window, "AudioContext", {
+  configurable: true,
+  value: MockAudioContext,
 });
 
 Object.defineProperty(window, "MediaRecorder", {
