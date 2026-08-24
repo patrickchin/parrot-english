@@ -143,6 +143,13 @@ const StoryReader = import.meta.env.SSR
         default: StoryReader,
       })),
     );
+const DuckDub = import.meta.env.SSR
+  ? (await import("../dubbing/DuckDub")).DuckDub
+  : lazy(() =>
+      import("../dubbing/DuckDub").then(({ DuckDub }) => ({
+        default: DuckDub,
+      })),
+    );
 
 const RECORDING_UNSUPPORTED_MESSAGE =
   "No mic here. Say the words. Then tap Done.";
@@ -1103,6 +1110,7 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
         />
         <Route element={<Navigate replace to="/" />} path="/progress" />
         <Route element={<StoryList />} path="/stories" />
+        <Route element={<DuckDub />} path="/dubs/five-little-ducks" />
         <Route element={<StoryRedirect />} path="/stories/:storyId" />
         <Route
           element={<StoryPageRoute />}

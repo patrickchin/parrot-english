@@ -50,7 +50,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu prioritizes the three learner activities", () => {
+test("home menu prioritizes the four learner activities", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -60,13 +60,20 @@ test("home menu prioritizes the three learner activities", () => {
   const activityHrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
   );
-  assert.deepEqual(activityHrefs, ["/lessons", "/talk-to-peppa", "/stories"]);
+  assert.deepEqual(activityHrefs, [
+    "/lessons",
+    "/talk-to-peppa",
+    "/stories",
+    "/dubs/five-little-ducks",
+  ]);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
   assert.match(html, /Tap a picture\./);
   assert.match(html, />Play a lesson</);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
+  assert.match(html, />Dub a rhyme</);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 3);
+  assert.equal((html.match(/<svg[^>]*viewBox="0 0 960 540"/g) ?? []).length, 1);
   assert.doesNotMatch(
     html,
     /Listen and speak\.|Say hello and chat\.|Listen to a story\.|Tap one\./,
@@ -148,6 +155,9 @@ test("authenticated application routes include the core learner activities", () 
     renderApplicationRoute("/stories"),
     /<h1[^>]*>Pick a story<\/h1>/,
   );
+  const dub = renderApplicationRoute("/dubs/five-little-ducks");
+  assert.match(dub, /Five Little Ducks/);
+  assert.match(dub, /Your recordings are private/);
   assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
@@ -255,6 +265,7 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     "/stories",
     "/stories/:storyId",
     "/stories/:storyId/pages/:pageNumber",
+    "/dubs/five-little-ducks",
     "/login",
     "/profile/setup",
     "/profile",

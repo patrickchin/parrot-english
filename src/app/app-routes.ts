@@ -25,6 +25,7 @@ const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const SAFE_RETURN_PATHS = [
   /^\/$/,
   TALK_TO_PEPPA_ROUTE_PATH,
+  /^\/dubs\/five-little-ducks\/*$/i,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
@@ -69,6 +70,10 @@ export function getStoryPath(storyId: string) {
   }
 
   return `/stories/${encodeURIComponent(storyId)}`;
+}
+
+export function getDuckDubPath() {
+  return "/dubs/five-little-ducks" as const;
 }
 
 export function getStoryShelfPath(

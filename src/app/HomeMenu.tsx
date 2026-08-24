@@ -1,5 +1,7 @@
-import { ArrowRight, Headphones, MessageCircle, Play } from "lucide-react";
+import { ArrowRight, Headphones, MessageCircle, Mic2, Play } from "lucide-react";
+import { DuckScene } from "../dubbing/DuckScene";
 import { cx, InteractiveCardLink } from "../shared/ui";
+import { getDuckDubPath } from "./app-routes";
 import { LESSON_LEARNING_PATH } from "./learning-paths";
 
 type LearningPath = {
@@ -11,6 +13,7 @@ type LearningPath = {
   imageSrc: string;
   imageSrcSet?: string;
   imageWidth: number;
+  originalDuckScene?: boolean;
   label: string;
   tone: "blue" | "navy" | "rose";
   to: string;
@@ -42,6 +45,17 @@ const LEARNING_PATHS: readonly LearningPath[] = [
     tone: "blue",
     to: "/stories",
   },
+  {
+    icon: Mic2,
+    imageClassName: "",
+    imageHeight: 0,
+    imageSrc: "",
+    imageWidth: 0,
+    label: "Dub a rhyme",
+    originalDuckScene: true,
+    tone: "rose",
+    to: getDuckDubPath(),
+  },
 ];
 
 export function HomeMenu() {
@@ -59,7 +73,7 @@ export function HomeMenu() {
 
         <nav
           aria-label="Learning activities"
-          className="grid grid-cols-1 gap-4 short-wide:grid-cols-3 short-wide:gap-3 md:grid-cols-3 md:gap-6"
+          className="grid grid-cols-2 gap-3 short-wide:grid-cols-4 short-wide:gap-3 md:grid-cols-4 md:gap-6"
         >
           {LEARNING_PATHS.map(
             ({
@@ -71,31 +85,36 @@ export function HomeMenu() {
               imageSrcSet,
               imageWidth,
               label,
+              originalDuckScene,
               tone,
               to,
             }) => (
               <InteractiveCardLink
                 aria-label={label}
-                className="grid min-h-24 grid-cols-[5rem_minmax(0,1fr)] items-center gap-3 overflow-hidden p-2.5 text-left short:grid-cols-[4rem_minmax(0,1fr)] short:gap-2 short:p-2 short-wide:!min-h-32 short-wide:!grid-cols-1 short-wide:!content-stretch short-wide:!gap-2 short-wide:!p-2.5 short-wide:!text-center md:min-h-64 md:grid-cols-1 md:content-stretch md:gap-4 md:p-4 md:text-center"
+                className="grid min-h-40 grid-cols-1 content-stretch items-center gap-2 overflow-hidden p-2 text-center short:min-h-32 short-wide:!min-h-32 short-wide:!gap-2 short-wide:!p-2.5 md:min-h-64 md:gap-4 md:p-4"
                 key={to}
                 to={to}
               >
-                <span
+                <div
                   className={cx(
-                    "relative size-20 overflow-hidden rounded-2xl bg-sky-100 short:size-16 short-wide:!h-20 short-wide:!w-28 md:aspect-[3/2] md:h-auto md:w-full",
+                    "relative h-20 w-full overflow-hidden rounded-2xl bg-sky-100 short:h-16 short-wide:!h-20 md:aspect-[3/2] md:h-auto",
                     tone === "navy" && "bg-pink-100",
                   )}
                 >
-                  <img
-                    alt=""
-                    className={cx("size-full", imageClassName)}
-                    decoding="async"
-                    height={imageHeight}
-                    sizes={imageSizes}
-                    src={imageSrc}
-                    srcSet={imageSrcSet}
-                    width={imageWidth}
-                  />
+                  {originalDuckScene ? (
+                    <DuckScene compact />
+                  ) : (
+                    <img
+                      alt=""
+                      className={cx("size-full", imageClassName)}
+                      decoding="async"
+                      height={imageHeight}
+                      sizes={imageSizes}
+                      src={imageSrc}
+                      srcSet={imageSrcSet}
+                      width={imageWidth}
+                    />
+                  )}
                   <span
                     aria-hidden="true"
                     className={cx(
@@ -107,12 +126,12 @@ export function HomeMenu() {
                   >
                     <Icon className="size-3.5 md:size-5" />
                   </span>
-                </span>
+                </div>
 
-                <span className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 short-wide:w-full md:w-full">
+                <span className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5 md:gap-2">
                   <strong
                     className={cx(
-                      "text-xl leading-tight min-[360px]:text-2xl md:text-3xl md:leading-none",
+                      "text-base leading-tight min-[360px]:text-lg sm:text-xl md:text-2xl md:leading-none lg:text-3xl",
                       tone === "navy" && "text-brand-navy",
                       tone === "rose" && "text-brand-rose",
                       tone === "blue" && "text-brand-blue",
@@ -123,7 +142,7 @@ export function HomeMenu() {
                   <ArrowRight
                     aria-hidden="true"
                     className={cx(
-                      "size-10 shrink-0 rounded-full p-2 text-white md:size-11 md:p-2.5",
+                      "size-8 shrink-0 rounded-full p-1.5 text-white md:size-11 md:p-2.5",
                       tone === "navy" && "bg-brand-navy",
                       tone === "rose" && "bg-brand-rose",
                       tone === "blue" && "bg-brand-blue",
