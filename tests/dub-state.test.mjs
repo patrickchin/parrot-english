@@ -32,9 +32,9 @@ describe("five little ducks dub domain", () => {
   it("keeps the authored script immutable", () => {
     const originalText = DUB_LINES[0].text;
     const originalCue = DUB_LINES[0].cueMs;
-    try { DUB_LINES[0].text = "changed"; } catch {}
-    try { DUB_LINES[0].cueMs = 0; } catch {}
-    try { DUB_LINES.push(DUB_LINES[0]); } catch {}
+    assert.throws(() => { DUB_LINES[0].text = "changed"; }, TypeError);
+    assert.throws(() => { DUB_LINES[0].cueMs = 0; }, TypeError);
+    assert.throws(() => { DUB_LINES.push(DUB_LINES[0]); }, TypeError);
     assert.equal(DUB_LINES[0].text, originalText);
     assert.equal(DUB_LINES[0].cueMs, originalCue);
     assert.equal(DUB_LINES.length, 9);
