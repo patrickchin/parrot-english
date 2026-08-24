@@ -179,6 +179,26 @@ function boxesOverlap(first: Rect, second: Rect) {
   );
 }
 
+function expectBoxInside(inner: Rect, outer: Rect) {
+  expect(inner.x).toBeGreaterThanOrEqual(outer.x);
+  expect(inner.y).toBeGreaterThanOrEqual(outer.y);
+  expect(inner.x + inner.width).toBeLessThanOrEqual(outer.x + outer.width);
+  expect(inner.y + inner.height).toBeLessThanOrEqual(outer.y + outer.height);
+}
+
+async function overflowClipBox(locator: Locator): Promise<Rect> {
+  await expect(locator).toBeVisible();
+  return locator.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return {
+      height: element.clientHeight,
+      width: element.clientWidth,
+      x: box.x + element.clientLeft,
+      y: box.y + element.clientTop,
+    };
+  });
+}
+
 async function focusedPaintBox(locator: Locator): Promise<Rect> {
   const box = await visibleBox(locator);
   const indicator = await locator.evaluate((element) => {
@@ -471,6 +491,7 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     const signOut = page.getByRole("menuitem", { name: "Sign out" });
     await expect(signOut).toBeFocused();
     const signOutPaint = await focusedPaintBox(signOut);
+    expectBoxInside(signOutPaint, await overflowClipBox(panel));
     expect(signOutPaint.x).toBeGreaterThanOrEqual(0);
     expect(signOutPaint.y).toBeGreaterThanOrEqual(0);
     expect(signOutPaint.x + signOutPaint.width).toBeLessThanOrEqual(
@@ -523,6 +544,7 @@ test("a failed account action stays separate from the reopened identity menu", a
   const signOut = page.getByRole("menuitem", { name: "Sign out" });
   await expect(signOut).toBeFocused();
   const signOutPaint = await focusedPaintBox(signOut);
+  expectBoxInside(signOutPaint, await overflowClipBox(panel));
   expect(signOutPaint.y).toBeGreaterThanOrEqual(0);
   expect(signOutPaint.y + signOutPaint.height).toBeLessThanOrEqual(
     viewport.height,

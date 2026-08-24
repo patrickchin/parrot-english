@@ -250,7 +250,7 @@ export function AccountHeader({
           {error ? <AccountError error={error} /> : null}
           <div
             aria-label="Account menu"
-            className="grid gap-1"
+            className="grid gap-1 [&>button]:scroll-my-2"
             id={menuId}
             onKeyDown={handleMenuKeyDown}
             role="menu"
