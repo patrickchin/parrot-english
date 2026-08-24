@@ -432,7 +432,10 @@ test("signed-in views expose signing-out progress on the persistent account cont
   });
 
   assert.match(html, /LESSON CONTENT/);
-  assert.match(html, /aria-label="Account for learner@example.com"/);
+  assert.match(
+    html,
+    /aria-label="Signing out… Account for learner@example.com"/,
+  );
   assert.match(html, /aria-disabled="true"/);
   assert.match(
     html,
@@ -443,11 +446,11 @@ test("signed-in views expose signing-out progress on the persistent account cont
   assert.match(html, /aria-expanded="false"/);
   assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
   const accountButton = html.match(
-    /<button[^>]*aria-label="Account for learner@example.com"[\s\S]*?<\/button>/,
+    /<button[^>]*aria-label="Signing out… Account for learner@example.com"[\s\S]*?<\/button>/,
   )?.[0];
   assert.ok(accountButton);
   assert.match(accountButton, /title="Account"/);
-  assert.doesNotMatch(accountButton, /Signing out…/);
+  assert.doesNotMatch(accountButton, />Signing out…</);
 });
 
 test("renders a clearly labeled account trigger without conflating learner profile", () => {
