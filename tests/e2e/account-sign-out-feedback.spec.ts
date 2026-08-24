@@ -508,6 +508,14 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   });
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/lessons");
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      [...document.images].map((image) =>
+        image.complete ? Promise.resolve() : image.decode().catch(() => {}),
+      ),
+    );
+  });
 
   const account = page.getByRole("button", { name: "Account for Mia" });
   await account.focus();
