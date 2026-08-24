@@ -124,16 +124,26 @@ pipeline. Each fixed `.audio` key is the current slot, so replacing a take
 cannot orphan an older browser format. Split voice data into its own bucket
 when its retention, residency, or access policy differs from private story art.
 
-R2 is the source of truth. `list` determines saved slots, `put` atomically
-replaces a slot, `get` streams owner-only audio, and deleting the dub removes
-the nine exact keys. HTTP metadata stores the normalized content type; custom
-metadata stores the consent version, line ID, and recording timestamp.
-The zero-byte `.dub-generation` coordination object stores only a unique reset
-generation and `deleting` or `ready` state in custom metadata. Conditional R2
-writes serialize resets; uploads capture and recheck the ready generation so a
-reset cannot return success while an older upload recreates a clip. Status and
-audio routes expose only the nine canonical line keys, while account deletion
-sweeps the marker through the same owner prefix.
+R2 is the source of truth. `list` determines saved slots, `put` conditionally
+replaces a slot, and `get` streams owner-only audio. Reset keeps the nine fixed
+keys but replaces each with a small non-audio generation tombstone. The marker,
+tombstones, and private audio envelope all include their generation in the
+object body. This is required because R2 single-part ETags are content-derived:
+custom metadata alone cannot prevent an ETag ABA when a reset or identical take
+rewrites a key. The audio endpoint strips the private envelope while streaming,
+so the learner receives the exact uploaded clip.
+
+HTTP metadata stores the normalized content type. Audio custom metadata stores
+the reset generation, audio state, payload offset, consent version, line ID, and
+recording timestamp. The `.dub-generation` coordination object also stores its
+unique reset generation and `deleting` or `ready` state in custom metadata.
+Conditional R2 writes serialize the marker and every fixed slot. Uploads capture
+the ready generation and slot ETag, then conditionally replace only that observed
+slot; resets acquire a new deleting generation and conditionally tombstone all
+nine slots before returning to ready. Status and audio routes accept only
+audio-state objects for the current ready generation (plus pre-marker legacy
+audio), while account deletion sweeps the marker and tombstones through the same
+owner prefix.
 
 ## Validation, Privacy, and Failure Handling
 
