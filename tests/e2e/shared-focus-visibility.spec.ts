@@ -742,6 +742,220 @@ test("story completion focus retains a real indicator in forced colors", async (
   );
 });
 
+function lessonShelfHeading(page: Page) {
+  return page.getByRole("heading", {
+    exact: true,
+    level: 1,
+    name: "Pick a lesson",
+  });
+}
+
+function firstLessonLink(page: Page) {
+  return page
+    .getByRole("region", { name: "Lessons" })
+    .getByRole("link", { name: "Start lesson: Peppa's High Ball" });
+}
+
+async function openSettledLessonShelf(page: Page) {
+  await page.route("**/api/lessons/my", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ lessons: [] }),
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.goto("/lessons");
+  await expect(lessonShelfHeading(page)).toBeFocused();
+  await expect(firstLessonLink(page)).toBeVisible();
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      Array.from(document.images, (image) => image.decode().catch(() => {})),
+    );
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
+}
+
+async function roundedLocatorBox(target: Locator) {
+  const box = await target.boundingBox();
+  expect(box).not.toBeNull();
+  const rounded = (value: number) => Math.round(value * 100) / 100;
+  return {
+    height: rounded(box!.height),
+    width: rounded(box!.width),
+    x: rounded(box!.x),
+    y: rounded(box!.y),
+  };
+}
+
+async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
+  const text = await heading.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const box = range.getBoundingClientRect();
+    const rounded = (value: number) => Math.round(value * 100) / 100;
+    return {
+      height: rounded(box.height),
+      width: rounded(box.width),
+      x: rounded(box.x),
+      y: rounded(box.y),
+    };
+  });
+  const presentation = await heading.evaluate((element) => {
+    const cue = getComputedStyle(element, "::before");
+    return {
+      cueMotion: {
+        animationName: cue.animationName,
+        transitionProperty: cue.transitionProperty,
+      },
+      documentScroll: {
+        left: document.documentElement.scrollLeft,
+        top: document.documentElement.scrollTop,
+      },
+      mainScroll: {
+        left: element.closest("main")?.scrollLeft ?? null,
+        top: element.closest("main")?.scrollTop ?? null,
+      },
+    };
+  });
+
+  return {
+    account: await roundedLocatorBox(
+      page.getByRole("button", { name: /^Account for / }),
+    ),
+    back: await roundedLocatorBox(page.getByRole("link", { name: "Back to home" })),
+    firstLesson: await roundedLocatorBox(firstLessonLink(page)),
+    heading: await roundedLocatorBox(heading),
+    subtitle: await roundedLocatorBox(page.getByText("Listen. Then speak.", { exact: true })),
+    text,
+    ...presentation,
+  };
+}
+
+async function expectLessonShelfOpenReadingCue(
+  page: Page,
+  heading: Locator,
+  name: string,
+) {
+  await expect(heading).toBeFocused();
+  await expect(heading).toHaveAttribute("tabindex", "-1");
+  const focused = await lessonShelfHeadingGeometry(page, heading);
+  expect(focused.heading.width - focused.text.width).toBeLessThanOrEqual(1);
+  expect(focused.heading.x - 12).toBeGreaterThanOrEqual(4);
+  expect(focused.mainScroll).toEqual({ left: 0, top: 0 });
+  expect(focused.documentScroll).toEqual({ left: 0, top: 0 });
+  expect(focused.cueMotion).toEqual({
+    animationName: "none",
+    transitionProperty: "none",
+  });
+
+  expectRenderedOpenReadingMarker(
+    await renderedInitialFocusDelta(page, heading, -12, 96),
+    name,
+  );
+
+  expect(await lessonShelfHeadingGeometry(page, heading)).toEqual(focused);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+}
+
+for (const viewport of [
+  { height: 568, width: 280 },
+  { height: 360, width: 640 },
+]) {
+  test(`lesson shelf direct arrival uses one localized reading cue at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize(viewport);
+    await openSettledLessonShelf(page);
+
+    await expectLessonShelfOpenReadingCue(
+      page,
+      lessonShelfHeading(page),
+      `lesson shelf heading at ${viewport.width}x${viewport.height}`,
+    );
+  });
+}
+
+for (const activation of ["pointer", "keyboard"] as const) {
+  test(`lesson shelf ${activation} navigation retains the same reading cue`, async ({
+    page,
+  }) => {
+    await page.route("**/api/lessons/my", async (route) => {
+      await route.fulfill({
+        body: JSON.stringify({ lessons: [] }),
+        contentType: "application/json",
+        status: 200,
+      });
+    });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.setViewportSize({ height: 844, width: 390 });
+    await page.goto("/");
+    const lessonLink = page.getByRole("link", { name: "Play a lesson" });
+    if (activation === "pointer") {
+      await lessonLink.click();
+    } else {
+      await focusWithKeyboard(page, lessonLink);
+      await page.keyboard.press("Enter");
+    }
+
+    await expect(page).toHaveURL("/lessons");
+    await expect(firstLessonLink(page)).toBeVisible();
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    });
+    await expectLessonShelfOpenReadingCue(
+      page,
+      lessonShelfHeading(page),
+      `${activation}-arrived lesson shelf heading`,
+    );
+  });
+}
+
+test("lesson shelf heading remains outside the ordinary Tab sequence", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await openSettledLessonShelf(page);
+  const heading = lessonShelfHeading(page);
+  await page.keyboard.press("Tab");
+
+  await expect(firstLessonLink(page)).toBeFocused();
+  await expect(heading).not.toBeFocused();
+});
+
+test("lesson shelf arrival keeps a real localized indicator in forced colors", async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+  await page.setViewportSize({ height: 360, width: 640 });
+  await openSettledLessonShelf(page);
+  const heading = lessonShelfHeading(page);
+  const indicator = await heading.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+
+  expect(indicator.outlineStyle).not.toBe("none");
+  expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
+  expectRenderedForcedReadingOutline(
+    await renderedInitialFocusDelta(page, heading, -12),
+    "forced-colors lesson shelf heading",
+  );
+});
+
 async function profileHeadingGeometry(target: Locator) {
   return target.evaluate((element) => {
     const rounded = (value: number) => Math.round(value * 100) / 100;
