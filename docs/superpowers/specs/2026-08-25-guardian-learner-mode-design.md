@@ -246,6 +246,12 @@ the Worker dispatch boundary before:
 - `PUT /api/lessons/my/:lessonId`;
 - `POST` or `DELETE /api/stories/:storyId/personalized-art`.
 
+Profile-edit conversations share `/api/conversations` with learner onboarding
+and small chat, so their guard is purpose-aware inside the conversation
+handler: starting a `profile-edit` conversation and reviewing/finalizing a
+stored `profile-edit` conversation require guardian access. Initial onboarding
+and `small-chat` remain learner-safe.
+
 The guard returns `403` with `{ error: "guardian_required" }` for missing or
 expired access. Owner scoping, body validation, provider rate limits, and photo
 consent remain mandatory after the role check. Learner-safe reads remain
