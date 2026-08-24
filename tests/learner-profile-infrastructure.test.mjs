@@ -15,6 +15,7 @@ const EXPECTED_MODELS = {
       "authUserId",
       "name",
       "age",
+      "storyLevel",
       "answersJson",
       "skippedQuestionKeysJson",
       "questionnaireVersion",
