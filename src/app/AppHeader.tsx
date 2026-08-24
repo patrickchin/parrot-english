@@ -273,21 +273,21 @@ export function AccountHeader({
             </MenuButton>
             <MenuButton
               disabled={isSigningOut}
-              onClick={() => selectAction(() => setIsDeleteOpen(true))}
-              role="menuitem"
-              type="button"
-              variant="brand"
-            >
-              Delete account
-            </MenuButton>
-            <MenuButton
-              disabled={isSigningOut}
               onClick={() => selectAction(onSignOut)}
               role="menuitem"
               type="button"
-              variant="brand"
             >
               {isSigningOut ? "Signing out…" : "Sign out"}
+            </MenuButton>
+            <MenuButton
+              className="mt-1"
+              disabled={isSigningOut}
+              onClick={() => selectAction(() => setIsDeleteOpen(true))}
+              role="menuitem"
+              type="button"
+              variant="dangerSurface"
+            >
+              Delete account
             </MenuButton>
           </div>
         </div>

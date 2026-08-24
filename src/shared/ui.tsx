@@ -7,7 +7,13 @@ import type {
 } from "react";
 import { Link } from "react-router";
 
-export type ControlVariant = "brand" | "navy" | "rose" | "success" | "surface";
+export type ControlVariant =
+  | "brand"
+  | "dangerSurface"
+  | "navy"
+  | "rose"
+  | "success"
+  | "surface";
 export type ControlSize =
   | "compact"
   | "default"
@@ -77,11 +83,13 @@ export function controlClassName({
     interaction === "link" &&
       "cursor-pointer hover:-translate-y-0.5 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
     interaction === "button" &&
-      (variant === "rose"
+      (variant === "rose" || variant === "dangerSurface"
         ? "enabled:hover:brightness-95"
         : "enabled:hover:brightness-105"),
     interaction === "link" &&
-      (variant === "rose" ? "hover:brightness-95" : "hover:brightness-105"),
+      (variant === "rose" || variant === "dangerSurface"
+        ? "hover:brightness-95"
+        : "hover:brightness-105"),
     "disabled:cursor-not-allowed disabled:opacity-60",
     align === "center" && "justify-center text-center",
     align === "start" && "justify-start text-left",
@@ -104,6 +112,7 @@ export function controlClassName({
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
     size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
     variant === "brand" && "bg-brand-pink text-brand-action-ink",
+    variant === "dangerSurface" && "bg-rose-50 text-red-800",
     variant === "navy" && "bg-brand-navy text-white",
     variant === "rose" && "bg-brand-rose text-white",
     variant === "success" && "bg-brand-green text-white",
@@ -114,7 +123,9 @@ export function controlClassName({
       "shadow-control-pink",
     elevation === "raised" && variant === "navy" && "shadow-control-navy",
     elevation === "raised" && variant === "success" && "shadow-control-green",
-    elevation === "raised" && variant === "surface" && "shadow-control-surface",
+    elevation === "raised" &&
+      (variant === "surface" || variant === "dangerSurface") &&
+      "shadow-control-surface",
     className,
   );
 }

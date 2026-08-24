@@ -127,7 +127,7 @@ export function AccountDeleteDialog({
               >
                 Cancel
               </ActionButton>
-              <ActionButton disabled={!password} type="submit" variant="brand">
+              <ActionButton disabled={!password} type="submit" variant="rose">
                 {isDeleting ? "Deleting account…" : "Delete account now"}
               </ActionButton>
             </div>
