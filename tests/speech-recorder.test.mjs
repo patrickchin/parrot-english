@@ -9,6 +9,32 @@ const recordSpeechClip =
   speechRecorder.recordSpeechClip ??
   (() => Promise.reject(new Error("recordSpeechClip is missing")));
 
+describe("recording MIME negotiation", () => {
+  it("selects the first supported portable recording type", () => {
+    class FakeRecorder {}
+    FakeRecorder.isTypeSupported = (type) => type === "audio/webm;codecs=opus";
+
+    assert.equal(
+      speechRecorder.selectRecordingMimeType(FakeRecorder),
+      "audio/webm;codecs=opus"
+    );
+  });
+
+  it("uses the recorder-reported MIME type for the returned blob", async () => {
+    const { stream } = createStream();
+    const { FakeMediaRecorder } = createRecorderClass();
+    FakeMediaRecorder.isTypeSupported = (type) => type === "audio/mp4";
+    FakeMediaRecorder.prototype.mimeType = "audio/mp4";
+
+    const session = await startSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    assert.equal((await session.stop()).type, "audio/mp4");
+  });
+});
+
 function createTrack() {
   return {
     stopped: false,
