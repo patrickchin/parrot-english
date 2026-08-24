@@ -910,14 +910,15 @@ branches.
     repository boundary. Direct child/caregiver comprehension remains untested.
 28. **Medium: a long account label can invalidate local compact clearance.** The
     retained Replay fix proves full separation for **Mia**, while Account owns a
-    fixed higher layer and can extend left as its visible label grows. An
-    independent visual review raised a specific long-label overlap risk, but
-    its exploratory probe was not preserved with a deterministic fixture,
-    geometry, or screenshot and is not treated as reproduced evidence here.
-    First reproduce or reject it, then research a shared header/content
-    arbitration rule with long names, emails, localization, safe-area, and
-    every account-owning route before adding another local offset or hiding the
-    label. Selected as the next bounded stacked improvement after item 29.
+    fixed higher layer and can extend left as its visible label grows. Now
+    reproduced deterministically with a fixture-preserving session intercept:
+    a long email completely covers **Back** at 280, 320, and 390px portrait;
+    profile collisions include a border failure at 280/320/360 and a
+    focus-only failure at 359; even **Mia** overlaps the active lesson HUD at
+    the 768x621 `short`/`md` seam. Selected design makes the closed trigger a
+    stable shared Account control, moves full identity into its existing menu,
+    and protects compact header geometry. TDD implementation is pending. See
+    the [guidance](./profile-account-label-clearance-guidance.md).
 29. **Medium: the 320×640 profile question needs 113 CSS pixels of vertical main
     scroll.** Fixed provisionally on `codex/profile-compact-primary-action` at
     `5b2fa73`, with acceptance hardening at `7978833`. The retained normal-flow

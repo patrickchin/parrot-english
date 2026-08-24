@@ -66,6 +66,7 @@ Last reviewed: 2026-08-24
 - [Profile heading reading-position cue implementation](./profile-heading-reading-cue-implementation.md)
 - [Profile replay and account clearance guidance](./profile-replay-account-clearance-guidance.md)
 - [Profile replay and account clearance implementation](./profile-replay-account-clearance-implementation.md)
+- [Shared account-label clearance guidance](./profile-account-label-clearance-guidance.md)
 - [Separate profile answer labels guidance](./profile-answer-separate-labels-guidance.md)
 - [Separate profile answer labels implementation](./profile-answer-separate-labels-implementation.md)
 - [Profile question operation feedback and focus guidance](./profile-operation-pending-focus-guidance.md)
