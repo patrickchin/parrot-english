@@ -272,6 +272,43 @@ test("auth gate container forwards an optional signed-out fallback", () => {
   assert.equal(capturedProps.signedOutFallback, fallback);
 });
 
+test("auth gate mounts one guardian boundary with the current session identity", () => {
+  let session = {
+    user: { email: " FIRST@Example.com ", id: " user-1 ", name: "Mia" },
+  };
+  const identities = [];
+  const client = createAuthClientStub({
+    useSession() {
+      return {
+        data: session,
+        error: null,
+        isPending: false,
+        refetch: async () => {},
+      };
+    },
+  });
+  function CaptureGuardianBoundary({ children, sessionIdentity }) {
+    identities.push(sessionIdentity);
+    return children;
+  }
+  const TestAuthGate = createAuthGate({
+    client,
+    GuardianAccessBoundary: CaptureGuardianBoundary,
+  });
+
+  renderToStaticMarkup(createElement(TestAuthGate, null, "SIGNED IN"));
+  session = { user: { email: " SECOND@Example.com ", name: "Maya" } };
+  renderToStaticMarkup(createElement(TestAuthGate, null, "CHANGED ACCOUNT"));
+  session = null;
+  renderToStaticMarkup(createElement(TestAuthGate, null, "SIGNED OUT"));
+
+  assert.deepEqual(identities, [
+    "id:user-1",
+    "email:second@example.com",
+    null,
+  ]);
+});
+
 test("auth client uses Better Auth's same-origin defaults", () => {
   assert.match(authClient, /from ["']better-auth\/react["']/);
   assert.match(authClient, /export const authClient\s*=\s*createAuthClient\(\s*\)/);

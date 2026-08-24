@@ -1,4 +1,5 @@
 import type { StoryLevelId } from "../../lib/story-level.ts";
+import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 
 export type LearnerProfileAudio = {
   id: string;
@@ -147,6 +148,9 @@ async function requestJson<Result>(
         : typeof errorPayload.message === "string"
           ? errorPayload.message
           : "The request could not be completed.";
+    if (response.status === 403 && code === "guardian_required") {
+      notifyGuardianAccessRequired();
+    }
     throw new LearnerProfileApiError(
       response.status,
       code,

@@ -327,4 +327,43 @@ describe("personalized story art client API", () => {
     );
     assert.equal(request.calls[0][1].method, "DELETE");
   });
+
+  it("notifies guardian access before exposing its typed guardian-required error", async () => {
+    const { PersonalizedStoryArtApiError, removePersonalizedStoryArt } =
+      requireClientApi();
+    const previousDocument = globalThis.document;
+    const eventTarget = new globalThis.EventTarget();
+    const order = [];
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: eventTarget,
+    });
+    eventTarget.addEventListener("guardian-access-required", () => {
+      order.push("notification");
+    });
+
+    try {
+      const failed = jsonFetch({ error: "guardian_required" }, 403);
+      await assert.rejects(
+        removePersonalizedStoryArt(
+          { storyId: "the-red-ball" },
+          { fetch: failed.fetch },
+        ),
+        (error) => {
+          order.push("error");
+          assert.ok(error instanceof PersonalizedStoryArtApiError);
+          assert.equal(error.status, 403);
+          assert.equal(error.code, "guardian_required");
+          return true;
+        },
+      );
+      assert.deepEqual(order, ["notification", "error"]);
+    } finally {
+      if (previousDocument === undefined) Reflect.deleteProperty(globalThis, "document");
+      else Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    }
+  });
 });

@@ -2,6 +2,7 @@ import { validateLesson } from "../../lib/lesson-data.js";
 import { LESSON_VISUAL_CATALOG } from "../../lib/lesson-visual-catalog.ts";
 import { isSafeRouteId } from "../../lib/route-id.ts";
 import type { Lesson, LessonDraft } from "./lesson-catalog";
+import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 
 export type MyLessonSource = "generated" | "uploaded";
 export type MyLessonDescriptor = {
@@ -70,6 +71,9 @@ async function requestJson<Result>(
       typeof error.message === "string"
         ? error.message
         : "The lesson request could not be completed.";
+    if (response.status === 403 && code === "guardian_required") {
+      notifyGuardianAccessRequired();
+    }
     throw new MyLessonsApiError(
       response.status,
       code,

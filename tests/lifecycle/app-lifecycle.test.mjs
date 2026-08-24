@@ -3768,6 +3768,50 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/AUTHENTICATED APP/);
   });
 
+  it("remounts guardian state before rendering a changed account identity", async () => {
+    const boundaryRenders = [];
+    function GuardianBoundary({ children, sessionIdentity }) {
+      const [owner] = useState(sessionIdentity);
+      boundaryRenders.push({ owner, sessionIdentity });
+      return createElement(
+        "output",
+        {
+          "aria-label": "Guardian boundary owner",
+          "data-owner": owner ?? "signed-out",
+        },
+        children,
+      );
+    }
+    const client = createSessionClient({
+      data: { user: { email: "mia@example.com", id: "user-1", name: "Mia" } },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: GuardianBoundary,
+    });
+
+    await mountStrict(createElement(TestAuthGate, null, "AUTHENTICATED APP"));
+    assert.equal(
+      document.querySelector('[aria-label="Guardian boundary owner"]').dataset.owner,
+      "id:user-1",
+    );
+
+    await act(async () => {
+      client.publish({
+        data: { user: { email: "maya@example.com", id: "user-2", name: "Maya" } },
+        error: null,
+        isPending: false,
+      });
+    });
+    assert.equal(
+      document.querySelector('[aria-label="Guardian boundary owner"]').dataset.owner,
+      "id:user-2",
+    );
+    assert.equal(boundaryRenders.at(-1).owner, boundaryRenders.at(-1).sessionIdentity);
+  });
+
   it("keeps Account available and retries sign out from one persistent alert", async () => {
     const failure = deferred();
     const secondFailure = deferred();

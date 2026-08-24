@@ -22,6 +22,7 @@ import {
   type ProfileAccountAction,
 } from "./account-actions";
 import { authClient } from "./auth-client";
+import { GuardianAccessProvider } from "./GuardianAccess";
 import {
   ActionButton,
   Card,
@@ -487,6 +488,10 @@ export type StateHook = <State>(
 interface CreateAuthGateOptions {
   client: AuthGateClient;
   deleteAccountAction?: typeof deleteAccountSession;
+  GuardianAccessBoundary?: ComponentType<{
+    children: ReactNode;
+    sessionIdentity: string | null;
+  }>;
   signOutAction?: typeof signOutSession;
   stateHook?: StateHook;
   submitAction?: typeof submitAuthForm;
@@ -496,6 +501,7 @@ interface CreateAuthGateOptions {
 export function createAuthGate({
   client,
   deleteAccountAction = deleteAccountSession,
+  GuardianAccessBoundary = GuardianAccessProvider,
   signOutAction = signOutSession,
   stateHook = useState,
   submitAction = submitAuthForm,
@@ -601,29 +607,34 @@ export function createAuthGate({
 
     return (
       <AccountActionProvider setProfileAction={setProfileAction}>
-        <View
-          fields={fields}
-          formError={formError}
-          isPending={isPending}
-          isRetrying={isRetrying}
-          isSigningOut={ownsSignOutState && signOutState.isPending}
-          isSubmitting={isSubmitting}
-          mode={mode}
-          onDeleteAccount={handleDeleteAccount}
-          onFieldChange={updateField}
-          onModeChange={selectMode}
-          onOpenProfile={profileAction?.onOpen ?? null}
-          onRetry={() => void handleRetry()}
-          onSignOut={handleSignOut}
-          onSubmit={handleSubmit}
-          profileError={profileAction?.error ?? ""}
-          session={session}
-          sessionError={error}
-          signOutError={ownsSignOutState ? signOutState.error : ""}
-          signedOutFallback={signedOutFallback ?? null}
+        <GuardianAccessBoundary
+          key={sessionIdentity ?? "signed-out"}
+          sessionIdentity={sessionIdentity}
         >
-          {children}
-        </View>
+          <View
+            fields={fields}
+            formError={formError}
+            isPending={isPending}
+            isRetrying={isRetrying}
+            isSigningOut={ownsSignOutState && signOutState.isPending}
+            isSubmitting={isSubmitting}
+            mode={mode}
+            onDeleteAccount={handleDeleteAccount}
+            onFieldChange={updateField}
+            onModeChange={selectMode}
+            onOpenProfile={profileAction?.onOpen ?? null}
+            onRetry={() => void handleRetry()}
+            onSignOut={handleSignOut}
+            onSubmit={handleSubmit}
+            profileError={profileAction?.error ?? ""}
+            session={session}
+            sessionError={error}
+            signOutError={ownsSignOutState ? signOutState.error : ""}
+            signedOutFallback={signedOutFallback ?? null}
+          >
+            {children}
+          </View>
+        </GuardianAccessBoundary>
       </AccountActionProvider>
     );
   };
