@@ -62,9 +62,9 @@ test("the start tap immediately gives a literal wait without showing turn contro
   await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
   await startSmallChat(page);
 
-  await expect(page.getByRole("status")).toContainText(
-    "Getting ready",
-  );
+  await expect(
+    page.getByRole("main").getByRole("status"),
+  ).toContainText("Getting ready");
   const captions = page.getByRole("region", {
     name: "Conversation captions",
   });
@@ -91,7 +91,9 @@ test("opening audio keeps the learner waiting until Peppa finishes", async ({
   await page.goto("/talk-to-peppa?parrotE2eConversation=opening-speaking");
   await startSmallChat(page);
 
-  await expect(page.getByRole("status")).toContainText("Peppa’s turn");
+  await expect(
+    page.getByRole("main").getByRole("status"),
+  ).toContainText("Peppa’s turn");
   await expect(
     page.getByRole("button", { name: "Listen to Peppa" }),
   ).toHaveCount(0);
@@ -108,7 +110,9 @@ test("reconnecting and error states keep recovery language in the same stage", a
 }) => {
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
   await startSmallChat(page);
-  await expect(page.getByRole("status")).toContainText("Trying again");
+  await expect(
+    page.getByRole("main").getByRole("status"),
+  ).toContainText("Trying again");
   const reconnectingCaptions = page.getByRole("region", {
     name: "Conversation captions",
   });
@@ -195,7 +199,9 @@ test("profile completion uses the stable saving stage", async ({ page }) => {
   await useIncompleteProfile(page);
   await page.goto("/profile/setup?parrotE2eConversation=saving");
 
-  await expect(page.getByRole("status")).toContainText("Saving your answers");
+  await expect(
+    page.getByRole("main").getByRole("status"),
+  ).toContainText("Saving your answers");
   const captions = page.getByRole("region", {
     name: "Conversation captions",
   });

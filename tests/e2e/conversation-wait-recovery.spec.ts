@@ -98,7 +98,7 @@ for (const viewport of viewports) {
     const controls = page.getByRole("group", {
       name: "Conversation controls",
     });
-    const status = page.getByRole("status");
+    const status = page.getByRole("main").getByRole("status");
     const peppa = page.getByRole("img", { exact: true, name: "Peppa" });
 
     await expect(status).toContainText("Thinking");
@@ -193,7 +193,7 @@ test("a timed-out connection gets one retry before a lesson alternative", async 
   const captions = page.getByRole("region", {
     name: "Conversation captions",
   });
-  const status = page.getByRole("status");
+  const status = page.getByRole("main").getByRole("status");
   const captionsBox = await box(captions);
 
   await expect(status).toContainText("Getting ready");
@@ -291,7 +291,7 @@ for (const viewport of [
     );
     await retry.click();
 
-    const status = page.getByRole("status");
+    const status = page.getByRole("main").getByRole("status");
     const captions = page.getByRole("region", {
       name: "Conversation captions",
     });
@@ -373,7 +373,7 @@ test("reduced motion keeps terminal recovery static and understandable", async (
   });
   const peppa = page.getByRole("img", { name: "Peppa" });
   const retry = page.getByRole("button", { name: "Try chat again" });
-  const status = page.getByRole("status");
+  const status = page.getByRole("main").getByRole("status");
 
   await expect(status).toContainText("Chat paused");
   await expect(status).toContainText("Try chat again");
@@ -395,7 +395,9 @@ test("reduced motion keeps every active remote wait static and named", async ({
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
   await startSmallChat(page);
-  await expect(page.getByRole("status")).toContainText("Getting ready");
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "Getting ready",
+  );
   await expectAnimationCount(page.getByRole("main"), 0);
 
   await page.goto("/talk-to-peppa");
@@ -405,16 +407,22 @@ test("reduced motion keeps every active remote wait static and named", async ({
     "My name is Mia",
   );
   await page.getByRole("button", { name: "I’m done" }).click();
-  await expect(page.getByRole("status")).toContainText("Thinking");
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "Thinking",
+  );
   await expectAnimationCount(page.getByRole("main"), 0);
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
   await startSmallChat(page);
-  await expect(page.getByRole("status")).toContainText("Trying again");
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "Trying again",
+  );
   await expectAnimationCount(page.getByRole("main"), 0);
 
   await useIncompleteProfile(page);
   await page.goto("/profile/setup?parrotE2eConversation=saving");
-  await expect(page.getByRole("status")).toContainText("Saving your answers");
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "Saving your answers",
+  );
   await expectAnimationCount(page.getByRole("main"), 0);
 });

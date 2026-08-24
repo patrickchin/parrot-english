@@ -19,7 +19,7 @@ for (const viewport of setupViewports) {
     await expect(start).toBeVisible();
     await expect(start).toContainText("Talk to Peppa");
     await expect(style).toBeHidden();
-    await expect(page.getByRole("status")).toContainText(
+    await expect(main.getByRole("status")).toContainText(
       "Ready to talk",
     );
     await expect

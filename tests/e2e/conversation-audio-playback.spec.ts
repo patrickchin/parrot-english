@@ -125,7 +125,7 @@ for (const viewport of viewports) {
     await page.goto("/talk-to-peppa?parrotE2eConversation=audio-blocked");
     await startSmallChat(page);
 
-    const status = page.getByRole("status");
+    const status = page.getByRole("main").getByRole("status");
     const captions = page.getByRole("region", {
       name: "Conversation captions",
     });
@@ -218,7 +218,7 @@ test("a failed sound request restores one child-safe retry action", async ({
   const retry = page.getByRole("button", { name: "Tap for sound" });
   await expect(retry).toBeVisible();
   await expect(retry).toBeFocused();
-  const failedStatus = page.getByRole("status");
+  const failedStatus = page.getByRole("main").getByRole("status");
   await expect(failedStatus).toHaveText(/Sound is off/);
   expect(await failedStatus.ariaSnapshot()).toContain(
     "Sound did not start. Tap again.",
@@ -288,7 +288,7 @@ test("opening the microphone keeps one focused pending action", async ({
   await page.goto("/talk-to-peppa?parrotE2eConversation=microphone-delayed");
   await startSmallChat(page);
 
-  const status = page.getByRole("status");
+  const status = page.getByRole("main").getByRole("status");
   const captions = page.getByRole("region", {
     name: "Conversation captions",
   });
@@ -358,7 +358,9 @@ test("a delayed session playback signal opens the learner turn without inferring
   await page.goto("/talk-to-peppa?parrotE2eConversation=audio-delayed");
   await startSmallChat(page);
 
-  await expect(page.getByRole("status")).toHaveText(/Getting ready/);
+  await expect(page.getByRole("main").getByRole("status")).toHaveText(
+    /Getting ready/,
+  );
   await expect(page.getByRole("button", { name: "Tap, then talk" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Listen to Peppa" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Repeat Peppa's audio" })).toHaveCount(0);

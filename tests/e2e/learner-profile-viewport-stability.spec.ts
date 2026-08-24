@@ -496,7 +496,9 @@ test("profile answer and microphone keep separate native labels and controls", a
   await expect.poll(microphoneRequests).toBe(0);
   await speak.click();
   await expect.poll(microphoneRequests).toBe(1);
-  await expect(page.getByRole("status")).toHaveText("Listening…");
+  await expect(page.getByRole("main").getByRole("status")).toHaveText(
+    "Listening…",
+  );
   await expect(answer).toBeDisabled();
   await expect(speak).toHaveAttribute("aria-disabled", "true");
   await expect(speak).not.toBeDisabled();
@@ -517,7 +519,9 @@ test("profile answer and microphone keep separate native labels and controls", a
     await keyboardSpeak.focus();
     await page.keyboard.press(key);
     await expect.poll(keyboardRequests).toBe(1);
-    await expect(page.getByRole("status")).toHaveText("Listening…");
+    await expect(page.getByRole("main").getByRole("status")).toHaveText(
+      "Listening…",
+    );
     await expect(keyboardSpeak).toHaveAttribute("aria-disabled", "true");
     await expect(keyboardSpeak).not.toBeDisabled();
     await expect(keyboardSpeak).toBeFocused();

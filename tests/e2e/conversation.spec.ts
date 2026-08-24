@@ -85,6 +85,8 @@ test("the latest Peppa message repeats from its bottom-right audio control", asy
 
   await repeat.click();
   await expect(repeat).toBeHidden();
-  await expect(page.getByRole("status")).toContainText("Peppa’s turn");
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "Peppa’s turn",
+  );
   await expect(repeat).toBeVisible();
 });

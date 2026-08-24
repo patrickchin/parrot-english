@@ -129,7 +129,9 @@ for (const viewport of viewports) {
 
     await end.click();
     await page.mouse.move(1, 1);
-    await expect(page.getByRole("status")).toHaveText("Thinking");
+    await expect(page.getByRole("main").getByRole("status")).toHaveText(
+      "Thinking",
+    );
     await expect(
       page.getByRole("button", { name: "Waiting for Peppa" }),
     ).toHaveCount(0);
@@ -145,7 +147,9 @@ for (const viewport of viewports) {
 
     await page.goto("/talk-to-peppa?parrotE2eConversation=connecting");
     await startSmallChat(page);
-    await expect(page.getByRole("status")).toContainText("Getting ready");
+    await expect(
+      page.getByRole("main").getByRole("status"),
+    ).toContainText("Getting ready");
     const captions = page.getByRole("region", {
       name: "Conversation captions",
     });
@@ -154,7 +158,9 @@ for (const viewport of viewports) {
 
     await page.goto("/talk-to-peppa?parrotE2eConversation=opening-speaking");
     await startSmallChat(page);
-    await expect(page.getByRole("status")).toContainText("Peppa’s turn");
+    await expect(
+      page.getByRole("main").getByRole("status"),
+    ).toContainText("Peppa’s turn");
     expectSameBox(waitingCaption, await box(captions));
     expectSameBox(waitingControls, await controlSlotBox(captions));
 
@@ -163,7 +169,9 @@ for (const viewport of viewports) {
     await expect(
       page.getByRole("button", { name: "Tap, then talk" }),
     ).toBeVisible();
-    await expect(page.getByRole("status")).toContainText("Your turn");
+    await expect(
+      page.getByRole("main").getByRole("status"),
+    ).toContainText("Your turn");
     expectSameBox(waitingCaption, await box(captions));
     expectSameBox(waitingControls, await controlSlotBox(captions));
     await expectNoPageScroll(page);
