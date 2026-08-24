@@ -2,11 +2,17 @@
 
 Date: 2026-08-24
 
-Status: research complete; real-code visual comparison in progress
+Status: implemented and provisionally retained
 
 Baseline branch: `codex/account-sign-out-feedback`
 
 Baseline commit: `1de1f6d`
+
+Implementation record:
+[`account-sign-out-recovery-implementation.md`](./account-sign-out-recovery-implementation.md)
+
+Visual evidence:
+[`account-sign-out-recovery/manifest.md`](../../artifacts/ux-review/account-sign-out-recovery/manifest.md)
 
 ## Question
 
@@ -58,19 +64,22 @@ results.
 Use:
 
 - alert: **Sign out did not finish.**
-- action: **Try sign out again**
+- action: **Sign out again**
 
 Do not say **You are still signed in**. An explicit service error or a lost
 network response does not prove whether the server completed sign-out. **Did
 not finish** names the app's observed transition without inventing account
 state.
 
-The selected words remove the less-common **unable**, the generic **Please try
-again**, and a polite word that does not help recovery. The action repeats the
-established operation and remains meaningful outside visual context. **Sign
-out** is a phrasal verb, which limited-English guidance generally advises
-against, but it is already the product's account term. Replacing it only for
-the error with **exit**, **leave**, or **log out** would add a competing name.
+The initial research candidate was **Try sign out again**. Real-code rendering
+showed its complete focus paint overlapping Back by about six CSS pixels at
+280x568. **Try again** fit but became ambiguous outside visual context. The
+retained **Sign out again** removes the generic word while repeating the
+established operation. **Sign out** is a phrasal verb, which limited-English
+guidance generally advises against, but it is already the product's account
+term. Replacing it only for the error with **exit**, **leave**, or **log out**
+would add a competing name. This revision records a layout-informed decision,
+not a comprehension result.
 
 Avoid **Oops**, **Something went wrong**, **session**, status codes, blame,
 humor, apology, contractions, and character voice. Do not add connection advice
@@ -84,14 +93,16 @@ unless the application actually knows the cause.
 | WAI-ARIA distinguishes assertive `alert` from polite `status`; the existing pending feedback already owns one pre-mounted status. See [A11Y-07, A11Y-08, and A11Y-10](./source-register.md). | Pending and failure need separate persistent semantic owners, with only one non-empty at a time. | A fast pending-to-error transition may still produce different announcements across assistive technologies. |
 | W3C COGA favors clear words, visible labels, short paths, succinct text, and stable control placement. See [A11Y-01 through A11Y-04, A11Y-11, and A11Y-12](./source-register.md). | Give the failure one visible, literal recovery action at the Account locus. Do not require menu rediscovery, a modal, or a detached toast. | COGA is supplemental and does not validate the exact words or layout with Parrot's audience. |
 | Home Office limited-English guidance recommends short active sentences, simple tenses, no contractions or idioms, translation checks, and direct testing of errors and buttons. See [UX-11](./source-register.md). | Use **Sign out did not finish.** and keep the operation's existing term in the retry label. | The source serves public-service users rather than young learners and advises against phrasal verbs such as **sign out**. The retained exception needs comprehension testing. |
-| USWDS asks for short, human-readable alerts with an easy next step and short verb-first button labels. See [UX-12](./source-register.md). | Pair a specific failure sentence with **Try sign out again** and a non-color warning cue. | USWDS is neither child research nor proof that this implementation is accessible. |
+| USWDS asks for short, human-readable alerts with an easy next step and short verb-first button labels. It also advises leading with the alert type, making purpose clear without color/icon, and not visually hiding the message. See [UX-12](./source-register.md). | Borrow the concise copy and easy-next-step principles; keep the visible **Sign out again** action understandable without its triangle. | Parrot does not adopt the full USWDS alert pattern: the sentence omits a leading **Error** and is screen-reader-only. This deliberate child-screen tradeoff needs direct testing and is not a claim of USWDS conformance. |
 | GOV.UK error guidance says to describe what happened and how to fix it in concise plain English; it discourages jargon, generic errors, **please**, apology, and humor. It also says its field-error component is not the right pattern for a service problem. See [UX-01 and UX-02](./source-register.md) and the [error-message guidance](https://design-system.service.gov.uk/components/error-message/). | Adopt the writing principles, but keep this recoverable operation failure with its Account task rather than transplanting a form-validation component. | Public-service writing guidance does not prescribe a compact child-product header. |
 | W3C focus guidance and the APG Alert Pattern preserve keyboard work while a non-modal alert appears. See [A11Y-16, A11Y-22, and A11Y-32](./source-register.md). | Account remains focused after failure. Retry is the next logical control, and activating it must not leave focus on a removed node. | The exact DOM/visual order remains a product choice requiring browser and assistive-technology checks. |
+| WCAG's Text Spacing understanding document defines an exact simultaneous override and identifies clipping and overlap as failures. See [A11Y-33](./source-register.md). | Test line height 1.5, paragraph spacing 2em, letter spacing 0.12em, and word spacing 0.16em together; size the recovery locus so its control and focus paint remain separate from child content. | The retained English LTR Chromium cases are boundary evidence, not whole-product or every-script conformance. |
 
 ## Interaction contract
 
-1. Sign-out failure receives dedicated `signOutError` state; authentication and
-   profile failures cannot accidentally acquire its retry behavior.
+1. Sign-out failure receives dedicated state owned by the current authenticated
+   identity; authentication and profile failures, a direct identity change, and
+   a stale earlier attempt cannot accidentally acquire its retry behavior.
 2. One empty `role="alert" aria-atomic="true"` exists before failure. It does
    not move between the closed header and open menu.
 3. Failure clears pending and fills that alert with **Sign out did not
@@ -115,8 +126,8 @@ unless the application actually knows the cause.
 | --- | --- | --- | --- |
 | Existing floating alert | Full sentence remains visible. | Covers primary content and supplies no action. | Reject. |
 | Reopen or retain the Account menu | The original Sign out row is present. | A large menu interrupts the child task, short viewports scroll, and failure focus lands on an unrelated first item. | Reject. |
-| Replace Account with one focused retry control | Reuses the stable pending frame, preserves focus, fits narrow and dense routes, and makes retry immediate. | Temporarily removes the visible path to Account utilities and may overload one control with Account/menu/retry meanings. | Prototype; reject if Account access is lost or ambiguous. |
-| Keep Account plus an adjacent compact retry | Preserves the familiar Account escape path and puts retry one Tab away. | Two targets consume scarce 280px header space; a short label may make the failure too implicit. | Prototype. |
+| Replace Account with one focused retry control | Reuses the stable pending frame, preserves focus, fits narrow and dense routes, and makes retry immediate. | Temporarily removes the visible path to Account utilities and may overload one control with Account/menu/retry meanings. | Rejected after prototype `5cefe19`: Account access was lost indefinitely. |
+| Keep Account plus an adjacent compact retry | Preserves the familiar Account escape path and puts retry one Tab away. | Two targets consume scarce 280px header space; a short label may make the failure too implicit. | Selected at `ba65985`; production implementation `fdd5897`. |
 | Put a sentence and button below Account | Keeps all recovery words visible together. | Recreates the exact vertical overlap at narrow and short viewports. | Reject unless a capture disproves the overlap. |
 | Global banner, toast, or modal | Familiar in systems with an existing host. | Detached or interruptive, adds infrastructure, and competes with the child's task. | Reject. |
 
@@ -139,14 +150,33 @@ identity.
    visible focus paint, action, alert cue, route header, shelf heading, Lesson
    Player HUD, and speech remain unobscured.
 6. The document has no horizontal overflow, including with arbitrary identity,
-   200% zoom/text spacing, forced colors, reduced motion, and short landscape.
-7. Sampled primary-content anchors move no more than one CSS pixel. Failure
-   recovery does not cause cumulative layout shift in the child activity.
+   200% zoom, the WCAG text-spacing override, forced colors, reduced motion, and
+   short landscape.
+7. Sampled settled-state primary-content rectangles move no more than one CSS
+   pixel. Record real cumulative layout shift separately rather than inferring
+   it from two rectangles.
 8. Failure-to-recovery DOM mutation and the next animation-frame callback keep
    the project's local 20-sample p95 target of at most 100 ms. Label this a
    local response proxy, not physical, field, or assistive-technology latency.
 9. Rendered behavior is tested with accessible locators; no test asserts CSS
    source or Tailwind class names.
+
+## Implementation status against acceptance
+
+| Boundary | Status | Evidence or remaining work |
+| --- | --- | --- |
+| Persistent alert and first failure | Pass | Server-rendered, mounted lifecycle, and browser contracts keep one alert node and fill the literal sentence. |
+| Account focus, menu access, and one-step retry | Pass with manual orientation check open | Account stays focused and available; retry is the next DOM/Tab stop. It is painted to Account's left, so LTR Tab movement is right-to-left and should be checked with target assistive technology. |
+| Repeated pointer, Enter, Space, and same-task input | Pass | Browser tests hold request two, prove the same alert clears and refills, and keep the request count at two under repeated activation. |
+| Identity and stale-attempt ownership | Pass | Lifecycle tests cover direct Mia-to-Noah changes during pending and after failure; an earlier owner's settlement cannot affect the new identity. |
+| Target size, focus paint, collision, and overflow | Pass for sampled routes/viewports | Default shelf cases cover 280×568, 390×844, 640×360, and 1440×900; dense Lesson Player cases cover 640×360. |
+| Exact WCAG text-spacing override | Pass for the recovery boundary | The initial compact layout failed by overlapping the heading. The reviewed layout passes 280, 390, and 640 CSS-pixel shelf tests plus the dense 640×360 Lesson Player, including focus paint and overflow. |
+| Arbitrary long and RTL identity | Partial | Production recovery uses a long LTR identity; the selected prototype also covered the existing RTL identity case. A production RTL recovery capture is still desirable. |
+| Forced colors and reduced motion | Pass under Chromium emulation | Words, triangle, and visible focus remain available. A physical Windows High Contrast check is open. |
+| Local DOM and next-frame timing | Pass as a diagnostic | Twenty new documents remain below the 100ms p95 proxy; this is not field, paint, assistive-technology, or child-perception latency. |
+| 200% zoom, target browsers, physical input, and target AT | Open | Text spacing is no longer grouped with zoom. VoiceOver/Safari, NVDA/Chrome or Firefox, browser zoom, touch, speech, and switch checks remain. |
+| Visible-sentence and weak-English comprehension | Open | The operation-specific action is visible, but the complete failure sentence is screen-reader-only. Compare task recovery in priority languages. |
+| Cumulative layout shift | Open as a metric | Settled heading, HUD, and speech rectangles are stable; no `layout-shift` performance entry was recorded, so this branch does not claim a CLS result. |
 
 ## Safety and measurement guardrails
 
@@ -165,15 +195,16 @@ cannot substitute for those checks.
 
 - Does **Sign out did not finish** survive professional translation into the
   product's priority languages without implying a known server outcome?
-- Do limited-English caregivers recognize **Try sign out again** faster than
-  the shorter **Try again** when both appear at the Account locus?
-- Can the chosen compact pattern keep the complete failure sentence visibly
-  available without competing with the child task, or should the interface
-  prioritize a specific visible recovery action plus an assertive sentence?
+- Do limited-English caregivers recognize **Sign out again** faster than
+  **Try again**, and do either need a visible failure sentence at the Account
+  locus?
+- Does a screen-reader-only failure sentence plus visible warning/action give
+  enough sighted context, or does comprehension testing require a different
+  collision-free way to keep the complete sentence visible?
 - What timeout or cancellation contract does Better Auth provide for a request
   that never settles? This branch must not invent one.
 
-The next cheapest evidence is a real-code comparison at the required
-viewports, followed by five task-based caregiver sessions in priority
-languages. Ask participants to recover from the failure; do not ask which
-design they prefer.
+The real-code comparison is complete. The next cheapest evidence is one manual
+repeated-failure pass with VoiceOver/Safari and NVDA/Chrome or Firefox,
+followed by five task-based caregiver sessions in priority languages. Ask
+participants to recover from the failure; do not ask which design they prefer.

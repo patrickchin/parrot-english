@@ -1,0 +1,355 @@
+{
+  "capture": {
+    "browser": "chromium",
+    "browserVersion": "149.0.7827.55",
+    "captureSourceCommit": "687f59dfe8c710769413cd808855cb0ce2870a9f",
+    "conditions": "Local Vite server; one browser context and page reused; five fresh document loads per viewport; first load may warm browser cache; sign-out request aborted immediately.",
+    "devicePixelRatio": 1,
+    "headless": true,
+    "node": "v24.19.0",
+    "platform": "darwin-arm64",
+    "playwright": "1.61.1"
+  },
+  "geometry": [
+    {
+      "account": {
+        "height": 44,
+        "width": 44,
+        "x": 226,
+        "y": 10
+      },
+      "accountPrecedesRetryInDom": true,
+      "alertText": "Sign out did not finish.",
+      "back": {
+        "height": 44,
+        "width": 44,
+        "x": 10,
+        "y": 10
+      },
+      "documentWidth": 280,
+      "heading": {
+        "height": 36,
+        "width": 215.8,
+        "x": 32.1,
+        "y": 72
+      },
+      "retry": {
+        "height": 44,
+        "width": 150,
+        "x": 64,
+        "y": 10
+      },
+      "retryFocusPaint": {
+        "height": 60,
+        "width": 166,
+        "x": 56,
+        "y": 2
+      },
+      "viewport": {
+        "height": 568,
+        "width": 280
+      }
+    },
+    {
+      "account": {
+        "height": 52,
+        "width": 52,
+        "x": 324,
+        "y": 14
+      },
+      "accountPrecedesRetryInDom": true,
+      "alertText": "Sign out did not finish.",
+      "back": {
+        "height": 52,
+        "width": 52,
+        "x": 14,
+        "y": 14
+      },
+      "documentWidth": 390,
+      "heading": {
+        "height": 36,
+        "width": 215.8,
+        "x": 87.1,
+        "y": 84
+      },
+      "retry": {
+        "height": 48,
+        "width": 150,
+        "x": 162,
+        "y": 14
+      },
+      "retryFocusPaint": {
+        "height": 64,
+        "width": 166,
+        "x": 154,
+        "y": 6
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "account": {
+        "height": 44,
+        "width": 44,
+        "x": 586,
+        "y": 10
+      },
+      "accountPrecedesRetryInDom": true,
+      "alertText": "Sign out did not finish.",
+      "back": {
+        "height": 44,
+        "width": 44,
+        "x": 10,
+        "y": 10
+      },
+      "documentWidth": 640,
+      "heading": {
+        "height": 60,
+        "width": 359.6,
+        "x": 140.2,
+        "y": 72
+      },
+      "retry": {
+        "height": 44,
+        "width": 158,
+        "x": 416,
+        "y": 10
+      },
+      "retryFocusPaint": {
+        "height": 60,
+        "width": 174,
+        "x": 408,
+        "y": 2
+      },
+      "viewport": {
+        "height": 360,
+        "width": 640
+      }
+    },
+    {
+      "account": {
+        "height": 64,
+        "width": 173.2,
+        "x": 1238.8,
+        "y": 24
+      },
+      "accountPrecedesRetryInDom": true,
+      "alertText": "Sign out did not finish.",
+      "back": {
+        "height": 64,
+        "width": 185.4,
+        "x": 28,
+        "y": 24
+      },
+      "documentWidth": 1440,
+      "heading": {
+        "height": 72,
+        "width": 431.6,
+        "x": 504.2,
+        "y": 112
+      },
+      "retry": {
+        "height": 48,
+        "width": 148.3,
+        "x": 1078.5,
+        "y": 24
+      },
+      "retryFocusPaint": {
+        "height": 64,
+        "width": 164.3,
+        "x": 1070.5,
+        "y": 16
+      },
+      "viewport": {
+        "height": 900,
+        "width": 1440
+      }
+    }
+  ],
+  "timing": {
+    "clickToAlertDomMutationMilliseconds": {
+      "samples": [
+        8.1,
+        8.4,
+        7.8,
+        8.4,
+        8.3,
+        8.4,
+        8.5,
+        8.3,
+        9.9,
+        8.6,
+        8.3,
+        8.3,
+        8.3,
+        8.8,
+        8.4,
+        7.9,
+        6.7,
+        7.7,
+        7.5,
+        8.9
+      ],
+      "summary": {
+        "maximum": 9.9,
+        "median": 8.3,
+        "minimum": 6.7,
+        "p95": 8.9
+      }
+    },
+    "clickToNextAnimationFrameMilliseconds": {
+      "samples": [
+        14.5,
+        13.6,
+        14.9,
+        15.1,
+        15.1,
+        15,
+        14.7,
+        13.4,
+        16,
+        14.3,
+        14.9,
+        15.3,
+        15.1,
+        15.5,
+        13.5,
+        14.8,
+        15,
+        14.4,
+        14.4,
+        15.2
+      ],
+      "summary": {
+        "maximum": 16,
+        "median": 14.9,
+        "minimum": 13.4,
+        "p95": 15.5
+      }
+    },
+    "samples": [
+      {
+        "alertMutationMilliseconds": 8.1,
+        "nextFrameMilliseconds": 14.5,
+        "sample": 1,
+        "viewport": "280x568"
+      },
+      {
+        "alertMutationMilliseconds": 8.4,
+        "nextFrameMilliseconds": 13.6,
+        "sample": 2,
+        "viewport": "280x568"
+      },
+      {
+        "alertMutationMilliseconds": 7.8,
+        "nextFrameMilliseconds": 14.9,
+        "sample": 3,
+        "viewport": "280x568"
+      },
+      {
+        "alertMutationMilliseconds": 8.4,
+        "nextFrameMilliseconds": 15.1,
+        "sample": 4,
+        "viewport": "280x568"
+      },
+      {
+        "alertMutationMilliseconds": 8.3,
+        "nextFrameMilliseconds": 15.1,
+        "sample": 5,
+        "viewport": "280x568"
+      },
+      {
+        "alertMutationMilliseconds": 8.4,
+        "nextFrameMilliseconds": 15,
+        "sample": 1,
+        "viewport": "390x844"
+      },
+      {
+        "alertMutationMilliseconds": 8.5,
+        "nextFrameMilliseconds": 14.7,
+        "sample": 2,
+        "viewport": "390x844"
+      },
+      {
+        "alertMutationMilliseconds": 8.3,
+        "nextFrameMilliseconds": 13.4,
+        "sample": 3,
+        "viewport": "390x844"
+      },
+      {
+        "alertMutationMilliseconds": 9.9,
+        "nextFrameMilliseconds": 16,
+        "sample": 4,
+        "viewport": "390x844"
+      },
+      {
+        "alertMutationMilliseconds": 8.6,
+        "nextFrameMilliseconds": 14.3,
+        "sample": 5,
+        "viewport": "390x844"
+      },
+      {
+        "alertMutationMilliseconds": 8.3,
+        "nextFrameMilliseconds": 14.9,
+        "sample": 1,
+        "viewport": "640x360"
+      },
+      {
+        "alertMutationMilliseconds": 8.3,
+        "nextFrameMilliseconds": 15.3,
+        "sample": 2,
+        "viewport": "640x360"
+      },
+      {
+        "alertMutationMilliseconds": 8.3,
+        "nextFrameMilliseconds": 15.1,
+        "sample": 3,
+        "viewport": "640x360"
+      },
+      {
+        "alertMutationMilliseconds": 8.8,
+        "nextFrameMilliseconds": 15.5,
+        "sample": 4,
+        "viewport": "640x360"
+      },
+      {
+        "alertMutationMilliseconds": 8.4,
+        "nextFrameMilliseconds": 13.5,
+        "sample": 5,
+        "viewport": "640x360"
+      },
+      {
+        "alertMutationMilliseconds": 7.9,
+        "nextFrameMilliseconds": 14.8,
+        "sample": 1,
+        "viewport": "1440x900"
+      },
+      {
+        "alertMutationMilliseconds": 6.7,
+        "nextFrameMilliseconds": 15,
+        "sample": 2,
+        "viewport": "1440x900"
+      },
+      {
+        "alertMutationMilliseconds": 7.7,
+        "nextFrameMilliseconds": 14.4,
+        "sample": 3,
+        "viewport": "1440x900"
+      },
+      {
+        "alertMutationMilliseconds": 7.5,
+        "nextFrameMilliseconds": 14.4,
+        "sample": 4,
+        "viewport": "1440x900"
+      },
+      {
+        "alertMutationMilliseconds": 8.9,
+        "nextFrameMilliseconds": 15.2,
+        "sample": 5,
+        "viewport": "1440x900"
+      }
+    ]
+  }
+}

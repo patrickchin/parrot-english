@@ -1027,11 +1027,35 @@ branches.
     Sign out together, then introduce one shared dirty-exit boundary only if the
     actual persistence model confirms loss. See UX-10 in the source register.
 41. **Medium: failed Sign out covers narrow page headings and requires an
-    inferred retry path.** The existing absolute alert covers all of **Pick a
-    lesson** at 280x568 and most of it at 390x844; keyboard focus remains on the
-    Account locus and the user must reopen the menu to retry. Compare a compact
-    anchored error plus explicit **Try again** against the existing alert without
-    weakening assertive announcement, retry guards, or arbitrary-identity fit.
+    inferred retry path.** Fixed provisionally on
+    `codex/account-sign-out-recovery` at `fdd5897`, with review contracts at
+    `ac270ce`, evidence harness at `fbe9422`, independent-review hardening at
+    `eca3c0b`, keyboard-check stabilization at `42dc21b`, and full-suite
+    menu-focus synchronization at `050713b`. The absolute alert is replaced by
+    one persistent screen-reader alert and a compact visible
+    **Sign out again** action beside the
+    still-available Account control. Across 280x568, 390x844, 640x360,
+    1440x900, and the dense 640x360 Lesson Player, the retry and its complete
+    focus paint do not overlap Back, Account, heading, HUD, or speech. The exact
+    WCAG text-spacing override now passes at 280, 390, and 640 CSS pixels after
+    review caught and fixed a real overlap. Pending/failure state is scoped to
+    the authenticated identity; held repeated failure, Enter, Space, request
+    guards, and the stable pending frame remain intact. See the
+    [guidance](./account-sign-out-recovery-guidance.md),
+    [implementation record](./account-sign-out-recovery-implementation.md), and
+    [visual manifest](../../artifacts/ux-review/account-sign-out-recovery/manifest.md).
+42. **Low: target assistive technology has not verified repeated sign-out
+    failure announcements.** Manually check first failure, alert clearing on
+    retry, identical second failure, Account focus, retry description, and menu
+    access with VoiceOver/Safari and NVDA/Chrome or Firefox. The persistent DOM
+    owner follows ARIA guidance, but automated role inspection cannot establish
+    actual speech order or duplication.
+43. **Low: compact sign-out recovery hides the complete failure sentence from
+    sighted users.** The warning triangle and operation-specific **Sign out
+    again** action avoid content obstruction, but weak-English comprehension is
+    untested. Compare task recovery—not preference—with and without a visible
+    literal sentence in priority languages; reject any alternative that
+    restores heading or Lesson Player overlap.
 
 ### Test-infrastructure observation
 

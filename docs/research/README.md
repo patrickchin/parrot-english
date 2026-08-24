@@ -50,6 +50,7 @@ Last reviewed: 2026-08-24
 - [Account sign-out feedback guidance](./account-sign-out-feedback-guidance.md)
 - [Account sign-out feedback implementation](./account-sign-out-feedback-implementation.md)
 - [Account sign-out recovery guidance](./account-sign-out-recovery-guidance.md)
+- [Account sign-out recovery implementation](./account-sign-out-recovery-implementation.md)
 - [Lesson start state stability](./lesson-start-stability.md)
 - [Lesson microphone direct-action feedback guidance](./lesson-microphone-direct-action-feedback-guidance.md)
 - [Lesson microphone direct-action feedback implementation](./lesson-microphone-direct-action-feedback-implementation.md)
