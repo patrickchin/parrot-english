@@ -6,6 +6,7 @@ import {
   access,
   mkdtemp,
   mkdir,
+  open as openFile,
   readdir,
   readFile,
   rename,
@@ -1510,6 +1511,285 @@ describe("private story preview preparation", () => {
       await Promise.all(sourceFiles.map((file) => readFile(file))),
       sourceBytes,
     );
+  });
+
+  it("reserves the transaction before the new lock handle finishes closing", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "acquisition-race-sources",
+    );
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const lockPath = path.join(transactionDirectory, "lock");
+    let releaseLockClose;
+    const lockCloseGate = new Promise((resolve) => {
+      releaseLockClose = resolve;
+    });
+    let reportLockCloseStarted;
+    const lockCloseStarted = new Promise((resolve) => {
+      reportLockCloseStarted = resolve;
+    });
+    let wrappedLockHandle = false;
+    const firstWriter = preparePrivateStoryPreview({
+      fileSystem: {
+        async open(target, flags, mode) {
+          const handle = await openFile(target, flags, mode);
+          if (target !== lockPath || wrappedLockHandle) return handle;
+          wrappedLockHandle = true;
+          return {
+            async close() {
+              reportLockCloseStarted();
+              await lockCloseGate;
+              return handle.close();
+            },
+            sync: handle.sync.bind(handle),
+            writeFile: handle.writeFile.bind(handle),
+          };
+        },
+      },
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+    await lockCloseStarted;
+
+    let secondWriterAssertion;
+    try {
+      await assert.rejects(
+        () => preparePrivateStoryPreview({
+          force: true,
+          previewDirectory: fixture.previewDirectory,
+          sourceFiles,
+        }),
+        /preparation is already in progress/,
+      );
+    } catch (error) {
+      secondWriterAssertion = error;
+    } finally {
+      releaseLockClose();
+    }
+    await firstWriter.catch((error) => {
+      if (!secondWriterAssertion) throw error;
+    });
+    if (secondWriterAssertion) throw secondWriterAssertion;
+
+    assert.equal(wrappedLockHandle, true);
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("uses the real transaction root identity across a symlinked parent alias", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "aliased-parent-concurrency-sources",
+    );
+    const aliasParent = path.join(fixture.projectRoot, "content-alias");
+    await symlink(path.dirname(fixture.previewDirectory), aliasParent);
+    const aliasedPreviewDirectory = path.join(
+      aliasParent,
+      path.basename(fixture.previewDirectory),
+    );
+    let releaseFirstWriter;
+    const firstWriterGate = new Promise((resolve) => {
+      releaseFirstWriter = resolve;
+    });
+    let reportFirstWriterPaused;
+    const firstWriterPaused = new Promise((resolve) => {
+      reportFirstWriterPaused = resolve;
+    });
+    let interceptedCommit = false;
+    const firstWriter = preparePrivateStoryPreview({
+      fileSystem: {
+        async rename(source, destination) {
+          if (
+            !interceptedCommit &&
+            destination === fixture.previewDirectory &&
+            path.basename(source) === "stage"
+          ) {
+            interceptedCommit = true;
+            reportFirstWriterPaused();
+            await firstWriterGate;
+          }
+          return rename(source, destination);
+        },
+      },
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+    await firstWriterPaused;
+
+    let secondWriterAssertion;
+    try {
+      await assert.rejects(
+        () => preparePrivateStoryPreview({
+          force: true,
+          previewDirectory: aliasedPreviewDirectory,
+          sourceFiles,
+        }),
+        /preparation is already in progress/,
+      );
+    } catch (error) {
+      secondWriterAssertion = error;
+    } finally {
+      releaseFirstWriter();
+    }
+    await firstWriter.catch((error) => {
+      if (!secondWriterAssertion) throw error;
+    });
+    if (secondWriterAssertion) throw secondWriterAssertion;
+
+    assert.equal(interceptedCommit, true);
+    const activeBundle = await readBundle(aliasedPreviewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("preserves a lock write error when close and partial-lock cleanup also fail", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "lock-write-failure-sources",
+    );
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const lockPath = path.join(transactionDirectory, "lock");
+    const writeError = new Error("Synthetic lock write failure");
+    const closeError = new Error("Synthetic lock close failure");
+    const unlinkError = new Error("Synthetic partial-lock cleanup failure");
+    let closeAttempted = false;
+    let unlinkAttempted = false;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async open(target, flags, mode) {
+            const handle = await openFile(target, flags, mode);
+            if (target !== lockPath) return handle;
+            return {
+              async close() {
+                closeAttempted = true;
+                await handle.close();
+                throw closeError;
+              },
+              sync: handle.sync.bind(handle),
+              async writeFile() {
+                throw writeError;
+              },
+            };
+          },
+          async unlink(target) {
+            if (target === lockPath) {
+              unlinkAttempted = true;
+              throw unlinkError;
+            }
+            return unlink(target);
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      (error) => {
+        assert.equal(error.message, writeError.message);
+        assert.equal(error.cause, writeError);
+        return true;
+      },
+    );
+
+    assert.equal(closeAttempted, true);
+    assert.equal(unlinkAttempted, true);
+    assert.deepEqual(await readdir(transactionDirectory), ["lock"]);
+    assert.equal((await stat(lockPath)).size, 0);
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /transaction lock is ambiguous/,
+    );
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("preserves a lock read error when closing its handle also fails", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "lock-read-failure-sources",
+    );
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const lockPath = path.join(transactionDirectory, "lock");
+    await mkdir(transactionDirectory);
+    await writeFile(lockPath, `${process.pid}\n`);
+    const readError = new Error("Synthetic lock read failure");
+    const closeError = new Error("Synthetic lock close failure");
+    let closeAttempted = false;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async open(target, flags, mode) {
+            const handle = await openFile(target, flags, mode);
+            if (target !== lockPath) return handle;
+            return {
+              async close() {
+                closeAttempted = true;
+                await handle.close();
+                throw closeError;
+              },
+              async readFile() {
+                throw readError;
+              },
+              stat: handle.stat.bind(handle),
+            };
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      (error) => {
+        assert.equal(
+          error.message,
+          "Private story transaction lock is ambiguous",
+        );
+        assert.equal(error.cause?.cause, readError);
+        return true;
+      },
+    );
+
+    assert.equal(closeAttempted, true);
+    assert.deepEqual(await readFile(lockPath, "utf8"), `${process.pid}\n`);
+
+    await preparePrivateStoryPreview({
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(await readdir(transactionDirectory), []);
   });
 
   it("recovers a transaction protected only by a dead local lock owner", async () => {

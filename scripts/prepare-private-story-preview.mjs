@@ -117,6 +117,33 @@ function sameFileSnapshot(left, right) {
   );
 }
 
+async function finishFileHandle(handle, primaryError, cleanup) {
+  let error = primaryError;
+  const cleanupErrors = [];
+  if (handle) {
+    try {
+      await handle.close();
+    } catch (closeError) {
+      if (error) cleanupErrors.push(closeError);
+      else error = closeError;
+    }
+    if (error && cleanup) {
+      try {
+        await cleanup();
+      } catch (cleanupError) {
+        cleanupErrors.push(cleanupError);
+      }
+    }
+  }
+  if (!error) return;
+  if (cleanupErrors.length === 0) throw error;
+  throw new AggregateError(
+    [error, ...cleanupErrors],
+    error.message,
+    { cause: error },
+  );
+}
+
 async function ensureTransactionRoot(parentDirectory, transactionDirectory, fileSystem) {
   if (
     path.dirname(transactionDirectory) !== parentDirectory ||
@@ -160,6 +187,8 @@ async function ensureTransactionRoot(parentDirectory, transactionDirectory, file
 
 async function readLockOwner(lockPath, fileSystem) {
   let handle;
+  let owner;
+  let primaryError;
   try {
     handle = await fileSystem.open(
       lockPath,
@@ -179,17 +208,19 @@ async function readLockOwner(lockPath, fileSystem) {
     if (!Number.isSafeInteger(pid)) {
       throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
     }
-    return { pid, stats: after };
+    owner = { pid, stats: after };
   } catch (error) {
-    if (error?.message === TRANSACTION_LOCK_AMBIGUOUS) throw error;
-    throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
-  } finally {
-    await handle?.close();
+    primaryError = error?.message === TRANSACTION_LOCK_AMBIGUOUS
+      ? error
+      : new Error(TRANSACTION_LOCK_AMBIGUOUS, { cause: error });
   }
+  await finishFileHandle(handle, primaryError);
+  return owner;
 }
 
 async function createLockFile(lockPath, fileSystem) {
   let handle;
+  let primaryError;
   try {
     handle = await fileSystem.open(
       lockPath,
@@ -202,40 +233,36 @@ async function createLockFile(lockPath, fileSystem) {
     await handle.writeFile(`${process.pid}\n`);
     await handle.sync();
   } catch (error) {
-    await handle?.close();
-    if (handle) await fileSystem.unlink(lockPath).catch(() => {});
-    throw error;
+    primaryError = error;
   }
-  await handle.close();
+  await finishFileHandle(
+    handle,
+    primaryError,
+    () => fileSystem.unlink(lockPath),
+  );
 }
 
-async function acquireTransactionLock(lockPath, recoveryPath, fileSystem) {
-  if (activeTransactionLocks.has(lockPath)) {
-    throw new Error(TRANSACTION_LOCKED);
-  }
+async function acquireTransactionLockFile(lockPath, recoveryPath, fileSystem) {
   if (await pathExists(recoveryPath, fileSystem)) {
     throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
   }
   try {
     await createLockFile(lockPath, fileSystem);
-    activeTransactionLocks.add(lockPath);
     return;
   } catch (error) {
     if (error?.code !== "EEXIST") throw error;
   }
 
   const owner = await readLockOwner(lockPath, fileSystem);
-  if (owner.pid === process.pid) {
-    if (activeTransactionLocks.has(lockPath)) {
-      throw new Error(TRANSACTION_LOCKED);
-    }
-  } else {
+  if (owner.pid !== process.pid) {
     try {
       process.kill(owner.pid, 0);
       throw new Error(TRANSACTION_LOCKED);
     } catch (error) {
       if (error?.message === TRANSACTION_LOCKED) throw error;
-      if (error?.code !== "ESRCH") throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
+      if (error?.code !== "ESRCH") {
+        throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
+      }
     }
   }
 
@@ -273,17 +300,34 @@ async function acquireTransactionLock(lockPath, recoveryPath, fileSystem) {
   } finally {
     await fileSystem.rmdir(recoveryPath);
   }
-  activeTransactionLocks.add(lockPath);
 }
 
-async function releaseTransactionLock(lockPath, fileSystem) {
+async function acquireTransactionLock(
+  lockPath,
+  recoveryPath,
+  transactionIdentity,
+  fileSystem,
+) {
+  if (activeTransactionLocks.has(transactionIdentity)) {
+    throw new Error(TRANSACTION_LOCKED);
+  }
+  activeTransactionLocks.add(transactionIdentity);
+  try {
+    await acquireTransactionLockFile(lockPath, recoveryPath, fileSystem);
+  } catch (error) {
+    activeTransactionLocks.delete(transactionIdentity);
+    throw error;
+  }
+}
+
+async function releaseTransactionLock(lockPath, transactionIdentity, fileSystem) {
   try {
     await fileSystem.unlink(lockPath);
     return null;
   } catch (error) {
     return error;
   } finally {
-    activeTransactionLocks.delete(lockPath);
+    activeTransactionLocks.delete(transactionIdentity);
   }
 }
 
@@ -421,7 +465,13 @@ export async function preparePrivateStoryPreview({
   const lockPath = path.join(transactionDirectory, "lock");
   const recoveryPath = path.join(transactionDirectory, "recovery");
   const stageDirectory = path.join(transactionDirectory, "stage");
-  await acquireTransactionLock(lockPath, recoveryPath, operations);
+  const transactionIdentity = transactionRoot.realTransactionDirectory;
+  await acquireTransactionLock(
+    lockPath,
+    recoveryPath,
+    transactionIdentity,
+    operations,
+  );
   let committed = false;
   let operationError;
   try {
@@ -490,7 +540,11 @@ export async function preparePrivateStoryPreview({
     operationError = error;
   }
 
-  const releaseError = await releaseTransactionLock(lockPath, operations);
+  const releaseError = await releaseTransactionLock(
+    lockPath,
+    transactionIdentity,
+    operations,
+  );
   if (operationError) throw operationError;
   if (releaseError && !committed) throw releaseError;
   return manifest;
