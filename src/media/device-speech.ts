@@ -35,6 +35,7 @@ type PlayDeviceSpeechOptions = {
   signal?: AbortSignal;
   speaker: DeviceSpeechSpeaker;
   text: string;
+  volume?: number;
 };
 
 function createAbortError() {
@@ -99,6 +100,7 @@ export function playDeviceSpeech({
   signal,
   speaker,
   text,
+  volume = 1,
 }: PlayDeviceSpeechOptions) {
   if (!env) {
     return Promise.reject(
@@ -113,7 +115,7 @@ export function playDeviceSpeech({
   utterance.lang = voice?.lang || "en-US";
   utterance.pitch = performance.pitch;
   utterance.rate = performance.rate;
-  utterance.volume = 1;
+  utterance.volume = volume;
   utterance.voice = voice;
 
   return new Promise<void>((resolve, reject) => {

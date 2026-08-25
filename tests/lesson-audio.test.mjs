@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getLessonAudioLine, getLessonSpeechLine } from "../lib/lesson-audio.js";
+import * as lessonAudio from "../lib/lesson-audio.js";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 const lesson = {
@@ -16,16 +16,28 @@ const lesson = {
 };
 
 describe("lesson audio", () => {
+  it("resolves a quiet group cue for the current join-in target", () => {
+    assert.equal(typeof lessonAudio.getLessonJoinInAudioLine, "function");
+    const cue = lessonAudio.getLessonJoinInAudioLine(
+      { ...createInitialLessonState(), phase: LessonPhase.JoiningIn, stepIndex: 1 },
+      lesson,
+    );
+
+    assert.equal(cue.text, "Here you are!");
+    assert.equal(cue.volume, 0.28);
+    assert.match(cue.audioSrc, /lesson-join-in-.*\.mp3$/);
+  });
+
   it("returns source-independent story speech only while speaking", () => {
     assert.deepEqual(
-      getLessonSpeechLine(
+      lessonAudio.getLessonSpeechLine(
         { ...createInitialLessonState(), phase: LessonPhase.Speaking },
         lesson,
       ),
       { speaker: "dolly", text: "Here you are!" },
     );
     assert.equal(
-      getLessonSpeechLine(
+      lessonAudio.getLessonSpeechLine(
         { ...createInitialLessonState(), phase: LessonPhase.JoiningIn, stepIndex: 1 },
         lesson,
       ),
@@ -35,7 +47,7 @@ describe("lesson audio", () => {
 
   it("resolves the current scripted speaker by exact text", () => {
     assert.deepEqual(
-      getLessonAudioLine(
+      lessonAudio.getLessonAudioLine(
         { ...createInitialLessonState(), phase: LessonPhase.Speaking },
         lesson,
       ),
@@ -52,7 +64,7 @@ describe("lesson audio", () => {
   it("stays silent outside automatic story speech", () => {
     for (const phase of [LessonPhase.Idle, LessonPhase.JoiningIn, LessonPhase.Paused, LessonPhase.Finished]) {
       assert.equal(
-        getLessonAudioLine(
+        lessonAudio.getLessonAudioLine(
           { ...createInitialLessonState(), phase, stepIndex: 1 },
           lesson,
         ),
@@ -68,7 +80,7 @@ describe("lesson audio", () => {
     };
 
     assert.throws(
-      () => getLessonAudioLine(
+      () => lessonAudio.getLessonAudioLine(
         { ...createInitialLessonState(), phase: LessonPhase.Speaking },
         missingLesson,
       ),

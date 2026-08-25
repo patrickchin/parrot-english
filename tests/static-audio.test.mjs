@@ -33,6 +33,16 @@ const learnerProfileAudio = {
 };
 
 describe("static audio cache metadata", () => {
+  it("registers one exact-text group cue for every supported built-in target", () => {
+    assert.equal(typeof staticAudio.LESSON_JOIN_IN_AUDIO_LINES, "object");
+    assert.equal(Object.keys(staticAudio.LESSON_JOIN_IN_AUDIO_LINES).length, 17);
+    assert.deepEqual(staticAudio.LESSON_JOIN_IN_AUDIO_LINES["It is up high!"], {
+      id: "lesson-join-in-dolly-it-is-up-high",
+      sourceAudioId: "dolly-it-is-up-high",
+      text: "It is up high!",
+    });
+  });
+
   it("resolves speech by speaker and exact text", () => {
     assert.equal(typeof staticAudio.getStaticAudioLineForSpeech, "function");
     assert.equal(
