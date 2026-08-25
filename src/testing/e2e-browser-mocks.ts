@@ -13,6 +13,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "partial",
   "complete",
   "playback-setup-failed",
+  "reset-delete-failed",
   "reset-interrupted",
   "upload-failed",
 ]);
@@ -392,6 +393,7 @@ function initialE2eDubLineIds(scenario: string) {
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
     scenario === "playback-setup-failed" ||
+    scenario === "reset-delete-failed" ||
     scenario === "reset-interrupted"
   ) {
     return [...E2E_DUB_LINE_IDS];
@@ -404,6 +406,7 @@ function createE2eDubStore(scenario: string | null) {
   if (!scenario) return null;
   const savedKey = `parrot-e2e-dub:${scenario}:saved`;
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
+  const resetDeleteFailureKey = `parrot-e2e-dub:${scenario}:reset-delete-failed`;
   const resetKey = `parrot-e2e-dub:${scenario}:reset-finished`;
   const persisted = sessionStorage.getItem(savedKey);
   const savedLineIds = persisted
@@ -423,7 +426,12 @@ function createE2eDubStore(scenario: string | null) {
   );
   let failedUpload: Uint8Array | null = null;
   let resetInterrupted =
-    scenario === "reset-interrupted" && sessionStorage.getItem(resetKey) !== "yes";
+    (scenario === "reset-delete-failed" || scenario === "reset-interrupted") &&
+    sessionStorage.getItem(resetKey) !== "yes";
+  let failResetDelete =
+    scenario === "reset-delete-failed" &&
+    sessionStorage.getItem(resetDeleteFailureKey) !== "used";
+  let delayNextStatus = false;
   const uploads: string[] = [];
 
   function persist() {
@@ -450,6 +458,10 @@ function createE2eDubStore(scenario: string | null) {
               },
             );
           }
+          if (delayNextStatus) {
+            delayNextStatus = false;
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 400));
+          }
           return e2eJson({
             complete: E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
             dubId: "five-little-ducks-v1",
@@ -466,6 +478,14 @@ function createE2eDubStore(scenario: string | null) {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
             resetInterrupted = false;
             sessionStorage.setItem(resetKey, "yes");
+            clips.clear();
+            persist();
+            if (failResetDelete) {
+              failResetDelete = false;
+              delayNextStatus = true;
+              sessionStorage.setItem(resetDeleteFailureKey, "used");
+              return new Response(null, { status: 503 });
+            }
           }
           clips.clear();
           persist();

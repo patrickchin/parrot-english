@@ -741,6 +741,11 @@ export function DuckDub() {
     void uploadPendingBlob(generation);
   }
 
+  function handleRetryLoad() {
+    setOperationError("");
+    setLoadSequence((current) => current + 1);
+  }
+
   const activeLine =
     state.phase === "final-playing"
       ? DUB_LINES[playbackLineIndex]
@@ -759,7 +764,7 @@ export function DuckDub() {
       onNext={handleNext}
       onRecord={() => void handleRecord()}
       onRetake={handleRetake}
-      onRetryLoad={() => setLoadSequence((current) => current + 1)}
+      onRetryLoad={handleRetryLoad}
       onSaveAgain={handleSaveAgain}
       onSelectLine={handleSelectLine}
       onStopPlayback={handleStopPlayback}

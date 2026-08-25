@@ -305,6 +305,46 @@ test("finishes an interrupted reset while preserving ordinary load retry", async
   await expect(page.getByRole("checkbox", { name: /I’m the grown-up/ })).not.toBeChecked();
 });
 
+test("clears a failed recovery DELETE before retrying a successful status load", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dubs/five-little-ducks?parrotE2eDub=reset-delete-failed",
+  );
+  await expect(
+    page.getByRole("button", { name: "Finish deleting my dub" }),
+  ).toBeVisible();
+
+  page.once("dialog", async (dialog) => {
+    await dialog.accept();
+  });
+  await page.getByRole("button", { name: "Finish deleting my dub" }).click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub was not deleted.",
+    }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Try loading again" }).click();
+  await expect(
+    page.getByRole("button", { name: "Loading your private dub…" }),
+  ).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Finish deleting my dub" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("main").locator('[role="status"]')).toHaveText(
+    "Loading your private dub.",
+  );
+
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: /I’m the grown-up/ })).not.toBeChecked();
+  await expect(page.getByRole("main").locator('[role="status"]')).toHaveText(
+    "Grown-up confirmation is needed before dubbing.",
+  );
+});
+
 for (const microphone of ["denied", "unsupported"] as const) {
   test(`keeps line 1 and record focus after a ${microphone} microphone`, async ({ page }) => {
     await page.goto(
