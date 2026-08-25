@@ -76,12 +76,6 @@ function isMeaningfulExcerpt(words) {
   return words.join(" ").length >= 50 && new Set(words).size >= 5;
 }
 
-function isMeaningfulCrossUnitExcerpt(words) {
-  const counts = new Map();
-  for (const word of words) counts.set(word, (counts.get(word) ?? 0) + 1);
-  return isMeaningfulExcerpt(words) && Math.max(...counts.values()) <= 3;
-}
-
 function createExcerptFingerprints(sourceGroups) {
   const fingerprints = new Map();
   const add = (words) => {
@@ -112,7 +106,7 @@ function createExcerptFingerprints(sourceGroups) {
       const unitWindow = storyUnitIndexes.slice(index, index + 12);
       if (
         unitWindow[0] !== unitWindow.at(-1) &&
-        isMeaningfulCrossUnitExcerpt(window)
+        isMeaningfulExcerpt(window)
       ) {
         add(window);
       }
@@ -267,8 +261,19 @@ function diagnosticPrefix(label) {
   return match?.[1] ?? "private-leak";
 }
 
-function safeLeakDiagnostic(label, context) {
-  const redacted = redactLeakedPath(label, context.variants);
+function protectedPathDiagnostic(label) {
+  const prefix = diagnosticPrefix(label);
+  const category = prefix === "private-leak"
+    ? "protected-path"
+    : `${prefix} protected-path`;
+  return `${category} ~${hash(label).slice(0, 12)}`;
+}
+
+function safeLeakDiagnostic(label, context, scannedPath) {
+  const candidate = containsPrivatePath(scannedPath ?? label)
+    ? protectedPathDiagnostic(label)
+    : label;
+  const redacted = redactLeakedPath(candidate, context.variants);
   if (!textLeaks(redacted, context)) return redacted;
 
   const fallback = redactLeakedPath(
@@ -305,7 +310,9 @@ export function scanPrivateStoryIsolation({
         contentLeakCache,
       ),
   );
-  const safePaths = leakedPaths.map(([label]) => safeLeakDiagnostic(label, context));
+  const safePaths = leakedPaths.map(([label, , scannedPath]) =>
+    safeLeakDiagnostic(label, context, scannedPath)
+  );
   const uniquePaths = [...new Set(safePaths)].sort();
 
   return {

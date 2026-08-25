@@ -27,6 +27,20 @@ import {
 
 const temporaryDirectories = [];
 const execFileAsync = promisify(execFile);
+const PROTECTED_PATH_DIAGNOSTIC =
+  /^(?:git-history [0-9a-f]{12} )?protected-path ~[0-9a-f]{12}$/u;
+
+function assertProtectedPathDiagnostics(result, count, sensitivePaths = []) {
+  assert.equal(result.leakedPaths.length, count);
+  assert.equal(new Set(result.leakedPaths).size, count);
+  for (const diagnostic of result.leakedPaths) {
+    assert.match(diagnostic, PROTECTED_PATH_DIAGNOSTIC);
+  }
+  for (const filePath of sensitivePaths) {
+    assert.equal(result.message.includes(filePath), false);
+    assert.equal(result.message.includes(filePath.split("/").at(-1)), false);
+  }
+}
 
 async function git(projectRoot, args, options = {}) {
   return execFileAsync("git", args, {
@@ -183,7 +197,7 @@ describe("private story isolation scanner", () => {
       ],
     });
 
-    assert.deepEqual(scanResult.leakedPaths, [
+    assertProtectedPathDiagnostics(scanResult, 2, [
       "content/private-story-preview/manifest.json",
       "dist/assets/private-story-preview/private-fixture/page-001.mp3",
     ]);
@@ -202,7 +216,7 @@ describe("private story isolation scanner", () => {
       ]],
     });
 
-    assert.deepEqual(scanResult.leakedPaths, [
+    assertProtectedPathDiagnostics(scanResult, 2, [
       "content/.private-story-preview-transaction/stage/residue.bin",
       "dist/content/.private-story-preview-transaction/backup/residue.bin",
     ]);
@@ -231,7 +245,25 @@ describe("private story isolation scanner", () => {
       ]),
     });
 
-    assert.deepEqual(result.leakedPaths, [...protectedPaths].sort());
+    assertProtectedPathDiagnostics(result, protectedPaths.length, protectedPaths);
+  });
+
+  it("does not expose protected paths or their private-looking basenames in diagnostics", () => {
+    const protectedPaths = [
+      "content/local-stories/Unlisted Synthetic Secret Title.txt",
+      "nested/content/private-story-preview/Sensitive Draft Name.txt",
+      "content/.private-story-preview-transaction/stage/Hidden Backup.bin",
+      "public/assets/private-story-preview/fixture/Private Recording.mp3",
+    ];
+
+    const result = scanPrivateStoryIsolation({
+      trackedFiles: protectedPaths.map((filePath) => [
+        filePath,
+        "synthetic public bytes",
+      ]),
+    });
+
+    assertProtectedPathDiagnostics(result, protectedPaths.length, protectedPaths);
   });
 
   it("detects a legacy source path in the current index and worktree", async () => {
@@ -247,7 +279,7 @@ describe("private story isolation scanner", () => {
       requirePrivateInputs: true,
     });
 
-    assert.deepEqual(result.leakedPaths, [leakedPath]);
+    assertProtectedPathDiagnostics(result, 1, [leakedPath]);
   });
 
   it("detects a legacy source path that was committed and later deleted", async () => {
@@ -264,9 +296,12 @@ describe("private story isolation scanner", () => {
       requirePrivateInputs: true,
     });
 
+    assertProtectedPathDiagnostics(result, 2, [leakedPath]);
     assert.equal(
-      result.leakedPaths.includes(
-        `git-history ${addCommit.slice(0, 12)} ${leakedPath}`,
+      result.leakedPaths.some((diagnostic) =>
+        diagnostic.startsWith(
+          `git-history ${addCommit.slice(0, 12)} protected-path ~`,
+        )
       ),
       true,
     );
@@ -282,7 +317,7 @@ describe("private story isolation scanner", () => {
 
     const result = await verifyPrivateStoryIsolation({ projectRoot });
 
-    assert.deepEqual(result.leakedPaths, [leakedPath]);
+    assertProtectedPathDiagnostics(result, 1, [leakedPath]);
   });
 
   it("allows generic private workflow paths in tracked tooling", () => {
@@ -471,7 +506,7 @@ describe("private story isolation scanner", () => {
     });
 
     assert.equal(result.status, "leaks");
-    assert.deepEqual(result.leakedPaths, [
+    assertProtectedPathDiagnostics(result, 2, [
       "dist/assets/private-story-preview/fixture/page.mp3",
       "public/assets/private-story-preview/fixture/page.mp3",
     ]);
@@ -510,7 +545,7 @@ describe("private story isolation scanner", () => {
     });
 
     assert.equal(result.status, "leaks");
-    assert.deepEqual(result.leakedPaths, [
+    assertProtectedPathDiagnostics(result, 2, [
       "dist/assets/private-story-preview/fixture/page.mp3",
       "public/assets/private-story-preview/fixture/page.mp3",
     ]);
@@ -538,14 +573,10 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({ projectRoot });
 
     assert.equal(result.status, "leaks");
-    assert.deepEqual(result.leakedPaths, [
+    assertProtectedPathDiagnostics(result, 2, [
       "content/private-story-preview/leak.txt",
       "dist/assets/private-story-preview/fixture/page.mp3",
     ]);
-    assert.equal(
-      result.message,
-      "content/private-story-preview/leak.txt\ndist/assets/private-story-preview/fixture/page.mp3",
-    );
   });
 
   it("reports a force-added transaction file from the index and worktree without markers", async () => {
@@ -566,7 +597,7 @@ describe("private story isolation scanner", () => {
     });
 
     assert.equal(result.status, "leaks");
-    assert.deepEqual(result.leakedPaths, [leakedPath]);
+    assertProtectedPathDiagnostics(result, 1, [leakedPath]);
     assert.equal(
       result.message.includes("synthetic transaction contents must not be echoed"),
       false,
@@ -618,14 +649,12 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({ projectRoot });
 
     assert.equal(result.status, "leaks");
-    assert.equal(
-      result.leakedPaths.some((filePath) =>
-        filePath.startsWith(
-          "content/private-story-preview/-leak.txt~",
-        )
-      ),
-      true,
-    );
+    assertProtectedPathDiagnostics(result, 4, [
+      "content/private-story-preview/manifest.json",
+      "content/private-story-preview/story.txt",
+      "content/private-story-preview/story-2.txt",
+      "content/private-story-preview/private-fixture-leak.txt",
+    ]);
     assert.doesNotMatch(result.message, /private-fixture/);
     assert.equal(result.message.includes("Synthetic page text."), false);
   });
@@ -788,7 +817,7 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({ projectRoot });
 
     assert.equal(result.status, "leaks");
-    assert.deepEqual(result.leakedPaths, [gitlinkPath]);
+    assertProtectedPathDiagnostics(result, 1, [gitlinkPath]);
   });
 
   it("rejects an external dist directory", async () => {
@@ -855,7 +884,7 @@ describe("private story isolation scanner", () => {
 
     const result = await verifyPrivateStoryIsolation({ projectRoot });
 
-    assert.deepEqual(result.leakedPaths, [
+    assertProtectedPathDiagnostics(result, 1, [
       "dist/assets/private-story-preview/fixture/page.mp3",
     ]);
   });
@@ -935,7 +964,7 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({ projectRoot });
 
     assert.equal(result.status, "leaks");
-    assert.deepEqual(result.leakedPaths, [
+    assertProtectedPathDiagnostics(result, 1, [
       "dist/assets/private-story-preview/fixture/page.mp3",
     ]);
   });
@@ -1334,15 +1363,20 @@ describe("private story isolation scanner", () => {
     });
 
     assert.equal(result.status, "leaks");
+    assertProtectedPathDiagnostics(result, 2, [leakedPath]);
     assert.equal(
-      result.leakedPaths.includes(
-        `git-history ${addCommit.trim().slice(0, 12)} ${leakedPath}`,
+      result.leakedPaths.some((diagnostic) =>
+        diagnostic.startsWith(
+          `git-history ${addCommit.trim().slice(0, 12)} protected-path ~`,
+        )
       ),
       true,
     );
     assert.equal(
-      result.leakedPaths.includes(
-        `git-history ${removeCommit.trim().slice(0, 12)} ${leakedPath}`,
+      result.leakedPaths.some((diagnostic) =>
+        diagnostic.startsWith(
+          `git-history ${removeCommit.trim().slice(0, 12)} protected-path ~`,
+        )
       ),
       true,
     );
@@ -2007,6 +2041,22 @@ describe("private story isolation scanner", () => {
     ]);
   });
 
+  it("detects a repetitive twelve-word excerpt spanning three adjacent units", () => {
+    const units = [
+      "bright lanterns shimmer bright",
+      "over valleys bright where",
+      "patient foxes gather bright",
+    ];
+    const excerpt = units.join(" ");
+
+    const result = scanPrivateStoryIsolation({
+      excerptSourceGroups: [units],
+      trackedFiles: [["public.txt", excerpt]],
+    });
+
+    assert.deepEqual(result.leakedPaths, ["public.txt"]);
+  });
+
   it("does not fingerprint across the boundary between two stories", () => {
     const firstStoryEnd = "crimson astronomers quietly chart distant nebulae";
     const secondStoryStart = "beyond frozen harbors while patient foxes";
@@ -2112,7 +2162,7 @@ describe("private story isolation scanner", () => {
     }
   });
 
-  it("ignores short, common, and highly repetitive source units", async () => {
+  it("detects a meaningful excerpt assembled from short and repetitive units", async () => {
     const { baseRevision, projectRoot } = await createReleaseAuditFixture({
       firstBody: [
         "One two three four five six seven.",
@@ -2131,7 +2181,7 @@ describe("private story isolation scanner", () => {
       requirePrivateInputs: true,
     });
 
-    assert.equal(result.status, "clean");
-    assert.deepEqual(result.leakedPaths, []);
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, ["public.txt"]);
   });
 });
