@@ -65,10 +65,10 @@ function removeMarkers(value, variants) {
   }
 }
 
-function markerSafeSuffix(filePath, variants) {
+function markerSafeSuffix(filePath, redactedPath, variants) {
   const digest = createHash("sha256").update(filePath).digest("hex");
   const conciseSuffix = `~${digest.slice(0, 12)}`;
-  if (!variants.some((marker) => conciseSuffix.includes(marker))) {
+  if (!variants.some((marker) => `${redactedPath}${conciseSuffix}`.includes(marker))) {
     return conciseSuffix;
   }
 
@@ -90,14 +90,24 @@ function markerSafeSuffix(filePath, variants) {
 function redactLeakedPath(filePath, variants) {
   const normalizedPath = normalizePath(filePath);
   const redaction = removeMarkers(normalizedPath, variants);
-  const diagnostic = redaction.changed
-    ? `${redaction.value}${markerSafeSuffix(normalizedPath, variants)}`
-    : redaction.value;
-  const escaped = JSON.stringify(diagnostic)
+  const escaped = JSON.stringify(redaction.value)
     .slice(1, -1)
     .replaceAll("\u2028", "\\u2028")
     .replaceAll("\u2029", "\\u2029");
-  return removeMarkers(escaped, variants).value;
+  const escapedRedaction = removeMarkers(escaped, variants);
+  if (!redaction.changed && !escapedRedaction.changed) {
+    return escapedRedaction.value;
+  }
+
+  const diagnostic = `${escapedRedaction.value}${markerSafeSuffix(
+    normalizedPath,
+    escapedRedaction.value,
+    variants,
+  )}`;
+  if (variants.some((marker) => diagnostic.includes(marker))) {
+    throw new Error("Unable to create a safe leak diagnostic");
+  }
+  return diagnostic;
 }
 
 export function scanPrivateStoryIsolation({

@@ -2,6 +2,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -125,6 +126,65 @@ describe("private story isolation scanner", () => {
     assert.notEqual(scanResult.leakedPaths[0], scanResult.leakedPaths[1]);
     for (const marker of markers) {
       assert.equal(scanResult.message.includes(marker), false);
+    }
+  });
+
+  it("keeps valid-manifest leaks distinct when titles span path and suffix", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-boundary-"));
+    temporaryDirectories.push(projectRoot);
+    const previewDirectory = join(projectRoot, "content/private-story-preview");
+    const leakedPaths = ["src/private-oneX", "src/private-twoX"];
+    const titles = leakedPaths.map((filePath) =>
+      `X~${createHash("sha256").update(filePath).digest("hex").slice(0, 12)}`
+    );
+    await mkdir(previewDirectory, { recursive: true });
+    await mkdir(join(projectRoot, "src"));
+    await writeFile(
+      join(previewDirectory, "manifest.json"),
+      JSON.stringify({
+        version: 1,
+        stories: [
+          { id: "private-one", textFile: "one.txt", title: titles[0] },
+          { id: "private-two", textFile: "two.txt", title: titles[1] },
+        ],
+      }),
+    );
+    await writeFile(
+      join(previewDirectory, "one.txt"),
+      `# ${titles[0]}\n\nSynthetic first page.\n`,
+    );
+    await writeFile(
+      join(previewDirectory, "two.txt"),
+      `# ${titles[1]}\n\nSynthetic second page.\n`,
+    );
+    await writeFile(
+      join(projectRoot, ".gitignore"),
+      "/content/private-story-preview/\n",
+    );
+    await Promise.all(
+      leakedPaths.map((filePath) =>
+        writeFile(join(projectRoot, filePath), "public content\n")
+      ),
+    );
+    await execFileAsync("git", ["init", "--quiet"], { cwd: projectRoot });
+    await execFileAsync("git", ["add", ".gitignore", ...leakedPaths], {
+      cwd: projectRoot,
+    });
+
+    const result = await verifyPrivateStoryIsolation({
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.equal(result.leakedPaths.length, 2);
+    assert.equal(new Set(result.leakedPaths).size, 2);
+    for (const leakedPath of result.leakedPaths) {
+      assert.match(leakedPath, /^src\/.+/);
+      assert.equal(/[\r\n\u2028\u2029]/u.test(leakedPath), false);
+    }
+    for (const marker of ["private-one", "private-two", ...titles]) {
+      assert.equal(result.message.includes(marker), false);
     }
   });
 
