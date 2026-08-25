@@ -136,7 +136,10 @@ export async function startDubPlayback({
   let stopVoices: (() => void) | null = null;
   let stopped = false;
   let closePromise: Promise<void> | null = null;
-  let firstLineFailure: DubLinePlaybackError | null = null;
+  let rejectStartupAbort!: (error: Error) => void;
+  const startupAbort = new Promise<never>((_, reject) => {
+    rejectStartupAbort = reject;
+  });
 
   const stopPlayback = () => {
     if (stopped) return closePromise ?? Promise.resolve();
@@ -157,6 +160,7 @@ export async function startDubPlayback({
     return closePromise;
   };
   const handleAbort = () => {
+    rejectStartupAbort(createAbortError());
     void stopPlayback();
   };
 
@@ -165,65 +169,66 @@ export async function startDubPlayback({
   try {
     if (signal?.aborted) throw createAbortError();
 
+    let firstLineFailure: DubLinePlaybackError | null = null;
+    let rejectLineFailure!: (failure: DubLinePlaybackError) => void;
+    const lineFailure = new Promise<never>((_, reject) => {
+      rejectLineFailure = reject;
+    });
     const failLine = (lineId: DubLine["id"], stage: DubLinePlaybackStage) => {
       const failure = new DubLinePlaybackError(lineId, stage);
       // The first observed line failure is the origin; later AbortErrors are
       // consequences of cancelling its sibling work.
       if (!firstLineFailure) {
         firstLineFailure = failure;
+        rejectLineFailure(failure);
         loadController.abort();
       }
       return failure;
     };
-    const decodedResults = await Promise.allSettled(
-      DUB_LINES.map(async ({ id }) => {
-        let response: Response;
-        try {
-          response = await request(getDubLineAudioUrl(id), {
-            credentials: "same-origin",
-            signal: loadController.signal,
-          });
-        } catch {
-          if (signal?.aborted || loadController.signal.aborted) {
-            throw createAbortError();
-          }
-          throw failLine(id, "fetch");
+    const lineLoads = DUB_LINES.map(async ({ id }) => {
+      let response: Response;
+      try {
+        response = await request(getDubLineAudioUrl(id), {
+          credentials: "same-origin",
+          signal: loadController.signal,
+        });
+      } catch {
+        if (signal?.aborted || loadController.signal.aborted) {
+          throw createAbortError();
         }
-        if (!response.ok) {
-          if (signal?.aborted) throw createAbortError();
-          throw failLine(id, "fetch");
+        throw failLine(id, "fetch");
+      }
+      if (!response.ok) {
+        if (signal?.aborted) throw createAbortError();
+        throw failLine(id, "fetch");
+      }
+      let bytes: ArrayBuffer;
+      try {
+        bytes = await response.arrayBuffer();
+      } catch {
+        if (signal?.aborted || loadController.signal.aborted) {
+          throw createAbortError();
         }
-        let bytes: ArrayBuffer;
-        try {
-          bytes = await response.arrayBuffer();
-        } catch {
-          if (signal?.aborted || loadController.signal.aborted) {
-            throw createAbortError();
-          }
-          throw failLine(id, "fetch");
+        throw failLine(id, "fetch");
+      }
+      let buffer: AudioBuffer;
+      try {
+        buffer = await context.decodeAudioData(bytes);
+      } catch {
+        if (signal?.aborted || loadController.signal.aborted) {
+          throw createAbortError();
         }
-        let buffer: AudioBuffer;
-        try {
-          buffer = await context.decodeAudioData(bytes);
-        } catch {
-          if (signal?.aborted || loadController.signal.aborted) {
-            throw createAbortError();
-          }
-          throw failLine(id, "decode");
-        }
-        return [id, buffer] as const;
-      }),
-    );
+        throw failLine(id, "decode");
+      }
+      return [id, buffer] as const;
+    });
+    const decodedLines = await Promise.race([
+      Promise.all(lineLoads),
+      lineFailure,
+      startupAbort,
+    ]);
 
     if (signal?.aborted) throw createAbortError();
-    if (firstLineFailure) throw firstLineFailure;
-    const rejectedLoad = decodedResults.find(
-      (result): result is PromiseRejectedResult => result.status === "rejected",
-    );
-    if (rejectedLoad) throw rejectedLoad.reason;
-    const decodedLines = decodedResults.map(
-      (result) => (result as PromiseFulfilledResult<readonly [DubLine["id"], AudioBuffer]>).value,
-    );
     await context.resume();
     if (signal?.aborted) throw createAbortError();
 
@@ -270,6 +275,7 @@ export async function startDubPlayback({
     };
   } catch (error) {
     await stopPlayback();
+    if (signal?.aborted) throw createAbortError();
     throw error;
   }
 }
