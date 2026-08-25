@@ -51,6 +51,46 @@ describe("five little ducks dub domain", () => {
     assert.equal(state.phase, "final-ready");
   });
 
+  it("selects only canonical saved lines without leaving final-ready", () => {
+    const saved = Object.fromEntries(
+      DUB_LINES.map(({ id }) => [id, "2026-08-25T10:00:00.000Z"]),
+    );
+    const state = {
+      ...createInitialDubState(),
+      error: "Old playback error",
+      phase: "final-ready",
+      saved,
+    };
+
+    const selected = reduceDubState(state, {
+      type: "SELECT_LINE",
+      lineId: "line-5",
+    });
+    assert.equal(selected.currentLineIndex, 4);
+    assert.equal(selected.error, "");
+    assert.equal(selected.phase, "final-ready");
+    assert.equal(selected.saved, saved);
+
+    assert.equal(
+      reduceDubState(state, { type: "SELECT_LINE", lineId: "line-99" }),
+      state,
+    );
+    const unsaved = { ...state, saved: { "line-1": saved["line-1"] } };
+    assert.equal(
+      reduceDubState(unsaved, { type: "SELECT_LINE", lineId: "line-5" }),
+      unsaved,
+    );
+
+    const inherited = {
+      ...state,
+      saved: Object.create({ "line-5": saved["line-5"] }),
+    };
+    assert.equal(
+      reduceDubState(inherited, { type: "SELECT_LINE", lineId: "line-5" }),
+      inherited,
+    );
+  });
+
   it("keeps a failed upload reviewable and advances after a saved take", () => {
     let state = reduceDubState(createInitialDubState(), {
       type: "LOADED",

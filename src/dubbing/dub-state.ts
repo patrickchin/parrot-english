@@ -8,6 +8,7 @@ export type DubEvent =
   | { type: "SAVE_STARTED" } | { type: "SAVE_FAILED"; message: string }
   | { type: "SAVE_SUCCEEDED"; lineId: string; recordedAt: string }
   | { type: "NEXT_LINE" } | { type: "RETAKE" }
+  | { type: "SELECT_LINE"; lineId: string }
   | { type: "FINAL_LOADING" } | { type: "FINAL_STARTED" } | { type: "FINAL_FINISHED" }
   | { type: "RESET_SUCCEEDED" };
 
@@ -29,6 +30,14 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
   if (event.type === "SAVE_STARTED") return { ...state, error: "", phase: "saving" };
   if (event.type === "SAVE_FAILED") return { ...state, error: event.message, phase: "save-error" };
   if (event.type === "SAVE_SUCCEEDED") return { ...state, error: "", phase: "line-review", saved: { ...state.saved, [event.lineId]: event.recordedAt } };
+  if (event.type === "SELECT_LINE") {
+    const currentLineIndex = DUB_LINES.findIndex(
+      ({ id }) => id === event.lineId && Object.hasOwn(state.saved, id),
+    );
+    return currentLineIndex < 0
+      ? state
+      : { ...state, currentLineIndex, error: "" };
+  }
   if (event.type === "NEXT_LINE") {
     if (DUB_LINES.every(({ id }) => id in state.saved)) return { ...state, phase: "final-ready" };
     const next = DUB_LINES.findIndex(({ id }, index) => index > state.currentLineIndex && !(id in state.saved));

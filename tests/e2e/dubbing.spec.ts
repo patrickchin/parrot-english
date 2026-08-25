@@ -2,6 +2,14 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type Rect = { height: number; width: number; x: number; y: number };
 type DubPreviewSnapshot = { pending: number; requests: number; resolved: number };
+type DubStoreSnapshot = { uploads: string[] };
+type MicrophoneSnapshot = {
+  pending: number;
+  requests: number;
+  resolved: number;
+  resolveNext(): boolean;
+  stoppedTracks: number;
+};
 
 const studioViewports = [
   { height: 568, width: 280 },
@@ -43,6 +51,46 @@ async function dubPreviewSnapshot(page: Page) {
   return snapshot!;
 }
 
+async function dubStoreSnapshot(page: Page) {
+  return page.evaluate(() =>
+    (
+      window as typeof window & {
+        __parrotE2eDub?: { snapshot(): DubStoreSnapshot };
+      }
+    ).__parrotE2eDub?.snapshot(),
+  );
+}
+
+async function microphoneSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const microphone = (
+      window as typeof window & {
+        __parrotE2eLessonMicrophone?: MicrophoneSnapshot;
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!microphone) throw new Error("Microphone controller is missing.");
+    return {
+      pending: microphone.pending,
+      requests: microphone.requests,
+      resolved: microphone.resolved,
+      stoppedTracks: microphone.stoppedTracks,
+    };
+  });
+}
+
+async function resolveDelayedMicrophone(page: Page) {
+  const resolved = await page.evaluate(() => {
+    const microphone = (
+      window as typeof window & {
+        __parrotE2eLessonMicrophone?: MicrophoneSnapshot;
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!microphone) throw new Error("Microphone controller is missing.");
+    return microphone.resolveNext();
+  });
+  expect(resolved).toBe(true);
+}
+
 test("records, saves, reviews, and resumes the nine-line dub at line 2", async ({
   page,
 }) => {
@@ -81,26 +129,112 @@ test("keeps the same take available when its first upload fails", async ({ page 
   await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
 });
 
-test("replays, stops, retakes, and deletes a complete private dub", async ({ page }) => {
+test("replaces selected middle line 5 and keeps the complete dub after reload", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await page.reload();
+  await enterStudio(page, "Continue dubbing");
+
+  const lineSelect = page.getByRole("combobox", { name: "Choose a saved line" });
+  await lineSelect.selectOption("line-5");
+  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
+  await expect(page.getByText("Three little ducks raced through the reeds.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Record selected line" }).click();
+  await page.getByRole("button", { name: "Record line 5" }).click();
+  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Stop recording line 5" }).click();
+  await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
+  await expect.poll(() => dubStoreSnapshot(page)).toEqual({
+    uploads: ["/api/dubs/five-little-ducks-v1/lines/line-5"],
+  });
+  await page.getByRole("button", { name: "Next line" }).click();
+  await expect(page.getByRole("button", { name: "Watch my dub" })).toBeVisible();
+
+  await page.reload();
+  await enterStudio(page, "Continue dubbing");
+  await page.getByRole("combobox", { name: "Choose a saved line" }).selectOption("line-5");
+  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Watch my dub" }).click();
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+  await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("returns an undecodable line 5 to a focused replacement action", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=corrupt-line-5");
   await enterStudio(page, "Continue dubbing");
 
   await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
-  await page.getByRole("button", { name: "Stop playback" }).click();
-  await expect(page.getByRole("button", { name: "Watch my dub" })).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "That take could not play. Record this line again.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
+  await expect(page.getByText("Three little ducks raced through the reeds.", { exact: true })).toBeVisible();
+  const record = page.getByRole("button", { name: "Record line 5" });
+  await expect(record).toBeVisible();
+  await expect(record).toBeFocused();
 
-  await page.getByRole("button", { name: "Record a line again" }).click();
-  await expect(page.getByRole("button", { name: "Record line 1" })).toBeVisible();
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+  await record.click();
+  await page.getByRole("button", { name: "Stop recording line 5" }).click();
   await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
   await page.getByRole("button", { name: "Next line" }).click();
-  await expect(page.getByRole("button", { name: "Watch my dub" })).toBeVisible();
   await page.getByRole("button", { name: "Watch my dub" }).click();
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
-  await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("automatically finishes and saves a six-second recording", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await enterStudio(page, "Start dubbing");
+
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible({
+    timeout: 8_000,
+  });
+});
+
+test("stops a delayed microphone stream that resolves after leaving the dub", async ({ page }) => {
+  await page.goto(
+    "/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=delayed",
+  );
+  await enterStudio(page, "Start dubbing");
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await expect(page.getByRole("button", { name: "Opening microphone…" })).toBeVisible();
+  await expect.poll(() => microphoneSnapshot(page)).toMatchObject({
+    pending: 1,
+    requests: 1,
+    stoppedTracks: 0,
+  });
+
+  await page.getByRole("link", { name: "Back to home" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await resolveDelayedMicrophone(page);
+  await expect.poll(() => microphoneSnapshot(page)).toMatchObject({
+    pending: 0,
+    resolved: 1,
+    stoppedTracks: 1,
+  });
+  await expect(page.getByText("Five Little Ducks", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("alert").filter({ hasText: /microphone|recording/i }),
+  ).toHaveCount(0);
+});
+
+test("gives every final secondary action a 48px touch target", async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await enterStudio(page, "Continue dubbing");
+
+  for (const name of ["Record selected line", "Delete my dub"]) {
+    const box = await visibleBox(page.getByRole("button", { name }));
+    expect(box.height).toBeGreaterThanOrEqual(48);
+  }
+});
+
+test("deletes a complete private dub", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await enterStudio(page, "Continue dubbing");
 
   page.once("dialog", async (dialog) => {
     expect(dialog.type()).toBe("confirm");

@@ -18,14 +18,14 @@ import {
   startSpeechRecording,
   type SpeechRecordingSession,
 } from "../media/speech-recorder";
-import { ActionButton, TextButton } from "../shared/ui";
+import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
 import {
   deleteDub,
   getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
 } from "./dub-api";
-import { startDubPlayback } from "./dub-playback";
+import { DubLinePlaybackError, startDubPlayback } from "./dub-playback";
 import {
   DUB_DURATION_MS,
   DUB_LINES,
@@ -49,6 +49,7 @@ type DubHandlers = {
   onRetake(): void;
   onRetryLoad(): void;
   onSaveAgain(): void;
+  onSelectLine(lineId: string): void;
   onStopPlayback(): void;
   onStopRecording(): void;
   onWatch(): void;
@@ -100,7 +101,7 @@ function renderDubControls({
     return (
       <>
         <ActionButton onClick={handlers.onSaveAgain}>Save again</ActionButton>
-        <TextButton onClick={handlers.onRetake}>Try recording again</TextButton>
+        <TextButton className="min-h-12" onClick={handlers.onRetake}>Try recording again</TextButton>
       </>
     );
   }
@@ -115,7 +116,7 @@ function renderDubControls({
           <Volume2 aria-hidden="true" /> Hear my take
         </ActionButton>
         <ActionButton onClick={handlers.onNext}>Next line</ActionButton>
-        <TextButton onClick={handlers.onRetake}>Try again</TextButton>
+        <TextButton className="min-h-12" onClick={handlers.onRetake}>Try again</TextButton>
       </>
     );
   }
@@ -133,11 +134,27 @@ function renderDubControls({
     if (isDeleting) return <ActionButton disabled>Deleting your dub…</ActionButton>;
     return (
       <>
+        <label className="font-ui font-black text-brand-ink" htmlFor="saved-dub-line">
+          Choose a saved line
+        </label>
+        <select
+          aria-label="Choose a saved line"
+          className={fieldClassName()}
+          id="saved-dub-line"
+          onChange={(event) => handlers.onSelectLine(event.currentTarget.value)}
+          value={activeLine.id}
+        >
+          {DUB_LINES.filter(({ id }) => id in state.saved).map((line, index) => (
+            <option key={line.id} value={line.id}>
+              Line {index + 1}: {line.text}
+            </option>
+          ))}
+        </select>
         <ActionButton onClick={handlers.onWatch} variant="success">
           <Play aria-hidden="true" /> Watch my dub
         </ActionButton>
-        <TextButton onClick={handlers.onRetake}>Record a line again</TextButton>
-        <TextButton onClick={handlers.onDelete}>Delete my dub</TextButton>
+        <TextButton className="min-h-12" onClick={handlers.onRetake}>Record selected line</TextButton>
+        <TextButton className="min-h-12" onClick={handlers.onDelete}>Delete my dub</TextButton>
       </>
     );
   }
@@ -159,7 +176,7 @@ function renderDubControls({
         <Mic aria-hidden="true" /> Record
       </ActionButton>
       {DUB_LINES.every(({ id }) => id in state.saved) ? (
-        <TextButton onClick={handlers.onWatch}>Watch my dub</TextButton>
+        <TextButton className="min-h-12" onClick={handlers.onWatch}>Watch my dub</TextButton>
       ) : null}
     </>
   );
@@ -179,6 +196,7 @@ export function DuckDubView({
   onRetake,
   onRetryLoad = () => {},
   onSaveAgain,
+  onSelectLine,
   onStopPlayback,
   onStopRecording,
   onWatch,
@@ -205,6 +223,7 @@ export function DuckDubView({
     onRetake,
     onRetryLoad,
     onSaveAgain,
+    onSelectLine,
     onStopPlayback,
     onStopRecording,
     onWatch,
@@ -230,7 +249,6 @@ export function DuckDubView({
           <p
             aria-label={`Line ${lineIndex + 1} of ${DUB_LINES.length}`}
             className="m-0 text-sm font-black uppercase tracking-wider text-brand-blue"
-            role="status"
           >
             Line {lineIndex + 1} of {DUB_LINES.length}
           </p>
@@ -273,7 +291,7 @@ export function DuckDubView({
             </div>
           )}
           {state.phase === "recording" ? (
-            <p aria-live="polite" className="m-0 font-black text-brand-rose" role="status">
+            <p className="m-0 font-black text-brand-rose">
               Recording…
             </p>
           ) : null}
@@ -282,8 +300,8 @@ export function DuckDubView({
               {error}
             </p>
           ) : null}
-          <div aria-live="polite" className="sr-only" role="status">
-            {state.phase === "recording" ? "Recording in progress." : `Line ${lineIndex + 1} is ready.`}
+          <div aria-atomic="true" aria-live="polite" className="sr-only" role="status">
+            Line {lineIndex + 1} of {DUB_LINES.length}. {state.phase === "recording" ? "Recording in progress." : "Ready."}
           </div>
         </section>
       </section>
@@ -568,6 +586,17 @@ export function DuckDub() {
     } catch (error) {
       if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
       finalControllerRef.current = null;
+      if (error instanceof DubLinePlaybackError) {
+        dispatch({ type: "SELECT_LINE", lineId: error.lineId });
+        dispatch({ type: "RETAKE" });
+        setOperationError("That take could not play. Record this line again.");
+        requestAnimationFrame(() => {
+          if (mountedRef.current && generation === generationRef.current) {
+            recordButtonRef.current?.focus();
+          }
+        });
+        return;
+      }
       dispatch({ type: "FINAL_FINISHED" });
       setOperationError(
         error instanceof Error ? error.message : "Your saved dub could not be played. Try again.",
@@ -609,6 +638,11 @@ export function DuckDub() {
     dispatch({ type: "RETAKE" });
   }
 
+  function handleSelectLine(lineId: string) {
+    setOperationError("");
+    dispatch({ type: "SELECT_LINE", lineId });
+  }
+
   function handleNext() {
     if (state.phase === "intro") {
       if (confirmed) dispatch({ type: "CONFIRMED" });
@@ -646,6 +680,7 @@ export function DuckDub() {
       onRetake={handleRetake}
       onRetryLoad={() => setLoadSequence((current) => current + 1)}
       onSaveAgain={handleSaveAgain}
+      onSelectLine={handleSelectLine}
       onStopPlayback={handleStopPlayback}
       onStopRecording={() => void finishRecording()}
       onWatch={() => void handleWatch()}

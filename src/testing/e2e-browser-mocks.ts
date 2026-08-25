@@ -8,6 +8,7 @@ const MOCK_RECORDING_DELAY_MS = 5000;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
+  "corrupt-line-5",
   "empty",
   "partial",
   "complete",
@@ -385,7 +386,9 @@ function createE2eDubBlob(scenario = "correct") {
 }
 
 function initialE2eDubLineIds(scenario: string) {
-  if (scenario === "complete") return [...E2E_DUB_LINE_IDS];
+  if (scenario === "complete" || scenario === "corrupt-line-5") {
+    return [...E2E_DUB_LINE_IDS];
+  }
   if (scenario === "partial") return E2E_DUB_LINE_IDS.slice(0, 3);
   return [];
 }
@@ -400,8 +403,18 @@ function createE2eDubStore(scenario: string | null) {
     : initialE2eDubLineIds(scenario);
   if (persisted === null) sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
 
-  const clips = new Map(savedLineIds.map((id) => [id, createE2eDubBlob()]));
+  const clips = new Map(
+    savedLineIds.map((id) => [
+      id,
+      createE2eDubBlob(
+        scenario === "corrupt-line-5" && id === "line-5"
+          ? "corrupt-line-5"
+          : "correct",
+      ),
+    ]),
+  );
   let failedUpload: Uint8Array | null = null;
+  const uploads: string[] = [];
 
   function persist() {
     sessionStorage.setItem(savedKey, JSON.stringify([...clips.keys()]));
@@ -451,6 +464,7 @@ function createE2eDubStore(scenario: string | null) {
       }
       if (method !== "PUT" || audioPath) return new Response(null, { status: 405 });
 
+      uploads.push(url.pathname);
       const clip = await request.blob();
       const bytes = new Uint8Array(await clip.arrayBuffer());
       const consent = request.headers.get("X-Parrot-Guardian-Consent-Version");
@@ -475,6 +489,9 @@ function createE2eDubStore(scenario: string | null) {
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
       return e2eJson({ recordedAt: E2E_DUB_RECORDED_AT });
+    },
+    snapshot() {
+      return { uploads: [...uploads] };
     },
   };
 }
@@ -636,6 +653,13 @@ function rejectNextProfileRecording() {
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
   const dubStore = createE2eDubStore(getE2eDubScenario());
+
+  if (dubStore) {
+    Object.defineProperty(window, "__parrotE2eDub", {
+      configurable: true,
+      value: { snapshot: () => dubStore.snapshot() },
+    });
+  }
 
   window.fetch = async (input, init) => {
     const profileScenario = getE2eProfileScenario();
@@ -892,7 +916,10 @@ class MockAudioContext {
   createOscillator() {
     return new MockScheduledAudioNode();
   }
-  async decodeAudioData() {
+  async decodeAudioData(bytes: ArrayBuffer) {
+    if (new TextDecoder().decode(bytes).includes("corrupt-line-5")) {
+      throw new DOMException("Mock undecodable dub line.", "EncodingError");
+    }
     return {} as AudioBuffer;
   }
   async resume() {}

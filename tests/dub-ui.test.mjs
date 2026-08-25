@@ -46,6 +46,7 @@ const handlers = {
   onNext() {},
   onRecord() {},
   onRetake() {},
+  onSelectLine() {},
   onSaveAgain() {},
   onStopPlayback() {},
   onStopRecording() {},
@@ -132,9 +133,17 @@ describe("duck dubbing presentation", () => {
   });
 
   it("renders final replay and delete actions for each final phase", () => {
-    const ready = renderDuckDub({ phase: "final-ready" });
+    const ready = renderDuckDub({
+      currentLineIndex: 4,
+      phase: "final-ready",
+      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+    });
     assert.match(ready, /Watch my dub<\/button>/);
-    assert.match(ready, />Record a line again<\/button>/);
+    assert.match(ready, /<label[^>]*>Choose a saved line<\/label>/);
+    assert.match(ready, /<select[^>]*aria-label="Choose a saved line"/);
+    assert.match(ready, /<option[^>]*value="line-5"[^>]*selected=""[^>]*>Line 5: Three little ducks raced through the reeds\.<\/option>/);
+    assert.equal((ready.match(/<option/g) ?? []).length, 9);
+    assert.match(ready, />Record selected line<\/button>/);
     assert.match(ready, />Delete my dub<\/button>/);
 
     const loading = renderDuckDub({ phase: "final-loading" });
@@ -143,6 +152,18 @@ describe("duck dubbing presentation", () => {
 
     const playing = renderDuckDub({ phase: "final-playing" });
     assert.match(playing, />Stop playback<\/button>/);
+  });
+
+  it("uses one polite live region while keeping visible progress and recording text", () => {
+    const html = renderDuckDub({ phase: "recording", currentLineIndex: 2 });
+    assert.match(html, />Line 3 of 9<\/p>/);
+    assert.match(html, />Recording…<\/p>/);
+    assert.equal((html.match(/role="status"/g) ?? []).length, 1);
+    assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1);
+    assert.match(
+      html,
+      /<div[^>]*aria-atomic="true"[^>]*aria-live="polite"[^>]*role="status"[^>]*>[^<]*Line 3[^<]*recording/i,
+    );
   });
 
   it("uses one hidden original SVG with adjacent scene description", () => {
