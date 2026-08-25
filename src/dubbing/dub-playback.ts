@@ -285,7 +285,7 @@ export async function startDubPlayback({
       },
     };
   } catch (error) {
-    const cleanup = beginCleanup();
+    void beginCleanup();
     try {
       if (signal?.aborted) throw createAbortError();
       const cleanupGrace = new Promise<void>((resolve) => {
@@ -293,7 +293,7 @@ export async function startDubPlayback({
         // allowing a non-cooperative AudioContext.close() to hang startup.
         scheduleTimeout(resolve, 0);
       });
-      await Promise.race([cleanup, startupAbort, cleanupGrace]);
+      await Promise.race([startupAbort, cleanupGrace]);
       if (signal?.aborted) throw createAbortError();
       throw error;
     } finally {
