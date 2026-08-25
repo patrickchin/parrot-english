@@ -56,7 +56,10 @@ export async function saveLessonRecording(
       ? payload as { error?: unknown; message?: unknown; recordedAt?: unknown }
       : {};
   const code = typeof error.error === "string" ? error.error : "request_failed";
-  if (response.status === 403 && code === "guardian_consent_required") {
+  if (
+    (response.status === 403 && code === "guardian_consent_required") ||
+    (response.status === 409 && code === "account_deletion_pending")
+  ) {
     return { reason: "recording_disabled", saved: false };
   }
   if (!response.ok) {

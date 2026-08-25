@@ -310,7 +310,7 @@ export function LessonPlayer({
   const loadConsentOnce = useCallback(() => {
     if (!consentPromiseRef.current) {
       consentPromiseRef.current = loadLessonRecordingConsent()
-        .then(({ enabled }) => enabled)
+        .then(({ enabled }) => enabled === true)
         .catch(() => false);
     }
     return consentPromiseRef.current;
@@ -345,6 +345,7 @@ export function LessonPlayer({
 
   const cancelPendingWork = useCallback(() => {
     playbackGenerationRef.current += 1;
+    startPendingRef.current = false;
     preflightControllerRef.current?.abort();
     preflightControllerRef.current = null;
     playbackControllerRef.current?.abort();
@@ -817,33 +818,31 @@ export function LessonPlayer({
     preflightControllerRef.current = controller;
     try {
       const consentEnabled = await loadConsentOnce();
-      if (
-        consentEnabled &&
+      const isCurrent = () =>
         !controller.signal.aborted &&
-        routeActivityGuardRef.current.isCurrent(routeGeneration)
-      ) {
+        routeActivityGuardRef.current.isCurrent(routeGeneration);
+      if (!isCurrent()) return;
+
+      recordingPermissionRef.current = false;
+      if (consentEnabled) {
         try {
           await requestMicrophoneAccess({ signal: controller.signal });
+          if (!isCurrent()) return;
           recordingPermissionRef.current = true;
         } catch (caughtError) {
-          if (isAbortError(caughtError)) return;
+          if (!isCurrent() || isAbortError(caughtError)) return;
           recordingPermissionRef.current = false;
           showMicrophoneNotice();
         }
-      } else {
-        recordingPermissionRef.current = false;
       }
 
-      if (
-        !controller.signal.aborted &&
-        routeActivityGuardRef.current.isCurrent(routeGeneration)
-      ) {
+      if (isCurrent()) {
         dispatchLessonEvent({ type: "PLAY_SCENE" });
       }
     } finally {
-      startPendingRef.current = false;
       if (preflightControllerRef.current === controller) {
         preflightControllerRef.current = null;
+        startPendingRef.current = false;
       }
     }
   }
@@ -997,6 +996,7 @@ export function LessonPlayer({
           onReplay={handleStartAction}
           onRetrySaving={() => {
             void recordingQueue.retryFailed();
+            startActionRef.current?.focus({ preventScroll: true });
           }}
           ref={startActionRef}
           saveState={saveState}

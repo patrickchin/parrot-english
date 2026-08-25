@@ -514,37 +514,40 @@ for (const viewport of [
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
+    await page.goto(
+      "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=held-cue-no-consent",
+    );
     const profile = page.getByRole("button", {
       name: /Profile for Mia, learner mode/,
     });
     const back = page.getByRole("button", { name: "Back to lesson list" });
-    const start = page.getByRole("button", { name: "Start lesson" });
+    const start = page.getByRole("button", { exact: true, name: "Let's go" });
     await expectInsideViewport(profile, viewport);
     await expectInsideViewport(back, viewport);
     await expectInsideViewport(start, viewport);
     await expectNoOverlap(profile, back);
 
-    await page.evaluate(() => {
-      class HeldAudio {
-        onended: ((event: Event) => void) | null = null;
-        onerror: ((event: Event) => void) | null = null;
-        pause() {}
-        async play() {}
-      }
-      Object.defineProperty(window, "Audio", {
-        configurable: true,
-        value: HeldAudio,
-      });
-    });
     await start.click();
 
     const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status").filter({ hasText: "Look! My ball!" });
+    const speech = page
+      .getByRole("region", { name: "Join in" })
+      .filter({ hasText: "It is up high!" });
+    const phrase = speech.getByText("It is up high!", { exact: true });
+    const status = speech.getByRole("status");
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });
-    for (const element of [profile, back, hud, speech, controls]) {
+    await expect(status).toHaveText("Voices are joining in");
+    for (const element of [
+      profile,
+      back,
+      hud,
+      speech,
+      phrase,
+      status,
+      controls,
+    ]) {
       await expectInsideViewport(element, viewport);
     }
     await expectNoOverlap(profile, hud);

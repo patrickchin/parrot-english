@@ -108,6 +108,24 @@ describe("lesson recording browser API", () => {
     );
   });
 
+  it("turns pending account deletion into a resolved disabled-recording result", async () => {
+    const request = responseFetch(
+      { error: "account_deletion_pending" },
+      409,
+    );
+
+    assert.deepEqual(
+      await saveLessonRecording(
+        new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+          type: "audio/webm",
+        }),
+        SLOT,
+        { fetch: request.fetch },
+      ),
+      { reason: "recording_disabled", saved: false },
+    );
+  });
+
   it("keeps other upload failures typed for the save queue", async () => {
     const request = responseFetch(
       { error: "unsupported_audio", message: "Unsupported recording." },

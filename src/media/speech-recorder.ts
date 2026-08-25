@@ -111,6 +111,7 @@ export async function requestMicrophoneAccess({
   try {
     stream = await getUserMedia(MICROPHONE_CONSTRAINTS);
   } catch (error) {
+    if (signal?.aborted) throw createAbortError();
     throw new MicrophoneAccessError(error);
   }
 

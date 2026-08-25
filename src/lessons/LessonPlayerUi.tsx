@@ -755,10 +755,10 @@ export function LessonJoinInPrompt({
     <section
       aria-labelledby={headingId}
       className={cx(
-        "lesson-dialogue-overlay lesson-user-prompt z-30 rounded-3xl border-4 border-white bg-white/95 px-3 py-3 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 md:px-7 md:py-4",
+        "lesson-dialogue-overlay lesson-user-prompt z-30 grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl border-4 border-white bg-white/95 px-3 py-3 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 md:px-7 md:py-4",
         reserved
           ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
-          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
+          : "absolute left-1/2 top-36 max-h-[calc(72dvh-15rem)] w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
       )}
       role="region"
     >
@@ -771,9 +771,9 @@ export function LessonJoinInPrompt({
       </h2>
       <p
         className={cx(
-          "mx-0 mb-2 mt-1 text-[clamp(1.65rem,8vw,3.5rem)] font-black leading-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink",
+          "m-0 min-h-0 overflow-y-auto overscroll-contain py-1 text-[clamp(1.65rem,8vw,3.5rem)] font-black leading-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink",
           reserved &&
-            "min-h-0 max-h-32 overflow-y-auto overscroll-contain short-wide:mb-1 short-wide:text-[clamp(1.4rem,4.5vw,2.25rem)] tall-wide:max-h-20 tall-wide:text-[clamp(1.25rem,2.2vw,2rem)]",
+            "max-h-32 short-wide:text-[clamp(1.4rem,4.5vw,2.25rem)] tall-wide:max-h-20 tall-wide:text-[clamp(1.25rem,2.2vw,2rem)]",
         )}
         onKeyDown={scrollOverflowText}
         ref={overflowText.ref}
@@ -781,9 +781,9 @@ export function LessonJoinInPrompt({
       >
         {dialogue}
       </p>
-      <p
+      <div
         aria-live="polite"
-        className="m-0 inline-flex items-center gap-1.5 text-sm font-extrabold text-slate-600"
+        className="m-0 inline-flex min-h-5 items-center justify-center gap-1.5 text-sm font-extrabold text-slate-600"
         role="status"
       >
         {recording ? (
@@ -794,7 +794,7 @@ export function LessonJoinInPrompt({
         {recording
           ? "Your microphone is joining in too"
           : "Voices are joining in"}
-      </p>
+      </div>
     </section>
   );
 }
@@ -974,7 +974,8 @@ export function LessonErrorBanner({
         tone === "help" ? "bg-brand-navy" : "bg-red-800",
       )}
       data-tone={tone}
-      role={tone === "help" ? "region" : "alert"}
+      aria-live={tone === "help" ? "polite" : undefined}
+      role={tone === "help" ? "status" : "alert"}
     >
       <p className="m-0">{error}</p>
       {onRetry && onSkip ? (

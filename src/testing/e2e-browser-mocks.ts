@@ -974,6 +974,9 @@ async function lessonRecordingResponse(
     method === "GET"
   ) {
     lessonMediaMetrics.consentRequests += 1;
+    if (getE2eLessonScenario() === "malformed-consent") {
+      return e2eJson({ enabled: "false" });
+    }
     return getE2eLessonScenario() === "consent-error"
       ? e2eJson({ error: "request_failed" }, 503)
       : e2eJson({ enabled: lessonRecordingConsentEnabled() });
@@ -1010,11 +1013,21 @@ async function lessonRecordingResponse(
     record.outcome = "recording_disabled";
     return e2eJson({ error: "guardian_consent_required" }, 403);
   }
-  if (scenario === "upload-failed" && attempt === 1) {
+  if (scenario === "account-deletion-pending") {
+    record.outcome = "recording_disabled";
+    return e2eJson({ error: "account_deletion_pending" }, 409);
+  }
+  if (
+    (scenario === "upload-failed" || scenario === "upload-retry-held") &&
+    attempt === 1
+  ) {
     record.outcome = "failed";
     return e2eJson({ error: "upload_failed" }, 503);
   }
-  if (scenario === "upload-held") {
+  if (
+    scenario === "upload-held" ||
+    (scenario === "upload-retry-held" && attempt === 2)
+  ) {
     record.outcome = "held";
     return new Promise<Response>((resolve, reject) => {
       pendingLessonUploads.push({ record, reject, resolve });
@@ -1198,8 +1211,10 @@ class MockAudioElement {
     const heldLessonAudio =
       (this.lessonCue &&
         (lessonScenario === "held-cue" ||
-          lessonScenario === "held-cue-no-consent")) ||
-      (!this.lessonCue && lessonScenario === "held-story");
+          lessonScenario === "held-cue-no-consent" ||
+          lessonScenario === "malformed-consent")) ||
+      (!this.lessonCue &&
+        (lessonScenario === "held-story" || lessonScenario === "held-preflight"));
     const cue: E2ELessonCue | null = this.lessonCue
       ? {
           endedAt: null,
@@ -1672,9 +1687,12 @@ const mockLessonSpeechSynthesis = {
       lessonMediaMetrics.cueCancellations += 1;
     };
     currentDevicePlayback = { cancel, fail, finish };
+    const lessonScenario = getE2eLessonScenario();
     if (
-      getE2eLessonScenario() === "held-cue" ||
-      getE2eLessonScenario() === "held-cue-no-consent"
+      lessonScenario === "held-cue" ||
+      lessonScenario === "held-cue-no-consent" ||
+      (lessonScenario === "account-deletion-pending" &&
+        utterance.text === "The kite turns.")
     ) {
       pendingLessonPlayback.push(currentDevicePlayback);
     } else if (getE2eLessonScenario() === "cue-failure") {
@@ -1745,6 +1763,18 @@ Object.defineProperty(navigator, "mediaDevices", {
             lessonMediaMetrics.getUserMediaCalls === 3)
         ) {
           throw new DOMException("Permission denied", "NotAllowedError");
+        }
+        if (
+          (lessonScenario === "held-preflight" &&
+            lessonMediaMetrics.getUserMediaCalls === 1) ||
+          (lessonScenario === "held-later-mic-failure" &&
+            lessonMediaMetrics.getUserMediaCalls === 3)
+        ) {
+          e2eLessonMicrophone.requests += 1;
+          return new Promise<MediaStream>((resolve, reject) => {
+            pendingMicrophoneRequests.push({ reject, resolve });
+            e2eLessonMicrophone.pending = pendingMicrophoneRequests.length;
+          });
         }
       }
       if (getE2eMicrophoneScenario() === "denied") {

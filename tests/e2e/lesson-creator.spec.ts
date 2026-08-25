@@ -450,7 +450,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
   );
   expect(payload.lesson.scenes[0].steps.at(-1)).toMatchObject({
     dialogue: "The flowers have all the water they need.",
-    speaker: "narrator",
+    speaker: "peppa",
   });
   await expect(page).toHaveURL("/lessons/my/gui-edit-test/scenes/1");
 });

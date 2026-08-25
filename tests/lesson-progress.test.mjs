@@ -5,7 +5,10 @@ import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 describe("lesson progress label", () => {
   it("describes idle, paused, and completed playback", () => {
-    assert.equal(getLessonProgressLabel(createInitialLessonState()), "Press Start to begin");
+    assert.equal(
+      getLessonProgressLabel(createInitialLessonState()),
+      "Press Let's go to begin",
+    );
     assert.equal(
       getLessonProgressLabel({ ...createInitialLessonState(), phase: LessonPhase.Paused }),
       "Story paused — press Play to resume",
