@@ -199,6 +199,11 @@ function seedDatabase() {
       "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
     )
     .run(USER_ID, "Parent One", "one@example.test", 1_000, 1_000);
+  state.sqlite.prepare(
+    `INSERT INTO guardian_dub_consent
+      (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
+     VALUES (?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
+  ).run(USER_ID, 1_000, 1_000);
   const insertArt = state.sqlite.prepare(
     `INSERT INTO personalized_story_art (
       id, auth_user_id, story_id, status, r2_object_key, content_type,

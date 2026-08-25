@@ -2,6 +2,10 @@ import { DUB_ID, DUB_LINES } from "../src/dubbing/dub-script.ts";
 import { isAccountDeletionPending } from "./account-deletion.ts";
 import type { Database } from "./database.ts";
 import {
+  createDubConsentRepository,
+  CURRENT_DUB_CONSENT_VERSION,
+} from "./dub-consent.ts";
+import {
   fenceBody,
   hasState,
   isR2WriteRateError,
@@ -15,11 +19,13 @@ import {
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedBytes,
+  readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
 
-const CONSENT_VERSION = "guardian-voice-r2-v1";
 const MAX_CLIP_BYTES = 512 * 1024;
+const MAX_CONSENT_BODY_BYTES = 8 * 1024;
+const LEGACY_CONSENT_VERSION = "guardian-voice-r2-v1";
 const LEGACY_GENERATION = "legacy";
 const AUDIO_FORMAT = "parrot-dub-audio-v1";
 const AUDIO_FORMAT_V2 = "parrot-dub-audio-v2";
@@ -49,6 +55,7 @@ export interface DubRequestInput {
 }
 
 type DubHandlerOverrides = {
+  consentRepository?: ReturnType<typeof createDubConsentRepository>;
   createGeneration?: () => string;
   createUploadNonce?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
@@ -116,6 +123,9 @@ function json(payload: unknown, init: ResponseInit = {}) {
 }
 
 function parseDubRoute(pathname: string) {
+  if (pathname === `/api/dubs/${DUB_ID}/consent`) {
+    return { audio: false, consent: true, dubId: DUB_ID, lineId: null };
+  }
   const match = /^\/api\/dubs\/([^/]+)(?:\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
     pathname,
   );
@@ -129,7 +139,7 @@ function parseDubRoute(pathname: string) {
     ) {
       return null;
     }
-    return { audio: match[3] === "audio", dubId, lineId };
+    return { audio: match[3] === "audio", consent: false, dubId, lineId };
   } catch {
     return null;
   }
@@ -256,8 +266,19 @@ async function conditionalPut(
 function audioStorage(
   object: R2Object,
   ready: string | null,
+  consentGeneration: string,
 ): AudioStorage | null {
   const metadata = object.customMetadata;
+  const consentVersion = metadata?.guardianConsentVersion;
+  if (
+    (consentVersion === CURRENT_DUB_CONSENT_VERSION &&
+      metadata?.guardianConsentGeneration !== consentGeneration) ||
+    (consentVersion !== undefined &&
+      consentVersion !== LEGACY_CONSENT_VERSION &&
+      consentVersion !== CURRENT_DUB_CONSENT_VERSION)
+  ) {
+    return null;
+  }
   if (
     ready === null &&
     metadata?.generation === undefined &&
@@ -376,9 +397,10 @@ async function getAudioPayload(
   key: string,
   object: R2Object,
   ready: string | null,
+  consentGeneration: string,
   rangeHeader: string | null,
 ): Promise<AudioPayload | null> {
-  const storage = audioStorage(object, ready);
+  const storage = audioStorage(object, ready, consentGeneration);
   if (!storage) return null;
   if (storage.kind === "legacy") {
     const range = parseAudioRange(rangeHeader, object.size);
@@ -388,7 +410,8 @@ async function getAudioPayload(
         ? { range: { length: range.length, offset: range.start } }
         : {}),
     });
-    return hasBody(legacy) && audioStorage(legacy, ready)?.kind === "legacy"
+    return hasBody(legacy) &&
+        audioStorage(legacy, ready, consentGeneration)?.kind === "legacy"
       ? { object: legacy, range, totalLength: object.size }
       : null;
   }
@@ -560,6 +583,82 @@ function safeRecordedAt(object: R2Object) {
   return Number.isNaN(object.uploaded.getTime()) ? null : object.uploaded.toISOString();
 }
 
+function emptyStatus(consentState: "not_granted" | "revoking") {
+  return {
+    complete: false,
+    consentState,
+    dubId: DUB_ID,
+    guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
+    lines: DUB_LINES.map(({ id }) => ({ id, recordedAt: null, saved: false })),
+    recordingEnabled: false,
+  };
+}
+
+function isCurrentGrant(
+  status: Awaited<ReturnType<ReturnType<typeof createDubConsentRepository>["status"]>>,
+): status is Extract<typeof status, { state: "granted" }> {
+  return status.state === "granted" &&
+    status.consentVersion === CURRENT_DUB_CONSENT_VERSION;
+}
+
+function consentError(status: { state: string }): never {
+  throw status.state === "revoking"
+    ? new DubApiError(409, "dub_consent_revoking")
+    : new DubApiError(403, "dubbing_not_enabled");
+}
+
+async function readConsentBody(request: Request) {
+  let value: unknown;
+  try {
+    value = JSON.parse(await readBoundedText(request, MAX_CONSENT_BODY_BYTES));
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      throw new DubApiError(413, "payload_too_large");
+    }
+    throw new DubApiError(400, "invalid_request");
+  }
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    throw new DubApiError(400, "invalid_request");
+  }
+  const body = value as Record<string, unknown>;
+  if (
+    Object.keys(body).length !== 2 ||
+    body.accepted !== true ||
+    body.consentVersion !== CURRENT_DUB_CONSENT_VERSION
+  ) {
+    throw new DubApiError(400, "invalid_request");
+  }
+}
+
+async function fenceRevokedConsentSlot(
+  bucket: R2Bucket,
+  key: string,
+  stored: R2Object,
+  consentGeneration: string,
+  wait: Wait,
+) {
+  await conditionalPut(
+    bucket,
+    key,
+    fenceBody("slot", consentGeneration, "consent-revoked"),
+    {
+      customMetadata: {
+        guardianConsentGeneration: consentGeneration,
+        state: "consent-revoked",
+      },
+    },
+    stored,
+    wait,
+    (object) =>
+      object.customMetadata?.guardianConsentGeneration === consentGeneration &&
+      object.customMetadata?.state === "consent-revoked",
+  );
+}
+
 export async function handleDubRequest(
   input: DubRequestInput,
   overrides: DubHandlerOverrides = {},
@@ -572,6 +671,8 @@ export async function handleDubRequest(
     overrides.isDeletionPending ?? isAccountDeletionPending;
   const now = overrides.now ?? (() => new Date());
   const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
+  const consentRepository = overrides.consentRepository ??
+    createDubConsentRepository(input.database);
   const route = parseDubRoute(new URL(input.request.url).pathname);
 
   try {
@@ -579,8 +680,35 @@ export async function handleDubRequest(
     const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
     const userId = input.identity.userId;
 
+    if (route.consent) {
+      if (input.request.method !== "PUT") {
+        throw new DubApiError(405, "method_not_allowed", undefined, {
+          Allow: "PUT",
+        });
+      }
+      await readConsentBody(input.request);
+      try {
+        await consentRepository.grant(userId);
+      } catch (error) {
+        if (error instanceof Error && error.message === "dub_consent_revoking") {
+          throw new DubApiError(409, "dub_consent_revoking");
+        }
+        throw error;
+      }
+      return new Response(null, {
+        headers: { "Cache-Control": "private, no-store" },
+        status: 204,
+      });
+    }
+
     if (!route.lineId && !route.audio) {
       if (input.request.method === "GET") {
+        const consent = await consentRepository.status(userId);
+        if (!isCurrentGrant(consent)) {
+          return json(emptyStatus(
+            consent.state === "revoking" ? "revoking" : "not_granted",
+          ));
+        }
         const generation = await readyGeneration(bucket, userId);
         const prefix = objectPrefix(userId);
         const page = await bucket.list({
@@ -592,7 +720,8 @@ export async function handleDubRequest(
         );
         const lines = await Promise.all(DUB_LINES.map(async ({ id }) => {
           const object = objects.get(objectKey(userId, id));
-          const storage = object && audioStorage(object, generation);
+          const storage = object &&
+            audioStorage(object, generation, consent.grantGeneration);
           const current = object && storage
             ? await validateAudioPrefix(
                 bucket,
@@ -611,11 +740,22 @@ export async function handleDubRequest(
         if (await readyGeneration(bucket, userId) !== generation) {
           throw new DubApiError(409, "dub_reset_in_progress");
         }
+        if (!await consentRepository.requireCurrentGrant(
+          userId,
+          consent.grantGeneration,
+        )) {
+          const current = await consentRepository.status(userId);
+          return json(emptyStatus(
+            current.state === "revoking" ? "revoking" : "not_granted",
+          ));
+        }
         return json({
           complete: lines.every(({ saved }) => saved),
+          consentState: "granted",
           dubId: DUB_ID,
-          guardianConsentVersion: CONSENT_VERSION,
+          guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
           lines,
+          recordingEnabled: true,
         });
       }
 
@@ -623,6 +763,9 @@ export async function handleDubRequest(
         if (await isDeletionPending(input.database, userId)) {
           throw new DubApiError(409, "account_deletion_pending");
         }
+        const revocation = await consentRepository.beginRevocation(userId);
+        if (revocation.state === "not_granted") consentError(revocation);
+        const consentGeneration = revocation.grantGeneration;
         const generation = createGeneration();
         if (!generation) throw new Error("Dub reset generation is required.");
         const deletingMarker = await beginReset(
@@ -665,6 +808,7 @@ export async function handleDubRequest(
         if (await isDeletionPending(input.database, userId)) {
           throw new DubApiError(409, "account_deletion_pending");
         }
+        await consentRepository.finishRevocation(userId, consentGeneration);
         return new Response(null, {
           headers: { "Cache-Control": "private, no-store" },
           status: 204,
@@ -688,6 +832,8 @@ export async function handleDubRequest(
           { Allow: "GET" },
         );
       }
+      const consent = await consentRepository.status(userId);
+      if (!isCurrentGrant(consent)) consentError(consent);
       const generation = await readyGeneration(bucket, userId);
       const key = objectKey(userId, route.lineId!);
       const head = await bucket.head(key);
@@ -697,12 +843,19 @@ export async function handleDubRequest(
             key,
             head,
             generation,
+            consent.grantGeneration,
             input.request.headers.get("Range"),
           )
         : null;
       if (!payload) throw new DubApiError(404, "not_found");
       if (await readyGeneration(bucket, userId) !== generation) {
         throw new DubApiError(404, "not_found");
+      }
+      if (!await consentRepository.requireCurrentGrant(
+        userId,
+        consent.grantGeneration,
+      )) {
+        throw new DubApiError(403, "dubbing_not_enabled");
       }
       const headers = new Headers();
       payload.object.writeHttpMetadata(headers);
@@ -736,14 +889,10 @@ export async function handleDubRequest(
     if (await isDeletionPending(input.database, userId)) {
       throw new DubApiError(409, "account_deletion_pending");
     }
+    const consent = await consentRepository.status(userId);
+    if (!isCurrentGrant(consent)) consentError(consent);
     const ready = await readyGeneration(bucket, userId);
     const generation = ready ?? LEGACY_GENERATION;
-    if (
-      input.request.headers.get("X-Parrot-Guardian-Consent-Version") !==
-      CONSENT_VERSION
-    ) {
-      throw new DubApiError(400, "guardian_consent_required");
-    }
     const contentType = normalizeContentType(input.request);
     let bytes: Uint8Array;
     try {
@@ -764,6 +913,12 @@ export async function handleDubRequest(
     if (await readyGeneration(bucket, userId) !== ready) {
       throw new DubApiError(409, "dub_reset_in_progress");
     }
+    if (!await consentRepository.requireCurrentGrant(
+      userId,
+      consent.grantGeneration,
+    )) {
+      throw new DubApiError(403, "dubbing_not_enabled");
+    }
     const recordedAt = now();
     const uploadNonce = createUploadNonce();
     if (!uploadNonce) throw new Error("Dub upload nonce is required.");
@@ -776,7 +931,8 @@ export async function handleDubRequest(
         httpMetadata: { contentType },
         customMetadata: {
           generation,
-          guardianConsentVersion: CONSENT_VERSION,
+          guardianConsentGeneration: consent.grantGeneration,
+          guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
           lineId: route.lineId!,
           payloadOffset: String(encodedAudio.payloadOffset),
           recordedAt: recordedAt.toISOString(),
@@ -810,6 +966,25 @@ export async function handleDubRequest(
       throw new DubApiError(409, "account_deletion_pending");
     };
     await throwIfAccountDeletionPending();
+    let consentChanged = false;
+    try {
+      consentChanged = !await consentRepository.requireCurrentGrant(
+        userId,
+        consent.grantGeneration,
+      );
+    } catch {
+      consentChanged = true;
+    }
+    if (consentChanged) {
+      await fenceRevokedConsentSlot(
+        bucket,
+        key,
+        stored,
+        consent.grantGeneration,
+        wait,
+      );
+      throw new DubApiError(403, "dubbing_not_enabled");
+    }
     let markerConflict: unknown;
     try {
       if (await readyGeneration(bucket, userId) !== ready) {

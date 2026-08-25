@@ -177,6 +177,12 @@ export async function requireGuardianAccess(input: {
 }
 
 export function requiresGuardianAccess(pathname: string, method: string) {
+  if (pathname === "/api/dubs/five-little-ducks-v1/consent") {
+    return method === "PUT";
+  }
+  if (pathname === "/api/dubs/five-little-ducks-v1") {
+    return method === "DELETE";
+  }
   if (pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
   }
