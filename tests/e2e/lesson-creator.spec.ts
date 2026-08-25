@@ -3,6 +3,10 @@ import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const shortPhone = { width: 320, height: 568 };
 
+function guardianPath(path: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
+}
+
 async function expectMainScrollsTo(page: Page, target: Locator) {
   const main = page.getByRole("main");
   const scrollRange = await main.evaluate((element) => ({
@@ -38,7 +42,7 @@ test("lesson creator scrolls to its review controls on a short phone", async ({
   page,
 }) => {
   await page.setViewportSize(shortPhone);
-  await page.goto("/lessons/my/create");
+  await page.goto(guardianPath("/lessons/my/create"));
 
   await expect(
     page.getByRole("heading", { name: "Create a custom lesson" }),
@@ -100,7 +104,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
     });
   });
 
-  await page.goto("/lessons/my/create");
+  await page.goto(guardianPath("/lessons/my/create"));
   await page
     .getByLabel("What should this lesson be about?")
     .fill("asking for help in a garden");
@@ -176,7 +180,7 @@ test("lesson editor leads with a visual storyboard and progressively reveals fie
     });
   });
 
-  await page.goto("/lessons/my/visual-first-test/edit");
+  await page.goto(guardianPath("/lessons/my/visual-first-test/edit"));
 
   const storyboard = page.getByRole("navigation", {
     name: "Lesson storyboard",
@@ -279,7 +283,7 @@ test("lesson editor leads with a visual storyboard and progressively reveals fie
 test("lesson creator tabs expose selection and support arrow keys", async ({
   page,
 }) => {
-  await page.goto("/lessons/my/create");
+  await page.goto(guardianPath("/lessons/my/create"));
 
   const makeWithAi = page.getByRole("tab", { name: "Make with AI" });
   const importJson = page.getByRole("tab", { name: "Import JSON" });
@@ -327,7 +331,7 @@ test("lesson editor scrolls to its GUI save control on a short phone", async ({
     });
   });
   await page.setViewportSize(shortPhone);
-  await page.goto("/lessons/my/scroll-test/edit");
+  await page.goto(guardianPath("/lessons/my/scroll-test/edit"));
 
   await expect(page.getByRole("heading", { name: "Edit Lesson" })).toBeVisible();
   await page.getByText("Lesson setup and goals", { exact: true }).click();
@@ -399,7 +403,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
     });
   });
 
-  await page.goto("/lessons/my/gui-edit-test/edit");
+  await page.goto(guardianPath("/lessons/my/gui-edit-test/edit"));
 
   await page.getByText("Lesson setup and goals", { exact: true }).click();
   await page.getByLabel("Lesson title").fill("GUI Garden Adventure");

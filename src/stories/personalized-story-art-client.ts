@@ -1,3 +1,5 @@
+import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
+
 export const PERSONALIZED_STORY_ID = "the-red-ball";
 export const PERSONALIZED_STORY_PAGE_ID = "my-red-ball";
 export const PERSONALIZED_STORY_TITLE = "The Red Ball";
@@ -184,9 +186,14 @@ async function requestJson<Result>(
       payload && typeof payload === "object"
         ? (payload as { error?: unknown; message?: unknown })
         : {};
+    const code =
+      typeof error.error === "string" ? error.error : "request_failed";
+    if (response.status === 403 && code === "guardian_required") {
+      notifyGuardianAccessRequired();
+    }
     throw new PersonalizedStoryArtApiError(
       response.status,
-      typeof error.error === "string" ? error.error : "request_failed",
+      code,
       typeof error.message === "string"
         ? error.message
         : "The story artwork request could not be completed.",

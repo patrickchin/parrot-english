@@ -15,6 +15,7 @@ import {
   useState,
 } from "react";
 import {
+  matchPath,
   Navigate,
   Route,
   Routes,
@@ -54,6 +55,7 @@ import {
 } from "../media/audio-playback";
 import {
   getGateRouteKind,
+  getGuardianPath,
   getLessonScenePath,
   getLoginPath,
   getLearnerProfilePath,
@@ -64,6 +66,7 @@ import {
   getStoryPagePath,
   getStoryShelfPath,
   isRedoLearnerProfileRequest,
+  isGuardianRoute,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
@@ -73,6 +76,7 @@ import {
   type StoryRouteDecision,
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
+import { useAccountExperience } from "../auth/account-actions";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
@@ -85,12 +89,14 @@ import {
   type LessonCatalogEntry,
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
+import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
 } from "../lessons/full-scene-lessons";
 import {
   BoxedFullSceneStage,
+  BoxedLessonSceneLayout,
   LessonCharacters,
   LessonCompletion,
   LessonErrorBanner,
@@ -114,6 +120,11 @@ import {
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
+import { GuardianDashboard } from "./GuardianDashboard";
+import {
+  GuardianModeBoundary,
+  LearnerModeBoundary,
+} from "./ModeRouteBoundaries";
 
 const LessonCreator = import.meta.env.SSR
   ? (await import("../lessons/LessonCreator")).LessonCreator
@@ -122,6 +133,36 @@ const LessonCreator = import.meta.env.SSR
         default: LessonCreator,
       })),
     );
+
+const APPLICATION_ROUTE_PATTERNS = [
+  "/",
+  "/guardian",
+  "/guardian/lessons",
+  "/guardian/stories",
+  "/talk-to-peppa",
+  "/lessons",
+  "/lessons/my/create",
+  "/lessons/my/:lessonId/edit",
+  "/lessons/parrot/:lessonId",
+  "/lessons/parrot/:lessonId/scenes/:sceneNumber",
+  "/lessons/my/:lessonId",
+  "/lessons/my/:lessonId/scenes/:sceneNumber",
+  "/progress",
+  "/stories",
+  "/dubs/five-little-ducks",
+  "/stories/:storyId",
+  "/stories/:storyId/pages/:pageNumber",
+  "/login",
+  "/profile/setup",
+  "/profile",
+];
+
+function isDeclaredApplicationRoute(pathname: string) {
+  return APPLICATION_ROUTE_PATTERNS.some((path) =>
+    matchPath({ end: true, path }, pathname),
+  );
+}
+
 const LessonEditor = import.meta.env.SSR
   ? (await import("../lessons/LessonEditor")).LessonEditor
   : lazy(() =>
@@ -135,6 +176,13 @@ const StoryList = import.meta.env.SSR
       import("../stories/StoryList").then(({ StoryList }) => ({
         default: StoryList,
       })),
+    );
+const GuardianStorySettings = import.meta.env.SSR
+  ? (await import("../stories/GuardianStorySettings")).GuardianStorySettings
+  : lazy(() =>
+      import("../stories/GuardianStorySettings").then(
+        ({ GuardianStorySettings }) => ({ default: GuardianStorySettings }),
+      ),
     );
 const StoryReader = import.meta.env.SSR
   ? (await import("../stories/StoryReader")).StoryReader
@@ -737,12 +785,80 @@ export function LessonPlayer({
   if (fullSceneArtwork && !fullScene) {
     throw new Error(`Lesson artwork is missing scene ${state.sceneIndex + 1}.`);
   }
+  const reserved = Boolean(fullScene);
+  const activeHud = (
+    <LessonHud
+      currentScene={state.sceneIndex + 1}
+      reserved={reserved}
+      sceneCount={currentLesson.scenes.length}
+      title={scene.title}
+    />
+  );
+  const activeDialogue = showUserTurn ? (
+    <LessonUserPrompt
+      dialogue={currentStep.dialogue}
+      portrait={promptPortrait}
+      reserved={reserved}
+      status={
+        isEvaluating ? "checking" : isRecording ? "recording" : "ready"
+      }
+    />
+  ) : isResponding ? (
+    <LessonFeedback
+      outcome={state.responseOutcome}
+      reserved={reserved}
+      speech={scene.speech}
+    />
+  ) : (
+    <LessonSpeech
+      characterCount={scene.characters.length}
+      characterIndex={speechCharacterIndex}
+      reserved={reserved}
+      showTail={!fullScene}
+      speech={scene.speech}
+    />
+  );
+  const activeControls = showUserTurn ? (
+    <LessonSpeakingControls
+      isEvaluating={isEvaluating}
+      isRecording={isRecording}
+      isStartingRecording={isStartingRecording}
+      onSkip={handleSkipUser}
+      onToggleRecording={handleToggleRecording}
+      reserved={reserved}
+      usePracticeFallback={Boolean(speechFallback)}
+    />
+  ) : showPlaybackControls ? (
+    <LessonPlaybackControls
+      atFinalScene={atFinalScene}
+      atFirstScene={atFirstScene}
+      isPaused={isPaused}
+      onNext={() => dispatchSceneControl("SCENE_NEXT")}
+      onPauseResume={handlePauseResume}
+      onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
+      reserved={reserved}
+    />
+  ) : null;
+  const activeNotice =
+    speechFallback || error ? (
+      <LessonErrorBanner
+        error={speechFallback || error}
+        onRetry={
+          error === LESSON_AUDIO_ERROR_MESSAGE ? handleRetryAudio : undefined
+        }
+        onSkip={
+          error === LESSON_AUDIO_ERROR_MESSAGE ? handleSkipAudio : undefined
+        }
+        reserved={reserved}
+        tone={speechFallback ? "help" : "error"}
+      />
+    ) : null;
   return (
     <LessonStage
       background={scene.backgroundAsset}
       presentation={fullScene ? "boxed" : "layered"}
     >
-      {fullScene && !isFinished ? <BoxedFullSceneStage image={fullScene} /> : null}
+      {fullScene && isIdle ? <BoxedFullSceneStage image={fullScene} /> : null}
       <RouteHeader>
         <HeaderButton
           aria-label="Back to lesson list"
@@ -773,75 +889,23 @@ export function LessonPlayer({
       ) : null}
 
       {showActiveScene ? (
-        <>
-          <LessonHud
-            currentScene={state.sceneIndex + 1}
-            sceneCount={currentLesson.scenes.length}
-            title={scene.title}
+        fullScene ? (
+          <BoxedLessonSceneLayout
+            controls={activeControls}
+            dialogue={activeDialogue}
+            hud={activeHud}
+            image={fullScene}
+            notice={activeNotice}
           />
-          {fullScene ? null : <LessonCharacters characters={scene.characters} />}
-
-          {showUserTurn ? (
-            <LessonUserPrompt
-              dialogue={currentStep.dialogue}
-              portrait={promptPortrait}
-              status={
-                isEvaluating
-                  ? "checking"
-                  : isRecording
-                    ? "recording"
-                    : "ready"
-              }
-            />
-          ) : isResponding ? (
-            <LessonFeedback
-              outcome={state.responseOutcome}
-              speech={scene.speech}
-            />
-          ) : (
-            <LessonSpeech
-              characterCount={scene.characters.length}
-              characterIndex={speechCharacterIndex}
-              showTail={!fullScene}
-              speech={scene.speech}
-            />
-          )}
-
-          {showUserTurn ? (
-            <LessonSpeakingControls
-              isEvaluating={isEvaluating}
-              isRecording={isRecording}
-              isStartingRecording={isStartingRecording}
-              onSkip={handleSkipUser}
-              onToggleRecording={handleToggleRecording}
-              usePracticeFallback={Boolean(speechFallback)}
-            />
-          ) : null}
-          {showPlaybackControls ? (
-            <LessonPlaybackControls
-              atFinalScene={atFinalScene}
-              atFirstScene={atFirstScene}
-              isPaused={isPaused}
-              onNext={() => dispatchSceneControl("SCENE_NEXT")}
-              onPauseResume={handlePauseResume}
-              onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
-            />
-          ) : null}
-          <LessonErrorBanner
-            error={speechFallback || error}
-            onRetry={
-              error === LESSON_AUDIO_ERROR_MESSAGE
-                ? handleRetryAudio
-                : undefined
-            }
-            onSkip={
-              error === LESSON_AUDIO_ERROR_MESSAGE
-                ? handleSkipAudio
-                : undefined
-            }
-            tone={speechFallback ? "help" : "error"}
-          />
-        </>
+        ) : (
+          <>
+            {activeHud}
+            <LessonCharacters characters={scene.characters} />
+            {activeDialogue}
+            {activeControls}
+            {activeNotice}
+          </>
+        )
       ) : null}
 
       <div
@@ -1022,7 +1086,6 @@ function StoryRouteDecisionView({
 }: {
   decision: StoryRouteDecision;
 }) {
-  const location = useLocation();
   const navigate = useNavigate();
   const personalizedStoryArt = usePersonalizedStoryArt();
 
@@ -1039,7 +1102,6 @@ function StoryRouteDecisionView({
       pageIndex={decision.pageIndex}
       personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
-      key={`${location.key}:${decision.story.id}:${decision.pageIndex}`}
     />
   );
 }
@@ -1062,7 +1124,15 @@ function StoryPageRoute() {
   );
 }
 
-export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
+export function ApplicationRoutes({
+  learnerName = "Learner",
+  loginTarget,
+  onBeforeModeNavigate,
+}: {
+  learnerName?: string;
+  loginTarget: string;
+  onBeforeModeNavigate?: () => void;
+}) {
   return (
     <Suspense
       fallback={
@@ -1075,6 +1145,23 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
     >
       <RouteFocusManager />
       <Routes>
+        <Route
+          element={
+            <GuardianDashboard
+              learnerName={learnerName}
+              onBeforeNavigate={onBeforeModeNavigate}
+            />
+          }
+          path={getGuardianPath()}
+        />
+        <Route
+          element={<GuardianLessonManager />}
+          path="/guardian/lessons"
+        />
+        <Route
+          element={<GuardianStorySettings />}
+          path="/guardian/stories"
+        />
         <Route element={<HomeMenu />} path="/" />
         <Route
           element={
@@ -1125,17 +1212,14 @@ export function ApplicationRoutes({ loginTarget }: { loginTarget: string }) {
   );
 }
 
-function RoutedApplication() {
+export function AuthenticatedApplication({
+  onExitLessonRoute,
+}: {
+  onExitLessonRoute: () => void;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
-  const lessonRouteExitRegistryRef = useRef(
-    createLessonRouteExitRegistry(),
-  );
-  const registerLessonRouteExitBarrier = useCallback(
-    (barrier: () => void) =>
-      lessonRouteExitRegistryRef.current.register(barrier),
-    [],
-  );
+  const accountExperience = useAccountExperience();
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
   const isLearnerProfileRoute = gateRoute === "learner-profile";
@@ -1150,9 +1234,84 @@ function RoutedApplication() {
     location.hash,
   );
   const openProfileRoute = useCallback(() => {
-    lessonRouteExitRegistryRef.current.exit();
+    onExitLessonRoute();
     navigate(getProfilePath(requestedProtectedTarget));
-  }, [navigate, requestedProtectedTarget]);
+  }, [navigate, onExitLessonRoute, requestedProtectedTarget]);
+
+  const applicationRoutes = (
+    <ApplicationRoutes
+      learnerName={accountExperience?.learnerName?.trim() || "Learner"}
+      loginTarget={safeReturnTo}
+      onBeforeModeNavigate={onExitLessonRoute}
+    />
+  );
+  const routeContent = (
+    <LearnerProfileGate
+      completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
+      isConversationRoute={isConversationRoute}
+      isLearnerProfileRoute={isLearnerProfileRoute}
+      isProfileRoute={isProfileRoute}
+      learnerProfileFallback={
+        <Navigate
+          replace
+          to={getLearnerProfilePath(requestedProtectedTarget)}
+        />
+      }
+      onCloseProfileRoute={() => navigate(safeReturnTo, { replace: true })}
+      onConversationCompleted={() => navigate("/", { replace: true })}
+      onOpenLessons={() => navigate("/lessons", { replace: true })}
+      onOpenProfileRoute={openProfileRoute}
+      onRedoCompleted={() => navigate(safeReturnTo, { replace: true })}
+      onRedoLearnerProfileRoute={() =>
+        navigate(getRedoLearnerProfilePath(getProfilePath(safeReturnTo)))
+      }
+      redoLearnerProfile={redoLearnerProfile}
+    >
+      {applicationRoutes}
+    </LearnerProfileGate>
+  );
+
+  if (!isDeclaredApplicationRoute(location.pathname)) {
+    return applicationRoutes;
+  }
+
+  if (onLoginRoute || (isLearnerProfileRoute && !redoLearnerProfile)) {
+    return routeContent;
+  }
+
+  if (isGuardianRoute(location.pathname, location.search)) {
+    return (
+      <GuardianModeBoundary onBeforeNavigate={onExitLessonRoute}>
+        {routeContent}
+      </GuardianModeBoundary>
+    );
+  }
+
+  return (
+    <LearnerModeBoundary onBeforeNavigate={onExitLessonRoute}>
+      {routeContent}
+    </LearnerModeBoundary>
+  );
+}
+
+function RoutedApplication() {
+  const location = useLocation();
+  const lessonRouteExitRegistryRef = useRef(createLessonRouteExitRegistry());
+  const registerLessonRouteExitBarrier = useCallback(
+    (barrier: () => void) => lessonRouteExitRegistryRef.current.register(barrier),
+    [],
+  );
+  const exitLessonRoute = useCallback(
+    () => lessonRouteExitRegistryRef.current.exit(),
+    [],
+  );
+  const gateRoute = getGateRouteKind(location.pathname);
+  const onLoginRoute = gateRoute === "login";
+  const requestedProtectedTarget = getRequestedProtectedTarget(
+    location.pathname,
+    location.search,
+    location.hash,
+  );
 
   return (
     <LessonRouteExitBarrierContext.Provider
@@ -1165,37 +1324,7 @@ function RoutedApplication() {
           )
         }
       >
-        <LearnerProfileGate
-          completedLearnerProfileFallback={
-            <Navigate replace to={safeReturnTo} />
-          }
-          isConversationRoute={isConversationRoute}
-          isLearnerProfileRoute={isLearnerProfileRoute}
-          isProfileRoute={isProfileRoute}
-          learnerProfileFallback={
-            <Navigate
-              replace
-              to={getLearnerProfilePath(requestedProtectedTarget)}
-            />
-          }
-          onCloseProfileRoute={() =>
-            navigate(safeReturnTo, { replace: true })
-          }
-          onConversationCompleted={() => navigate("/", { replace: true })}
-          onOpenLessons={() => navigate("/lessons", { replace: true })}
-          onOpenProfileRoute={openProfileRoute}
-          onRedoCompleted={() =>
-            navigate(safeReturnTo, { replace: true })
-          }
-          onRedoLearnerProfileRoute={() =>
-            navigate(
-              getRedoLearnerProfilePath(getProfilePath(safeReturnTo)),
-            )
-          }
-          redoLearnerProfile={redoLearnerProfile}
-        >
-          <ApplicationRoutes loginTarget={safeReturnTo} />
-        </LearnerProfileGate>
+        <AuthenticatedApplication onExitLessonRoute={exitLessonRoute} />
       </AuthGate>
     </LessonRouteExitBarrierContext.Provider>
   );

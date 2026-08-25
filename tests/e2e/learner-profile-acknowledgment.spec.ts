@@ -343,7 +343,7 @@ for (const viewport of responsiveViewports) {
     });
     const image = page.getByRole("img", { name: "Peppa smiling" });
     const next = page.getByRole("button", { exact: true, name: "Next" });
-    const account = page.getByRole("button", { name: /^Account for / });
+    const account = page.getByRole("button", { name: /^Profile for / });
     const main = page.getByRole("main");
 
     await expect(heading).toHaveText(longAcknowledgment);

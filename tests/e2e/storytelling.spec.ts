@@ -139,6 +139,127 @@ async function installStoryMediaGuard(page: Page) {
   });
 }
 
+async function installSavedStoryAudio(page: Page) {
+  await page.waitForFunction(() => Audio.name === "MockAudioElement");
+  await page.evaluate(() => {
+    const storyAudio = {
+      instances: [] as SavedStoryAudio[],
+      staleEnds: [] as Array<() => void>,
+    };
+
+    class SavedStoryAudio {
+      active = false;
+      onended: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+      url: string;
+
+      constructor(url = "") {
+        this.url = url;
+        storyAudio.instances.push(this);
+      }
+
+      set src(url: string) {
+        this.url = url;
+      }
+
+      pause() {
+        this.active = false;
+      }
+
+      play() {
+        this.active = true;
+        const onended = this.onended;
+        storyAudio.staleEnds.push(() => onended?.(new Event("ended")));
+        return Promise.resolve();
+      }
+
+      finish() {
+        if (!this.active) return false;
+        this.active = false;
+        this.onended?.(new Event("ended"));
+        return true;
+      }
+
+      fail() {
+        if (!this.active) return false;
+        this.active = false;
+        this.onerror?.(new Event("error"));
+        return true;
+      }
+    }
+
+    Object.defineProperty(window, "Audio", {
+      configurable: true,
+      value: SavedStoryAudio,
+    });
+    Object.defineProperty(window, "__savedStoryAudio", {
+      configurable: true,
+      value: storyAudio,
+    });
+  });
+}
+
+async function savedStoryAudioState(page: Page) {
+  return page.evaluate(() => {
+    const audio = (
+      window as unknown as {
+        __savedStoryAudio: {
+          instances: Array<{ active: boolean; url: string }>;
+        };
+      }
+    ).__savedStoryAudio;
+    return {
+      active: audio.instances
+        .filter((instance) => instance.active)
+        .map((instance) => instance.url),
+      instanceCount: audio.instances.length,
+    };
+  });
+}
+
+async function finishSavedStoryAudio(page: Page) {
+  await page.evaluate(() => {
+    const instances = (
+      window as unknown as {
+        __savedStoryAudio: {
+          instances: Array<{ active: boolean; finish: () => boolean }>;
+        };
+      }
+    ).__savedStoryAudio.instances;
+    const active = [...instances].reverse().find((instance) => instance.active);
+    if (!active?.finish()) throw new Error("Missing active saved story audio.");
+  });
+}
+
+async function failSavedStoryAudio(page: Page) {
+  await page.evaluate(() => {
+    const instances = (
+      window as unknown as {
+        __savedStoryAudio: {
+          instances: Array<{ active: boolean; fail: () => boolean }>;
+        };
+      }
+    ).__savedStoryAudio.instances;
+    const active = [...instances].reverse().find((instance) => instance.active);
+    if (!active?.fail()) throw new Error("Missing active saved story audio.");
+  });
+}
+
+async function invokeStaleSavedStoryAudio(page: Page) {
+  await page.evaluate(() => {
+    const staleEnds = (
+      window as unknown as {
+        __savedStoryAudio: {
+          staleEnds: Array<() => void>;
+        };
+      }
+    ).__savedStoryAudio.staleEnds;
+    const staleEnd = staleEnds.shift();
+    if (!staleEnd) throw new Error("Missing stale saved-audio callback.");
+    staleEnd();
+  });
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
     .poll(() =>
@@ -285,36 +406,6 @@ async function storySpeechState(page: Page) {
   });
 }
 
-async function invokeStorySpeechCallback(
-  page: Page,
-  kind: "end" | "error",
-  index: number,
-) {
-  await page.evaluate(
-    ({ callbackIndex, callbackKind }) => {
-      const speech = (
-        window as unknown as {
-          __storySpeech: {
-            endCallbacks: Array<() => void>;
-            errorCallbacks: Array<() => void>;
-          };
-        }
-      ).__storySpeech;
-      const callback =
-        callbackKind === "end"
-          ? speech.endCallbacks[callbackIndex]
-          : speech.errorCallbacks[callbackIndex];
-      if (!callback) {
-        throw new Error(
-          `Missing ${callbackKind} callback ${callbackIndex}.`,
-        );
-      }
-      callback();
-    },
-    { callbackIndex: index, callbackKind: kind },
-  );
-}
-
 async function expectContainedWithoutScrolling(
   container: Locator,
   content: Locator,
@@ -347,7 +438,7 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the shelf shows beginner pictures before grown-up level choices", async ({
+test("the learner shelf shows only the saved beginner story level", async ({
   page,
 }) => {
   await page.goto("/stories");
@@ -356,13 +447,12 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
     page.getByRole("heading", { exact: true, name: "Pick a story" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  let panel = shelf.getByRole("region", { name: /Start here stories/ });
+  const panel = shelf.getByRole("region", { name: /Start here stories/ });
 
-  const grownUpOptions = shelf.getByLabel("Grown-up options");
-  const levelTabs = shelf.getByRole("tablist", {
-    name: "Pick a story group",
-  });
-  await expect(levelTabs).toBeHidden();
+  await expect(shelf.getByRole("tablist")).toHaveCount(0);
+  await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Generate story art/ })).toHaveCount(0);
+  await expect(page.getByLabel("Upload learner photo")).toHaveCount(0);
   await expect(panel.getByRole("article")).toHaveCount(5);
   await expect(panel.getByRole("link", { name: /^Listen to story:/ })).toHaveCount(5);
 
@@ -403,119 +493,52 @@ test("the shelf shows beginner pictures before grown-up level choices", async ({
     ),
   ).toHaveCount(0);
 
-  await grownUpOptions.click();
-  const firstWordsTab = levelTabs.getByRole("tab", { name: /Start here/ });
-  await expect(firstWordsTab).toHaveAttribute("aria-selected", "true");
-  await expect(firstWordsTab).toHaveAttribute("tabindex", "0");
-  await firstWordsTab.focus();
-  await firstWordsTab.press("ArrowRight");
-  const patternsTab = levelTabs.getByRole("tab", {
-    name: /Say it again/,
-  });
-  await expect(patternsTab).toBeFocused();
-  await expect(patternsTab).toHaveAttribute("aria-selected", "true");
-  await expect(page).toHaveURL(/\/stories\?level=repeating-patterns$/);
-  panel = shelf.getByRole("region", { name: /Say it again stories/ });
-  await expect(panel.getByRole("article")).toHaveCount(5);
-  await expect(
-    panel.getByRole("link", { name: "Listen to story: Boots in the Rain" }),
-  ).toBeVisible();
-
-  for (const level of [
-    {
-      id: "tiny-stories",
-      name: "Little stories",
-      story: "The Lantern Trail",
-    },
-    { id: "early-a1", name: "Big adventures", story: "The Moon Bus" },
-  ]) {
-    await levelTabs.getByRole("tab", { name: new RegExp(level.name) }).click();
-    await expect(page).toHaveURL(new RegExp(`\\?level=${level.id}$`));
-    panel = shelf.getByRole("region", {
-      name: new RegExp(`${level.name} stories`),
-    });
-    await expect(panel.getByRole("article")).toHaveCount(5);
-    await expect(
-      panel.getByRole("link", { name: `Listen to story: ${level.story}` }),
-    ).toBeVisible();
-  }
-
-  await expect(levelTabs.getByRole("tab")).toHaveCount(4);
-
   await page.goto("/stories?level=not-a-level");
   await expect(page).toHaveURL(/\/stories$/);
-  await shelf.getByLabel("Grown-up options").click();
-  await expect(
-    shelf.getByRole("tab", { name: /Start here/ }),
-  ).toHaveAttribute("aria-selected", "true");
+  await expect(shelf.getByRole("region", { name: /Start here stories/ })).toBeVisible();
 });
 
-test("returning from a story restores its shelf level", async ({ page }) => {
+test("a stale shelf level query returns to the learner's saved level", async ({ page }) => {
   await page.goto("/stories?level=tiny-stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  await expect(page).toHaveURL("/stories");
   await shelf
-    .getByRole("link", { name: "Listen to story: The Lantern Trail" })
+    .getByRole("link", { name: "Listen to story: The Red Ball" })
     .click();
 
   const backToStories = page.getByRole("link", { name: "Back to stories" });
   await expect(backToStories).toHaveAttribute(
     "href",
-    "/stories?level=tiny-stories",
+    "/stories",
   );
   await backToStories.click();
-  await expect(page).toHaveURL(/\/stories\?level=tiny-stories$/);
+  await expect(page).toHaveURL("/stories");
   await expect(
-    page.getByRole("tab", { name: /Little stories/ }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(
-    page.getByRole("region", { name: /Little stories/ }),
-  ).toContainText("The Lantern Trail");
+    page.getByRole("region", { name: /Start here stories/ }),
+  ).toContainText("The Red Ball");
 });
 
-test("a phone puts story pictures before secondary level choices", async ({ page }) => {
+test("a phone keeps learner story cards contained without management controls", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const levelTabs = shelf.getByRole("tablist", { name: "Pick a story group" });
   const redBall = shelf.getByRole("link", {
     name: "Listen to story: The Red Ball",
   });
-  const grownUpOptions = shelf.getByLabel("Grown-up options");
   await expect(redBall).toBeVisible();
-  await expect(levelTabs).toBeHidden();
-  const [storyBox, optionsBox] = await Promise.all([
-    redBall.boundingBox(),
-    grownUpOptions.boundingBox(),
-  ]);
-  expect(storyBox).not.toBeNull();
-  expect(optionsBox).not.toBeNull();
-  expect(storyBox!.y).toBeLessThan(optionsBox!.y);
-
-  await grownUpOptions.click();
-  await expect(levelTabs).toBeVisible();
-  await expect(levelTabs.getByRole("tab")).toHaveCount(4);
-  await expect(
-    levelTabs.getByRole("tab", { name: "Start here" }),
-  ).toHaveAttribute("aria-selected", "true");
-
-  await levelTabs.getByRole("tab", { name: "Big adventures" }).click();
-  await expect(page).toHaveURL(/\/stories\?level=early-a1$/);
-  await expect(
-    shelf.getByRole("region", { name: "Big adventures stories" }),
-  ).toContainText("The Moon Bus");
-
-  await page.reload();
-  await expect(
-    levelTabs.getByRole("tab", { name: "Big adventures" }),
-  ).toHaveAttribute("aria-selected", "true");
+  await expect(shelf.getByRole("tablist")).toHaveCount(0);
+  await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
+  await expectInsideViewportHorizontally(redBall, page);
+  await expectNoHorizontalOverflow(page);
 });
 
-test("a script-only story has descriptive art, read-aloud, and obvious page controls", async ({
+test("a saved-audio story has descriptive art, read-aloud, and obvious page controls", async ({
   page,
 }) => {
   await page.goto(firstStoryPath);
+  await installSavedStoryAudio(page);
 
   const reader = page.getByRole("region", { name: "Story reader" });
   const progress = reader.getByRole("progressbar", {
@@ -553,25 +576,24 @@ test("a script-only story has descriptive art, read-aloud, and obvious page cont
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeVisible();
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as unknown as {
-              __storySpeech: { spoken: string[] };
-            }
-          ).__storySpeech.spoken,
-      ),
-    )
-    .toEqual(["Here is my red ball."]);
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-the-red-ball-my-red-ball-narration.mp3",
+    ]);
   await controls.getByRole("button", { name: "Pause story" }).click();
   await expect(
     controls.getByRole("button", { name: "Resume story" }),
   ).toBeVisible();
+  expect((await savedStoryAudioState(page)).active).toEqual([]);
   await controls.getByRole("button", { name: "Resume story" }).click();
   await expect(
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeVisible();
+  await expect
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-the-red-ball-my-red-ball-narration.mp3",
+    ]);
 
   await controls.getByRole("button", { name: "Next page" }).click();
   await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/2$/);
@@ -586,6 +608,55 @@ test("a script-only story has descriptive art, read-aloud, and obvious page cont
     "Page 2 of 5. Roll, red ball, roll.",
   );
   await expect(controls.getByRole("button", { name: "Previous page" })).toBeEnabled();
+});
+
+test("whole-story playback advances every routed page and completes the story", async ({
+  page,
+}) => {
+  await page.goto(firstStoryPath);
+  await installSavedStoryAudio(page);
+
+  const redBall = STORIES.find(({ id }) => id === "the-red-ball");
+  if (!redBall) throw new Error("Expected The Red Ball in the catalog.");
+  const wholeStory = page.getByRole("button", {
+    name: "Play whole story",
+  });
+  await expect(wholeStory).toHaveAttribute("aria-pressed", "false");
+  await wholeStory.click();
+  await expect(wholeStory).toHaveAttribute("aria-pressed", "true");
+
+  for (const [pageIndex, storyPage] of redBall.pages.entries()) {
+    await expect
+      .poll(async () => (await savedStoryAudioState(page)).active)
+      .toEqual([expect.stringMatching(
+        new RegExp(`/assets/audio/${storyPage.narrationAudioId}\\.mp3$`),
+      )]);
+    await finishSavedStoryAudio(page);
+    await expect(
+      page.getByLabel(`Say it: ${storyPage.joinIn}`).getByText(
+        "Listen and say it",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect
+      .poll(async () => (await savedStoryAudioState(page)).active)
+      .toEqual([expect.stringMatching(
+        new RegExp(`/assets/audio/${storyPage.joinInAudioId}\\.mp3$`),
+      )]);
+    await finishSavedStoryAudio(page);
+    expect((await savedStoryAudioState(page)).instanceCount).toBe(1);
+
+    if (pageIndex < redBall.pages.length - 1) {
+      await expect(page).toHaveURL(
+        new RegExp(`/stories/the-red-ball/pages/${pageIndex + 2}$`),
+      );
+      await expect(wholeStory).toHaveAttribute("aria-pressed", "true");
+    }
+  }
+
+  await expect(
+    page.getByRole("region", { name: "Story finished" }),
+  ).toBeVisible();
 });
 
 for (const viewport of completionViewports) {
@@ -663,6 +734,7 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/stories/kite-come-back/pages/4");
+  await installSavedStoryAudio(page);
 
   const reader = page.getByRole("region", { name: "Story reader" });
   const controls = reader.getByRole("navigation", {
@@ -691,48 +763,34 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeFocused();
   await expect
-    .poll(async () => (await storySpeechState(page)).snapshots.length)
-    .toBe(1);
-  expect((await storySpeechState(page)).snapshots[0]).toMatchObject({
-    scrollTop: 0,
-    text: "Ana gives the string one small pull. It will not move.",
-  });
-
-  await invokeStorySpeechCallback(page, "end", 0);
-  await expect(
-    prompt.getByText("Listen and say it", { exact: true }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await storySpeechState(page)).snapshots.length)
-    .toBe(2);
-  const joinInSnapshot = (await storySpeechState(page)).snapshots[1];
-  expect(joinInSnapshot).toMatchObject({
-    promptFullyVisible: true,
-    text: "Stop and ask!",
-  });
-  expect(joinInSnapshot.scrollTop).toBeGreaterThan(0);
-  await expectFullyVisibleInReadingPane(prompt);
-  await expect(
-    controls.getByRole("button", { name: "Pause story" }),
-  ).toBeFocused();
-
-  const joinInScrollTop = (await readingPaneGeometry(prompt)).paneScrollTop;
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-kite-come-back-ana-pulls-narration.mp3",
+    ]);
   await controls.getByRole("button", { name: "Pause story" }).click();
   await expect(
     controls.getByRole("button", { name: "Resume story" }),
   ).toBeFocused();
-  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(
-    joinInScrollTop,
-  );
+  expect((await savedStoryAudioState(page)).active).toEqual([]);
+  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
   await controls.getByRole("button", { name: "Resume story" }).click();
   await expect(
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeFocused();
-  expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(
-    joinInScrollTop,
-  );
+  await expect
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-kite-come-back-ana-pulls-narration.mp3",
+    ]);
 
-  await invokeStorySpeechCallback(page, "end", 1);
+  await finishSavedStoryAudio(page);
+  await expect(prompt.getByText("Listen and say it", { exact: true })).toBeVisible();
+  await expect
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-join-in-stop-and-ask.mp3",
+    ]);
+  await finishSavedStoryAudio(page);
   await expect(prompt.getByText("Your turn", { exact: true })).toBeVisible();
   await expectFullyVisibleInReadingPane(prompt);
   await expect(
@@ -757,12 +815,10 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeFocused();
   await expect
-    .poll(async () => (await storySpeechState(page)).snapshots.length)
-    .toBe(3);
-  expect((await storySpeechState(page)).snapshots[2]).toMatchObject({
-    scrollTop: 0,
-    text: "Ana gives the string one small pull. It will not move.",
-  });
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-kite-come-back-ana-pulls-narration.mp3",
+    ]);
   expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
   await expectFullyVisibleInReadingPane(text);
 });
@@ -772,6 +828,7 @@ test("a stale sentence completion cannot reveal or speak on the next page", asyn
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/stories/kite-come-back/pages/4");
+  await installSavedStoryAudio(page);
   const reader = page.getByRole("region", { name: "Story reader" });
   const controls = reader.getByRole("navigation", {
     name: "Story controls",
@@ -779,32 +836,20 @@ test("a stale sentence completion cannot reveal or speak on the next page", asyn
 
   await controls.getByRole("button", { name: "Listen" }).click();
   await expect
-    .poll(async () => (await storySpeechState(page)).callbackCounts.end)
-    .toBe(1);
-  await page.evaluate(() => {
-    const speech = (
-      window as unknown as {
-        __storySpeech: { endCallbacks: Array<() => void> };
-      }
-    ).__storySpeech;
-    const next = document.querySelector<HTMLButtonElement>(
-      '[aria-label="Next page"]',
-    );
-    if (!next) throw new Error("Expected the next-page action.");
-    speech.endCallbacks[0]();
-    next.click();
-    speech.endCallbacks[0]();
-  });
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-kite-come-back-ana-pulls-narration.mp3",
+    ]);
+  await controls.getByRole("button", { name: "Next page" }).click();
 
   await expect(page).toHaveURL(/\/stories\/kite-come-back\/pages\/5$/);
+  await invokeStaleSavedStoryAudio(page);
   const kite = STORIES.find(({ id }) => id === "kite-come-back");
   if (!kite) throw new Error("Expected Kite, Come Back! in the catalog.");
   const nextText = reader.getByText(kite.pages[4].text, { exact: true });
   await expect(nextText).toBeFocused();
   await expectFullyVisibleInReadingPane(nextText);
-  expect((await storySpeechState(page)).spoken).toEqual([
-    "Ana gives the string one small pull. It will not move.",
-  ]);
+  expect((await savedStoryAudioState(page)).active).toEqual([]);
   const nextPrompt = reader.getByLabel(`Say it: ${kite.pages[4].joinIn}`);
   expect((await readingPaneGeometry(nextPrompt)).paneScrollTop).toBe(0);
   await expect(
@@ -817,6 +862,7 @@ test("read-aloud failure keeps the child prompt beside recovery", async ({
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto(firstStoryPath);
+  await installSavedStoryAudio(page);
 
   const reader = page.getByRole("region", { name: "Story reader" });
   const controls = reader.getByRole("navigation", {
@@ -832,14 +878,13 @@ test("read-aloud failure keeps the child prompt beside recovery", async ({
     controls,
   );
 
-  await page.evaluate(() => {
-    (
-      window as unknown as {
-        __storySpeech: { throwOnSpeak: boolean };
-      }
-    ).__storySpeech.throwOnSpeak = true;
-  });
   await controls.getByRole("button", { name: "Listen" }).click();
+  await expect
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-the-red-ball-my-red-ball-narration.mp3",
+    ]);
+  await failSavedStoryAudio(page);
   let alert = reader.getByRole("alert");
   await expect(alert).toHaveText(
     "I can’t read aloud on this device. You can still read together.",
@@ -852,9 +897,11 @@ test("read-aloud failure keeps the child prompt beside recovery", async ({
 
   await controls.getByRole("button", { name: "Listen" }).click();
   await expect
-    .poll(async () => (await storySpeechState(page)).callbackCounts.error)
-    .toBe(1);
-  await invokeStorySpeechCallback(page, "error", 0);
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-the-red-ball-my-red-ball-narration.mp3",
+    ]);
+  await failSavedStoryAudio(page);
   alert = reader.getByRole("alert");
   await expect(alert).toHaveText(
     "I can’t read aloud on this device. You can still read together.",
@@ -888,6 +935,7 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await page.goto("/stories/kite-come-back/pages/4");
+    await installSavedStoryAudio(page);
     const reader = page.getByRole("region", { name: "Story reader" });
     const prompt = reader.getByLabel("Say it: Stop and ask!");
     const controls = reader.getByRole("navigation", {
@@ -895,21 +943,23 @@ for (const viewport of [
     });
 
     await controls.getByRole("button", { name: "Listen" }).click();
-    await invokeStorySpeechCallback(page, "end", 0);
     await expect
-      .poll(async () => (await storySpeechState(page)).snapshots.length)
-      .toBe(2);
-    expect((await storySpeechState(page)).snapshots[1]).toMatchObject({
-      promptFullyVisible: true,
-      scrollTop: 0,
-      text: "Stop and ask!",
-    });
+      .poll(async () => (await savedStoryAudioState(page)).active)
+      .toHaveLength(1);
+    await finishSavedStoryAudio(page);
+    await expect(
+      prompt.getByText("Listen and say it", { exact: true }),
+    ).toBeVisible();
+    await finishSavedStoryAudio(page);
+    await expect(
+      prompt.getByText("Your turn", { exact: true }),
+    ).toBeVisible();
     await expectFullyVisibleInReadingPane(prompt);
     expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
   });
 }
 
-test("every current device-speech story prompt is fully visible at join-in and Your turn", async ({
+test("every saved-audio story prompt is fully visible when narration ends", async ({
   page,
 }) => {
   test.setTimeout(180_000);
@@ -917,6 +967,7 @@ test("every current device-speech story prompt is fully visible at join-in and Y
   await page.setViewportSize({ height: 360, width: 640 });
   for (const story of STORIES) {
     await page.goto(`/stories/${story.id}/pages/1`);
+    await installSavedStoryAudio(page);
     for (const [pageIndex, storyPage] of story.pages.entries()) {
       const route = `/stories/${story.id}/pages/${pageIndex + 1}`;
       await expect(page).toHaveURL(new RegExp(`${route}$`));
@@ -924,30 +975,30 @@ test("every current device-speech story prompt is fully visible at join-in and Y
       const controls = reader.getByRole("navigation", {
         name: "Story controls",
       });
-      if (storyPage.narrationAudioId === null) {
-        const prompt = reader.getByLabel(`Say it: ${storyPage.joinIn}`);
-        const callbackStart = (await storySpeechState(page)).callbackCounts.end;
-        await controls.getByRole("button", { name: "Listen" }).click();
-        await invokeStorySpeechCallback(page, "end", callbackStart);
-        await expect
-          .poll(async () => (await storySpeechState(page)).snapshots.length)
-          .toBe(callbackStart + 2);
-        expect(
-          (await storySpeechState(page)).snapshots[callbackStart + 1]
-            .promptFullyVisible,
-          `${route} must expose its prompt before the join-in utterance starts.`,
-        ).toBe(true);
-        await expectFullyVisibleInReadingPane(prompt);
-
-        await invokeStorySpeechCallback(page, "end", callbackStart + 1);
-        await expect(
-          prompt.getByText("Your turn", { exact: true }),
-        ).toBeVisible();
-        await expectFullyVisibleInReadingPane(prompt);
-        await expect(
-          reader.evaluate((element) => element.scrollTop),
-        ).resolves.toBe(0);
-      }
+      const prompt = reader.getByLabel(`Say it: ${storyPage.joinIn}`);
+      await controls.getByRole("button", { name: "Listen" }).click();
+      await expect
+        .poll(async () => (await savedStoryAudioState(page)).active)
+        .toEqual([
+          `/assets/audio/${storyPage.narrationAudioId}.mp3`,
+        ]);
+      await finishSavedStoryAudio(page);
+      await expect(
+        prompt.getByText("Listen and say it", { exact: true }),
+      ).toBeVisible();
+      await expect
+        .poll(async () => (await savedStoryAudioState(page)).active)
+        .toEqual([
+          `/assets/audio/${storyPage.joinInAudioId}.mp3`,
+        ]);
+      await finishSavedStoryAudio(page);
+      await expect(
+        prompt.getByText("Your turn", { exact: true }),
+      ).toBeVisible();
+      await expectFullyVisibleInReadingPane(prompt);
+      await expect(
+        reader.evaluate((element) => element.scrollTop),
+      ).resolves.toBe(0);
 
       if (pageIndex < story.pages.length - 1) {
         await controls.getByRole("button", { name: "Next page" }).click();
@@ -965,6 +1016,7 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     await page.goto(firstStoryPath);
+    await installSavedStoryAudio(page);
 
     const reader = page.getByRole("region", { name: "Story reader" });
     const controls = reader.getByRole("navigation", {
@@ -993,21 +1045,20 @@ for (const viewport of [
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
 
-    const callbackStart = (await storySpeechState(page)).callbackCounts.end;
     await controls.getByRole("button", { name: "Listen" }).click();
     await expect(
       controls.getByRole("button", { name: "Pause story" }),
     ).toBeVisible();
-    await invokeStorySpeechCallback(page, "end", callbackStart);
     await expect
-      .poll(async () => (await storySpeechState(page)).snapshots.length)
-      .toBe(callbackStart + 2);
-    expect(
-      (await storySpeechState(page)).snapshots[callbackStart + 1]
-        .promptFullyVisible,
-    ).toBe(true);
-    await expectFullyVisibleInReadingPane(prompt);
-    await invokeStorySpeechCallback(page, "end", callbackStart + 1);
+      .poll(async () => (await savedStoryAudioState(page)).active)
+      .toEqual([
+        "/assets/audio/story-the-red-ball-my-red-ball-narration.mp3",
+      ]);
+    await finishSavedStoryAudio(page);
+    await expect(
+      prompt.getByText("Listen and say it", { exact: true }),
+    ).toBeVisible();
+    await finishSavedStoryAudio(page);
     await expect(prompt.getByText("Your turn", { exact: true })).toBeVisible();
     await expectFullyVisibleInReadingPane(prompt);
     expectStablePosition(
@@ -1234,17 +1285,16 @@ test("replay resets a deliberately scrolled completion screen", async ({
 test("completion cancels active narration and ignores its stale callback", async ({
   page,
 }) => {
-  await installStoryMediaGuard(page);
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/stories/the-red-ball/pages/5");
+  await installSavedStoryAudio(page);
 
   await page.getByRole("button", { name: "Listen" }).click();
   await expect
-    .poll(async () => (await storySpeechState(page)).callbackCounts.end)
-    .toBe(1);
-  const beforeFinish = await storySpeechState(page);
-  expect(beforeFinish.spoken).toEqual(["My red ball is home."]);
-  expect(beforeFinish.audioConstructions).toBe(0);
+    .poll(async () => (await savedStoryAudioState(page)).active)
+    .toEqual([
+      "/assets/audio/story-the-red-ball-ball-home-narration.mp3",
+    ]);
 
   await page.getByRole("button", { name: "Finish story" }).click();
   const complete = page.getByRole("region", { name: "Story finished" });
@@ -1253,21 +1303,15 @@ test("completion cancels active narration and ignores its stale callback", async
     name: "Great job!",
   });
   await expect(heading).toBeFocused();
-  const afterFinish = await storySpeechState(page);
-  expect(afterFinish.cancelled).toBeGreaterThan(beforeFinish.cancelled);
-  expect(afterFinish.spoken).toEqual(["My red ball is home."]);
-  expect(afterFinish.audioConstructions).toBe(0);
+  expect((await savedStoryAudioState(page)).active).toEqual([]);
 
-  await invokeStorySpeechCallback(page, "end", 0);
+  await invokeStaleSavedStoryAudio(page);
   await expect(heading).toBeFocused();
   await expect(complete).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Story reader" }),
   ).toBeHidden();
-  const afterStaleCallback = await storySpeechState(page);
-  expect(afterStaleCallback.spoken).toEqual(["My red ball is home."]);
-  expect(afterStaleCallback.callbackCounts.end).toBe(1);
-  expect(afterStaleCallback.audioConstructions).toBe(0);
+  expect((await savedStoryAudioState(page)).active).toEqual([]);
 });
 
 for (const viewport of viewports) {
@@ -1289,13 +1333,8 @@ for (const viewport of viewports) {
       }).first(),
     ).toBeHidden();
     await expectInsideViewportHorizontally(shelf, page);
-    const grownUpOptions = shelf.getByLabel("Grown-up options");
-    await expectInsideViewportHorizontally(grownUpOptions, page);
-    await grownUpOptions.click();
-    await expectInsideViewportHorizontally(
-      shelf.getByRole("tablist", { name: "Pick a story group" }),
-      page,
-    );
+    await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
+    await expect(shelf.getByRole("tablist")).toHaveCount(0);
     await expectInsideViewportHorizontally(readStory, page);
     await expectNoHorizontalOverflow(page);
 

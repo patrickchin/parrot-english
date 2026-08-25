@@ -86,7 +86,10 @@ test("lesson list gives children one simple picture-led lesson path", () => {
     html,
     /<section[^>]*aria-label="Lessons"/,
   );
-  assert.match(html, /<h2[^>]*id="grown-up-tools-title"[^>]*>[\s\S]*Grown-up tools<\/h2>/);
+  assert.doesNotMatch(
+    html,
+    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson/,
+  );
   assert.doesNotMatch(html, /id="my-lessons-title"/);
   assert.equal((html.match(/<h3/g) ?? []).length, 7);
   assert.match(html, /Peppa&#x27;s High Ball/);
@@ -127,7 +130,7 @@ test("ready-made lessons use distinct story-specific artwork", () => {
   assert.equal(new Set(expectedReadyMadeArtwork.map(([src]) => src)).size, 7);
 });
 
-test("lesson list keeps custom creation secondary and explains who it is for", () => {
+test("learner lesson list has no custom-lesson management actions", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
       myLessons: [],
@@ -136,11 +139,9 @@ test("lesson list keeps custom creation secondary and explains who it is for", (
     }),
   );
 
-  assert.match(html, /No made-for-you lessons yet\./);
-  assert.match(html, /Grown-up tools/);
-  assert.match(
+  assert.doesNotMatch(
     html,
-    /<a[^>]*aria-label="Create custom lesson"[^>]*href="\/lessons\/my\/create"[^>]*>.*Make a lesson<\/a>/s,
+    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/create/,
   );
 });
 
@@ -179,7 +180,10 @@ test("a failed custom-lesson list offers retry without hiding ready-made lessons
   assert.match(html, /We couldn&#x27;t load My Lessons\./);
   assert.match(html, /<button[^>]*>Try again<\/button>/);
   assert.match(html, /Peppa&#x27;s High Ball/);
-  assert.match(html, /aria-label="Create custom lesson"/);
+  assert.doesNotMatch(
+    html,
+    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/create/,
+  );
   assert.doesNotMatch(html, /Cannot read properties|TypeError|request_failed/);
 });
 
@@ -197,7 +201,7 @@ test("retry keeps one focusable unavailable action beside loading feedback", () 
   assert.doesNotMatch(html, /<button[^>]* disabled=""/);
 });
 
-test("saved lessons keep distinct play, edit, and create actions", () => {
+test("saved lessons stay playable without custom-lesson management actions", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
       myLessons: [
@@ -216,12 +220,9 @@ test("saved lessons keep distinct play, edit, and create actions", () => {
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
   assert.match(html, /Made for you/);
   assert.match(html, /A lesson made for you\./);
-  assert.match(html, /aria-label="Edit lesson: Editable Garden"/);
-  assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/edit"/);
-  assert.match(html, /Grown-up: edit/);
-  assert.match(
+  assert.doesNotMatch(
     html,
-    /<a[^>]*aria-label="Create custom lesson"[^>]*href="\/lessons\/my\/create"[^>]*>.*Make a lesson<\/a>/s,
+    /Edit lesson: Editable Garden|Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/lesson%2Fid\/edit|\/lessons\/my\/create/,
   );
 });
 

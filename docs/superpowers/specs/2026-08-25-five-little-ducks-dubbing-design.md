@@ -27,17 +27,20 @@ The experience has four learner-visible stages:
 2. **Line recording.** Show the animated duck scene, `Line n of 9`, the exact
    line, **Hear the line**, and one large **Record** / **Stop** action. Recording
    stops automatically at six seconds.
-3. **Line review.** Upload immediately, then offer **Hear my take**, **Try
-   again**, and **Next line**. A replacement upload atomically overwrites that
-   line's previous object. Existing progress resumes at the first missing line.
+3. **Line review.** Upload immediately, then show one large **Next line** action
+   and a quieter **Record again** option. A replacement upload atomically
+   overwrites that line's previous object. Existing progress resumes at the
+   first missing line.
 4. **Final replay.** Unlock **Watch my dub** only after all nine lines exist.
    Schedule the clips and an original procedural music bed against one shared
    Web Audio clock while the original SVG duck scene advances through the same
-   fixed timeline. Offer **Watch again** and a grown-up-only **Delete my dub**.
+   fixed timeline. Return to **Watch my dub** after playback and keep line
+   replacement and **Delete my dub** inside **Grown-up options**.
 
-The line-review playback is intentionally available even though The Choicer
-Voicer hides takes until the end. Immediate review makes retakes understandable
-for young learners and supports parent-child play.
+Individual takes are intentionally not previewed during the guided flow. Like
+The Choicer Voicer inspiration, each screen has one obvious next action and the
+whole performance is the reward at the end. A grown-up can still reopen any
+saved line and replace it from the final screen.
 
 ## Original Content
 
@@ -86,7 +89,7 @@ animation. It returns one idempotent stop function that cancels sources,
 animation frames, and the context.
 
 `src/dubbing/DuckDub.tsx` composes the route UI and owns cancellable effects.
-It aborts guide speech, microphone work, uploads, clip previews, and final
+It aborts guide speech, microphone work, uploads, and final
 playback on retake, reset, or unmount. Async results carry a generation token
 so a late result cannot mutate a newer line or an exited route.
 

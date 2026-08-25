@@ -56,6 +56,18 @@ export const session = sqliteTable(
   ]
 );
 
+export const guardianSessionUnlock = sqliteTable(
+  "guardian_session_unlock",
+  {
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => session.id, { onDelete: "cascade" }),
+    unlockedAt: integer("unlocked_at", { mode: "timestamp_ms" }).notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [index("guardian_session_unlock_expires_at_idx").on(table.expiresAt)],
+);
+
 export const account = sqliteTable(
   "account",
   {
@@ -181,6 +193,7 @@ export const learnerProfile = sqliteTable(
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name"),
     age: integer("age"),
+    storyLevel: text("story_level").default("first-words").notNull(),
     answersJson: text("answers_json").default("{}").notNull(),
     skippedQuestionKeysJson: text("skipped_question_keys_json")
       .default("[]")
@@ -215,6 +228,10 @@ export const learnerProfile = sqliteTable(
     check(
       "learner_profile_onboarding_status_check",
       sql`${table.profileStatus} in ('not_started', 'in_progress', 'completed')`
+    ),
+    check(
+      "learner_profile_story_level_check",
+      sql`${table.storyLevel} in ('first-words', 'repeating-patterns', 'tiny-stories', 'early-a1')`,
     ),
   ]
 );

@@ -8,6 +8,7 @@ export interface RateLimitEnv {
   LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
   LESSON_GENERATION_RATE_LIMITER: RateLimitBinding;
   PERSONALIZED_STORY_ART_RATE_LIMITER: RateLimitBinding;
+  GUARDIAN_UNLOCK_RATE_LIMITER: RateLimitBinding;
 }
 
 function jsonResponse(payload: unknown, init?: ResponseInit) {
@@ -101,5 +102,17 @@ export function checkPersonalizedStoryArtRateLimit(
     env.PERSONALIZED_STORY_ART_RATE_LIMITER,
     `${userId}:${getClientAddress(request)}`,
     "Too many personalized story art requests. Please wait and try again.",
+  );
+}
+
+export function checkGuardianUnlockRateLimit(
+  request: Request,
+  env: RateLimitEnv,
+  userId: string,
+) {
+  return checkRateLimit(
+    env.GUARDIAN_UNLOCK_RATE_LIMITER,
+    `${userId}:${getClientAddress(request)}`,
+    "Too many password attempts. Wait a minute, then try again.",
   );
 }

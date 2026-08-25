@@ -31,8 +31,8 @@ export class DubResetInProgressError extends Error {
 export class DubTakeRejectedError extends Error {
   readonly code = "dub_take_rejected" as const;
 
-  constructor() {
-    super("That recording is too long. Try the line again.");
+  constructor(message = "That recording is too long. Try the line again.") {
+    super(message);
     this.name = "DubTakeRejectedError";
   }
 }
@@ -147,6 +147,19 @@ export async function saveDubLine(
   );
   if (!response.ok) {
     if (response.status === 413) throw new DubTakeRejectedError();
+    if (response.status === 400 || response.status === 415) {
+      const body: unknown = await response.clone().json().catch(() => null);
+      if (
+        typeof body === "object" &&
+        body !== null &&
+        "error" in body &&
+        (body.error === "audio_required" || body.error === "unsupported_audio")
+      ) {
+        throw new DubTakeRejectedError(
+          "That recording did not work. Record the line again.",
+        );
+      }
+    }
     throw new Error(SAVE_FAILURE);
   }
   const result = await parseJson(response, SAVE_FAILURE);

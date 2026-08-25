@@ -3,6 +3,7 @@ import { Buffer } from "node:buffer";
 import { describe, it } from "node:test";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import { createDatabase } from "../worker/database.ts";
+import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import {
   handleConversationRequest,
 } from "../worker/conversations.ts";
@@ -160,7 +161,371 @@ async function callConversation(
   );
 }
 
+function insertLearnerProfile(
+  state,
+  {
+    age = 8,
+    description = "Mia is eight years old and loves pandas.",
+    lastSkippedAt = null,
+    lastSkippedSessionId = null,
+    name = "Mia",
+    profileStatus = "completed",
+  } = {},
+) {
+  state.sqlite
+    .prepare(
+      "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, last_skipped_at, last_skipped_session_id, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(
+      "profile-1",
+      "user-1",
+      name,
+      age,
+      JSON.stringify({
+        schemaVersion: 2,
+        questionnaireVersion: 2,
+        responses: {},
+        legacyAnswers: null,
+        description,
+      }),
+      profileStatus,
+      lastSkippedAt,
+      lastSkippedSessionId,
+      profileStatus === "completed" ? 2_000 : null,
+      1_000,
+      2_000,
+    );
+}
+
+async function stageConversationProfile(database, conversationId, values = {}) {
+  return callConversation(
+    database,
+    `/api/conversations/${conversationId}/facts`,
+    "POST",
+    {
+      controllerState: {
+        phase: "closing",
+        activeObjective: null,
+        rephraseCount: { name: 0, age: 0, interest: 0 },
+        optionalExchangeCount: 1,
+        profileSummary: "Maya is nine years old and loves red pandas.",
+        profileName: "Maya",
+        profileAge: 9,
+        learnedName: true,
+        learnedAge: true,
+        finishReason: "conversation_complete",
+        ...values,
+      },
+      candidates: [],
+    },
+    {
+      identity: null,
+      headers: { Authorization: "Bearer agent-secret" },
+    },
+  );
+}
+
+function profileValues(state) {
+  const profile = state.sqlite
+    .prepare("SELECT name, age, answers_json FROM learner_profile WHERE auth_user_id = ?")
+    .get("user-1");
+  return {
+    age: profile.age,
+    description: JSON.parse(profile.answers_json).description,
+    name: profile.name,
+  };
+}
+
+function insertExpiredGuardianUnlock(state) {
+  state.sqlite
+    .prepare(
+      "INSERT INTO guardian_session_unlock (session_id, unlocked_at, expires_at) VALUES (?, ?, ?)",
+    )
+    .run("session-1", 1_000, 2_000);
+}
+
 describe("conversation persistence and API", () => {
+  it("rejects onboarding start after the learner profile is complete", async () => {
+    const state = createSeededDatabase();
+    try {
+      insertLearnerProfile(state);
+
+      const response = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+
+      assert.equal(response.status, 403);
+      assert.deepEqual(await response.json(), { error: "guardian_required" });
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects onboarding start after the learner bypassed initial setup", async () => {
+    const state = createSeededDatabase();
+    try {
+      insertLearnerProfile(state, {
+        lastSkippedAt: 2_000,
+        lastSkippedSessionId: "session-1",
+        profileStatus: "not_started",
+      });
+
+      const response = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+
+      assert.equal(response.status, 403);
+      assert.deepEqual(await response.json(), { error: "guardian_required" });
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps initial incomplete onboarding learner-safe", async () => {
+    const state = createSeededDatabase();
+    try {
+      insertLearnerProfile(state, { profileStatus: "in_progress" });
+
+      const response = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+
+      assert.equal(response.status, 201);
+      assert.equal((await response.json()).conversation.scenarioKey, "onboarding");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps locked and expired browser finishes outside profile persistence", async () => {
+    for (const accessState of ["locked", "expired"]) {
+      const state = createSeededDatabase();
+      try {
+        const started = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { purpose: "onboarding" },
+        );
+        const { conversation } = await started.json();
+        assert.equal(
+          (await stageConversationProfile(state.database, conversation.id)).status,
+          200,
+        );
+        insertLearnerProfile(state);
+        if (accessState === "expired") insertExpiredGuardianUnlock(state);
+
+        const response = await callConversation(
+          state.database,
+          `/api/conversations/${conversation.id}/finish`,
+          "POST",
+          { reason: "finished_by_learner" },
+        );
+
+        assert.equal(response.status, 200, accessState);
+        assert.deepEqual(profileValues(state), {
+          age: 8,
+          description: "Mia is eight years old and loves pandas.",
+          name: "Mia",
+        });
+      } finally {
+        state.close();
+      }
+    }
+  });
+
+  it("keeps locked and expired trusted-agent endings outside profile persistence", async () => {
+    for (const accessState of ["locked", "expired"]) {
+      const state = createSeededDatabase();
+      try {
+        const started = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { purpose: "onboarding" },
+        );
+        const { conversation } = await started.json();
+        assert.equal(
+          (await stageConversationProfile(state.database, conversation.id)).status,
+          200,
+        );
+        insertLearnerProfile(state);
+        if (accessState === "expired") insertExpiredGuardianUnlock(state);
+
+        const response = await callConversation(
+          state.database,
+          `/api/conversations/${conversation.id}/end`,
+          "POST",
+          { finishReason: "conversation_complete", status: "completed" },
+          {
+            identity: null,
+            headers: { Authorization: "Bearer agent-secret" },
+          },
+        );
+
+        assert.equal(response.status, 200, accessState);
+        assert.deepEqual(profileValues(state), {
+          age: 8,
+          description: "Mia is eight years old and loves pandas.",
+          name: "Mia",
+        });
+      } finally {
+        state.close();
+      }
+    }
+  });
+
+  it("rejects locked and expired onboarding reviews after profile completion", async () => {
+    for (const accessState of ["locked", "expired"]) {
+      const state = createSeededDatabase();
+      try {
+        const started = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { purpose: "onboarding" },
+        );
+        const { conversation } = await started.json();
+        assert.equal(
+          (await stageConversationProfile(state.database, conversation.id)).status,
+          200,
+        );
+        insertLearnerProfile(state);
+        if (accessState === "expired") insertExpiredGuardianUnlock(state);
+
+        const response = await callConversation(
+          state.database,
+          `/api/conversations/${conversation.id}/review`,
+          "PUT",
+          {},
+        );
+
+        assert.equal(response.status, 403, accessState);
+        assert.deepEqual(await response.json(), { error: "guardian_required" });
+        assert.deepEqual(profileValues(state), {
+          age: 8,
+          description: "Mia is eight years old and loves pandas.",
+          name: "Mia",
+        });
+      } finally {
+        state.close();
+      }
+    }
+  });
+
+  it("saves a profile-edit review through the current authorized session", async () => {
+    const state = createSeededDatabase();
+    try {
+      insertLearnerProfile(state);
+      await createGuardianAccessRepository(state.database).unlock("session-1");
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      const { conversation } = await started.json();
+      assert.equal(
+        (await stageConversationProfile(state.database, conversation.id)).status,
+        200,
+      );
+
+      const response = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(profileValues(state), {
+        age: 9,
+        description: "Maya is nine years old and loves red pandas.",
+        name: "Maya",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
+  it("guards profile edits while keeping initial onboarding and small chat learner-safe", async () => {
+    const state = createSeededDatabase();
+    try {
+      const lockedStart = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      assert.equal(lockedStart.status, 403);
+      assert.deepEqual(await lockedStart.json(), { error: "guardian_required" });
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_session")
+          .get().count,
+        0,
+      );
+
+      for (const purpose of ["onboarding", "small-chat"]) {
+        const started = await callConversation(
+          state.database,
+          "/api/conversations",
+          "POST",
+          { purpose },
+        );
+        assert.equal(started.status, 201, purpose);
+        const conversation = (await started.json()).conversation;
+        const reviewed = await callConversation(
+          state.database,
+          `/api/conversations/${conversation.id}/review`,
+          "PUT",
+          {},
+        );
+        assert.equal(reviewed.status, 200, purpose);
+      }
+
+      const access = createGuardianAccessRepository(state.database);
+      await access.unlock("session-1");
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "profile-edit" },
+      );
+      assert.equal(started.status, 201);
+      const conversation = (await started.json()).conversation;
+      await access.lock("session-1");
+
+      const lockedReview = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(lockedReview.status, 403);
+      assert.deepEqual(await lockedReview.json(), {
+        error: "guardian_required",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
   it("does not mint a conversation token while realtime rollout is disabled", async () => {
     const state = createSeededDatabase();
     try {
@@ -236,6 +601,7 @@ describe("conversation persistence and API", () => {
     const state = createSeededDatabase();
     const tokenPurposes = [];
     try {
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       for (const purpose of ["onboarding", "profile-edit", "small-chat"]) {
         const response = await callConversation(
           state.database,
@@ -592,12 +958,13 @@ describe("conversation persistence and API", () => {
           1_000,
           2_000,
         );
+      await createGuardianAccessRepository(state.database).unlock("session-1");
 
       const response = await callConversation(
         state.database,
         "/api/conversations",
         "POST",
-        undefined,
+        { purpose: "profile-edit" },
         {
           async createParticipantToken(input) {
             tokenCalls.push(input);
@@ -766,7 +1133,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("finalizes a corrected learner profile when the agent ends the conversation", async () => {
+  it("defers an agent-ended profile edit to authenticated review", async () => {
     const state = createSeededDatabase();
     try {
       state.sqlite
@@ -790,10 +1157,12 @@ describe("conversation persistence and API", () => {
           1_000,
           2_000,
         );
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       const started = await callConversation(
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "profile-edit" },
       );
       const { conversation } = await started.json();
       const agentOptions = {
@@ -831,6 +1200,19 @@ describe("conversation persistence and API", () => {
       );
 
       assert.equal(ended.status, 200);
+      assert.deepEqual(profileValues(state), {
+        age: 8,
+        description: "Mia is eight years old and loves pandas.",
+        name: "Mia",
+      });
+
+      const reviewed = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(reviewed.status, 200);
       const profile = state.sqlite
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
@@ -849,6 +1231,7 @@ describe("conversation persistence and API", () => {
   it("rejects private details at the reusable profile persistence boundary", async () => {
     const state = createSeededDatabase();
     try {
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       state.sqlite
         .prepare(
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -910,8 +1293,7 @@ describe("conversation persistence and API", () => {
         agentOptions,
       );
 
-      assert.equal(ended.status, 400);
-      assert.deepEqual(await ended.json(), { error: "private_profile_details" });
+      assert.equal(ended.status, 200);
       const profile = state.sqlite
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
@@ -956,15 +1338,14 @@ describe("conversation persistence and API", () => {
         agentOptions,
       );
       assert.equal(stagedSurnameSummary.status, 200);
-      const surnameSummaryEnd = await callConversation(
+      const surnameSummaryReview = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/end`,
-        "POST",
-        { finishReason: "conversation_complete", status: "completed" },
-        agentOptions,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
       );
-      assert.equal(surnameSummaryEnd.status, 400);
-      assert.deepEqual(await surnameSummaryEnd.json(), {
+      assert.equal(surnameSummaryReview.status, 400);
+      assert.deepEqual(await surnameSummaryReview.json(), {
         error: "preferred_name_required",
       });
 
@@ -986,15 +1367,14 @@ describe("conversation persistence and API", () => {
         agentOptions,
       );
       assert.equal(stagedFullName.status, 200);
-      const fullNameEnd = await callConversation(
+      const fullNameReview = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/end`,
-        "POST",
-        { finishReason: "conversation_complete", status: "completed" },
-        agentOptions,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
       );
-      assert.equal(fullNameEnd.status, 400);
-      assert.deepEqual(await fullNameEnd.json(), {
+      assert.equal(fullNameReview.status, 400);
+      assert.deepEqual(await fullNameReview.json(), {
         error: "preferred_name_required",
       });
     } finally {
@@ -1005,6 +1385,7 @@ describe("conversation persistence and API", () => {
   it("finishes without rewriting an unchanged legacy-private profile", async () => {
     const state = createSeededDatabase();
     try {
+      await createGuardianAccessRepository(state.database).unlock("session-1");
       state.sqlite
         .prepare(
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1076,7 +1457,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("creates a completed learner profile from a fresh conversation snapshot", async () => {
+  it("creates a completed learner profile only during browser review", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -1121,6 +1502,19 @@ describe("conversation persistence and API", () => {
       );
 
       assert.equal(ended.status, 200);
+      assert.equal(
+        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
+          .count,
+        0,
+      );
+
+      const reviewed = await callConversation(
+        state.database,
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(reviewed.status, 200);
       const profile = state.sqlite
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
@@ -1247,7 +1641,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("creates an exact-session bypass when finalization lacks a required detail", async () => {
+  it("blocks repeated onboarding after finalization creates an exact-session bypass", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -1308,6 +1702,17 @@ describe("conversation persistence and API", () => {
       assert.equal(profile.name, "Mia");
       assert.equal(profile.onboarding_status, "not_started");
       assert.equal(JSON.parse(profile.answers_json).description, "Mia shared her name.");
+
+      const repeatedOnboarding = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+      assert.equal(repeatedOnboarding.status, 403);
+      assert.deepEqual(await repeatedOnboarding.json(), {
+        error: "guardian_required",
+      });
     } finally {
       state.close();
     }

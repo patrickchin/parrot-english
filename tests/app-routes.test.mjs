@@ -163,6 +163,37 @@ describe("app route helpers", () => {
     assert.equal(routes.isRedoLearnerProfileRequest("?redo=0"), false);
   });
 
+  it("builds and classifies only canonical guardian routes", () => {
+    assert.equal(routes.getGuardianPath(), "/guardian");
+    assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
+    assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
+
+    for (const [pathname, search = ""] of [
+      ["/guardian"],
+      ["/guardian/lessons"],
+      ["/guardian/stories"],
+      ["/profile"],
+      ["/profile/setup", "?redo=1"],
+      ["/lessons/my/create"],
+      ["/lessons/my/lesson-1/edit"],
+    ]) {
+      assert.equal(routes.isGuardianRoute(pathname, search), true);
+    }
+
+    for (const [pathname, search = ""] of [
+      ["/"],
+      ["/lessons"],
+      ["/profile/setup"],
+      ["/profile/setup", "?redo=01"],
+      ["/guardianish"],
+      ["/guardian/lessons/extra"],
+      ["/lessons/my/lesson-1/edit/extra"],
+      ["/%2F%2Fevil.example/guardian"],
+    ]) {
+      assert.equal(routes.isGuardianRoute(pathname, search), false);
+    }
+  });
+
   it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {
     for (const [pathname, kind] of [
       ["/login", "login"],
@@ -567,6 +598,16 @@ describe("app route helpers", () => {
       ),
       "/stories/the-lantern-trail/pages/2",
     );
+    for (const guardianPath of [
+      "/guardian",
+      "/guardian/lessons",
+      "/guardian/stories",
+    ]) {
+      assert.equal(
+        routes.getSafeReturnTo(returnToSearch(guardianPath)),
+        guardianPath,
+      );
+    }
     assert.equal(
       routes.getSafeReturnTo("?returnTo=https%3A%2F%2Fevil.example"),
       null,
@@ -598,6 +639,17 @@ describe("app route helpers", () => {
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",
+      "/guardianish",
+      "/guardian/lessons/extra",
+      "/guardian%2Fstories",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
+    }
+
+    for (const returnTo of [
+      "https://evil.example/guardian",
+      "//evil.example/guardian",
+      "%2F%2Fevil.example%2Fguardian",
     ]) {
       assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
     }

@@ -71,6 +71,13 @@
       "when": 1786357438634,
       "tag": "0009_personalized_story_art_generation_lease",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1787598900550,
+      "tag": "0010_guardian_modes",
+      "breakpoints": true
     }
   ]
 }

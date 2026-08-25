@@ -84,4 +84,41 @@ describe("conversation browser API", () => {
         error.status === 503,
     );
   });
+
+  it("notifies guardian access before exposing its typed guardian-required error", async () => {
+    const previousDocument = globalThis.document;
+    const eventTarget = new globalThis.EventTarget();
+    const order = [];
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: eventTarget,
+    });
+    eventTarget.addEventListener("guardian-access-required", () => {
+      order.push("notification");
+    });
+
+    try {
+      const failed = createJsonFetch({ error: "guardian_required" }, 403);
+      await assert.rejects(
+        startConversation(
+          { promptStyle: "gentle-guide", purpose: "small-chat" },
+          { fetch: failed.fetch },
+        ),
+        (error) => {
+          order.push("error");
+          assert.ok(error instanceof ConversationApiError);
+          assert.equal(error.status, 403);
+          assert.equal(error.code, "guardian_required");
+          return true;
+        },
+      );
+      assert.deepEqual(order, ["notification", "error"]);
+    } finally {
+      if (previousDocument === undefined) Reflect.deleteProperty(globalThis, "document");
+      else Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    }
+  });
 });

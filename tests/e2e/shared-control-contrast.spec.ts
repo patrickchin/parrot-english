@@ -2,6 +2,10 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type Color = { alpha: number; blue: number; green: number; red: number };
 
+function guardianPath(path: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
+}
+
 const viewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
   { height: 900, name: "desktop", width: 1440 },
@@ -317,8 +321,10 @@ for (const viewport of viewports) {
     page,
   }) => {
     await preparePage(page, viewport);
-    await page.goto("/lessons");
-    await page.getByRole("button", { name: "Account for Mia" }).click();
+    await page.goto(guardianPath("/lessons"));
+    await page
+      .getByRole("button", { name: "Profile for Mia, guardian mode" })
+      .click();
 
     await expectPointerStateContrast({
       interaction: page.getByRole("menuitem", { name: "Sign out" }),
@@ -339,7 +345,7 @@ for (const viewport of viewports) {
   }) => {
     await preparePage(page, viewport);
 
-    await page.goto("/lessons");
+    await page.goto(guardianPath("/guardian/lessons"));
     const createLesson = page.getByRole("link", {
       name: "Create custom lesson",
     });
@@ -356,9 +362,11 @@ for (const viewport of viewports) {
     page,
   }) => {
     await preparePage(page, viewport);
-    await page.goto("/lessons");
+    await page.goto(guardianPath("/lessons"));
 
-    await page.getByRole("button", { name: "Account for Mia" }).click();
+    await page
+      .getByRole("button", { name: "Profile for Mia, guardian mode" })
+      .click();
     await page.getByRole("menuitem", { name: "Delete account" }).click();
     const dialog = page.getByRole("dialog", { name: "Delete account" });
     const password = dialog.getByRole("textbox", { name: "Password" });

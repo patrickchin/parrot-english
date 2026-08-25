@@ -19,6 +19,7 @@ import {
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
+  type AudioPlaybackEnvironment,
   isAbortError,
   playAudioLine,
   type PlaybackControl,
@@ -77,9 +78,13 @@ export function StoryReader({
   const [isStoryComplete, setIsStoryComplete] = useState(false);
   const [narrationState, setNarrationState] =
     useState<NarrationState>("idle");
+  const [playWholeStory, setPlayWholeStory] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const audioEnvironmentRef = useRef<AudioPlaybackEnvironment | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
+  const playWholeStoryRef = useRef(false);
   const resumeNarrationStateRef = useRef<"join-in" | "playing">("playing");
   const completionHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const errorRef = useRef<HTMLParagraphElement | null>(null);
@@ -95,6 +100,16 @@ export function StoryReader({
   const isFirstPage = pageIndex === 0;
   const isLastPage = pageIndex === story.pages.length - 1;
 
+  if (!audioEnvironmentRef.current) {
+    audioEnvironmentRef.current = {
+      createAudio(url) {
+        if (!audioElementRef.current) audioElementRef.current = new Audio(url);
+        else audioElementRef.current.src = url;
+        return audioElementRef.current;
+      },
+    };
+  }
+
   const stopNarration = useCallback(() => {
     playbackGenerationRef.current += 1;
     abortControllerRef.current?.abort();
@@ -108,13 +123,16 @@ export function StoryReader({
     setError("");
     setIsStoryComplete(false);
 
+    if (playWholeStoryRef.current) startNarration(true);
+
     return stopNarration;
   }, [pageIndex, stopNarration, story.id]);
 
   useIsomorphicLayoutEffect(() => {
+    if (isStoryComplete) return;
     if (readingPaneRef.current) readingPaneRef.current.scrollTop = 0;
     pageTextRef.current?.focus({ preventScroll: true });
-  }, [pageIndex, story.id]);
+  }, [isStoryComplete, pageIndex, story.id]);
 
   useIsomorphicLayoutEffect(() => {
     if (isStoryComplete) {
@@ -130,11 +148,13 @@ export function StoryReader({
     abortControllerRef.current = null;
     playbackControlRef.current = null;
     setNarrationState("idle");
+    playWholeStoryRef.current = false;
+    setPlayWholeStory(false);
     setError(READ_ALOUD_ERROR);
     revealWithinPane(readingPaneRef.current, errorRef.current);
   }
 
-  function startNarration() {
+  function startNarration(continueWholeStory = false) {
     stopNarration();
     if (readingPaneRef.current) readingPaneRef.current.scrollTop = 0;
     const controller = new AbortController();
@@ -152,26 +172,32 @@ export function StoryReader({
     };
 
     let narrationPromise: Promise<void>;
+    const narrationAudioId = page.narrationAudioId;
+    const joinInAudioId = page.joinInAudioId;
     try {
-      if (page.narrationAudioId) {
-        const narration = getStaticAudioLineForSpeech(
-          "narrator",
-          `${page.text} ${page.joinIn}`,
-        );
-        if (narration.id !== page.narrationAudioId) {
-          throw new Error(
-            `Expected ${page.narrationAudioId}, received ${narration.id}`,
+      if (narrationAudioId && joinInAudioId) {
+        narrationPromise = (async () => {
+          await playSavedStoryLine(
+            narrationAudioId,
+            page.text,
+            controller.signal,
+            onPlaybackControl,
           );
-        }
-        narrationPromise = playAudioLine({
-          audioId: narration.id,
-          audioSrc: narration.src,
-          lang: narration.lang,
-          onPlaybackControl,
-          signal: controller.signal,
-          text: narration.text,
-        });
-      } else {
+          if (generation !== playbackGenerationRef.current) return;
+          revealWithinPane(
+            readingPaneRef.current,
+            joinInPromptRef.current,
+          );
+          resumeNarrationStateRef.current = "join-in";
+          setNarrationState("join-in");
+          await playSavedStoryLine(
+            joinInAudioId,
+            page.joinIn,
+            controller.signal,
+            onPlaybackControl,
+          );
+        })();
+      } else if (!narrationAudioId && !joinInAudioId) {
         narrationPromise = (async () => {
           await playDeviceSpeech({
             onPlaybackControl,
@@ -193,6 +219,8 @@ export function StoryReader({
             text: page.joinIn,
           });
         })();
+      } else {
+        throw new Error("Story audio metadata is incomplete.");
       }
     } catch {
       showReadAloudError();
@@ -204,6 +232,11 @@ export function StoryReader({
         if (generation !== playbackGenerationRef.current) return;
         abortControllerRef.current = null;
         playbackControlRef.current = null;
+        if (continueWholeStory) {
+          if (isLastPage) finishStory();
+          else navigatePage(pageIndex + 1);
+          return;
+        }
         revealWithinPane(
           readingPaneRef.current,
           joinInPromptRef.current,
@@ -233,7 +266,40 @@ export function StoryReader({
       setNarrationState(resumeNarrationStateRef.current);
       return;
     }
-    startNarration();
+    startNarration(playWholeStoryRef.current);
+  }
+
+  function playSavedStoryLine(
+    audioId: string,
+    text: string,
+    signal: AbortSignal,
+    onPlaybackControl: (control: PlaybackControl | null) => void,
+  ) {
+    const line = getStaticAudioLineForSpeech("narrator", text);
+    if (line.id !== audioId) {
+      throw new Error(`Expected ${audioId}, received ${line.id}`);
+    }
+    return playAudioLine({
+      audioId: line.id,
+      audioSrc: line.src,
+      env: audioEnvironmentRef.current ?? undefined,
+      lang: line.lang,
+      onPlaybackControl,
+      signal,
+      text: line.text,
+    });
+  }
+
+  function toggleWholeStory() {
+    const shouldPlayWholeStory = !playWholeStoryRef.current;
+    playWholeStoryRef.current = shouldPlayWholeStory;
+    setPlayWholeStory(shouldPlayWholeStory);
+    if (shouldPlayWholeStory) startNarration(true);
+    else {
+      stopNarration();
+      setNarrationState("idle");
+      setError("");
+    }
   }
 
   function navigatePage(nextPageIndex: number) {
@@ -356,8 +422,8 @@ export function StoryReader({
             className="grid gap-3 short-wide:-mx-2 short-wide:min-h-0 short-wide:min-w-0 short-wide:gap-2 short-wide:overflow-x-hidden short-wide:overflow-y-auto short-wide:px-2 sm:gap-4"
             ref={readingPaneRef}
           >
-            <header className="grid gap-2.5 short-wide:gap-1">
-              <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
+            <header className="grid gap-2.5 short-wide:grid-cols-[minmax(0,1fr)_auto] short-wide:items-center short-wide:gap-x-2 short-wide:gap-y-0">
+              <h1 className="m-0 text-xl leading-none text-brand-ink short-wide:col-start-1 short-wide:row-start-1 sm:text-3xl lg:text-4xl">
                 {story.title}
               </h1>
               <div
@@ -366,7 +432,7 @@ export function StoryReader({
                 aria-valuemin={1}
                 aria-valuenow={pageIndex + 1}
                 aria-valuetext={`Page ${pageIndex + 1} of ${story.pages.length}`}
-                className="h-2 overflow-hidden rounded-full bg-sky-100"
+                className="h-2 overflow-hidden rounded-full bg-sky-100 short-wide:col-span-2 short-wide:row-start-2 short-wide:h-1"
                 role="progressbar"
               >
                 <span
@@ -376,6 +442,22 @@ export function StoryReader({
                   }}
                 />
               </div>
+              <ActionButton
+                aria-label="Play whole story"
+                aria-pressed={playWholeStory}
+                className="w-fit gap-2 rounded-xl px-3 short-wide:col-start-2 short-wide:row-start-1"
+                elevation="flat"
+                frame="soft"
+                onClick={toggleWholeStory}
+                shape="rounded"
+                size="inline"
+                type="button"
+                variant={playWholeStory ? "navy" : "surface"}
+              >
+                <Play aria-hidden="true" className="size-4 fill-current" />
+                <span className="short-wide:hidden">Whole story</span>
+                <span className="hidden short-wide:inline">Auto</span>
+              </ActionButton>
             </header>
 
             <p

@@ -3,6 +3,10 @@ import sharp from "sharp";
 
 type Rgb = { blue: number; green: number; red: number };
 
+function guardianPath(path: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
+}
+
 async function openProfileSetup(page: Page) {
   await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
   await expect(
@@ -28,8 +32,10 @@ const focusScenarios: Array<{
   {
     name: "dark navy account menu",
     prepare: async (page) => {
-      await page.goto("/");
-      await page.getByRole("button", { name: "Account for Mia" }).click();
+      await page.goto(guardianPath("/"));
+      await page
+        .getByRole("button", { name: "Profile for Mia, guardian mode" })
+        .click();
       return page.getByRole("menuitem", { name: "Learner profile" });
     },
     viewport: { height: 844, width: 390 },
@@ -90,8 +96,7 @@ const focusScenarios: Array<{
   {
     name: "selected story level tab",
     prepare: async (page) => {
-      await page.goto("/stories");
-      await page.getByLabel("Grown-up options").click();
+      await page.goto(guardianPath("/guardian/stories"));
       return page.getByRole("tab", { name: "Start here" });
     },
     viewport: { height: 844, width: 390 },
@@ -868,7 +873,7 @@ async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
 
   return {
     account: await roundedLocatorBox(
-      page.getByRole("button", { name: /^Account for / }),
+      page.getByRole("button", { name: /^Profile for / }),
     ),
     back: await roundedLocatorBox(page.getByRole("link", { name: "Back to home" })),
     firstLesson: await roundedLocatorBox(firstLessonLink(page)),
@@ -1010,7 +1015,7 @@ test("lesson shelf arrival cue survives My Lessons settlement", async ({
   await requestStarted;
   const heading = lessonShelfHeading(page);
   const status = page
-    .getByRole("complementary", { name: "Grown-up tools" })
+    .getByRole("region", { name: "Saved lesson status" })
     .getByRole("status");
   await expect(status).toHaveText("Loading My Lessons…");
   await expect(heading).toBeFocused();
@@ -1151,7 +1156,7 @@ async function expectProfileOpenReadingCue(
   await expect(target).toBeFocused();
   await expect(target).toHaveAttribute("tabindex", "-1");
   await page.evaluate(() => {
-    for (const animation of document.getAnimations()) animation.pause();
+    for (const animation of document.getAnimations()) animation.cancel();
   });
   const focused = await profileHeadingGeometry(target);
   expect(
@@ -1179,7 +1184,7 @@ async function expectProfileOpenReadingCue(
 
   const blurred = await profileHeadingGeometry(target);
   if (focused.art && blurred.art) {
-    // Chromium can requantize a paused transform by one hundredth of a pixel.
+    // Chromium can requantize an animation transform by one hundredth of a pixel.
     expect(Math.abs(blurred.art.y - focused.art.y)).toBeLessThanOrEqual(0.02);
     blurred.art.y = focused.art.y;
   }
@@ -1409,11 +1414,17 @@ test("dark-surface focus does not fade in or linger after moving", async ({
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto("/");
+  await page.goto(guardianPath("/guardian"));
   await expect(
-    page.getByRole("heading", { exact: true, level: 1, name: "Tap a picture." }),
+    page.getByRole("heading", {
+      exact: true,
+      level: 1,
+      name: "Guardian dashboard",
+    }),
   ).toBeFocused();
-  await page.getByRole("button", { name: "Account for Mia" }).click();
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
   const profile = page.getByRole("menuitem", { name: "Learner profile" });
   await expect(profile).toBeFocused();
   await blurActiveElement(page);
@@ -1502,7 +1513,7 @@ test("retained pending focus stays visible", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/lessons");
   const retry = page
-    .getByRole("complementary", { name: "Grown-up tools" })
+    .getByRole("region", { name: "Saved lesson status" })
     .getByRole("button", { name: "Try again" });
   await expect(retry).toBeVisible();
   await blurActiveElement(page);
@@ -1557,7 +1568,7 @@ test("forced colors keeps the profile Replay focus fully clear", async ({
     "forced-colors profile replay action",
   );
 
-  const account = page.getByRole("button", { name: "Account for Mia" });
+  const account = page.getByRole("button", { name: /^Profile for / });
   const progress = page.getByText("Question 1 of 6", { exact: true });
   const [accountBox, progressBox, replayBox] = await Promise.all([
     account.boundingBox(),

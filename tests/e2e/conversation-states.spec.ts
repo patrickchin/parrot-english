@@ -47,7 +47,7 @@ test("each purpose has its own framing and only profile flows offer save complet
   ).toBeVisible();
 
   await page.unroute("**/api/learner-profile");
-  await page.goto("/profile/setup?redo=1");
+  await page.goto("/profile/setup?redo=1&parrotE2eGuardian=guardian");
   await expect(
     page.getByRole("heading", { name: "Update my profile" }),
   ).toBeVisible();

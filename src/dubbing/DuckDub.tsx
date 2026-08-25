@@ -647,7 +647,7 @@ export function DuckDub() {
     } catch (error) {
       if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
       finalControllerRef.current = null;
-      if (error instanceof DubLinePlaybackError) {
+      if (error instanceof DubLinePlaybackError && error.stage === "decode") {
         dispatch({ type: "SELECT_LINE", lineId: error.lineId });
         dispatch({ type: "RETAKE" });
         setOperationError("That take could not play. Record this line again.");

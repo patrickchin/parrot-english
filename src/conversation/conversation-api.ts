@@ -1,5 +1,6 @@
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
 import type { TalkToPeppaPromptStyle } from "../../lib/talk-to-peppa-prompt-style";
+import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 
 export type ConversationTurn = {
   id: string;
@@ -104,6 +105,9 @@ async function requestJson<Result>(
       typeof record.message === "string"
         ? record.message
         : "The conversation request could not be completed.";
+    if (response.status === 403 && code === "guardian_required") {
+      notifyGuardianAccessRequired();
+    }
     throw new ConversationApiError(response.status, code, message);
   }
   return payload as Result;

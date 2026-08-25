@@ -100,7 +100,7 @@ for (const viewport of phoneViewports) {
     await expectActivityPicturesLoaded(activities);
 
     const accountBox = await page
-      .getByRole("button", { name: "Account for Mia" })
+      .getByRole("button", { name: "Profile for Mia, learner mode" })
       .boundingBox();
     const headingBox = await page
       .getByRole("heading", { name: "Tap a picture." })

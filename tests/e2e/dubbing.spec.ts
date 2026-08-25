@@ -201,6 +201,24 @@ test("returns an undecodable line 5 to a focused replacement action", async ({ p
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
 });
 
+test("keeps a complete dub ready when a saved-line audio fetch fails", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=audio-fetch-failed");
+  await enterStudio(page, "Continue dubbing");
+
+  await page.getByRole("button", { name: "Watch my dub" }).click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub could not be played. Try again.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText("All 9 lines recorded", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your dub is ready!", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Record line/ })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Watch my dub" }).click();
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+});
+
 test("hides generic playback setup details and keeps final controls usable", async ({
   page,
 }) => {
@@ -421,7 +439,9 @@ for (const viewport of studioViewports) {
 
     const main = page.getByRole("main");
     const back = page.getByRole("link", { name: "Back to home" });
-    const account = page.getByRole("button", { name: "Account for Mia" });
+    const account = page.getByRole("button", {
+      name: "Profile for Mia, learner mode",
+    });
     const stage = page.getByRole("figure", { name: "Four ducks make bright ripples." });
     const action = page.getByRole("button", { name: "Record line 4" });
 

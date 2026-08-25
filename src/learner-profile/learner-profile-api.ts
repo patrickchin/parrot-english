@@ -1,3 +1,6 @@
+import type { StoryLevelId } from "../../lib/story-level.ts";
+import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
+
 export type LearnerProfileAudio = {
   id: string;
   src: string;
@@ -39,6 +42,7 @@ export type LearnerProfileAcknowledgment = {
 export type LearnerProfileSummary = {
   name: string | null;
   age: number | null;
+  storyLevel: StoryLevelId;
   description: string | null;
   answers: LearnerProfileAnswers;
   questionnaireVersion: number;
@@ -144,6 +148,9 @@ async function requestJson<Result>(
         : typeof errorPayload.message === "string"
           ? errorPayload.message
           : "The request could not be completed.";
+    if (response.status === 403 && code === "guardian_required") {
+      notifyGuardianAccessRequired();
+    }
     throw new LearnerProfileApiError(
       response.status,
       code,
@@ -258,6 +265,21 @@ export function saveProfileAnswers(
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ answers }),
+    },
+    options,
+  );
+}
+
+export function saveStoryLevel(
+  storyLevel: StoryLevelId,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requestJson<ProfileState>(
+    "/api/profile/preferences",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ storyLevel }),
     },
     options,
   );

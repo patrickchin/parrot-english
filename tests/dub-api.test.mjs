@@ -204,4 +204,31 @@ describe("duck dub browser API", () => {
       },
     );
   });
+
+  it("asks for a new take when the server rejects the recorded audio", async () => {
+    for (const [status, code] of [
+      [400, "audio_required"],
+      [415, "unsupported_audio"],
+    ]) {
+      await assert.rejects(
+        saveDubLine("line-1", new Blob(["bad take"]), {
+          fetch: async () =>
+            Response.json(
+              { error: code, message: `TECHNICAL ${code} detail` },
+              { status },
+            ),
+        }),
+        (error) => {
+          assert.ok(error instanceof DubTakeRejectedError);
+          assert.equal(error.code, "dub_take_rejected");
+          assert.equal(
+            error.message,
+            "That recording did not work. Record the line again.",
+          );
+          assert.doesNotMatch(error.message, /technical|audio_required|unsupported_audio/i);
+          return true;
+        },
+      );
+    }
+  });
 });
