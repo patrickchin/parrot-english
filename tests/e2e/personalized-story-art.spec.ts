@@ -15,6 +15,10 @@ const tinyPng = Buffer.from(
   "base64",
 );
 
+function guardianPath(path: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
+}
+
 type PhotoState = "cleanup-only" | "deleted" | "empty" | "ready";
 
 function readyPhotoPayload() {
@@ -252,8 +256,7 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
   await installStoryMediaGuard(page);
   await page.setViewportSize(narrowPhone);
   await mockPersonalizedStoryArtApis(page);
-  await page.goto("/stories");
-  await page.getByLabel("Grown-up options").click();
+  await page.goto(guardianPath("/guardian/stories"));
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   const consent = panel.getByRole("checkbox", { name: guardianConsentLabel });
@@ -289,8 +292,7 @@ test("disabled generation keeps one cleanup path and confirms deletion", async (
   const requests = await mockPersonalizedStoryArtApis(page, "cleanup-only", {
     deleteDelayMs: 150,
   });
-  await page.goto("/stories");
-  await page.getByLabel("Grown-up options").click();
+  await page.goto(guardianPath("/guardian/stories"));
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   await expect(panel).toBeVisible();
@@ -335,8 +337,7 @@ test("failed cleanup keeps its keyboard action focused for retry", async ({
     deleteDelayMs: 100,
     deleteFails: true,
   });
-  await page.goto("/stories");
-  await page.getByLabel("Grown-up options").click();
+  await page.goto(guardianPath("/guardian/stories"));
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   const remove = panel.getByRole("button", {
@@ -363,9 +364,7 @@ test("cleanup completion does not steal focus after the caregiver moves away", a
   await mockPersonalizedStoryArtApis(page, "cleanup-only", {
     deleteDelayMs: 150,
   });
-  await page.goto("/stories");
-  const grownUpOptions = page.getByLabel("Grown-up options");
-  await grownUpOptions.click();
+  await page.goto(guardianPath("/guardian/stories"));
   const otherControl = page.getByRole("tab", { name: "Start here" });
 
   const remove = page.getByRole("button", {
@@ -413,8 +412,7 @@ test("deleting story art falls back to the default story placeholder", async ({
 }) => {
   await installStoryMediaGuard(page);
   await mockPersonalizedStoryArtApis(page, "ready");
-  await page.goto("/stories");
-  await page.getByLabel("Grown-up options").click();
+  await page.goto(guardianPath("/guardian/stories"));
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   const remove = panel.getByRole("button", { name: "Delete story art" });

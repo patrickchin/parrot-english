@@ -2,6 +2,10 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type Rect = { height: number; width: number; x: number; y: number };
 
+function guardianPath(path: string) {
+  return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
+}
+
 function boxesOverlap(first: Rect, second: Rect) {
   return !(
     first.x + first.width <= second.x ||
@@ -87,11 +91,13 @@ for (const viewport of viewports) {
       await route.abort("failed");
     });
     await page.setViewportSize(viewport);
-    await page.goto("/lessons");
+    await page.goto(guardianPath("/guardian"));
     await waitForVisualAssets(page);
 
-    const account = page.getByRole("button", { name: "Account for Mia" });
-    const heading = page.getByRole("heading", { name: "Pick a lesson" });
+    const account = page.getByRole("button", {
+      name: "Profile for Mia, guardian mode",
+    });
+    const heading = page.getByRole("heading", { name: "Guardian dashboard" });
     const status = page
       .getByRole("complementary", { name: "Account" })
       .getByRole("status");
@@ -106,7 +112,7 @@ for (const viewport of viewports) {
 
     const pendingAccount = page.getByRole("button", {
       exact: true,
-      name: "Signing out… Account for Mia",
+      name: "Signing out… Profile for Mia, guardian mode",
     });
     await expect(pendingAccount).toBeFocused();
     await expect(pendingAccount).toHaveAttribute("aria-disabled", "true");
@@ -175,7 +181,7 @@ for (const viewport of viewports) {
         account.boundingBox(),
         retry.boundingBox(),
         heading.boundingBox(),
-        page.getByRole("link", { name: "Back to home" }).boundingBox(),
+        page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
       ]);
     expect(failureAccountBox).not.toBeNull();
     expect(retryBox).not.toBeNull();
@@ -231,10 +237,12 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
     await route.abort("failed");
   });
   await page.setViewportSize({ height: 360, width: 640 });
-  await page.goto("/lessons");
+  await page.goto(guardianPath("/guardian"));
   await waitForVisualAssets(page);
 
-  const account = page.getByRole("button", { name: "Account for Mia" });
+  const account = page.getByRole("button", {
+    name: "Profile for Mia, guardian mode",
+  });
   await account.focus();
   await account.press("ArrowDown");
   await page.getByRole("menuitem", { name: "Delete account" }).press("ArrowUp");
@@ -243,7 +251,7 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   const status = page.getByRole("status").filter({ hasText: "Signing out…" });
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Account for Mia",
+    name: "Signing out… Profile for Mia, guardian mode",
   });
   await expect(status).toBeVisible();
   await expect(pendingAccount).toBeFocused();
@@ -310,7 +318,7 @@ test("route heading focus does not override a faster account interaction", async
     };
   });
 
-  await page.goto("/lessons");
+  await page.goto(guardianPath("/guardian"));
   await expect
     .poll(() =>
       page.evaluate(
@@ -327,7 +335,9 @@ test("route heading focus does not override a faster account interaction", async
     )
     .toBeGreaterThan(0);
 
-  const account = page.getByRole("button", { name: "Account for Mia" });
+  const account = page.getByRole("button", {
+    name: "Profile for Mia, guardian mode",
+  });
   await account.focus();
   await expect(account).toBeFocused();
 
@@ -344,7 +354,7 @@ test("route heading focus does not override a faster account interaction", async
   await expect(account).toBeFocused();
 });
 
-test("sign-out feedback stays clear over the dense lesson player", async ({
+test("sign-out feedback stays clear over the guardian dashboard", async ({
   page,
 }) => {
   let releaseRequest = () => {};
@@ -356,30 +366,30 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
     await route.abort("failed");
   });
   await page.setViewportSize({ height: 360, width: 640 });
-  await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const speech = page.getByRole("region", { name: "Your turn" });
-  await expect(speech).toContainText("It is up high!");
+  await page.goto(guardianPath("/guardian"));
   await waitForVisualAssets(page);
 
-  const hud = page.getByRole("region", { name: "Lesson progress" });
-  const [hudBefore, speechBefore] = await Promise.all([
-    hud.boundingBox(),
-    speech.boundingBox(),
+  const heading = page.getByRole("heading", { name: "Guardian dashboard" });
+  const management = page.getByRole("heading", { name: "My Lessons" });
+  const [headingBefore, managementBefore] = await Promise.all([
+    heading.boundingBox(),
+    management.boundingBox(),
   ]);
-  const account = page.getByRole("button", { name: "Account for Mia" });
+  const account = page.getByRole("button", {
+    name: "Profile for Mia, guardian mode",
+  });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
 
   const pending = page.getByRole("status").filter({ hasText: "Signing out…" });
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Account for Mia",
+    name: "Signing out… Profile for Mia, guardian mode",
   });
   await expect(pending).toBeVisible();
   await expect(pendingAccount).toBeFocused();
-  expect(await hud.boundingBox()).toEqual(hudBefore);
-  expect(await speech.boundingBox()).toEqual(speechBefore);
+  expect(await heading.boundingBox()).toEqual(headingBefore);
+  expect(await management.boundingBox()).toEqual(managementBefore);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
@@ -393,35 +403,37 @@ test("sign-out feedback stays clear over the dense lesson player", async ({
     exact: true,
     name: "Sign out again",
   });
-  const [retryBox, hudAfter, speechAfter] = await Promise.all([
+  const [retryBox, headingAfter, managementAfter] = await Promise.all([
     retry.boundingBox(),
-    hud.boundingBox(),
-    speech.boundingBox(),
+    heading.boundingBox(),
+    management.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
-  expect(hudAfter).toEqual(hudBefore);
-  expect(speechAfter).toEqual(speechBefore);
-  expect(boxesOverlap(retryBox!, hudAfter!)).toBe(false);
-  expect(boxesOverlap(retryBox!, speechAfter!)).toBe(false);
+  expect(headingAfter).toEqual(headingBefore);
+  expect(managementAfter).toEqual(managementBefore);
+  expect(boxesOverlap(retryBox!, headingAfter!)).toBe(false);
+  expect(boxesOverlap(retryBox!, managementAfter!)).toBe(false);
 
   await page.keyboard.press("Tab");
   await expect(retry).toBeFocused();
   const retryPaint = await focusedPaintBox(retry);
-  expect(boxesOverlap(retryPaint, hudAfter!)).toBe(false);
-  expect(boxesOverlap(retryPaint, speechAfter!)).toBe(false);
+  expect(boxesOverlap(retryPaint, headingAfter!)).toBe(false);
+  expect(boxesOverlap(retryPaint, managementAfter!)).toBe(false);
 
 });
 
-test("sign-out recovery keeps text-spacing focus clear of the narrow shelf", async ({
+test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard", async ({
   page,
 }) => {
   await page.route("**/api/auth/sign-out", (route) => route.abort("failed"));
   await page.setViewportSize({ height: 568, width: 280 });
-  await page.goto("/lessons");
+  await page.goto(guardianPath("/guardian"));
   await applyTextSpacing(page);
 
-  const heading = page.getByRole("heading", { name: "Pick a lesson" });
-  const account = page.getByRole("button", { name: "Account for Mia" });
+  const heading = page.getByRole("heading", { name: "Guardian dashboard" });
+  const account = page.getByRole("button", {
+    name: "Profile for Mia, guardian mode",
+  });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page.getByRole("alert")).toHaveText(
@@ -442,10 +454,9 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow shelf", asy
 
 });
 
-test("sign-out recovery keeps text-spacing focus clear of the lesson HUD", async ({
+test("learner lesson HUD excludes sign-out recovery controls", async ({
   page,
 }) => {
-  await page.route("**/api/auth/sign-out", (route) => route.abort("failed"));
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
   await page.getByRole("button", { name: "Start lesson" }).click();
@@ -455,22 +466,9 @@ test("sign-out recovery keeps text-spacing focus clear of the lesson HUD", async
   await applyTextSpacing(page);
 
   const hud = page.getByRole("region", { name: "Lesson progress" });
-  const account = page.getByRole("button", { name: "Account for Mia" });
-  await account.click();
-  await page.getByRole("menuitem", { name: "Sign out" }).click();
-  await expect(page.getByRole("alert")).toHaveText(
-    "Sign out did not finish.",
-  );
-  await expect(account).toBeFocused();
-  const retry = page.getByRole("button", {
-    exact: true,
-    name: "Sign out again",
-  });
-  await page.keyboard.press("Tab");
-  await expect(retry).toBeFocused();
-  const retryPaint = await focusedPaintBox(retry);
-  expect(boxesOverlap(retryPaint, (await hud.boundingBox())!)).toBe(false);
-  expect(boxesOverlap(retryPaint, (await speech.boundingBox())!)).toBe(false);
+  await expect(hud).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Sign out" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sign out again" })).toHaveCount(0);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);

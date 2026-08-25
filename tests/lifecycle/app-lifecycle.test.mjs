@@ -3,11 +3,14 @@ import { fileURLToPath } from "node:url";
 import {
   act,
   createElement,
+  Fragment,
   useState,
   useSyncExternalStore,
 } from "react";
 import {
   MemoryRouter,
+  Route,
+  Routes,
   useLocation,
   useNavigate,
 } from "react-router";
@@ -38,11 +41,22 @@ const vite = await createServer({
 });
 
 let ApplicationRoutes;
+let AuthenticatedApplication;
+let AccountActionProvider;
 let ConversationSurface;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
+let useLearnerProfile;
 let usePeppaConversation;
 let createAuthGate;
+let createGuardianAccessProvider;
+let useGuardianAccess;
+let GuardianDashboard;
+let GuardianModeBoundary;
+let LearnerModeBoundary;
+let RouteFocusManager;
+let useAccountExperience;
+let useProfileAccountAction;
 let firstLesson;
 let firstLessonId;
 
@@ -51,14 +65,36 @@ before(async () => {
     "/src/conversation/ConversationSurface.tsx",
   ));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
+  ({
+    AccountActionProvider,
+    useAccountExperience,
+    useProfileAccountAction,
+  } = await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
+  ({ createGuardianAccessProvider, useGuardianAccess } = await vite.ssrLoadModule(
+    "/src/auth/GuardianAccess.tsx",
+  ));
   ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
   ));
   ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx"));
+  ({ useLearnerProfile } = await vite
+    .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+    .catch(() => ({})));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
   ));
-  ({ ApplicationRoutes } = await vite.ssrLoadModule("/src/app/App.tsx"));
+  ({ ApplicationRoutes, AuthenticatedApplication } = await vite.ssrLoadModule(
+    "/src/app/App.tsx",
+  ));
+  ({ RouteFocusManager } = await vite.ssrLoadModule(
+    "/src/app/RouteFocusManager.tsx",
+  ));
+  ({ GuardianModeBoundary, LearnerModeBoundary } = await vite
+    .ssrLoadModule("/src/app/ModeRouteBoundaries.tsx")
+    .catch(() => ({})));
+  ({ GuardianDashboard } = await vite
+    .ssrLoadModule("/src/app/GuardianDashboard.tsx")
+    .catch(() => ({})));
   const catalog = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
   firstLessonId = catalog.LESSONS[0].id;
@@ -111,6 +147,8 @@ function fullLearnerProfileState(overrides = {}) {
     profile: {
       name: null,
       age: null,
+      storyLevel: "first-words",
+      description: null,
       answers: emptyAnswers(),
       questionnaireVersion: 2,
       currentQuestionKey: "name",
@@ -143,6 +181,29 @@ function completedLearnerProfileState() {
 
 function json(payload, status = 200) {
   return Response.json(payload, { status });
+}
+
+function guardianAccessBoundary() {
+  return createGuardianAccessProvider({
+    api: {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+    },
+    schedule: () => () => {},
+  });
 }
 
 function conversationStartResponse(id) {
@@ -397,6 +458,20 @@ function ProfileRouteHarness({ children, initialRoute = "/" }) {
   );
 }
 
+function LoadedProfileHarness() {
+  assert.equal(
+    typeof useLearnerProfile,
+    "function",
+    "Expected protected descendants to read the loaded learner profile",
+  );
+  const { profile } = useLearnerProfile();
+  return createElement(
+    "output",
+    { "aria-label": "Loaded profile story level" },
+    profile.storyLevel,
+  );
+}
+
 function StandaloneConversationRouteHarness() {
   const [route, setRoute] = useState("/talk-to-peppa");
   const isConversationRoute = route === "/talk-to-peppa";
@@ -470,6 +545,158 @@ function applicationRoutesInMemory({ initialEntries, initialIndex }) {
       createElement(ApplicationRoutes, { loginTarget: "/" }),
       createElement(RouterHistoryControls),
     ),
+  );
+}
+
+function modeRoutesInMemory({
+  api,
+  initialEntry,
+  learnerName = "Mia",
+  now,
+  onBeforeNavigate = () => {},
+  schedule = () => () => {},
+}) {
+  assert.equal(
+    typeof GuardianModeBoundary,
+    "function",
+    "Expected a mounted guardian route boundary",
+  );
+  assert.equal(
+    typeof LearnerModeBoundary,
+    "function",
+    "Expected a mounted learner route boundary",
+  );
+  assert.equal(
+    typeof GuardianDashboard,
+    "function",
+    "Expected a mounted guardian dashboard",
+  );
+  const Provider = createGuardianAccessProvider({ api, now, schedule });
+
+  return createElement(
+    Provider,
+    { sessionIdentity: "user-1" },
+    createElement(
+      MemoryRouter,
+      { initialEntries: [initialEntry] },
+      createElement(
+        Routes,
+        null,
+        createElement(Route, {
+          element: createElement(
+            "main",
+            null,
+            createElement("h1", null, "Learner home"),
+          ),
+          path: "/",
+        }),
+        createElement(
+          Route,
+          {
+            element: createElement(GuardianModeBoundary, {
+              onBeforeNavigate,
+            }),
+          },
+          createElement(Route, {
+            element: createElement(
+              "main",
+              null,
+              createElement("h1", null, "Learner profile"),
+              createElement("p", null, "Save changes"),
+              createElement("p", null, "Redo setup questions"),
+            ),
+            path: "/profile",
+          }),
+          createElement(Route, {
+            element: createElement(
+              Fragment,
+              null,
+              createElement(RouteFocusManager),
+              createElement(GuardianDashboard, {
+                learnerName,
+                onBeforeNavigate,
+              }),
+            ),
+            path: "/guardian",
+          }),
+        ),
+        createElement(
+          Route,
+          {
+            element: createElement(LearnerModeBoundary, {
+              onBeforeNavigate,
+            }),
+          },
+          createElement(Route, {
+            element: createElement(
+              "main",
+              null,
+              createElement("h1", null, "Pick a lesson"),
+            ),
+            path: "/lessons",
+          }),
+        ),
+      ),
+      createElement(RouterHistoryControls),
+    ),
+  );
+}
+
+function authenticatedApplicationInMemory({ api, initialEntry }) {
+  const Provider = createGuardianAccessProvider({
+    api,
+    schedule: () => () => {},
+  });
+
+  return createElement(
+    AccountActionProvider,
+    {
+      profileAction: registeredLearnerExperience,
+      setProfileAction() {},
+    },
+    createElement(
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: [initialEntry] },
+        createElement(AuthenticatedApplication, {
+          onExitLessonRoute() {},
+        }),
+        createElement(RouterHistoryControls),
+      ),
+    ),
+  );
+}
+
+const registeredLearnerExperience = {
+  error: "",
+  learnerName: "Mia",
+  onOpenProfile() {},
+};
+
+function RegisteredLearnerNameHarness() {
+  const [experience, setExperience] = useState(null);
+
+  function RegisterLearner() {
+    useProfileAccountAction(registeredLearnerExperience);
+    return null;
+  }
+
+  function ReadLearner() {
+    const accountExperience = useAccountExperience();
+    return createElement(
+      "output",
+      { "aria-label": "Registered learner name" },
+      accountExperience?.learnerName ?? "Learner",
+    );
+  }
+
+  return createElement(
+    AccountActionProvider,
+    { profileAction: experience, setProfileAction: setExperience },
+    createElement(RegisterLearner),
+    createElement(ReadLearner),
   );
 }
 
@@ -590,13 +817,26 @@ function noText(value) {
 }
 
 function createSessionClient(initialState) {
-  let state = initialState;
+  function withTestSession(nextState) {
+    if (!nextState.data || nextState.data.session) return nextState;
+    const userKey =
+      nextState.data.user.id ?? nextState.data.user.email.toLowerCase();
+    return {
+      ...nextState,
+      data: {
+        session: { id: `test-session:${userKey}` },
+        ...nextState.data,
+      },
+    };
+  }
+
+  let state = withTestSession(initialState);
   const listeners = new Set();
   const retry = deferred();
   const signInCalls = [];
 
   function publish(nextState) {
-    state = nextState;
+    state = withTestSession(nextState);
     for (const listener of listeners) listener();
   }
 
@@ -653,6 +893,290 @@ function createSessionClient(initialState) {
 }
 
 describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
+  it("lets unknown guardian-mode URLs reach the wildcard redirect", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "learner" };
+      },
+    };
+
+    for (const initialEntry of [
+      "/guardianish",
+      "/guardian/lessons/extra",
+      "/unknown",
+    ]) {
+      await mountStrict(
+        authenticatedApplicationInMemory({ api, initialEntry }),
+      );
+      await waitFor(() => assert.equal(currentRoute().path, "/"));
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
+  });
+
+  it("exposes the registered learner name to guardian routes", async () => {
+    assert.equal(
+      typeof useAccountExperience,
+      "function",
+      "Expected guardian routes to consume the registered account experience",
+    );
+    await mountStrict(createElement(RegisteredLearnerNameHarness));
+    await waitFor(() =>
+      assert.equal(output("Registered learner name").textContent, "Mia"),
+    );
+  });
+
+  it("locked guardian routes render only the unlock screen", async () => {
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: "/profile",
+      }),
+    );
+
+    await waitFor(() => text(/Unlock guardian mode/));
+    noText(/Save changes|Redo setup questions/);
+    assert.equal(currentRoute().path, "/profile");
+  });
+
+  it("guardian mode does not render learner activities", async () => {
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: "/lessons",
+      }),
+    );
+
+    await waitFor(() => text(/Switch to learner mode/));
+    noText(/Pick a lesson/);
+  });
+
+  it("shows a neutral access check without flashing protected children", async () => {
+    const access = deferred();
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          loadGuardianAccess() {
+            return access.promise;
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "learner" };
+          },
+        },
+        initialEntry: "/profile",
+      }),
+    );
+
+    text(/Checking guardian access…/);
+    noText(/Save changes|Redo setup questions|Unlock guardian mode/);
+  });
+
+  it("resumes a locked guardian deep link at the same URL and cancels home", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess(password) {
+        assert.equal(password, "correct-password");
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+    };
+    await mountStrict(
+      modeRoutesInMemory({ api, initialEntry: "/profile" }),
+    );
+    await waitFor(() => text(/Unlock guardian mode/));
+    await input(document.querySelector('input[name="password"]'), "correct-password");
+    await click(button("Unlock guardian mode"));
+    await waitFor(() => text(/Save changes/));
+    assert.equal(currentRoute().path, "/profile");
+
+    await cleanupMountedRoots();
+    document.body.replaceChildren();
+    await mountStrict(
+      modeRoutesInMemory({ api, initialEntry: "/profile" }),
+    );
+    await waitFor(() => text(/Unlock guardian mode/));
+    await click(button("Cancel"));
+    await waitFor(() => assert.equal(currentRoute().path, "/"));
+  });
+
+  it("replaces expired guardian content with the same-URL unlock screen", async () => {
+    let expire = () => assert.fail("Expected guardian expiry to be scheduled.");
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2026-08-25T08:15:00.000Z",
+              mode: "guardian",
+            };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "learner" };
+          },
+        },
+        initialEntry: "/profile",
+        now: () => Date.parse("2026-08-25T08:00:00.000Z"),
+        schedule(callback) {
+          expire = callback;
+          return () => {};
+        },
+      }),
+    );
+    await waitFor(() => text(/Save changes/));
+    await act(async () => expire());
+    await waitFor(() => text(/Unlock guardian mode/));
+    noText(/Save changes|Redo setup questions/);
+    assert.equal(currentRoute().path, "/profile");
+  });
+
+  it("focuses the guardian dashboard heading after access resolves", async () => {
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "learner" };
+          },
+        },
+        initialEntry: "/guardian",
+      }),
+    );
+
+    await waitFor(() => text(/Guardian dashboard/));
+    await waitFor(() =>
+      assert.equal(document.activeElement, document.querySelector("main h1")),
+    );
+  });
+
+  it("awaits lock and exits lesson work before mode navigation", async () => {
+    const lock = deferred();
+    const exitRoutes = [];
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+          lockGuardianAccess() {
+            return lock.promise;
+          },
+          async unlockGuardianAccess() {
+            return { mode: "learner" };
+          },
+        },
+        initialEntry: "/lessons",
+        onBeforeNavigate() {
+          exitRoutes.push(currentRoute().path);
+        },
+      }),
+    );
+    await waitFor(() => text(/Switch to learner mode/));
+    await click(button("Switch to learner mode"));
+    assert.equal(currentRoute().path, "/lessons");
+    assert.deepEqual(exitRoutes, []);
+
+    lock.resolve({ mode: "learner" });
+    await waitFor(() => assert.equal(currentRoute().path, "/"));
+    assert.deepEqual(exitRoutes, ["/lessons"]);
+  });
+
+  it("dashboard awaits lock and exits route work before switching profiles", async () => {
+    const lock = deferred();
+    const exitRoutes = [];
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+          lockGuardianAccess() {
+            return lock.promise;
+          },
+          async unlockGuardianAccess() {
+            return { mode: "learner" };
+          },
+        },
+        initialEntry: "/guardian",
+        onBeforeNavigate() {
+          exitRoutes.push(currentRoute().path);
+        },
+      }),
+    );
+    await waitFor(() => text(/Guardian dashboard/));
+    await click(button("Switch to learner"));
+    assert.equal(currentRoute().path, "/guardian");
+    assert.deepEqual(exitRoutes, []);
+
+    lock.resolve({ mode: "learner" });
+    await waitFor(() => assert.equal(currentRoute().path, "/"));
+    assert.deepEqual(exitRoutes, ["/guardian"]);
+  });
+
   it("keeps loading visible until the StrictMode onboarding request resolves", async () => {
     const response = deferred();
     let requests = 0;
@@ -684,6 +1208,48 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     response.resolve(json(fullLearnerProfileState()));
     await waitFor(() => text(/Answer 1 question/));
     noText(/Loading your questions…/);
+  });
+
+  it("provides the already-loaded learner profile to protected descendants without another request", async () => {
+    let profileRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      profileRequests += 1;
+      return json({
+        ...completedLearnerProfileState(),
+        profile: {
+          ...completedLearnerProfileState().profile,
+          storyLevel: "tiny-stories",
+        },
+      });
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(LoadedProfileHarness),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.equal(output("Loaded profile story level").textContent, "tiny-stories"),
+    );
+    assert.equal(profileRequests, 2, "StrictMode performs only the gate load cycle");
   });
 
   it("opens the learner's turn only after Peppa finishes her opening", async () => {
@@ -3738,7 +4304,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       error: new Error("session unavailable"),
       isPending: false,
     });
-    const TestAuthGate = createAuthGate({ client });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
+    });
 
     await mountStrict(
       createElement(
@@ -3762,10 +4331,151 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
     await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
+  });
+
+  it("remounts guardian state before rendering a changed account identity", async () => {
+    const boundaryRenders = [];
+    const Provider = guardianAccessBoundary();
+    function GuardianBoundary({ children, sessionIdentity }) {
+      const [owner] = useState(sessionIdentity);
+      boundaryRenders.push({ owner, sessionIdentity });
+      return createElement(
+        Provider,
+        { sessionIdentity },
+        createElement(
+          "output",
+          {
+            "aria-label": "Guardian boundary owner",
+            "data-owner": owner ?? "signed-out",
+          },
+          children,
+        ),
+      );
+    }
+    const client = createSessionClient({
+      data: { user: { email: "mia@example.com", id: "user-1", name: "Mia" } },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: GuardianBoundary,
+    });
+
+    await mountStrict(createElement(TestAuthGate, null, "AUTHENTICATED APP"));
+    assert.equal(
+      document.querySelector('[aria-label="Guardian boundary owner"]').dataset.owner,
+      "id:user-1|session:test-session:user-1",
+    );
+
+    await act(async () => {
+      client.publish({
+        data: { user: { email: "maya@example.com", id: "user-2", name: "Maya" } },
+        error: null,
+        isPending: false,
+      });
+    });
+    assert.equal(
+      document.querySelector('[aria-label="Guardian boundary owner"]').dataset.owner,
+      "id:user-2|session:test-session:user-2",
+    );
+    assert.equal(boundaryRenders.at(-1).owner, boundaryRenders.at(-1).sessionIdentity);
+  });
+
+  it("fails closed when the same user receives a different Better Auth session", async () => {
+    const secondLoad = deferred();
+    let loadCalls = 0;
+    let replacementSession = false;
+    const Provider = createGuardianAccessProvider({
+      api: {
+        async loadGuardianAccess() {
+          loadCalls += 1;
+          if (!replacementSession) {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          }
+          return secondLoad.promise;
+        },
+        async lockGuardianAccess() {
+          return { mode: "learner" };
+        },
+        async unlockGuardianAccess() {
+          return { mode: "learner" };
+        },
+      },
+      schedule: () => () => {},
+    });
+    function AccessProbe() {
+      const access = useGuardianAccess();
+      return createElement(
+        "output",
+        { "aria-label": "Guardian access mode" },
+        access.mode,
+      );
+    }
+    function GuardianBoundary({ children, sessionIdentity }) {
+      const [owner] = useState(sessionIdentity);
+      return createElement(
+        Provider,
+        { sessionIdentity },
+        createElement(
+          "section",
+          { "data-owner": owner },
+          createElement(AccessProbe),
+          children,
+        ),
+      );
+    }
+    const user = { email: "mia@example.com", id: "user-1", name: "Mia" };
+    const client = createSessionClient({
+      data: { session: { id: "session-a" }, user },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: GuardianBoundary,
+    });
+
+    await mountStrict(createElement(TestAuthGate, null, "AUTHENTICATED APP"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('[aria-label="Guardian access mode"]').textContent,
+        "guardian",
+      ),
+    );
+    const initialLoadCalls = loadCalls;
+
+    await act(async () => {
+      replacementSession = true;
+      client.publish({
+        data: { session: { id: "session-b" }, user },
+        error: null,
+        isPending: false,
+      });
+    });
+
+    const boundary = document.querySelector("section[data-owner]");
+    assert.equal(boundary.dataset.owner, "id:user-1|session:session-b");
+    assert.equal(
+      document.querySelector('[aria-label="Guardian access mode"]').textContent,
+      "loading",
+    );
+    assert.ok(loadCalls > initialLoadCalls);
+
+    secondLoad.resolve({ mode: "learner" });
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('[aria-label="Guardian access mode"]').textContent,
+        "learner",
+      ),
+    );
   });
 
   it("keeps Account available and retries sign out from one persistent alert", async () => {
@@ -3779,6 +4489,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction() {
         signOutCalls += 1;
         return signOutCalls === 1 ? failure.promise : secondFailure.promise;
@@ -3793,7 +4504,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    const account = button("Account for Mia");
+    const account = await waitFor(() =>
+      button("Profile for Mia, guardian mode"),
+    );
     const status = document.querySelector('[role="status"]');
     const alert = document.querySelector('[role="alert"]');
     assert.ok(status, "Expected the sign-out status to be pre-mounted.");
@@ -3883,6 +4596,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction() {
         signOutCalls += 1;
         if (signOutCalls === 1) return firstAttempt.promise;
@@ -3899,7 +4613,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
     assert.equal(signOutCalls, 1);
 
@@ -3916,7 +4630,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
     });
     await waitFor(() => text(/AUTHENTICATED APP/));
-    const account = button("Account for Mia");
+    const account = await waitFor(() =>
+      button("Profile for Mia, guardian mode"),
+    );
     assert.equal(account.getAttribute("aria-disabled"), null);
 
     await click(account);
@@ -3958,6 +4674,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction() {
         signOutCalls += 1;
         return signOutCalls === 1 ? firstAttempt.promise : secondAttempt.promise;
@@ -3971,9 +4688,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
-    assert.equal(button("Signing out… Account for Mia").getAttribute("aria-disabled"), "true");
+    assert.equal(
+      button("Signing out… Profile for Mia, guardian mode").getAttribute(
+        "aria-disabled",
+      ),
+      "true",
+    );
 
     await act(async () => {
       client.publish({
@@ -3984,7 +4706,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         isPending: false,
       });
     });
-    const noahAccount = await waitFor(() => button("Account for Noah"));
+    const noahAccount = await waitFor(() =>
+      button("Profile for Noah, guardian mode"),
+    );
     assert.equal(noahAccount.getAttribute("aria-disabled"), null);
     noText(/Signing out|Sign out did not finish|Sign out again/);
 
@@ -4016,6 +4740,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     const TestAuthGate = createAuthGate({
       client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
       signOutAction: async () => "Sign out did not finish.",
     });
 
@@ -4026,7 +4751,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Sign out"));
     await waitFor(() => button("Sign out again"));
 
@@ -4039,7 +4764,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         isPending: false,
       });
     });
-    const noahAccount = await waitFor(() => button("Account for Noah"));
+    const noahAccount = await waitFor(() =>
+      button("Profile for Noah, guardian mode"),
+    );
     assert.equal(noahAccount.getAttribute("aria-disabled"), null);
     noText(/Sign out did not finish|Sign out again/);
   });
@@ -4195,7 +4922,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       error: null,
       isPending: false,
     });
-    const TestAuthGate = createAuthGate({ client });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: guardianAccessBoundary(),
+    });
     const profileQuestion = question();
     const profileState = {
       profile: {
@@ -4237,7 +4967,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/PROFILE LESSONS/));
-    await click(button("Account for Mia"));
+    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Learner profile"));
     await waitFor(() => text(/Learner profile/));
     await input(document.querySelector("#profile-name"), "Maya");

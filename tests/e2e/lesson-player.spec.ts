@@ -808,8 +808,7 @@ for (const viewport of viewports) {
     const artwork = page.getByRole("region", { name: "Lesson artwork" });
     const back = page.getByRole("button", { name: "Back to lesson list" });
     const account = page.getByRole("button", {
-      exact: true,
-      name: "Account for Mia",
+      name: "Profile for Mia, learner mode",
     });
 
     await expect(hud).toContainText("The Ball Up High");
@@ -897,7 +896,7 @@ for (const viewport of viewports) {
   });
 }
 
-test("Account stays clear of the lesson HUD across the short-header seam", async ({
+test("learner profile stays clear of the lesson HUD across the short-header seam", async ({
   page,
 }) => {
   await installFallbackAccountIdentity(page);
@@ -916,8 +915,7 @@ test("Account stays clear of the lesson HUD across the short-header seam", async
     await page.getByRole("button", { name: "Start lesson" }).click();
 
     const account = page.getByRole("button", {
-      exact: true,
-      name: `Account for ${longAccountEmail}`,
+      name: "Profile for Mia, learner mode",
     });
     const hud = page.getByRole("region", { name: "Lesson progress" });
     const accountBox = await expectInsideViewport(account, viewport);
@@ -926,7 +924,8 @@ test("Account stays clear of the lesson HUD across the short-header seam", async
     if (viewport.width < 1360) {
       expect(accountBox.width).toBe(accountBox.height);
     } else {
-      await expect(account).toContainText("Account");
+      await expect(account).toContainText("Mia");
+      await expect(account).toContainText("Learner");
       await expect(account).not.toContainText(longAccountEmail);
     }
 

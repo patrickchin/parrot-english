@@ -17,6 +17,16 @@ const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
 const E2E_PROFILE_OPERATION_SCENARIO = "held";
+const E2E_GUARDIAN_PASSWORD = "e2e-guardian-password";
+const E2E_GUARDIAN_ACCESS_TTL_MS = 15 * 60 * 1000;
+const E2E_EXPIRED_ACCESS_DELAY_MS = 2_000;
+const E2E_GUARDIAN_SCENARIOS = new Set([
+  "learner",
+  "guardian",
+  "unlock-error",
+  "lock-error",
+  "expired",
+]);
 const E2E_PROFILE_VISUAL_PHASES = new Set([
   "listening",
   "opening",
@@ -87,6 +97,7 @@ const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
     currentQuestionKey: null,
     name: "Mia",
     profileStatus: "completed",
+    storyLevel: "first-words",
   },
   progress: { answered: 1, current: 1, total: 1 },
   question: null,
@@ -195,6 +206,7 @@ const E2E_VIEWPORT_EDITOR_PROFILE = {
   completedAt: "2026-07-10T08:00:00.000Z",
   currentQuestionKey: null,
   profileStatus: "completed",
+  storyLevel: "first-words",
 };
 
 const E2E_VIEWPORT_EDITOR_GATE = {
@@ -337,13 +349,171 @@ const pendingProfileOperations: Record<
 };
 const pendingProfileRecorders: PendingProfileRecorder[] = [];
 
-function e2eJson(payload: unknown) {
+function e2eJson(payload: unknown, status = 200) {
   return Response.json(payload, {
+    status,
     headers: {
       "Cache-Control": "no-store",
       "X-Parrot-Mock-Api": "browser",
     },
   });
+}
+
+type MockGuardianAccess = {
+  mode: "learner" | "guardian";
+  expiresAt?: string;
+};
+
+type MockGuardianScenario =
+  | "learner"
+  | "guardian"
+  | "unlock-error"
+  | "lock-error"
+  | "expired";
+
+function getE2eGuardianScenario(): MockGuardianScenario {
+  const scenario = new URL(window.location.href).searchParams.get(
+    "parrotE2eGuardian",
+  );
+  return scenario && E2E_GUARDIAN_SCENARIOS.has(scenario)
+    ? (scenario as MockGuardianScenario)
+    : "learner";
+}
+
+const guardianScenario = getE2eGuardianScenario();
+const guardianStorageKey = `parrot-e2e-guardian-access:${guardianScenario}`;
+
+function initialGuardianAccess(): MockGuardianAccess {
+  if (guardianScenario === "guardian" || guardianScenario === "lock-error") {
+    return {
+      expiresAt: new Date(Date.now() + E2E_GUARDIAN_ACCESS_TTL_MS).toISOString(),
+      mode: "guardian",
+    };
+  }
+  if (guardianScenario === "expired") {
+    return {
+      expiresAt: new Date(Date.now() + E2E_EXPIRED_ACCESS_DELAY_MS).toISOString(),
+      mode: "guardian",
+    };
+  }
+  return { mode: "learner" };
+}
+
+function readGuardianAccess(): MockGuardianAccess {
+  const saved = sessionStorage.getItem(guardianStorageKey);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved) as MockGuardianAccess;
+      if (
+        parsed.mode === "learner" ||
+        (parsed.mode === "guardian" &&
+          typeof parsed.expiresAt === "string" &&
+          Number.isFinite(Date.parse(parsed.expiresAt)))
+      ) {
+        return parsed;
+      }
+    } catch {
+      // Fall through to the deterministic scenario state.
+    }
+  }
+  const access = initialGuardianAccess();
+  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+  return access;
+}
+
+let guardianAccess = readGuardianAccess();
+
+function setGuardianAccess(access: MockGuardianAccess) {
+  guardianAccess = access;
+  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+}
+
+function currentGuardianAccess() {
+  if (
+    guardianAccess.mode === "guardian" &&
+    Date.parse(guardianAccess.expiresAt ?? "") <= Date.now()
+  ) {
+    setGuardianAccess({ mode: "learner" });
+  }
+  return guardianAccess;
+}
+
+function requiresGuardianAccess(url: URL, method: string) {
+  if (url.pathname === "/api/profile") {
+    return method === "GET" || method === "PUT";
+  }
+  if (url.pathname === "/api/profile/preferences") return method === "PUT";
+  if (url.pathname === "/api/lessons/my") return method === "POST";
+  if (url.pathname === "/api/lessons/my/generate") return method === "POST";
+  if (/^\/api\/lessons\/my\/[^/]+$/.test(url.pathname)) {
+    return method === "PUT";
+  }
+  return (
+    /^\/api\/stories\/[^/]+\/personalized-art$/.test(url.pathname) &&
+    (method === "POST" || method === "DELETE")
+  );
+}
+
+async function guardianResponse(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  url: URL,
+  method: string,
+) {
+  if (url.origin !== window.location.origin) return null;
+  if (url.pathname === "/api/guardian-access") {
+    if (method === "GET") return e2eJson(currentGuardianAccess());
+    if (method === "POST") {
+      const request = input instanceof Request ? input : null;
+      const body = init?.body ?? (request ? await request.clone().text() : "");
+      let password = "";
+      try {
+        password = (JSON.parse(String(body)) as { password?: unknown }).password as string;
+      } catch {
+        return e2eJson({ error: "invalid_json" }, 400);
+      }
+      if (password !== E2E_GUARDIAN_PASSWORD) {
+        return e2eJson(
+          {
+            error: "invalid_password",
+            message: "The password did not match this account.",
+          },
+          401,
+        );
+      }
+      if (guardianScenario === "unlock-error") {
+        return e2eJson(
+          {
+            error: "request_failed",
+            message: "Guardian access could not be checked. Please try again.",
+          },
+          503,
+        );
+      }
+      setGuardianAccess({
+        expiresAt: new Date(
+          Date.now() + E2E_GUARDIAN_ACCESS_TTL_MS,
+        ).toISOString(),
+        mode: "guardian",
+      });
+      return e2eJson(guardianAccess);
+    }
+    if (method === "DELETE") {
+      if (guardianScenario === "lock-error") {
+        return e2eJson({ error: "lock_failed" }, 503);
+      }
+      setGuardianAccess({ mode: "learner" });
+      return e2eJson(guardianAccess);
+    }
+    return e2eJson({ error: "method_not_allowed" }, 405);
+  }
+  if (
+    requiresGuardianAccess(url, method) &&
+    currentGuardianAccess().mode === "learner"
+  ) {
+    return e2eJson({ error: "guardian_required" }, 403);
+  }
+  return null;
 }
 
 function createProfileOperationAbortError() {
@@ -514,6 +684,8 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+    const guardedResponse = await guardianResponse(input, init, url, method);
+    if (guardedResponse) return guardedResponse;
     const profileOperation = profileOperationForRequest(url, method);
 
     const visualPhase = getE2eProfileVisualPhase();

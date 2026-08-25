@@ -22,9 +22,21 @@ export type StoryRouteDecision =
 
 const GATE_ROUTE_PATH = /^\/(login|profile\/setup|profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
+const GUARDIAN_ROUTE_PATHS = [
+  /^\/guardian\/*$/i,
+  /^\/guardian\/lessons\/*$/i,
+  /^\/guardian\/stories\/*$/i,
+];
+const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
+  ...GUARDIAN_ROUTE_PATHS,
+  /^\/profile\/*$/i,
+  /^\/lessons\/my\/create\/*$/i,
+  /^\/lessons\/my\/[^/]+\/edit\/*$/i,
+];
 const SAFE_RETURN_PATHS = [
   /^\/$/,
   TALK_TO_PEPPA_ROUTE_PATH,
+  ...GUARDIAN_ROUTE_PATHS,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
@@ -43,6 +55,18 @@ const STORY_LEVEL_IDS = new Set<StoryLevelId>(
 );
 
 export const DEFAULT_STORY_LEVEL_ID: StoryLevelId = "first-words";
+
+export function getGuardianPath() {
+  return "/guardian";
+}
+
+export function getGuardianLessonsPath() {
+  return "/guardian/lessons";
+}
+
+export function getGuardianStoriesPath() {
+  return "/guardian/stories";
+}
 
 function parseSceneNumber(value: string | undefined) {
   if (!value || !/^[1-9]\d*$/.test(value)) return null;
@@ -120,6 +144,13 @@ export function getRedoLearnerProfilePath(returnTo: string) {
 
 export function isRedoLearnerProfileRequest(search: string) {
   return new URLSearchParams(search).get("redo") === "1";
+}
+
+export function isGuardianRoute(pathname: string, search = "") {
+  if (/^\/profile\/setup\/*$/i.test(pathname)) {
+    return isRedoLearnerProfileRequest(search);
+  }
+  return GUARDIAN_MANAGEMENT_ROUTE_PATHS.some((path) => path.test(pathname));
 }
 
 export function getGateRouteKind(pathname: string): GateRouteKind | null {

@@ -2,36 +2,51 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from "react";
 
-export type ProfileAccountAction = {
+export type AccountExperience = {
   error: string;
-  onOpen: () => void;
-} | null;
+  learnerName: string | null;
+  onOpenProfile: (() => void) | null;
+};
 
-type ProfileActionSetter = Dispatch<SetStateAction<ProfileAccountAction>>;
+type AccountExperienceSetter = Dispatch<
+  SetStateAction<AccountExperience | null>
+>;
 
-const AccountActionContext = createContext<ProfileActionSetter | null>(null);
+type AccountActionContextValue = {
+  action: AccountExperience | null;
+  setAction: AccountExperienceSetter;
+};
+
+const AccountActionContext = createContext<AccountActionContextValue | null>(null);
 
 export function AccountActionProvider({
   children,
+  profileAction = null,
   setProfileAction,
 }: {
   children: ReactNode;
-  setProfileAction: ProfileActionSetter;
+  profileAction?: AccountExperience | null;
+  setProfileAction: AccountExperienceSetter;
 }) {
+  const value = useMemo(
+    () => ({ action: profileAction, setAction: setProfileAction }),
+    [profileAction, setProfileAction],
+  );
   return (
-    <AccountActionContext.Provider value={setProfileAction}>
+    <AccountActionContext.Provider value={value}>
       {children}
     </AccountActionContext.Provider>
   );
 }
 
-export function useProfileAccountAction(action: ProfileAccountAction) {
-  const setProfileAction = useContext(AccountActionContext);
+export function useProfileAccountAction(action: AccountExperience | null) {
+  const setProfileAction = useContext(AccountActionContext)?.setAction;
 
   useEffect(() => {
     if (!setProfileAction) return;
@@ -39,4 +54,8 @@ export function useProfileAccountAction(action: ProfileAccountAction) {
     return () =>
       setProfileAction((current) => (current === action ? null : current));
   }, [action, setProfileAction]);
+}
+
+export function useAccountExperience() {
+  return useContext(AccountActionContext)?.action ?? null;
 }

@@ -15,6 +15,7 @@ const PROTECTED_REQUESTS = [
   ["POST", "/api/learner-profile/complete"],
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
+  ["PUT", "/api/profile/preferences"],
 ];
 
 function createEnvironment() {
@@ -199,6 +200,57 @@ async function callLearnerProfile(
 }
 
 describe("onboarding persistence and API", () => {
+  it("returns and updates the learner's selected story level", async () => {
+    const state = createSeededDatabase();
+    try {
+      const loaded = await callLearnerProfile(state.database, "/api/profile");
+      assert.equal(loaded.status, 200);
+      assert.equal((await loaded.json()).profile.storyLevel, "first-words");
+
+      const saved = await callLearnerProfile(
+        state.database,
+        "/api/profile/preferences",
+        "PUT",
+        { storyLevel: "tiny-stories" },
+      );
+      assert.equal(saved.status, 200);
+      assert.equal((await saved.json()).profile.storyLevel, "tiny-stories");
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT story_level FROM learner_profile WHERE auth_user_id = ?")
+          .get("user-1").story_level,
+        "tiny-stories",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects unknown story levels and extra preference keys", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callLearnerProfile(state.database, "/api/profile");
+      for (const body of [
+        { storyLevel: "expert" },
+        { storyLevel: "first-words", extra: true },
+      ]) {
+        const response = await callLearnerProfile(
+          state.database,
+          "/api/profile/preferences",
+          "PUT",
+          body,
+        );
+        assert.equal(response.status, 400);
+        assert.deepEqual(await response.json(), {
+          error: "invalid_story_level",
+          fieldError: "Choose an available story level.",
+        });
+      }
+    } finally {
+      state.close();
+    }
+  });
+
   it("creates v2 profiles without normalized questionnaire rows", async () => {
     const state = createTestD1Database();
     try {

@@ -16,10 +16,16 @@ const vite = await createServer({
 });
 
 const { HomeMenu } = await vite.ssrLoadModule("/src/app/HomeMenu.tsx");
+const { GuardianDashboardView } = await vite
+  .ssrLoadModule("/src/app/GuardianDashboard.tsx")
+  .catch(() => ({}));
 const { LessonListView } = await vite.ssrLoadModule(
   "/src/lessons/LessonList.tsx",
 );
 const { StoryList } = await vite.ssrLoadModule("/src/stories/StoryList.tsx");
+const { LearnerProfileProvider } = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerProfileContext.tsx",
+);
 const { STORIES, STORY_LEVELS } = await vite.ssrLoadModule(
   "/src/stories/story-catalog.ts",
 );
@@ -49,6 +55,43 @@ test("home gives children three clear, working learning choices", () => {
   );
 });
 
+test("guardian dashboard presents four focused grown-up destinations", () => {
+  assert.equal(
+    typeof GuardianDashboardView,
+    "function",
+    "Expected a rendered guardian dashboard view",
+  );
+  const html = renderInRouter(
+    createElement(GuardianDashboardView, {
+      error: "",
+      isSwitching: false,
+      learnerName: "Mia",
+      onSwitchToLearner() {},
+    }),
+    "/guardian",
+  );
+  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+
+  for (const heading of [
+    "Learner profile",
+    "My Lessons",
+    "Story settings",
+    "Account and privacy",
+  ]) {
+    assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
+  }
+  assert.deepEqual(hrefs, [
+    "/profile",
+    "/guardian/lessons",
+    "/guardian/stories",
+  ]);
+  assert.match(html, /Managing Mia/);
+  assert.match(html, /AI and saved data.*sign out.*delete/i);
+  assert.match(html, /Switch to learner/);
+});
+
 test("lesson catalog presents one canonical path without artwork experiments", () => {
   const html = renderInRouter(
     createElement(LessonListView, {
@@ -60,21 +103,51 @@ test("lesson catalog presents one canonical path without artwork experiments", (
   );
 
   assert.match(html, /Pick a lesson/);
-  assert.match(html, /Grown-up tools/);
-  assert.match(html, /aria-label="Create custom lesson"/);
+  assert.doesNotMatch(
+    html,
+    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson/,
+  );
   assert.doesNotMatch(html, /full-scene|same lesson, same audio|comparison/i);
 });
 
 test("story shelf presents a curated learner library without research controls", () => {
-  const html = renderInRouter(createElement(StoryList), "/stories");
+  const html = renderInRouter(
+    createElement(
+      LearnerProfileProvider,
+      {
+        profile: {
+          age: 6,
+          answers: {
+            legacyAnswers: null,
+            questionnaireVersion: 2,
+            responses: {},
+            schemaVersion: 2,
+          },
+          completedAt: "2026-08-25T08:00:00.000Z",
+          currentQuestionKey: null,
+          description: "Likes animals",
+          name: "Mia",
+          profileStatus: "completed",
+          questionnaireVersion: 2,
+          storyLevel: "tiny-stories",
+        },
+        replaceProfile() {},
+      },
+      createElement(StoryList),
+    ),
+    "/stories",
+  );
 
   assert.equal(STORY_LEVELS.length, 4);
   assert.equal(STORIES.length, 20);
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
   assert.match(html, /Pick a story/);
   assert.match(html, /Tap a picture\. I can read it to you\./);
-  assert.match(html, /Start here/);
-  assert.match(html, /Say it again/);
+  assert.match(html, /Little stories/);
+  assert.doesNotMatch(
+    html,
+    /Start here|Say it again|Big adventures|Grown-up options|Guardian consent/,
+  );
   assert.doesNotMatch(
     html,
     /CEFR|Pre-A1|reading level|Flask|Teaching notes|Prompt test|Assumes familiar|Original baseline|Uncontrolled comparison|experiment/i,

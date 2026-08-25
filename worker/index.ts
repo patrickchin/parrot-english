@@ -1,4 +1,6 @@
+import { APIError } from "better-auth/api";
 import {
+  checkGuardianUnlockRateLimit,
   checkPersonalizedStoryArtRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
@@ -14,6 +16,11 @@ import {
   type BuildInfoEnv,
 } from "./build-info.ts";
 import { handleEvaluateSpeech } from "./groq.ts";
+import {
+  handleGuardianAccessRequest,
+  requireGuardianAccess,
+  requiresGuardianAccess,
+} from "./guardian-access.ts";
 import { handleLearnerProfileRequest } from "./learner-profile.ts";
 import {
   handleConversationRequest,
@@ -48,11 +55,13 @@ interface Env
 interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
+  checkGuardianUnlockRateLimit: typeof checkGuardianUnlockRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
   checkLessonGenerationRateLimit: typeof checkLessonGenerationRateLimit;
   checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
+  handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
@@ -63,7 +72,8 @@ function isLearnerProfilePath(pathname: string) {
   return (
     pathname === "/api/learner-profile" ||
     pathname.startsWith("/api/learner-profile/") ||
-    pathname === "/api/profile"
+    pathname === "/api/profile" ||
+    pathname === "/api/profile/preferences"
   );
 }
 
@@ -88,6 +98,8 @@ export function createWorker(
 ) {
   const rateLimit =
     dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
+  const guardianUnlockRateLimit =
+    dependencies.checkGuardianUnlockRateLimit ?? checkGuardianUnlockRateLimit;
   const learnerProfileTranscriptionRateLimit =
     dependencies.checkLearnerProfileTranscriptionRateLimit ??
     checkLearnerProfileTranscriptionRateLimit;
@@ -101,6 +113,8 @@ export function createWorker(
     checkPersonalizedStoryArtRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
+  const guardianAccessRequest =
+    dependencies.handleGuardianAccessRequest ?? handleGuardianAccessRequest;
   const learnerProfileRequest =
     dependencies.handleLearnerProfileRequest ?? handleLearnerProfileRequest;
   const conversationRequest =
@@ -136,12 +150,64 @@ export function createWorker(
         return authFactory(env).handler(request);
       }
 
+      if (url.pathname === "/api/guardian-access") {
+        const auth = authFactory(env);
+        const session = await auth.api.getSession({ headers: request.headers });
+        if (!session) {
+          return Response.json(
+            { error: "unauthorized" },
+            { status: 401, headers: { "Cache-Control": "no-store" } },
+          );
+        }
+        if (request.method === "POST") {
+          const rateLimited = await guardianUnlockRateLimit(
+            request,
+            env,
+            session.user.id,
+          );
+          if (rateLimited) return rateLimited;
+        }
+        return guardianAccessRequest({
+          database: createDatabase(env.DB),
+          identity: {
+            sessionId: session.session.id,
+            userId: session.user.id,
+          },
+          request,
+          verifyPassword: async (password) => {
+            try {
+              const verified = await auth.api.verifyPassword({
+                body: { password },
+                headers: request.headers,
+              });
+              return Boolean(verified);
+            } catch (error) {
+              if (
+                error instanceof APIError &&
+                error.body?.code === "INVALID_PASSWORD"
+              ) {
+                return false;
+              }
+              throw error;
+            }
+          },
+        });
+      }
+
       if (isLearnerProfilePath(url.pathname)) {
         const session = await authFactory(env).api.getSession({
           headers: request.headers,
         });
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
+        }
+        const database = createDatabase(env.DB);
+        if (requiresGuardianAccess(url.pathname, request.method)) {
+          const denied = await requireGuardianAccess({
+            database,
+            sessionId: session.session.id,
+          });
+          if (denied) return denied;
         }
 
         if (
@@ -169,7 +235,7 @@ export function createWorker(
         }
 
         return learnerProfileRequest({
-          database: createDatabase(env.DB),
+          database,
           env,
           identity: {
             sessionId: session.session.id,
@@ -214,6 +280,14 @@ export function createWorker(
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
+        const database = createDatabase(env.DB);
+        if (requiresGuardianAccess(url.pathname, request.method)) {
+          const denied = await requireGuardianAccess({
+            database,
+            sessionId: session.session.id,
+          });
+          if (denied) return denied;
+        }
         if (
           url.pathname === "/api/lessons/my/generate" &&
           request.method === "POST"
@@ -226,7 +300,7 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
         return myLessonRequest({
-          database: createDatabase(env.DB),
+          database,
           env,
           identity: {
             sessionId: session.session.id,
@@ -244,6 +318,14 @@ export function createWorker(
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
+        const database = createDatabase(env.DB);
+        if (requiresGuardianAccess(url.pathname, request.method)) {
+          const denied = await requireGuardianAccess({
+            database,
+            sessionId: session.session.id,
+          });
+          if (denied) return denied;
+        }
         if (request.method === "POST") {
           const rateLimited = await personalizedStoryArtRateLimit(
             request,
@@ -253,7 +335,7 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
         return personalizedStoryArtRequest({
-          database: createDatabase(env.DB),
+          database,
           env,
           identity: {
             sessionId: session.session.id,

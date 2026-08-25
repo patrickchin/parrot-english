@@ -349,7 +349,7 @@ async function leaveLearnerRoute(page: Page) {
     window.history.pushState(window.history.state, "", "/");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
-  await expect(page).toHaveURL(/\/profile\/setup\?returnTo=%2F$/);
+  await expect(page).toHaveURL("/");
 }
 
 test("microphone feedback owns one focused node through opening, listening, writing, and ready", async ({
@@ -394,7 +394,7 @@ test("microphone feedback owns one focused node through opening, listening, writ
     skipForNow: { requests: 0 },
   });
 
-  const account = page.getByRole("button", { name: /^Account for / });
+  const account = page.getByRole("button", { name: /^Profile for / });
   for (let step = 0; step < 2; step += 1) {
     if (
       await account.evaluate((element) => document.activeElement === element)
@@ -674,7 +674,7 @@ test("failed voice and save work stays retryable without stealing deliberately m
 
   await microphone.press("Enter");
   await expectSingleStatus(question, "Opening mic…");
-  const account = page.getByRole("button", { name: /^Account for / });
+  const account = page.getByRole("button", { name: /^Profile for / });
   await account.focus();
   await settlePhase(page, "opening", "reject");
   await expect(account).toBeFocused();
@@ -918,11 +918,8 @@ test("route exit aborts held work and quarantines stale settlements", async ({
   question = page.getByRole("region", {
     name: "Hi! I'm Peppa. What's your name?",
   });
-  await expect(question.getByRole("status")).toHaveText("");
-  await expect(
-    question.getByRole("textbox", { exact: true, name: "Your answer" }),
-  ).toHaveValue("");
-  await expect(question.getByRole("alert")).toHaveCount(0);
+  await expect(question).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveText("");
 
   question = await openQuestion(
     page,
@@ -952,11 +949,8 @@ test("route exit aborts held work and quarantines stale settlements", async ({
   question = page.getByRole("region", {
     name: "Hi! I'm Peppa. What's your name?",
   });
-  await expect(question.getByRole("status")).toHaveText("");
-  await expect(
-    question.getByRole("textbox", { exact: true, name: "Your answer" }),
-  ).toHaveValue("Mia");
-  await expect(question.getByRole("alert")).toHaveCount(0);
+  await expect(question).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveText("");
 });
 
 test("route exit stops active recording and aborts either skip request", async ({

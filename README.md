@@ -25,6 +25,7 @@ npm run build
 npm run build:agent
 npm run lint
 npm test
+npm run test:browser
 npm run verify:backgrounds
 npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force
 ```
@@ -62,6 +63,31 @@ npm run db:migrate:local
 
 Do not run `npm run db:generate` for routine startup when the schema has not
 changed; a clean no-drift result does not require a new migration.
+
+## Learner and Guardian Modes
+
+Every authenticated account has one learner profile and starts in learner
+mode. Learner mode contains Talk to Peppa, lesson playback, and stories at the
+stored learner level. Its profile dropdown contains the mode switch only; it
+does not expose profile editing, AI/data, sign-out, deletion, lesson authoring,
+or story-art controls.
+
+Selecting Guardian asks for the current account password. The Worker unlocks
+only that Better Auth session for a fixed 15 minutes; refreshes may resume it,
+but activity does not extend it. `/guardian` is the management dashboard,
+`/guardian/lessons` owns custom lesson management, and `/guardian/stories`
+owns the learner's story level and optional personalized art. `/profile`,
+`/lessons/my/create`, and `/lessons/my/:lessonId/edit` use the same guardian
+boundary. Switching to learner removes the unlock before returning to `/`.
+
+The same-origin `GET|POST|DELETE /api/guardian-access` endpoint reports,
+creates, or removes the current session unlock. D1 table
+`guardian_session_unlock` stores its fixed expiry, while
+`learner_profile.story_level` stores the selected shelf level. The Worker
+returns `guardian_required` for protected profile, lesson-authoring,
+profile-edit conversation, and personalized-art requests made in learner mode.
+Owner-scoped reads still let learners play saved custom lessons and view saved
+story art.
 
 ## Lesson Content
 

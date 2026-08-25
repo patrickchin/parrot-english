@@ -30,6 +30,7 @@ const E2E_PROFILE = {
   currentQuestionKey: null,
   profileStatus: "completed",
   completedAt: E2E_TIMESTAMP,
+  storyLevel: "first-words",
 };
 
 const E2E_LEARNER_PROFILE_STATE = {

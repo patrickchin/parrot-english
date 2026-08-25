@@ -15,6 +15,7 @@ const EXPECTED_MODELS = {
       "authUserId",
       "name",
       "age",
+      "storyLevel",
       "answersJson",
       "skippedQuestionKeysJson",
       "questionnaireVersion",
@@ -130,6 +131,11 @@ describe("learner-profile infrastructure", () => {
         name: "PERSONALIZED_STORY_ART_RATE_LIMITER",
         namespace_id: "104205",
         simple: { limit: 2, period: 60 },
+      },
+      {
+        name: "GUARDIAN_UNLOCK_RATE_LIMITER",
+        namespace_id: "104206",
+        simple: { limit: 5, period: 60 },
       },
     ]);
   });

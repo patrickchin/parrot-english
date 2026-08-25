@@ -1,17 +1,22 @@
+import type { StoryLevelId } from "../../lib/story-level.ts";
 import { STORY_SCRIPT_CANDIDATES } from "./story-script-candidates.ts";
 import type {
   Story,
   StoryLevel,
-  StoryLevelId,
   StoryVocabularyProfile,
   StoryVocabularyProfileId,
 } from "./story-types.ts";
+
+export {
+  STORY_LEVEL_IDS,
+  isStoryLevelId,
+  type StoryLevelId,
+} from "../../lib/story-level.ts";
 
 export type {
   Story,
   StoryArtwork,
   StoryLevel,
-  StoryLevelId,
   StoryPage,
   StoryPromptExperiment,
   StoryVocabularyProfile,

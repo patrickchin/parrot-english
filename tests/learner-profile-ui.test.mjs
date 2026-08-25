@@ -1247,7 +1247,8 @@ describe("onboarding and profile gate", () => {
     assert.match(appSource, /completedLearnerProfileFallback=/);
     assert.match(appSource, /learnerProfileFallback=/);
     assert.match(appSource, /isProfileRoute=/);
-    assert.match(gateSource, /onOpen:\s*onOpenProfileRoute/);
+    assert.match(gateSource, /learnerName:\s*fullData\.profile\.name/);
+    assert.match(gateSource, /onOpenProfile:[\s\S]*?onOpenProfileRoute/);
     assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);
   });
 });

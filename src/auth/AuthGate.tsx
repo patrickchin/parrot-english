@@ -10,6 +10,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
+import { useNavigate } from "react-router";
 import { AccountHeader } from "../app/AppHeader";
 import {
   getAuthErrorMessage,
@@ -19,9 +20,14 @@ import {
 } from "./auth-form";
 import {
   AccountActionProvider,
-  type ProfileAccountAction,
+  type AccountExperience,
 } from "./account-actions";
 import { authClient } from "./auth-client";
+import {
+  GuardianAccessProvider,
+  useGuardianAccess,
+} from "./GuardianAccess";
+import { GuardianUnlockDialog } from "./GuardianUnlock";
 import {
   ActionButton,
   Card,
@@ -169,6 +175,9 @@ export async function deleteAccountSession({
 }
 
 interface AuthSession {
+  session: {
+    id: string;
+  };
   user: {
     email: string;
     id?: string | null;
@@ -184,10 +193,12 @@ interface AuthGateViewProps {
   isRetrying: boolean;
   isSigningOut: boolean;
   isSubmitting: boolean;
+  learnerName: string | null;
   mode: AuthMode;
   onDeleteAccount: (password: string) => Promise<string | null>;
   onFieldChange: (field: keyof AuthFields, value: string) => void;
   onModeChange: (mode: AuthMode) => void;
+  onNavigate: (path: string) => void;
   onOpenProfile: (() => void) | null;
   onRetry: () => void;
   onSignOut: () => void;
@@ -199,6 +210,112 @@ interface AuthGateViewProps {
   signedOutFallback: ReactNode | null;
 }
 
+function navigateInBrowser(path: string) {
+  if (typeof window === "undefined") return;
+  window.history.pushState(null, "", path);
+  window.dispatchEvent(new window.PopStateEvent("popstate"));
+}
+
+function AccountExperienceHeader({
+  error,
+  guardianLabel,
+  isSigningOut,
+  learnerName,
+  onDeleteAccount,
+  onNavigate,
+  onOpenProfile,
+  onSignOut,
+  signOutError,
+  userEmail,
+}: {
+  error: string;
+  guardianLabel: string;
+  isSigningOut: boolean;
+  learnerName: string | null;
+  onDeleteAccount: (password: string) => Promise<string | null>;
+  onNavigate: (path: string) => void;
+  onOpenProfile: (() => void) | null;
+  onSignOut: () => void;
+  signOutError: string;
+  userEmail: string;
+}) {
+  const access = useGuardianAccess();
+  const [isModePending, setIsModePending] = useState(false);
+  const [isUnlockOpen, setIsUnlockOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
+  const unlockButtonRef = useRef<HTMLButtonElement>(null);
+  const activeMode = access.mode === "guardian" ? "guardian" : "learner";
+  const previousAccessModeRef = useRef(access.mode);
+
+  useEffect(() => {
+    const previousMode = previousAccessModeRef.current;
+    previousAccessModeRef.current = access.mode;
+    if (previousMode === "learner" && access.mode === "guardian") {
+      setAnnouncement("Guardian mode unlocked for 15 minutes");
+    } else if (previousMode === "guardian" && access.mode === "learner") {
+      setAnnouncement("Learner mode");
+    }
+  }, [access.mode]);
+
+  async function selectLearner() {
+    if (access.mode !== "guardian" || isModePending) return;
+    setIsModePending(true);
+    try {
+      const lockError = await access.lock();
+      if (!lockError) {
+        onNavigate("/");
+      }
+    } finally {
+      setIsModePending(false);
+    }
+  }
+
+  return (
+    <>
+      <AccountHeader
+        activeMode={activeMode}
+        error={access.error || error}
+        guardianLabel={guardianLabel}
+        isDialogOpen={isUnlockOpen}
+        isModePending={isModePending}
+        isSigningOut={activeMode === "guardian" && isSigningOut}
+        learnerLabel={learnerName?.trim() || "Learner"}
+        onDeleteAccount={onDeleteAccount}
+        onOpenProfile={onOpenProfile ?? (() => onNavigate("/profile"))}
+        onRetryError={access.error ? access.retry : undefined}
+        onSelectGuardian={(button) => {
+          if (access.mode !== "guardian") {
+            unlockButtonRef.current = button;
+            setIsUnlockOpen(true);
+          }
+        }}
+        onSelectLearner={() => void selectLearner()}
+        onSignOut={onSignOut}
+        signOutError={activeMode === "guardian" ? signOutError : ""}
+        userEmail={userEmail}
+      />
+      <span
+        aria-atomic="true"
+        aria-live="polite"
+        className="sr-only"
+        role="status"
+      >
+        {announcement}
+      </span>
+      {isUnlockOpen ? (
+        <GuardianUnlockDialog
+          onClose={() => setIsUnlockOpen(false)}
+          onUnlocked={() => {
+            setIsUnlockOpen(false);
+            onNavigate("/guardian");
+          }}
+          returnFocusRef={unlockButtonRef}
+        />
+      ) : null}
+    </>
+  );
+}
+
 export function AuthGateView({
   children,
   fields,
@@ -207,10 +324,12 @@ export function AuthGateView({
   isRetrying,
   isSigningOut,
   isSubmitting,
+  learnerName,
   mode,
   onDeleteAccount,
   onFieldChange,
   onModeChange,
+  onNavigate,
   onOpenProfile,
   onRetry,
   onSignOut,
@@ -429,15 +548,17 @@ export function AuthGateView({
 
   return (
     <>
-      <AccountHeader
+      <AccountExperienceHeader
         error={accountError}
+        guardianLabel={userLabel}
         isSigningOut={isSigningOut}
+        learnerName={learnerName}
         onDeleteAccount={onDeleteAccount}
+        onNavigate={onNavigate}
         onOpenProfile={onOpenProfile}
         onSignOut={onSignOut}
         signOutError={signOutError}
         userEmail={session.user.email}
-        userLabel={userLabel}
       />
       {children}
     </>
@@ -446,6 +567,7 @@ export function AuthGateView({
 
 interface AuthGateProps {
   children: ReactNode;
+  navigate?: (path: string) => void;
   signedOutFallback?: ReactNode;
 }
 
@@ -465,10 +587,13 @@ const EMPTY_SIGN_OUT_STATE: SignOutState = {
 
 function getSessionIdentity(session: AuthSession | null) {
   if (!session) return null;
+  const sessionId = session.session?.id?.trim();
+  if (!sessionId) return null;
   const id = session.user.id?.trim();
-  return id
+  const userIdentity = id
     ? `id:${id}`
     : `email:${session.user.email.trim().toLowerCase()}`;
+  return `${userIdentity}|session:${sessionId}`;
 }
 
 interface AuthGateClient extends AuthActionClient {
@@ -487,6 +612,10 @@ export type StateHook = <State>(
 interface CreateAuthGateOptions {
   client: AuthGateClient;
   deleteAccountAction?: typeof deleteAccountSession;
+  GuardianAccessBoundary?: ComponentType<{
+    children: ReactNode;
+    sessionIdentity: string | null;
+  }>;
   signOutAction?: typeof signOutSession;
   stateHook?: StateHook;
   submitAction?: typeof submitAuthForm;
@@ -496,6 +625,7 @@ interface CreateAuthGateOptions {
 export function createAuthGate({
   client,
   deleteAccountAction = deleteAccountSession,
+  GuardianAccessBoundary = GuardianAccessProvider,
   signOutAction = signOutSession,
   stateHook = useState,
   submitAction = submitAuthForm,
@@ -503,6 +633,7 @@ export function createAuthGate({
 }: CreateAuthGateOptions) {
   return function AuthGateContainer({
     children,
+    navigate = navigateInBrowser,
     signedOutFallback,
   }: AuthGateProps) {
     const { data: session, isPending, error, refetch } = client.useSession();
@@ -514,7 +645,7 @@ export function createAuthGate({
       stateHook<SignOutState>(EMPTY_SIGN_OUT_STATE);
     const [isRetrying, setIsRetrying] = stateHook(false);
     const [profileAction, setProfileAction] =
-      stateHook<ProfileAccountAction>(null);
+      stateHook<AccountExperience | null>(null);
     const signOutAttemptRef = useRef<{ owner: string } | null>(null);
     const sessionIdentity = getSessionIdentity(session);
     const ownsSignOutState =
@@ -600,33 +731,48 @@ export function createAuthGate({
     }
 
     return (
-      <AccountActionProvider setProfileAction={setProfileAction}>
-        <View
-          fields={fields}
-          formError={formError}
-          isPending={isPending}
-          isRetrying={isRetrying}
-          isSigningOut={ownsSignOutState && signOutState.isPending}
-          isSubmitting={isSubmitting}
-          mode={mode}
-          onDeleteAccount={handleDeleteAccount}
-          onFieldChange={updateField}
-          onModeChange={selectMode}
-          onOpenProfile={profileAction?.onOpen ?? null}
-          onRetry={() => void handleRetry()}
-          onSignOut={handleSignOut}
-          onSubmit={handleSubmit}
-          profileError={profileAction?.error ?? ""}
-          session={session}
-          sessionError={error}
-          signOutError={ownsSignOutState ? signOutState.error : ""}
-          signedOutFallback={signedOutFallback ?? null}
+      <AccountActionProvider
+        profileAction={profileAction}
+        setProfileAction={setProfileAction}
+      >
+        <GuardianAccessBoundary
+          key={sessionIdentity ?? "signed-out"}
+          sessionIdentity={sessionIdentity}
         >
-          {children}
-        </View>
+          <View
+            fields={fields}
+            formError={formError}
+            isPending={isPending}
+            isRetrying={isRetrying}
+            isSigningOut={ownsSignOutState && signOutState.isPending}
+            isSubmitting={isSubmitting}
+            learnerName={profileAction?.learnerName ?? null}
+            mode={mode}
+            onDeleteAccount={handleDeleteAccount}
+            onFieldChange={updateField}
+            onModeChange={selectMode}
+            onNavigate={navigate}
+            onOpenProfile={profileAction?.onOpenProfile ?? null}
+            onRetry={() => void handleRetry()}
+            onSignOut={handleSignOut}
+            onSubmit={handleSubmit}
+            profileError={profileAction?.error ?? ""}
+            session={session}
+            sessionError={error}
+            signOutError={ownsSignOutState ? signOutState.error : ""}
+            signedOutFallback={signedOutFallback ?? null}
+          >
+            {children}
+          </View>
+        </GuardianAccessBoundary>
       </AccountActionProvider>
     );
   };
 }
 
-export const AuthGate = createAuthGate({ client: authClient });
+const ProductionAuthGate = createAuthGate({ client: authClient });
+
+export function AuthGate(props: Omit<AuthGateProps, "navigate">) {
+  const navigate = useNavigate();
+  return <ProductionAuthGate {...props} navigate={navigate} />;
+}

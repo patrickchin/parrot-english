@@ -118,6 +118,26 @@ describe("learnerProfile browser API", () => {
     });
   });
 
+  it("saves exactly one story-level preference", async () => {
+    assert.equal(typeof learnerProfileApi.saveStoryLevel, "function");
+    const payload = { profile: { storyLevel: "tiny-stories" }, questions: [] };
+    const request = jsonFetch(payload);
+
+    assert.deepEqual(
+      await learnerProfileApi.saveStoryLevel("tiny-stories", {
+        fetch: request.fetch,
+      }),
+      payload,
+    );
+    assert.equal(request.calls[0][0], "/api/profile/preferences");
+    assert.deepEqual(request.calls[0][1], {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: '{"storyLevel":"tiny-stories"}',
+      signal: undefined,
+    });
+  });
+
   it("posts skip and completion transitions", async () => {
     const skipped = jsonFetch({ canBypass: true });
     await skipLearnerProfile({ fetch: skipped.fetch });
@@ -181,6 +201,37 @@ describe("learnerProfile browser API", () => {
     const request = jsonFetch({ ok: true });
     await loadLearnerProfile({ fetch: request.fetch, signal: controller.signal });
     assert.equal(request.calls[0][1].signal, controller.signal);
+  });
+
+  it("notifies guardian access before exposing its typed guardian-required error", async () => {
+    const previousDocument = globalThis.document;
+    const eventTarget = new globalThis.EventTarget();
+    const order = [];
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: eventTarget,
+    });
+    eventTarget.addEventListener("guardian-access-required", () => {
+      order.push("notification");
+    });
+
+    try {
+      const failed = jsonFetch({ error: "guardian_required" }, 403);
+      await assert.rejects(loadProfile({ fetch: failed.fetch }), (error) => {
+        order.push("error");
+        assert.ok(error instanceof LearnerProfileApiError);
+        assert.equal(error.status, 403);
+        assert.equal(error.code, "guardian_required");
+        return true;
+      });
+      assert.deepEqual(order, ["notification", "error"]);
+    } finally {
+      if (previousDocument === undefined) Reflect.deleteProperty(globalThis, "document");
+      else Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    }
   });
 
   it("preserves keyed errors from atomic profile validation", async () => {

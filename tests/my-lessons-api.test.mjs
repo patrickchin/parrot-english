@@ -251,4 +251,38 @@ describe("My Lessons browser API", () => {
       return true;
     });
   });
+
+  it("notifies guardian access before exposing its typed guardian-required error", async () => {
+    const previousDocument = globalThis.document;
+    const eventTarget = new globalThis.EventTarget();
+    const order = [];
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: eventTarget,
+    });
+    eventTarget.addEventListener("guardian-access-required", () => {
+      order.push("notification");
+    });
+
+    try {
+      const failed = jsonFetch({ error: "guardian_required" }, 403);
+      await assert.rejects(
+        generateMyLesson("ordering ice cream", { fetch: failed.fetch }),
+        (error) => {
+          order.push("error");
+          assert.ok(error instanceof MyLessonsApiError);
+          assert.equal(error.status, 403);
+          assert.equal(error.code, "guardian_required");
+          return true;
+        },
+      );
+      assert.deepEqual(order, ["notification", "error"]);
+    } finally {
+      if (previousDocument === undefined) Reflect.deleteProperty(globalThis, "document");
+      else Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    }
+  });
 });
