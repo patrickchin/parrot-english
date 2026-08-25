@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { getTableColumns, getTableName } from "drizzle-orm";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
 import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
@@ -139,6 +141,18 @@ function indexDetails(database, table) {
         .all()
         .map((column) => column.name),
     }));
+}
+
+function gitPathExists(projectRoot, revisionPath) {
+  try {
+    execFileSync("git", ["cat-file", "-e", revisionPath], {
+      cwd: projectRoot,
+      stdio: "ignore",
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 describe("learner-profile infrastructure", () => {
@@ -434,6 +448,45 @@ describe("learner-profile infrastructure", () => {
 });
 
 describe("checked-in questionnaire deployment", () => {
+  it("pins c259116 as the compatibility rollback floor before the enable migration exists", () => {
+    const projectRoot = fileURLToPath(new URL("../", import.meta.url));
+    const floorWrangler = execFileSync("git", ["show", "c259116:wrangler.jsonc"], {
+      cwd: projectRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+    });
+    const floorWorkerConfiguration = execFileSync(
+      "git",
+      ["show", "c259116:worker-configuration.d.ts"],
+      {
+        cwd: projectRoot,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "inherit"],
+      },
+    );
+
+    assert.equal(
+      existsSync(new URL("../migrations/0013_multi_learner_enable.sql", import.meta.url)),
+      false,
+    );
+    assert.equal(
+      gitPathExists(projectRoot, "c259116:migrations/0012_multi_learner_expand.sql"),
+      true,
+    );
+    assert.equal(
+      gitPathExists(projectRoot, "c259116:migrations/0013_multi_learner_enable.sql"),
+      false,
+    );
+    assert.match(
+      floorWrangler,
+      /"MULTI_LEARNER_PROFILES_ENABLED"\s*:\s*"0"/,
+    );
+    assert.match(
+      floorWorkerConfiguration,
+      /MULTI_LEARNER_PROFILES_ENABLED:\s*"0"/,
+    );
+  });
+
   it("applies D1 migrations and deploys without publishing questionnaire rows", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
