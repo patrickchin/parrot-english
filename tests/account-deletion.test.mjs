@@ -18,6 +18,8 @@ const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v2/`;
+const LESSON_RECORDING_KEY =
+  `${USER_PREFIX}lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio`;
 const MARKER_KEY = `${DUB_PREFIX}.dub-generation`;
 const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
 const slotKey = (lineId) => `${DUB_PREFIX}${lineId}.audio`;
@@ -229,7 +231,7 @@ function seedDatabase() {
 }
 
 describe("account deletion personalized-art lifecycle", () => {
-  it("tombstones the account and art, purges every R2 object, and retains only dub deletion fences", async () => {
+  it("tombstones the account, purges art and lesson recordings, and retains only dub deletion fences", async () => {
     const state = seedDatabase();
     const events = [];
     try {
@@ -250,6 +252,7 @@ describe("account deletion personalized-art lifecycle", () => {
           {
             objects: [
               { key: `${USER_PREFIX}future-story/versions/two.webp` },
+              { key: LESSON_RECORDING_KEY },
             ],
             truncated: false,
           },
@@ -294,7 +297,10 @@ describe("account deletion personalized-art lifecycle", () => {
           userCount: 1,
         },
         {
-          keys: [`${USER_PREFIX}future-story/versions/two.webp`],
+          keys: [
+            `${USER_PREFIX}future-story/versions/two.webp`,
+            LESSON_RECORDING_KEY,
+          ],
           statuses: ["deleting", "deleting"],
           tombstoneCount: 1,
           userCount: 1,

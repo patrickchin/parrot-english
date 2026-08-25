@@ -7,6 +7,7 @@ import {
   type LessonGenerationEnv,
 } from "./lesson-generator.ts";
 import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
+import { deleteLessonRecordingsForLesson } from "./lesson-recording-storage.ts";
 import { createMyLessonRepository } from "./my-lessons-repository.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
@@ -17,7 +18,11 @@ import type { ApiEnv } from "./groq.ts";
 
 const MAX_BODY_BYTES = 256 * 1024;
 
-export type MyLessonsEnv = ApiEnv & LessonGenerationEnv & { DB: D1Database };
+export type MyLessonsEnv = ApiEnv &
+  LessonGenerationEnv & {
+    DB: D1Database;
+    PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
+  };
 export type MyLessonRequestInput = {
   database: Database;
   env: MyLessonsEnv;
@@ -188,6 +193,11 @@ export async function handleMyLessonRequest(
         draft.lesson,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
+      await deleteLessonRecordingsForLesson(
+        input.env.PERSONALIZED_STORY_ART_BUCKET,
+        input.identity.userId,
+        row.id,
+      );
       return json({ lesson: clientLesson(row), warnings: draft.warnings });
     }
 

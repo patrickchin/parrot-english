@@ -28,11 +28,25 @@ function request(path, method = "GET", body) {
   });
 }
 
+function emptyRecordingBucket() {
+  return {
+    async delete() {},
+    async list() {
+      return { objects: [], truncated: false };
+    },
+  };
+}
+
 function call(state, path, method = "GET", body, options = {}) {
   return handleMyLessonRequest(
     {
       database: state.database,
-      env: { DB: state.d1, GROQ_API_KEY: "test-key" },
+      env: {
+        DB: state.d1,
+        GROQ_API_KEY: "test-key",
+        PERSONALIZED_STORY_ART_BUCKET:
+          options.bucket ?? emptyRecordingBucket(),
+      },
       identity: {
         sessionId: "session-1",
         userId: options.userId ?? "user-1",
@@ -211,6 +225,106 @@ describe("My Lessons persistence and API", () => {
             .get("lesson-1").lesson_json,
         ).title,
         "Garden Help",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("purges every page below the exact edited My Lesson recording prefix", async () => {
+    const state = seedDatabase();
+    try {
+      await call(
+        state,
+        "/api/lessons/my",
+        "POST",
+        { source: "uploaded", lesson: createLessonScript() },
+        { createId: () => "lesson/one" },
+      );
+      const prefix =
+        "personalized-story-art/user-1/lesson-recordings/my/lesson%2Fone/";
+      const lists = [];
+      const deletions = [];
+      const pages = new Map([
+        [
+          "",
+          {
+            cursor: "page-2",
+            objects: [{ key: `${prefix}scene-0/step-1.audio` }],
+            truncated: true,
+          },
+        ],
+        [
+          "page-2",
+          {
+            objects: [{ key: `${prefix}scene-4/step-1.audio` }],
+            truncated: false,
+          },
+        ],
+      ]);
+      const bucket = {
+        async delete(keys) { deletions.push(keys); },
+        async list(options) {
+          lists.push(options);
+          return pages.get(options.cursor ?? "");
+        },
+      };
+
+      const response = await call(
+        state,
+        "/api/lessons/my/lesson%2Fone",
+        "PUT",
+        { lesson: createLessonScript({ title: "Edited lesson" }) },
+        { bucket },
+      );
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(lists, [
+        { prefix },
+        { prefix, cursor: "page-2" },
+      ]);
+      assert.deepEqual(deletions, [
+        [`${prefix}scene-0/step-1.audio`],
+        [`${prefix}scene-4/step-1.audio`],
+      ]);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not report a fully successful edit when recording purge fails", async () => {
+    const state = seedDatabase();
+    try {
+      await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: createLessonScript(),
+      });
+      const response = await call(
+        state,
+        "/api/lessons/my/lesson-1",
+        "PUT",
+        { lesson: createLessonScript({ title: "Edited before purge" }) },
+        {
+          bucket: {
+            async delete() {},
+            async list() { throw new Error("R2 purge failed"); },
+          },
+        },
+      );
+
+      assert.equal(response.status, 500);
+      assert.deepEqual(await response.json(), {
+        error: "internal_error",
+        message: "The lesson request failed.",
+      });
+      assert.equal(
+        JSON.parse(
+          state.sqlite
+            .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
+            .get("lesson-1").lesson_json,
+        ).title,
+        "Edited before purge",
+        "The API must fail safely because the owned update committed before R2 cleanup",
       );
     } finally {
       state.close();

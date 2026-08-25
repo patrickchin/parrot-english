@@ -281,6 +281,74 @@ describe("Worker authentication", () => {
     assert.equal(getAssetCalls(), 0);
   });
 
+  it("rejects every anonymous lesson-recording route before its handler", async () => {
+    const authStub = createAuthStub();
+    const { env, getAssetCalls } = createEnvironment();
+    let handlerCalls = 0;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      async handleLessonRecordingRequest() {
+        handlerCalls += 1;
+        return Response.json({ saved: true });
+      },
+    });
+
+    for (const [method, path] of [
+      ["GET", "/api/lesson-recordings/consent"],
+      [
+        "PUT",
+        "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
+      ],
+      ["DELETE", "/api/lesson-recordings/anything"],
+    ]) {
+      const response = await worker.fetch(
+        new Request(`https://example.test${path}`, { method }),
+        env,
+      );
+      assert.equal(response.status, 401, `${method} ${path}`);
+      assert.deepEqual(await response.json(), { error: "unauthorized" });
+    }
+
+    assert.equal(authStub.getSessionCalls(), 3);
+    assert.equal(handlerCalls, 0);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("dispatches authenticated recording routes with session-owned identity", async () => {
+    const authStub = createAuthStub({
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", name: " Parent One " },
+      },
+    });
+    const { env, getAssetCalls } = createEnvironment();
+    env.DB = {};
+    let received;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      async handleLessonRecordingRequest(input) {
+        received = input;
+        return Response.json({ routed: true }, { status: 201 });
+      },
+    });
+    const request = new Request(
+      "https://example.test/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
+      { method: "PUT" },
+    );
+
+    const response = await worker.fetch(request, env);
+
+    assert.equal(response.status, 201);
+    assert.deepEqual(await response.json(), { routed: true });
+    assert.deepEqual(received.identity, {
+      sessionId: "session-1",
+      userId: "user-1",
+      userName: "Parent One",
+    });
+    assert.strictEqual(received.request, request);
+    assert.equal(getAssetCalls(), 0);
+  });
+
   it("rejects anonymous speech evaluation before protected dependencies run", async () => {
     const authStub = createAuthStub();
     const { env } = createEnvironment();
