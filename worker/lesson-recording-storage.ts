@@ -40,7 +40,11 @@ export async function fenceLessonRecordingUpload(
   key: string,
   stored: R2Object,
   uploadNonce: string,
-  state: "account-deleting" | "consent-revoked" | "state-unknown",
+  state:
+    | "account-deleting"
+    | "consent-revoked"
+    | "lesson-changed"
+    | "state-unknown",
 ) {
   const current = await bucket.head(key);
   if (

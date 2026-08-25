@@ -46,11 +46,14 @@ export async function resolveLessonRecordingTarget(
   slot: LessonRecordingSlot,
 ) {
   if (slot.source === "parrot") {
-    return userTarget(BUILT_IN_LESSONS.get(slot.lessonId), slot);
+    const targetText = userTarget(BUILT_IN_LESSONS.get(slot.lessonId), slot);
+    return targetText ? { revision: null, targetText } : null;
   }
   const row = await createMyLessonRepository(database).findOwned(
     slot.lessonId,
     userId,
   );
-  return row ? userTarget(JSON.parse(row.lessonJson), slot) : null;
+  if (!row) return null;
+  const targetText = userTarget(JSON.parse(row.lessonJson), slot);
+  return targetText ? { revision: row.lessonJson, targetText } : null;
 }

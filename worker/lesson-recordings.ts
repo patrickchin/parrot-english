@@ -17,6 +17,7 @@ import {
 } from "./request-body.ts";
 
 const MAX_CLIP_BYTES = 512 * 1024;
+const MAX_TARGET_TEXT_BYTES = 4096;
 const MIME_SIGNATURES = {
   "audio/mp4": (bytes: Uint8Array) =>
     bytes.length >= 8 &&
@@ -155,12 +156,18 @@ export async function handleLessonRecordingRequest(
     };
     requireAccess(await accessState());
 
-    const targetText = await resolveLessonRecordingTarget(
+    const target = await resolveLessonRecordingTarget(
       input.database,
       input.identity.userId,
       route,
     );
-    if (!targetText) throw new LessonRecordingApiError(404, "not_found");
+    if (!target) throw new LessonRecordingApiError(404, "not_found");
+    if (
+      new TextEncoder().encode(target.targetText).byteLength >
+      MAX_TARGET_TEXT_BYTES
+    ) {
+      throw new LessonRecordingApiError(422, "target_too_large");
+    }
 
     const normalizedContentType = contentType(input.request);
     let bytes: Uint8Array;
@@ -197,7 +204,7 @@ export async function handleLessonRecordingRequest(
         source: route.source,
         state: "audio",
         stepIndex: String(route.stepIndex),
-        targetText,
+        targetText: target.targetText,
         uploadNonce,
       },
       httpMetadata: {
@@ -229,6 +236,35 @@ export async function handleLessonRecordingRequest(
         after.deletion ? "account-deleting" : "consent-revoked",
       );
       requireAccess(after);
+    }
+    if (route.source === "my") {
+      let currentTarget: Awaited<ReturnType<typeof resolveLessonRecordingTarget>>;
+      try {
+        currentTarget = await resolveLessonRecordingTarget(
+          input.database,
+          input.identity.userId,
+          route,
+        );
+      } catch (error) {
+        await fenceLessonRecordingUpload(
+          bucket,
+          key,
+          stored,
+          uploadNonce,
+          "state-unknown",
+        );
+        throw error;
+      }
+      if (!currentTarget || currentTarget.revision !== target.revision) {
+        await fenceLessonRecordingUpload(
+          bucket,
+          key,
+          stored,
+          uploadNonce,
+          "lesson-changed",
+        );
+        throw new LessonRecordingApiError(409, "lesson_changed");
+      }
     }
     return json({ recordedAt }, { status: 201 });
   } catch (error) {
