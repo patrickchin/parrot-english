@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   deleteDub,
+  DubNotEnabledError,
   DubResetInProgressError,
   DubTakeRejectedError,
+  grantDubConsent,
   getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
@@ -25,11 +27,13 @@ describe("duck dub browser API", () => {
     const controller = new AbortController();
     const status = {
       complete: false,
+      consentState: "granted",
       dubId: "five-little-ducks-v1",
-      guardianConsentVersion: "guardian-voice-r2-v1",
+      guardianConsentVersion: "guardian-voice-r2-v2",
       lines: [
         { id: "line-1", recordedAt: null, saved: false },
       ],
+      recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
 
@@ -61,7 +65,6 @@ describe("duck dub browser API", () => {
         credentials: "same-origin",
         headers: {
           "Content-Type": "audio/webm;codecs=opus",
-          "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
         },
         method: "PUT",
         signal: controller.signal,
@@ -85,6 +88,27 @@ describe("duck dub browser API", () => {
     assert.equal(
       getDubLineAudioUrl("line/1"),
       "/api/dubs/five-little-ducks-v1/lines/line%2F1/audio",
+    );
+  });
+
+  it("submits the exact guardian consent body", async () => {
+    const request = requestRecorder(new Response(null, { status: 204 }));
+
+    await grantDubConsent({ fetch: request.fetch });
+
+    assert.equal(request.calls[0][0], "/api/dubs/five-little-ducks-v1/consent");
+    assert.deepEqual(JSON.parse(request.calls[0][1].body), {
+      accepted: true,
+      consentVersion: "guardian-voice-r2-v2",
+    });
+  });
+
+  it("maps a revoked upload to DubNotEnabledError", async () => {
+    await assert.rejects(
+      () => saveDubLine("line-1", new Blob(["take"]), {
+        fetch: async () => Response.json({ error: "dubbing_not_enabled" }, { status: 403 }),
+      }),
+      DubNotEnabledError,
     );
   });
 

@@ -40,7 +40,6 @@ function renderInRouter(element) {
 }
 
 const handlers = {
-  onDelete() {},
   onHearGuide() {},
   onNext() {},
   onRecord() {},
@@ -52,7 +51,7 @@ const handlers = {
   onWatch() {},
 };
 
-function renderDuckDub(state, confirmed = true, viewProps = {}) {
+function renderDuckDub(state, viewProps = {}) {
   assert.equal(
     typeof DuckDubView,
     "function",
@@ -61,9 +60,8 @@ function renderDuckDub(state, confirmed = true, viewProps = {}) {
   const mergedState = { ...createInitialDubState(), ...state };
   return renderInRouter(
     createElement(DuckDubView, {
-      confirmed,
       line: DUB_LINES[mergedState.currentLineIndex],
-      onConfirm() {},
+      recordingEnabled: true,
       state: mergedState,
       ...handlers,
       ...viewProps,
@@ -80,26 +78,15 @@ function liveStatusText(html) {
 }
 
 describe("duck dubbing presentation", () => {
-  it("requires grown-up confirmation and explains private account storage", () => {
-    const unchecked = renderDuckDub({ phase: "intro" }, false);
-    assert.match(unchecked, /Five Little Ducks/);
-    assert.match(unchecked, /Your recordings are private/);
-    assert.match(unchecked, /signed-in grown-up(?:&#x27;|')s account/);
-    assert.doesNotMatch(unchecked, /Line 1 of 9/);
-    assert.doesNotMatch(unchecked, /Five little ducks went out to play\./);
-    assert.match(
-      unchecked,
-      /I’m the grown-up and I agree to save these private voice clips\./,
-    );
-    assert.match(unchecked, /<input[^>]*required/);
-    assert.match(unchecked, /<button[^>]*disabled[^>]*>Start dubbing<\/button>/);
+  it("never asks a learner to claim they are a grown-up", () => {
+    const disabled = renderDuckDub({ phase: "intro" }, { recordingEnabled: false });
+    assert.match(disabled, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
+    assert.match(disabled, /Back home/);
+    assert.doesNotMatch(disabled, /checkbox|I’m the grown-up|Grown-up options|Delete my dub/);
 
-    const continued = renderDuckDub(
-      { phase: "intro", saved: { "line-1": "saved" } },
-      true,
-    );
-    assert.match(continued, /<button[^>]*>Continue dubbing<\/button>/);
-    assert.doesNotMatch(continued, /Continue dubbing<\/button>[^]*disabled/);
+    const enabled = renderDuckDub({ phase: "intro" });
+    assert.match(enabled, />Start dubbing<\/button>/);
+    assert.doesNotMatch(enabled, /checkbox|I’m the grown-up/);
   });
 
   it("makes Record the clear next step and keeps listening optional", () => {
@@ -153,7 +140,7 @@ describe("duck dubbing presentation", () => {
     assert.doesNotMatch(review, /Hear my take/);
   });
 
-  it("keeps final management controls inside closed grown-up options", () => {
+  it("keeps retakes learner-facing but removes destructive management", () => {
     const ready = renderDuckDub({
       currentLineIndex: 4,
       phase: "final-ready",
@@ -164,15 +151,15 @@ describe("duck dubbing presentation", () => {
     assert.match(ready, /Your dub is ready!/);
     assert.doesNotMatch(ready, /aria-label="Line 5 of 9"/);
     assert.match(ready, /<details(?![^>]*\bopen\b)[^>]*>/);
-    assert.match(ready, /<summary[^>]*aria-label="Grown-up options"/);
-    assert.match(ready, />Grown-up options<\/summary>|>Grown-up options<span/);
+    assert.match(ready, /<summary[^>]*aria-label="Record another take"/);
+    assert.match(ready, />Record another take<\/summary>|>Record another take<span/);
     assert.match(ready, /<label[^>]*>Choose a saved line<\/label>/);
     assert.match(ready, /<select[^>]*aria-label="Choose a saved line"/);
     assert.match(ready, /<option[^>]*value="line-5"[^>]*selected=""[^>]*>Line 5: Three little ducks raced through the reeds\.<\/option>/);
     assert.equal((ready.match(/<option/g) ?? []).length, 9);
     assert.match(ready, />Record selected line<\/button>/);
-    assert.match(ready, />Delete my dub<\/button>/);
-    assert.match(ready, /Your recordings are private/);
+    assert.doesNotMatch(ready, /Grown-up options|Delete my dub/);
+    assert.doesNotMatch(ready, /Your recordings are private/);
 
     const loading = renderDuckDub({ phase: "final-loading" });
     assert.match(loading, /Getting your dub ready…/);
@@ -182,8 +169,8 @@ describe("duck dubbing presentation", () => {
     assert.match(playing, />Stop playback<\/button>/);
   });
 
-  it("shows recurring privacy guidance only at consent and inside grown-up options", () => {
-    const intro = renderDuckDub({ phase: "intro" }, false);
+  it("shows recurring privacy guidance only at the learner intro", () => {
+    const intro = renderDuckDub({ phase: "intro" });
     const ready = renderDuckDub({ phase: "line-ready" });
     const review = renderDuckDub({ phase: "line-review" });
     const complete = renderDuckDub({
@@ -191,10 +178,10 @@ describe("duck dubbing presentation", () => {
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
 
-    assert.match(intro, /Your recordings are private/);
+    assert.match(intro, /Your voice clips stay private in this account/);
     assert.doesNotMatch(ready, /Your recordings are private/);
     assert.doesNotMatch(review, /Your recordings are private/);
-    assert.match(complete, /Your recordings are private/);
+    assert.doesNotMatch(complete, /Your recordings are private/);
   });
 
   it("announces every phase accurately through one atomic polite live region", () => {
@@ -208,14 +195,10 @@ describe("duck dubbing presentation", () => {
       ],
       [
         { phase: "loading" },
-        {
-          loadError:
-            "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
-          resetInterrupted: true,
-        },
-        "Deleting your saved dub was interrupted. A grown-up can finish deleting it.",
+        { loadError: "A previous action was interrupted." },
+        "Loading stopped. Try loading again.",
       ],
-      [{ phase: "intro" }, {}, "Grown-up confirmation is needed before dubbing."],
+      [{ phase: "intro" }, {}, "Choose Start dubbing to begin."],
       [
         { currentLineIndex: 2, phase: "line-ready" },
         {},
@@ -271,64 +254,25 @@ describe("duck dubbing presentation", () => {
         {},
         "Playing your dub. Line 3 of 9.",
       ],
-      [
-        { currentLineIndex: 2, phase: "final-ready", saved: complete },
-        { isDeleting: true },
-        "Deleting your saved dub.",
-      ],
-      [
-        { phase: "loading" },
-        {
-          isDeleting: true,
-          loadError:
-            "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
-          resetInterrupted: true,
-        },
-        "Deleting your saved dub.",
-      ],
     ];
 
     for (const [state, viewProps, expected] of cases) {
-      const html = renderDuckDub(state, true, viewProps);
+      const html = renderDuckDub(state, viewProps);
       assert.equal(liveStatusText(html), expected);
       assert.equal((html.match(/role="status"/g) ?? []).length, 1);
       assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1);
     }
   });
 
-  it("offers an explicit reset recovery only for an interrupted deletion", () => {
+  it("keeps load recovery learner-safe", () => {
     const ordinary = renderDuckDub(
       { phase: "loading" },
-      true,
       { loadError: "Your saved dub could not be loaded." },
     );
     assert.match(ordinary, />Try loading again<\/button>/);
     assert.doesNotMatch(ordinary, /Finish deleting my dub/);
 
-    const interrupted = renderDuckDub(
-      { phase: "loading" },
-      true,
-      {
-        loadError:
-          "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
-        resetInterrupted: true,
-      },
-    );
-    assert.match(interrupted, />Finish deleting my dub<\/button>/);
-    assert.doesNotMatch(interrupted, /Try loading again/);
-
-    const deleting = renderDuckDub(
-      { phase: "loading" },
-      true,
-      {
-        isDeleting: true,
-        loadError:
-          "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
-        resetInterrupted: true,
-      },
-    );
-    assert.match(deleting, /<button[^>]*disabled[^>]*>Deleting your dub…<\/button>/);
-    assert.doesNotMatch(deleting, /Try loading again|Finish deleting my dub/);
+    assert.doesNotMatch(ordinary, /Finish deleting my dub|Delete my dub/);
   });
 
   it("keeps visible progress and recording text accessible but non-live", () => {

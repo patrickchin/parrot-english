@@ -5,13 +5,12 @@ export type DubSaveRecovery = "record" | "save";
 export type DubState = { currentLineIndex: number; error: string; phase: DubPhase; saved: Record<string, string>; saveRecovery: DubSaveRecovery };
 export type DubEvent =
   | { type: "LOADED"; savedLineIds: string[] }
-  | { type: "CONFIRMED" } | { type: "MIC_OPENING" } | { type: "MIC_STARTED" }
+  | { type: "STARTED" } | { type: "MIC_OPENING" } | { type: "MIC_STARTED" }
   | { type: "SAVE_STARTED" } | { type: "SAVE_FAILED"; message: string; recovery: DubSaveRecovery }
   | { type: "SAVE_SUCCEEDED"; lineId: string; recordedAt: string }
   | { type: "NEXT_LINE" } | { type: "RETAKE" }
   | { type: "SELECT_LINE"; lineId: string }
-  | { type: "FINAL_LOADING" } | { type: "FINAL_STARTED" } | { type: "FINAL_FINISHED" }
-  | { type: "RESET_SUCCEEDED" };
+  | { type: "FINAL_LOADING" } | { type: "FINAL_STARTED" } | { type: "FINAL_FINISHED" };
 
 export const createInitialDubState = (): DubState => ({ currentLineIndex: 0, error: "", phase: "loading", saved: {}, saveRecovery: "save" });
 
@@ -25,7 +24,7 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
     const saved = Object.fromEntries(event.savedLineIds.map((id) => [id, ""]));
     return { currentLineIndex: firstMissingDubLineIndex(new Set(event.savedLineIds)), error: "", phase: "intro", saved, saveRecovery: "save" };
   }
-  if (event.type === "CONFIRMED") return { ...state, phase: DUB_LINES.every(({ id }) => id in state.saved) ? "final-ready" : "line-ready" };
+  if (event.type === "STARTED") return { ...state, phase: DUB_LINES.every(({ id }) => id in state.saved) ? "final-ready" : "line-ready" };
   if (event.type === "MIC_OPENING") return { ...state, error: "", phase: "mic-opening" };
   if (event.type === "MIC_STARTED") return { ...state, phase: "recording" };
   if (event.type === "SAVE_STARTED") return { ...state, error: "", phase: "saving", saveRecovery: "save" };
@@ -48,6 +47,5 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
   if (event.type === "FINAL_LOADING") return { ...state, phase: "final-loading" };
   if (event.type === "FINAL_STARTED") return { ...state, phase: "final-playing" };
   if (event.type === "FINAL_FINISHED") return { ...state, phase: "final-ready" };
-  if (event.type === "RESET_SUCCEEDED") return { ...createInitialDubState(), phase: "intro" };
   return state;
 }

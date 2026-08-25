@@ -47,7 +47,7 @@ describe("five little ducks dub domain", () => {
       savedLineIds: DUB_LINES.map(({ id }) => id),
     });
     assert.equal(state.currentLineIndex, 0);
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     assert.equal(state.phase, "final-ready");
   });
 
@@ -96,7 +96,7 @@ describe("five little ducks dub domain", () => {
       type: "LOADED",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "MIC_OPENING" });
     state = reduceDubState(state, { type: "MIC_STARTED" });
     state = reduceDubState(state, { type: "SAVE_STARTED" });

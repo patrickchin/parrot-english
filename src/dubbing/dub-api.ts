@@ -1,15 +1,17 @@
 import { DUB_ID } from "./dub-script.ts";
 
-const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v1" as const;
+const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
 const SAVE_FAILURE = "Your take was not saved. Try again.";
 const DELETE_FAILURE = "Your saved dub was not deleted.";
 
 export type DubStatus = {
   complete: boolean;
+  consentState: "granted" | "not_granted" | "revoking";
   dubId: typeof DUB_ID;
   guardianConsentVersion: typeof GUARDIAN_CONSENT_VERSION;
   lines: Array<{ id: string; recordedAt: string | null; saved: boolean }>;
+  recordingEnabled: boolean;
 };
 
 type DubRequestOptions = {
@@ -34,6 +36,15 @@ export class DubTakeRejectedError extends Error {
   constructor(message = "That recording is too long. Try the line again.") {
     super(message);
     this.name = "DubTakeRejectedError";
+  }
+}
+
+export class DubNotEnabledError extends Error {
+  readonly code = "dubbing_not_enabled" as const;
+
+  constructor() {
+    super("Voice dubbing is not turned on right now.");
+    this.name = "DubNotEnabledError";
   }
 }
 
@@ -73,9 +84,13 @@ function isDubStatus(value: unknown): value is DubStatus {
   const status = value as Partial<DubStatus>;
   return (
     typeof status.complete === "boolean" &&
+    (status.consentState === "granted" ||
+      status.consentState === "not_granted" ||
+      status.consentState === "revoking") &&
     status.dubId === DUB_ID &&
     status.guardianConsentVersion === GUARDIAN_CONSENT_VERSION &&
     Array.isArray(status.lines) &&
+    typeof status.recordingEnabled === "boolean" &&
     status.lines.every((line) =>
       typeof line === "object" &&
       line !== null &&
@@ -138,7 +153,6 @@ export async function saveDubLine(
       credentials: "same-origin",
       headers: {
         "Content-Type": blob.type,
-        "X-Parrot-Guardian-Consent-Version": GUARDIAN_CONSENT_VERSION,
       },
       method: "PUT",
       signal: options.signal,
@@ -146,6 +160,12 @@ export async function saveDubLine(
     SAVE_FAILURE,
   );
   if (!response.ok) {
+    if (response.status === 403) {
+      const body: unknown = await response.clone().json().catch(() => null);
+      if (typeof body === "object" && body !== null && "error" in body && body.error === "dubbing_not_enabled") {
+        throw new DubNotEnabledError();
+      }
+    }
     if (response.status === 413) throw new DubTakeRejectedError();
     if (response.status === 400 || response.status === 415) {
       const body: unknown = await response.clone().json().catch(() => null);
@@ -165,6 +185,22 @@ export async function saveDubLine(
   const result = await parseJson(response, SAVE_FAILURE);
   if (!isSaveResult(result)) throw new Error(SAVE_FAILURE);
   return result;
+}
+
+export async function grantDubConsent(options: DubRequestOptions = {}) {
+  const response = await requestResponse(
+    options.fetch ?? globalThis.fetch,
+    `/api/dubs/${DUB_ID}/consent`,
+    {
+      body: JSON.stringify({ accepted: true, consentVersion: GUARDIAN_CONSENT_VERSION }),
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      signal: options.signal,
+    },
+    "Voice dubbing could not be turned on.",
+  );
+  requireOk(response, "Voice dubbing could not be turned on.");
 }
 
 export async function deleteDub(options: DubRequestOptions = {}) {
