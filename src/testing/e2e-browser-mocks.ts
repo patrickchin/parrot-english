@@ -1036,7 +1036,7 @@ function installE2eProfileFetchMock() {
         profileScenario === E2E_PROFILE_RESUME_SCENARIO
           ? E2E_VIEWPORT_RESUMED_PROFILE
           : profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
-            ? window.location.pathname === "/profile"
+            ? window.location.pathname === "/guardian/profile"
               ? E2E_VIEWPORT_EDITOR_GATE
               : E2E_VIEWPORT_INCOMPLETE_PROFILE
             : E2E_INCOMPLETE_PROFILE;

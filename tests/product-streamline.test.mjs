@@ -82,7 +82,7 @@ test("guardian dashboard presents five focused grown-up destinations", () => {
   );
 
   for (const heading of [
-    "Learner profile",
+    "Learner details",
     "My Lessons",
     "Story settings",
     "Voice dubbing",
@@ -92,12 +92,13 @@ test("guardian dashboard presents five focused grown-up destinations", () => {
   }
   assert.equal((html.match(/<h2/g) ?? []).length, 5);
   assert.deepEqual(hrefs, [
-    "/profile",
+    "/guardian/profile?returnTo=%2Fguardian",
     "/guardian/lessons",
     "/guardian/stories",
     "/guardian/dubbing",
   ]);
   assert.match(html, /Managing Mia/);
+  assert.match(html, /Manage learner details/);
   assert.match(html, /AI and saved data.*sign out.*delete/i);
   assert.match(html, /Switch to learner/);
 });

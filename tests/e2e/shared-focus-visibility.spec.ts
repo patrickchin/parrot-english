@@ -36,7 +36,7 @@ const focusScenarios: Array<{
       await page
         .getByRole("button", { name: "Profile for Mia, guardian mode" })
         .click();
-      return page.getByRole("menuitem", { name: "Learner profile" });
+      return page.getByRole("menuitem", { name: "Manage learner details" });
     },
     viewport: { height: 844, width: 390 },
   },
@@ -1425,7 +1425,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  const profile = page.getByRole("menuitem", { name: "Learner profile" });
+  const profile = page.getByRole("menuitem", { name: "Manage learner details" });
   await expect(profile).toBeFocused();
   await blurActiveElement(page);
   const unfocusedShadow = await profile.evaluate(

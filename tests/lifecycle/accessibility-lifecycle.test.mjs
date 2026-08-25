@@ -772,7 +772,7 @@ describe("keyboard accessibility lifecycles", () => {
       ],
     );
     await click(button("Manage learner details"));
-    assert.deepEqual(navigations, ["/profile"]);
+    assert.deepEqual(navigations, ["/guardian/profile?returnTo=%2Fguardian"]);
   });
 
   it("clears only the exact account experience registered by a profile", async () => {

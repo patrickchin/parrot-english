@@ -4994,7 +4994,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/PROFILE LESSONS/));
     await click(await waitFor(() => button("Profile for Mia, guardian mode")));
     await click(button("Manage learner details"));
-    await waitFor(() => text(/Learner profile/));
+    await waitFor(() => text(/Learner details/));
     await input(document.querySelector("#profile-name"), "Maya");
     await input(document.querySelector("#profile-age"), "almost nine");
     await input(
@@ -5066,7 +5066,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "PROFILE LESSONS"),
       ),
     );
-    await waitFor(() => text(/Learner profile/));
+    await waitFor(() => text(/Learner details/));
     await click(button("Save changes"));
 
     await waitFor(() => text(/Thank you!/));

@@ -57,9 +57,9 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to lessons", role: "link" },
   },
   {
-    name: "learner profile",
+    name: "learner details",
     mode: "guardian",
-    path: "/profile",
+    path: "/guardian/profile",
     control: { name: "Back", role: "button" },
   },
   {
@@ -954,6 +954,41 @@ test("account actions separate routine sign out from staged deletion", async ({
       await cancel.click();
     }
   }
+});
+
+test("unlocking guardian mode opens learner details in the guardian profile editor", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .click();
+  await page
+    .getByRole("menuitem", { name: /Grown-up access/ })
+    .click();
+
+  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  await dialog.getByLabel("Password").fill("e2e-guardian-password");
+  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
+
+  await page.getByRole("link", { name: "Manage learner details" }).click();
+
+  await expect(page).toHaveURL("/guardian/profile?returnTo=%2Fguardian");
+  await expect(
+    page.getByRole("heading", { name: "Learner details" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { exact: true, name: "Name" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { exact: true, name: "Age" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { exact: true, name: "About Mia" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Redo setup questions" }),
+  ).toBeVisible();
 });
 
 test("forced colors keeps both account exit actions visibly focused", async ({

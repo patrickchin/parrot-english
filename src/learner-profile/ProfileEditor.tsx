@@ -60,11 +60,14 @@ export function ProfileEditorView({
         width="narrow"
       >
         <header>
+          <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue sm:text-sm">
+            Guardian settings
+          </p>
           <h1
-            className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl"
+            className="mb-0 mt-2 text-3xl leading-none text-brand-ink sm:text-5xl"
             id="profile-title"
           >
-            Learner profile
+            Learner details
           </h1>
           <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-600">
             These details personalize chats and lessons.

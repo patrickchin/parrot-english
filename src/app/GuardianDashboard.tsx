@@ -6,8 +6,10 @@ import { ActionLink, Card } from "../shared/ui";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import {
   getGuardianDubbingPath,
+  getGuardianPath,
   getGuardianLessonsPath,
   getGuardianStoriesPath,
+  getProfilePath,
 } from "./app-routes";
 
 export function GuardianDashboardView({
@@ -57,13 +59,13 @@ export function GuardianDashboardView({
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="grid content-start gap-4 p-6">
             <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Learner profile
+              Learner details
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review the learner&apos;s name, age, and profile details.
+              Review and update the learner&apos;s name, age, and profile details.
             </p>
-            <ActionLink className="mt-auto" to="/profile">
-              Open learner profile
+            <ActionLink className="mt-auto" to={getProfilePath(getGuardianPath())}>
+              Manage learner details
             </ActionLink>
           </Card>
 

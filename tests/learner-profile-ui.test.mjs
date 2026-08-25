@@ -493,7 +493,9 @@ describe("profile summary editor", () => {
       }),
     );
 
-    assert.match(html, /<h1[^>]*>Learner profile<\/h1>/);
+    assert.match(html, /Guardian settings/);
+    assert.match(html, /<h1[^>]*>Learner details<\/h1>/);
+    assert.doesNotMatch(html, /<h1[^>]*>Learner profile<\/h1>/);
     assert.match(html, /personalize.*chats and lessons/i);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
@@ -1174,7 +1176,7 @@ describe("onboarding and profile gate", () => {
         pageError: "",
       },
     });
-    assert.match(html, /Learner profile/);
+    assert.match(html, /Learner details/);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /Redo setup questions/);

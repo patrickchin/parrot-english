@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router";
 import { AccountHeader } from "../app/AppHeader";
+import { getGuardianPath, getProfilePath } from "../app/app-routes";
 import {
   getAuthErrorMessage,
   validateAuthForm,
@@ -281,7 +282,9 @@ function AccountExperienceHeader({
         isSigningOut={activeMode === "guardian" && isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
         onDeleteAccount={onDeleteAccount}
-        onOpenProfile={onOpenProfile ?? (() => onNavigate("/profile"))}
+        onOpenProfile={
+          onOpenProfile ?? (() => onNavigate(getProfilePath(getGuardianPath())))
+        }
         onRetryError={access.error ? access.retry : undefined}
         onSelectGuardian={(button) => {
           if (access.mode !== "guardian") {

@@ -289,8 +289,9 @@ export function AboutDialog({
           title="What you can do"
         >
           <p className="m-0">
-            A child can finish a conversation at any time. Use Learner profile
-            to change saved details. Delete optional art on its story page.
+            A child can finish a conversation at any time. Use Learner details
+            in Guardian mode to change saved details. Delete optional art on its
+            story page.
           </p>
           <p className="m-0">
             Delete account removes the account, learner profile, custom lessons,

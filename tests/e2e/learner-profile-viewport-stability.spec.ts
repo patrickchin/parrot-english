@@ -761,10 +761,10 @@ for (const viewport of targetViewports) {
     });
 
     await page.goto(
-      "/profile?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
+      "/guardian/profile?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
     );
     const editorHeading = page.getByRole("heading", {
-      name: "Learner profile",
+      name: "Learner details",
     });
     const redoHeading = page.getByRole("heading", {
       name: "Redo learner setup",

@@ -670,16 +670,16 @@ test("an incomplete learner returns to the requested duck dub after profile setu
   ).toHaveCount(0);
 });
 
-test("guardian learner profile has a clear dashboard exit and distinguishes setup from chat", async ({
+test("guardian learner details has a clear dashboard exit and distinguishes setup from chat", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 568, width: 320 });
   await page.goto(
-    guardianPath("/profile?returnTo=%2Fguardian"),
+    guardianPath("/guardian/profile?returnTo=%2Fguardian"),
   );
 
   await expect(
-    page.getByRole("heading", { name: "Learner profile" }),
+    page.getByRole("heading", { name: "Learner details" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Redo setup questions" }),
@@ -692,15 +692,15 @@ test("guardian learner profile has a clear dashboard exit and distinguishes setu
   ).toBeVisible();
 });
 
-test("guardian learner profile returns to the manager that opened it", async ({ page }) => {
+test("guardian learner details returns to the manager that opened it", async ({ page }) => {
   await page.goto(guardianPath("/guardian/lessons"));
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  await page.getByRole("menuitem", { name: "Learner profile" }).click();
+  await page.getByRole("menuitem", { name: "Manage learner details" }).click();
 
   await expect(page).toHaveURL(
-    "/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
+    "/guardian/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
   );
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page).toHaveURL(guardianPath("/guardian/lessons"));
@@ -709,7 +709,7 @@ test("guardian learner profile returns to the manager that opened it", async ({ 
   ).toBeVisible();
 });
 
-test("account menu separates learner profile from account sign-out", async ({
+test("account menu separates learner details from account sign-out", async ({
   page,
 }) => {
   let signedOut = false;
@@ -740,7 +740,9 @@ test("account menu separates learner profile from account sign-out", async ({
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
-  await expect(menu.getByRole("menuitem", { name: "Learner profile" })).toBeVisible();
+  await expect(
+    menu.getByRole("menuitem", { name: "Manage learner details" }),
+  ).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
 
