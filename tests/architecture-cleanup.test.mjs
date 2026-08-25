@@ -81,14 +81,15 @@ describe("architecture cleanup contracts", () => {
     }
   });
 
-  it("keeps built-in playback asset-backed and My Lessons on-device", () => {
+  it("keeps built-in playback and cues asset-backed and My Lessons on-device", () => {
     const app = readProjectFile("src/app/App.tsx");
     const lessonAudio = readProjectFile("lib/lesson-audio.js");
     const playbackPath = new URL("../src/tts-playback.ts", import.meta.url);
 
     assert.match(app, /from "\.\.\/media\/audio-playback"/);
     assert.match(app, /from "\.\.\/media\/device-speech"/);
-    assert.match(app, /source === "my" \? "device" : "static"/);
+    assert.match(app, /if \(source === "my"\)/);
+    assert.match(app, /getLessonJoinInAudioLine/);
     assert.doesNotMatch(app, /tts-playback|TTS|previousAudioUrl|revokeObjectURL/);
     assert.doesNotMatch(lessonAudio, /\bengine\b|\bslow\b|character[:,]/);
     assert.equal(existsSync(playbackPath), false);

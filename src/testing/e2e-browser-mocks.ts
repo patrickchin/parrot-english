@@ -32,6 +32,50 @@ const E2E_MICROPHONE_SCENARIOS = new Set([
   "denied",
   "unsupported",
 ]);
+const E2E_LESSON_SCENARIO = new URL(window.location.href).searchParams.get(
+  "parrotE2eLesson",
+);
+type E2ELessonCue = {
+  endedAt: number | null;
+  kind: "device" | "static";
+  startedAt: number;
+  text: string;
+  volume: number;
+};
+type E2ELessonUpload = {
+  attempt: number;
+  lessonId: string;
+  outcome: "failed" | "held" | "recording_disabled" | "saved";
+  sceneIndex: number;
+  size: number;
+  source: "my" | "parrot";
+  stepIndex: number;
+  type: string;
+};
+type PendingLessonPlayback = {
+  cancel: () => void;
+  fail: () => void;
+  finish: () => void;
+};
+type PendingLessonUpload = {
+  record: E2ELessonUpload;
+  reject: (error: unknown) => void;
+  resolve: (response: Response) => void;
+};
+const lessonMediaMetrics = {
+  consentRequests: 0,
+  cueCancellations: 0,
+  cues: [] as E2ELessonCue[],
+  evaluateRequests: 0,
+  getUserMediaCalls: 0,
+  nextRecorderId: 0,
+  recorderStarts: [] as Array<{ id: number; startedAt: number }>,
+  recorderStops: [] as Array<{ id: number; stoppedAt: number }>,
+  stoppedTracks: 0,
+  uploads: [] as E2ELessonUpload[],
+};
+const pendingLessonPlayback: PendingLessonPlayback[] = [];
+const pendingLessonUploads: PendingLessonUpload[] = [];
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
 const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
@@ -250,6 +294,24 @@ function getE2eScenario() {
   );
 
   return scenario && E2E_SCENARIOS.has(scenario) ? scenario : DEFAULT_SCENARIO;
+}
+
+function getE2eLessonScenario() {
+  return E2E_LESSON_SCENARIO;
+}
+
+function lessonRecordingConsentEnabled() {
+  const scenario = getE2eLessonScenario();
+  return Boolean(
+    scenario &&
+      ![
+        "consent-error",
+        "device-no-consent",
+        "held-cue-no-consent",
+        "held-story",
+        "no-consent",
+      ].includes(scenario),
+  );
 }
 
 function getE2eMicrophoneScenario() {
@@ -883,6 +945,84 @@ function rejectNextProfileRecording() {
   return true;
 }
 
+function lessonRecordingSlot(url: URL) {
+  const match = url.pathname.match(
+    /^\/api\/lesson-recordings\/(my|parrot)\/([^/]+)\/scenes\/(\d+)\/steps\/(\d+)$/,
+  );
+  if (!match) return null;
+  try {
+    return {
+      lessonId: decodeURIComponent(match[2]),
+      sceneIndex: Number(match[3]),
+      source: match[1] as "my" | "parrot",
+      stepIndex: Number(match[4]),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function lessonRecordingResponse(
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  url: URL,
+  method: string,
+) {
+  if (url.origin !== window.location.origin) return null;
+  if (
+    url.pathname === "/api/lesson-recordings/consent" &&
+    method === "GET"
+  ) {
+    lessonMediaMetrics.consentRequests += 1;
+    return getE2eLessonScenario() === "consent-error"
+      ? e2eJson({ error: "request_failed" }, 503)
+      : e2eJson({ enabled: lessonRecordingConsentEnabled() });
+  }
+
+  const slot = lessonRecordingSlot(url);
+  if (!slot || method !== "PUT") return null;
+  const request = input instanceof Request ? input : null;
+  const blob =
+    init?.body instanceof Blob
+      ? init.body
+      : request
+        ? await request.clone().blob()
+        : new Blob();
+  const attempt =
+    lessonMediaMetrics.uploads.filter(
+      (candidate) =>
+        candidate.source === slot.source &&
+        candidate.lessonId === slot.lessonId &&
+        candidate.sceneIndex === slot.sceneIndex &&
+        candidate.stepIndex === slot.stepIndex,
+    ).length + 1;
+  const record: E2ELessonUpload = {
+    ...slot,
+    attempt,
+    outcome: "saved",
+    size: blob.size,
+    type: blob.type,
+  };
+  lessonMediaMetrics.uploads.push(record);
+  const scenario = getE2eLessonScenario();
+
+  if (scenario === "recording-disabled") {
+    record.outcome = "recording_disabled";
+    return e2eJson({ error: "guardian_consent_required" }, 403);
+  }
+  if (scenario === "upload-failed" && attempt === 1) {
+    record.outcome = "failed";
+    return e2eJson({ error: "upload_failed" }, 503);
+  }
+  if (scenario === "upload-held") {
+    record.outcome = "held";
+    return new Promise<Response>((resolve, reject) => {
+      pendingLessonUploads.push({ record, reject, resolve });
+    });
+  }
+  return e2eJson({ recordedAt: "2026-08-26T08:00:00.000Z" }, 201);
+}
+
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
   const dubStore = createE2eDubStore(getE2eDubScenario());
@@ -905,6 +1045,19 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+    if (
+      getE2eLessonScenario() &&
+      url.pathname === "/api/evaluate-speech"
+    ) {
+      lessonMediaMetrics.evaluateRequests += 1;
+    }
+    const recordingResponse = await lessonRecordingResponse(
+      input,
+      init,
+      url,
+      method,
+    );
+    if (recordingResponse) return recordingResponse;
     if (dubStore) {
       const dubResponse = await dubStore.handle(
         url,
@@ -989,11 +1142,21 @@ function getMockAudioDelayMs(src: string) {
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
   onerror: RecorderHandler<Event> = null;
+  volume = 1;
   private held = false;
+  private lessonCue = false;
+  private lessonPending: PendingLessonPlayback | null = null;
+  private lessonResume: (() => void) | null = null;
+  private timerId: number | null = null;
 
   constructor(readonly src: string) {}
 
   pause() {
+    if (this.timerId !== null) {
+      window.clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+    if (this.lessonCue) this.lessonPending?.cancel();
     if (this.held) {
       this.held = false;
       pendingProfilePlayback.delete(this);
@@ -1026,9 +1189,86 @@ class MockAudioElement {
       }
       return;
     }
-    window.setTimeout(() => {
+    if (this.lessonResume) {
+      this.lessonResume();
+      return;
+    }
+    const lessonScenario = getE2eLessonScenario();
+    this.lessonCue = this.src.includes("lesson-join-in-");
+    const heldLessonAudio =
+      (this.lessonCue &&
+        (lessonScenario === "held-cue" ||
+          lessonScenario === "held-cue-no-consent")) ||
+      (!this.lessonCue && lessonScenario === "held-story");
+    const cue: E2ELessonCue | null = this.lessonCue
+      ? {
+          endedAt: null,
+          kind: "static" as const,
+          startedAt: performance.now(),
+          text: this.src,
+          volume: this.volume,
+        }
+      : null;
+    if (cue) lessonMediaMetrics.cues.push(cue);
+
+    let settled = false;
+    const removePending = () => {
+      if (!this.lessonPending) return;
+      const index = pendingLessonPlayback.indexOf(this.lessonPending);
+      if (index >= 0) pendingLessonPlayback.splice(index, 1);
+      this.lessonPending = null;
+    };
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      this.timerId = null;
+      this.lessonResume = null;
+      removePending();
+      if (cue) cue.endedAt = performance.now();
       this.onended?.(new Event("ended"));
-    }, getMockAudioDelayMs(this.src));
+    };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      this.timerId = null;
+      this.lessonResume = null;
+      removePending();
+      if (cue) cue.endedAt = performance.now();
+      this.onerror?.(new Event("error"));
+    };
+    const cancel = () => {
+      if (settled) return;
+      settled = true;
+      if (this.timerId !== null) window.clearTimeout(this.timerId);
+      this.timerId = null;
+      this.lessonResume = null;
+      removePending();
+      if (cue) lessonMediaMetrics.cueCancellations += 1;
+    };
+    this.lessonPending = { cancel, fail, finish };
+
+    if (heldLessonAudio) {
+      this.lessonResume = () => {};
+      pendingLessonPlayback.push(this.lessonPending);
+      return;
+    }
+    if (this.lessonCue && lessonScenario === "cue-failure") {
+      this.timerId = window.setTimeout(fail, 10);
+      return;
+    }
+    if (!this.lessonCue && lessonScenario === "story-failure") {
+      this.timerId = window.setTimeout(fail, 10);
+      return;
+    }
+    this.lessonResume = () => {
+      if (this.timerId === null) {
+        this.timerId = window.setTimeout(
+          finish,
+          getMockAudioDelayMs(this.src),
+        );
+      }
+    };
+    this.lessonResume();
   }
 }
 
@@ -1049,14 +1289,25 @@ class MockMediaRecorder {
   onerror: RecorderHandler<Event> = null;
   onstop: RecorderHandler<Event> = null;
   state: RecordingState = "inactive";
+  readonly lessonRecorderId: number;
 
   constructor(
     readonly stream: MediaStream,
     readonly options?: MediaRecorderOptions
-  ) {}
+  ) {
+    this.lessonRecorderId = getE2eLessonScenario()
+      ? ++lessonMediaMetrics.nextRecorderId
+      : 0;
+  }
 
   start() {
     this.state = "recording";
+    if (this.lessonRecorderId) {
+      lessonMediaMetrics.recorderStarts.push({
+        id: this.lessonRecorderId,
+        startedAt: performance.now(),
+      });
+    }
     if (hasHeldE2eProfileOperations()) {
       trackHeldProfileRecording(this);
       const visualPhase = getE2eProfileVisualPhase();
@@ -1081,6 +1332,16 @@ class MockMediaRecorder {
     if (this.state === "inactive") return;
 
     this.state = "inactive";
+    if (this.lessonRecorderId) {
+      lessonMediaMetrics.recorderStops.push({
+        id: this.lessonRecorderId,
+        stoppedAt: performance.now(),
+      });
+      if (getE2eLessonScenario() === "stop-failure") {
+        this.onerror?.(new Event("error"));
+        return;
+      }
+    }
     finishHeldProfileRecording(this, "resolved");
     const data = createE2eDubBlob(getE2eScenario());
     this.ondataavailable?.({ data } as BlobEvent);
@@ -1294,6 +1555,152 @@ const e2eProfileOperations = {
   stopRecording: stopNextProfileRecording,
 };
 
+function settleNextLessonPlayback(action: "fail" | "finish") {
+  const playback = pendingLessonPlayback[0];
+  if (!playback) return false;
+  playback[action]();
+  return true;
+}
+
+function settleNextLessonUpload(action: "reject" | "resolve") {
+  const upload = pendingLessonUploads.shift();
+  if (!upload) return false;
+  if (action === "resolve") {
+    upload.record.outcome = "saved";
+    upload.resolve(
+      e2eJson({ recordedAt: "2026-08-26T08:00:00.000Z" }, 201),
+    );
+  } else {
+    upload.record.outcome = "failed";
+    upload.reject(new Error("Held lesson recording upload failed."));
+  }
+  return true;
+}
+
+const e2eLessonMedia = {
+  failNextCue: () => settleNextLessonPlayback("fail"),
+  rejectNextUpload: () => settleNextLessonUpload("reject"),
+  releaseNextCue: () => settleNextLessonPlayback("finish"),
+  resolveNextUpload: () => settleNextLessonUpload("resolve"),
+  snapshot() {
+    return {
+      consentRequests: lessonMediaMetrics.consentRequests,
+      cueCancellations: lessonMediaMetrics.cueCancellations,
+      cues: lessonMediaMetrics.cues.map((cue) => ({ ...cue })),
+      evaluateRequests: lessonMediaMetrics.evaluateRequests,
+      getUserMediaCalls: lessonMediaMetrics.getUserMediaCalls,
+      pendingCues: pendingLessonPlayback.length,
+      pendingUploads: pendingLessonUploads.length,
+      recorderStarts: lessonMediaMetrics.recorderStarts.map((entry) => ({
+        ...entry,
+      })),
+      recorderStops: lessonMediaMetrics.recorderStops.map((entry) => ({
+        ...entry,
+      })),
+      stoppedTracks: lessonMediaMetrics.stoppedTracks,
+      uploads: lessonMediaMetrics.uploads.map((upload) => ({ ...upload })),
+    };
+  },
+};
+
+class MockLessonSpeechUtterance {
+  lang = "";
+  onend: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  pitch = 1;
+  rate = 1;
+  voice = null;
+  volume = 1;
+
+  constructor(readonly text: string) {}
+}
+
+let currentDevicePlayback: PendingLessonPlayback | null = null;
+const mockLessonSpeechSynthesis = {
+  cancel() {
+    currentDevicePlayback?.cancel();
+    currentDevicePlayback = null;
+  },
+  getVoices() {
+    return [
+      {
+        default: true,
+        lang: "en-US",
+        localService: true,
+        name: "Parrot E2E English",
+      },
+    ];
+  },
+  pause() {},
+  resume() {},
+  speak(utterance: MockLessonSpeechUtterance) {
+    const cue: E2ELessonCue = {
+      endedAt: null,
+      kind: "device",
+      startedAt: performance.now(),
+      text: utterance.text,
+      volume: utterance.volume,
+    };
+    lessonMediaMetrics.cues.push(cue);
+    let settled = false;
+    let timerId: number | null = null;
+    const removePending = () => {
+      if (!currentDevicePlayback) return;
+      const index = pendingLessonPlayback.indexOf(currentDevicePlayback);
+      if (index >= 0) pendingLessonPlayback.splice(index, 1);
+      currentDevicePlayback = null;
+    };
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      cue.endedAt = performance.now();
+      removePending();
+      utterance.onend?.();
+    };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      cue.endedAt = performance.now();
+      removePending();
+      utterance.onerror?.();
+    };
+    const cancel = () => {
+      if (settled) return;
+      settled = true;
+      if (timerId !== null) window.clearTimeout(timerId);
+      removePending();
+      lessonMediaMetrics.cueCancellations += 1;
+    };
+    currentDevicePlayback = { cancel, fail, finish };
+    if (
+      getE2eLessonScenario() === "held-cue" ||
+      getE2eLessonScenario() === "held-cue-no-consent"
+    ) {
+      pendingLessonPlayback.push(currentDevicePlayback);
+    } else if (getE2eLessonScenario() === "cue-failure") {
+      timerId = window.setTimeout(fail, 10);
+    } else {
+      timerId = window.setTimeout(finish, MOCK_AUDIO_DELAY_MS);
+    }
+  },
+};
+
+Object.defineProperty(window, "__parrotE2eLessonMedia", {
+  configurable: true,
+  value: e2eLessonMedia,
+});
+
+if (getE2eLessonScenario()) {
+  Object.defineProperty(window, "SpeechSynthesisUtterance", {
+    configurable: true,
+    value: MockLessonSpeechUtterance,
+  });
+  Object.defineProperty(window, "speechSynthesis", {
+    configurable: true,
+    value: mockLessonSpeechSynthesis,
+  });
+}
+
 Object.defineProperty(window, "__parrotE2eLessonMicrophone", {
   configurable: true,
   value: e2eLessonMicrophone,
@@ -1328,6 +1735,18 @@ Object.defineProperty(navigator, "mediaDevices", {
   configurable: true,
   value: {
     getUserMedia: async () => {
+      const lessonScenario = getE2eLessonScenario();
+      if (lessonScenario) {
+        lessonMediaMetrics.getUserMediaCalls += 1;
+        if (
+          (lessonScenario === "denied-preflight" &&
+            lessonMediaMetrics.getUserMediaCalls === 1) ||
+          (lessonScenario === "later-mic-failure" &&
+            lessonMediaMetrics.getUserMediaCalls === 3)
+        ) {
+          throw new DOMException("Permission denied", "NotAllowedError");
+        }
+      }
       if (getE2eMicrophoneScenario() === "denied") {
         throw new DOMException("Permission denied", "NotAllowedError");
       }
@@ -1338,7 +1757,13 @@ Object.defineProperty(navigator, "mediaDevices", {
           e2eLessonMicrophone.pending = pendingMicrophoneRequests.length;
         });
       }
-      return createMockStream();
+      return createMockStream(
+        lessonScenario
+          ? () => {
+              lessonMediaMetrics.stoppedTracks += 1;
+            }
+          : undefined,
+      );
     },
   },
 });
