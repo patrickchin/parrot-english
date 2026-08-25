@@ -396,6 +396,7 @@ describe("child-first story reader behavior", () => {
   });
 
   it("rejects direct narration mixed with static audio metadata", async () => {
+    const createdUrls = [];
     const playedUrls = [];
     const spoken = [];
     const mixedMetadataStory = {
@@ -417,6 +418,7 @@ describe("child-first story reader behavior", () => {
     class TestAudio {
       constructor(url) {
         this.url = url;
+        createdUrls.push(url);
       }
 
       pause() {}
@@ -476,6 +478,7 @@ describe("child-first story reader behavior", () => {
         /can’t read aloud on this device/i,
       ),
     );
+    assert.deepEqual(createdUrls, []);
     assert.deepEqual(playedUrls, []);
     assert.deepEqual(spoken, []);
   });
