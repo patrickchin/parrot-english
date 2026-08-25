@@ -1,15 +1,21 @@
 import assert from "node:assert/strict";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { MemoryRouter, useLocation } from "react-router";
 import { after, afterEach, before, test } from "node:test";
-import { createServer } from "vite";
 import {
   cleanupMountedRoots,
   installDom,
   mountStrict,
   waitFor,
 } from "./helpers/react-lifecycle.mjs";
+import {
+  createHermeticViteServer,
+  snapshotViteEnvironment,
+  viteEnvironmentMatches,
+} from "./helpers/hermetic-vite-server.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const privateStoryFixtures = [
@@ -47,24 +53,34 @@ const privateStoryFixtures = [
 const restoreDom = installDom();
 const originalFetch = globalThis.fetch;
 const fetchCalls = [];
-const vite = await createServer({
-  appType: "custom",
-  define: {
-    "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(
-      privateStoryFixtures,
-    ),
-    "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW": "true",
-  },
-  logLevel: "silent",
-  root: projectRoot,
-  server: { middlewareMode: true },
-});
-
+let vite;
+let viteHarness;
+let viteEnvironmentRestored = false;
 let App;
 let routedLocation = "";
 
 before(async () => {
-  ({ App } = await vite.ssrLoadModule("/src/app/App.tsx"));
+  const environmentBeforeCreation = snapshotViteEnvironment();
+  viteHarness = await createHermeticViteServer({
+    appType: "custom",
+    define: {
+      "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(
+        privateStoryFixtures,
+      ),
+      "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW": "true",
+    },
+    logLevel: "silent",
+    root: projectRoot,
+  });
+  vite = viteHarness.server;
+  viteEnvironmentRestored = viteEnvironmentMatches(environmentBeforeCreation);
+  try {
+    ({ App } = await vite.ssrLoadModule("/src/app/App.tsx"));
+  } catch (error) {
+    await viteHarness.close();
+    viteHarness = null;
+    throw error;
+  }
 });
 
 afterEach(async () => {
@@ -76,8 +92,11 @@ afterEach(async () => {
 });
 
 after(async () => {
-  await vite.close();
-  restoreDom();
+  try {
+    await viteHarness?.close();
+  } finally {
+    restoreDom();
+  }
 });
 
 function privatePreviewAppAt(initialEntry) {
@@ -98,6 +117,23 @@ function LocationProbe() {
   routedLocation = `${location.pathname}${location.search}${location.hash}`;
   return null;
 }
+
+test("uses a hermetic Vite module-transform server", () => {
+  assert.equal(viteEnvironmentRestored, true);
+  assert.equal(vite.config.configFile, undefined);
+  assert.equal(vite.config.envDir, false);
+  assert.deepEqual(vite.config.envPrefix, []);
+  assert.equal(vite.config.publicDir, "");
+  assert.equal(vite.config.server.watch, null);
+  assert.equal(vite.config.optimizeDeps.noDiscovery, true);
+  assert.deepEqual(vite.config.optimizeDeps.include, []);
+  assert.equal(path.isAbsolute(vite.config.cacheDir), true);
+  assert.equal(path.dirname(vite.config.cacheDir), os.tmpdir());
+  assert.equal(
+    vite.config.cacheDir.startsWith(`${projectRoot}${path.sep}`),
+    false,
+  );
+});
 
 test("App selects the synthetic private story shell before account and profile gates", async () => {
   assert.equal(
