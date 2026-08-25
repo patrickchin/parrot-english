@@ -50,7 +50,7 @@ test("revoking blocks grant and exact-generation checks until cleanup finishes",
   assert.deepEqual(await repository.status("user-1"), { state: "not_granted" });
 });
 
-test("rejects stale consent versions", async () => {
+test("replaces a stale consent version with one fresh current generation", async () => {
   const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
   state.sqlite.prepare(
     `INSERT INTO guardian_dub_consent
@@ -59,6 +59,10 @@ test("rejects stale consent versions", async () => {
   ).run("user-1", "guardian-voice-r2-v1", "old-grant", "granted", timestamp, timestamp);
 
   assert.equal(await repository.requireCurrentGrant("user-1"), null);
+  const granted = await repository.grant("user-1");
+  assert.equal(granted.state, "granted");
+  assert.equal(granted.consentVersion, "guardian-voice-r2-v2");
+  assert.equal(granted.grantGeneration, "grant-1");
 });
 
 test("rejects wrong grant generations", async () => {

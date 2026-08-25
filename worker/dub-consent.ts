@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { guardianDubConsent } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 
@@ -48,6 +48,22 @@ export function createDubConsentRepository(
   }
 
   async function grant(userId: string): Promise<DubConsentStatus> {
+    const [existing] = await database
+      .update(guardianDubConsent)
+      .set({ consentVersion: CURRENT_DUB_CONSENT_VERSION })
+      .where(
+        and(
+          eq(guardianDubConsent.authUserId, userId),
+          eq(guardianDubConsent.state, "granted"),
+          eq(
+            guardianDubConsent.consentVersion,
+            CURRENT_DUB_CONSENT_VERSION,
+          ),
+        ),
+      )
+      .returning();
+    if (existing) return statusFromRow(existing);
+
     const timestamp = now();
     const grantGeneration = createGeneration();
     const [row] = await database
@@ -69,11 +85,24 @@ export function createDubConsentRepository(
           state: "granted",
           updatedAt: timestamp,
         },
-        where: eq(guardianDubConsent.state, "granted"),
+        where: and(
+          eq(guardianDubConsent.state, "granted"),
+          ne(
+            guardianDubConsent.consentVersion,
+            CURRENT_DUB_CONSENT_VERSION,
+          ),
+        ),
       })
       .returning();
-    if (!row) throw new Error("dub_consent_revoking");
-    return statusFromRow(row);
+    if (row) return statusFromRow(row);
+    const current = await status(userId);
+    if (
+      current.state === "granted" &&
+      current.consentVersion === CURRENT_DUB_CONSENT_VERSION
+    ) {
+      return current;
+    }
+    throw new Error("dub_consent_revoking");
   }
 
   async function beginRevocation(userId: string): Promise<DubConsentStatus> {

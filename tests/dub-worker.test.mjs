@@ -3,6 +3,9 @@ import { createHash } from "node:crypto";
 import { ReadableStream } from "node:stream/web";
 import { describe, it } from "node:test";
 import { TextEncoder } from "node:util";
+import { createDatabase } from "../worker/database.ts";
+import { createDubConsentRepository } from "../worker/dub-consent.ts";
+import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const DUB_PATH = "/api/dubs/five-little-ducks-v1";
 const CURRENT_CONSENT_VERSION = "guardian-voice-r2-v2";
@@ -307,6 +310,68 @@ async function callDub({
 }
 
 describe("private learner dub API", () => {
+  it("keeps the first durable generation across repeated concurrent grants with legacy audio", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      let generationCalls = 0;
+      const consentRepository = createDubConsentRepository(
+        createDatabase(state.d1),
+        {
+          createGeneration: () => `consent-${++generationCalls}`,
+          now: () => new Date("2026-08-25T08:00:00.000Z"),
+        },
+      );
+      const bucket = createBucket([[slotKey("line-1"), {
+        bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+        options: { httpMetadata: { contentType: "audio/webm" } },
+        uploaded: new Date("2026-08-25T07:00:00.000Z"),
+      }]]);
+      const grant = () => callDub({
+        body: JSON.stringify({
+          accepted: true,
+          consentVersion: CURRENT_CONSENT_VERSION,
+        }),
+        bucket,
+        consentRepository,
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+        path: `${DUB_PATH}/consent`,
+      });
+
+      assert.equal((await grant()).status, 204);
+      const first = await consentRepository.status("user-1");
+      assert.equal(first.state, "granted");
+      assert.equal(first.grantGeneration, "consent-1");
+      assert.equal((await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      }).then((response) => response.json())).lines[0].saved, true);
+
+      const repeated = await Promise.all([grant(), grant()]);
+      assert.deepEqual(repeated.map(({ status }) => status), [204, 204]);
+      const current = await consentRepository.status("user-1");
+      assert.equal(current.state, "granted");
+      assert.equal(current.grantGeneration, first.grantGeneration);
+      assert.equal(generationCalls, 1);
+      assert.equal((await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      }).then((response) => response.json())).lines[0].saved, true);
+    } finally {
+      state.close();
+    }
+  });
+
   it("returns disabled status without listing R2 when consent is absent or revoking", async () => {
     for (const consentState of ["not_granted", "revoking"]) {
       const bucket = createBucket();
