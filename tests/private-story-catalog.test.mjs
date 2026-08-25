@@ -64,7 +64,7 @@ const PRIVATE_STORY_FIXTURES = [
   },
 ];
 
-async function loadCatalog(define = {}, loadPreviewModule = false) {
+async function loadCatalog(define = {}) {
   const vite = await createServer({
     appType: "custom",
     define,
@@ -73,36 +73,43 @@ async function loadCatalog(define = {}, loadPreviewModule = false) {
     server: { middlewareMode: true },
   });
   after(async () => vite.close());
-  if (loadPreviewModule) {
-    await vite.ssrLoadModule("/src/stories/private-story-preview.ts");
-  }
-  return vite.ssrLoadModule("/src/stories/story-catalog.ts");
+  const preview = await vite.ssrLoadModule(
+    "/src/stories/private-story-preview.ts",
+  );
+  const catalog = await vite.ssrLoadModule("/src/stories/story-catalog.ts");
+  return { catalog, preview };
 }
 
 describe("private long-story catalog injection", () => {
   it("keeps the default catalog at 20 stories across four levels", async () => {
-    const catalog = await loadCatalog();
+    const { catalog, preview } = await loadCatalog();
 
     assert.equal(catalog.STORIES.length, 20);
     assert.equal(catalog.STORY_LEVELS.length, 4);
+    assert.equal(preview.IS_PRIVATE_STORY_PREVIEW, false);
   });
 
   it("appends injected private stories as a final routable Long stories level", async () => {
-    const injectedCatalog = await loadCatalog(
-      {
-        "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(
-          PRIVATE_STORY_FIXTURES,
-        ),
-        "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW": "true",
-      },
-      true,
-    );
+    const { catalog: injectedCatalog, preview } = await loadCatalog({
+      "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(
+        PRIVATE_STORY_FIXTURES,
+      ),
+      "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW": "true",
+    });
 
     assert.deepEqual(
-      injectedCatalog.STORY_LEVELS.map(({ id }) => id).at(-1),
-      "long-stories",
+      injectedCatalog.STORY_LEVELS.map(({ id }) => id),
+      [
+        "first-words",
+        "repeating-patterns",
+        "tiny-stories",
+        "early-a1",
+        "long-stories",
+      ],
     );
     assert.equal(injectedCatalog.STORY_LEVELS.at(-1).label, "Long stories");
+    assert.equal(injectedCatalog.STORIES.length, 22);
+    assert.equal(preview.IS_PRIVATE_STORY_PREVIEW, true);
     assert.deepEqual(
       injectedCatalog.STORIES.filter(({ level }) => level === "long-stories")
         .map(({ id }) => id),
