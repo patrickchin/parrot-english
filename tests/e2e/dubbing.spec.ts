@@ -1,7 +1,17 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type Rect = { height: number; width: number; x: number; y: number };
-type DubPreviewSnapshot = { pending: number; requests: number; resolved: number };
+type DubPreviewSnapshot = {
+  aborted: number;
+  authenticatedMediaRequests: number;
+  cleanups: number;
+  mediaRequests: number;
+  pending: number;
+  rejected: number;
+  requests: number;
+  resolved: number;
+  synchronousStarts: number;
+};
 type DubStoreSnapshot = { uploads: string[] };
 type MicrophoneSnapshot = {
   pending: number;
@@ -49,6 +59,17 @@ async function dubPreviewSnapshot(page: Page) {
   );
   expect(snapshot).toBeDefined();
   return snapshot!;
+}
+
+async function finishNextDubPreview(page: Page) {
+  const finished = await page.evaluate(() =>
+    (
+      window as typeof window & {
+        __parrotE2eDubPreview?: { finishNext(): boolean };
+      }
+    ).__parrotE2eDubPreview?.finishNext(),
+  );
+  expect(finished).toBe(true);
 }
 
 async function dubStoreSnapshot(page: Page) {
@@ -101,12 +122,22 @@ test("records, saves, reviews, and resumes the nine-line dub at line 2", async (
   await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Stop recording line 1" }).click();
   await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
-  expect(await dubPreviewSnapshot(page)).toEqual({ pending: 0, requests: 0, resolved: 0 });
+  expect(await dubPreviewSnapshot(page)).toMatchObject({
+    cleanups: 0,
+    mediaRequests: 0,
+    pending: 0,
+    requests: 0,
+    synchronousStarts: 0,
+  });
   await page.getByRole("button", { name: "Hear my take" }).click();
-  await expect.poll(() => dubPreviewSnapshot(page)).toEqual({
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    authenticatedMediaRequests: 1,
+    cleanups: 1,
+    mediaRequests: 1,
     pending: 0,
     requests: 1,
     resolved: 1,
+    synchronousStarts: 1,
   });
   await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
   await page.getByRole("button", { name: "Next line" }).click();
@@ -116,6 +147,90 @@ test("records, saves, reviews, and resumes the nine-line dub at line 2", async (
   await enterStudio(page, "Continue dubbing");
   await expect(page.getByText("Line 2 of 9", { exact: true })).toBeVisible();
   await expect(page.getByText("Over the hill and far away.", { exact: true })).toBeVisible();
+});
+
+test("finishes and cancels direct saved-take previews across a resumed session", async ({
+  page,
+}) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=preview-held");
+  await enterStudio(page, "Start dubbing");
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+  await expect(page.getByRole("button", { name: "Hear my take" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Hear my take" }).click();
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    authenticatedMediaRequests: 1,
+    cleanups: 0,
+    mediaRequests: 1,
+    pending: 1,
+    requests: 1,
+    synchronousStarts: 1,
+  });
+  await finishNextDubPreview(page);
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    cleanups: 1,
+    pending: 0,
+    resolved: 1,
+  });
+
+  await page.getByRole("button", { name: "Next line" }).click();
+  await page.reload();
+  await enterStudio(page, "Continue dubbing");
+  await expect(page.getByText("Line 2 of 9", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Record line 2" }).click();
+  await page.getByRole("button", { name: "Stop recording line 2" }).click();
+  const hearTake = page.getByRole("button", { name: "Hear my take" });
+  await hearTake.click();
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    authenticatedMediaRequests: 1,
+    mediaRequests: 1,
+    pending: 1,
+    requests: 1,
+    synchronousStarts: 1,
+  });
+  await hearTake.click();
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    aborted: 1,
+    authenticatedMediaRequests: 2,
+    cleanups: 1,
+    mediaRequests: 2,
+    pending: 1,
+    requests: 2,
+    synchronousStarts: 2,
+  });
+
+  await page.getByRole("link", { name: "Back to home" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    aborted: 2,
+    cleanups: 2,
+    pending: 0,
+    requests: 2,
+  });
+  await expect(page.getByRole("alert").filter({ hasText: /saved take/i })).toHaveCount(0);
+});
+
+test("hides technical saved-take playback failures", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=preview-failed");
+  await enterStudio(page, "Start dubbing");
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+  await page.getByRole("button", { name: "Hear my take" }).click();
+
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved take could not be played. Try again.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText(/WebKit media pipeline code 77/i)).toHaveCount(0);
+  await expect.poll(() => dubPreviewSnapshot(page)).toMatchObject({
+    cleanups: 1,
+    pending: 0,
+    rejected: 1,
+    requests: 1,
+  });
+  await expect(page.getByRole("button", { name: "Next line" })).toBeEnabled();
 });
 
 test("keeps the same take available when its first upload fails", async ({ page }) => {

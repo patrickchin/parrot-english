@@ -13,6 +13,8 @@ const E2E_DUB_SCENARIOS = new Set([
   "partial",
   "complete",
   "playback-setup-failed",
+  "preview-failed",
+  "preview-held",
   "reset-delete-failed",
   "reset-interrupted",
   "upload-failed",
@@ -317,6 +319,13 @@ type E2EOperationCounters = {
   resolved: number;
 };
 
+type E2EDubPreviewCounters = E2EOperationCounters & {
+  authenticatedMediaRequests: number;
+  cleanups: number;
+  mediaRequests: number;
+  synchronousStarts: number;
+};
+
 type PendingProfileOperation = {
   abort: () => void;
   abortObserved: boolean;
@@ -348,6 +357,16 @@ function createOperationCounters(): E2EOperationCounters {
   };
 }
 
+function createDubPreviewCounters(): E2EDubPreviewCounters {
+  return {
+    ...createOperationCounters(),
+    authenticatedMediaRequests: 0,
+    cleanups: 0,
+    mediaRequests: 0,
+    synchronousStarts: 0,
+  };
+}
+
 const profileOperationCounters = Object.fromEntries(
   E2E_PROFILE_OPERATIONS.map((operation) => [
     operation,
@@ -357,7 +376,7 @@ const profileOperationCounters = Object.fromEntries(
 
 const profileRecordingCounters = createOperationCounters();
 const profilePlaybackCounters = createOperationCounters();
-const dubPreviewPlaybackCounters = createOperationCounters();
+const dubPreviewPlaybackCounters = createDubPreviewCounters();
 const pendingProfileOperations: Record<
   E2EProfileOperation,
   PendingProfileOperation[]
@@ -502,6 +521,10 @@ function createE2eDubStore(scenario: string | null) {
       if (!lineMatch) return null;
       const [, lineId, audioPath] = lineMatch;
       if (method === "GET" && audioPath) {
+        dubPreviewPlaybackCounters.mediaRequests += 1;
+        if (request.credentials === "same-origin") {
+          dubPreviewPlaybackCounters.authenticatedMediaRequests += 1;
+        }
         const clip = clips.get(lineId);
         return clip
           ? new Response(clip, {
@@ -801,13 +824,35 @@ function getMockAudioDelayMs(src: string) {
     : MOCK_AUDIO_DELAY_MS;
 }
 
+function isDirectE2eDubAudioUrl(src: string) {
+  try {
+    const url = new URL(src, window.location.href);
+    return (
+      url.origin === window.location.origin &&
+      /^\/api\/dubs\/five-little-ducks-v1\/lines\/line-[1-9]\/audio$/.test(
+        url.pathname,
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
   onerror: RecorderHandler<Event> = null;
+  src: string;
+  private readonly dubPreviewSource: boolean;
+  private dubPreviewActive = false;
   private dubPreviewTimer: number | null = null;
   private held = false;
 
-  constructor(readonly src: string) {}
+  constructor(src: string) {
+    this.src = src;
+    this.dubPreviewSource =
+      Boolean(getE2eDubScenario()) &&
+      (src.startsWith("blob:") || isDirectE2eDubAudioUrl(src));
+  }
 
   pause() {
     if (this.held) {
@@ -816,12 +861,24 @@ class MockAudioElement {
       profilePlaybackCounters.pending = pendingProfilePlayback.size;
       profilePlaybackCounters.aborted += 1;
     }
-    if (this.dubPreviewTimer !== null) {
-      window.clearTimeout(this.dubPreviewTimer);
-      this.dubPreviewTimer = null;
+    if (this.dubPreviewActive) {
+      this.dubPreviewActive = false;
+      pendingDubPreviews.delete(this);
+      if (this.dubPreviewTimer !== null) {
+        window.clearTimeout(this.dubPreviewTimer);
+        this.dubPreviewTimer = null;
+      }
       dubPreviewPlaybackCounters.pending -= 1;
       dubPreviewPlaybackCounters.aborted += 1;
     }
+  }
+
+  removeAttribute(name: string) {
+    if (name === "src") this.src = "";
+  }
+
+  load() {
+    if (this.dubPreviewSource) dubPreviewPlaybackCounters.cleanups += 1;
   }
 
   finish() {
@@ -834,16 +891,76 @@ class MockAudioElement {
     return true;
   }
 
+  finishDubPreview() {
+    if (!this.dubPreviewActive) return false;
+    this.dubPreviewActive = false;
+    pendingDubPreviews.delete(this);
+    if (this.dubPreviewTimer !== null) {
+      window.clearTimeout(this.dubPreviewTimer);
+      this.dubPreviewTimer = null;
+    }
+    dubPreviewPlaybackCounters.pending -= 1;
+    dubPreviewPlaybackCounters.resolved += 1;
+    this.onended?.(new Event("ended"));
+    return true;
+  }
+
+  private failDubPreview() {
+    if (!this.dubPreviewActive) return;
+    this.dubPreviewActive = false;
+    pendingDubPreviews.delete(this);
+    if (this.dubPreviewTimer !== null) {
+      window.clearTimeout(this.dubPreviewTimer);
+      this.dubPreviewTimer = null;
+    }
+    dubPreviewPlaybackCounters.pending -= 1;
+    dubPreviewPlaybackCounters.rejected += 1;
+    this.onerror?.(new Event("error"));
+  }
+
+  private scheduleDubPreview() {
+    if (
+      !this.dubPreviewActive ||
+      getE2eDubScenario() === "preview-held"
+    ) {
+      return;
+    }
+    this.dubPreviewTimer = window.setTimeout(() => {
+      this.finishDubPreview();
+    }, MOCK_AUDIO_DELAY_MS);
+  }
+
   async play() {
-    if (getE2eDubScenario() && this.src.startsWith("blob:") && this.dubPreviewTimer === null) {
+    if (this.dubPreviewSource && !this.dubPreviewActive) {
+      if (
+        dubPreviewPlaybackCounters.mediaRequests ===
+        dubPreviewPlaybackCounters.requests
+      ) {
+        dubPreviewPlaybackCounters.synchronousStarts += 1;
+      }
       dubPreviewPlaybackCounters.pending += 1;
       dubPreviewPlaybackCounters.requests += 1;
-      this.dubPreviewTimer = window.setTimeout(() => {
-        this.dubPreviewTimer = null;
+      if (getE2eDubScenario() === "preview-failed") {
         dubPreviewPlaybackCounters.pending -= 1;
-        dubPreviewPlaybackCounters.resolved += 1;
-        this.onended?.(new Event("ended"));
-      }, MOCK_AUDIO_DELAY_MS);
+        dubPreviewPlaybackCounters.rejected += 1;
+        throw new DOMException(
+          "TECHNICAL WebKit media pipeline code 77",
+          "NotSupportedError",
+        );
+      }
+      this.dubPreviewActive = true;
+      pendingDubPreviews.add(this);
+      if (isDirectE2eDubAudioUrl(this.src)) {
+        void window.fetch(this.src).then(
+          (response) => {
+            if (response.ok) this.scheduleDubPreview();
+            else this.failDubPreview();
+          },
+          () => this.failDubPreview(),
+        );
+      } else {
+        this.scheduleDubPreview();
+      }
       return;
     }
     if (
@@ -865,10 +982,16 @@ class MockAudioElement {
 }
 
 const pendingProfilePlayback = new Set<MockAudioElement>();
+const pendingDubPreviews = new Set<MockAudioElement>();
 
 function resolveNextProfilePlayback() {
   const playback = pendingProfilePlayback.values().next().value;
   return playback?.finish() ?? false;
+}
+
+function resolveNextDubPreview() {
+  const playback = pendingDubPreviews.values().next().value;
+  return playback?.finishDubPreview() ?? false;
 }
 
 class MockMediaRecorder {
@@ -1134,12 +1257,9 @@ if (getE2eDubScenario()) {
     configurable: true,
     value: {
       snapshot() {
-        return {
-          pending: dubPreviewPlaybackCounters.pending,
-          requests: dubPreviewPlaybackCounters.requests,
-          resolved: dubPreviewPlaybackCounters.resolved,
-        };
+        return { ...dubPreviewPlaybackCounters };
       },
+      finishNext: resolveNextDubPreview,
     },
   });
 }

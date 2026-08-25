@@ -411,7 +411,6 @@ export function DuckDub() {
   const statusControllerRef = useRef<AbortController | null>(null);
   const guideControllerRef = useRef<AbortController | null>(null);
   const uploadControllerRef = useRef<AbortController | null>(null);
-  const previewControllerRef = useRef<AbortController | null>(null);
   const finalControllerRef = useRef<AbortController | null>(null);
   const deleteControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
@@ -420,8 +419,7 @@ export function DuckDub() {
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
-  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-  const previewUrlRef = useRef<string | null>(null);
+  const previewPlaybackRef = useRef<{ stop(): void } | null>(null);
   const finalPlaybackRef = useRef<{ stop(): void } | null>(null);
 
   const stopOperations = useCallback((discardBlob = false) => {
@@ -432,8 +430,8 @@ export function DuckDub() {
     guideControllerRef.current = null;
     uploadControllerRef.current?.abort();
     uploadControllerRef.current = null;
-    previewControllerRef.current?.abort();
-    previewControllerRef.current = null;
+    previewPlaybackRef.current?.stop();
+    previewPlaybackRef.current = null;
     finalControllerRef.current?.abort();
     finalControllerRef.current = null;
     deleteControllerRef.current?.abort();
@@ -446,10 +444,6 @@ export function DuckDub() {
       clearTimeout(recordingTimerRef.current);
       recordingTimerRef.current = null;
     }
-    previewAudioRef.current?.pause();
-    previewAudioRef.current = null;
-    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    previewUrlRef.current = null;
     finalPlaybackRef.current?.stop();
     finalPlaybackRef.current = null;
     if (discardBlob) {
@@ -596,43 +590,72 @@ export function DuckDub() {
       });
   }
 
-  async function handleHearTake() {
+  function handleHearTake() {
     stopOperations(false);
     const generation = generationRef.current;
     const controller = new AbortController();
-    previewControllerRef.current = controller;
+    const lineId = DUB_LINES[state.currentLineIndex].id;
+    const audio = new Audio(getDubLineAudioUrl(lineId));
+    let cleaned = false;
+    let settled = false;
+    let resolveCompletion!: () => void;
+    let rejectCompletion!: (error: unknown) => void;
+    const completion = new Promise<void>((resolve, reject) => {
+      resolveCompletion = resolve;
+      rejectCompletion = reject;
+    });
+    const finish = (error?: unknown) => {
+      if (settled) return;
+      settled = true;
+      if (error === undefined) resolveCompletion();
+      else rejectCompletion(error);
+    };
+    const abort = () => {
+      finish(new DOMException("Preview cancelled.", "AbortError"));
+    };
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      controller.signal.removeEventListener("abort", abort);
+      audio.onended = null;
+      audio.onerror = null;
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    };
+    const playback = {
+      stop() {
+        controller.abort();
+        cleanup();
+      },
+    };
+    previewPlaybackRef.current = playback;
     setOperationError("");
+    audio.onended = () => finish();
+    audio.onerror = () => finish(new Error("Saved take playback failed."));
+    controller.signal.addEventListener("abort", abort, { once: true });
+    void completion
+      .catch((error: unknown) => {
+        if (
+          controller.signal.aborted ||
+          generation !== generationRef.current ||
+          isAbortError(error)
+        ) {
+          return;
+        }
+        setOperationError("Your saved take could not be played. Try again.");
+      })
+      .finally(() => {
+        cleanup();
+        if (previewPlaybackRef.current === playback) {
+          previewPlaybackRef.current = null;
+        }
+      });
     try {
-      const lineId = DUB_LINES[state.currentLineIndex].id;
-      const response = await fetch(getDubLineAudioUrl(lineId), {
-        credentials: "same-origin",
-        signal: controller.signal,
-      });
-      if (!response.ok) throw new Error("Your saved take could not be played. Try again.");
-      const blob = await response.blob();
-      if (!mountedRef.current || generation !== generationRef.current) return;
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      previewUrlRef.current = url;
-      previewAudioRef.current = audio;
-      await new Promise<void>((resolve, reject) => {
-        const abort = () => reject(new DOMException("Preview cancelled.", "AbortError"));
-        audio.onended = () => resolve();
-        audio.onerror = () => reject(new Error("Your saved take could not be played. Try again."));
-        controller.signal.addEventListener("abort", abort, { once: true });
-        void audio.play().catch(reject);
-      });
+      const playResult = audio.play();
+      void playResult?.catch((error: unknown) => finish(error));
     } catch (error) {
-      if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
-      setOperationError(error instanceof Error ? error.message : "Your saved take could not be played. Try again.");
-    } finally {
-      if (previewControllerRef.current === controller) {
-        previewAudioRef.current?.pause();
-        previewAudioRef.current = null;
-        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = null;
-        previewControllerRef.current = null;
-      }
+      finish(error);
     }
   }
 
