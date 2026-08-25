@@ -12,6 +12,8 @@ const E2E_DUB_SCENARIOS = new Set([
   "empty",
   "partial",
   "complete",
+  "playback-setup-failed",
+  "reset-interrupted",
   "upload-failed",
 ]);
 const E2E_DUB_LINE_IDS = [
@@ -386,7 +388,12 @@ function createE2eDubBlob(scenario = "correct") {
 }
 
 function initialE2eDubLineIds(scenario: string) {
-  if (scenario === "complete" || scenario === "corrupt-line-5") {
+  if (
+    scenario === "complete" ||
+    scenario === "corrupt-line-5" ||
+    scenario === "playback-setup-failed" ||
+    scenario === "reset-interrupted"
+  ) {
     return [...E2E_DUB_LINE_IDS];
   }
   if (scenario === "partial") return E2E_DUB_LINE_IDS.slice(0, 3);
@@ -397,6 +404,7 @@ function createE2eDubStore(scenario: string | null) {
   if (!scenario) return null;
   const savedKey = `parrot-e2e-dub:${scenario}:saved`;
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
+  const resetKey = `parrot-e2e-dub:${scenario}:reset-finished`;
   const persisted = sessionStorage.getItem(savedKey);
   const savedLineIds = persisted
     ? (JSON.parse(persisted) as string[])
@@ -414,6 +422,8 @@ function createE2eDubStore(scenario: string | null) {
     ]),
   );
   let failedUpload: Uint8Array | null = null;
+  let resetInterrupted =
+    scenario === "reset-interrupted" && sessionStorage.getItem(resetKey) !== "yes";
   const uploads: string[] = [];
 
   function persist() {
@@ -425,6 +435,21 @@ function createE2eDubStore(scenario: string | null) {
       if (url.origin !== window.location.origin) return null;
       if (url.pathname === E2E_DUB_API) {
         if (method === "GET") {
+          if (resetInterrupted) {
+            return Response.json(
+              {
+                error: "dub_reset_in_progress",
+                message: "TECHNICAL reset marker generation is deleting",
+              },
+              {
+                headers: {
+                  "Cache-Control": "no-store",
+                  "X-Parrot-Mock-Api": "browser",
+                },
+                status: 409,
+              },
+            );
+          }
           return e2eJson({
             complete: E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
             dubId: "five-little-ducks-v1",
@@ -437,6 +462,11 @@ function createE2eDubStore(scenario: string | null) {
           });
         }
         if (method === "DELETE") {
+          if (resetInterrupted) {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
+            resetInterrupted = false;
+            sessionStorage.setItem(resetKey, "yes");
+          }
           clips.clear();
           persist();
           return new Response(null, {
@@ -922,7 +952,14 @@ class MockAudioContext {
     }
     return {} as AudioBuffer;
   }
-  async resume() {}
+  async resume() {
+    if (getE2eDubScenario() === "playback-setup-failed") {
+      throw new DOMException(
+        "Mock AudioContext resume failed: sample-rate mismatch at graph 7.",
+        "InvalidStateError",
+      );
+    }
+  }
 }
 
 function createMockStream(onStop?: () => void) {

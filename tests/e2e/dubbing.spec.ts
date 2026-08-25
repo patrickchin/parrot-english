@@ -182,6 +182,28 @@ test("returns an undecodable line 5 to a focused replacement action", async ({ p
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
 });
 
+test("hides generic playback setup details and keeps final controls usable", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dubs/five-little-ducks?parrotE2eDub=playback-setup-failed",
+  );
+  await enterStudio(page, "Continue dubbing");
+
+  await page.getByRole("button", { name: "Watch my dub" }).click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub could not be played. Try again.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByText(/sample-rate mismatch at graph 7/i)).toHaveCount(0);
+  const lineSelect = page.getByRole("combobox", { name: "Choose a saved line" });
+  await expect(lineSelect).toBeEnabled();
+  await lineSelect.selectOption("line-5");
+  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch my dub" })).toBeEnabled();
+});
+
 test("automatically finishes and saves a six-second recording", async ({ page }) => {
   test.setTimeout(15_000);
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
@@ -244,6 +266,41 @@ test("deletes a complete private dub", async ({ page }) => {
     await dialog.accept();
   });
   await page.getByRole("button", { name: "Delete my dub" }).click();
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /I’m the grown-up/ })).not.toBeChecked();
+});
+
+test("finishes an interrupted reset while preserving ordinary load retry", async ({
+  page,
+}) => {
+  await page.goto(
+    "/dubs/five-little-ducks?parrotE2eDub=reset-interrupted",
+  );
+
+  await expect(
+    page.getByRole("alert").filter({
+      hasText:
+        "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try loading again" })).toBeVisible();
+  await page.getByRole("button", { name: "Try loading again" }).click();
+  await expect(
+    page.getByRole("button", { name: "Finish deleting my dub" }),
+  ).toBeVisible();
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.type()).toBe("confirm");
+    expect(dialog.message()).toBe(
+      "Grown-up: delete every saved voice clip in this dub?",
+    );
+    await dialog.accept();
+  });
+  await page.getByRole("button", { name: "Finish deleting my dub" }).click();
+  await expect(page.getByRole("button", { name: "Deleting your dub…" })).toBeVisible();
+  await expect(page.getByRole("main").locator('[role="status"]')).toHaveText(
+    "Deleting your saved dub.",
+  );
   await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
   await expect(page.getByRole("checkbox", { name: /I’m the grown-up/ })).not.toBeChecked();
 });

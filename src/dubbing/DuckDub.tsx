@@ -21,6 +21,7 @@ import {
 import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
 import {
   deleteDub,
+  DubResetInProgressError,
   getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
@@ -61,8 +62,64 @@ type DubControlsProps = {
   isDeleting?: boolean;
   loadError?: string;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
+  resetInterrupted?: boolean;
   state: DubState;
 };
+
+function dubStatusMessage({
+  isDeleting,
+  lineIndex,
+  loadError,
+  resetInterrupted,
+  state,
+}: {
+  isDeleting: boolean;
+  lineIndex: number;
+  loadError: string;
+  resetInterrupted: boolean;
+  state: DubState;
+}) {
+  const line = `Line ${lineIndex + 1} of ${DUB_LINES.length}.`;
+  if (isDeleting) {
+    return "Deleting your saved dub.";
+  }
+  if (state.phase === "loading") {
+    if (resetInterrupted) {
+      return "Deleting your saved dub was interrupted. A grown-up can finish deleting it.";
+    }
+    return loadError
+      ? "Loading stopped. Try loading again."
+      : "Loading your private dub.";
+  }
+  if (state.phase === "intro") {
+    return "Grown-up confirmation is needed before dubbing.";
+  }
+  if (state.phase === "line-ready") {
+    return `${line} Ready to hear or record this line.`;
+  }
+  if (state.phase === "mic-opening") {
+    return `${line} Opening the microphone.`;
+  }
+  if (state.phase === "recording") {
+    return `${line} Recording in progress.`;
+  }
+  if (state.phase === "saving") {
+    return `${line} Saving your take.`;
+  }
+  if (state.phase === "save-error") {
+    return `${line} Choose Save again or record this line again.`;
+  }
+  if (state.phase === "line-review") {
+    return `${line} Your saved take is ready to review.`;
+  }
+  if (state.phase === "final-ready") {
+    return `Your complete dub is ready. Line ${lineIndex + 1} of ${DUB_LINES.length} selected.`;
+  }
+  if (state.phase === "final-loading") {
+    return "Getting your dub ready to play.";
+  }
+  return `Playing your dub. ${line}`;
+}
 
 function renderDubControls({
   activeLine,
@@ -70,12 +127,23 @@ function renderDubControls({
   isDeleting = false,
   loadError = "",
   recordButtonRef,
+  resetInterrupted = false,
   state,
 }: DubControlsProps) {
   const lineNumber = Math.max(0, DUB_LINES.findIndex(({ id }) => id === activeLine.id)) + 1;
   if (state.phase === "loading") {
+    if (isDeleting) {
+      return <ActionButton disabled>Deleting your dub…</ActionButton>;
+    }
     return loadError ? (
-      <ActionButton onClick={handlers.onRetryLoad}>Try loading again</ActionButton>
+      <>
+        <ActionButton onClick={handlers.onRetryLoad}>Try loading again</ActionButton>
+        {resetInterrupted ? (
+          <ActionButton onClick={handlers.onDelete} variant="dangerSurface">
+            Finish deleting my dub
+          </ActionButton>
+        ) : null}
+      </>
     ) : (
       <ActionButton disabled>Loading your private dub…</ActionButton>
     );
@@ -201,6 +269,7 @@ export function DuckDubView({
   onStopRecording,
   onWatch,
   recordButtonRef,
+  resetInterrupted = false,
   state,
 }: Omit<DubHandlers, "onRetryLoad"> & {
   confirmed: boolean;
@@ -210,10 +279,18 @@ export function DuckDubView({
   onConfirm(confirmed: boolean): void;
   onRetryLoad?(): void;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
+  resetInterrupted?: boolean;
   state: DubState;
 }) {
   const lineIndex = Math.max(0, DUB_LINES.findIndex(({ id }) => id === line.id));
   const error = state.error || loadError;
+  const statusMessage = dubStatusMessage({
+    isDeleting,
+    lineIndex,
+    loadError,
+    resetInterrupted,
+    state,
+  });
   const handlers: DubHandlers = {
     onDelete,
     onHearGuide,
@@ -286,6 +363,7 @@ export function DuckDubView({
                 isDeleting,
                 loadError,
                 recordButtonRef,
+                resetInterrupted,
                 state,
               })}
             </div>
@@ -301,7 +379,7 @@ export function DuckDubView({
             </p>
           ) : null}
           <div aria-atomic="true" aria-live="polite" className="sr-only" role="status">
-            Line {lineIndex + 1} of {DUB_LINES.length}. {state.phase === "recording" ? "Recording in progress." : "Ready."}
+            {statusMessage}
           </div>
         </section>
       </section>
@@ -327,6 +405,7 @@ export function DuckDub() {
   const [loadSequence, setLoadSequence] = useState(0);
   const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [resetInterrupted, setResetInterrupted] = useState(false);
   const mountedRef = useRef(false);
   const generationRef = useRef(0);
   const statusControllerRef = useRef<AbortController | null>(null);
@@ -385,6 +464,7 @@ export function DuckDub() {
     const generation = generationRef.current;
     statusControllerRef.current = controller;
     setLoadError("");
+    setResetInterrupted(false);
     void loadDubStatus({ signal: controller.signal })
       .then((status) => {
         if (!mountedRef.current || generation !== generationRef.current) return;
@@ -395,6 +475,7 @@ export function DuckDub() {
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted || !mountedRef.current) return;
+        setResetInterrupted(error instanceof DubResetInProgressError);
         setLoadError(error instanceof Error ? error.message : "Your saved dub could not be loaded.");
       })
       .finally(() => {
@@ -598,9 +679,7 @@ export function DuckDub() {
         return;
       }
       dispatch({ type: "FINAL_FINISHED" });
-      setOperationError(
-        error instanceof Error ? error.message : "Your saved dub could not be played. Try again.",
-      );
+      setOperationError("Your saved dub could not be played. Try again.");
     }
   }
 
@@ -616,11 +695,13 @@ export function DuckDub() {
     const controller = new AbortController();
     deleteControllerRef.current = controller;
     setIsDeleting(true);
+    setLoadError("");
     setOperationError("");
     try {
       await deleteDub({ signal: controller.signal });
       if (!mountedRef.current || generation !== generationRef.current) return;
       setConfirmed(false);
+      setResetInterrupted(false);
       setPlaybackLineIndex(0);
       dispatch({ type: "RESET_SUCCEEDED" });
     } catch (error) {
@@ -685,6 +766,7 @@ export function DuckDub() {
       onStopRecording={() => void finishRecording()}
       onWatch={() => void handleWatch()}
       recordButtonRef={recordButtonRef}
+      resetInterrupted={resetInterrupted}
       state={state.error || !operationError ? state : { ...state, error: operationError }}
     />
   );

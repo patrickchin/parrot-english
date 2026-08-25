@@ -53,7 +53,7 @@ const handlers = {
   onWatch() {},
 };
 
-function renderDuckDub(state, confirmed = true) {
+function renderDuckDub(state, confirmed = true, viewProps = {}) {
   assert.equal(
     typeof DuckDubView,
     "function",
@@ -67,8 +67,17 @@ function renderDuckDub(state, confirmed = true) {
       onConfirm() {},
       state: mergedState,
       ...handlers,
+      ...viewProps,
     }),
   );
+}
+
+function liveStatusText(html) {
+  const match = html.match(
+    /<div(?=[^>]*aria-atomic="true")(?=[^>]*aria-live="polite")(?=[^>]*role="status")[^>]*>([^<]*)<\/div>/,
+  );
+  assert.ok(match, "Expected one atomic polite status region");
+  return match[1].replace(/\s+/g, " ").trim();
 }
 
 describe("duck dubbing presentation", () => {
@@ -154,16 +163,137 @@ describe("duck dubbing presentation", () => {
     assert.match(playing, />Stop playback<\/button>/);
   });
 
-  it("uses one polite live region while keeping visible progress and recording text", () => {
+  it("announces every phase accurately through one atomic polite live region", () => {
+    const complete = Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"]));
+    const cases = [
+      [{ phase: "loading" }, {}, "Loading your private dub."],
+      [
+        { phase: "loading" },
+        { loadError: "Your saved dub could not be loaded." },
+        "Loading stopped. Try loading again.",
+      ],
+      [
+        { phase: "loading" },
+        {
+          loadError:
+            "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+          resetInterrupted: true,
+        },
+        "Deleting your saved dub was interrupted. A grown-up can finish deleting it.",
+      ],
+      [{ phase: "intro" }, {}, "Grown-up confirmation is needed before dubbing."],
+      [
+        { currentLineIndex: 2, phase: "line-ready" },
+        {},
+        "Line 3 of 9. Ready to hear or record this line.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "mic-opening" },
+        {},
+        "Line 3 of 9. Opening the microphone.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "recording" },
+        {},
+        "Line 3 of 9. Recording in progress.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "saving" },
+        {},
+        "Line 3 of 9. Saving your take.",
+      ],
+      [
+        { currentLineIndex: 2, error: "Not saved.", phase: "save-error" },
+        {},
+        "Line 3 of 9. Choose Save again or record this line again.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "line-review" },
+        {},
+        "Line 3 of 9. Your saved take is ready to review.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "final-ready", saved: complete },
+        {},
+        "Your complete dub is ready. Line 3 of 9 selected.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "final-loading", saved: complete },
+        {},
+        "Getting your dub ready to play.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "final-playing", saved: complete },
+        {},
+        "Playing your dub. Line 3 of 9.",
+      ],
+      [
+        { currentLineIndex: 2, phase: "final-ready", saved: complete },
+        { isDeleting: true },
+        "Deleting your saved dub.",
+      ],
+      [
+        { phase: "loading" },
+        {
+          isDeleting: true,
+          loadError:
+            "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+          resetInterrupted: true,
+        },
+        "Deleting your saved dub.",
+      ],
+    ];
+
+    for (const [state, viewProps, expected] of cases) {
+      const html = renderDuckDub(state, true, viewProps);
+      assert.equal(liveStatusText(html), expected);
+      assert.equal((html.match(/role="status"/g) ?? []).length, 1);
+      assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1);
+    }
+  });
+
+  it("offers an explicit reset recovery only for an interrupted deletion", () => {
+    const ordinary = renderDuckDub(
+      { phase: "loading" },
+      true,
+      { loadError: "Your saved dub could not be loaded." },
+    );
+    assert.match(ordinary, />Try loading again<\/button>/);
+    assert.doesNotMatch(ordinary, /Finish deleting my dub/);
+
+    const interrupted = renderDuckDub(
+      { phase: "loading" },
+      true,
+      {
+        loadError:
+          "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+        resetInterrupted: true,
+      },
+    );
+    assert.match(interrupted, />Try loading again<\/button>/);
+    assert.match(interrupted, />Finish deleting my dub<\/button>/);
+
+    const deleting = renderDuckDub(
+      { phase: "loading" },
+      true,
+      {
+        isDeleting: true,
+        loadError:
+          "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+        resetInterrupted: true,
+      },
+    );
+    assert.match(deleting, /<button[^>]*disabled[^>]*>Deleting your dub…<\/button>/);
+    assert.doesNotMatch(deleting, /Try loading again|Finish deleting my dub/);
+  });
+
+  it("keeps visible progress and recording text accessible but non-live", () => {
     const html = renderDuckDub({ phase: "recording", currentLineIndex: 2 });
     assert.match(html, />Line 3 of 9<\/p>/);
     assert.match(html, />Recording…<\/p>/);
     assert.equal((html.match(/role="status"/g) ?? []).length, 1);
     assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1);
-    assert.match(
-      html,
-      /<div[^>]*aria-atomic="true"[^>]*aria-live="polite"[^>]*role="status"[^>]*>[^<]*Line 3[^<]*recording/i,
-    );
+    assert.doesNotMatch(html, /<p[^>]*(?:aria-live|role="status")[^>]*>[^<]*(?:Line 3|Recording…)/);
   });
 
   it("uses one hidden original SVG with adjacent scene description", () => {

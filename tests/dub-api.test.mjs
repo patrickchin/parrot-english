@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   deleteDub,
+  DubResetInProgressError,
   getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
@@ -102,6 +103,46 @@ describe("duck dub browser API", () => {
     await assert.rejects(
       deleteDub({ fetch: failingFetch }),
       /Your saved dub was not deleted\./,
+    );
+  });
+
+  it("types an interrupted reset without exposing server details", async () => {
+    await assert.rejects(
+      loadDubStatus({
+        fetch: async () =>
+          Response.json(
+            {
+              error: "dub_reset_in_progress",
+              message: "TECHNICAL marker generation reset-17 is deleting",
+            },
+            { status: 409 },
+          ),
+      }),
+      (error) => {
+        assert.ok(error instanceof DubResetInProgressError);
+        assert.equal(error.code, "dub_reset_in_progress");
+        assert.equal(
+          error.message,
+          "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+        );
+        assert.doesNotMatch(error.message, /marker|generation|reset-17/i);
+        return true;
+      },
+    );
+
+    await assert.rejects(
+      loadDubStatus({
+        fetch: async () =>
+          Response.json(
+            { error: "account_deletion_pending" },
+            { status: 409 },
+          ),
+      }),
+      (error) => {
+        assert.ok(!(error instanceof DubResetInProgressError));
+        assert.equal(error.message, "Your saved dub could not be loaded.");
+        return true;
+      },
     );
   });
 

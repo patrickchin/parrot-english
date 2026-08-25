@@ -96,18 +96,33 @@ against the same contract and stored in D1. Story scripts retain internal
 vocabulary and prompt metadata for validation, but the learner UI consumes only
 level, cover, title, summary, pages, and join-in content.
 
-Five Little Ducks voice clips use nine format-agnostic fixed keys beneath the
-existing private account-purge prefix:
+Five Little Ducks voice clips use a generation marker and nine format-agnostic
+fixed slots beneath the existing private account-purge prefix:
 
 ```text
 personalized-story-art/{encoded-user-id}/learner-dubs/
-  five-little-ducks-v1/{line-id}.audio
+  five-little-ducks-v1/
+    .dub-generation
+    line-{1..9}.audio
 ```
 
-R2 is the source of truth for saved slots. Replacement overwrites the fixed
-slot and reset deletes the nine exact keys. No D1 metadata or migration is used;
-the existing per-account R2 prefix sweep also deletes the clips with the
-account.
+R2 is the source of truth. The marker carries a generation and a `ready` or
+`deleting` state; status and playback expose only clips owned by the current
+ready generation. Each new upload stores a `parrot-dub-audio-v2` envelope with
+the generation and a request-unique upload nonce before the raw audio payload.
+Matching metadata records the payload offset, generation, and nonce so an
+authenticated GET can conditionally validate the exact envelope and stream only
+the payload.
+
+Replacement conditionally writes the observed fixed slot and rechecks the
+generation fence. Reset conditionally acquires a new `deleting` generation,
+conditionally replaces all nine fixed slots with generation-owned non-audio
+tombstones, and then conditionally finalizes the marker as `ready`; an
+interrupted reset remains fenced until another DELETE completes it. Account
+deletion checks fence an exact in-flight upload with a non-audio
+`account-deleting` tombstone before returning a conflict, while the existing
+per-account R2 prefix sweep removes markers, tombstones, and clips. Dubs require
+no D1 metadata or migration.
 
 ## Provider Boundaries
 

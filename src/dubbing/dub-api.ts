@@ -14,6 +14,17 @@ type DubRequestOptions = {
   signal?: AbortSignal;
 };
 
+export class DubResetInProgressError extends Error {
+  readonly code = "dub_reset_in_progress" as const;
+
+  constructor() {
+    super(
+      "Deleting your saved dub was interrupted. Ask a grown-up to finish deleting it.",
+    );
+    this.name = "DubResetInProgressError";
+  }
+}
+
 function requireOk(response: Response, fallback: string) {
   if (!response.ok) throw new Error(fallback);
   return response;
@@ -30,6 +41,17 @@ export async function loadDubStatus(options: DubRequestOptions = {}) {
       signal: options.signal,
     },
   );
+  if (response.status === 409) {
+    const body: unknown = await response.clone().json().catch(() => null);
+    if (
+      typeof body === "object" &&
+      body !== null &&
+      "error" in body &&
+      body.error === "dub_reset_in_progress"
+    ) {
+      throw new DubResetInProgressError();
+    }
+  }
   return (await requireOk(
     response,
     "Your saved dub could not be loaded.",
