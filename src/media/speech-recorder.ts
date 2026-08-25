@@ -1,5 +1,4 @@
 const DEFAULT_RECORDING_MS = 4200;
-const DEFAULT_MIME_TYPE = "audio/webm";
 
 export const MICROPHONE_CONSTRAINTS = {
   audio: {
@@ -57,7 +56,7 @@ export function selectRecordingMimeType(
   }
 
   if (typeof MediaRecorderClass.isTypeSupported !== "function") {
-    return DEFAULT_MIME_TYPE;
+    return "";
   }
 
   const isTypeSupported = MediaRecorderClass.isTypeSupported;

@@ -20,13 +20,24 @@ describe("recording MIME negotiation", () => {
     );
   });
 
-  it("falls back to audio/webm when probing is unavailable", () => {
+  it("uses the browser default when MIME probing is unavailable", () => {
     class FakeRecorder {}
 
-    assert.equal(
-      speechRecorder.selectRecordingMimeType(FakeRecorder),
-      "audio/webm"
-    );
+    assert.equal(speechRecorder.selectRecordingMimeType(FakeRecorder), "");
+  });
+
+  it("omits options and preserves the recorder type without MIME probing", async () => {
+    const { stream } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    FakeMediaRecorder.prototype.mimeType = "audio/mp4";
+
+    const session = await startSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    assert.equal(instances[0].options, undefined);
+    assert.equal((await session.stop()).type, "audio/mp4");
   });
 
   it("returns no MIME type when probing finds no supported format", () => {
