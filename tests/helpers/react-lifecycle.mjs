@@ -16,14 +16,28 @@ export function deferred() {
 
 export function installDom() {
   const browserWindow = new Window({ url: "http://localhost/" });
+  Object.defineProperty(browserWindow.HTMLImageElement.prototype, "decode", {
+    configurable: true,
+    value: () => Promise.resolve(),
+  });
+  class PreloadImage {
+    decoding = "auto";
+    src = "";
+
+    decode() {
+      return Promise.resolve();
+    }
+  }
   const bindings = {
     CustomEvent: browserWindow.CustomEvent,
     DOMException: browserWindow.DOMException,
     Element: browserWindow.Element,
     Event: browserWindow.Event,
     HTMLElement: browserWindow.HTMLElement,
+    HTMLImageElement: browserWindow.HTMLImageElement,
     HTMLInputElement: browserWindow.HTMLInputElement,
     HTMLTextAreaElement: browserWindow.HTMLTextAreaElement,
+    Image: PreloadImage,
     KeyboardEvent: browserWindow.KeyboardEvent,
     MouseEvent: browserWindow.MouseEvent,
     MutationObserver: browserWindow.MutationObserver,

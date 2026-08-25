@@ -153,12 +153,86 @@ export function LessonStage({
 }
 
 export function BoxedFullSceneStage({
+  decoded = false,
   image,
+  onDecoded,
+  onFailed,
+  onRetry,
   reserved = false,
 }: {
+  decoded?: boolean;
   image: FullSceneImage;
+  onDecoded?: (src: string) => void;
+  onFailed?: (src: string) => void;
+  onRetry?: (src: string) => void;
   reserved?: boolean;
 }) {
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const [decodedRequest, setDecodedRequest] = useState("");
+  const [failedRequest, setFailedRequest] = useState("");
+  const [retrySequence, setRetrySequence] = useState(0);
+  const requestKey = `${image.src}:${retrySequence}`;
+  const isDecoded = decoded || decodedRequest === requestKey;
+  const didFail = failedRequest === requestKey;
+
+  useEffect(() => {
+    if (decoded) return;
+    const element = imageRef.current;
+    if (!element) return;
+    let active = true;
+    let settled = false;
+    let decoding = false;
+    let timeoutId: number | undefined;
+
+    const clearLoadTimeout = () => {
+      if (timeoutId === undefined) return;
+      window.clearTimeout(timeoutId);
+      timeoutId = undefined;
+    };
+
+    const reportFailure = () => {
+      if (!active || settled) return;
+      settled = true;
+      clearLoadTimeout();
+      setFailedRequest(requestKey);
+      onFailed?.(image.src);
+    };
+    const reportDecoded = async () => {
+      if (!active || settled || decoding) return;
+      decoding = true;
+      try {
+        if (typeof element.decode === "function") await element.decode();
+      } catch {
+        if (!element.complete || element.naturalWidth === 0) {
+          reportFailure();
+          return;
+        }
+      }
+      if (!active || settled || element !== imageRef.current) return;
+      if (!element.complete || element.naturalWidth === 0) {
+        reportFailure();
+        return;
+      }
+      settled = true;
+      clearLoadTimeout();
+      setDecodedRequest(requestKey);
+      onDecoded?.(image.src);
+    };
+    const handleLoad = () => void reportDecoded();
+
+    element.addEventListener("load", handleLoad);
+    element.addEventListener("error", reportFailure);
+    timeoutId = window.setTimeout(reportFailure, 8_000);
+    if (element.complete && element.naturalWidth > 0) void reportDecoded();
+
+    return () => {
+      active = false;
+      clearLoadTimeout();
+      element.removeEventListener("load", handleLoad);
+      element.removeEventListener("error", reportFailure);
+    };
+  }, [decoded, image.src, onDecoded, onFailed, requestKey]);
+
   return (
     <section
       aria-label="Lesson artwork"
@@ -172,48 +246,164 @@ export function BoxedFullSceneStage({
     >
       <img
         alt={image.alt}
-        className="block size-full select-none object-contain"
+        className={cx(
+          "block size-full select-none object-contain transition-opacity motion-reduce:transition-none",
+          isDecoded ? "opacity-100" : "opacity-0",
+        )}
+        decoding="async"
         draggable="false"
+        fetchPriority="high"
+        key={requestKey}
+        loading="eager"
+        ref={imageRef}
         src={image.src}
       />
+      {isDecoded ? null : (
+        <div className="absolute inset-0 grid place-items-center bg-sky-100/95 p-4 text-center text-brand-ink">
+          {didFail ? (
+            <div className="grid max-w-xs place-items-center gap-3" role="alert">
+              <p className="m-0 text-lg font-black">No picture yet.</p>
+              <ActionButton
+                aria-label="Try loading picture again"
+                onClick={() => {
+                  onRetry?.(image.src);
+                  setRetrySequence((current) => current + 1);
+                }}
+                size="large"
+                type="button"
+                variant="navy"
+              >
+                Try again
+              </ActionButton>
+            </div>
+          ) : (
+            <div
+              aria-live="polite"
+              className="grid place-items-center gap-2 font-black"
+              role="status"
+            >
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-8 animate-spin text-brand-blue motion-reduce:animate-none"
+              />
+              Loading picture…
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
 
 export function BoxedLessonSceneLayout({
+  artworkDecoded = false,
   controls,
   dialogue,
   hud,
   image,
   notice,
+  onArtworkDecoded,
 }: {
+  artworkDecoded?: boolean;
   controls: ReactNode;
   dialogue: ReactNode;
   hud: ReactNode;
   image: FullSceneImage;
   notice: ReactNode;
+  onArtworkDecoded?: (src: string) => void;
 }) {
+  const useSceneSafePanel = !notice;
+  const isRibbon = image.panelLayout === "ribbon";
+  const [panelX, panelY, panelWidth, panelHeight] = image.panelSafeRect;
+  const panelStyle = {
+    "--lesson-panel-height": `${panelHeight * 100}%`,
+    "--lesson-panel-left": `${(panelX + panelWidth / 2) * 100}%`,
+    "--lesson-panel-top": `${panelY * 100}%`,
+    "--lesson-panel-width": `${panelWidth * 100}%`,
+  } as CSSProperties;
+
   return (
     <section
       aria-label="Active lesson content"
-      className="absolute inset-x-2 bottom-2 top-20 z-10 grid min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_minmax(0,auto)_auto_auto] gap-1.5 short:top-16 md:inset-x-3 md:bottom-4 md:top-24 md:gap-3 short-wide:inset-x-2 short-wide:bottom-2 short-wide:top-16 short-wide:gap-2 min-[560px]:landscape:grid-cols-[minmax(0,3fr)_minmax(14rem,2fr)] min-[560px]:landscape:grid-rows-[auto_minmax(0,1fr)_auto_auto] lg:landscape:grid-cols-[minmax(0,5fr)_minmax(20rem,3fr)] wide:inset-x-6 wide:gap-4"
+      className={cx(
+        "absolute inset-x-2 bottom-2 top-20 z-10 grid min-h-0 grid-cols-1 grid-rows-[auto_minmax(0,1fr)_minmax(0,auto)_auto_auto] gap-1.5 [container-type:size] short:top-16 md:inset-x-3 md:bottom-4 md:top-24 md:gap-3 short-wide:inset-x-2 short-wide:bottom-2 short-wide:top-16 short-wide:gap-2 min-[560px]:landscape:grid-cols-[minmax(0,3fr)_minmax(14rem,2fr)] min-[560px]:landscape:grid-rows-[auto_minmax(0,1fr)_auto_auto] wide:inset-x-6 wide:gap-4",
+        useSceneSafePanel
+          ? "tall-wide:grid-cols-1 tall-wide:grid-rows-1 tall-wide:place-items-center"
+          : "tall-wide:grid-cols-[minmax(0,1fr)_clamp(20rem,24vw,28rem)] tall-wide:grid-rows-1",
+      )}
     >
-      <div className="col-start-1 row-start-1 min-w-0 min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-1">
-        {hud}
-      </div>
-      <div className="row-start-2 grid min-h-0 min-w-0 place-items-center [container-type:size] min-[560px]:landscape:col-start-1 min-[560px]:landscape:row-span-4 min-[560px]:landscape:row-start-1">
-        <BoxedFullSceneStage image={image} reserved />
-      </div>
-      <div className="col-start-1 row-start-3 flex min-h-0 min-w-0 items-start overflow-hidden min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-2">
-        {dialogue}
-      </div>
-      {notice ? (
-        <div className="col-start-1 row-start-4 min-w-0 min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-3">
-          {notice}
+      <div
+        className={cx(
+          "contents",
+          useSceneSafePanel &&
+            "tall-wide:relative tall-wide:block tall-wide:h-[min(100cqh,56.25cqw)] tall-wide:w-[min(100cqw,177.78cqh)]",
+        )}
+      >
+        <div
+          className={cx(
+            "row-start-2 grid min-h-0 min-w-0 place-items-center [container-type:size] min-[560px]:landscape:col-start-1 min-[560px]:landscape:row-span-4 min-[560px]:landscape:row-start-1",
+            useSceneSafePanel &&
+              "tall-wide:absolute tall-wide:inset-0 tall-wide:z-0 tall-wide:col-auto tall-wide:row-auto tall-wide:row-span-1",
+            !useSceneSafePanel &&
+              "tall-wide:row-span-1 tall-wide:row-start-1",
+          )}
+        >
+          <BoxedFullSceneStage
+            decoded={artworkDecoded}
+            image={image}
+            onDecoded={onArtworkDecoded}
+            reserved
+          />
         </div>
-      ) : null}
-      <div className="col-start-1 row-start-5 min-w-0 min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-4">
-        {controls}
+        <div
+          aria-label="Lesson words and controls"
+          className={cx(
+            "contents min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-span-4 min-[560px]:landscape:row-start-1 min-[560px]:landscape:grid min-[560px]:landscape:min-h-0 min-[560px]:landscape:grid-rows-[auto_minmax(0,1fr)_auto_auto] min-[560px]:landscape:gap-2",
+            useSceneSafePanel &&
+              "tall-wide:absolute tall-wide:left-[var(--lesson-panel-left)] tall-wide:top-[var(--lesson-panel-top)] tall-wide:z-20 tall-wide:col-auto tall-wide:row-auto tall-wide:max-h-[var(--lesson-panel-height)] tall-wide:w-[min(var(--lesson-panel-width),28rem)] tall-wide:-translate-x-1/2 tall-wide:gap-0.5 tall-wide:overflow-hidden tall-wide:rounded-3xl tall-wide:border-4 tall-wide:border-white tall-wide:bg-white/90 tall-wide:p-1 tall-wide:shadow-card",
+            useSceneSafePanel &&
+              isRibbon &&
+              "tall-wide:w-[var(--lesson-panel-width)] tall-wide:grid-cols-[minmax(12rem,0.8fr)_minmax(16rem,1.4fr)_auto] tall-wide:grid-rows-1 tall-wide:items-center tall-wide:gap-2",
+            !useSceneSafePanel &&
+              "tall-wide:self-center tall-wide:row-span-1 tall-wide:row-start-1 tall-wide:grid-rows-[auto_auto_auto_auto] tall-wide:content-center tall-wide:gap-2 tall-wide:rounded-3xl tall-wide:border-4 tall-wide:border-white tall-wide:bg-white/90 tall-wide:p-2 tall-wide:shadow-card",
+          )}
+          role="region"
+          style={useSceneSafePanel ? panelStyle : undefined}
+        >
+          <div
+            className={cx(
+              "col-start-1 row-start-1 min-w-0",
+              useSceneSafePanel && isRibbon && "tall-wide:self-center",
+            )}
+          >
+            {hud}
+          </div>
+          <div
+            className={cx(
+              "col-start-1 row-start-3 flex min-h-0 min-w-0 items-start overflow-hidden min-[560px]:landscape:row-start-2",
+              useSceneSafePanel &&
+                isRibbon &&
+                "tall-wide:col-start-2 tall-wide:row-start-1 tall-wide:items-center",
+            )}
+          >
+            {dialogue}
+          </div>
+          {notice ? (
+            <div className="col-start-1 row-start-4 min-w-0 min-[560px]:landscape:row-start-3">
+              {notice}
+            </div>
+          ) : null}
+          <div
+            className={cx(
+              "col-start-1 row-start-5 min-w-0 min-[560px]:landscape:row-start-4",
+              useSceneSafePanel &&
+                isRibbon &&
+                "tall-wide:col-start-3 tall-wide:row-start-1",
+            )}
+          >
+            {controls}
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -247,13 +437,14 @@ export function LessonHud({
         className={cx(
           "flex min-h-11 min-w-0 items-center gap-2 rounded-full border-3 border-white bg-white/95 px-3 py-1.5 text-brand-ink shadow-md md:min-h-14 md:gap-3 md:px-4",
           reserved &&
-            "short-wide:min-h-11 short-wide:gap-2 short-wide:px-3 short-wide:py-1",
+            "short-wide:min-h-11 short-wide:gap-2 short-wide:px-3 short-wide:py-1 tall-wide:min-h-10 tall-wide:gap-1.5 tall-wide:border-0 tall-wide:px-2.5 tall-wide:py-1 tall-wide:shadow-none",
         )}
       >
         <span
           className={cx(
             "shrink-0 text-xs font-black uppercase tracking-wide text-brand-rose md:text-sm",
-            reserved && "short-wide:text-xs",
+            reserved &&
+              "short-wide:text-xs tall-wide:text-[0.65rem] tall-wide:tracking-normal",
           )}
         >
           Scene {currentScene} of {sceneCount}
@@ -262,7 +453,8 @@ export function LessonHud({
         <h1
           className={cx(
             "m-0 min-w-0 flex-1 truncate text-base font-black leading-tight md:text-xl",
-            reserved && "short-wide:text-base",
+            reserved &&
+              "short-wide:text-base tall-wide:text-base",
           )}
         >
           {title}
@@ -276,7 +468,7 @@ export function LessonHud({
         className={cx(
           "mx-5 mt-1.5 h-2 overflow-hidden rounded-full border border-white/90 bg-white/65 shadow-sm md:mx-7 md:h-2.5",
           reserved &&
-            "short-wide:mx-4 short-wide:mt-1 short-wide:h-1.5",
+            "short-wide:mx-4 short-wide:mt-1 short-wide:h-1.5 tall-wide:mx-3 tall-wide:mt-0.5 tall-wide:h-1.5 tall-wide:border-0 tall-wide:shadow-none",
         )}
         role="progressbar"
       >
@@ -295,10 +487,11 @@ export const LessonIntroduction = forwardRef<
   {
     lessonTitle: string;
     onStart: () => void;
+    ready?: boolean;
     sceneCount: number;
   }
 >(function LessonIntroduction(
-  { lessonTitle, onStart, sceneCount },
+  { lessonTitle, onStart, ready = true, sceneCount },
   ref,
 ) {
   return (
@@ -338,13 +531,24 @@ export const LessonIntroduction = forwardRef<
         <ActionButton
           aria-label="Start lesson"
           className="max-w-sm"
+          disabled={!ready}
           fullWidth
           onClick={onStart}
           ref={ref}
           size="hero"
           type="button"
         >
-          Let’s go!
+          {ready ? (
+            "Let’s go!"
+          ) : (
+            <>
+              <LoaderCircle
+                aria-hidden="true"
+                className="size-7 animate-spin motion-reduce:animate-none"
+              />
+              Loading picture…
+            </>
+          )}
         </ActionButton>
       </Card>
     </section>
@@ -470,7 +674,7 @@ export function LessonSpeech({
       className={cx(
         "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface md:px-7 md:py-4",
         reserved
-          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5"
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
           : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
         isNarration
           ? "bg-brand-navy/95 text-white shadow-control-navy"
@@ -508,7 +712,7 @@ export function LessonSpeech({
         className={cx(
           "m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 md:max-h-40",
           reserved &&
-            "min-h-0 overscroll-contain short-wide:text-xl lg:landscape:text-[clamp(1.25rem,2.4vw,2rem)]",
+            "min-h-0 overscroll-contain short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
           isNarration
             ? "focus-visible:outline-brand-yellow"
             : "focus-visible:outline-brand-ink",
@@ -548,16 +752,17 @@ export function LessonUserPrompt({
       className={cx(
         "lesson-dialogue-overlay lesson-user-prompt z-30 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 min-[340px]:py-3 md:px-7 md:py-4",
         reserved
-          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5"
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
           : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
         portrait && "lesson-user-prompt-with-portrait",
+        portrait && reserved && "tall-wide:flex tall-wide:items-center tall-wide:gap-2",
       )}
       role="region"
     >
       {portrait ? (
         <img
           alt="You in storybook style"
-          className="lesson-user-portrait mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24"
+          className="lesson-user-portrait mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24 tall-wide:mb-0 tall-wide:size-12 tall-wide:shrink-0 tall-wide:rounded-xl tall-wide:border-2"
           src={portrait.src}
         />
       ) : null}
@@ -565,6 +770,7 @@ export function LessonUserPrompt({
         className={cx(
           "lesson-user-prompt-copy min-w-0",
           reserved && "grid min-h-0 grid-rows-[auto_minmax(0,1fr)]",
+          portrait && reserved && "tall-wide:flex-1",
         )}
       >
         <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
@@ -582,7 +788,7 @@ export function LessonUserPrompt({
           className={cx(
             "m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]",
             reserved &&
-              "min-h-0 overflow-y-auto overscroll-contain short-wide:text-xl lg:landscape:text-[clamp(1.25rem,2.4vw,2rem)]",
+              "min-h-0 overflow-y-auto overscroll-contain short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
           )}
           onKeyDown={scrollOverflowText}
           ref={overflowText.ref}
@@ -619,7 +825,7 @@ export function LessonFeedback({
       className={cx(
         "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center text-white shadow-control-navy md:px-7 md:py-4",
         reserved
-          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5"
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
           : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
         isCorrect
           ? "bg-emerald-700/95"
@@ -638,7 +844,7 @@ export function LessonFeedback({
         className={cx(
           "m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
           reserved &&
-            "min-h-0 max-h-32 overflow-y-auto overscroll-contain md:max-h-40 short-wide:text-xl lg:landscape:text-[clamp(1.25rem,2.4vw,2rem)]",
+            "min-h-0 max-h-32 overflow-y-auto overscroll-contain md:max-h-40 short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
         )}
         onKeyDown={scrollOverflowText}
         ref={overflowText.ref}
@@ -682,6 +888,7 @@ export function LessonPlaybackControls({
     >
       <IconButton
         aria-label="Previous scene"
+        className={reserved ? "tall-wide:size-12" : undefined}
         disabled={atFirstScene}
         elevation="raised"
         frame="white"
@@ -694,6 +901,7 @@ export function LessonPlaybackControls({
       </IconButton>
       <IconButton
         aria-label={pauseLabel}
+        className={reserved ? "tall-wide:size-12" : undefined}
         elevation="raised"
         frame="white"
         onClick={onPauseResume}
@@ -709,6 +917,7 @@ export function LessonPlaybackControls({
       </IconButton>
       <IconButton
         aria-label="Next scene"
+        className={reserved ? "tall-wide:size-12" : undefined}
         disabled={atFinalScene}
         elevation="raised"
         frame="white"
@@ -754,6 +963,9 @@ export function LessonSpeakingControls({
         <span
           aria-live="assertive"
           className={controlClassName({
+            className: reserved
+              ? "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base"
+              : undefined,
             fullWidth: true,
             interaction: "static",
             size: "large",
@@ -772,7 +984,11 @@ export function LessonSpeakingControls({
           {usePracticeFallback ? (
             <ActionButton
               aria-label="Done with speaking"
-              className="min-w-0 flex-1"
+              className={cx(
+                "min-w-0 flex-1",
+                reserved &&
+                  "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base",
+              )}
               onClick={onSkip}
               size="large"
               type="button"
@@ -788,6 +1004,8 @@ export function LessonSpeakingControls({
               usePracticeFallback ? "shrink-0" : "min-w-0 flex-1",
               isStartingRecording && "aria-disabled:opacity-100",
               isRecording && "animate-pulse motion-reduce:animate-none",
+              reserved &&
+                "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base",
             )}
             onClick={isStartingRecording ? undefined : onToggleRecording}
             size="large"
@@ -815,7 +1033,11 @@ export function LessonSpeakingControls({
           {usePracticeFallback ? null : (
             <ActionButton
               aria-label="Skip speaking turn"
-              className="shrink-0"
+              className={cx(
+                "shrink-0",
+                reserved &&
+                  "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base",
+              )}
               disabled={isStartingRecording}
               onClick={onSkip}
               size="large"

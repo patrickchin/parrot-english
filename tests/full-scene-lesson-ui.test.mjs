@@ -133,6 +133,63 @@ test("every ready-made lesson has one five-scene artwork set", async () => {
   );
 });
 
+test("every ready-made scene declares a scene-aware learning-panel composition", () => {
+  const scenes = getFullSceneLessons().flatMap((lesson) => lesson.scenes);
+  const layouts = new Set();
+
+  for (const scene of scenes) {
+    assert.ok(
+      Object.hasOwn(scene, "panelSafeRect"),
+      `Expected an explicit panel placement decision for ${scene.src}`,
+    );
+    assert.ok(
+      ["stack", "ribbon"].includes(scene.panelLayout),
+      `Expected a stack or ribbon panel layout for ${scene.src}`,
+    );
+
+    assert.equal(scene.panelSafeRect.length, 4);
+    const [x, y, width, height] = scene.panelSafeRect;
+    for (const value of scene.panelSafeRect) {
+      assert.equal(Number.isFinite(value), true);
+      assert.ok(value >= 0 && value <= 1);
+    }
+    if (scene.panelLayout === "stack") {
+      assert.ok(width >= 0.32);
+      assert.ok(height >= 0.36);
+    } else {
+      assert.ok(width >= 0.7);
+      assert.ok(height >= 0.16 && height <= 0.22);
+    }
+    assert.ok(x + width <= 1);
+    assert.ok(y + height <= 1);
+    layouts.add(scene.panelLayout);
+  }
+
+  assert.deepEqual(layouts, new Set(["stack", "ribbon"]));
+});
+
+test("learning controls keep a predictable anchor within each lesson", () => {
+  for (const lesson of getFullSceneLessons()) {
+    const layouts = new Set(lesson.scenes.map((scene) => scene.panelLayout));
+    const xPositions = lesson.scenes.map((scene) => scene.panelSafeRect[0]);
+    const yPositions = lesson.scenes.map((scene) => scene.panelSafeRect[1]);
+
+    assert.equal(
+      layouts.size,
+      1,
+      `Expected one panel composition throughout ${lesson.lessonId}`,
+    );
+    assert.ok(
+      Math.max(...xPositions) - Math.min(...xPositions) <= 0.08,
+      `Expected limited horizontal panel movement in ${lesson.lessonId}`,
+    );
+    assert.ok(
+      Math.max(...yPositions) - Math.min(...yPositions) <= 0.001,
+      `Expected a stable vertical panel anchor in ${lesson.lessonId}`,
+    );
+  }
+});
+
 test("every declared ready-made full-scene source is a clean versioned media URL", () => {
   const lessons = getDeclaredReadyMadeLessons();
   const allSources = lessons.flatMap((lesson) =>
