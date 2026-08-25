@@ -23,6 +23,7 @@ type Mutation = "delete" | "grant" | "switch";
 
 export function GuardianDubbingSettingsView({
   consentState,
+  canRetryStatus,
   error,
   hasAccepted,
   isLoading,
@@ -35,6 +36,7 @@ export function GuardianDubbingSettingsView({
   savedCount,
 }: {
   consentState: DubStatus["consentState"] | null;
+  canRetryStatus: boolean;
   error: string;
   hasAccepted: boolean;
   isLoading: boolean;
@@ -90,7 +92,7 @@ export function GuardianDubbingSettingsView({
             <p className="m-0 font-extrabold text-red-900" role="alert">
               {error}
             </p>
-            {!busy ? (
+            {canRetryStatus && !busy ? (
               <ActionButton
                 onClick={onRetry}
                 size="compact"
@@ -227,6 +229,7 @@ export function GuardianDubbingSettings({
   const [isLoading, setIsLoading] = useState(true);
   const [mutation, setMutation] = useState<Mutation | null>(null);
   const [operationError, setOperationError] = useState("");
+  const [statusError, setStatusError] = useState("");
   const loadControllerRef = useRef<AbortController | null>(null);
   const loadGenerationRef = useRef(0);
   const mountedRef = useRef(false);
@@ -236,10 +239,10 @@ export function GuardianDubbingSettings({
   const refresh = useCallback(
     async ({
       invalidateOnFailure = false,
-      preserveError = false,
+      preserveOperationError = false,
     }: {
       invalidateOnFailure?: boolean;
-      preserveError?: boolean;
+      preserveOperationError?: boolean;
     } = {}) => {
       loadControllerRef.current?.abort();
       const controller = new AbortController();
@@ -247,7 +250,8 @@ export function GuardianDubbingSettings({
       loadControllerRef.current = controller;
       loadGenerationRef.current = generation;
       setIsLoading(true);
-      if (!preserveError) setOperationError("");
+      setStatusError("");
+      if (!preserveOperationError) setOperationError("");
 
       try {
         const nextStatus = await loadDubStatus({ signal: controller.signal });
@@ -259,6 +263,7 @@ export function GuardianDubbingSettings({
           return false;
         }
         setStatus(nextStatus);
+        if (nextStatus.consentState !== "not_granted") setHasAccepted(false);
         return true;
       } catch (error) {
         if (
@@ -269,7 +274,7 @@ export function GuardianDubbingSettings({
           return false;
         }
         if (invalidateOnFailure) setStatus(null);
-        setOperationError(
+        setStatusError(
           messageFor(error, "Voice dubbing settings could not be loaded."),
         );
         return false;
@@ -302,7 +307,6 @@ export function GuardianDubbingSettings({
   async function mutate(
     kind: Exclude<Mutation, "switch">,
     operation: (options: { signal: AbortSignal }) => Promise<void>,
-    reloadAfterFailure: boolean,
   ) {
     if (mutationRef.current !== null || isLoading) return;
     mutationRef.current = kind;
@@ -323,15 +327,11 @@ export function GuardianDubbingSettings({
     }
 
     if (mountedRef.current && !controller.signal.aborted) {
-      if (succeeded || reloadAfterFailure) {
-        const reloaded = await refresh({
-          invalidateOnFailure: true,
-          preserveError: Boolean(failure),
-        });
-        if (failure && reloaded) setOperationError(failure);
-      } else if (failure) {
-        setOperationError(failure);
-      }
+      if (failure) setOperationError(failure);
+      await refresh({
+        invalidateOnFailure: true,
+        preserveOperationError: Boolean(failure),
+      });
       if (kind === "grant" && succeeded) setHasAccepted(false);
     }
 
@@ -346,7 +346,7 @@ export function GuardianDubbingSettings({
 
   function grant() {
     if (!hasAccepted || status?.consentState !== "not_granted") return;
-    void mutate("grant", grantDubConsent, false);
+    void mutate("grant", grantDubConsent);
   }
 
   function remove() {
@@ -356,7 +356,7 @@ export function GuardianDubbingSettings({
     ) {
       return;
     }
-    void mutate("delete", deleteDub, true);
+    void mutate("delete", deleteDub);
   }
 
   async function switchToLearner() {
@@ -386,15 +386,16 @@ export function GuardianDubbingSettings({
 
   return (
     <GuardianDubbingSettingsView
+      canRetryStatus={Boolean(statusError)}
       consentState={status?.consentState ?? null}
-      error={operationError || guardianError}
+      error={statusError || operationError || guardianError}
       hasAccepted={hasAccepted}
       isLoading={isLoading}
       mutation={mutation}
       onAcceptedChange={setHasAccepted}
       onDelete={remove}
       onGrant={grant}
-      onRetry={() => void refresh()}
+      onRetry={() => void refresh({ preserveOperationError: true })}
       onSwitchToLearner={() => void switchToLearner()}
       savedCount={status?.lines.filter(({ saved }) => saved).length ?? 0}
     />

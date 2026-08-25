@@ -52,6 +52,7 @@ function renderView(overrides = {}) {
       MemoryRouter,
       { initialEntries: ["/guardian/dubbing"] },
       createElement(GuardianDubbingSettingsView, {
+        canRetryStatus: false,
         consentState: "not_granted",
         error: "",
         hasAccepted: false,
@@ -93,7 +94,10 @@ test("guardian settings exposes progress and recovery states accessibly", () => 
   assert.match(loading, /role="status"/);
   assert.match(loading, /Loading voice dubbing settings…/);
 
-  const failed = renderView({ error: "Voice dubbing could not be loaded." });
+  const failed = renderView({
+    canRetryStatus: true,
+    error: "Voice dubbing could not be loaded.",
+  });
   assert.match(failed, /role="alert"/);
   assert.match(failed, /Voice dubbing could not be loaded/);
   assert.match(failed, /Try again/);
@@ -199,13 +203,19 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
   );
 });
 
-test("failed status and grant requests stay recoverable without assuming consent", async () => {
+test("a committed grant with a lost response reloads authoritative granted status", async () => {
   let loadFails = true;
+  let consentState = "not_granted";
+  let getCalls = 0;
   globalThis.fetch = async (_input, init = {}) => {
-    if (init.method === "PUT") return new Response(null, { status: 500 });
+    if (init.method === "PUT") {
+      consentState = "granted";
+      throw new Error("Response lost.");
+    }
+    getCalls += 1;
     return loadFails
       ? new Response(null, { status: 500 })
-      : Response.json(dubStatus("not_granted"));
+      : Response.json(dubStatus(consentState));
   };
 
   const container = await mountStrict(
@@ -228,15 +238,18 @@ test("failed status and grant requests stay recoverable without assuming consent
   await click(button(container, "Try again"));
   await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
 
+  const getCallsBeforeGrant = getCalls;
   await click(container.querySelector('input[type="checkbox"]'));
   await click(button(container, "Allow voice dubbing"));
   await waitFor(() =>
-    assert.match(
-      container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Voice dubbing could not be turned on/,
-    ),
+    assert.match(container.textContent, /Voice dubbing is on/),
   );
-  assert.equal(button(container, "Allow voice dubbing").disabled, false);
+  assert.equal(getCalls, getCallsBeforeGrant + 1);
+  assert.match(
+    container.querySelector('[role="alert"]')?.textContent ?? "",
+    /Voice dubbing could not be turned on/,
+  );
+  assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
 });
 
 test("failed cleanup reloads revoking status and offers a retry", async () => {
@@ -280,7 +293,8 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
 });
 
-test("switch stays put after a lock failure and navigates only after success", async () => {
+test("switch coalesces overlapping activations and stays recoverable after lock failure", async () => {
+  const pendingLock = deferred();
   let lockCalls = 0;
   globalThis.fetch = async () => Response.json(dubStatus("granted", 4));
 
@@ -293,7 +307,10 @@ test("switch stays put after a lock failure and navigates only after success", a
         {
           async lockGuardianAccess() {
             lockCalls += 1;
-            if (lockCalls === 1) throw new Error("Lock failed.");
+            if (lockCalls === 1) {
+              await pendingLock.promise;
+              throw new Error("Lock failed.");
+            }
             return { mode: "learner" };
           },
         },
@@ -306,14 +323,31 @@ test("switch stays put after a lock failure and navigates only after success", a
     assert.ok(button(container, "Switch to learner and start dubbing")),
   );
 
-  await click(button(container, "Switch to learner and start dubbing"));
+  const switchButton = button(container, "Switch to learner and start dubbing");
+  await act(() => {
+    switchButton.click();
+    switchButton.disabled = false;
+    switchButton.click();
+    pendingLock.resolve();
+  });
+  assert.equal(lockCalls, 1);
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="alert"]')?.textContent ?? "",
+      /Could not lock guardian mode/,
+    ),
+  );
   assert.equal(
     container.querySelector('output[aria-label="Current route"]')?.textContent,
     "/guardian/dubbing",
   );
-  assert.match(
-    container.querySelector('[role="alert"]')?.textContent ?? "",
-    /Could not lock guardian mode/,
+  assert.equal(
+    Boolean(
+      [...container.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent === "Try again",
+      ),
+    ),
+    false,
   );
 
   await click(button(container, "Switch to learner and start dubbing"));
