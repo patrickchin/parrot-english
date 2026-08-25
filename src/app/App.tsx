@@ -55,6 +55,7 @@ import {
 } from "../media/audio-playback";
 import {
   getGateRouteKind,
+  getGuardianDubbingPath,
   getGuardianPath,
   getLessonScenePath,
   getLoginPath,
@@ -137,6 +138,7 @@ const LessonCreator = import.meta.env.SSR
 const APPLICATION_ROUTE_PATTERNS = [
   "/",
   "/guardian",
+  "/guardian/dubbing",
   "/guardian/lessons",
   "/guardian/stories",
   "/talk-to-peppa",
@@ -182,6 +184,16 @@ const GuardianStorySettings = import.meta.env.SSR
   : lazy(() =>
       import("../stories/GuardianStorySettings").then(
         ({ GuardianStorySettings }) => ({ default: GuardianStorySettings }),
+      ),
+    );
+const GuardianDubbingSettings = import.meta.env.SSR
+  ? (await import("../dubbing/GuardianDubbingSettings"))
+      .GuardianDubbingSettings
+  : lazy(() =>
+      import("../dubbing/GuardianDubbingSettings").then(
+        ({ GuardianDubbingSettings }) => ({
+          default: GuardianDubbingSettings,
+        }),
       ),
     );
 const StoryReader = import.meta.env.SSR
@@ -1227,6 +1239,14 @@ export function ApplicationRoutes({
         <Route
           element={<GuardianStorySettings />}
           path="/guardian/stories"
+        />
+        <Route
+          element={
+            <GuardianDubbingSettings
+              onBeforeNavigate={onBeforeModeNavigate}
+            />
+          }
+          path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
         <Route

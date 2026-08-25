@@ -204,6 +204,13 @@ test("authenticated application routes include the core learner activities", () 
   );
 });
 
+test("authenticated application routes include guardian voice-dubbing settings", () => {
+  assert.match(
+    app,
+    /<Route\s+element=\{\s*<GuardianDubbingSettings[^>]*\/>\s*\}\s+path=\{getGuardianDubbingPath\(\)\}\s*\/>/,
+  );
+});
+
 test("canonical Parrot scene routes start without premature scene content", () => {
   const html = renderApplicationRoute(
     "/lessons/parrot/01-peppas-high-ball/scenes/2",

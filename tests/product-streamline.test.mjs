@@ -62,7 +62,7 @@ test("home gives children four clear, working learning choices", () => {
   );
 });
 
-test("guardian dashboard presents four focused grown-up destinations", () => {
+test("guardian dashboard presents five focused grown-up destinations", () => {
   assert.equal(
     typeof GuardianDashboardView,
     "function",
@@ -85,14 +85,17 @@ test("guardian dashboard presents four focused grown-up destinations", () => {
     "Learner profile",
     "My Lessons",
     "Story settings",
+    "Voice dubbing",
     "Account and privacy",
   ]) {
     assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
   }
+  assert.equal((html.match(/<h2/g) ?? []).length, 5);
   assert.deepEqual(hrefs, [
     "/profile",
     "/guardian/lessons",
     "/guardian/stories",
+    "/guardian/dubbing",
   ]);
   assert.match(html, /Managing Mia/);
   assert.match(html, /AI and saved data.*sign out.*delete/i);

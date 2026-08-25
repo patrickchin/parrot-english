@@ -165,11 +165,13 @@ describe("app route helpers", () => {
 
   it("builds and classifies only canonical guardian routes", () => {
     assert.equal(routes.getGuardianPath(), "/guardian");
+    assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
 
     for (const [pathname, search = ""] of [
       ["/guardian"],
+      ["/guardian/dubbing"],
       ["/guardian/lessons"],
       ["/guardian/stories"],
       ["/profile"],
@@ -187,6 +189,7 @@ describe("app route helpers", () => {
       ["/profile/setup", "?redo=01"],
       ["/guardianish"],
       ["/guardian/lessons/extra"],
+      ["/guardian/dubbing/extra"],
       ["/lessons/my/lesson-1/edit/extra"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
@@ -319,6 +322,21 @@ describe("app route helpers", () => {
     }
     assert.equal(
       routes.getSafeReturnTo(returnToSearch("/dubs/five-little-ducks/extra")),
+      null,
+    );
+  });
+
+  it("builds and safely returns to guardian voice-dubbing settings", () => {
+    assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
+    for (const pathname of [
+      "/guardian/dubbing",
+      "/Guardian/Dubbing//",
+    ]) {
+      assert.equal(routes.isGuardianRoute(pathname), true);
+      assert.equal(routes.getSafeReturnTo(returnToSearch(pathname)), pathname);
+    }
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/guardian/dubbing/extra")),
       null,
     );
   });
