@@ -204,6 +204,37 @@ test("keeps the same take available when its first upload fails", async ({ page 
   await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
 });
 
+test("mirrors the durable line-upload response contract", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+
+  const upload = await page.evaluate(async () => {
+    const response = await fetch(
+      "/api/dubs/five-little-ducks-v1/lines/line-1",
+      {
+        body: new Blob(
+          [new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00])],
+          { type: "audio/webm" },
+        ),
+        headers: { "Content-Type": "audio/webm" },
+        method: "PUT",
+      },
+    );
+    return {
+      body: await response.text(),
+      contentType: response.headers.get("Content-Type"),
+      status: response.status,
+    };
+  });
+
+  expect(upload.status).toBe(201);
+  expect(upload.contentType).toBe("application/json");
+  expect(JSON.parse(upload.body)).toEqual({
+    lineId: "line-1",
+    recordedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+  });
+});
+
 test("asks for one new take when the upload rejects the recording", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
   await enterStudio(page, "Start dubbing");
@@ -430,11 +461,82 @@ test("guardian mode finishes an interrupted consent revocation", async ({
   ).toBeVisible();
 });
 
-test("reconciles status after an interrupted cleanup reports failure", async ({
+test("keeps a failed cleanup revoking until the guardian retries", async ({
   page,
 }) => {
   await page.goto(
     "/guardian/dubbing?parrotE2eDub=reset-delete-failed&parrotE2eGuardian=guardian",
+  );
+  await page.getByRole("button", { name: "Finish removing voice clips" }).click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub was not deleted.",
+    }),
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish removing voice clips" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish removing voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Allow voice dubbing" }),
+  ).toHaveCount(0);
+
+  const blockedRegrant = await page.evaluate(async (consentVersion) => {
+    const response = await fetch(
+      "/api/dubs/five-little-ducks-v1/consent",
+      {
+        body: JSON.stringify({ accepted: true, consentVersion }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      },
+    );
+    return { body: await response.json(), status: response.status };
+  }, "guardian-voice-r2-v2");
+  expect(blockedRegrant).toEqual({
+    body: { error: "dub_consent_revoking" },
+    status: 409,
+  });
+
+  const blockedMedia = await page.evaluate(async () => {
+    const responses = await Promise.all([
+      fetch("/api/dubs/five-little-ducks-v1/lines/line-1/audio"),
+      fetch("/api/dubs/five-little-ducks-v1/lines/line-1", {
+        body: new Blob(["blocked clip"], { type: "audio/webm" }),
+        headers: { "Content-Type": "audio/webm" },
+        method: "PUT",
+      }),
+    ]);
+    return Promise.all(
+      responses.map(async (response) => ({
+        body: await response.json(),
+        status: response.status,
+      })),
+    );
+  });
+  expect(blockedMedia).toEqual([
+    { body: { error: "dub_consent_revoking" }, status: 409 },
+    { body: { error: "dub_consent_revoking" }, status: 409 },
+  ]);
+
+  await page.getByRole("button", { name: "Finish removing voice clips" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+});
+
+test("reconciles a lost cleanup response from durable status", async ({ page }) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=reset-delete-lost-response&parrotE2eGuardian=guardian",
   );
   await page.getByRole("button", { name: "Finish removing voice clips" }).click();
   await expect(

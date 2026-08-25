@@ -16,6 +16,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "complete",
   "playback-setup-failed",
   "reset-delete-failed",
+  "reset-delete-lost-response",
   "reset-interrupted",
   "revoking",
   "upload-failed",
@@ -427,6 +428,7 @@ function initialE2eDubLineIds(scenario: string) {
     scenario === "corrupt-line-5" ||
     scenario === "playback-setup-failed" ||
     scenario === "reset-delete-failed" ||
+    scenario === "reset-delete-lost-response" ||
     scenario === "reset-interrupted"
   ) {
     return [...E2E_DUB_LINE_IDS];
@@ -451,6 +453,7 @@ function createE2eDubStore(scenario: string | null) {
     (scenario === "not-granted"
       ? "not_granted"
       : scenario === "reset-delete-failed" ||
+          scenario === "reset-delete-lost-response" ||
           scenario === "reset-interrupted" ||
           scenario === "revoking"
         ? "revoking"
@@ -470,10 +473,15 @@ function createE2eDubStore(scenario: string | null) {
   let failedUpload: Uint8Array | null = null;
   let failAudioFetch = scenario === "audio-fetch-failed";
   let resetInterrupted =
-    (scenario === "reset-delete-failed" || scenario === "reset-interrupted") &&
+    (scenario === "reset-delete-failed" ||
+      scenario === "reset-delete-lost-response" ||
+      scenario === "reset-interrupted") &&
     sessionStorage.getItem(resetKey) !== "yes";
   let failResetDelete =
     scenario === "reset-delete-failed" &&
+    sessionStorage.getItem(resetDeleteFailureKey) !== "used";
+  let loseResetDeleteResponse =
+    scenario === "reset-delete-lost-response" &&
     sessionStorage.getItem(resetDeleteFailureKey) !== "used";
   let delayNextStatus = false;
   const uploads: string[] = [];
@@ -557,6 +565,11 @@ function createE2eDubStore(scenario: string | null) {
             return e2eDubJson({ error: "guardian_required" }, 403);
           }
           persistConsent("revoking");
+          if (failResetDelete) {
+            failResetDelete = false;
+            sessionStorage.setItem(resetDeleteFailureKey, "used");
+            return new Response(null, { status: 503 });
+          }
           if (resetInterrupted) {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
             resetInterrupted = false;
@@ -564,8 +577,8 @@ function createE2eDubStore(scenario: string | null) {
             clips.clear();
             persist();
             persistConsent("not_granted");
-            if (failResetDelete) {
-              failResetDelete = false;
+            if (loseResetDeleteResponse) {
+              loseResetDeleteResponse = false;
               delayNextStatus = true;
               sessionStorage.setItem(resetDeleteFailureKey, "used");
               return new Response(null, { status: 503 });
@@ -634,7 +647,7 @@ function createE2eDubStore(scenario: string | null) {
       }
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
-      return e2eDubJson({ recordedAt: E2E_DUB_RECORDED_AT });
+      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
     },
     snapshot() {
       return { uploads: [...uploads] };

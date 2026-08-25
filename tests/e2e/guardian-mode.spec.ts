@@ -403,6 +403,19 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   await expect(menu).toHaveCount(0);
 });
 
+async function expectNoLearnerAdultControls(page: Page) {
+  await expect(
+    page.getByRole("checkbox", {
+      name: /I’m the grown-up|I am the learner's guardian/i,
+    }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Delete (my )?dub/i }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel(/^Grown-up chat style:/)).toHaveCount(0);
+}
+
 test("learner routes omit adult management actions", async ({
   page,
 }) => {
@@ -436,21 +449,13 @@ test("learner routes omit adult management actions", async ({
     await expect(
       page.getByRole("checkbox", { name: "Guardian consent" }),
     ).toHaveCount(0);
-    await expect(
-      page.getByRole("checkbox", {
-        name: /I’m the grown-up|I am the learner's guardian/i,
-      }),
-    ).toHaveCount(0);
-    await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
-    await expect(
-      page.getByRole("button", { name: /Delete (my )?dub/i }),
-    ).toHaveCount(0);
-    await expect(page.getByLabel(/^Grown-up chat style:/)).toHaveCount(0);
+    await expectNoLearnerAdultControls(page);
     if (watchDub) {
       await page.getByRole("button", { name: "Continue dubbing" }).click();
       await expect(
         page.getByRole("button", { name: "Watch my dub" }),
       ).toBeVisible();
+      await expectNoLearnerAdultControls(page);
     }
     await page.keyboard.press("Escape");
   }
