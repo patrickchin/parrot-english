@@ -35,6 +35,7 @@ describe("personalized story art persistence contract", () => {
     assert.deepEqual(Object.keys(getTableColumns(schema.personalizedStoryArt)), [
       "id",
       "authUserId",
+      "learnerProfileId",
       "storyId",
       "status",
       "r2ObjectKey",

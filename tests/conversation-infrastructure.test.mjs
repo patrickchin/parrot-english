@@ -11,6 +11,7 @@ const MODELS = {
     properties: [
       "id",
       "authUserId",
+      "learnerProfileId",
       "scenarioKey",
       "scenarioVersion",
       "promptStyle",
