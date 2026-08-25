@@ -161,7 +161,7 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveText("Guardian mode unlocked for 15 minutes");
 
   for (const heading of [
-    "Learner profile",
+    "Learner details",
     "My Lessons",
     "Story settings",
     "Account and privacy",
