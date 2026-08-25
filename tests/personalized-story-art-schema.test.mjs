@@ -93,7 +93,7 @@ describe("personalized story art persistence contract", () => {
     }
   });
 
-  it("adds an owner-and-story generation lease with tracked recovery keys", () => {
+  it("retains the account-and-story generation lease as a compatibility table", () => {
     assert.ok(
       schema.personalizedStoryArtGenerationLease,
       "Expected schema.personalizedStoryArtGenerationLease",
@@ -130,6 +130,55 @@ describe("personalized story art persistence contract", () => {
         sql ?? "",
         /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
       );
+      assert.match(sql ?? "", /[`"]?generation_token[`"]?\s+text\s+NOT NULL/i);
+      assert.match(sql ?? "", /[`"]?candidate_r2_object_key[`"]?\s+text/i);
+      assert.match(sql ?? "", /[`"]?previous_r2_object_key[`"]?\s+text/i);
+      assert.match(sql ?? "", /[`"]?lease_expires_at[`"]?\s+integer\s+NOT NULL/i);
+    } finally {
+      database.close();
+    }
+  });
+
+  it("adds a learner-and-story generation lease with independent CAS ownership", () => {
+    assert.ok(
+      schema.learnerStoryArtGenerationLease,
+      "Expected schema.learnerStoryArtGenerationLease",
+    );
+    assert.equal(
+      getTableName(schema.learnerStoryArtGenerationLease),
+      "learner_story_art_generation_lease",
+    );
+    assert.deepEqual(
+      Object.keys(getTableColumns(schema.learnerStoryArtGenerationLease)),
+      [
+        "learnerProfileId",
+        "authUserId",
+        "storyId",
+        "generationToken",
+        "candidateR2ObjectKey",
+        "previousR2ObjectKey",
+        "leaseExpiresAt",
+        "createdAt",
+        "updatedAt",
+      ],
+    );
+
+    const database = createMigratedDatabase();
+    try {
+      const sql = tableSql(database, "learner_story_art_generation_lease");
+      assert.match(
+        sql ?? "",
+        /PRIMARY KEY\s*\(\s*[`"]?learner_profile_id[`"]?\s*,\s*[`"]?story_id[`"]?\s*\)/i,
+      );
+      assert.match(
+        sql ?? "",
+        /REFERENCES [`"]?learner_profile[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(
+        sql ?? "",
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(sql ?? "", /[`"]?auth_user_id[`"]?\s+text\s+NOT NULL/i);
       assert.match(sql ?? "", /[`"]?generation_token[`"]?\s+text\s+NOT NULL/i);
       assert.match(sql ?? "", /[`"]?candidate_r2_object_key[`"]?\s+text/i);
       assert.match(sql ?? "", /[`"]?previous_r2_object_key[`"]?\s+text/i);

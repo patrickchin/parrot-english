@@ -20,7 +20,32 @@ function seedDatabase() {
   );
   insertUser.run("user-1", "Parent One", "one@example.test", 1_000, 1_000);
   insertUser.run("user-2", "Parent Two", "two@example.test", 1_000, 1_000);
+  const insertLearner = state.sqlite.prepare(
+    `INSERT INTO learner_profile (
+      id, auth_user_id, legacy_storage_owner, name, onboarding_status,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, 'completed', 1000, 1000)`,
+  );
+  insertLearner.run("learner-a", "user-1", 1, "Ava");
+  insertLearner.run("learner-user-2", "user-2", 1, "Casey");
   return { ...state, database: createDatabase(state.d1) };
+}
+
+function enableSiblingLearner(state, { artCoexistence = false } = {}) {
+  // Task 9 removes these rollout-compatibility indexes in production. Only
+  // final-cardinality sibling tests opt into that schema state early.
+  state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_profile (
+        id, auth_user_id, legacy_storage_owner, name, onboarding_status,
+        created_at, updated_at
+      ) VALUES ('learner-b', 'user-1', 0, 'Ben', 'completed', 1000, 1000)`,
+    )
+    .run();
+  if (artCoexistence) {
+    state.sqlite.exec("DROP INDEX personalized_story_art_user_story_unique");
+  }
 }
 
 function request(path, method = "GET", body) {
@@ -35,6 +60,38 @@ function bucketStub(overrides = {}) {
     },
     async put() {},
     ...overrides,
+  };
+}
+
+function memoryBucket() {
+  const gets = [];
+  const stored = new Map();
+  return {
+    async delete(key) {
+      stored.delete(key);
+    },
+    async get(key) {
+      gets.push(key);
+      const item = stored.get(key);
+      return item
+        ? new Response(item.bytes, {
+            headers: { "Content-Type": item.contentType },
+          })
+        : null;
+    },
+    async head(key) {
+      return stored.has(key) ? { key } : null;
+    },
+    async put(key, value, options) {
+      stored.set(key, {
+        bytes:
+          value instanceof Uint8Array
+            ? value
+            : new Uint8Array(await value.arrayBuffer()),
+        contentType: options?.httpMetadata?.contentType ?? "image/png",
+      });
+    },
+    gets,
   };
 }
 
@@ -119,6 +176,12 @@ async function call(state, options = {}, overrides = {}) {
         PERSONALIZED_STORY_ART_BUCKET: options.bucket ?? bucketStub(),
       },
       identity: {
+        learnerName: options.learnerName ?? "Learner",
+        learnerProfileId:
+          options.learnerProfileId ??
+          (options.userId === "user-2" ? "learner-user-2" : "learner-a"),
+        legacyStorageOwner:
+          options.legacyStorageOwner ?? options.learnerProfileId !== "learner-b",
         sessionId: "session-1",
         userId: options.userId ?? "user-1",
         userName: "Parent",
@@ -192,6 +255,7 @@ function insertReadyArt(
   {
     contentType = "image/png",
     id = "art-1",
+    learnerProfileId = "learner-a",
     objectKey,
     storyId = STORY_ID,
     updatedAt = 1_000,
@@ -201,15 +265,17 @@ function insertReadyArt(
   state.sqlite
     .prepare(
       `INSERT INTO personalized_story_art (
-        id, auth_user_id, story_id, status, r2_object_key, content_type,
+        id, auth_user_id, learner_profile_id, story_id, status,
+        r2_object_key, content_type,
         guardian_consent_version, guardian_consent_at, provider,
         prompt_version, created_at, updated_at
-      ) VALUES (?, ?, ?, 'ready', ?, ?, ?, ?,
+      ) VALUES (?, ?, ?, ?, 'ready', ?, ?, ?, ?,
         'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
     )
     .run(
       id,
       userId,
+      learnerProfileId,
       storyId,
       objectKey,
       contentType,
@@ -225,9 +291,42 @@ function insertGenerationLease(
   {
     candidateKey = null,
     expiresAt,
+    learnerProfileId = "learner-a",
     previousKey = null,
     storyId = STORY_ID,
     token = "lease-1",
+    userId = "user-1",
+  },
+) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_story_art_generation_lease (
+        learner_profile_id, auth_user_id, story_id, generation_token,
+        candidate_r2_object_key, previous_r2_object_key,
+        lease_expires_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      learnerProfileId,
+      userId,
+      storyId,
+      token,
+      candidateKey,
+      previousKey,
+      expiresAt,
+      1_000,
+      1_000,
+    );
+}
+
+function insertLegacyGenerationLease(
+  state,
+  {
+    candidateKey = null,
+    expiresAt,
+    previousKey = null,
+    storyId = STORY_ID,
+    token = "legacy-lease-1",
     userId = "user-1",
   },
 ) {
@@ -237,7 +336,7 @@ function insertGenerationLease(
         auth_user_id, story_id, generation_token,
         candidate_r2_object_key, previous_r2_object_key,
         lease_expires_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, 1000, 1000)`,
     )
     .run(
       userId,
@@ -246,8 +345,6 @@ function insertGenerationLease(
       candidateKey,
       previousKey,
       expiresAt,
-      1_000,
-      1_000,
     );
 }
 
@@ -598,7 +695,7 @@ describe("personalized story art Worker handler", () => {
       assert.ok(putCall);
       assert.equal(
         putCall.key,
-        "personalized-story-art/user-1/the-red-ball/versions/generation-1.webp",
+        "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-1.webp",
       );
       assert.equal(Buffer.from(putCall.bytes).toString("ascii", 0, 4), "RIFF");
       assert.equal(putCall.options.httpMetadata?.contentType, "image/webp");
@@ -643,6 +740,424 @@ describe("personalized story art Worker handler", () => {
         userId: "user-2",
       });
       assert.equal(foreignAsset.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("generates and reads the same story independently for sibling learners", async () => {
+    const state = seedDatabase();
+    enableSiblingLearner(state, { artCoexistence: true });
+    const bucket = memoryBucket();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 30, g: 140, b: 210, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const generatedImage = {
+      bytes: new Uint8Array(generatedPng),
+      contentType: "image/png",
+      extension: "png",
+    };
+    try {
+      const artAResponse = await call(
+        state,
+        { body: uploadForm(), bucket, method: "POST" },
+        {
+          createId: () => "art-a",
+          createObjectId: () => "object-a",
+          async generateImage() {
+            return generatedImage;
+          },
+        },
+      );
+      const artBResponse = await call(
+        state,
+        {
+          body: uploadForm(),
+          bucket,
+          learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          method: "POST",
+        },
+        {
+          createId: () => "art-b",
+          createObjectId: () => "object-b",
+          async generateImage() {
+            return generatedImage;
+          },
+        },
+      );
+
+      assert.equal(artAResponse.status, 201);
+      assert.equal(artBResponse.status, 201);
+      const [artA, artB] = state.sqlite
+        .prepare(
+          `SELECT learner_profile_id AS learnerProfileId,
+            r2_object_key AS r2ObjectKey, story_id AS storyId
+          FROM personalized_story_art
+          WHERE auth_user_id = ? ORDER BY learner_profile_id`,
+        )
+        .all("user-1");
+      assert.equal(artA.learnerProfileId, "learner-a");
+      assert.equal(artB.learnerProfileId, "learner-b");
+      assert.notEqual(artA.r2ObjectKey, artB.r2ObjectKey);
+      assert.match(artA.r2ObjectKey, /\/learners\/learner-a\//);
+      assert.match(artB.r2ObjectKey, /\/learners\/learner-b\//);
+
+      assert.equal((await call(state, { bucket, path: ASSET_ROUTE })).status, 200);
+      assert.equal(
+        (
+          await call(state, {
+            bucket,
+            learnerProfileId: "learner-b",
+            legacyStorageOwner: false,
+            path: ASSET_ROUTE,
+          })
+        ).status,
+        200,
+      );
+      assert.deepEqual(bucket.gets.slice(-2), [
+        artA.r2ObjectKey,
+        artB.r2ObjectKey,
+      ]);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("deletes one learner's story art without touching its sibling's row or object", async () => {
+    const state = seedDatabase();
+    enableSiblingLearner(state, { artCoexistence: true });
+    const bucket = memoryBucket();
+    const artAKey =
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/a.webp";
+    const artBKey =
+      "personalized-story-art/user-1/learners/learner-b/the-red-ball/versions/b.webp";
+    try {
+      insertReadyArt(state, { id: "art-a", objectKey: artAKey });
+      insertReadyArt(state, {
+        id: "art-b",
+        learnerProfileId: "learner-b",
+        objectKey: artBKey,
+      });
+      await bucket.put(artAKey, new Uint8Array([1]), {
+        httpMetadata: { contentType: "image/webp" },
+      });
+      await bucket.put(artBKey, new Uint8Array([2]), {
+        httpMetadata: { contentType: "image/webp" },
+      });
+
+      const deleted = await call(state, {
+        bucket,
+        learnerProfileId: "learner-b",
+        legacyStorageOwner: false,
+        method: "DELETE",
+      });
+
+      assert.equal(deleted.status, 204);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM personalized_story_art WHERE id = 'art-a'")
+          .get().count,
+        1,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM personalized_story_art WHERE id = 'art-b'")
+          .get().count,
+        0,
+      );
+      assert.ok(await bucket.head(artAKey));
+      assert.equal(await bucket.head(artBKey), null);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("serves a null-profile legacy row at its exact stored key only to the marked learner", async () => {
+    const state = seedDatabase();
+    enableSiblingLearner(state);
+    const bucket = memoryBucket();
+    const legacyKey = "legacy-exact/story-art-red-ball.webp";
+    try {
+      insertReadyArt(state, {
+        id: "legacy-art",
+        learnerProfileId: null,
+        objectKey: legacyKey,
+      });
+      await bucket.put(legacyKey, new Uint8Array([7]), {
+        httpMetadata: { contentType: "image/webp" },
+      });
+
+      const sibling = await call(state, {
+        bucket,
+        learnerProfileId: "learner-b",
+        legacyStorageOwner: false,
+        path: ASSET_ROUTE,
+      });
+      const legacy = await call(state, { bucket, path: ASSET_ROUTE });
+
+      assert.equal(sibling.status, 404);
+      assert.equal(legacy.status, 200);
+      assert.deepEqual(bucket.gets, [legacyKey]);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT learner_profile_id FROM personalized_story_art WHERE id = ?")
+          .get("legacy-art").learner_profile_id,
+        null,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("attaches a null-profile legacy row before an interrupted delete mutation", async () => {
+    const state = seedDatabase();
+    const legacyKey = "legacy-exact/story-art-red-ball.webp";
+    try {
+      insertReadyArt(state, {
+        id: "legacy-art",
+        learnerProfileId: null,
+        objectKey: legacyKey,
+      });
+
+      const response = await call(state, {
+        method: "DELETE",
+        bucket: bucketStub({
+          async delete() {
+            throw new Error("temporary R2 failure");
+          },
+        }),
+      });
+
+      assert.equal(response.status, 502);
+      const stored = state.sqlite
+        .prepare(
+          `SELECT learner_profile_id, r2_object_key, status
+          FROM personalized_story_art WHERE id = ?`,
+        )
+        .get("legacy-art");
+      assert.equal(stored.learner_profile_id, "learner-a");
+      assert.equal(stored.r2_object_key, legacyKey);
+      assert.equal(stored.status, "deleting");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("lets sibling learner leases generate the same story concurrently", async () => {
+    const state = seedDatabase();
+    enableSiblingLearner(state, { artCoexistence: true });
+    const bucket = memoryBucket();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 20, g: 170, b: 90, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const generatedImage = {
+      bytes: new Uint8Array(generatedPng),
+      contentType: "image/png",
+      extension: "png",
+    };
+    let releaseA;
+    let signalAStarted;
+    const aStarted = new Promise((resolve) => {
+      signalAStarted = resolve;
+    });
+    const aBarrier = new Promise((resolve) => {
+      releaseA = resolve;
+    });
+    try {
+      const responseAPromise = call(
+        state,
+        { body: uploadForm(), bucket, method: "POST" },
+        {
+          createId: () => "art-a",
+          createObjectId: () => "object-a",
+          async generateImage() {
+            signalAStarted();
+            await aBarrier;
+            return generatedImage;
+          },
+        },
+      );
+      await aStarted;
+
+      const responseB = await call(
+        state,
+        {
+          body: uploadForm(),
+          bucket,
+          learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          method: "POST",
+        },
+        {
+          createId: () => "art-b",
+          createObjectId: () => "object-b",
+          async generateImage() {
+            return generatedImage;
+          },
+        },
+      );
+      releaseA();
+      const responseA = await responseAPromise;
+
+      assert.equal(responseA.status, 201);
+      assert.equal(responseB.status, 201);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM personalized_story_art")
+          .get().count,
+        2,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM learner_story_art_generation_lease")
+          .get().count,
+        0,
+      );
+    } finally {
+      releaseA?.();
+      state.close();
+    }
+  });
+
+  it("honors an old lease only for the marked legacy learner", async () => {
+    const state = seedDatabase();
+    enableSiblingLearner(state);
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 210, g: 100, b: 40, alpha: 1 },
+      },
+    }).png().toBuffer();
+    let legacyGenerationCalls = 0;
+    try {
+      insertLegacyGenerationLease(state, { expiresAt: 9_999_999_999_999 });
+
+      const sibling = await call(
+        state,
+        {
+          body: uploadForm(),
+          learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          method: "POST",
+        },
+        {
+          createId: () => "art-b",
+          createObjectId: () => "object-b",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+        },
+      );
+      const legacy = await call(
+        state,
+        { body: uploadForm(), method: "POST" },
+        {
+          async generateImage() {
+            legacyGenerationCalls += 1;
+            throw new Error("must not reach the provider");
+          },
+        },
+      );
+
+      assert.equal(sibling.status, 201);
+      assert.equal(legacy.status, 409);
+      assert.deepEqual(await legacy.json(), {
+        error: "generation_in_progress",
+      });
+      assert.equal(legacyGenerationCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("recovers and releases an expired old lease before using the learner authority", async () => {
+    const state = seedDatabase();
+    const generatedPng = await sharp({
+      create: {
+        width: 1152,
+        height: 768,
+        channels: 4,
+        background: { r: 150, g: 80, b: 220, alpha: 1 },
+      },
+    }).png().toBuffer();
+    const oldKey = "legacy-exact/ready-red-ball.png";
+    const abandonedKey = "legacy-exact/abandoned-red-ball.png";
+    const nextKey =
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/next.png";
+    const objectKeys = new Set([oldKey, abandonedKey]);
+    const deletedKeys = [];
+    try {
+      insertReadyArt(state, { objectKey: oldKey });
+      insertLegacyGenerationLease(state, {
+        candidateKey: abandonedKey,
+        expiresAt: 1_000,
+        previousKey: oldKey,
+      });
+
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          method: "POST",
+          bucket: bucketStub({
+            async delete(key) {
+              deletedKeys.push(key);
+              objectKeys.delete(key);
+            },
+            async put(key) {
+              objectKeys.add(key);
+            },
+          }),
+        },
+        {
+          createObjectId: () => "next",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array(generatedPng),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+          now: () => new Date(10_000),
+        },
+      );
+
+      assert.equal(response.status, 201);
+      assert.deepEqual(deletedKeys, [abandonedKey, oldKey]);
+      assert.deepEqual([...objectKeys], [nextKey]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
     } finally {
       state.close();
     }
@@ -825,7 +1340,7 @@ describe("personalized story art Worker handler", () => {
       assert.equal(
         state.sqlite
           .prepare(
-            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
         0,
@@ -1113,8 +1628,8 @@ describe("personalized story art Worker handler", () => {
         background: { r: 0, g: 180, b: 120, alpha: 1 },
       },
     }).png().toBuffer();
-    const candidateKey =
-      "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
+      const candidateKey =
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-1.png";
     const objectKeys = new Set();
     let finalizeChanges = null;
     try {
@@ -1177,7 +1692,7 @@ describe("personalized story art Worker handler", () => {
       assert.equal(
         state.sqlite
           .prepare(
-            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
         0,
@@ -1202,7 +1717,7 @@ describe("personalized story art Worker handler", () => {
     const abandonedCandidateKey =
       "personalized-story-art/user-1/the-red-ball/versions/abandoned.png";
     const nextKey =
-      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png";
     const objectKeys = new Set([oldKey, abandonedCandidateKey]);
     const deleteKeys = [];
     try {
@@ -1255,7 +1770,7 @@ describe("personalized story art Worker handler", () => {
       assert.equal(
         state.sqlite
           .prepare(
-            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
         0,
@@ -1280,7 +1795,7 @@ describe("personalized story art Worker handler", () => {
     const finalizedCandidateKey =
       "personalized-story-art/user-1/the-red-ball/versions/finalized.png";
     const nextKey =
-      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png";
     const objectKeys = new Set([oldKey, finalizedCandidateKey]);
     const deleteKeys = [];
     try {
@@ -1333,7 +1848,7 @@ describe("personalized story art Worker handler", () => {
       assert.equal(
         state.sqlite
           .prepare(
-            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
         0,
@@ -1414,13 +1929,13 @@ describe("personalized story art Worker handler", () => {
       );
       assert.equal(secondResponse.status, 201);
       assert.deepEqual(putKeys, [
-        "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
-        "personalized-story-art/user-1/the-red-ball/versions/generation-2.png",
+        "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-1.png",
+        "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png",
       ]);
       assert.deepEqual(deleteEvents, [
         [
-          "personalized-story-art/user-1/the-red-ball/versions/generation-1.png",
-          "personalized-story-art/user-1/the-red-ball/versions/generation-2.png",
+          "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-1.png",
+          "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png",
         ],
       ]);
       assert.equal(
@@ -1435,7 +1950,7 @@ describe("personalized story art Worker handler", () => {
             "SELECT r2_object_key FROM personalized_story_art WHERE auth_user_id = ? AND story_id = ?",
           )
           .get("user-1", STORY_ID).r2_object_key,
-        "personalized-story-art/user-1/the-red-ball/versions/generation-2.png",
+        "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png",
       );
     } finally {
       state.close();
@@ -1455,7 +1970,7 @@ describe("personalized story art Worker handler", () => {
     const oldKey =
       "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
     const candidateKey =
-      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png";
     const objectKeys = new Set([oldKey]);
     const deleteKeys = [];
     try {
@@ -1512,7 +2027,7 @@ describe("personalized story art Worker handler", () => {
       assert.equal(
         state.sqlite
           .prepare(
-            "SELECT count(*) AS count FROM personalized_story_art_generation_lease",
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
         0,
@@ -1535,7 +2050,7 @@ describe("personalized story art Worker handler", () => {
     const oldKey =
       "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
     const candidateKey =
-      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png";
     const objectKeys = new Set([oldKey]);
     const deleteKeys = [];
     try {
@@ -1596,10 +2111,10 @@ describe("personalized story art Worker handler", () => {
         .prepare(
           `SELECT generation_token, candidate_r2_object_key,
             previous_r2_object_key, lease_expires_at
-          FROM personalized_story_art_generation_lease
-          WHERE auth_user_id = ? AND story_id = ?`,
+          FROM learner_story_art_generation_lease
+          WHERE learner_profile_id = ? AND auth_user_id = ? AND story_id = ?`,
         )
-        .get("user-1", STORY_ID);
+        .get("learner-a", "user-1", STORY_ID);
       assert.ok(lease.generation_token);
       assert.equal(lease.candidate_r2_object_key, candidateKey);
       assert.equal(lease.previous_r2_object_key, oldKey);
@@ -1622,7 +2137,7 @@ describe("personalized story art Worker handler", () => {
     const oldKey =
       "personalized-story-art/user-1/the-red-ball/versions/generation-1.png";
     const candidateKey =
-      "personalized-story-art/user-1/the-red-ball/versions/generation-2.png";
+      "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/generation-2.png";
     const deleteKeys = [];
     try {
       insertReadyArt(state, { objectKey: oldKey });
@@ -1669,10 +2184,10 @@ describe("personalized story art Worker handler", () => {
         .prepare(
           `SELECT generation_token, candidate_r2_object_key,
             previous_r2_object_key, lease_expires_at
-          FROM personalized_story_art_generation_lease
-          WHERE auth_user_id = ? AND story_id = ?`,
+          FROM learner_story_art_generation_lease
+          WHERE learner_profile_id = ? AND auth_user_id = ? AND story_id = ?`,
         )
-        .get("user-1", STORY_ID);
+        .get("learner-a", "user-1", STORY_ID);
       assert.ok(lease.generation_token);
       assert.equal(lease.candidate_r2_object_key, candidateKey);
       assert.equal(lease.previous_r2_object_key, oldKey);
