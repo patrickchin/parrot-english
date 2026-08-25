@@ -52,7 +52,7 @@ async function dubStoreSnapshot(page: Page): Promise<DubStoreSnapshot> {
 }
 
 async function releaseDubOperation(page: Page, operation: "delete" | "upload") {
-  const released = await page.evaluate((requestedOperation) => {
+  await expect.poll(async () => page.evaluate((requestedOperation) => {
     const store = (
       window as typeof window & { __parrotE2eDub?: DubStoreController }
     ).__parrotE2eDub;
@@ -60,8 +60,7 @@ async function releaseDubOperation(page: Page, operation: "delete" | "upload") {
     return requestedOperation === "delete"
       ? store.releaseDelete()
       : store.releaseUpload();
-  }, operation);
-  expect(released).toBe(true);
+  }, operation)).toBe(true);
 }
 
 async function microphoneSnapshot(page: Page) {
@@ -596,16 +595,19 @@ test("the narrow scene editor reads stage, selectors, selected lyric, then contr
   const stage = page.getByRole("region", { name: "Scene video" });
   const selectors = page.getByRole("region", { name: "Scene line selectors" });
   const lyric = page.getByRole("heading", { name: "But only four little ducks came back." });
+  const scenePlayback = page.getByRole("button", { name: "Play this scene" });
   const record = page.getByRole("button", { name: "Record line" });
-  const [stageBox, selectorsBox, lyricBox, recordBox] = await Promise.all([
+  const [stageBox, selectorsBox, lyricBox, playbackBox, recordBox] = await Promise.all([
     boundingBoxOrThrow(stage),
     boundingBoxOrThrow(selectors),
     boundingBoxOrThrow(lyric),
+    boundingBoxOrThrow(scenePlayback),
     boundingBoxOrThrow(record),
   ]);
 
   expect(selectorsBox.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height);
   expect(lyricBox.y).toBeGreaterThanOrEqual(selectorsBox.y + selectorsBox.height);
+  expect(playbackBox.y).toBeGreaterThanOrEqual(lyricBox.y + lyricBox.height);
   expect(recordBox.y).toBeGreaterThanOrEqual(lyricBox.y + lyricBox.height);
   await expect(page.getByRole("region", { name: "Scene lyrics" })).toHaveCount(0);
 });

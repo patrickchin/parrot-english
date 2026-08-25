@@ -101,17 +101,6 @@ export function DubSceneEditor({
           <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
             <DuckScene compact line={visualLine} playing={operation === "playback"} />
           </section>
-          <ActionButton
-            aria-label={playbackLabel}
-            disabled={operation === "playback-loading" || navigationLocked}
-            onClick={onToggleScenePlayback}
-            ref={playbackButtonRef}
-            size="large"
-            variant="navy"
-          >
-            {operation === "playback" ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
-            {playbackLabel}
-          </ActionButton>
         </section>
 
         <aside aria-label="Scene line controls" className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
@@ -141,6 +130,17 @@ export function DubSceneEditor({
 
           <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3">
             <h2 className="m-0 text-xl font-black leading-snug text-brand-ink" ref={lineHeadingRef} tabIndex={-1}>{activeLine.text}</h2>
+            <ActionButton
+              aria-label={playbackLabel}
+              disabled={operation === "playback-loading" || navigationLocked}
+              onClick={onToggleScenePlayback}
+              ref={playbackButtonRef}
+              size="large"
+              variant="navy"
+            >
+              {operation === "playback" ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
+              {playbackLabel}
+            </ActionButton>
             <TextButton className="min-h-12 justify-self-start gap-2" disabled={mediaLocked} onClick={onHearGuide}>
               <Volume2 aria-hidden="true" /> Hear example
             </TextButton>
