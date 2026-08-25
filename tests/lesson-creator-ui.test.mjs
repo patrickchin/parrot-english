@@ -59,6 +59,10 @@ test("custom lesson creation defaults to a simple AI path", () => {
   );
   assert.doesNotMatch(html, /id="lesson-script-editor"|Review script/i);
   assert.doesNotMatch(html, /type="file"/);
+  assert.match(
+    html,
+    /<a[^>]*aria-label="Back to lessons"[^>]*href="\/guardian\/lessons"/,
+  );
 });
 
 test("the import query reveals the advanced clipboard-paste panel", () => {

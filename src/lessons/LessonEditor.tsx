@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
-import { getLessonScenePath } from "../app/app-routes";
+import { getGuardianLessonsPath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { ActionButton, Card } from "../shared/ui";
 import type { Lesson } from "./lesson-catalog";
@@ -69,8 +69,8 @@ export function LessonEditor() {
       const prepared = prepareLessonDraft(lesson, "edited lesson");
       setLesson(prepared.lesson);
       setWarnings(prepared.warnings);
-      const updated = await updateMyLesson(lessonId, prepared.lesson);
-      navigate(getLessonScenePath("my", updated.lesson.id, 0));
+      await updateMyLesson(lessonId, prepared.lesson);
+      navigate(getGuardianLessonsPath());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -87,7 +87,7 @@ export function LessonEditor() {
         <HeaderLink
           aria-label="Back to lessons"
           icon={<ArrowLeft />}
-          to="/lessons"
+          to={getGuardianLessonsPath()}
         >
           Back to lessons
         </HeaderLink>

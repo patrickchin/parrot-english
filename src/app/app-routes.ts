@@ -26,6 +26,7 @@ const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/*$/i,
   /^\/guardian\/dubbing\/*$/i,
+  /^\/guardian\/learners\/*$/i,
   /^\/guardian\/lessons\/*$/i,
   /^\/guardian\/profile\/*$/i,
   /^\/guardian\/profile\/setup\/*$/i,
@@ -67,6 +68,10 @@ export function getGuardianDubbingPath() {
 
 export function getGuardianLessonsPath() {
   return "/guardian/lessons";
+}
+
+export function getGuardianLearnersPath() {
+  return "/guardian/learners" as const;
 }
 
 export function getGuardianStoriesPath() {
@@ -198,6 +203,16 @@ export function getSafeReturnTo(search: string) {
   }
 
   return `${destination.pathname}${destination.search}${destination.hash}`;
+}
+
+export function getSafeGuardianReturnTo(search: string) {
+  const safe = getSafeReturnTo(search);
+  if (!safe) return getGuardianPath();
+  const { pathname } = new URL(safe, RETURN_TO_ORIGIN);
+  if (!isGuardianRoute(pathname) || getGateRouteKind(pathname)) {
+    return getGuardianPath();
+  }
+  return safe;
 }
 
 export function getRequestedProtectedTarget(

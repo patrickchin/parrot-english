@@ -2,8 +2,9 @@ import { useState, type ReactNode } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { GuardianUnlockScreen } from "../auth/GuardianUnlock";
-import { ActionButton, Card } from "../shared/ui";
+import { ActionButton, ActionLink, Card } from "../shared/ui";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
+import { getGuardianPath } from "./app-routes";
 
 type ModeBoundaryProps = {
   children?: ReactNode;
@@ -90,6 +91,7 @@ export function LearnerModeBoundary({
         >
           {isSwitching ? "Switching to learner mode…" : "Switch to learner mode"}
         </ActionButton>
+        <ActionLink to={getGuardianPath()}>Back to Guardian dashboard</ActionLink>
       </Card>
     </main>
   );

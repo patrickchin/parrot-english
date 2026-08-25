@@ -39,7 +39,10 @@ test("saved lesson edit route starts with an accessible GUI loading state", () =
   assert.match(html, /<h1[^>]*>Edit Lesson<\/h1>/);
   assert.match(html, /role="status"/);
   assert.match(html, /Loading lesson/);
-  assert.match(html, /href="\/lessons"/);
+  assert.match(
+    html,
+    /<a[^>]*aria-label="Back to lessons"[^>]*href="\/guardian\/lessons"/,
+  );
   assert.doesNotMatch(
     html,
     /lesson-script-editor|Editable lesson script|Review script/i,

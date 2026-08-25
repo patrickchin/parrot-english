@@ -918,7 +918,7 @@ function createSessionClient(initialState) {
 }
 
 describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
-  it("lets unknown guardian-mode URLs reach the wildcard redirect", async () => {
+  it("returns unknown Guardian URLs to the Guardian dashboard", async () => {
     const api = {
       async loadGuardianAccess() {
         return {
@@ -934,15 +934,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     };
 
-    for (const initialEntry of [
-      "/guardianish",
-      "/guardian/lessons/extra",
-      "/unknown",
+    for (const [initialEntry, expectedRoute] of [
+      ["/guardianish", "/"],
+      ["/guardian/lessons/extra", "/guardian"],
+      ["/unknown", "/"],
     ]) {
       await mountStrict(
         authenticatedApplicationInMemory({ api, initialEntry }),
       );
-      await waitFor(() => assert.equal(currentRoute().path, "/"));
+      await waitFor(() => assert.equal(currentRoute().path, expectedRoute));
       await cleanupMountedRoots();
       document.body.replaceChildren();
     }
@@ -1012,6 +1012,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await waitFor(() => text(/Switch to learner mode/));
     noText(/Pick a lesson/);
+    const dashboard = document.querySelector('a[href="/guardian"]');
+    assert.ok(dashboard, "Expected a Guardian dashboard escape link.");
+    assert.equal(dashboard.textContent.trim(), "Back to Guardian dashboard");
+    await click(dashboard);
+    await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
   });
 
   it("shows a neutral access check without flashing protected children", async () => {

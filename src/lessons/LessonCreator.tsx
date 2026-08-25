@@ -8,7 +8,7 @@ import {
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { getLessonLanguageWarnings } from "../../lib/lesson-language";
-import { getLessonScenePath } from "../app/app-routes";
+import { getGuardianLessonsPath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   ActionButton,
@@ -366,8 +366,8 @@ export function LessonCreator() {
       const prepared = prepareLessonDraft(lesson, "custom lesson");
       setLesson(prepared.lesson);
       setWarnings(prepared.warnings);
-      const saved = await saveMyLesson(prepared.lesson, lessonSource);
-      navigate(getLessonScenePath("my", saved.id, 0));
+      await saveMyLesson(prepared.lesson, lessonSource);
+      navigate(getGuardianLessonsPath());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -384,7 +384,7 @@ export function LessonCreator() {
         <HeaderLink
           aria-label="Back to lessons"
           icon={<ArrowLeft />}
-          to="/lessons"
+          to={getGuardianLessonsPath()}
         >
           Back to lessons
         </HeaderLink>

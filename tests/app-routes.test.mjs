@@ -167,6 +167,7 @@ describe("app route helpers", () => {
     assert.equal(routes.getGuardianPath(), "/guardian");
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
+    assert.equal(routes.getGuardianLearnersPath(), "/guardian/learners");
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
     assert.equal(
       routes.getProfilePath("/guardian"),
@@ -209,6 +210,27 @@ describe("app route helpers", () => {
 
     assert.equal(routes.isGuardianRoute("/profile/setup"), false);
     assert.equal(routes.isGuardianRoute("/profile/setup", "?redo=1"), true);
+  });
+
+  it("returns guardian gates only to non-gate guardian destinations", () => {
+    assert.equal(routes.getSafeGuardianReturnTo(""), "/guardian");
+    assert.equal(
+      routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Fstories"),
+      "/guardian/stories",
+    );
+    for (const value of [
+      "/",
+      "/lessons",
+      "/guardian/profile",
+      "https://evil.test/",
+    ]) {
+      assert.equal(
+        routes.getSafeGuardianReturnTo(
+          `?returnTo=${encodeURIComponent(value)}`,
+        ),
+        "/guardian",
+      );
+    }
   });
 
   it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {

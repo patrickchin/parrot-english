@@ -63,6 +63,7 @@ import {
   getProfilePath,
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
+  getSafeGuardianReturnTo,
   getSafeReturnTo,
   getStoryPagePath,
   getStoryShelfPath,
@@ -140,6 +141,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/",
   "/guardian",
   "/guardian/dubbing",
+  "/guardian/learners",
   "/guardian/lessons",
   "/guardian/profile",
   "/guardian/profile/setup",
@@ -1241,10 +1243,12 @@ export function ApplicationRoutes({
   learnerName = "Learner",
   loginTarget,
   onBeforeModeNavigate,
+  wildcardTarget = "/",
 }: {
   learnerName?: string;
   loginTarget: string;
   onBeforeModeNavigate?: () => void;
+  wildcardTarget?: string;
 }) {
   return (
     <Suspense
@@ -1329,7 +1333,7 @@ export function ApplicationRoutes({
         <Route element={null} path="/guardian/profile" />
         <Route element={null} path="/profile/setup" />
         <Route element={null} path="/profile" />
-        <Route element={<Navigate replace to="/" />} path="*" />
+        <Route element={<Navigate replace to={wildcardTarget} />} path="*" />
       </Routes>
     </Suspense>
   );
@@ -1351,7 +1355,9 @@ export function AuthenticatedApplication({
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
   const redoLearnerProfile =
     isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
-  const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
+  const safeReturnTo = guardianRoute
+    ? getSafeGuardianReturnTo(location.search)
+    : getSafeReturnTo(location.search) ?? "/";
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
     location.search,
@@ -1367,6 +1373,9 @@ export function AuthenticatedApplication({
       learnerName={accountExperience?.learnerName?.trim() || "Learner"}
       loginTarget={safeReturnTo}
       onBeforeModeNavigate={onExitLessonRoute}
+      wildcardTarget={
+        /^\/guardian(?:\/|$)/i.test(location.pathname) ? getGuardianPath() : "/"
+      }
     />
   );
   const routeContent = (

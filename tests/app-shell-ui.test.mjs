@@ -309,7 +309,10 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     app,
     /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
   );
-  assert.match(app, /const\s+safeReturnTo\s*=\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/);
+  assert.match(
+    app,
+    /const\s+safeReturnTo\s*=\s*guardianRoute\s*\?\s*getSafeGuardianReturnTo\(location\.search\)\s*:\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/s,
+  );
   assert.match(app, /const\s+requestedProtectedTarget\s*=/);
   assert.match(app, /getLearnerProfilePath\(requestedProtectedTarget\)/);
 });
