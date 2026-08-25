@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type DubStoreSnapshot = {
   audioContextDoubleCloses: number;
@@ -517,7 +517,7 @@ test("reduced motion disables playing duck animation and playback cleanup stays 
   await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
 });
 
-async function boundingBoxOrThrow(locator: ReturnType<Page["locator"]>) {
+async function boundingBoxOrThrow(locator: Locator) {
   const box = await locator.boundingBox();
   if (!box) throw new Error("Expected a visible element with a bounding box.");
   return box;
@@ -528,7 +528,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 async function expectLearnerTargetsAtLeast48px(page: Page) {
-  const targets = page.locator("main button:visible, main summary:visible");
+  const targets = page.getByRole("main").getByRole("button");
   const sizes = await targets.evaluateAll((elements) => elements.map((element) => {
     const { height, width } = element.getBoundingClientRect();
     return { height, name: element.getAttribute("aria-label") ?? element.textContent?.trim(), width };
@@ -545,7 +545,7 @@ test("the desktop project is a wide video workspace with a six-scene dock", asyn
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await confirmDub(page, "Continue dubbing");
 
-  const workspace = page.locator("main > section").first();
+  const workspace = page.getByRole("region", { name: "Dub project workspace" });
   const player = page.getByRole("region", { name: "Full video player" });
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const workspaceBox = await boundingBoxOrThrow(workspace);
@@ -562,6 +562,52 @@ test("the desktop project is a wide video workspace with a six-scene dock", asyn
     const sceneBox = await boundingBoxOrThrow(scene);
     expect(sceneBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
   }
+});
+
+test("the desktop scene editor keeps the stage left of its selected-line controls", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await openScene(page, 1);
+
+  const workspace = page.getByRole("region", { name: "Scene editor workspace" });
+  const stage = page.getByRole("region", { name: "Scene video" });
+  const controls = page.getByRole("complementary", { name: "Scene line controls" });
+  const [workspaceBox, stageBox, controlsBox] = await Promise.all([
+    boundingBoxOrThrow(workspace),
+    boundingBoxOrThrow(stage),
+    boundingBoxOrThrow(controls),
+  ]);
+
+  expect(workspaceBox.width).toBeGreaterThanOrEqual(1440 * 0.9);
+  expect(stageBox.x + stageBox.width).toBeLessThanOrEqual(controlsBox.x);
+  expect(stageBox.y + stageBox.height).toBeGreaterThan(controlsBox.y);
+  await expect(stage).toBeInViewport();
+  await expect(controls).toBeInViewport();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("the narrow scene editor reads stage, selectors, selected lyric, then controls", async ({ page }) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await openScene(page, 1);
+
+  const stage = page.getByRole("region", { name: "Scene video" });
+  const selectors = page.getByRole("region", { name: "Scene line selectors" });
+  const lyric = page.getByRole("heading", { name: "But only four little ducks came back." });
+  const record = page.getByRole("button", { name: "Record line" });
+  const [stageBox, selectorsBox, lyricBox, recordBox] = await Promise.all([
+    boundingBoxOrThrow(stage),
+    boundingBoxOrThrow(selectors),
+    boundingBoxOrThrow(lyric),
+    boundingBoxOrThrow(record),
+  ]);
+
+  expect(selectorsBox.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height);
+  expect(lyricBox.y).toBeGreaterThanOrEqual(selectorsBox.y + selectorsBox.height);
+  expect(recordBox.y).toBeGreaterThanOrEqual(lyricBox.y + lyricBox.height);
+  await expect(page.getByRole("region", { name: "Scene lyrics" })).toHaveCount(0);
 });
 
 for (const viewport of [

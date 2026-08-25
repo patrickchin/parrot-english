@@ -149,7 +149,7 @@ describe("duck dubbing storyboard presentation", () => {
       visualLine: DUB_LINES[3],
     });
     assert.match(html, /aria-current="true"[^>]*aria-label="Line 2, selected, generated"/);
-    assert.match(html, />Over the hill and far away\.<\/p>/);
+    assert.match(html, /<h2[^>]*>Over the hill and far away\.<\/h2>/);
     assert.match(html, /The ducklings come back to the pond\./);
     assert.doesNotMatch(html, /aria-current="true"[^>]*aria-label="Line 4, selected/);
   });

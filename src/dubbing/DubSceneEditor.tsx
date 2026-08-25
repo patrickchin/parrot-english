@@ -90,7 +90,7 @@ export function DubSceneEditor({
 
   return (
     <main aria-busy={locked} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
-      <section className="mx-auto grid w-full max-w-[1600px] gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
+      <section aria-label="Scene editor workspace" className="mx-auto grid w-full max-w-[1600px] gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
         <section className="grid content-start gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <TextButton className="min-h-12 gap-1" disabled={navigationLocked} onClick={onBack}>Back to full video</TextButton>
@@ -98,7 +98,7 @@ export function DubSceneEditor({
               Scene {sceneNumber} of {DUB_VERSES.length}
             </p>
           </div>
-          <section className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
+          <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
             <DuckScene compact line={visualLine} playing={operation === "playback"} />
           </section>
           <ActionButton
@@ -112,22 +112,14 @@ export function DubSceneEditor({
             {operation === "playback" ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
             {playbackLabel}
           </ActionButton>
-          <section aria-label="Scene lyrics" className="grid gap-2 rounded-3xl border-3 border-white bg-white/90 p-4 shadow-card">
-            {sceneLines.map((line, index) => (
-              <p className="m-0 font-black leading-snug text-brand-ink" key={line.id}>
-                <span className="mr-2 text-sm text-brand-blue">{index + 1}.</span>
-                {line.text}
-              </p>
-            ))}
-          </section>
         </section>
 
-        <aside className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
+        <aside aria-label="Scene line controls" className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
           <div>
             <p className="m-0 text-sm font-black uppercase tracking-[0.16em] text-brand-blue">Choose a line</p>
             <h1 className="m-0 text-2xl text-brand-ink" ref={sceneHeadingRef} tabIndex={-1}>Record this scene</h1>
           </div>
-          <div aria-label="Scene lines" className="grid grid-cols-2 gap-2">
+          <section aria-label="Scene line selectors" className="grid grid-cols-2 gap-2">
             {sceneLines.map((line, index) => {
               const selected = line.id === activeLine.id;
               return (
@@ -145,7 +137,7 @@ export function DubSceneEditor({
                 </ActionButton>
               );
             })}
-          </div>
+          </section>
 
           <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3">
             <h2 className="m-0 text-xl font-black leading-snug text-brand-ink" ref={lineHeadingRef} tabIndex={-1}>{activeLine.text}</h2>

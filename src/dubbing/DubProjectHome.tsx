@@ -68,7 +68,7 @@ export function DubProjectHome({
 
   return (
     <main aria-busy={deleting} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
-      <section className="mx-auto grid w-full max-w-[1600px] gap-5">
+      <section aria-label="Dub project workspace" className="mx-auto grid w-full max-w-[1600px] gap-5">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="m-0 text-sm font-black uppercase tracking-[0.16em] text-brand-blue">
