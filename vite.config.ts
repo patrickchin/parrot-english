@@ -46,11 +46,14 @@ export function privateStoryPreviewAssets(
   return {
     name: "private-story-preview-assets",
     generateBundle() {
-      for (const { fileName, sourceFilePath } of assets) {
+      for (const { fileName, source } of assets) {
+        if (!source?.length) {
+          throw new Error("Private story preview asset is missing snapshotted audio");
+        }
         this.emitFile({
           type: "asset",
           fileName,
-          source: readFileSync(sourceFilePath),
+          source,
         });
       }
     },

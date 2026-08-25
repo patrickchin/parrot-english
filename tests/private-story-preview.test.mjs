@@ -303,6 +303,7 @@ describe("private story preview loader", () => {
         ),
         publicPath:
           "/assets/private-story-preview/private-story-fixture/page-001.mp3",
+        source: Buffer.from("synthetic audio"),
         sourceFilePath: path.join(
           fixture.previewDirectory,
           "audio/private-story-fixture/page-001.mp3",
@@ -317,6 +318,7 @@ describe("private story preview loader", () => {
         ),
         publicPath:
           "/assets/private-story-preview/private-story-second/page-001.mp3",
+        source: Buffer.from("second synthetic audio"),
         sourceFilePath: path.join(
           fixture.previewDirectory,
           "audio/private-story-second/page-001.mp3",
@@ -566,6 +568,13 @@ describe("private story preview loader", () => {
       () => loadPrivateStoryPreview({ projectRoot: fixture.projectRoot }),
       /must stay inside the private preview directory/,
     );
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      /must stay inside the private preview directory/,
+    );
   });
 
   it("rejects a zero-byte narration MP3", async () => {
@@ -575,6 +584,13 @@ describe("private story preview loader", () => {
 
     await assert.rejects(
       () => loadPrivateStoryPreview({ projectRoot: fixture.projectRoot }),
+      /non-empty regular MP3/,
+    );
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
       /non-empty regular MP3/,
     );
   });
@@ -662,7 +678,7 @@ describe("private story preview loader", () => {
     );
   });
 
-  it("accepts the normalized source byte limit and rejects one byte over", async () => {
+  it("accepts the raw source byte limit and rejects removable whitespace one byte over", async () => {
     const fixture = await createFixtureRoot();
     const prefix = "# Fixture Story\n\n";
     const sourceAtLimit = `${prefix}${"!".repeat(131072 - Buffer.byteLength(prefix))}`;
@@ -673,7 +689,7 @@ describe("private story preview loader", () => {
     });
     assert.equal(atLimit.stories.length, 2);
 
-    await writePreviewFixture(fixture, { text: `${sourceAtLimit}!` });
+    await writePreviewFixture(fixture, { text: `${sourceAtLimit} ` });
     await assert.rejects(
       () => loadPrivateStoryPreview({ projectRoot: fixture.projectRoot, requireAudio: false }),
       /source must be at most 131072 UTF-8 bytes/,
@@ -837,7 +853,7 @@ describe("private story preview preparation", () => {
     ];
     const sourceBytes = [
       Buffer.from("# New One\n\nNew first body.\n"),
-      Buffer.from(`${"x".repeat(1024 * 1024)}\n`),
+      Buffer.from(`# New Two\n\nNew second body.${" ".repeat(131072)}`),
     ];
     await Promise.all(sourceFiles.map((file, index) => writeFile(file, sourceBytes[index])));
 
@@ -884,6 +900,94 @@ describe("private story preview preparation", () => {
       /source files must stay outside the preview directory/,
     );
 
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("refuses an outside source symlink whose real target is inside the destination", async () => {
+    const fixture = await createFixtureRoot();
+    const insideSource = path.join(fixture.previewDirectory, "original-inside.txt");
+    const insideBytes = Buffer.from("# Inside Original\n\nOriginal body.\n");
+    await writeFile(insideSource, insideBytes);
+    const sourcesDirectory = path.join(fixture.projectRoot, "outside-sources");
+    await mkdir(sourcesDirectory);
+    const outsideAlias = path.join(sourcesDirectory, "inside-alias.txt");
+    const outsideSecond = path.join(sourcesDirectory, "second-source.txt");
+    const secondBytes = Buffer.from("# Outside Second\n\nSecond body.\n");
+    await symlink(insideSource, outsideAlias);
+    await writeFile(outsideSecond, secondBytes);
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [outsideAlias, outsideSecond],
+      }),
+      /source files must stay outside the preview directory/,
+    );
+
+    assert.deepEqual(await readFile(insideSource), insideBytes);
+    assert.deepEqual(await readFile(outsideAlias), insideBytes);
+    assert.deepEqual(await readFile(outsideSecond), secondBytes);
+  });
+
+  it("rolls back the old bundle when post-install backup cleanup fails", async () => {
+    const fixture = await createFixtureRoot();
+    const oldFiles = {
+      "manifest.json": Buffer.from('{"version":1,"stories":[]}\n'),
+      "story-1.txt": Buffer.from("# Old One\n\nOld first body.\n"),
+      "story-2.txt": Buffer.from("# Old Two\n\nOld second body.\n"),
+    };
+    await Promise.all(
+      Object.entries(oldFiles).map(([name, contents]) =>
+        writeFile(path.join(fixture.previewDirectory, name), contents),
+      ),
+    );
+    const sourcesDirectory = path.join(fixture.projectRoot, "cleanup-failure-sources");
+    await mkdir(sourcesDirectory);
+    const sourceFiles = [
+      path.join(sourcesDirectory, "new-one.txt"),
+      path.join(sourcesDirectory, "new-two.txt"),
+    ];
+    const sourceBytes = [
+      Buffer.from("# New One\n\nNew first body.\n"),
+      Buffer.from("# New Two\n\nNew second body.\n"),
+    ];
+    await Promise.all(sourceFiles.map((file, index) => writeFile(file, sourceBytes[index])));
+    let failedBackupCleanup = false;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async rm(target, options) {
+            if (!failedBackupCleanup && path.basename(target).includes(".backup-")) {
+              failedBackupCleanup = true;
+              throw new Error("Synthetic backup cleanup failure");
+            }
+            return rm(target, options);
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /Synthetic backup cleanup failure/,
+    );
+
+    assert.equal(failedBackupCleanup, true);
+    assert.deepEqual(
+      (await readdir(fixture.previewDirectory)).sort(),
+      Object.keys(oldFiles).sort(),
+    );
+    for (const [name, contents] of Object.entries(oldFiles)) {
+      assert.deepEqual(await readFile(path.join(fixture.previewDirectory, name)), contents);
+    }
+    assert.deepEqual(
+      await readdir(path.dirname(fixture.previewDirectory)),
+      [path.basename(fixture.previewDirectory)],
+    );
     assert.deepEqual(
       await Promise.all(sourceFiles.map((file) => readFile(file))),
       sourceBytes,

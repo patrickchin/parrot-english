@@ -1,7 +1,7 @@
 /* global Buffer */
 
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { env } from "node:process";
@@ -142,7 +142,7 @@ describe("private story Vite build boundary", () => {
     );
   });
 
-  it("emits only loader-allowlisted MP3s with exact filenames and bytes", async () => {
+  it("emits snapshotted allowlisted MP3 bytes after the source path is replaced", async () => {
     const fixture = await createFixture({ withAudio: true });
     const data = await getPrivateStoryPreviewBuildData({
       command: "build",
@@ -159,6 +159,16 @@ describe("private story Vite build boundary", () => {
       ],
     );
 
+    const originalAudioPath = path.join(
+      fixture.previewDirectory,
+      "audio/private-fixture/page-001.mp3",
+    );
+    const externalAudioPath = path.join(fixture.projectRoot, "replacement.mp3");
+    const externalBytes = Buffer.from([0x49, 0x44, 0x33, 0x09, 0x09, 0x09]);
+    await writeFile(externalAudioPath, externalBytes);
+    await rm(originalAudioPath);
+    await symlink(externalAudioPath, originalAudioPath);
+
     const emitted = [];
     const plugin = privateStoryPreviewAssets(data.assets);
     plugin.generateBundle.call({
@@ -173,6 +183,7 @@ describe("private story Vite build boundary", () => {
       "assets/private-story-preview/private-fixture/page-001.mp3",
     );
     assert.deepEqual(emitted[0].source, fixture.audioBytes[0]);
+    assert.notDeepEqual(emitted[0].source, externalBytes);
     assert.equal(
       emitted[1].fileName,
       "assets/private-story-preview/private-second/page-001.mp3",

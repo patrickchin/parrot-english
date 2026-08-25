@@ -534,16 +534,10 @@ async function historyFiles(projectRoot, baseRevision) {
   return files;
 }
 
-async function hashPrivateAudio(assets) {
+function hashPrivateAudio(assets) {
   const hashes = [];
   for (const asset of assets) {
-    try {
-      hashes.push(hash(await readFile(asset.sourceFilePath)));
-    } catch (error) {
-      if (error?.code !== "ENOENT") {
-        throw new Error("Unable to read private narration for isolation audit");
-      }
-    }
+    if (asset.source) hashes.push(hash(asset.source));
   }
   return hashes;
 }
@@ -589,7 +583,7 @@ export async function verifyPrivateStoryIsolation({
   }
   const markers = privateData?.markers ?? [];
   const sourceUnits = privateData?.excerptSourceUnits ?? [];
-  const audioHashes = privateData ? await hashPrivateAudio(privateData.assets) : [];
+  const audioHashes = privateData ? hashPrivateAudio(privateData.assets) : [];
   const trackedEntries = await gitTrackedEntries(projectRoot);
   const trackedPaths = [...new Set(trackedEntries.map((entry) => entry.path))];
   const publicTrackedPaths = trackedPaths.filter(
