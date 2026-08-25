@@ -120,6 +120,7 @@ import {
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import { finishSpeechOperation } from "../lessons/speech-operation";
+import { IS_PRIVATE_STORY_PREVIEW } from "../stories/private-story-preview";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import {
@@ -1165,7 +1166,9 @@ function StoryRouteDecisionView({
   decision: StoryRouteDecision;
 }) {
   const navigate = useNavigate();
-  const personalizedStoryArt = usePersonalizedStoryArt();
+  const personalizedStoryArt = usePersonalizedStoryArt({
+    enabled: !IS_PRIVATE_STORY_PREVIEW,
+  });
 
   if (decision.kind === "redirect") {
     return <Navigate replace={decision.replace} to={decision.to} />;
@@ -1199,6 +1202,36 @@ function StoryPageRoute() {
     <StoryRouteDecisionView
       decision={resolveStoryRouteDecision(storyId, pageNumber)}
     />
+  );
+}
+
+export function PrivateStoryPreviewRoutes() {
+  return (
+    <Suspense
+      fallback={
+        <FeaturePlaceholder
+          busy
+          description="Getting your activity ready."
+          title="Loading…"
+        />
+      }
+    >
+      <RouteFocusManager />
+      <Routes>
+        <Route element={<StoryList />} path="/stories" />
+        <Route element={<StoryRedirect />} path="/stories/:storyId" />
+        <Route
+          element={<StoryPageRoute />}
+          path="/stories/:storyId/pages/:pageNumber"
+        />
+        <Route
+          element={
+            <Navigate replace to={getStoryShelfPath("long-stories")} />
+          }
+          path="*"
+        />
+      </Routes>
+    </Suspense>
   );
 }
 
@@ -1380,7 +1413,7 @@ export function AuthenticatedApplication({
   );
 }
 
-function RoutedApplication() {
+function AuthenticatedRoutedApplication() {
   const location = useLocation();
   const lessonRouteExitRegistryRef = useRef(createLessonRouteExitRegistry());
   const registerLessonRouteExitBarrier = useCallback(
@@ -1413,6 +1446,14 @@ function RoutedApplication() {
         <AuthenticatedApplication onExitLessonRoute={exitLessonRoute} />
       </AuthGate>
     </LessonRouteExitBarrierContext.Provider>
+  );
+}
+
+function RoutedApplication() {
+  return IS_PRIVATE_STORY_PREVIEW ? (
+    <PrivateStoryPreviewRoutes />
+  ) : (
+    <AuthenticatedRoutedApplication />
   );
 }
 

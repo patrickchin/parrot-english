@@ -36,6 +36,28 @@ including authentication and Worker APIs. `npm run dev:vite` is only a
 frontend convenience server and cannot provide the Better Auth or speech
 evaluation Worker APIs.
 
+### Private Story Preview
+
+Cloudflare Access must already protect the `parrot-english` Worker’s
+**Previews only** scope with the **Cloudflare account members** policy before
+the version upload. Applying or changing that policy requires action-time
+confirmation. Do not upload or share a preview URL until the dashboard confirms
+preview protection. Use `wrangler versions upload`, never `wrangler deploy`.
+The private story preview directory is ignored by Git; keep its source text and
+generated audio out of tracked files. A version preview still uses the
+production D1 and R2 bindings, so it is not a staging environment: test only
+the story shelf and reader, and do not exercise `/api`, account, profile, or
+personalized-art writes. Keep preview-only Access enabled for as long as any
+private preview version remains available.
+
+```bash
+npm run generate:audio:private-story-preview
+npm run build
+npm run verify:private-story-isolation -- --require-private-inputs --base=origin/main
+npm run build:private-story-preview
+npx wrangler versions upload --config wrangler.jsonc --preview-alias private-story-test-local
+```
+
 ## Local Authentication Setup
 
 Create a local environment file, apply the local D1 migrations, and start the

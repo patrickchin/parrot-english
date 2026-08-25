@@ -3,7 +3,7 @@ import {
   learnerProfile,
   profileSessionBypass,
 } from "../src/db/schema.ts";
-import type { StoryLevelId } from "../lib/story-level.ts";
+import type { LearnerStoryLevelId } from "../lib/story-level.ts";
 import type { Database } from "./database.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 
@@ -108,7 +108,10 @@ export function createLearnerProfileRepository(
       .where(eq(learnerProfile.id, profileId));
   }
 
-  async function saveStoryLevel(userId: string, storyLevel: StoryLevelId) {
+  async function saveStoryLevel(
+    userId: string,
+    storyLevel: LearnerStoryLevelId,
+  ) {
     await database
       .update(learnerProfile)
       .set({ storyLevel, updatedAt: now() })
