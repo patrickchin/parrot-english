@@ -144,23 +144,31 @@ describe("private story pagination", () => {
     );
   });
 
-  it("keeps public normalized fidelity when a multi-blank delimiter crosses a page boundary", () => {
+  it("preserves source-normalized fidelity when a multi-blank delimiter crosses a page boundary", () => {
+    const sourceBody = [
+      words(70, "first"),
+      "",
+      "",
+      "",
+      words(1, "second"),
+    ].join("\n");
     const paginated = paginatePrivateStoryText(
-      [
-        "# Boundary Delimiter Fixture",
-        words(70, "first"),
-        "",
-        "",
-        "",
-        words(1, "second"),
-      ].join("\n"),
+      `# Boundary Delimiter Fixture\n${sourceBody}`,
     );
 
     assert.deepEqual(paginated.pages, [words(70, "first"), words(1, "second")]);
+    assert.deepEqual(paginated.pageSeparators, ["\n\n\n\n"]);
     assert.equal(
-      normalizeStoryBody(paginated.pages.join("\n\n")),
-      normalizeStoryBody(paginated.body),
+      normalizeStoryBody(
+        paginated.pages.reduce(
+          (body, page, index) =>
+            body + (index ? paginated.pageSeparators[index - 1] : "") + page,
+          "",
+        ),
+      ),
+      normalizeStoryBody(sourceBody),
     );
+    assert.equal(normalizeStoryBody(paginated.body), normalizeStoryBody(sourceBody));
   });
 
   it("rejects a single source unit over 90 words", () => {
