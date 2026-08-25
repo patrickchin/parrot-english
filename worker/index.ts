@@ -76,7 +76,9 @@ function isLearnerProfilePath(pathname: string) {
     pathname === "/api/learner-profile" ||
     pathname.startsWith("/api/learner-profile/") ||
     pathname === "/api/profile" ||
-    pathname === "/api/profile/preferences"
+    pathname === "/api/profile/preferences" ||
+    pathname === "/api/lesson-recordings/consent" ||
+    pathname === "/api/profile/lesson-recording-consent"
   );
 }
 

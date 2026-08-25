@@ -5,6 +5,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { after, describe, it } from "node:test";
 import { createServer } from "vite";
+import {
+  cleanupMountedRoots,
+  click,
+  installDom,
+  mountStrict,
+} from "./helpers/react-lifecycle.mjs";
 
 const vite = await createServer({
   appType: "custom",
@@ -473,6 +479,101 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
+  it("renders immediate guardian recording-consent controls", () => {
+    const props = {
+      drafts: { name: "Mia", age: "8" },
+      fieldErrors: {},
+      isSaving: false,
+      onCancel() {},
+      onClose() {},
+      onLessonRecordingConsentChange() {},
+      onRedoLearnerProfile() {},
+      onSave() {},
+      onValueChange() {},
+      pageError: "",
+    };
+
+    const disabled = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        ...props,
+        lessonRecordingConsent: false,
+      }),
+    );
+    assert.match(disabled, /Allow lesson voice recordings/);
+    assert.doesNotMatch(disabled, /Stop and delete lesson recordings/);
+
+    const enabled = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        ...props,
+        lessonRecordingConsent: true,
+      }),
+    );
+    assert.match(enabled, /Stop and delete lesson recordings/);
+    assert.doesNotMatch(enabled, /Allow lesson voice recordings/);
+  });
+
+  it("grants immediately and requires explicit confirmation before revoke", async () => {
+    const restoreDom = installDom();
+    const changes = [];
+    const confirmations = [];
+    let confirmation = false;
+    window.confirm = (message) => {
+      confirmations.push(message);
+      return confirmation;
+    };
+    const props = {
+      drafts: { name: "Mia", age: "8" },
+      fieldErrors: {},
+      isSaving: false,
+      onCancel() {},
+      onClose() {},
+      onLessonRecordingConsentChange(enabled) {
+        changes.push(enabled);
+      },
+      onRedoLearnerProfile() {},
+      onSave() {},
+      onValueChange() {},
+      pageError: "",
+    };
+
+    try {
+      let mounted = await mountStrict(
+        createElement(ProfileEditorView, {
+          ...props,
+          lessonRecordingConsent: false,
+        }),
+      );
+      await click(
+        [...mounted.querySelectorAll("button")].find((button) =>
+          button.textContent.includes("Allow lesson voice recordings"),
+        ),
+      );
+      assert.deepEqual(changes, [true]);
+      assert.deepEqual(confirmations, []);
+
+      await cleanupMountedRoots();
+      mounted = await mountStrict(
+        createElement(ProfileEditorView, {
+          ...props,
+          lessonRecordingConsent: true,
+        }),
+      );
+      const revoke = [...mounted.querySelectorAll("button")].find((button) =>
+        button.textContent.includes("Stop and delete lesson recordings"),
+      );
+      await click(revoke);
+      assert.deepEqual(changes, [true]);
+      assert.match(confirmations[0], /delete.*lesson voice recordings/i);
+
+      confirmation = true;
+      await click(revoke);
+      assert.deepEqual(changes, [true, false]);
+    } finally {
+      await cleanupMountedRoots();
+      restoreDom();
+    }
+  });
+
   it("renders learner details separately from the profile-setup action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {

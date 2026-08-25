@@ -83,4 +83,33 @@ describe("guardian access persistence", () => {
     assert.match(sql, /story_level[^,]*DEFAULT ['"]first-words['"][^,]*NOT NULL/i);
     assert.match(sql, /story_level[^\n]*first-words[^\n]*early-a1/i);
   });
+
+  it("stores nullable recording consent on the one learner profile per auth user", () => {
+    const columns = getTableColumns(schema.learnerProfile);
+    assert.equal(columns.lessonRecordingConsentVersion.name, "lesson_recording_consent_version");
+    assert.equal(columns.lessonRecordingConsentAt.name, "lesson_recording_consent_at");
+
+    const database = createMigratedDatabase();
+    database
+      .prepare(
+        `INSERT INTO user (id, name, email, email_verified)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .run("user-1", "Guardian", "guardian@example.test", 1);
+    database
+      .prepare(
+        `INSERT INTO learner_profile (id, auth_user_id)
+         VALUES (?, ?)`,
+      )
+      .run("profile-1", "user-1");
+
+    const row = database
+      .prepare(
+        `SELECT lesson_recording_consent_version, lesson_recording_consent_at
+         FROM learner_profile WHERE auth_user_id = ?`,
+      )
+      .get("user-1");
+    assert.equal(row.lesson_recording_consent_version, null);
+    assert.equal(row.lesson_recording_consent_at, null);
+  });
 });

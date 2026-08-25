@@ -6,6 +6,7 @@ import {
 import type { StoryLevelId } from "../lib/story-level.ts";
 import type { Database } from "./database.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 
 type RepositoryOptions = {
   createId?: () => string;
@@ -118,6 +119,33 @@ export function createLearnerProfileRepository(
     return profile;
   }
 
+  async function readLessonRecordingConsent(userId: string) {
+    const profile = await findProfile(userId);
+    return (
+      profile?.lessonRecordingConsentVersion ===
+      LESSON_RECORDING_CONSENT_VERSION
+    );
+  }
+
+  async function saveLessonRecordingConsent(userId: string, enabled: boolean) {
+    const timestamp = now();
+    await database
+      .update(learnerProfile)
+      .set({
+        lessonRecordingConsentVersion: enabled
+          ? LESSON_RECORDING_CONSENT_VERSION
+          : null,
+        lessonRecordingConsentAt: enabled ? timestamp : null,
+        updatedAt: timestamp,
+      })
+      .where(eq(learnerProfile.authUserId, userId));
+    const saved = await readLessonRecordingConsent(userId);
+    if (saved !== enabled) {
+      throw new Error("Learner recording consent could not be updated.");
+    }
+    return saved;
+  }
+
   async function saveTransition(
     profileId: string,
     values: {
@@ -177,7 +205,9 @@ export function createLearnerProfileRepository(
     findProfile,
     hasSessionBypass,
     loadProfile,
+    readLessonRecordingConsent,
     saveAnswer,
+    saveLessonRecordingConsent,
     saveStoryLevel,
     saveTransition,
     skip,

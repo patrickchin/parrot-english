@@ -208,6 +208,10 @@ export const learnerProfile = sqliteTable(
     lastSkippedAt: integer("last_skipped_at", { mode: "timestamp_ms" }),
     lastSkippedSessionId: text("last_skipped_session_id"),
     completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+    lessonRecordingConsentVersion: text("lesson_recording_consent_version"),
+    lessonRecordingConsentAt: integer("lesson_recording_consent_at", {
+      mode: "timestamp_ms",
+    }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

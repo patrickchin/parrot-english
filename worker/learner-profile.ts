@@ -19,6 +19,7 @@ import {
 } from "../lib/learner-profile-privacy.ts";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { isStoryLevelId } from "../lib/story-level.ts";
+import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
 import type { Database } from "./database.ts";
@@ -33,6 +34,7 @@ import {
   type LearnerProfileEnrichmentResult,
 } from "./learner-profile-enrichment.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
+import { deleteAllLessonRecordings } from "./lesson-recording-storage.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
@@ -224,7 +226,12 @@ function learnerProfileExperienceMode(env: LearnerProfileRequestInput["env"]) {
 
 function profilePayload(profile: Profile) {
   return {
-    profile: clientProfile(profile),
+    profile: {
+      ...clientProfile(profile),
+      lessonRecordingConsent:
+        profile.lessonRecordingConsentVersion ===
+        LESSON_RECORDING_CONSENT_VERSION,
+    },
     questions: LEARNER_PROFILE_QUESTIONNAIRE.questions.map(serializeQuestion),
   };
 }
@@ -822,6 +829,41 @@ export async function handleLearnerProfileRequest(
       return jsonResponse(profilePayload(profile));
     }
 
+    if (
+      url.pathname === "/api/lesson-recordings/consent" &&
+      input.request.method === "GET"
+    ) {
+      return jsonResponse({
+        enabled: await repository.readLessonRecordingConsent(
+          input.identity.userId,
+        ),
+      });
+    }
+
+    if (
+      url.pathname === "/api/profile/lesson-recording-consent" &&
+      input.request.method === "PUT"
+    ) {
+      const record = await readJsonRecord(input.request);
+      if (
+        Object.keys(record).length !== 1 ||
+        typeof record.enabled !== "boolean"
+      ) {
+        throw new ApiError(400, "invalid_lesson_recording_consent");
+      }
+      const enabled = await repository.saveLessonRecordingConsent(
+        input.identity.userId,
+        record.enabled,
+      );
+      if (!enabled) {
+        await deleteAllLessonRecordings(
+          input.env.PERSONALIZED_STORY_ART_BUCKET,
+          input.identity.userId,
+        );
+      }
+      return jsonResponse({ enabled });
+    }
+
     if (url.pathname === "/api/profile" && input.request.method === "PUT") {
       const body = parseProfileEditRecord(await readJsonRecord(input.request));
       const profile = await repository.loadProfile(input.identity);
@@ -890,7 +932,9 @@ export async function handleLearnerProfileRequest(
       url.pathname === "/api/learner-profile/skip" ||
       url.pathname === "/api/learner-profile/complete" ||
       url.pathname === "/api/profile" ||
-      url.pathname === "/api/profile/preferences";
+      url.pathname === "/api/profile/preferences" ||
+      url.pathname === "/api/lesson-recordings/consent" ||
+      url.pathname === "/api/profile/lesson-recording-consent";
     return jsonResponse(
       { error: recognized ? "method_not_allowed" : "not_found" },
       { status: recognized ? 405 : 404 }

@@ -17,6 +17,7 @@ import {
   loadProfile,
   LearnerProfileApiError,
   saveLearnerProfileAnswer,
+  saveLessonRecordingConsent,
   saveProfileAnswers,
   skipLearnerProfile,
   skipLearnerProfileQuestion,
@@ -662,7 +663,16 @@ export function LearnerProfileGate({
       current?.mode === "full" ? { ...current, profile } : current,
     );
     setProfileState((current) =>
-      current ? { ...current, profile } : current,
+      current
+        ? {
+            ...current,
+            profile: {
+              ...profile,
+              lessonRecordingConsent:
+                current.profile.lessonRecordingConsent,
+            },
+          }
+        : current,
     );
   }, []);
 
@@ -1252,6 +1262,41 @@ export function LearnerProfileGate({
     }
   }
 
+  async function handleLessonRecordingConsentChange(enabled: boolean) {
+    if (!profileState || !isActiveProfileRoute()) return;
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const profileOperation = boundary.begin();
+    const { controller } = profileOperation;
+    setIsProfileSaving(true);
+    setProfilePageError("");
+    try {
+      const saved = await saveLessonRecordingConsent(enabled, {
+        signal: controller.signal,
+      });
+      if (!isCurrentProfileOperation(profileOperation)) return;
+      setProfileState((current) =>
+        current
+          ? {
+              ...current,
+              profile: {
+                ...current.profile,
+                lessonRecordingConsent: saved.enabled,
+              },
+            }
+          : current,
+      );
+    } catch (error) {
+      if (isCurrentProfileOperation(profileOperation) && !isAbortError(error)) {
+        setProfilePageError(readableError(error));
+      }
+    } finally {
+      const isCurrent = isCurrentProfileOperation(profileOperation);
+      boundary.finish(controller);
+      if (isCurrent) setIsProfileSaving(false);
+    }
+  }
+
   function handleAcknowledgmentNext() {
     const pending = pendingAcknowledgment;
     if (!pending) return;
@@ -1407,8 +1452,12 @@ export function LearnerProfileGate({
               drafts: profileDrafts,
               fieldErrors: profileFieldErrors,
               isSaving: isProfileSaving,
+              lessonRecordingConsent:
+                profileState.profile.lessonRecordingConsent,
               onCancel: closeProfileEditor,
               onClose: closeProfileEditor,
+              onLessonRecordingConsentChange: (enabled) =>
+                void handleLessonRecordingConsentChange(enabled),
               onRedoLearnerProfile: handleRedoLearnerProfile,
               onSave: () => void handleProfileSave(),
               onValueChange: handleProfileValueChange,

@@ -24,6 +24,8 @@ const EXPECTED_MODELS = {
       "lastSkippedAt",
       "lastSkippedSessionId",
       "completedAt",
+      "lessonRecordingConsentVersion",
+      "lessonRecordingConsentAt",
       "createdAt",
       "updatedAt",
     ],

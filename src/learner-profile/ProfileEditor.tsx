@@ -16,8 +16,10 @@ type ProfileEditorViewProps = {
   drafts: Record<string, string>;
   fieldErrors: Record<string, string>;
   isSaving: boolean;
+  lessonRecordingConsent: boolean;
   onCancel: () => void;
   onClose: () => void;
+  onLessonRecordingConsentChange: (enabled: boolean) => void;
   onRedoLearnerProfile: () => void;
   onSave: () => void;
   onValueChange: (answerKey: string, value: string) => void;
@@ -28,8 +30,10 @@ export function ProfileEditorView({
   drafts,
   fieldErrors,
   isSaving,
+  lessonRecordingConsent,
   onCancel,
   onClose,
+  onLessonRecordingConsentChange,
   onRedoLearnerProfile,
   onSave,
   onValueChange,
@@ -38,6 +42,18 @@ export function ProfileEditorView({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSave();
+  }
+
+  function changeLessonRecordingConsent() {
+    if (
+      lessonRecordingConsent &&
+      !window.confirm(
+        "Stop lesson voice recordings and delete all saved lesson voice recordings? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    onLessonRecordingConsentChange(!lessonRecordingConsent);
   }
 
   return (
@@ -147,6 +163,36 @@ export function ProfileEditorView({
               </p>
             ) : null}
           </fieldset>
+
+          <section
+            aria-labelledby="lesson-recording-consent-title"
+            className="mt-5 grid gap-3 rounded-3xl bg-sky-50 p-4"
+          >
+            <div className="grid gap-2">
+              <h2
+                className="m-0 text-xl text-brand-ink"
+                id="lesson-recording-consent-title"
+              >
+                Lesson voice recordings
+              </h2>
+              <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
+                Let this learner save their own voice clips while joining in
+                with lessons. You can stop and delete them at any time.
+              </p>
+            </div>
+            <ActionButton
+              disabled={isSaving}
+              fullWidth
+              onClick={changeLessonRecordingConsent}
+              size="compact"
+              type="button"
+              variant={lessonRecordingConsent ? "dangerSurface" : "navy"}
+            >
+              {lessonRecordingConsent
+                ? "Stop and delete lesson recordings"
+                : "Allow lesson voice recordings"}
+            </ActionButton>
+          </section>
 
           <section
             aria-labelledby="redo-learner-setup-title"

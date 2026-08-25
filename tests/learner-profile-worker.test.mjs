@@ -16,6 +16,8 @@ const PROTECTED_REQUESTS = [
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
   ["PUT", "/api/profile/preferences"],
+  ["GET", "/api/lesson-recordings/consent"],
+  ["PUT", "/api/profile/lesson-recording-consent"],
 ];
 
 function createEnvironment() {
@@ -200,6 +202,128 @@ async function callLearnerProfile(
 }
 
 describe("onboarding persistence and API", () => {
+  it("persists versioned recording consent across auth sessions", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callLearnerProfile(state.database, "/api/profile");
+      const enabled = await callLearnerProfile(
+        state.database,
+        "/api/profile/lesson-recording-consent",
+        "PUT",
+        { enabled: true },
+      );
+      assert.equal(enabled.status, 200);
+      assert.deepEqual(await enabled.json(), { enabled: true });
+
+      const row = state.sqlite
+        .prepare(
+          `SELECT lesson_recording_consent_version, lesson_recording_consent_at
+           FROM learner_profile WHERE auth_user_id = ?`,
+        )
+        .get("user-1");
+      assert.equal(row.lesson_recording_consent_version, "lesson-join-in-recording-v1");
+      assert.ok(Number.isInteger(row.lesson_recording_consent_at));
+
+      const readFromAnotherSession = await callLearnerProfile(
+        state.database,
+        "/api/lesson-recordings/consent",
+        "GET",
+        undefined,
+        { sessionId: "session-2" },
+      );
+      assert.equal(readFromAnotherSession.headers.get("Cache-Control"), "no-store");
+      assert.deepEqual(await readFromAnotherSession.json(), { enabled: true });
+
+      const profile = await callLearnerProfile(state.database, "/api/profile");
+      assert.equal((await profile.json()).profile.lessonRecordingConsent, true);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("clears consent before purging recordings on revoke", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callLearnerProfile(state.database, "/api/profile");
+      await callLearnerProfile(
+        state.database,
+        "/api/profile/lesson-recording-consent",
+        "PUT",
+        { enabled: true },
+      );
+      const calls = [];
+      const bucket = {
+        async list(options) {
+          calls.push(["list", options]);
+          const row = state.sqlite
+            .prepare(
+              `SELECT lesson_recording_consent_version, lesson_recording_consent_at
+               FROM learner_profile WHERE auth_user_id = ?`,
+            )
+            .get("user-1");
+          assert.equal(row.lesson_recording_consent_version, null);
+          assert.equal(row.lesson_recording_consent_at, null);
+          return {
+            objects: [{ key: "personalized-story-art/user-1/lesson-recordings/clip-1.webm" }],
+            truncated: false,
+          };
+        },
+        async delete(keys) {
+          calls.push(["delete", keys]);
+        },
+      };
+
+      const disabled = await handleLearnerProfileRequest({
+        database: state.database,
+        env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+        identity: {
+          sessionId: "session-1",
+          userId: "user-1",
+          userName: "Mia",
+        },
+        request: request(
+          "/api/profile/lesson-recording-consent",
+          "PUT",
+          { enabled: false },
+        ),
+      });
+
+      assert.equal(disabled.status, 200);
+      assert.deepEqual(await disabled.json(), { enabled: false });
+      assert.deepEqual(calls, [
+        ["list", { prefix: "personalized-story-art/user-1/lesson-recordings/" }],
+        ["delete", ["personalized-story-art/user-1/lesson-recordings/clip-1.webm"]],
+      ]);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("accepts exactly one boolean recording-consent key", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callLearnerProfile(state.database, "/api/profile");
+      for (const body of [
+        {},
+        { enabled: "true" },
+        { enabled: true, userId: "user-2" },
+      ]) {
+        const response = await callLearnerProfile(
+          state.database,
+          "/api/profile/lesson-recording-consent",
+          "PUT",
+          body,
+        );
+        assert.equal(response.status, 400);
+        assert.deepEqual(await response.json(), {
+          error: "invalid_lesson_recording_consent",
+        });
+      }
+    } finally {
+      state.close();
+    }
+  });
+
   it("returns and updates the learner's selected story level", async () => {
     const state = createSeededDatabase();
     try {
