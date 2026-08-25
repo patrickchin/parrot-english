@@ -45,7 +45,7 @@ out of tracked files.
 ```bash
 npm run generate:audio:private-story-preview
 npm run build
-npm run verify:private-story-isolation -- --require-private-inputs
+npm run verify:private-story-isolation -- --require-private-inputs --base=origin/main
 npm run build:private-story-preview
 npx wrangler versions upload --preview-alias private-story-test-local
 ```

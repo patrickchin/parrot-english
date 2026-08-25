@@ -1,9 +1,16 @@
 /* global Buffer */
 
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  rename,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -15,6 +22,91 @@ import {
 
 const temporaryDirectories = [];
 const execFileAsync = promisify(execFile);
+
+async function git(projectRoot, args, options = {}) {
+  return execFileAsync("git", args, {
+    cwd: projectRoot,
+    encoding: "utf8",
+    ...options,
+  });
+}
+
+function gitWithInput(projectRoot, args, input) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("git", args, { cwd: projectRoot, stdio: ["pipe", "pipe", "pipe"] });
+    const stderr = [];
+    child.stderr.on("data", (chunk) => stderr.push(chunk));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(Buffer.concat(stderr).toString("utf8")));
+    });
+    child.stdin.end(input);
+  });
+}
+
+async function commit(projectRoot, message) {
+  await git(projectRoot, [
+    "-c",
+    "user.name=Synthetic Fixture",
+    "-c",
+    "user.email=fixture@example.test",
+    "commit",
+    "--allow-empty",
+    "--quiet",
+    "-m",
+    message,
+  ]);
+}
+
+async function createReleaseAuditFixture({
+  audioBytes,
+  firstBody = "Synthetic first page for the private fixture.",
+  secondBody = "Synthetic second page for the private fixture.",
+} = {}) {
+  const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-release-"));
+  temporaryDirectories.push(projectRoot);
+  const previewDirectory = join(projectRoot, "content/private-story-preview");
+  await mkdir(previewDirectory, { recursive: true });
+  await writeFile(
+    join(previewDirectory, "manifest.json"),
+    JSON.stringify({
+      version: 1,
+      stories: [
+        { id: "private-fixture", textFile: "one.txt", title: "Fixture Story" },
+        { id: "private-second", textFile: "two.txt", title: "Second Fixture" },
+      ],
+    }),
+  );
+  await writeFile(join(previewDirectory, "one.txt"), `# Fixture Story\n\n${firstBody}\n`);
+  await writeFile(join(previewDirectory, "two.txt"), `# Second Fixture\n\n${secondBody}\n`);
+  if (audioBytes) {
+    const audioDirectories = [
+      join(previewDirectory, "audio/private-fixture"),
+      join(previewDirectory, "audio/private-second"),
+    ];
+    await Promise.all(audioDirectories.map((directory) => mkdir(directory, { recursive: true })));
+    await Promise.all(
+      audioDirectories.map((directory, index) =>
+        writeFile(join(directory, "page-001.mp3"), audioBytes[index])
+      ),
+    );
+  }
+  await writeFile(
+    join(projectRoot, ".gitignore"),
+    "/content/private-story-preview/\n/dist/\n",
+  );
+  await writeFile(join(projectRoot, "public.txt"), "public baseline\n");
+  await git(projectRoot, ["init", "--quiet"]);
+  await git(projectRoot, ["add", ".gitignore", "public.txt"]);
+  await commit(projectRoot, "synthetic base");
+  const { stdout } = await git(projectRoot, ["rev-parse", "HEAD"]);
+  return {
+    baseRevision: stdout.trim(),
+    previewDirectory,
+    projectRoot,
+  };
+}
 
 afterEach(async () => {
   await Promise.all(
@@ -173,7 +265,6 @@ describe("private story isolation scanner", () => {
 
     const result = await verifyPrivateStoryIsolation({
       projectRoot,
-      requirePrivateInputs: true,
     });
 
     assert.equal(result.status, "leaks");
@@ -207,6 +298,11 @@ describe("private story isolation scanner", () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-"));
     temporaryDirectories.push(projectRoot);
     await execFileAsync("git", ["init", "--quiet"], { cwd: projectRoot });
+    await writeFile(join(projectRoot, "seed.txt"), "synthetic seed\n");
+    await execFileAsync("git", ["add", "seed.txt"], { cwd: projectRoot });
+    await commit(projectRoot, "synthetic base");
+    const { stdout } = await git(projectRoot, ["rev-parse", "HEAD"]);
+    const baseRevision = stdout.trim();
 
     assert.deepEqual(
       await verifyPrivateStoryIsolation({ projectRoot }),
@@ -215,6 +311,7 @@ describe("private story isolation scanner", () => {
     await assert.rejects(
       () =>
         verifyPrivateStoryIsolation({
+          baseRevision,
           projectRoot,
           requirePrivateInputs: true,
         }),
@@ -272,6 +369,10 @@ describe("private story isolation scanner", () => {
     await writeFile(trackedAsset, "synthetic tracked audio");
     await writeFile(distAsset, "synthetic built audio");
     await execFileAsync("git", ["init", "--quiet"], { cwd: projectRoot });
+    await writeFile(join(projectRoot, ".gitignore"), "/dist/\n");
+    await execFileAsync("git", ["add", ".gitignore"], { cwd: projectRoot });
+    await commit(projectRoot, "synthetic base");
+    const { stdout } = await git(projectRoot, ["rev-parse", "HEAD"]);
     await execFileAsync(
       "git",
       ["add", "public/assets/private-story-preview/fixture/page.mp3"],
@@ -279,6 +380,7 @@ describe("private story isolation scanner", () => {
     );
 
     const result = await verifyPrivateStoryIsolation({
+      baseRevision: stdout.trim(),
       projectRoot,
       requirePrivateInputs: true,
     });
@@ -429,7 +531,6 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({
       distDirectory: join(projectRoot, "dist"),
       projectRoot,
-      requirePrivateInputs: true,
     });
 
     assert.equal(result.status, "leaks");
@@ -490,7 +591,6 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({
       distDirectory: join(projectRoot, "dist"),
       projectRoot,
-      requirePrivateInputs: true,
     });
 
     assert.equal(result.status, "leaks");
@@ -608,5 +708,639 @@ describe("private story isolation scanner", () => {
     assert.deepEqual(result.leakedPaths, [
       "dist/assets/private-story-preview/fixture/page.mp3",
     ]);
+  });
+
+  it("requires a Git base for release verification", async () => {
+    const { projectRoot } = await createReleaseAuditFixture();
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      /Git history base is required/,
+    );
+  });
+
+  it("rejects an invalid Git base without echoing the ref or Git stderr", async () => {
+    const { projectRoot } = await createReleaseAuditFixture();
+    const suppliedBase = "Fixture Story\nunknown-base";
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision: suppliedBase,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Unable to resolve Git history base");
+        assert.equal(error.message.includes(suppliedBase), false);
+        assert.equal(error.message.includes("Fixture Story"), false);
+        assert.equal(/[\r\n\t]/u.test(error.message), false);
+        return true;
+      },
+    );
+  });
+
+  it("sanitizes a Git base containing a NUL byte before reporting failure", async () => {
+    const { projectRoot } = await createReleaseAuditFixture();
+    const suppliedBase = "private-fixture\0invalid";
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision: suppliedBase,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Unable to resolve Git history base");
+        assert.equal(error.message.includes("private-fixture"), false);
+        assert.equal(error.message.includes("\0"), false);
+        return true;
+      },
+    );
+  });
+
+  it("rejects a non-commit Git base with a sanitized error", async () => {
+    const { projectRoot } = await createReleaseAuditFixture();
+    const blobPath = join(projectRoot, "synthetic-blob.bin");
+    await writeFile(blobPath, "synthetic blob\n");
+    const { stdout } = await git(projectRoot, ["hash-object", "-w", blobPath]);
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision: stdout.trim(),
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Unable to resolve Git history base");
+        assert.equal(error.message.includes(stdout.trim()), false);
+        return true;
+      },
+    );
+  });
+
+  it("rejects a non-ancestor Git base with a sanitized error", async () => {
+    const { projectRoot } = await createReleaseAuditFixture();
+    const { stdout: tree } = await git(projectRoot, ["rev-parse", "HEAD^{tree}"]);
+    const { stdout: unrelatedCommit } = await git(projectRoot, [
+      "-c",
+      "user.name=Synthetic Fixture",
+      "-c",
+      "user.email=fixture@example.test",
+      "commit-tree",
+      tree.trim(),
+      "-m",
+      "synthetic unrelated history",
+    ]);
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision: unrelatedCommit.trim(),
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Git history base must be an ancestor of HEAD");
+        assert.equal(error.message.includes(unrelatedCommit.trim()), false);
+        return true;
+      },
+    );
+  });
+
+  it("fails closed without exposing a missing historical object", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    await writeFile(join(projectRoot, "temporary.bin"), "synthetic historical bytes\n");
+    await git(projectRoot, ["add", "--", "temporary.bin"]);
+    await commit(projectRoot, "add temporary object");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "rev-parse",
+      "HEAD:temporary.bin",
+    ]);
+    const objectId = blobObjectId.trim();
+    await rm(join(projectRoot, ".git/objects", objectId.slice(0, 2), objectId.slice(2)));
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Git isolation audit failed");
+        assert.equal(error.message.includes(objectId), false);
+        assert.equal(error.message.includes("temporary.bin"), false);
+        return true;
+      },
+    );
+  });
+
+  it("accepts an empty history range and still scans current files", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    await writeFile(join(projectRoot, "public.txt"), "Fixture Story\n");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, ["public.txt"]);
+  });
+
+  it("detects a private marker in a branch commit message", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    await commit(projectRoot, "release note for Fixture Story");
+    const { stdout } = await git(projectRoot, ["rev-parse", "HEAD"]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, [`git-commit ${stdout.trim().slice(0, 12)}`]);
+    assert.equal(result.message.includes("Fixture Story"), false);
+  });
+
+  it("detects a binary marker blob that was committed and later deleted", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const leakedPath = "archive.bin";
+    await writeFile(
+      join(projectRoot, leakedPath),
+      Buffer.concat([
+        Buffer.from([0, 255, 1]),
+        Buffer.from("Fixture Story"),
+        Buffer.from([0, 254]),
+      ]),
+    );
+    await git(projectRoot, ["add", "--", leakedPath]);
+    await commit(projectRoot, "add synthetic archive");
+    const { stdout: leakCommit } = await git(projectRoot, ["rev-parse", "HEAD"]);
+    await rm(join(projectRoot, leakedPath));
+    await git(projectRoot, ["add", "-u", "--", leakedPath]);
+    await commit(projectRoot, "remove synthetic archive");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.equal(
+      result.leakedPaths.some((label) =>
+        label.startsWith(`git-history ${leakCommit.trim().slice(0, 12)} `)
+      ),
+      true,
+    );
+    assert.equal(result.message.includes("Fixture Story"), false);
+  });
+
+  it("audits every commit newly reachable through a merge", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const { stdout: mainBranch } = await git(projectRoot, [
+      "symbolic-ref",
+      "--short",
+      "HEAD",
+    ]);
+    await git(projectRoot, ["checkout", "--quiet", "-b", "synthetic-side"]);
+    await writeFile(join(projectRoot, "side.bin"), "Fixture Story\n");
+    await git(projectRoot, ["add", "--", "side.bin"]);
+    await commit(projectRoot, "add side-branch fixture");
+    const { stdout: sideCommit } = await git(projectRoot, ["rev-parse", "HEAD"]);
+    await git(projectRoot, ["checkout", "--quiet", mainBranch.trim()]);
+    await writeFile(join(projectRoot, "main.txt"), "public main-branch change\n");
+    await git(projectRoot, ["add", "--", "main.txt"]);
+    await commit(projectRoot, "add main-branch fixture");
+    await git(projectRoot, [
+      "-c",
+      "user.name=Synthetic Fixture",
+      "-c",
+      "user.email=fixture@example.test",
+      "merge",
+      "--quiet",
+      "--no-ff",
+      "-m",
+      "merge synthetic side",
+      "synthetic-side",
+    ]);
+    await rm(join(projectRoot, "side.bin"));
+    await git(projectRoot, ["add", "-u", "--", "side.bin"]);
+    await commit(projectRoot, "remove side-branch fixture");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(
+      result.leakedPaths.some((label) =>
+        label === `git-history ${sideCommit.trim().slice(0, 12)} side.bin`
+      ),
+      true,
+    );
+    assert.equal(result.message.includes("Fixture Story"), false);
+  });
+
+  it("redacts markers and control separators from renamed historical paths", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const directory = join(projectRoot, "archive");
+    const leakedPath = "archive/Fixture Story\n\tsecret.js";
+    const renamedPath = "archive/public.js";
+    await mkdir(directory);
+    await writeFile(join(projectRoot, leakedPath), "public content\n");
+    await git(projectRoot, ["add", "--", leakedPath]);
+    await commit(projectRoot, "add synthetic filename");
+    await rename(join(projectRoot, leakedPath), join(projectRoot, renamedPath));
+    await git(projectRoot, ["add", "-A", "--", "archive"]);
+    await commit(projectRoot, "rename synthetic filename");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.equal(result.message.includes("Fixture Story"), false);
+    for (const label of result.leakedPaths) {
+      assert.equal(/[\r\n\t\0\u2028\u2029]/u.test(label), false);
+    }
+    assert.match(result.message, /^git-history [0-9a-f]{12} /m);
+  });
+
+  it("handles an invalid-UTF-8 historical path without exposing raw separators", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const blobPath = join(projectRoot, "synthetic-path-blob.txt");
+    await writeFile(blobPath, "public content\n");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "hash-object",
+      "-w",
+      blobPath,
+    ]);
+    const rawPath = Buffer.concat([
+      Buffer.from("Fixture Story\n\t"),
+      Buffer.from([0xff]),
+      Buffer.from(".txt"),
+    ]);
+    await gitWithInput(
+      projectRoot,
+      ["update-index", "-z", "--index-info"],
+      Buffer.concat([
+        Buffer.from(`100644 ${blobObjectId.trim()}\t`),
+        rawPath,
+        Buffer.from([0]),
+      ]),
+    );
+    await commit(projectRoot, "add raw synthetic path");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    for (const label of result.leakedPaths) {
+      assert.equal(label.includes("Fixture Story"), false);
+      assert.equal(/[\r\n\t\0\u2028\u2029]/u.test(label), false);
+    }
+  });
+
+  it("keeps distinct invalid-UTF-8 historical paths distinct", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const blobPath = join(projectRoot, "synthetic-private-blob.txt");
+    await writeFile(blobPath, "Fixture Story\n");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "hash-object",
+      "-w",
+      blobPath,
+    ]);
+    const rawPaths = [0xfe, 0xff].map((byte) =>
+      Buffer.concat([
+        Buffer.from("raw-"),
+        Buffer.from([byte]),
+        Buffer.from(".txt"),
+      ])
+    );
+    const records = rawPaths.flatMap((rawPath) => [
+      Buffer.from(`100644 ${blobObjectId.trim()}\t`),
+      rawPath,
+      Buffer.from([0]),
+    ]);
+    await gitWithInput(
+      projectRoot,
+      ["update-index", "-z", "--index-info"],
+      Buffer.concat(records),
+    );
+    await commit(projectRoot, "add distinct raw synthetic paths");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+    const historyLabels = result.leakedPaths.filter((label) =>
+      label.startsWith("git-history ")
+    );
+
+    assert.equal(historyLabels.length, 2);
+    assert.equal(new Set(historyLabels).size, 2);
+    assert.equal(result.message.includes("Fixture Story"), false);
+  });
+
+  it("ignores Git replacement refs while auditing branch history", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    await writeFile(join(projectRoot, "replaced.txt"), "Fixture Story\n");
+    await git(projectRoot, ["add", "--", "replaced.txt"]);
+    await commit(projectRoot, "add replaced synthetic leak");
+    const { stdout: leakedCommit } = await git(projectRoot, ["rev-parse", "HEAD"]);
+    await rm(join(projectRoot, "replaced.txt"));
+    await git(projectRoot, ["add", "-u", "--", "replaced.txt"]);
+    await commit(projectRoot, "remove replaced synthetic leak");
+    const { stdout: baseTree } = await git(projectRoot, [
+      "rev-parse",
+      `${baseRevision}^{tree}`,
+    ]);
+    const { stdout: replacementCommit } = await git(projectRoot, [
+      "-c",
+      "user.name=Synthetic Fixture",
+      "-c",
+      "user.email=fixture@example.test",
+      "commit-tree",
+      baseTree.trim(),
+      "-p",
+      baseRevision,
+      "-m",
+      "synthetic clean replacement",
+    ]);
+    await git(projectRoot, [
+      "replace",
+      leakedCommit.trim(),
+      replacementCommit.trim(),
+    ]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.equal(result.message.includes("Fixture Story"), false);
+    assert.match(result.message, /^git-history [0-9a-f]{12} replaced\.txt$/m);
+  });
+
+  it("treats historical gitlinks as paths without reading commits as blobs", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    await git(projectRoot, [
+      "update-index",
+      "--add",
+      "--cacheinfo",
+      "160000",
+      baseRevision,
+      "modules/synthetic-fixture",
+    ]);
+    await commit(projectRoot, "add synthetic gitlink");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "clean");
+    assert.deepEqual(result.leakedPaths, []);
+  });
+
+  it("detects an exact private narration file renamed in dist", async () => {
+    const privateAudio = Buffer.from("ID3 synthetic private narration bytes");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [privateAudio, Buffer.from("ID3 different narration bytes")],
+    });
+    await mkdir(join(projectRoot, "dist/assets"), { recursive: true });
+    await writeFile(join(projectRoot, "dist/assets/renamed.bin"), privateAudio);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, ["dist/assets/renamed.bin"]);
+    assert.equal(
+      result.message.includes(createHash("sha256").update(privateAudio).digest("hex")),
+      false,
+    );
+  });
+
+  it("detects an exact private narration file renamed in the index", async () => {
+    const privateAudio = Buffer.from("ID3 synthetic staged narration bytes");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [privateAudio, Buffer.from("ID3 different narration bytes")],
+    });
+    await mkdir(join(projectRoot, "public"));
+    await writeFile(join(projectRoot, "public/renamed.data"), privateAudio);
+    await git(projectRoot, ["add", "--", "public/renamed.data"]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, ["public/renamed.data"]);
+  });
+
+  it("detects exact private narration bytes committed and later deleted", async () => {
+    const privateAudio = Buffer.from("ID3 synthetic archived narration bytes");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [privateAudio, Buffer.from("ID3 different narration bytes")],
+    });
+    const leakedPath = "archived.data";
+    await writeFile(join(projectRoot, leakedPath), privateAudio);
+    await git(projectRoot, ["add", "--", leakedPath]);
+    await commit(projectRoot, "add archived bytes");
+    await rm(join(projectRoot, leakedPath));
+    await git(projectRoot, ["add", "-u", "--", leakedPath]);
+    await commit(projectRoot, "remove archived bytes");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.match(result.message, /^git-history [0-9a-f]{12} archived\.data$/m);
+  });
+
+  it("allows changed or embedded private narration bytes", async () => {
+    const privateAudio = Buffer.from("ID3 synthetic exact narration bytes");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [privateAudio, Buffer.from("ID3 different narration bytes")],
+    });
+    await mkdir(join(projectRoot, "dist"));
+    await writeFile(
+      join(projectRoot, "dist/changed.bin"),
+      Buffer.concat([privateAudio.subarray(0, -1), Buffer.from("X")]),
+    );
+    await writeFile(
+      join(projectRoot, "dist/embedded.bin"),
+      Buffer.concat([Buffer.from("prefix"), privateAudio, Buffer.from("suffix")]),
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "clean");
+    assert.deepEqual(result.leakedPaths, []);
+  });
+
+  it("reports distinct paths for duplicate private narration hashes", async () => {
+    const duplicateAudio = Buffer.from("ID3 synthetic duplicate narration bytes");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [duplicateAudio, duplicateAudio],
+    });
+    await mkdir(join(projectRoot, "dist"));
+    await writeFile(join(projectRoot, "dist/copy-one.data"), duplicateAudio);
+    await writeFile(join(projectRoot, "dist/copy-two.data"), duplicateAudio);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(result.leakedPaths, [
+      "dist/copy-one.data",
+      "dist/copy-two.data",
+    ]);
+  });
+
+  it("detects a normalized rolling twelve-word prose excerpt", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      firstBody:
+        "Traveler’s amber lanterns drift quietly beyond silver rivers while patient foxes gather beneath ancient moonlit branches.",
+    });
+    await writeFile(
+      join(projectRoot, "public.txt"),
+      "TRAVELER'S, amber! lanterns\\ndrift quietly\tbeyond; SILVER rivers while patient foxes gather",
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(result.leakedPaths, ["public.txt"]);
+  });
+
+  it("detects a distinctive whole eight-to-eleven-word prose unit", async () => {
+    const privateUnit =
+      "Curious marmots quietly catalogue shimmering constellations beyond distant valleys";
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      firstBody: `${privateUnit}.\n\nA harmless closing paragraph keeps the page marker different.`,
+    });
+    await writeFile(
+      join(projectRoot, "public.txt"),
+      "CURIOUS marmots, quietly catalogue shimmering constellations beyond distant valleys!",
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(result.leakedPaths, ["public.txt"]);
+  });
+
+  it("detects normalized prose excerpts in commit messages", async () => {
+    const privateUnit =
+      "Brilliant otters patiently arrange twelve gleaming pebbles beside quiet waterfalls before sunrise arrives";
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      firstBody: `${privateUnit}. Extra source words keep this from being a full marker.`,
+    });
+    await commit(
+      projectRoot,
+      "BRILLIANT otters, patiently arrange twelve gleaming pebbles beside quiet waterfalls before sunrise",
+    );
+    const { stdout } = await git(projectRoot, ["rev-parse", "HEAD"]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(result.leakedPaths, [`git-commit ${stdout.trim().slice(0, 12)}`]);
+    assert.equal(result.message.includes("Brilliant otters"), false);
+  });
+
+  it("detects and redacts a normalized prose excerpt in a historical path", async () => {
+    const privateUnit =
+      "Curious marmots quietly catalogue shimmering constellations beyond distant valleys";
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      firstBody: `${privateUnit}.\n\nA harmless closing paragraph keeps the page marker different.`,
+    });
+    const leakedPath = `archive/${privateUnit.toUpperCase().replaceAll(" ", "-")}.txt`;
+    await mkdir(join(projectRoot, "archive"));
+    await writeFile(join(projectRoot, leakedPath), "public content\n");
+    await git(projectRoot, ["add", "--", leakedPath]);
+    await commit(projectRoot, "add synthetic prose path");
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.leakedPaths.length >= 1, true);
+    assert.match(result.message, /^git-history [0-9a-f]{12} /);
+    for (const label of result.leakedPaths) {
+      assert.equal(label.toLowerCase().includes("curious"), false);
+      assert.equal(/[\r\n\t\0\u2028\u2029]/u.test(label), false);
+    }
+  });
+
+  it("ignores short, common, and highly repetitive source units", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      firstBody: [
+        "One two three four five six seven.",
+        "Echo echo echo echo echo echo echo echo.",
+        "A harmless closing paragraph keeps the complete marker different.",
+      ].join("\n\n"),
+    });
+    await writeFile(
+      join(projectRoot, "public.txt"),
+      "One, two three four five six seven. Echo echo echo echo echo echo echo echo.",
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "clean");
+    assert.deepEqual(result.leakedPaths, []);
   });
 });
