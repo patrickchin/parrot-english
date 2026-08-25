@@ -33,8 +33,11 @@ async function createFixture({ withAudio }) {
   );
   temporaryDirectories.push(projectRoot);
   const previewDirectory = path.join(projectRoot, "synthetic-preview");
-  const audioDirectory = path.join(previewDirectory, "audio/private-fixture");
-  await mkdir(audioDirectory, { recursive: true });
+  const audioDirectories = [
+    path.join(previewDirectory, "audio/private-fixture"),
+    path.join(previewDirectory, "audio/private-second"),
+  ];
+  await Promise.all(audioDirectories.map((directory) => mkdir(directory, { recursive: true })));
   await writeFile(
     path.join(previewDirectory, "manifest.json"),
     JSON.stringify({
@@ -42,22 +45,38 @@ async function createFixture({ withAudio }) {
       stories: [
         {
           id: "private-fixture",
-          textFile: "story.txt",
+          textFile: "story-1.txt",
           title: "Synthetic Fixture",
+        },
+        {
+          id: "private-second",
+          textFile: "story-2.txt",
+          title: "Second Synthetic Fixture",
         },
       ],
     }),
   );
   await writeFile(
-    path.join(previewDirectory, "story.txt"),
+    path.join(previewDirectory, "story-1.txt"),
     "# Synthetic Fixture\n\nA synthetic story page for a build boundary test.\n",
   );
+  await writeFile(
+    path.join(previewDirectory, "story-2.txt"),
+    "# Second Synthetic Fixture\n\nA second synthetic build page.\n",
+  );
 
-  const audioBytes = Buffer.from([0x49, 0x44, 0x33, 0x03, 0x00, 0x7f]);
+  const audioBytes = [
+    Buffer.from([0x49, 0x44, 0x33, 0x03, 0x00, 0x7f]),
+    Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x7e]),
+  ];
   if (withAudio) {
-    await writeFile(path.join(audioDirectory, "page-001.mp3"), audioBytes);
+    await Promise.all(
+      audioDirectories.map((directory, index) =>
+        writeFile(path.join(directory, "page-001.mp3"), audioBytes[index]),
+      ),
+    );
   }
-  await writeFile(path.join(audioDirectory, "not-allowlisted.mp3"), "do not emit");
+  await writeFile(path.join(audioDirectories[0], "not-allowlisted.mp3"), "do not emit");
 
   return { audioBytes, previewDirectory, projectRoot };
 }
@@ -134,7 +153,10 @@ describe("private story Vite build boundary", () => {
 
     assert.deepEqual(
       data.assets.map(({ fileName }) => fileName),
-      ["assets/private-story-preview/private-fixture/page-001.mp3"],
+      [
+        "assets/private-story-preview/private-fixture/page-001.mp3",
+        "assets/private-story-preview/private-second/page-001.mp3",
+      ],
     );
 
     const emitted = [];
@@ -145,11 +167,16 @@ describe("private story Vite build boundary", () => {
       },
     });
 
-    assert.equal(emitted.length, 1);
+    assert.equal(emitted.length, 2);
     assert.equal(
       emitted[0].fileName,
       "assets/private-story-preview/private-fixture/page-001.mp3",
     );
-    assert.deepEqual(emitted[0].source, fixture.audioBytes);
+    assert.deepEqual(emitted[0].source, fixture.audioBytes[0]);
+    assert.equal(
+      emitted[1].fileName,
+      "assets/private-story-preview/private-second/page-001.mp3",
+    );
+    assert.deepEqual(emitted[1].source, fixture.audioBytes[1]);
   });
 });

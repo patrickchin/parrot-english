@@ -11,6 +11,36 @@ import { getGenerationLines } from "../scripts/generate-static-audio.mjs";
 
 const execFileAsync = promisify(execFile);
 
+async function writeSyntheticPrivatePreview(previewDirectory) {
+  await mkdir(previewDirectory, { recursive: true });
+  await writeFile(
+    join(previewDirectory, "manifest.json"),
+    JSON.stringify({
+      version: 1,
+      stories: [
+        {
+          id: "private-fixture",
+          textFile: "story-1.txt",
+          title: "Fixture Story",
+        },
+        {
+          id: "private-second",
+          textFile: "story-2.txt",
+          title: "Second Fixture",
+        },
+      ],
+    }),
+  );
+  await writeFile(
+    join(previewDirectory, "story-1.txt"),
+    "# Fixture Story\n\nSynthetic page text.\n",
+  );
+  await writeFile(
+    join(previewDirectory, "story-2.txt"),
+    "# Second Fixture\n\nSecond synthetic page text.\n",
+  );
+}
+
 describe("static audio generator", () => {
   it("selects static lines by default without running generation", async () => {
     const lines = await getGenerationLines({ includePrivateStories: false });
@@ -22,24 +52,7 @@ describe("static audio generator", () => {
   it("adds synthetic private narration with output inside the preview directory", async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-lines-"));
     const previewDirectory = join(projectRoot, "content/private-story-preview");
-    await mkdir(previewDirectory, { recursive: true });
-    await writeFile(
-      join(previewDirectory, "manifest.json"),
-      JSON.stringify({
-        version: 1,
-        stories: [
-          {
-            id: "private-fixture",
-            textFile: "story-1.txt",
-            title: "Fixture Story",
-          },
-        ],
-      }),
-    );
-    await writeFile(
-      join(previewDirectory, "story-1.txt"),
-      "# Fixture Story\n\nSynthetic page text.\n",
-    );
+    await writeSyntheticPrivatePreview(previewDirectory);
 
     try {
       const lines = await getGenerationLines({
@@ -68,25 +81,8 @@ describe("static audio generator", () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-symlink-"));
     const previewDirectory = join(projectRoot, "content/private-story-preview");
     const externalDirectory = join(projectRoot, "external-audio");
-    await mkdir(previewDirectory, { recursive: true });
+    await writeSyntheticPrivatePreview(previewDirectory);
     await mkdir(externalDirectory);
-    await writeFile(
-      join(previewDirectory, "manifest.json"),
-      JSON.stringify({
-        version: 1,
-        stories: [
-          {
-            id: "private-fixture",
-            textFile: "story-1.txt",
-            title: "Fixture Story",
-          },
-        ],
-      }),
-    );
-    await writeFile(
-      join(previewDirectory, "story-1.txt"),
-      "# Fixture Story\n\nSynthetic page text.\n",
-    );
     await symlink(externalDirectory, join(previewDirectory, "audio"));
 
     try {
@@ -109,24 +105,7 @@ describe("static audio generator", () => {
     const externalContent = await mkdtemp(join(tmpdir(), "parrot-audio-content-"));
     const previewDirectory = join(projectRoot, "content/private-story-preview");
     const externalPreview = join(externalContent, "private-story-preview");
-    await mkdir(externalPreview, { recursive: true });
-    await writeFile(
-      join(externalPreview, "manifest.json"),
-      JSON.stringify({
-        version: 1,
-        stories: [
-          {
-            id: "private-fixture",
-            textFile: "story-1.txt",
-            title: "Fixture Story",
-          },
-        ],
-      }),
-    );
-    await writeFile(
-      join(externalPreview, "story-1.txt"),
-      "# Fixture Story\n\nSynthetic page text.\n",
-    );
+    await writeSyntheticPrivatePreview(externalPreview);
     await symlink(externalContent, join(projectRoot, "content"));
 
     try {

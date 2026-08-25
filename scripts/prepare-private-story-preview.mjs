@@ -1,23 +1,33 @@
 /* global process */
 
-import { access, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
-
-function titleFromSource(source) {
-  const normalized = source.replace(/\r\n?/g, "\n");
-  const match = /^# ([^\n]+)(?:\n|$)/.exec(normalized);
-  if (!match) throw new Error("Each private story source must start with a Markdown H1");
-  return match[1].replace(/[ \t]+$/, "");
-}
+import { paginatePrivateStoryText } from "../lib/private-story-preview.js";
 
 async function requireReadable(file) {
   try {
-    await access(file);
     return await readFile(file);
   } catch {
     throw new Error("Expected exactly two readable source files");
+  }
+}
+
+async function pathExists(filePath) {
+  try {
+    await lstat(filePath);
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw error;
   }
 }
 
@@ -30,31 +40,80 @@ export async function preparePrivateStoryPreview({
     throw new Error("Expected exactly two readable source files");
   }
   const directory = path.resolve(previewDirectory ?? "content/private-story-preview");
-  await Promise.all(sourceFiles.map(requireReadable));
-  const manifestPath = path.join(directory, "manifest.json");
-  if (!force) {
-    try {
-      await access(manifestPath);
-      throw new Error("Private story preview manifest already exists; use --force to replace it");
-    } catch (error) {
-      if (error.message.includes("already exists")) throw error;
-    }
+  if (
+    sourceFiles.some((sourceFile) => {
+      const relativePath = path.relative(directory, path.resolve(sourceFile));
+      return (
+        relativePath === "" ||
+        (relativePath !== ".." &&
+          !relativePath.startsWith(`..${path.sep}`) &&
+          !path.isAbsolute(relativePath))
+      );
+    })
+  ) {
+    throw new Error("Private story source files must stay outside the preview directory");
   }
-  await mkdir(directory, { recursive: true });
-  const stories = await Promise.all(
-    sourceFiles.map(async (sourceFile, index) => {
-      const source = await readFile(sourceFile, "utf8");
-      const textFile = `story-${index + 1}.txt`;
-      await copyFile(sourceFile, path.join(directory, textFile));
-      return {
-        id: `private-story-${randomUUID().replaceAll("-", "").slice(0, 12)}`,
-        textFile,
-        title: titleFromSource(source),
-      };
+  const validatedSources = await Promise.all(
+    sourceFiles.map(async (sourceFile) => {
+      const bytes = await requireReadable(sourceFile);
+      const { title } = paginatePrivateStoryText(bytes.toString("utf8"));
+      return { bytes, title };
     }),
   );
+  const manifestPath = path.join(directory, "manifest.json");
+  if (!force && await pathExists(manifestPath)) {
+    throw new Error("Private story preview manifest already exists; use --force to replace it");
+  }
+  const stories = validatedSources.map(({ title }, index) => ({
+    id: `private-story-${randomUUID().replaceAll("-", "").slice(0, 12)}`,
+    textFile: `story-${index + 1}.txt`,
+    title,
+  }));
   const manifest = { stories, version: 1 };
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const parentDirectory = path.dirname(directory);
+  await mkdir(parentDirectory, { recursive: true });
+  const stagingDirectory = path.join(
+    parentDirectory,
+    `.${path.basename(directory)}.stage-${randomUUID()}.tmp`,
+  );
+  await mkdir(stagingDirectory);
+  let backupDirectory = null;
+  let stagingExists = true;
+  try {
+    await Promise.all(
+      validatedSources.map(({ bytes }, index) =>
+        writeFile(path.join(stagingDirectory, `story-${index + 1}.txt`), bytes),
+      ),
+    );
+    await writeFile(
+      path.join(stagingDirectory, "manifest.json"),
+      `${JSON.stringify(manifest, null, 2)}\n`,
+    );
+
+    if (await pathExists(directory)) {
+      backupDirectory = path.join(
+        parentDirectory,
+        `.${path.basename(directory)}.backup-${randomUUID()}.tmp`,
+      );
+      await rename(directory, backupDirectory);
+    }
+    try {
+      await rename(stagingDirectory, directory);
+      stagingExists = false;
+    } catch (error) {
+      if (backupDirectory) await rename(backupDirectory, directory);
+      throw error;
+    }
+    if (backupDirectory) {
+      await rm(backupDirectory, { force: true, recursive: true });
+      backupDirectory = null;
+    }
+  } finally {
+    if (stagingExists) {
+      await rm(stagingDirectory, { force: true, recursive: true });
+    }
+  }
   return manifest;
 }
 

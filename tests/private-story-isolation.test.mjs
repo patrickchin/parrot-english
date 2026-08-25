@@ -337,12 +337,21 @@ describe("private story isolation scanner", () => {
             textFile: "story.txt",
             title: "Fixture Story",
           },
+          {
+            id: "private-second",
+            textFile: "story-2.txt",
+            title: "Second Fixture",
+          },
         ],
       }),
     );
     await writeFile(
       join(previewDirectory, "story.txt"),
       "# Fixture Story\n\nSynthetic page text.\n",
+    );
+    await writeFile(
+      join(previewDirectory, "story-2.txt"),
+      "# Second Fixture\n\nSecond synthetic page text.\n",
     );
     await writeFile(
       join(previewDirectory, "private-fixture-leak.txt"),
@@ -387,12 +396,21 @@ describe("private story isolation scanner", () => {
             textFile: "story.txt",
             title: "Fixture Story",
           },
+          {
+            id: "private-second",
+            textFile: "story-2.txt",
+            title: "Second Fixture",
+          },
         ],
       }),
     );
     await writeFile(
       join(previewDirectory, "story.txt"),
       "# Fixture Story\n\nSynthetic page text.\n",
+    );
+    await writeFile(
+      join(previewDirectory, "story-2.txt"),
+      "# Second Fixture\n\nSecond synthetic page text.\n",
     );
     await writeFile(
       join(projectRoot, ".gitignore"),
@@ -435,12 +453,21 @@ describe("private story isolation scanner", () => {
             textFile: "story.txt",
             title: "Fixture Story",
           },
+          {
+            id: "private-second",
+            textFile: "story-2.txt",
+            title: "Second Fixture",
+          },
         ],
       }),
     );
     await writeFile(
       join(previewDirectory, "story.txt"),
       "# Fixture Story\n\nSynthetic page text.\n",
+    );
+    await writeFile(
+      join(previewDirectory, "story-2.txt"),
+      "# Second Fixture\n\nSecond synthetic page text.\n",
     );
     await writeFile(
       join(projectRoot, ".gitignore"),
