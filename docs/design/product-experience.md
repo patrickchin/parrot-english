@@ -141,8 +141,10 @@ Five Little Ducks is a durable authenticated studio at
 authentic traditional six-stanza rhyme one line at a time. Its 24 lines count
 down from five ducklings to none, then end with sad mother duck bringing all
 five home. Progress is saved to the signed-in account, resumes at the first
-missing line, and unlocks one synchronized 98-second final performance when
-every line is ready.
+missing line, and is presented as six four-line verses rather than one long
+24-step task. Completing each verse plays those four saved voice clips with the
+matching animation and music before the next verse opens. All six verses unlock
+one synchronized 98-second final performance.
 
 Voice clips are private to the account. The guided flow does not expose
 unrelated options or require the learner to infer a workflow. Entering a line
@@ -152,8 +154,11 @@ title, and the full-screen desktop studio gives most of its width and height to
 the animated scene.
 
 After each recording, the learner can immediately choose **Hear my voice** and
-see a waveform decoded from the actual local take before choosing the one large
-**Next line** action. **Record again** remains available but visually quieter.
+see a waveform decoded from the actual local take. **Record**, **Stop**, and
+**Record again** always occupy the left action slot; **Next line** always stays
+in the right slot and remains disabled until the take is saved. This predictable
+layout gives feedback after four lines without making the learner finish all 24
+before hearing a performance.
 Saved lines can be replaced and the complete dub can be reset from closed
 grown-up options. The welcome screen exposes the same closed grown-up section
 when saved progress exists, allowing unfinished or legacy recordings to be
@@ -175,7 +180,7 @@ recognition.
 - Respect reduced motion and prevent horizontal overflow from 280 px upward.
 - Keep lesson controls clear of characters, speech, and the account header.
 - In the dubbing studio, keep the active lyric visually dominant, the title
-  compact, and exactly one primary action for the current state.
+  compact, and the fixed Record/Next action slots in the same physical places.
 
 ## Content Boundaries
 
