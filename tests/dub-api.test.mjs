@@ -104,12 +104,17 @@ describe("duck dub browser API", () => {
   });
 
   it("maps a revoked upload to DubNotEnabledError", async () => {
-    await assert.rejects(
-      () => saveDubLine("line-1", new Blob(["take"]), {
-        fetch: async () => Response.json({ error: "dubbing_not_enabled" }, { status: 403 }),
-      }),
-      DubNotEnabledError,
-    );
+    for (const [status, error] of [
+      [403, "dubbing_not_enabled"],
+      [409, "dub_consent_revoking"],
+    ]) {
+      await assert.rejects(
+        () => saveDubLine("line-1", new Blob(["take"]), {
+          fetch: async () => Response.json({ error }, { status }),
+        }),
+        DubNotEnabledError,
+      );
+    }
   });
 
   it("turns guarded API failures into child-friendly errors", async () => {

@@ -160,9 +160,14 @@ export async function saveDubLine(
     SAVE_FAILURE,
   );
   if (!response.ok) {
-    if (response.status === 403) {
+    if (response.status === 403 || response.status === 409) {
       const body: unknown = await response.clone().json().catch(() => null);
-      if (typeof body === "object" && body !== null && "error" in body && body.error === "dubbing_not_enabled") {
+      if (
+        typeof body === "object" &&
+        body !== null &&
+        "error" in body &&
+        (body.error === "dubbing_not_enabled" || body.error === "dub_consent_revoking")
+      ) {
         throw new DubNotEnabledError();
       }
     }

@@ -1,10 +1,22 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { after, describe, it } from "node:test";
+import { after, afterEach, describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { createServer } from "vite";
+import {
+  cleanupMountedRoots,
+  click,
+  installDom,
+  mountStrict,
+  waitFor,
+} from "./helpers/react-lifecycle.mjs";
+
+const restoreDom = installDom();
+const originalFetch = globalThis.fetch;
+const originalMediaRecorder = globalThis.MediaRecorder;
+const originalMediaDevices = navigator.mediaDevices;
 
 const vite = await createServer({
   appType: "custom",
@@ -24,10 +36,24 @@ const { DUB_LINES } = await vite.ssrLoadModule(
 const { createInitialDubState } = await vite.ssrLoadModule(
   "/src/dubbing/dub-state.ts",
 );
-const { DuckDubView } = dubModule;
+const { DuckDub, DuckDubView } = dubModule;
 const { DuckScene } = sceneModule;
 
-after(async () => vite.close());
+afterEach(async () => {
+  await cleanupMountedRoots();
+  document.body.replaceChildren();
+  globalThis.fetch = originalFetch;
+  globalThis.MediaRecorder = originalMediaRecorder;
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: originalMediaDevices,
+  });
+});
+
+after(async () => {
+  await vite.close();
+  restoreDom();
+});
 
 function renderInRouter(element) {
   return renderToStaticMarkup(
@@ -83,10 +109,62 @@ describe("duck dubbing presentation", () => {
     assert.match(disabled, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
     assert.match(disabled, /Back home/);
     assert.doesNotMatch(disabled, /checkbox|I’m the grown-up|Grown-up options|Delete my dub/);
+    assert.doesNotMatch(disabled, /Start dubbing|Continue dubbing|Record line/);
 
     const enabled = renderDuckDub({ phase: "intro" });
     assert.match(enabled, />Start dubbing<\/button>/);
     assert.doesNotMatch(enabled, /checkbox|I’m the grown-up/);
+  });
+
+  it("clears a revoking save into disabled learner guidance", async () => {
+    assert.equal(typeof DuckDub, "function", "Expected an executable DuckDub");
+    const track = { stopped: false, stop() { this.stopped = true; } };
+    class Recorder {
+      static isTypeSupported() { return false; }
+
+      constructor() { this.state = "inactive"; }
+
+      start() { this.state = "recording"; }
+
+      stop() {
+        this.state = "inactive";
+        this.ondataavailable?.({ data: new Blob(["take"], { type: "audio/webm" }) });
+        this.onstop?.();
+      }
+    }
+    globalThis.MediaRecorder = Recorder;
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { async getUserMedia() { return { getTracks: () => [track] }; } },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v1" && !init.method) {
+        return Response.json({
+          complete: false,
+          consentState: "granted",
+          dubId: "five-little-ducks-v1",
+          guardianConsentVersion: "guardian-voice-r2-v2",
+          lines: DUB_LINES.map(({ id }) => ({ id, recordedAt: null, saved: false })),
+          recordingEnabled: true,
+        });
+      }
+      if (path === "/api/dubs/five-little-ducks-v1/lines/line-1" && init.method === "PUT") {
+        return Response.json({ error: "dub_consent_revoking" }, { status: 409 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountStrict(
+      createElement(MemoryRouter, { initialEntries: ["/dubs/five-little-ducks"] }, createElement(DuckDub)),
+    );
+    await waitFor(() => assert.ok([...container.querySelectorAll("button")].some((button) => button.textContent.includes("Start dubbing"))));
+    await click([...container.querySelectorAll("button")].find((button) => button.textContent.includes("Start dubbing")));
+    await click(container.querySelector('[aria-label="Record line 1"]'));
+    await click(container.querySelector('[aria-label="Stop recording line 1"]'));
+
+    await waitFor(() => assert.match(container.textContent, /Ask a grown-up to turn on voice dubbing in Guardian mode/));
+    assert.equal(track.stopped, true);
+    assert.doesNotMatch(container.textContent, /Save again|Start dubbing|Continue dubbing|Record line/);
   });
 
   it("makes Record the clear next step and keeps listening optional", () => {
