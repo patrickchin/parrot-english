@@ -39,11 +39,17 @@ prototype build entry in the shipped product.
 - `src/stories` owns the stored-level learner shelf/reader and guardian-only
   story settings and personalized-art controls.
 - `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
-  client, decoded take waveform, and synchronized replay. The traditional
-  six-stanza script has 24 slots on a 98-second timeline with cues every four
-  seconds and a six-second maximum for each recording. The browser groups the
-  slots into six four-line verses and can replay one cue-rebased verse without
-  changing the 24-slot R2 model.
+  client, decoded take waveform, and synchronized replay. Its project home
+  plays the 98-second timeline and opens any of six four-line scene editors.
+  The traditional six-stanza script still has 24 fixed slots with cues every
+  four seconds and a six-second maximum recording, but selection is non-linear:
+  each scene can select or replace any of its four line clips. Full and
+  cue-rebased scene playback resolve each line independently, preferring the
+  authenticated private take when saved and otherwise using the checked-in
+  ElevenLabs guide. A failed private fetch or decode uses that guide as a
+  fallback; only an unavailable preferred and fallback source omits its voice
+  while the shared animation and music clock continues. This changes no R2
+  slots or v2 API contract.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
@@ -94,8 +100,11 @@ Five Little Ducks dubbing studio, and guardian management. The learner story
 shelf URL is canonicalized to the profile's stored `story_level`. Guardian mode
 is server state for the current auth session, not a client-only role or
 long-lived account permission. Lesson and dub playback phase, active recording,
-evaluation, and current step are transient React state. Route changes invalidate
-pending audio and recording work before a new scene is selected.
+evaluation, selected scene and line, pending local take recovery, and
+session-local Needs-retake markers are transient React state. The saved-line map
+comes from the existing dub status response, so a reload resumes recorded
+progress without persisting editor-only fallback markers. Route changes
+invalidate pending audio and recording work before a new scene is selected.
 
 ```text
 /
@@ -144,12 +153,15 @@ personalized-story-art/{encoded-user-id}/learner-dubs/
 
 The browser creates an object URL immediately from each finished MediaRecorder
 `Blob`, decodes the same bytes to PCM for the visible waveform, and can replay
-that local take before the learner advances. Upload and final replay remain
-separate: R2 is the durable source of truth, while the local object URL exists
-only for the current take-review state and is revoked when it is replaced or
-abandoned. Final playback fetches the 24 authenticated clips and schedules
-them, the procedural music bed, and SVG scene beats against one Web Audio
-clock.
+that local take while its selected line remains open, including after a
+successful upload. Upload and draft playback remain separate: R2 is the durable
+source of truth, while the local object URL is revoked when a take is replaced
+or discarded by navigation, deletion, or unmount. The full project and each
+four-line scene resolve saved slots from authenticated R2 and missing slots from
+checked-in guides, then schedule the usable voices, procedural music bed, and
+SVG scene beats against one Web Audio clock. Private playback failures retry the
+guide and set a browser-session Needs-retake marker; if both sources fail, the
+voice is omitted without stopping the draft.
 
 R2 is the source of truth. During normal studio use the marker carries a
 generation and a `ready` or `deleting` state; status and playback expose only
