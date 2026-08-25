@@ -592,9 +592,7 @@ test("signed-out protected routes preserve the destination and show account acce
   await expectNoHorizontalOverflow(page);
 });
 
-test("an incomplete learner sees a skippable profile setup before the requested activity", async ({
-  page,
-}) => {
+async function routeIncompleteLearnerProfile(page: Page) {
   await page.route("**/api/learner-profile", async (route) => {
     await route.fulfill({
       body: JSON.stringify({
@@ -632,6 +630,12 @@ test("an incomplete learner sees a skippable profile setup before the requested 
       status: 200,
     });
   });
+}
+
+test("an incomplete learner sees a skippable profile setup before the requested activity", async ({
+  page,
+}) => {
+  await routeIncompleteLearnerProfile(page);
   await page.goto("/lessons");
 
   await expect(page).toHaveURL(
@@ -646,6 +650,24 @@ test("an incomplete learner sees a skippable profile setup before the requested 
   await expect(
     page.getByRole("button", { name: "Skip for now" }),
   ).toBeVisible();
+});
+
+test("an incomplete learner returns to the requested duck dub after profile setup", async ({
+  page,
+}) => {
+  await routeIncompleteLearnerProfile(page);
+  const requested = "/dubs/five-little-ducks?parrotE2eDub=partial";
+  await page.goto(requested);
+
+  await expect(page).toHaveURL(
+    `/profile/setup?returnTo=${encodeURIComponent(requested)}`,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Answer 6 questions" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Five Little Ducks" }),
+  ).toHaveCount(0);
 });
 
 test("guardian learner profile has a clear dashboard exit and distinguishes setup from chat", async ({

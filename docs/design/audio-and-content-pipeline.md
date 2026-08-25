@@ -18,6 +18,12 @@ requesting a missing file. Do not add static-audio entries or page illustrations
 while script wording is still being compared. Artwork production prompts remain
 catalogue metadata and are not rendered as extra child-facing reading text.
 
+The Five Little Ducks dubbing activity is a separate, original media path. Its
+scene is an inline SVG and its quiet pentatonic music bed is synthesized in the
+browser. Final playback uses one native Web Audio clock to schedule the nine
+private voice clips, procedural music, and original SVG scene beats; it does not
+use a third-party player or a mixed downloadable video.
+
 ## Sources of Truth
 
 - Lessons: `content/lessons/*.json`
@@ -36,6 +42,10 @@ catalogue metadata and are not rendered as extra child-facing reading text.
 - Generated story covers: `public/assets/stories/*-cover.webp`
 - Story language and prompt research:
   `docs/design/young-learner-storytelling.md`
+- Five Little Ducks authored script and timing: `src/dubbing/dub-script.ts`
+- Private replaceable voice slots: authenticated
+  `/api/dubs/five-little-ducks-v1/*` backed by the existing private R2 account
+  purge prefix and deletion tombstone, with no dub-specific D1 metadata
 
 Do not edit `dist` directly.
 
@@ -81,6 +91,12 @@ For Storytelling, saved playback is attempted only when a page declares a
 non-null narration audio ID. The resolved exact-text cache entry must match that
 ID. Prototype pages with null IDs show Audio later and never call the saved
 audio resolver.
+
+Dubbing uploads the MediaRecorder Blob directly to its authenticated fixed line
+slot. The browser can replay or replace each owner-only take, reset all nine
+slots, and assemble the complete performance with native Web Audio. The clips
+remain private, are never part of the static-audio manifest, and are deleted by
+both studio reset and account deletion.
 
 ## ElevenLabs Generation
 
@@ -158,4 +174,7 @@ URL rather than overwriting an existing object.
 - Run focused lesson/audio tests.
 - Confirm every story cover path resolves to a checked-in WebP while page media
   remains explicitly nullable.
+- Confirm dubbing clips stay private, replaceable, resettable, and covered by
+  account deletion; verify native Web Audio replay against the original SVG and
+  procedural music timeline.
 - Run `npm run build` so Vite copies the source assets into `dist`.

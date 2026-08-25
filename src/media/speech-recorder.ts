@@ -1,5 +1,4 @@
 const DEFAULT_RECORDING_MS = 4200;
-const DEFAULT_MIME_TYPE = "audio/webm";
 
 export const MICROPHONE_CONSTRAINTS = {
   audio: {
@@ -13,10 +12,22 @@ type SpeechRecorderConstructor = new (
   options?: MediaRecorderOptions,
 ) => MediaRecorder;
 
+type SpeechRecorderClass = SpeechRecorderConstructor & {
+  isTypeSupported?: (mimeType: string) => boolean;
+};
+
+const RECORDING_MIME_TYPES = [
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/webm;codecs=opus",
+  "audio/mp4",
+  "audio/webm",
+  "audio/ogg;codecs=opus",
+] as const;
+
 type TimerId = ReturnType<typeof setTimeout>;
 
 type SpeechRecorderOptions = {
-  MediaRecorder?: SpeechRecorderConstructor;
+  MediaRecorder?: SpeechRecorderClass;
   clearTimeout?: (timerId: TimerId) => void;
   getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream>;
   mimeType?: string;
@@ -36,6 +47,21 @@ type SpeechRecordingSessionOptions = Pick<
   SpeechRecorderOptions,
   "MediaRecorder" | "getUserMedia" | "mimeType" | "signal"
 >;
+
+export function selectRecordingMimeType(
+  MediaRecorderClass: SpeechRecorderClass = globalThis.MediaRecorder
+) {
+  if (!MediaRecorderClass) {
+    throw new RecordingUnsupportedError();
+  }
+
+  if (typeof MediaRecorderClass.isTypeSupported !== "function") {
+    return "";
+  }
+
+  const isTypeSupported = MediaRecorderClass.isTypeSupported;
+  return RECORDING_MIME_TYPES.find((type) => isTypeSupported(type)) ?? "";
+}
 
 export type SpeechRecordingSession = {
   cancel: () => void;
@@ -99,7 +125,7 @@ export async function startSpeechRecording({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
   getUserMedia = (constraints) =>
     navigator.mediaDevices.getUserMedia(constraints),
-  mimeType = DEFAULT_MIME_TYPE,
+  mimeType,
   signal,
 }: SpeechRecordingSessionOptions = {}): Promise<SpeechRecordingSession> {
   if (signal?.aborted) {
@@ -109,6 +135,8 @@ export async function startSpeechRecording({
   if (!MediaRecorderClass) {
     throw new RecordingUnsupportedError();
   }
+
+  const resolvedMimeType = mimeType ?? selectRecordingMimeType(MediaRecorderClass);
 
   let stream: MediaStream;
   try {
@@ -151,7 +179,7 @@ export async function startSpeechRecording({
       return;
     }
 
-    resolveResult(new Blob(chunks, { type: mimeType }));
+    resolveResult(new Blob(chunks, { type: recorder.mimeType || resolvedMimeType }));
   }
 
   function fail(error: unknown) {
@@ -172,7 +200,10 @@ export async function startSpeechRecording({
   }
 
   try {
-    recorder = new MediaRecorderClass(stream, { mimeType });
+    recorder = new MediaRecorderClass(
+      stream,
+      resolvedMimeType ? { mimeType: resolvedMimeType } : undefined
+    );
   } catch (error) {
     stopMediaStream(stream);
     throw error;
@@ -210,7 +241,7 @@ export async function recordSpeechClip({
   clearTimeout: clearRecordingTimeout = globalThis.clearTimeout,
   getUserMedia = (constraints) =>
     navigator.mediaDevices.getUserMedia(constraints),
-  mimeType = DEFAULT_MIME_TYPE,
+  mimeType,
   onRecordingStart,
   recordingMs = DEFAULT_RECORDING_MS,
   setTimeout: setRecordingTimeout = globalThis.setTimeout,
@@ -220,6 +251,8 @@ export async function recordSpeechClip({
   if (!MediaRecorderClass) {
     throw new RecordingUnsupportedError();
   }
+
+  const resolvedMimeType = mimeType ?? selectRecordingMimeType(MediaRecorderClass);
 
   if (signal?.aborted) {
     throw createAbortError();
@@ -263,7 +296,7 @@ export async function recordSpeechClip({
         return;
       }
 
-      resolve(new Blob(chunks, { type: mimeType }));
+      resolve(new Blob(chunks, { type: recorder.mimeType || resolvedMimeType }));
     }
 
     function fail(error: unknown) {
@@ -289,7 +322,10 @@ export async function recordSpeechClip({
     }
 
     try {
-      recorder = new MediaRecorderClass(stream, { mimeType });
+      recorder = new MediaRecorderClass(
+        stream,
+        resolvedMimeType ? { mimeType: resolvedMimeType } : undefined
+      );
     } catch (error) {
       fail(error);
       return;

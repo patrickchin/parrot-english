@@ -225,6 +225,7 @@ describe("app route helpers", () => {
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/progress", "/Progress///", null],
       ["/stories", "/Stories///", null],
+      ["/dubs/five-little-ducks", "/Dubs/Five-Little-Ducks///", null],
       ["/stories/:storyId", "/Stories/the-lantern-trail//", null],
       [
         "/stories/:storyId/pages/:pageNumber",
@@ -306,6 +307,20 @@ describe("app route helpers", () => {
       );
     }
     assert.equal(routes.isTalkToPeppaRoute("/talk-to-peppa/extra"), false);
+  });
+
+  it("builds and safely returns to the fixed duck dubbing route", () => {
+    assert.equal(routes.getDuckDubPath(), "/dubs/five-little-ducks");
+    for (const pathname of [
+      "/dubs/five-little-ducks",
+      "/Dubs/Five-Little-Ducks//",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(pathname)), pathname);
+    }
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/dubs/five-little-ducks/extra")),
+      null,
+    );
   });
 
   it("falls back home from an unsafe auth gate return target", () => {

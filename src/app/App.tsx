@@ -149,6 +149,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/lessons/my/:lessonId/scenes/:sceneNumber",
   "/progress",
   "/stories",
+  "/dubs/five-little-ducks",
   "/stories/:storyId",
   "/stories/:storyId/pages/:pageNumber",
   "/login",
@@ -188,6 +189,13 @@ const StoryReader = import.meta.env.SSR
   : lazy(() =>
       import("../stories/StoryReader").then(({ StoryReader }) => ({
         default: StoryReader,
+      })),
+    );
+const DuckDub = import.meta.env.SSR
+  ? (await import("../dubbing/DuckDub")).DuckDub
+  : lazy(() =>
+      import("../dubbing/DuckDub").then(({ DuckDub }) => ({
+        default: DuckDub,
       })),
     );
 
@@ -1255,6 +1263,7 @@ export function ApplicationRoutes({
         />
         <Route element={<Navigate replace to="/" />} path="/progress" />
         <Route element={<StoryList />} path="/stories" />
+        <Route element={<DuckDub />} path="/dubs/five-little-ducks" />
         <Route element={<StoryRedirect />} path="/stories/:storyId" />
         <Route
           element={<StoryPageRoute />}

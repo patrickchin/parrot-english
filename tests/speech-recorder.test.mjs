@@ -9,6 +9,116 @@ const recordSpeechClip =
   speechRecorder.recordSpeechClip ??
   (() => Promise.reject(new Error("recordSpeechClip is missing")));
 
+describe("recording MIME negotiation", () => {
+  it("selects the first supported portable recording type", () => {
+    class FakeRecorder {}
+    FakeRecorder.isTypeSupported = (type) => type === "audio/webm;codecs=opus";
+
+    assert.equal(
+      speechRecorder.selectRecordingMimeType(FakeRecorder),
+      "audio/webm;codecs=opus"
+    );
+  });
+
+  it("uses the browser default when MIME probing is unavailable", () => {
+    class FakeRecorder {}
+
+    assert.equal(speechRecorder.selectRecordingMimeType(FakeRecorder), "");
+  });
+
+  it("omits options and preserves the recorder type without MIME probing", async () => {
+    const { stream } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    FakeMediaRecorder.prototype.mimeType = "audio/mp4";
+
+    const session = await startSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    assert.equal(instances[0].options, undefined);
+    assert.equal((await session.stop()).type, "audio/mp4");
+  });
+
+  it("returns no MIME type when probing finds no supported format", () => {
+    class FakeRecorder {}
+    FakeRecorder.isTypeSupported = () => false;
+
+    assert.equal(speechRecorder.selectRecordingMimeType(FakeRecorder), "");
+  });
+
+  it("uses the recorder-reported MIME type for the returned blob", async () => {
+    const { stream } = createStream();
+    const { FakeMediaRecorder } = createRecorderClass();
+    FakeMediaRecorder.isTypeSupported = (type) => type === "audio/mp4";
+    FakeMediaRecorder.prototype.mimeType = "audio/mp4";
+
+    const session = await startSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    assert.equal((await session.stop()).type, "audio/mp4");
+  });
+
+  it("omits recorder options when no probed format is supported", async () => {
+    const startStream = createStream();
+    const startRecorder = createRecorderClass();
+    startRecorder.FakeMediaRecorder.isTypeSupported = () => false;
+    const session = await startSpeechRecording({
+      MediaRecorder: startRecorder.FakeMediaRecorder,
+      getUserMedia: async () => startStream.stream,
+    });
+
+    assert.equal(startRecorder.instances[0].options, undefined);
+    await session.stop();
+
+    const clipStream = createStream();
+    const clipRecorder = createRecorderClass();
+    clipRecorder.FakeMediaRecorder.isTypeSupported = () => false;
+    await recordSpeechClip({
+      MediaRecorder: clipRecorder.FakeMediaRecorder,
+      getUserMedia: async () => clipStream.stream,
+      setTimeout(callback) {
+        setTimeout(callback, 0);
+        return 1;
+      },
+      clearTimeout() {},
+    });
+
+    assert.equal(clipRecorder.instances[0].options, undefined);
+  });
+
+  it("omits options and preserves an explicit empty MIME type", async () => {
+    const startStream = createStream();
+    const startRecorder = createRecorderClass();
+    const session = await startSpeechRecording({
+      MediaRecorder: startRecorder.FakeMediaRecorder,
+      getUserMedia: async () => startStream.stream,
+      mimeType: "",
+    });
+
+    assert.equal(startRecorder.instances[0].options, undefined);
+    assert.equal((await session.stop()).type, "");
+
+    const clipStream = createStream();
+    const clipRecorder = createRecorderClass();
+    const clip = await recordSpeechClip({
+      MediaRecorder: clipRecorder.FakeMediaRecorder,
+      getUserMedia: async () => clipStream.stream,
+      mimeType: "",
+      setTimeout(callback) {
+        setTimeout(callback, 0);
+        return 1;
+      },
+      clearTimeout() {},
+    });
+
+    assert.equal(clipRecorder.instances[0].options, undefined);
+    assert.equal(clip.type, "");
+  });
+});
+
 function createTrack() {
   return {
     stopped: false,

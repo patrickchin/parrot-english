@@ -102,13 +102,15 @@ and Unlock actions.
 
 Learner mode contains only:
 
-- `/` — the existing three picture-led choices;
+- `/` — the four picture-led choices;
 - `/talk-to-peppa` — learner-controlled conversation;
 - `/lessons` — ready-made and guardian-created playable lessons;
 - `/lessons/parrot/:lessonId[/scenes/:sceneNumber]` — lesson playback;
 - `/lessons/my/:lessonId[/scenes/:sceneNumber]` — custom lesson playback;
 - `/stories` — the story shelf at the guardian-selected level;
-- `/stories/:storyId[/pages/:pageNumber]` — story reading.
+- `/stories/:storyId[/pages/:pageNumber]` — story reading;
+- `/dubs/five-little-ducks` — private line-by-line rhyme recording and complete
+  dub replay.
 
 The learner lesson shelf removes `Grown-up: edit`, `Grown-up tools`, and `Make a
 lesson`. The learner story shelf removes `Grown-up options`, story-level

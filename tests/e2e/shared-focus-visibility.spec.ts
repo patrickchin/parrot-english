@@ -795,6 +795,18 @@ function firstLessonLink(page: Page) {
     .getByRole("link", { name: "Start lesson: Peppa's High Ball" });
 }
 
+async function settleLessonShelf(page: Page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(
+      Array.from(document.images, (image) => image.decode().catch(() => {})),
+    );
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+  });
+}
+
 async function openSettledLessonShelf(page: Page) {
   await page.route("**/api/lessons/my", async (route) => {
     await route.fulfill({
@@ -806,15 +818,7 @@ async function openSettledLessonShelf(page: Page) {
   await page.goto("/lessons");
   await expect(lessonShelfHeading(page)).toBeFocused();
   await expect(firstLessonLink(page)).toBeVisible();
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all(
-      Array.from(document.images, (image) => image.decode().catch(() => {})),
-    );
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-    );
-  });
+  await settleLessonShelf(page);
 }
 
 async function roundedLocatorBox(target: Locator) {
@@ -965,12 +969,7 @@ for (const activation of ["pointer", "keyboard"] as const) {
 
     await expect(page).toHaveURL("/lessons");
     await expect(firstLessonLink(page)).toBeVisible();
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-    });
+    await settleLessonShelf(page);
     await expectLessonShelfOpenReadingCue(
       page,
       lessonShelfHeading(page),
@@ -1157,7 +1156,7 @@ async function expectProfileOpenReadingCue(
   await expect(target).toBeFocused();
   await expect(target).toHaveAttribute("tabindex", "-1");
   await page.evaluate(() => {
-    for (const animation of document.getAnimations()) animation.pause();
+    for (const animation of document.getAnimations()) animation.cancel();
   });
   const focused = await profileHeadingGeometry(target);
   expect(
@@ -1185,7 +1184,7 @@ async function expectProfileOpenReadingCue(
 
   const blurred = await profileHeadingGeometry(target);
   if (focused.art && blurred.art) {
-    // Chromium can requantize a paused transform by one hundredth of a pixel.
+    // Chromium can requantize an animation transform by one hundredth of a pixel.
     expect(Math.abs(blurred.art.y - focused.art.y)).toBeLessThanOrEqual(0.02);
     blurred.art.y = focused.art.y;
   }

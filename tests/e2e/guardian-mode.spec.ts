@@ -236,6 +236,24 @@ test("a locked guardian deep link never flashes protected content", async ({
   ).toBe(false);
 });
 
+test("a guardian-mode duck dub deep link asks to switch profiles", async ({
+  page,
+}) => {
+  await page.goto(
+    guardianUrl(
+      "/dubs/five-little-ducks?parrotE2eDub=partial",
+      "guardian",
+    ),
+  );
+
+  await expect(
+    page.getByRole("heading", { name: "Switch to learner mode" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Five Little Ducks" }),
+  ).toHaveCount(0);
+});
+
 test("a valid guardian unlock resumes after refresh", async ({
   page,
 }) => {
@@ -263,6 +281,9 @@ test("a seeded guardian expiry stays fixed across refresh", async ({ page }) => 
   });
 
   await page.reload();
+  await expect(
+    page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
+  ).toBeVisible();
 
   const expiresAtAfterRefresh = await page.evaluate(async () => {
     const response = await fetch("/api/guardian-access");

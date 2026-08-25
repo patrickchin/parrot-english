@@ -62,6 +62,11 @@ const routes: HeaderRoute[] = [
     path: "/profile",
     control: { name: "Back", role: "button" },
   },
+  {
+    name: "duck dubbing studio",
+    path: "/dubs/five-little-ducks?parrotE2eDub=partial",
+    control: { name: "Back to home", role: "link" },
+  },
 ];
 
 const mobileViewports: Viewport[] = [

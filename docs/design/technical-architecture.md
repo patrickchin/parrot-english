@@ -14,6 +14,7 @@ Browser
        -> /api/guardian-access -> Better Auth password check -> D1
        -> /api/conversations/* -> LiveKit -> D1
        -> /api/lessons/my/* -> OpenAI -> D1
+       -> /api/dubs/five-little-ducks-v1/* -> private R2 clip slots
        -> /api/evaluate-speech -> Groq
        -> static Vite assets
 ```
@@ -27,7 +28,8 @@ prototype build entry in the shipped product.
 - `src/app/App.tsx` composes route guards and owns lesson playback effects.
 - `src/app/app-routes.ts` owns canonical paths, safe return targets, and route
   decisions.
-- `src/app/HomeMenu.tsx` exposes the three learner activities.
+- `src/app/HomeMenu.tsx` exposes the four learner activities, including Five
+  Little Ducks dubbing.
 - `src/auth` owns the Better Auth session, account UI, guardian-access state,
   password unlock, fixed expiry, and learner/guardian route boundaries.
 - `src/learner-profile` owns onboarding and profile editing.
@@ -36,6 +38,8 @@ prototype build entry in the shipped product.
   manager, creation, and editing.
 - `src/stories` owns the stored-level learner shelf/reader and guardian-only
   story settings and personalized-art controls.
+- `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
+  client, and synchronized replay.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
@@ -49,7 +53,10 @@ home redirect and are not accepted as authentication return targets.
 `worker/index.ts` authenticates protected requests, applies endpoint-specific
 rate limits, and delegates to focused handlers. It exposes authentication,
 guardian access, learner profile, conversations, My Lessons, story art, build
-information, and speech evaluation. Static assets are the final fallback.
+information, speech evaluation, and Five Little Ducks dubbing. The
+authenticated `/api/dubs/five-little-ducks-v1/*` family owns status, raw clip
+upload, private clip streaming, and whole-dub reset. Static assets are the
+final fallback.
 
 `GET`, `POST`, and `DELETE /api/guardian-access` read, unlock, and lock the
 current Better Auth session. Unlock verifies the current account password on
@@ -78,13 +85,13 @@ new learners.
 
 ## Durable and Transient State
 
-URLs are authoritative for durable screens, lesson scenes, story pages, and
-guardian management. The learner story shelf URL is canonicalized to the
-profile's stored `story_level`. Guardian mode is server state for the current
-auth session, not a client-only role or long-lived account permission. Lesson
-playback phase, recording, evaluation, and current step are transient React
-state. Route changes invalidate pending audio and recording work before a new
-scene is selected.
+URLs are authoritative for durable screens, lesson scenes, story pages, the
+Five Little Ducks dubbing studio, and guardian management. The learner story
+shelf URL is canonicalized to the profile's stored `story_level`. Guardian mode
+is server state for the current auth session, not a client-only role or
+long-lived account permission. Lesson and dub playback phase, active recording,
+evaluation, and current step are transient React state. Route changes invalidate
+pending audio and recording work before a new scene is selected.
 
 ```text
 /
@@ -96,6 +103,7 @@ scene is selected.
 │   └── /lessons/my/:lessonId/edit               (guardian)
 ├── /stories
 │   └── /stories/:storyId/pages/:pageNumber
+├── /dubs/five-little-ducks
 ├── /guardian
 │   ├── /guardian/lessons
 │   └── /guardian/stories
@@ -119,6 +127,40 @@ Built-in lesson JSON never stores asset filenames. My Lessons are validated
 against the same contract and stored in D1. Story scripts retain internal
 vocabulary and prompt metadata for validation, but the learner UI consumes only
 level, cover, title, summary, pages, and join-in content.
+
+Five Little Ducks voice clips use a generation marker and nine format-agnostic
+fixed slots beneath the existing private account-purge prefix:
+
+```text
+personalized-story-art/{encoded-user-id}/learner-dubs/
+  five-little-ducks-v1/
+    .dub-generation
+    line-{1..9}.audio
+```
+
+R2 is the source of truth. During normal studio use the marker carries a
+generation and a `ready` or `deleting` state; status and playback expose only
+clips owned by the current ready generation. Each new upload stores a
+`parrot-dub-audio-v2` envelope with the generation and a request-unique upload
+nonce before the raw audio payload.
+Matching metadata records the payload offset, generation, and nonce so an
+authenticated GET can conditionally validate the exact envelope and stream only
+the payload.
+
+Replacement conditionally writes the observed fixed slot and rechecks the
+generation fence. Reset conditionally acquires a new `deleting` generation,
+conditionally replaces all nine fixed slots with generation-owned non-audio
+tombstones, and then conditionally finalizes the marker as `ready`; an
+interrupted reset remains fenced until another DELETE completes it. Account
+deletion derives one stable generation from the permanent D1 deletion
+tombstone, sweeps every non-closure object below the account prefix, then
+conditionally persists a terminal `account-deleting` marker followed by all
+nine same-generation non-audio slot fences. The exact ten closure keys are
+excluded from every broad sweep, so concurrent deletion hooks converge instead
+of dismantling one another. Better Auth can remove the user only after the
+complete closure exists; ordinary dub resets cannot take over its terminal
+marker. The retained objects contain no recording bytes. Dubs require no new D1
+metadata or migration because they reuse the existing deletion tombstone.
 
 ## Provider Boundaries
 
