@@ -226,7 +226,7 @@ test("scene playback advances only the visual before recording the selected cano
 });
 
 test("retryable save survives guide and Blob replay while retry remains exclusive", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held&parrotE2eDubPlayback=held");
   await confirmDub(page, "Start dubbing");
   await openScene(page, 1);
   await page.getByRole("button", { name: "Record line" }).click();
@@ -241,6 +241,9 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await expect(page.getByText("Scene 1 of 6", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Hear example" }).click();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Playing example for Scene 1, line 1.",
+  );
   await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Line 2, generated" })).toBeDisabled();
@@ -250,6 +253,9 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
 
   await page.getByRole("button", { name: "Hear my voice" }).click();
   await expect(page.getByRole("button", { name: "Stop my voice" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Playing your recording for Scene 1, line 1.",
+  );
   await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Back to full video" })).toBeDisabled();
@@ -306,6 +312,9 @@ test("a double-source failure names the exact slot while video and music continu
   await expect(page.getByRole("alert").filter({
     hasText: "Scene 2, line 1 could not play. The video will continue without it.",
   })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    /Playing full video: Scene \d, line \d\./,
+  );
   await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
   await expect(page.getByRole("figure")).toHaveAccessibleName(/duck/i);
 });
@@ -432,6 +441,20 @@ test("a held project delete is exclusive until reset succeeds", async ({ page })
   await expect(page.getByRole("button", { name: "Continue Scene 1" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Scene 1, in progress" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Deleting my dub…" })).toBeDisabled();
+
+  await releaseDubOperation(page, "delete");
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+});
+
+test("a held pre-confirmation delete marks the intro route busy", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=delete-held");
+  await page.getByLabel("Grown-up options").click();
+  page.once("dialog", async (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Delete saved recordings" }).click();
+
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Deleting your dub…");
+  await expect(page.getByRole("main")).toHaveAttribute("aria-busy", "true");
+  await expect(page.getByRole("button", { name: "Deleting saved recordings…" })).toBeDisabled();
 
   await releaseDubOperation(page, "delete");
   await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();

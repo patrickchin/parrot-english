@@ -93,7 +93,7 @@ export function resolveDubLineAudioSource(
   return { preferredUrl: resolveGuide("narrator", line.text).src };
 }
 
-function DubEntry({
+export function DubEntry({
   confirmed,
   deleting,
   error,
@@ -116,7 +116,7 @@ function DubEntry({
 }) {
   const loading = error !== "" || resetInterrupted;
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
+    <main aria-busy={deleting} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-2xl gap-4 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-card">
         <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
         {loading ? (
@@ -170,7 +170,7 @@ function DubEntry({
   );
 }
 
-function DubLoading({
+export function DubLoading({
   deleting,
   error,
   onDelete,
@@ -199,7 +199,7 @@ function DubLoading({
     );
   }
   return (
-    <main className="grid min-h-dvh place-items-center bg-story-shelf px-3 pt-20">
+    <main aria-busy={deleting} className="grid min-h-dvh place-items-center bg-story-shelf px-3 pt-20">
       <section className="grid justify-items-center gap-4">
         <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
         <ActionButton disabled>Loading your private dub…</ActionButton>
@@ -625,9 +625,7 @@ export function DuckDub() {
   const savedCount = Object.keys(state.saved).length;
   let liveStatus = "Ready for grown-up consent.";
   const activeError = state.error || loadError;
-  if (activeError) {
-    liveStatus = activeError;
-  } else if (state.operation === "deleting") {
+  if (state.operation === "deleting") {
     liveStatus = "Deleting your dub…";
   } else if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
@@ -645,6 +643,8 @@ export function DuckDub() {
     liveStatus = state.playbackScope === "full"
       ? `Playing full video: Scene ${playbackSceneNumber}, line ${playbackSceneLineNumber}.`
       : `Playing Scene ${state.selectedSceneIndex + 1}: line ${playbackSceneLineNumber}.`;
+  } else if (activeError) {
+    liveStatus = activeError;
   } else if (state.view === "loading") {
     liveStatus = "Loading your private dub…";
   } else if (state.view === "project") {

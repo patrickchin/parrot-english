@@ -14,7 +14,11 @@ const vite = await createServer({
 const { DuckScene } = await vite.ssrLoadModule("/src/dubbing/DuckScene.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
-const { resolveDubLineAudioSource } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
+const {
+  DubEntry,
+  DubLoading,
+  resolveDubLineAudioSource,
+} = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const { DUB_LINES } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
 
 after(async () => vite.close());
@@ -201,6 +205,31 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(deletingScene, /aria-label="Play this scene"[^>]*disabled/);
     assert.match(deletingScene, /aria-label="Record line"[^>]*disabled/);
     assert.match(deletingScene, /<button[^>]*disabled[^>]*>Back to full video<\/button>/);
+  });
+
+  it("marks intro and reset-loading route shells busy during deletion", () => {
+    assert.equal(typeof DubEntry, "function", "DubEntry must be renderable for route-shell checks");
+    assert.equal(typeof DubLoading, "function", "DubLoading must be renderable for route-shell checks");
+    const entry = renderToStaticMarkup(createElement(DubEntry, {
+      confirmed: false,
+      deleting: true,
+      error: "",
+      onConfirm() {},
+      onDelete() {},
+      onEnter() {},
+      onRetryLoad() {},
+      resetInterrupted: false,
+      savedCount: 0,
+    }));
+    const loading = renderToStaticMarkup(createElement(DubLoading, {
+      deleting: true,
+      error: "",
+      onDelete() {},
+      onRetryLoad() {},
+      resetInterrupted: true,
+    }));
+    assert.match(entry, /<main[^>]*aria-busy="true"/);
+    assert.match(loading, /<main[^>]*aria-busy="true"/);
   });
 
   it("discards rejected-take preview and exposes one Record again action", () => {

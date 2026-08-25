@@ -298,6 +298,13 @@ function hasHeldE2eProfilePlayback() {
   );
 }
 
+function hasHeldE2eDubPlayback() {
+  return (
+    new URL(window.location.href).searchParams.get("parrotE2eDubPlayback") ===
+    "held"
+  );
+}
+
 function keepsAbortedE2eProfileOperationsSettleable() {
   return (
     new URL(window.location.href).searchParams.get("parrotE2eProfileAbort") ===
@@ -1092,8 +1099,9 @@ class MockAudioElement {
   async play() {
     playedAudioSources.push(this.src);
     if (
-      hasHeldE2eProfilePlayback() &&
-      this.src.includes("learner-profile")
+      (hasHeldE2eProfilePlayback() && this.src.includes("learner-profile")) ||
+      (hasHeldE2eDubPlayback() &&
+        (this.src.includes("five-little-ducks") || this.src.startsWith("blob:")))
     ) {
       if (!this.held) {
         this.held = true;
