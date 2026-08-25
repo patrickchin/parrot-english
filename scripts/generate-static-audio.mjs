@@ -32,7 +32,6 @@ const ELEVENLABS_SPEAKER_VOICE_IDS = {
 };
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const audioDir = join(rootDir, "public", "assets", "audio");
 const args = process.argv.slice(2);
 const force = args.includes("--force");
 const provider = readArg("provider") ?? "elevenlabs";
@@ -230,11 +229,11 @@ async function validatePrivateOutputPathOnDisk(
 }
 
 export async function getGenerationLines({
-  includePrivateStories = false,
+  privateStoriesOnly = false,
   previewDirectory,
   projectRoot = rootDir,
 } = {}) {
-  if (!includePrivateStories) return STATIC_AUDIO_LINES;
+  if (!privateStoriesOnly) return STATIC_AUDIO_LINES;
 
   const directory = resolve(
     previewDirectory ?? join(projectRoot, "content/private-story-preview"),
@@ -260,7 +259,7 @@ export async function getGenerationLines({
     ),
   );
 
-  return { ...STATIC_AUDIO_LINES, ...privateAudioLines };
+  return privateAudioLines;
 }
 
 async function requestSpeech(apiKey, line) {
@@ -290,6 +289,15 @@ async function writeAudioFile(filePath, audioBytes) {
   await rm(mp3Path, { force: true });
 }
 
+export async function readSpeechAudioResponse(id, response) {
+  if (!response.ok) {
+    const status = Number.isInteger(response.status) ? response.status : 0;
+    throw new Error(`${id} failed with HTTP ${status}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+}
+
 async function generateAudioFile(apiKey, id, line) {
   const filePath = getOutputPath(line);
   if (existsSync(filePath) && !force) {
@@ -302,14 +310,7 @@ async function generateAudioFile(apiKey, id, line) {
     response = await requestSpeech(apiKey, line);
   }
 
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `${id} failed with ${response.status}: ${detail.slice(0, 300)}`
-    );
-  }
-
-  await writeAudioFile(filePath, Buffer.from(await response.arrayBuffer()));
+  await writeAudioFile(filePath, await readSpeechAudioResponse(id, response));
   return "generated";
 }
 
@@ -323,9 +324,8 @@ async function main() {
     throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
   }
 
-  await mkdir(outputDir ?? audioDir, { recursive: true });
   const lines = await getGenerationLines({
-    includePrivateStories: args.includes("--private-story-preview"),
+    privateStoriesOnly: args.includes("--private-story-preview"),
     projectRoot: rootDir,
   });
 

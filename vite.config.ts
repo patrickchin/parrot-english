@@ -393,30 +393,57 @@ function parrotE2eMockApi(): Plugin {
   };
 }
 
-export default defineConfig(async ({ command }) => {
-  const enabled =
-    command === "build" && process.env.PARROT_PRIVATE_STORY_PREVIEW === "1";
-  const data = await getPrivateStoryPreviewBuildData({
-    command,
-    enabled,
-    projectRoot: fileURLToPath(new URL(".", import.meta.url)),
-  });
+type CreateViteConfigOptions = {
+  outDir?: string;
+  privateStoryPreviewDirectory?: string;
+  privateStoryPreviewEnabled?: boolean;
+  privateStoryProjectRoot?: string;
+};
 
-  return {
-    plugins: [react(), parrotE2eMockApi(), privateStoryPreviewAssets(data.assets)],
-    define: {
-      "import.meta.env.VITE_PARROT_APP_VERSION": JSON.stringify(getBuildVersion()),
-      "import.meta.env.VITE_PARROT_COMMIT_SHA": JSON.stringify(getShortCommitSha()),
-      "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW": JSON.stringify(enabled),
-      "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(data.stories),
-    },
-    build: {
-      outDir: "dist",
-      rolldownOptions: {
-        output: {
-          codeSplitting: true,
+export function createViteConfig(options: CreateViteConfigOptions = {}) {
+  return defineConfig(async ({ command }) => {
+    const enabled =
+      command === "build" &&
+      (options.privateStoryPreviewEnabled ??
+        process.env.PARROT_PRIVATE_STORY_PREVIEW === "1");
+    const data = await getPrivateStoryPreviewBuildData({
+      command,
+      enabled,
+      previewDirectory: options.privateStoryPreviewDirectory,
+      projectRoot:
+        options.privateStoryProjectRoot ??
+        fileURLToPath(new URL(".", import.meta.url)),
+    });
+
+    return {
+      plugins: [
+        react(),
+        parrotE2eMockApi(),
+        privateStoryPreviewAssets(data.assets),
+      ],
+      define: {
+        "import.meta.env.VITE_PARROT_APP_VERSION": JSON.stringify(
+          getBuildVersion(),
+        ),
+        "import.meta.env.VITE_PARROT_COMMIT_SHA": JSON.stringify(
+          getShortCommitSha(),
+        ),
+        "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW":
+          JSON.stringify(enabled),
+        "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(
+          data.stories,
+        ),
+      },
+      build: {
+        outDir: options.outDir ?? "dist",
+        rolldownOptions: {
+          output: {
+            codeSplitting: true,
+          },
         },
       },
-    },
-  };
-});
+    };
+  });
+}
+
+export default createViteConfig();

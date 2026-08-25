@@ -1,18 +1,31 @@
 /* global Buffer */
 
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { env } from "node:process";
 import { afterEach, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+import { build as viteBuild } from "vite";
 import viteConfig, {
+  createViteConfig,
   getPrivateStoryPreviewBuildData,
   privateStoryPreviewAssets,
 } from "../vite.config.ts";
 
 const temporaryDirectories = [];
 const originalPrivatePreviewFlag = env.PARROT_PRIVATE_STORY_PREVIEW;
+const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 
 afterEach(async () => {
   if (originalPrivatePreviewFlag === undefined) {
@@ -79,6 +92,39 @@ async function createFixture({ withAudio }) {
   await writeFile(path.join(audioDirectories[0], "not-allowlisted.mp3"), "do not emit");
 
   return { audioBytes, previewDirectory, projectRoot };
+}
+
+async function listFiles(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await listFiles(entryPath)));
+    } else if (entry.isFile()) {
+      files.push(entryPath);
+    }
+  }
+  return files;
+}
+
+async function readGeneratedText(directory) {
+  const textFiles = (await listFiles(directory)).filter((filePath) =>
+    /\.(?:css|html|js|json)$/.test(filePath),
+  );
+  return (
+    await Promise.all(textFiles.map((filePath) => readFile(filePath, "utf8")))
+  ).join("\n");
+}
+
+async function runViteBuild(options) {
+  const configFactory = createViteConfig(options);
+  const config = await configFactory({ command: "build", mode: "test" });
+  await viteBuild({
+    ...config,
+    configFile: false,
+    logLevel: "silent",
+    root: repositoryRoot,
+  });
 }
 
 describe("private story Vite build boundary", () => {
@@ -189,5 +235,94 @@ describe("private story Vite build boundary", () => {
       "assets/private-story-preview/private-second/page-001.mp3",
     );
     assert.deepEqual(emitted[1].source, fixture.audioBytes[1]);
+  });
+
+  it("runs a normal Vite build without reading a nonexistent private preview", async () => {
+    const projectRoot = await mkdtemp(
+      path.join(os.tmpdir(), "parrot-normal-vite-build-"),
+    );
+    temporaryDirectories.push(projectRoot);
+    const outDir = path.join(projectRoot, "vite-output");
+
+    await runViteBuild({
+      outDir,
+      privateStoryPreviewDirectory: path.join(projectRoot, "missing-preview"),
+      privateStoryPreviewEnabled: false,
+      privateStoryProjectRoot: projectRoot,
+    });
+
+    const generatedText = await readGeneratedText(outDir);
+    for (const marker of [
+      "private-fixture",
+      "Synthetic Fixture",
+      "A synthetic story page for a build boundary test.",
+      "private-second",
+      "Second Synthetic Fixture",
+      "A second synthetic build page.",
+    ]) {
+      assert.equal(generatedText.includes(marker), false);
+    }
+    await assert.rejects(
+      access(path.join(outDir, "assets/private-story-preview")),
+      (error) => error.code === "ENOENT",
+    );
+  });
+
+  it("runs a private Vite build with only allowlisted synthetic preview assets", async () => {
+    const fixture = await createFixture({ withAudio: true });
+    const outDir = path.join(fixture.projectRoot, "vite-output");
+
+    await runViteBuild({
+      outDir,
+      privateStoryPreviewDirectory: fixture.previewDirectory,
+      privateStoryPreviewEnabled: true,
+      privateStoryProjectRoot: fixture.projectRoot,
+    });
+
+    const generatedText = await readGeneratedText(outDir);
+    for (const markerSet of [
+      [
+        "private-fixture",
+        "Synthetic Fixture",
+        "A synthetic story page for a build boundary test.",
+      ],
+      [
+        "private-second",
+        "Second Synthetic Fixture",
+        "A second synthetic build page.",
+      ],
+    ]) {
+      for (const marker of markerSet) {
+        assert.equal(generatedText.includes(marker), true);
+      }
+    }
+
+    assert.deepEqual(
+      await readFile(
+        path.join(
+          outDir,
+          "assets/private-story-preview/private-fixture/page-001.mp3",
+        ),
+      ),
+      fixture.audioBytes[0],
+    );
+    assert.deepEqual(
+      await readFile(
+        path.join(
+          outDir,
+          "assets/private-story-preview/private-second/page-001.mp3",
+        ),
+      ),
+      fixture.audioBytes[1],
+    );
+    await assert.rejects(
+      access(
+        path.join(
+          outDir,
+          "assets/private-story-preview/private-fixture/not-allowlisted.mp3",
+        ),
+      ),
+      (error) => error.code === "ENOENT",
+    );
   });
 });

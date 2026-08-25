@@ -7,7 +7,10 @@ import { isAbsolute, join, relative } from "node:path";
 import { promisify } from "node:util";
 import { describe, it } from "node:test";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
-import { getGenerationLines } from "../scripts/generate-static-audio.mjs";
+import {
+  getGenerationLines,
+  readSpeechAudioResponse,
+} from "../scripts/generate-static-audio.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -43,20 +46,20 @@ async function writeSyntheticPrivatePreview(previewDirectory) {
 
 describe("static audio generator", () => {
   it("selects static lines by default without running generation", async () => {
-    const lines = await getGenerationLines({ includePrivateStories: false });
+    const lines = await getGenerationLines();
 
     assert.equal(lines, STATIC_AUDIO_LINES);
     assert.equal(lines["private-fixture-page-001-narration"], undefined);
   });
 
-  it("adds synthetic private narration with output inside the preview directory", async () => {
+  it("selects only synthetic private narration with output inside the preview directory", async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-lines-"));
     const previewDirectory = join(projectRoot, "content/private-story-preview");
     await writeSyntheticPrivatePreview(previewDirectory);
 
     try {
       const lines = await getGenerationLines({
-        includePrivateStories: true,
+        privateStoriesOnly: true,
         previewDirectory,
         projectRoot,
       });
@@ -71,7 +74,7 @@ describe("static audio generator", () => {
       assert.equal(isAbsolute(privateLine.outputFilePath), true);
       assert.equal(outputRelativePath.startsWith(".."), false);
       assert.equal(isAbsolute(outputRelativePath), false);
-      assert.equal(lines["turn-hello"], STATIC_AUDIO_LINES["turn-hello"]);
+      assert.equal(lines["turn-hello"], undefined);
     } finally {
       await rm(projectRoot, { force: true, recursive: true });
     }
@@ -89,7 +92,7 @@ describe("static audio generator", () => {
       await assert.rejects(
         () =>
           getGenerationLines({
-            includePrivateStories: true,
+            privateStoriesOnly: true,
             previewDirectory,
             projectRoot,
           }),
@@ -112,7 +115,7 @@ describe("static audio generator", () => {
       await assert.rejects(
         () =>
           getGenerationLines({
-            includePrivateStories: true,
+            privateStoriesOnly: true,
             previewDirectory,
             projectRoot,
           }),
@@ -124,6 +127,44 @@ describe("static audio generator", () => {
         rm(externalContent, { force: true, recursive: true }),
       ]);
     }
+  });
+
+  it("reports only the safe audio ID and numeric status for provider failures", async () => {
+    const privatePageText = "Synthetic provider body that must remain private.";
+    let textCalls = 0;
+    const response = {
+      ok: false,
+      status: 503,
+      get headers() {
+        throw new Error("headers must not be read");
+      },
+      get statusText() {
+        throw new Error("statusText must not be read");
+      },
+      async arrayBuffer() {
+        throw new Error("audio bytes must not be read after a failure");
+      },
+      async json() {
+        throw new Error("JSON must not be read");
+      },
+      async text() {
+        textCalls += 1;
+        return privatePageText;
+      },
+    };
+
+    await assert.rejects(
+      () => readSpeechAudioResponse("private-page-001-narration", response),
+      (error) => {
+        assert.equal(
+          error.message,
+          "private-page-001-narration failed with HTTP 503",
+        );
+        assert.doesNotMatch(error.message, new RegExp(privatePageText));
+        return true;
+      },
+    );
+    assert.equal(textCalls, 0);
   });
 
   it("chooses ElevenLabs voices from speaker metadata", () => {
