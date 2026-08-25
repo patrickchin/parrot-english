@@ -9,6 +9,7 @@ import {
   link,
   mkdtemp,
   mkdir,
+  readFile,
   rename,
   rm,
   symlink,
@@ -1790,18 +1791,25 @@ describe("private story isolation scanner", () => {
     await writeFile(join(projectRoot, "current.txt"), "Fixture Story\n");
     await git(projectRoot, ["add", "--", "current.txt"]);
 
-    const { stdout: realGitOutput } = await execFileAsync("which", ["git"], {
-      encoding: "utf8",
-    });
+    const { stdout: realGitOutput } = await execFileAsync(
+      process.platform === "win32" ? "where" : "which",
+      ["git"],
+      { encoding: "utf8" },
+    );
+    const realGit = realGitOutput.split(/\r?\n/u).find(Boolean);
+    assert.ok(realGit);
     const wrapperDirectory = join(projectRoot, "synthetic-bin");
-    const wrapperPath = join(wrapperDirectory, "git");
+    const wrapperModulePath = join(wrapperDirectory, "git-wrapper.mjs");
+    const wrapperPath = join(
+      wrapperDirectory,
+      process.platform === "win32" ? "git.cmd" : "git",
+    );
     await mkdir(wrapperDirectory);
     await writeFile(
-      wrapperPath,
+      wrapperModulePath,
       [
-        "#!/usr/bin/env node",
         'import { spawnSync } from "node:child_process";',
-        `const realGit = ${JSON.stringify(realGitOutput.trim())};`,
+        `const realGit = ${JSON.stringify(realGit)};`,
         'const unsafe = Object.keys(process.env).filter((name) => /^GIT_/iu.test(name) && name !== "GIT_NO_REPLACE_OBJECTS");',
         'if (unsafe.length || process.env.GIT_NO_REPLACE_OBJECTS !== "1") process.exit(97);',
         'const result = spawnSync(realGit, process.argv.slice(2), { env: process.env, stdio: "inherit" });',
@@ -1809,7 +1817,18 @@ describe("private story isolation scanner", () => {
         "process.exit(result.status ?? 1);",
       ].join("\n"),
     );
-    await chmod(wrapperPath, 0o755);
+    if (process.platform === "win32") {
+      await writeFile(
+        wrapperPath,
+        `@echo off\r\n"${process.execPath}" "${wrapperModulePath}" %*\r\n`,
+      );
+    } else {
+      await writeFile(
+        wrapperPath,
+        `#!/usr/bin/env node\n${await readFile(wrapperModulePath, "utf8")}`,
+      );
+      await chmod(wrapperPath, 0o755);
+    }
 
     const ambientSelectors = {
       GIT_ALTERNATE_OBJECT_DIRECTORIES: "ambient-alternate-selector",

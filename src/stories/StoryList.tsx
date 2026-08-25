@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router";
 import {
   getStoryPagePath,
   getStoryShelfPath,
-  resolveStoryShelfLevel,
 } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
@@ -53,10 +52,12 @@ function PrivateStoryList() {
   const location = useLocation();
   const navigate = useNavigate();
   const requestedLevelId = new URLSearchParams(location.search).get("level");
-  const activeLevelId = resolveStoryShelfLevel(location.search);
+  const activeLevelId =
+    STORY_LEVELS.find(({ id }) => id === requestedLevelId)?.id ??
+    "long-stories";
 
   useEffect(() => {
-    if (requestedLevelId && requestedLevelId !== activeLevelId) {
+    if (requestedLevelId !== activeLevelId) {
       navigate(getStoryShelfPath(activeLevelId), { replace: true });
     }
   }, [activeLevelId, navigate, requestedLevelId]);

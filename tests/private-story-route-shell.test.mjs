@@ -135,6 +135,20 @@ test("uses a hermetic Vite module-transform server", () => {
   );
 });
 
+test("the bare private story shelf canonicalizes to Long stories", async () => {
+  globalThis.fetch = async (...args) => {
+    fetchCalls.push(args);
+    throw new Error(`Unexpected request: ${String(args[0])}`);
+  };
+
+  const shelf = await mountStrict(privatePreviewAppAt("/stories"));
+  await waitFor(() => {
+    assert.match(shelf.textContent, /Fixture Long Story/);
+    assert.equal(routedLocation, "/stories?level=long-stories");
+  });
+  assert.equal(fetchCalls.length, 0);
+});
+
 test("App selects the synthetic private story shell before account and profile gates", async () => {
   assert.equal(
     typeof App,

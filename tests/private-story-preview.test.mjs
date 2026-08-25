@@ -1215,6 +1215,38 @@ describe("private story preview preparation", () => {
     assert.deepEqual(await readFile(alias), sourceBytes);
   });
 
+  it("fails closed when the filesystem cannot identify hardlink aliases", async () => {
+    const fixture = await createFixtureRoot();
+    const source = path.join(fixture.projectRoot, "source.txt");
+    const alias = path.join(fixture.projectRoot, "source-hardlink.txt");
+    const sourceBytes = Buffer.from("# Fixture\n\nSynthetic body.\n");
+    await writeFile(source, sourceBytes);
+    await link(source, alias);
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async stat(file, options) {
+            const stats = await stat(file, options);
+            if (file !== source && file !== alias) return stats;
+            return { ...stats, ino: 0, isFile: () => stats.isFile() };
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [source, alias],
+      }),
+      {
+        message:
+          "Unable to verify that private story source files are distinct",
+      },
+    );
+
+    assert.deepEqual(await readdir(fixture.previewDirectory), []);
+    assert.deepEqual(await readFile(source), sourceBytes);
+    assert.deepEqual(await readFile(alias), sourceBytes);
+  });
+
   it("leaves an existing forced bundle unchanged when later source validation fails", async () => {
     const fixture = await createFixtureRoot();
     const oldFiles = {

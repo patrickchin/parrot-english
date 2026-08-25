@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { after, describe, it } from "node:test";
-import { createServer } from "vite";
+import { describe, it } from "node:test";
+import { createHermeticViteServer } from "./helpers/hermetic-vite-server.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -65,19 +65,23 @@ const PRIVATE_STORY_FIXTURES = [
 ];
 
 async function loadCatalog(define = {}) {
-  const vite = await createServer({
+  const viteHarness = await createHermeticViteServer({
     appType: "custom",
     define,
     logLevel: "silent",
     root: projectRoot,
-    server: { middlewareMode: true },
   });
-  after(async () => vite.close());
-  const preview = await vite.ssrLoadModule(
-    "/src/stories/private-story-preview.ts",
-  );
-  const catalog = await vite.ssrLoadModule("/src/stories/story-catalog.ts");
-  return { catalog, preview };
+  try {
+    const preview = await viteHarness.server.ssrLoadModule(
+      "/src/stories/private-story-preview.ts",
+    );
+    const catalog = await viteHarness.server.ssrLoadModule(
+      "/src/stories/story-catalog.ts",
+    );
+    return { catalog, preview };
+  } finally {
+    await viteHarness.close();
+  }
 }
 
 describe("private long-story catalog injection", () => {

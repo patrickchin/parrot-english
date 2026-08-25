@@ -426,9 +426,17 @@ export async function preparePrivateStoryPreview({
     sourceFiles.map((sourceFile) => requireReadable(sourceFile, operations)),
   );
   if (
+    sources.some(({ sourceStats }) =>
+      !Number.isSafeInteger(sourceStats.ino) || sourceStats.ino <= 0
+    )
+  ) {
+    throw new Error(
+      "Unable to verify that private story source files are distinct",
+    );
+  }
+  if (
     sources[0].realFilePath === sources[1].realFilePath ||
-    (sources[0].sourceStats.ino !== 0 &&
-      sources[0].sourceStats.dev === sources[1].sourceStats.dev &&
+    (sources[0].sourceStats.dev === sources[1].sourceStats.dev &&
       sources[0].sourceStats.ino === sources[1].sourceStats.ino)
   ) {
     throw new Error("Private story source files must be distinct");

@@ -44,7 +44,11 @@ the version upload. Applying or changing that policy requires action-time
 confirmation. Do not upload or share a preview URL until the dashboard confirms
 preview protection. Use `wrangler versions upload`, never `wrangler deploy`.
 The private story preview directory is ignored by Git; keep its source text and
-generated audio out of tracked files.
+generated audio out of tracked files. A version preview still uses the
+production D1 and R2 bindings, so it is not a staging environment: test only
+the story shelf and reader, and do not exercise `/api`, account, profile, or
+personalized-art writes. Keep preview-only Access enabled for as long as any
+private preview version remains available.
 
 ```bash
 npm run generate:audio:private-story-preview

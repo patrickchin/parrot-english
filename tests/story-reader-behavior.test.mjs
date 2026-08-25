@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { act, createElement, useState } from "react";
 import { MemoryRouter } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
-import { createServer } from "vite";
+import { createHermeticViteServer } from "./helpers/hermetic-vite-server.mjs";
 import {
   cleanupMountedRoots,
   click,
@@ -23,12 +23,12 @@ const originalSpeechUtterance = Object.getOwnPropertyDescriptor(
   globalThis,
   "SpeechSynthesisUtterance",
 );
-const vite = await createServer({
+const viteHarness = await createHermeticViteServer({
   appType: "custom",
   logLevel: "silent",
   root: projectRoot,
-  server: { middlewareMode: true },
 });
+const vite = viteHarness.server;
 
 let StoryReader;
 let firstStory;
@@ -61,7 +61,7 @@ afterEach(async () => {
 });
 
 after(async () => {
-  await vite.close();
+  await viteHarness.close();
   restoreDom();
 });
 

@@ -474,7 +474,7 @@ export function StoryReader({
 
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
-              className="relative m-0 text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short-wide:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
+              className="relative m-0 whitespace-pre-line text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short-wide:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
               ref={pageTextRef}
               tabIndex={-1}
             >
