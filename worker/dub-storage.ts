@@ -2,6 +2,19 @@ import { DUB_ID } from "../src/dubbing/dub-script.ts";
 
 const GENERATION_MARKER = ".dub-generation";
 const FENCE_FORMAT = "parrot-dub-fence-v1";
+const LEGACY_DUB_ID = "five-little-ducks-v1";
+
+export const LEGACY_DUB_LINE_IDS = [
+  "line-1",
+  "line-2",
+  "line-3",
+  "line-4",
+  "line-5",
+  "line-6",
+  "line-7",
+  "line-8",
+  "line-9",
+] as const;
 
 export const R2_WRITE_INTERVAL_MS = 1_050;
 export const MAX_R2_WRITE_ATTEMPTS = 3;
@@ -9,6 +22,18 @@ export const MAX_R2_WRITE_ATTEMPTS = 3;
 export function objectPrefix(userId: string) {
   // ponytail: shared private bucket; split when voice and art retention policies differ.
   return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${DUB_ID}/`;
+}
+
+export function legacyObjectPrefix(userId: string) {
+  return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${LEGACY_DUB_ID}/`;
+}
+
+export function legacyObjectKey(userId: string, lineId: string) {
+  return `${legacyObjectPrefix(userId)}${lineId}.audio`;
+}
+
+export function legacyMarkerKey(userId: string) {
+  return `${legacyObjectPrefix(userId)}${GENERATION_MARKER}`;
 }
 
 export function objectKey(userId: string, lineId: string) {

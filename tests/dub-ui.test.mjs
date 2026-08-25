@@ -42,6 +42,7 @@ function renderInRouter(element) {
 const handlers = {
   onDelete() {},
   onHearGuide() {},
+  onHearTake() {},
   onNext() {},
   onRecord() {},
   onRetake() {},
@@ -49,6 +50,7 @@ const handlers = {
   onSaveAgain() {},
   onStopPlayback() {},
   onStopRecording() {},
+  onStopTake() {},
   onWatch() {},
 };
 
@@ -85,30 +87,37 @@ describe("duck dubbing presentation", () => {
     assert.match(unchecked, /Five Little Ducks/);
     assert.match(unchecked, /Your recordings are private/);
     assert.match(unchecked, /signed-in grown-up(?:&#x27;|')s account/);
-    assert.doesNotMatch(unchecked, /Line 1 of 9/);
-    assert.doesNotMatch(unchecked, /Five little ducks went out to play\./);
+    assert.doesNotMatch(unchecked, /Line 1 of 24/);
+    assert.doesNotMatch(unchecked, /Five little ducks went out one day\./);
     assert.match(
       unchecked,
       /I’m the grown-up and I agree to save these private voice clips\./,
     );
     assert.match(unchecked, /<input[^>]*required/);
     assert.match(unchecked, /<button[^>]*disabled[^>]*>Start dubbing<\/button>/);
+    assert.match(unchecked, /<details(?![^>]*\bopen\b)[^>]*>/);
+    assert.match(unchecked, /<summary[^>]*aria-label="Grown-up options"/);
+    assert.match(unchecked, />Delete saved recordings<\/button>/);
 
     const continued = renderDuckDub(
       { phase: "intro", saved: { "line-1": "saved" } },
       true,
     );
-    assert.match(continued, /<button[^>]*>Continue dubbing<\/button>/);
-    assert.doesNotMatch(continued, /Continue dubbing<\/button>[^]*disabled/);
+    const continueButton = continued.match(
+      /<button([^>]*)>Continue dubbing<\/button>/,
+    );
+    assert.ok(continueButton);
+    assert.doesNotMatch(continueButton[1], /\sdisabled(?:=|\s|$)/);
   });
 
-  it("makes Record the clear next step and keeps listening optional", () => {
+  it("makes the current lyric unmistakable and keeps the saved guide replayable", () => {
     const html = renderDuckDub({ phase: "line-ready", currentLineIndex: 0 });
-    assert.match(html, /Line 1 of 9/);
-    assert.match(html, /Five little ducks went out to play\./);
+    assert.match(html, /Line 1 of 24/);
+    assert.match(html, /Now read/);
+    assert.match(html, /Five little ducks went out one day\./);
     assert.match(html, /aria-label="Record line 1"/);
-    assert.match(html, /aria-label="Hear the line"/);
-    assert.doesNotMatch(html, /Hear the line again/);
+    assert.match(html, /aria-label="Replay example"/);
+    assert.doesNotMatch(html, /aria-label="Hear the line"/);
     assert.doesNotMatch(html, /Watch my dub/);
 
     const complete = renderDuckDub({
@@ -147,10 +156,26 @@ describe("duck dubbing presentation", () => {
     assert.match(rejected, />Record again<\/button>/);
     assert.doesNotMatch(rejected, />Save again<\/button>/);
 
-    const review = renderDuckDub({ phase: "line-review" });
+    const review = renderDuckDub(
+      { phase: "line-review" },
+      true,
+      { takeBlob: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }) },
+    );
+    assert.match(review, /Your voice/);
+    assert.match(review, /aria-label="Your recording waveform"/);
+    assert.match(review, /aria-label="Hear my voice"/);
     assert.match(review, />Next line<\/button>/);
     assert.match(review, />Record again<\/button>/);
-    assert.doesNotMatch(review, /Hear my take/);
+
+    const playingTake = renderDuckDub(
+      { phase: "line-review" },
+      true,
+      {
+        takeBlob: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+        takePlaying: true,
+      },
+    );
+    assert.match(playingTake, /aria-label="Stop my voice"/);
   });
 
   it("keeps final management controls inside closed grown-up options", () => {
@@ -160,16 +185,16 @@ describe("duck dubbing presentation", () => {
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.match(ready, /Watch my dub<\/button>/);
-    assert.match(ready, /All 9 lines recorded/);
+    assert.match(ready, /All 24 lines recorded/);
     assert.match(ready, /Your dub is ready!/);
-    assert.doesNotMatch(ready, /aria-label="Line 5 of 9"/);
+    assert.doesNotMatch(ready, /aria-label="Line 5 of 24"/);
     assert.match(ready, /<details(?![^>]*\bopen\b)[^>]*>/);
     assert.match(ready, /<summary[^>]*aria-label="Grown-up options"/);
     assert.match(ready, />Grown-up options<\/summary>|>Grown-up options<span/);
     assert.match(ready, /<label[^>]*>Choose a saved line<\/label>/);
     assert.match(ready, /<select[^>]*aria-label="Choose a saved line"/);
-    assert.match(ready, /<option[^>]*value="line-5"[^>]*selected=""[^>]*>Line 5: Three little ducks raced through the reeds\.<\/option>/);
-    assert.equal((ready.match(/<option/g) ?? []).length, 9);
+    assert.match(ready, /<option[^>]*value="line-5"[^>]*selected=""[^>]*>Line 5: Four little ducks went out one day\.<\/option>/);
+    assert.equal((ready.match(/<option/g) ?? []).length, 24);
     assert.match(ready, />Record selected line<\/button>/);
     assert.match(ready, />Delete my dub<\/button>/);
     assert.match(ready, /Your recordings are private/);
@@ -219,27 +244,27 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, phase: "line-ready" },
         {},
-        "Line 3 of 9. Ready to hear or record this line.",
+        "Line 3 of 24. Listen to the example, then record this line.",
       ],
       [
         { currentLineIndex: 2, phase: "mic-opening" },
         {},
-        "Line 3 of 9. Opening the microphone.",
+        "Line 3 of 24. Opening the microphone.",
       ],
       [
         { currentLineIndex: 2, phase: "recording" },
         {},
-        "Line 3 of 9. Recording in progress.",
+        "Line 3 of 24. Recording in progress.",
       ],
       [
         { currentLineIndex: 2, phase: "saving" },
         {},
-        "Line 3 of 9. Saving your take.",
+        "Line 3 of 24. Saving your take.",
       ],
       [
         { currentLineIndex: 2, error: "Not saved.", phase: "save-error" },
         {},
-        "Line 3 of 9. Choose Save again.",
+        "Line 3 of 24. Choose Save again.",
       ],
       [
         {
@@ -249,12 +274,12 @@ describe("duck dubbing presentation", () => {
           saveRecovery: "record",
         },
         {},
-        "Line 3 of 9. Choose Record again.",
+        "Line 3 of 24. Choose Record again.",
       ],
       [
         { currentLineIndex: 2, phase: "line-review" },
         {},
-        "Line 3 of 9. Your take is saved. Choose Next line to continue.",
+        "Line 3 of 24. Your take is saved. Hear your voice or choose Next line.",
       ],
       [
         { currentLineIndex: 2, phase: "final-ready", saved: complete },
@@ -269,7 +294,7 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, phase: "final-playing", saved: complete },
         {},
-        "Playing your dub. Line 3 of 9.",
+        "Playing your dub. Line 3 of 24.",
       ],
       [
         { currentLineIndex: 2, phase: "final-ready", saved: complete },
@@ -333,7 +358,7 @@ describe("duck dubbing presentation", () => {
 
   it("keeps visible progress and recording text accessible but non-live", () => {
     const html = renderDuckDub({ phase: "recording", currentLineIndex: 2 });
-    assert.match(html, />Line 3 of 9<\/p>/);
+    assert.match(html, />Line 3 of 24<\/p>/);
     assert.match(html, />Recording…<\/p>/);
     assert.equal((html.match(/role="status"/g) ?? []).length, 1);
     assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1);
@@ -346,7 +371,8 @@ describe("duck dubbing presentation", () => {
       createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
     );
     assert.match(html, /<svg[^>]*aria-hidden="true"[^>]*viewBox="0 0 960 540"/);
-    assert.match(html, /A frog appears; four ducks continue\./);
+    assert.doesNotMatch(html, /frog/i);
+    assert.match(html, /Mother duck calls/);
     assert.equal((html.match(/<svg/g) ?? []).length, 1);
     assert.doesNotMatch(html, /<img|https?:\/\//);
   });

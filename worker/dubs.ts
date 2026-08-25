@@ -5,6 +5,10 @@ import {
   fenceBody,
   hasState,
   isR2WriteRateError,
+  LEGACY_DUB_LINE_IDS,
+  legacyMarkerKey,
+  legacyObjectKey,
+  legacyObjectPrefix,
   markerKey,
   MAX_R2_WRITE_ATTEMPTS,
   objectKey,
@@ -433,7 +437,37 @@ async function assertResetOwner(
   }
 }
 
-async function tombstoneSlot(
+async function fenceResetOwnedKey(
+  bucket: R2Bucket,
+  userId: string,
+  key: string,
+  kind: "marker" | "slot",
+  generation: string,
+  state: string,
+  markerEtag: string,
+  wait: Wait,
+) {
+  for (let attempt = 0; attempt < MAX_CAS_CONFLICTS; attempt += 1) {
+    await assertResetOwner(bucket, userId, generation, markerEtag);
+    const current = await bucket.head(key);
+    await assertResetOwner(bucket, userId, generation, markerEtag);
+    const fence = await conditionalPut(
+      bucket,
+      key,
+      fenceBody(kind, generation, state),
+      {
+        customMetadata: { generation, state },
+      },
+      current,
+      wait,
+      (object) => hasState(object, generation, state),
+    );
+    if (fence) return;
+  }
+  throw new DubApiError(409, "dub_reset_in_progress");
+}
+
+function tombstoneSlot(
   bucket: R2Bucket,
   userId: string,
   lineId: string,
@@ -441,25 +475,97 @@ async function tombstoneSlot(
   markerEtag: string,
   wait: Wait,
 ) {
-  const key = objectKey(userId, lineId);
-  for (let attempt = 0; attempt < MAX_CAS_CONFLICTS; attempt += 1) {
-    await assertResetOwner(bucket, userId, generation, markerEtag);
-    const current = await bucket.head(key);
-    await assertResetOwner(bucket, userId, generation, markerEtag);
-    const tombstone = await conditionalPut(
-      bucket,
-      key,
-      fenceBody("slot", generation, "tombstone"),
-      {
-        customMetadata: { generation, state: "tombstone" },
-      },
-      current,
-      wait,
-      (object) => hasState(object, generation, "tombstone"),
-    );
-    if (tombstone) return;
+  return fenceResetOwnedKey(
+    bucket,
+    userId,
+    objectKey(userId, lineId),
+    "slot",
+    generation,
+    "tombstone",
+    markerEtag,
+    wait,
+  );
+}
+
+async function deleteWithRetry(bucket: R2Bucket, keys: string[], wait: Wait) {
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      await bucket.delete(keys);
+      return;
+    } catch (error) {
+      if (!isR2WriteRateError(error) || attempt === MAX_R2_WRITE_ATTEMPTS - 1) {
+        throw error;
+      }
+      await wait(retryDelay(attempt));
+    }
   }
-  throw new DubApiError(409, "dub_reset_in_progress");
+}
+
+async function retireLegacyDub(
+  bucket: R2Bucket,
+  userId: string,
+  generation: string,
+  markerEtag: string,
+  wait: Wait,
+) {
+  const prefix = legacyObjectPrefix(userId);
+  if (prefix === objectPrefix(userId)) return;
+  const marker = legacyMarkerKey(userId);
+  const slots = LEGACY_DUB_LINE_IDS.map((lineId) =>
+    legacyObjectKey(userId, lineId)
+  );
+  const retirementKeys = new Set([marker, ...slots]);
+
+  await fenceResetOwnedKey(
+    bucket,
+    userId,
+    marker,
+    "marker",
+    generation,
+    "account-deleting",
+    markerEtag,
+    wait,
+  );
+  for (const key of slots) {
+    await fenceResetOwnedKey(
+      bucket,
+      userId,
+      key,
+      "slot",
+      generation,
+      "account-deleting",
+      markerEtag,
+      wait,
+    );
+  }
+
+  let cursor: string | undefined;
+  let hasMore = true;
+  const seenCursors = new Set<string>();
+
+  while (hasMore) {
+    await assertResetOwner(bucket, userId, generation, markerEtag);
+    const page = await bucket.list({
+      ...(cursor === undefined ? {} : { cursor }),
+      prefix,
+    });
+    const listedKeys = page.objects.map(({ key }) => key);
+    if (listedKeys.some((key) => !key.startsWith(prefix))) {
+      throw new Error("R2 returned an object outside the legacy dub prefix.");
+    }
+    const keys = listedKeys.filter((key) => !retirementKeys.has(key));
+    await assertResetOwner(bucket, userId, generation, markerEtag);
+    if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
+
+    hasMore = page.truncated;
+    if (page.truncated) {
+      if (!page.cursor || seenCursors.has(page.cursor)) {
+        throw new Error("R2 legacy dub listing did not advance its cursor.");
+      }
+      seenCursors.add(page.cursor);
+      cursor = page.cursor;
+    }
+  }
 }
 
 function isDemonstrablyNonAudio(object: R2Object) {
@@ -644,6 +750,16 @@ export async function handleDubRequest(
             wait,
           );
         }
+        if (await isDeletionPending(input.database, userId)) {
+          throw new DubApiError(409, "account_deletion_pending");
+        }
+        await retireLegacyDub(
+          bucket,
+          userId,
+          generation,
+          deletingMarker.etag,
+          wait,
+        );
         if (await isDeletionPending(input.database, userId)) {
           throw new DubApiError(409, "account_deletion_pending");
         }

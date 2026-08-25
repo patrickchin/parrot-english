@@ -15,18 +15,47 @@ import {
 } from "../src/dubbing/dub-state.ts";
 
 describe("five little ducks dub domain", () => {
-  it("authors nine six-second slots inside a 56 second replay", () => {
-    assert.equal(DUB_ID, "five-little-ducks-v1");
+  it("authors the complete traditional rhyme as 24 four-second cues", () => {
+    assert.equal(DUB_ID, "five-little-ducks-v2");
     assert.equal(DUB_ROUTE, "/dubs/five-little-ducks");
     assert.equal(DUB_RECORDING_MS, 6_000);
-    assert.equal(DUB_LINES.length, 9);
+    assert.equal(DUB_LINES.length, 24);
+    assert.deepEqual(DUB_LINES.map(({ text }) => text), [
+      "Five little ducks went out one day.",
+      "Over the hill and far away.",
+      "Mother duck said, \u201cQuack, quack, quack, quack.\u201d",
+      "But only four little ducks came back.",
+      "Four little ducks went out one day.",
+      "Over the hill and far away.",
+      "Mother duck said, \u201cQuack, quack, quack, quack.\u201d",
+      "But only three little ducks came back.",
+      "Three little ducks went out one day.",
+      "Over the hill and far away.",
+      "Mother duck said, \u201cQuack, quack, quack, quack.\u201d",
+      "But only two little ducks came back.",
+      "Two little ducks went out one day.",
+      "Over the hill and far away.",
+      "Mother duck said, \u201cQuack, quack, quack, quack.\u201d",
+      "But only one little duck came back.",
+      "One little duck went out one day.",
+      "Over the hill and far away.",
+      "Mother duck said, \u201cQuack, quack, quack, quack.\u201d",
+      "But none of the five little ducks came back.",
+      "Sad mother duck went out one day.",
+      "Over the hill and far away.",
+      "Sad mother duck said, \u201cQuack, quack, quack, quack.\u201d",
+      "And all of the five little ducks came back.",
+    ]);
     assert.deepEqual(DUB_LINES.map(({ cueMs }) => cueMs),
-      [800, 6800, 12800, 18800, 24800, 30800, 36800, 42800, 48800]);
-    assert.equal(DUB_DURATION_MS, 56_000);
-    assert.deepEqual(DUB_LINES.map(({ duckCount }) => duckCount), [5, 5, 4, 4, 3, 2, 1, 1, 5]);
+      [800, 4800, 8800, 12800, 16800, 20800, 24800, 28800, 32800, 36800, 40800, 44800, 48800, 52800, 56800, 60800, 64800, 68800, 72800, 76800, 80800, 84800, 88800, 92800]);
+    assert.equal(DUB_DURATION_MS, 98_000);
+    assert.deepEqual(DUB_LINES.map(({ duckCount }) => duckCount),
+      [5, 5, 0, 4, 4, 4, 0, 3, 3, 3, 0, 2, 2, 2, 0, 1, 1, 1, 0, 0, 0, 0, 0, 5]);
+    assert.ok(DUB_LINES.every(({ duckCount }) => Number.isInteger(duckCount) && duckCount >= 0 && duckCount <= 5));
+    assert.equal(DUB_LINES[23].duckCount, 5);
     assert.deepEqual(DUB_LINES.map(({ visualBeat }) => visualBeat),
-      ["five-enter", "hill", "frog", "four-splash", "reeds", "lily-circle", "one-calls", "mama-calls", "five-return"]);
-    assert.equal(getDubLineAtElapsed(12_900)?.id, "line-3");
+      ["depart", "hill", "mother-calls", "return", "depart", "hill", "mother-calls", "return", "depart", "hill", "mother-calls", "return", "depart", "hill", "mother-calls", "return", "depart", "hill", "mother-calls", "none-return", "sad-mother-depart", "sad-mother-hill", "sad-mother-calls", "five-return"]);
+    assert.equal(getDubLineAtElapsed(92_900)?.id, "line-24");
   });
 
   it("keeps the authored script immutable", () => {
@@ -37,7 +66,7 @@ describe("five little ducks dub domain", () => {
     assert.throws(() => { DUB_LINES.push(DUB_LINES[0]); }, TypeError);
     assert.equal(DUB_LINES[0].text, originalText);
     assert.equal(DUB_LINES[0].cueMs, originalCue);
-    assert.equal(DUB_LINES.length, 9);
+    assert.equal(DUB_LINES.length, 24);
   });
 
   it("resumes at the first missing line and unlocks the final replay", () => {

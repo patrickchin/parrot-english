@@ -4,15 +4,19 @@ import { ReadableStream } from "node:stream/web";
 import { describe, it } from "node:test";
 import { TextEncoder } from "node:util";
 
-const DUB_PATH = "/api/dubs/five-little-ducks-v1";
+const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 const CONSENT_HEADERS = {
   "Content-Type": "audio/webm",
   "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
 };
-const LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
-const OWNER_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/";
+const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
+const OWNER_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
 const MARKER_KEY = `${OWNER_PREFIX}.dub-generation`;
 const slotKey = (lineId) => `${OWNER_PREFIX}${lineId}.audio`;
+const LEGACY_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/";
+const LEGACY_LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
+const LEGACY_MARKER_KEY = `${LEGACY_PREFIX}.dub-generation`;
+const legacySlotKey = (lineId) => `${LEGACY_PREFIX}${lineId}.audio`;
 
 function encoded(value) {
   return new TextEncoder().encode(JSON.stringify(value));
@@ -71,6 +75,30 @@ function assertResetTombstones(bucket, generation) {
     assert.deepEqual(item?.options.customMetadata, {
       generation,
       state: "tombstone",
+    }, lineId);
+  }
+}
+
+function assertLegacyRetirementFences(bucket, generation) {
+  const marker = bucket.stored.get(LEGACY_MARKER_KEY);
+  assert.deepEqual(
+    marker?.bytes,
+    fenceBytes("marker", generation, "account-deleting"),
+  );
+  assert.deepEqual(marker?.options.customMetadata, {
+    generation,
+    state: "account-deleting",
+  });
+  for (const lineId of LEGACY_LINE_IDS) {
+    const item = bucket.stored.get(legacySlotKey(lineId));
+    assert.deepEqual(
+      item?.bytes,
+      fenceBytes("slot", generation, "account-deleting"),
+      lineId,
+    );
+    assert.deepEqual(item?.options.customMetadata, {
+      generation,
+      state: "account-deleting",
     }, lineId);
   }
 }
@@ -274,7 +302,7 @@ describe("private learner dub API", () => {
     assert.equal(bucket.calls.put.length, 1);
     assert.deepEqual(bucket.calls.put[0], {
       bytes: envelope.bytes,
-      key: "personalized-story-art/user%2Fone/learner-dubs/five-little-ducks-v1/line-1.audio",
+      key: "personalized-story-art/user%2Fone/learner-dubs/five-little-ducks-v2/line-1.audio",
       options: {
         customMetadata: {
           generation: "legacy",
@@ -313,8 +341,8 @@ describe("private learner dub API", () => {
     assert.equal(statusPayload.lines[0].recordedAt, "2026-08-25T10:00:00.000Z");
   });
 
-  it("returns all nine canonical status rows and safely derives recorded times", async () => {
-    const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/";
+  it("returns all canonical status rows and safely derives recorded times", async () => {
+    const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
     const bucket = createBucket([
       [`${prefix}line-1.audio`, {
         bytes: new Uint8Array([1]),
@@ -345,7 +373,7 @@ describe("private learner dub API", () => {
     assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     assert.deepEqual(await response.json(), {
       complete: false,
-      dubId: "five-little-ducks-v1",
+      dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v1",
       lines: LINE_IDS.map((id, index) => ({
         id,
@@ -363,8 +391,8 @@ describe("private learner dub API", () => {
     }]);
   });
 
-  it("reports complete only when all nine fixed slots exist", async () => {
-    const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/";
+  it("reports complete only when every fixed slot exists", async () => {
+    const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
     const bucket = createBucket(LINE_IDS.map((id, index) => [
       `${prefix}${id}.audio`,
       {
@@ -378,7 +406,7 @@ describe("private learner dub API", () => {
     assert.equal((await response.json()).complete, true);
   });
 
-  it("resets all nine fixed slots to current-generation tombstones", async () => {
+  it("resets every fixed slot to current-generation tombstones", async () => {
     const bucket = createBucket();
 
     const response = await callDub({
@@ -392,6 +420,109 @@ describe("private learner dub API", () => {
     assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     assert.deepEqual(bucket.calls.delete, []);
     assertResetTombstones(bucket, "reset-1");
+  });
+
+  it("retires the owner's legacy v1 slots and purges only arbitrary legacy objects", async () => {
+    const otherProductKey =
+      "personalized-story-art/user-1/learner-dubs/another-story-v1/line-1.audio";
+    const otherUserKey =
+      "personalized-story-art/user-2/learner-dubs/five-little-ducks-v1/line-1.audio";
+    const retiredTakeKey = `${LEGACY_PREFIX}retired-take.webm`;
+    const legacyAudioKeys = [legacySlotKey("line-1"), legacySlotKey("line-9")];
+    const bucket = createBucket([
+      ...[LEGACY_MARKER_KEY, ...legacyAudioKeys, retiredTakeKey].map((key) => [key, {
+        bytes: new Uint8Array([1]),
+        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
+      }]),
+      [otherProductKey, {
+        bytes: new Uint8Array([2]),
+        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
+      }],
+      [otherUserKey, {
+        bytes: new Uint8Array([3]),
+        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
+      }],
+    ]);
+
+    const response = await callDub({
+      bucket,
+      generation: () => "reset-1",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+
+    assert.equal(response.status, 204);
+    assertResetTombstones(bucket, "reset-1");
+    assertLegacyRetirementFences(bucket, "reset-1");
+    assert.equal(bucket.stored.has(retiredTakeKey), false);
+    assert.equal(legacyAudioKeys.some((key) =>
+      bucket.stored.get(key)?.options.customMetadata.state === "audio"), false);
+    assert.equal(bucket.stored.has(otherProductKey), true);
+    assert.equal(bucket.stored.has(otherUserKey), true);
+  });
+
+  it("makes a held old-v1 upload lose to durable retirement fences", async () => {
+    const bucket = createBucket();
+    const oldPutStarted = deferred();
+    const releaseOldPut = deferred();
+    const put = bucket.put.bind(bucket);
+    bucket.put = async (key, bytes, options) => {
+      if (
+        key === legacySlotKey("line-1") &&
+        options?.customMetadata?.state === "audio"
+      ) {
+        oldPutStarted.resolve();
+        await releaseOldPut.promise;
+      }
+      return put(key, bytes, options);
+    };
+    const legacyAudio = envelopedAudio(
+      "legacy",
+      new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      "old-upload-1",
+    );
+    const oldUpload = (async () => {
+      const marker = await bucket.head(LEGACY_MARKER_KEY);
+      const previous = await bucket.head(legacySlotKey("line-1"));
+      assert.equal(marker, null);
+      assert.equal(previous, null);
+      assert.equal(await bucket.head(LEGACY_MARKER_KEY), null);
+      return bucket.put(legacySlotKey("line-1"), legacyAudio.bytes, {
+        customMetadata: {
+          generation: "legacy",
+          payloadOffset: String(legacyAudio.payloadOffset),
+          state: "audio",
+          uploadNonce: "old-upload-1",
+        },
+        httpMetadata: { contentType: "audio/webm" },
+        onlyIf: { etagDoesNotMatch: "*" },
+      });
+    })();
+    await oldPutStarted.promise;
+
+    let reset;
+    try {
+      reset = await callDub({
+        bucket,
+        generation: () => "reset-1",
+        method: "DELETE",
+        path: DUB_PATH,
+      });
+    } finally {
+      releaseOldPut.resolve();
+    }
+    const oldStored = await oldUpload;
+
+    assert.equal(reset.status, 204);
+    assert.equal(oldStored, null);
+    assertResetTombstones(bucket, "reset-1");
+    assertLegacyRetirementFences(bucket, "reset-1");
+    assert.equal(
+      [...bucket.stored]
+        .filter(([key]) => key.startsWith(LEGACY_PREFIX))
+        .some(([, item]) => item.options.customMetadata.state === "audio"),
+      false,
+    );
   });
 
   it("paces recent slot overwrites and reset marker finalization for R2 hot keys", async () => {
@@ -1442,7 +1573,7 @@ describe("private learner dub API", () => {
     })).status, 404);
   });
 
-  it("keeps marker and tombstones private, purge-scoped, and outside status rows", async () => {
+  it("keeps current and retired markers and tombstones private and outside status rows", async () => {
     const bucket = createBucket();
     assert.equal((await callDub({
       bucket,
@@ -1453,13 +1584,17 @@ describe("private learner dub API", () => {
 
     const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
     const payload = await status.json();
-    assert.equal(payload.lines.length, 9);
+    assert.equal(payload.lines.length, LINE_IDS.length);
     assert.equal(payload.lines.every(({ saved }) => !saved), true);
     const accountObjects = await bucket.list({
       prefix: "personalized-story-art/user-1/",
     });
-    assert.equal(accountObjects.objects.length, 10);
+    assert.equal(
+      accountObjects.objects.length,
+      LINE_IDS.length + 1 + LEGACY_LINE_IDS.length + 1,
+    );
     assert.equal(accountObjects.objects.some(({ key }) => key === MARKER_KEY), true);
+    assertLegacyRetirementFences(bucket, "reset-1");
     assert.equal(accountObjects.objects.every(({ key }) =>
       key.startsWith("personalized-story-art/user-1/")), true);
     await bucket.delete(accountObjects.objects.map(({ key }) => key));

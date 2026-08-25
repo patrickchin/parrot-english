@@ -14,7 +14,7 @@ Browser
        -> /api/guardian-access -> Better Auth password check -> D1
        -> /api/conversations/* -> LiveKit -> D1
        -> /api/lessons/my/* -> OpenAI -> D1
-       -> /api/dubs/five-little-ducks-v1/* -> private R2 clip slots
+       -> /api/dubs/five-little-ducks-v2/* -> private R2 clip slots
        -> /api/evaluate-speech -> Groq
        -> static Vite assets
 ```
@@ -39,7 +39,9 @@ prototype build entry in the shipped product.
 - `src/stories` owns the stored-level learner shelf/reader and guardian-only
   story settings and personalized-art controls.
 - `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
-  client, and synchronized replay.
+  client, decoded take waveform, and synchronized replay. The traditional
+  six-stanza script has 24 slots on a 98-second timeline with cues every four
+  seconds and a six-second maximum for each recording.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
@@ -54,7 +56,7 @@ home redirect and are not accepted as authentication return targets.
 rate limits, and delegates to focused handlers. It exposes authentication,
 guardian access, learner profile, conversations, My Lessons, story art, build
 information, speech evaluation, and Five Little Ducks dubbing. The
-authenticated `/api/dubs/five-little-ducks-v1/*` family owns status, raw clip
+authenticated `/api/dubs/five-little-ducks-v2/*` family owns status, raw clip
 upload, private clip streaming, and whole-dub reset. Static assets are the
 final fallback.
 
@@ -128,15 +130,24 @@ against the same contract and stored in D1. Story scripts retain internal
 vocabulary and prompt metadata for validation, but the learner UI consumes only
 level, cover, title, summary, pages, and join-in content.
 
-Five Little Ducks voice clips use a generation marker and nine format-agnostic
+Five Little Ducks voice clips use a generation marker and 24 format-agnostic
 fixed slots beneath the existing private account-purge prefix:
 
 ```text
 personalized-story-art/{encoded-user-id}/learner-dubs/
-  five-little-ducks-v1/
+  five-little-ducks-v2/
     .dub-generation
-    line-{1..9}.audio
+    line-{1..24}.audio
 ```
+
+The browser creates an object URL immediately from each finished MediaRecorder
+`Blob`, decodes the same bytes to PCM for the visible waveform, and can replay
+that local take before the learner advances. Upload and final replay remain
+separate: R2 is the durable source of truth, while the local object URL exists
+only for the current take-review state and is revoked when it is replaced or
+abandoned. Final playback fetches the 24 authenticated clips and schedules
+them, the procedural music bed, and SVG scene beats against one Web Audio
+clock.
 
 R2 is the source of truth. During normal studio use the marker carries a
 generation and a `ready` or `deleting` state; status and playback expose only
@@ -149,22 +160,33 @@ the payload.
 
 Replacement conditionally writes the observed fixed slot and rechecks the
 generation fence. Reset conditionally acquires a new `deleting` generation,
-conditionally replaces all nine fixed slots with generation-owned non-audio
-tombstones, and then conditionally finalizes the marker as `ready`; an
-interrupted reset remains fenced until another DELETE completes it. Account
-deletion derives one stable generation from the permanent D1 deletion
-tombstone, sweeps every non-closure object below the account prefix, then
-conditionally persists a terminal `account-deleting` marker followed by all
-nine same-generation non-audio slot fences. The exact ten closure keys are
-excluded from every broad sweep, so concurrent deletion hooks converge instead
-of dismantling one another. Better Auth can remove the user only after the
-complete closure exists; ordinary dub resets cannot take over its terminal
-marker. The retained objects contain no recording bytes. Dubs require no new D1
-metadata or migration because they reuse the existing deletion tombstone.
+conditionally replaces all 24 fixed slots with generation-owned non-audio
+tombstones, retires the same owner's legacy `five-little-ducks-v1/` namespace,
+and then conditionally finalizes the v2 marker as `ready`; an interrupted reset
+remains fenced until another DELETE completes it. Legacy retirement first
+stores a terminal `account-deleting` marker and nine non-audio slot fences that
+old v1 Workers recognize, then deletes every other object under that exact
+prefix. The ten tiny fences remain so a v1 upload that passed its old marker
+checks before a gradual deployment cannot recreate recording bytes. The
+paginated sweep validates its exact prefix and cursor, rechecks ownership of the
+observed v2 deleting marker around each page, and bounds retries for transient
+R2 write-rate failures. Account deletion derives one stable generation from the
+permanent D1
+deletion tombstone, sweeps every non-closure object below the account prefix
+(including the legacy v1 retirement closure), then conditionally persists a
+terminal `account-deleting` marker followed by all 24 same-generation non-audio
+slot fences. The exact 25-key closure—the marker plus 24 fences—is excluded from
+every broad sweep, so concurrent deletion hooks converge instead of dismantling
+one another. Better Auth can remove the user only after the complete closure
+exists; ordinary dub resets cannot take over its terminal marker. The retained
+objects contain no recording bytes. Dubs require no new D1 metadata or
+migration because they reuse the existing deletion tombstone.
 
 ## Provider Boundaries
 
 - Built-in lesson lines use checked-in ElevenLabs audio assets.
+- Five Little Ducks line guides use checked-in ElevenLabs narrator MP3s; the
+  browser never substitutes device speech for a missing guide.
 - My Lessons use cancellable browser English speech.
 - Groq evaluates lesson speech and supports profile enrichment.
 - OpenAI generates custom lesson drafts.

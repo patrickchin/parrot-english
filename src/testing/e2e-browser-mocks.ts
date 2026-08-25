@@ -5,6 +5,8 @@ type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
 const MOCK_AUDIO_DELAY_MS = 200;
 const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
 const MOCK_RECORDING_DELAY_MS = 5000;
+const playedAudioSources: string[] = [];
+let audioContextDoubleCloses = 0;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
@@ -19,18 +21,11 @@ const E2E_DUB_SCENARIOS = new Set([
   "upload-failed",
   "upload-rejected",
 ]);
-const E2E_DUB_LINE_IDS = [
-  "line-1",
-  "line-2",
-  "line-3",
-  "line-4",
-  "line-5",
-  "line-6",
-  "line-7",
-  "line-8",
-  "line-9",
-] as const;
-const E2E_DUB_API = "/api/dubs/five-little-ducks-v1";
+const E2E_DUB_LINE_IDS = Array.from(
+  { length: 24 },
+  (_, index) => `line-${index + 1}` as `line-${number}`,
+);
+const E2E_DUB_API = "/api/dubs/five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
 const E2E_MICROPHONE_SCENARIOS = new Set([
   "delayed",
@@ -480,7 +475,7 @@ function createE2eDubStore(scenario: string | null) {
           }
           return e2eJson({
             complete: E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
-            dubId: "five-little-ducks-v1",
+            dubId: "five-little-ducks-v2",
             guardianConsentVersion: "guardian-voice-r2-v1",
             lines: E2E_DUB_LINE_IDS.map((id) => ({
               id,
@@ -513,7 +508,7 @@ function createE2eDubStore(scenario: string | null) {
       }
 
       const lineMatch = url.pathname.match(
-        /^\/api\/dubs\/five-little-ducks-v1\/lines\/(line-[1-9])(\/audio)?$/,
+        /^\/api\/dubs\/five-little-ducks-v2\/lines\/(line-(?:[1-9]|1[0-9]|2[0-4]))(\/audio)?$/,
       );
       if (!lineMatch) return null;
       const [, lineId, audioPath] = lineMatch;
@@ -568,7 +563,11 @@ function createE2eDubStore(scenario: string | null) {
       return e2eJson({ recordedAt: E2E_DUB_RECORDED_AT });
     },
     snapshot() {
-      return { uploads: [...uploads] };
+      return {
+        audioContextDoubleCloses,
+        playedAudioSources: [...playedAudioSources],
+        uploads: [...uploads],
+      };
     },
   };
 }
@@ -1014,6 +1013,7 @@ class MockAudioElement {
   }
 
   async play() {
+    playedAudioSources.push(this.src);
     if (
       hasHeldE2eProfilePlayback() &&
       this.src.includes("learner-profile")
@@ -1119,12 +1119,19 @@ class MockGainNode extends MockAudioNode {
 class MockAudioContext {
   readonly destination = new MockAudioNode();
   private readonly startedAt = performance.now();
+  private closed = false;
 
   get currentTime() {
     return ((performance.now() - this.startedAt) / 1_000) * 20;
   }
 
-  async close() {}
+  async close() {
+    if (this.closed) {
+      audioContextDoubleCloses += 1;
+      throw new DOMException("Cannot close a closed AudioContext.", "InvalidStateError");
+    }
+    this.closed = true;
+  }
   createBufferSource() {
     return new MockScheduledAudioNode();
   }
@@ -1138,7 +1145,9 @@ class MockAudioContext {
     if (new TextDecoder().decode(bytes).includes("corrupt-line-5")) {
       throw new DOMException("Mock undecodable dub line.", "EncodingError");
     }
-    return {} as AudioBuffer;
+    return {
+      getChannelData: () => Float32Array.from([0, 0.25, -0.8, 0.45, -1, 0.15]),
+    } as unknown as AudioBuffer;
   }
   async resume() {
     if (getE2eDubScenario() === "playback-setup-failed") {

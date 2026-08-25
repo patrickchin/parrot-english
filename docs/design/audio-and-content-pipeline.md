@@ -18,11 +18,15 @@ requesting a missing file. Do not add static-audio entries or page illustrations
 while script wording is still being compared. Artwork production prompts remain
 catalogue metadata and are not rendered as extra child-facing reading text.
 
-The Five Little Ducks dubbing activity is a separate, original media path. Its
-scene is an inline SVG and its quiet pentatonic music bed is synthesized in the
-browser. Final playback uses one native Web Audio clock to schedule the nine
-private voice clips, procedural music, and original SVG scene beats; it does not
-use a third-party player or a mixed downloadable video.
+The Five Little Ducks dubbing activity is a separate media path built around
+the authentic traditional six-stanza rhyme. Its scene is an original inline
+SVG and its quiet pentatonic music bed is synthesized in the browser. Saved
+ElevenLabs narrator MP3s provide the line examples; there is no device-speech
+fallback for those guides. Final playback uses one native Web Audio clock to
+schedule the 24 private voice clips, procedural music, and original SVG scene
+beats across the 98-second timeline. Authored cues are four seconds apart and
+each recording has a six-second maximum. The path does not use a third-party
+player or a mixed downloadable video.
 
 ## Sources of Truth
 
@@ -43,8 +47,10 @@ use a third-party player or a mixed downloadable video.
 - Story language and prompt research:
   `docs/design/young-learner-storytelling.md`
 - Five Little Ducks authored script and timing: `src/dubbing/dub-script.ts`
+- Five Little Ducks saved narrator guides: `lib/static-audio.js` and
+  `public/assets/audio/five-little-ducks-v2-guide-line-*.mp3`
 - Private replaceable voice slots: authenticated
-  `/api/dubs/five-little-ducks-v1/*` backed by the existing private R2 account
+  `/api/dubs/five-little-ducks-v2/*` backed by the existing private R2 account
   purge prefix and deletion tombstone, with no dub-specific D1 metadata
 
 Do not edit `dist` directly.
@@ -92,11 +98,20 @@ non-null narration audio ID. The resolved exact-text cache entry must match that
 ID. Prototype pages with null IDs show Audio later and never call the saved
 audio resolver.
 
-Dubbing uploads the MediaRecorder Blob directly to its authenticated fixed line
-slot. The browser can replay or replace each owner-only take, reset all nine
-slots, and assemble the complete performance with native Web Audio. The clips
-remain private, are never part of the static-audio manifest, and are deleted by
-both studio reset and account deletion.
+Dubbing creates a local object URL as soon as MediaRecorder returns its `Blob`,
+decodes those same bytes into normalized PCM peaks for the visible waveform,
+and lets the learner replay the take before advancing. In parallel, it uploads
+the Blob directly to its authenticated fixed line slot. The local preview is
+ephemeral; R2 remains the durable source of truth.
+
+The browser can replay or replace each owner-only take, reset all 24 v2 slots,
+and assemble the complete performance with native Web Audio. A normal v2 reset
+also purges every recording under only that owner's legacy
+`five-little-ducks-v1/` prefix. It retains one terminal marker plus nine tiny
+non-audio slot fences so an in-flight old-v1 upload cannot recreate a take, and
+deletes every other legacy object. Account deletion removes those retirement
+fences along with all saved clips. Only the reusable narrator guides are static
+assets.
 
 ## ElevenLabs Generation
 
@@ -133,6 +148,13 @@ defaults are:
 - Narrator: `pFZP5JQG7iQjIQuC4Bku` (Lily)
 
 These are character-directed voices, not exact protected-character clones.
+
+Five Little Ducks uses the narrator voice for 15 unique checked-in guide MP3s.
+Exact repeated lyrics resolve to the first matching asset, so those 15 files
+cover all 24 recording slots. Each entry carries a warm, rhythmic
+nursery-rhyme direction for ElevenLabs generation while its visible `text`
+remains the exact traditional lyric. A missing entry or MP3 is a build/test
+failure; the dubbing UI must not substitute browser speech.
 
 Use `--only=<audio-id>` to avoid regenerating existing assets or spending
 credits unnecessarily. Never substitute local or macOS system speech for a
@@ -175,6 +197,9 @@ URL rather than overwriting an existing object.
 - Confirm every story cover path resolves to a checked-in WebP while page media
   remains explicitly nullable.
 - Confirm dubbing clips stay private, replaceable, resettable, and covered by
-  account deletion; verify native Web Audio replay against the original SVG and
-  procedural music timeline.
+  account deletion; verify 24-slot native Web Audio replay against the original
+  SVG and procedural music timeline.
+- Confirm every dubbing guide resolves to a checked-in ElevenLabs MP3 and that
+  each completed take can be replayed locally with a decoded waveform before
+  **Next line**.
 - Run `npm run build` so Vite copies the source assets into `dist`.

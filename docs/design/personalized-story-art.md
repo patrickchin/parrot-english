@@ -344,8 +344,10 @@ Account deletion is now implemented as a separate tombstone-and-sweep path:
 1. persist an opaque `account_deletion_tombstone` outside the user-row cascade;
 2. mark all `personalized_story_art` rows for that user as `deleting`;
 3. list and purge the user R2 prefix, including orphaned objects not currently
-   referenced by D1, while protecting the ten canonical dubbing closure keys;
-4. replace those dubbing keys with one terminal marker plus nine
+   referenced by D1, legacy v1 dub recordings, and the ten non-audio v1
+   retirement fences, while protecting the 25 canonical v2 dubbing closure
+   keys;
+4. replace those dubbing keys with one terminal marker plus 24
    same-generation non-audio fences derived from the persisted deletion
    tombstone;
 5. only then allow the Better Auth user deletion cascade to remove the user and
