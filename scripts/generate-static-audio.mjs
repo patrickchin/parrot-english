@@ -363,6 +363,10 @@ async function writePrivateAudioFileAtomically(
     writeBytes = (fileHandle, bytes) => fileHandle.writeFile(bytes),
   },
 ) {
+  if (audioBytes.byteLength === 0) {
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  }
+
   const initial = await inspectPrivateMutationPath(
     filePath,
     previewDirectory,
@@ -375,6 +379,7 @@ async function writePrivateAudioFileAtomically(
   );
   let temporaryHandle;
   let temporaryStats;
+  let published = false;
 
   try {
     temporaryHandle = await open(
@@ -391,8 +396,6 @@ async function writePrivateAudioFileAtomically(
     if (!temporaryStats.isFile() || temporaryStats.size !== audioBytes.byteLength) {
       throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
     }
-    await temporaryHandle.close();
-    temporaryHandle = undefined;
 
     await beforePublish?.();
     const final = await inspectPrivateMutationPath(
@@ -414,10 +417,19 @@ async function writePrivateAudioFileAtomically(
     } else {
       await link(temporaryPath, filePath);
     }
+    published = true;
   } catch (error) {
     if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
     throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
   } finally {
+    if (!published && temporaryHandle) {
+      try {
+        await temporaryHandle.truncate(0);
+        await temporaryHandle.sync();
+      } catch {
+        // Continue with close and pathname cleanup without exposing private details.
+      }
+    }
     try {
       await temporaryHandle?.close();
     } catch {

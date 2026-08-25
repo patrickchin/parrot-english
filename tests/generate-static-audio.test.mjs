@@ -9,6 +9,7 @@ import {
   mkdir,
   readFile,
   readdir,
+  rename,
   rm,
   symlink,
   truncate,
@@ -16,6 +17,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { describe, it } from "node:test";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
@@ -128,6 +130,49 @@ describe("static audio generator", () => {
 
       assert.equal(status, "generated");
       assert.deepEqual(await readFile(outputFilePath), expectedAudio);
+    } finally {
+      await rm(projectRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("rejects empty private narration without changing existing or absent outputs", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-empty-"));
+    const previewDirectory = join(projectRoot, "content/private-story-preview");
+    const originalAudio = Buffer.from("original synthetic audio");
+    await mkdir(previewDirectory, { recursive: true });
+
+    try {
+      for (const fixture of [
+        { id: "existing", original: originalAudio },
+        { id: "absent", original: null },
+      ]) {
+        const parentDirectory = join(previewDirectory, "audio", fixture.id);
+        const outputFilePath = join(parentDirectory, "page-001.mp3");
+        if (fixture.original) {
+          await mkdir(parentDirectory, { recursive: true });
+          await writeFile(outputFilePath, fixture.original);
+        }
+
+        await assert.rejects(
+          () =>
+            generatePrivateAudio({
+              audioBytes: Buffer.alloc(0),
+              forceOverwrite: true,
+              id: `private-fixture-${fixture.id}-narration`,
+              outputFilePath,
+              previewDirectory,
+              projectRoot,
+            }),
+          /private preview directory/i,
+        );
+
+        if (fixture.original) {
+          assert.deepEqual(await readFile(outputFilePath), fixture.original);
+          assert.deepEqual(await readdir(parentDirectory), ["page-001.mp3"]);
+        } else {
+          await assert.rejects(() => lstat(parentDirectory), { code: "ENOENT" });
+        }
+      }
     } finally {
       await rm(projectRoot, { force: true, recursive: true });
     }
@@ -366,6 +411,67 @@ describe("static audio generator", () => {
     }
   });
 
+  it("scrubs an unpublished temporary file when its parent is moved", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-moved-parent-"));
+    const previewDirectory = join(projectRoot, "content/private-story-preview");
+    const replacementAudio = Buffer.from("private synthetic replacement audio");
+    const originalAudio = Buffer.from("original synthetic audio");
+    await mkdir(previewDirectory, { recursive: true });
+
+    try {
+      for (const fixture of [
+        { id: "existing", original: originalAudio },
+        { id: "absent", original: null },
+      ]) {
+        const parentDirectory = join(previewDirectory, "audio", fixture.id);
+        const movedDirectory = join(projectRoot, `moved-${fixture.id}`);
+        const outputFilePath = join(parentDirectory, "page-001.mp3");
+        await mkdir(parentDirectory, { recursive: true });
+        if (fixture.original) await writeFile(outputFilePath, fixture.original);
+
+        await assert.rejects(
+          () =>
+            generatePrivateAudio({
+              audioBytes: replacementAudio,
+              forceOverwrite: true,
+              id: `private-fixture-${fixture.id}-narration`,
+              outputFilePath,
+              previewDirectory,
+              privateWriteOptions: {
+                async beforePublish() {
+                  await rename(parentDirectory, movedDirectory);
+                  await mkdir(parentDirectory);
+                },
+              },
+              projectRoot,
+            }),
+          /private preview directory/i,
+        );
+
+        await assert.rejects(() => readFile(outputFilePath), { code: "ENOENT" });
+        assert.deepEqual(await readdir(parentDirectory), []);
+        const movedEntries = await readdir(movedDirectory);
+        const temporaryEntries = movedEntries.filter((entry) => entry.endsWith(".tmp"));
+        assert.equal(temporaryEntries.length, 1);
+        for (const entry of temporaryEntries) {
+          const stats = await lstat(join(movedDirectory, entry));
+          assert.equal(stats.isFile(), true);
+          assert.equal(stats.size, 0);
+        }
+        if (fixture.original) {
+          assert.deepEqual(
+            await readFile(join(movedDirectory, "page-001.mp3")),
+            fixture.original,
+          );
+        } else {
+          assert.deepEqual(movedEntries, temporaryEntries);
+        }
+      }
+    } finally {
+      await rm(projectRoot, { force: true, recursive: true });
+    }
+  });
+
   it("refuses a short temporary write even when the injected writer resolves", async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-short-write-"));
     const previewDirectory = join(projectRoot, "content/private-story-preview");
@@ -485,9 +591,11 @@ describe("static audio generator", () => {
   });
 
   it("preserves the public generator's direct write and skip behavior", async () => {
-    const outputDirectory = await mkdtemp(join(tmpdir(), "parrot-public-audio-"));
+    const outputDirectory = await mkdtemp(
+      join(dirname(fileURLToPath(import.meta.url)), ".parrot-public-audio-"),
+    );
     const outputFilePath = join(outputDirectory, "synthetic-public.mp3");
-    const publicDirectory = new URL("../public/", import.meta.url).pathname;
+    const publicDirectory = fileURLToPath(new URL("../public/", import.meta.url));
     const expectedAudio = Buffer.from("synthetic public audio");
     const line = {
       speaker: "narrator",

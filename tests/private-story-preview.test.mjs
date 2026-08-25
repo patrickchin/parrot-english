@@ -10,6 +10,7 @@ import {
   open as openFile,
   readdir,
   readFile,
+  realpath,
   rename,
   rm,
   stat,
@@ -1221,6 +1222,44 @@ describe("private story preview preparation", () => {
     assert.deepEqual(await readdir(fixture.previewDirectory), []);
     assert.deepEqual(await readFile(source), sourceBytes);
     assert.deepEqual(await readFile(alias), sourceBytes);
+  });
+
+  it("rejects a source symlink retargeted while it is being read", async () => {
+    const fixture = await createFixtureRoot();
+    const sourceOne = path.join(fixture.projectRoot, "source-one.txt");
+    const sourceTwo = path.join(fixture.projectRoot, "source-two.txt");
+    const alias = path.join(fixture.projectRoot, "source-alias.txt");
+    const sourceOneBytes = Buffer.from("# Source One\n\nFirst synthetic body.\n");
+    const sourceTwoBytes = Buffer.from("# Source Two\n\nSecond synthetic body.\n");
+    await writeFile(sourceOne, sourceOneBytes);
+    await writeFile(sourceTwo, sourceTwoBytes);
+    await symlink(sourceOne, alias);
+    let aliasRealpathCalls = 0;
+    let swapped = false;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async realpath(file) {
+            if (file === alias && ++aliasRealpathCalls === 2) {
+              swapped = true;
+              await unlink(alias);
+              await symlink(sourceTwo, alias);
+            }
+            return realpath(file);
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [alias, sourceTwo],
+      }),
+      { message: "Expected exactly two readable source files" },
+    );
+
+    assert.equal(swapped, true);
+    assert.deepEqual(await readdir(fixture.previewDirectory), []);
+    assert.deepEqual(await readFile(sourceOne), sourceOneBytes);
+    assert.deepEqual(await readFile(sourceTwo), sourceTwoBytes);
   });
 
   it("rejects a hardlink alias to the same preparation source", async () => {

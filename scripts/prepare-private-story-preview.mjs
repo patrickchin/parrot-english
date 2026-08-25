@@ -34,6 +34,8 @@ const TRANSACTION_LOCK_AMBIGUOUS =
   "Private story transaction lock is ambiguous";
 const TRANSACTION_LOCKED =
   "Private story preparation is already in progress";
+const SOURCE_DISTINCT_ERROR =
+  "Unable to verify that private story source files are distinct";
 const activeTransactionLocks = new Set();
 
 const DEFAULT_FILE_SYSTEM = {
@@ -59,7 +61,20 @@ function requireSourceByteLimit(byteLength) {
   }
 }
 
+function hasSafeSourceIdentity(stats) {
+  return (
+    Number.isSafeInteger(stats.dev) &&
+    stats.dev >= 0 &&
+    Number.isSafeInteger(stats.ino) &&
+    stats.ino > 0
+  );
+}
+
 async function requireReadable(file, fileSystem) {
+  let fileHandle;
+  let failure;
+  let result;
+
   try {
     const [sourceStats, realFilePath] = await Promise.all([
       fileSystem.stat(file),
@@ -69,13 +84,53 @@ async function requireReadable(file, fileSystem) {
       throw new Error("Expected exactly two readable source files");
     }
     requireSourceByteLimit(sourceStats.size);
-    const bytes = await fileSystem.readFile(file);
+    if (!hasSafeSourceIdentity(sourceStats)) {
+      throw new Error(SOURCE_DISTINCT_ERROR);
+    }
+
+    fileHandle = await fileSystem.open(
+      realFilePath,
+      constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0),
+    );
+    const before = await fileHandle.stat();
+    if (!hasSafeSourceIdentity(before)) {
+      throw new Error(SOURCE_DISTINCT_ERROR);
+    }
+    if (!before.isFile() || !sameFileSnapshot(sourceStats, before)) {
+      throw new Error("Expected exactly two readable source files");
+    }
+    const bytes = await fileHandle.readFile();
     requireSourceByteLimit(bytes.byteLength);
-    return { bytes, realFilePath, sourceStats };
+    const after = await fileHandle.stat();
+    const [finalSourceStats, finalRealFilePath] = await Promise.all([
+      fileSystem.stat(file),
+      fileSystem.realpath(file),
+    ]);
+    if (
+      finalRealFilePath !== realFilePath ||
+      !sameFileSnapshot(before, after) ||
+      !sameFileSnapshot(after, finalSourceStats) ||
+      bytes.byteLength !== after.size
+    ) {
+      throw new Error("Expected exactly two readable source files");
+    }
+    result = { bytes, realFilePath, sourceStats: after };
   } catch (error) {
-    if (error?.message?.includes("source must be at most")) throw error;
-    throw new Error("Expected exactly two readable source files");
+    failure =
+      error?.message?.includes("source must be at most") ||
+      error?.message === SOURCE_DISTINCT_ERROR
+        ? error
+        : new Error("Expected exactly two readable source files");
   }
+
+  try {
+    await fileHandle?.close();
+  } catch {
+    failure ??= new Error("Expected exactly two readable source files");
+  }
+
+  if (failure) throw failure;
+  return result;
 }
 
 async function pathExists(filePath, fileSystem) {
@@ -427,11 +482,11 @@ export async function preparePrivateStoryPreview({
   );
   if (
     sources.some(({ sourceStats }) =>
-      !Number.isSafeInteger(sourceStats.ino) || sourceStats.ino <= 0
+      !hasSafeSourceIdentity(sourceStats)
     )
   ) {
     throw new Error(
-      "Unable to verify that private story source files are distinct",
+      SOURCE_DISTINCT_ERROR,
     );
   }
   if (
