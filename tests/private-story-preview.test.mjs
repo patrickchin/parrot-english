@@ -1,4 +1,4 @@
-/* global Buffer */
+/* global Buffer, process */
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -13,6 +13,7 @@ import {
   stat,
   symlink,
   truncate,
+  unlink,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -1152,6 +1153,118 @@ describe("private story preview preparation", () => {
       activeBundle["manifest.json"],
       Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`),
     );
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("keeps a committed bundle when lock release fails and recovers the residual lock next time", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "committed-lock-release-sources",
+    );
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const lockPath = path.join(transactionDirectory, "lock");
+
+    const manifest = await preparePrivateStoryPreview({
+      fileSystem: {
+        async unlink(target) {
+          if (target === lockPath) {
+            throw new Error("Synthetic final lock release failure");
+          }
+          return unlink(target);
+        },
+      },
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+
+    const committedBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(committedBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(committedBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(
+      committedBundle["manifest.json"],
+      Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`),
+    );
+    assert.deepEqual(await readFile(lockPath, "utf8"), `${process.pid}\n`);
+
+    await preparePrivateStoryPreview({
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("preserves a pre-commit error when lock release also fails and recovers next time", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "failed-commit-lock-release-sources",
+    );
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const lockPath = path.join(transactionDirectory, "lock");
+    let commitFailureInjected = false;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async rename(source, destination) {
+            if (
+              !commitFailureInjected &&
+              destination === fixture.previewDirectory &&
+              path.basename(source) === "stage"
+            ) {
+              commitFailureInjected = true;
+              throw new Error("Synthetic commit rename failure");
+            }
+            return rename(source, destination);
+          },
+          async unlink(target) {
+            if (target === lockPath) {
+              throw new Error("Synthetic final lock release failure");
+            }
+            return unlink(target);
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      (error) => {
+        assert.equal(error.message, "Synthetic commit rename failure");
+        return true;
+      },
+    );
+
+    assert.equal(commitFailureInjected, true);
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(await readFile(lockPath, "utf8"), `${process.pid}\n`);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+
+    await preparePrivateStoryPreview({
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
     assert.deepEqual(await readdir(transactionDirectory), []);
     assert.deepEqual(
       await Promise.all(sourceFiles.map((file) => readFile(file))),

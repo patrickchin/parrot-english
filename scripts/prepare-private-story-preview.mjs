@@ -34,6 +34,7 @@ const TRANSACTION_LOCK_AMBIGUOUS =
   "Private story transaction lock is ambiguous";
 const TRANSACTION_LOCKED =
   "Private story preparation is already in progress";
+const activeTransactionLocks = new Set();
 
 const DEFAULT_FILE_SYSTEM = {
   lstat,
@@ -209,23 +210,33 @@ async function createLockFile(lockPath, fileSystem) {
 }
 
 async function acquireTransactionLock(lockPath, recoveryPath, fileSystem) {
+  if (activeTransactionLocks.has(lockPath)) {
+    throw new Error(TRANSACTION_LOCKED);
+  }
   if (await pathExists(recoveryPath, fileSystem)) {
     throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
   }
   try {
     await createLockFile(lockPath, fileSystem);
+    activeTransactionLocks.add(lockPath);
     return;
   } catch (error) {
     if (error?.code !== "EEXIST") throw error;
   }
 
   const owner = await readLockOwner(lockPath, fileSystem);
-  try {
-    process.kill(owner.pid, 0);
-    throw new Error(TRANSACTION_LOCKED);
-  } catch (error) {
-    if (error?.message === TRANSACTION_LOCKED) throw error;
-    if (error?.code !== "ESRCH") throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
+  if (owner.pid === process.pid) {
+    if (activeTransactionLocks.has(lockPath)) {
+      throw new Error(TRANSACTION_LOCKED);
+    }
+  } else {
+    try {
+      process.kill(owner.pid, 0);
+      throw new Error(TRANSACTION_LOCKED);
+    } catch (error) {
+      if (error?.message === TRANSACTION_LOCKED) throw error;
+      if (error?.code !== "ESRCH") throw new Error(TRANSACTION_LOCK_AMBIGUOUS);
+    }
   }
 
   if (await pathExists(recoveryPath, fileSystem)) {
@@ -261,6 +272,18 @@ async function acquireTransactionLock(lockPath, recoveryPath, fileSystem) {
     }
   } finally {
     await fileSystem.rmdir(recoveryPath);
+  }
+  activeTransactionLocks.add(lockPath);
+}
+
+async function releaseTransactionLock(lockPath, fileSystem) {
+  try {
+    await fileSystem.unlink(lockPath);
+    return null;
+  } catch (error) {
+    return error;
+  } finally {
+    activeTransactionLocks.delete(lockPath);
   }
 }
 
@@ -399,6 +422,8 @@ export async function preparePrivateStoryPreview({
   const recoveryPath = path.join(transactionDirectory, "recovery");
   const stageDirectory = path.join(transactionDirectory, "stage");
   await acquireTransactionLock(lockPath, recoveryPath, operations);
+  let committed = false;
+  let operationError;
   try {
     await recoverTransaction({
       backupDirectory,
@@ -437,6 +462,7 @@ export async function preparePrivateStoryPreview({
       }
       await operations.rename(stageDirectory, directory);
       stageExists = false;
+      committed = true;
     } catch (error) {
       if (backupExists) {
         try {
@@ -460,10 +486,14 @@ export async function preparePrivateStoryPreview({
       await operations.rm(backupDirectory, { force: true, recursive: true })
         .catch(() => undefined);
     }
-    return manifest;
-  } finally {
-    await operations.unlink(lockPath);
+  } catch (error) {
+    operationError = error;
   }
+
+  const releaseError = await releaseTransactionLock(lockPath, operations);
+  if (operationError) throw operationError;
+  if (releaseError && !committed) throw releaseError;
+  return manifest;
 }
 
 function parseArguments(args, cwd) {
