@@ -19,10 +19,12 @@ function lineIdFromUrl(url) {
 
 function createDeferred() {
   let resolve;
-  const promise = new Promise((settle) => {
+  let reject;
+  const promise = new Promise((settle, fail) => {
     resolve = settle;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, reject, resolve };
 }
 
 function createFailingFetch(failingLineId, responseFactory) {
@@ -82,6 +84,7 @@ function createAudioHarness({
   decodeFailureLineId,
   decodeNeverLineId,
   oscillatorStopFailure,
+  resumeDeferred,
 } = {}) {
   const contexts = [];
 
@@ -185,6 +188,7 @@ function createAudioHarness({
 
     async resume() {
       this.resumeCalls += 1;
+      await resumeDeferred?.promise;
     }
   }
 
@@ -656,6 +660,60 @@ describe("duck dub playback", () => {
     assert.equal(audio.contexts[0].sources.length, 0);
     assert.equal(audio.contexts[0].oscillators.length, 0);
     assert.equal(raf.callbacks.size, 0);
+  });
+
+  it("rejects promptly when abort interrupts stalled resume and close", async () => {
+    const closeDeferred = createDeferred();
+    const resumeDeferred = createDeferred();
+    const audio = createAudioHarness({ closeDeferred, resumeDeferred });
+    const raf = createRaf();
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const addEventListener = signal.addEventListener.bind(signal);
+    const removeEventListener = signal.removeEventListener.bind(signal);
+    let externalAdds = 0;
+    let externalRemoves = 0;
+    signal.addEventListener = (type, listener, options) => {
+      if (type === "abort") externalAdds += 1;
+      return addEventListener(type, listener, options);
+    };
+    signal.removeEventListener = (type, listener, options) => {
+      if (type === "abort") externalRemoves += 1;
+      return removeEventListener(type, listener, options);
+    };
+    let rejection;
+
+    const starting = startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal,
+    });
+    void starting.catch((error) => {
+      rejection = error;
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].resumeCalls, 1);
+
+    controller.abort();
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    assert.equal(rejection?.name, "AbortError");
+    assert.equal(externalAdds, 1);
+    assert.equal(externalRemoves, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.ok(audio.fetchCalls.every(([, init]) => init.signal.aborted));
+    assert.equal(audio.contexts[0].sources.length, 0);
+    assert.equal(audio.contexts[0].gains.length, 0);
+    assert.equal(audio.contexts[0].oscillators.length, 0);
+    assert.equal(raf.callbacks.size, 0);
+
+    resumeDeferred.reject(new Error("late resume failure"));
+    closeDeferred.resolve();
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
   });
 
   it("cleans up already-started audio when setup fails", async () => {

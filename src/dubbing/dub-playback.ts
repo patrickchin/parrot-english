@@ -229,7 +229,7 @@ export async function startDubPlayback({
     ]);
 
     if (signal?.aborted) throw createAbortError();
-    await context.resume();
+    await Promise.race([context.resume(), startupAbort]);
     if (signal?.aborted) throw createAbortError();
 
     const master = context.createGain();
@@ -274,7 +274,9 @@ export async function startDubPlayback({
       },
     };
   } catch (error) {
-    await stopPlayback();
+    const cleanup = stopPlayback();
+    if (signal?.aborted) throw createAbortError();
+    await Promise.race([cleanup, startupAbort]);
     if (signal?.aborted) throw createAbortError();
     throw error;
   }
