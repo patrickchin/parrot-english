@@ -9,7 +9,7 @@ import {
   isTalkToPeppaPromptStyle,
   type TalkToPeppaPromptStyle,
 } from "../lib/talk-to-peppa-prompt-style.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 export const LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS = 10 * 60 * 1_000;
 
@@ -22,7 +22,7 @@ export interface LiveKitTokenEnv {
 type TokenInput = {
   env: LiveKitTokenEnv;
   conversation: { id: string; roomName: string; scenarioKey: string };
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   initialState?: Record<string, unknown>;
   now?: Date;
   promptStyle?: TalkToPeppaPromptStyle;
