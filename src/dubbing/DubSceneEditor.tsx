@@ -26,9 +26,13 @@ export type DubSceneEditorProps = {
   onToggleScenePlayback(): void;
   operation: DubOperation;
   pendingTake: Blob | null;
+  playbackButtonRef?: RefObject<HTMLButtonElement | null>;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
+  saveButtonRef?: RefObject<HTMLButtonElement | null>;
   saveRecovery: "record" | "save" | null;
+  sceneHeadingRef?: RefObject<HTMLHeadingElement | null>;
   saved: Readonly<Record<string, string>>;
+  lineHeadingRef?: RefObject<HTMLHeadingElement | null>;
   visualLine: DubLine;
 };
 
@@ -61,9 +65,13 @@ export function DubSceneEditor({
   onToggleScenePlayback,
   operation,
   pendingTake,
+  playbackButtonRef,
   recordButtonRef,
+  saveButtonRef,
   saveRecovery,
+  sceneHeadingRef,
   saved,
+  lineHeadingRef,
   visualLine,
 }: DubSceneEditorProps) {
   const sceneLines = DUB_VERSES[activeSceneIndex] ?? DUB_VERSES[0];
@@ -97,6 +105,7 @@ export function DubSceneEditor({
             aria-label={playbackLabel}
             disabled={operation === "playback-loading" || navigationLocked}
             onClick={onToggleScenePlayback}
+            ref={playbackButtonRef}
             size="large"
             variant="navy"
           >
@@ -116,7 +125,7 @@ export function DubSceneEditor({
         <aside className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
           <div>
             <p className="m-0 text-sm font-black uppercase tracking-[0.16em] text-brand-blue">Choose a line</p>
-            <h1 className="m-0 text-2xl text-brand-ink">Record this scene</h1>
+            <h1 className="m-0 text-2xl text-brand-ink" ref={sceneHeadingRef} tabIndex={-1}>Record this scene</h1>
           </div>
           <div aria-label="Scene lines" className="grid grid-cols-2 gap-2">
             {sceneLines.map((line, index) => {
@@ -139,7 +148,7 @@ export function DubSceneEditor({
           </div>
 
           <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3">
-            <p className="m-0 text-xl font-black leading-snug text-brand-ink">{activeLine.text}</p>
+            <h2 className="m-0 text-xl font-black leading-snug text-brand-ink" ref={lineHeadingRef} tabIndex={-1}>{activeLine.text}</h2>
             <TextButton className="min-h-12 justify-self-start gap-2" disabled={mediaLocked} onClick={onHearGuide}>
               <Volume2 aria-hidden="true" /> Hear example
             </TextButton>
@@ -156,7 +165,7 @@ export function DubSceneEditor({
               {recording ? "Stop recording" : recordAgain ? "Record again" : "Record line"}
             </ActionButton>
             {saveRecovery === "save" ? (
-              <TextButton className="min-h-12 justify-self-start" disabled={locked} onClick={onRetrySave}>Save again</TextButton>
+              <TextButton className="min-h-12 justify-self-start" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save again</TextButton>
             ) : null}
           </section>
 

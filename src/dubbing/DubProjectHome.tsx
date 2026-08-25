@@ -1,4 +1,5 @@
 import { Play, Square } from "lucide-react";
+import type { RefObject } from "react";
 import { ActionButton, TextButton } from "../shared/ui";
 import { DuckScene } from "./DuckScene";
 import {
@@ -19,6 +20,7 @@ export type DubProjectHomeProps = {
   onOpenScene(sceneIndex: number): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
+  playbackButtonRef?: RefObject<HTMLButtonElement | null>;
   saved: Readonly<Record<string, string>>;
   visualLine?: DubLine;
 };
@@ -46,6 +48,7 @@ export function DubProjectHome({
   onOpenScene,
   onTogglePlayback,
   playback,
+  playbackButtonRef,
   saved,
   visualLine = activeLine,
 }: DubProjectHomeProps) {
@@ -90,6 +93,7 @@ export function DubProjectHome({
             aria-label={playbackLabel}
             disabled={playback === "loading" || locked}
             onClick={onTogglePlayback}
+            ref={playbackButtonRef}
             size="large"
             variant="navy"
           >

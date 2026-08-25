@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState, type RefObject } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { isAbortError, playAudioLine } from "../media/audio-playback";
@@ -232,7 +232,20 @@ export function DuckDub() {
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
   const takePreviewRef = useRef<TakePreview | null>(null);
+  const fullPlaybackButtonRef = useRef<HTMLButtonElement>(null);
+  const sceneHeadingRef = useRef<HTMLHeadingElement>(null);
+  const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
+  const lineHeadingRef = useRef<HTMLHeadingElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+
+  function focusAfterRender(ref: RefObject<HTMLElement | null>, generation: number) {
+    requestAnimationFrame(() => {
+      if (mountedRef.current && generation === mediaGenerationRef.current) {
+        ref.current?.focus();
+      }
+    });
+  }
 
   const clearTakePreview = useCallback(() => {
     takeControllerRef.current?.abort();
@@ -332,11 +345,7 @@ export function DuckDub() {
       pendingBlobRef.current = null;
       pendingLineIdRef.current = null;
       dispatch({ type: "SAVE_SUCCEEDED", lineId, recordedAt: result.recordedAt });
-      requestAnimationFrame(() => {
-        if (mountedRef.current && generation === mediaGenerationRef.current) {
-          recordButtonRef.current?.focus();
-        }
-      });
+      focusAfterRender(recordButtonRef, generation);
     } catch (error) {
       if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
       const rejected = error instanceof DubTakeRejectedError;
@@ -350,6 +359,7 @@ export function DuckDub() {
         message: error instanceof Error ? error.message : "Your take was not saved. Try again.",
         recovery: rejected ? "record" : "save",
       });
+      focusAfterRender(rejected ? recordButtonRef : saveButtonRef, generation);
     } finally {
       if (uploadControllerRef.current === controller) uploadControllerRef.current = null;
     }
@@ -380,6 +390,7 @@ export function DuckDub() {
       pendingLineIdRef.current = null;
       dispatch({ type: "OPERATION_FINISHED" });
       dispatch({ type: "SET_ERROR", message: "The recording did not finish. Try recording the line again." });
+      focusAfterRender(recordButtonRef, generation);
     }
   }
 
@@ -408,7 +419,7 @@ export function DuckDub() {
       pendingLineIdRef.current = null;
       dispatch({ type: "OPERATION_FINISHED" });
       dispatch({ type: "SET_ERROR", message: microphoneMessage(error) });
-      requestAnimationFrame(() => recordButtonRef.current?.focus());
+      focusAfterRender(recordButtonRef, generation);
     }
   }
 
@@ -507,6 +518,10 @@ export function DuckDub() {
           playbackRef.current = null;
           playbackControllerRef.current = null;
           dispatch({ type: "OPERATION_FINISHED" });
+          focusAfterRender(
+            scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
+            generation,
+          );
         },
         onLineFallback(lineId) {
           dispatch({ type: "MARK_NEEDS_RETAKE", lineId });
@@ -547,14 +562,16 @@ export function DuckDub() {
 
   function handleOpenScene(sceneIndex: number) {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    cancelMedia(true);
+    const generation = cancelMedia(true);
     dispatch({ type: "OPEN_SCENE", sceneIndex });
+    focusAfterRender(sceneHeadingRef, generation);
   }
 
   function handleSelectLine(lineId: string) {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    cancelMedia(true);
+    const generation = cancelMedia(true);
     dispatch({ type: "SELECT_LINE", lineId });
+    focusAfterRender(lineHeadingRef, generation);
   }
 
   function handleBack() {
@@ -702,6 +719,7 @@ export function DuckDub() {
               ? "loading"
               : "idle"
           : "idle"}
+        playbackButtonRef={fullPlaybackButtonRef}
         saved={state.saved}
         visualLine={visualLine}
       />
@@ -723,9 +741,13 @@ export function DuckDub() {
         onToggleScenePlayback={() => void startPlayback("scene")}
         operation={state.operation}
         pendingTake={takePreview?.blob ?? null}
+        playbackButtonRef={scenePlaybackButtonRef}
         recordButtonRef={recordButtonRef}
+        saveButtonRef={saveButtonRef}
         saveRecovery={state.saveRecovery}
+        sceneHeadingRef={sceneHeadingRef}
         saved={state.saved}
+        lineHeadingRef={lineHeadingRef}
         visualLine={visualLine}
       />
     );

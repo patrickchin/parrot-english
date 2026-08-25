@@ -516,3 +516,197 @@ test("reduced motion disables playing duck animation and playback cleanup stays 
   await page.getByRole("button", { name: "Stop this scene" }).click();
   await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
 });
+
+async function boundingBoxOrThrow(locator: ReturnType<Page["locator"]>) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("Expected a visible element with a bounding box.");
+  return box;
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+}
+
+async function expectLearnerTargetsAtLeast48px(page: Page) {
+  const targets = page.locator("main button:visible, main summary:visible");
+  const sizes = await targets.evaluateAll((elements) => elements.map((element) => {
+    const { height, width } = element.getBoundingClientRect();
+    return { height, name: element.getAttribute("aria-label") ?? element.textContent?.trim(), width };
+  }));
+  expect(sizes).not.toEqual([]);
+  for (const target of sizes) {
+    expect(target.width, `${target.name} is narrower than 48px`).toBeGreaterThanOrEqual(48);
+    expect(target.height, `${target.name} is shorter than 48px`).toBeGreaterThanOrEqual(48);
+  }
+}
+
+test("the desktop project is a wide video workspace with a six-scene dock", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+
+  const workspace = page.locator("main > section").first();
+  const player = page.getByRole("region", { name: "Full video player" });
+  const dock = page.getByRole("navigation", { name: "Scenes" });
+  const workspaceBox = await boundingBoxOrThrow(workspace);
+  const playerBox = await boundingBoxOrThrow(player);
+  const dockBox = await boundingBoxOrThrow(dock);
+
+  expect(workspaceBox.width).toBeGreaterThanOrEqual(1440 * 0.9);
+  expect(playerBox.width / playerBox.height).toBeGreaterThan(1.7);
+  expect(playerBox.width / playerBox.height).toBeLessThan(1.8);
+  expect(playerBox.width).toBeGreaterThanOrEqual(workspaceBox.width * 0.9);
+  expect(dockBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  await expect(dock.getByRole("button")).toHaveCount(6);
+  for (const scene of await dock.getByRole("button").all()) {
+    const sceneBox = await boundingBoxOrThrow(scene);
+    expect(sceneBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  }
+});
+
+for (const viewport of [
+  { height: 568, width: 280 },
+  { height: 844, width: 390 },
+]) {
+  test(`phone project and scene controls remain reachable at ${viewport.width} by ${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+    await confirmDub(page, "Continue dubbing");
+
+    const dock = page.getByRole("navigation", { name: "Scenes" });
+    const sceneSix = dock.getByRole("button", { name: "Scene 6, draft" });
+    await expectNoHorizontalOverflow(page);
+    await expect.poll(() => dock.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    await sceneSix.scrollIntoViewIfNeeded();
+    const [dockBox, sceneBox] = await Promise.all([
+      boundingBoxOrThrow(dock),
+      boundingBoxOrThrow(sceneSix),
+    ]);
+    expect(sceneBox.x).toBeGreaterThanOrEqual(dockBox.x);
+    expect(sceneBox.x + sceneBox.width).toBeLessThanOrEqual(dockBox.x + dockBox.width + 1);
+    await expectLearnerTargetsAtLeast48px(page);
+
+    await sceneSix.focus();
+    await page.keyboard.press("Enter");
+    const sceneHeading = page.getByRole("heading", { name: "Record this scene" });
+    await expect(sceneHeading).toBeFocused();
+    await expect(page.getByText("Scene 6 of 6", { exact: true })).toHaveAttribute("aria-current", "page");
+
+    const record = page.getByRole("button", { name: "Record line" });
+    await record.scrollIntoViewIfNeeded();
+    await expect(record).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+    await expectLearnerTargetsAtLeast48px(page);
+  });
+}
+
+test("keyboard navigation exposes current selections and focuses scene and line headings", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  const sceneTwo = page.getByRole("button", { name: "Scene 2, draft" });
+  await expect(page.getByRole("button", { name: "Scene 1, draft" })).toHaveAttribute("aria-current", "page");
+
+  await sceneTwo.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Record this scene" })).toBeFocused();
+  await expect(page.getByText("Scene 2 of 6", { exact: true })).toHaveAttribute("aria-current", "page");
+
+  const lineTwo = page.getByRole("button", { name: "Line 2, generated" });
+  await lineTwo.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Line 2, selected, generated" })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByRole("heading", { name: "Over the hill and far away." })).toBeFocused();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveCount(1);
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Scene 2, line 2 selected. Generated.",
+  );
+});
+
+test("save recovery and completed scoped playback restore focus to their fixed action", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("button", { name: "Save again" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Save again" }).click();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Saving your take…");
+  await releaseDubOperation(page, "upload");
+  await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await page.getByRole("button", { name: "Hear example" }).focus();
+  await expect(page.getByRole("button", { name: "Play this scene" })).toBeFocused({ timeout: 8_000 });
+});
+
+test("completed full playback restores focus to the full-video play action", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await page.getByLabel("Grown-up options").focus();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused({ timeout: 8_000 });
+});
+
+test("a stale microphone-error animation-frame callback cannot steal focus", async ({ page }) => {
+  await page.addInitScript(() => {
+    const callbacks: FrameRequestCallback[] = [];
+    Object.defineProperty(window, "requestAnimationFrame", {
+      configurable: true,
+      value: (callback: FrameRequestCallback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      },
+    });
+    Object.defineProperty(window, "__flushAnimationFrames", {
+      configurable: true,
+      value: () => callbacks.splice(0).forEach((callback) => callback(performance.now())),
+    });
+  });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=denied");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "The microphone is off." })).toBeVisible();
+
+  const hearExample = page.getByRole("button", { name: "Hear example" });
+  await hearExample.click();
+  await page.evaluate(() => {
+    (window as typeof window & { __flushAnimationFrames(): void }).__flushAnimationFrames();
+  });
+  await expect(hearExample).toBeFocused();
+});
+
+test("short landscape keeps project and scene actions clear of the route header", async ({ page }) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+
+  const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
+  const player = page.getByRole("region", { name: "Full video player" });
+  const dock = page.getByRole("navigation", { name: "Scenes" });
+  const [headerBox, playerBox, dockBox] = await Promise.all([
+    boundingBoxOrThrow(routeHeader),
+    boundingBoxOrThrow(player),
+    boundingBoxOrThrow(dock),
+  ]);
+  expect(playerBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+  expect(dockBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: "Scene 1, in progress" }).click();
+  const lineHeading = page.getByRole("heading", { name: "But only four little ducks came back." });
+  const record = page.getByRole("button", { name: "Record line" });
+  await record.scrollIntoViewIfNeeded();
+  const [sceneHeaderBox, lineBox, recordBox] = await Promise.all([
+    boundingBoxOrThrow(routeHeader),
+    boundingBoxOrThrow(lineHeading),
+    boundingBoxOrThrow(record),
+  ]);
+  expect(lineBox.y).toBeGreaterThanOrEqual(sceneHeaderBox.y + sceneHeaderBox.height);
+  expect(recordBox.y).toBeGreaterThanOrEqual(lineBox.y + lineBox.height);
+  await expect(record).toBeInViewport();
+  await expectNoHorizontalOverflow(page);
+});

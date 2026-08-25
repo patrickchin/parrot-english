@@ -236,10 +236,14 @@ function textControlClassName(className?: string) {
 export function TextButton({
   children,
   className,
+  ref,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  children: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
+}) {
   return (
-    <button className={textControlClassName(className)} {...props}>
+    <button className={textControlClassName(className)} ref={ref} {...props}>
       {children}
     </button>
   );
