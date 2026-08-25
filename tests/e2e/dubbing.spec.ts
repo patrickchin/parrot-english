@@ -109,9 +109,29 @@ test("keeps the same take available when its first upload fails", async ({ page 
   await page.getByRole("button", { name: "Record line 1" }).click();
   await page.getByRole("button", { name: "Stop recording line 1" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record again" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save again" }).click();
   await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
+});
+
+test("asks for one new take when the upload rejects the recording", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
+  await enterStudio(page, "Start dubbing");
+
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "too long" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save again" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Record again" }).click();
+  await page.getByRole("button", { name: "Record line 1" }).click();
+  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
+  await expect.poll(() => dubStoreSnapshot(page)).toEqual({
+    uploads: [
+      "/api/dubs/five-little-ducks-v1/lines/line-1",
+      "/api/dubs/five-little-ducks-v1/lines/line-1",
+    ],
+  });
 });
 
 test("replaces selected middle line 5 and keeps the complete dub after reload", async ({ page }) => {

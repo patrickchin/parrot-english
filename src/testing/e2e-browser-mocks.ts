@@ -16,6 +16,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "reset-delete-failed",
   "reset-interrupted",
   "upload-failed",
+  "upload-rejected",
 ]);
 const E2E_DUB_LINE_IDS = [
   "line-1",
@@ -519,6 +520,13 @@ function createE2eDubStore(scenario: string | null) {
       const consent = request.headers.get("X-Parrot-Guardian-Consent-Version");
       if (request.headers.get("Content-Type") !== "audio/webm" || consent !== "guardian-voice-r2-v1") {
         return new Response(null, { status: 400 });
+      }
+      if (
+        scenario === "upload-rejected" &&
+        sessionStorage.getItem(failureKey) !== "used"
+      ) {
+        sessionStorage.setItem(failureKey, "used");
+        return new Response(null, { status: 413 });
       }
       if (
         scenario === "upload-failed" &&

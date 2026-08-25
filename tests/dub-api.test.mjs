@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   deleteDub,
   DubResetInProgressError,
+  DubTakeRejectedError,
   getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
@@ -195,7 +196,12 @@ describe("duck dub browser API", () => {
       saveDubLine("line-1", new Blob(["long take"]), {
         fetch: async () => new Response(null, { status: 413 }),
       }),
-      /That recording is too long\. Try the line again\./,
+      (error) => {
+        assert.ok(error instanceof DubTakeRejectedError);
+        assert.equal(error.code, "dub_take_rejected");
+        assert.equal(error.message, "That recording is too long. Try the line again.");
+        return true;
+      },
     );
   });
 });

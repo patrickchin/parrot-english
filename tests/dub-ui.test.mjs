@@ -136,7 +136,16 @@ describe("duck dubbing presentation", () => {
     });
     assert.match(failed, /role="alert"/);
     assert.match(failed, />Save again<\/button>/);
-    assert.match(failed, />Record again<\/button>/);
+    assert.doesNotMatch(failed, />Record again<\/button>/);
+
+    const rejected = renderDuckDub({
+      error: "That recording is too long. Try the line again.",
+      phase: "save-error",
+      saveRecovery: "record",
+    });
+    assert.match(rejected, /role="alert"/);
+    assert.match(rejected, />Record again<\/button>/);
+    assert.doesNotMatch(rejected, />Save again<\/button>/);
 
     const review = renderDuckDub({ phase: "line-review" });
     assert.match(review, />Next line<\/button>/);
@@ -230,7 +239,17 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, error: "Not saved.", phase: "save-error" },
         {},
-        "Line 3 of 9. Choose Save again or Record again.",
+        "Line 3 of 9. Choose Save again.",
+      ],
+      [
+        {
+          currentLineIndex: 2,
+          error: "Too long.",
+          phase: "save-error",
+          saveRecovery: "record",
+        },
+        {},
+        "Line 3 of 9. Choose Record again.",
       ],
       [
         { currentLineIndex: 2, phase: "line-review" },

@@ -100,8 +100,19 @@ describe("five little ducks dub domain", () => {
     state = reduceDubState(state, { type: "MIC_OPENING" });
     state = reduceDubState(state, { type: "MIC_STARTED" });
     state = reduceDubState(state, { type: "SAVE_STARTED" });
-    state = reduceDubState(state, { type: "SAVE_FAILED", message: "Try again." });
+    state = reduceDubState(state, {
+      type: "SAVE_FAILED",
+      message: "Try again.",
+      recovery: "save",
+    });
     assert.equal(state.phase, "save-error");
+    assert.equal(state.saveRecovery, "save");
+    state = reduceDubState(state, {
+      type: "SAVE_FAILED",
+      message: "Record again.",
+      recovery: "record",
+    });
+    assert.equal(state.saveRecovery, "record");
     state = reduceDubState(state, {
       type: "SAVE_SUCCEEDED",
       lineId: "line-1",

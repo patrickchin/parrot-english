@@ -22,6 +22,7 @@ import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
+  DubTakeRejectedError,
   loadDubStatus,
   saveDubLine,
 } from "./dub-api";
@@ -105,7 +106,7 @@ function dubStatusMessage({
     return `${line} Saving your take.`;
   }
   if (state.phase === "save-error") {
-    return `${line} Choose Save again or Record again.`;
+    return `${line} Choose ${state.saveRecovery === "record" ? "Record again" : "Save again"}.`;
   }
   if (state.phase === "line-review") {
     return `${line} Your take is saved. Choose Next line to continue.`;
@@ -164,11 +165,12 @@ function renderDubControls({
     return <ActionButton disabled>Saving your take…</ActionButton>;
   }
   if (state.phase === "save-error") {
-    return (
-      <>
-        <ActionButton onClick={handlers.onSaveAgain}>Save again</ActionButton>
-        <TextButton className="min-h-12" onClick={handlers.onRetake}>Record again</TextButton>
-      </>
+    return state.saveRecovery === "record" ? (
+      <ActionButton fullWidth onClick={handlers.onRetake} size="hero" variant="rose">
+        Record again
+      </ActionButton>
+    ) : (
+      <ActionButton fullWidth onClick={handlers.onSaveAgain} size="hero">Save again</ActionButton>
     );
   }
   if (state.phase === "line-review") {
@@ -506,7 +508,11 @@ export function DuckDub() {
     const blob = pendingBlobRef.current;
     const lineId = pendingLineIdRef.current;
     if (!blob || !lineId) {
-      dispatch({ type: "SAVE_FAILED", message: "There is no new take to save. Record the line again." });
+      dispatch({
+        type: "SAVE_FAILED",
+        message: "There is no new take to save. Record the line again.",
+        recovery: "record",
+      });
       return;
     }
     const controller = new AbortController();
@@ -526,6 +532,7 @@ export function DuckDub() {
       dispatch({
         type: "SAVE_FAILED",
         message: error instanceof Error ? error.message : "Your take was not saved. Try again.",
+        recovery: error instanceof DubTakeRejectedError ? "record" : "save",
       });
     } finally {
       if (uploadControllerRef.current === controller) uploadControllerRef.current = null;
