@@ -364,47 +364,83 @@ git commit -m "fix: remove grown-up controls from story preview"
 
 - [ ] **Step 1: Add the locked-route matrix**
 
-Use literal cases with protected headings/actions:
+Use literal cases with protected headings/actions for every canonical route and
+guarded compatibility alias:
 
 ```ts
-for (const { path, protectedName } of [
+for (const { path, protectedName, seedEditLesson } of [
   { path: "/guardian", protectedName: "Guardian dashboard" },
-  { path: "/guardian/profile", protectedName: "Learner details" },
   {
-    path: "/guardian/profile/setup?redo=1",
-    protectedName: "Redo learner setup",
+    path: "/guardian/profile?returnTo=%2Fguardian",
+    protectedName: "Learner details",
+  },
+  {
+    path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+    protectedName: "Update my profile",
   },
   { path: "/guardian/lessons", protectedName: "My Lessons" },
   { path: "/guardian/stories", protectedName: "Story settings" },
   { path: "/guardian/dubbing", protectedName: "Voice dubbing" },
+  {
+    path: "/profile?returnTo=%2Fguardian",
+    protectedName: "Learner details",
+  },
+  {
+    path: "/profile/setup?redo=1&returnTo=%2Fguardian",
+    protectedName: "Update my profile",
+  },
   { path: "/lessons/my/create", protectedName: "Create a custom lesson" },
+  {
+    path: "/lessons/my/boundary-fixture/edit",
+    protectedName: "Edit Lesson",
+    seedEditLesson: true,
+  },
 ]) {
   test(`locked ${path} shows only the password gate`, async ({ page }) => {
+    // Seed the edit API when requested so removing the route guard would expose
+    // the editor heading instead of merely reaching a not-found state.
     // Install the existing heading MutationObserver before navigation.
-    await page.goto(path);
+    const requestedUrl = guardianUrl(path, "learner");
+    await page.goto(requestedUrl);
     await expect(
       page.getByRole("heading", { name: "Unlock guardian mode" }),
     ).toBeVisible();
+    await expect(page).toHaveURL(requestedUrl);
     await expect(
       page.getByRole("heading", { name: protectedName }),
     ).toHaveCount(0);
     expect(await page.evaluate(() => window.__protectedHeadingSeen ?? false))
       .toBe(false);
+
+    // This is the route-level screen, not the account-menu dialog. Unlocking
+    // resumes the exact requested URL and proves the sentinel is reachable.
+    await page.getByRole("main").getByLabel("Password").fill(GUARDIAN_PASSWORD);
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: "Unlock guardian mode" })
+      .click();
+    await expect(page).toHaveURL(requestedUrl);
+    await expect(
+      page.getByRole("heading", { exact: true, name: protectedName }),
+    ).toBeVisible();
   });
 }
 ```
 
-Add the seeded custom-lesson edit route using the existing E2E fixture query
-and its editor heading. Keep each expected accessible name literal.
+Seed the custom-lesson edit route with `createLessonScript` before navigation.
+Keep each expected accessible name literal. Retain the separate unit assertion
+that `/profile/setup` without exact `redo=1` is learner-safe; never broaden the
+route expression to lock initial onboarding.
 
 - [ ] **Step 2: Run the matrix as boundary characterization coverage**
 
 Run: `npx playwright test tests/e2e/guardian-mode.spec.ts --grep "shows only the password gate"`
 
-Expected: every case passes after Task 1. Mutation check: removing any case's
-shared `isGuardianRoute` entry would make that case render or redirect without
-the required `Unlock guardian mode` heading, so the test guards a real route
-boundary rather than source text.
+Expected: every case passes after Tasks 1–4. Mutation check: removing any case's
+shared `isGuardianRoute` entry would make that seeded case render without the
+required `Unlock guardian mode` heading and trip its pre-unlock observer, so the
+test guards a real route boundary rather than source text. Exact URL assertions
+also cover query preservation for canonical and legacy learner-detail links.
 
 - [ ] **Step 3: Keep only behavior-strengthening fixes**
 
