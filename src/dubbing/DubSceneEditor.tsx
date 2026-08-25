@@ -66,17 +66,18 @@ export function DubSceneEditor({
     || operation === "recording"
     || operation === "saving";
   const playbackLabel = operation === "playback"
-    ? "Stop scene playback"
+    ? "Stop this scene"
     : operation === "playback-loading"
       ? "Loading scene…"
       : "Play this scene";
+  const takeLabel = operation === "take-playing" ? "Stop my voice" : "Hear my voice";
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-[1600px] gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
         <section className="grid content-start gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <TextButton className="gap-1" onClick={onBack}>Back to full video</TextButton>
+            <TextButton className="min-h-12 gap-1" onClick={onBack}>Back to full video</TextButton>
             <p aria-current="page" className="m-0 font-black text-brand-blue">
               Scene {sceneNumber} of {DUB_VERSES.length}
             </p>
@@ -85,7 +86,7 @@ export function DubSceneEditor({
             <DuckScene compact line={activeLine} playing={operation === "playback"} />
           </section>
           <ActionButton
-            aria-label="Play this scene"
+            aria-label={operation === "playback" ? "Stop this scene" : "Play this scene"}
             disabled={operation === "playback-loading"}
             onClick={onToggleScenePlayback}
             size="large"
@@ -130,7 +131,7 @@ export function DubSceneEditor({
 
           <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3">
             <p className="m-0 text-xl font-black leading-snug text-brand-ink">{activeLine.text}</p>
-            <TextButton className="justify-self-start gap-2" disabled={unsafeOperation} onClick={onHearGuide}>
+            <TextButton className="min-h-12 justify-self-start gap-2" disabled={unsafeOperation} onClick={onHearGuide}>
               <Volume2 aria-hidden="true" /> Hear example
             </TextButton>
             <ActionButton
@@ -144,17 +145,17 @@ export function DubSceneEditor({
               <Mic aria-hidden="true" /> Record line
             </ActionButton>
             {saveRecovery === "save" ? (
-              <TextButton className="justify-self-start" onClick={onRetrySave}>Save again</TextButton>
+              <TextButton className="min-h-12 justify-self-start" onClick={onRetrySave}>Save again</TextButton>
             ) : saveRecovery === "record" ? (
-              <TextButton className="justify-self-start" onClick={onRecord}>Record again</TextButton>
+              <TextButton className="min-h-12 justify-self-start" onClick={onRecord}>Record again</TextButton>
             ) : null}
           </section>
 
           {pendingTake ? (
             <section aria-label="Your recorded line" className="grid gap-2 rounded-2xl border-3 border-cyan-200 bg-cyan-50 p-3">
               <DubTakeWaveform blob={pendingTake} />
-              <TextButton aria-label="Hear my voice" className="justify-self-start gap-2" onClick={onHearTake}>
-                <Volume2 aria-hidden="true" /> Hear my voice
+              <TextButton aria-label={takeLabel} className="min-h-12 justify-self-start gap-2" onClick={onHearTake}>
+                {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {takeLabel}
               </TextButton>
             </section>
           ) : null}

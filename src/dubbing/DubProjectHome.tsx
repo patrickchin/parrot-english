@@ -43,6 +43,8 @@ export function DubProjectHome({
 }: DubProjectHomeProps) {
   const recorded = DUB_LINES.filter(({ id }) => Object.hasOwn(saved, id)).length;
   const allRecorded = recorded === DUB_LINES.length;
+  const firstMissingLineIndex = DUB_LINES.findIndex(({ id }) => !Object.hasOwn(saved, id));
+  const continueSceneIndex = Math.floor(firstMissingLineIndex / DUB_LINES_PER_VERSE);
   const activeSceneIndex = Math.max(
     0,
     Math.floor(DUB_LINES.indexOf(activeLine) / DUB_LINES_PER_VERSE),
@@ -77,7 +79,7 @@ export function DubProjectHome({
 
         <div className="flex flex-wrap justify-between gap-3">
           <ActionButton
-            aria-label="Play full video"
+            aria-label={playback === "playing" ? "Stop full video" : "Play full video"}
             disabled={playback === "loading"}
             onClick={onTogglePlayback}
             size="large"
@@ -86,9 +88,11 @@ export function DubProjectHome({
             {playback === "playing" ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
             {playbackLabel}
           </ActionButton>
-          <ActionButton onClick={onContinue} size="large">
-            Continue Scene {activeSceneIndex + 1}
-          </ActionButton>
+          {!allRecorded ? (
+            <ActionButton onClick={onContinue} size="large">
+              Continue Scene {continueSceneIndex + 1}
+            </ActionButton>
+          ) : null}
         </div>
 
         <nav aria-label="Scenes" className="grid grid-flow-col auto-cols-[minmax(8.5rem,1fr)] gap-2 overflow-x-auto pb-2 md:grid-flow-row md:grid-cols-6 md:overflow-visible">
@@ -112,9 +116,18 @@ export function DubProjectHome({
           })}
         </nav>
 
-        <TextButton className="justify-self-start text-red-800" onClick={onDelete}>
-          Delete my dub
-        </TextButton>
+        <details className="group justify-self-start rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
+          <summary
+            aria-label="Grown-up options"
+            className="flex min-h-12 cursor-pointer list-none items-center gap-2 font-ui font-black text-brand-blue focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
+          >
+            Grown-up options
+            <span aria-hidden="true" className="group-open:rotate-180">▾</span>
+          </summary>
+          <TextButton className="mt-2 min-h-12 text-red-800" onClick={onDelete}>
+            Delete my dub
+          </TextButton>
+        </details>
       </section>
     </main>
   );

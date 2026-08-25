@@ -516,9 +516,48 @@ describe("duck dubbing storyboard presentation", () => {
 
     assert.match(html, />Your dub</);
     assert.match(html, />All scenes recorded</);
+    assert.doesNotMatch(html, /Continue Scene/);
     for (let scene = 1; scene <= 6; scene += 1) {
       assert.match(html, new RegExp("aria-label=\\\"Scene " + scene + ", recorded\\\""));
     }
+  });
+
+  it("continues from the first missing scene instead of the preview scene", () => {
+    const html = renderProjectHome({
+      activeLine: DUB_LINES[16],
+      saved: { "line-1": "saved", "line-3": "saved" },
+    });
+
+    assert.match(html, />Continue Scene 1</);
+    assert.doesNotMatch(html, /Continue Scene 5/);
+  });
+
+  it("keeps deletion inside closed grown-up options", () => {
+    const html = renderProjectHome();
+
+    assert.match(html, /<details(?![^>]*\\bopen\\b)[^>]*>/);
+    assert.match(html, /<summary[^>]*aria-label="Grown-up options"/);
+    assert.match(html, />Delete my dub<\/button>/);
+  });
+
+  it("names each playback toggle after its active action", () => {
+    const home = renderProjectHome({ playback: "playing" });
+    const scene = renderSceneEditor({ operation: "playback" });
+
+    assert.match(home, /aria-label="Stop full video"/);
+    assert.doesNotMatch(home, /aria-label="Play full video"/);
+    assert.match(scene, /aria-label="Stop this scene"/);
+    assert.doesNotMatch(scene, /aria-label="Play this scene"/);
+  });
+
+  it("names a playing take as a stop action", () => {
+    const html = renderSceneEditor({
+      operation: "take-playing",
+      pendingTake: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+    });
+
+    assert.match(html, /aria-label="Stop my voice"/);
+    assert.doesNotMatch(html, /aria-label="Hear my voice"/);
   });
 
   it("renders the focused scene editor with explicit selection and playback scopes", () => {
@@ -557,5 +596,19 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, />Save again</);
     assert.match(html, /role="alert"/);
     assert.doesNotMatch(html, /Next line/);
+  });
+
+  it("keeps every learner follow-up action as a named visible control", () => {
+    const project = renderProjectHome();
+    const scene = renderSceneEditor({
+      pendingTake: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+      saveRecovery: "save",
+    });
+
+    assert.match(project, /<summary[^>]*aria-label="Grown-up options"/);
+    assert.match(project, /<button[^>]*>Delete my dub<\/button>/);
+    assert.match(scene, /<button[^>]*>.*Hear example/);
+    assert.match(scene, /<button[^>]*>Save again<\/button>/);
+    assert.match(scene, /<button[^>]*aria-label="Hear my voice"/);
   });
 });
