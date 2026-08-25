@@ -187,6 +187,18 @@ test("guardian story settings owns level and art management", () => {
   assert.match(html, /Generate story art/);
 });
 
+test("guardian story settings renders exactly the four learner preference levels", () => {
+  const container = document.createElement("div");
+  container.innerHTML = renderView();
+  const levelTabs = container.querySelectorAll('[role="tab"]');
+
+  assert.equal(levelTabs.length, 4);
+  assert.deepEqual(
+    [...levelTabs].map((tab) => tab.textContent.trim()),
+    ["1Start here", "2Say it again", "3Little stories", "4Big adventures"],
+  );
+});
+
 test("guardian story settings preserves private-art cleanup states", () => {
   const html = renderView({
     art: artState({

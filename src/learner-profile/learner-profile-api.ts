@@ -1,4 +1,4 @@
-import type { StoryLevelId } from "../../lib/story-level.ts";
+import type { LearnerStoryLevelId } from "../../lib/story-level.ts";
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 
 export type LearnerProfileAudio = {
@@ -42,7 +42,7 @@ export type LearnerProfileAcknowledgment = {
 export type LearnerProfileSummary = {
   name: string | null;
   age: number | null;
-  storyLevel: StoryLevelId;
+  storyLevel: LearnerStoryLevelId;
   description: string | null;
   answers: LearnerProfileAnswers;
   questionnaireVersion: number;
@@ -271,7 +271,7 @@ export function saveProfileAnswers(
 }
 
 export function saveStoryLevel(
-  storyLevel: StoryLevelId,
+  storyLevel: LearnerStoryLevelId,
   options?: LearnerProfileRequestOptions,
 ) {
   return requestJson<ProfileState>(

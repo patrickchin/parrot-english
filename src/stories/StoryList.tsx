@@ -19,8 +19,8 @@ import {
   getStoryLevel,
   STORIES,
   STORY_LEVELS,
+  type StoryLevelId,
 } from "./story-catalog";
-import type { StoryLevelId } from "./story-types";
 
 const STORY_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 273px";

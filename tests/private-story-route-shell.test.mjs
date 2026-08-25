@@ -60,13 +60,11 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-let PrivateStoryPreviewRoutes;
+let App;
 let routedLocation = "";
 
 before(async () => {
-  ({ PrivateStoryPreviewRoutes } = await vite.ssrLoadModule(
-    "/src/app/App.tsx",
-  ));
+  ({ App } = await vite.ssrLoadModule("/src/app/App.tsx"));
 });
 
 afterEach(async () => {
@@ -82,7 +80,7 @@ after(async () => {
   restoreDom();
 });
 
-function previewRoutesAt(initialEntry) {
+function privatePreviewAppAt(initialEntry) {
   return createElement(
     MemoryRouter,
     { initialEntries: [initialEntry] },
@@ -90,7 +88,7 @@ function previewRoutesAt(initialEntry) {
       "div",
       null,
       createElement(LocationProbe),
-      createElement(PrivateStoryPreviewRoutes),
+      createElement(App),
     ),
   );
 }
@@ -101,18 +99,18 @@ function LocationProbe() {
   return null;
 }
 
-test("private preview exposes only synthetic story routes without account clients", async () => {
+test("App selects the synthetic private story shell before account and profile gates", async () => {
   assert.equal(
-    typeof PrivateStoryPreviewRoutes,
+    typeof App,
     "function",
-    "Expected App.tsx to export PrivateStoryPreviewRoutes",
+    "Expected App.tsx to export App",
   );
   globalThis.fetch = async (...args) => {
     fetchCalls.push(args);
     throw new Error(`Unexpected request: ${String(args[0])}`);
   };
 
-  const shelf = await mountStrict(previewRoutesAt("/lessons"));
+  const shelf = await mountStrict(privatePreviewAppAt("/lessons"));
   await waitFor(() => {
     assert.match(shelf.textContent, /Pick a story/);
     assert.match(shelf.textContent, /Fixture Long Story/);
@@ -120,16 +118,22 @@ test("private preview exposes only synthetic story routes without account client
   });
   assert.match(shelf.textContent, /Pick a story level/);
   assert.doesNotMatch(shelf.textContent, /Personalized story art/);
+  assert.equal(shelf.querySelector('[aria-label="Account"]'), null);
+  assert.equal(shelf.querySelector('[aria-label="Unlock guardian mode"]'), null);
+  assert.equal(fetchCalls.length, 0);
 
   await cleanupMountedRoots();
   document.body.replaceChildren();
 
   const reader = await mountStrict(
-    previewRoutesAt("/stories/fixture-long-story/pages/1"),
+    privatePreviewAppAt("/stories/fixture-long-story/pages/1"),
   );
   await waitFor(() => {
     assert.match(reader.textContent, /Fixture Long Story/);
     assert.match(reader.textContent, /Synthetic private story page\./);
+    assert.equal(routedLocation, "/stories/fixture-long-story/pages/1");
   });
+  assert.equal(reader.querySelector('[aria-label="Account"]'), null);
+  assert.equal(reader.querySelector('[aria-label="Unlock guardian mode"]'), null);
   assert.equal(fetchCalls.length, 0);
 });

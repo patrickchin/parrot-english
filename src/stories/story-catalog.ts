@@ -3,14 +3,17 @@ import { PRIVATE_STORY_PREVIEW_STORIES } from "./private-story-preview.ts";
 import type {
   Story,
   StoryLevel,
-  StoryLevelId as CatalogStoryLevelId,
+  StoryLevelId,
   StoryVocabularyProfile,
   StoryVocabularyProfileId,
 } from "./story-types.ts";
 
 export {
+  LEARNER_STORY_LEVEL_IDS,
   STORY_LEVEL_IDS,
+  isLearnerStoryLevelId,
   isStoryLevelId,
+  type LearnerStoryLevelId,
   type StoryLevelId,
 } from "../../lib/story-level.ts";
 
@@ -208,7 +211,7 @@ export function countStoryWords(text: string): number {
   return text.match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g)?.length ?? 0;
 }
 
-export function getStoryLevel(levelId: CatalogStoryLevelId): StoryLevel {
+export function getStoryLevel(levelId: StoryLevelId): StoryLevel {
   const level = STORY_LEVELS.find(({ id }) => id === levelId);
   if (!level) {
     throw new Error(`Unknown story level: ${levelId}`);
