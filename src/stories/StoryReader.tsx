@@ -175,7 +175,17 @@ export function StoryReader({
     const narrationAudioId = page.narrationAudioId;
     const joinInAudioId = page.joinInAudioId;
     try {
-      if (narrationAudioId && joinInAudioId) {
+      if (page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
+        narrationPromise = playAudioLine({
+          audioId: `${story.id}-${page.id}-private-narration`,
+          audioSrc: page.narrationAudioSrc,
+          env: audioEnvironmentRef.current ?? undefined,
+          lang: "en-GB",
+          onPlaybackControl,
+          signal: controller.signal,
+          text: page.text,
+        });
+      } else if (!page.narrationAudioSrc && narrationAudioId && joinInAudioId) {
         narrationPromise = (async () => {
           await playSavedStoryLine(
             narrationAudioId,
@@ -197,7 +207,7 @@ export function StoryReader({
             onPlaybackControl,
           );
         })();
-      } else if (!narrationAudioId && !joinInAudioId) {
+      } else if (!page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
         narrationPromise = (async () => {
           await playDeviceSpeech({
             onPlaybackControl,

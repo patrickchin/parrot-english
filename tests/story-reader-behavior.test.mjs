@@ -265,6 +265,195 @@ describe("child-first story reader behavior", () => {
     assert.match(container.textContent, /Your turn/);
   });
 
+  it("plays direct narration without device speech or a saved join-in clip", async () => {
+    const finishAudio = [];
+    const playedUrls = [];
+    const spoken = [];
+    const directNarrationStory = {
+      ...firstStory,
+      id: "direct-narration-test",
+      pages: [
+        {
+          ...firstStory.pages[0],
+          id: "direct-page-one",
+          joinIn: "Say the synthetic line.",
+          joinInAudioId: null,
+          narrationAudioId: null,
+          narrationAudioSrc:
+            "/assets/private-story-preview/private-fixture/page-001.mp3",
+          text: "This is the exact synthetic narration text.",
+        },
+      ],
+    };
+
+    class TestAudio {
+      constructor(url) {
+        this.url = url;
+      }
+
+      set src(url) {
+        this.url = url;
+      }
+
+      pause() {}
+
+      play() {
+        playedUrls.push(this.url);
+        const onended = this.onended;
+        finishAudio.push(() => onended?.(new window.Event("ended")));
+        return Promise.resolve();
+      }
+    }
+
+    class TestSpeechUtterance {
+      constructor(text) {
+        this.text = text;
+      }
+    }
+
+    Object.defineProperty(globalThis, "Audio", {
+      configurable: true,
+      value: TestAudio,
+    });
+    Object.defineProperty(globalThis, "SpeechSynthesisUtterance", {
+      configurable: true,
+      value: TestSpeechUtterance,
+    });
+    Object.defineProperty(globalThis, "speechSynthesis", {
+      configurable: true,
+      value: {
+        cancel() {},
+        getVoices() {
+          return [];
+        },
+        pause() {},
+        resume() {},
+        speak(utterance) {
+          spoken.push(utterance.text);
+        },
+      },
+    });
+
+    const container = await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/stories/direct-narration-test/pages/1"] },
+        createElement(StoryReader, {
+          backToStories: "/stories",
+          onNavigatePage() {},
+          pageIndex: 0,
+          story: directNarrationStory,
+        }),
+      ),
+    );
+
+    assert.match(
+      container.querySelector("[aria-label^='Page 1 of 1']").getAttribute(
+        "aria-label",
+      ),
+      /This is the exact synthetic narration text\./,
+    );
+    await click(container.querySelector('[aria-label="Listen"]'));
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.deepEqual(playedUrls, [
+      "/assets/private-story-preview/private-fixture/page-001.mp3",
+    ]);
+    assert.deepEqual(spoken, []);
+
+    await act(async () => finishAudio.shift()());
+    await waitFor(() =>
+      assert.ok(container.querySelector('[aria-label="Listen again"]')),
+    );
+    assert.deepEqual(playedUrls, [
+      "/assets/private-story-preview/private-fixture/page-001.mp3",
+    ]);
+  });
+
+  it("advances whole-story playback to the next direct narration source", async () => {
+    const finishAudio = [];
+    const navigatedPages = [];
+    const playedUrls = [];
+    const directNarrationStory = {
+      ...firstStory,
+      id: "direct-whole-story-test",
+      pages: [
+        {
+          ...firstStory.pages[0],
+          id: "direct-page-one",
+          joinInAudioId: null,
+          narrationAudioId: null,
+          narrationAudioSrc:
+            "/assets/private-story-preview/private-fixture/page-001.mp3",
+          text: "First synthetic narration.",
+        },
+        {
+          ...firstStory.pages[1],
+          id: "direct-page-two",
+          joinInAudioId: null,
+          narrationAudioId: null,
+          narrationAudioSrc:
+            "/assets/private-story-preview/private-fixture/page-002.mp3",
+          text: "Second synthetic narration.",
+        },
+      ],
+    };
+
+    class TestAudio {
+      constructor(url) {
+        this.url = url;
+      }
+
+      set src(url) {
+        this.url = url;
+      }
+
+      pause() {}
+
+      play() {
+        playedUrls.push(this.url);
+        const onended = this.onended;
+        finishAudio.push(() => onended?.(new window.Event("ended")));
+        return Promise.resolve();
+      }
+    }
+
+    Object.defineProperty(globalThis, "Audio", {
+      configurable: true,
+      value: TestAudio,
+    });
+
+    function WholeStoryHarness() {
+      const [pageIndex, setPageIndex] = useState(0);
+      return createElement(StoryReader, {
+        backToStories: "/stories",
+        onNavigatePage(pageIndex) {
+          navigatedPages.push(pageIndex);
+          setPageIndex(pageIndex);
+        },
+        pageIndex,
+        story: directNarrationStory,
+      });
+    }
+
+    const container = await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/stories/direct-whole-story-test/pages/1"] },
+        createElement(WholeStoryHarness),
+      ),
+    );
+
+    await click(container.querySelector('[aria-label="Play whole story"]'));
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    await act(async () => finishAudio.shift()());
+    await waitFor(() => assert.deepEqual(navigatedPages, [1]));
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.deepEqual(playedUrls, [
+      "/assets/private-story-preview/private-fixture/page-001.mp3",
+      "/assets/private-story-preview/private-fixture/page-002.mp3",
+    ]);
+  });
+
   it("starts and advances when whole-story playback is enabled", async () => {
     const navigatedPages = [];
     const finishAudio = [];
