@@ -60,8 +60,6 @@ Peppa & Dolly assets-*.zip
 # temporary and local work files
 /tmp/
 /content/local-stories/
-/content/.private-story-preview-transaction/
-/content/private-story-preview/
 *.tmp
 *.temp
 /public/assets/audio/*.tmp.*
