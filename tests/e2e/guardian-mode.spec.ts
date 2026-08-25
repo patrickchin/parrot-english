@@ -10,6 +10,12 @@ const requiredViewports = [
   { width: 640, height: 360 },
   { width: 1440, height: 900 },
 ];
+const lessonPrivacyViewports = [
+  { width: 280, height: 653 },
+  { width: 390, height: 844 },
+  { width: 667, height: 375 },
+  { width: 1440, height: 900 },
+];
 
 type Rect = { height: number; width: number; x: number; y: number };
 
@@ -25,10 +31,15 @@ async function expectInsideViewport(
   viewport: { height: number; width: number },
 ) {
   const box = await visibleBox(locator);
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  const subpixelTolerance = 1;
+  expect(box.x).toBeGreaterThanOrEqual(-subpixelTolerance);
+  expect(box.y).toBeGreaterThanOrEqual(-subpixelTolerance);
+  expect(box.x + box.width).toBeLessThanOrEqual(
+    viewport.width + subpixelTolerance,
+  );
+  expect(box.y + box.height).toBeLessThanOrEqual(
+    viewport.height + subpixelTolerance,
+  );
   return box;
 }
 
@@ -196,79 +207,103 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   }
 });
 
-test("guardian grants and confirms revocation of lesson voice recordings", async ({
-  page,
-}) => {
-  const profile = {
-    age: 8,
-    answers: {
-      legacyAnswers: null,
+for (const viewport of lessonPrivacyViewports) {
+  test(`guardian grants and confirms revocation of lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    const profile = {
+      age: 8,
+      answers: {
+        legacyAnswers: null,
+        questionnaireVersion: 2,
+        responses: {},
+        schemaVersion: 2,
+      },
+      completedAt: "2026-08-26T08:00:00.000Z",
+      currentQuestionKey: null,
+      description: null,
+      name: "Mia",
+      profileStatus: "completed",
       questionnaireVersion: 2,
-      responses: {},
-      schemaVersion: 2,
-    },
-    completedAt: "2026-08-26T08:00:00.000Z",
-    currentQuestionKey: null,
-    description: null,
-    name: "Mia",
-    profileStatus: "completed",
-    questionnaireVersion: 2,
-    storyLevel: "first-words",
-  };
-  let consent = false;
-  const mutations: boolean[] = [];
+      storyLevel: "first-words",
+    };
+    let consent = false;
+    const mutations: boolean[] = [];
 
-  await page.route("**/api/learner-profile", (route) =>
-    route.fulfill({
-      json: {
-        canBypass: true,
-        experienceMode: "form",
-        mode: "full",
-        profile,
-        progress: { answered: 6, current: 6, total: 6 },
-        question: null,
-        questionnaire: { version: 2 },
-      },
-    }),
-  );
-  await page.route("**/api/profile", (route) =>
-    route.fulfill({
-      json: {
-        profile: { ...profile, lessonRecordingConsent: consent },
-        questions: [],
-      },
-    }),
-  );
-  await page.route("**/api/profile/lesson-recording-consent", async (route) => {
-    const body = route.request().postDataJSON() as { enabled: boolean };
-    consent = body.enabled;
-    mutations.push(consent);
-    await route.fulfill({ json: { enabled: consent } });
+    await page.setViewportSize(viewport);
+    await page.route("**/api/learner-profile", (route) =>
+      route.fulfill({
+        json: {
+          canBypass: true,
+          experienceMode: "form",
+          mode: "full",
+          profile,
+          progress: { answered: 6, current: 6, total: 6 },
+          question: null,
+          questionnaire: { version: 2 },
+        },
+      }),
+    );
+    await page.route("**/api/profile", (route) =>
+      route.fulfill({
+        json: {
+          profile: { ...profile, lessonRecordingConsent: consent },
+          questions: [],
+        },
+      }),
+    );
+    await page.route("**/api/profile/lesson-recording-consent", async (route) => {
+      const body = route.request().postDataJSON() as { enabled: boolean };
+      consent = body.enabled;
+      mutations.push(consent);
+      await route.fulfill({ json: { enabled: consent } });
+    });
+
+    await page.goto(guardianUrl("/profile", "guardian"));
+
+    const account = page.getByRole("button", {
+      name: "Profile for Mia, guardian mode",
+    });
+    const back = page.getByRole("button", { exact: true, name: "Back" });
+    const consentSection = page.getByRole("region", {
+      name: "Lesson voice recordings",
+    });
+    const grant = consentSection.getByRole("button", {
+      name: "Allow lesson voice recordings",
+    });
+    await consentSection.scrollIntoViewIfNeeded();
+    await expectInsideViewport(consentSection, viewport);
+    await expectInsideViewport(grant, viewport);
+    await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
+    await expectNoOverlap(grant, account);
+    await expectNoOverlap(grant, back);
+    expect(await horizontalOverflow(page)).toBe(false);
+
+    await grant.click();
+    const revoke = consentSection.getByRole("button", {
+      name: "Stop and delete lesson recordings",
+    });
+    await expect(revoke).toHaveAccessibleName(
+      "Stop and delete lesson recordings",
+    );
+    await expectInsideViewport(revoke, viewport);
+    await expectNoOverlap(revoke, account);
+    await expectNoOverlap(revoke, back);
+    expect(mutations).toEqual([true]);
+
+    page.once("dialog", async (dialog) => {
+      expect(dialog.type()).toBe("confirm");
+      expect(dialog.message()).toMatch(/delete all saved lesson voice recordings/i);
+      await dialog.accept();
+    });
+    await revoke.click();
+
+    await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
+    await expectInsideViewport(grant, viewport);
+    expect(await horizontalOverflow(page)).toBe(false);
+    expect(mutations).toEqual([true, false]);
   });
-
-  await page.goto(guardianUrl("/profile", "guardian"));
-
-  const grant = page.getByRole("button", {
-    name: "Allow lesson voice recordings",
-  });
-  await expect(grant).toBeVisible();
-  await grant.click();
-  const revoke = page.getByRole("button", {
-    name: "Stop and delete lesson recordings",
-  });
-  await expect(revoke).toBeVisible();
-  expect(mutations).toEqual([true]);
-
-  page.once("dialog", async (dialog) => {
-    expect(dialog.type()).toBe("confirm");
-    expect(dialog.message()).toMatch(/delete all saved lesson voice recordings/i);
-    await dialog.accept();
-  });
-  await revoke.click();
-
-  await expect(grant).toBeVisible();
-  expect(mutations).toEqual([true, false]);
-});
+}
 
 test("a locked guardian deep link never flashes protected content", async ({
   page,

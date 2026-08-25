@@ -54,7 +54,14 @@ test("the account AI and saved data panel is wired to deployed component metadat
   assert.match(header, />\s*AI and saved data\s*</s);
   assert.match(about, /AI and saved data/);
   assert.match(about, /How Parrot uses AI/);
-  assert.match(about, /Raw audio is not\s+added to the Parrot account/);
+  assert.match(
+    about,
+    /With guardian permission, lessons save one private\s+voice clip for\s+each join-in moment/,
+  );
+  assert.doesNotMatch(
+    about,
+    /Raw audio is not\s+added to the Parrot account/,
+  );
   assert.match(about, /Talk to Peppa does not change the learner profile/);
   assert.match(about, /The photo is not added to the account/);
   assert.match(about, /Technical build details/);

@@ -641,12 +641,15 @@ test("My Lessons use the exact on-device guide at quiet volume", async ({ page }
 test("cue failure discards partial capture, holds the phrase briefly, and advances", async ({
   page,
 }) => {
+  await page.clock.install();
   await openParrotLesson(page, "cue-failure");
   await startLesson(page);
+  await page.clock.runFor(450);
   const prompt = joinInPrompt(page, "It is up high!");
   await expect(prompt).toBeVisible();
-  await page.waitForTimeout(250);
+  await page.clock.runFor(250);
   await expect(prompt).toBeVisible();
+  await page.clock.runFor(451);
   await expect(page).toHaveURL(/\/scenes\/2/);
 
   const snapshot = await mediaSnapshot(page);
@@ -884,41 +887,105 @@ test("a recording stop failure discards only that clip and continues", async ({
 });
 
 for (const viewport of [
-  { name: "ultra-narrow", width: 280, height: 568 },
-  { name: "short landscape", width: 640, height: 360 },
+  { name: "280x653 boundary", width: 280, height: 653 },
+  { name: "390x844 phone", width: 390, height: 844 },
+  { name: "667x375 short-wide", width: 667, height: 375 },
   { name: "desktop", width: 1440, height: 900 },
 ]) {
-  test(`join-in words and playback controls stay contained on ${viewport.name}`, async ({
+  test(`lesson intro, join-in, and completion stay contained on ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
     await openParrotLesson(page, "held-cue-no-consent");
     const intro = page.getByRole("region", { name: "Lesson introduction" });
-    await expectInsideViewport(intro, viewport);
+    const introHeading = intro.getByRole("heading", {
+      exact: true,
+      level: 1,
+      name: "Watch and join in",
+    });
+    const start = intro.getByRole("button", { exact: true, name: "Let's go" });
+    const account = page.getByRole("button", {
+      name: "Profile for Mia, learner mode",
+    });
+    const routeBack = page.getByRole("button", {
+      name: "Back to lesson list",
+    });
+    await expectInsideViewport(introHeading, viewport);
+    await expectInsideViewport(start, viewport);
+    await expect(start).toHaveAccessibleName("Let's go");
+    await expectInsideViewport(account, viewport);
+    await expectInsideViewport(routeBack, viewport);
+    await expectNoOverlap(introHeading, account);
+    await expectNoOverlap(introHeading, routeBack);
+    await expectNoOverlap(start, account);
+    await expectNoOverlap(start, routeBack);
+    await expectNoOverlap(account, routeBack);
+    await expectNoPageOverflow(page);
     await startLesson(page);
 
     const prompt = joinInPrompt(page, "It is up high!");
+    const joinInHeading = prompt.getByRole("heading", {
+      exact: true,
+      name: "Join in",
+    });
+    const phrase = prompt.getByText("It is up high!", { exact: true });
+    const status = prompt.getByRole("status");
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });
-    await expectInsideViewport(
-      page.getByRole("region", { name: "Lesson artwork" }),
-      viewport,
-    );
-    await expectInsideViewport(
-      page.getByRole("region", { name: "Lesson progress" }),
-      viewport,
-    );
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    await expect(joinInHeading).toBeVisible();
+    await expect(phrase).toBeVisible();
+    await expect(status).toHaveText("Voices are joining in");
+    await expectInsideViewport(artwork, viewport);
+    await expectInsideViewport(hud, viewport);
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(controls, viewport);
     await expectNoOverlap(prompt, controls);
-    await expect(
-      page.getByRole("button", { name: "Back to lesson list" }),
-    ).toBeVisible();
-    await expectNoOverlap(
-      page.getByRole("button", { name: "Back to lesson list" }),
-      prompt,
-    );
+    await expectNoOverlap(prompt, hud);
+    await expectNoOverlap(prompt, routeBack);
+    await expectNoOverlap(prompt, account);
+    await expectNoOverlap(artwork, routeBack);
+    await expectNoOverlap(artwork, account);
+    await expectNoOverlap(hud, routeBack);
+    await expectNoOverlap(hud, account);
+    await expectNoOverlap(controls, routeBack);
+    await expectNoOverlap(controls, account);
+    await expectNoPageOverflow(page);
+
+    await openMyLesson(page, "device-no-consent", {
+      id: `responsive-completion-${viewport.width}-${viewport.height}`,
+    });
+    await startLesson(page);
+
+    const completion = page.getByRole("region", { name: "Lesson completion" });
+    const completionHeading = completion.getByRole("heading", {
+      exact: true,
+      level: 1,
+      name: "Lesson complete!",
+    });
+    const replay = completion.getByRole("button", { name: "Replay lesson" });
+    const completionBack = completion.getByRole("button", {
+      exact: true,
+      name: "Back to lessons",
+    });
+    const completionStatus = page.getByRole("status", {
+      name: "Lesson updates",
+    });
+    await expectInsideViewport(completionHeading, viewport);
+    await expectInsideViewport(replay, viewport);
+    await expectInsideViewport(completionBack, viewport);
+    await expect(replay).toHaveAccessibleName("Replay lesson");
+    await expect(completionBack).toHaveAccessibleName("Back to lessons");
+    await expect(completionStatus).toHaveText("Lesson complete");
+    await expectNoOverlap(replay, completionBack);
+    await expectNoOverlap(replay, routeBack);
+    await expectNoOverlap(replay, account);
+    await expectNoOverlap(completionBack, routeBack);
+    await expectNoOverlap(completionBack, account);
+    await expectNoOverlap(account, routeBack);
+    await expectNoPageOverflow(page);
   });
 }
 

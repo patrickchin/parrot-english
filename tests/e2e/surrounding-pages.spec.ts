@@ -783,7 +783,7 @@ test("account deletion requires the password and returns to sign in only after p
   await page.getByRole("menuitem", { name: "Delete account" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "This removes your account, learner profile, My Lessons, saved conversation text, and private story art from Parrot.",
+    "This removes your account, learner profile, My Lessons, saved conversation text, Five Little Ducks voice clips, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
   );
   const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();
