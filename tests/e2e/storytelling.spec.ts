@@ -526,7 +526,7 @@ test("story prose preserves authored line breaks", async ({ page }) => {
   await expect(pageText).toBeVisible();
   await expect
     .poll(() =>
-      pageText.evaluate((element) => getComputedStyle(element).whiteSpace)
+      pageText.evaluate((element) => getComputedStyle(element).whiteSpace),
     )
     .toBe("pre-line");
 });
@@ -995,15 +995,21 @@ test("every saved-audio story prompt is fully visible when narration ends", asyn
           `/assets/audio/${storyPage.narrationAudioId}.mp3`,
         ]);
       await finishSavedStoryAudio(page);
-      await expect(
-        prompt.getByText("Listen and say it", { exact: true }),
-      ).toBeVisible();
-      await expect
-        .poll(async () => (await savedStoryAudioState(page)).active)
-        .toEqual([
-          `/assets/audio/${storyPage.joinInAudioId}.mp3`,
-        ]);
-      await finishSavedStoryAudio(page);
+      if (storyPage.joinInAudioId) {
+        await expect(
+          prompt.getByText("Listen and say it", { exact: true }),
+        ).toBeVisible();
+        await expect
+          .poll(async () => (await savedStoryAudioState(page)).active)
+          .toEqual([
+            `/assets/audio/${storyPage.joinInAudioId}.mp3`,
+          ]);
+        await finishSavedStoryAudio(page);
+      } else {
+        await expect
+          .poll(async () => (await savedStoryAudioState(page)).active)
+          .toEqual([]);
+      }
       await expect(
         prompt.getByText("Your turn", { exact: true }),
       ).toBeVisible();

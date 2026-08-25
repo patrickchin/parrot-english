@@ -4,10 +4,12 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { MemoryRouter, useLocation } from "react-router";
 import { after, afterEach, describe, it } from "node:test";
+import { createServer } from "vite";
 import {
   auditStoryVocabulary,
   countStoryWords,
   getStoryLevel,
+  LEARNER_STORY_LEVEL_IDS,
   STORIES,
   STORY_LEVELS,
   STORY_VOCABULARY_PROFILES,
@@ -19,16 +21,15 @@ import {
   mountStrict,
   waitFor,
 } from "./helpers/react-lifecycle.mjs";
-import { createHermeticViteServer } from "./helpers/hermetic-vite-server.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const restoreDom = installDom();
-const viteHarness = await createHermeticViteServer({
+const vite = await createServer({
   appType: "custom",
   logLevel: "silent",
   root: projectRoot,
+  server: { middlewareMode: true },
 });
-const vite = viteHarness.server;
 const { StoryList } = await vite
   .ssrLoadModule("/src/stories/StoryList.tsx")
   .catch(() => ({}));
@@ -42,7 +43,7 @@ afterEach(async () => {
 });
 
 after(async () => {
-  await viteHarness.close();
+  await vite.close();
   restoreDom();
 });
 
@@ -107,6 +108,21 @@ describe("story script catalog", () => {
     );
   });
 
+  it("renders two public long stories beneath every saved learner shelf", async () => {
+    const container = await mountStrict(
+      storyListAt("tiny-stories", "/stories?level=tiny-stories"),
+    );
+    const section = container.querySelector(
+      'section[aria-label="Long stories"]',
+    );
+
+    assert.ok(section);
+    assert.equal(
+      section.querySelectorAll('a[aria-label^="Listen to story:"]').length,
+      2,
+    );
+  });
+
   it("replaces a mismatched story query with the saved shelf without rendering the requested shelf", async () => {
     const container = await mountStrict(
       storyListAt("tiny-stories", "/stories?level=early-a1"),
@@ -139,11 +155,18 @@ describe("story script catalog", () => {
   });
 
   it("publishes 20 stories across four learner levels", () => {
-    assert.equal(STORIES.length, 20);
-    assert.equal(STORY_LEVELS.length, 4);
+    const learnerStories = STORIES.filter(({ level }) =>
+      LEARNER_STORY_LEVEL_IDS.includes(level),
+    );
+    const learnerLevels = STORY_LEVELS.filter(({ id }) =>
+      LEARNER_STORY_LEVEL_IDS.includes(id),
+    );
+
+    assert.equal(learnerStories.length, 20);
+    assert.equal(learnerLevels.length, 4);
     assert.equal(STORY_VOCABULARY_PROFILES.length, 4);
     assert.deepEqual(
-      STORY_LEVELS.map(({ id }) => id),
+      learnerLevels.map(({ id }) => id),
       [
         "first-words",
         "repeating-patterns",
@@ -152,27 +175,51 @@ describe("story script catalog", () => {
       ],
     );
     assert.deepEqual(
-      STORIES.map(({ level }) => level),
+      learnerStories.map(({ level }) => level),
       [
-        ...STORY_LEVELS.flatMap(({ id }) => Array(5).fill(id)),
+        ...learnerLevels.flatMap(({ id }) => Array(5).fill(id)),
       ],
     );
 
-    for (const level of STORY_LEVELS) {
+    for (const level of learnerLevels) {
       assert.equal(
-        STORIES.filter((story) => story.level === level.id).length,
+        learnerStories.filter((story) => story.level === level.id).length,
         5,
         `${level.label} story count`,
       );
     }
   });
 
-  it("keeps every story, page, title, and prompt experiment distinct", () => {
+  it("publishes two long read-alouds with 17 saved-narration pages", () => {
+    const longStories = STORIES.filter(
+      ({ level }) => level === "long-stories",
+    );
+
+    assert.equal(longStories.length, 2);
+    assert.equal(
+      longStories.reduce((total, story) => total + story.pages.length, 0),
+      17,
+    );
+    for (const story of longStories) {
+      for (const page of story.pages) {
+        assert.match(page.narrationAudioId, /^story-.+-narration$/);
+        assert.equal(page.joinInAudioId, null);
+      }
+    }
+  });
+
+  it("keeps every story, page, title, and learner prompt experiment distinct", () => {
+    const learnerStories = STORIES.filter(
+      ({ level }) => level !== "long-stories",
+    );
+
     assert.equal(new Set(STORIES.map(({ id }) => id)).size, STORIES.length);
     assert.equal(new Set(STORIES.map(({ title }) => title)).size, STORIES.length);
     assert.equal(
-      new Set(STORIES.map(({ promptExperiment }) => promptExperiment.focus)).size,
-      STORIES.length,
+      new Set(
+        learnerStories.map(({ promptExperiment }) => promptExperiment.focus),
+      ).size,
+      learnerStories.length,
     );
 
     for (const story of STORIES) {
@@ -194,7 +241,11 @@ describe("story script catalog", () => {
       assert.ok(story.completionText.trim(), `${story.title} completion`);
       assert.ok(story.promptExperiment.instruction.trim(), `${story.title} prompt`);
       assert.ok(story.promptExperiment.hypothesis.trim(), `${story.title} hypothesis`);
-      assert.ok(story.pages.length >= 5 && story.pages.length <= 7, `${story.title} pages`);
+      assert.ok(
+        story.pages.length >= 5 &&
+          (story.level === "long-stories" || story.pages.length <= 7),
+        `${story.title} pages`,
+      );
       assert.equal(
         new Set(story.pages.map(({ id }) => id)).size,
         story.pages.length,
@@ -233,6 +284,18 @@ describe("story script catalog", () => {
         story.assumedKnownWords.length,
         `${story.title} assumed-known words are distinct`,
       );
+
+      if (story.level === "long-stories") {
+        for (const page of story.pages) {
+          assert.ok(page.text.trim(), `${story.title}/${page.id} text`);
+          assert.ok(page.joinIn.trim(), `${story.title}/${page.id} join-in`);
+          assert.ok(
+            countStoryWords(page.joinIn) <= 7,
+            `${story.title}/${page.id} join-in stays short`,
+          );
+        }
+        continue;
+      }
 
       const completeScript = story.pages
         .map(({ joinIn, text }) => `${text} ${joinIn}`)
@@ -286,10 +349,10 @@ describe("story script catalog", () => {
     }
   });
 
-  it("fully illustrates First words and assigns saved narration and join-in audio to every page", () => {
+  it("fully illustrates First words and assigns saved narration and join-in audio to every learner page", () => {
     const joinInAudioByText = new Map();
 
-    for (const story of STORIES) {
+    for (const story of STORIES.filter(({ level }) => level !== "long-stories")) {
       assert.equal(
         story.cover.src,
         `https://media.parrotbook.com/assets/v3/stories/${story.id}-cover.webp`,
@@ -339,10 +402,11 @@ describe("story script catalog", () => {
     );
     const expectedStoryAssets = new Set(
       STORIES.flatMap((story) =>
-        story.pages.flatMap((page) => [
-          `${page.narrationAudioId}.mp3`,
-          `${page.joinInAudioId}.mp3`,
-        ]),
+        story.pages.flatMap((page) =>
+          [page.narrationAudioId, page.joinInAudioId]
+            .filter(Boolean)
+            .map((audioId) => `${audioId}.mp3`),
+        ),
       ),
     );
     assert.deepEqual(savedStoryAssets, expectedStoryAssets);
