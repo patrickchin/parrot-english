@@ -15,8 +15,11 @@ import {
 
 const restoreDom = installDom();
 const originalFetch = globalThis.fetch;
+const originalAudioContext = globalThis.AudioContext;
 const originalMediaRecorder = globalThis.MediaRecorder;
 const originalMediaDevices = navigator.mediaDevices;
+const originalCreateObjectUrl = URL.createObjectURL;
+const originalRevokeObjectUrl = URL.revokeObjectURL;
 
 const vite = await createServer({
   appType: "custom",
@@ -43,7 +46,10 @@ afterEach(async () => {
   await cleanupMountedRoots();
   document.body.replaceChildren();
   globalThis.fetch = originalFetch;
+  globalThis.AudioContext = originalAudioContext;
   globalThis.MediaRecorder = originalMediaRecorder;
+  URL.createObjectURL = originalCreateObjectUrl;
+  URL.revokeObjectURL = originalRevokeObjectUrl;
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,
     value: originalMediaDevices,
@@ -97,6 +103,12 @@ function renderDuckDub(state, viewProps = {}) {
   );
 }
 
+function buttonWithText(container, label) {
+  return [...container.querySelectorAll("button")].find((candidate) =>
+    candidate.textContent.includes(label)
+  );
+}
+
 function liveStatusText(html) {
   const match = html.match(
     /<div(?=[^>]*aria-atomic="true")(?=[^>]*aria-live="polite")(?=[^>]*role="status")[^>]*>([^<]*)<\/div>/,
@@ -120,6 +132,9 @@ describe("duck dubbing presentation", () => {
 
   it("clears a revoking save into disabled learner guidance", async () => {
     assert.equal(typeof DuckDub, "function", "Expected an executable DuckDub");
+    const revokedUrls = [];
+    URL.createObjectURL = () => "blob:revoking-take";
+    URL.revokeObjectURL = (url) => revokedUrls.push(url);
     const track = { stopped: false, stop() { this.stopped = true; } };
     class Recorder {
       static isTypeSupported() { return false; }
@@ -166,7 +181,133 @@ describe("duck dubbing presentation", () => {
 
     await waitFor(() => assert.match(container.textContent, /Ask a grown-up to turn on voice dubbing in Guardian mode/));
     assert.equal(track.stopped, true);
+    assert.deepEqual(revokedUrls, ["blob:revoking-take"]);
     assert.doesNotMatch(container.textContent, /Save again|Start dubbing|Continue dubbing|Record line/);
+  });
+
+  it("revokes the current take preview when dubbing unmounts", async () => {
+    const revokedUrls = [];
+    let createdUrls = 0;
+    URL.createObjectURL = () => `blob:take-${++createdUrls}`;
+    URL.revokeObjectURL = (url) => revokedUrls.push(url);
+    const track = { stop() {} };
+    class Recorder {
+      static isTypeSupported() { return false; }
+
+      constructor() { this.state = "inactive"; }
+
+      start() { this.state = "recording"; }
+
+      stop() {
+        this.state = "inactive";
+        this.ondataavailable?.({ data: new Blob(["take"], { type: "audio/webm" }) });
+        this.onstop?.();
+      }
+    }
+    globalThis.MediaRecorder = Recorder;
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: { async getUserMedia() { return { getTracks: () => [track] }; } },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json({
+          complete: false,
+          consentState: "granted",
+          dubId: "five-little-ducks-v2",
+          guardianConsentVersion: "guardian-voice-r2-v2",
+          lines: DUB_LINES.map(({ id }) => ({ id, recordedAt: null, saved: false })),
+          recordingEnabled: true,
+        });
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        return Response.json({ recordedAt: "2026-08-25T10:00:00.000Z" }, { status: 201 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountStrict(
+      createElement(MemoryRouter, { initialEntries: ["/dubs/five-little-ducks"] }, createElement(DuckDub)),
+    );
+    await waitFor(() => assert.ok(buttonWithText(container, "Start dubbing")));
+    await click(buttonWithText(container, "Start dubbing"));
+    await click(container.querySelector('[aria-label="Record line 1"]'));
+    await click(container.querySelector('[aria-label="Stop recording line 1"]'));
+    await waitFor(() => assert.ok(buttonWithText(container, "Next line")));
+
+    assert.equal(createdUrls, 1);
+    assert.deepEqual(revokedUrls, []);
+    await cleanupMountedRoots();
+    assert.deepEqual(revokedUrls, ["blob:take-1"]);
+  });
+
+  it("clears a complete dub when final playback reports consent loss", async () => {
+    assert.equal(typeof DuckDub, "function", "Expected an executable DuckDub");
+    class AudioContext {
+      close() { return Promise.resolve(); }
+    }
+    globalThis.AudioContext = AudioContext;
+
+    for (const [status, error] of [
+      [403, "dubbing_not_enabled"],
+      [409, "dub_consent_revoking"],
+    ]) {
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+          return Response.json({
+            complete: true,
+            consentState: "granted",
+            dubId: "five-little-ducks-v2",
+            guardianConsentVersion: "guardian-voice-r2-v2",
+            lines: DUB_LINES.map(({ id }) => ({
+              id,
+              recordedAt: "2026-08-25T10:00:00.000Z",
+              saved: true,
+            })),
+            recordingEnabled: true,
+          });
+        }
+        if (String(path).endsWith("/audio")) {
+          return Response.json({ error }, { status });
+        }
+        throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+      };
+
+      const container = await mountStrict(
+        createElement(
+          MemoryRouter,
+          { initialEntries: ["/dubs/five-little-ducks"] },
+          createElement(DuckDub),
+        ),
+      );
+      await waitFor(() => assert.ok(
+        [...container.querySelectorAll("button")].some((button) =>
+          /Start dubbing|Continue dubbing/.test(button.textContent)
+        ),
+      ));
+      await click([...container.querySelectorAll("button")].find((button) =>
+        /Start dubbing|Continue dubbing/.test(button.textContent)
+      ));
+      await waitFor(() => assert.ok(
+        [...container.querySelectorAll("button")].some((button) =>
+          button.textContent.includes("Watch my dub")
+        ),
+      ));
+      await click([...container.querySelectorAll("button")].find((button) =>
+        button.textContent.includes("Watch my dub")
+      ));
+
+      await waitFor(() => assert.match(
+        container.textContent,
+        /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      ));
+      assert.doesNotMatch(
+        container.textContent,
+        /Watch my dub|Try again|Record selected line/,
+      );
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
   });
 
   it("makes the current lyric unmistakable and keeps the saved guide replayable", () => {

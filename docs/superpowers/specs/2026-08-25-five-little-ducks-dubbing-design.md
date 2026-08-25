@@ -55,10 +55,10 @@ line, record a replacement, and replay the final performance.
 
 Adult management lives separately at `/guardian/dubbing`, behind the live
 15-minute guardian unlock. Only that route can accept version-2 voice-storage
-consent or turn dubbing off and delete all saved clips. A successful grant locks
-guardian mode before handing the activity back to the learner. An interrupted
-deletion remains `revoking` and offers **Finish removing voice clips** only in
-guardian mode.
+consent or turn dubbing off and delete all saved clips. The separate **Switch to
+learner and start dubbing** handoff locks guardian mode before learner
+navigation. An interrupted deletion remains `revoking` and offers **Finish
+removing voice clips** only in guardian mode.
 
 ## Traditional Rhyme and Original Presentation
 

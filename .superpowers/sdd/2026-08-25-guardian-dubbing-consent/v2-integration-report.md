@@ -231,3 +231,120 @@ Documentation:
   `worker-configuration.d.ts`; build still reports the existing non-failing
   chunk-size advisory.
 - No unresolved product or architecture choice appeared during integration.
+
+## Fix Round 1 — review closure
+
+### Status and changes
+
+PASS. Round 1 closes every Critical, Important, and Minor review finding plus
+the requested high-value coverage gaps.
+
+- Added `worker/dub-route.ts` as the single raw, canonical v2 route parser used
+  by both the dub domain and central guardian policy. Percent-encoded aliases
+  of the current root or consent route are rejected with a private production-
+  shaped 404 after authentication and before the domain handler, whether the
+  session is locked or unlocked. The domain independently rejects the same
+  aliases before any D1 or R2 mutation.
+- Extended the no-grant upload test to spoof the current
+  `guardian-voice-r2-v2` header as well as the retired v1 header. Added
+  mutation-sensitive status/audio checks where consent becomes `revoking`
+  during R2 work, and a failed arbitrary v1-prefix purge check proving D1 stays
+  `revoking` until a successful retry converges.
+- Preserved `DubNotEnabledError` for final-playback audio 403
+  `dubbing_not_enabled` and 409 `dub_consent_revoking` responses. `DuckDub`
+  now reuses one consent-loss transition for upload and final playback: it
+  cancels/stops media, clears pending blobs, object URLs, saved lines, and
+  errors, disables recording, and returns to the child-readable unavailable
+  intro with no futile replay action.
+- Added explicit post-mutation focus restoration to the newly authoritative
+  guardian state heading after grant, failed revoke/cleanup, and successful
+  cleanup. Initial and ordinary status loads do not request focus.
+- Expanded object-URL lifecycle coverage to consent-loss cleanup and unmount,
+  with exact create/revoke pairing assertions.
+- The browser mock now returns `{ error: "not_found", message: "not_found" }`
+  with `Cache-Control: private, no-store` for obsolete v1 and out-of-range v2
+  paths. Focused Playwright asserts both v1 root/consent and v2 line-25
+  upload/audio routes.
+- Expanded guardian responsive Playwright to `complete`, `not-granted`, and
+  cleanup-required/`revoking` states at 280x568, 390x844, and 640x360,
+  including header containment, scroll reachability, action containment, and
+  horizontal overflow.
+- Corrected the v2 design: consent grant does not lock guardian mode; the
+  separate **Switch to learner and start dubbing** handoff locks before
+  learner navigation.
+
+### TDD evidence
+
+- Encoded-route RED: the first focused routing/Worker run was 70/71, with the
+  locked encoded root `DELETE` reaching the handler as 204. The narrower
+  central-plus-domain run then showed both destructive aliases failing (1/3
+  passed, 2 failed). After the shared route contract, both regressions passed.
+- Final-playback RED: the new 403/409 typed-error playback test failed because
+  it received `DubLinePlaybackError`; after the API/playback change it passed
+  for both statuses. The mounted learner regression likewise first remained
+  on **Watch my dub** with a generic retry, then passed for both statuses after
+  the shared cleanup transition.
+- Focus RED: grant, failed cleanup, and cleanup completion all left focus on
+  `BODY` (0/3). The post-commit state-heading focus mechanism passed 3/3 and
+  the test also proves initial load leaves focus on `BODY`.
+- Browser mock RED: obsolete/out-of-range requests initially escaped the mock
+  and returned non-production bodies. After the mock fallback and an explicit
+  app-readiness boundary, the path contract passed. The new responsive matrix
+  passed 9/9.
+- The spoofed-current-header, mid-R2 revocation, legacy purge retry, and object-
+  URL tests characterized already-correct privacy/lifecycle behavior and were
+  green when introduced; no unnecessary production rewrite followed.
+
+Focused GREEN totals:
+
+- Backend schema/consent/routing/guardian/Worker/account deletion: 104/104.
+- Dub API/state/UI/playback/waveform/static audio plus guardian routes/settings/
+  shell/lifecycle: 225/225.
+- Dubbing plus guardian-mode Playwright: 63/63.
+- Final direct obsolete-v1/line-25 browser-mock check: 1/1.
+
+### Round 1 files
+
+- `worker/dub-route.ts` (new)
+- `worker/dubs.ts`
+- `worker/guardian-access.ts`
+- `worker/index.ts`
+- `src/dubbing/dub-api.ts`
+- `src/dubbing/dub-playback.ts`
+- `src/dubbing/DuckDub.tsx`
+- `src/dubbing/GuardianDubbingSettings.tsx`
+- `src/testing/e2e-browser-mocks.ts`
+- `tests/dub-routing.test.mjs`
+- `tests/dub-worker.test.mjs`
+- `tests/dub-playback.test.mjs`
+- `tests/dub-ui.test.mjs`
+- `tests/guardian-dubbing-settings.test.mjs`
+- `tests/e2e/dubbing.spec.ts`
+- `docs/superpowers/specs/2026-08-25-five-little-ducks-dubbing-design.md`
+
+### Ordered full gates after Round 1
+
+1. `npm test` — exit 0; 964 tests, 104 suites, 964 passed, 0 failed.
+2. `npm run lint` — exit 0; 0 errors and the same two generated-file warnings
+   in `worker-configuration.d.ts`.
+3. `npm run build` — exit 0; TypeScript passed and Vite built 1,906 modules;
+   the existing non-failing large-chunk advisory remains.
+4. `npm run test:browser` — exit 0; 448 passed, 0 failed in 1.8 minutes.
+
+### Round 1 self-review and concerns
+
+- Reviewed every amended production, test, mock, and design path. The route
+  contract accepts only raw canonical v2 identifiers; encoded aliases cannot
+  cross a different central/domain interpretation. Obsolete v1 paths remain
+  authenticated private 404s and never become guardian mutations.
+- Rechecked playback abort/close behavior, pending-blob and object-URL cleanup,
+  state reset, and the absence of learner adult/destructive controls.
+- Rechecked focus ownership: only an authoritative mutation increments the
+  one-shot focus request; initial/retry status loads cannot trigger it.
+- Searched for conflict markers, stale current v1 API use, current nine-line
+  counts, learner grown-up/delete controls, and loss of guide/waveform/range/
+  envelope/pacing/legacy-retirement behavior. Remaining v1 paths are
+  intentional historical-plan text or negative/retirement tests.
+- `git diff --check` is clean. No new product or architecture decision and no
+  new rollout concern appeared. The two generated lint warnings and Vite
+  chunk-size advisory remain the only non-failing concerns.

@@ -48,6 +48,21 @@ export class DubNotEnabledError extends Error {
   }
 }
 
+export async function dubConsentLossError(response: Response) {
+  if (response.status !== 403 && response.status !== 409) return null;
+  const body: unknown = await response.clone().json().catch(() => null);
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "error" in body &&
+    (body.error === "dubbing_not_enabled" ||
+      body.error === "dub_consent_revoking")
+  ) {
+    return new DubNotEnabledError();
+  }
+  return null;
+}
+
 function requireOk(response: Response, fallback: string) {
   if (!response.ok) throw new Error(fallback);
   return response;
@@ -160,17 +175,8 @@ export async function saveDubLine(
     SAVE_FAILURE,
   );
   if (!response.ok) {
-    if (response.status === 403 || response.status === 409) {
-      const body: unknown = await response.clone().json().catch(() => null);
-      if (
-        typeof body === "object" &&
-        body !== null &&
-        "error" in body &&
-        (body.error === "dubbing_not_enabled" || body.error === "dub_consent_revoking")
-      ) {
-        throw new DubNotEnabledError();
-      }
-    }
+    const consentLoss = await dubConsentLossError(response);
+    if (consentLoss) throw consentLoss;
     if (response.status === 413) throw new DubTakeRejectedError();
     if (response.status === 400 || response.status === 415) {
       const body: unknown = await response.clone().json().catch(() => null);

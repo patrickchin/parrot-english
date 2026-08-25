@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
+import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
 import {
   DubLinePlaybackError,
   scheduleDubAudio,
@@ -459,6 +460,37 @@ describe("duck dub playback", () => {
     assert.equal(audio.contexts[0].sources.length, 0);
     assert.equal(audio.contexts[0].oscillators.length, 0);
     assert.equal(raf.callbacks.size, 0);
+  });
+
+  it("preserves consent loss from private audio responses", async () => {
+    for (const [status, code] of [
+      [403, "dubbing_not_enabled"],
+      [409, "dub_consent_revoking"],
+    ]) {
+      const audio = createAudioHarness();
+      const request = createFailingFetch(
+        "line-5",
+        () => Response.json({ error: code }, { status }),
+      );
+
+      const error = await startDubPlayback({
+        AudioContext: audio.AudioContext,
+        fetch: request.fetch,
+        onTick() {},
+      }).then(
+        () => assert.fail("playback should reject"),
+        (cause) => cause,
+      );
+
+      assert.ok(error instanceof DubNotEnabledError, `${status} ${code}`);
+      assert.equal(error.code, "dubbing_not_enabled");
+      assert.deepEqual(
+        request.abortedLineIds.sort(),
+        DUB_LINES.map(({ id }) => id).filter((id) => id !== "line-5").sort(),
+      );
+      assert.equal(audio.contexts[0].closeCalls, 1);
+      assert.equal(audio.contexts[0].resumeCalls, 0);
+    }
   });
 
   it("keeps the first observed network failure when multiple failures race", async () => {

@@ -250,6 +250,50 @@ test("mirrors the durable line-upload response contract", async ({ page }) => {
   });
 });
 
+test("browser mock rejects obsolete v1 and out-of-range v2 routes", async ({
+  page,
+}) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+
+  const results = await page.evaluate(async () => {
+    const requests: Array<[string, RequestInit]> = [
+      ["/api/dubs/five-little-ducks-v1", {}],
+      [
+        "/api/dubs/five-little-ducks-v1/consent",
+        {
+          body: JSON.stringify({ accepted: true }),
+          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+        },
+      ],
+      [
+        "/api/dubs/five-little-ducks-v2/lines/line-25",
+        {
+          body: new Blob(["clip"], { type: "audio/webm" }),
+          headers: { "Content-Type": "audio/webm" },
+          method: "PUT",
+        },
+      ],
+      ["/api/dubs/five-little-ducks-v2/lines/line-25/audio", {}],
+    ];
+    return Promise.all(requests.map(async ([path, init]) => {
+      const response = await fetch(path, init);
+      return {
+        body: await response.text(),
+        cacheControl: response.headers.get("Cache-Control"),
+        status: response.status,
+      };
+    }));
+  });
+
+  expect(results).toEqual(Array.from({ length: 4 }, () => ({
+    body: JSON.stringify({ error: "not_found", message: "not_found" }),
+    cacheControl: "private, no-store",
+    status: 404,
+  })));
+});
+
 test("asks for one new take when the upload rejects the recording", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
   await enterStudio(page, "Start dubbing");
@@ -463,48 +507,73 @@ test("guardian mode deletes a complete private dub and revokes consent", async (
   ).toBeVisible();
 });
 
+const guardianResponsiveStates = [
+  {
+    action: "Turn off voice dubbing and delete saved clips",
+    heading: "Voice dubbing is on",
+    scenario: "complete",
+  },
+  {
+    action: "Allow voice dubbing",
+    heading: "Turn on private voice dubbing",
+    scenario: "not-granted",
+  },
+  {
+    action: "Finish removing voice clips",
+    heading: "Voice clip removal needs to finish",
+    scenario: "reset-delete-failed",
+  },
+] as const;
+
 for (const viewport of [
   { height: 568, width: 280 },
   { height: 844, width: 390 },
   { height: 360, width: 640 },
 ]) {
-  test(`keeps guardian voice settings usable at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(
-      "/guardian/dubbing?parrotE2eDub=complete&parrotE2eGuardian=guardian",
-    );
+  for (const state of guardianResponsiveStates) {
+    test(`keeps guardian ${state.scenario} settings usable at ${viewport.width}x${viewport.height}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await page.goto(
+        `/guardian/dubbing?parrotE2eDub=${state.scenario}&parrotE2eGuardian=guardian`,
+      );
 
-    const back = page.getByRole("link", { name: "Back to guardian dashboard" });
-    const account = page.getByRole("button", {
-      name: /Profile for Mia, guardian mode/,
-    });
-    const heading = page.getByRole("heading", {
-      exact: true,
-      name: "Voice dubbing",
-    });
-    const remove = page.getByRole("button", {
-      name: "Turn off voice dubbing and delete saved clips",
-    });
+      const back = page.getByRole("link", { name: "Back to guardian dashboard" });
+      const account = page.getByRole("button", {
+        name: /Profile for Mia, guardian mode/,
+      });
+      const pageHeading = page.getByRole("heading", {
+        exact: true,
+        name: "Voice dubbing",
+      });
+      const stateHeading = page.getByRole("heading", {
+        exact: true,
+        name: state.heading,
+      });
+      const action = page.getByRole("button", { name: state.action });
 
-    const headerBoxes = await Promise.all([back, account].map(visibleBox));
-    for (const box of headerBoxes) {
-      expect(box.x).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-    }
-    expect(boxesOverlap(headerBoxes[0], headerBoxes[1])).toBe(false);
-    await expect(heading).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
-    const removeBox = await visibleBox(remove);
-    expect(removeBox.x).toBeGreaterThanOrEqual(0);
-    expect(removeBox.x + removeBox.width).toBeLessThanOrEqual(viewport.width);
-    await expect
-      .poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-      )
-      .toBe(true);
-  });
+      const headerBoxes = await Promise.all([back, account].map(visibleBox));
+      for (const box of headerBoxes) {
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+      }
+      expect(boxesOverlap(headerBoxes[0], headerBoxes[1])).toBe(false);
+      await expect(pageHeading).toBeVisible();
+      await expect(stateHeading).toBeVisible();
+      await action.scrollIntoViewIfNeeded();
+      const actionBox = await visibleBox(action);
+      expect(actionBox.x).toBeGreaterThanOrEqual(0);
+      expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(viewport.width);
+      expect(actionBox.y).toBeGreaterThanOrEqual(0);
+      expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(viewport.height);
+      await expect
+        .poll(() =>
+          page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+        )
+        .toBe(true);
+    });
+  }
 }
 
 test("guardian mode recovers a legacy interrupted reset after a fresh grant", async ({

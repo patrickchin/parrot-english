@@ -1,7 +1,7 @@
 import { and, eq, lte } from "drizzle-orm";
-import { DUB_ID } from "../src/dubbing/dub-script.ts";
 import { guardianSessionUnlock } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
+import { parseDubRoute } from "./dub-route.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
@@ -178,11 +178,11 @@ export async function requireGuardianAccess(input: {
 }
 
 export function requiresGuardianAccess(pathname: string, method: string) {
-  const dubPath = `/api/dubs/${DUB_ID}`;
-  if (pathname === `${dubPath}/consent`) {
+  const dubRoute = parseDubRoute(pathname);
+  if (dubRoute?.consent) {
     return method === "PUT";
   }
-  if (pathname === dubPath) {
+  if (dubRoute && !dubRoute.lineId) {
     return method === "DELETE";
   }
   if (pathname === "/api/profile") {

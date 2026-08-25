@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { createDatabase } from "../worker/database.ts";
+import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
@@ -113,6 +115,71 @@ describe("dub Worker routing", () => {
         assert.deepEqual(await response.json(), { routed: true });
       }
       assert.equal(handlerCalls, 5);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects encoded current-dub aliases before the handler while locked or unlocked", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      state.sqlite.prepare(
+        `INSERT INTO session
+          (id, expires_at, token, created_at, updated_at, user_id)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(
+        "session-1",
+        timestamp + 86_400_000,
+        "token-1",
+        timestamp,
+        timestamp,
+        "user-1",
+      );
+      let handlerCalls = 0;
+      const worker = createWorker({
+        createAuth: () => authStub({
+          session: { id: "session-1" },
+          user: { id: "user-1", name: "Guardian" },
+        }, []),
+        async handleDubRequest() {
+          handlerCalls += 1;
+          return new Response(null, { status: 204 });
+        },
+      });
+      const { env } = environment();
+      env.DB = state.d1;
+      const aliases = [
+        ["DELETE", "/api/dubs/%66ive-little-ducks-v2"],
+        ["PUT", "/api/dubs/%66ive-little-ducks-v2/consent"],
+        ["PUT", "/api/dubs/five-little-ducks-v2/%63onsent"],
+      ];
+
+      for (const mode of ["locked", "unlocked"]) {
+        if (mode === "unlocked") {
+          await createGuardianAccessRepository(createDatabase(state.d1)).unlock(
+            "session-1",
+          );
+        }
+        for (const [method, path] of aliases) {
+          const response = await worker.fetch(request(method, path), env);
+          assert.equal(response.status, 404, `${mode}: ${method} ${path}`);
+          assert.equal(
+            response.headers.get("Cache-Control"),
+            "private, no-store",
+          );
+          assert.deepEqual(await response.json(), {
+            error: "not_found",
+            message: "not_found",
+          });
+        }
+      }
+      assert.equal(handlerCalls, 0);
     } finally {
       state.close();
     }

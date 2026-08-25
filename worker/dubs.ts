@@ -20,6 +20,7 @@ import {
   R2_WRITE_INTERVAL_MS,
   retryDelay,
 } from "./dub-storage.ts";
+import { parseDubRoute } from "./dub-route.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedBytes,
@@ -124,29 +125,6 @@ function json(payload: unknown, init: ResponseInit = {}) {
     ...init,
     headers: { "Cache-Control": "private, no-store", ...init.headers },
   });
-}
-
-function parseDubRoute(pathname: string) {
-  if (pathname === `/api/dubs/${DUB_ID}/consent`) {
-    return { audio: false, consent: true, dubId: DUB_ID, lineId: null };
-  }
-  const match = /^\/api\/dubs\/([^/]+)(?:\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
-    pathname,
-  );
-  if (!match) return null;
-  try {
-    const dubId = decodeURIComponent(match[1]);
-    const lineId = match[2] ? decodeURIComponent(match[2]) : null;
-    if (
-      dubId !== DUB_ID ||
-      (lineId && !DUB_LINES.some((line) => line.id === lineId))
-    ) {
-      return null;
-    }
-    return { audio: match[3] === "audio", consent: false, dubId, lineId };
-  } catch {
-    return null;
-  }
 }
 
 async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> {

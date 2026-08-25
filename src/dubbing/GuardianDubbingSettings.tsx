@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type Ref,
 } from "react";
 import { useNavigate } from "react-router";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
@@ -36,6 +37,7 @@ export function GuardianDubbingSettingsView({
   onRetry,
   onSwitchToLearner,
   savedCount,
+  stateHeadingRef,
 }: {
   cleanupRequired: boolean;
   consentState: DubStatus["consentState"] | null;
@@ -50,6 +52,7 @@ export function GuardianDubbingSettingsView({
   onRetry: () => void;
   onSwitchToLearner: () => void;
   savedCount: number;
+  stateHeadingRef?: Ref<HTMLHeadingElement>;
 }) {
   const busy = isLoading || mutation !== null;
 
@@ -111,7 +114,11 @@ export function GuardianDubbingSettingsView({
         {consentState === "not_granted" ? (
           <Card className="grid gap-5 p-5 sm:p-7">
             <div className="grid gap-3">
-              <h2 className="m-0 text-2xl leading-tight text-brand-navy">
+              <h2
+                className="m-0 text-2xl leading-tight text-brand-navy"
+                ref={stateHeadingRef}
+                tabIndex={-1}
+              >
                 Turn on private voice dubbing
               </h2>
               <p className="m-0 font-bold leading-relaxed text-slate-600">
@@ -151,7 +158,11 @@ export function GuardianDubbingSettingsView({
         {consentState === "granted" ? (
           <Card className="grid gap-5 p-5 sm:p-7">
             <div className="grid gap-2 text-center">
-              <h2 className="m-0 text-2xl leading-tight text-brand-navy">
+              <h2
+                className="m-0 text-2xl leading-tight text-brand-navy"
+                ref={stateHeadingRef}
+                tabIndex={-1}
+              >
                 Voice dubbing is on
               </h2>
               <p className="m-0 font-extrabold text-brand-blue">
@@ -190,7 +201,11 @@ export function GuardianDubbingSettingsView({
         {consentState === "revoking" || cleanupRequired ? (
           <Card className="grid gap-5 p-5 text-center sm:p-7">
             <div className="grid gap-2">
-              <h2 className="m-0 text-2xl leading-tight text-brand-navy">
+              <h2
+                className="m-0 text-2xl leading-tight text-brand-navy"
+                ref={stateHeadingRef}
+                tabIndex={-1}
+              >
                 Voice clip removal needs to finish
               </h2>
               <p className="m-0 font-bold leading-relaxed text-slate-600">
@@ -228,6 +243,7 @@ export function GuardianDubbingSettings({
   const { error: guardianError, lock } = useGuardianAccess();
   const navigate = useNavigate();
   const [cleanupRequired, setCleanupRequired] = useState(false);
+  const [focusRequest, setFocusRequest] = useState(0);
   const [status, setStatus] = useState<DubStatus | null>(null);
   const [hasAccepted, setHasAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -236,9 +252,11 @@ export function GuardianDubbingSettings({
   const [statusError, setStatusError] = useState("");
   const loadControllerRef = useRef<AbortController | null>(null);
   const loadGenerationRef = useRef(0);
+  const lastFocusedRequestRef = useRef(0);
   const mountedRef = useRef(false);
   const mutationControllerRef = useRef<AbortController | null>(null);
   const mutationRef = useRef<Mutation | null>(null);
+  const stateHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const refresh = useCallback(
     async ({
@@ -317,6 +335,12 @@ export function GuardianDubbingSettings({
     };
   }, [refresh]);
 
+  useEffect(() => {
+    if (focusRequest === lastFocusedRequestRef.current) return;
+    lastFocusedRequestRef.current = focusRequest;
+    stateHeadingRef.current?.focus();
+  }, [cleanupRequired, focusRequest, status?.consentState]);
+
   async function mutate(
     kind: Exclude<Mutation, "switch">,
     operation: (options: { signal: AbortSignal }) => Promise<void>,
@@ -346,6 +370,7 @@ export function GuardianDubbingSettings({
         preserveOperationError: Boolean(failure),
       });
       if (kind === "grant" && succeeded) setHasAccepted(false);
+      setFocusRequest((request) => request + 1);
     }
 
     if (mutationControllerRef.current === controller) {
@@ -413,6 +438,7 @@ export function GuardianDubbingSettings({
       onRetry={() => void refresh({ preserveOperationError: true })}
       onSwitchToLearner={() => void switchToLearner()}
       savedCount={status?.lines.filter(({ saved }) => saved).length ?? 0}
+      stateHeadingRef={stateHeadingRef}
     />
   );
 }

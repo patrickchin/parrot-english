@@ -35,6 +35,7 @@ import {
   type PersonalizedStoryArtEnv,
 } from "./personalized-story-art.ts";
 import { handleDubRequest, type DubEnv } from "./dubs.ts";
+import { isEncodedDubRouteAlias } from "./dub-route.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
 
 interface AssetFetcher {
@@ -168,6 +169,15 @@ export function createWorker(
             {
               headers: { "Cache-Control": "private, no-store" },
               status: 401,
+            },
+          );
+        }
+        if (isEncodedDubRouteAlias(url.pathname)) {
+          return Response.json(
+            { error: "not_found", message: "not_found" },
+            {
+              headers: { "Cache-Control": "private, no-store" },
+              status: 404,
             },
           );
         }

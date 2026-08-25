@@ -523,6 +523,14 @@ export function DuckDub() {
     }
   }, [clearTakePreview]);
 
+  const handleConsentLoss = useCallback(() => {
+    stopOperations(true);
+    setLoadError("");
+    setOperationError("");
+    setRecordingEnabled(false);
+    dispatch({ type: "LOADED", savedLineIds: [] });
+  }, [stopOperations]);
+
   useEffect(() => {
     mountedRef.current = true;
     const controller = new AbortController();
@@ -581,11 +589,7 @@ export function DuckDub() {
     } catch (error) {
       if (controller.signal.aborted || generation !== generationRef.current) return;
       if (error instanceof DubNotEnabledError) {
-        stopOperations(true);
-        setLoadError("");
-        setOperationError("");
-        setRecordingEnabled(false);
-        dispatch({ type: "LOADED", savedLineIds: [] });
+        handleConsentLoss();
         return;
       }
       dispatch({
@@ -756,6 +760,10 @@ export function DuckDub() {
     } catch (error) {
       if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
       finalControllerRef.current = null;
+      if (error instanceof DubNotEnabledError) {
+        handleConsentLoss();
+        return;
+      }
       if (error instanceof DubLinePlaybackError && error.stage === "decode") {
         dispatch({ type: "SELECT_LINE", lineId: error.lineId });
         dispatch({ type: "RETAKE" });

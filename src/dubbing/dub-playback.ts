@@ -3,7 +3,10 @@ import {
   DUB_LINES,
   type DubLine,
 } from "./dub-script.ts";
-import { getDubLineAudioUrl } from "./dub-api.ts";
+import {
+  dubConsentLossError,
+  getDubLineAudioUrl,
+} from "./dub-api.ts";
 
 type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
@@ -180,13 +183,12 @@ export async function startDubPlayback({
   try {
     if (signal?.aborted) throw createAbortError();
 
-    let firstLineFailure: DubLinePlaybackError | null = null;
-    let rejectLineFailure!: (failure: DubLinePlaybackError) => void;
+    let firstLineFailure: Error | null = null;
+    let rejectLineFailure!: (failure: Error) => void;
     const lineFailure = new Promise<never>((_, reject) => {
       rejectLineFailure = reject;
     });
-    const failLine = (lineId: DubLine["id"], stage: DubLinePlaybackStage) => {
-      const failure = new DubLinePlaybackError(lineId, stage);
+    const failPlayback = (failure: Error) => {
       // The first observed line failure is the origin; later AbortErrors are
       // consequences of cancelling its sibling work.
       if (!firstLineFailure) {
@@ -196,6 +198,8 @@ export async function startDubPlayback({
       }
       return failure;
     };
+    const failLine = (lineId: DubLine["id"], stage: DubLinePlaybackStage) =>
+      failPlayback(new DubLinePlaybackError(lineId, stage));
     const lineLoads = DUB_LINES.map(async ({ id }) => {
       let response: Response;
       try {
@@ -211,6 +215,8 @@ export async function startDubPlayback({
       }
       if (!response.ok) {
         if (signal?.aborted) throw createAbortError();
+        const consentLoss = await dubConsentLossError(response);
+        if (consentLoss) throw failPlayback(consentLoss);
         throw failLine(id, "fetch");
       }
       let bytes: ArrayBuffer;

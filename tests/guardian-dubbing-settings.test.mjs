@@ -186,6 +186,7 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
   );
 
   await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
+  assert.equal(document.activeElement, document.body);
   const grantButton = button(container, "Allow voice dubbing");
   assert.equal(grantButton.disabled, true);
   await click(container.querySelector('input[type="checkbox"]'));
@@ -202,6 +203,10 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
   await waitFor(() =>
     assert.match(container.textContent, /Voice dubbing is on/),
   );
+  await waitFor(() => assert.equal(
+    document.activeElement?.textContent,
+    "Voice dubbing is on",
+  ));
 });
 
 test("a committed grant with a lost response reloads authoritative granted status", async () => {
@@ -292,6 +297,10 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
     /Your saved dub was not deleted/,
   );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
+  await waitFor(() => assert.equal(
+    document.activeElement?.textContent,
+    "Voice clip removal needs to finish",
+  ));
 });
 
 test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
@@ -339,6 +348,10 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
 
   await click(button(container, "Finish removing voice clips"));
   await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
+  await waitFor(() => assert.equal(
+    document.activeElement?.textContent,
+    "Turn on private voice dubbing",
+  ));
   assert.equal(deleteCalls, 2);
   assert.doesNotMatch(container.textContent, /Finish removing voice clips/);
 });

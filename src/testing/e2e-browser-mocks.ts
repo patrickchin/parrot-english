@@ -597,7 +597,11 @@ function createE2eDubStore(scenario: string | null) {
       const lineMatch = url.pathname.match(
         /^\/api\/dubs\/five-little-ducks-v2\/lines\/(line-(?:[1-9]|1[0-9]|2[0-4]))(\/audio)?$/,
       );
-      if (!lineMatch) return null;
+      if (!lineMatch) {
+        return url.pathname.startsWith("/api/dubs/")
+          ? e2eDubJson({ error: "not_found", message: "not_found" }, 404)
+          : null;
+      }
       const [, lineId, audioPath] = lineMatch;
       if (consentState !== "granted") return disabledDubResponse();
       if (method === "GET" && audioPath) {

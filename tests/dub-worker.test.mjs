@@ -529,41 +529,99 @@ describe("private learner dub API", () => {
 
   it("rejects upload and audio without a current durable grant", async () => {
     for (const consentState of ["not_granted", "revoking"]) {
-      const bucket = createBucket();
-      const consentRepository = createConsentRepository(
-        consentState === "revoking"
-          ? { state: "revoking", grantGeneration: "consent-1" }
-          : { state: "not_granted" },
-      );
-      const upload = await callDub({
-        body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-        bucket,
-        consentRepository,
-        headers: {
-          ...CONSENT_HEADERS,
-          "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
-        },
-        method: "PUT",
-        path: `${DUB_PATH}/lines/line-1`,
-      });
-      const audio = await callDub({
-        bucket,
-        consentRepository,
-        method: "GET",
-        path: `${DUB_PATH}/lines/line-1/audio`,
-      });
+      for (const spoofedVersion of [
+        "guardian-voice-r2-v1",
+        CURRENT_CONSENT_VERSION,
+      ]) {
+        const bucket = createBucket();
+        const consentRepository = createConsentRepository(
+          consentState === "revoking"
+            ? { state: "revoking", grantGeneration: "consent-1" }
+            : { state: "not_granted" },
+        );
+        const upload = await callDub({
+          body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+          bucket,
+          consentRepository,
+          headers: {
+            ...CONSENT_HEADERS,
+            "X-Parrot-Guardian-Consent-Version": spoofedVersion,
+          },
+          method: "PUT",
+          path: `${DUB_PATH}/lines/line-1`,
+        });
+        const audio = await callDub({
+          bucket,
+          consentRepository,
+          method: "GET",
+          path: `${DUB_PATH}/lines/line-1/audio`,
+        });
 
-      const expected = consentState === "revoking" ? 409 : 403;
-      const error = consentState === "revoking"
-        ? "dub_consent_revoking"
-        : "dubbing_not_enabled";
-      assert.equal(upload.status, expected, consentState);
-      assert.equal((await upload.json()).error, error, consentState);
-      assert.equal(audio.status, expected, consentState);
-      assert.equal((await audio.json()).error, error, consentState);
-      assert.equal(bucket.calls.put.length, 0, consentState);
-      assert.equal(bucket.calls.head.length, 0, consentState);
+        const expected = consentState === "revoking" ? 409 : 403;
+        const error = consentState === "revoking"
+          ? "dub_consent_revoking"
+          : "dubbing_not_enabled";
+        assert.equal(upload.status, expected, `${consentState}: ${spoofedVersion}`);
+        assert.equal((await upload.json()).error, error, consentState);
+        assert.equal(audio.status, expected, consentState);
+        assert.equal((await audio.json()).error, error, consentState);
+        assert.equal(bucket.calls.put.length, 0, consentState);
+        assert.equal(bucket.calls.head.length, 0, consentState);
+      }
     }
+  });
+
+  it("fails status and audio closed when consent revokes during R2 work", async () => {
+    const statusConsent = createConsentRepository();
+    const statusBucket = createBucket([[slotKey("line-1"), {
+      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      options: { httpMetadata: { contentType: "audio/webm" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    const list = statusBucket.list.bind(statusBucket);
+    statusBucket.list = async (...args) => {
+      const page = await list(...args);
+      statusConsent.set({ state: "revoking", grantGeneration: "consent-1" });
+      return page;
+    };
+
+    const status = await callDub({
+      bucket: statusBucket,
+      consentRepository: statusConsent,
+      method: "GET",
+      path: DUB_PATH,
+    });
+    const statusPayload = await status.json();
+    assert.equal(status.status, 200);
+    assert.equal(statusPayload.consentState, "revoking");
+    assert.equal(statusPayload.recordingEnabled, false);
+    assert.deepEqual(
+      statusPayload.lines.filter(({ saved }) => saved),
+      [],
+    );
+
+    const audioConsent = createConsentRepository();
+    const audioBucket = createBucket([[slotKey("line-1"), {
+      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      options: { httpMetadata: { contentType: "audio/webm" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    const get = audioBucket.get.bind(audioBucket);
+    audioBucket.get = async (...args) => {
+      const object = await get(...args);
+      audioConsent.set({ state: "revoking", grantGeneration: "consent-1" });
+      return object;
+    };
+
+    const audio = await callDub({
+      bucket: audioBucket,
+      consentRepository: audioConsent,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    });
+    assert.equal(audio.status, 403);
+    assert.equal((await audio.json()).error, "dubbing_not_enabled");
+    assert.equal(audioBucket.calls.get.length, 1);
   });
 
   it("grants only the exact bounded guardian consent object", async () => {
@@ -1247,6 +1305,50 @@ describe("private learner dub API", () => {
     assert.equal(retry.status, 204);
     assert.equal((await consentRepository.status()).state, "not_granted");
     assertResetTombstones(bucket, "reset-2");
+  });
+
+  it("keeps revoking when legacy-prefix purge fails and converges on retry", async () => {
+    const retiredTakeKey = `${LEGACY_PREFIX}retired-take.webm`;
+    const bucket = createBucket([[retiredTakeKey, {
+      bytes: new Uint8Array([1, 2, 3]),
+      options: { httpMetadata: { contentType: "audio/webm" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    const consentRepository = createConsentRepository();
+    const remove = bucket.delete.bind(bucket);
+    let failLegacyPurge = true;
+    bucket.delete = async (keys) => {
+      if (failLegacyPurge && keys.includes(retiredTakeKey)) {
+        failLegacyPurge = false;
+        throw new Error("legacy purge unavailable");
+      }
+      return remove(keys);
+    };
+
+    await assert.rejects(
+      callDub({
+        bucket,
+        consentRepository,
+        generation: () => "reset-1",
+        method: "DELETE",
+        path: DUB_PATH,
+      }),
+      /legacy purge unavailable/,
+    );
+    assert.equal((await consentRepository.status()).state, "revoking");
+
+    const retry = await callDub({
+      bucket,
+      consentRepository,
+      generation: () => "reset-2",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    assert.equal(retry.status, 204);
+    assert.equal((await consentRepository.status()).state, "not_granted");
+    assert.equal(bucket.stored.has(retiredTakeKey), false);
+    assertResetTombstones(bucket, "reset-2");
+    assertLegacyRetirementFences(bucket, "reset-2");
   });
 
   it("paces recent slot overwrites and reset marker finalization for R2 hot keys", async () => {
@@ -2923,6 +3025,62 @@ describe("private learner dub API", () => {
       assert.equal(response.status, 404, path);
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     }
+  });
+
+  it("rejects encoded canonical aliases before domain mutations", async () => {
+    const bucket = createBucket();
+    const consentRepository = createConsentRepository();
+    let grants = 0;
+    let revocations = 0;
+    const grant = consentRepository.grant.bind(consentRepository);
+    const beginRevocation = consentRepository.beginRevocation.bind(
+      consentRepository,
+    );
+    consentRepository.grant = async (...args) => {
+      grants += 1;
+      return grant(...args);
+    };
+    consentRepository.beginRevocation = async (...args) => {
+      revocations += 1;
+      return beginRevocation(...args);
+    };
+
+    for (const [method, path, body, headers] of [
+      ["DELETE", "/api/dubs/%66ive-little-ducks-v2"],
+      [
+        "PUT",
+        "/api/dubs/%66ive-little-ducks-v2/consent",
+        JSON.stringify({
+          accepted: true,
+          consentVersion: CURRENT_CONSENT_VERSION,
+        }),
+        { "Content-Type": "application/json" },
+      ],
+      [
+        "PUT",
+        `${DUB_PATH}/%63onsent`,
+        JSON.stringify({
+          accepted: true,
+          consentVersion: CURRENT_CONSENT_VERSION,
+        }),
+        { "Content-Type": "application/json" },
+      ],
+    ]) {
+      const response = await callDub({
+        body,
+        bucket,
+        consentRepository,
+        headers,
+        method,
+        path,
+      });
+      assert.equal(response.status, 404, `${method} ${path}`);
+    }
+
+    assert.equal(grants, 0);
+    assert.equal(revocations, 0);
+    assert.deepEqual(bucket.calls.put, []);
+    assert.deepEqual(bucket.calls.delete, []);
   });
 
   it("returns route-specific Allow headers for every supported 405 shape", async () => {
