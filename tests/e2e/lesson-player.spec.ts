@@ -638,18 +638,25 @@ test("My Lessons use the exact on-device guide at quiet volume", async ({ page }
   ]);
 });
 
-test("cue failure discards partial capture, holds the phrase briefly, and advances", async ({
+test("cue failure discards partial capture, holds the phrase for 700ms, and advances", async ({
   page,
 }) => {
-  await page.clock.install();
-  await openParrotLesson(page, "cue-failure");
+  const clockStartedAt = Date.parse("2026-08-26T08:00:00.000Z");
+  await page.clock.install({ time: clockStartedAt });
+  await openParrotLesson(page, "held-cue");
   await startLesson(page);
   await page.clock.runFor(450);
   const prompt = joinInPrompt(page, "It is up high!");
   await expect(prompt).toBeVisible();
-  await page.clock.runFor(250);
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+
+  await page.clock.pauseAt(clockStartedAt + 10_000);
+  await controlLessonMedia(page, "failNextCue");
+  await page.clock.runFor(699);
   await expect(prompt).toBeVisible();
-  await page.clock.runFor(451);
+  await expect(page).toHaveURL(/\/scenes\/1/);
+
+  await page.clock.runFor(1);
   await expect(page).toHaveURL(/\/scenes\/2/);
 
   const snapshot = await mediaSnapshot(page);
