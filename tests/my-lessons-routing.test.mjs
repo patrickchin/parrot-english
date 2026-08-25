@@ -121,7 +121,6 @@ describe("My Lessons Worker routing", () => {
     const { state, env } = authenticatedEnvironment();
     const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
     try {
-      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
       state.sqlite
         .prepare(
           `INSERT INTO session

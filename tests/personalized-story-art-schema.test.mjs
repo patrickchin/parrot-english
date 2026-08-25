@@ -50,7 +50,7 @@ describe("personalized story art persistence contract", () => {
     assert.ok(schema.personalizedStoryArtRelations);
   });
 
-  it("adds a migration for owner-scoped private generated-image rows", () => {
+  it("keeps final story art unique per learner with an account lookup index", () => {
     const migrations = readMigrations();
     const artMigration = migrations.find(({ sql }) =>
       /CREATE TABLE [`"]?personalized_story_art[`"]?/i.test(sql),
@@ -83,10 +83,25 @@ describe("personalized story art persistence contract", () => {
         .prepare("PRAGMA index_list('personalized_story_art')")
         .all();
       assert.ok(
-        indexes.some(({ name, unique }) =>
-          unique === 1 && /user.*story|story.*user/i.test(name),
+        indexes.some(
+          ({ name, unique }) =>
+            name === "personalized_story_art_profile_story_unique" &&
+            unique === 1,
         ),
-        "Expected one unique row per user and story",
+        "Expected one unique row per learner and story",
+      );
+      assert.ok(
+        indexes.some(
+          ({ name, unique }) =>
+            name === "personalized_story_art_user_story_idx" && unique === 0,
+        ),
+        "Expected a nonunique compatibility lookup by account and story",
+      );
+      assert.ok(
+        !indexes.some(
+          ({ name }) => name === "personalized_story_art_user_story_unique",
+        ),
+        "Account-wide story uniqueness must be removed",
       );
     } finally {
       database.close();

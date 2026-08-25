@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
+import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
 import { resolveLearnerIdentity } from "../worker/request-identity.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
@@ -72,10 +73,6 @@ function insertSelection(
        VALUES (?, ?, ?, ?, ?)`,
     )
     .run(sessionId, userId, learnerProfileId, timestamp, timestamp);
-}
-
-function allowMultipleLearners(state) {
-  state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
 }
 
 function expectedLearner(
@@ -186,6 +183,27 @@ describe("request learner identity", () => {
     );
   });
 
+  it("keeps the legacy repository fallback valid after singleton uniqueness is removed", async () => {
+    let nextId = 0;
+    const repository = createLearnerProfileRepository(database, {
+      createId: () => `legacy-repository-${nextId++}`,
+      now: () => new Date(timestamp),
+    });
+
+    const [first, second] = await Promise.all([
+      repository.ensureProfile(account("session-a")),
+      repository.ensureProfile(account("session-a")),
+    ]);
+
+    assert.equal(first.id, second.id);
+    assert.equal(first.legacyStorageOwner, true);
+    assert.equal(
+      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
+        .count,
+      1,
+    );
+  });
+
   it("auto-selects the account's only learner", async () => {
     insertLearner(state, "learner-a", "user-a");
 
@@ -204,7 +222,6 @@ describe("request learner identity", () => {
   });
 
   it("requires Guardian selection when an account owns two learners", async () => {
-    allowMultipleLearners(state);
     insertLearner(state, "learner-a", "user-a");
     insertLearner(state, "learner-b", "user-a", {
       legacyStorageOwner: false,
@@ -247,6 +264,33 @@ describe("request learner identity", () => {
         { session_id: "session-a", learner_profile_id: "learner-a" },
         { session_id: "session-b", learner_profile_id: "learner-a" },
       ],
+    );
+  });
+
+  it("resolves session A's selected sibling while session B still requires selection", async () => {
+    insertSession(state, "session-b", "user-a");
+    insertLearner(state, "learner-a", "user-a");
+    insertLearner(state, "learner-b", "user-a", {
+      legacyStorageOwner: false,
+      name: "Leo",
+    });
+    insertSelection(state, "session-a", "user-a", "learner-a");
+
+    assert.deepEqual(await resolveLearnerIdentity(database, account("session-a")), {
+      status: "selected",
+      identity: expectedLearner("session-a"),
+    });
+    assert.deepEqual(await resolveLearnerIdentity(database, account("session-b")), {
+      status: "selection_required",
+    });
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM session_learner_selection
+           WHERE session_id = 'session-b'`,
+        )
+        .get().count,
+      0,
     );
   });
 

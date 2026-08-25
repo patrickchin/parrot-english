@@ -235,7 +235,7 @@ export const learnerProfile = sqliteTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    uniqueIndex("learner_profile_auth_user_id_unique").on(table.authUserId),
+    index("learner_profile_auth_user_id_idx").on(table.authUserId),
     uniqueIndex("learner_profile_id_user_unique").on(
       table.id,
       table.authUserId,
@@ -270,19 +270,28 @@ export const learnerProfile = sqliteTable(
   ]
 );
 
-export const sessionLearnerSelection = sqliteTable("session_learner_selection", {
-  sessionId: text("session_id")
-    .primaryKey()
-    .references(() => session.id, { onDelete: "cascade" }),
-  authUserId: text("auth_user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  learnerProfileId: text("learner_profile_id")
-    .notNull()
-    .references(() => learnerProfile.id, { onDelete: "cascade" }),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-});
+export const sessionLearnerSelection = sqliteTable(
+  "session_learner_selection",
+  {
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => session.id, { onDelete: "cascade" }),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    learnerProfileId: text("learner_profile_id")
+      .notNull()
+      .references(() => learnerProfile.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("session_learner_selection_auth_profile_idx").on(
+      table.authUserId,
+      table.learnerProfileId,
+    ),
+  ],
+);
 
 export const learnerDubConsent = sqliteTable(
   "learner_dub_consent",
@@ -521,7 +530,7 @@ export const personalizedStoryArt = sqliteTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    uniqueIndex("personalized_story_art_user_story_unique").on(
+    index("personalized_story_art_user_story_idx").on(
       table.authUserId,
       table.storyId,
     ),
@@ -604,7 +613,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
   guardianDubConsent: one(guardianDubConsent),
-  learnerProfile: one(learnerProfile),
+  learnerProfiles: many(learnerProfile),
   learnerLessons: many(learnerLesson),
   personalizedStoryArt: many(personalizedStoryArt),
   personalizedStoryArtGenerationLeases: many(

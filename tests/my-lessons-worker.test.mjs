@@ -12,7 +12,6 @@ function seedDatabase() {
   );
   insertUser.run("user-1", "Parent One", "one@example.test", 1_000, 1_000);
   insertUser.run("user-2", "Parent Two", "two@example.test", 1_000, 1_000);
-  state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
   const insertProfile = state.sqlite.prepare(
     "INSERT INTO learner_profile (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at) VALUES (?, ?, ?, ?, 'completed', ?, ?)",
   );

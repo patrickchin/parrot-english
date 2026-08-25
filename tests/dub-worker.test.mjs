@@ -360,7 +360,6 @@ describe("private learner dub API", () => {
           (id, name, email, email_verified, created_at, updated_at)
          VALUES (?, ?, ?, 1, ?, ?)`,
       ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
-      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)

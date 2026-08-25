@@ -77,7 +77,7 @@ export function createLearnerProfileRepository(
           createdAt: timestamp,
           updatedAt: timestamp,
         })
-        .onConflictDoNothing({ target: learnerProfile.authUserId });
+        .onConflictDoNothing();
       profile = await findProfile(identity.userId);
     }
     if (!profile) throw new Error("Learner profile could not be created.");

@@ -210,7 +210,6 @@ function insertLearnerProfile(
 
 function createMultiLearnerDatabase() {
   const state = createSeededDatabase({ seedProfile: false });
-  state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
   const insertProfile = state.sqlite.prepare(
     `INSERT INTO learner_profile
       (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)

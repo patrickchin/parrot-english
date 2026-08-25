@@ -359,7 +359,6 @@ describe("account deletion personalized-art lifecycle", () => {
     let uploads = [];
 
     try {
-      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
@@ -766,7 +765,6 @@ describe("account deletion personalized-art lifecycle", () => {
     };
 
     try {
-      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)

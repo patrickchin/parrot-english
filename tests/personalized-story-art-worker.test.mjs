@@ -31,10 +31,7 @@ function seedDatabase() {
   return { ...state, database: createDatabase(state.d1) };
 }
 
-function enableSiblingLearner(state, { artCoexistence = false } = {}) {
-  // Task 9 removes these rollout-compatibility indexes in production. Only
-  // final-cardinality sibling tests opt into that schema state early.
-  state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+function enableSiblingLearner(state) {
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile (
@@ -43,9 +40,6 @@ function enableSiblingLearner(state, { artCoexistence = false } = {}) {
       ) VALUES ('learner-b', 'user-1', 0, 'Ben', 'completed', 1000, 1000)`,
     )
     .run();
-  if (artCoexistence) {
-    state.sqlite.exec("DROP INDEX personalized_story_art_user_story_unique");
-  }
 }
 
 function request(path, method = "GET", body) {
@@ -747,7 +741,7 @@ describe("personalized story art Worker handler", () => {
 
   it("generates and reads the same story independently for sibling learners", async () => {
     const state = seedDatabase();
-    enableSiblingLearner(state, { artCoexistence: true });
+    enableSiblingLearner(state);
     const bucket = memoryBucket();
     const generatedPng = await sharp({
       create: {
@@ -831,7 +825,7 @@ describe("personalized story art Worker handler", () => {
 
   it("deletes one learner's story art without touching its sibling's row or object", async () => {
     const state = seedDatabase();
-    enableSiblingLearner(state, { artCoexistence: true });
+    enableSiblingLearner(state);
     const bucket = memoryBucket();
     const artAKey =
       "personalized-story-art/user-1/learners/learner-a/the-red-ball/versions/a.webp";
@@ -951,7 +945,7 @@ describe("personalized story art Worker handler", () => {
 
   it("lets sibling learner leases generate the same story concurrently", async () => {
     const state = seedDatabase();
-    enableSiblingLearner(state, { artCoexistence: true });
+    enableSiblingLearner(state);
     const bucket = memoryBucket();
     const generatedPng = await sharp({
       create: {

@@ -297,7 +297,6 @@ describe("dub Worker routing", () => {
     };
     const { env, state } = authenticatedEnvironment();
     try {
-      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
       state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)

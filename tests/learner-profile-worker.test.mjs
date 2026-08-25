@@ -131,7 +131,6 @@ describe("onboarding Worker routing", () => {
   it("returns a no-store selection-required response before learner profile work", async () => {
     const state = createSeededDatabase({ seedProfile: false });
     try {
-      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
       const insert = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
@@ -207,7 +206,6 @@ function createSeededDatabase({ seedProfile = true } = {}) {
 }
 
 function seedSiblingProfile(state) {
-  state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile
