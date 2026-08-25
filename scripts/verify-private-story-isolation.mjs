@@ -13,6 +13,9 @@ const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const PRIVATE_INPUT_DIRECTORY = "content/private-story-preview";
 const PRIVATE_ASSET_DIRECTORY = "assets/private-story-preview";
 const MAX_GIT_BUFFER = 128 * 1024 * 1024;
+const MAX_SCANNED_BYTES = 512 * 1024 * 1024;
+const BYTE_BUDGET_ERROR = "Private story isolation scan exceeded its byte budget";
+const READ_ERROR = "Unable to read isolation scan input";
 const GIT_BLOB_MODES = new Set(["100644", "100755", "120000"]);
 const GIT_ENTRY_MODES = new Set([
   "000000",
@@ -60,6 +63,10 @@ function wordsHash(words) {
   return hash(words.join(" "));
 }
 
+function isMeaningfulExcerpt(words) {
+  return words.join(" ").length >= 50 && new Set(words).size >= 5;
+}
+
 function createExcerptFingerprints(sourceUnits) {
   const fingerprints = new Map();
   const add = (words) => {
@@ -72,15 +79,12 @@ function createExcerptFingerprints(sourceUnits) {
     const words = normalizedWords(unit);
     if (words.length >= 12) {
       for (let index = 0; index <= words.length - 12; index += 1) {
-        add(words.slice(index, index + 12));
+        const window = words.slice(index, index + 12);
+        if (isMeaningfulExcerpt(window)) add(window);
       }
       continue;
     }
-    if (
-      words.length >= 8 &&
-      words.join(" ").length >= 50 &&
-      new Set(words).size >= 5
-    ) {
+    if (words.length >= 8 && isMeaningfulExcerpt(words)) {
       add(words);
     }
   }
@@ -106,11 +110,18 @@ function createPrivacyContext({ audioHashes = [], markers = [], sourceUnits = []
   };
 }
 
-function containsPrivatePath(filePath) {
+function isPrivateInputPath(filePath) {
   const normalized = normalizePath(filePath).replace(/^\.\//u, "");
   return (
     normalized === PRIVATE_INPUT_DIRECTORY ||
-    normalized.startsWith(`${PRIVATE_INPUT_DIRECTORY}/`) ||
+    normalized.startsWith(`${PRIVATE_INPUT_DIRECTORY}/`)
+  );
+}
+
+function containsPrivatePath(filePath) {
+  const normalized = normalizePath(filePath).replace(/^\.\//u, "");
+  return (
+    isPrivateInputPath(normalized) ||
     normalized === PRIVATE_ASSET_DIRECTORY ||
     normalized.includes(`/${PRIVATE_ASSET_DIRECTORY}/`) ||
     normalized.endsWith(`/${PRIVATE_ASSET_DIRECTORY}`)
@@ -187,6 +198,12 @@ function redactLeakedPath(filePath, variants) {
   const decodedPath = asText(filePath);
   const decodedLosslessly =
     !Buffer.isBuffer(filePath) || Buffer.from(decodedPath).equals(filePath);
+  if (!decodedLosslessly) {
+    return redactLeakedPath(
+      `${diagnosticPrefix(filePath)} ~${hash(filePath).slice(0, 12)}`,
+      variants,
+    );
+  }
   const normalizedPath = decodedPath.replaceAll(path.sep, "/");
   const redaction = removeMarkers(normalizedPath, variants);
   const escaped = escapeDiagnostic(redaction.value);
@@ -236,8 +253,8 @@ export function scanPrivateStoryIsolation({
 } = {}) {
   const context = createPrivacyContext({ audioHashes, markers, sourceUnits });
   const leakedPaths = [...trackedFiles, ...distFiles].filter(
-    ([label, contents, scannedPath]) =>
-      fileLeaks(scannedPath ?? label, contents, context),
+    ([label, contents, scannedPath, unreadable]) =>
+      unreadable || fileLeaks(scannedPath ?? label, contents, context),
   );
   const safePaths = leakedPaths.map(([label]) => safeLeakDiagnostic(label, context));
   const uniquePaths = [...new Set(safePaths)].sort();
@@ -280,32 +297,112 @@ async function gitOutput(projectRoot, args, message = "Git isolation audit faile
   return result.stdout;
 }
 
-async function gitTrackedPaths(projectRoot, pathspec) {
+function createScanBudget(limit) {
+  if (
+    !Number.isSafeInteger(limit) ||
+    limit <= 0 ||
+    limit > MAX_SCANNED_BYTES
+  ) {
+    throw new Error(BYTE_BUDGET_ERROR);
+  }
+
+  let scannedBytes = 0;
+  return {
+    add(value) {
+      this.addSize(asBuffer(value).length);
+    },
+    addSize(size) {
+      if (
+        !Number.isSafeInteger(size) ||
+        size < 0 ||
+        scannedBytes > limit - size
+      ) {
+        throw new Error(BYTE_BUDGET_ERROR);
+      }
+      scannedBytes += size;
+    },
+  };
+}
+
+function nulRecords(output, message) {
+  if (!output.length) return [];
+  if (output.at(-1) !== 0) throw new Error(message);
+
+  const records = [];
+  let offset = 0;
+  while (offset < output.length) {
+    const end = output.indexOf(0, offset);
+    if (end <= offset) throw new Error(message);
+    records.push(output.subarray(offset, end));
+    offset = end + 1;
+  }
+  return records;
+}
+
+async function gitTrackedPaths(projectRoot, pathspec, budget) {
   const args = ["ls-files", "-z"];
   if (pathspec) args.push("--", pathspec);
   const stdout = await gitOutput(projectRoot, args);
-  return stdout.toString("utf8").split("\0").filter(Boolean);
+  budget.add(stdout);
+  return nulRecords(stdout, "Unable to parse tracked Git paths");
 }
 
-async function gitTrackedEntries(projectRoot) {
+async function gitTrackedEntries(projectRoot, budget) {
   const stdout = await gitOutput(projectRoot, ["ls-files", "--stage", "-z"]);
-  return stdout.toString("utf8").split("\0").filter(Boolean).map((record) => {
-    const separator = record.indexOf("\t");
-    const metadata = record.slice(0, separator);
+  budget.add(stdout);
+  return nulRecords(stdout, "Unable to parse the Git index").map((record) => {
+    const separator = record.indexOf(0x09);
+    if (separator < 0) throw new Error("Unable to parse the Git index");
+    const metadata = record.subarray(0, separator).toString("ascii");
     const match = /^(\d{6}) ([0-9a-f]+) ([0-3])$/u.exec(metadata);
-    if (separator < 0 || !match) {
+    const filePath = record.subarray(separator + 1);
+    if (
+      !match ||
+      !filePath.length ||
+      (!GIT_BLOB_MODES.has(match[1]) && match[1] !== "160000") ||
+      !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(match[2])
+    ) {
       throw new Error("Unable to parse the Git index");
     }
     return {
       mode: match[1],
       objectId: match[2],
-      path: record.slice(separator + 1),
+      path: filePath,
     };
   });
 }
 
+function validateRawGitPath(filePath) {
+  let offset = 0;
+  while (offset <= filePath.length) {
+    const separator = filePath.indexOf(0x2f, offset);
+    const end = separator < 0 ? filePath.length : separator;
+    const segment = filePath.subarray(offset, end);
+    if (
+      !segment.length ||
+      (segment.length === 1 && segment[0] === 0x2e) ||
+      (segment.length === 2 && segment[0] === 0x2e && segment[1] === 0x2e)
+    ) {
+      throw new Error("Tracked path escaped the project root");
+    }
+    if (separator < 0) break;
+    offset = separator + 1;
+  }
+}
+
 function resolveInsideProject(projectRoot, filePath) {
-  const resolved = path.resolve(projectRoot, filePath);
+  const decodedPath = asText(filePath);
+  if (Buffer.isBuffer(filePath) && !Buffer.from(decodedPath).equals(filePath)) {
+    validateRawGitPath(filePath);
+    if (process.platform === "win32") throw new Error(READ_ERROR);
+    const resolvedRoot = path.resolve(projectRoot);
+    return Buffer.concat([
+      Buffer.from(resolvedRoot.endsWith(path.sep) ? resolvedRoot : `${resolvedRoot}${path.sep}`),
+      filePath,
+    ]);
+  }
+
+  const resolved = path.resolve(projectRoot, decodedPath);
   const relativePath = path.relative(projectRoot, resolved);
   if (
     relativePath === ".." ||
@@ -315,6 +412,12 @@ function resolveInsideProject(projectRoot, filePath) {
     throw new Error("Tracked path escaped the project root");
   }
   return resolved;
+}
+
+function uniqueRawPaths(entries) {
+  return [
+    ...new Map(entries.map((entry) => [entry.path.toString("hex"), entry.path])).values(),
+  ];
 }
 
 function pathEscapes(root, target) {
@@ -352,32 +455,70 @@ async function resolveDistDirectory(projectRoot, distDirectory) {
   return directory;
 }
 
-async function readTrackedFiles(projectRoot, trackedPaths) {
-  const files = await Promise.all(
-    trackedPaths.map(async (filePath) => {
-      const absolutePath = resolveInsideProject(projectRoot, filePath);
-      try {
-        const fileStats = await lstat(absolutePath);
-        const contents = fileStats.isSymbolicLink()
-          ? await readlink(absolutePath)
-          : fileStats.isFile()
-            ? await readFile(absolutePath)
-            : "";
-        return [filePath, contents];
-      } catch (error) {
-        if (error?.code === "ENOENT") return null;
-        throw error;
-      }
-    }),
-  );
-  return files.filter(Boolean);
+function reserveFileRead(budget, fileStats) {
+  budget.addSize(fileStats.size);
 }
 
-async function readIndexFiles(projectRoot, trackedEntries) {
+function accountFileReadGrowth(budget, fileStats, contents) {
+  if (contents.length > fileStats.size) {
+    budget.addSize(contents.length - fileStats.size);
+  }
+}
+
+async function readTrackedFiles(projectRoot, trackedPaths, budget) {
+  const files = [];
+  for (const filePath of trackedPaths) {
+    const decodedPath = asText(filePath);
+    const rawPath =
+      Buffer.isBuffer(filePath) && !Buffer.from(decodedPath).equals(filePath);
+    if (rawPath && process.platform === "win32") {
+      validateRawGitPath(filePath);
+      budget.add(filePath);
+      files.push([filePath, Buffer.alloc(0), filePath, true]);
+      continue;
+    }
+    const absolutePath = resolveInsideProject(projectRoot, filePath);
+    let fileStats;
+    try {
+      fileStats = await lstat(absolutePath);
+    } catch (error) {
+      if (rawPath) {
+        budget.add(filePath);
+        files.push([filePath, Buffer.alloc(0), filePath, true]);
+        continue;
+      }
+      if (error?.code === "ENOENT") continue;
+      throw new Error(READ_ERROR);
+    }
+    if (!fileStats.isFile() && !fileStats.isSymbolicLink()) {
+      throw new Error("Unsupported file type in isolation scan");
+    }
+    budget.add(filePath);
+    reserveFileRead(budget, fileStats);
+
+    let contents;
+    try {
+      contents = fileStats.isSymbolicLink()
+        ? await readlink(absolutePath, { encoding: "buffer" })
+        : await readFile(absolutePath);
+    } catch {
+      if (rawPath) {
+        files.push([filePath, Buffer.alloc(0), filePath, true]);
+        continue;
+      }
+      throw new Error(READ_ERROR);
+    }
+    accountFileReadGrowth(budget, fileStats, contents);
+    files.push([filePath, contents]);
+  }
+  return files;
+}
+
+async function readIndexFiles(projectRoot, trackedEntries, budget) {
   const files = [];
   for (const entry of trackedEntries) {
     if (entry.mode === "160000") {
-      files.push([entry.path, ""]);
+      files.push([entry.path, Buffer.alloc(0)]);
       continue;
     }
     if (!GIT_BLOB_MODES.has(entry.mode)) {
@@ -388,32 +529,75 @@ async function readIndexFiles(projectRoot, trackedEntries) {
       "blob",
       entry.objectId,
     ]);
+    budget.add(contents);
     files.push([entry.path, contents]);
   }
   return files;
 }
 
-async function readDirectoryFiles(directory, projectRoot) {
-  const entries = await readdir(directory, { withFileTypes: true });
+async function readDirectoryFiles(
+  directory,
+  projectRoot,
+  budget,
+  allowDirectorySymlink = false,
+) {
+  let directoryStats;
+  try {
+    directoryStats = await lstat(directory);
+  } catch {
+    throw new Error(READ_ERROR);
+  }
+  if (
+    !directoryStats.isDirectory() &&
+    !(allowDirectorySymlink && directoryStats.isSymbolicLink())
+  ) {
+    throw new Error("Unsupported file type in isolation scan");
+  }
+
+  let entries;
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch {
+    throw new Error(READ_ERROR);
+  }
   const files = [];
 
   for (const entry of entries) {
     const absolutePath = path.join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await readDirectoryFiles(absolutePath, projectRoot)));
+    let fileStats;
+    try {
+      fileStats = await lstat(absolutePath);
+    } catch {
+      throw new Error(READ_ERROR);
+    }
+    if (fileStats.isDirectory()) {
+      files.push(...(await readDirectoryFiles(absolutePath, projectRoot, budget)));
       continue;
     }
-    const contents = entry.isSymbolicLink()
-      ? await readlink(absolutePath)
-      : await readFile(absolutePath);
-    files.push([normalizePath(path.relative(projectRoot, absolutePath)), contents]);
+    if (!fileStats.isFile() && !fileStats.isSymbolicLink()) {
+      throw new Error("Unsupported file type in isolation scan");
+    }
+    const label = normalizePath(path.relative(projectRoot, absolutePath));
+    budget.add(label);
+    reserveFileRead(budget, fileStats);
+
+    let contents;
+    try {
+      contents = fileStats.isSymbolicLink()
+        ? await readlink(absolutePath, { encoding: "buffer" })
+        : await readFile(absolutePath);
+    } catch {
+      throw new Error(READ_ERROR);
+    }
+    accountFileReadGrowth(budget, fileStats, contents);
+    files.push([label, contents]);
   }
 
   return files;
 }
 
 function requireObjectId(value) {
-  if (!/^[0-9a-f]{40,64}$/u.test(value)) {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(value)) {
     throw new Error("Git isolation audit failed");
   }
   return value;
@@ -448,7 +632,7 @@ function parseRawDiff(output) {
       throw new Error("Git isolation audit failed");
     }
     const header = output.subarray(offset, headerEnd).toString("ascii");
-    const match = /^:(\d{6}) (\d{6}) ([0-9a-f]{40,64}) ([0-9a-f]{40,64}) ([ADMT])$/u.exec(
+    const match = /^:(\d{6}) (\d{6}) ([0-9a-f]{40}|[0-9a-f]{64}) ([0-9a-f]{40}|[0-9a-f]{64}) ([ADMT])$/u.exec(
       header,
     );
     const filePath = output.subarray(headerEnd + 1, pathEnd);
@@ -470,7 +654,7 @@ function parseRawDiff(output) {
   return entries;
 }
 
-async function historyFiles(projectRoot, baseRevision) {
+async function historyFiles(projectRoot, baseRevision, budget) {
   const baseObjectId = await resolveCommit(projectRoot, baseRevision, "base");
   const headObjectId = await resolveCommit(projectRoot, "HEAD", "HEAD");
   const ancestor = await executeGit(projectRoot, [
@@ -490,10 +674,12 @@ async function historyFiles(projectRoot, baseRevision) {
     "--topo-order",
     `${baseObjectId}..${headObjectId}`,
   ]);
+  budget.add(rangeOutput);
   const commitObjectIds = rangeOutput.toString("ascii").split("\n").filter(Boolean);
   commitObjectIds.forEach(requireObjectId);
 
   const files = [];
+  const blobCache = new Map();
   for (const commitObjectId of commitObjectIds) {
     const shortObjectId = commitObjectId.slice(0, 12);
     const commitObject = await gitOutput(projectRoot, [
@@ -501,6 +687,7 @@ async function historyFiles(projectRoot, baseRevision) {
       "commit",
       commitObjectId,
     ]);
+    budget.add(commitObject);
     files.push([`git-commit ${shortObjectId}`, commitObject, ""]);
     const parents = parseCommitParents(commitObject);
     const comparisons = parents.length
@@ -518,15 +705,27 @@ async function historyFiles(projectRoot, baseRevision) {
       ];
       if (comparison.length === 1) args.push("--root");
       args.push(...comparison);
-      const entries = parseRawDiff(await gitOutput(projectRoot, args));
+      const diffOutput = await gitOutput(projectRoot, args);
+      budget.add(diffOutput);
+      const entries = parseRawDiff(diffOutput);
       for (const entry of entries) {
         const label = Buffer.concat([
           Buffer.from(`git-history ${shortObjectId} `),
           entry.path,
         ]);
-        const contents = GIT_BLOB_MODES.has(entry.newMode)
-          ? await gitOutput(projectRoot, ["cat-file", "blob", entry.newObjectId])
-          : Buffer.alloc(0);
+        let contents = Buffer.alloc(0);
+        if (GIT_BLOB_MODES.has(entry.newMode)) {
+          contents = blobCache.get(entry.newObjectId);
+          if (!contents) {
+            contents = await gitOutput(projectRoot, [
+              "cat-file",
+              "blob",
+              entry.newObjectId,
+            ]);
+            blobCache.set(entry.newObjectId, contents);
+          }
+          budget.add(contents);
+        }
         files.push([label, contents, entry.path]);
       }
     }
@@ -534,10 +733,15 @@ async function historyFiles(projectRoot, baseRevision) {
   return files;
 }
 
-function hashPrivateAudio(assets) {
+function hashPrivateAudio(assets, budget, requireAll) {
   const hashes = [];
   for (const asset of assets) {
-    if (asset.source) hashes.push(hash(asset.source));
+    if (!Buffer.isBuffer(asset.source) || !asset.source.length) continue;
+    budget.add(asset.source);
+    hashes.push(hash(asset.source));
+  }
+  if (requireAll && hashes.length !== assets.length) {
+    throw new Error("Unable to hash required private narration");
   }
   return hashes;
 }
@@ -548,12 +752,14 @@ export async function verifyPrivateStoryIsolation({
   previewDirectory,
   projectRoot = rootDir,
   requirePrivateInputs = false,
+  maxScannedBytes = MAX_SCANNED_BYTES,
 } = {}) {
   if (requirePrivateInputs && !baseRevision) {
     throw new Error("Git history base is required for release verification");
   }
+  const budget = createScanBudget(maxScannedBytes);
   const historicalFiles = baseRevision
-    ? await historyFiles(projectRoot, baseRevision)
+    ? await historyFiles(projectRoot, baseRevision, budget)
     : [];
   const resolvedDistDirectory = await resolveDistDirectory(
     projectRoot,
@@ -566,6 +772,7 @@ export async function verifyPrivateStoryIsolation({
   const privateTrackedPaths = await gitTrackedPaths(
     projectRoot,
     PRIVATE_INPUT_DIRECTORY,
+    budget,
   );
   const hasPrivateInputs = existsSync(manifestPath);
 
@@ -575,7 +782,7 @@ export async function verifyPrivateStoryIsolation({
       privateData = await loadPrivateStoryPreview({
         previewDirectory: directory,
         projectRoot,
-        requireAudio: false,
+        requireAudio: requirePrivateInputs,
       });
     } catch {
       throw new Error("Unable to load private story audit inputs");
@@ -583,22 +790,45 @@ export async function verifyPrivateStoryIsolation({
   }
   const markers = privateData?.markers ?? [];
   const sourceUnits = privateData?.excerptSourceUnits ?? [];
-  const audioHashes = privateData ? hashPrivateAudio(privateData.assets) : [];
-  const trackedEntries = await gitTrackedEntries(projectRoot);
-  const trackedPaths = [...new Set(trackedEntries.map((entry) => entry.path))];
+  for (const marker of markers) budget.add(marker);
+  for (const sourceUnit of sourceUnits) budget.add(sourceUnit);
+  const audioHashes = privateData
+    ? hashPrivateAudio(privateData.assets, budget, requirePrivateInputs)
+    : [];
+  const trackedEntries = await gitTrackedEntries(projectRoot, budget);
+  const trackedPaths = uniqueRawPaths(trackedEntries);
   const publicTrackedPaths = trackedPaths.filter(
-    (filePath) => !normalizePath(filePath).startsWith(`${PRIVATE_INPUT_DIRECTORY}/`),
+    (filePath) => !isPrivateInputPath(filePath),
   );
   const publicTrackedEntries = trackedEntries.filter(
-    (entry) => !normalizePath(entry.path).startsWith(`${PRIVATE_INPUT_DIRECTORY}/`),
+    (entry) => !isPrivateInputPath(entry.path),
   );
-  const [indexFiles, workingTreeFiles] = await Promise.all([
-    readIndexFiles(projectRoot, publicTrackedEntries),
-    readTrackedFiles(projectRoot, publicTrackedPaths),
-  ]);
+  const worktreePathKeys = new Set(
+    publicTrackedEntries
+      .filter((entry) => entry.mode !== "160000")
+      .map((entry) => entry.path.toString("hex")),
+  );
+  const indexFiles = await readIndexFiles(
+    projectRoot,
+    publicTrackedEntries,
+    budget,
+  );
+  const workingTreeFiles = await readTrackedFiles(
+    projectRoot,
+    publicTrackedPaths.filter((filePath) =>
+      worktreePathKeys.has(filePath.toString("hex"))
+    ),
+    budget,
+  );
   const distFiles = existsSync(resolvedDistDirectory)
-    ? await readDirectoryFiles(resolvedDistDirectory, projectRoot)
+    ? await readDirectoryFiles(
+        resolvedDistDirectory,
+        projectRoot,
+        budget,
+        true,
+      )
     : [];
+  for (const filePath of privateTrackedPaths) budget.add(filePath);
   const result = scanPrivateStoryIsolation({
     audioHashes,
     distFiles,

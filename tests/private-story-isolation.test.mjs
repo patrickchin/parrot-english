@@ -3,7 +3,9 @@
 import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { createServer } from "node:net";
 import {
+  chmod,
   mkdtemp,
   mkdir,
   rename,
@@ -13,6 +15,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { promisify } from "node:util";
 import { afterEach, describe, it } from "node:test";
 import {
@@ -60,7 +63,10 @@ async function commit(projectRoot, message) {
 }
 
 async function createReleaseAuditFixture({
-  audioBytes,
+  audioBytes = [
+    Buffer.from("ID3 default synthetic narration one"),
+    Buffer.from("ID3 default synthetic narration two"),
+  ],
   firstBody = "Synthetic first page for the private fixture.",
   secondBody = "Synthetic second page for the private fixture.",
 } = {}) {
@@ -85,10 +91,13 @@ async function createReleaseAuditFixture({
       join(previewDirectory, "audio/private-fixture"),
       join(previewDirectory, "audio/private-second"),
     ];
-    await Promise.all(audioDirectories.map((directory) => mkdir(directory, { recursive: true })));
     await Promise.all(
       audioDirectories.map((directory, index) =>
-        writeFile(join(directory, "page-001.mp3"), audioBytes[index])
+        audioBytes[index]
+          ? mkdir(directory, { recursive: true }).then(() =>
+              writeFile(join(directory, "page-001.mp3"), audioBytes[index])
+            )
+          : Promise.resolve()
       ),
     );
   }
@@ -691,6 +700,26 @@ describe("private story isolation scanner", () => {
     );
   });
 
+  it("scans an internal dist directory symlink", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-root-"));
+    temporaryDirectories.push(projectRoot);
+    const outputDirectory = join(projectRoot, "synthetic-output");
+    const leakedAsset = join(
+      outputDirectory,
+      "assets/private-story-preview/fixture/page.mp3",
+    );
+    await mkdir(join(leakedAsset, ".."), { recursive: true });
+    await writeFile(leakedAsset, "synthetic built audio");
+    await symlink(outputDirectory, join(projectRoot, "dist"));
+    await execFileAsync("git", ["init", "--quiet"], { cwd: projectRoot });
+
+    const result = await verifyPrivateStoryIsolation({ projectRoot });
+
+    assert.deepEqual(result.leakedPaths, [
+      "dist/assets/private-story-preview/fixture/page.mp3",
+    ]);
+  });
+
   it("derives the default dist directory from the supplied project root", async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-default-dist-"));
     temporaryDirectories.push(projectRoot);
@@ -710,6 +739,58 @@ describe("private story isolation scanner", () => {
     ]);
   });
 
+  it("fails before scanning more than the aggregate byte budget", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-budget-"));
+    temporaryDirectories.push(projectRoot);
+    await writeFile(join(projectRoot, "a"), "");
+    await git(projectRoot, ["init", "--quiet"]);
+    await git(projectRoot, ["add", "a"]);
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          maxScannedBytes: 10,
+          projectRoot,
+        }),
+      (error) => {
+        assert.equal(error.message, "Private story isolation scan exceeded its byte budget");
+        assert.equal(error.message.includes("public.txt"), false);
+        return true;
+      },
+    );
+  });
+
+  it("rejects a dist socket without reading it", async (testContext) => {
+    if (process.platform === "win32") {
+      testContext.skip("Unix-domain filesystem sockets are unavailable");
+      return;
+    }
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-socket-"));
+    temporaryDirectories.push(projectRoot);
+    const distDirectory = join(projectRoot, "dist");
+    const socketPath = join(distDirectory, "synthetic.sock");
+    await mkdir(distDirectory);
+    await git(projectRoot, ["init", "--quiet"]);
+    const server = createServer();
+    await new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(socketPath, resolve);
+    });
+
+    try {
+      await assert.rejects(
+        () => verifyPrivateStoryIsolation({ projectRoot }),
+        (error) => {
+          assert.equal(error.message, "Unsupported file type in isolation scan");
+          assert.equal(error.message.includes(socketPath), false);
+          return true;
+        },
+      );
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+
   it("requires a Git base for release verification", async () => {
     const { projectRoot } = await createReleaseAuditFixture();
 
@@ -720,6 +801,46 @@ describe("private story isolation scanner", () => {
           requirePrivateInputs: true,
         }),
       /Git history base is required/,
+    );
+  });
+
+  it("fails release verification when every narration file is missing", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: null,
+    });
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Unable to load private story audit inputs");
+        assert.equal(error.message.includes("private-fixture"), false);
+        return true;
+      },
+    );
+  });
+
+  it("fails release verification when one narration file is missing", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [Buffer.from("ID3 one available narration"), null],
+    });
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Unable to load private story audit inputs");
+        assert.equal(error.message.includes("private-second"), false);
+        return true;
+      },
     );
   });
 
@@ -1060,6 +1181,201 @@ describe("private story isolation scanner", () => {
     assert.equal(result.message.includes("Fixture Story"), false);
   });
 
+  it("keeps distinct invalid-UTF-8 index paths byte-safe", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const blobPath = join(projectRoot, "synthetic-index-private-blob.txt");
+    await writeFile(blobPath, "Fixture Story\n");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "hash-object",
+      "-w",
+      blobPath,
+    ]);
+    const records = [0xfe, 0xff].flatMap((byte) => [
+      Buffer.from(`100644 ${blobObjectId.trim()}\tindex-`),
+      Buffer.from([byte]),
+      Buffer.from(".txt\0"),
+    ]);
+    await gitWithInput(
+      projectRoot,
+      ["update-index", "-z", "--index-info"],
+      Buffer.concat(records),
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.leakedPaths.length, 2);
+    assert.equal(new Set(result.leakedPaths).size, 2);
+    for (const label of result.leakedPaths) {
+      assert.match(label, /^private-leak ~[0-9a-f]{12}$/u);
+      assert.equal(label.includes("�"), false);
+    }
+    assert.equal(result.message.includes("Fixture Story"), false);
+  });
+
+  it("fails closed when a raw tracked worktree path cannot be opened", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const blobPath = join(projectRoot, "synthetic-raw-clean-blob.txt");
+    await writeFile(blobPath, "public content\n");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "hash-object",
+      "-w",
+      blobPath,
+    ]);
+    const rawPath = Buffer.concat([
+      Buffer.from("unavailable-"),
+      Buffer.from([0xff]),
+      Buffer.from(".data"),
+    ]);
+    await gitWithInput(
+      projectRoot,
+      ["update-index", "-z", "--index-info"],
+      Buffer.concat([
+        Buffer.from(`100644 ${blobObjectId.trim()}\t`),
+        rawPath,
+        Buffer.from([0]),
+      ]),
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, [
+      `private-leak ~${createHash("sha256").update(rawPath).digest("hex").slice(0, 12)}`,
+    ]);
+  });
+
+  it("reports a non-ENOENT raw lookup failure with an opaque label", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const blobPath = join(projectRoot, "synthetic-overlong-clean-blob.txt");
+    await writeFile(blobPath, "public content\n");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "hash-object",
+      "-w",
+      blobPath,
+    ]);
+    const lockedDirectory = join(projectRoot, "locked");
+    await mkdir(lockedDirectory);
+    const rawPath = Buffer.concat([
+      Buffer.from("locked/opaque-"),
+      Buffer.from([0xff]),
+    ]);
+    await gitWithInput(
+      projectRoot,
+      ["update-index", "-z", "--index-info"],
+      Buffer.concat([
+        Buffer.from(`100644 ${blobObjectId.trim()}\t`),
+        rawPath,
+        Buffer.from([0]),
+      ]),
+    );
+
+    await chmod(lockedDirectory, 0);
+    let result;
+    try {
+      result = await verifyPrivateStoryIsolation({
+        baseRevision,
+        projectRoot,
+        requirePrivateInputs: true,
+      });
+    } finally {
+      await chmod(lockedDirectory, 0o700);
+    }
+
+    assert.deepEqual(result.leakedPaths, [
+      `private-leak ~${createHash("sha256").update(rawPath).digest("hex").slice(0, 12)}`,
+    ]);
+  });
+
+  it("scans narration and marker bytes at raw POSIX worktree paths or fails closed", async () => {
+    const privateAudio = Buffer.from("ID3 raw working-tree narration bytes");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      audioBytes: [privateAudio, Buffer.from("ID3 other narration bytes")],
+    });
+    const cleanBlobPath = join(projectRoot, "synthetic-raw-clean-blob.txt");
+    await writeFile(cleanBlobPath, "public content\n");
+    const { stdout: blobObjectId } = await git(projectRoot, [
+      "hash-object",
+      "-w",
+      cleanBlobPath,
+    ]);
+    const rawPaths = [0xfe, 0xff].map((byte) =>
+      Buffer.concat([
+        Buffer.from("working-tree-"),
+        Buffer.from([byte]),
+        Buffer.from(".data"),
+      ])
+    );
+    await gitWithInput(
+      projectRoot,
+      ["update-index", "-z", "--index-info"],
+      Buffer.concat(
+        rawPaths.flatMap((rawPath) => [
+          Buffer.from(`100644 ${blobObjectId.trim()}\t`),
+          rawPath,
+          Buffer.from([0]),
+        ]),
+      ),
+    );
+    await commit(projectRoot, "add raw working-tree paths");
+    const createdPathIndexes = [];
+    for (const [index, rawPath] of rawPaths.entries()) {
+      try {
+        await writeFile(
+          Buffer.concat([Buffer.from(`${projectRoot}/`), rawPath]),
+          "public content\n",
+        );
+        createdPathIndexes.push(index);
+      } catch (error) {
+        if (!["EILSEQ", "EINVAL", "ENOTSUP", "ERR_INVALID_ARG_TYPE"].includes(error?.code)) {
+          throw error;
+        }
+      }
+    }
+
+    if (createdPathIndexes.length === rawPaths.length) {
+      const cleanResult = await verifyPrivateStoryIsolation({
+        baseRevision,
+        projectRoot,
+        requirePrivateInputs: true,
+      });
+      assert.equal(cleanResult.status, "clean");
+    }
+
+    await Promise.all(
+      createdPathIndexes.map((index) =>
+        writeFile(
+          Buffer.concat([Buffer.from(`${projectRoot}/`), rawPaths[index]]),
+          index === 0 ? privateAudio : Buffer.from("Fixture Story\n"),
+        )
+      ),
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(
+      result.leakedPaths,
+      rawPaths
+        .map(
+          (rawPath) =>
+            `private-leak ~${createHash("sha256").update(rawPath).digest("hex").slice(0, 12)}`,
+        )
+        .sort(),
+    );
+  });
+
   it("ignores Git replacement refs while auditing branch history", async () => {
     const { baseRevision, projectRoot } = await createReleaseAuditFixture();
     await writeFile(join(projectRoot, "replaced.txt"), "Fixture Story\n");
@@ -1251,6 +1567,28 @@ describe("private story isolation scanner", () => {
     });
 
     assert.deepEqual(result.leakedPaths, ["public.txt"]);
+  });
+
+  it("ignores a twelve-word window with only one repeated token", () => {
+    const repeatedWindow = Array.from({ length: 12 }, () => "echo").join(" ");
+
+    const result = scanPrivateStoryIsolation({
+      sourceUnits: [`${repeatedWindow} ending`],
+      trackedFiles: [["public.txt", repeatedWindow]],
+    });
+
+    assert.deepEqual(result.leakedPaths, []);
+  });
+
+  it("ignores a twelve-word window shorter than fifty normalized characters", () => {
+    const shortWindow = "a an i in on at to by up no go do";
+
+    const result = scanPrivateStoryIsolation({
+      sourceUnits: [`${shortWindow} ending`],
+      trackedFiles: [["public.txt", shortWindow]],
+    });
+
+    assert.deepEqual(result.leakedPaths, []);
   });
 
   it("detects a distinctive whole eight-to-eleven-word prose unit", async () => {
