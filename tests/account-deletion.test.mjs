@@ -16,10 +16,10 @@ const DELETION_REQUESTED_AT = "2026-08-25T10:00:00.000Z";
 const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .update(USER_ID)
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
-const DUB_PATH = "/api/dubs/five-little-ducks-v1";
-const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v1/`;
+const DUB_PATH = "/api/dubs/five-little-ducks-v2";
+const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v2/`;
 const MARKER_KEY = `${DUB_PREFIX}.dub-generation`;
-const LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
+const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
 const slotKey = (lineId) => `${DUB_PREFIX}${lineId}.audio`;
 const CLOSURE_KEYS = [MARKER_KEY, ...LINE_IDS.map(slotKey)];
 
@@ -462,7 +462,7 @@ describe("account deletion personalized-art lifecycle", () => {
         wait: async () => {},
       });
       assertDeletionFences(bucket, DELETION_GENERATION);
-      assert.equal(bucket.stored.size, 10);
+      assert.equal(bucket.stored.size, CLOSURE_KEYS.length);
       const finalWrites = bucket.calls.put.filter(
         ({ options }) =>
           options.customMetadata?.generation === DELETION_GENERATION,

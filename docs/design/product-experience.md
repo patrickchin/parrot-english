@@ -38,7 +38,7 @@ duplicate learner activity catalog.
 | Capability | Learner | Guardian | Enforcement |
 | --- | --- | --- | --- |
 | Complete first-time learner setup | Yes | Yes | Authenticated session |
-| Talk, play lessons, read stories | Yes | Switch to learner | Authenticated session |
+| Talk, play lessons, read stories, dub the rhyme | Yes | Switch to learner | Authenticated session |
 | View saved custom lessons for playback | Yes | Switch to learner | Owner-scoped read |
 | Edit learner profile or redo setup | No | Yes | Guardian unlock |
 | Choose stored story level | No | Yes | Guardian unlock |
@@ -138,15 +138,29 @@ guardian-only.
 
 Five Little Ducks is a durable authenticated studio at
 `/dubs/five-little-ducks`. A grown-up confirms before the learner records the
-original nine-line rhyme one line at a time. Progress is saved to the signed-in
-account, resumes at the first missing line, and unlocks one synchronized final
-performance when every line is ready.
+authentic traditional six-stanza rhyme one line at a time. Its 24 lines count
+down from five ducklings to none, then end with sad mother duck bringing all
+five home. Progress is saved to the signed-in account, resumes at the first
+missing line, and unlocks one synchronized 98-second final performance when
+every line is ready.
 
-Voice clips are private to the account. The guided flow does not preview
-individual takes: each saved line advances to one clear next action, and the
-whole performance replays when complete. Saved lines can be replaced and the
-complete dub can be reset from closed grown-up options. Account deletion removes
-all saved clips. Recordings are not shared publicly or sent to speech
+Voice clips are private to the account. The guided flow does not expose
+unrelated options or require the learner to infer a workflow. Entering a line
+plays its checked-in ElevenLabs narrator example; **Replay example** remains a
+secondary action. The current **Now read** lyric is much larger than the compact
+title, and the full-screen desktop studio gives most of its width and height to
+the animated scene.
+
+After each recording, the learner can immediately choose **Hear my voice** and
+see a waveform decoded from the actual local take before choosing the one large
+**Next line** action. **Record again** remains available but visually quieter.
+Saved lines can be replaced and the complete dub can be reset from closed
+grown-up options. The welcome screen exposes the same closed grown-up section
+when saved progress exists, allowing unfinished or legacy recordings to be
+deleted without completing the rhyme. A normal v2 reset also purges recordings
+left under the legacy v1 dub prefix while retaining ten tiny non-audio retirement
+fences that block old-v1 uploads; account deletion removes all saved clips and permanently
+fences the current slots. Recordings are not shared publicly or sent to speech
 recognition.
 
 ## Visual and Interaction Rules
@@ -160,6 +174,8 @@ recognition.
   primitives.
 - Respect reduced motion and prevent horizontal overflow from 280 px upward.
 - Keep lesson controls clear of characters, speech, and the account header.
+- In the dubbing studio, keep the active lyric visually dominant, the title
+  compact, and exactly one primary action for the current state.
 
 ## Content Boundaries
 

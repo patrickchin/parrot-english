@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
+import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import { STORIES } from "../src/stories/story-catalog.ts";
 
 const getStaticAudioLineForSpeech =
@@ -42,6 +43,18 @@ describe("static audio cache metadata", () => {
       getStaticAudioLineForSpeech("narrator", "Let's copy Dolly!").src,
       "/assets/audio/narrator-copy-dolly.mp3"
     );
+  });
+
+  it("registers an ElevenLabs narrator guide for every unique duck lyric", () => {
+    const guideLines = new Map();
+    for (const { text } of DUB_LINES) {
+      const line = getStaticAudioLineForSpeech("narrator", text);
+      assert.match(line.id, /^five-little-ducks-v2-guide-/);
+      assert.equal(line.text, text);
+      assert.match(line.ttsText, /^\[warm, rhythmic nursery-rhyme delivery\]/);
+      guideLines.set(text, line.id);
+    }
+    assert.equal(guideLines.size, 15);
   });
 
   it("covers every scripted non-user line and speech-check response", () => {

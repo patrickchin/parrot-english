@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createWorker } from "../worker/index.ts";
 
-const DUB_PATH = "/api/dubs/five-little-ducks-v1";
+const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 
 function authStub(session, sessionCalls) {
   return {

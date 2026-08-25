@@ -25,7 +25,7 @@ describe("duck dub browser API", () => {
     const controller = new AbortController();
     const status = {
       complete: false,
-      dubId: "five-little-ducks-v1",
+      dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v1",
       lines: [
         { id: "line-1", recordedAt: null, saved: false },
@@ -38,7 +38,7 @@ describe("duck dub browser API", () => {
       status,
     );
     assert.deepEqual(load.calls[0], [
-      "/api/dubs/five-little-ducks-v1",
+      "/api/dubs/five-little-ducks-v2",
       { credentials: "same-origin", signal: controller.signal },
     ]);
 
@@ -55,7 +55,7 @@ describe("duck dub browser API", () => {
       saved,
     );
     assert.deepEqual(upload.calls[0], [
-      "/api/dubs/five-little-ducks-v1/lines/line%2F1",
+      "/api/dubs/five-little-ducks-v2/lines/line%2F1",
       {
         body: blob,
         credentials: "same-origin",
@@ -74,7 +74,7 @@ describe("duck dub browser API", () => {
       undefined,
     );
     assert.deepEqual(remove.calls[0], [
-      "/api/dubs/five-little-ducks-v1",
+      "/api/dubs/five-little-ducks-v2",
       {
         credentials: "same-origin",
         method: "DELETE",
@@ -84,7 +84,7 @@ describe("duck dub browser API", () => {
 
     assert.equal(
       getDubLineAudioUrl("line/1"),
-      "/api/dubs/five-little-ducks-v1/lines/line%2F1/audio",
+      "/api/dubs/five-little-ducks-v2/lines/line%2F1/audio",
     );
   });
 

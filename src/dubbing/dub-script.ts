@@ -1,11 +1,11 @@
-export const DUB_ID = "five-little-ducks-v1" as const;
+export const DUB_ID = "five-little-ducks-v2" as const;
 export const DUB_ROUTE = "/dubs/five-little-ducks" as const;
-export const DUB_DURATION_MS = 56_000;
+export const DUB_DURATION_MS = 98_000;
 export const DUB_RECORDING_MS = 6_000;
 
 export type DubVisualBeat =
-  | "five-enter" | "hill" | "frog" | "four-splash" | "reeds"
-  | "lily-circle" | "one-calls" | "mama-calls" | "five-return";
+  | "depart" | "hill" | "mother-calls" | "return" | "none-return"
+  | "sad-mother-depart" | "sad-mother-hill" | "sad-mother-calls" | "five-return";
 
 export type DubLine = {
   readonly cueMs: number;
@@ -16,21 +16,43 @@ export type DubLine = {
 };
 
 const texts = [
-  "Five little ducks went out to play.",
+  "Five little ducks went out one day.",
   "Over the hill and far away.",
-  "One found a frog and stopped to say, “Hello!”",
-  "Four little ducks came splashing back.",
-  "Three little ducks raced through the reeds.",
-  "Two little ducks twirled round and round.",
-  "One little duck called, “Quack, quack, quack!”",
-  "Mama duck called, “Come home, my friends!”",
-  "Five happy ducks came swimming back.",
+  "Mother duck said, “Quack, quack, quack, quack.”",
+  "But only four little ducks came back.",
+  "Four little ducks went out one day.",
+  "Over the hill and far away.",
+  "Mother duck said, “Quack, quack, quack, quack.”",
+  "But only three little ducks came back.",
+  "Three little ducks went out one day.",
+  "Over the hill and far away.",
+  "Mother duck said, “Quack, quack, quack, quack.”",
+  "But only two little ducks came back.",
+  "Two little ducks went out one day.",
+  "Over the hill and far away.",
+  "Mother duck said, “Quack, quack, quack, quack.”",
+  "But only one little duck came back.",
+  "One little duck went out one day.",
+  "Over the hill and far away.",
+  "Mother duck said, “Quack, quack, quack, quack.”",
+  "But none of the five little ducks came back.",
+  "Sad mother duck went out one day.",
+  "Over the hill and far away.",
+  "Sad mother duck said, “Quack, quack, quack, quack.”",
+  "And all of the five little ducks came back.",
 ] as const;
-const beats: DubVisualBeat[] = ["five-enter", "hill", "frog", "four-splash", "reeds", "lily-circle", "one-calls", "mama-calls", "five-return"];
-const counts = [5, 5, 4, 4, 3, 2, 1, 1, 5];
+const beats: readonly DubVisualBeat[] = [
+  "depart", "hill", "mother-calls", "return",
+  "depart", "hill", "mother-calls", "return",
+  "depart", "hill", "mother-calls", "return",
+  "depart", "hill", "mother-calls", "return",
+  "depart", "hill", "mother-calls", "none-return",
+  "sad-mother-depart", "sad-mother-hill", "sad-mother-calls", "five-return",
+];
+const counts = [5, 5, 0, 4, 4, 4, 0, 3, 3, 3, 0, 2, 2, 2, 0, 1, 1, 1, 0, 0, 0, 0, 0, 5];
 
 export const DUB_LINES: readonly DubLine[] = Object.freeze(texts.map((text, index) => Object.freeze({
-  cueMs: 800 + index * 6_000,
+  cueMs: 800 + index * 4_000,
   duckCount: counts[index],
   id: `line-${index + 1}` as `line-${number}`,
   text,

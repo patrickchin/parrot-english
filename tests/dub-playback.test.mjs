@@ -259,12 +259,16 @@ describe("duck dub playback", () => {
       startAt: 11,
     });
 
-    assert.deepEqual(starts, [11.8, 17.8, 29.8, 35.8, 41.8, 47.8, 53.8, 59.8]);
+    assert.deepEqual(starts, [
+      11.8, 15.8, 23.8, 27.8, 31.8, 35.8, 39.8, 43.8,
+      47.8, 51.8, 55.8, 59.8, 63.8, 67.8, 71.8, 75.8,
+      79.8, 83.8, 87.8, 91.8, 95.8, 99.8, 103.8,
+    ]);
     stop();
     stop();
     assert.deepEqual(
       [...sources.values()].map(({ stopCalls }) => stopCalls),
-      [1, 1, 1, 1, 1, 1, 1, 1],
+      Array.from({ length: 23 }, () => 1),
     );
   });
 
@@ -288,7 +292,7 @@ describe("duck dub playback", () => {
       audio.fetchCalls.map(([url]) => url),
       DUB_LINES.map(
         ({ id }) =>
-          `/api/dubs/five-little-ducks-v1/lines/${id}/audio`,
+          `/api/dubs/five-little-ducks-v2/lines/${id}/audio`,
       ),
     );
     assert.ok(
@@ -303,7 +307,11 @@ describe("duck dub playback", () => {
     const startAt = 10.12;
     assert.deepEqual(
       context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
-      [10.92, 16.92, 22.92, 28.92, 34.92, 40.92, 46.92, 52.92, 58.92],
+      [
+        10.92, 14.92, 18.92, 22.92, 26.92, 30.92, 34.92, 38.92,
+        42.92, 46.92, 50.92, 54.92, 58.92, 62.92, 66.92, 70.92,
+        74.92, 78.92, 82.92, 86.92, 90.92, 94.92, 98.92, 102.92,
+      ],
     );
     assert.equal(context.gains[0].gain.value, 0.95);
     assert.deepEqual(context.gains[0].connections, [context.destination]);
@@ -327,9 +335,9 @@ describe("duck dub playback", () => {
     raf.runNext();
     assert.deepEqual(ticks, [1500]);
 
-    context.currentTime = startAt + 60;
+    context.currentTime = startAt + 100;
     raf.runNext();
-    assert.deepEqual(ticks, [1500, 56_000]);
+    assert.deepEqual(ticks, [1500, 98_000]);
     assert.equal(context.closeCalls, 1);
     assert.equal(raf.callbacks.size, 0);
 

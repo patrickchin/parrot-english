@@ -1,15 +1,15 @@
 import { DUB_LINES, type DubLine } from "./dub-script.ts";
 
 const sceneDescriptions = {
-  "five-enter": "Five ducks enter the pond.",
+  depart: "The ducklings set out together.",
   hill: "The flock swims toward a green hill.",
-  frog: "A frog appears; four ducks continue.",
-  "four-splash": "Four ducks make bright ripples.",
-  reeds: "Three ducks pass swaying reeds.",
-  "lily-circle": "Two ducks circle a lily pad.",
-  "one-calls": "One duck calls beside the bank.",
-  "mama-calls": "Mama duck appears at sunset.",
-  "five-return": "All five ducks return for the finale.",
+  "mother-calls": "Mother duck calls for the ducklings.",
+  return: "The ducklings come back to the pond.",
+  "none-return": "No ducklings come back to the pond.",
+  "sad-mother-depart": "Sad mother duck sets out alone.",
+  "sad-mother-hill": "Sad mother duck travels over the hill.",
+  "sad-mother-calls": "Sad mother duck calls for the ducklings.",
+  "five-return": "All five ducklings come back to mother duck.",
 } as const;
 
 function Duck({
@@ -52,22 +52,28 @@ export function DuckScene({
   line?: DubLine;
   playing?: boolean;
 }) {
-  const showFrog = line.visualBeat === "frog";
-  const showMama = line.visualBeat === "mama-calls" || line.visualBeat === "five-return";
-  const duckPositions = [
+  const showMama = line.visualBeat === "mother-calls"
+    || line.visualBeat.startsWith("sad-mother")
+    || line.visualBeat === "five-return";
+  const returnPositions = [
     [265, 345],
     [390, 390],
     [520, 342],
     [650, 392],
     [765, 335],
   ] as const;
+  const duckPositions = line.visualBeat.includes("hill")
+    ? [[390, 295], [500, 265], [610, 300], [710, 280], [805, 315]] as const
+    : line.visualBeat.includes("depart")
+      ? [[625, 360], [705, 330], [785, 350], [835, 310], [890, 340]] as const
+      : returnPositions;
 
   return (
     <figure
       className={
         compact
           ? "grid size-full overflow-hidden"
-          : "m-0 grid overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
+          : "m-0 grid min-h-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
       }
     >
       <svg
@@ -96,16 +102,6 @@ export function DuckScene({
           <path d="M95 390 78 300M115 393 122 292M136 402 157 314" />
           <path d="M835 390 822 290M858 394 869 280M887 405 906 315" />
         </g>
-        {showFrog ? (
-          <g transform="translate(165 395)">
-            <ellipse cx="0" cy="10" fill="#55b957" rx="34" ry="23" />
-            <circle cx="-18" cy="-11" fill="#68ca63" r="13" />
-            <circle cx="18" cy="-11" fill="#68ca63" r="13" />
-            <circle cx="-18" cy="-13" fill="#172554" r="4" />
-            <circle cx="18" cy="-13" fill="#172554" r="4" />
-            <path d="M-13 9 Q0 20 13 9" fill="none" stroke="#185c38" strokeWidth="4" />
-          </g>
-        ) : null}
         {duckPositions.slice(0, line.duckCount).map(([x, y], index) => (
           <Duck delay={index * 90} key={`${x}-${y}`} playing={playing} x={x} y={y} />
         ))}
