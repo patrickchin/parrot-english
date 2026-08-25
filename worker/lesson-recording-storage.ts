@@ -39,14 +39,10 @@ export function deleteAllLessonRecordings(
 export function deleteLessonRecordingsForLesson(
   bucket: LessonRecordingBucket,
   userId: string,
-  source: "generated" | "uploaded",
   lessonId: string,
 ) {
-  if (source !== "generated" && source !== "uploaded") {
-    throw new TypeError("Unknown My Lesson source.");
-  }
   return deletePrefix(
     bucket,
-    `${ownerPrefix(userId)}${source}/${encodeURIComponent(lessonId)}/`,
+    `${ownerPrefix(userId)}my/${encodeURIComponent(lessonId)}/`,
   );
 }

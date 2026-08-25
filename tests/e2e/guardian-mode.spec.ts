@@ -196,6 +196,80 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   }
 });
 
+test("guardian grants and confirms revocation of lesson voice recordings", async ({
+  page,
+}) => {
+  const profile = {
+    age: 8,
+    answers: {
+      legacyAnswers: null,
+      questionnaireVersion: 2,
+      responses: {},
+      schemaVersion: 2,
+    },
+    completedAt: "2026-08-26T08:00:00.000Z",
+    currentQuestionKey: null,
+    description: null,
+    name: "Mia",
+    profileStatus: "completed",
+    questionnaireVersion: 2,
+    storyLevel: "first-words",
+  };
+  let consent = false;
+  const mutations: boolean[] = [];
+
+  await page.route("**/api/learner-profile", (route) =>
+    route.fulfill({
+      json: {
+        canBypass: true,
+        experienceMode: "form",
+        mode: "full",
+        profile,
+        progress: { answered: 6, current: 6, total: 6 },
+        question: null,
+        questionnaire: { version: 2 },
+      },
+    }),
+  );
+  await page.route("**/api/profile", (route) =>
+    route.fulfill({
+      json: {
+        profile: { ...profile, lessonRecordingConsent: consent },
+        questions: [],
+      },
+    }),
+  );
+  await page.route("**/api/profile/lesson-recording-consent", async (route) => {
+    const body = route.request().postDataJSON() as { enabled: boolean };
+    consent = body.enabled;
+    mutations.push(consent);
+    await route.fulfill({ json: { enabled: consent } });
+  });
+
+  await page.goto(guardianUrl("/profile", "guardian"));
+
+  const grant = page.getByRole("button", {
+    name: "Allow lesson voice recordings",
+  });
+  await expect(grant).toBeVisible();
+  await grant.click();
+  const revoke = page.getByRole("button", {
+    name: "Stop and delete lesson recordings",
+  });
+  await expect(revoke).toBeVisible();
+  expect(mutations).toEqual([true]);
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.type()).toBe("confirm");
+    expect(dialog.message()).toMatch(/delete all saved lesson voice recordings/i);
+    await dialog.accept();
+  });
+  await revoke.click();
+
+  await expect(grant).toBeVisible();
+  expect(mutations).toEqual([true, false]);
+});
+
 test("a locked guardian deep link never flashes protected content", async ({
   page,
 }) => {

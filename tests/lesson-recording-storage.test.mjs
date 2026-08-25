@@ -29,7 +29,7 @@ describe("lesson recording storage", () => {
         [
           "",
           {
-            objects: [{ key: `${prefix}generated/lesson-1/clip-1.webm` }],
+            objects: [{ key: `${prefix}my/lesson-1/clip-1.webm` }],
             truncated: true,
             cursor: "page-2",
           },
@@ -37,7 +37,7 @@ describe("lesson recording storage", () => {
         [
           "page-2",
           {
-            objects: [{ key: `${prefix}uploaded/lesson-2/clip-2.webm` }],
+            objects: [{ key: `${prefix}my/lesson-2/clip-2.webm` }],
             truncated: false,
           },
         ],
@@ -51,15 +51,15 @@ describe("lesson recording storage", () => {
       { prefix, cursor: "page-2" },
     ]);
     assert.deepEqual(state.deletions, [
-      [`${prefix}generated/lesson-1/clip-1.webm`],
-      [`${prefix}uploaded/lesson-2/clip-2.webm`],
+      [`${prefix}my/lesson-1/clip-1.webm`],
+      [`${prefix}my/lesson-2/clip-2.webm`],
     ]);
   });
 
   it("deletes only the exact encoded My Lesson subprefix", async () => {
     assert.equal(typeof storage.deleteLessonRecordingsForLesson, "function");
     const prefix =
-      "personalized-story-art/user-1/lesson-recordings/uploaded/lesson%2Fone/";
+      "personalized-story-art/user-1/lesson-recordings/my/lesson%2Fone/";
     const state = pagedBucket(
       new Map([
         [
@@ -75,7 +75,6 @@ describe("lesson recording storage", () => {
     await storage.deleteLessonRecordingsForLesson(
       state.bucket,
       "user-1",
-      "uploaded",
       "lesson/one",
     );
 
