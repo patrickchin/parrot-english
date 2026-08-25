@@ -2,7 +2,8 @@ export type StoryLevelId =
   | "first-words"
   | "repeating-patterns"
   | "tiny-stories"
-  | "early-a1";
+  | "early-a1"
+  | "long-stories";
 
 export type StoryVocabularyProfileId =
   | "first-words-v1"
@@ -22,6 +23,7 @@ export type StoryPage = {
   joinIn: string;
   joinInAudioId: string | null;
   narrationAudioId: string | null;
+  narrationAudioSrc?: string;
   text: string;
 };
 
