@@ -280,6 +280,10 @@ export function LessonPlayer({
   const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [historyPopSequence, setHistoryPopSequence] = useState(0);
   const [audioRetrySequence, setAudioRetrySequence] = useState(0);
+  const [decodedArtworkSources, setDecodedArtworkSources] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const [failedArtworkSrc, setFailedArtworkSrc] = useState("");
   const stateRef = useRef(state);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
@@ -301,6 +305,21 @@ export function LessonPlayer({
     event: LessonEvent;
     sceneIndex: number;
   } | null>(null);
+  const handleArtworkDecoded = useCallback((src: string) => {
+    setDecodedArtworkSources((decodedSources) => {
+      if (decodedSources.has(src)) return decodedSources;
+      const nextSources = new Set(decodedSources);
+      nextSources.add(src);
+      return nextSources;
+    });
+    setFailedArtworkSrc((failedSrc) => (failedSrc === src ? "" : failedSrc));
+  }, []);
+  const handleArtworkFailed = useCallback((src: string) => {
+    setFailedArtworkSrc(src);
+  }, []);
+  const handleArtworkRetry = useCallback((src: string) => {
+    setFailedArtworkSrc((failedSrc) => (failedSrc === src ? "" : failedSrc));
+  }, []);
 
   useLayoutEffect(() => {
     stateRef.current = state;
@@ -451,6 +470,7 @@ export function LessonPlayer({
     historyPopSequence,
     routedLocationKey,
     routedSceneIndex,
+    decodedArtworkSources,
     state.phase,
     state.sceneIndex,
   ]);
@@ -474,8 +494,31 @@ export function LessonPlayer({
         : null;
 
   useEffect(() => {
+    const currentArtwork = fullSceneArtwork?.[state.sceneIndex];
+    const nextArtwork = fullSceneArtwork?.[state.sceneIndex + 1];
+    if (
+      !currentArtwork ||
+      !decodedArtworkSources.has(currentArtwork.src) ||
+      !nextArtwork
+    ) {
+      return;
+    }
+
+    const preload = new Image();
+    preload.decoding = "async";
+    preload.src = nextArtwork.src;
+    if (typeof preload.decode === "function") {
+      void preload.decode().catch(() => undefined);
+    }
+  }, [decodedArtworkSources, fullSceneArtwork, state.sceneIndex]);
+
+  useEffect(() => {
     if (state.sceneIndex !== routedSceneRef.current) return;
     if (!playbackPhase) return;
+    const currentArtworkSrc = fullSceneArtwork?.[state.sceneIndex]?.src;
+    if (currentArtworkSrc && !decodedArtworkSources.has(currentArtworkSrc)) {
+      return;
+    }
 
     const completionEvent: LessonEvent =
       playbackPhase === LessonPhase.Responding
@@ -561,7 +604,9 @@ export function LessonPlayer({
     audioRetrySequence,
     audioMode,
     currentLesson,
+    decodedArtworkSources,
     dispatchLessonEvent,
+    fullSceneArtwork,
     playbackPhase,
     routedSceneIndex,
     state.response,
@@ -615,6 +660,11 @@ export function LessonPlayer({
   function handleStartAction() {
     if (state.phase === LessonPhase.Finished) {
       dispatchSceneControl("REPLAY_LESSON");
+      return;
+    }
+
+    const currentArtwork = fullSceneArtwork?.[state.sceneIndex];
+    if (currentArtwork && !decodedArtworkSources.has(currentArtwork.src)) {
       return;
     }
 
@@ -778,6 +828,11 @@ export function LessonPlayer({
     throw new Error(`Lesson artwork is missing scene ${state.sceneIndex + 1}.`);
   }
   const reserved = Boolean(fullScene);
+  const artworkReady =
+    !fullScene || decodedArtworkSources.has(fullScene.src);
+  const artworkFailed = Boolean(
+    fullScene && failedArtworkSrc === fullScene.src,
+  );
   const activeHud = (
     <LessonHud
       currentScene={state.sceneIndex + 1}
@@ -810,7 +865,7 @@ export function LessonPlayer({
       speech={scene.speech}
     />
   );
-  const activeControls = showUserTurn ? (
+  const activeControls = !artworkReady ? null : showUserTurn ? (
     <LessonSpeakingControls
       isEvaluating={isEvaluating}
       isRecording={isRecording}
@@ -850,7 +905,15 @@ export function LessonPlayer({
       background={scene.backgroundAsset}
       presentation={fullScene ? "boxed" : "layered"}
     >
-      {fullScene && isIdle ? <BoxedFullSceneStage image={fullScene} /> : null}
+      {fullScene && isIdle ? (
+        <BoxedFullSceneStage
+          decoded={decodedArtworkSources.has(fullScene.src)}
+          image={fullScene}
+          onDecoded={handleArtworkDecoded}
+          onFailed={handleArtworkFailed}
+          onRetry={handleArtworkRetry}
+        />
+      ) : null}
       <RouteHeader>
         <HeaderButton
           aria-label="Back to lesson list"
@@ -862,10 +925,11 @@ export function LessonPlayer({
         </HeaderButton>
       </RouteHeader>
 
-      {isIdle ? (
+      {isIdle && !artworkFailed ? (
         <LessonIntroduction
           lessonTitle={currentLesson.title}
           onStart={handleStartAction}
+          ready={artworkReady}
           ref={startActionRef}
           sceneCount={currentLesson.scenes.length}
         />
@@ -883,11 +947,13 @@ export function LessonPlayer({
       {showActiveScene ? (
         fullScene ? (
           <BoxedLessonSceneLayout
+            artworkDecoded={artworkReady}
             controls={activeControls}
             dialogue={activeDialogue}
             hud={activeHud}
             image={fullScene}
             notice={activeNotice}
+            onArtworkDecoded={handleArtworkDecoded}
           />
         ) : (
           <>
