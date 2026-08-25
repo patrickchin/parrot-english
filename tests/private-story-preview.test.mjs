@@ -8,6 +8,7 @@ import {
   readFile,
   rm,
   stat,
+  symlink,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -119,6 +120,28 @@ describe("private story pagination", () => {
       `${words(40, "first")}\n\n${words(30, "second")}`,
       words(1, "third"),
     ]);
+  });
+
+  it("preserves multiple blank-line paragraph delimiters during pagination", () => {
+    const rawText = [
+      "# Delimiter Fixture",
+      "",
+      "First complete paragraph.",
+      "",
+      "",
+      "",
+      "Second complete paragraph!",
+    ].join("\n");
+
+    const paginated = paginatePrivateStoryText(rawText);
+
+    assert.deepEqual(paginated.pages, [
+      "First complete paragraph.\n\n\n\nSecond complete paragraph!",
+    ]);
+    assert.equal(
+      normalizeStoryBody(paginated.body),
+      normalizeStoryBody(rawText.replace(/^# Delimiter Fixture\n+/, "")),
+    );
   });
 
   it("rejects a single source unit over 90 words", () => {
@@ -298,6 +321,26 @@ describe("private story preview loader", () => {
         ],
       },
     });
+    await assert.rejects(
+      () =>
+        loadPrivateStoryPreview({
+          projectRoot: fixture.projectRoot,
+          requireAudio: false,
+        }),
+      /must stay inside the private preview directory/,
+    );
+  });
+
+  it("rejects a text-file symlink that escapes the private preview directory", async () => {
+    const fixture = await createFixtureRoot();
+    const outsideFile = path.join(fixture.projectRoot, "outside-story.txt");
+    await writeFile(outsideFile, "# Fixture Story\n\nOutside fixture text.");
+    await writePreviewFixture(fixture, { text: null });
+    await symlink(
+      outsideFile,
+      path.join(fixture.previewDirectory, "story-1.txt"),
+    );
+
     await assert.rejects(
       () =>
         loadPrivateStoryPreview({
