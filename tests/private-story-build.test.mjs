@@ -26,6 +26,32 @@ import viteConfig, {
 const temporaryDirectories = [];
 const originalPrivatePreviewFlag = env.PARROT_PRIVATE_STORY_PREVIEW;
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+const viteManagedEnvironmentKeys = [
+  "NODE_ENV",
+  "VITE_USER_NODE_ENV",
+  "BROWSER",
+  "BROWSER_ARGS",
+  "DEBUG",
+];
+
+function snapshotEnvironment(keys) {
+  return new Map(
+    keys.map((key) => [
+      key,
+      {
+        present: Object.hasOwn(env, key),
+        value: env[key],
+      },
+    ]),
+  );
+}
+
+function restoreEnvironment(snapshot) {
+  for (const [key, { present, value }] of snapshot) {
+    if (present) env[key] = value;
+    else delete env[key];
+  }
+}
 
 afterEach(async () => {
   if (originalPrivatePreviewFlag === undefined) {
@@ -117,14 +143,33 @@ async function readGeneratedText(directory) {
 }
 
 async function runViteBuild(options) {
-  const configFactory = createViteConfig(options);
-  const config = await configFactory({ command: "build", mode: "test" });
-  await viteBuild({
-    ...config,
-    configFile: false,
-    logLevel: "silent",
-    root: repositoryRoot,
-  });
+  const environmentSnapshot = snapshotEnvironment(viteManagedEnvironmentKeys);
+  const cacheDir = await mkdtemp(
+    path.join(os.tmpdir(), "parrot-private-story-vite-cache-"),
+  );
+  temporaryDirectories.push(cacheDir);
+  env.NODE_ENV = "production";
+  for (const key of viteManagedEnvironmentKeys.slice(1)) delete env[key];
+
+  try {
+    const configFactory = createViteConfig(options);
+    const config = await configFactory({ command: "build", mode: "production" });
+    const buildConfig = {
+      ...config,
+      cacheDir,
+      configFile: false,
+      envDir: false,
+      envPrefix: [],
+      logLevel: "silent",
+      mode: "production",
+      publicDir: false,
+      root: repositoryRoot,
+    };
+    await viteBuild(buildConfig);
+    return buildConfig;
+  } finally {
+    restoreEnvironment(environmentSnapshot);
+  }
 }
 
 describe("private story Vite build boundary", () => {
@@ -237,6 +282,33 @@ describe("private story Vite build boundary", () => {
     assert.deepEqual(emitted[1].source, fixture.audioBytes[1]);
   });
 
+  it("restores Vite-managed environment keys when a programmatic build fails", async () => {
+    const environmentSnapshot = snapshotEnvironment(viteManagedEnvironmentKeys);
+    const projectRoot = await mkdtemp(
+      path.join(os.tmpdir(), "parrot-failing-vite-build-"),
+    );
+    temporaryDirectories.push(projectRoot);
+    const blockedOutDir = path.join(projectRoot, "blocked-output");
+    await writeFile(blockedOutDir, "synthetic non-directory output");
+
+    try {
+      for (const key of viteManagedEnvironmentKeys) delete env[key];
+      await assert.rejects(
+        runViteBuild({
+          outDir: blockedOutDir,
+          privateStoryPreviewDirectory: path.join(projectRoot, "missing-preview"),
+          privateStoryPreviewEnabled: false,
+          privateStoryProjectRoot: projectRoot,
+        }),
+      );
+      for (const key of viteManagedEnvironmentKeys) {
+        assert.equal(Object.hasOwn(env, key), false);
+      }
+    } finally {
+      restoreEnvironment(environmentSnapshot);
+    }
+  });
+
   it("runs a normal Vite build without reading a nonexistent private preview", async () => {
     const projectRoot = await mkdtemp(
       path.join(os.tmpdir(), "parrot-normal-vite-build-"),
@@ -244,12 +316,19 @@ describe("private story Vite build boundary", () => {
     temporaryDirectories.push(projectRoot);
     const outDir = path.join(projectRoot, "vite-output");
 
-    await runViteBuild({
+    const buildConfig = await runViteBuild({
       outDir,
       privateStoryPreviewDirectory: path.join(projectRoot, "missing-preview"),
       privateStoryPreviewEnabled: false,
       privateStoryProjectRoot: projectRoot,
     });
+
+    assert.equal(buildConfig.mode, "production");
+    assert.equal(buildConfig.envDir, false);
+    assert.equal(buildConfig.publicDir, false);
+    assert.deepEqual(buildConfig.envPrefix, []);
+    assert.equal(path.isAbsolute(buildConfig.cacheDir), true);
+    assert.equal(buildConfig.cacheDir.startsWith(repositoryRoot), false);
 
     const generatedText = await readGeneratedText(outDir);
     for (const marker of [
@@ -296,6 +375,38 @@ describe("private story Vite build boundary", () => {
         assert.equal(generatedText.includes(marker), true);
       }
     }
+    for (const privateBuildOnlyValue of [
+      fixture.projectRoot,
+      fixture.previewDirectory,
+      path.join(fixture.previewDirectory, "story-1.txt"),
+      path.join(fixture.previewDirectory, "story-2.txt"),
+      "synthetic-preview/story-1.txt",
+      "synthetic-preview/story-2.txt",
+      "audio/private-fixture/page-001.mp3",
+      "audio/private-second/page-001.mp3",
+      "outputFilePath",
+      "sourceFilePath",
+      JSON.stringify(fixture.audioBytes[0]),
+      JSON.stringify(fixture.audioBytes[1]),
+    ]) {
+      assert.equal(generatedText.includes(privateBuildOnlyValue), false);
+    }
+
+    const privateAssetDirectory = path.join(
+      outDir,
+      "assets/private-story-preview",
+    );
+    assert.deepEqual(
+      (await listFiles(privateAssetDirectory))
+        .map((filePath) =>
+          path.relative(privateAssetDirectory, filePath).split(path.sep).join("/"),
+        )
+        .sort(),
+      [
+        "private-fixture/page-001.mp3",
+        "private-second/page-001.mp3",
+      ],
+    );
 
     assert.deepEqual(
       await readFile(
@@ -314,15 +425,6 @@ describe("private story Vite build boundary", () => {
         ),
       ),
       fixture.audioBytes[1],
-    );
-    await assert.rejects(
-      access(
-        path.join(
-          outDir,
-          "assets/private-story-preview/private-fixture/not-allowlisted.mp3",
-        ),
-      ),
-      (error) => error.code === "ENOENT",
     );
   });
 });

@@ -289,13 +289,39 @@ async function writeAudioFile(filePath, audioBytes) {
   await rm(mp3Path, { force: true });
 }
 
+async function cancelSpeechResponseBody(response) {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Provider-controlled cancellation failures must not replace safe diagnostics.
+  }
+}
+
 export async function readSpeechAudioResponse(id, response) {
   if (!response.ok) {
     const status = Number.isInteger(response.status) ? response.status : 0;
+    await cancelSpeechResponseBody(response);
     throw new Error(`${id} failed with HTTP ${status}`);
   }
 
   return Buffer.from(await response.arrayBuffer());
+}
+
+export async function requestSpeechWithRateLimitRetry(
+  apiKey,
+  line,
+  {
+    requestSpeechImplementation = requestSpeech,
+    waitImplementation = wait,
+  } = {},
+) {
+  let response = await requestSpeechImplementation(apiKey, line);
+  if (response.status === 429) {
+    await cancelSpeechResponseBody(response);
+    await waitImplementation(7000);
+    response = await requestSpeechImplementation(apiKey, line);
+  }
+  return response;
 }
 
 async function generateAudioFile(apiKey, id, line) {
@@ -304,11 +330,7 @@ async function generateAudioFile(apiKey, id, line) {
     return "skipped";
   }
 
-  let response = await requestSpeech(apiKey, line);
-  if (response.status === 429) {
-    await wait(7000);
-    response = await requestSpeech(apiKey, line);
-  }
+  const response = await requestSpeechWithRateLimitRetry(apiKey, line);
 
   await writeAudioFile(filePath, await readSpeechAudioResponse(id, response));
   return "generated";

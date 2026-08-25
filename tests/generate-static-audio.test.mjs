@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
@@ -10,6 +11,7 @@ import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import {
   getGenerationLines,
   readSpeechAudioResponse,
+  requestSpeechWithRateLimitRetry,
 } from "../scripts/generate-static-audio.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -63,6 +65,14 @@ describe("static audio generator", () => {
         previewDirectory,
         projectRoot,
       });
+      assert.deepEqual(Object.keys(lines).sort(), [
+        "private-fixture-page-001-narration",
+        "private-second-page-001-narration",
+      ]);
+      assert.deepEqual(
+        Object.keys(lines).filter((id) => Object.hasOwn(STATIC_AUDIO_LINES, id)),
+        [],
+      );
       const privateLine = lines["private-fixture-page-001-narration"];
       const outputRelativePath = relative(
         previewDirectory,
@@ -74,7 +84,6 @@ describe("static audio generator", () => {
       assert.equal(isAbsolute(privateLine.outputFilePath), true);
       assert.equal(outputRelativePath.startsWith(".."), false);
       assert.equal(isAbsolute(outputRelativePath), false);
-      assert.equal(lines["turn-hello"], undefined);
     } finally {
       await rm(projectRoot, { force: true, recursive: true });
     }
@@ -131,8 +140,15 @@ describe("static audio generator", () => {
 
   it("reports only the safe audio ID and numeric status for provider failures", async () => {
     const privatePageText = "Synthetic provider body that must remain private.";
+    let cancelCalls = 0;
     let textCalls = 0;
     const response = {
+      body: {
+        async cancel() {
+          cancelCalls += 1;
+          throw new Error(privatePageText);
+        },
+      },
       ok: false,
       status: 503,
       get headers() {
@@ -164,7 +180,82 @@ describe("static audio generator", () => {
         return true;
       },
     );
+    assert.equal(cancelCalls, 1);
     assert.equal(textCalls, 0);
+  });
+
+  it("cancels a rate-limited body before retrying without inspecting it", async () => {
+    const privatePageText = "Synthetic rate-limit body that must remain private.";
+    const expectedAudio = Buffer.from([0x49, 0x44, 0x33, 0x06, 0x07, 0x08]);
+    let cancelCalls = 0;
+    let jsonCalls = 0;
+    let requestCalls = 0;
+    let textCalls = 0;
+    const events = [];
+    const waits = [];
+    const throttledResponse = {
+      body: {
+        async cancel() {
+          cancelCalls += 1;
+          events.push("cancel");
+          throw new Error(privatePageText);
+        },
+      },
+      ok: false,
+      status: 429,
+      get headers() {
+        throw new Error("headers must not be read");
+      },
+      get statusText() {
+        throw new Error("statusText must not be read");
+      },
+      async json() {
+        jsonCalls += 1;
+        return { detail: privatePageText };
+      },
+      async text() {
+        textCalls += 1;
+        return privatePageText;
+      },
+    };
+    const successfulResponse = {
+      body: null,
+      ok: true,
+      status: 200,
+      async arrayBuffer() {
+        return expectedAudio;
+      },
+    };
+    const responses = [throttledResponse, successfulResponse];
+
+    const response = await requestSpeechWithRateLimitRetry(
+      "synthetic-api-key",
+      { speaker: "narrator", text: "Synthetic narration." },
+      {
+        async requestSpeechImplementation() {
+          events.push(`request-${requestCalls + 1}`);
+          const responseForAttempt = responses[requestCalls];
+          requestCalls += 1;
+          return responseForAttempt;
+        },
+        async waitImplementation(duration) {
+          events.push(`wait-${duration}`);
+          waits.push(duration);
+        },
+      },
+    );
+
+    assert.equal(response, successfulResponse);
+    assert.equal(cancelCalls, 1);
+    assert.equal(jsonCalls, 0);
+    assert.equal(requestCalls, 2);
+    assert.equal(textCalls, 0);
+    assert.deepEqual(events, ["request-1", "cancel", "wait-7000", "request-2"]);
+    assert.deepEqual(waits, [7000]);
+    assert.deepEqual(
+      await readSpeechAudioResponse("private-page-001-narration", response),
+      expectedAudio,
+    );
   });
 
   it("chooses ElevenLabs voices from speaker metadata", () => {
