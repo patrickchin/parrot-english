@@ -86,17 +86,61 @@ describe("private story isolation scanner", () => {
     assert.equal(scanResult.message, "");
   });
 
-  it("redacts marker values embedded in leaked filenames", () => {
-    const marker = "private-opaque-fixture";
+  it("redacts a marker that equals the former diagnostic token", () => {
+    const marker = "[private-marker]";
     const scanResult = scanPrivateStoryIsolation({
       markers: [marker],
       trackedFiles: [[`src/${marker}.js`, "public content"]],
     });
 
-    assert.deepEqual(scanResult.leakedPaths, ["src/[private-marker].js"]);
-    assert.equal(scanResult.message, "src/[private-marker].js");
-    assert.doesNotMatch(scanResult.message, new RegExp(marker));
-    assert.doesNotMatch(scanResult.leakedPaths[0], new RegExp(marker));
+    assert.equal(scanResult.leakedPaths.length, 1);
+    assert.match(scanResult.leakedPaths[0], /^src\/.*\.js/);
+    assert.equal(scanResult.message.includes(marker), false);
+    assert.equal(scanResult.leakedPaths[0].includes(marker), false);
+  });
+
+  it("does not introduce a marker substring through redaction", () => {
+    const marker = "private";
+    const scanResult = scanPrivateStoryIsolation({
+      markers: [marker],
+      trackedFiles: [[`src/${marker}-fixture.js`, "public content"]],
+    });
+
+    assert.equal(scanResult.leakedPaths.length, 1);
+    assert.equal(scanResult.message.includes(marker), false);
+    assert.equal(scanResult.leakedPaths[0].includes(marker), false);
+  });
+
+  it("keeps distinct leaked paths distinct after marker redaction", () => {
+    const markers = ["private-one", "private-two"];
+    const scanResult = scanPrivateStoryIsolation({
+      markers,
+      trackedFiles: [
+        ["src/private-one.js", "public content"],
+        ["src/private-two.js", "public content"],
+      ],
+    });
+
+    assert.equal(scanResult.leakedPaths.length, 2);
+    assert.notEqual(scanResult.leakedPaths[0], scanResult.leakedPaths[1]);
+    for (const marker of markers) {
+      assert.equal(scanResult.message.includes(marker), false);
+    }
+  });
+
+  it("escapes every JavaScript line separator in reported paths", () => {
+    const scanResult = scanPrivateStoryIsolation({
+      markers: ["synthetic marker"],
+      trackedFiles: [
+        ["src/carriage\rreturn\nline\u2028paragraph\u2029.js", "synthetic marker"],
+      ],
+    });
+
+    assert.equal(/[\r\n\u2028\u2029]/u.test(scanResult.message), false);
+    assert.match(scanResult.message, /\\r/);
+    assert.match(scanResult.message, /\\n/);
+    assert.match(scanResult.message, /\\u2028/);
+    assert.match(scanResult.message, /\\u2029/);
   });
 
   it("clean-skips absent inputs unless they are required", async () => {
@@ -143,6 +187,40 @@ describe("private story isolation scanner", () => {
     const result = await verifyPrivateStoryIsolation({
       distDirectory: join(projectRoot, "dist"),
       projectRoot,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, [
+      "dist/assets/private-story-preview/fixture/page.mp3",
+      "public/assets/private-story-preview/fixture/page.mp3",
+    ]);
+  });
+
+  it("reports generic leaks before required absent private inputs", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-required-"));
+    temporaryDirectories.push(projectRoot);
+    const trackedAsset = join(
+      projectRoot,
+      "public/assets/private-story-preview/fixture/page.mp3",
+    );
+    const distAsset = join(
+      projectRoot,
+      "dist/assets/private-story-preview/fixture/page.mp3",
+    );
+    await mkdir(join(trackedAsset, ".."), { recursive: true });
+    await mkdir(join(distAsset, ".."), { recursive: true });
+    await writeFile(trackedAsset, "synthetic tracked audio");
+    await writeFile(distAsset, "synthetic built audio");
+    await execFileAsync("git", ["init", "--quiet"], { cwd: projectRoot });
+    await execFileAsync(
+      "git",
+      ["add", "public/assets/private-story-preview/fixture/page.mp3"],
+      { cwd: projectRoot },
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      projectRoot,
+      requirePrivateInputs: true,
     });
 
     assert.equal(result.status, "leaks");
@@ -221,8 +299,10 @@ describe("private story isolation scanner", () => {
 
     assert.equal(result.status, "leaks");
     assert.equal(
-      result.leakedPaths.includes(
-        "content/private-story-preview/[private-marker]-leak.txt",
+      result.leakedPaths.some((filePath) =>
+        filePath.startsWith(
+          "content/private-story-preview/-leak.txt~",
+        )
       ),
       true,
     );
@@ -329,6 +409,50 @@ describe("private story isolation scanner", () => {
     assert.equal(result.status, "leaks");
     assert.deepEqual(result.leakedPaths, ["staged\\nfixture.js"]);
     assert.equal(result.message, "staged\\nfixture.js");
+  });
+
+  it("scans a gitlink path without reading the commit as a blob", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-gitlink-"));
+    temporaryDirectories.push(projectRoot);
+    await writeFile(join(projectRoot, "seed.txt"), "synthetic seed\n");
+    await execFileAsync("git", ["init", "--quiet"], { cwd: projectRoot });
+    await execFileAsync("git", ["add", "seed.txt"], { cwd: projectRoot });
+    await execFileAsync(
+      "git",
+      [
+        "-c",
+        "user.name=Synthetic Fixture",
+        "-c",
+        "user.email=fixture@example.test",
+        "commit",
+        "--quiet",
+        "-m",
+        "synthetic base",
+      ],
+      { cwd: projectRoot },
+    );
+    const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], {
+      cwd: projectRoot,
+      encoding: "utf8",
+    });
+    const gitlinkPath = "modules/assets/private-story-preview/fixture";
+    await execFileAsync(
+      "git",
+      [
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        "160000",
+        stdout.trim(),
+        gitlinkPath,
+      ],
+      { cwd: projectRoot },
+    );
+
+    const result = await verifyPrivateStoryIsolation({ projectRoot });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, [gitlinkPath]);
   });
 
   it("rejects an external dist directory", async () => {

@@ -1,6 +1,7 @@
 /* global Buffer, URL */
 
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { lstat, readFile, readdir, readlink, realpath } from "node:fs/promises";
 import path from "node:path";
@@ -47,12 +48,56 @@ function fileLeaks(filePath, contents, variants) {
   );
 }
 
-function redactLeakedPath(filePath, variants) {
-  let redactedPath = normalizePath(filePath);
-  for (const marker of [...variants].sort((left, right) => right.length - left.length)) {
-    redactedPath = redactedPath.replaceAll(marker, "[private-marker]");
+function removeMarkers(value, variants) {
+  const sortedVariants = [...variants].sort(
+    (left, right) => right.length - left.length,
+  );
+  let redacted = value;
+  let changed = false;
+
+  while (true) {
+    const previous = redacted;
+    for (const marker of sortedVariants) {
+      redacted = redacted.replaceAll(marker, "");
+    }
+    if (redacted === previous) return { changed, value: redacted };
+    changed = true;
   }
-  return JSON.stringify(redactedPath).slice(1, -1);
+}
+
+function markerSafeSuffix(filePath, variants) {
+  const digest = createHash("sha256").update(filePath).digest("hex");
+  const conciseSuffix = `~${digest.slice(0, 12)}`;
+  if (!variants.some((marker) => conciseSuffix.includes(marker))) {
+    return conciseSuffix;
+  }
+
+  const markerCharacters = new Set(variants.join(""));
+  const safeCharacters = [];
+  for (let codePoint = 0xe000; safeCharacters.length < 3; codePoint += 1) {
+    const character = String.fromCodePoint(codePoint);
+    if (!markerCharacters.has(character)) safeCharacters.push(character);
+  }
+  const binaryDigest = [...Buffer.from(digest, "hex")]
+    .map((byte) => byte.toString(2).padStart(8, "0"))
+    .join("");
+  const bits = [...binaryDigest.slice(0, 64)]
+    .map((bit) => safeCharacters[Number(bit)])
+    .join("");
+  return `${safeCharacters[2]}${bits}`;
+}
+
+function redactLeakedPath(filePath, variants) {
+  const normalizedPath = normalizePath(filePath);
+  const redaction = removeMarkers(normalizedPath, variants);
+  const diagnostic = redaction.changed
+    ? `${redaction.value}${markerSafeSuffix(normalizedPath, variants)}`
+    : redaction.value;
+  const escaped = JSON.stringify(diagnostic)
+    .slice(1, -1)
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029");
+  return removeMarkers(escaped, variants).value;
 }
 
 export function scanPrivateStoryIsolation({
@@ -80,6 +125,27 @@ async function gitTrackedPaths(projectRoot, pathspec) {
     encoding: "utf8",
   });
   return stdout.split("\0").filter(Boolean);
+}
+
+async function gitTrackedEntries(projectRoot) {
+  const { stdout } = await execFileAsync(
+    "git",
+    ["ls-files", "--stage", "-z"],
+    { cwd: projectRoot, encoding: "utf8" },
+  );
+  return stdout.split("\0").filter(Boolean).map((record) => {
+    const separator = record.indexOf("\t");
+    const metadata = record.slice(0, separator);
+    const match = /^(\d{6}) ([0-9a-f]+) ([0-3])$/.exec(metadata);
+    if (separator < 0 || !match) {
+      throw new Error("Unable to parse the Git index");
+    }
+    return {
+      mode: match[1],
+      objectId: match[2],
+      path: record.slice(separator + 1),
+    };
+  });
 }
 
 function resolveInsideProject(projectRoot, filePath) {
@@ -138,7 +204,9 @@ async function readTrackedFiles(projectRoot, trackedPaths) {
         const fileStats = await lstat(absolutePath);
         const contents = fileStats.isSymbolicLink()
           ? await readlink(absolutePath)
-          : await readFile(absolutePath);
+          : fileStats.isFile()
+            ? await readFile(absolutePath)
+            : "";
         return [filePath, contents];
       } catch (error) {
         if (error?.code === "ENOENT") return null;
@@ -149,19 +217,26 @@ async function readTrackedFiles(projectRoot, trackedPaths) {
   return files.filter(Boolean);
 }
 
-async function readIndexFiles(projectRoot, trackedPaths) {
+async function readIndexFiles(projectRoot, trackedEntries) {
   const files = [];
-  for (const filePath of trackedPaths) {
+  for (const entry of trackedEntries) {
+    if (entry.mode === "160000") {
+      files.push([entry.path, ""]);
+      continue;
+    }
+    if (!["100644", "100755", "120000"].includes(entry.mode)) {
+      throw new Error("Unexpected Git index entry mode");
+    }
     const { stdout } = await execFileAsync(
       "git",
-      ["cat-file", "blob", `:${filePath}`],
+      ["cat-file", "blob", entry.objectId],
       {
         cwd: projectRoot,
         encoding: null,
         maxBuffer: 128 * 1024 * 1024,
       },
     );
-    files.push([filePath, stdout]);
+    files.push([entry.path, stdout]);
   }
   return files;
 }
@@ -204,9 +279,6 @@ export async function verifyPrivateStoryIsolation({
     PRIVATE_INPUT_DIRECTORY,
   );
   const hasPrivateInputs = existsSync(manifestPath);
-  if (!hasPrivateInputs && requirePrivateInputs) {
-    throw new Error("Private story inputs are required");
-  }
 
   const markers = hasPrivateInputs
     ? (
@@ -217,12 +289,16 @@ export async function verifyPrivateStoryIsolation({
         })
       ).markers
     : [];
-  const trackedPaths = await gitTrackedPaths(projectRoot);
+  const trackedEntries = await gitTrackedEntries(projectRoot);
+  const trackedPaths = [...new Set(trackedEntries.map((entry) => entry.path))];
   const publicTrackedPaths = trackedPaths.filter(
     (filePath) => !normalizePath(filePath).startsWith(`${PRIVATE_INPUT_DIRECTORY}/`),
   );
+  const publicTrackedEntries = trackedEntries.filter(
+    (entry) => !normalizePath(entry.path).startsWith(`${PRIVATE_INPUT_DIRECTORY}/`),
+  );
   const [indexFiles, workingTreeFiles] = await Promise.all([
-    readIndexFiles(projectRoot, publicTrackedPaths),
+    readIndexFiles(projectRoot, publicTrackedEntries),
     readTrackedFiles(projectRoot, publicTrackedPaths),
   ]);
   const distFiles = existsSync(resolvedDistDirectory)
@@ -237,6 +313,10 @@ export async function verifyPrivateStoryIsolation({
       ...workingTreeFiles,
     ],
   });
+
+  if (!result.leakedPaths.length && !hasPrivateInputs && requirePrivateInputs) {
+    throw new Error("Private story inputs are required");
+  }
 
   return {
     ...result,

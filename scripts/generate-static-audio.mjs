@@ -184,19 +184,26 @@ function validatePrivateOutputPath(outputFilePath, previewDirectory) {
 async function validatePrivateOutputPathOnDisk(
   outputFilePath,
   previewDirectory,
+  projectRoot,
 ) {
-  const outputPath = validatePrivateOutputPath(
-    outputFilePath,
-    previewDirectory,
-  );
-  const directory = resolve(previewDirectory);
-  const directoryStats = await lstat(directory);
-  if (directoryStats.isSymbolicLink()) {
+  const root = resolve(projectRoot);
+  const directory = validatePrivateOutputPath(previewDirectory, root);
+  if (directory === root) {
     throw new Error("Private audio output must stay inside the private preview directory");
   }
+  const outputPath = validatePrivateOutputPath(
+    outputFilePath,
+    directory,
+  );
+  const rootStats = await lstat(root);
+  if (rootStats.isSymbolicLink()) {
+    throw new Error("Private audio output must stay inside the private preview directory");
+  }
+  const realRoot = await realpath(root);
   const realDirectory = await realpath(directory);
-  const relativePath = relative(directory, outputPath);
-  let currentPath = directory;
+  validatePrivateOutputPath(realDirectory, realRoot);
+  const relativePath = relative(root, outputPath);
+  let currentPath = root;
 
   for (const segment of relativePath.split(process.platform === "win32" ? "\\" : "/")) {
     currentPath = join(currentPath, segment);
@@ -205,7 +212,14 @@ async function validatePrivateOutputPathOnDisk(
       if (currentStats.isSymbolicLink()) {
         throw new Error("Private audio output must stay inside the private preview directory");
       }
-      validatePrivateOutputPath(await realpath(currentPath), realDirectory);
+      const realCurrentPath = await realpath(currentPath);
+      validatePrivateOutputPath(realCurrentPath, realRoot);
+      if (
+        currentPath === directory ||
+        !relative(directory, currentPath).startsWith("..")
+      ) {
+        validatePrivateOutputPath(realCurrentPath, realDirectory);
+      }
     } catch (error) {
       if (error?.code === "ENOENT") break;
       throw error;
@@ -239,6 +253,7 @@ export async function getGenerationLines({
           outputFilePath: await validatePrivateOutputPathOnDisk(
             line.outputFilePath,
             directory,
+            projectRoot,
           ),
         },
       ]),

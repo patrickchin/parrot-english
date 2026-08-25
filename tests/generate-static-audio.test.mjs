@@ -104,6 +104,49 @@ describe("static audio generator", () => {
     }
   });
 
+  it("rejects a symlinked content ancestor between the project and preview", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-root-link-"));
+    const externalContent = await mkdtemp(join(tmpdir(), "parrot-audio-content-"));
+    const previewDirectory = join(projectRoot, "content/private-story-preview");
+    const externalPreview = join(externalContent, "private-story-preview");
+    await mkdir(externalPreview, { recursive: true });
+    await writeFile(
+      join(externalPreview, "manifest.json"),
+      JSON.stringify({
+        version: 1,
+        stories: [
+          {
+            id: "private-fixture",
+            textFile: "story-1.txt",
+            title: "Fixture Story",
+          },
+        ],
+      }),
+    );
+    await writeFile(
+      join(externalPreview, "story-1.txt"),
+      "# Fixture Story\n\nSynthetic page text.\n",
+    );
+    await symlink(externalContent, join(projectRoot, "content"));
+
+    try {
+      await assert.rejects(
+        () =>
+          getGenerationLines({
+            includePrivateStories: true,
+            previewDirectory,
+            projectRoot,
+          }),
+        /must stay inside the private preview directory/,
+      );
+    } finally {
+      await Promise.all([
+        rm(projectRoot, { force: true, recursive: true }),
+        rm(externalContent, { force: true, recursive: true }),
+      ]);
+    }
+  });
+
   it("chooses ElevenLabs voices from speaker metadata", () => {
     const generator = readFileSync(
       new URL("../scripts/generate-static-audio.mjs", import.meta.url),
