@@ -963,6 +963,25 @@ for (const viewport of [
     await expectContainedBy(status, prompt);
     await expectLongTextReachable(phrase);
 
+    if (viewport.name === "compact") {
+      const centers = await heading.evaluate((element) => {
+        const promptRect = element.parentElement!.getBoundingClientRect();
+        const iconRect = element.querySelector("svg")!.getBoundingClientRect();
+        const textNode = [...element.childNodes].find(
+          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+        )!;
+        const textRange = document.createRange();
+        textRange.selectNodeContents(textNode);
+        const textRect = textRange.getBoundingClientRect();
+        return {
+          content: (Math.min(iconRect.left, textRect.left) +
+            Math.max(iconRect.right, textRect.right)) / 2,
+          prompt: promptRect.left + promptRect.width / 2,
+        };
+      });
+      expect(Math.abs(centers.content - centers.prompt)).toBeLessThanOrEqual(2);
+    }
+
     const promptMetrics = await prompt.evaluate((element) => ({
       clientHeight: element.clientHeight,
       scrollHeight: element.scrollHeight,

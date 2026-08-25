@@ -763,7 +763,7 @@ export function LessonJoinInPrompt({
       role="region"
     >
       <h2
-        className="m-0 inline-flex items-center gap-1.5 text-sm font-black uppercase tracking-widest text-brand-green md:text-base"
+        className="m-0 inline-flex items-center justify-self-center gap-1.5 text-sm font-black uppercase tracking-widest text-brand-green md:text-base"
         id={headingId}
       >
         <Mic aria-hidden="true" className="size-4" />
