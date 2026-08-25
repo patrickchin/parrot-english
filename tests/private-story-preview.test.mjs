@@ -8,9 +8,11 @@ import {
   mkdir,
   readdir,
   readFile,
+  rename,
   rm,
   stat,
   symlink,
+  truncate,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -105,6 +107,90 @@ async function writeRequiredAudio(fixture, { emptyFirst = false } = {}) {
     await mkdir(directory, { recursive: true });
     await writeFile(path.join(directory, "page-001.mp3"), contents);
   }
+}
+
+function transactionDirectoryFor(previewDirectory) {
+  return path.join(
+    path.dirname(previewDirectory),
+    ".private-story-preview-transaction",
+  );
+}
+
+async function writeBundle(directory, files) {
+  await mkdir(directory, { recursive: true });
+  await Promise.all(
+    Object.entries(files).map(([name, contents]) =>
+      writeFile(path.join(directory, name), contents),
+    ),
+  );
+}
+
+async function readBundle(directory) {
+  const names = (await readdir(directory)).sort();
+  return Object.fromEntries(
+    await Promise.all(
+      names.map(async (name) => [name, await readFile(path.join(directory, name))]),
+    ),
+  );
+}
+
+async function createPreparationSources(fixture, directoryName = "replacement-sources") {
+  const sourcesDirectory = path.join(fixture.projectRoot, directoryName);
+  await mkdir(sourcesDirectory);
+  const sourceFiles = [
+    path.join(sourcesDirectory, "new-one.txt"),
+    path.join(sourcesDirectory, "new-two.txt"),
+  ];
+  const sourceBytes = [
+    Buffer.from("# New One\n\nNew first body.\n"),
+    Buffer.from("# New Two\n\nNew second body.\n"),
+  ];
+  await Promise.all(
+    sourceFiles.map((file, index) => writeFile(file, sourceBytes[index])),
+  );
+  return { sourceBytes, sourceFiles };
+}
+
+const oldBundle = {
+  "manifest.json": Buffer.from('{"version":1,"stories":[]}\n'),
+  "story-1.txt": Buffer.from("# Old One\n\nOld first body.\n"),
+  "story-2.txt": Buffer.from("# Old Two\n\nOld second body.\n"),
+};
+
+async function leavePartialBackupCleanupResidue(fixture, directoryName) {
+  await writeBundle(fixture.previewDirectory, oldBundle);
+  const { sourceBytes, sourceFiles } = await createPreparationSources(
+    fixture,
+    directoryName,
+  );
+  const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+  let injectedFailure = false;
+  const manifest = await preparePrivateStoryPreview({
+    fileSystem: {
+      async rm(target, options) {
+        const basename = path.basename(target);
+        if (
+          !injectedFailure &&
+          (basename === "backup" || basename.includes(".backup-"))
+        ) {
+          injectedFailure = true;
+          await rm(path.join(target, "story-1.txt"));
+          throw new Error("Synthetic partial backup cleanup failure");
+        }
+        return rm(target, options);
+      },
+    },
+    force: true,
+    previewDirectory: fixture.previewDirectory,
+    sourceFiles,
+  });
+  assert.equal(injectedFailure, true);
+  return {
+    manifest,
+    sourceBytes,
+    sourceFiles,
+    transactionDirectory,
+  };
 }
 
 describe("private story pagination", () => {
@@ -339,6 +425,29 @@ describe("private story preview loader", () => {
     await assert.rejects(
       () => loadPrivateStoryPreview({ projectRoot: fixture.projectRoot }),
       /Missing required narration audio/,
+    );
+  });
+
+  it("accepts a 32 MiB narration snapshot and rejects one byte more", async () => {
+    const fixture = await createFixtureRoot();
+    await writePreviewFixture(fixture);
+    await writeRequiredAudio(fixture);
+    const audioFile = path.join(
+      fixture.previewDirectory,
+      "audio/private-story-fixture/page-001.mp3",
+    );
+    const byteLimit = 32 * 1024 * 1024;
+    await truncate(audioFile, byteLimit);
+
+    const atLimit = await loadPrivateStoryPreview({
+      projectRoot: fixture.projectRoot,
+    });
+    assert.equal(atLimit.assets[0].source.length, byteLimit);
+
+    await truncate(audioFile, byteLimit + 1);
+    await assert.rejects(
+      () => loadPrivateStoryPreview({ projectRoot: fixture.projectRoot }),
+      /Narration audio.*at most 33554432 bytes/,
     );
   });
 
@@ -736,11 +845,15 @@ describe("private story preview loader", () => {
 });
 
 describe("private story preview preparation", () => {
-  it("uses the repository ignore rules for both private source directories", async () => {
+  it("uses exact repository ignore rules for private source and transaction directories", async () => {
     const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
     for (const [filePath, pattern] of [
       ["content/local-stories/synthetic.txt", "/content/local-stories/"],
       ["content/private-story-preview/synthetic.txt", "/content/private-story-preview/"],
+      [
+        "content/.private-story-preview-transaction/synthetic.txt",
+        "/content/.private-story-preview-transaction/",
+      ],
     ]) {
       const { stdout } = await execFileAsync(
         "git",
@@ -879,6 +992,33 @@ describe("private story preview preparation", () => {
     );
   });
 
+  it("rejects an oversized source from metadata before reading its contents", async () => {
+    const fixture = await createFixtureRoot();
+    const { sourceFiles } = await createPreparationSources(
+      fixture,
+      "oversized-source-fixtures",
+    );
+    await truncate(sourceFiles[1], 131073);
+    let oversizedSourceWasRead = false;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async readFile(file, options) {
+            if (file === sourceFiles[1]) oversizedSourceWasRead = true;
+            return readFile(file, options);
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /source must be at most 131072 UTF-8 bytes/,
+    );
+
+    assert.equal(oversizedSourceWasRead, false);
+  });
+
   it("refuses source files inside the destination so originals cannot be replaced", async () => {
     const fixture = await createFixtureRoot();
     const sourceFiles = [
@@ -933,38 +1073,219 @@ describe("private story preview preparation", () => {
     assert.deepEqual(await readFile(outsideSecond), secondBytes);
   });
 
-  it("rolls back the old bundle when post-install backup cleanup fails", async () => {
+  it("refuses a source alias into transaction residue so recovery cannot delete it", async () => {
     const fixture = await createFixtureRoot();
-    const oldFiles = {
-      "manifest.json": Buffer.from('{"version":1,"stories":[]}\n'),
-      "story-1.txt": Buffer.from("# Old One\n\nOld first body.\n"),
-      "story-2.txt": Buffer.from("# Old Two\n\nOld second body.\n"),
-    };
-    await Promise.all(
-      Object.entries(oldFiles).map(([name, contents]) =>
-        writeFile(path.join(fixture.previewDirectory, name), contents),
-      ),
-    );
-    const sourcesDirectory = path.join(fixture.projectRoot, "cleanup-failure-sources");
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const insideSource = path.join(transactionDirectory, "stage", "original.txt");
+    const insideBytes = Buffer.from("# Transaction Original\n\nOriginal body.\n");
+    await writeBundle(path.dirname(insideSource), {
+      [path.basename(insideSource)]: insideBytes,
+    });
+    const sourcesDirectory = path.join(fixture.projectRoot, "transaction-alias-sources");
     await mkdir(sourcesDirectory);
-    const sourceFiles = [
-      path.join(sourcesDirectory, "new-one.txt"),
-      path.join(sourcesDirectory, "new-two.txt"),
-    ];
-    const sourceBytes = [
-      Buffer.from("# New One\n\nNew first body.\n"),
-      Buffer.from("# New Two\n\nNew second body.\n"),
-    ];
-    await Promise.all(sourceFiles.map((file, index) => writeFile(file, sourceBytes[index])));
-    let failedBackupCleanup = false;
+    const outsideAlias = path.join(sourcesDirectory, "original-alias.txt");
+    const outsideSecond = path.join(sourcesDirectory, "second.txt");
+    const secondBytes = Buffer.from("# Outside Second\n\nSecond body.\n");
+    await symlink(insideSource, outsideAlias);
+    await writeFile(outsideSecond, secondBytes);
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [outsideAlias, outsideSecond],
+      }),
+      /source files must stay outside the preview and transaction directories/,
+    );
+
+    assert.deepEqual(await readFile(insideSource), insideBytes);
+    assert.deepEqual(await readFile(outsideAlias), insideBytes);
+    assert.deepEqual(await readFile(outsideSecond), secondBytes);
+  });
+
+  it("keeps the complete new bundle after backup cleanup partially deletes then throws", async () => {
+    const fixture = await createFixtureRoot();
+    const {
+      manifest,
+      sourceBytes,
+      sourceFiles,
+      transactionDirectory,
+    } = await leavePartialBackupCleanupResidue(
+      fixture,
+      "partial-cleanup-sources",
+    );
+
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(
+      activeBundle["manifest.json"],
+      Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`),
+    );
+    assert.deepEqual(await readdir(transactionDirectory), ["backup"]);
+    assert.deepEqual(
+      (await readdir(path.dirname(fixture.previewDirectory))).sort(),
+      [path.basename(fixture.previewDirectory), path.basename(transactionDirectory)].sort(),
+    );
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("cleans post-commit backup residue before starting the next replacement", async () => {
+    const fixture = await createFixtureRoot();
+    const { sourceBytes, sourceFiles, transactionDirectory } =
+      await leavePartialBackupCleanupResidue(fixture, "recovery-cleanup-sources");
+
+    const manifest = await preparePrivateStoryPreview({
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(
+      activeBundle["manifest.json"],
+      Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`),
+    );
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("restores the byte-identical old bundle when the commit rename fails", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "commit-failure-sources",
+    );
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    let commitSource;
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        fileSystem: {
+          async rename(source, destination) {
+            if (
+              !commitSource &&
+              destination === fixture.previewDirectory &&
+              (path.basename(source) === "stage" || path.basename(source).includes(".stage-"))
+            ) {
+              commitSource = source;
+              throw new Error("Synthetic commit rename failure");
+            }
+            return rename(source, destination);
+          },
+        },
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /Synthetic commit rename failure/,
+    );
+
+    assert.equal(path.dirname(commitSource), transactionDirectory);
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("recovers an absent destination from backup and removes a stale stage", async () => {
+    const fixture = await createFixtureRoot();
+    await rm(fixture.previewDirectory, { recursive: true });
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    await writeBundle(path.join(transactionDirectory, "backup"), oldBundle);
+    await writeBundle(path.join(transactionDirectory, "stage"), {
+      "partial.txt": Buffer.from("incomplete staged output"),
+    });
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "absent-destination-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /already exists.*--force/,
+    );
+
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("treats an existing destination as authoritative and cleans crash residue first", async () => {
+    const fixture = await createFixtureRoot();
+    const authoritativeBundle = {
+      ...oldBundle,
+      "story-1.txt": Buffer.from("# Authoritative One\n\nCommitted body.\n"),
+    };
+    await writeBundle(fixture.previewDirectory, authoritativeBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    await writeBundle(path.join(transactionDirectory, "backup"), oldBundle);
+    await writeBundle(path.join(transactionDirectory, "stage"), {
+      "partial.txt": Buffer.from("stale staged output"),
+    });
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "authoritative-destination-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /already exists.*--force/,
+    );
+
+    assert.deepEqual(
+      await readBundle(fixture.previewDirectory),
+      authoritativeBundle,
+    );
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("refuses a new transaction when crash-residue cleanup still fails", async () => {
+    const fixture = await createFixtureRoot();
+    const authoritativeBundle = {
+      ...oldBundle,
+      "story-2.txt": Buffer.from("# Authoritative Two\n\nCommitted body.\n"),
+    };
+    await writeBundle(fixture.previewDirectory, authoritativeBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const backupDirectory = path.join(transactionDirectory, "backup");
+    await writeBundle(backupDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "failed-recovery-cleanup-sources",
+    );
 
     await assert.rejects(
       () => preparePrivateStoryPreview({
         fileSystem: {
           async rm(target, options) {
-            if (!failedBackupCleanup && path.basename(target).includes(".backup-")) {
-              failedBackupCleanup = true;
-              throw new Error("Synthetic backup cleanup failure");
+            if (target === backupDirectory) {
+              await rm(path.join(target, "story-1.txt"));
+              throw new Error("Synthetic recovery cleanup failure");
             }
             return rm(target, options);
           },
@@ -973,21 +1294,256 @@ describe("private story preview preparation", () => {
         previewDirectory: fixture.previewDirectory,
         sourceFiles,
       }),
-      /Synthetic backup cleanup failure/,
+      /Synthetic recovery cleanup failure/,
     );
 
-    assert.equal(failedBackupCleanup, true);
     assert.deepEqual(
-      (await readdir(fixture.previewDirectory)).sort(),
-      Object.keys(oldFiles).sort(),
+      await readBundle(fixture.previewDirectory),
+      authoritativeBundle,
     );
-    for (const [name, contents] of Object.entries(oldFiles)) {
-      assert.deepEqual(await readFile(path.join(fixture.previewDirectory, name)), contents);
+    assert.deepEqual(await readdir(transactionDirectory), ["backup"]);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("rejects a symlinked transaction root without touching the active bundle", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const outsideDirectory = path.join(fixture.projectRoot, "outside-transaction");
+    await mkdir(outsideDirectory);
+    await symlink(
+      outsideDirectory,
+      transactionDirectoryFor(fixture.previewDirectory),
+    );
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "symlinked-transaction-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /transaction root must be a real directory/,
+    );
+
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(await readdir(outsideDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("rejects a symlinked transaction component without following it", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    const outsideDirectory = path.join(fixture.projectRoot, "outside-stage");
+    await mkdir(transactionDirectory);
+    await mkdir(outsideDirectory);
+    await symlink(outsideDirectory, path.join(transactionDirectory, "stage"));
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "symlinked-component-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /transaction entries must be real files or directories/,
+    );
+
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(await readdir(outsideDirectory), []);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("fails closed on an unknown transaction entry", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    await mkdir(transactionDirectory);
+    await writeFile(
+      path.join(transactionDirectory, "unknown"),
+      "ambiguous residue",
+    );
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "unknown-entry-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /Unexpected private story transaction entry/,
+    );
+
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("recovers a transaction protected only by a dead local lock owner", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    await mkdir(transactionDirectory);
+    await writeFile(path.join(transactionDirectory, "lock"), "99999999\n");
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "dead-lock-sources",
+    );
+
+    await preparePrivateStoryPreview({
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+
+    assert.deepEqual(await readdir(transactionDirectory), []);
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("fails closed when stale-lock recovery is already claimed", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    await mkdir(path.join(transactionDirectory, "recovery"), { recursive: true });
+    await writeFile(path.join(transactionDirectory, "lock"), "99999999\n");
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "claimed-recovery-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /transaction lock is ambiguous/,
+    );
+
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(
+      (await readdir(transactionDirectory)).sort(),
+      ["lock", "recovery"],
+    );
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("fails closed on an ambiguous local lock owner", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const transactionDirectory = transactionDirectoryFor(fixture.previewDirectory);
+    await mkdir(transactionDirectory);
+    await writeFile(path.join(transactionDirectory, "lock"), "not-a-pid\n");
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "ambiguous-lock-sources",
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      /transaction lock is ambiguous/,
+    );
+
+    assert.deepEqual(await readBundle(fixture.previewDirectory), oldBundle);
+    assert.deepEqual(
+      await Promise.all(sourceFiles.map((file) => readFile(file))),
+      sourceBytes,
+    );
+  });
+
+  it("rejects a second writer while the first holds the transaction lock", async () => {
+    const fixture = await createFixtureRoot();
+    await writeBundle(fixture.previewDirectory, oldBundle);
+    const { sourceBytes, sourceFiles } = await createPreparationSources(
+      fixture,
+      "concurrent-writer-sources",
+    );
+    let releaseFirstWriter;
+    const firstWriterGate = new Promise((resolve) => {
+      releaseFirstWriter = resolve;
+    });
+    let reportFirstWriterPaused;
+    const firstWriterPaused = new Promise((resolve) => {
+      reportFirstWriterPaused = resolve;
+    });
+    let interceptedCommit = false;
+    const firstWriter = preparePrivateStoryPreview({
+      fileSystem: {
+        async rename(source, destination) {
+          if (
+            !interceptedCommit &&
+            destination === fixture.previewDirectory &&
+            (path.basename(source) === "stage" || path.basename(source).includes(".stage-"))
+          ) {
+            interceptedCommit = true;
+            reportFirstWriterPaused();
+            await firstWriterGate;
+          }
+          return rename(source, destination);
+        },
+      },
+      force: true,
+      previewDirectory: fixture.previewDirectory,
+      sourceFiles,
+    });
+    await firstWriterPaused;
+
+    let secondWriterAssertion;
+    try {
+      await assert.rejects(
+        () => preparePrivateStoryPreview({
+          force: true,
+          previewDirectory: fixture.previewDirectory,
+          sourceFiles,
+        }),
+        /preparation is already in progress/,
+      );
+    } catch (error) {
+      secondWriterAssertion = error;
+    } finally {
+      releaseFirstWriter();
     }
-    assert.deepEqual(
-      await readdir(path.dirname(fixture.previewDirectory)),
-      [path.basename(fixture.previewDirectory)],
-    );
+    await firstWriter.catch((error) => {
+      if (!secondWriterAssertion) throw error;
+    });
+    if (secondWriterAssertion) throw secondWriterAssertion;
+
+    const activeBundle = await readBundle(fixture.previewDirectory);
+    assert.deepEqual(activeBundle["story-1.txt"], sourceBytes[0]);
+    assert.deepEqual(activeBundle["story-2.txt"], sourceBytes[1]);
     assert.deepEqual(
       await Promise.all(sourceFiles.map((file) => readFile(file))),
       sourceBytes,

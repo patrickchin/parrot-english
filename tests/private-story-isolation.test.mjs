@@ -170,6 +170,24 @@ describe("private story isolation scanner", () => {
     assert.doesNotMatch(scanResult.message, /Synthetic secret marker/);
   });
 
+  it("detects the exact transaction path in current and dist-relative locations", () => {
+    const scanResult = scanPrivateStoryIsolation({
+      distFiles: [[
+        "dist/content/.private-story-preview-transaction/backup/residue.bin",
+        "synthetic residue",
+      ]],
+      trackedFiles: [[
+        "content/.private-story-preview-transaction/stage/residue.bin",
+        "synthetic residue",
+      ]],
+    });
+
+    assert.deepEqual(scanResult.leakedPaths, [
+      "content/.private-story-preview-transaction/stage/residue.bin",
+      "dist/content/.private-story-preview-transaction/backup/residue.bin",
+    ]);
+  });
+
   it("allows generic private workflow paths in tracked tooling", () => {
     const scanResult = scanPrivateStoryIsolation({
       markers: ["private-opaque-fixture"],
@@ -430,6 +448,31 @@ describe("private story isolation scanner", () => {
     assert.equal(
       result.message,
       "content/private-story-preview/leak.txt\ndist/assets/private-story-preview/fixture/page.mp3",
+    );
+  });
+
+  it("reports a force-added transaction file from the index and worktree without markers", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const leakedPath =
+      "content/.private-story-preview-transaction/backup/residue.bin";
+    await mkdir(join(projectRoot, leakedPath, ".."), { recursive: true });
+    await writeFile(
+      join(projectRoot, leakedPath),
+      "synthetic transaction contents must not be echoed",
+    );
+    await git(projectRoot, ["add", "--force", "--", leakedPath]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.deepEqual(result.leakedPaths, [leakedPath]);
+    assert.equal(
+      result.message.includes("synthetic transaction contents must not be echoed"),
+      false,
     );
   });
 
@@ -1025,6 +1068,50 @@ describe("private story isolation scanner", () => {
       true,
     );
     assert.equal(result.message.includes("Fixture Story"), false);
+  });
+
+  it("reports a force-added transaction file after it was deleted from history", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const leakedPath =
+      "content/.private-story-preview-transaction/stage/residue.bin";
+    await mkdir(join(projectRoot, leakedPath, ".."), { recursive: true });
+    await writeFile(
+      join(projectRoot, leakedPath),
+      "synthetic historical transaction contents must not be echoed",
+    );
+    await git(projectRoot, ["add", "--force", "--", leakedPath]);
+    await commit(projectRoot, "add synthetic transaction residue");
+    const { stdout: addCommit } = await git(projectRoot, ["rev-parse", "HEAD"]);
+    await rm(join(projectRoot, leakedPath));
+    await git(projectRoot, ["add", "-u", "--", leakedPath]);
+    await commit(projectRoot, "remove synthetic transaction residue");
+    const { stdout: removeCommit } = await git(projectRoot, ["rev-parse", "HEAD"]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
+    assert.equal(
+      result.leakedPaths.includes(
+        `git-history ${addCommit.trim().slice(0, 12)} ${leakedPath}`,
+      ),
+      true,
+    );
+    assert.equal(
+      result.leakedPaths.includes(
+        `git-history ${removeCommit.trim().slice(0, 12)} ${leakedPath}`,
+      ),
+      true,
+    );
+    assert.equal(
+      result.message.includes(
+        "synthetic historical transaction contents must not be echoed",
+      ),
+      false,
+    );
   });
 
   it("audits every commit newly reachable through a merge", async () => {

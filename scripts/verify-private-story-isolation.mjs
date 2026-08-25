@@ -11,6 +11,8 @@ import { loadPrivateStoryPreview } from "../lib/private-story-preview.js";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const PRIVATE_INPUT_DIRECTORY = "content/private-story-preview";
+const PRIVATE_TRANSACTION_DIRECTORY =
+  "content/.private-story-preview-transaction";
 const PRIVATE_ASSET_DIRECTORY = "assets/private-story-preview";
 const MAX_GIT_BUFFER = 128 * 1024 * 1024;
 const MAX_SCANNED_BYTES = 512 * 1024 * 1024;
@@ -122,6 +124,10 @@ function containsPrivatePath(filePath) {
   const normalized = normalizePath(filePath).replace(/^\.\//u, "");
   return (
     isPrivateInputPath(normalized) ||
+    normalized === PRIVATE_TRANSACTION_DIRECTORY ||
+    normalized.startsWith(`${PRIVATE_TRANSACTION_DIRECTORY}/`) ||
+    normalized.includes(`/${PRIVATE_TRANSACTION_DIRECTORY}/`) ||
+    normalized.endsWith(`/${PRIVATE_TRANSACTION_DIRECTORY}`) ||
     normalized === PRIVATE_ASSET_DIRECTORY ||
     normalized.includes(`/${PRIVATE_ASSET_DIRECTORY}/`) ||
     normalized.endsWith(`/${PRIVATE_ASSET_DIRECTORY}`)
