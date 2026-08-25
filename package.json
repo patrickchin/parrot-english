@@ -20,6 +20,7 @@
     "dev:vite": "vite --host 0.0.0.0",
     "prebuild": "node scripts/prepare-workers-ci-metadata.mjs",
     "build": "tsc --noEmit && vite build",
+    "build:private-story-preview": "PARROT_PRIVATE_STORY_PREVIEW=1 npm run build",
     "build:agent": "tsc -p tsconfig.agent.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply parrot-english --local",

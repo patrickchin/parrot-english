@@ -1,15 +1,61 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { Buffer } from "node:buffer";
 import type { ServerResponse } from "node:http";
 import { defineConfig, type Plugin } from "vite";
+import { loadPrivateStoryPreview } from "./lib/private-story-preview.js";
 
 type MockEvaluationScenario = "correct" | "incorrect" | "no-speech";
 
 type PackageManifest = {
   version?: string;
 };
+
+type PrivateStoryPreviewData = Pick<
+  Awaited<ReturnType<typeof loadPrivateStoryPreview>>,
+  "assets" | "stories"
+>;
+
+export async function getPrivateStoryPreviewBuildData({
+  command,
+  enabled,
+  projectRoot,
+  previewDirectory,
+}: {
+  command: string;
+  enabled: boolean;
+  projectRoot?: string;
+  previewDirectory?: string;
+}): Promise<PrivateStoryPreviewData> {
+  if (command !== "build" || !enabled) return { assets: [], stories: [] };
+
+  const loaderOptions = {
+    projectRoot,
+    previewDirectory,
+    requireAudio: true,
+  };
+  const { assets, stories } = await loadPrivateStoryPreview(loaderOptions);
+  return { assets, stories };
+}
+
+export function privateStoryPreviewAssets(
+  assets: PrivateStoryPreviewData["assets"],
+): Plugin {
+  return {
+    name: "private-story-preview-assets",
+    generateBundle() {
+      for (const { fileName, sourceFilePath } of assets) {
+        this.emitFile({
+          type: "asset",
+          fileName,
+          source: readFileSync(sourceFilePath),
+        });
+      }
+    },
+  };
+}
 
 const MOCK_API_DELAY_MS = Number.parseInt(
   process.env.PARROT_E2E_MOCK_API_DELAY_MS ?? "900",
@@ -344,18 +390,30 @@ function parrotE2eMockApi(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), parrotE2eMockApi()],
-  define: {
-    "import.meta.env.VITE_PARROT_APP_VERSION": JSON.stringify(getBuildVersion()),
-    "import.meta.env.VITE_PARROT_COMMIT_SHA": JSON.stringify(getShortCommitSha()),
-  },
-  build: {
-    outDir: "dist",
-    rolldownOptions: {
-      output: {
-        codeSplitting: true,
+export default defineConfig(async ({ command }) => {
+  const enabled =
+    command === "build" && process.env.PARROT_PRIVATE_STORY_PREVIEW === "1";
+  const data = await getPrivateStoryPreviewBuildData({
+    command,
+    enabled,
+    projectRoot: fileURLToPath(new URL(".", import.meta.url)),
+  });
+
+  return {
+    plugins: [react(), parrotE2eMockApi(), privateStoryPreviewAssets(data.assets)],
+    define: {
+      "import.meta.env.VITE_PARROT_APP_VERSION": JSON.stringify(getBuildVersion()),
+      "import.meta.env.VITE_PARROT_COMMIT_SHA": JSON.stringify(getShortCommitSha()),
+      "import.meta.env.VITE_PARROT_PRIVATE_STORY_PREVIEW": JSON.stringify(enabled),
+      "import.meta.env.VITE_PARROT_PRIVATE_STORIES": JSON.stringify(data.stories),
+    },
+    build: {
+      outDir: "dist",
+      rolldownOptions: {
+        output: {
+          codeSplitting: true,
+        },
       },
     },
-  },
+  };
 });
