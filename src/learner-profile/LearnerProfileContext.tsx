@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { LearnerProfileSummary } from "./learner-profile-api";
 
 type LearnerProfileContextValue = {
@@ -8,6 +8,16 @@ type LearnerProfileContextValue = {
 
 const LearnerProfileContext =
   createContext<LearnerProfileContextValue | null>(null);
+
+export type LearnerSelectionContextValue = {
+  activeProfileId: string | null;
+  reloadSelectedLearner: (
+    expectedProfileId: string,
+  ) => Promise<LearnerProfileSummary>;
+};
+
+const LearnerSelectionContext =
+  createContext<LearnerSelectionContextValue | null>(null);
 
 export function LearnerProfileProvider({
   children,
@@ -24,5 +34,27 @@ export function LearnerProfileProvider({
 export function useLearnerProfile() {
   const value = useContext(LearnerProfileContext);
   if (!value) throw new Error("Learner profile is unavailable.");
+  return value;
+}
+
+export function LearnerSelectionProvider({
+  activeProfileId,
+  children,
+  reloadSelectedLearner,
+}: LearnerSelectionContextValue & { children: ReactNode }) {
+  const value = useMemo(
+    () => ({ activeProfileId, reloadSelectedLearner }),
+    [activeProfileId, reloadSelectedLearner],
+  );
+  return (
+    <LearnerSelectionContext.Provider value={value}>
+      {children}
+    </LearnerSelectionContext.Provider>
+  );
+}
+
+export function useLearnerSelection() {
+  const value = useContext(LearnerSelectionContext);
+  if (!value) throw new Error("Learner selection is unavailable.");
   return value;
 }

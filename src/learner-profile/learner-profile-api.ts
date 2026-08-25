@@ -40,6 +40,7 @@ export type LearnerProfileAcknowledgment = {
 };
 
 export type LearnerProfileSummary = {
+  id: string;
   name: string | null;
   age: number | null;
   storyLevel: LearnerStoryLevelId;
@@ -69,9 +70,27 @@ export type BypassOnlyLearnerProfileState = {
   canBypass: true;
 };
 
+export type SelectionRequiredLearnerProfileState = {
+  mode: "selection-required";
+};
+
 export type LearnerProfileState =
   | FullLearnerProfileState
-  | BypassOnlyLearnerProfileState;
+  | BypassOnlyLearnerProfileState
+  | SelectionRequiredLearnerProfileState;
+
+export type GuardianLearnerProfileSummary = {
+  id: string;
+  name: string;
+  age: number | null;
+  profileStatus: LearnerProfileSummary["profileStatus"];
+  createdAt: string;
+};
+
+export type LearnerProfileRoster = {
+  activeProfileId: string | null;
+  profiles: GuardianLearnerProfileSummary[];
+};
 
 export type ProfileState = {
   profile: LearnerProfileSummary;
@@ -180,12 +199,72 @@ function jsonRequest<Result>(
   );
 }
 
-export function loadLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileState>(
-    "/api/learner-profile",
-    { method: "GET" },
-    options
+function requireValidLearnerProfileState(
+  state: LearnerProfileState,
+): LearnerProfileState {
+  if (
+    state.mode === "full" &&
+    (typeof state.profile?.id !== "string" || !state.profile.id.trim())
+  ) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_profile",
+      "The learner profile could not be loaded.",
+    );
+  }
+  return state;
+}
+
+function requireValidProfileState(state: ProfileState): ProfileState {
+  if (typeof state.profile?.id !== "string" || !state.profile.id.trim()) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_profile",
+      "The learner profile could not be loaded.",
+    );
+  }
+  return state;
+}
+
+async function learnerProfileRequest(
+  path: string,
+  init: RequestInit,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requireValidLearnerProfileState(
+    await requestJson<LearnerProfileState>(path, init, options),
   );
+}
+
+async function profileRequest(
+  path: string,
+  init: RequestInit,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requireValidProfileState(
+    await requestJson<ProfileState>(path, init, options),
+  );
+}
+
+export async function loadLearnerProfile(
+  options?: LearnerProfileRequestOptions,
+) {
+  try {
+    return await learnerProfileRequest(
+      "/api/learner-profile",
+      { method: "GET" },
+      options,
+    );
+  } catch (error) {
+    if (
+      error instanceof LearnerProfileApiError &&
+      error.status === 409 &&
+      error.code === "learner_selection_required"
+    ) {
+      return { mode: "selection-required" } as const;
+    }
+    throw error;
+  }
 }
 
 export function saveLearnerProfileAnswer(
@@ -193,17 +272,19 @@ export function saveLearnerProfileAnswer(
   rawAnswer: string,
   options?: LearnerProfileRequestOptions
 ) {
-  return jsonRequest<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/answer",
-    "PUT",
-    questionKey,
-    rawAnswer,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionKey, rawAnswer }),
+    },
     options
   );
 }
 
 export function skipLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/skip",
     { method: "POST" },
     options
@@ -214,7 +295,7 @@ export function skipLearnerProfileQuestion(
   questionKey: string,
   options?: LearnerProfileRequestOptions
 ) {
-  return requestJson<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/question/skip",
     {
       method: "POST",
@@ -226,32 +307,68 @@ export function skipLearnerProfileQuestion(
 }
 
 export function completeLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/complete",
     { method: "POST" },
     options
   );
 }
 
+export function loadLearnerProfiles(options?: LearnerProfileRequestOptions) {
+  return requestJson<LearnerProfileRoster>(
+    "/api/learner-profiles",
+    { method: "GET" },
+    options,
+  );
+}
+
+export function createLearnerProfile(
+  name: string,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requestJson<LearnerProfileRoster>(
+    "/api/learner-profiles",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    },
+    options,
+  );
+}
+
+export function selectLearnerProfile(
+  profileId: string,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requestJson<LearnerProfileRoster>(
+    `/api/learner-profiles/${encodeURIComponent(profileId)}/active`,
+    { method: "PUT" },
+    options,
+  );
+}
+
 export function loadProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<ProfileState>(
+  return profileRequest(
     "/api/profile",
     { method: "GET" },
     options
   );
 }
 
-export function saveProfileAnswer(
+export async function saveProfileAnswer(
   questionKey: string,
   rawAnswer: string,
   options?: LearnerProfileRequestOptions
 ) {
-  return jsonRequest<ProfileState>(
-    "/api/profile",
-    "PUT",
-    questionKey,
-    rawAnswer,
-    options
+  return requireValidProfileState(
+    await jsonRequest<ProfileState>(
+      "/api/profile",
+      "PUT",
+      questionKey,
+      rawAnswer,
+      options,
+    ),
   );
 }
 
@@ -259,7 +376,7 @@ export function saveProfileAnswers(
   answers: Record<string, string>,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<ProfileState>(
+  return profileRequest(
     "/api/profile",
     {
       method: "PUT",
@@ -274,7 +391,7 @@ export function saveStoryLevel(
   storyLevel: LearnerStoryLevelId,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<ProfileState>(
+  return profileRequest(
     "/api/profile/preferences",
     {
       method: "PUT",

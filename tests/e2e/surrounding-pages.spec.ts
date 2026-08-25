@@ -600,6 +600,7 @@ async function routeIncompleteLearnerProfile(page: Page) {
         experienceMode: "form",
         mode: "full",
         profile: {
+          id: "e2e-learner",
           age: null,
           answers: {
             legacyAnswers: null,

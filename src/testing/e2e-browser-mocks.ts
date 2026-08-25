@@ -80,6 +80,7 @@ const E2E_INCOMPLETE_PROFILE = {
   experienceMode: "form",
   mode: "full",
   profile: {
+    id: "e2e-learner",
     age: null,
     answers: {
       legacyAnswers: null,

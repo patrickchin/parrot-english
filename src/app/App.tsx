@@ -56,6 +56,7 @@ import {
 import {
   getGateRouteKind,
   getGuardianDubbingPath,
+  getGuardianLearnersPath,
   getGuardianPath,
   getLessonScenePath,
   getLoginPath,
@@ -1209,6 +1210,15 @@ function StoryPageRoute() {
   );
 }
 
+function GuardianLearnerProfilesPlaceholder() {
+  return (
+    <FeaturePlaceholder
+      description="Learner profile choices will appear here."
+      title="Learner profiles"
+    />
+  );
+}
+
 export function PrivateStoryPreviewRoutes() {
   return (
     <Suspense
@@ -1270,6 +1280,10 @@ export function ApplicationRoutes({
             />
           }
           path={getGuardianPath()}
+        />
+        <Route
+          element={<GuardianLearnerProfilesPlaceholder />}
+          path={getGuardianLearnersPath()}
         />
         <Route
           element={<GuardianLessonManager />}
@@ -1353,6 +1367,9 @@ export function AuthenticatedApplication({
   const isProfileRoute = gateRoute === "profile";
   const isConversationRoute = isTalkToPeppaRoute(location.pathname);
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const learnerManagerRoute =
+    matchPath({ end: true, path: getGuardianLearnersPath() }, location.pathname) !==
+    null;
   const redoLearnerProfile =
     isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
   const safeReturnTo = guardianRoute
@@ -1381,9 +1398,15 @@ export function AuthenticatedApplication({
   const routeContent = (
     <LearnerProfileGate
       completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
+      guardianRoute={guardianRoute}
+      guardianSelectionFallback={
+        <Navigate replace to={getGuardianLearnersPath()} />
+      }
+      guardianUnlockDestination={getGuardianLearnersPath()}
       isConversationRoute={isConversationRoute}
       isLearnerProfileRoute={isLearnerProfileRoute}
       isProfileRoute={isProfileRoute}
+      learnerManagerRoute={learnerManagerRoute}
       learnerProfileFallback={
         <Navigate
           replace

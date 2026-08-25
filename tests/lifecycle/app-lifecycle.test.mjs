@@ -47,6 +47,7 @@ let ConversationSurface;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let useLearnerProfile;
+let useLearnerSelection;
 let usePeppaConversation;
 let createAuthGate;
 let createGuardianAccessProvider;
@@ -77,7 +78,7 @@ before(async () => {
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
   ));
   ({ LearnerProfileGate } = await vite.ssrLoadModule("/src/learner-profile/LearnerProfileGate.tsx"));
-  ({ useLearnerProfile } = await vite
+  ({ useLearnerProfile, useLearnerSelection } = await vite
     .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
     .catch(() => ({})));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
@@ -145,6 +146,7 @@ function fullLearnerProfileState(overrides = {}) {
   const base = {
     mode: "full",
     profile: {
+      id: "learner-1",
       name: null,
       age: null,
       storyLevel: "first-words",
@@ -477,6 +479,52 @@ function LoadedProfileHarness() {
     "output",
     { "aria-label": "Loaded profile story level" },
     profile.storyLevel,
+  );
+}
+
+function SelectionContextHarness() {
+  assert.equal(
+    typeof useLearnerSelection,
+    "function",
+    "Expected learner selection to be available without a loaded profile",
+  );
+  const { activeProfileId } = useLearnerSelection();
+  return createElement(
+    "output",
+    { "aria-label": "Active learner selection" },
+    activeProfileId ?? "none",
+  );
+}
+
+function SelectionReloadHarness() {
+  assert.equal(
+    typeof useLearnerSelection,
+    "function",
+    "Expected learner selection reloads to be available to the roster manager",
+  );
+  const { activeProfileId, reloadSelectedLearner } = useLearnerSelection();
+  const reload = (id) => {
+    void reloadSelectedLearner(id).catch(() => {});
+  };
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "output",
+      { "aria-label": "Reloaded learner selection" },
+      activeProfileId ?? "none",
+    ),
+    createElement(
+      "button",
+      {
+        onClick: () => {
+          reload("learner-a");
+          reload("learner-b");
+        },
+        type: "button",
+      },
+      "Reload learners A then B",
+    ),
   );
 }
 
@@ -1010,6 +1058,342 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     }
   });
 
+  it("runs Guardian form-mode redo through profile questions and returns safely on completion", async () => {
+    const firstQuestion = question({
+      answerKey: "favoriteAnimals",
+      promptEn: "What animals do you like?",
+    });
+    const secondQuestion = question({
+      answerKey: "favoriteCartoons",
+      position: 2,
+      promptEn: "What cartoons do you like?",
+    });
+    const profile = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        answers: emptyAnswers(),
+      },
+      questions: [firstQuestion, secondQuestion],
+    };
+    const savedAnswers = [];
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          experienceMode: "form",
+        });
+      }
+      if (path === "/api/profile" && init.method === "GET") return json(profile);
+      if (path === "/api/profile" && init.method === "PUT") {
+        savedAnswers.push(JSON.parse(init.body));
+        return json(profile);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian",
+      }),
+    );
+
+    await waitFor(() => text(/What animals do you like/));
+    noText(/Skip for now|Skip question/);
+    await input(
+      document.querySelector("#learner-profile-answer-favoriteAnimals"),
+      "I like dinosaurs",
+    );
+    await click(button("Save"));
+    await waitFor(() => text(/What cartoons do you like/));
+    await input(
+      document.querySelector("#learner-profile-answer-favoriteCartoons"),
+      "I like Bluey",
+    );
+    await click(button("Save"));
+    await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+    assert.deepEqual(savedAnswers, [
+      { questionKey: "favoriteAnimals", rawAnswer: "I like dinosaurs" },
+      { questionKey: "favoriteCartoons", rawAnswer: "I like Bluey" },
+    ]);
+  });
+
+  it("aborts a held Guardian form-redo save before Back and fences its late result", async () => {
+    const firstQuestion = question({
+      answerKey: "favoriteAnimals",
+      promptEn: "What animals do you like?",
+    });
+    const profile = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        answers: emptyAnswers(),
+      },
+      questions: [firstQuestion],
+    };
+    const save = deferred();
+    let saveSignal;
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          experienceMode: "form",
+        });
+      }
+      if (path === "/api/profile" && init.method === "GET") return json(profile);
+      if (path === "/api/profile" && init.method === "PUT") {
+        saveSignal = init.signal;
+        return save.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian",
+      }),
+    );
+
+    await waitFor(() => text(/What animals do you like/));
+    await input(
+      document.querySelector("#learner-profile-answer-favoriteAnimals"),
+      "I like dinosaurs",
+    );
+    await click(button("Save"));
+    await waitFor(() => assert.ok(saveSignal));
+    await click(button("Back"));
+    await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+    assert.equal(saveSignal.aborted, true);
+
+    await act(async () => {
+      save.resolve(json(profile));
+      await flush();
+    });
+    assert.equal(currentRoute().path, "/guardian");
+    noText(/What animals do you like/);
+  });
+
+  it("aborts Guardian form-redo replay when Back closes the profile questions", async () => {
+    const ControlledAudio = installControlledAudio();
+    const firstQuestion = question({
+      answerKey: "favoriteAnimals",
+      audio: {
+        id: "favorite-animals",
+        src: "/assets/audio/favorite-animals.mp3",
+        text: "What animals do you like?",
+      },
+      promptEn: "What animals do you like?",
+    });
+    const profile = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        answers: emptyAnswers(),
+      },
+      questions: [firstQuestion],
+    };
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          experienceMode: "form",
+        });
+      }
+      if (path === "/api/profile" && init.method === "GET") return json(profile);
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian",
+      }),
+    );
+
+    await waitFor(() => text(/What animals do you like/));
+    await click(button("Replay question"));
+    await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
+    const playback = ControlledAudio.instances[0];
+    const staleCompletion = playback.onended;
+    await click(button("Back"));
+    await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+    assert.equal(playback.paused, true);
+
+    await act(async () => {
+      staleCompletion?.(new window.Event("ended"));
+      await flush();
+    });
+    assert.equal(currentRoute().path, "/guardian");
+    noText(/What animals do you like/);
+  });
+
+  it("keeps Guardian form-mode redo recovery to Retry and Back without learner skips", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          experienceMode: "form",
+        });
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json({ message: "Profile questions are unavailable." }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian",
+      }),
+    );
+
+    await waitFor(() => text(/Profile is taking a break/));
+    button("Retry");
+    noText(/Skip for now|Skip question/);
+    await click(button("Back"));
+    await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+  });
+
+  it("rejects a Guardian form-redo profile response for a different learner", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          experienceMode: "form",
+        });
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json({
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-other",
+          },
+          questions: [question()],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian",
+      }),
+    );
+
+    await waitFor(() => text(/Profile is taking a break/));
+    text(/selected learner profile could not be loaded/i);
+    noText(/Hi! I'm Peppa/);
+    button("Retry");
+    button("Back");
+  });
+
+  it("keeps an initial Guardian form-redo load failure to Retry and Back without learner skips", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({ message: "Learner questions are unavailable." }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian",
+      }),
+    );
+
+    await waitFor(() => text(/Questions are taking a break/));
+    button("Retry");
+    noText(/Skip for now|Skip question/);
+    await click(button("Back"));
+    await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+  });
+
   it("exposes the registered learner name to guardian routes", async () => {
     assert.equal(
       typeof useAccountExperience,
@@ -1341,6 +1725,183 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(output("Loaded profile story level").textContent, "tiny-stories"),
     );
     assert.equal(profileRequests, 2, "StrictMode performs only the gate load cycle");
+  });
+
+  it("maps learner-selection-required to an always-available empty selection context", async () => {
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      return json({ error: "learner_selection_required" }, 409);
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          guardianRoute: true,
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerManagerRoute: true,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(SelectionContextHarness),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.equal(output("Active learner selection").textContent, "none"),
+    );
+    noText(/Questions are taking a break|Mia/);
+  });
+
+  it("aborts and fences an older roster reload before committing the newer learner", async () => {
+    const pendingLoads = [];
+    let initialLoads = true;
+    const stateFor = (id) => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id,
+        name: id === "learner-b" ? "Bea" : "Ari",
+      },
+    });
+    globalThis.fetch = (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      if (initialLoads) return Promise.resolve(json(stateFor("learner-0")));
+      return new Promise((resolve, reject) => {
+        const pending = { resolve, signal: init.signal };
+        pendingLoads.push(pending);
+        init.signal.addEventListener("abort", () => reject(abortError()), {
+          once: true,
+        });
+      });
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(SelectionReloadHarness),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.equal(output("Reloaded learner selection").textContent, "learner-0"),
+    );
+    initialLoads = false;
+    await click(button("Reload learners A then B"));
+    await waitFor(() => assert.equal(pendingLoads.length, 2));
+    assert.equal(pendingLoads[0].signal.aborted, true);
+
+    pendingLoads[1].resolve(json(stateFor("learner-b")));
+    await waitFor(() =>
+      assert.equal(output("Reloaded learner selection").textContent, "learner-b"),
+    );
+    assert.equal(pendingLoads[1].signal.aborted, false);
+  });
+
+  it("remounts the full learner subtree when the active profile ID changes", async () => {
+    let nextProfileId = "learner-a";
+    let instanceCount = 0;
+    const stateFor = (id) => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id,
+        name: id === "learner-b" ? "Bea" : "Ari",
+      },
+    });
+    function KeyedLearnerProbe() {
+      const { profile } = useLearnerProfile();
+      const { reloadSelectedLearner } = useLearnerSelection();
+      const [instance] = useState(() => {
+        instanceCount += 1;
+        return instanceCount;
+      });
+      return createElement(
+        "section",
+        null,
+        createElement(
+          "output",
+          {
+            "aria-label": "Keyed learner instance",
+            "data-instance": String(instance),
+            "data-profile-id": profile.id,
+          },
+          profile.name,
+        ),
+        createElement(
+          "button",
+          {
+            onClick: () => void reloadSelectedLearner("learner-b"),
+            type: "button",
+          },
+          "Select learner B",
+        ),
+      );
+    }
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      return json(stateFor(nextProfileId));
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(KeyedLearnerProbe),
+      ),
+    );
+
+    const firstInstance = await waitFor(() => {
+      const probe = output("Keyed learner instance");
+      assert.equal(probe.dataset.profileId, "learner-a");
+      return probe.dataset.instance;
+    });
+    nextProfileId = "learner-b";
+    await click(button("Select learner B"));
+    await waitFor(() => {
+      const probe = output("Keyed learner instance");
+      assert.equal(probe.dataset.profileId, "learner-b");
+      assert.notEqual(probe.dataset.instance, firstInstance);
+    });
   });
 
   it("opens the learner's turn only after Peppa finishes her opening", async () => {
@@ -4569,6 +5130,80 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
+  it("does not flash a previous session's account action into a replacement session", async () => {
+    const snapshots = [];
+    const user = { email: "mia@example.com", id: "user-1", name: "Mia" };
+    const client = createSessionClient({
+      data: { session: { id: "session-a" }, user },
+      error: null,
+      isPending: false,
+    });
+    const profileAction = {
+      error: "",
+      learnerName: "Ari",
+      onOpenProfile() {},
+    };
+    function CaptureView({ children, learnerName, session }) {
+      snapshots.push({
+        learnerName,
+        sessionId: session?.session.id ?? null,
+      });
+      return createElement(
+        "section",
+        null,
+        createElement(
+          "output",
+          { "aria-label": "Session account action" },
+          `${session?.session.id ?? "none"}:${learnerName ?? "none"}`,
+        ),
+        children,
+      );
+    }
+    function RegisterProfileAction() {
+      useProfileAccountAction(profileAction);
+      return null;
+    }
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: ({ children }) => children,
+      View: CaptureView,
+    });
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement(RegisterProfileAction),
+      ),
+    );
+    await waitFor(() =>
+      assert.equal(output("Session account action").textContent, "session-a:Ari"),
+    );
+    const priorSnapshotCount = snapshots.length;
+
+    await act(async () => {
+      client.publish({
+        data: { session: { id: "session-b" }, user },
+        error: null,
+        isPending: false,
+      });
+      await flush();
+    });
+
+    assert.ok(
+      snapshots
+        .slice(priorSnapshotCount)
+        .some(
+          (snapshot) =>
+            snapshot.sessionId === "session-b" && snapshot.learnerName === null,
+        ),
+      "Expected the replacement session to render without the prior session action before its own registration.",
+    );
+    await waitFor(() =>
+      assert.equal(output("Session account action").textContent, "session-b:Ari"),
+    );
+  });
+
   it("keeps Account available and retries sign out from one persistent alert", async () => {
     const failure = deferred();
     const secondFailure = deferred();
@@ -5078,6 +5713,58 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         },
       },
     ]);
+  });
+
+  it("rejects a late profile save response for a different learner", async () => {
+    const activeProfile = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: 8,
+        description: "Mia is eight and likes dinosaurs.",
+      },
+      questions: [question()],
+    };
+    const save = deferred();
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(activeProfile);
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        return save.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        ProfileRouteHarness,
+        { initialRoute: "/profile" },
+        createElement("p", null, "PROFILE LESSONS"),
+      ),
+    );
+
+    await waitFor(() => text(/Learner details/));
+    await click(button("Save changes"));
+    await act(async () => {
+      save.resolve(
+        json({
+          ...activeProfile,
+          acknowledgments: [{ text: "Leo's saved response" }],
+          profile: { ...activeProfile.profile, id: "learner-b", name: "Leo" },
+        }),
+      );
+      await flush();
+    });
+
+    await waitFor(() =>
+      text(/The selected learner profile could not be saved/),
+    );
+    text(/Learner details/);
+    noText(/Leo's saved response/);
   });
 
   it("paces saved profile acknowledgments one Next action at a time", async () => {

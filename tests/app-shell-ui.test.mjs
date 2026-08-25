@@ -211,6 +211,13 @@ test("authenticated application routes include guardian voice-dubbing settings",
   );
 });
 
+test("guardian learner route has a concrete temporary destination before the roster manager ships", () => {
+  const html = renderApplicationRoute("/guardian/learners");
+
+  assert.match(html, /<h1[^>]*>Learner profiles<\/h1>/);
+  assert.doesNotMatch(html, /Learning activities/);
+});
+
 test("canonical Parrot scene routes start without premature scene content", () => {
   const html = renderApplicationRoute(
     "/lessons/parrot/01-peppas-high-ball/scenes/2",

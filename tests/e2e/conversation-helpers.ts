@@ -5,6 +5,7 @@ const incompleteProfile = {
   experienceMode: "realtime",
   mode: "full",
   profile: {
+    id: "e2e-learner",
     age: null,
     answers: {
       legacyAnswers: null,

@@ -32,6 +32,7 @@ export type QuestionStatus =
 type LearnerProfileQuestionViewProps = {
   fieldError: string;
   mode: "learner-profile" | "profile";
+  onBack?: () => void;
   onReplay: () => void;
   onSkip: () => void;
   onSkipQuestion: () => void;
@@ -49,6 +50,7 @@ type LearnerProfileQuestionViewProps = {
 export function LearnerProfileQuestionView({
   fieldError,
   mode,
+  onBack,
   onReplay,
   onSkip,
   onSkipQuestion,
@@ -214,6 +216,11 @@ export function LearnerProfileQuestionView({
           ) : null}
 
           <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-[360px]:mt-0 max-[360px]:gap-2 short:mt-0 short:gap-2 max-sm:justify-between">
+            {mode === "profile" && onBack ? (
+              <TextButton onClick={onBack} type="button">
+                Back
+              </TextButton>
+            ) : null}
             {mode === "learner-profile" && !question.required ? (
               <TextButton
                 aria-disabled={skipQuestionOwnsPending || undefined}

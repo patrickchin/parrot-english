@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -190,6 +191,7 @@ interface AuthGateViewProps {
   children: ReactNode;
   fields: AuthFields;
   formError: string;
+  guardianUnlockDestination?: string | null;
   isPending: boolean;
   isRetrying: boolean;
   isSigningOut: boolean;
@@ -220,6 +222,7 @@ function navigateInBrowser(path: string) {
 function AccountExperienceHeader({
   error,
   guardianLabel,
+  guardianUnlockDestination,
   isSigningOut,
   learnerName,
   onDeleteAccount,
@@ -231,6 +234,7 @@ function AccountExperienceHeader({
 }: {
   error: string;
   guardianLabel: string;
+  guardianUnlockDestination?: string | null;
   isSigningOut: boolean;
   learnerName: string | null;
   onDeleteAccount: (password: string) => Promise<string | null>;
@@ -310,7 +314,7 @@ function AccountExperienceHeader({
           onClose={() => setIsUnlockOpen(false)}
           onUnlocked={() => {
             setIsUnlockOpen(false);
-            onNavigate("/guardian");
+            onNavigate(guardianUnlockDestination ?? getGuardianPath());
           }}
           returnFocusRef={unlockButtonRef}
         />
@@ -323,6 +327,7 @@ export function AuthGateView({
   children,
   fields,
   formError,
+  guardianUnlockDestination,
   isPending,
   isRetrying,
   isSigningOut,
@@ -554,6 +559,7 @@ export function AuthGateView({
       <AccountExperienceHeader
         error={accountError}
         guardianLabel={userLabel}
+        guardianUnlockDestination={guardianUnlockDestination}
         isSigningOut={isSigningOut}
         learnerName={learnerName}
         onDeleteAccount={onDeleteAccount}
@@ -582,9 +588,19 @@ interface SignOutState {
   owner: string | null;
 }
 
+interface ProfileActionState {
+  action: AccountExperience | null;
+  owner: string | null;
+}
+
 const EMPTY_SIGN_OUT_STATE: SignOutState = {
   error: "",
   isPending: false,
+  owner: null,
+};
+
+const EMPTY_PROFILE_ACTION_STATE: ProfileActionState = {
+  action: null,
   owner: null,
 };
 
@@ -647,10 +663,30 @@ export function createAuthGate({
     const [signOutState, setSignOutState] =
       stateHook<SignOutState>(EMPTY_SIGN_OUT_STATE);
     const [isRetrying, setIsRetrying] = stateHook(false);
-    const [profileAction, setProfileAction] =
-      stateHook<AccountExperience | null>(null);
+    const [profileActionState, setProfileActionState] =
+      stateHook<ProfileActionState>(EMPTY_PROFILE_ACTION_STATE);
     const signOutAttemptRef = useRef<{ owner: string } | null>(null);
     const sessionIdentity = getSessionIdentity(session);
+    const profileAction =
+      profileActionState.owner === sessionIdentity
+        ? profileActionState.action
+        : null;
+    const setProfileAction = useCallback<
+      Dispatch<SetStateAction<AccountExperience | null>>
+    >(
+      (nextAction) => {
+        setProfileActionState((current) => {
+          const currentAction =
+            current.owner === sessionIdentity ? current.action : null;
+          const action =
+            typeof nextAction === "function"
+              ? nextAction(currentAction)
+              : nextAction;
+          return { action, owner: sessionIdentity };
+        });
+      },
+      [sessionIdentity, setProfileActionState],
+    );
     const ownsSignOutState =
       sessionIdentity !== null && signOutState.owner === sessionIdentity;
 
@@ -750,6 +786,9 @@ export function createAuthGate({
             isSigningOut={ownsSignOutState && signOutState.isPending}
             isSubmitting={isSubmitting}
             learnerName={profileAction?.learnerName ?? null}
+            guardianUnlockDestination={
+              profileAction?.guardianUnlockDestination ?? null
+            }
             mode={mode}
             onDeleteAccount={handleDeleteAccount}
             onFieldChange={updateField}

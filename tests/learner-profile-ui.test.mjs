@@ -927,6 +927,7 @@ function fullState(overrides = {}) {
   return {
     mode: "full",
     profile: {
+      id: "learner-1",
       name: "Mia",
       age: null,
       answers: emptyAnswers(),
@@ -994,6 +995,44 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
+  it("keys the full learner subtree by the active profile ID", () => {
+    assert.match(
+      gateSource,
+      /<LearnerProfileProvider\s+key=\{data\.profile\.id\}[\s\S]*?>[\s\S]*?\{children\}/,
+    );
+  });
+
+  it("keeps selection-required learner mode free of profile and sibling content", () => {
+    const html = renderGate({
+      data: { mode: "selection-required" },
+      isLearnerProfileRoute: false,
+    });
+
+    assert.match(html, /Ask a grown-up to choose a learner/);
+    assert.doesNotMatch(html, /LESSON CONTENT|Mia/);
+  });
+
+  it("keeps incomplete profiles available to Guardian routes and redirects other Guardian pages to the manager when selection is required", () => {
+    const incompleteGuardian = renderGate({
+      data: fullState(),
+      guardianRoute: true,
+      isLearnerProfileRoute: false,
+    });
+    assert.match(incompleteGuardian, /LESSON CONTENT/);
+
+    const selectionRedirect = renderGate({
+      data: { mode: "selection-required" },
+      guardianRoute: true,
+      guardianSelectionFallback: createElement(
+        "div",
+        null,
+        "GUARDIAN MANAGER REDIRECT",
+      ),
+      isLearnerProfileRoute: false,
+    });
+    assert.match(selectionRedirect, /GUARDIAN MANAGER REDIRECT/);
+  });
+
   it("does not sync question state before the initial onboarding load finishes", () => {
     assert.equal(typeof shouldSyncActiveQuestion, "function");
     assert.equal(shouldSyncActiveQuestion(null, null), false);

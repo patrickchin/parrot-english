@@ -33,12 +33,89 @@ describe("learnerProfile browser API", () => {
     assert.equal(learnerProfile.calls[0][0], "/api/learner-profile");
     assert.equal(learnerProfile.calls[0][1].method, "GET");
 
-    const profile = jsonFetch({ questions: [] });
+    const profile = jsonFetch({ profile: { id: "learner-1" }, questions: [] });
     assert.deepEqual(await loadProfile({ fetch: profile.fetch }), {
+      profile: { id: "learner-1" },
       questions: [],
     });
     assert.equal(profile.calls[0][0], "/api/profile");
     assert.equal(profile.calls[0][1].method, "GET");
+  });
+
+  it("uses the Guardian roster routes with exact JSON bodies and encoded profile IDs", async () => {
+    assert.equal(
+      typeof learnerProfileApi.loadLearnerProfiles,
+      "function",
+      "Expected the Guardian roster loader",
+    );
+    assert.equal(
+      typeof learnerProfileApi.createLearnerProfile,
+      "function",
+      "Expected the Guardian roster creator",
+    );
+    assert.equal(
+      typeof learnerProfileApi.selectLearnerProfile,
+      "function",
+      "Expected the Guardian roster selector",
+    );
+
+    const request = jsonFetch({ activeProfileId: "learner/a", profiles: [] });
+
+    await learnerProfileApi.loadLearnerProfiles({ fetch: request.fetch });
+    await learnerProfileApi.createLearnerProfile("Mia", { fetch: request.fetch });
+    await learnerProfileApi.selectLearnerProfile("learner/a", {
+      fetch: request.fetch,
+    });
+
+    assert.equal(request.calls[0][0], "/api/learner-profiles");
+    assert.equal(request.calls[0][1].method, "GET");
+    assert.equal(request.calls[1][0], "/api/learner-profiles");
+    assert.equal(request.calls[1][1].method, "POST");
+    assert.deepEqual(JSON.parse(request.calls[1][1].body), { name: "Mia" });
+    assert.equal(
+      request.calls[2][0],
+      "/api/learner-profiles/learner%2Fa/active",
+    );
+    assert.equal(request.calls[2][1].method, "PUT");
+  });
+
+  it("turns only the active-profile selection-required response into explicit state", async () => {
+    const required = jsonFetch({ error: "learner_selection_required" }, 409);
+
+    assert.deepEqual(
+      await loadLearnerProfile({ fetch: required.fetch }),
+      { mode: "selection-required" },
+    );
+
+    const otherConflict = jsonFetch({ error: "another_conflict" }, 409);
+    await assert.rejects(
+      loadLearnerProfile({ fetch: otherConflict.fetch }),
+      (error) =>
+        error instanceof LearnerProfileApiError &&
+        error.status === 409 &&
+        error.code === "another_conflict",
+    );
+  });
+
+  it("rejects malformed full and Guardian profile responses before they can cross a learner boundary", async () => {
+    const malformedLearner = jsonFetch({
+      mode: "full",
+      profile: { id: "" },
+    });
+    await assert.rejects(
+      loadLearnerProfile({ fetch: malformedLearner.fetch }),
+      (error) =>
+        error instanceof LearnerProfileApiError &&
+        error.code === "invalid_profile",
+    );
+
+    const malformedProfile = jsonFetch({ profile: { id: "" }, questions: [] });
+    await assert.rejects(
+      loadProfile({ fetch: malformedProfile.fetch }),
+      (error) =>
+        error instanceof LearnerProfileApiError &&
+        error.code === "invalid_profile",
+    );
   });
 
   it("submits prose and retains the acknowledgment response", async () => {
@@ -68,7 +145,7 @@ describe("learnerProfile browser API", () => {
       signal: undefined,
     });
 
-    const profile = jsonFetch({ profile: { name: "Maya" } });
+    const profile = jsonFetch({ profile: { id: "learner-1", name: "Maya" } });
     await saveProfileAnswer("name", "Maya", { fetch: profile.fetch });
     assert.equal(profile.calls[0][0], "/api/profile");
     assert.equal(profile.calls[0][1].method, "PUT");
@@ -81,7 +158,7 @@ describe("learnerProfile browser API", () => {
   it("submits all prose profile edits in one request", async () => {
     assert.equal(typeof learnerProfileApi.saveProfileAnswers, "function");
     const payload = {
-      profile: { name: "Maya" },
+      profile: { id: "learner-1", name: "Maya" },
       acknowledgments: [
         {
           text: "Thank you!",
@@ -120,7 +197,10 @@ describe("learnerProfile browser API", () => {
 
   it("saves exactly one story-level preference", async () => {
     assert.equal(typeof learnerProfileApi.saveStoryLevel, "function");
-    const payload = { profile: { storyLevel: "tiny-stories" }, questions: [] };
+    const payload = {
+      profile: { id: "learner-1", storyLevel: "tiny-stories" },
+      questions: [],
+    };
     const request = jsonFetch(payload);
 
     assert.deepEqual(
@@ -152,7 +232,11 @@ describe("learnerProfile browser API", () => {
 
   it("posts an explicit optional-question skip", async () => {
     assert.equal(typeof learnerProfileApi.skipLearnerProfileQuestion, "function");
-    const request = jsonFetch({ mode: "full", question: null });
+    const request = jsonFetch({
+      mode: "full",
+      profile: { id: "learner-1" },
+      question: null,
+    });
 
     await learnerProfileApi.skipLearnerProfileQuestion("favoriteCartoons", {
       fetch: request.fetch,

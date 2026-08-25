@@ -775,6 +775,41 @@ describe("keyboard accessibility lifecycles", () => {
     assert.deepEqual(navigations, ["/guardian/profile?returnTo=%2Fguardian"]);
   });
 
+  it("sends the grown-up gateway to the learner manager after unlock", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi(),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    const navigations = [];
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        { navigate: (path) => navigations.push(path) },
+        createElement(AccountExperienceRegistration, {
+          experience: {
+            error: "",
+            guardianUnlockDestination: "/guardian/learners",
+            learnerName: null,
+            onOpenProfile: null,
+          },
+        }),
+      ),
+    );
+
+    await click(await waitFor(() => button("Profile for Learner, learner mode")));
+    await click(button("Grown-up accessAccount password required"));
+    await input(document.querySelector('input[name="password"]'), "correct-password");
+    await click(button("Unlock guardian mode"));
+    await waitFor(() =>
+      assert.deepEqual(navigations, ["/guardian/learners"]),
+    );
+  });
+
   it("clears only the exact account experience registered by a profile", async () => {
     const first = {
       error: "",

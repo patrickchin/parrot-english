@@ -196,7 +196,7 @@ for (const { path, protectedName, seedEditLesson } of [
   },
   {
     path: "/guardian/profile/setup?parrotE2eProfile=viewport-stability",
-    protectedName: "Answer 6 questions",
+    protectedName: "Guardian dashboard",
   },
   {
     path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
