@@ -50,7 +50,6 @@ import {
 import {
   isAbortError,
   playAudioLine,
-  waitForAbortableDelay,
   type PlaybackControl,
 } from "../media/audio-playback";
 import {
@@ -209,7 +208,6 @@ const SPEECH_CHECK_ERROR_MESSAGE =
   "We could not check your words. Tap Done to keep going.";
 const LESSON_AUDIO_ERROR_MESSAGE =
   "The sound stopped. Try it again or skip this sound.";
-const MINIMUM_LESSON_FEEDBACK_MS = 1_500;
 const legacyLessonPhase = {
   Evaluating: "evaluating",
   Recording: "recording",
@@ -217,7 +215,7 @@ const legacyLessonPhase = {
   WaitingForUser: "waiting-for-user",
 } as const;
 
-type LessonEvent =
+export type LessonEvent =
   | { type: "PLAY_SCENE" }
   | { type: "PAUSE_SCENE" }
   | { type: "SCENE_PREVIOUS" }
@@ -225,17 +223,7 @@ type LessonEvent =
   | { type: "REPLAY_LESSON" }
   | { type: "SELECT_SCENE"; sceneIndex: number }
   | { type: "LINE_DONE" }
-  | { type: "MIC_STARTED" }
-  | { type: "MIC_RELEASED" }
-  | { type: "SKIP_USER" }
-  | { type: "RECORDING_CANCELLED" }
-  | {
-      type: "EVALUATED";
-      outcome: "correct" | "incorrect" | "noInput";
-      transcript: string;
-    }
-  | { type: "EVALUATION_FAILED" }
-  | { type: "RESPONSE_DONE" }
+  | { type: "JOIN_IN_DONE" }
   | { type: "RESET" };
 
 type LessonPlayerProps = {
@@ -289,6 +277,9 @@ export function LessonPlayer({
     ) => reduceLessonState(currentState, event, currentLesson),
     { ...createInitialLessonState(), sceneIndex: routedSceneIndex }
   );
+  const dispatchLegacyEvent = dispatch as (
+    event: { type: string } & Record<string, unknown>,
+  ) => void;
   const [error, setError] = useState("");
   const [speechFallback, setSpeechFallback] = useState("");
   const [isStartingRecording, setIsStartingRecording] = useState(false);
@@ -545,10 +536,7 @@ export function LessonPlayer({
       return;
     }
 
-    const completionEvent: LessonEvent =
-      playbackPhase === legacyLessonPhase.Responding
-        ? { type: "RESPONSE_DONE" }
-        : { type: "LINE_DONE" };
+    const completionEvent: LessonEvent = { type: "LINE_DONE" };
     let startPlayback: (
       signal: AbortSignal,
       onPlaybackControl: (control: PlaybackControl | null) => void,
@@ -587,7 +575,6 @@ export function LessonPlayer({
 
     let cancelled = false;
     const controller = new AbortController();
-    const playbackStartedAt = Date.now();
     playbackControllerRef.current = controller;
     setError("");
     void startPlayback(controller.signal, (control) => {
@@ -595,16 +582,7 @@ export function LessonPlayer({
         playbackControlRef.current = control;
       }
     })
-      .then(async () => {
-        if (playbackPhase === legacyLessonPhase.Responding) {
-          await waitForAbortableDelay(
-            Math.max(
-              0,
-              MINIMUM_LESSON_FEEDBACK_MS - (Date.now() - playbackStartedAt),
-            ),
-            controller.signal,
-          );
-        }
+      .then(() => {
         playbackOperation.complete();
       })
       .catch((caughtError: unknown) => {
@@ -675,11 +653,7 @@ export function LessonPlayer({
     if (!playbackPhase) return;
     cancelPendingWork();
     setError("");
-    dispatchLessonEvent(
-      playbackPhase === legacyLessonPhase.Responding
-        ? { type: "RESPONSE_DONE" }
-        : { type: "LINE_DONE" },
-    );
+    dispatchLessonEvent({ type: "LINE_DONE" });
   }
 
   function handleStartAction() {
@@ -712,7 +686,7 @@ export function LessonPlayer({
 
   function handleSkipUser() {
     if (recordingActiveRef.current && !recordingRef.current) return;
-    dispatchLessonEvent({ type: "SKIP_USER" }, { cancel: true });
+    dispatchLegacyEvent({ type: "SKIP_USER" });
   }
 
   async function beginRecording() {
@@ -746,7 +720,7 @@ export function LessonPlayer({
       }
       recordingRef.current = session;
       setIsStartingRecording(false);
-      dispatch({ type: "MIC_STARTED" });
+      dispatchLegacyEvent({ type: "MIC_STARTED" });
     } catch (caughtError) {
       if (
         !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
@@ -794,7 +768,7 @@ export function LessonPlayer({
       getCurrentGeneration: () => recordingSequenceRef.current,
       onEvaluated: (result) => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatch({
+        dispatchLegacyEvent({
           type: "EVALUATED",
           outcome: result.outcome,
           transcript: result.transcript,
@@ -804,14 +778,14 @@ export function LessonPlayer({
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         if (currentStep.check) {
           setSpeechFallback(SPEECH_CHECK_ERROR_MESSAGE);
-          dispatch({ type: "EVALUATION_FAILED" });
+          dispatchLegacyEvent({ type: "EVALUATION_FAILED" });
         } else {
           setError("The mic stopped. Try it again.");
         }
       },
       onReleased: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatchLessonEvent({ type: "MIC_RELEASED" });
+        dispatchLegacyEvent({ type: "MIC_RELEASED" });
       },
       recordingController,
       recordingControllerRef,
