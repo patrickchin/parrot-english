@@ -12,6 +12,7 @@ const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
   "audio-fetch-failed",
   "almost-complete",
+  "both-source-failed",
   "corrupt-line-5",
   "empty",
   "partial",
@@ -402,6 +403,7 @@ function createE2eDubBlob(scenario = "correct") {
 function initialE2eDubLineIds(scenario: string) {
   if (
     scenario === "audio-fetch-failed" ||
+    scenario === "both-source-failed" ||
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
     scenario === "playback-setup-failed" ||
@@ -448,7 +450,8 @@ function createE2eDubStore(scenario: string | null) {
     scenario === "reset-delete-failed" &&
     sessionStorage.getItem(resetDeleteFailureKey) !== "used";
   let delayNextStatus = false;
-  const audioFetches: string[] = [];
+  const guideFetches: string[] = [];
+  const privateFetches: string[] = [];
   const uploads: string[] = [];
 
   function persist() {
@@ -458,6 +461,16 @@ function createE2eDubStore(scenario: string | null) {
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
+      const guideMatch = url.pathname.match(
+        /^\/assets\/audio\/five-little-ducks-v2-guide-(line-(?:[1-9]|1[0-9]|2[0-4]))\.mp3$/,
+      );
+      if (method === "GET" && guideMatch) {
+        guideFetches.push(url.pathname);
+        if (scenario === "both-source-failed" && guideMatch[1] === "line-5") {
+          return new Response(null, { status: 503 });
+        }
+        return null;
+      }
       if (url.pathname === E2E_DUB_API) {
         if (method === "GET") {
           if (resetInterrupted) {
@@ -519,7 +532,10 @@ function createE2eDubStore(scenario: string | null) {
       if (!lineMatch) return null;
       const [, lineId, audioPath] = lineMatch;
       if (method === "GET" && audioPath) {
-        audioFetches.push(url.pathname);
+        privateFetches.push(url.pathname);
+        if (scenario === "both-source-failed" && lineId === "line-5") {
+          return new Response(null, { status: 503 });
+        }
         if (failAudioFetch) {
           failAudioFetch = false;
           return new Response(null, { status: 503 });
@@ -571,9 +587,10 @@ function createE2eDubStore(scenario: string | null) {
     },
     snapshot() {
       return {
-        audioFetches: [...audioFetches],
         audioContextDoubleCloses,
+        guideFetches: [...guideFetches],
         playedAudioSources: [...playedAudioSources],
+        privateFetches: [...privateFetches],
         uploads: [...uploads],
       };
     },

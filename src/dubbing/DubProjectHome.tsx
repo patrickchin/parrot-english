@@ -10,6 +10,7 @@ import {
 
 export type DubProjectHomeProps = {
   activeLine: DubLine;
+  error?: string;
   needsRetake: ReadonlySet<string>;
   onContinue(): void;
   onDelete(): void;
@@ -33,6 +34,7 @@ function sceneState({
 
 export function DubProjectHome({
   activeLine,
+  error = "",
   needsRetake,
   onContinue,
   onDelete,
@@ -115,6 +117,12 @@ export function DubProjectHome({
             );
           })}
         </nav>
+
+        {error ? (
+          <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <details className="group justify-self-start rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
           <summary

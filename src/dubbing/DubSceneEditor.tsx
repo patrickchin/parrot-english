@@ -1,4 +1,5 @@
 import { Mic, Play, Square, Volume2 } from "lucide-react";
+import type { RefObject } from "react";
 import { ActionButton, TextButton } from "../shared/ui";
 import { DuckScene } from "./DuckScene";
 import { DubTakeWaveform } from "./DubTakeWaveform";
@@ -24,6 +25,7 @@ export type DubSceneEditorProps = {
   onToggleScenePlayback(): void;
   operation: DubOperation;
   pendingTake: Blob | null;
+  recordButtonRef?: RefObject<HTMLButtonElement | null>;
   saveRecovery: "record" | "save" | null;
   saved: Readonly<Record<string, string>>;
 };
@@ -56,6 +58,7 @@ export function DubSceneEditor({
   onToggleScenePlayback,
   operation,
   pendingTake,
+  recordButtonRef,
   saveRecovery,
   saved,
 }: DubSceneEditorProps) {
@@ -63,8 +66,11 @@ export function DubSceneEditor({
   const activeSceneLineIndex = Math.max(0, DUB_LINES.indexOf(activeLine));
   const sceneNumber = Math.floor(activeSceneLineIndex / DUB_LINES_PER_VERSE) + 1;
   const unsafeOperation = operation === "mic-opening"
-    || operation === "recording"
     || operation === "saving";
+  const recording = operation === "recording";
+  const recordAgain = pendingTake !== null || saveRecovery !== null;
+  const mediaLocked = unsafeOperation || recording;
+  const navigationLocked = mediaLocked || saveRecovery === "save";
   const playbackLabel = operation === "playback"
     ? "Stop this scene"
     : operation === "playback-loading"
@@ -77,7 +83,7 @@ export function DubSceneEditor({
       <section className="mx-auto grid w-full max-w-[1600px] gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
         <section className="grid content-start gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <TextButton className="min-h-12 gap-1" onClick={onBack}>Back to full video</TextButton>
+            <TextButton className="min-h-12 gap-1" disabled={navigationLocked} onClick={onBack}>Back to full video</TextButton>
             <p aria-current="page" className="m-0 font-black text-brand-blue">
               Scene {sceneNumber} of {DUB_VERSES.length}
             </p>
@@ -87,7 +93,7 @@ export function DubSceneEditor({
           </section>
           <ActionButton
             aria-label={operation === "playback" ? "Stop this scene" : "Play this scene"}
-            disabled={operation === "playback-loading"}
+            disabled={operation === "playback-loading" || navigationLocked}
             onClick={onToggleScenePlayback}
             size="large"
             variant="navy"
@@ -118,6 +124,7 @@ export function DubSceneEditor({
                   aria-current={selected ? "true" : undefined}
                   aria-label={`Line ${index + 1}, ${lineState({ activeLine, line, needsRetake, saved })}`}
                   className="min-h-16 rounded-2xl px-3 py-2 text-left text-sm"
+                  disabled={navigationLocked}
                   key={line.id}
                   onClick={() => onSelectLine(line.id)}
                   shape="rounded"
@@ -131,25 +138,35 @@ export function DubSceneEditor({
 
           <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3">
             <p className="m-0 text-xl font-black leading-snug text-brand-ink">{activeLine.text}</p>
-            <TextButton className="min-h-12 justify-self-start gap-2" disabled={unsafeOperation} onClick={onHearGuide}>
+            <TextButton className="min-h-12 justify-self-start gap-2" disabled={mediaLocked} onClick={onHearGuide}>
               <Volume2 aria-hidden="true" /> Hear example
             </TextButton>
             <ActionButton
-              aria-label="Record line"
+              aria-label={recording ? "Stop recording" : recordAgain ? "Record again" : "Record line"}
               disabled={unsafeOperation}
               fullWidth
               onClick={onRecord}
+              ref={recordButtonRef}
               size="large"
               variant="rose"
             >
-              <Mic aria-hidden="true" /> Record line
+              {recording ? <Square aria-hidden="true" /> : <Mic aria-hidden="true" />}
+              {recording ? "Stop recording" : recordAgain ? "Record again" : "Record line"}
             </ActionButton>
             {saveRecovery === "save" ? (
               <TextButton className="min-h-12 justify-self-start" onClick={onRetrySave}>Save again</TextButton>
-            ) : saveRecovery === "record" ? (
-              <TextButton className="min-h-12 justify-self-start" onClick={onRecord}>Record again</TextButton>
             ) : null}
           </section>
+
+          {operation === "mic-opening" || operation === "recording" || operation === "saving" ? (
+            <p className="m-0 font-black text-brand-rose">
+              {operation === "mic-opening"
+                ? "Opening microphone…"
+                : operation === "recording"
+                  ? "Recording…"
+                  : "Saving your take…"}
+            </p>
+          ) : null}
 
           {pendingTake ? (
             <section aria-label="Your recorded line" className="grid gap-2 rounded-2xl border-3 border-cyan-200 bg-cyan-50 p-3">
