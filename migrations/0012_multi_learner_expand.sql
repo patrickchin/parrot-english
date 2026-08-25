@@ -56,8 +56,14 @@ CREATE TABLE session_learner_selection (
   FOREIGN KEY (learner_profile_id) REFERENCES learner_profile(id) ON DELETE CASCADE
 );
 --> statement-breakpoint
-INSERT INTO session_learner_selection (session_id, auth_user_id, learner_profile_id)
-SELECT session.id, session.user_id, learner_profile.id
+INSERT INTO session_learner_selection (
+  session_id,
+  auth_user_id,
+  learner_profile_id,
+  created_at,
+  updated_at
+)
+SELECT session.id, session.user_id, learner_profile.id, session.created_at, session.updated_at
 FROM session
 INNER JOIN learner_profile
   ON learner_profile.auth_user_id = session.user_id

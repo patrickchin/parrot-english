@@ -162,7 +162,8 @@ it("expands legacy data into learner ownership without breaking singleton storag
     assert.deepEqual(
       database
         .prepare(
-          "SELECT session_id, auth_user_id, learner_profile_id FROM session_learner_selection ORDER BY session_id",
+          `SELECT session_id, auth_user_id, learner_profile_id, created_at, updated_at
+             FROM session_learner_selection ORDER BY session_id`,
         )
         .all()
         .map((entry) => ({ ...entry })),
@@ -171,11 +172,15 @@ it("expands legacy data into learner ownership without breaking singleton storag
           session_id: "session-1",
           auth_user_id: "guardian-1",
           learner_profile_id: "learner-1",
+          created_at: 120,
+          updated_at: 121,
         },
         {
           session_id: "session-2",
           auth_user_id: "guardian-2",
           learner_profile_id: generatedLegacy.id,
+          created_at: 210,
+          updated_at: 211,
         },
       ],
     );
