@@ -66,7 +66,7 @@ type DubMarker =
       generation: string;
       kind: "valid";
       object: R2Object;
-      state: "deleting" | "ready";
+      state: "account-deleting" | "deleting" | "ready";
     };
 
 type AudioStorage =
@@ -130,7 +130,11 @@ async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> 
   const state = marker.customMetadata?.state;
   if (
     !generation ||
-    (state !== "deleting" && state !== "ready")
+    (
+      state !== "account-deleting" &&
+      state !== "deleting" &&
+      state !== "ready"
+    )
   ) {
     return { etag: marker.etag, kind: "malformed", object: marker };
   }
@@ -146,6 +150,9 @@ async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> 
 async function readyGeneration(bucket: R2Bucket, userId: string) {
   const marker = await readMarker(bucket, userId);
   if (marker.kind === "absent") return null;
+  if (marker.kind === "valid" && marker.state === "account-deleting") {
+    throw new DubApiError(409, "account_deletion_pending");
+  }
   if (marker.kind !== "valid" || marker.state !== "ready") {
     throw new DubApiError(409, "dub_reset_in_progress");
   }
@@ -159,6 +166,9 @@ async function beginReset(
   wait: Wait,
 ) {
   const current = await readMarker(bucket, userId);
+  if (current.kind === "valid" && current.state === "account-deleting") {
+    throw new DubApiError(409, "account_deletion_pending");
+  }
   const marker = await conditionalPut(
     bucket,
     markerKey(userId),

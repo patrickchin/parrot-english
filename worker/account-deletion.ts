@@ -20,7 +20,6 @@ type Wait = (delay: number) => Promise<void>;
 
 type AccountDeletionInput = {
   bucket: Pick<R2Bucket, "delete" | "head" | "list" | "put">;
-  createGeneration?: () => string;
   database: Database;
   now?: Clock;
   userId: string;
@@ -95,6 +94,14 @@ export async function markAccountDeletionPending(
   return storedTombstone;
 }
 
+function accountDeletionGeneration(userIdHash: string, requestedAt: Date) {
+  const requestedAtMs = requestedAt.getTime();
+  if (!Number.isFinite(requestedAtMs)) {
+    throw new Error("Account deletion timestamp is invalid.");
+  }
+  return `account-deletion-v1:${userIdHash}:${requestedAtMs}`;
+}
+
 async function deleteWithRetry(
   bucket: AccountDeletionInput["bucket"],
   keys: string[],
@@ -154,13 +161,21 @@ async function persistFence(
 
 export async function prepareAccountDeletion({
   bucket,
-  createGeneration = () => crypto.randomUUID(),
   database,
   now = () => new Date(),
   userId,
   wait = (delay: number) => scheduler.wait(delay),
 }: AccountDeletionInput) {
-  const { r2Prefix } = await markAccountDeletionPending(database, userId, now);
+  const tombstone = await markAccountDeletionPending(database, userId, now);
+  const { r2Prefix } = tombstone;
+  const generation = accountDeletionGeneration(
+    tombstone.userIdHash,
+    tombstone.requestedAt,
+  );
+  const closureKeys = new Set([
+    markerKey(userId),
+    ...DUB_LINES.map(({ id }) => objectKey(userId, id)),
+  ]);
   let cursor: string | undefined;
   let hasMore = true;
   const seenCursors = new Set<string>();
@@ -170,10 +185,11 @@ export async function prepareAccountDeletion({
       ...(cursor === undefined ? {} : { cursor }),
       prefix: r2Prefix,
     });
-    const keys = page.objects.map(({ key }) => key);
-    if (keys.some((key) => !key.startsWith(r2Prefix))) {
+    const listedKeys = page.objects.map(({ key }) => key);
+    if (listedKeys.some((key) => !key.startsWith(r2Prefix))) {
       throw new Error("R2 returned an object outside the account deletion prefix.");
     }
+    const keys = listedKeys.filter((key) => !closureKeys.has(key));
     if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
 
     hasMore = page.truncated;
@@ -186,14 +202,12 @@ export async function prepareAccountDeletion({
     }
   }
 
-  const generation = createGeneration();
-  if (!generation) throw new Error("Account deletion generation is required.");
   await persistFence(
     bucket,
     markerKey(userId),
     "marker",
     generation,
-    "deleting",
+    "account-deleting",
     wait,
   );
   for (const { id } of DUB_LINES) {

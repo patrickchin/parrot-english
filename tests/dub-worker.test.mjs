@@ -1439,6 +1439,50 @@ describe("private learner dub API", () => {
     assert.equal(bucket.calls.put.length, 0);
   });
 
+  it("treats an account-deleting marker as terminal for every studio operation", async () => {
+    const generation = "account-deletion-v1:owner-hash:1787652000000";
+    const cases = [
+      { method: "GET", path: DUB_PATH },
+      { method: "DELETE", path: DUB_PATH },
+      {
+        body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+        headers: CONSENT_HEADERS,
+        method: "PUT",
+        path: `${DUB_PATH}/lines/line-1`,
+      },
+      { method: "GET", path: `${DUB_PATH}/lines/line-1/audio` },
+    ];
+
+    for (const testCase of cases) {
+      const bucket = createBucket([[MARKER_KEY, {
+        bytes: fenceBytes("marker", generation, "account-deleting"),
+        options: {
+          customMetadata: { generation, state: "account-deleting" },
+        },
+        uploaded: new Date("2026-08-25T10:00:00.000Z"),
+      }]]);
+
+      const response = await callDub({ bucket, ...testCase });
+
+      assert.equal(
+        response.status,
+        409,
+        `${testCase.method} ${testCase.path}`,
+      );
+      assert.equal(
+        (await response.json()).error,
+        "account_deletion_pending",
+        `${testCase.method} ${testCase.path}`,
+      );
+      assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+      assert.equal(bucket.calls.put.length, 0);
+      assert.deepEqual(
+        bucket.stored.get(MARKER_KEY).bytes,
+        fenceBytes("marker", generation, "account-deleting"),
+      );
+    }
+  });
+
   it("CAS-tombstones a held upload that lands after the account prefix sweep", async () => {
     const bucket = createBucket();
     const audioPutStarted = deferred();
