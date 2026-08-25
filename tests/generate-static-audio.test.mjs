@@ -2,7 +2,15 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  link,
+  mkdtemp,
+  mkdir,
+  rm,
+  symlink,
+  truncate,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
 import { promisify } from "node:util";
@@ -44,6 +52,10 @@ async function writeSyntheticPrivatePreview(previewDirectory) {
     join(previewDirectory, "story-2.txt"),
     "# Second Fixture\n\nSecond synthetic page text.\n",
   );
+}
+
+function syntheticWords(count) {
+  return Array.from({ length: count }, (_, index) => `word${index + 1}`).join(" ");
 }
 
 describe("static audio generator", () => {
@@ -135,6 +147,40 @@ describe("static audio generator", () => {
         rm(projectRoot, { force: true, recursive: true }),
         rm(externalContent, { force: true, recursive: true }),
       ]);
+    }
+  });
+
+  it("enforces the aggregate narration cap in private generation mode", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-audio-aggregate-"));
+    const previewDirectory = join(projectRoot, "content/private-story-preview");
+    await writeSyntheticPrivatePreview(previewDirectory);
+    await writeFile(
+      join(previewDirectory, "story-1.txt"),
+      `# Fixture Story\n\n${syntheticWords(70)}\n\nfinal\n`,
+    );
+    const firstDirectory = join(previewDirectory, "audio/private-fixture");
+    const secondDirectory = join(previewDirectory, "audio/private-second");
+    await Promise.all([
+      mkdir(firstDirectory, { recursive: true }),
+      mkdir(secondDirectory, { recursive: true }),
+    ]);
+    const firstAudio = join(firstDirectory, "page-001.mp3");
+    await writeFile(firstAudio, "x");
+    await truncate(firstAudio, 32 * 1024 * 1024 - 1);
+    await link(firstAudio, join(firstDirectory, "page-002.mp3"));
+    await writeFile(join(secondDirectory, "page-001.mp3"), "xyz");
+
+    try {
+      await assert.rejects(
+        () => getGenerationLines({
+          privateStoriesOnly: true,
+          previewDirectory,
+          projectRoot,
+        }),
+        { message: "Narration audio must total at most 67108864 bytes" },
+      );
+    } finally {
+      await rm(projectRoot, { force: true, recursive: true });
     }
   });
 

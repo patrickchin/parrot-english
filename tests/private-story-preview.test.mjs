@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import {
   access,
+  link,
   mkdtemp,
   mkdir,
   open as openFile,
@@ -318,6 +319,11 @@ describe("private story preview loader", () => {
       "A second synthetic page.",
       "/assets/private-story-preview/private-story-second/page-001.mp3",
     ]);
+    assert.deepEqual(result.excerptSourceGroups, [
+      ["First complete paragraph.", "Second complete paragraph!"],
+      ["A second synthetic page."],
+    ]);
+    assert.equal(Object.hasOwn(result, "excerptSourceUnits"), false);
     assert.equal(result.stories.length, 2);
     assert.deepEqual(result.stories[0], {
         assumedKnownWords: [],
@@ -453,6 +459,45 @@ describe("private story preview loader", () => {
     );
   });
 
+  it("counts duplicate narration assets at the 64 MiB aggregate boundary", async () => {
+    const fixture = await createFixtureRoot();
+    await writePreviewFixture(fixture, {
+      text: `# Fixture Story\n\n${words(70, "first-")}\n\nfinal\n`,
+    });
+    await writeRequiredAudio(fixture);
+    const firstAudio = path.join(
+      fixture.previewDirectory,
+      "audio/private-story-fixture/page-001.mp3",
+    );
+    const duplicateAudio = path.join(
+      fixture.previewDirectory,
+      "audio/private-story-fixture/page-002.mp3",
+    );
+    const finalAudio = path.join(
+      fixture.previewDirectory,
+      "audio/private-story-second/page-001.mp3",
+    );
+    const duplicateSize = 32 * 1024 * 1024 - 1;
+    await truncate(firstAudio, duplicateSize);
+    await link(firstAudio, duplicateAudio);
+    await truncate(finalAudio, 2);
+
+    const atLimit = await loadPrivateStoryPreview({
+      projectRoot: fixture.projectRoot,
+    });
+    assert.equal(
+      atLimit.assets.reduce((total, asset) => total + asset.source.length, 0),
+      64 * 1024 * 1024,
+    );
+    atLimit.assets.length = 0;
+
+    await truncate(finalAudio, 3);
+    await assert.rejects(
+      () => loadPrivateStoryPreview({ projectRoot: fixture.projectRoot }),
+      { message: "Narration audio must total at most 67108864 bytes" },
+    );
+  });
+
   it("rejects duplicate and unsafe manifest IDs", async () => {
     const fixture = await createFixtureRoot();
     await writePreviewFixture(fixture, {
@@ -493,6 +538,31 @@ describe("private story preview loader", () => {
           requireAudio: false,
         }),
       /safe private story id/,
+    );
+  });
+
+  it("rejects duplicate manifest text-file basenames", async () => {
+    const fixture = await createFixtureRoot();
+    await writePreviewFixture(fixture, {
+      manifest: {
+        version: 1,
+        stories: [
+          defaultManifest.stories[0],
+          {
+            id: "private-story-second",
+            textFile: "story-1.txt",
+            title: "Fixture Story",
+          },
+        ],
+      },
+    });
+
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      { message: "Private story preview manifest has duplicate text file" },
     );
   });
 
@@ -807,6 +877,138 @@ describe("private story preview loader", () => {
     );
   });
 
+  it("accepts a 64 KiB manifest and rejects one byte more", async () => {
+    const fixture = await createFixtureRoot();
+    const manifestJson = JSON.stringify(defaultManifest);
+    const manifestByteLimit = 64 * 1024;
+    await writePreviewFixture(fixture);
+    await writeFile(
+      path.join(fixture.previewDirectory, "manifest.json"),
+      `${manifestJson}${" ".repeat(manifestByteLimit - Buffer.byteLength(manifestJson))}`,
+    );
+
+    const atLimit = await loadPrivateStoryPreview({
+      projectRoot: fixture.projectRoot,
+      requireAudio: false,
+    });
+    assert.equal(atLimit.stories.length, 2);
+
+    await writeFile(
+      path.join(fixture.previewDirectory, "manifest.json"),
+      `${manifestJson}${" ".repeat(manifestByteLimit - Buffer.byteLength(manifestJson) + 1)}`,
+    );
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      { message: "Unable to read private story preview manifest" },
+    );
+  });
+
+  it("rejects oversized manifest metadata before opening the file", async () => {
+    const fixture = await createFixtureRoot();
+    const manifestJson = JSON.stringify(defaultManifest);
+    const manifestByteLimit = 64 * 1024;
+    await writePreviewFixture(fixture);
+    let openCalls = 0;
+    const openImplementation = async (...args) => {
+      openCalls += 1;
+      return openFile(...args);
+    };
+
+    await loadPrivateStoryPreview({
+      openImplementation,
+      projectRoot: fixture.projectRoot,
+      requireAudio: false,
+    });
+    assert.equal(openCalls, 3);
+
+    openCalls = 0;
+    await writeFile(
+      path.join(fixture.previewDirectory, "manifest.json"),
+      `${manifestJson}${" ".repeat(manifestByteLimit - Buffer.byteLength(manifestJson) + 1)}`,
+    );
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        openImplementation,
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      { message: "Unable to read private story preview manifest" },
+    );
+    assert.equal(openCalls, 0);
+  });
+
+  it("rejects malformed UTF-8 in the manifest and story source", async () => {
+    const fixture = await createFixtureRoot();
+    await writePreviewFixture(fixture);
+    const validManifest = JSON.stringify(defaultManifest);
+    const titleOffset = validManifest.indexOf("Fixture Story") + "Fixture ".length;
+    await writeFile(
+      path.join(fixture.previewDirectory, "manifest.json"),
+      Buffer.concat([
+        Buffer.from(validManifest.slice(0, titleOffset)),
+        Buffer.from([0xff]),
+        Buffer.from(validManifest.slice(titleOffset)),
+      ]),
+    );
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      { message: "Unable to read private story preview manifest" },
+    );
+
+    await writeFile(
+      path.join(fixture.previewDirectory, "manifest.json"),
+      validManifest,
+    );
+    await writeFile(
+      path.join(fixture.previewDirectory, "story-1.txt"),
+      Buffer.concat([
+        Buffer.from("# Fixture Story\n\nSynthetic body "),
+        Buffer.from([0xff]),
+        Buffer.from(".\n"),
+      ]),
+    );
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      { message: "Unable to read private story text" },
+    );
+  });
+
+  it("accepts valid Unicode manifest and source text", async () => {
+    const fixture = await createFixtureRoot();
+    const unicodeManifest = {
+      version: 1,
+      stories: [
+        {
+          id: "private-story-fixture",
+          textFile: "story-1.txt",
+          title: "Café 月亮 🦊",
+        },
+        defaultManifest.stories[1],
+      ],
+    };
+    await writePreviewFixture(fixture, {
+      manifest: unicodeManifest,
+      text: "# Café 月亮 🦊\n\nLumière 故事 ✨\n",
+    });
+
+    const result = await loadPrivateStoryPreview({
+      projectRoot: fixture.projectRoot,
+      requireAudio: false,
+    });
+
+    assert.equal(result.stories[0].title, "Café 月亮 🦊");
+    assert.equal(result.stories[0].pages[0].text, "Lumière 故事 ✨");
+  });
+
   it("accepts 40 pages and 2000 words and rejects either limit over", async () => {
     const fixture = await createFixtureRoot();
     const fortyPages = Array.from(
@@ -919,7 +1121,9 @@ describe("private story preview preparation", () => {
   it("requires exactly two readable inputs and refuses manifest replacement without force", async () => {
     const fixture = await createFixtureRoot();
     const source = path.join(fixture.projectRoot, "fixture.txt");
+    const secondSource = path.join(fixture.projectRoot, "fixture-two.txt");
     await writeFile(source, "# Fixture\n\nBody.");
+    await writeFile(secondSource, "# Fixture Two\n\nSecond body.");
 
     await assert.rejects(
       () =>
@@ -935,17 +1139,80 @@ describe("private story preview preparation", () => {
       () =>
         preparePrivateStoryPreview({
           previewDirectory: fixture.previewDirectory,
-          sourceFiles: [source, source],
+          sourceFiles: [source, secondSource],
         }),
       /already exists.*--force/,
     );
     await preparePrivateStoryPreview({
       force: true,
       previewDirectory: fixture.previewDirectory,
-      sourceFiles: [source, source],
+      sourceFiles: [source, secondSource],
     });
     await access(path.join(fixture.previewDirectory, "manifest.json"));
     assert.equal((await stat(path.join(fixture.previewDirectory, "story-1.txt"))).isFile(), true);
+  });
+
+  it("rejects the same preparation source argument before destination mutation", async () => {
+    const fixture = await createFixtureRoot();
+    const source = path.join(fixture.projectRoot, "source.txt");
+    const sourceBytes = Buffer.from("# Fixture\n\nSynthetic body.\n");
+    await writeFile(source, sourceBytes);
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [source, source],
+      }),
+      { message: "Private story source files must be distinct" },
+    );
+
+    assert.deepEqual(await readdir(fixture.previewDirectory), []);
+    assert.deepEqual(await readFile(source), sourceBytes);
+  });
+
+  it("rejects a symlink alias to the same preparation source", async () => {
+    const fixture = await createFixtureRoot();
+    const source = path.join(fixture.projectRoot, "source.txt");
+    const alias = path.join(fixture.projectRoot, "source-alias.txt");
+    const sourceBytes = Buffer.from("# Fixture\n\nSynthetic body.\n");
+    await writeFile(source, sourceBytes);
+    await symlink(source, alias);
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [source, alias],
+      }),
+      { message: "Private story source files must be distinct" },
+    );
+
+    assert.deepEqual(await readdir(fixture.previewDirectory), []);
+    assert.deepEqual(await readFile(source), sourceBytes);
+    assert.deepEqual(await readFile(alias), sourceBytes);
+  });
+
+  it("rejects a hardlink alias to the same preparation source", async () => {
+    const fixture = await createFixtureRoot();
+    const source = path.join(fixture.projectRoot, "source.txt");
+    const alias = path.join(fixture.projectRoot, "source-hardlink.txt");
+    const sourceBytes = Buffer.from("# Fixture\n\nSynthetic body.\n");
+    await writeFile(source, sourceBytes);
+    await link(source, alias);
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles: [source, alias],
+      }),
+      { message: "Private story source files must be distinct" },
+    );
+
+    assert.deepEqual(await readdir(fixture.previewDirectory), []);
+    assert.deepEqual(await readFile(source), sourceBytes);
+    assert.deepEqual(await readFile(alias), sourceBytes);
   });
 
   it("leaves an existing forced bundle unchanged when later source validation fails", async () => {
@@ -1019,6 +1286,33 @@ describe("private story preview preparation", () => {
     );
 
     assert.equal(oversizedSourceWasRead, false);
+  });
+
+  it("rejects malformed UTF-8 preparation input before destination mutation", async () => {
+    const fixture = await createFixtureRoot();
+    const { sourceFiles } = await createPreparationSources(
+      fixture,
+      "malformed-utf8-sources",
+    );
+    await writeFile(
+      sourceFiles[0],
+      Buffer.concat([
+        Buffer.from("# New One\n\nSynthetic body "),
+        Buffer.from([0xff]),
+        Buffer.from(".\n"),
+      ]),
+    );
+
+    await assert.rejects(
+      () => preparePrivateStoryPreview({
+        force: true,
+        previewDirectory: fixture.previewDirectory,
+        sourceFiles,
+      }),
+      { message: "Private story source must be valid UTF-8" },
+    );
+
+    assert.deepEqual(await readdir(fixture.previewDirectory), []);
   });
 
   it("refuses source files inside the destination so originals cannot be replaced", async () => {

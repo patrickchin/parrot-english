@@ -71,7 +71,7 @@ async function requireReadable(file, fileSystem) {
     requireSourceByteLimit(sourceStats.size);
     const bytes = await fileSystem.readFile(file);
     requireSourceByteLimit(bytes.byteLength);
-    return { bytes, realFilePath };
+    return { bytes, realFilePath, sourceStats };
   } catch (error) {
     if (error?.message?.includes("source must be at most")) throw error;
     throw new Error("Expected exactly two readable source files");
@@ -425,6 +425,14 @@ export async function preparePrivateStoryPreview({
   const sources = await Promise.all(
     sourceFiles.map((sourceFile) => requireReadable(sourceFile, operations)),
   );
+  if (
+    sources[0].realFilePath === sources[1].realFilePath ||
+    (sources[0].sourceStats.ino !== 0 &&
+      sources[0].sourceStats.dev === sources[1].sourceStats.dev &&
+      sources[0].sourceStats.ino === sources[1].sourceStats.ino)
+  ) {
+    throw new Error("Private story source files must be distinct");
+  }
   if (
     sourceFiles.some((sourceFile) => isInside(directory, path.resolve(sourceFile))) ||
     (destinationRealPath &&

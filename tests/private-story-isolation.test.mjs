@@ -6,15 +6,17 @@ import { createHash } from "node:crypto";
 import { createServer } from "node:net";
 import {
   chmod,
+  link,
   mkdtemp,
   mkdir,
   rename,
   rm,
   symlink,
+  truncate,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import process from "node:process";
 import { promisify } from "node:util";
 import { afterEach, describe, it } from "node:test";
@@ -204,6 +206,83 @@ describe("private story isolation scanner", () => {
       "content/.private-story-preview-transaction/stage/residue.bin",
       "dist/content/.private-story-preview-transaction/backup/residue.bin",
     ]);
+  });
+
+  it("detects protected directory segment sequences without matching lookalikes", () => {
+    const protectedPaths = [
+      "content/local-stories/source.txt",
+      "nested/content/local-stories/source.txt",
+      "dist/content/private-story-preview/manifest.json",
+      "nested/content/private-story-preview/story.txt",
+      "dist/content/.private-story-preview-transaction/stage/residue.bin",
+      "public/assets/private-story-preview/fixture/page.mp3",
+    ];
+    const cleanLookalikes = [
+      "content/local-stories-copy/source.txt",
+      "content/private-story-previewed/story.txt",
+      "content/.private-story-preview-transactional/residue.bin",
+      "assets/private-story-preview-old/page.mp3",
+    ];
+
+    const result = scanPrivateStoryIsolation({
+      trackedFiles: [...protectedPaths, ...cleanLookalikes].map((filePath) => [
+        filePath,
+        "synthetic public bytes",
+      ]),
+    });
+
+    assert.deepEqual(result.leakedPaths, [...protectedPaths].sort());
+  });
+
+  it("detects a legacy source path in the current index and worktree", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const leakedPath = "content/local-stories/source.txt";
+    await mkdir(join(projectRoot, leakedPath, ".."), { recursive: true });
+    await writeFile(join(projectRoot, leakedPath), "synthetic public bytes\n");
+    await git(projectRoot, ["add", "--force", "--", leakedPath]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(result.leakedPaths, [leakedPath]);
+  });
+
+  it("detects a legacy source path that was committed and later deleted", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const leakedPath = "archive/content/local-stories/source.txt";
+    const addCommit = await commitAndDeleteFiles(projectRoot, [[
+      leakedPath,
+      "synthetic public bytes\n",
+    ]]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(
+      result.leakedPaths.includes(
+        `git-history ${addCommit.slice(0, 12)} ${leakedPath}`,
+      ),
+      true,
+    );
+  });
+
+  it("detects a preview directory nested inside dist", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-nested-dist-"));
+    temporaryDirectories.push(projectRoot);
+    const leakedPath = "dist/content/private-story-preview/residue.bin";
+    await mkdir(join(projectRoot, leakedPath, ".."), { recursive: true });
+    await writeFile(join(projectRoot, leakedPath), "synthetic public bytes\n");
+    await git(projectRoot, ["init", "--quiet"]);
+
+    const result = await verifyPrivateStoryIsolation({ projectRoot });
+
+    assert.deepEqual(result.leakedPaths, [leakedPath]);
   });
 
   it("allows generic private workflow paths in tracked tooling", () => {
@@ -781,6 +860,67 @@ describe("private story isolation scanner", () => {
     ]);
   });
 
+  it("rejects a nested dist symlink to private narration without reading it", async () => {
+    const { baseRevision, previewDirectory, projectRoot } =
+      await createReleaseAuditFixture();
+    const privateTarget = join(
+      previewDirectory,
+      "audio/private-fixture/page-001.mp3",
+    );
+    await mkdir(join(projectRoot, "dist"));
+    await symlink(privateTarget, join(projectRoot, "dist/innocent.data"));
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      (error) => {
+        assert.equal(error.message, "Unsupported file type in isolation scan");
+        assert.equal(error.message.includes("private-fixture"), false);
+        assert.equal(error.message.includes(privateTarget), false);
+        return true;
+      },
+    );
+  });
+
+  it("rejects a generic file symlink nested inside dist", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-file-link-"));
+    temporaryDirectories.push(projectRoot);
+    await mkdir(join(projectRoot, "dist"));
+    await writeFile(join(projectRoot, "public.txt"), "synthetic public bytes\n");
+    await symlink(join(projectRoot, "public.txt"), join(projectRoot, "dist/file.txt"));
+    await git(projectRoot, ["init", "--quiet"]);
+
+    await assert.rejects(
+      () => verifyPrivateStoryIsolation({ projectRoot }),
+      { message: "Unsupported file type in isolation scan" },
+    );
+  });
+
+  it("rejects a generic directory symlink nested inside dist", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-dir-link-"));
+    temporaryDirectories.push(projectRoot);
+    await mkdir(join(projectRoot, "dist"));
+    await mkdir(join(projectRoot, "public-output"));
+    await writeFile(
+      join(projectRoot, "public-output/index.js"),
+      "synthetic public bytes\n",
+    );
+    await symlink(
+      join(projectRoot, "public-output"),
+      join(projectRoot, "dist/assets"),
+    );
+    await git(projectRoot, ["init", "--quiet"]);
+
+    await assert.rejects(
+      () => verifyPrivateStoryIsolation({ projectRoot }),
+      { message: "Unsupported file type in isolation scan" },
+    );
+  });
+
   it("derives the default dist directory from the supplied project root", async () => {
     const projectRoot = await mkdtemp(join(tmpdir(), "parrot-isolation-default-dist-"));
     temporaryDirectories.push(projectRoot);
@@ -900,6 +1040,40 @@ describe("private story isolation scanner", () => {
       (error) => {
         assert.equal(error.message, "Unable to load private story audit inputs");
         assert.equal(error.message.includes("private-second"), false);
+        return true;
+      },
+    );
+  });
+
+  it("enforces the aggregate narration cap in release verification", async () => {
+    const { baseRevision, previewDirectory, projectRoot } =
+      await createReleaseAuditFixture({
+        firstBody: `${Array.from({ length: 70 }, (_, index) => `word${index + 1}`).join(" ")}\n\nfinal`,
+      });
+    const firstAudio = join(
+      previewDirectory,
+      "audio/private-fixture/page-001.mp3",
+    );
+    const duplicateAudio = join(
+      previewDirectory,
+      "audio/private-fixture/page-002.mp3",
+    );
+    await truncate(firstAudio, 32 * 1024 * 1024 - 1);
+    await link(firstAudio, duplicateAudio);
+    await truncate(
+      join(previewDirectory, "audio/private-second/page-001.mp3"),
+      3,
+    );
+
+    await assert.rejects(
+      () => verifyPrivateStoryIsolation({
+        baseRevision,
+        projectRoot,
+        requirePrivateInputs: true,
+      }),
+      (error) => {
+        assert.equal(error.message, "Unable to load private story audit inputs");
+        assert.equal(error.message.includes("private-fixture"), false);
         return true;
       },
     );
@@ -1572,6 +1746,83 @@ describe("private story isolation scanner", () => {
     assert.match(result.message, /^git-history [0-9a-f]{12} replaced\.txt$/m);
   });
 
+  it("scrubs ambient Git repository selectors while auditing the real index and history", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const historicalPath = "archive/ambient-selector.txt";
+    const addCommit = await commitAndDeleteFiles(projectRoot, [[
+      historicalPath,
+      "Fixture Story\n",
+    ]]);
+    await writeFile(join(projectRoot, "current.txt"), "Fixture Story\n");
+    await git(projectRoot, ["add", "--", "current.txt"]);
+
+    const { stdout: realGitOutput } = await execFileAsync("which", ["git"], {
+      encoding: "utf8",
+    });
+    const wrapperDirectory = join(projectRoot, "synthetic-bin");
+    const wrapperPath = join(wrapperDirectory, "git");
+    await mkdir(wrapperDirectory);
+    await writeFile(
+      wrapperPath,
+      [
+        "#!/usr/bin/env node",
+        'import { spawnSync } from "node:child_process";',
+        `const realGit = ${JSON.stringify(realGitOutput.trim())};`,
+        'const unsafe = Object.keys(process.env).filter((name) => /^GIT_/iu.test(name) && name !== "GIT_NO_REPLACE_OBJECTS");',
+        'if (unsafe.length || process.env.GIT_NO_REPLACE_OBJECTS !== "1") process.exit(97);',
+        'const result = spawnSync(realGit, process.argv.slice(2), { env: process.env, stdio: "inherit" });',
+        "if (result.error) throw result.error;",
+        "process.exit(result.status ?? 1);",
+      ].join("\n"),
+    );
+    await chmod(wrapperPath, 0o755);
+
+    const ambientSelectors = {
+      GIT_ALTERNATE_OBJECT_DIRECTORIES: "ambient-alternate-selector",
+      GIT_CONFIG_COUNT: "1",
+      GIT_CONFIG_GLOBAL: "ambient-global-config",
+      GIT_CONFIG_KEY_0: "core.hooksPath",
+      GIT_CONFIG_SYSTEM: "ambient-system-config",
+      GIT_CONFIG_VALUE_0: "ambient-hooks",
+      GIT_DIR: "ambient-git-directory",
+      GIT_INDEX_FILE: "ambient-index-file",
+      GIT_OBJECT_DIRECTORY: "ambient-object-directory",
+      GIT_REPLACE_REF_BASE: "refs/ambient-replacements/",
+      GIT_WORK_TREE: "ambient-work-tree",
+    };
+    const previousEnvironment = new Map(
+      ["PATH", ...Object.keys(ambientSelectors)].map((name) => [
+        name,
+        process.env[name],
+      ]),
+    );
+    let result;
+    try {
+      process.env.PATH = `${wrapperDirectory}${delimiter}${process.env.PATH}`;
+      Object.assign(process.env, ambientSelectors);
+      result = await verifyPrivateStoryIsolation({
+        baseRevision,
+        projectRoot,
+        requirePrivateInputs: true,
+      });
+    } catch (error) {
+      for (const value of Object.values(ambientSelectors)) {
+        assert.equal(error.message.includes(value), false);
+      }
+      throw error;
+    } finally {
+      for (const [name, value] of previousEnvironment) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+
+    assert.deepEqual(result.leakedPaths, [
+      "current.txt",
+      `git-history ${addCommit.slice(0, 12)} ${historicalPath}`,
+    ]);
+  });
+
   it("treats historical gitlinks as paths without reading commits as blobs", async () => {
     const { baseRevision, projectRoot } = await createReleaseAuditFixture();
     await git(projectRoot, [
@@ -1723,11 +1974,59 @@ describe("private story isolation scanner", () => {
     assert.deepEqual(result.leakedPaths, ["public.txt"]);
   });
 
+  it("detects a twelve-word excerpt spanning adjacent units in current, dist, and history", async () => {
+    const units = [
+      "Crimson astronomers quietly chart",
+      "distant nebulae beyond frozen",
+      "harbors while patient foxes",
+    ];
+    const excerpt = units.join(" ");
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture({
+      firstBody: units.join(".\n\n"),
+    });
+    const historicalPath = "archive/cross-unit.txt";
+    const addCommit = await commitAndDeleteFiles(projectRoot, [[
+      historicalPath,
+      excerpt,
+    ]]);
+    await writeFile(join(projectRoot, "current.txt"), excerpt);
+    await git(projectRoot, ["add", "--", "current.txt"]);
+    await mkdir(join(projectRoot, "dist"));
+    await writeFile(join(projectRoot, "dist/cross-unit.txt"), excerpt);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(result.leakedPaths, [
+      "current.txt",
+      "dist/cross-unit.txt",
+      `git-history ${addCommit.slice(0, 12)} ${historicalPath}`,
+    ]);
+  });
+
+  it("does not fingerprint across the boundary between two stories", () => {
+    const firstStoryEnd = "crimson astronomers quietly chart distant nebulae";
+    const secondStoryStart = "beyond frozen harbors while patient foxes";
+
+    const result = scanPrivateStoryIsolation({
+      excerptSourceGroups: [[firstStoryEnd], [secondStoryStart]],
+      trackedFiles: [[
+        "public.txt",
+        `${firstStoryEnd} ${secondStoryStart}`,
+      ]],
+    });
+
+    assert.deepEqual(result.leakedPaths, []);
+  });
+
   it("ignores a twelve-word window with only one repeated token", () => {
     const repeatedWindow = Array.from({ length: 12 }, () => "echo").join(" ");
 
     const result = scanPrivateStoryIsolation({
-      sourceUnits: [`${repeatedWindow} ending`],
+      excerptSourceGroups: [[`${repeatedWindow} ending`]],
       trackedFiles: [["public.txt", repeatedWindow]],
     });
 
@@ -1738,7 +2037,7 @@ describe("private story isolation scanner", () => {
     const shortWindow = "a an i in on at to by up no go do";
 
     const result = scanPrivateStoryIsolation({
-      sourceUnits: [`${shortWindow} ending`],
+      excerptSourceGroups: [[`${shortWindow} ending`]],
       trackedFiles: [["public.txt", shortWindow]],
     });
 

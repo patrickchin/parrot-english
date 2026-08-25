@@ -11,9 +11,16 @@ import { loadPrivateStoryPreview } from "../lib/private-story-preview.js";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const PRIVATE_INPUT_DIRECTORY = "content/private-story-preview";
+const PRIVATE_LEGACY_INPUT_DIRECTORY = "content/local-stories";
 const PRIVATE_TRANSACTION_DIRECTORY =
   "content/.private-story-preview-transaction";
 const PRIVATE_ASSET_DIRECTORY = "assets/private-story-preview";
+const PROTECTED_DIRECTORY_SEGMENTS = [
+  PRIVATE_INPUT_DIRECTORY,
+  PRIVATE_LEGACY_INPUT_DIRECTORY,
+  PRIVATE_TRANSACTION_DIRECTORY,
+  PRIVATE_ASSET_DIRECTORY,
+].map((directory) => directory.split("/"));
 const MAX_GIT_BUFFER = 128 * 1024 * 1024;
 const MAX_SCANNED_BYTES = 512 * 1024 * 1024;
 const BYTE_BUDGET_ERROR = "Private story isolation scan exceeded its byte budget";
@@ -69,7 +76,13 @@ function isMeaningfulExcerpt(words) {
   return words.join(" ").length >= 50 && new Set(words).size >= 5;
 }
 
-function createExcerptFingerprints(sourceUnits) {
+function isMeaningfulCrossUnitExcerpt(words) {
+  const counts = new Map();
+  for (const word of words) counts.set(word, (counts.get(word) ?? 0) + 1);
+  return isMeaningfulExcerpt(words) && Math.max(...counts.values()) <= 3;
+}
+
+function createExcerptFingerprints(sourceGroups) {
   const fingerprints = new Map();
   const add = (words) => {
     const count = words.length;
@@ -77,17 +90,32 @@ function createExcerptFingerprints(sourceUnits) {
     fingerprints.get(count).add(wordsHash(words));
   };
 
-  for (const unit of sourceUnits) {
-    const words = normalizedWords(unit);
-    if (words.length >= 12) {
-      for (let index = 0; index <= words.length - 12; index += 1) {
-        const window = words.slice(index, index + 12);
-        if (isMeaningfulExcerpt(window)) add(window);
+  for (const sourceUnits of sourceGroups) {
+    const storyWords = [];
+    const storyUnitIndexes = [];
+    for (const [unitIndex, unit] of sourceUnits.entries()) {
+      const words = normalizedWords(unit);
+      storyWords.push(...words);
+      storyUnitIndexes.push(...words.map(() => unitIndex));
+      if (words.length >= 12) {
+        for (let index = 0; index <= words.length - 12; index += 1) {
+          const window = words.slice(index, index + 12);
+          if (isMeaningfulExcerpt(window)) add(window);
+        }
       }
-      continue;
+      if (words.length >= 8 && words.length < 12 && isMeaningfulExcerpt(words)) {
+        add(words);
+      }
     }
-    if (words.length >= 8 && isMeaningfulExcerpt(words)) {
-      add(words);
+    for (let index = 0; index <= storyWords.length - 12; index += 1) {
+      const window = storyWords.slice(index, index + 12);
+      const unitWindow = storyUnitIndexes.slice(index, index + 12);
+      if (
+        unitWindow[0] !== unitWindow.at(-1) &&
+        isMeaningfulCrossUnitExcerpt(window)
+      ) {
+        add(window);
+      }
     }
   }
   return fingerprints;
@@ -104,33 +132,29 @@ function matchesExcerpt(value, fingerprints) {
   return false;
 }
 
-function createPrivacyContext({ audioHashes = [], markers = [], sourceUnits = [] }) {
+function createPrivacyContext({
+  audioHashes = [],
+  excerptSourceGroups = [],
+  markers = [],
+}) {
   return {
     audioHashes: new Set(audioHashes),
-    excerptFingerprints: createExcerptFingerprints(sourceUnits),
+    excerptFingerprints: createExcerptFingerprints(excerptSourceGroups),
     variants: markerVariants(markers),
   };
 }
 
-function isPrivateInputPath(filePath) {
-  const normalized = normalizePath(filePath).replace(/^\.\//u, "");
-  return (
-    normalized === PRIVATE_INPUT_DIRECTORY ||
-    normalized.startsWith(`${PRIVATE_INPUT_DIRECTORY}/`)
-  );
-}
-
 function containsPrivatePath(filePath) {
-  const normalized = normalizePath(filePath).replace(/^\.\//u, "");
-  return (
-    isPrivateInputPath(normalized) ||
-    normalized === PRIVATE_TRANSACTION_DIRECTORY ||
-    normalized.startsWith(`${PRIVATE_TRANSACTION_DIRECTORY}/`) ||
-    normalized.includes(`/${PRIVATE_TRANSACTION_DIRECTORY}/`) ||
-    normalized.endsWith(`/${PRIVATE_TRANSACTION_DIRECTORY}`) ||
-    normalized === PRIVATE_ASSET_DIRECTORY ||
-    normalized.includes(`/${PRIVATE_ASSET_DIRECTORY}/`) ||
-    normalized.endsWith(`/${PRIVATE_ASSET_DIRECTORY}`)
+  const segments = normalizePath(filePath)
+    .replace(/^\.\//u, "")
+    .split("/")
+    .filter((segment) => segment && segment !== ".");
+  return PROTECTED_DIRECTORY_SEGMENTS.some((protectedSegments) =>
+    segments.some((_, start) =>
+      protectedSegments.every(
+        (segment, offset) => segments[start + offset] === segment,
+      )
+    )
   );
 }
 
@@ -260,11 +284,15 @@ function safeLeakDiagnostic(label, context) {
 export function scanPrivateStoryIsolation({
   audioHashes = [],
   distFiles = [],
+  excerptSourceGroups = [],
   markers = [],
-  sourceUnits = [],
   trackedFiles = [],
 } = {}) {
-  const context = createPrivacyContext({ audioHashes, markers, sourceUnits });
+  const context = createPrivacyContext({
+    audioHashes,
+    excerptSourceGroups,
+    markers,
+  });
   const contentLeakCache = new Map();
   const leakedPaths = [...trackedFiles, ...distFiles].filter(
     ([label, contents, scannedPath, unreadable, contentKey]) =>
@@ -287,6 +315,10 @@ export function scanPrivateStoryIsolation({
 }
 
 function executeGit(projectRoot, args) {
+  const environment = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !/^GIT_/iu.test(name)),
+  );
+  environment.GIT_NO_REPLACE_OBJECTS = "1";
   return new Promise((resolve) => {
     execFile(
       "git",
@@ -294,7 +326,7 @@ function executeGit(projectRoot, args) {
       {
         cwd: projectRoot,
         encoding: null,
-        env: { ...process.env, GIT_NO_REPLACE_OBJECTS: "1" },
+        env: environment,
         maxBuffer: MAX_GIT_BUFFER,
       },
       (error, stdout) => {
@@ -358,14 +390,6 @@ function nulRecords(output, message) {
     offset = end + 1;
   }
   return records;
-}
-
-async function gitTrackedPaths(projectRoot, pathspec, budget) {
-  const args = ["ls-files", "-z"];
-  if (pathspec) args.push("--", pathspec);
-  const stdout = await gitOutput(projectRoot, args);
-  budget.add(stdout);
-  return nulRecords(stdout, "Unable to parse tracked Git paths");
 }
 
 async function gitTrackedEntries(projectRoot, budget) {
@@ -591,11 +615,14 @@ async function readDirectoryFiles(
     } catch {
       throw new Error(READ_ERROR);
     }
+    if (fileStats.isSymbolicLink()) {
+      throw new Error("Unsupported file type in isolation scan");
+    }
     if (fileStats.isDirectory()) {
       files.push(...(await readDirectoryFiles(absolutePath, projectRoot, budget)));
       continue;
     }
-    if (!fileStats.isFile() && !fileStats.isSymbolicLink()) {
+    if (!fileStats.isFile()) {
       throw new Error("Unsupported file type in isolation scan");
     }
     const label = normalizePath(path.relative(projectRoot, absolutePath));
@@ -604,9 +631,7 @@ async function readDirectoryFiles(
 
     let contents;
     try {
-      contents = fileStats.isSymbolicLink()
-        ? await readlink(absolutePath, { encoding: "buffer" })
-        : await readFile(absolutePath);
+      contents = await readFile(absolutePath);
     } catch {
       throw new Error(READ_ERROR);
     }
@@ -796,11 +821,6 @@ export async function verifyPrivateStoryIsolation({
     previewDirectory ?? path.join(projectRoot, PRIVATE_INPUT_DIRECTORY),
   );
   const manifestPath = path.join(directory, "manifest.json");
-  const privateTrackedPaths = await gitTrackedPaths(
-    projectRoot,
-    PRIVATE_INPUT_DIRECTORY,
-    budget,
-  );
   const hasPrivateInputs = existsSync(manifestPath);
 
   let privateData;
@@ -816,19 +836,22 @@ export async function verifyPrivateStoryIsolation({
     }
   }
   const markers = privateData?.markers ?? [];
-  const sourceUnits = privateData?.excerptSourceUnits ?? [];
+  const excerptSourceGroups = privateData?.excerptSourceGroups ?? [];
   for (const marker of markers) budget.add(marker);
-  for (const sourceUnit of sourceUnits) budget.add(sourceUnit);
+  for (const sourceGroup of excerptSourceGroups) {
+    for (const sourceUnit of sourceGroup) budget.add(sourceUnit);
+  }
   const audioHashes = privateData
     ? hashPrivateAudio(privateData.assets, budget, requirePrivateInputs)
     : [];
   const trackedEntries = await gitTrackedEntries(projectRoot, budget);
   const trackedPaths = uniqueRawPaths(trackedEntries);
+  const privateTrackedPaths = trackedPaths.filter(containsPrivatePath);
   const publicTrackedPaths = trackedPaths.filter(
-    (filePath) => !isPrivateInputPath(filePath),
+    (filePath) => !containsPrivatePath(filePath),
   );
   const publicTrackedEntries = trackedEntries.filter(
-    (entry) => !isPrivateInputPath(entry.path),
+    (entry) => !containsPrivatePath(entry.path),
   );
   const worktreePathKeys = new Set(
     publicTrackedEntries
@@ -855,12 +878,11 @@ export async function verifyPrivateStoryIsolation({
         true,
       )
     : [];
-  for (const filePath of privateTrackedPaths) budget.add(filePath);
   const result = scanPrivateStoryIsolation({
     audioHashes,
     distFiles,
+    excerptSourceGroups,
     markers,
-    sourceUnits,
     trackedFiles: [
       ...privateTrackedPaths.map((filePath) => [filePath, ""]),
       ...indexFiles,
