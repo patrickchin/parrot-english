@@ -1,14 +1,7 @@
 "use client";
 
-import { ChevronLeft, Mic, Play, Square, Volume2 } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { ChevronLeft } from "lucide-react";
+import { useCallback, useEffect, useReducer, useRef, useState, type RefObject } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { isAbortError, playAudioLine } from "../media/audio-playback";
@@ -18,17 +11,19 @@ import {
   startSpeechRecording,
   type SpeechRecordingSession,
 } from "../media/speech-recorder";
-import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
+import { ActionButton, TextButton } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
   DubTakeRejectedError,
+  getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
 } from "./dub-api";
-import { DubLinePlaybackError, startDubPlayback } from "./dub-playback";
+import { startDubPlayback, type DubAudioSource } from "./dub-playback";
+import { DubProjectHome } from "./DubProjectHome";
+import { DubSceneEditor } from "./DubSceneEditor";
 import {
-  DUB_DURATION_MS,
   DUB_LINES,
   DUB_LINES_PER_VERSE,
   DUB_RECORDING_MS,
@@ -40,522 +35,14 @@ import {
 import {
   createInitialDubState,
   reduceDubState,
-  type DubState,
+  type DubOperation,
 } from "./dub-state";
-import { DuckScene } from "./DuckScene";
-import { DubTakeWaveform } from "./DubTakeWaveform";
 
 type TakePreview = {
   blob: Blob;
   lineId: string;
   url: string;
 };
-
-type DubHandlers = {
-  onDelete(): void;
-  onHearGuide(): void;
-  onHearTake(): void;
-  onNext(): void;
-  onRecord(): void;
-  onRetake(): void;
-  onRetryLoad(): void;
-  onSaveAgain(): void;
-  onSelectLine(lineId: string): void;
-  onStopPlayback(): void;
-  onStopRecording(): void;
-  onStopTake(): void;
-  onWatch(): void;
-};
-
-type DubControlsProps = {
-  activeLine: DubLine;
-  handlers: DubHandlers;
-  isDeleting?: boolean;
-  loadError?: string;
-  nextButtonRef?: RefObject<HTMLButtonElement | null>;
-  recordButtonRef?: RefObject<HTMLButtonElement | null>;
-  resetInterrupted?: boolean;
-  state: DubState;
-};
-
-function dubStatusMessage({
-  isDeleting,
-  lineIndex,
-  loadError,
-  resetInterrupted,
-  state,
-}: {
-  isDeleting: boolean;
-  lineIndex: number;
-  loadError: string;
-  resetInterrupted: boolean;
-  state: DubState;
-}) {
-  const verseIndex = Math.floor(lineIndex / DUB_LINES_PER_VERSE);
-  const finalVerse = verseIndex === DUB_VERSES.length - 1;
-  const line = `Verse ${verseIndex + 1} of ${DUB_VERSES.length}, line ${(lineIndex % DUB_LINES_PER_VERSE) + 1} of ${DUB_LINES_PER_VERSE}.`;
-  if (isDeleting) {
-    return "Deleting your saved dub.";
-  }
-  if (state.phase === "loading") {
-    if (resetInterrupted) {
-      return "Deleting your saved dub was interrupted. A grown-up can finish deleting it.";
-    }
-    return loadError
-      ? "Loading stopped. Try loading again."
-      : "Loading your private dub.";
-  }
-  if (state.phase === "intro") {
-    return "Grown-up confirmation is needed before dubbing.";
-  }
-  if (state.phase === "line-ready") {
-    return `${line} Listen to the example, then record this line.`;
-  }
-  if (state.phase === "mic-opening") {
-    return `${line} Opening the microphone.`;
-  }
-  if (state.phase === "recording") {
-    return `${line} Recording in progress.`;
-  }
-  if (state.phase === "saving") {
-    return `${line} Saving your take.`;
-  }
-  if (state.phase === "save-error") {
-    return `${line} Choose ${state.saveRecovery === "record" ? "Record again" : "Save again"}.`;
-  }
-  if (state.phase === "line-review") {
-    return `${line} Your take is saved. Hear your voice or choose Next line.`;
-  }
-  if (state.phase === "verse-loading") {
-    return finalVerse
-      ? `Getting verse ${verseIndex + 1} of ${DUB_VERSES.length} ready. Next skips to your completed dub.`
-      : `Getting verse ${verseIndex + 1} of ${DUB_VERSES.length} ready. Next skips the preview.`;
-  }
-  if (state.phase === "verse-playing") {
-    return finalVerse
-      ? `Playing verse ${verseIndex + 1} of ${DUB_VERSES.length}. Next skips to your completed dub.`
-      : `Playing verse ${verseIndex + 1} of ${DUB_VERSES.length}. Next skips to the next verse.`;
-  }
-  if (state.phase === "final-ready") {
-    return "Your complete dub is ready. Choose Watch my dub.";
-  }
-  if (state.phase === "final-loading") {
-    return "Getting your dub ready to play.";
-  }
-  return `Playing your dub. ${line}`;
-}
-
-function renderDubControls({
-  activeLine,
-  handlers,
-  isDeleting = false,
-  loadError = "",
-  nextButtonRef,
-  recordButtonRef,
-  resetInterrupted = false,
-  state,
-}: DubControlsProps) {
-  const lineNumber = Math.max(0, DUB_LINES.findIndex(({ id }) => id === activeLine.id)) + 1;
-  const complete = DUB_LINES.every(({ id }) => id in state.saved);
-  if (state.phase === "loading") {
-    if (isDeleting) {
-      return <ActionButton disabled>Deleting your dub…</ActionButton>;
-    }
-    return loadError ? (
-      resetInterrupted ? (
-        <ActionButton onClick={handlers.onDelete} variant="dangerSurface">
-          Finish deleting my dub
-        </ActionButton>
-      ) : (
-        <ActionButton onClick={handlers.onRetryLoad}>Try loading again</ActionButton>
-      )
-    ) : (
-      <ActionButton disabled>Loading your private dub…</ActionButton>
-    );
-  }
-  if (state.phase === "final-loading") {
-    return <ActionButton disabled>Getting your dub ready…</ActionButton>;
-  }
-  if (state.phase === "final-playing") {
-    return (
-      <ActionButton onClick={handlers.onStopPlayback} variant="rose">
-        Stop playback
-      </ActionButton>
-    );
-  }
-  if (state.phase === "final-ready") {
-    if (isDeleting) return <ActionButton disabled>Deleting your dub…</ActionButton>;
-    return (
-      <>
-        <ActionButton
-          fullWidth
-          onClick={handlers.onWatch}
-          ref={recordButtonRef}
-          size="hero"
-          variant="success"
-        >
-          <Play aria-hidden="true" /> Watch my dub
-        </ActionButton>
-        <details className="group rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
-          <summary
-            aria-label="Grown-up options"
-            className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 font-ui font-black text-brand-blue focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
-          >
-            Grown-up options
-            <span aria-hidden="true" className="group-open:rotate-180">▾</span>
-          </summary>
-          <div className="mt-3 grid gap-3">
-            <p className="m-0 text-sm font-bold leading-snug text-slate-700">
-              Your recordings are private and saved to the signed-in grown-up&apos;s account.
-              You can replay or replace them here, and they are deleted with the account.
-            </p>
-            <label className="font-ui font-black text-brand-ink" htmlFor="saved-dub-line">
-              Choose a saved line
-            </label>
-            <select
-              aria-label="Choose a saved line"
-              className={fieldClassName()}
-              id="saved-dub-line"
-              onChange={(event) => handlers.onSelectLine(event.currentTarget.value)}
-              value={activeLine.id}
-            >
-              {DUB_LINES.filter(({ id }) => id in state.saved).map((line, index) => (
-                <option key={line.id} value={line.id}>
-                  Line {index + 1}: {line.text}
-                </option>
-              ))}
-            </select>
-            <TextButton className="min-h-12" onClick={handlers.onRetake}>Record selected line</TextButton>
-            <TextButton className="min-h-12 text-red-800" onClick={handlers.onDelete}>Delete my dub</TextButton>
-          </div>
-        </details>
-      </>
-    );
-  }
-
-  const recording = state.phase === "recording";
-  const reviewing = state.phase === "line-review";
-  const previewing = state.phase === "verse-loading" || state.phase === "verse-playing";
-  const recordDisabled = state.phase === "mic-opening" || state.phase === "saving" || previewing;
-  const recordAgain = reviewing || state.phase === "save-error";
-  const nextEnabled = reviewing || previewing || (state.phase === "line-ready" && complete);
-  const recordLabel = recording
-    ? `Stop recording line ${lineNumber}`
-    : recordAgain
-      ? `Record again line ${lineNumber}`
-      : `Record line ${lineNumber}`;
-
-  return (
-    <>
-      <section aria-label="Line actions" className="grid grid-cols-2 gap-2">
-        <ActionButton
-          aria-label={recordLabel}
-          className="min-h-14 min-w-0 px-2 text-base short-wide:min-h-12 short-wide:text-sm lg:min-h-16 lg:text-lg"
-          disabled={recordDisabled}
-          fullWidth
-          onClick={recording
-            ? handlers.onStopRecording
-            : recordAgain
-              ? handlers.onRetake
-              : handlers.onRecord}
-          ref={recordButtonRef}
-          size="compact"
-          variant="rose"
-        >
-          {recording ? <Square aria-hidden="true" /> : <Mic aria-hidden="true" className="hidden lg:block" />}
-          {recording ? "Stop" : recordAgain ? "Record again" : "Record"}
-        </ActionButton>
-        <ActionButton
-          aria-label="Next line"
-          className="min-h-14 min-w-0 px-2 text-base short-wide:min-h-12 short-wide:text-sm lg:min-h-16 lg:text-lg"
-          disabled={!nextEnabled}
-          fullWidth
-          onClick={handlers.onNext}
-          ref={nextButtonRef}
-          size="compact"
-        >
-          Next
-        </ActionButton>
-      </section>
-      {state.phase === "save-error" && state.saveRecovery === "save" ? (
-        <TextButton className="min-h-12" onClick={handlers.onSaveAgain}>Save again</TextButton>
-      ) : null}
-      {state.phase === "line-ready" || reviewing || state.phase === "save-error" ? (
-        <TextButton
-          aria-label="Replay example"
-          className="min-h-12 gap-2"
-          onClick={handlers.onHearGuide}
-        >
-          <Volume2 aria-hidden="true" /> Replay example
-        </TextButton>
-      ) : null}
-    </>
-  );
-}
-
-export function DuckDubView({
-  confirmed,
-  isDeleting = false,
-  line,
-  loadError = "",
-  mainRef,
-  nextButtonRef,
-  onConfirm,
-  onDelete,
-  onHearGuide,
-  onHearTake,
-  onNext,
-  onRecord,
-  onRetake,
-  onRetryLoad = () => {},
-  onSaveAgain,
-  onSelectLine,
-  onStopPlayback,
-  onStopRecording,
-  onStopTake,
-  onWatch,
-  recordButtonRef,
-  resetInterrupted = false,
-  state,
-  takeBlob = null,
-  takePlaying = false,
-}: Omit<DubHandlers, "onRetryLoad"> & {
-  confirmed: boolean;
-  isDeleting?: boolean;
-  line: DubLine;
-  loadError?: string;
-  mainRef?: RefObject<HTMLElement | null>;
-  nextButtonRef?: RefObject<HTMLButtonElement | null>;
-  onConfirm(confirmed: boolean): void;
-  onRetryLoad?(): void;
-  recordButtonRef?: RefObject<HTMLButtonElement | null>;
-  resetInterrupted?: boolean;
-  state: DubState;
-  takeBlob?: Blob | null;
-  takePlaying?: boolean;
-}) {
-  const lineIndex = Math.max(0, DUB_LINES.findIndex(({ id }) => id === line.id));
-  const verseIndex = Math.floor(lineIndex / DUB_LINES_PER_VERSE);
-  const lineIndexInVerse = lineIndex % DUB_LINES_PER_VERSE;
-  const verseProgress = `Verse ${verseIndex + 1} of ${DUB_VERSES.length} · Line ${lineIndexInVerse + 1} of ${DUB_LINES_PER_VERSE}`;
-  const verseProgressAccessible = `Verse ${verseIndex + 1} of ${DUB_VERSES.length}, line ${lineIndexInVerse + 1} of ${DUB_LINES_PER_VERSE}`;
-  const isFinalReady = state.phase === "final-ready";
-  const error = state.error || loadError;
-  const statusMessage = dubStatusMessage({
-    isDeleting,
-    lineIndex,
-    loadError,
-    resetInterrupted,
-    state,
-  });
-  const handlers: DubHandlers = {
-    onDelete,
-    onHearGuide,
-    onHearTake,
-    onNext,
-    onRecord,
-    onRetake,
-    onRetryLoad,
-    onSaveAgain,
-    onSelectLine,
-    onStopPlayback,
-    onStopRecording,
-    onStopTake,
-    onWatch,
-  };
-  const showTakePreview = takeBlob !== null && (
-    state.phase === "saving" ||
-    state.phase === "save-error" ||
-    state.phase === "line-review"
-  );
-  const visibleStatus = state.phase === "mic-opening"
-    ? "Opening microphone…"
-    : state.phase === "recording"
-      ? "Recording…"
-      : state.phase === "saving"
-        ? "Saving your take…"
-        : state.phase === "verse-loading"
-          ? `Getting verse ${verseIndex + 1} ready…`
-          : state.phase === "verse-playing"
-            ? `Playing verse ${verseIndex + 1}…`
-            : "";
-
-  return (
-    <main
-      className="h-dvh w-screen overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-5 pt-20 short-wide:!pb-2 short-wide:!pt-16 md:px-6 md:pb-6 md:pt-24"
-      ref={mainRef}
-    >
-      <RouteHeader>
-        <HeaderLink
-          aria-label="Back to home"
-          icon={<ChevronLeft strokeWidth={3.2} />}
-          to="/"
-        >
-          Back home
-        </HeaderLink>
-      </RouteHeader>
-      <section
-        aria-labelledby="dub-title"
-        className="mx-auto grid w-full max-w-[1600px] gap-4 short-wide:h-[calc(100dvh-4.5rem)] short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.6fr)_minmax(15rem,0.9fr)] short-wide:gap-3 lg:min-h-[calc(100dvh-7.5rem)] lg:grid-cols-[minmax(0,2fr)_minmax(20rem,0.78fr)]"
-      >
-        <div className={state.phase === "intro" ? "hidden sm:contents" : "contents"}>
-          <DuckScene
-            line={line}
-            playing={state.phase === "final-playing" || state.phase === "verse-playing"}
-          />
-        </div>
-        <section
-          aria-label="Dubbing controls"
-          className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card short-wide:gap-2 short-wide:rounded-2xl short-wide:p-2 md:p-5"
-        >
-          <div className="grid gap-2 short-wide:gap-1">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <h1 className="m-0 text-xl leading-none text-brand-ink short-wide:text-base md:text-2xl" id="dub-title">
-                Five Little Ducks
-              </h1>
-              {state.phase !== "intro" ? (
-                <p
-                  aria-label={isFinalReady
-                    ? `All ${DUB_VERSES.length} verses recorded`
-                    : verseProgressAccessible}
-                  className="m-0 text-right text-xs font-black uppercase tracking-wider text-brand-blue short-wide:text-[0.625rem] md:text-sm"
-                >
-                  {isFinalReady
-                    ? `All ${DUB_VERSES.length} verses recorded`
-                    : verseProgress}
-                </p>
-              ) : null}
-            </div>
-            {state.phase !== "intro" ? (
-              <progress
-                aria-label="Dubbing progress"
-                aria-valuetext={isFinalReady
-                  ? `All ${DUB_VERSES.length} verses recorded`
-                  : verseProgressAccessible}
-                className="h-2 w-full overflow-hidden rounded-full accent-brand-blue short-wide:h-1"
-                max={DUB_VERSES.length}
-                value={isFinalReady
-                  ? DUB_VERSES.length
-                  : verseIndex + (lineIndexInVerse + 1) / DUB_LINES_PER_VERSE}
-              />
-            ) : null}
-          </div>
-          {state.phase !== "intro" ? (
-            isFinalReady ? (
-              <p className="m-0 text-3xl font-black leading-tight text-brand-ink">
-                Your dub is ready!
-              </p>
-            ) : (
-              <section
-                aria-label="Current line"
-                aria-current="step"
-                className="grid gap-2 rounded-3xl border-3 border-sky-200 bg-sky-50 p-4 short-wide:gap-1 short-wide:rounded-2xl short-wide:p-2"
-              >
-                <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue short-wide:text-[0.625rem]">
-                  {state.phase === "verse-loading" || state.phase === "verse-playing"
-                    ? "Your verse"
-                    : "Now read"}
-                </p>
-                <p className="m-0 text-3xl font-black leading-tight text-brand-ink short-wide:text-xl md:text-4xl">
-                  {line.text}
-                </p>
-              </section>
-            )
-          ) : null}
-          {state.phase === "intro" ? (
-            <p className="m-0 text-sm font-bold leading-snug text-slate-700">
-              Your recordings are private and saved to the signed-in grown-up&apos;s account.
-              You can replay or replace them here, and they are deleted with the account.
-            </p>
-          ) : null}
-          {state.phase === "intro" ? (
-            isDeleting ? (
-              <ActionButton disabled>Deleting your dub…</ActionButton>
-            ) : (
-              <div className="grid gap-4">
-                <label className="flex min-h-12 items-start gap-3 rounded-2xl bg-sky-50 p-3 font-bold leading-snug text-brand-ink">
-                  <input
-                    checked={confirmed}
-                    className="mt-1 size-5 shrink-0 accent-brand-blue"
-                    onChange={(event) => onConfirm(event.currentTarget.checked)}
-                    required
-                    type="checkbox"
-                  />
-                  <span>I’m the grown-up and I agree to save these private voice clips.</span>
-                </label>
-                <ActionButton disabled={!confirmed} fullWidth onClick={handlers.onNext} size="hero">
-                  {Object.keys(state.saved).length > 0 ? "Continue dubbing" : "Start dubbing"}
-                </ActionButton>
-                <details className="group rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
-                  <summary
-                    aria-label="Grown-up options"
-                    className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 font-ui font-black text-brand-blue focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
-                  >
-                    Grown-up options
-                    <span aria-hidden="true" className="group-open:rotate-180">▾</span>
-                  </summary>
-                  <div className="mt-3 grid gap-3">
-                    <p className="m-0 text-sm font-bold leading-snug text-slate-700">
-                      Remove unfinished or earlier Five Little Ducks recordings from this account.
-                    </p>
-                    <TextButton className="min-h-12 text-red-800" onClick={handlers.onDelete}>
-                      Delete saved recordings
-                    </TextButton>
-                  </div>
-                </details>
-              </div>
-            )
-          ) : (
-            <div className="grid gap-3 short-wide:gap-2">
-              {renderDubControls({
-                activeLine: line,
-                handlers,
-                isDeleting,
-                loadError,
-                nextButtonRef,
-                recordButtonRef,
-                resetInterrupted,
-                state,
-              })}
-              {showTakePreview ? (
-                <section
-                  aria-label="Your recorded line"
-                  className="grid gap-2 rounded-2xl border-3 border-cyan-200 bg-cyan-50 p-3"
-                >
-                  <p className="m-0 text-sm font-black uppercase tracking-wider text-brand-blue">
-                    Your voice
-                  </p>
-                  <DubTakeWaveform blob={takeBlob} />
-                  <TextButton
-                    aria-label={takePlaying ? "Stop my voice" : "Hear my voice"}
-                    className="min-h-12 gap-2"
-                    onClick={takePlaying ? handlers.onStopTake : handlers.onHearTake}
-                  >
-                    {takePlaying ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
-                    {takePlaying ? "Stop my voice" : "Hear my voice"}
-                  </TextButton>
-                </section>
-              ) : null}
-            </div>
-          )}
-          {visibleStatus ? (
-            <p className="m-0 font-black text-brand-rose">
-              {visibleStatus}
-            </p>
-          ) : null}
-          {error ? (
-            <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div aria-atomic="true" aria-live="polite" className="sr-only" role="status">
-            {statusMessage}
-          </div>
-        </section>
-      </section>
-    </main>
-  );
-}
 
 function microphoneMessage(error: unknown) {
   if (error instanceof RecordingUnsupportedError) {
@@ -567,40 +54,202 @@ function microphoneMessage(error: unknown) {
   return "The microphone did not start. Try recording again.";
 }
 
+function unavailableLineMessage(lineId: string) {
+  const lineIndex = DUB_LINES.findIndex(({ id }) => id === lineId);
+  const sceneNumber = Math.floor(lineIndex / DUB_LINES_PER_VERSE) + 1;
+  const lineNumber = lineIndex % DUB_LINES_PER_VERSE + 1;
+  return `Scene ${sceneNumber}, line ${lineNumber} could not play. The video will continue without it.`;
+}
+
+function isUnsafeOperation(operation: DubOperation) {
+  return operation === "deleting"
+    || operation === "mic-opening"
+    || operation === "recording"
+    || operation === "saving";
+}
+
+function isControlLocked(operation: DubOperation) {
+  return operation === "deleting"
+    || operation === "mic-opening"
+    || operation === "saving";
+}
+
+export function resolveDubLineAudioSource(
+  line: DubLine,
+  saved: Readonly<Record<string, string>>,
+  resolveGuide: typeof getStaticAudioLineForSpeech = getStaticAudioLineForSpeech,
+): DubAudioSource {
+  if (Object.hasOwn(saved, line.id)) {
+    const preferredUrl = getDubLineAudioUrl(line.id);
+    try {
+      return {
+        fallbackUrl: resolveGuide("narrator", line.text).src,
+        preferredUrl,
+      };
+    } catch {
+      return { preferredUrl };
+    }
+  }
+  return { preferredUrl: resolveGuide("narrator", line.text).src };
+}
+
+export function DubEntry({
+  confirmed,
+  deleting,
+  error,
+  onConfirm,
+  onDelete,
+  onEnter,
+  onRetryLoad,
+  resetInterrupted,
+  savedCount,
+}: {
+  confirmed: boolean;
+  deleting: boolean;
+  error: string;
+  onConfirm(confirmed: boolean): void;
+  onDelete(): void;
+  onEnter(): void;
+  onRetryLoad(): void;
+  resetInterrupted: boolean;
+  savedCount: number;
+}) {
+  const loading = error !== "" || resetInterrupted;
+  return (
+    <main aria-busy={deleting} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
+      <section className="mx-auto grid w-full max-w-2xl gap-4 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-card">
+        <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
+        {loading ? (
+          <>
+            <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">
+              {error}
+            </p>
+            {deleting ? (
+              <ActionButton disabled>Deleting your dub…</ActionButton>
+            ) : resetInterrupted ? (
+              <ActionButton onClick={onDelete} variant="dangerSurface">Finish deleting my dub</ActionButton>
+            ) : (
+              <ActionButton onClick={onRetryLoad}>Try loading again</ActionButton>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="m-0 font-bold leading-snug text-slate-700">
+              Your recordings are private and saved to the signed-in grown-up&apos;s account.
+              You can replay or replace them here, and they are deleted with the account.
+            </p>
+            <label className="flex min-h-12 items-start gap-3 rounded-2xl bg-sky-50 p-3 font-bold leading-snug text-brand-ink">
+              <input
+                checked={confirmed}
+                className="mt-1 size-5 shrink-0 accent-brand-blue"
+                disabled={deleting}
+                onChange={(event) => onConfirm(event.currentTarget.checked)}
+                required
+                type="checkbox"
+              />
+              <span>I’m the grown-up and I agree to save these private voice clips.</span>
+            </label>
+            <ActionButton disabled={!confirmed || deleting} fullWidth onClick={onEnter} size="hero">
+              {savedCount > 0 ? "Continue dubbing" : "Start dubbing"}
+            </ActionButton>
+            <details className="group rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
+              <summary
+                aria-label="Grown-up options"
+                className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 font-ui font-black text-brand-blue"
+              >
+                Grown-up options <span aria-hidden="true">▾</span>
+              </summary>
+              <TextButton className="mt-3 min-h-12 text-red-800" disabled={deleting} onClick={onDelete}>
+                {deleting ? "Deleting saved recordings…" : "Delete saved recordings"}
+              </TextButton>
+            </details>
+          </>
+        )}
+      </section>
+    </main>
+  );
+}
+
+export function DubLoading({
+  deleting,
+  error,
+  onDelete,
+  onRetryLoad,
+  resetInterrupted,
+}: {
+  deleting: boolean;
+  error: string;
+  onDelete(): void;
+  onRetryLoad(): void;
+  resetInterrupted: boolean;
+}) {
+  if (error) {
+    return (
+      <DubEntry
+        confirmed={false}
+        deleting={deleting}
+        error={error}
+        onConfirm={() => {}}
+        onDelete={onDelete}
+        onEnter={() => {}}
+        onRetryLoad={onRetryLoad}
+        resetInterrupted={resetInterrupted}
+        savedCount={0}
+      />
+    );
+  }
+  return (
+    <main aria-busy={deleting} className="grid h-dvh w-screen place-items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pt-20">
+      <section className="grid justify-items-center gap-4">
+        <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
+        <ActionButton disabled>Loading your private dub…</ActionButton>
+      </section>
+    </main>
+  );
+}
+
 export function DuckDub() {
   const [state, dispatch] = useReducer(reduceDubState, undefined, createInitialDubState);
   const [confirmed, setConfirmed] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [operationError, setOperationError] = useState("");
   const [loadSequence, setLoadSequence] = useState(0);
   const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [resetInterrupted, setResetInterrupted] = useState(false);
-  const [takePlaying, setTakePlaying] = useState(false);
   const [takePreview, setTakePreview] = useState<TakePreview | null>(null);
+
   const mountedRef = useRef(false);
-  const generationRef = useRef(0);
+  const mediaGenerationRef = useRef(0);
   const statusControllerRef = useRef<AbortController | null>(null);
+  const deleteControllerRef = useRef<AbortController | null>(null);
   const guideControllerRef = useRef<AbortController | null>(null);
   const takeControllerRef = useRef<AbortController | null>(null);
   const uploadControllerRef = useRef<AbortController | null>(null);
-  const finalControllerRef = useRef<AbortController | null>(null);
-  const deleteControllerRef = useRef<AbortController | null>(null);
+  const playbackControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const recordingSessionRef = useRef<SpeechRecordingSession | null>(null);
-  const nextButtonRef = useRef<HTMLButtonElement>(null);
-  const recordButtonRef = useRef<HTMLButtonElement>(null);
-  const scrollContainerRef = useRef<HTMLElement>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playbackRef = useRef<{ stop(): void } | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
   const takePreviewRef = useRef<TakePreview | null>(null);
-  const finalPlaybackRef = useRef<{ stop(): void } | null>(null);
+  const fullPlaybackButtonRef = useRef<HTMLButtonElement>(null);
+  const sceneHeadingRef = useRef<HTMLHeadingElement>(null);
+  const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
+  const lineHeadingRef = useRef<HTMLHeadingElement>(null);
+  const recordButtonRef = useRef<HTMLButtonElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+
+  function focusAfterRender(ref: RefObject<HTMLElement | null>, generation: number) {
+    requestAnimationFrame(() => {
+      if (mountedRef.current && generation === mediaGenerationRef.current) {
+        ref.current?.focus();
+      }
+    });
+  }
 
   const clearTakePreview = useCallback(() => {
     takeControllerRef.current?.abort();
     takeControllerRef.current = null;
-    setTakePlaying(false);
     const preview = takePreviewRef.current;
     takePreviewRef.current = null;
     if (preview) URL.revokeObjectURL(preview.url);
@@ -614,21 +263,18 @@ export function DuckDub() {
     setTakePreview(preview);
   }, [clearTakePreview]);
 
-  const stopOperations = useCallback((discardBlob = false) => {
-    generationRef.current += 1;
-    statusControllerRef.current?.abort();
-    statusControllerRef.current = null;
+  const cancelMedia = useCallback((discardTake: boolean) => {
+    mediaGenerationRef.current += 1;
     guideControllerRef.current?.abort();
     guideControllerRef.current = null;
     takeControllerRef.current?.abort();
     takeControllerRef.current = null;
-    setTakePlaying(false);
     uploadControllerRef.current?.abort();
     uploadControllerRef.current = null;
-    finalControllerRef.current?.abort();
-    finalControllerRef.current = null;
-    deleteControllerRef.current?.abort();
-    deleteControllerRef.current = null;
+    playbackControllerRef.current?.abort();
+    playbackControllerRef.current = null;
+    playbackRef.current?.stop();
+    playbackRef.current = null;
     recordingControllerRef.current?.abort();
     recordingControllerRef.current = null;
     recordingSessionRef.current?.cancel();
@@ -637,25 +283,32 @@ export function DuckDub() {
       clearTimeout(recordingTimerRef.current);
       recordingTimerRef.current = null;
     }
-    finalPlaybackRef.current?.stop();
-    finalPlaybackRef.current = null;
-    if (discardBlob) {
+    if (discardTake) {
       pendingBlobRef.current = null;
       pendingLineIdRef.current = null;
       clearTakePreview();
     }
+    return mediaGenerationRef.current;
   }, [clearTakePreview]);
 
   useEffect(() => {
     mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      statusControllerRef.current?.abort();
+      deleteControllerRef.current?.abort();
+      cancelMedia(true);
+    };
+  }, [cancelMedia]);
+
+  useEffect(() => {
     const controller = new AbortController();
-    const generation = generationRef.current;
     statusControllerRef.current = controller;
     setLoadError("");
     setResetInterrupted(false);
     void loadDubStatus({ signal: controller.signal })
       .then((status) => {
-        if (!mountedRef.current || generation !== generationRef.current) return;
+        if (!mountedRef.current || statusControllerRef.current !== controller) return;
         dispatch({
           type: "LOADED",
           savedLineIds: status.lines.filter(({ saved }) => saved).map(({ id }) => id),
@@ -669,18 +322,14 @@ export function DuckDub() {
       .finally(() => {
         if (statusControllerRef.current === controller) statusControllerRef.current = null;
       });
+    return () => controller.abort();
+  }, [loadSequence]);
 
-    return () => {
-      mountedRef.current = false;
-      controller.abort();
-      stopOperations(true);
-    };
-  }, [loadSequence, stopOperations]);
-
-  async function uploadPendingBlob(generation: number) {
+  async function uploadPendingTake(generation: number) {
     const blob = pendingBlobRef.current;
     const lineId = pendingLineIdRef.current;
     if (!blob || !lineId) {
+      clearTakePreview();
       dispatch({
         type: "SAVE_FAILED",
         message: "There is no new take to save. Record the line again.",
@@ -689,31 +338,35 @@ export function DuckDub() {
       return;
     }
     const controller = new AbortController();
-    uploadControllerRef.current?.abort();
     uploadControllerRef.current = controller;
-    setOperationError("");
     try {
       const result = await saveDubLine(lineId, blob, { signal: controller.signal });
-      if (!mountedRef.current || generation !== generationRef.current) return;
-      if (pendingBlobRef.current === blob) {
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
+      pendingBlobRef.current = null;
+      pendingLineIdRef.current = null;
+      dispatch({ type: "SAVE_SUCCEEDED", lineId, recordedAt: result.recordedAt });
+      focusAfterRender(recordButtonRef, generation);
+    } catch (error) {
+      if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
+      const rejected = error instanceof DubTakeRejectedError;
+      if (rejected) {
         pendingBlobRef.current = null;
         pendingLineIdRef.current = null;
+        clearTakePreview();
       }
-      dispatch({ type: "SAVE_SUCCEEDED", lineId, recordedAt: result.recordedAt });
-    } catch (error) {
-      if (controller.signal.aborted || generation !== generationRef.current) return;
       dispatch({
         type: "SAVE_FAILED",
         message: error instanceof Error ? error.message : "Your take was not saved. Try again.",
-        recovery: error instanceof DubTakeRejectedError ? "record" : "save",
+        recovery: rejected ? "record" : "save",
       });
+      focusAfterRender(rejected ? recordButtonRef : saveButtonRef, generation);
     } finally {
       if (uploadControllerRef.current === controller) uploadControllerRef.current = null;
     }
   }
 
-  async function finishRecording(generation = generationRef.current) {
-    if (generation !== generationRef.current) return;
+  async function finishRecording(generation = mediaGenerationRef.current) {
+    if (generation !== mediaGenerationRef.current) return;
     const session = recordingSessionRef.current;
     if (!session) return;
     recordingSessionRef.current = null;
@@ -723,68 +376,74 @@ export function DuckDub() {
     }
     try {
       const blob = await session.stop();
-      if (!mountedRef.current || generation !== generationRef.current) return;
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
       recordingControllerRef.current = null;
-      pendingBlobRef.current = blob;
       const lineId = pendingLineIdRef.current;
-      if (lineId) replaceTakePreview(blob, lineId);
-      dispatch({ type: "SAVE_STARTED" });
-      await uploadPendingBlob(generation);
+      if (!lineId) return;
+      pendingBlobRef.current = blob;
+      replaceTakePreview(blob, lineId);
+      dispatch({ type: "OPERATION_STARTED", operation: "saving" });
+      await uploadPendingTake(generation);
     } catch (error) {
-      if (generation !== generationRef.current || isAbortError(error)) return;
+      if (generation !== mediaGenerationRef.current || isAbortError(error)) return;
       recordingControllerRef.current = null;
-      dispatch({ type: "RETAKE" });
-      setOperationError("The recording did not finish. Try recording the line again.");
+      pendingLineIdRef.current = null;
+      dispatch({ type: "OPERATION_FINISHED" });
+      dispatch({ type: "SET_ERROR", message: "The recording did not finish. Try recording the line again." });
+      focusAfterRender(recordButtonRef, generation);
     }
   }
 
-  async function handleRecord() {
-    stopOperations(true);
-    const generation = generationRef.current;
+  async function startRecording() {
+    if (isUnsafeOperation(state.operation)) return;
+    const generation = cancelMedia(true);
+    const lineId = DUB_LINES[state.selectedLineIndex].id;
     const controller = new AbortController();
     recordingControllerRef.current = controller;
-    pendingLineIdRef.current = DUB_LINES[state.currentLineIndex].id;
-    setOperationError("");
-    dispatch({ type: "MIC_OPENING" });
+    pendingLineIdRef.current = lineId;
+    dispatch({ type: "OPERATION_STARTED", operation: "mic-opening" });
     try {
       const session = await startSpeechRecording({ signal: controller.signal });
-      if (!mountedRef.current || generation !== generationRef.current) {
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         session.cancel();
         return;
       }
       recordingSessionRef.current = session;
-      dispatch({ type: "MIC_STARTED" });
+      dispatch({ type: "OPERATION_STARTED", operation: "recording" });
       recordingTimerRef.current = setTimeout(() => {
         void finishRecording(generation);
       }, DUB_RECORDING_MS);
     } catch (error) {
-      if (controller.signal.aborted || generation !== generationRef.current) return;
+      if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
       recordingControllerRef.current = null;
       pendingLineIdRef.current = null;
-      dispatch({ type: "RETAKE" });
-      setOperationError(microphoneMessage(error));
-      requestAnimationFrame(() => {
-        if (mountedRef.current && generation === generationRef.current) {
-          recordButtonRef.current?.focus();
-        }
-      });
+      dispatch({ type: "OPERATION_FINISHED" });
+      dispatch({ type: "SET_ERROR", message: microphoneMessage(error) });
+      focusAfterRender(recordButtonRef, generation);
     }
   }
 
-  function playGuide(lineIndex: number) {
-    guideControllerRef.current?.abort();
-    takeControllerRef.current?.abort();
-    takeControllerRef.current = null;
-    setTakePlaying(false);
-    const generation = generationRef.current;
+  function handleRecord() {
+    if (state.operation === "recording") {
+      void finishRecording();
+      return;
+    }
+    if (isUnsafeOperation(state.operation)) return;
+    void startRecording();
+  }
+
+  function handleHearGuide() {
+    if (isUnsafeOperation(state.operation)) return;
+    const generation = cancelMedia(false);
     const controller = new AbortController();
     guideControllerRef.current = controller;
-    setOperationError("");
+    dispatch({ type: "OPERATION_STARTED", operation: "guide-playing" });
     let guide;
     try {
-      guide = getStaticAudioLineForSpeech("narrator", DUB_LINES[lineIndex].text);
+      guide = getStaticAudioLineForSpeech("narrator", DUB_LINES[state.selectedLineIndex].text);
     } catch {
-      setOperationError("I could not play that example. You can still record the words you see.");
+      dispatch({ type: "OPERATION_FINISHED" });
+      dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
       return;
     }
     void playAudioLine({
@@ -793,280 +452,329 @@ export function DuckDub() {
       lang: guide.lang,
       signal: controller.signal,
       text: guide.text,
-    })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
-        setOperationError("I could not play that example. You can still record the words you see.");
-      })
-      .finally(() => {
-        if (guideControllerRef.current === controller) guideControllerRef.current = null;
-      });
-  }
-
-  function handleHearGuide() {
-    playGuide(state.currentLineIndex);
+    }).catch((error: unknown) => {
+      if (controller.signal.aborted || isAbortError(error)) return;
+      dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
+    }).finally(() => {
+      if (generation !== mediaGenerationRef.current || guideControllerRef.current !== controller) return;
+      guideControllerRef.current = null;
+      dispatch({ type: "OPERATION_FINISHED" });
+    });
   }
 
   function handleHearTake() {
+    if (state.operation === "take-playing") {
+      cancelMedia(false);
+      dispatch({ type: "OPERATION_FINISHED" });
+      return;
+    }
+    if (isUnsafeOperation(state.operation)) return;
     const preview = takePreviewRef.current;
     if (!preview) return;
-    guideControllerRef.current?.abort();
-    guideControllerRef.current = null;
-    takeControllerRef.current?.abort();
+    const generation = cancelMedia(false);
     const controller = new AbortController();
     takeControllerRef.current = controller;
-    setOperationError("");
-    setTakePlaying(true);
-    void playAudioLine({
-      audioSrc: preview.url,
-      signal: controller.signal,
-      text: DUB_LINES[state.currentLineIndex].text,
-    })
+    dispatch({ type: "OPERATION_STARTED", operation: "take-playing" });
+    const line = DUB_LINES.find(({ id }) => id === preview.lineId) ?? DUB_LINES[state.selectedLineIndex];
+    void playAudioLine({ audioSrc: preview.url, signal: controller.signal, text: line.text })
       .catch((error: unknown) => {
         if (controller.signal.aborted || isAbortError(error)) return;
-        setOperationError("Your recording could not be played. Record the line again.");
+        dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
       })
       .finally(() => {
-        if (takeControllerRef.current !== controller) return;
+        if (generation !== mediaGenerationRef.current || takeControllerRef.current !== controller) return;
         takeControllerRef.current = null;
-        setTakePlaying(false);
+        dispatch({ type: "OPERATION_FINISHED" });
       });
   }
 
-  function handleStopTake() {
-    takeControllerRef.current?.abort();
-    takeControllerRef.current = null;
-    setTakePlaying(false);
+  function resolveLineAudio(line: DubLine): DubAudioSource {
+    return resolveDubLineAudioSource(line, state.saved);
   }
 
-  async function handleWatch() {
-    stopOperations(false);
-    const generation = generationRef.current;
-    const controller = new AbortController();
-    finalControllerRef.current = controller;
-    setPlaybackLineIndex(0);
-    setOperationError("");
-    dispatch({ type: "FINAL_LOADING" });
-    try {
-      const playback = await startDubPlayback({
-        onTick(elapsedMs) {
-          if (generation !== generationRef.current) return;
-          setPlaybackLineIndex(DUB_LINES.indexOf(getDubLineAtElapsed(elapsedMs)));
-          if (elapsedMs >= DUB_DURATION_MS) {
-            finalPlaybackRef.current?.stop();
-            finalPlaybackRef.current = null;
-            finalControllerRef.current = null;
-            dispatch({ type: "FINAL_FINISHED" });
-          }
-        },
-        signal: controller.signal,
-      });
-      if (!mountedRef.current || generation !== generationRef.current) {
-        playback.stop();
-        return;
-      }
-      finalPlaybackRef.current = playback;
-      dispatch({ type: "FINAL_STARTED" });
-    } catch (error) {
-      if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
-      finalControllerRef.current = null;
-      if (error instanceof DubLinePlaybackError && error.stage === "decode") {
-        dispatch({ type: "SELECT_LINE", lineId: error.lineId });
-        dispatch({ type: "RETAKE" });
-        const lineIndex = DUB_LINES.findIndex(({ id }) => id === error.lineId);
-        if (lineIndex >= 0) playGuide(lineIndex);
-        setOperationError("That take could not play. Record this line again.");
-        requestAnimationFrame(() => {
-          if (mountedRef.current && generation === generationRef.current) {
-            recordButtonRef.current?.focus();
-          }
-        });
-        return;
-      }
-      dispatch({ type: "FINAL_FINISHED" });
-      setOperationError("Your saved dub could not be played. Try again.");
+  async function startPlayback(scope: "full" | "scene") {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    if (
+      (state.operation === "playback" || state.operation === "playback-loading")
+      && state.playbackScope === scope
+    ) {
+      cancelMedia(false);
+      dispatch({ type: "OPERATION_FINISHED" });
+      return;
     }
-  }
-
-  function finishVersePreview(sourceState: DubState, message = "") {
-    stopOperations(true);
-    const nextState = reduceDubState(sourceState, { type: "VERSE_FINISHED" });
-    dispatch({ type: "VERSE_FINISHED" });
-    if (nextState.phase === "line-ready") {
-      playGuide(nextState.currentLineIndex);
-    }
-    requestAnimationFrame(() => recordButtonRef.current?.focus());
-    setOperationError(message);
-  }
-
-  async function handleVersePreview() {
-    stopOperations(false);
-    const generation = generationRef.current;
+    const generation = cancelMedia(false);
     const controller = new AbortController();
-    const verseIndex = Math.floor(state.currentLineIndex / DUB_LINES_PER_VERSE);
-    const lines = DUB_VERSES[verseIndex];
-    finalControllerRef.current = controller;
-    setPlaybackLineIndex(verseIndex * DUB_LINES_PER_VERSE);
-    setOperationError("");
-    dispatch({ type: "VERSE_LOADING" });
+    const sceneIndex = state.selectedSceneIndex;
+    const lines = scope === "full" ? DUB_LINES : DUB_VERSES[sceneIndex];
+    const unavailableLineIds = new Set<DubLine["id"]>();
+    playbackControllerRef.current = controller;
+    setPlaybackLineIndex(scope === "full" ? 0 : sceneIndex * DUB_LINES_PER_VERSE);
+    dispatch({ type: "OPERATION_STARTED", operation: "playback-loading", playbackScope: scope });
     try {
       const playback = await startDubPlayback({
         lines,
         onEnded() {
-          if (generation !== generationRef.current) return;
-          finishVersePreview(state);
+          if (generation !== mediaGenerationRef.current) return;
+          playbackRef.current = null;
+          playbackControllerRef.current = null;
+          dispatch({ type: "OPERATION_FINISHED" });
+          focusAfterRender(
+            scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
+            generation,
+          );
+        },
+        onLineFallback(lineId) {
+          dispatch({ type: "MARK_NEEDS_RETAKE", lineId });
+        },
+        onLineUnavailable(lineId) {
+          unavailableLineIds.add(lineId);
         },
         onTick(elapsedMs) {
-          if (generation !== generationRef.current) return;
-          setPlaybackLineIndex(DUB_LINES.indexOf(
-            getDubVerseLineAtElapsed(verseIndex, elapsedMs),
-          ));
+          if (generation !== mediaGenerationRef.current) return;
+          const line = scope === "full"
+            ? getDubLineAtElapsed(elapsedMs)
+            : getDubVerseLineAtElapsed(sceneIndex, elapsedMs);
+          setPlaybackLineIndex(DUB_LINES.indexOf(line));
         },
+        resolveAudioSource: resolveLineAudio,
         signal: controller.signal,
       });
-      if (!mountedRef.current || generation !== generationRef.current) {
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         playback.stop();
         return;
       }
-      finalPlaybackRef.current = playback;
-      dispatch({ type: "VERSE_STARTED" });
+      playbackRef.current = playback;
+      dispatch({ type: "OPERATION_STARTED", operation: "playback", playbackScope: scope });
+      const unavailableMessage = DUB_LINES
+        .filter(({ id }) => unavailableLineIds.has(id))
+        .map(({ id }) => unavailableLineMessage(id))
+        .join(" ");
+      if (unavailableMessage) dispatch({ type: "SET_ERROR", message: unavailableMessage });
     } catch (error) {
-      if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
-      finalControllerRef.current = null;
-      if (error instanceof DubLinePlaybackError && error.stage === "decode") {
-        clearTakePreview();
-        dispatch({ type: "SELECT_LINE", lineId: error.lineId });
-        dispatch({ type: "RETAKE" });
-        const lineIndex = DUB_LINES.findIndex(({ id }) => id === error.lineId);
-        if (lineIndex >= 0) playGuide(lineIndex);
-        setOperationError("That take could not play. Record this line again.");
-        requestAnimationFrame(() => recordButtonRef.current?.focus());
-        return;
-      }
-      dispatch({ type: "VERSE_FAILED" });
-      setOperationError("That verse could not play. Choose Next line to try again.");
-      requestAnimationFrame(() => nextButtonRef.current?.focus());
+      if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
+      playbackControllerRef.current = null;
+      dispatch({ type: "OPERATION_FINISHED" });
+      dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
     }
   }
 
-  function handleStopPlayback() {
-    stopOperations(false);
-    dispatch({ type: "FINAL_FINISHED" });
+  function handleContinue() {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    const generation = cancelMedia(true);
+    dispatch({ type: "CONTINUE" });
+    focusAfterRender(sceneHeadingRef, generation);
+  }
+
+  function handleOpenScene(sceneIndex: number) {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    const generation = cancelMedia(true);
+    dispatch({ type: "OPEN_SCENE", sceneIndex });
+    focusAfterRender(sceneHeadingRef, generation);
+  }
+
+  function handleSelectLine(lineId: string) {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    const generation = cancelMedia(lineId !== DUB_LINES[state.selectedLineIndex].id);
+    dispatch({ type: "SELECT_LINE", lineId });
+    focusAfterRender(lineHeadingRef, generation);
+  }
+
+  function handleBack() {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    cancelMedia(true);
+    dispatch({ type: "BACK_TO_PROJECT" });
+  }
+
+  function handleRetrySave() {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery !== "save") return;
+    const generation = cancelMedia(false);
+    dispatch({ type: "OPERATION_STARTED", operation: "saving" });
+    void uploadPendingTake(generation);
   }
 
   async function handleDelete() {
+    if (isUnsafeOperation(state.operation)) return;
     if (!window.confirm("Grown-up: delete every saved voice clip in this dub?")) return;
-    stopOperations(true);
-    const generation = generationRef.current;
+    cancelMedia(true);
+    statusControllerRef.current?.abort();
+    statusControllerRef.current = null;
     const controller = new AbortController();
     deleteControllerRef.current = controller;
-    setIsDeleting(true);
     setLoadError("");
-    setOperationError("");
+    dispatch({ type: "OPERATION_STARTED", operation: "deleting" });
     try {
       await deleteDub({ signal: controller.signal });
-      if (!mountedRef.current || generation !== generationRef.current) return;
+      if (!mountedRef.current || deleteControllerRef.current !== controller) return;
+      cancelMedia(true);
       setConfirmed(false);
       setResetInterrupted(false);
       setPlaybackLineIndex(0);
       dispatch({ type: "RESET_SUCCEEDED" });
     } catch (error) {
-      if (controller.signal.aborted || generation !== generationRef.current) return;
+      if (controller.signal.aborted) return;
       setResetInterrupted(false);
-      setOperationError(error instanceof Error ? error.message : "Your saved dub was not deleted.");
+      const message = error instanceof Error ? error.message : "Your saved dub was not deleted.";
+      if (state.view === "project" || state.view === "scene") {
+        dispatch({ type: "SET_ERROR", message });
+      } else {
+        setLoadError(message);
+      }
+      dispatch({ type: "OPERATION_FINISHED" });
     } finally {
       if (deleteControllerRef.current === controller) deleteControllerRef.current = null;
-      if (mountedRef.current && generation === generationRef.current) setIsDeleting(false);
     }
-  }
-
-  function handleRetake() {
-    stopOperations(true);
-    setOperationError("");
-    dispatch({ type: "RETAKE" });
-    playGuide(state.currentLineIndex);
-  }
-
-  function handleSelectLine(lineId: string) {
-    setOperationError("");
-    dispatch({ type: "SELECT_LINE", lineId });
-  }
-
-  function handleNext() {
-    if (state.phase === "intro") {
-      if (confirmed) {
-        const nextState = reduceDubState(state, { type: "CONFIRMED" });
-        scrollContainerRef.current?.scrollTo({ top: 0 });
-        dispatch({ type: "CONFIRMED" });
-        if (nextState.phase === "line-ready") playGuide(nextState.currentLineIndex);
-      }
-      return;
-    }
-    if (state.phase === "verse-loading" || state.phase === "verse-playing") {
-      finishVersePreview(state);
-      return;
-    }
-    if (
-      state.phase === "line-review" &&
-      state.lineMode === "fresh" &&
-      state.currentLineIndex % DUB_LINES_PER_VERSE === DUB_LINES_PER_VERSE - 1
-    ) {
-      void handleVersePreview();
-      return;
-    }
-    stopOperations(true);
-    setOperationError("");
-    const nextState = reduceDubState(state, { type: "NEXT_LINE" });
-    dispatch({ type: "NEXT_LINE" });
-    if (nextState.phase === "line-ready") playGuide(nextState.currentLineIndex);
-  }
-
-  function handleSaveAgain() {
-    stopOperations(false);
-    const generation = generationRef.current;
-    dispatch({ type: "SAVE_STARTED" });
-    void uploadPendingBlob(generation);
   }
 
   function handleRetryLoad() {
-    setOperationError("");
-    setLoadSequence((current) => current + 1);
+    if (isUnsafeOperation(state.operation)) return;
+    setLoadError("");
+    setResetInterrupted(false);
+    dispatch({ type: "SET_ERROR", message: "" });
+    setLoadSequence((sequence) => sequence + 1);
   }
 
-  const activeLine =
-    state.phase === "final-playing" ||
-    state.phase === "verse-loading" ||
-    state.phase === "verse-playing"
-      ? DUB_LINES[playbackLineIndex]
-      : DUB_LINES[state.currentLineIndex];
+  const selectedLine = DUB_LINES[state.selectedLineIndex];
+  const playbackLine = DUB_LINES[playbackLineIndex] ?? selectedLine;
+  const visualLine = state.operation === "playback" || state.operation === "playback-loading"
+    ? playbackLine
+    : selectedLine;
+  const deleting = state.operation === "deleting";
+  const locked = isControlLocked(state.operation);
+  const selectedSceneNumber = state.selectedSceneIndex + 1;
+  const selectedSceneLineNumber = state.selectedLineIndex % DUB_LINES_PER_VERSE + 1;
+  const playbackSceneNumber = Math.floor(playbackLineIndex / DUB_LINES_PER_VERSE) + 1;
+  const playbackSceneLineNumber = playbackLineIndex % DUB_LINES_PER_VERSE + 1;
+  const savedCount = Object.keys(state.saved).length;
+  let liveStatus = "Ready for grown-up consent.";
+  const activeError = state.error || loadError;
+  if (state.operation === "deleting") {
+    liveStatus = "Deleting your dub…";
+  } else if (state.operation === "mic-opening") {
+    liveStatus = "Opening microphone…";
+  } else if (state.operation === "recording") {
+    liveStatus = "Recording…";
+  } else if (state.operation === "saving") {
+    liveStatus = "Saving your take…";
+  } else if (state.operation === "guide-playing") {
+    liveStatus = `Playing example for Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber}.`;
+  } else if (state.operation === "take-playing") {
+    liveStatus = `Playing your recording for Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber}.`;
+  } else if (state.operation === "playback-loading") {
+    liveStatus = state.playbackScope === "full" ? "Loading full video…" : "Loading scene…";
+  } else if (state.operation === "playback") {
+    liveStatus = state.playbackScope === "full"
+      ? `Playing full video: Scene ${playbackSceneNumber}, line ${playbackSceneLineNumber}.`
+      : `Playing Scene ${state.selectedSceneIndex + 1}: line ${playbackSceneLineNumber}.`;
+  } else if (activeError) {
+    liveStatus = activeError;
+  } else if (state.view === "loading") {
+    liveStatus = "Loading your private dub…";
+  } else if (state.view === "project") {
+    liveStatus = `${savedCount} of ${DUB_LINES.length} voice clips recorded.`;
+  } else if (state.view === "scene") {
+    const selectedState = Object.hasOwn(state.needsRetake, selectedLine.id)
+      ? "Needs retake"
+      : Object.hasOwn(state.saved, selectedLine.id)
+        ? "Recorded"
+        : "Generated";
+    liveStatus = `Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber} selected. ${selectedState}.`;
+  }
+
+  let content;
+  if (state.view === "loading") {
+    content = (
+      <DubLoading
+        deleting={deleting}
+        error={loadError}
+        onDelete={() => void handleDelete()}
+        onRetryLoad={handleRetryLoad}
+        resetInterrupted={resetInterrupted}
+      />
+    );
+  } else if (state.view === "intro") {
+    content = (
+      <DubEntry
+        confirmed={confirmed}
+        deleting={deleting}
+        error={loadError}
+        onConfirm={setConfirmed}
+        onDelete={() => void handleDelete()}
+        onEnter={() => confirmed && !isUnsafeOperation(state.operation) && dispatch({ type: "CONFIRMED" })}
+        onRetryLoad={handleRetryLoad}
+        resetInterrupted={resetInterrupted}
+        savedCount={savedCount}
+      />
+    );
+  } else if (state.view === "project") {
+    content = (
+      <DubProjectHome
+        activeLine={selectedLine}
+        deleting={deleting}
+        error={state.error}
+        locked={locked}
+        needsRetake={new Set(Object.keys(state.needsRetake))}
+        onContinue={handleContinue}
+        onDelete={() => void handleDelete()}
+        onOpenScene={handleOpenScene}
+        onTogglePlayback={() => void startPlayback("full")}
+        playback={state.playbackScope === "full"
+          ? state.operation === "playback"
+            ? "playing"
+            : state.operation === "playback-loading"
+              ? "loading"
+              : "idle"
+          : "idle"}
+        playbackButtonRef={fullPlaybackButtonRef}
+        saved={state.saved}
+        visualLine={visualLine}
+      />
+    );
+  } else {
+    content = (
+      <DubSceneEditor
+        activeLine={selectedLine}
+        activeSceneIndex={state.selectedSceneIndex}
+        error={state.error}
+        locked={locked}
+        needsRetake={new Set(Object.keys(state.needsRetake))}
+        onBack={handleBack}
+        onHearGuide={handleHearGuide}
+        onHearTake={handleHearTake}
+        onRecord={handleRecord}
+        onRetrySave={handleRetrySave}
+        onSelectLine={handleSelectLine}
+        onToggleScenePlayback={() => void startPlayback("scene")}
+        operation={state.operation}
+        pendingTake={takePreview?.blob ?? null}
+        playbackButtonRef={scenePlaybackButtonRef}
+        recordButtonRef={recordButtonRef}
+        saveButtonRef={saveButtonRef}
+        saveRecovery={state.saveRecovery}
+        sceneHeadingRef={sceneHeadingRef}
+        saved={state.saved}
+        lineHeadingRef={lineHeadingRef}
+        visualLine={visualLine}
+      />
+    );
+  }
 
   return (
-    <DuckDubView
-      confirmed={confirmed}
-      isDeleting={isDeleting}
-      line={activeLine}
-      loadError={loadError || operationError}
-      mainRef={scrollContainerRef}
-      nextButtonRef={nextButtonRef}
-      onConfirm={setConfirmed}
-      onDelete={() => void handleDelete()}
-      onHearGuide={handleHearGuide}
-      onHearTake={handleHearTake}
-      onNext={handleNext}
-      onRecord={() => void handleRecord()}
-      onRetake={handleRetake}
-      onRetryLoad={handleRetryLoad}
-      onSaveAgain={handleSaveAgain}
-      onSelectLine={handleSelectLine}
-      onStopPlayback={handleStopPlayback}
-      onStopRecording={() => void finishRecording()}
-      onStopTake={handleStopTake}
-      onWatch={() => void handleWatch()}
-      recordButtonRef={recordButtonRef}
-      resetInterrupted={resetInterrupted}
-      state={state.error || !operationError ? state : { ...state, error: operationError }}
-      takeBlob={takePreview?.blob}
-      takePlaying={takePlaying}
-    />
+    <>
+      <RouteHeader>
+        <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
+          Back home
+        </HeaderLink>
+      </RouteHeader>
+      <span
+        aria-atomic="true"
+        aria-label="Dub updates"
+        aria-live="polite"
+        className="sr-only"
+        role="status"
+      >
+        {liveStatus}
+      </span>
+      {content}
+    </>
   );
 }

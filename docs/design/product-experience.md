@@ -137,28 +137,32 @@ guardian-only.
 ## Dub a Rhyme
 
 Five Little Ducks is a durable authenticated studio at
-`/dubs/five-little-ducks`. A grown-up confirms before the learner records the
-authentic traditional six-stanza rhyme one line at a time. Its 24 lines count
-down from five ducklings to none, then end with sad mother duck bringing all
-five home. Progress is saved to the signed-in account, resumes at the first
-missing line, and is presented as six four-line verses rather than one long
-24-step task. Completing each verse plays those four saved voice clips with the
-matching animation and music before the next verse opens. All six verses unlock
-one synchronized 98-second final performance.
+`/dubs/five-little-ducks`. A grown-up confirms before recording private voice
+clips. After confirmation, the learner opens a full-video project home: the
+98-second duck video is prominent, its six scene controls are always selectable,
+and the project bar shows the number of the rhyme's 24 clips that are recorded.
+**Continue Scene** opens the first missing line, but the learner can instead
+open any scene at any time. Each scene contains four independent line clips;
+opening an incomplete scene selects its first missing line, while a completed
+scene opens for review.
 
-Voice clips are private to the account. The guided flow does not expose
-unrelated options or require the learner to infer a workflow. Entering a line
-plays its checked-in ElevenLabs narrator example; **Replay example** remains a
-secondary action. The current **Now read** lyric is much larger than the compact
-title, and the full-screen desktop studio gives most of its width and height to
-the animated scene.
+The full video and every four-line scene can play as a draft at any completion
+level. Saved clips use private account audio and unfinished clips use their
+checked-in ElevenLabs guide audio, synchronized with the matching animation and
+music. A saved clip that cannot load or decode falls back to its guide and marks
+that line's scene **Needs retake** for this browser session only. If both sources
+fail, the animation and music continue without that voice and identify the
+affected line. A reload clears the Needs retake marker until playback discovers
+the failure again.
 
-After each recording, the learner can immediately choose **Hear my voice** and
-see a waveform decoded from the actual local take. **Record**, **Stop**, and
-**Record again** always occupy the left action slot; **Next line** always stays
-in the right slot and remains disabled until the take is saved. This predictable
-layout gives feedback after four lines without making the learner finish all 24
-before hearing a performance.
+The focused scene recorder shows the selected lyric, **Hear example**, and a
+fixed recording action that changes among **Record line**, **Stop recording**,
+and **Record again**. There is no countdown: recording starts as soon as
+microphone access is ready and stops early or after its six-second limit. After
+recording, the learner can see the decoded waveform and use **Hear my voice**.
+Saving keeps the learner on the same line for review, replacement, scene
+playback, another line choice, or return to the full video; there is no required
+Next action or automatic advancement.
 Saved lines can be replaced and the complete dub can be reset from closed
 grown-up options. The welcome screen exposes the same closed grown-up section
 when saved progress exists, allowing unfinished or legacy recordings to be
@@ -179,8 +183,8 @@ recognition.
   primitives.
 - Respect reduced motion and prevent horizontal overflow from 280 px upward.
 - Keep lesson controls clear of characters, speech, and the account header.
-- In the dubbing studio, keep the active lyric visually dominant, the title
-  compact, and the fixed Record/Next action slots in the same physical places.
+- In the dubbing studio, keep the full video dominant on project home and the
+  selected lyric and fixed recording action clear in the scene editor.
 
 ## Content Boundaries
 
