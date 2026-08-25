@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { DUB_LINES, type DubLine } from "./dub-script.ts";
 
 const sceneDescriptions = {
@@ -47,11 +48,14 @@ export function DuckScene({
   compact = false,
   line = DUB_LINES[0],
   playing = false,
+  thumbnail = false,
 }: {
   compact?: boolean;
   line?: DubLine;
   playing?: boolean;
+  thumbnail?: boolean;
 }) {
+  const skyGradientId = useId();
   const showMama = line.visualBeat === "mother-calls"
     || line.visualBeat.startsWith("sad-mother")
     || line.visualBeat === "five-return";
@@ -68,6 +72,42 @@ export function DuckScene({
       ? [[625, 360], [705, 330], [785, 350], [835, 310], [890, 340]] as const
       : returnPositions;
 
+  const art = (
+    <svg
+      aria-hidden="true"
+      className="block h-full min-h-0 w-full"
+      viewBox="0 0 960 540"
+    >
+      <defs>
+        <linearGradient id={skyGradientId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#8dd8ff" />
+          <stop offset="1" stopColor="#ffe6a7" />
+        </linearGradient>
+      </defs>
+      <rect fill={`url(#${skyGradientId})`} height="540" width="960" />
+      <circle cx="815" cy="92" fill="#fff3a6" r="54" />
+      <path d="M0 275 Q145 115 335 270 Q520 88 760 275 Q865 185 960 250 V390 H0Z" fill="#70bd65" />
+      <path d="M0 322 Q235 262 475 320 Q720 245 960 315 V540 H0Z" fill="#328c58" />
+      <ellipse cx="500" cy="420" fill="#41b7d8" rx="430" ry="125" />
+      <ellipse cx="500" cy="426" fill="none" opacity=".55" rx="340" ry="78" stroke="#d9f8ff" strokeWidth="8" />
+      <g fill="#49a942">
+        <ellipse cx="175" cy="435" rx="52" ry="18" />
+        <ellipse cx="700" cy="455" rx="59" ry="19" />
+        <ellipse cx="825" cy="402" rx="42" ry="14" />
+      </g>
+      <g fill="none" stroke="#4d913e" strokeLinecap="round" strokeWidth="10">
+        <path d="M95 390 78 300M115 393 122 292M136 402 157 314" />
+        <path d="M835 390 822 290M858 394 869 280M887 405 906 315" />
+      </g>
+      {duckPositions.slice(0, line.duckCount).map(([x, y], index) => (
+        <Duck delay={index * 90} key={`${x}-${y}`} playing={playing} x={x} y={y} />
+      ))}
+      {showMama ? <Duck delay={0} mama playing={playing} x={135} y={330} /> : null}
+    </svg>
+  );
+
+  if (thumbnail) return art;
+
   return (
     <figure
       className={
@@ -76,37 +116,7 @@ export function DuckScene({
           : "m-0 grid min-h-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
       }
     >
-      <svg
-        aria-hidden="true"
-        className="block h-full min-h-0 w-full"
-        viewBox="0 0 960 540"
-      >
-        <defs>
-          <linearGradient id="duck-sky-gradient" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="#8dd8ff" />
-            <stop offset="1" stopColor="#ffe6a7" />
-          </linearGradient>
-        </defs>
-        <rect fill="url(#duck-sky-gradient)" height="540" width="960" />
-        <circle cx="815" cy="92" fill="#fff3a6" r="54" />
-        <path d="M0 275 Q145 115 335 270 Q520 88 760 275 Q865 185 960 250 V390 H0Z" fill="#70bd65" />
-        <path d="M0 322 Q235 262 475 320 Q720 245 960 315 V540 H0Z" fill="#328c58" />
-        <ellipse cx="500" cy="420" fill="#41b7d8" rx="430" ry="125" />
-        <ellipse cx="500" cy="426" fill="none" opacity=".55" rx="340" ry="78" stroke="#d9f8ff" strokeWidth="8" />
-        <g fill="#49a942">
-          <ellipse cx="175" cy="435" rx="52" ry="18" />
-          <ellipse cx="700" cy="455" rx="59" ry="19" />
-          <ellipse cx="825" cy="402" rx="42" ry="14" />
-        </g>
-        <g fill="none" stroke="#4d913e" strokeLinecap="round" strokeWidth="10">
-          <path d="M95 390 78 300M115 393 122 292M136 402 157 314" />
-          <path d="M835 390 822 290M858 394 869 280M887 405 906 315" />
-        </g>
-        {duckPositions.slice(0, line.duckCount).map(([x, y], index) => (
-          <Duck delay={index * 90} key={`${x}-${y}`} playing={playing} x={x} y={y} />
-        ))}
-        {showMama ? <Duck delay={0} mama playing={playing} x={135} y={330} /> : null}
-      </svg>
+      {art}
       <figcaption className={compact ? "sr-only" : "bg-white/90 px-4 py-2 text-center font-ui text-sm font-black text-brand-navy"}>
         {sceneDescriptions[line.visualBeat]}
       </figcaption>

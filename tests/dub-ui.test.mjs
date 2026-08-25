@@ -88,6 +88,26 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
   });
 
+  it("keeps full figure markup out of the six scene buttons", () => {
+    const html = renderProjectHome();
+    const sceneButtons = html.match(
+      /<button(?=[^>]*aria-label="Scene \d,)[\s\S]*?<\/button>/g,
+    ) ?? [];
+
+    assert.equal(sceneButtons.length, 6);
+    assert.doesNotMatch(sceneButtons.join(""), /<figure\b/);
+  });
+
+  it("gives every rendered duck SVG a document-unique ID", () => {
+    const html = renderProjectHome();
+    const svgIds = [...html.matchAll(/<svg\b[\s\S]*?<\/svg>/g)].flatMap(
+      ([svg]) => [...svg.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]),
+    );
+
+    assert.equal(svgIds.length, 7);
+    assert.equal(new Set(svgIds).size, svgIds.length);
+  });
+
   it("keeps every scene selectable after all clips are recorded", () => {
     const html = renderProjectHome({
       activeLine: DUB_LINES[23],

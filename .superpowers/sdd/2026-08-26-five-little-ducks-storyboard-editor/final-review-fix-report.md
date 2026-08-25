@@ -63,11 +63,17 @@ new dependency was added.
    `cancelMedia(true)`, revoking the current local take even when selection did
    not change. Reselecting the active line now stops media with
    `cancelMedia(false)`; changing lines still discards the take.
-9. **Object URL evidence:** the E2E harness did not observe browser object URL
-   ownership. It now instruments create/revoke operations and verifies retained
-   same-line review plus exactly-once cleanup for replacement, changed-line
-   selection, Back, rejected upload, deletion, and route unmount. The unmount
-   assertion polls the passive-effect cleanup rather than racing it.
+9. **Object URL evidence — ADDRESSED:** the E2E harness did not observe browser
+   object URL ownership. It now instruments create/revoke operations and
+   verifies retained same-line review plus exactly-once cleanup for replacement,
+   changed-line selection, Back, rejected upload, and route unmount. Delete is
+   available only on the project home while a live preview exists only in the
+   scene editor, so Back necessarily revokes the preview before Delete becomes
+   reachable; the combined Back/delete coverage verifies deletion does not
+   double-revoke it. The reviewer verified that live-preview/deletion
+   coexistence is unreachable and reclassified original finding 9 as
+   **ADDRESSED**. The unmount assertion polls passive-effect cleanup rather than
+   racing it.
 
 ## RED evidence
 
@@ -168,3 +174,54 @@ No functional concern remains for the accepted findings. The only observed
 warnings are the two pre-existing generated-type lint warnings and Vite's
 non-failing chunk-size advisory noted above. No deployment or external state
 change was performed.
+
+## Residual review follow-up after `2ca587a`
+
+The residual reviewer confirmed original finding 9 as **ADDRESSED** for the
+unreachable deletion/live-preview state described above, and identified one
+separate markup breakage: the six representative scene thumbnails reused the
+full `DuckScene` figure markup inside their buttons and all seven rendered duck
+SVGs reused `id="duck-sky-gradient"`.
+
+### RED
+
+Two focused SSR assertions were added before production changes:
+
+```text
+node --test tests/dub-ui.test.mjs
+17 passed, 2 failed (19 total)
+```
+
+`keeps full figure markup out of the six scene buttons` failed because every
+button contained a `<figure>`. `gives every rendered duck SVG a document-unique
+ID` failed because seven SVG IDs produced a unique-set size of one.
+
+### Correction
+
+`DuckScene` now has an explicit thumbnail rendering mode that returns only its
+hidden SVG art inside the caller's already labeled `role="img"`. Ordinary and
+compact scene presentations retain their figure and adjacent caption contract.
+React `useId` supplies a stable document-unique gradient ID and the matching
+local paint reference for every rendered instance.
+
+### GREEN
+
+```text
+node --test tests/dub-ui.test.mjs
+19 passed, 0 failed
+
+PLAYWRIGHT_PORT=4199 npx playwright test tests/e2e/dubbing.spec.ts
+43 passed, 0 failed
+
+npm run build
+passed (TypeScript and Vite production build)
+
+npm run lint
+passed with 0 errors and the same 2 pre-existing generated-type warnings
+
+git diff --check
+passed with no output
+```
+
+Vite also repeated the existing non-failing chunk-size advisory. No API,
+storage, consent, deletion, recording, or external state behavior changed.

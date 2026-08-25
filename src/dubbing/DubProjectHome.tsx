@@ -127,7 +127,7 @@ export function DubProjectHome({
                   variant={selected ? "navy" : "surface"}
                 >
                   <span aria-label={`Scene ${sceneIndex + 1} thumbnail`} className="block h-10 w-full overflow-hidden rounded-lg short-wide:h-7" role="img">
-                    <DuckScene compact line={lines[0]} />
+                    <DuckScene line={lines[0]} thumbnail />
                   </span>
                   <span>Scene {sceneIndex + 1}</span>
                   <span className="text-xs normal-case short-wide:text-[0.65rem]">{statusLabel}</span>
