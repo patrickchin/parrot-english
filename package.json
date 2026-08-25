@@ -31,6 +31,8 @@
     "verify:backgrounds": "node scripts/verify-background-media.mjs",
     "generate:audio": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
+    "generate:audio:private-story-preview": "node scripts/generate-static-audio.mjs --provider=elevenlabs --private-story-preview",
+    "verify:private-story-isolation": "node scripts/verify-private-story-isolation.mjs",
     "start": "wrangler dev --local --port 3000",
     "preview": "vite preview --host 0.0.0.0",
     "test:e2e": "node scripts/run-maestro-tests.mjs",

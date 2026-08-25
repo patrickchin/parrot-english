@@ -2,11 +2,20 @@ import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, dirname, extname, join } from "node:path";
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from "node:path";
 import process from "node:process";
 import { setTimeout as wait } from "node:timers/promises";
 import { promisify } from "node:util";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { loadPrivateStoryPreview } from "../lib/private-story-preview.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
 const execFileAsync = promisify(execFile);
@@ -144,9 +153,63 @@ function getElevenLabsVoiceSettings(line) {
 }
 
 function getOutputPath(line) {
+  if (line.outputFilePath) {
+    return validatePrivateOutputPath(
+      line.outputFilePath,
+      join(rootDir, "content/private-story-preview"),
+    );
+  }
   if (!outputDir) return join(rootDir, "public", line.src);
 
   return join(outputDir, basename(line.src));
+}
+
+function validatePrivateOutputPath(outputFilePath, previewDirectory) {
+  if (typeof outputFilePath !== "string" || !outputFilePath) {
+    throw new Error("Private audio output must stay inside the private preview directory");
+  }
+  const directory = resolve(previewDirectory);
+  const outputPath = resolve(outputFilePath);
+  const relativePath = relative(directory, outputPath);
+  if (
+    relativePath === ".." ||
+    relativePath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+    isAbsolute(relativePath)
+  ) {
+    throw new Error("Private audio output must stay inside the private preview directory");
+  }
+  return outputPath;
+}
+
+export async function getGenerationLines({
+  includePrivateStories = false,
+  previewDirectory,
+  projectRoot = rootDir,
+} = {}) {
+  if (!includePrivateStories) return STATIC_AUDIO_LINES;
+
+  const directory = resolve(
+    previewDirectory ?? join(projectRoot, "content/private-story-preview"),
+  );
+  const { audioLines } = await loadPrivateStoryPreview({
+    previewDirectory: directory,
+    projectRoot,
+    requireAudio: false,
+  });
+  const privateAudioLines = Object.fromEntries(
+    Object.entries(audioLines).map(([id, line]) => [
+      id,
+      {
+        ...line,
+        outputFilePath: validatePrivateOutputPath(
+          line.outputFilePath,
+          directory,
+        ),
+      },
+    ]),
+  );
+
+  return { ...STATIC_AUDIO_LINES, ...privateAudioLines };
 }
 
 async function requestSpeech(apiKey, line) {
@@ -199,20 +262,30 @@ async function generateAudioFile(apiKey, id, line) {
   return "generated";
 }
 
-if (provider !== "elevenlabs") {
-  throw new Error(`Unsupported TTS provider: ${provider}`);
+async function main() {
+  if (provider !== "elevenlabs") {
+    throw new Error(`Unsupported TTS provider: ${provider}`);
+  }
+
+  const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
+  if (!apiKey) {
+    throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
+  }
+
+  await mkdir(outputDir ?? audioDir, { recursive: true });
+  const lines = await getGenerationLines({
+    includePrivateStories: args.includes("--private-story-preview"),
+    projectRoot: rootDir,
+  });
+
+  for (const [id, line] of Object.entries(lines)) {
+    if (onlyIds.length > 0 && !onlyIds.includes(id)) continue;
+
+    const status = await generateAudioFile(apiKey, id, line);
+    globalThis.console.log(`${status}: ${id} (${provider})`);
+  }
 }
 
-const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
-if (!apiKey) {
-  throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
-}
-
-await mkdir(outputDir ?? audioDir, { recursive: true });
-
-for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
-  if (onlyIds.length > 0 && !onlyIds.includes(id)) continue;
-
-  const status = await generateAudioFile(apiKey, id, line);
-  globalThis.console.log(`${status}: ${id} (${provider})`);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
 }

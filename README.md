@@ -36,6 +36,20 @@ including authentication and Worker APIs. `npm run dev:vite` is only a
 frontend convenience server and cannot provide the Better Auth or speech
 evaluation Worker APIs.
 
+### Private Story Preview
+
+Cloudflare Access must protect the preview before any upload. The private story
+preview directory is ignored by Git; keep its source text and generated audio
+out of tracked files.
+
+```bash
+npm run generate:audio:private-story-preview
+npm run build
+npm run verify:private-story-isolation -- --require-private-inputs
+npm run build:private-story-preview
+npx wrangler versions upload --preview-alias private-story-test-local
+```
+
 ## Local Authentication Setup
 
 Create a local environment file, apply the local D1 migrations, and start the
