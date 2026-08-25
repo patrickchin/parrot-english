@@ -1,8 +1,9 @@
 import { ArrowLeft } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import { saveStoryLevel } from "../learner-profile/learner-profile-api";
+import { isAbortError } from "../media/audio-playback";
 import {
   Card,
   SegmentedButton,
@@ -152,27 +153,58 @@ export function GuardianStorySettings() {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const mountedRef = useRef(false);
+  const saveControllerRef = useRef<AbortController | null>(null);
+  const saveEpochRef = useRef(0);
   const savingRef = useRef(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      saveEpochRef.current += 1;
+      saveControllerRef.current?.abort();
+      saveControllerRef.current = null;
+      savingRef.current = false;
+    };
+  }, []);
 
   async function selectLevel(level: LearnerStoryLevelId) {
     if (savingRef.current || level === profile.storyLevel) return;
+    const controller = new AbortController();
+    const epoch = saveEpochRef.current + 1;
+    saveControllerRef.current?.abort();
+    saveControllerRef.current = controller;
+    saveEpochRef.current = epoch;
     savingRef.current = true;
     setError("");
     setStatusMessage("");
     setIsSaving(true);
+    const isCurrent = () =>
+      mountedRef.current &&
+      !controller.signal.aborted &&
+      saveControllerRef.current === controller &&
+      saveEpochRef.current === epoch;
     try {
-      const result = await saveStoryLevel(level);
+      const result = await saveStoryLevel(level, { signal: controller.signal });
+      if (!isCurrent()) return;
       replaceProfile(result.profile);
       setStatusMessage(`Story level saved: ${getStoryLevel(level).label}.`);
     } catch (caughtError) {
+      if (!isCurrent() || isAbortError(caughtError)) return;
       setError(
         caughtError instanceof Error
           ? caughtError.message
           : "Story settings could not be saved.",
       );
     } finally {
-      savingRef.current = false;
-      setIsSaving(false);
+      if (isCurrent()) {
+        savingRef.current = false;
+        setIsSaving(false);
+      }
+      if (saveControllerRef.current === controller) {
+        saveControllerRef.current = null;
+      }
     }
   }
 

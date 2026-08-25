@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { env } from "node:process";
 import { fileURLToPath } from "node:url";
-import { createElement, useState } from "react";
+import { act, createElement, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test from "node:test";
@@ -71,8 +71,12 @@ test.after(async () => {
   }
 });
 
-function learnerProfile(storyLevel = "first-words") {
+function learnerProfile(
+  storyLevel = "first-words",
+  { id = "learner-mia", name = "Mia" } = {},
+) {
   return {
+    id,
     age: 6,
     answers: {
       legacyAnswers: null,
@@ -83,11 +87,47 @@ function learnerProfile(storyLevel = "first-words") {
     completedAt: "2026-08-25T08:00:00.000Z",
     currentQuestionKey: null,
     description: "Likes animals",
-    name: "Mia",
+    name,
     profileStatus: "completed",
     questionnaireVersion: 2,
     storyLevel,
   };
+}
+
+function SwitchingSettingsProfileProvider({ children, onReplaceProfile }) {
+  const [profile, setProfile] = useState(() => learnerProfile());
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "button",
+      {
+        onClick: () =>
+          setProfile(
+            learnerProfile("early-a1", { id: "learner-noah", name: "Noah" }),
+          ),
+        type: "button",
+      },
+      "Use Noah",
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Active learner" },
+      profile.id,
+    ),
+    createElement(
+      LearnerProfileProvider,
+      {
+        key: profile.id,
+        profile,
+        replaceProfile(nextProfile) {
+          onReplaceProfile(nextProfile);
+          setProfile(nextProfile);
+        },
+      },
+      children,
+    ),
+  );
 }
 
 function artState(overrides = {}) {
@@ -330,6 +370,71 @@ test("saves a level before replacing the loaded profile and announces success wi
     /Story level saved.*Little stories/i,
   );
   assert.equal(document.activeElement, tinyStories);
+});
+
+test("aborts and ignores an old learner's level save after a keyed learner change", async () => {
+  const preference = deferred();
+  const saveSignals = [];
+  const replacedProfiles = [];
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/stories/the-red-ball/personalized-art") {
+      return Response.json({ enabled: true, stories: {} });
+    }
+    if (path === "/api/profile/preferences" && init.method === "PUT") {
+      saveSignals.push(init.signal);
+      return preference.promise;
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/stories"] },
+      createElement(
+        SwitchingSettingsProfileProvider,
+        { onReplaceProfile: (profile) => replacedProfiles.push(profile) },
+        createElement(GuardianStorySettings),
+        createElement(ProfileProbe),
+      ),
+    ),
+  );
+  await click(levelButton(container, "Little stories"));
+  await waitFor(() => assert.equal(saveSignals.length, 1));
+  await click(
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent === "Use Noah",
+    ),
+  );
+
+  assert.ok(saveSignals[0] instanceof AbortSignal);
+  assert.equal(saveSignals[0].aborted, true);
+  await act(async () => {
+    preference.resolve(
+      Response.json({
+        profile: learnerProfile("tiny-stories"),
+        questions: [],
+      }),
+    );
+    await preference.promise;
+    await Promise.resolve();
+  });
+
+  assert.deepEqual(replacedProfiles, []);
+  assert.equal(
+    container.querySelector('output[aria-label="Active learner"]')?.textContent,
+    "learner-noah",
+  );
+  assert.equal(
+    container.querySelector('output[aria-label="Saved story level"]')
+      ?.textContent,
+    "early-a1",
+  );
+  assert.equal(container.querySelector('[role="alert"]'), null);
+  assert.doesNotMatch(
+    container.querySelector('[role="status"]')?.textContent ?? "",
+    /Story level saved|Saving story level/i,
+  );
 });
 
 for (const [status, message] of [

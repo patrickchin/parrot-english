@@ -282,6 +282,52 @@ describe("personalized story art client API", () => {
     assert.equal(request.calls[0][1].body.get("source").type, "image/png");
   });
 
+  it("does not start an upload after cancellation during image normalization", async () => {
+    const { generatePersonalizedStoryArt } = requireClientApi();
+    const controller = new AbortController();
+    let resolveDecode;
+    const decode = new Promise((resolve) => {
+      resolveDecode = resolve;
+    });
+    let uploadCalls = 0;
+    const operation = generatePersonalizedStoryArt(
+      {
+        guardianConsentVersion: "2026-08-09",
+        photo: new File([new Uint8Array([1, 2, 3])], "camera.png", {
+          type: "image/png",
+        }),
+        storyId: "the-red-ball",
+      },
+      {
+        fetch: async () => {
+          uploadCalls += 1;
+          return Response.json({ enabled: true, stories: {} });
+        },
+        normalization: {
+          createCanvas() {
+            return {
+              convertToBlob: async () => new Blob(["png"], { type: "image/png" }),
+              getContext() {
+                return { clearRect() {}, drawImage() {} };
+              },
+              height: 480,
+              width: 480,
+            };
+          },
+          decodeImage: async () => decode,
+        },
+        signal: controller.signal,
+      },
+    );
+
+    await Promise.resolve();
+    controller.abort();
+    resolveDecode({ height: 480, width: 480 });
+
+    await assert.rejects(operation, { name: "AbortError" });
+    assert.equal(uploadCalls, 0);
+  });
+
   it("loads same-origin metadata without accepting arbitrary image URLs", async () => {
     const { loadPersonalizedStoryArt } = requireClientApi();
     const request = jsonFetch({
