@@ -22,7 +22,6 @@ import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
-  getDubLineAudioUrl,
   loadDubStatus,
   saveDubLine,
 } from "./dub-api";
@@ -44,7 +43,6 @@ import { DuckScene } from "./DuckScene";
 type DubHandlers = {
   onDelete(): void;
   onHearGuide(): void;
-  onHearTake(): void;
   onNext(): void;
   onRecord(): void;
   onRetake(): void;
@@ -107,13 +105,13 @@ function dubStatusMessage({
     return `${line} Saving your take.`;
   }
   if (state.phase === "save-error") {
-    return `${line} Choose Save again or record this line again.`;
+    return `${line} Choose Save again.`;
   }
   if (state.phase === "line-review") {
-    return `${line} Your saved take is ready to review.`;
+    return `${line} Your take is saved. Choose Next line to continue.`;
   }
   if (state.phase === "final-ready") {
-    return `Your complete dub is ready. Line ${lineIndex + 1} of ${DUB_LINES.length} selected.`;
+    return "Your complete dub is ready. Choose Watch my dub.";
   }
   if (state.phase === "final-loading") {
     return "Getting your dub ready to play.";
@@ -136,14 +134,13 @@ function renderDubControls({
       return <ActionButton disabled>Deleting your dub…</ActionButton>;
     }
     return loadError ? (
-      <>
+      resetInterrupted ? (
+        <ActionButton onClick={handlers.onDelete} variant="dangerSurface">
+          Finish deleting my dub
+        </ActionButton>
+      ) : (
         <ActionButton onClick={handlers.onRetryLoad}>Try loading again</ActionButton>
-        {resetInterrupted ? (
-          <ActionButton onClick={handlers.onDelete} variant="dangerSurface">
-            Finish deleting my dub
-          </ActionButton>
-        ) : null}
-      </>
+      )
     ) : (
       <ActionButton disabled>Loading your private dub…</ActionButton>
     );
@@ -166,25 +163,15 @@ function renderDubControls({
     return <ActionButton disabled>Saving your take…</ActionButton>;
   }
   if (state.phase === "save-error") {
-    return (
-      <>
-        <ActionButton onClick={handlers.onSaveAgain}>Save again</ActionButton>
-        <TextButton className="min-h-12" onClick={handlers.onRetake}>Try recording again</TextButton>
-      </>
-    );
+    return <ActionButton onClick={handlers.onSaveAgain}>Save again</ActionButton>;
   }
   if (state.phase === "line-review") {
     return (
       <>
-        <ActionButton
-          aria-label="Hear my take"
-          onClick={handlers.onHearTake}
-          variant="navy"
-        >
-          <Volume2 aria-hidden="true" /> Hear my take
+        <ActionButton fullWidth onClick={handlers.onNext} size="hero">
+          Next line
         </ActionButton>
-        <ActionButton onClick={handlers.onNext}>Next line</ActionButton>
-        <TextButton className="min-h-12" onClick={handlers.onRetake}>Try again</TextButton>
+        <TextButton className="min-h-12" onClick={handlers.onRetake}>Record again</TextButton>
       </>
     );
   }
@@ -202,50 +189,64 @@ function renderDubControls({
     if (isDeleting) return <ActionButton disabled>Deleting your dub…</ActionButton>;
     return (
       <>
-        <label className="font-ui font-black text-brand-ink" htmlFor="saved-dub-line">
-          Choose a saved line
-        </label>
-        <select
-          aria-label="Choose a saved line"
-          className={fieldClassName()}
-          id="saved-dub-line"
-          onChange={(event) => handlers.onSelectLine(event.currentTarget.value)}
-          value={activeLine.id}
-        >
-          {DUB_LINES.filter(({ id }) => id in state.saved).map((line, index) => (
-            <option key={line.id} value={line.id}>
-              Line {index + 1}: {line.text}
-            </option>
-          ))}
-        </select>
-        <ActionButton onClick={handlers.onWatch} variant="success">
+        <ActionButton fullWidth onClick={handlers.onWatch} size="hero" variant="success">
           <Play aria-hidden="true" /> Watch my dub
         </ActionButton>
-        <TextButton className="min-h-12" onClick={handlers.onRetake}>Record selected line</TextButton>
-        <TextButton className="min-h-12" onClick={handlers.onDelete}>Delete my dub</TextButton>
+        <details className="group rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
+          <summary
+            aria-label="Grown-up options"
+            className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 font-ui font-black text-brand-blue focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
+          >
+            Grown-up options
+            <span aria-hidden="true" className="group-open:rotate-180">▾</span>
+          </summary>
+          <div className="mt-3 grid gap-3">
+            <p className="m-0 text-sm font-bold leading-snug text-slate-700">
+              Your recordings are private and saved to the signed-in grown-up&apos;s account.
+              You can replay or replace them here, and they are deleted with the account.
+            </p>
+            <label className="font-ui font-black text-brand-ink" htmlFor="saved-dub-line">
+              Choose a saved line
+            </label>
+            <select
+              aria-label="Choose a saved line"
+              className={fieldClassName()}
+              id="saved-dub-line"
+              onChange={(event) => handlers.onSelectLine(event.currentTarget.value)}
+              value={activeLine.id}
+            >
+              {DUB_LINES.filter(({ id }) => id in state.saved).map((line, index) => (
+                <option key={line.id} value={line.id}>
+                  Line {index + 1}: {line.text}
+                </option>
+              ))}
+            </select>
+            <TextButton className="min-h-12" onClick={handlers.onRetake}>Record selected line</TextButton>
+            <TextButton className="min-h-12 text-red-800" onClick={handlers.onDelete}>Delete my dub</TextButton>
+          </div>
+        </details>
       </>
     );
   }
   return (
     <>
       <ActionButton
-        aria-label="Hear the line"
-        onClick={handlers.onHearGuide}
-        variant="navy"
-      >
-        <Volume2 aria-hidden="true" /> Hear the line
-      </ActionButton>
-      <ActionButton
         aria-label={`Record line ${lineNumber}`}
+        fullWidth
         onClick={handlers.onRecord}
         ref={recordButtonRef}
+        size="hero"
         variant="rose"
       >
         <Mic aria-hidden="true" /> Record
       </ActionButton>
-      {DUB_LINES.every(({ id }) => id in state.saved) ? (
-        <TextButton className="min-h-12" onClick={handlers.onWatch}>Watch my dub</TextButton>
-      ) : null}
+      <TextButton
+        aria-label="Hear the line again"
+        className="min-h-12 gap-2"
+        onClick={handlers.onHearGuide}
+      >
+        <Volume2 aria-hidden="true" /> Hear the line again
+      </TextButton>
     </>
   );
 }
@@ -258,7 +259,6 @@ export function DuckDubView({
   onConfirm,
   onDelete,
   onHearGuide,
-  onHearTake,
   onNext,
   onRecord,
   onRetake,
@@ -294,7 +294,6 @@ export function DuckDubView({
   const handlers: DubHandlers = {
     onDelete,
     onHearGuide,
-    onHearTake,
     onNext,
     onRecord,
     onRetake,
@@ -321,24 +320,32 @@ export function DuckDubView({
         aria-labelledby="dub-title"
         className="mx-auto grid w-full max-w-6xl gap-4 short-wide:grid-cols-[minmax(0,1.45fr)_minmax(16rem,0.8fr)] lg:grid-cols-[minmax(0,1.45fr)_minmax(16rem,0.8fr)]"
       >
-        <DuckScene line={line} playing={state.phase === "final-playing"} />
+        <div className={state.phase === "intro" ? "hidden sm:contents" : "contents"}>
+          <DuckScene line={line} playing={state.phase === "final-playing"} />
+        </div>
         <section className="grid content-center gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
-          <p
-            aria-label={`Line ${lineIndex + 1} of ${DUB_LINES.length}`}
-            className="m-0 text-sm font-black uppercase tracking-wider text-brand-blue"
-          >
-            Line {lineIndex + 1} of {DUB_LINES.length}
-          </p>
+          {state.phase !== "intro" ? (
+            <p
+              aria-label={`Line ${lineIndex + 1} of ${DUB_LINES.length}`}
+              className="m-0 text-sm font-black uppercase tracking-wider text-brand-blue"
+            >
+              Line {lineIndex + 1} of {DUB_LINES.length}
+            </p>
+          ) : null}
           <h1 className="m-0 text-3xl leading-none text-brand-ink md:text-5xl" id="dub-title">
             Five Little Ducks
           </h1>
-          <p className="m-0 text-xl font-black leading-snug text-brand-ink">
-            {line.text}
-          </p>
-          <p className="m-0 text-sm font-bold leading-snug text-slate-700">
-            Your recordings are private and saved to the signed-in grown-up&apos;s account.
-            You can replay or replace them here, and they are deleted with the account.
-          </p>
+          {state.phase !== "intro" ? (
+            <p className="m-0 text-xl font-black leading-snug text-brand-ink">
+              {line.text}
+            </p>
+          ) : null}
+          {state.phase === "intro" ? (
+            <p className="m-0 text-sm font-bold leading-snug text-slate-700">
+              Your recordings are private and saved to the signed-in grown-up&apos;s account.
+              You can replay or replace them here, and they are deleted with the account.
+            </p>
+          ) : null}
           {state.phase === "intro" ? (
             <div className="grid gap-4">
               <label className="flex min-h-12 items-start gap-3 rounded-2xl bg-sky-50 p-3 font-bold leading-snug text-brand-ink">
@@ -351,12 +358,12 @@ export function DuckDubView({
                 />
                 <span>I’m the grown-up and I agree to save these private voice clips.</span>
               </label>
-              <ActionButton disabled={!confirmed} onClick={handlers.onNext}>
+              <ActionButton disabled={!confirmed} fullWidth onClick={handlers.onNext} size="hero">
                 {Object.keys(state.saved).length > 0 ? "Continue dubbing" : "Start dubbing"}
               </ActionButton>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 short-wide:grid-cols-1">
+            <div className="grid gap-3">
               {renderDubControls({
                 activeLine: line,
                 handlers,
@@ -419,7 +426,6 @@ export function DuckDub() {
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
-  const previewPlaybackRef = useRef<{ stop(): void } | null>(null);
   const finalPlaybackRef = useRef<{ stop(): void } | null>(null);
 
   const stopOperations = useCallback((discardBlob = false) => {
@@ -430,8 +436,6 @@ export function DuckDub() {
     guideControllerRef.current = null;
     uploadControllerRef.current?.abort();
     uploadControllerRef.current = null;
-    previewPlaybackRef.current?.stop();
-    previewPlaybackRef.current = null;
     finalControllerRef.current?.abort();
     finalControllerRef.current = null;
     deleteControllerRef.current?.abort();
@@ -590,75 +594,6 @@ export function DuckDub() {
       });
   }
 
-  function handleHearTake() {
-    stopOperations(false);
-    const generation = generationRef.current;
-    const controller = new AbortController();
-    const lineId = DUB_LINES[state.currentLineIndex].id;
-    const audio = new Audio(getDubLineAudioUrl(lineId));
-    let cleaned = false;
-    let settled = false;
-    let resolveCompletion!: () => void;
-    let rejectCompletion!: (error: unknown) => void;
-    const completion = new Promise<void>((resolve, reject) => {
-      resolveCompletion = resolve;
-      rejectCompletion = reject;
-    });
-    const finish = (error?: unknown) => {
-      if (settled) return;
-      settled = true;
-      if (error === undefined) resolveCompletion();
-      else rejectCompletion(error);
-    };
-    const abort = () => {
-      finish(new DOMException("Preview cancelled.", "AbortError"));
-    };
-    const cleanup = () => {
-      if (cleaned) return;
-      cleaned = true;
-      controller.signal.removeEventListener("abort", abort);
-      audio.onended = null;
-      audio.onerror = null;
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
-    };
-    const playback = {
-      stop() {
-        controller.abort();
-        cleanup();
-      },
-    };
-    previewPlaybackRef.current = playback;
-    setOperationError("");
-    audio.onended = () => finish();
-    audio.onerror = () => finish(new Error("Saved take playback failed."));
-    controller.signal.addEventListener("abort", abort, { once: true });
-    void completion
-      .catch((error: unknown) => {
-        if (
-          controller.signal.aborted ||
-          generation !== generationRef.current ||
-          isAbortError(error)
-        ) {
-          return;
-        }
-        setOperationError("Your saved take could not be played. Try again.");
-      })
-      .finally(() => {
-        cleanup();
-        if (previewPlaybackRef.current === playback) {
-          previewPlaybackRef.current = null;
-        }
-      });
-    try {
-      const playResult = audio.play();
-      void playResult?.catch((error: unknown) => finish(error));
-    } catch (error) {
-      finish(error);
-    }
-  }
-
   async function handleWatch() {
     stopOperations(false);
     const generation = generationRef.current;
@@ -729,6 +664,7 @@ export function DuckDub() {
       dispatch({ type: "RESET_SUCCEEDED" });
     } catch (error) {
       if (controller.signal.aborted || generation !== generationRef.current) return;
+      setResetInterrupted(false);
       setOperationError(error instanceof Error ? error.message : "Your saved dub was not deleted.");
     } finally {
       if (deleteControllerRef.current === controller) deleteControllerRef.current = null;
@@ -783,7 +719,6 @@ export function DuckDub() {
       onConfirm={setConfirmed}
       onDelete={() => void handleDelete()}
       onHearGuide={handleHearGuide}
-      onHearTake={() => void handleHearTake()}
       onNext={handleNext}
       onRecord={() => void handleRecord()}
       onRetake={handleRetake}

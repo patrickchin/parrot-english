@@ -42,7 +42,6 @@ function renderInRouter(element) {
 const handlers = {
   onDelete() {},
   onHearGuide() {},
-  onHearTake() {},
   onNext() {},
   onRecord() {},
   onRetake() {},
@@ -86,6 +85,8 @@ describe("duck dubbing presentation", () => {
     assert.match(unchecked, /Five Little Ducks/);
     assert.match(unchecked, /Your recordings are private/);
     assert.match(unchecked, /signed-in grown-up(?:&#x27;|')s account/);
+    assert.doesNotMatch(unchecked, /Line 1 of 9/);
+    assert.doesNotMatch(unchecked, /Five little ducks went out to play\./);
     assert.match(
       unchecked,
       /I’m the grown-up and I agree to save these private voice clips\./,
@@ -101,19 +102,19 @@ describe("duck dubbing presentation", () => {
     assert.doesNotMatch(continued, /Continue dubbing<\/button>[^]*disabled/);
   });
 
-  it("renders readable line progress and stable ready controls", () => {
+  it("makes Record the clear next step and keeps listening optional", () => {
     const html = renderDuckDub({ phase: "line-ready", currentLineIndex: 0 });
     assert.match(html, /Line 1 of 9/);
     assert.match(html, /Five little ducks went out to play\./);
-    assert.match(html, /aria-label="Hear the line"/);
     assert.match(html, /aria-label="Record line 1"/);
+    assert.match(html, /aria-label="Hear the line again"/);
     assert.doesNotMatch(html, /Watch my dub/);
 
     const complete = renderDuckDub({
       phase: "line-ready",
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.match(complete, />Watch my dub<\/button>/);
+    assert.doesNotMatch(complete, /Watch my dub/);
   });
 
   it("keeps recording, saving, failure, and review actions child-readable", () => {
@@ -133,27 +134,31 @@ describe("duck dubbing presentation", () => {
     });
     assert.match(failed, /role="alert"/);
     assert.match(failed, />Save again<\/button>/);
-    assert.match(failed, />Try recording again<\/button>/);
+    assert.doesNotMatch(failed, /Try recording again/);
 
     const review = renderDuckDub({ phase: "line-review" });
-    assert.match(review, /aria-label="Hear my take"/);
     assert.match(review, />Next line<\/button>/);
-    assert.match(review, />Try again<\/button>/);
+    assert.match(review, />Record again<\/button>/);
+    assert.doesNotMatch(review, /Hear my take/);
   });
 
-  it("renders final replay and delete actions for each final phase", () => {
+  it("keeps final management controls inside closed grown-up options", () => {
     const ready = renderDuckDub({
       currentLineIndex: 4,
       phase: "final-ready",
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.match(ready, /Watch my dub<\/button>/);
+    assert.match(ready, /<details(?![^>]*\bopen\b)[^>]*>/);
+    assert.match(ready, /<summary[^>]*aria-label="Grown-up options"/);
+    assert.match(ready, />Grown-up options<\/summary>|>Grown-up options<span/);
     assert.match(ready, /<label[^>]*>Choose a saved line<\/label>/);
     assert.match(ready, /<select[^>]*aria-label="Choose a saved line"/);
     assert.match(ready, /<option[^>]*value="line-5"[^>]*selected=""[^>]*>Line 5: Three little ducks raced through the reeds\.<\/option>/);
     assert.equal((ready.match(/<option/g) ?? []).length, 9);
     assert.match(ready, />Record selected line<\/button>/);
     assert.match(ready, />Delete my dub<\/button>/);
+    assert.match(ready, /Your recordings are private/);
 
     const loading = renderDuckDub({ phase: "final-loading" });
     assert.match(loading, /Getting your dub ready…/);
@@ -161,6 +166,21 @@ describe("duck dubbing presentation", () => {
 
     const playing = renderDuckDub({ phase: "final-playing" });
     assert.match(playing, />Stop playback<\/button>/);
+  });
+
+  it("shows recurring privacy guidance only at consent and inside grown-up options", () => {
+    const intro = renderDuckDub({ phase: "intro" }, false);
+    const ready = renderDuckDub({ phase: "line-ready" });
+    const review = renderDuckDub({ phase: "line-review" });
+    const complete = renderDuckDub({
+      phase: "final-ready",
+      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+    });
+
+    assert.match(intro, /Your recordings are private/);
+    assert.doesNotMatch(ready, /Your recordings are private/);
+    assert.doesNotMatch(review, /Your recordings are private/);
+    assert.match(complete, /Your recordings are private/);
   });
 
   it("announces every phase accurately through one atomic polite live region", () => {
@@ -205,17 +225,17 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, error: "Not saved.", phase: "save-error" },
         {},
-        "Line 3 of 9. Choose Save again or record this line again.",
+        "Line 3 of 9. Choose Save again.",
       ],
       [
         { currentLineIndex: 2, phase: "line-review" },
         {},
-        "Line 3 of 9. Your saved take is ready to review.",
+        "Line 3 of 9. Your take is saved. Choose Next line to continue.",
       ],
       [
         { currentLineIndex: 2, phase: "final-ready", saved: complete },
         {},
-        "Your complete dub is ready. Line 3 of 9 selected.",
+        "Your complete dub is ready. Choose Watch my dub.",
       ],
       [
         { currentLineIndex: 2, phase: "final-loading", saved: complete },
@@ -270,8 +290,8 @@ describe("duck dubbing presentation", () => {
         resetInterrupted: true,
       },
     );
-    assert.match(interrupted, />Try loading again<\/button>/);
     assert.match(interrupted, />Finish deleting my dub<\/button>/);
+    assert.doesNotMatch(interrupted, /Try loading again/);
 
     const deleting = renderDuckDub(
       { phase: "loading" },
