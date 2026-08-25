@@ -34,7 +34,7 @@ export function createMyLessonRepository(
     return findOwned(id, identity);
   }
 
-  function learnerOwnership(identity: LearnerIdentity) {
+  function readableLearnerOwnership(identity: LearnerIdentity) {
     const selected = eq(
       learnerLesson.learnerProfileId,
       identity.learnerProfileId,
@@ -52,7 +52,7 @@ export function createMyLessonRepository(
         and(
           eq(learnerLesson.id, id),
           eq(learnerLesson.authUserId, identity.userId),
-          learnerOwnership(identity),
+          readableLearnerOwnership(identity),
         ),
       )
       .limit(1);
@@ -64,7 +64,7 @@ export function createMyLessonRepository(
     identity: LearnerIdentity,
     lesson: unknown,
   ) {
-    await database
+    const [row] = await database
       .update(learnerLesson)
       .set({
         lessonJson: JSON.stringify(lesson),
@@ -74,10 +74,11 @@ export function createMyLessonRepository(
         and(
           eq(learnerLesson.id, id),
           eq(learnerLesson.authUserId, identity.userId),
-          learnerOwnership(identity),
+          eq(learnerLesson.learnerProfileId, identity.learnerProfileId),
         ),
-      );
-    return findOwned(id, identity);
+      )
+      .returning();
+    return row ?? null;
   }
 
   async function listOwned(identity: LearnerIdentity) {
@@ -87,7 +88,7 @@ export function createMyLessonRepository(
       .where(
         and(
           eq(learnerLesson.authUserId, identity.userId),
-          learnerOwnership(identity),
+          readableLearnerOwnership(identity),
         ),
       )
       .orderBy(desc(learnerLesson.updatedAt));

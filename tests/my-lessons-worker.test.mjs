@@ -244,6 +244,42 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
+  it("does not update a null-profile compatibility lesson", async () => {
+    const state = seedDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_lesson
+            (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
+           VALUES (?, ?, NULL, 'uploaded', ?, ?, ?)`,
+        )
+        .run(
+          "legacy-lesson",
+          "user-1",
+          JSON.stringify(createLessonScript()),
+          1_000,
+          1_000,
+        );
+      const storedLesson = state.sqlite.prepare(
+        "SELECT lesson_json, updated_at FROM learner_lesson WHERE id = ?",
+      );
+      const before = storedLesson.get("legacy-lesson");
+
+      const response = await call(
+        state,
+        "/api/lessons/my/legacy-lesson",
+        "PUT",
+        { lesson: createLessonScript({ title: "Rewritten legacy lesson" }) },
+      );
+
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      assert.deepEqual(storedLesson.get("legacy-lesson"), before);
+    } finally {
+      state.close();
+    }
+  });
+
   it("updates an owned lesson with lenient repairs while preserving its source", async () => {
     const state = seedDatabase();
     try {
