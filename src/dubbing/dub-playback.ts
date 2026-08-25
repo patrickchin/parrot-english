@@ -9,6 +9,8 @@ type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
 type ScheduleDubAudioOptions = {
   context: Pick<AudioContext, "currentTime">;
+  cueOffsetMs?: number;
+  lines?: readonly DubLine[];
   lineSources: Map<string, VoiceSource>;
   output: AudioNode;
   startAt: number;
@@ -18,6 +20,8 @@ type StartDubPlaybackOptions = {
   AudioContext?: typeof globalThis.AudioContext;
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
   fetch?: typeof globalThis.fetch;
+  lines?: readonly DubLine[];
+  onEnded?: () => void;
   onTick: (elapsedMs: number) => void;
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
   setTimeout?: typeof globalThis.setTimeout;
@@ -50,15 +54,21 @@ function stopNode(node: Pick<AudioScheduledSourceNode, "stop">) {
 }
 
 export function scheduleDubAudio(options: ScheduleDubAudioOptions) {
-  const { lineSources, output, startAt } = options;
+  const {
+    cueOffsetMs = 0,
+    lines = DUB_LINES,
+    lineSources,
+    output,
+    startAt,
+  } = options;
   const scheduled: VoiceSource[] = [];
 
   try {
-    for (const line of DUB_LINES) {
+    for (const line of lines) {
       const source = lineSources.get(line.id);
       if (!source) continue;
       source.connect(output);
-      source.start(startAt + line.cueMs / 1_000);
+      source.start(startAt + (line.cueMs - cueOffsetMs) / 1_000);
       scheduled.push(source);
     }
   } catch (error) {
@@ -80,11 +90,12 @@ function midiFrequency(note: number) {
 
 function scheduleDubMusic(
   context: AudioContext,
+  durationMs: number,
   output: AudioNode,
   startAt: number,
 ) {
   const beatSeconds = 60 / MUSIC_BPM;
-  const noteCount = Math.ceil(DUB_DURATION_MS / 1_000 / beatSeconds);
+  const noteCount = Math.ceil(durationMs / 1_000 / beatSeconds);
   const oscillators: OscillatorNode[] = [];
 
   try {
@@ -122,15 +133,35 @@ function createAbortError() {
   return error;
 }
 
+function getPlaybackScope(lines: readonly DubLine[]) {
+  if (lines.length === 0) {
+    throw new TypeError("Dub playback lines must be one non-empty authored range.");
+  }
+  const firstLineIndex = DUB_LINES.indexOf(lines[0]);
+  const canonical = firstLineIndex >= 0 && lines.every(
+    (line, index) => DUB_LINES[firstLineIndex + index] === line,
+  );
+  if (!canonical) {
+    throw new TypeError("Dub playback lines must be one non-empty authored range.");
+  }
+  const endLineIndex = firstLineIndex + lines.length;
+  const fullDub = firstLineIndex === 0 && endLineIndex === DUB_LINES.length;
+  const cueOffsetMs = fullDub ? 0 : lines[0].cueMs;
+  return { cueOffsetMs, fullDub };
+}
+
 export async function startDubPlayback({
   AudioContext: AudioContextClass = globalThis.AudioContext,
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
   fetch: request = globalThis.fetch,
+  lines = DUB_LINES,
+  onEnded,
   onTick,
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
+  const { cueOffsetMs, fullDub } = getPlaybackScope(lines);
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -196,7 +227,7 @@ export async function startDubPlayback({
       }
       return failure;
     };
-    const lineLoads = DUB_LINES.map(async ({ id }) => {
+    const lineLoads = lines.map(async ({ id }) => {
       let response: Response;
       try {
         response = await request(getDubLineAudioUrl(id), {
@@ -240,6 +271,10 @@ export async function startDubPlayback({
     ]);
 
     if (signal?.aborted) throw createAbortError();
+    const durationMs = fullDub
+      ? DUB_DURATION_MS
+      : Math.max(...decodedLines.map(([, buffer], index) =>
+          lines[index].cueMs - cueOffsetMs + buffer.duration * 1_000));
     await Promise.race([context.resume(), startupAbort]);
     if (signal?.aborted) throw createAbortError();
 
@@ -260,19 +295,22 @@ export async function startDubPlayback({
     const startAt = context.currentTime + 0.12;
     stopVoices = scheduleDubAudio({
       context,
+      cueOffsetMs,
+      lines,
       lineSources,
       output: master,
       startAt,
     });
-    oscillators = scheduleDubMusic(context, music, startAt);
+    oscillators = scheduleDubMusic(context, durationMs, music, startAt);
 
     const tick = () => {
       frameId = null;
       const elapsedMs = Math.max(0, (context.currentTime - startAt) * 1_000);
-      onTick(Math.min(DUB_DURATION_MS, elapsedMs));
+      onTick(Math.min(durationMs, elapsedMs));
       if (stopped) return;
-      if (elapsedMs >= DUB_DURATION_MS) {
+      if (elapsedMs >= durationMs) {
         void stopPlayback();
+        onEnded?.();
         return;
       }
       frameId = requestFrame(tick);

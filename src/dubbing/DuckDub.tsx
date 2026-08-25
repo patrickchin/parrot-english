@@ -30,8 +30,11 @@ import { DubLinePlaybackError, startDubPlayback } from "./dub-playback";
 import {
   DUB_DURATION_MS,
   DUB_LINES,
+  DUB_LINES_PER_VERSE,
   DUB_RECORDING_MS,
+  DUB_VERSES,
   getDubLineAtElapsed,
+  getDubVerseLineAtElapsed,
   type DubLine,
 } from "./dub-script";
 import {
@@ -69,6 +72,7 @@ type DubControlsProps = {
   handlers: DubHandlers;
   isDeleting?: boolean;
   loadError?: string;
+  nextButtonRef?: RefObject<HTMLButtonElement | null>;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
   resetInterrupted?: boolean;
   state: DubState;
@@ -87,7 +91,9 @@ function dubStatusMessage({
   resetInterrupted: boolean;
   state: DubState;
 }) {
-  const line = `Line ${lineIndex + 1} of ${DUB_LINES.length}.`;
+  const verseIndex = Math.floor(lineIndex / DUB_LINES_PER_VERSE);
+  const finalVerse = verseIndex === DUB_VERSES.length - 1;
+  const line = `Verse ${verseIndex + 1} of ${DUB_VERSES.length}, line ${(lineIndex % DUB_LINES_PER_VERSE) + 1} of ${DUB_LINES_PER_VERSE}.`;
   if (isDeleting) {
     return "Deleting your saved dub.";
   }
@@ -120,6 +126,16 @@ function dubStatusMessage({
   if (state.phase === "line-review") {
     return `${line} Your take is saved. Hear your voice or choose Next line.`;
   }
+  if (state.phase === "verse-loading") {
+    return finalVerse
+      ? `Getting verse ${verseIndex + 1} of ${DUB_VERSES.length} ready. Next skips to your completed dub.`
+      : `Getting verse ${verseIndex + 1} of ${DUB_VERSES.length} ready. Next skips the preview.`;
+  }
+  if (state.phase === "verse-playing") {
+    return finalVerse
+      ? `Playing verse ${verseIndex + 1} of ${DUB_VERSES.length}. Next skips to your completed dub.`
+      : `Playing verse ${verseIndex + 1} of ${DUB_VERSES.length}. Next skips to the next verse.`;
+  }
   if (state.phase === "final-ready") {
     return "Your complete dub is ready. Choose Watch my dub.";
   }
@@ -134,6 +150,7 @@ function renderDubControls({
   handlers,
   isDeleting = false,
   loadError = "",
+  nextButtonRef,
   recordButtonRef,
   resetInterrupted = false,
   state,
@@ -156,42 +173,6 @@ function renderDubControls({
       <ActionButton disabled>Loading your private dub…</ActionButton>
     );
   }
-  if (state.phase === "mic-opening") {
-    return <ActionButton disabled>Opening microphone…</ActionButton>;
-  }
-  if (state.phase === "recording") {
-    return (
-      <ActionButton
-        aria-label={`Stop recording line ${lineNumber}`}
-        onClick={handlers.onStopRecording}
-        variant="rose"
-      >
-        <Square aria-hidden="true" /> Stop recording
-      </ActionButton>
-    );
-  }
-  if (state.phase === "saving") {
-    return <ActionButton disabled>Saving your take…</ActionButton>;
-  }
-  if (state.phase === "save-error") {
-    return state.saveRecovery === "record" ? (
-      <ActionButton fullWidth onClick={handlers.onRetake} size="hero" variant="rose">
-        Record again
-      </ActionButton>
-    ) : (
-      <ActionButton fullWidth onClick={handlers.onSaveAgain} size="hero">Save again</ActionButton>
-    );
-  }
-  if (state.phase === "line-review") {
-    return (
-      <>
-        <ActionButton fullWidth onClick={handlers.onNext} size="hero">
-          Next line
-        </ActionButton>
-        <TextButton className="min-h-12" onClick={handlers.onRetake}>Record again</TextButton>
-      </>
-    );
-  }
   if (state.phase === "final-loading") {
     return <ActionButton disabled>Getting your dub ready…</ActionButton>;
   }
@@ -206,7 +187,13 @@ function renderDubControls({
     if (isDeleting) return <ActionButton disabled>Deleting your dub…</ActionButton>;
     return (
       <>
-        <ActionButton fullWidth onClick={handlers.onWatch} size="hero" variant="success">
+        <ActionButton
+          fullWidth
+          onClick={handlers.onWatch}
+          ref={recordButtonRef}
+          size="hero"
+          variant="success"
+        >
           <Play aria-hidden="true" /> Watch my dub
         </ActionButton>
         <details className="group rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
@@ -245,29 +232,63 @@ function renderDubControls({
       </>
     );
   }
+
+  const recording = state.phase === "recording";
+  const reviewing = state.phase === "line-review";
+  const previewing = state.phase === "verse-loading" || state.phase === "verse-playing";
+  const recordDisabled = state.phase === "mic-opening" || state.phase === "saving" || previewing;
+  const recordAgain = reviewing || state.phase === "save-error";
+  const nextEnabled = reviewing || previewing || (state.phase === "line-ready" && complete);
+  const recordLabel = recording
+    ? `Stop recording line ${lineNumber}`
+    : recordAgain
+      ? `Record again line ${lineNumber}`
+      : `Record line ${lineNumber}`;
+
   return (
     <>
-      <ActionButton
-        aria-label={`Record line ${lineNumber}`}
-        className="short-wide:min-h-12 short-wide:px-4 short-wide:text-base"
-        fullWidth
-        onClick={handlers.onRecord}
-        ref={recordButtonRef}
-        size="hero"
-        variant="rose"
-      >
-        <Mic aria-hidden="true" /> Record
-      </ActionButton>
-      {complete ? (
-        <TextButton className="min-h-12" onClick={handlers.onNext}>Back to my dub</TextButton>
+      <section aria-label="Line actions" className="grid grid-cols-2 gap-2">
+        <ActionButton
+          aria-label={recordLabel}
+          className="min-h-14 min-w-0 px-2 text-base short-wide:min-h-12 short-wide:text-sm lg:min-h-16 lg:text-lg"
+          disabled={recordDisabled}
+          fullWidth
+          onClick={recording
+            ? handlers.onStopRecording
+            : recordAgain
+              ? handlers.onRetake
+              : handlers.onRecord}
+          ref={recordButtonRef}
+          size="compact"
+          variant="rose"
+        >
+          {recording ? <Square aria-hidden="true" /> : <Mic aria-hidden="true" className="hidden lg:block" />}
+          {recording ? "Stop" : recordAgain ? "Record again" : "Record"}
+        </ActionButton>
+        <ActionButton
+          aria-label="Next line"
+          className="min-h-14 min-w-0 px-2 text-base short-wide:min-h-12 short-wide:text-sm lg:min-h-16 lg:text-lg"
+          disabled={!nextEnabled}
+          fullWidth
+          onClick={handlers.onNext}
+          ref={nextButtonRef}
+          size="compact"
+        >
+          Next
+        </ActionButton>
+      </section>
+      {state.phase === "save-error" && state.saveRecovery === "save" ? (
+        <TextButton className="min-h-12" onClick={handlers.onSaveAgain}>Save again</TextButton>
       ) : null}
-      <TextButton
-        aria-label="Replay example"
-        className="min-h-12 gap-2"
-        onClick={handlers.onHearGuide}
-      >
-        <Volume2 aria-hidden="true" /> Replay example
-      </TextButton>
+      {state.phase === "line-ready" || reviewing || state.phase === "save-error" ? (
+        <TextButton
+          aria-label="Replay example"
+          className="min-h-12 gap-2"
+          onClick={handlers.onHearGuide}
+        >
+          <Volume2 aria-hidden="true" /> Replay example
+        </TextButton>
+      ) : null}
     </>
   );
 }
@@ -278,6 +299,7 @@ export function DuckDubView({
   line,
   loadError = "",
   mainRef,
+  nextButtonRef,
   onConfirm,
   onDelete,
   onHearGuide,
@@ -303,6 +325,7 @@ export function DuckDubView({
   line: DubLine;
   loadError?: string;
   mainRef?: RefObject<HTMLElement | null>;
+  nextButtonRef?: RefObject<HTMLButtonElement | null>;
   onConfirm(confirmed: boolean): void;
   onRetryLoad?(): void;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
@@ -312,6 +335,10 @@ export function DuckDubView({
   takePlaying?: boolean;
 }) {
   const lineIndex = Math.max(0, DUB_LINES.findIndex(({ id }) => id === line.id));
+  const verseIndex = Math.floor(lineIndex / DUB_LINES_PER_VERSE);
+  const lineIndexInVerse = lineIndex % DUB_LINES_PER_VERSE;
+  const verseProgress = `Verse ${verseIndex + 1} of ${DUB_VERSES.length} · Line ${lineIndexInVerse + 1} of ${DUB_LINES_PER_VERSE}`;
+  const verseProgressAccessible = `Verse ${verseIndex + 1} of ${DUB_VERSES.length}, line ${lineIndexInVerse + 1} of ${DUB_LINES_PER_VERSE}`;
   const isFinalReady = state.phase === "final-ready";
   const error = state.error || loadError;
   const statusMessage = dubStatusMessage({
@@ -341,6 +368,17 @@ export function DuckDubView({
     state.phase === "save-error" ||
     state.phase === "line-review"
   );
+  const visibleStatus = state.phase === "mic-opening"
+    ? "Opening microphone…"
+    : state.phase === "recording"
+      ? "Recording…"
+      : state.phase === "saving"
+        ? "Saving your take…"
+        : state.phase === "verse-loading"
+          ? `Getting verse ${verseIndex + 1} ready…`
+          : state.phase === "verse-playing"
+            ? `Playing verse ${verseIndex + 1}…`
+            : "";
 
   return (
     <main
@@ -361,36 +399,44 @@ export function DuckDubView({
         className="mx-auto grid w-full max-w-[1600px] gap-4 short-wide:h-[calc(100dvh-4.5rem)] short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.6fr)_minmax(15rem,0.9fr)] short-wide:gap-3 lg:min-h-[calc(100dvh-7.5rem)] lg:grid-cols-[minmax(0,2fr)_minmax(20rem,0.78fr)]"
       >
         <div className={state.phase === "intro" ? "hidden sm:contents" : "contents"}>
-          <DuckScene line={line} playing={state.phase === "final-playing"} />
+          <DuckScene
+            line={line}
+            playing={state.phase === "final-playing" || state.phase === "verse-playing"}
+          />
         </div>
         <section
           aria-label="Dubbing controls"
-          className="grid content-center gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card short-wide:gap-2 short-wide:rounded-2xl short-wide:p-2 md:p-5"
+          className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card short-wide:gap-2 short-wide:rounded-2xl short-wide:p-2 md:p-5"
         >
           <div className="grid gap-2 short-wide:gap-1">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <h1 className="m-0 text-xl leading-none text-brand-ink short-wide:text-base md:text-2xl" id="dub-title">
                 Five Little Ducks
               </h1>
               {state.phase !== "intro" ? (
                 <p
                   aria-label={isFinalReady
-                    ? `All ${DUB_LINES.length} lines recorded`
-                    : `Line ${lineIndex + 1} of ${DUB_LINES.length}`}
-                  className="m-0 shrink-0 text-xs font-black uppercase tracking-wider text-brand-blue short-wide:text-[0.65rem] md:text-sm"
+                    ? `All ${DUB_VERSES.length} verses recorded`
+                    : verseProgressAccessible}
+                  className="m-0 text-right text-xs font-black uppercase tracking-wider text-brand-blue short-wide:text-[0.625rem] md:text-sm"
                 >
                   {isFinalReady
-                    ? `All ${DUB_LINES.length} lines recorded`
-                    : `Line ${lineIndex + 1} of ${DUB_LINES.length}`}
+                    ? `All ${DUB_VERSES.length} verses recorded`
+                    : verseProgress}
                 </p>
               ) : null}
             </div>
             {state.phase !== "intro" ? (
               <progress
                 aria-label="Dubbing progress"
+                aria-valuetext={isFinalReady
+                  ? `All ${DUB_VERSES.length} verses recorded`
+                  : verseProgressAccessible}
                 className="h-2 w-full overflow-hidden rounded-full accent-brand-blue short-wide:h-1"
-                max={DUB_LINES.length}
-                value={isFinalReady ? DUB_LINES.length : lineIndex + 1}
+                max={DUB_VERSES.length}
+                value={isFinalReady
+                  ? DUB_VERSES.length
+                  : verseIndex + (lineIndexInVerse + 1) / DUB_LINES_PER_VERSE}
               />
             ) : null}
           </div>
@@ -406,7 +452,9 @@ export function DuckDubView({
                 className="grid gap-2 rounded-3xl border-3 border-sky-200 bg-sky-50 p-4 short-wide:gap-1 short-wide:rounded-2xl short-wide:p-2"
               >
                 <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue short-wide:text-[0.625rem]">
-                  Now read
+                  {state.phase === "verse-loading" || state.phase === "verse-playing"
+                    ? "Your verse"
+                    : "Now read"}
                 </p>
                 <p className="m-0 text-3xl font-black leading-tight text-brand-ink short-wide:text-xl md:text-4xl">
                   {line.text}
@@ -459,6 +507,16 @@ export function DuckDubView({
             )
           ) : (
             <div className="grid gap-3 short-wide:gap-2">
+              {renderDubControls({
+                activeLine: line,
+                handlers,
+                isDeleting,
+                loadError,
+                nextButtonRef,
+                recordButtonRef,
+                resetInterrupted,
+                state,
+              })}
               {showTakePreview ? (
                 <section
                   aria-label="Your recorded line"
@@ -478,20 +536,11 @@ export function DuckDubView({
                   </TextButton>
                 </section>
               ) : null}
-              {renderDubControls({
-                activeLine: line,
-                handlers,
-                isDeleting,
-                loadError,
-                recordButtonRef,
-                resetInterrupted,
-                state,
-              })}
             </div>
           )}
-          {state.phase === "recording" ? (
+          {visibleStatus ? (
             <p className="m-0 font-black text-brand-rose">
-              Recording…
+              {visibleStatus}
             </p>
           ) : null}
           {error ? (
@@ -539,6 +588,7 @@ export function DuckDub() {
   const deleteControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const recordingSessionRef = useRef<SpeechRecordingSession | null>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
   const scrollContainerRef = useRef<HTMLElement>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -838,6 +888,67 @@ export function DuckDub() {
     }
   }
 
+  function finishVersePreview(sourceState: DubState, message = "") {
+    stopOperations(true);
+    const nextState = reduceDubState(sourceState, { type: "VERSE_FINISHED" });
+    dispatch({ type: "VERSE_FINISHED" });
+    if (nextState.phase === "line-ready") {
+      playGuide(nextState.currentLineIndex);
+    }
+    requestAnimationFrame(() => recordButtonRef.current?.focus());
+    setOperationError(message);
+  }
+
+  async function handleVersePreview() {
+    stopOperations(false);
+    const generation = generationRef.current;
+    const controller = new AbortController();
+    const verseIndex = Math.floor(state.currentLineIndex / DUB_LINES_PER_VERSE);
+    const lines = DUB_VERSES[verseIndex];
+    finalControllerRef.current = controller;
+    setPlaybackLineIndex(verseIndex * DUB_LINES_PER_VERSE);
+    setOperationError("");
+    dispatch({ type: "VERSE_LOADING" });
+    try {
+      const playback = await startDubPlayback({
+        lines,
+        onEnded() {
+          if (generation !== generationRef.current) return;
+          finishVersePreview(state);
+        },
+        onTick(elapsedMs) {
+          if (generation !== generationRef.current) return;
+          setPlaybackLineIndex(DUB_LINES.indexOf(
+            getDubVerseLineAtElapsed(verseIndex, elapsedMs),
+          ));
+        },
+        signal: controller.signal,
+      });
+      if (!mountedRef.current || generation !== generationRef.current) {
+        playback.stop();
+        return;
+      }
+      finalPlaybackRef.current = playback;
+      dispatch({ type: "VERSE_STARTED" });
+    } catch (error) {
+      if (controller.signal.aborted || generation !== generationRef.current || isAbortError(error)) return;
+      finalControllerRef.current = null;
+      if (error instanceof DubLinePlaybackError && error.stage === "decode") {
+        clearTakePreview();
+        dispatch({ type: "SELECT_LINE", lineId: error.lineId });
+        dispatch({ type: "RETAKE" });
+        const lineIndex = DUB_LINES.findIndex(({ id }) => id === error.lineId);
+        if (lineIndex >= 0) playGuide(lineIndex);
+        setOperationError("That take could not play. Record this line again.");
+        requestAnimationFrame(() => recordButtonRef.current?.focus());
+        return;
+      }
+      dispatch({ type: "VERSE_FAILED" });
+      setOperationError("That verse could not play. Choose Next line to try again.");
+      requestAnimationFrame(() => nextButtonRef.current?.focus());
+    }
+  }
+
   function handleStopPlayback() {
     stopOperations(false);
     dispatch({ type: "FINAL_FINISHED" });
@@ -891,6 +1002,18 @@ export function DuckDub() {
       }
       return;
     }
+    if (state.phase === "verse-loading" || state.phase === "verse-playing") {
+      finishVersePreview(state);
+      return;
+    }
+    if (
+      state.phase === "line-review" &&
+      state.lineMode === "fresh" &&
+      state.currentLineIndex % DUB_LINES_PER_VERSE === DUB_LINES_PER_VERSE - 1
+    ) {
+      void handleVersePreview();
+      return;
+    }
     stopOperations(true);
     setOperationError("");
     const nextState = reduceDubState(state, { type: "NEXT_LINE" });
@@ -911,7 +1034,9 @@ export function DuckDub() {
   }
 
   const activeLine =
-    state.phase === "final-playing"
+    state.phase === "final-playing" ||
+    state.phase === "verse-loading" ||
+    state.phase === "verse-playing"
       ? DUB_LINES[playbackLineIndex]
       : DUB_LINES[state.currentLineIndex];
 
@@ -922,6 +1047,7 @@ export function DuckDub() {
       line={activeLine}
       loadError={loadError || operationError}
       mainRef={scrollContainerRef}
+      nextButtonRef={nextButtonRef}
       onConfirm={setConfirmed}
       onDelete={() => void handleDelete()}
       onHearGuide={handleHearGuide}

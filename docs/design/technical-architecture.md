@@ -41,7 +41,9 @@ prototype build entry in the shipped product.
 - `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
   client, decoded take waveform, and synchronized replay. The traditional
   six-stanza script has 24 slots on a 98-second timeline with cues every four
-  seconds and a six-second maximum for each recording.
+  seconds and a six-second maximum for each recording. The browser groups the
+  slots into six four-line verses and can replay one cue-rebased verse without
+  changing the 24-slot R2 model.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 

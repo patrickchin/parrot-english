@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import * as dubScript from "../src/dubbing/dub-script.ts";
 import {
   DUB_ID,
   DUB_RECORDING_MS,
@@ -67,6 +68,28 @@ describe("five little ducks dub domain", () => {
     assert.equal(DUB_LINES[0].text, originalText);
     assert.equal(DUB_LINES[0].cueMs, originalCue);
     assert.equal(DUB_LINES.length, 24);
+  });
+
+  it("groups the rhyme into six natural four-line verses", () => {
+    assert.equal(dubScript.DUB_LINES_PER_VERSE, 4);
+    assert.deepEqual(
+      dubScript.DUB_VERSES.map((verse) => verse.map(({ id }) => id)),
+      [
+        ["line-1", "line-2", "line-3", "line-4"],
+        ["line-5", "line-6", "line-7", "line-8"],
+        ["line-9", "line-10", "line-11", "line-12"],
+        ["line-13", "line-14", "line-15", "line-16"],
+        ["line-17", "line-18", "line-19", "line-20"],
+        ["line-21", "line-22", "line-23", "line-24"],
+      ],
+    );
+  });
+
+  it("holds the fourth verse line through a long recorded tail", () => {
+    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 0).id, "line-5");
+    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 11_999).id, "line-7");
+    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 12_000).id, "line-8");
+    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 17_999).id, "line-8");
   });
 
   it("resumes at the first missing line and unlocks the final replay", () => {
@@ -150,5 +173,76 @@ describe("five little ducks dub domain", () => {
     assert.equal(state.phase, "line-review");
     state = reduceDubState(state, { type: "NEXT_LINE" });
     assert.equal(state.currentLineIndex, 1);
+  });
+
+  it("previews each newly completed four-line verse before advancing", () => {
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      savedLineIds: ["line-1", "line-2", "line-3"],
+    });
+    state = reduceDubState(state, { type: "CONFIRMED" });
+    assert.equal(state.currentLineIndex, 3);
+    assert.equal(state.lineMode, "fresh");
+
+    state = reduceDubState(state, {
+      type: "SAVE_SUCCEEDED",
+      lineId: "line-4",
+      recordedAt: "2026-08-25T10:00:00.000Z",
+    });
+    state = reduceDubState(state, { type: "VERSE_LOADING" });
+    assert.equal(state.phase, "verse-loading");
+    state = reduceDubState(state, { type: "VERSE_STARTED" });
+    assert.equal(state.phase, "verse-playing");
+    state = reduceDubState(state, { type: "VERSE_FAILED" });
+    assert.equal(state.phase, "line-review");
+    assert.equal(state.currentLineIndex, 3);
+    state = reduceDubState(state, { type: "VERSE_LOADING" });
+    state = reduceDubState(state, { type: "VERSE_STARTED" });
+    state = reduceDubState(state, { type: "VERSE_FINISHED" });
+    assert.equal(state.phase, "line-ready");
+    assert.equal(state.currentLineIndex, 4);
+    assert.equal(state.lineMode, "fresh");
+  });
+
+  it("returns a completed-dub replacement directly to the final replay", () => {
+    const savedLineIds = DUB_LINES.map(({ id }) => id);
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      savedLineIds,
+    });
+    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-8" });
+    state = reduceDubState(state, { type: "RETAKE" });
+    assert.equal(state.lineMode, "replacement");
+    state = reduceDubState(state, {
+      type: "SAVE_SUCCEEDED",
+      lineId: "line-8",
+      recordedAt: "2026-08-25T10:00:00.000Z",
+    });
+    state = reduceDubState(state, { type: "NEXT_LINE" });
+    assert.equal(state.phase, "final-ready");
+  });
+
+  it("marks the default final line as a replacement without a select change", () => {
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      savedLineIds: DUB_LINES.slice(0, 23).map(({ id }) => id),
+    });
+    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, {
+      type: "SAVE_SUCCEEDED",
+      lineId: "line-24",
+      recordedAt: "2026-08-25T10:00:00.000Z",
+    });
+    state = reduceDubState(state, { type: "VERSE_LOADING" });
+    state = reduceDubState(state, { type: "VERSE_STARTED" });
+    state = reduceDubState(state, { type: "VERSE_FINISHED" });
+    assert.equal(state.phase, "final-ready");
+    assert.equal(state.currentLineIndex, 23);
+    assert.equal(state.lineMode, "fresh");
+
+    state = reduceDubState(state, { type: "RETAKE" });
+    assert.equal(state.phase, "line-ready");
+    assert.equal(state.lineMode, "replacement");
   });
 });

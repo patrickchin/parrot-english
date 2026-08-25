@@ -11,6 +11,7 @@ const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
   "audio-fetch-failed",
+  "almost-complete",
   "corrupt-line-5",
   "empty",
   "partial",
@@ -20,6 +21,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "reset-interrupted",
   "upload-failed",
   "upload-rejected",
+  "verse-fetch-failed",
 ]);
 const E2E_DUB_LINE_IDS = Array.from(
   { length: 24 },
@@ -408,7 +410,10 @@ function initialE2eDubLineIds(scenario: string) {
   ) {
     return [...E2E_DUB_LINE_IDS];
   }
-  if (scenario === "partial") return E2E_DUB_LINE_IDS.slice(0, 3);
+  if (scenario === "almost-complete") return E2E_DUB_LINE_IDS.slice(0, 23);
+  if (scenario === "partial" || scenario === "verse-fetch-failed") {
+    return E2E_DUB_LINE_IDS.slice(0, 3);
+  }
   return [];
 }
 
@@ -435,7 +440,7 @@ function createE2eDubStore(scenario: string | null) {
     ]),
   );
   let failedUpload: Uint8Array | null = null;
-  let failAudioFetch = scenario === "audio-fetch-failed";
+  let failAudioFetch = scenario === "audio-fetch-failed" || scenario === "verse-fetch-failed";
   let resetInterrupted =
     (scenario === "reset-delete-failed" || scenario === "reset-interrupted") &&
     sessionStorage.getItem(resetKey) !== "yes";
@@ -443,6 +448,7 @@ function createE2eDubStore(scenario: string | null) {
     scenario === "reset-delete-failed" &&
     sessionStorage.getItem(resetDeleteFailureKey) !== "used";
   let delayNextStatus = false;
+  const audioFetches: string[] = [];
   const uploads: string[] = [];
 
   function persist() {
@@ -513,6 +519,7 @@ function createE2eDubStore(scenario: string | null) {
       if (!lineMatch) return null;
       const [, lineId, audioPath] = lineMatch;
       if (method === "GET" && audioPath) {
+        audioFetches.push(url.pathname);
         if (failAudioFetch) {
           failAudioFetch = false;
           return new Response(null, { status: 503 });
@@ -564,6 +571,7 @@ function createE2eDubStore(scenario: string | null) {
     },
     snapshot() {
       return {
+        audioFetches: [...audioFetches],
         audioContextDoubleCloses,
         playedAudioSources: [...playedAudioSources],
         uploads: [...uploads],
@@ -1146,6 +1154,7 @@ class MockAudioContext {
       throw new DOMException("Mock undecodable dub line.", "EncodingError");
     }
     return {
+      duration: 4,
       getChannelData: () => Float32Array.from([0, 0.25, -0.8, 0.45, -1, 0.15]),
     } as unknown as AudioBuffer;
   }
