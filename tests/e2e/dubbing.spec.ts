@@ -125,8 +125,8 @@ test("guardian consent unlocks learner recording without exposing adult controls
     .getByRole("button", { name: /Profile for Mia, learner mode/ })
     .click();
   await page
-    .getByRole("group", { name: "Choose profile mode" })
-    .getByRole("button", { name: "Guardian" })
+    .getByRole("menu", { name: "Account menu" })
+    .getByRole("menuitem", { name: /Grown-up access/ })
     .click();
   const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
   await dialog.getByLabel("Password").fill("e2e-guardian-password");
