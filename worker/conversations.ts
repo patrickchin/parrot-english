@@ -153,13 +153,14 @@ async function requireProfileConversationAccess(input: {
   if (!updatesLearnerProfile(input.purpose)) return;
   let needsGuardian = input.purpose === "profile-edit";
   if (input.purpose === "onboarding") {
-    const profile = await createLearnerProfileRepository(
-      input.database,
-    ).findProfile(input.identity.userId);
-    needsGuardian = Boolean(
-      profile &&
-        (profile.profileStatus === "completed" || profile.lastSkippedAt !== null),
-    );
+    const profileRepository = createLearnerProfileRepository(input.database);
+    const profile = await profileRepository.findProfile(input.identity.userId);
+    needsGuardian =
+      Boolean(
+        profile &&
+          (profile.profileStatus === "completed" ||
+            profile.lastSkippedAt !== null),
+      ) || (await profileRepository.hasSessionBypass(input.identity));
   }
   if (!needsGuardian) return;
   const denied = await requireGuardianAccess({

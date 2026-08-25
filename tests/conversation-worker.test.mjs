@@ -1641,7 +1641,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("creates an exact-session bypass when finalization lacks a required detail", async () => {
+  it("blocks repeated onboarding after finalization creates an exact-session bypass", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -1702,6 +1702,17 @@ describe("conversation persistence and API", () => {
       assert.equal(profile.name, "Mia");
       assert.equal(profile.onboarding_status, "not_started");
       assert.equal(JSON.parse(profile.answers_json).description, "Mia shared her name.");
+
+      const repeatedOnboarding = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+      assert.equal(repeatedOnboarding.status, 403);
+      assert.deepEqual(await repeatedOnboarding.json(), {
+        error: "guardian_required",
+      });
     } finally {
       state.close();
     }

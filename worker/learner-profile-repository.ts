@@ -175,6 +175,7 @@ export function createLearnerProfileRepository(
     complete,
     ensureProfile,
     findProfile,
+    hasSessionBypass,
     loadProfile,
     saveAnswer,
     saveStoryLevel,
