@@ -245,6 +245,51 @@ describe("five little ducks dub domain", () => {
     assert.equal(state.error, "Cleared.");
   });
 
+  it("blocks scene navigation while deletion is active", () => {
+    let state = reduceDubEditorState(createInitialDubEditorState(), {
+      type: "LOADED",
+      savedLineIds: DUB_LINES.slice(0, 8).map(({ id }) => id),
+    });
+    state = reduceDubEditorState(state, { type: "CONFIRMED" });
+    state = reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 2 });
+    state = reduceDubEditorState(state, { type: "SELECT_LINE", lineId: "line-12" });
+    state = reduceDubEditorState(state, {
+      type: "OPERATION_STARTED",
+      operation: "deleting",
+    });
+    const deletingState = state;
+    assert.equal(
+      reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 4 }),
+      deletingState,
+    );
+    assert.equal(
+      reduceDubEditorState(state, { type: "SELECT_LINE", lineId: "line-9" }),
+      deletingState,
+    );
+    assert.equal(
+      reduceDubEditorState(state, { type: "BACK_TO_PROJECT" }),
+      deletingState,
+    );
+  });
+
+  it("ignores open-scene requests before confirmation", () => {
+    const loading = createInitialDubEditorState();
+    assert.equal(
+      reduceDubEditorState(loading, { type: "OPEN_SCENE", sceneIndex: 1 }),
+      loading,
+    );
+
+    const intro = reduceDubEditorState(createInitialDubEditorState(), {
+      type: "LOADED",
+      savedLineIds: DUB_LINES.slice(0, 4).map(({ id }) => id),
+    });
+    assert.equal(intro.view, "intro");
+    assert.equal(
+      reduceDubEditorState(intro, { type: "OPEN_SCENE", sceneIndex: 1 }),
+      intro,
+    );
+  });
+
   it("resets the editor back to intro", () => {
     let state = reduceDubEditorState(createInitialDubEditorState(), {
       type: "LOADED",

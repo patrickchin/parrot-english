@@ -62,6 +62,7 @@ export type DubEditorEvent =
   | { type: "RESET_SUCCEEDED" };
 
 const DUB_UNSAFE_EDITOR_OPERATIONS = new Set<DubOperation>([
+  "deleting",
   "mic-opening",
   "recording",
   "saving",
@@ -167,7 +168,9 @@ export function reduceDubEditorState(
     ? { ...state, error: "", view: "project" }
     : state;
   if (event.type === "OPEN_SCENE") {
-    return canChangeDubEditorSelection(state) ? selectDubEditorScene(state, event.sceneIndex) : state;
+    return canChangeDubEditorSelection(state) && (state.view === "project" || state.view === "scene")
+      ? selectDubEditorScene(state, event.sceneIndex)
+      : state;
   }
   if (event.type === "CONTINUE") {
     if (!canChangeDubEditorSelection(state) || state.view !== "project") return state;
