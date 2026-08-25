@@ -254,6 +254,16 @@ function button(name) {
   return match;
 }
 
+function link(name) {
+  const match = [...document.querySelectorAll("a")].find(
+    (candidate) =>
+      candidate.getAttribute("aria-label") === name ||
+      candidate.textContent.trim() === name,
+  );
+  assert.ok(match, `Expected a link named ${name}.`);
+  return match;
+}
+
 function output(name) {
   const match = document.querySelector(`output[aria-label="${name}"]`);
   assert.ok(match, `Expected an output named ${name}.`);
@@ -948,6 +958,58 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     }
   });
 
+  it("returns Guardian profile Back, Cancel, and Save to the dashboard without returnTo", async () => {
+    const profile = {
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: 8,
+        description: "Mia is eight and likes dinosaurs.",
+      },
+      questions: [question()],
+    };
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+
+    for (const action of ["Back", "Cancel", "Save changes"]) {
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/learner-profile" && init.method === "GET") {
+          return json(completedLearnerProfileState());
+        }
+        if (path === "/api/profile" && init.method === "GET") {
+          return json(profile);
+        }
+        if (path === "/api/profile" && init.method === "PUT") {
+          return json(profile);
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        authenticatedApplicationInMemory({
+          api,
+          initialEntry: "/guardian/profile",
+        }),
+      );
+      await waitFor(() => button(action));
+      await click(button(action));
+      await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
+  });
+
   it("exposes the registered learner name to guardian routes", async () => {
     assert.equal(
       typeof useAccountExperience,
@@ -1012,9 +1074,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await waitFor(() => text(/Switch to learner mode/));
     noText(/Pick a lesson/);
-    const dashboard = document.querySelector('a[href="/guardian"]');
-    assert.ok(dashboard, "Expected a Guardian dashboard escape link.");
-    assert.equal(dashboard.textContent.trim(), "Back to Guardian dashboard");
+    const dashboard = link("Back to Guardian dashboard");
+    assert.equal(dashboard.getAttribute("href"), "/guardian");
     await click(dashboard);
     await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
   });
