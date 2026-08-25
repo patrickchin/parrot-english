@@ -210,6 +210,12 @@ const SPEECH_CHECK_ERROR_MESSAGE =
 const LESSON_AUDIO_ERROR_MESSAGE =
   "The sound stopped. Try it again or skip this sound.";
 const MINIMUM_LESSON_FEEDBACK_MS = 1_500;
+const legacyLessonPhase = {
+  Evaluating: "evaluating",
+  Recording: "recording",
+  Responding: "responding",
+  WaitingForUser: "waiting-for-user",
+} as const;
 
 type LessonEvent =
   | { type: "PLAY_SCENE" }
@@ -485,19 +491,30 @@ export function LessonPlayer({
 
   const currentStep = getCurrentStep(state, currentLesson);
   if (!currentStep) throw new Error("The lesson position is invalid.");
+  const legacyState = state as typeof state & {
+    response?: { dialogue: string; speaker: string } | null;
+    responseOutcome?:
+      | "correct"
+      | "incorrect"
+      | "incorrectFinal"
+      | "noInput"
+      | "noInputFinal"
+      | null;
+    transcript?: string;
+  };
   const scene = useMemo(
     () => getLessonScenePresentation(state, currentLesson, VISUAL_CATALOG),
     [currentLesson, state]
   );
   const progressLabel = getLessonProgressLabel(
     state,
-    state.response ?? currentStep,
+    legacyState.response ?? currentStep,
   );
   const playbackPhase =
     state.phase === LessonPhase.Paused
       ? state.resumePhase
       : state.phase === LessonPhase.Speaking ||
-          state.phase === LessonPhase.Responding
+          state.phase === legacyLessonPhase.Responding
         ? state.phase
         : null;
 
@@ -529,7 +546,7 @@ export function LessonPlayer({
     }
 
     const completionEvent: LessonEvent =
-      playbackPhase === LessonPhase.Responding
+      playbackPhase === legacyLessonPhase.Responding
         ? { type: "RESPONSE_DONE" }
         : { type: "LINE_DONE" };
     let startPlayback: (
@@ -579,7 +596,7 @@ export function LessonPlayer({
       }
     })
       .then(async () => {
-        if (playbackPhase === LessonPhase.Responding) {
+        if (playbackPhase === legacyLessonPhase.Responding) {
           await waitForAbortableDelay(
             Math.max(
               0,
@@ -617,7 +634,7 @@ export function LessonPlayer({
     fullSceneArtwork,
     playbackPhase,
     routedSceneIndex,
-    state.response,
+    legacyState.response,
     state.sceneIndex,
     state.stepIndex,
   ]);
@@ -659,7 +676,7 @@ export function LessonPlayer({
     cancelPendingWork();
     setError("");
     dispatchLessonEvent(
-      playbackPhase === LessonPhase.Responding
+      playbackPhase === legacyLessonPhase.Responding
         ? { type: "RESPONSE_DONE" }
         : { type: "LINE_DONE" },
     );
@@ -700,7 +717,7 @@ export function LessonPlayer({
 
   async function beginRecording() {
     if (
-      state.phase !== LessonPhase.WaitingForUser ||
+      state.phase !== legacyLessonPhase.WaitingForUser ||
       recordingActiveRef.current ||
       recordingRef.current
     ) {
@@ -811,20 +828,22 @@ export function LessonPlayer({
     void beginRecording();
   }
 
-  const isRecording = state.phase === LessonPhase.Recording;
-  const isEvaluating = state.phase === LessonPhase.Evaluating;
+  const isRecording = state.phase === legacyLessonPhase.Recording;
+  const isEvaluating = state.phase === legacyLessonPhase.Evaluating;
   const showUserTurn =
-    state.phase === LessonPhase.WaitingForUser || isRecording || isEvaluating;
+    state.phase === legacyLessonPhase.WaitingForUser || isRecording || isEvaluating;
   const isIdle = state.phase === LessonPhase.Idle;
   const isFinished = state.phase === LessonPhase.Finished;
   const isPaused = state.phase === LessonPhase.Paused;
   const isResponding =
-    state.phase === LessonPhase.Responding ||
-    (isPaused && state.resumePhase === LessonPhase.Responding);
+    state.phase === legacyLessonPhase.Responding ||
+    (isPaused &&
+      (legacyState.resumePhase as string | null) ===
+        legacyLessonPhase.Responding);
   const showActiveScene = !isIdle && !isFinished;
   const showPlaybackControls =
     state.phase === LessonPhase.Speaking ||
-    state.phase === LessonPhase.Responding ||
+    state.phase === legacyLessonPhase.Responding ||
     isPaused;
   const atFirstScene = state.sceneIndex === 0;
   const atFinalScene = state.sceneIndex === currentLesson.scenes.length - 1;
@@ -860,7 +879,7 @@ export function LessonPlayer({
     />
   ) : isResponding ? (
     <LessonFeedback
-      outcome={state.responseOutcome}
+      outcome={legacyState.responseOutcome ?? null}
       reserved={reserved}
       speech={scene.speech}
     />
@@ -987,7 +1006,7 @@ export function LessonPlayer({
             } Scene ${state.sceneIndex + 1} of ${
               currentLesson.scenes.length
             }. ${scene.settingDescription}`}
-        {state.transcript ? ` Heard: ${state.transcript}.` : ""}
+        {legacyState.transcript ? ` Heard: ${legacyState.transcript}.` : ""}
         {error ? ` ${error}` : ""}
       </div>
       <div

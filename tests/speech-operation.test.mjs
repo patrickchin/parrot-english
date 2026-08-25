@@ -1,10 +1,5 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  LessonPhase,
-  createInitialLessonState,
-  reduceLessonState,
-} from "../lib/lesson-state.js";
 import { finishSpeechOperation } from "../src/lessons/speech-operation.ts";
 
 function createDeferred() {
@@ -157,48 +152,8 @@ describe("speech operation isolation", () => {
     assert.equal(evaluationControllerRef.current, null);
   });
 
-  it("recovers an active evaluation AbortError by returning to the learner turn", async () => {
-    const lesson = {
-      childName: "Bella",
-      scenes: [
-        {
-          title: "Practice",
-          steps: [
-            {
-              speaker: "user",
-              dialogue: "Here you are!",
-              check: {
-                maxAttempts: 2,
-                correct: {
-                  speaker: "narrator",
-                  dialogue: "Well done!",
-                  after: "continue",
-                },
-                incorrect: {
-                  speaker: "narrator",
-                  dialogue: "Try again.",
-                  after: "retry",
-                },
-                incorrectFinal: {
-                  speaker: "narrator",
-                  dialogue: "Let's continue.",
-                  after: "continue",
-                },
-              },
-            },
-          ],
-        },
-      ],
-    };
+  it("reports an active evaluation AbortError through its failure callback", async () => {
     const events = [];
-    let state = {
-      ...createInitialLessonState(),
-      phase: LessonPhase.Recording,
-    };
-    const dispatch = (event) => {
-      events.push(event);
-      state = reduceLessonState(state, event, lesson);
-    };
     const recordingController = new AbortController();
     const recordingControllerRef = { current: recordingController };
     const evaluationControllerRef = { current: null };
@@ -210,14 +165,9 @@ describe("speech operation isolation", () => {
       evaluationControllerRef,
       generation: 1,
       getCurrentGeneration: () => 1,
-      onEvaluated: (result) =>
-        dispatch({
-          type: "EVALUATED",
-          outcome: result.outcome,
-          transcript: result.transcript,
-        }),
-      onFailed: () => dispatch({ type: "EVALUATION_FAILED" }),
-      onReleased: () => dispatch({ type: "MIC_RELEASED" }),
+      onEvaluated: () => events.push("evaluated"),
+      onFailed: (error) => events.push(error.name),
+      onReleased: () => events.push("released"),
       recordingController,
       recordingControllerRef,
       session: {
@@ -227,12 +177,7 @@ describe("speech operation isolation", () => {
       targetText: "Here you are!",
     });
 
-    assert.deepEqual(events, [
-      { type: "MIC_RELEASED" },
-      { type: "EVALUATION_FAILED" },
-    ]);
-    assert.equal(state.phase, LessonPhase.WaitingForUser);
-    assert.equal(state.attemptCount, 0);
+    assert.deepEqual(events, ["released", "AbortError"]);
   });
 
   it("ignores a late recording settlement after a new operation starts", async () => {

@@ -1,12 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import * as lessonAudio from "../lib/lesson-audio.js";
+import { getLessonAudioLine, getLessonSpeechLine } from "../lib/lesson-audio.js";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
-const getLessonAudioLine =
-  lessonAudio.getLessonAudioLine ?? (() => undefined);
-const getLessonSpeechLine =
-  lessonAudio.getLessonSpeechLine ?? (() => undefined);
 const lesson = {
   childName: "Bella",
   scenes: [
@@ -20,7 +16,7 @@ const lesson = {
 };
 
 describe("lesson audio", () => {
-  it("returns source-independent speech for on-device My Lesson playback", () => {
+  it("returns source-independent story speech only while speaking", () => {
     assert.deepEqual(
       getLessonSpeechLine(
         { ...createInitialLessonState(), phase: LessonPhase.Speaking },
@@ -28,91 +24,39 @@ describe("lesson audio", () => {
       ),
       { speaker: "dolly", text: "Here you are!" },
     );
-    assert.deepEqual(
+    assert.equal(
       getLessonSpeechLine(
-        {
-          ...createInitialLessonState(),
-          phase: LessonPhase.Responding,
-          response: {
-            speaker: "narrator",
-            dialogue: "Almost! Try again.",
-            after: "retry",
-          },
-        },
+        { ...createInitialLessonState(), phase: LessonPhase.JoiningIn, stepIndex: 1 },
         lesson,
       ),
-      { speaker: "narrator", text: "Almost! Try again." },
+      null,
     );
   });
 
   it("resolves the current scripted speaker by exact text", () => {
-    const line = getLessonAudioLine(
-      { ...createInitialLessonState(), phase: LessonPhase.Speaking },
-      lesson
-    );
-
-    assert.deepEqual(line, {
-      audioId: "dolly-here-you-are",
-      audioSrc: "/assets/audio/dolly-here-you-are.mp3",
-      lang: "en-US",
-      speaker: "dolly",
-      text: "Here you are!",
-    });
-  });
-
-  it("resolves scripted response audio using its actual speaker", () => {
-    const line = getLessonAudioLine(
+    assert.deepEqual(
+      getLessonAudioLine(
+        { ...createInitialLessonState(), phase: LessonPhase.Speaking },
+        lesson,
+      ),
       {
-        ...createInitialLessonState(),
-        phase: LessonPhase.Responding,
-        response: {
-          speaker: "dolly",
-          dialogue: "Here you are!",
-          after: "retry",
-        },
-        responseOutcome: "incorrect",
+        audioId: "dolly-here-you-are",
+        audioSrc: "/assets/audio/dolly-here-you-are.mp3",
+        lang: "en-US",
+        speaker: "dolly",
+        text: "Here you are!",
       },
-      lesson
     );
-
-    assert.equal(line.speaker, "dolly");
-    assert.equal(line.text, "Here you are!");
-    assert.equal(line.audioSrc, "/assets/audio/dolly-here-you-are.mp3");
   });
 
-  it("resolves name-free retry feedback to saved narration", () => {
-    const line = getLessonAudioLine(
-      {
-        ...createInitialLessonState(),
-        phase: LessonPhase.Responding,
-        response: {
-          speaker: "narrator",
-          dialogue: "Almost! Try again.",
-          after: "retry",
-        },
-        responseOutcome: "incorrect",
-      },
-      lesson,
-    );
-
-    assert.equal(line.text, "Almost! Try again.");
-    assert.equal(line.audioSrc, "/assets/audio/narrator-feedback-retry.mp3");
-  });
-
-  it("stays silent for user interaction and idle phases", () => {
-    for (const phase of [
-      LessonPhase.Idle,
-      LessonPhase.WaitingForUser,
-      LessonPhase.Recording,
-      LessonPhase.Evaluating,
-      LessonPhase.Finished,
-    ]) {
+  it("stays silent outside automatic story speech", () => {
+    for (const phase of [LessonPhase.Idle, LessonPhase.JoiningIn, LessonPhase.Paused, LessonPhase.Finished]) {
       assert.equal(
         getLessonAudioLine(
           { ...createInitialLessonState(), phase, stepIndex: 1 },
-          lesson
+          lesson,
         ),
-        null
+        null,
       );
     }
   });
@@ -124,12 +68,11 @@ describe("lesson audio", () => {
     };
 
     assert.throws(
-      () =>
-        getLessonAudioLine(
-          { ...createInitialLessonState(), phase: LessonPhase.Speaking },
-          missingLesson
-        ),
-      /Missing saved audio for narrator: A new line\./
+      () => getLessonAudioLine(
+        { ...createInitialLessonState(), phase: LessonPhase.Speaking },
+        missingLesson,
+      ),
+      /Missing saved audio for narrator: A new line\./,
     );
   });
 });

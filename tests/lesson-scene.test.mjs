@@ -167,62 +167,31 @@ describe("scene-script presentation", () => {
     assert.equal(scene.characters.some((character) => character.isActive), false);
   });
 
-  it("keeps user speech metadata without presenting a user character", () => {
-    for (const phase of [
-      LessonPhase.WaitingForUser,
-      LessonPhase.Recording,
-      LessonPhase.Evaluating,
-    ]) {
-      const scene = getLessonScenePresentation(
-        { ...createInitialLessonState(), phase, stepIndex: 2 },
-        lesson,
-        catalog
-      );
-
-      assert.deepEqual(scene.speech, {
-        speaker: "user",
-        text: "Here you are!",
-        kind: "user",
-      });
-      assert.equal(
-        scene.characters.find((character) => character.id === "peppa").emote,
-        "listening",
-      );
-      assert.equal(scene.characters.some((character) => character.id === "user"), false);
-    }
-  });
-
-  it("presents a scripted responder with inherited and partial emotes", () => {
-    const response = lesson.scenes[0].steps[2].check.correct;
+  it("keeps the scripted join-in speech and emotes without feedback overrides", () => {
     const scene = getLessonScenePresentation(
       {
         ...createInitialLessonState(),
-        phase: LessonPhase.Responding,
+        phase: LessonPhase.JoiningIn,
         stepIndex: 2,
-        response,
-        responseOutcome: "correct",
       },
       lesson,
       catalog
     );
 
     assert.deepEqual(scene.speech, {
-      speaker: "peppa",
-      text: "Well done!",
-      kind: "feedback",
+      speaker: "user",
+      text: "Here you are!",
+      kind: "user",
     });
     assert.equal(
       scene.characters.find((character) => character.id === "peppa").emote,
-      "happy",
+      "listening",
     );
     assert.equal(
       scene.characters.find((character) => character.id === "dolly").emote,
       "listening",
     );
-    assert.equal(
-      scene.characters.find((character) => character.id === "peppa").isActive,
-      true,
-    );
+    assert.equal(scene.characters.some((character) => character.id === "user"), false);
   });
 
   it("starts omitted scene emotes from idle and applies later overrides", () => {
