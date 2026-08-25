@@ -51,11 +51,36 @@ const boxedResponsiveViewports = [
   { name: "large desktop", width: 2560, height: 1440 },
 ];
 
+const adaptiveDesktopViewports = [
+  { name: "narrow desktop boundary", width: 900, height: 560 },
+  { name: "narrow desktop", width: 960, height: 600 },
+  { name: "sub-1024 desktop", width: 1023, height: 600 },
+  { name: "compact-height desktop boundary", width: 1024, height: 560 },
+  { name: "short desktop", width: 1024, height: 600 },
+  { name: "short compact laptop", width: 1280, height: 600 },
+  { name: "short regular laptop", width: 1366, height: 600 },
+  { name: "small desktop", width: 1024, height: 768 },
+  { name: "compact laptop", width: 1280, height: 720 },
+  { name: "regular laptop", width: 1366, height: 768 },
+  { name: "large laptop", width: 1440, height: 900 },
+  { name: "full HD desktop", width: 1920, height: 1080 },
+  { name: "large desktop", width: 2560, height: 1440 },
+  { name: "ultrawide desktop", width: 3440, height: 1440 },
+];
+
 function usesBoxedSideBySideLayout(viewport: {
   width: number;
   height: number;
 }) {
   return viewport.width >= 560 && viewport.width > viewport.height;
+}
+
+function usesSceneSafePanel(viewport: { width: number; height: number }) {
+  return (
+    viewport.width >= 900 &&
+    viewport.height >= 560 &&
+    viewport.width > viewport.height
+  );
 }
 
 function usesLayeredLearningPane(viewport: { width: number; height: number }) {
@@ -791,6 +816,195 @@ test("the start state introduces the lesson without premature scene UI", async (
   await expectNoPageOverflow(page);
 });
 
+test("lesson start waits for the matching rendered picture to decode", async ({
+  page,
+}) => {
+  let releaseCurrentImage!: () => void;
+  const currentImageGate = new Promise<void>((resolve) => {
+    releaseCurrentImage = resolve;
+  });
+  await page.route(
+    "https://media.parrotbook.com/**/full-scenes/**",
+    async (route) => {
+      if (route.request().url().endsWith("01-ball-up-high.webp")) {
+        await currentImageGate;
+      }
+      await route.fulfill({
+        body: tinySceneWebp,
+        contentType: "image/webp",
+        status: 200,
+      });
+    },
+  );
+  await page.goto(lessonPath, { waitUntil: "domcontentloaded" });
+  const start = page.getByRole("button", { name: "Start lesson" });
+  await start.waitFor();
+  await page.evaluate(() => {
+    class CountingAudio {
+      onended: ((event: Event) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      pause() {}
+
+      async play() {
+        const metrics = window as Window & { __parrotAudioPlayCount?: number };
+        metrics.__parrotAudioPlayCount =
+          (metrics.__parrotAudioPlayCount ?? 0) + 1;
+      }
+    }
+
+    Object.defineProperty(window, "Audio", {
+      configurable: true,
+      value: CountingAudio,
+    });
+  });
+  await expect(start).toBeDisabled();
+  await expect(start).toContainText("Loading picture…");
+
+  const artworkImage = page
+    .getByRole("region", { name: "Lesson artwork" })
+    .getByRole("img");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __parrotAudioPlayCount?: number })
+            .__parrotAudioPlayCount ?? 0,
+      ),
+    )
+    .toBe(0);
+  await expect
+    .poll(() =>
+      artworkImage.evaluate(
+        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(false);
+  await expect(
+    page
+      .getByRole("region", { name: "Lesson artwork" })
+      .getByRole("status"),
+  ).toContainText("Loading picture…");
+  await expect(
+    page.getByRole("navigation", { name: "Lesson playback controls" }),
+  ).toBeHidden();
+
+  releaseCurrentImage();
+  await expect
+    .poll(() =>
+      artworkImage.evaluate(
+        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+  await expect(start).toBeEnabled();
+  await expect(start).toContainText("Let’s go!");
+  await start.click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __parrotAudioPlayCount?: number })
+            .__parrotAudioPlayCount ?? 0,
+      ),
+    )
+    .toBe(1);
+  await expect(
+    page.getByRole("navigation", { name: "Lesson playback controls" }),
+  ).toBeVisible();
+});
+
+test("a failed lesson picture can be retried before playback continues", async ({
+  page,
+}) => {
+  let allowCurrentImage = false;
+  await page.route(
+    "https://media.parrotbook.com/**/full-scenes/**",
+    async (route) => {
+      if (
+        route.request().url().endsWith("01-ball-up-high.webp") &&
+        !allowCurrentImage
+      ) {
+        await route.abort("failed");
+        return;
+      }
+      await route.fulfill({
+        body: tinySceneWebp,
+        contentType: "image/webp",
+        status: 200,
+      });
+    },
+  );
+  await page.goto(lessonPath);
+
+  const pictureError = page.getByRole("alert").filter({
+    hasText: "No picture yet.",
+  });
+  await expect(pictureError).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Lesson introduction" }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("navigation", { name: "Lesson playback controls" }),
+  ).toBeHidden();
+  allowCurrentImage = true;
+  await page
+    .getByRole("button", { name: "Try loading picture again" })
+    .click();
+
+  const artworkImage = page
+    .getByRole("region", { name: "Lesson artwork" })
+    .getByRole("img");
+  await expect
+    .poll(() =>
+      artworkImage.evaluate(
+        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+  await expect(pictureError).toBeHidden();
+  const start = page.getByRole("button", { name: "Start lesson" });
+  await expect(start).toBeEnabled();
+  await start.click();
+  await expect(
+    page.getByRole("navigation", { name: "Lesson playback controls" }),
+  ).toBeVisible();
+});
+
+test("a stalled lesson picture becomes retryable", async ({ page }) => {
+  let releaseCurrentImage!: () => void;
+  const currentImageGate = new Promise<void>((resolve) => {
+    releaseCurrentImage = resolve;
+  });
+  await page.clock.install();
+  await page.route(
+    "https://media.parrotbook.com/**/full-scenes/**",
+    async (route) => {
+      if (route.request().url().endsWith("01-ball-up-high.webp")) {
+        await currentImageGate;
+      }
+      await route.fulfill({
+        body: tinySceneWebp,
+        contentType: "image/webp",
+        status: 200,
+      });
+    },
+  );
+  await page.goto(lessonPath, { waitUntil: "domcontentloaded" });
+
+  const start = page.getByRole("button", { name: "Start lesson" });
+  await expect(start).toBeDisabled();
+  await page.clock.fastForward(8_001);
+  await expect(
+    page.getByRole("alert").filter({ hasText: "No picture yet." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Try loading picture again" }),
+  ).toBeVisible();
+
+  releaseCurrentImage();
+});
+
 for (const viewport of viewports) {
   test(`listening and learner turns stay composed on a ${viewport.name}`, async ({
     page,
@@ -974,6 +1188,149 @@ for (const viewport of boxedLandscapeViewports) {
   });
 }
 
+for (const viewport of adaptiveDesktopViewports) {
+  test(`boxed artwork fills the available story stage on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(lessonPath);
+    await installAudioDelay(page, 5_000);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const activeContent = page.getByRole("region", {
+      name: "Active lesson content",
+    });
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const learningPanel = page.getByRole("region", {
+      name: "Lesson words and controls",
+    });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status").filter({
+      hasText: "Look! My ball!",
+    });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const activeBox = await expectInsideViewport(activeContent, viewport);
+    const artworkBox = await expectInsideViewport(artwork, viewport);
+    const largestContainedWidth = Math.min(
+      activeBox.width,
+      (activeBox.height * 16) / 9,
+    );
+
+    expect(artworkBox.width).toBeGreaterThanOrEqual(largestContainedWidth - 8);
+    expect(artworkBox.width / artworkBox.height).toBeCloseTo(16 / 9, 1);
+    const panelBox = await expectInsideViewport(learningPanel, viewport);
+    expect(panelBox.width).toBeLessThanOrEqual(artworkBox.width * 0.33);
+    expect(panelBox.width).toBeLessThanOrEqual(448);
+    expect(panelBox.height).toBeLessThanOrEqual(320);
+    await expectContainedBy(learningPanel, artwork);
+    for (const surface of [hud, speech, controls]) {
+      await expectInsideViewport(surface, viewport);
+      await expectContainedBy(surface, learningPanel);
+    }
+    const line = speech.getByText("Look! My ball!", { exact: true });
+    await expectInsideViewport(line, viewport);
+    await expectContainedBy(line, speech);
+    await expect
+      .poll(() =>
+        line.evaluate(
+          (element) => element.scrollHeight <= element.clientHeight,
+        ),
+      )
+      .toBe(true);
+    await expectNoOverlap(hud, speech);
+    await expectNoOverlap(hud, controls);
+    await expectNoOverlap(speech, controls);
+    await expectNoPageOverflow(page);
+  });
+}
+
+for (const viewport of [
+  { name: "small desktop", width: 1024, height: 768 },
+  { name: "large laptop", width: 1440, height: 900 },
+]) {
+  test(`crowded artwork uses a shallow learning ribbon on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/lessons/parrot/05-market-day/scenes/1");
+    await installAudioDelay(page, 5_000);
+    await page.getByRole("button", { name: "Start lesson" }).click();
+
+    const activeContent = page.getByRole("region", {
+      name: "Active lesson content",
+    });
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const learningPanel = page.getByRole("region", {
+      name: "Lesson words and controls",
+    });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const speech = page.getByRole("status").filter({
+      hasText: "Welcome to my fruit stand!",
+    });
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const activeBox = await expectInsideViewport(activeContent, viewport);
+    const artworkBox = await expectInsideViewport(artwork, viewport);
+    const largestContainedWidth = Math.min(
+      activeBox.width,
+      (activeBox.height * 16) / 9,
+    );
+
+    expect(artworkBox.width).toBeGreaterThanOrEqual(largestContainedWidth - 8);
+    const panelBox = await expectInsideViewport(learningPanel, viewport);
+    expect(panelBox.width).toBeGreaterThanOrEqual(artworkBox.width * 0.7);
+    expect(panelBox.height).toBeLessThanOrEqual(artworkBox.height * 0.22);
+    await expectContainedBy(learningPanel, artwork);
+    for (const surface of [hud, speech, controls]) {
+      await expectInsideViewport(surface, viewport);
+      await expectContainedBy(surface, learningPanel);
+    }
+    await expectLeftOf(hud, speech);
+    await expectLeftOf(speech, controls);
+    await expectNoOverlap(hud, speech);
+    await expectNoOverlap(speech, controls);
+    await expectNoPageOverflow(page);
+  });
+}
+
+test("playback controls keep one anchor while scene composition changes", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(lessonPath);
+  await installAudioDelay(page, 5_000);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+
+  const controls = page.getByRole("navigation", {
+    name: "Lesson playback controls",
+  });
+  const firstBox = await visibleBox(controls);
+  const next = controls.getByRole("button", { name: "Next scene" });
+  await next.click();
+  await expect(page).toHaveURL(/\/scenes\/2$/);
+  await next.click();
+  await expect(page).toHaveURL(/\/scenes\/3$/);
+  const thirdArtwork = page.getByAltText(
+    "Peppa asks Dolly for help beneath the tree while the ball stays high above",
+  );
+  await expect
+    .poll(() =>
+      thirdArtwork.evaluate(
+        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+  const thirdBox = await visibleBox(controls);
+
+  expect(Math.abs(thirdBox.x - firstBox.x)).toBeLessThanOrEqual(8);
+  expect(Math.abs(thirdBox.y - firstBox.y)).toBeLessThanOrEqual(8);
+  expect(Math.abs(thirdBox.width - firstBox.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(thirdBox.height - firstBox.height)).toBeLessThanOrEqual(2);
+});
+
 for (const viewport of boxedResponsiveViewports) {
   test(`boxed artwork stays large and clear while listening on a ${viewport.name}`, async ({
     page,
@@ -996,15 +1353,23 @@ for (const viewport of boxedResponsiveViewports) {
     await expectInsideViewport(hud, viewport);
     await expectInsideViewport(speech, viewport);
     await expectInsideViewport(controls, viewport);
-    await expectNoOverlap(artwork, hud);
-    await expectNoOverlap(artwork, speech);
-    await expectNoOverlap(artwork, controls);
     await expectNoOverlap(speech, controls);
 
-    if (usesBoxedSideBySideLayout(viewport)) {
+    if (usesSceneSafePanel(viewport)) {
+      const learningPanel = page.getByRole("region", {
+        name: "Lesson words and controls",
+      });
+      await expectContainedBy(learningPanel, artwork);
+      for (const surface of [hud, speech, controls]) {
+        await expectContainedBy(surface, learningPanel);
+      }
+    } else if (usesBoxedSideBySideLayout(viewport)) {
       await expectLeftOf(artwork, hud);
       await expectLeftOf(artwork, speech);
       await expectLeftOf(artwork, controls);
+      await expectNoOverlap(artwork, hud);
+      await expectNoOverlap(artwork, speech);
+      await expectNoOverlap(artwork, controls);
       if (viewport.height > 620) {
         expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width * 0.55);
       }
@@ -1012,6 +1377,9 @@ for (const viewport of boxedResponsiveViewports) {
       await expectBefore(hud, artwork);
       await expectBefore(artwork, speech);
       await expectBefore(speech, controls);
+      await expectNoOverlap(artwork, hud);
+      await expectNoOverlap(artwork, speech);
+      await expectNoOverlap(artwork, controls);
       expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width - 24);
     }
 
@@ -1022,6 +1390,7 @@ for (const viewport of boxedResponsiveViewports) {
 
 for (const viewport of [
   { name: "compact portrait window", width: 430, height: 600 },
+  { name: "compact-height desktop boundary", width: 1024, height: 560 },
   { name: "small desktop", width: 1024, height: 768 },
   { name: "compact laptop", width: 1280, height: 720 },
   { name: "large laptop", width: 1440, height: 900 },
@@ -1049,9 +1418,22 @@ for (const viewport of [
     await expectInsideViewport(artwork, viewport);
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(speakingControls, viewport);
-    await expectNoOverlap(artwork, hud);
-    await expectNoOverlap(artwork, prompt);
-    await expectNoOverlap(artwork, speakingControls);
+    if (usesSceneSafePanel(viewport)) {
+      const learningPanel = page.getByRole("region", {
+        name: "Lesson words and controls",
+      });
+      for (const surface of [hud, prompt, speakingControls]) {
+        await expectContainedBy(surface, learningPanel);
+      }
+      await expectContainedBy(
+        prompt.getByText("It is up high!", { exact: true }),
+        prompt,
+      );
+    } else {
+      await expectNoOverlap(artwork, hud);
+      await expectNoOverlap(artwork, prompt);
+      await expectNoOverlap(artwork, speakingControls);
+    }
     await expectNoOverlap(prompt, speakingControls);
 
     const microphone = speakingControls.getByRole("button").first();
@@ -1065,8 +1447,17 @@ for (const viewport of [
     await expect(feedback).toBeVisible();
     await expectInsideViewport(feedback, viewport);
     await expectInsideViewport(playbackControls, viewport);
-    await expectNoOverlap(artwork, feedback);
-    await expectNoOverlap(artwork, playbackControls);
+    if (usesSceneSafePanel(viewport)) {
+      const learningPanel = page.getByRole("region", {
+        name: "Lesson words and controls",
+      });
+      for (const surface of [hud, feedback, playbackControls]) {
+        await expectContainedBy(surface, learningPanel);
+      }
+    } else {
+      await expectNoOverlap(artwork, feedback);
+      await expectNoOverlap(artwork, playbackControls);
+    }
     await expectNoOverlap(feedback, playbackControls);
     await expectNoPageOverflow(page);
   });
@@ -1437,6 +1828,46 @@ test("a saved portrait stays inside a boxed learner turn in short landscape", as
   await expectLeftOf(artwork, controls);
   await expectNoOverlap(artwork, prompt);
   await expectNoOverlap(artwork, controls);
+  await expectNoOverlap(prompt, controls);
+  await expectNoPageOverflow(page);
+});
+
+test("a saved portrait keeps the full desktop story stage stable", async ({
+  page,
+}) => {
+  const viewport = { width: 1024, height: 768 };
+  await page.setViewportSize(viewport);
+  await mockSavedLessonPortrait(page);
+  await page.goto(lessonPath);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  await waitForLearnerTurn(page);
+
+  const activeContent = page.getByRole("region", {
+    name: "Active lesson content",
+  });
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  const learningPanel = page.getByRole("region", {
+    name: "Lesson words and controls",
+  });
+  const prompt = page.getByRole("region", { name: "Your turn" });
+  const portrait = prompt.getByRole("img", { name: "You in storybook style" });
+  const controls = page.getByRole("navigation", { name: "Speaking controls" });
+  const activeBox = await expectInsideViewport(activeContent, viewport);
+  const artworkBox = await expectInsideViewport(artwork, viewport);
+  const largestContainedWidth = Math.min(
+    activeBox.width,
+    (activeBox.height * 16) / 9,
+  );
+
+  expect(artworkBox.width).toBeGreaterThanOrEqual(largestContainedWidth - 8);
+  const portraitBox = await expectInsideViewport(portrait, viewport);
+  expect(portraitBox.width).toBeGreaterThanOrEqual(44);
+  expect(portraitBox.height).toBeGreaterThanOrEqual(44);
+  await expectContainedBy(learningPanel, artwork);
+  await expectContainedBy(portrait, prompt);
+  for (const surface of [prompt, controls]) {
+    await expectContainedBy(surface, learningPanel);
+  }
   await expectNoOverlap(prompt, controls);
   await expectNoPageOverflow(page);
 });
@@ -1956,9 +2387,35 @@ test("completion becomes a focused end screen and replay restarts the story", as
   await expect(page.getByText("Great job!", { exact: true })).toBeHidden();
 
   await installAudioDelay(page, 2_000);
+  const audioCreationsBeforeReplay = await page.evaluate(
+    () =>
+      (window as Window & { __lessonAudioCreations?: number })
+        .__lessonAudioCreations ?? 0,
+  );
+  await page.evaluate(() => {
+    const decode = HTMLImageElement.prototype.decode;
+    Object.defineProperty(HTMLImageElement.prototype, "decode", {
+      configurable: true,
+      value(this: HTMLImageElement) {
+        if (this.src.endsWith("01-ball-up-high.webp")) {
+          return new Promise<void>(() => undefined);
+        }
+        return decode.call(this);
+      },
+    });
+  });
   await completion.getByRole("button", { name: "Replay lesson" }).click();
   await expect(completion).toBeHidden();
   await expect(page).toHaveURL(/\/scenes\/1$/);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as Window & { __lessonAudioCreations?: number })
+            .__lessonAudioCreations ?? 0,
+      ),
+    )
+    .toBe(audioCreationsBeforeReplay + 1);
   await expect(
     page.getByRole("region", { name: "Lesson progress" }),
   ).toBeVisible();
@@ -2074,6 +2531,50 @@ test("a denied microphone offers calm unscored practice on a narrow phone", asyn
   await expect(
     page.getByRole("region", { name: "Speaking feedback" }),
   ).toBeHidden();
+});
+
+test("desktop microphone help becomes one compact recovery panel", async ({
+  page,
+}) => {
+  const viewport = { width: 1440, height: 900 };
+  await page.setViewportSize(viewport);
+  await page.goto(`${lessonPath}?parrotE2eMicrophone=denied`);
+  await page.getByRole("button", { name: "Start lesson" }).click();
+  const microphone = await waitForLearnerTurn(page);
+  await microphone.click();
+
+  const artwork = page.getByRole("region", { name: "Lesson artwork" });
+  const learningPanel = page.getByRole("region", {
+    name: "Lesson words and controls",
+  });
+  const hud = page.getByRole("region", { name: "Lesson progress" });
+  const prompt = page.getByRole("region", { name: "Your turn" });
+  const help = page.getByRole("region", { name: "Speaking help" });
+  const controls = page.getByRole("navigation", {
+    name: "Speaking controls",
+  });
+  const artworkBox = await expectInsideViewport(artwork, viewport);
+  const panelBox = await expectInsideViewport(learningPanel, viewport);
+
+  expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width * 0.68);
+  expect(artworkBox.width / artworkBox.height).toBeCloseTo(16 / 9, 1);
+  expect(panelBox.height).toBeLessThanOrEqual(artworkBox.height * 0.8);
+  await expectLeftOf(artwork, learningPanel);
+  await expectNoOverlap(artwork, learningPanel);
+  for (const surface of [hud, prompt, help, controls]) {
+    await expectContainedBy(surface, learningPanel);
+  }
+  for (const [index, surface] of [hud, prompt, help, controls].entries()) {
+    for (const nextSurface of [hud, prompt, help, controls].slice(index + 1)) {
+      await expectNoOverlap(surface, nextSurface);
+    }
+  }
+  for (const button of await controls.getByRole("button").all()) {
+    const box = await expectInsideViewport(button, viewport);
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+  await expectNoPageOverflow(page);
 });
 
 test("a boxed sound error stays clear in short landscape", async ({ page }) => {

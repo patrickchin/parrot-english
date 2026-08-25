@@ -46,6 +46,12 @@
   }
 }
 
+@custom-variant tall-wide {
+  @media (min-width: 900px) and (min-height: 560px) and (orientation: landscape) {
+    @slot;
+  }
+}
+
 @utility bg-auth {
   background-image:
     radial-gradient(
