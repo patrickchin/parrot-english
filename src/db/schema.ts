@@ -68,6 +68,26 @@ export const guardianSessionUnlock = sqliteTable(
   (table) => [index("guardian_session_unlock_expires_at_idx").on(table.expiresAt)],
 );
 
+export const guardianDubConsent = sqliteTable(
+  "guardian_dub_consent",
+  {
+    authUserId: text("auth_user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    consentVersion: text("consent_version").notNull(),
+    grantGeneration: text("grant_generation").notNull(),
+    state: text("state").notNull(),
+    grantedAt: integer("granted_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    check(
+      "guardian_dub_consent_state_check",
+      sql`${table.state} in ('granted', 'revoking')`,
+    ),
+  ],
+);
+
 export const account = sqliteTable(
   "account",
   {
@@ -459,6 +479,7 @@ export const accountDeletionTombstone = sqliteTable(
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
+  guardianDubConsent: one(guardianDubConsent),
   learnerProfile: one(learnerProfile),
   learnerLessons: many(learnerLesson),
   personalizedStoryArt: many(personalizedStoryArt),
@@ -468,6 +489,16 @@ export const userRelations = relations(user, ({ many, one }) => ({
   profileSessionBypasses: many(profileSessionBypass),
   sessions: many(session),
 }));
+
+export const guardianDubConsentRelations = relations(
+  guardianDubConsent,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [guardianDubConsent.authUserId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const learnerLessonRelations = relations(
   learnerLesson,

@@ -3,11 +3,14 @@ import { createHash } from "node:crypto";
 import { ReadableStream } from "node:stream/web";
 import { describe, it } from "node:test";
 import { TextEncoder } from "node:util";
+import { createDatabase } from "../worker/database.ts";
+import { createDubConsentRepository } from "../worker/dub-consent.ts";
+import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
+const CURRENT_CONSENT_VERSION = "guardian-voice-r2-v2";
 const CONSENT_HEADERS = {
   "Content-Type": "audio/webm",
-  "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
 };
 const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
 const OWNER_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
@@ -58,6 +61,60 @@ function createClock(iso = "2026-08-25T10:00:00.000Z") {
     wait: async (delay) => {
       waits.push(delay);
       milliseconds += delay;
+    },
+  };
+}
+
+function createConsentRepository(
+  initial = {
+    state: "granted",
+    consentVersion: CURRENT_CONSENT_VERSION,
+    grantGeneration: "consent-1",
+    grantedAt: new Date("2026-08-25T08:00:00.000Z"),
+  },
+) {
+  let current = initial;
+  return {
+    async beginRevocation() {
+      if (current.state === "granted") {
+        current = {
+          state: "revoking",
+          grantGeneration: current.grantGeneration,
+        };
+      }
+      return current;
+    },
+    async finishRevocation(_userId, generation) {
+      if (
+        current.state === "revoking" &&
+        current.grantGeneration === generation
+      ) {
+        current = { state: "not_granted" };
+      }
+    },
+    async grant() {
+      if (current.state === "revoking") throw new Error("dub_consent_revoking");
+      current = {
+        state: "granted",
+        consentVersion: CURRENT_CONSENT_VERSION,
+        grantGeneration: "consent-1",
+        grantedAt: new Date("2026-08-25T08:00:00.000Z"),
+      };
+      return current;
+    },
+    async requireCurrentGrant(_userId, expectedGeneration) {
+      return current.state === "granted" &&
+          current.consentVersion === CURRENT_CONSENT_VERSION &&
+          (expectedGeneration === undefined ||
+            current.grantGeneration === expectedGeneration)
+        ? current
+        : null;
+    },
+    set(next) {
+      current = next;
+    },
+    async status() {
+      return current;
     },
   };
 }
@@ -251,6 +308,7 @@ function createBucket(seed = [], {
 async function callDub({
   body,
   bucket = createBucket(),
+  consentRepository = createConsentRepository(),
   headers = {},
   method,
   path,
@@ -270,6 +328,7 @@ async function callDub({
     identity: { sessionId: "session-1", userId, userName: "Parent" },
     request: new Request(`https://example.test${path}`, init),
   }, {
+    consentRepository,
     createGeneration: generation,
     createUploadNonce: nonce,
     isDeletionPending: pending,
@@ -279,6 +338,602 @@ async function callDub({
 }
 
 describe("private learner dub API", () => {
+  it("keeps the first durable generation without reviving the retired v1 prefix", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      let generationCalls = 0;
+      const consentRepository = createDubConsentRepository(
+        createDatabase(state.d1),
+        {
+          createGeneration: () => `consent-${++generationCalls}`,
+          now: () => new Date("2026-08-25T08:00:00.000Z"),
+        },
+      );
+      const bucket = createBucket([
+        [slotKey("line-1"), {
+          bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+          options: { httpMetadata: { contentType: "audio/webm" } },
+          uploaded: new Date("2026-08-25T07:00:00.000Z"),
+        }],
+        [legacySlotKey("line-2"), {
+          bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 2]),
+          options: { httpMetadata: { contentType: "audio/webm" } },
+          uploaded: new Date("2026-08-25T07:00:00.000Z"),
+        }],
+      ]);
+      const grant = () => callDub({
+        body: JSON.stringify({
+          accepted: true,
+          consentVersion: CURRENT_CONSENT_VERSION,
+        }),
+        bucket,
+        consentRepository,
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+        path: `${DUB_PATH}/consent`,
+      });
+
+      assert.equal((await grant()).status, 204);
+      const first = await consentRepository.status("user-1");
+      assert.equal(first.state, "granted");
+      assert.equal(first.grantGeneration, "consent-1");
+      const firstStatus = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      }).then((response) => response.json());
+      assert.deepEqual(
+        firstStatus.lines.filter(({ saved }) => saved).map(({ id }) => id),
+        ["line-1"],
+      );
+      assert.equal((await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: `${DUB_PATH}/lines/line-2/audio`,
+      })).status, 404);
+
+      const repeated = await Promise.all([grant(), grant()]);
+      assert.deepEqual(repeated.map(({ status }) => status), [204, 204]);
+      const current = await consentRepository.status("user-1");
+      assert.equal(current.state, "granted");
+      assert.equal(current.grantGeneration, first.grantGeneration);
+      assert.equal(generationCalls, 1);
+      assert.equal((await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      }).then((response) => response.json())).lines[0].saved, true);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("lets a guardian take over a legacy deleting marker after granting fresh consent", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      const consentRepository = createDubConsentRepository(
+        createDatabase(state.d1),
+        {
+          createGeneration: () => "consent-1",
+          now: () => new Date("2026-08-25T08:00:00.000Z"),
+        },
+      );
+      const bucket = createBucket([[MARKER_KEY, {
+        bytes: fenceBytes("marker", "legacy-reset", "deleting"),
+        options: {
+          customMetadata: { generation: "legacy-reset", state: "deleting" },
+        },
+        uploaded: new Date("2026-08-25T07:00:00.000Z"),
+      }]]);
+
+      const initial = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+      assert.equal(initial.status, 200);
+      assert.equal((await initial.json()).consentState, "not_granted");
+      assert.equal(bucket.calls.list.length, 0);
+
+      const grant = await callDub({
+        body: JSON.stringify({
+          accepted: true,
+          consentVersion: CURRENT_CONSENT_VERSION,
+        }),
+        bucket,
+        consentRepository,
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+        path: `${DUB_PATH}/consent`,
+      });
+      assert.equal(grant.status, 204);
+
+      const interrupted = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+      assert.equal(interrupted.status, 409);
+      assert.equal((await interrupted.json()).error, "dub_reset_in_progress");
+
+      const cleanup = await callDub({
+        bucket,
+        consentRepository,
+        generation: () => "reset-2",
+        method: "DELETE",
+        path: DUB_PATH,
+      });
+      assert.equal(cleanup.status, 204);
+      assert.deepEqual(await consentRepository.status("user-1"), {
+        state: "not_granted",
+      });
+      assertResetTombstones(bucket, "reset-2");
+
+      const final = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+      assert.equal(final.status, 200);
+      assert.equal((await final.json()).consentState, "not_granted");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns disabled status without listing R2 when consent is absent or revoking", async () => {
+    for (const consentState of ["not_granted", "revoking"]) {
+      const bucket = createBucket();
+      const consentRepository = createConsentRepository(
+        consentState === "revoking"
+          ? { state: "revoking", grantGeneration: "consent-1" }
+          : { state: "not_granted" },
+      );
+      const response = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+
+      assert.equal(response.status, 200, consentState);
+      assert.deepEqual(await response.json(), {
+        complete: false,
+        consentState,
+        dubId: "five-little-ducks-v2",
+        guardianConsentVersion: CURRENT_CONSENT_VERSION,
+        lines: LINE_IDS.map((id) => ({ id, recordedAt: null, saved: false })),
+        recordingEnabled: false,
+      });
+      assert.equal(bucket.calls.list.length, 0, consentState);
+    }
+  });
+
+  it("rejects upload and audio without a current durable grant", async () => {
+    for (const consentState of ["not_granted", "revoking"]) {
+      const bucket = createBucket();
+      const consentRepository = createConsentRepository(
+        consentState === "revoking"
+          ? { state: "revoking", grantGeneration: "consent-1" }
+          : { state: "not_granted" },
+      );
+      const upload = await callDub({
+        body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+        bucket,
+        consentRepository,
+        headers: {
+          ...CONSENT_HEADERS,
+          "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
+        },
+        method: "PUT",
+        path: `${DUB_PATH}/lines/line-1`,
+      });
+      const audio = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: `${DUB_PATH}/lines/line-1/audio`,
+      });
+
+      const expected = consentState === "revoking" ? 409 : 403;
+      const error = consentState === "revoking"
+        ? "dub_consent_revoking"
+        : "dubbing_not_enabled";
+      assert.equal(upload.status, expected, consentState);
+      assert.equal((await upload.json()).error, error, consentState);
+      assert.equal(audio.status, expected, consentState);
+      assert.equal((await audio.json()).error, error, consentState);
+      assert.equal(bucket.calls.put.length, 0, consentState);
+      assert.equal(bucket.calls.head.length, 0, consentState);
+    }
+  });
+
+  it("grants only the exact bounded guardian consent object", async () => {
+    const consentRepository = createConsentRepository({ state: "not_granted" });
+    const response = await callDub({
+      body: JSON.stringify({
+        accepted: true,
+        consentVersion: CURRENT_CONSENT_VERSION,
+      }),
+      consentRepository,
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      path: `${DUB_PATH}/consent`,
+    });
+
+    assert.equal(response.status, 204);
+    assert.equal(
+      (await consentRepository.status()).state,
+      "granted",
+    );
+
+    for (const body of [
+      "not-json",
+      JSON.stringify({ accepted: false, consentVersion: CURRENT_CONSENT_VERSION }),
+      JSON.stringify({ accepted: true, consentVersion: "guardian-voice-r2-v1" }),
+      JSON.stringify({
+        accepted: true,
+        consentVersion: CURRENT_CONSENT_VERSION,
+        userId: "user-2",
+      }),
+    ]) {
+      const rejected = await callDub({
+        body,
+        consentRepository: createConsentRepository({ state: "not_granted" }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+        path: `${DUB_PATH}/consent`,
+      });
+      assert.equal(rejected.status, 400, body);
+      assert.equal((await rejected.json()).error, "invalid_request", body);
+    }
+
+    const oversized = await callDub({
+      body: JSON.stringify({
+        accepted: true,
+        consentVersion: CURRENT_CONSENT_VERSION,
+        padding: "x".repeat(8 * 1024),
+      }),
+      consentRepository: createConsentRepository({ state: "not_granted" }),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      path: `${DUB_PATH}/consent`,
+    });
+    assert.equal(oversized.status, 413);
+    assert.equal((await oversized.json()).error, "payload_too_large");
+  });
+
+  it("blocks consent grant before mutation and after a deletion-tombstone race", async () => {
+    const body = JSON.stringify({
+      accepted: true,
+      consentVersion: CURRENT_CONSENT_VERSION,
+    });
+    const blockedRepository = createConsentRepository({ state: "not_granted" });
+    let blockedGrantCalls = 0;
+    const blockedGrant = blockedRepository.grant.bind(blockedRepository);
+    blockedRepository.grant = async (...args) => {
+      blockedGrantCalls += 1;
+      return blockedGrant(...args);
+    };
+    const blocked = await callDub({
+      body,
+      consentRepository: blockedRepository,
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      path: `${DUB_PATH}/consent`,
+      pending: async () => true,
+    });
+
+    assert.equal(blocked.status, 409);
+    assert.equal((await blocked.json()).error, "account_deletion_pending");
+    assert.equal(blockedGrantCalls, 0);
+
+    const racedRepository = createConsentRepository({ state: "not_granted" });
+    let pendingChecks = 0;
+    const raced = await callDub({
+      body,
+      consentRepository: racedRepository,
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      path: `${DUB_PATH}/consent`,
+      pending: async () => ++pendingChecks === 2,
+    });
+
+    assert.equal(raced.status, 409);
+    assert.equal((await raced.json()).error, "account_deletion_pending");
+    assert.equal(pendingChecks, 2);
+    assert.equal((await racedRepository.status()).state, "granted");
+
+    const bucket = createBucket([[slotKey("line-1"), {
+      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      options: { httpMetadata: { contentType: "audio/webm" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    for (const path of [DUB_PATH, `${DUB_PATH}/lines/line-1/audio`]) {
+      const response = await callDub({
+        bucket,
+        consentRepository: racedRepository,
+        method: "GET",
+        path,
+        pending: async () => true,
+      });
+      assert.equal(response.status, 409, path);
+      assert.equal((await response.json()).error, "account_deletion_pending");
+    }
+    assert.equal(bucket.calls.list.length, 0);
+    assert.equal(bucket.calls.head.length, 0);
+    assert.equal(bucket.calls.get.length, 0);
+  });
+
+  it("fails status closed before R2 work and after a tombstone response race", async () => {
+    const blockedBucket = createBucket();
+    const blocked = await callDub({
+      bucket: blockedBucket,
+      method: "GET",
+      path: DUB_PATH,
+      pending: async () => true,
+    });
+    assert.equal(blocked.status, 409);
+    assert.equal((await blocked.json()).error, "account_deletion_pending");
+    assert.equal(blockedBucket.calls.list.length, 0);
+    assert.equal(blockedBucket.calls.head.length, 0);
+
+    const racedBucket = createBucket([[slotKey("line-1"), {
+      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      options: { httpMetadata: { contentType: "audio/webm" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+    let pendingChecks = 0;
+    const raced = await callDub({
+      bucket: racedBucket,
+      method: "GET",
+      path: DUB_PATH,
+      pending: async () => ++pendingChecks === 2,
+    });
+    assert.equal(raced.status, 409);
+    assert.equal((await raced.json()).error, "account_deletion_pending");
+    assert.equal(pendingChecks, 2);
+    assert.equal(racedBucket.calls.list.length, 1);
+  });
+
+  it("fails audio closed before R2 work and after a tombstone response race", async () => {
+    const seed = [[slotKey("line-1"), {
+      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      options: { httpMetadata: { contentType: "audio/webm" } },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]];
+    const blockedBucket = createBucket(seed);
+    const blocked = await callDub({
+      bucket: blockedBucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+      pending: async () => true,
+    });
+    assert.equal(blocked.status, 409);
+    assert.equal((await blocked.json()).error, "account_deletion_pending");
+    assert.equal(blockedBucket.calls.head.length, 0);
+    assert.equal(blockedBucket.calls.get.length, 0);
+
+    const racedBucket = createBucket(seed);
+    let pendingChecks = 0;
+    const raced = await callDub({
+      bucket: racedBucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+      pending: async () => ++pendingChecks === 2,
+    });
+    assert.equal(raced.status, 409);
+    assert.equal((await raced.json()).error, "account_deletion_pending");
+    assert.equal(pendingChecks, 2);
+    assert.equal(racedBucket.calls.get.length, 1);
+  });
+
+  it("blocks regrant while consent cleanup remains in progress", async () => {
+    const response = await callDub({
+      body: JSON.stringify({
+        accepted: true,
+        consentVersion: CURRENT_CONSENT_VERSION,
+      }),
+      consentRepository: createConsentRepository({
+        state: "revoking",
+        grantGeneration: "consent-1",
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+      path: `${DUB_PATH}/consent`,
+    });
+
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, "dub_consent_revoking");
+  });
+
+  it("does not write when the captured consent generation is stale before put", async () => {
+    const bucket = createBucket();
+    const granted = {
+      state: "granted",
+      consentVersion: CURRENT_CONSENT_VERSION,
+      grantGeneration: "consent-1",
+      grantedAt: new Date("2026-08-25T08:00:00.000Z"),
+    };
+    let checks = 0;
+    const consentRepository = {
+      ...createConsentRepository(granted),
+      async requireCurrentGrant(_userId, expectedGeneration) {
+        checks += 1;
+        return checks === 1 && expectedGeneration === undefined ? granted : null;
+      },
+    };
+
+    const response = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
+      bucket,
+      consentRepository,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "dubbing_not_enabled");
+    assert.equal(checks, 1);
+    assert.equal(bucket.calls.put.length, 0);
+  });
+
+  it("exactly fences an upload when consent is revoked after the put", async () => {
+    const bucket = createBucket();
+    const consentRepository = createConsentRepository();
+    const put = bucket.put.bind(bucket);
+    bucket.put = async (key, bytes, options) => {
+      const stored = await put(key, bytes, options);
+      if (options?.customMetadata?.state === "audio") {
+        consentRepository.set({
+          state: "revoking",
+          grantGeneration: "consent-1",
+        });
+      }
+      return stored;
+    };
+
+    const response = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 7]),
+      bucket,
+      consentRepository,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "dubbing_not_enabled");
+    assert.equal(bucket.calls.put.length, 2);
+    assert.deepEqual(bucket.calls.put[1].options.onlyIf, {
+      etagMatches: bucket.calls.put[0].bytes.length
+        ? contentEtag(bucket.calls.put[0].bytes)
+        : "",
+    });
+    assert.equal(
+      bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
+      "consent-revoked",
+    );
+  });
+
+  it("fences the exact upload when the post-put consent read is uncertain", async () => {
+    const bucket = createBucket();
+    const granted = {
+      state: "granted",
+      consentVersion: CURRENT_CONSENT_VERSION,
+      grantGeneration: "consent-1",
+      grantedAt: new Date("2026-08-25T08:00:00.000Z"),
+    };
+    let checks = 0;
+    const consentRepository = {
+      ...createConsentRepository(granted),
+      async requireCurrentGrant() {
+        checks += 1;
+        if (checks === 2) throw new Error("D1 unavailable");
+        return granted;
+      },
+    };
+
+    const response = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 8]),
+      bucket,
+      consentRepository,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "dubbing_not_enabled");
+    assert.equal(bucket.calls.put.length, 2);
+    assert.deepEqual(bucket.calls.put[1].options.onlyIf, {
+      etagMatches: contentEtag(bucket.calls.put[0].bytes),
+    });
+    assert.equal(
+      bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
+      "consent-revoked",
+    );
+  });
+
+  it("never reads current-version audio from an old consent generation", async () => {
+    const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9]);
+    const envelope = envelopedAudio("legacy", body, "upload-old");
+    const bucket = createBucket([
+      [slotKey("line-1"), {
+        bytes: envelope.bytes,
+        options: {
+          customMetadata: {
+            generation: "legacy",
+            guardianConsentGeneration: "consent-old",
+            guardianConsentVersion: CURRENT_CONSENT_VERSION,
+            lineId: "line-1",
+            payloadOffset: String(envelope.payloadOffset),
+            recordedAt: "2026-08-25T09:00:00.000Z",
+            state: "audio",
+            uploadNonce: "upload-old",
+          },
+          httpMetadata: { contentType: "audio/webm" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+      [slotKey("line-2"), {
+        bytes: body,
+        options: {
+          customMetadata: {
+            guardianConsentGeneration: "consent-old",
+            guardianConsentVersion: CURRENT_CONSENT_VERSION,
+          },
+          httpMetadata: { contentType: "audio/webm" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+    ]);
+    const consentRepository = createConsentRepository({
+      state: "granted",
+      consentVersion: CURRENT_CONSENT_VERSION,
+      grantGeneration: "consent-new",
+      grantedAt: new Date("2026-08-25T10:00:00.000Z"),
+    });
+
+    const status = await callDub({
+      bucket,
+      consentRepository,
+      method: "GET",
+      path: DUB_PATH,
+    });
+    const audio = await callDub({
+      bucket,
+      consentRepository,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    });
+
+    assert.deepEqual(
+      (await status.json()).lines.slice(0, 2).map(({ saved }) => saved),
+      [false, false],
+    );
+    assert.equal(audio.status, 404);
+  });
+
   it("stores and privately streams one encoded owner-scoped WebM slot", async () => {
     const bucket = createBucket();
     const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2]);
@@ -306,7 +961,8 @@ describe("private learner dub API", () => {
       options: {
         customMetadata: {
           generation: "legacy",
-          guardianConsentVersion: "guardian-voice-r2-v1",
+          guardianConsentGeneration: "consent-1",
+          guardianConsentVersion: CURRENT_CONSENT_VERSION,
           lineId: "line-1",
           payloadOffset: String(envelope.payloadOffset),
           recordedAt: "2026-08-25T10:00:00.000Z",
@@ -341,6 +997,31 @@ describe("private learner dub API", () => {
     assert.equal(statusPayload.lines[0].recordedAt, "2026-08-25T10:00:00.000Z");
   });
 
+  it("accepts line 24 and rejects line 25 at the v2 route boundary", async () => {
+    const bucket = createBucket();
+    const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]);
+
+    const accepted = await callDub({
+      body,
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-24`,
+    });
+    const rejected = await callDub({
+      body,
+      bucket,
+      headers: CONSENT_HEADERS,
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-25`,
+    });
+
+    assert.equal(accepted.status, 201);
+    assert.equal((await accepted.json()).lineId, "line-24");
+    assert.equal(rejected.status, 404);
+    assert.equal(bucket.calls.put.length, 1);
+  });
+
   it("returns all canonical status rows and safely derives recorded times", async () => {
     const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
     const bucket = createBucket([
@@ -373,8 +1054,9 @@ describe("private learner dub API", () => {
     assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     assert.deepEqual(await response.json(), {
       complete: false,
+      consentState: "granted",
       dubId: "five-little-ducks-v2",
-      guardianConsentVersion: "guardian-voice-r2-v1",
+      guardianConsentVersion: CURRENT_CONSENT_VERSION,
       lines: LINE_IDS.map((id, index) => ({
         id,
         recordedAt: index === 0
@@ -384,6 +1066,7 @@ describe("private learner dub API", () => {
             : null,
         saved: index < 2,
       })),
+      recordingEnabled: true,
     });
     assert.deepEqual(bucket.calls.list, [{
       include: ["customMetadata"],
@@ -523,6 +1206,47 @@ describe("private learner dub API", () => {
         .some(([, item]) => item.options.customMetadata.state === "audio"),
       false,
     );
+  });
+
+  it("keeps revoking state after failed R2 cleanup and finishes it on retry", async () => {
+    const bucket = createBucket();
+    const consentRepository = createConsentRepository();
+    const put = bucket.put.bind(bucket);
+    let failCleanup = true;
+    bucket.put = async (key, bytes, options) => {
+      if (
+        failCleanup &&
+        key === slotKey("line-5") &&
+        options?.customMetadata?.state === "tombstone"
+      ) {
+        failCleanup = false;
+        throw new Error("R2 unavailable");
+      }
+      return put(key, bytes, options);
+    };
+
+    await assert.rejects(
+      callDub({
+        bucket,
+        consentRepository,
+        generation: () => "reset-1",
+        method: "DELETE",
+        path: DUB_PATH,
+      }),
+      /R2 unavailable/,
+    );
+    assert.equal((await consentRepository.status()).state, "revoking");
+
+    const retry = await callDub({
+      bucket,
+      consentRepository,
+      generation: () => "reset-2",
+      method: "DELETE",
+      path: DUB_PATH,
+    });
+    assert.equal(retry.status, 204);
+    assert.equal((await consentRepository.status()).state, "not_granted");
+    assertResetTombstones(bucket, "reset-2");
   });
 
   it("paces recent slot overwrites and reset marker finalization for R2 hot keys", async () => {
@@ -710,7 +1434,8 @@ describe("private learner dub API", () => {
       bucket.stored.get(slotKey("line-1")).options.customMetadata,
       {
         generation: "reset-1",
-        guardianConsentVersion: "guardian-voice-r2-v1",
+        guardianConsentGeneration: "consent-1",
+        guardianConsentVersion: CURRENT_CONSENT_VERSION,
         lineId: "line-1",
         payloadOffset: String(newerEnvelope.payloadOffset),
         recordedAt: "2026-08-25T10:00:00.000Z",
@@ -1059,7 +1784,8 @@ describe("private learner dub API", () => {
       bucket.stored.get(slotKey("line-1")).options.customMetadata,
       {
         generation: "reset-2",
-        guardianConsentVersion: "guardian-voice-r2-v1",
+        guardianConsentGeneration: "consent-1",
+        guardianConsentVersion: CURRENT_CONSENT_VERSION,
         lineId: "line-1",
         payloadOffset: String(newerEnvelope.payloadOffset),
         recordedAt: "2026-08-25T10:00:00.000Z",
@@ -1671,7 +2397,6 @@ describe("private learner dub API", () => {
         bucket,
         headers: {
           "Content-Type": contentType,
-          "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
         },
         method: "PUT",
         path: `${DUB_PATH}/lines/${lineId}`,
@@ -1684,20 +2409,10 @@ describe("private learner dub API", () => {
     );
   });
 
-  it("rejects missing consent, wrong types and mismatched signatures before R2 put", async () => {
+  it("rejects wrong types and mismatched signatures before R2 put", async () => {
     const bucket = createBucket();
     const base = { bucket, method: "PUT", path: `${DUB_PATH}/lines/line-1` };
     const cases = [
-      {
-        expected: 400,
-        name: "missing consent",
-        request: { body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]), headers: { "Content-Type": "audio/webm" } },
-      },
-      {
-        expected: 400,
-        name: "wrong consent",
-        request: { body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]), headers: { ...CONSENT_HEADERS, "X-Parrot-Guardian-Consent-Version": "guardian-voice-r1-v1" } },
-      },
       {
         expected: 415,
         name: "unsupported type",

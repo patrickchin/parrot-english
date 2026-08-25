@@ -5,6 +5,7 @@ import { useGuardianAccess } from "../auth/GuardianAccess";
 import { ActionLink, Card } from "../shared/ui";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import {
+  getGuardianDubbingPath,
   getGuardianLessonsPath,
   getGuardianStoriesPath,
 } from "./app-routes";
@@ -87,6 +88,18 @@ export function GuardianDashboardView({
             </p>
             <ActionLink className="mt-auto" to={getGuardianStoriesPath()}>
               Open story settings
+            </ActionLink>
+          </Card>
+
+          <Card className="grid content-start gap-4 p-6">
+            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
+              Voice dubbing
+            </h2>
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              Allow private voice clips or turn dubbing off and remove them.
+            </p>
+            <ActionLink className="mt-auto" to={getGuardianDubbingPath()}>
+              Manage voice dubbing
             </ActionLink>
           </Card>
 

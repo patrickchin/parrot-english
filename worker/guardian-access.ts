@@ -1,4 +1,5 @@
 import { and, eq, lte } from "drizzle-orm";
+import { DUB_ID } from "../src/dubbing/dub-script.ts";
 import { guardianSessionUnlock } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import {
@@ -177,6 +178,13 @@ export async function requireGuardianAccess(input: {
 }
 
 export function requiresGuardianAccess(pathname: string, method: string) {
+  const dubPath = `/api/dubs/${DUB_ID}`;
+  if (pathname === `${dubPath}/consent`) {
+    return method === "PUT";
+  }
+  if (pathname === dubPath) {
+    return method === "DELETE";
+  }
   if (pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
   }

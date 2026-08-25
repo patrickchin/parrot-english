@@ -280,7 +280,7 @@ export function usePeppaConversation({
   const [recoveryPhase, setRecoveryPhase] =
     useState<ConversationRecoveryPhase>(null);
   const [voiceRetryUsed, setVoiceRetryUsed] = useState(false);
-  const [promptStyle, setPromptStyle] = useState<TalkToPeppaPromptStyle>(
+  const [promptStyle] = useState<TalkToPeppaPromptStyle>(
     DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   );
   const [conversationLifecycleOwner] = useState<ConversationLifecycleOwner>(
@@ -1193,7 +1193,6 @@ export function usePeppaConversation({
       onChooseLesson: chooseLesson,
       onStartAudio: () => void startAudioPlayback(),
       onFinish: () => void finish(),
-      onPromptStyleChange: setPromptStyle,
       onRepeatAudio: () => void repeatAudio(),
       onRetryVoice: retryVoice,
       onStart: () => void start(),
@@ -1201,7 +1200,6 @@ export function usePeppaConversation({
       recoveryPhase,
       responseLatencyMs,
       purpose,
-      promptStyle,
       status,
       turnReady,
       turns,
@@ -1223,7 +1221,6 @@ export function usePeppaConversation({
       recoveryPhase,
       responseLatencyMs,
       purpose,
-      promptStyle,
       retryVoice,
       start,
       startAudioPlayback,

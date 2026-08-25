@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createWorker } from "../worker/index.ts";
+import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 
@@ -46,6 +47,77 @@ function request(method, path, body) {
 }
 
 describe("dub Worker routing", () => {
+  it("guards only guardian dub mutations before the domain handler", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      state.sqlite.prepare(
+        `INSERT INTO session
+          (id, expires_at, token, created_at, updated_at, user_id)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(
+        "session-1",
+        timestamp + 86_400_000,
+        "token-1",
+        timestamp,
+        timestamp,
+        "user-1",
+      );
+      let handlerCalls = 0;
+      const session = {
+        session: { id: "session-1" },
+        user: { id: "user-1", name: "Guardian" },
+      };
+      const worker = createWorker({
+        createAuth: () => authStub(session, []),
+        async handleDubRequest() {
+          handlerCalls += 1;
+          return Response.json({ routed: true });
+        },
+      });
+      const { env } = environment();
+      env.DB = state.d1;
+
+      for (const [method, path] of [
+        ["PUT", `${DUB_PATH}/consent`],
+        ["DELETE", DUB_PATH],
+      ]) {
+        const response = await worker.fetch(request(method, path), env);
+        assert.equal(response.status, 403, `${method} ${path}`);
+        assert.deepEqual(await response.json(), { error: "guardian_required" });
+      }
+      assert.equal(handlerCalls, 0);
+
+      for (const [method, path] of [
+        ["PUT", "/api/dubs/five-little-ducks-v1/consent"],
+        ["DELETE", "/api/dubs/five-little-ducks-v1"],
+      ]) {
+        const response = await worker.fetch(request(method, path), env);
+        assert.equal(response.status, 200, `${method} ${path}`);
+        assert.deepEqual(await response.json(), { routed: true });
+      }
+      assert.equal(handlerCalls, 2);
+
+      for (const [method, path] of [
+        ["GET", DUB_PATH],
+        ["PUT", `${DUB_PATH}/lines/line-1`],
+        ["GET", `${DUB_PATH}/lines/line-1/audio`],
+      ]) {
+        const response = await worker.fetch(request(method, path), env);
+        assert.equal(response.status, 200, `${method} ${path}`);
+        assert.deepEqual(await response.json(), { routed: true });
+      }
+      assert.equal(handlerCalls, 5);
+    } finally {
+      state.close();
+    }
+  });
+
   it("rejects anonymous dub status, upload, audio, delete, and mismatch routes", async () => {
     const sessionCalls = [];
     let handlerCalls = 0;

@@ -9,6 +9,9 @@ import {
   fenceBody,
   hasState,
   isR2WriteRateError,
+  LEGACY_DUB_LINE_IDS,
+  legacyMarkerKey,
+  legacyObjectKey,
   markerKey,
   MAX_R2_WRITE_ATTEMPTS,
   objectKey,
@@ -175,6 +178,8 @@ export async function prepareAccountDeletion({
   const closureKeys = new Set([
     markerKey(userId),
     ...DUB_LINES.map(({ id }) => objectKey(userId, id)),
+    legacyMarkerKey(userId),
+    ...LEGACY_DUB_LINE_IDS.map((lineId) => legacyObjectKey(userId, lineId)),
   ]);
   let cursor: string | undefined;
   let hasMore = true;
@@ -214,6 +219,24 @@ export async function prepareAccountDeletion({
     await persistFence(
       bucket,
       objectKey(userId, id),
+      "slot",
+      generation,
+      "account-deleting",
+      wait,
+    );
+  }
+  await persistFence(
+    bucket,
+    legacyMarkerKey(userId),
+    "marker",
+    generation,
+    "account-deleting",
+    wait,
+  );
+  for (const lineId of LEGACY_DUB_LINE_IDS) {
+    await persistFence(
+      bucket,
+      legacyObjectKey(userId, lineId),
       "slot",
       generation,
       "account-deleting",

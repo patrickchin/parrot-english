@@ -21,7 +21,19 @@ const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v2/`;
 const MARKER_KEY = `${DUB_PREFIX}.dub-generation`;
 const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
 const slotKey = (lineId) => `${DUB_PREFIX}${lineId}.audio`;
-const CLOSURE_KEYS = [MARKER_KEY, ...LINE_IDS.map(slotKey)];
+const LEGACY_DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v1/`;
+const LEGACY_MARKER_KEY = `${LEGACY_DUB_PREFIX}.dub-generation`;
+const LEGACY_LINE_IDS = Array.from(
+  { length: 9 },
+  (_, index) => `line-${index + 1}`,
+);
+const legacySlotKey = (lineId) => `${LEGACY_DUB_PREFIX}${lineId}.audio`;
+const CLOSURE_KEYS = [
+  MARKER_KEY,
+  ...LINE_IDS.map(slotKey),
+  LEGACY_MARKER_KEY,
+  ...LEGACY_LINE_IDS.map(legacySlotKey),
+];
 
 function encoded(value) {
   return new TextEncoder().encode(JSON.stringify(value));
@@ -140,6 +152,27 @@ function assertDeletionFences(bucket, generation) {
       state: "account-deleting",
     }, lineId);
   }
+  assert.deepEqual(
+    bucket.stored.get(LEGACY_MARKER_KEY)?.bytes,
+    fenceBytes("marker", generation, "account-deleting"),
+  );
+  assert.deepEqual(
+    bucket.stored.get(LEGACY_MARKER_KEY)?.options.customMetadata,
+    { generation, state: "account-deleting" },
+  );
+  for (const lineId of LEGACY_LINE_IDS) {
+    const item = bucket.stored.get(legacySlotKey(lineId));
+    assert.deepEqual(
+      item?.bytes,
+      fenceBytes("slot", generation, "account-deleting"),
+      `legacy ${lineId}`,
+    );
+    assert.deepEqual(
+      item?.options.customMetadata,
+      { generation, state: "account-deleting" },
+      `legacy ${lineId}`,
+    );
+  }
 }
 
 function assertNoClosureDeletes(bucket) {
@@ -199,6 +232,11 @@ function seedDatabase() {
       "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
     )
     .run(USER_ID, "Parent One", "one@example.test", 1_000, 1_000);
+  state.sqlite.prepare(
+    `INSERT INTO guardian_dub_consent
+      (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
+     VALUES (?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
+  ).run(USER_ID, 1_000, 1_000);
   const insertArt = state.sqlite.prepare(
     `INSERT INTO personalized_story_art (
       id, auth_user_id, story_id, status, r2_object_key, content_type,

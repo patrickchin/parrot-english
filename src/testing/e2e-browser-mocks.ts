@@ -13,11 +13,14 @@ const E2E_DUB_SCENARIOS = new Set([
   "audio-fetch-failed",
   "corrupt-line-5",
   "empty",
+  "not-granted",
   "partial",
   "complete",
   "playback-setup-failed",
   "reset-delete-failed",
+  "reset-delete-lost-response",
   "reset-interrupted",
+  "revoking",
   "upload-failed",
   "upload-rejected",
 ]);
@@ -27,6 +30,8 @@ const E2E_DUB_LINE_IDS = Array.from(
 );
 const E2E_DUB_API = "/api/dubs/five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
+const E2E_DUB_CONSENT_VERSION = "guardian-voice-r2-v2";
+const E2E_DUB_SCENARIO_KEY = "parrot-e2e-dub:active-scenario";
 const E2E_MICROPHONE_SCENARIOS = new Set([
   "delayed",
   "denied",
@@ -264,8 +269,12 @@ function getE2eDubScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
     "parrotE2eDub",
   );
-
-  return scenario && E2E_DUB_SCENARIOS.has(scenario) ? scenario : null;
+  if (scenario && E2E_DUB_SCENARIOS.has(scenario)) {
+    sessionStorage.setItem(E2E_DUB_SCENARIO_KEY, scenario);
+    return scenario;
+  }
+  const persisted = sessionStorage.getItem(E2E_DUB_SCENARIO_KEY);
+  return persisted && E2E_DUB_SCENARIOS.has(persisted) ? persisted : null;
 }
 
 function getE2eProfileScenario() {
@@ -387,6 +396,16 @@ function e2eJson(payload: unknown, status = 200) {
   });
 }
 
+function e2eDubJson(payload: unknown, status = 200) {
+  return Response.json(payload, {
+    status,
+    headers: {
+      "Cache-Control": "private, no-store",
+      "X-Parrot-Mock-Api": "browser",
+    },
+  });
+}
+
 function createE2eDubBlob(scenario = "correct") {
   return new Blob(
     [
@@ -404,6 +423,7 @@ function initialE2eDubLineIds(scenario: string) {
     scenario === "corrupt-line-5" ||
     scenario === "playback-setup-failed" ||
     scenario === "reset-delete-failed" ||
+    scenario === "reset-delete-lost-response" ||
     scenario === "reset-interrupted"
   ) {
     return [...E2E_DUB_LINE_IDS];
@@ -415,6 +435,7 @@ function initialE2eDubLineIds(scenario: string) {
 function createE2eDubStore(scenario: string | null) {
   if (!scenario) return null;
   const savedKey = `parrot-e2e-dub:${scenario}:saved`;
+  const consentKey = `parrot-e2e-dub:${scenario}:consent`;
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
   const resetDeleteFailureKey = `parrot-e2e-dub:${scenario}:reset-delete-failed`;
   const resetKey = `parrot-e2e-dub:${scenario}:reset-finished`;
@@ -423,6 +444,15 @@ function createE2eDubStore(scenario: string | null) {
     ? (JSON.parse(persisted) as string[])
     : initialE2eDubLineIds(scenario);
   if (persisted === null) sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
+  let consentState = (sessionStorage.getItem(consentKey) ??
+    (scenario === "not-granted" || scenario === "reset-interrupted"
+      ? "not_granted"
+      : scenario === "reset-delete-failed" ||
+          scenario === "reset-delete-lost-response" ||
+          scenario === "revoking"
+        ? "revoking"
+        : "granted")) as "granted" | "not_granted" | "revoking";
+  sessionStorage.setItem(consentKey, consentState);
 
   const clips = new Map(
     savedLineIds.map((id) => [
@@ -436,11 +466,18 @@ function createE2eDubStore(scenario: string | null) {
   );
   let failedUpload: Uint8Array | null = null;
   let failAudioFetch = scenario === "audio-fetch-failed";
-  let resetInterrupted =
-    (scenario === "reset-delete-failed" || scenario === "reset-interrupted") &&
+  let legacyResetPending =
+    scenario === "reset-interrupted" &&
+    sessionStorage.getItem(resetKey) !== "yes";
+  let resetCleanupPending =
+    (scenario === "reset-delete-failed" ||
+      scenario === "reset-delete-lost-response") &&
     sessionStorage.getItem(resetKey) !== "yes";
   let failResetDelete =
     scenario === "reset-delete-failed" &&
+    sessionStorage.getItem(resetDeleteFailureKey) !== "used";
+  let loseResetDeleteResponse =
+    scenario === "reset-delete-lost-response" &&
     sessionStorage.getItem(resetDeleteFailureKey) !== "used";
   let delayNextStatus = false;
   const uploads: string[] = [];
@@ -449,50 +486,99 @@ function createE2eDubStore(scenario: string | null) {
     sessionStorage.setItem(savedKey, JSON.stringify([...clips.keys()]));
   }
 
+  function persistConsent(state: typeof consentState) {
+    consentState = state;
+    sessionStorage.setItem(consentKey, state);
+  }
+
+  function disabledDubResponse() {
+    const error = consentState === "revoking"
+      ? "dub_consent_revoking"
+      : "dubbing_not_enabled";
+    return e2eDubJson({ error }, consentState === "revoking" ? 409 : 403);
+  }
+
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
+      if (url.pathname === `${E2E_DUB_API}/consent`) {
+        if (method !== "PUT") return e2eDubJson({ error: "method_not_allowed" }, 405);
+        if (currentGuardianAccess().mode !== "guardian") {
+          return e2eDubJson({ error: "guardian_required" }, 403);
+        }
+        if (consentState === "revoking") {
+          return e2eDubJson({ error: "dub_consent_revoking" }, 409);
+        }
+        let body: unknown;
+        try {
+          body = await request.clone().json();
+        } catch {
+          return e2eDubJson({ error: "invalid_request" }, 400);
+        }
+        if (
+          typeof body !== "object" ||
+          body === null ||
+          Object.keys(body).length !== 2 ||
+          !("accepted" in body) ||
+          body.accepted !== true ||
+          !("consentVersion" in body) ||
+          body.consentVersion !== E2E_DUB_CONSENT_VERSION
+        ) {
+          return e2eDubJson({ error: "invalid_request" }, 400);
+        }
+        persistConsent("granted");
+        return new Response(null, {
+          headers: { "Cache-Control": "private, no-store" },
+          status: 204,
+        });
+      }
       if (url.pathname === E2E_DUB_API) {
         if (method === "GET") {
-          if (resetInterrupted) {
-            return Response.json(
-              {
-                error: "dub_reset_in_progress",
-                message: "TECHNICAL reset marker generation is deleting",
-              },
-              {
-                headers: {
-                  "Cache-Control": "no-store",
-                  "X-Parrot-Mock-Api": "browser",
-                },
-                status: 409,
-              },
-            );
-          }
           if (delayNextStatus) {
             delayNextStatus = false;
             await new Promise<void>((resolve) => window.setTimeout(resolve, 400));
           }
-          return e2eJson({
-            complete: E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
+          if (legacyResetPending && consentState === "granted") {
+            return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
+          }
+          return e2eDubJson({
+            complete:
+              consentState === "granted" &&
+              E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
+            consentState,
             dubId: "five-little-ducks-v2",
-            guardianConsentVersion: "guardian-voice-r2-v1",
+            guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
             lines: E2E_DUB_LINE_IDS.map((id) => ({
               id,
-              recordedAt: clips.has(id) ? E2E_DUB_RECORDED_AT : null,
-              saved: clips.has(id),
+              recordedAt:
+                consentState === "granted" && clips.has(id)
+                  ? E2E_DUB_RECORDED_AT
+                  : null,
+              saved: consentState === "granted" && clips.has(id),
             })),
+            recordingEnabled: consentState === "granted",
           });
         }
         if (method === "DELETE") {
-          if (resetInterrupted) {
+          if (currentGuardianAccess().mode !== "guardian") {
+            return e2eDubJson({ error: "guardian_required" }, 403);
+          }
+          persistConsent("revoking");
+          if (failResetDelete) {
+            failResetDelete = false;
+            sessionStorage.setItem(resetDeleteFailureKey, "used");
+            return new Response(null, { status: 503 });
+          }
+          if (legacyResetPending || resetCleanupPending) {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
-            resetInterrupted = false;
+            legacyResetPending = false;
+            resetCleanupPending = false;
             sessionStorage.setItem(resetKey, "yes");
             clips.clear();
             persist();
-            if (failResetDelete) {
-              failResetDelete = false;
+            persistConsent("not_granted");
+            if (loseResetDeleteResponse) {
+              loseResetDeleteResponse = false;
               delayNextStatus = true;
               sessionStorage.setItem(resetDeleteFailureKey, "used");
               return new Response(null, { status: 503 });
@@ -500,6 +586,7 @@ function createE2eDubStore(scenario: string | null) {
           }
           clips.clear();
           persist();
+          persistConsent("not_granted");
           return new Response(null, {
             headers: { "Cache-Control": "private, no-store" },
             status: 204,
@@ -512,6 +599,7 @@ function createE2eDubStore(scenario: string | null) {
       );
       if (!lineMatch) return null;
       const [, lineId, audioPath] = lineMatch;
+      if (consentState !== "granted") return disabledDubResponse();
       if (method === "GET" && audioPath) {
         if (failAudioFetch) {
           failAudioFetch = false;
@@ -532,8 +620,7 @@ function createE2eDubStore(scenario: string | null) {
       uploads.push(url.pathname);
       const clip = await request.blob();
       const bytes = new Uint8Array(await clip.arrayBuffer());
-      const consent = request.headers.get("X-Parrot-Guardian-Consent-Version");
-      if (request.headers.get("Content-Type") !== "audio/webm" || consent !== "guardian-voice-r2-v1") {
+      if (request.headers.get("Content-Type") !== "audio/webm") {
         return new Response(null, { status: 400 });
       }
       if (
@@ -560,7 +647,7 @@ function createE2eDubStore(scenario: string | null) {
       }
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
-      return e2eJson({ recordedAt: E2E_DUB_RECORDED_AT });
+      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
     },
     snapshot() {
       return {

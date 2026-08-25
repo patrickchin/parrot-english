@@ -24,6 +24,7 @@ const GATE_ROUTE_PATH = /^\/(login|profile\/setup|profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/*$/i,
+  /^\/guardian\/dubbing\/*$/i,
   /^\/guardian\/lessons\/*$/i,
   /^\/guardian\/stories\/*$/i,
 ];
@@ -59,6 +60,10 @@ export const DEFAULT_STORY_LEVEL_ID: StoryLevelId = "first-words";
 
 export function getGuardianPath() {
   return "/guardian";
+}
+
+export function getGuardianDubbingPath() {
+  return "/guardian/dubbing" as const;
 }
 
 export function getGuardianLessonsPath() {

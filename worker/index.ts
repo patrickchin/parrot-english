@@ -171,8 +171,16 @@ export function createWorker(
             },
           );
         }
+        const database = createDatabase(env.DB);
+        if (requiresGuardianAccess(url.pathname, request.method)) {
+          const denied = await requireGuardianAccess({
+            database,
+            sessionId: session.session.id,
+          });
+          if (denied) return denied;
+        }
         return dubRequest({
-          database: createDatabase(env.DB),
+          database,
           env,
           identity: {
             sessionId: session.session.id,
