@@ -18,6 +18,12 @@ const dubModule = await vite
 const sceneModule = await vite
   .ssrLoadModule("/src/dubbing/DuckScene.tsx")
   .catch(() => ({}));
+const projectHomeModule = await vite
+  .ssrLoadModule("/src/dubbing/DubProjectHome.tsx")
+  .catch(() => ({}));
+const sceneEditorModule = await vite
+  .ssrLoadModule("/src/dubbing/DubSceneEditor.tsx")
+  .catch(() => ({}));
 const { DUB_LINES } = await vite.ssrLoadModule(
   "/src/dubbing/dub-script.ts",
 );
@@ -26,6 +32,8 @@ const { createInitialDubState } = await vite.ssrLoadModule(
 );
 const { DuckDubView } = dubModule;
 const { DuckScene } = sceneModule;
+const { DubProjectHome } = projectHomeModule;
+const { DubSceneEditor } = sceneEditorModule;
 
 after(async () => vite.close());
 
@@ -68,6 +76,55 @@ function renderDuckDub(state, confirmed = true, viewProps = {}) {
       onConfirm() {},
       state: mergedState,
       ...handlers,
+      ...viewProps,
+    }),
+  );
+}
+
+function renderProjectHome(viewProps = {}) {
+  assert.equal(
+    typeof DubProjectHome,
+    "function",
+    "Expected an executable DubProjectHome",
+  );
+  return renderToStaticMarkup(
+    createElement(DubProjectHome, {
+      activeLine: DUB_LINES[0],
+      needsRetake: new Set(),
+      onContinue() {},
+      onDelete() {},
+      onOpenScene() {},
+      onTogglePlayback() {},
+      playback: "idle",
+      saved: {},
+      ...viewProps,
+    }),
+  );
+}
+
+function renderSceneEditor(viewProps = {}) {
+  assert.equal(
+    typeof DubSceneEditor,
+    "function",
+    "Expected an executable DubSceneEditor",
+  );
+  return renderToStaticMarkup(
+    createElement(DubSceneEditor, {
+      activeLine: DUB_LINES[0],
+      activeSceneIndex: 0,
+      error: "",
+      needsRetake: new Set(),
+      onBack() {},
+      onHearGuide() {},
+      onHearTake() {},
+      onRecord() {},
+      onRetrySave() {},
+      onSelectLine() {},
+      onToggleScenePlayback() {},
+      operation: "idle",
+      pendingTake: null,
+      saveRecovery: null,
+      saved: {},
       ...viewProps,
     }),
   );
@@ -433,5 +490,72 @@ describe("duck dubbing presentation", () => {
     assert.match(html, /Mother duck calls/);
     assert.equal((html.match(/<svg/g) ?? []).length, 1);
     assert.doesNotMatch(html, /<img|https?:\/\//);
+  });
+});
+
+describe("duck dubbing storyboard presentation", () => {
+  it("renders a selectable six-scene project workspace without line controls", () => {
+    const html = renderProjectHome();
+
+    assert.match(html, /aria-label="Full video player"/);
+    assert.match(html, /Play full video/);
+    assert.match(html, />Draft</);
+    assert.match(html, />0 of 24 voice clips recorded</);
+    assert.match(html, />Continue Scene 1</);
+    for (let scene = 1; scene <= 6; scene += 1) {
+      assert.match(html, new RegExp("aria-label=\\\"Scene " + scene + ", draft\\\""));
+    }
+    assert.doesNotMatch(html, /Five little ducks went out one day\\.|waveform|Record line|Next line/i);
+  });
+
+  it("keeps every scene selectable after all voice clips are recorded", () => {
+    const html = renderProjectHome({
+      activeLine: DUB_LINES[23],
+      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+    });
+
+    assert.match(html, />Your dub</);
+    assert.match(html, />All scenes recorded</);
+    for (let scene = 1; scene <= 6; scene += 1) {
+      assert.match(html, new RegExp("aria-label=\\\"Scene " + scene + ", recorded\\\""));
+    }
+  });
+
+  it("renders the focused scene editor with explicit selection and playback scopes", () => {
+    const html = renderSceneEditor({
+      needsRetake: new Set(["line-3"]),
+      saved: { "line-1": "saved" },
+    });
+
+    assert.match(html, />Back to full video</);
+    assert.match(html, /aria-label="Play this scene"/);
+    assert.match(html, /aria-current="page"[^>]*>Scene 1 of 6/);
+    assert.match(html, /aria-current="true"[^>]*aria-label="Line 1, selected, recorded"/);
+    assert.match(html, /aria-label="Line 2, generated"/);
+    assert.match(html, /aria-label="Line 3, needs retake"/);
+    assert.match(html, /aria-label="Line 4, generated"/);
+    for (const line of DUB_LINES.slice(0, 4)) {
+      assert.match(html, new RegExp(line.text.replaceAll(".", "\\.")));
+    }
+    assert.match(html, /Hear example/);
+    assert.match(html, /aria-label="Record line"/);
+    assert.equal((html.match(/aria-label="Record line"/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /Next line/);
+  });
+
+  it("keeps the fixed record action while exposing a saved take and retry recovery", () => {
+    const html = renderSceneEditor({
+      error: "Your take was not saved.",
+      operation: "recording",
+      pendingTake: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+      saveRecovery: "save",
+    });
+
+    assert.match(html, /aria-label="Record line"[^>]*disabled/);
+    assert.match(html, /aria-label="Your recording waveform"/);
+    assert.match(html, /aria-label="Hear my voice"/);
+    assert.match(html, />Save again</);
+    assert.match(html, /role="alert"/);
+    assert.doesNotMatch(html, /Next line/);
   });
 });
