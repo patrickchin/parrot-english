@@ -62,12 +62,16 @@ describe("dub Worker routing", () => {
       ["PUT", `${DUB_PATH}/lines/line-1`],
       ["GET", `${DUB_PATH}/lines/line-1/audio`],
       ["DELETE", DUB_PATH],
+      ["POST", DUB_PATH],
+      ["GET", `${DUB_PATH}/lines/line-1`],
+      ["PUT", `${DUB_PATH}/lines/line-1/audio`],
       ["GET", "/api/dubs/not-the-ducks"],
     ];
 
     for (const [method, path] of routes) {
       const response = await worker.fetch(request(method, path), env);
       assert.equal(response.status, 401, `${method} ${path}`);
+      assert.equal(response.headers.get("Allow"), null, `${method} ${path}`);
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
       assert.deepEqual(await response.json(), { error: "unauthorized" });
     }
@@ -119,14 +123,15 @@ describe("dub Worker routing", () => {
     const worker = createWorker({ createAuth: () => authStub(session, sessionCalls) });
     const { env, getAssetCalls } = environment();
     const routes = [
-      ["POST", DUB_PATH],
-      ["GET", `${DUB_PATH}/lines/line-1`],
-      ["PUT", `${DUB_PATH}/lines/line-1/audio`],
+      ["POST", DUB_PATH, "GET, DELETE"],
+      ["GET", `${DUB_PATH}/lines/line-1`, "PUT"],
+      ["PUT", `${DUB_PATH}/lines/line-1/audio`, "GET"],
     ];
 
-    for (const [method, path] of routes) {
+    for (const [method, path, allow] of routes) {
       const response = await worker.fetch(request(method, path), env);
       assert.equal(response.status, 405, `${method} ${path}`);
+      assert.equal(response.headers.get("Allow"), allow, `${method} ${path}`);
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     }
     assert.equal(sessionCalls.length, routes.length);

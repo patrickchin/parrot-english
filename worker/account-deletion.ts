@@ -1,18 +1,33 @@
 import { eq, sql } from "drizzle-orm";
+import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   accountDeletionTombstone,
   personalizedStoryArt,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
+import {
+  fenceBody,
+  hasState,
+  isR2WriteRateError,
+  markerKey,
+  MAX_R2_WRITE_ATTEMPTS,
+  objectKey,
+  retryDelay,
+} from "./dub-storage.ts";
 
 type Clock = () => Date;
+type Wait = (delay: number) => Promise<void>;
 
 type AccountDeletionInput = {
-  bucket: Pick<R2Bucket, "delete" | "list">;
+  bucket: Pick<R2Bucket, "delete" | "head" | "list" | "put">;
+  createGeneration?: () => string;
   database: Database;
   now?: Clock;
   userId: string;
+  wait?: Wait;
 };
+
+const MAX_FENCE_CONFLICTS = 16;
 
 function r2PrefixForUser(userId: string) {
   return `personalized-story-art/${encodeURIComponent(userId)}/`;
@@ -80,11 +95,70 @@ export async function markAccountDeletionPending(
   return storedTombstone;
 }
 
+async function deleteWithRetry(
+  bucket: AccountDeletionInput["bucket"],
+  keys: string[],
+  wait: Wait,
+) {
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      await bucket.delete(keys);
+      return;
+    } catch (error) {
+      if (
+        !isR2WriteRateError(error) ||
+        attempt === MAX_R2_WRITE_ATTEMPTS - 1
+      ) {
+        throw error;
+      }
+      await wait(retryDelay(attempt));
+    }
+  }
+}
+
+function conditionalWrite(object: R2Object | null) {
+  return object
+    ? { etagMatches: object.etag }
+    : { etagDoesNotMatch: "*" };
+}
+
+async function persistFence(
+  bucket: AccountDeletionInput["bucket"],
+  key: string,
+  kind: "marker" | "slot",
+  generation: string,
+  state: "account-deleting" | "deleting",
+  wait: Wait,
+) {
+  let rateFailures = 0;
+  for (let conflict = 0; conflict < MAX_FENCE_CONFLICTS; conflict += 1) {
+    const current = await bucket.head(key);
+    if (current && hasState(current, generation, state)) return;
+    try {
+      const stored = await bucket.put(key, fenceBody(kind, generation, state), {
+        customMetadata: { generation, state },
+        onlyIf: conditionalWrite(current),
+      });
+      if (stored) return;
+    } catch (error) {
+      if (!isR2WriteRateError(error)) throw error;
+      const latest = await bucket.head(key);
+      if (latest && hasState(latest, generation, state)) return;
+      rateFailures += 1;
+      if (rateFailures >= MAX_R2_WRITE_ATTEMPTS) throw error;
+      await wait(retryDelay(rateFailures - 1));
+    }
+  }
+  throw new Error("Dub account-deletion fence contention exceeded.");
+}
+
 export async function prepareAccountDeletion({
   bucket,
+  createGeneration = () => crypto.randomUUID(),
   database,
   now = () => new Date(),
   userId,
+  wait = (delay: number) => scheduler.wait(delay),
 }: AccountDeletionInput) {
   const { r2Prefix } = await markAccountDeletionPending(database, userId, now);
   let cursor: string | undefined;
@@ -100,7 +174,7 @@ export async function prepareAccountDeletion({
     if (keys.some((key) => !key.startsWith(r2Prefix))) {
       throw new Error("R2 returned an object outside the account deletion prefix.");
     }
-    if (keys.length > 0) await bucket.delete(keys);
+    if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
 
     hasMore = page.truncated;
     if (page.truncated) {
@@ -110,5 +184,26 @@ export async function prepareAccountDeletion({
       seenCursors.add(page.cursor);
       cursor = page.cursor;
     }
+  }
+
+  const generation = createGeneration();
+  if (!generation) throw new Error("Account deletion generation is required.");
+  await persistFence(
+    bucket,
+    markerKey(userId),
+    "marker",
+    generation,
+    "deleting",
+    wait,
+  );
+  for (const { id } of DUB_LINES) {
+    await persistFence(
+      bucket,
+      objectKey(userId, id),
+      "slot",
+      generation,
+      "account-deleting",
+      wait,
+    );
   }
 }

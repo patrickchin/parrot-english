@@ -1839,15 +1839,16 @@ describe("private learner dub API", () => {
     }
   });
 
-  it("returns 405 for unsupported methods on each supported route shape", async () => {
-    for (const [method, path] of [
-      ["POST", DUB_PATH],
-      ["GET", `${DUB_PATH}/lines/line-1`],
-      ["PUT", `${DUB_PATH}/lines/line-1/audio`],
-      ["DELETE", `${DUB_PATH}/lines/line-1/audio`],
+  it("returns route-specific Allow headers for every supported 405 shape", async () => {
+    for (const [method, path, allow] of [
+      ["POST", DUB_PATH, "GET, DELETE"],
+      ["GET", `${DUB_PATH}/lines/line-1`, "PUT"],
+      ["PUT", `${DUB_PATH}/lines/line-1/audio`, "GET"],
+      ["DELETE", `${DUB_PATH}/lines/line-1/audio`, "GET"],
     ]) {
       const response = await callDub({ method, path });
       assert.equal(response.status, 405, `${method} ${path}`);
+      assert.equal(response.headers.get("Allow"), allow, `${method} ${path}`);
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
     }
   });

@@ -1,6 +1,17 @@
 import { DUB_ID, DUB_LINES } from "../src/dubbing/dub-script.ts";
 import { isAccountDeletionPending } from "./account-deletion.ts";
 import type { Database } from "./database.ts";
+import {
+  fenceBody,
+  hasState,
+  isR2WriteRateError,
+  markerKey,
+  MAX_R2_WRITE_ATTEMPTS,
+  objectKey,
+  objectPrefix,
+  R2_WRITE_INTERVAL_MS,
+  retryDelay,
+} from "./dub-storage.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedBytes,
@@ -9,13 +20,9 @@ import {
 
 const CONSENT_VERSION = "guardian-voice-r2-v1";
 const MAX_CLIP_BYTES = 512 * 1024;
-const GENERATION_MARKER = ".dub-generation";
 const LEGACY_GENERATION = "legacy";
-const FENCE_FORMAT = "parrot-dub-fence-v1";
 const AUDIO_FORMAT = "parrot-dub-audio-v1";
 const AUDIO_FORMAT_V2 = "parrot-dub-audio-v2";
-const R2_WRITE_INTERVAL_MS = 1_050;
-const MAX_R2_WRITE_ATTEMPTS = 3;
 const MAX_CAS_CONFLICTS = 16;
 const MIME_SIGNATURES = {
   "audio/webm": (bytes: Uint8Array) =>
@@ -73,11 +80,18 @@ type AudioStorage =
 
 class DubApiError extends Error {
   readonly code: string;
+  readonly headers?: HeadersInit;
   readonly status: number;
 
-  constructor(status: number, code: string, message = code) {
+  constructor(
+    status: number,
+    code: string,
+    message = code,
+    headers?: HeadersInit,
+  ) {
     super(message);
     this.code = code;
+    this.headers = headers;
     this.status = status;
   }
 }
@@ -107,19 +121,6 @@ function parseDubRoute(pathname: string) {
   } catch {
     return null;
   }
-}
-
-function objectPrefix(userId: string) {
-  // ponytail: shared private bucket; split when voice and art retention policies differ.
-  return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${DUB_ID}/`;
-}
-
-function objectKey(userId: string, lineId: string) {
-  return `${objectPrefix(userId)}${lineId}.audio`;
-}
-
-function markerKey(userId: string) {
-  return `${objectPrefix(userId)}${GENERATION_MARKER}`;
 }
 
 async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> {
@@ -177,10 +178,6 @@ function encoded(value: unknown) {
   return new TextEncoder().encode(JSON.stringify(value));
 }
 
-function fenceBody(kind: "marker" | "slot", generation: string, state: string) {
-  return encoded([FENCE_FORMAT, kind, generation, state]);
-}
-
 function audioPrefix(generation: string, uploadNonce?: string) {
   return uploadNonce === undefined
     ? encoded([AUDIO_FORMAT, generation])
@@ -205,19 +202,6 @@ function sameObject(left: R2Object | null, right: R2Object | null) {
   return left === null || right === null
     ? left === right
     : left.etag === right.etag && left.version === right.version;
-}
-
-function hasState(object: R2Object, generation: string, state: string) {
-  const metadata = object.customMetadata;
-  return metadata?.generation === generation && metadata.state === state;
-}
-
-function isR2WriteRateError(error: unknown) {
-  return error instanceof Error && /\(10058\)\s*$/.test(error.message);
-}
-
-function retryDelay(attempt: number) {
-  return R2_WRITE_INTERVAL_MS + attempt * 100 + Math.floor(Math.random() * 100);
 }
 
 async function conditionalPut(
@@ -599,12 +583,22 @@ export async function handleDubRequest(
         });
       }
 
-      throw new DubApiError(405, "method_not_allowed");
+      throw new DubApiError(
+        405,
+        "method_not_allowed",
+        undefined,
+        { Allow: "GET, DELETE" },
+      );
     }
 
     if (route.audio) {
       if (input.request.method !== "GET") {
-        throw new DubApiError(405, "method_not_allowed");
+        throw new DubApiError(
+          405,
+          "method_not_allowed",
+          undefined,
+          { Allow: "GET" },
+        );
       }
       const generation = await readyGeneration(bucket, userId);
       const key = objectKey(userId, route.lineId!);
@@ -624,7 +618,12 @@ export async function handleDubRequest(
     }
 
     if (input.request.method !== "PUT") {
-      throw new DubApiError(405, "method_not_allowed");
+      throw new DubApiError(
+        405,
+        "method_not_allowed",
+        undefined,
+        { Allow: "PUT" },
+      );
     }
     if (await isDeletionPending(input.database, userId)) {
       throw new DubApiError(409, "account_deletion_pending");
@@ -724,7 +723,7 @@ export async function handleDubRequest(
     if (error instanceof DubApiError) {
       return json(
         { error: error.code, message: error.message },
-        { status: error.status },
+        { headers: error.headers, status: error.status },
       );
     }
     throw error;
