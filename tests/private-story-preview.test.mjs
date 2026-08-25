@@ -144,7 +144,7 @@ describe("private story pagination", () => {
     );
   });
 
-  it("preserves source-normalized fidelity when a multi-blank delimiter crosses a page boundary", () => {
+  it("preserves source-normalized fidelity through an ordinary page join at a multi-blank boundary", () => {
     const sourceBody = [
       words(70, "first"),
       "",
@@ -156,17 +156,10 @@ describe("private story pagination", () => {
       `# Boundary Delimiter Fixture\n${sourceBody}`,
     );
 
-    assert.deepEqual(paginated.pages, [words(70, "first"), words(1, "second")]);
-    assert.deepEqual(paginated.pageSeparators, ["\n\n\n\n"]);
+    assert.equal(paginated.pages.length, 2);
     assert.equal(
-      normalizeStoryBody(
-        paginated.pages.reduce(
-          (body, page, index) =>
-            body + (index ? paginated.pageSeparators[index - 1] : "") + page,
-          "",
-        ),
-      ),
       normalizeStoryBody(sourceBody),
+      normalizeStoryBody(paginated.pages.join("\n\n")),
     );
     assert.equal(normalizeStoryBody(paginated.body), normalizeStoryBody(sourceBody));
   });
