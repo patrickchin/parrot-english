@@ -566,6 +566,36 @@ describe("private story preview loader", () => {
     );
   });
 
+  it("rejects distinct manifest names that identify the same text file", async () => {
+    const fixture = await createFixtureRoot();
+    await writePreviewFixture(fixture, {
+      manifest: {
+        version: 1,
+        stories: [
+          defaultManifest.stories[0],
+          {
+            id: "private-story-second",
+            textFile: "story-2.txt",
+            title: "Fixture Story",
+          },
+        ],
+      },
+    });
+    await rm(path.join(fixture.previewDirectory, "story-2.txt"));
+    await link(
+      path.join(fixture.previewDirectory, "story-1.txt"),
+      path.join(fixture.previewDirectory, "story-2.txt"),
+    );
+
+    await assert.rejects(
+      () => loadPrivateStoryPreview({
+        projectRoot: fixture.projectRoot,
+        requireAudio: false,
+      }),
+      { message: "Private story preview manifest has duplicate text file" },
+    );
+  });
+
   it("rejects traversal and absolute manifest paths", async () => {
     const fixture = await createFixtureRoot();
     await writePreviewFixture(fixture, {

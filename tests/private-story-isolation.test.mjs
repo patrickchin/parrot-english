@@ -227,6 +227,7 @@ describe("private story isolation scanner", () => {
     const protectedPaths = [
       "content/local-stories/source.txt",
       "nested/content/local-stories/source.txt",
+      "Content/LOCAL-STORIES/Synthetic Draft.txt",
       "dist/content/private-story-preview/manifest.json",
       "nested/content/private-story-preview/story.txt",
       "dist/content/.private-story-preview-transaction/stage/residue.bin",
@@ -234,6 +235,7 @@ describe("private story isolation scanner", () => {
     ];
     const cleanLookalikes = [
       "content/local-stories-copy/source.txt",
+      "CONTENT/LOCAL-STORIES-COPY/source.txt",
       "content/private-story-previewed/story.txt",
       "content/.private-story-preview-transactional/residue.bin",
       "assets/private-story-preview-old/page.mp3",
@@ -280,6 +282,23 @@ describe("private story isolation scanner", () => {
       requirePrivateInputs: true,
     });
 
+    assertProtectedPathDiagnostics(result, 1, [leakedPath]);
+  });
+
+  it("detects a case-folded legacy source path in the index and worktree", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const leakedPath = "Content/LOCAL-STORIES/Synthetic Draft.txt";
+    await mkdir(join(projectRoot, leakedPath, ".."), { recursive: true });
+    await writeFile(join(projectRoot, leakedPath), "synthetic public bytes\n");
+    await git(projectRoot, ["add", "--force", "--", leakedPath]);
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.equal(result.status, "leaks");
     assertProtectedPathDiagnostics(result, 1, [leakedPath]);
   });
 

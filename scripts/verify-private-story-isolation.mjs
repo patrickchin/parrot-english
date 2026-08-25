@@ -142,7 +142,8 @@ function containsPrivatePath(filePath) {
   const segments = normalizePath(filePath)
     .replace(/^\.\//u, "")
     .split("/")
-    .filter((segment) => segment && segment !== ".");
+    .filter((segment) => segment && segment !== ".")
+    .map((segment) => segment.toLowerCase());
   return PROTECTED_DIRECTORY_SEGMENTS.some((protectedSegments) =>
     segments.some((_, start) =>
       protectedSegments.every(
