@@ -1,7 +1,18 @@
 import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
-import { lstat, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { constants, existsSync } from "node:fs";
+import {
+  link,
+  lstat,
+  mkdir,
+  open,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import {
   basename,
   dirname,
@@ -10,6 +21,7 @@ import {
   join,
   relative,
   resolve,
+  sep,
 } from "node:path";
 import process from "node:process";
 import { setTimeout as wait } from "node:timers/promises";
@@ -30,6 +42,8 @@ const ELEVENLABS_SPEAKER_VOICE_IDS = {
   dolly: ELEVENLABS_DOLLY_VOICE_ID,
   narrator: ELEVENLABS_NARRATOR_VOICE_ID,
 };
+const PRIVATE_AUDIO_OUTPUT_ERROR =
+  "Private audio output must stay inside the private preview directory";
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const args = process.argv.slice(2);
@@ -165,67 +179,256 @@ function getOutputPath(line) {
 
 function validatePrivateOutputPath(outputFilePath, previewDirectory) {
   if (typeof outputFilePath !== "string" || !outputFilePath) {
-    throw new Error("Private audio output must stay inside the private preview directory");
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
   }
   const directory = resolve(previewDirectory);
   const outputPath = resolve(outputFilePath);
   const relativePath = relative(directory, outputPath);
   if (
     relativePath === ".." ||
-    relativePath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+    relativePath.startsWith(`..${sep}`) ||
     isAbsolute(relativePath)
   ) {
-    throw new Error("Private audio output must stay inside the private preview directory");
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
   }
   return outputPath;
 }
 
-async function validatePrivateOutputPathOnDisk(
+function sameFileIdentity(left, right) {
+  return left.dev === right.dev && left.ino === right.ino;
+}
+
+async function inspectPrivateMutationPath(
   outputFilePath,
   previewDirectory,
   projectRoot,
+  { allowFinalSymlink = false, createParents = false } = {},
 ) {
-  const root = resolve(projectRoot);
-  const directory = validatePrivateOutputPath(previewDirectory, root);
-  if (directory === root) {
-    throw new Error("Private audio output must stay inside the private preview directory");
-  }
-  const outputPath = validatePrivateOutputPath(
-    outputFilePath,
-    directory,
-  );
-  const rootStats = await lstat(root);
-  if (rootStats.isSymbolicLink()) {
-    throw new Error("Private audio output must stay inside the private preview directory");
-  }
-  const realRoot = await realpath(root);
-  const realDirectory = await realpath(directory);
-  validatePrivateOutputPath(realDirectory, realRoot);
-  const relativePath = relative(root, outputPath);
-  let currentPath = root;
+  try {
+    const root = resolve(projectRoot);
+    const directory = validatePrivateOutputPath(previewDirectory, root);
+    const outputPath = validatePrivateOutputPath(outputFilePath, directory);
+    if (directory === root) throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
 
-  for (const segment of relativePath.split(process.platform === "win32" ? "\\" : "/")) {
-    currentPath = join(currentPath, segment);
-    try {
-      const currentStats = await lstat(currentPath);
-      if (currentStats.isSymbolicLink()) {
-        throw new Error("Private audio output must stay inside the private preview directory");
+    const rootStats = await lstat(root);
+    const realRoot = await realpath(root);
+    if (rootStats.isSymbolicLink() || !rootStats.isDirectory()) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    let currentPath = root;
+    for (const segment of relative(root, directory).split(sep)) {
+      currentPath = join(currentPath, segment);
+      const stats = await lstat(currentPath);
+      if (stats.isSymbolicLink() || !stats.isDirectory()) {
+        throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
       }
       const realCurrentPath = await realpath(currentPath);
       validatePrivateOutputPath(realCurrentPath, realRoot);
-      if (
-        currentPath === directory ||
-        !relative(directory, currentPath).startsWith("..")
-      ) {
-        validatePrivateOutputPath(realCurrentPath, realDirectory);
+    }
+
+    const realDirectory = await realpath(directory);
+    if (realDirectory === realRoot) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    validatePrivateOutputPath(realDirectory, realRoot);
+
+    const parentPath = dirname(outputPath);
+    currentPath = directory;
+    let parentMissing = false;
+    for (const segment of relative(directory, parentPath).split(sep)) {
+      currentPath = join(currentPath, segment);
+      let stats;
+      try {
+        stats = await lstat(currentPath);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+        if (!createParents) {
+          parentMissing = true;
+          break;
+        }
+        try {
+          await mkdir(currentPath, { mode: 0o700 });
+        } catch (mkdirError) {
+          if (mkdirError?.code !== "EEXIST") throw mkdirError;
+        }
+        stats = await lstat(currentPath);
       }
+      if (stats.isSymbolicLink() || !stats.isDirectory()) {
+        throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+      }
+      const realCurrentPath = await realpath(currentPath);
+      validatePrivateOutputPath(realCurrentPath, realDirectory);
+    }
+
+    if (parentMissing) {
+      return {
+        outputPath,
+        outputStats: null,
+        parentPath,
+        parentStats: null,
+      };
+    }
+
+    const parentStats = await lstat(parentPath);
+    let outputStats = null;
+    try {
+      outputStats = await lstat(outputPath);
     } catch (error) {
-      if (error?.code === "ENOENT") break;
-      throw error;
+      if (error?.code !== "ENOENT") throw error;
+    }
+    if (
+      outputStats &&
+      (outputStats.isDirectory() ||
+        (outputStats.isSymbolicLink() && !allowFinalSymlink))
+    ) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    return { outputPath, outputStats, parentPath, parentStats };
+  } catch (error) {
+    if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  }
+}
+
+function sameFileSnapshot(left, right) {
+  return (
+    sameFileIdentity(left, right) &&
+    left.size === right.size &&
+    left.mtimeMs === right.mtimeMs &&
+    left.ctimeMs === right.ctimeMs
+  );
+}
+
+async function hasStablePrivateAudioOutput(
+  filePath,
+  previewDirectory,
+  projectRoot,
+) {
+  let fileHandle;
+  try {
+    const initial = await inspectPrivateMutationPath(
+      filePath,
+      previewDirectory,
+      projectRoot,
+    );
+    if (!initial.outputStats) return false;
+    if (!initial.outputStats.isFile() || initial.outputStats.size === 0) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    fileHandle = await open(
+      filePath,
+      constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0),
+    );
+    const before = await fileHandle.stat();
+    if (!before.isFile() || before.size === 0 || !sameFileSnapshot(initial.outputStats, before)) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    const final = await inspectPrivateMutationPath(
+      filePath,
+      previewDirectory,
+      projectRoot,
+    );
+    const after = await fileHandle.stat();
+    if (
+      !final.outputStats ||
+      !sameFileSnapshot(before, after) ||
+      !sameFileSnapshot(after, final.outputStats)
+    ) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    return true;
+  } catch (error) {
+    if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  } finally {
+    try {
+      await fileHandle?.close();
+    } catch {
+      // A failed read-only close does not change the existing output.
     }
   }
+}
 
-  return outputPath;
+async function writePrivateAudioFileAtomically(
+  filePath,
+  audioBytes,
+  {
+    beforePublish,
+    forceOverwrite,
+    previewDirectory,
+    projectRoot,
+    writeBytes = (fileHandle, bytes) => fileHandle.writeFile(bytes),
+  },
+) {
+  const initial = await inspectPrivateMutationPath(
+    filePath,
+    previewDirectory,
+    projectRoot,
+    { allowFinalSymlink: forceOverwrite, createParents: true },
+  );
+  const temporaryPath = join(
+    initial.parentPath,
+    `.${basename(filePath)}.${process.pid}.${randomUUID()}.tmp`,
+  );
+  let temporaryHandle;
+  let temporaryStats;
+
+  try {
+    temporaryHandle = await open(
+      temporaryPath,
+      constants.O_WRONLY |
+        constants.O_CREAT |
+        constants.O_EXCL |
+        (constants.O_NOFOLLOW ?? 0),
+      0o600,
+    );
+    await writeBytes(temporaryHandle, audioBytes);
+    await temporaryHandle.sync();
+    temporaryStats = await temporaryHandle.stat();
+    if (!temporaryStats.isFile() || temporaryStats.size !== audioBytes.byteLength) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    await temporaryHandle.close();
+    temporaryHandle = undefined;
+
+    await beforePublish?.();
+    const final = await inspectPrivateMutationPath(
+      filePath,
+      previewDirectory,
+      projectRoot,
+      { allowFinalSymlink: forceOverwrite },
+    );
+    if (!sameFileIdentity(initial.parentStats, final.parentStats)) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    const publishStats = await lstat(temporaryPath);
+    if (!publishStats.isFile() || !sameFileSnapshot(temporaryStats, publishStats)) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    if (forceOverwrite) {
+      await rename(temporaryPath, filePath);
+    } else {
+      await link(temporaryPath, filePath);
+    }
+  } catch (error) {
+    if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  } finally {
+    try {
+      await temporaryHandle?.close();
+    } catch {
+      // The final path remains untouched when a temporary-file close fails.
+    }
+    try {
+      await rm(temporaryPath, { force: true });
+    } catch {
+      // A failed best-effort cleanup never changes the published final path.
+    }
+  }
 }
 
 export async function getGenerationLines({
@@ -249,11 +452,13 @@ export async function getGenerationLines({
         id,
         {
           ...line,
-          outputFilePath: await validatePrivateOutputPathOnDisk(
-            line.outputFilePath,
-            directory,
-            projectRoot,
-          ),
+          outputFilePath: (
+            await inspectPrivateMutationPath(
+              line.outputFilePath,
+              directory,
+              projectRoot,
+            )
+          ).outputPath,
         },
       ]),
     ),
@@ -324,15 +529,61 @@ export async function requestSpeechWithRateLimitRetry(
   return response;
 }
 
-async function generateAudioFile(apiKey, id, line) {
-  const filePath = getOutputPath(line);
-  if (existsSync(filePath) && !force) {
+export async function generateAudioFile(
+  apiKey,
+  id,
+  line,
+  {
+    forceOverwrite = force,
+    previewDirectory = join(rootDir, "content/private-story-preview"),
+    privateWriteOptions = {},
+    projectRoot = rootDir,
+    requestSpeechImplementation = requestSpeech,
+  } = {},
+) {
+  const filePath = line.outputFilePath
+    ? validatePrivateOutputPath(line.outputFilePath, previewDirectory)
+    : getOutputPath(line);
+  if (line.outputFilePath) {
+    if (forceOverwrite) {
+      await inspectPrivateMutationPath(
+        filePath,
+        previewDirectory,
+        projectRoot,
+        { allowFinalSymlink: true },
+      );
+    } else if (
+      await hasStablePrivateAudioOutput(
+        filePath,
+        previewDirectory,
+        projectRoot,
+      )
+    ) {
+      return "skipped";
+    }
+  } else if (existsSync(filePath) && !forceOverwrite) {
     return "skipped";
   }
 
-  const response = await requestSpeechWithRateLimitRetry(apiKey, line);
+  const response = await requestSpeechWithRateLimitRetry(apiKey, line, {
+    requestSpeechImplementation,
+  });
 
-  await writeAudioFile(filePath, await readSpeechAudioResponse(id, response));
+  const audioBytes = await readSpeechAudioResponse(id, response);
+  if (line.outputFilePath) {
+    await writePrivateAudioFileAtomically(
+      filePath,
+      audioBytes,
+      {
+        ...privateWriteOptions,
+        forceOverwrite,
+        previewDirectory,
+        projectRoot,
+      },
+    );
+  } else {
+    await writeAudioFile(filePath, audioBytes);
+  }
   return "generated";
 }
 
