@@ -14,7 +14,7 @@ Browser
        -> /api/guardian-access -> Better Auth password check -> D1
        -> /api/conversations/* -> LiveKit -> D1
        -> /api/lessons/my/* -> OpenAI -> D1
-       -> /api/dubs/five-little-ducks-v1/* -> private R2 clip slots
+       -> /api/dubs/five-little-ducks-v1/* -> D1 consent + private R2 clip slots
        -> /api/evaluate-speech -> Groq
        -> static Vite assets
 ```
@@ -38,15 +38,16 @@ prototype build entry in the shipped product.
   manager, creation, and editing.
 - `src/stories` owns the stored-level learner shelf/reader and guardian-only
   story settings and personalized-art controls.
-- `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
-  client, and synchronized replay.
+- `src/dubbing` owns the fixed Five Little Ducks script, learner studio,
+  guardian settings, authenticated client, and synchronized replay.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
 Top-level learner navigation stays small. Management starts at `/guardian`,
-with custom lesson authoring at `/guardian/lessons` and story controls at
-`/guardian/stories`. Retired experiment routes resolve through the wildcard
-home redirect and are not accepted as authentication return targets.
+with custom lesson authoring at `/guardian/lessons`, story controls at
+`/guardian/stories`, and dubbing consent/deletion at `/guardian/dubbing`.
+Retired experiment routes resolve through the wildcard home redirect and are
+not accepted as authentication return targets.
 
 ## Worker Responsibilities
 
@@ -54,9 +55,9 @@ home redirect and are not accepted as authentication return targets.
 rate limits, and delegates to focused handlers. It exposes authentication,
 guardian access, learner profile, conversations, My Lessons, story art, build
 information, speech evaluation, and Five Little Ducks dubbing. The
-authenticated `/api/dubs/five-little-ducks-v1/*` family owns status, raw clip
-upload, private clip streaming, and whole-dub reset. Static assets are the
-final fallback.
+authenticated `/api/dubs/five-little-ducks-v1/*` family owns consent-aware
+status, raw clip upload, private clip streaming, durable consent grant, and
+whole-dub revocation/deletion. Static assets are the final fallback.
 
 `GET`, `POST`, and `DELETE /api/guardian-access` read, unlock, and lock the
 current Better Auth session. Unlock verifies the current account password on
@@ -66,8 +67,9 @@ lazily. No password, guardian token, or mode history is stored.
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
 before profile reads/updates, profile preference changes, custom-lesson
-creation/generation/updates, and personalized-art mutations when the current
-session lacks a live unlock. Conversation start is purpose-aware: profile edits
+creation/generation/updates, personalized-art mutations, dubbing consent grant,
+and whole-dub deletion when the current session lacks a live unlock.
+Conversation start is purpose-aware: profile edits
 always require the current session's live unlock, while onboarding remains
 learner-safe only until the owner profile is completed or bypassed. The
 authenticated `/review` endpoint is the sole conversation path that persists
@@ -79,9 +81,12 @@ learner-safe reads remain available.
 The Worker and browser share the Drizzle schema in `src/db/schema.ts`. Better
 Auth and product data use one D1 database. `guardian_session_unlock` is keyed
 to the Better Auth session and stores `unlocked_at` plus indexed `expires_at`;
-session deletion cascades to the unlock. `learner_profile.story_level` stores
-one of the four supported IDs and defaults to `first-words` for existing and
-new learners.
+session deletion cascades to the unlock. `guardian_dub_consent` stores one
+account-owned durable grant for consent contract `guardian-voice-r2-v2`, its
+opaque grant generation, timestamps, and `granted` or `revoking` state. Its
+account foreign key cascades on deletion. `learner_profile.story_level` stores
+one of the four supported IDs and defaults to `first-words` for existing and new
+learners.
 
 ## Durable and Transient State
 
@@ -89,9 +94,11 @@ URLs are authoritative for durable screens, lesson scenes, story pages, the
 Five Little Ducks dubbing studio, and guardian management. The learner story
 shelf URL is canonicalized to the profile's stored `story_level`. Guardian mode
 is server state for the current auth session, not a client-only role or
-long-lived account permission. Lesson and dub playback phase, active recording,
-evaluation, and current step are transient React state. Route changes invalidate
-pending audio and recording work before a new scene is selected.
+long-lived account permission. Dubbing consent is deliberately different: its
+version-2 grant is durable account state so a learner may record after guardian
+mode is locked. Lesson and dub playback phase, active recording, evaluation,
+and current step are transient React state. Route changes invalidate pending
+audio and recording work before a new scene is selected.
 
 ```text
 /
@@ -106,11 +113,29 @@ pending audio and recording work before a new scene is selected.
 ├── /dubs/five-little-ducks
 ├── /guardian
 │   ├── /guardian/lessons
-│   └── /guardian/stories
+│   ├── /guardian/stories
+│   └── /guardian/dubbing
 ├── /profile                         (guardian after initial setup)
 ├── /profile/setup
 └── /login
 ```
+
+## Dubbing Capability Boundary
+
+`GET /api/dubs/five-little-ducks-v1` returns `recordingEnabled`,
+`consentState`, the fixed nine-line status shape, and consent contract
+`guardian-voice-r2-v2`. Absence or `revoking` returns no saved lines and never
+lists R2. Learners may upload, retake, read, and replay clips only while the
+current D1 grant generation remains valid. The upload path captures that
+generation, checks it around the conditional R2 write, and fences the exact
+object it wrote if consent changes.
+
+`PUT /api/dubs/five-little-ducks-v1/consent` accepts only the bounded version-2
+attestation object under a live guardian unlock. Guardian-only
+`DELETE /api/dubs/five-little-ducks-v1` changes D1 to `revoking` before R2
+cleanup and removes the consent row only after cleanup succeeds. The learner
+studio contains no self-attestation, `Grown-up options`, or delete action; it
+retains recording, retakes, saved-line replacement, and final playback.
 
 ## Content Boundaries
 
@@ -138,11 +163,14 @@ personalized-story-art/{encoded-user-id}/learner-dubs/
     line-{1..9}.audio
 ```
 
-R2 is the source of truth. During normal studio use the marker carries a
-generation and a `ready` or `deleting` state; status and playback expose only
-clips owned by the current ready generation. Each new upload stores a
-`parrot-dub-audio-v2` envelope with the generation and a request-unique upload
-nonce before the raw audio payload.
+R2 is the source of truth for clip bytes; D1 is the source of truth for whether
+those clips may be used. Status returns `not_granted`, `granted`, or `revoking`
+and does not list R2 when no current grant exists. During normal studio use the
+marker carries a generation and a `ready` or `deleting` state; status and
+playback expose only clips owned by both the current ready R2 generation and the
+current D1 consent generation. Each new upload stores a `parrot-dub-audio-v2`
+envelope with the generations and a request-unique upload nonce before the raw
+audio payload.
 Matching metadata records the payload offset, generation, and nonce so an
 authenticated GET can conditionally validate the exact envelope and stream only
 the payload.
@@ -159,8 +187,10 @@ nine same-generation non-audio slot fences. The exact ten closure keys are
 excluded from every broad sweep, so concurrent deletion hooks converge instead
 of dismantling one another. Better Auth can remove the user only after the
 complete closure exists; ordinary dub resets cannot take over its terminal
-marker. The retained objects contain no recording bytes. Dubs require no new D1
-metadata or migration because they reuse the existing deletion tombstone.
+marker. The retained objects contain no recording bytes. Guardian revocation
+first changes the D1 consent to `revoking`, completes the R2 tombstones, and
+deletes the D1 consent row only after cleanup succeeds. New grants and all media
+access fail closed while that cleanup is incomplete.
 
 ## Provider Boundaries
 

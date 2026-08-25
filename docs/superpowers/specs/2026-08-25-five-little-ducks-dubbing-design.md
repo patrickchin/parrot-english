@@ -19,11 +19,16 @@ header, `RouteHeader`, and shared controls. It is a separate activity rather
 than a lesson-player variant because it retains multiple takes and assembles a
 timed final performance.
 
-The experience has four learner-visible stages:
+Before these four active stages, the learner route checks durable consent. When
+it is absent or being revoked, the route shows **Ask a grown-up to turn on voice
+dubbing in Guardian mode.** It shows no self-attestation checkbox, password,
+consent terms, delete action, or `Grown-up options` panel.
 
-1. **Welcome and grown-up confirmation.** Explain that voice clips are private,
-   saved to the signed-in account, replayable, replaceable, and deleted with
-   the account. A grown-up must confirm before a new clip can be uploaded.
+After a current consent grant, the learner experience has four stages:
+
+1. **Welcome.** Explain that voice clips are private, saved to the signed-in
+   account, replayable, replaceable, and deleted with the account. **Start
+   dubbing** or **Continue dubbing** is immediately available.
 2. **Line recording.** Show the animated duck scene, `Line n of 9`, the exact
    line, **Hear the line**, and one large **Record** / **Stop** action. Recording
    stops automatically at six seconds.
@@ -35,12 +40,19 @@ The experience has four learner-visible stages:
    Schedule the clips and an original procedural music bed against one shared
    Web Audio clock while the original SVG duck scene advances through the same
    fixed timeline. Return to **Watch my dub** after playback and keep line
-   replacement and **Delete my dub** inside **Grown-up options**.
+   replacement under the learner-facing **Record another take** control.
 
 Individual takes are intentionally not previewed during the guided flow. Like
 The Choicer Voicer inspiration, each screen has one obvious next action and the
-whole performance is the reward at the end. A grown-up can still reopen any
-saved line and replace it from the final screen.
+whole performance is the reward at the end. The learner can reopen any saved
+line, record a replacement, and replay the final performance.
+
+Adult management lives separately at `/guardian/dubbing`, behind the live
+15-minute guardian unlock. Only that route can accept version-2 voice-storage
+consent or turn dubbing off and delete all saved clips. A successful grant locks
+guardian mode before handing the activity back to the learner. An interrupted
+deletion remains `revoking` and offers **Finish removing voice clips** only in
+guardian mode.
 
 ## Original Content
 
@@ -74,9 +86,9 @@ voice clips, needs no media licence, and adds no dependency or binary asset.
 `src/dubbing/dub-script.ts` owns the immutable script, slot IDs, cue offsets,
 maximum record duration, and visual-beat metadata.
 
-`src/dubbing/dub-api.ts` owns same-origin status, upload, private audio, and
-delete requests. Uploads are raw `Blob` bodies so the Worker can apply a strict
-byte limit without multipart overhead.
+`src/dubbing/dub-api.ts` owns same-origin status, upload, private audio, durable
+consent, and delete requests. Uploads are raw `Blob` bodies so the Worker can
+apply a strict byte limit without multipart overhead.
 
 `src/dubbing/dub-state.ts` owns pure transitions for loading, introduction,
 line readiness, microphone opening, recording, saving, review, final readiness,
@@ -90,8 +102,11 @@ animation frames, and the context.
 
 `src/dubbing/DuckDub.tsx` composes the route UI and owns cancellable effects.
 It aborts guide speech, microphone work, uploads, and final
-playback on retake, reset, or unmount. Async results carry a generation token
-so a late result cannot mutate a newer line or an exited route.
+playback on retake, consent loss, or unmount. Async results carry a generation
+token so a late result cannot mutate a newer line or an exited route.
+
+`src/dubbing/GuardianDubbingSettings.tsx` composes the guardian-only consent,
+mode handoff, revocation, and cleanup-retry experience.
 
 `src/dubbing/DuckScene.tsx` renders both the small home-card illustration and
 the responsive game stage. It contains no media URLs.
@@ -108,10 +123,19 @@ The Worker exposes one fixed, authenticated API family:
 - `GET /api/dubs/five-little-ducks-v1`
 - `PUT /api/dubs/five-little-ducks-v1/lines/:lineId`
 - `GET /api/dubs/five-little-ducks-v1/lines/:lineId/audio`
+- `PUT /api/dubs/five-little-ducks-v1/consent`
 - `DELETE /api/dubs/five-little-ducks-v1`
 
 Only the nine authored line IDs are valid. The user ID always comes from the
-Better Auth session and is never accepted from the browser.
+Better Auth session and is never accepted from the browser. Status is an
+authenticated owner-scoped read. Consent `PUT` and dub `DELETE` additionally
+require a live guardian unlock; line upload and playback instead require the
+current durable consent generation so they remain learner capabilities.
+
+The current contract is `guardian-voice-r2-v2`. D1 table
+`guardian_dub_consent` stores one row per account with the consent version, an
+opaque grant generation, `granted` or `revoking` state, and timestamps. Version
+1 represented browser self-attestation and is not a durable grant.
 
 The proof of concept reuses the existing private personalized-art R2 bucket,
 account-deletion tombstone, and owner prefix:
@@ -122,15 +146,16 @@ personalized-story-art/{encoded-user-id}/learner-dubs/
   five-little-ducks-v1/{line-id}.audio
 ```
 
-This deliberately avoids a new bucket, D1 table, and migration while extending
+This reuses the existing bucket while adding the D1 consent row and extending
 the existing account-delete pipeline with a dub-specific storage closure. Each
 fixed `.audio` key is the current slot, so replacing a take cannot orphan an
 older browser format. Split voice data into its own bucket when its retention,
 residency, or access policy differs from private story art.
 
-R2 is the source of truth. `list` determines saved slots, `put` conditionally
-replaces a slot, and `get` streams owner-only audio. Reset keeps the nine fixed
-keys but replaces each with a small, opaque non-audio generation tombstone. The
+R2 is the source of truth for clip bytes, while D1 is the source of truth for
+consent. `list` determines saved slots, `put` conditionally replaces a slot, and
+`get` streams owner-only audio only under a current grant. Reset keeps the nine
+fixed keys but replaces each with a small, opaque non-audio generation tombstone. The
 marker and tombstones include their generation in the object body. Each newly
 written private audio envelope includes both that generation and a
 request-unique upload nonce. This is required because R2 single-part ETags are
@@ -146,16 +171,19 @@ Enveloped objects are also rejected when their total size exceeds the exact
 prefix plus the 512 KiB upload ceiling.
 
 HTTP metadata stores the normalized content type. Audio custom metadata stores
-the reset generation, request-unique upload nonce, audio state, payload offset,
-consent version, line ID, and recording timestamp. The `.dub-generation`
-coordination object also stores its generation and `ready`, `deleting`, or
-terminal `account-deleting` state in custom metadata. Conditional R2 writes
-serialize the marker and every fixed slot. Uploads capture the ready generation
-and slot ETag, then conditionally replace only that observed slot; resets
+the reset generation, durable consent generation, request-unique upload nonce,
+audio state, payload offset, consent version, line ID, and recording timestamp.
+The `.dub-generation` coordination object also stores its generation and
+`ready`, `deleting`, or terminal `account-deleting` state in custom metadata.
+Conditional R2 writes serialize the marker and every fixed slot. Uploads
+capture the ready generation and slot ETag, then conditionally replace only that
+observed slot; resets
 acquire a new deleting generation and conditionally tombstone all nine slots
 before returning the marker to ready. Status and audio routes accept only
 audio-state objects for the current ready generation (plus pre-marker legacy
-audio). Account deletion derives its generation from the persisted D1
+audio). A first version-2 grant may adopt eligible private pre-version-2 clips;
+after any revocation, tombstones prevent those clips from reappearing under a
+later grant. Account deletion derives its generation from the persisted D1
 tombstone, excludes the ten canonical closure keys from broad prefix deletion,
 then conditionally stores a terminal `account-deleting` marker
 and nine same-generation non-audio fences. Concurrent deletion hooks therefore
@@ -173,11 +201,13 @@ Every API request is session-gated. All JSON and audio responses use
 `Cache-Control: private, no-store`; audio also uses
 `X-Content-Type-Options: nosniff`.
 
-Uploads require the current grown-up confirmation version in a request header,
-are limited to 512 KiB, and accept only browser-recordable WebM, MP4, or Ogg
-audio. The Worker checks both the normalized MIME type and container signature.
-Empty, oversized, mismatched, unknown-line, and unsupported requests fail
-without an R2 write.
+Uploads require a current durable `guardian-voice-r2-v2` grant in D1, are
+limited to 512 KiB, and accept only browser-recordable WebM, MP4, or Ogg audio.
+The Worker captures the grant generation, rechecks it before and after the
+conditional R2 write, and fences its exact object if consent changes. A public
+browser header cannot create or prove consent. The Worker also checks both the
+normalized MIME type and container signature. Empty, oversized, mismatched,
+unknown-line, and unsupported requests fail without an R2 write.
 
 The permanent D1 account-deletion tombstone is checked before and after upload.
 If deletion begins during a write after the prefix sweep has already passed,
@@ -201,9 +231,8 @@ conditional uploads and resets; the D1 tombstone prevents any new legitimate
 upload for the deleted account.
 
 Recordings are never sent to speech recognition, analytics, a public bucket,
-or a third-party media player. The UI makes no claim that a checkbox alone is
-legal consent; it is a product safeguard and a clear disclosure for this
-proof of concept.
+or a third-party media player. Consent is an explicit guardian action on the
+protected guardian route; the learner route has no adult self-attestation.
 
 Recoverable failures stay in context:
 
@@ -213,7 +242,11 @@ Recoverable failures stay in context:
 - one corrupt/undecodable final clip: return to that line for replacement;
 - guide speech unavailable: keep recording enabled because the visible line is
   authoritative;
-- route exit or reset: stop media tracks and audio immediately.
+- consent revoked during recording: fail the upload closed and return to the
+  child-readable unavailable state without a **Save again** loop;
+- interrupted revocation: keep all media blocked and let a guardian retry
+  cleanup;
+- route exit: stop media tracks and audio immediately.
 
 ## Responsive and Accessible Presentation
 
@@ -241,9 +274,11 @@ Test-first coverage will include:
 - Worker authentication, route validation, size/type/signature checks, owner
   isolation, atomic replacement, private streaming headers, reset, and the
   account-deletion race fence;
-- browser behavior for confirmation, recording, saving, retaking, reload
-  resume, final replay, reset, denied/unsupported microphones, and failed
-  uploads;
+- browser behavior for not-granted status, guardian grant and learner handoff,
+  recording, saving, retaking, reload resume, final replay, guardian deletion,
+  denied/unsupported microphones, and failed uploads;
+- learner-route audits proving there is no self-attestation, `Grown-up options`,
+  delete action, or grown-up chat-style selector while **Watch my dub** remains;
 - home and dubbing layouts at 280, 320, 390, short landscape, and desktop;
 - fresh `npm test`, `npm run lint`, `npm run build`, and
   `npm run test:browser` runs before completion.

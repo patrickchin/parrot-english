@@ -403,10 +403,19 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   await expect(menu).toHaveCount(0);
 });
 
-test("learner home, lesson shelf, and story shelf omit management actions", async ({
+test("learner routes omit adult management actions", async ({
   page,
 }) => {
-  for (const path of ["/", "/lessons", "/stories"]) {
+  for (const { path, watchDub } of [
+    { path: "/", watchDub: false },
+    { path: "/talk-to-peppa", watchDub: false },
+    { path: "/lessons", watchDub: false },
+    { path: "/stories", watchDub: false },
+    {
+      path: "/dubs/five-little-ducks?parrotE2eDub=complete",
+      watchDub: true,
+    },
+  ]) {
     await page.goto(path);
     const switcher = await openModeSwitch(page, "learner");
     await expect(
@@ -427,6 +436,22 @@ test("learner home, lesson shelf, and story shelf omit management actions", asyn
     await expect(
       page.getByRole("checkbox", { name: "Guardian consent" }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("checkbox", {
+        name: /I’m the grown-up|I am the learner's guardian/i,
+      }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /Delete (my )?dub/i }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel(/^Grown-up chat style:/)).toHaveCount(0);
+    if (watchDub) {
+      await page.getByRole("button", { name: "Continue dubbing" }).click();
+      await expect(
+        page.getByRole("button", { name: "Watch my dub" }),
+      ).toBeVisible();
+    }
     await page.keyboard.press("Escape");
   }
 });

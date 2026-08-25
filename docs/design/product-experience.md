@@ -39,6 +39,10 @@ duplicate learner activity catalog.
 | --- | --- | --- | --- |
 | Complete first-time learner setup | Yes | Yes | Authenticated session |
 | Talk, play lessons, read stories | Yes | Switch to learner | Authenticated session |
+| See whether voice dubbing is available | Yes | Yes | Authenticated, owner-scoped status |
+| Record, retake, and replay saved dub lines | Yes, after guardian consent | Switch to learner | Current durable consent grant |
+| Allow voice-clip storage | No | Yes | Guardian unlock plus durable v2 consent |
+| Turn off dubbing and delete saved clips | No | Yes | Guardian unlock plus fenced cleanup |
 | View saved custom lessons for playback | Yes | Switch to learner | Owner-scoped read |
 | Edit learner profile or redo setup | No | Yes | Guardian unlock |
 | Choose stored story level | No | Yes | Guardian unlock |
@@ -70,6 +74,7 @@ Canonical guardian routes are:
 - `/guardian` — dashboard;
 - `/guardian/lessons` — saved custom lesson management;
 - `/guardian/stories` — stored story level and personalized-art management;
+- `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
 - `/profile`, `/lessons/my/create`, and `/lessons/my/:lessonId/edit` — existing
   management URLs protected by the same guardian boundary.
 
@@ -82,10 +87,12 @@ home.
 
 ## Talk to Peppa
 
-The learner chooses a conversation style before joining. The experience shows
-one calm status, Peppa's latest line, the learner's live transcript, and one
-large turn control. It does not expose developer timing, transcript history,
-or profile-writing controls.
+Talk to Peppa currently shows a learner-safe unavailable screen. When the
+conversation experience is enabled, it shows one calm status, Peppa's latest
+line, the learner's live transcript, and one large turn control. It does not
+expose developer timing, transcript history, profile-writing controls, or a
+grown-up chat-style selector; the adult prompt style remains an internal
+default.
 
 The learner may interrupt, repeat Peppa's latest completed line, or finish at
 any time. Ordinary chat never updates the learner profile. Raw audio is not
@@ -137,17 +144,22 @@ guardian-only.
 ## Dub a Rhyme
 
 Five Little Ducks is a durable authenticated studio at
-`/dubs/five-little-ducks`. A grown-up confirms before the learner records the
-original nine-line rhyme one line at a time. Progress is saved to the signed-in
-account, resumes at the first missing line, and unlocks one synchronized final
-performance when every line is ready.
+`/dubs/five-little-ducks`. Before consent it shows the child-readable message
+**Ask a grown-up to turn on voice dubbing in Guardian mode.** It never asks the
+learner to self-attest as an adult. A guardian grants the durable
+`guardian-voice-r2-v2` consent at `/guardian/dubbing`, then switches back to
+learner mode. The learner records the original nine-line rhyme one line at a
+time. Progress is saved to the signed-in account, resumes at the first missing
+line, and unlocks one synchronized final performance when every line is ready.
 
 Voice clips are private to the account. The guided flow does not preview
 individual takes: each saved line advances to one clear next action, and the
-whole performance replays when complete. Saved lines can be replaced and the
-complete dub can be reset from closed grown-up options. Account deletion removes
-all saved clips. Recordings are not shared publicly or sent to speech
-recognition.
+whole performance replays when complete. The learner can record again, replace
+any saved line through **Record another take**, and use **Watch my dub**; there
+are no learner-facing consent, `Grown-up options`, or delete controls. Only a
+live guardian session can turn dubbing off and delete every saved clip. Account
+deletion also removes all saved clips. Recordings are not shared publicly or
+sent to speech recognition.
 
 ## Visual and Interaction Rules
 
