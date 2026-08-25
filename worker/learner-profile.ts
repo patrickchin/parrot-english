@@ -18,7 +18,7 @@ import {
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
-import { isStoryLevelId } from "../lib/story-level.ts";
+import { isLearnerStoryLevelId } from "../lib/story-level.ts";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
 import type { Database } from "./database.ts";
@@ -868,7 +868,7 @@ export async function handleLearnerProfileRequest(
       const record = await readJsonRecord(input.request);
       if (
         Object.keys(record).length !== 1 ||
-        !isStoryLevelId(record.storyLevel)
+        !isLearnerStoryLevelId(record.storyLevel)
       ) {
         throw new ApiError(
           400,

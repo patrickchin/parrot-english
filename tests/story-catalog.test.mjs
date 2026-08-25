@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { MemoryRouter, useLocation } from "react-router";
 import { after, afterEach, describe, it } from "node:test";
-import { createServer } from "vite";
 import {
   auditStoryVocabulary,
   countStoryWords,
@@ -20,15 +19,16 @@ import {
   mountStrict,
   waitFor,
 } from "./helpers/react-lifecycle.mjs";
+import { createHermeticViteServer } from "./helpers/hermetic-vite-server.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const restoreDom = installDom();
-const vite = await createServer({
+const viteHarness = await createHermeticViteServer({
   appType: "custom",
   logLevel: "silent",
   root: projectRoot,
-  server: { middlewareMode: true },
 });
+const vite = viteHarness.server;
 const { StoryList } = await vite
   .ssrLoadModule("/src/stories/StoryList.tsx")
   .catch(() => ({}));
@@ -42,7 +42,7 @@ afterEach(async () => {
 });
 
 after(async () => {
-  await vite.close();
+  await viteHarness.close();
   restoreDom();
 });
 

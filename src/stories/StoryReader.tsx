@@ -66,12 +66,14 @@ export function StoryReader({
   onNavigatePage,
   pageIndex,
   personalizedOverrides,
+  playAudioLine: playAudioLineOverride = playAudioLine,
   story,
 }: {
   backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
   personalizedOverrides?: PersonalizedStoryArtMetadata["stories"];
+  playAudioLine?: typeof playAudioLine;
   story: Story;
 }) {
   const [error, setError] = useState("");
@@ -175,7 +177,17 @@ export function StoryReader({
     const narrationAudioId = page.narrationAudioId;
     const joinInAudioId = page.joinInAudioId;
     try {
-      if (narrationAudioId && joinInAudioId) {
+      if (page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
+        narrationPromise = playAudioLineOverride({
+          audioId: `${story.id}-${page.id}-private-narration`,
+          audioSrc: page.narrationAudioSrc,
+          env: audioEnvironmentRef.current ?? undefined,
+          lang: "en-GB",
+          onPlaybackControl,
+          signal: controller.signal,
+          text: page.text,
+        });
+      } else if (!page.narrationAudioSrc && narrationAudioId && joinInAudioId) {
         narrationPromise = (async () => {
           await playSavedStoryLine(
             narrationAudioId,
@@ -197,7 +209,7 @@ export function StoryReader({
             onPlaybackControl,
           );
         })();
-      } else if (!narrationAudioId && !joinInAudioId) {
+      } else if (!page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
         narrationPromise = (async () => {
           await playDeviceSpeech({
             onPlaybackControl,
@@ -462,7 +474,7 @@ export function StoryReader({
 
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
-              className="relative m-0 text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short-wide:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
+              className="relative m-0 whitespace-pre-line text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short-wide:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
               ref={pageTextRef}
               tabIndex={-1}
             >

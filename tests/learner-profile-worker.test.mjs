@@ -232,6 +232,7 @@ describe("onboarding persistence and API", () => {
       await callLearnerProfile(state.database, "/api/profile");
       for (const body of [
         { storyLevel: "expert" },
+        { storyLevel: "long-stories" },
         { storyLevel: "first-words", extra: true },
       ]) {
         const response = await callLearnerProfile(

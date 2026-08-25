@@ -11,8 +11,8 @@ import {
 import { PersonalizedStoryArtPanel } from "./PersonalizedStoryArtPanel";
 import {
   getStoryLevel,
-  STORY_LEVELS,
-  type StoryLevelId,
+  LEARNER_STORY_LEVEL_IDS,
+  type LearnerStoryLevelId,
 } from "./story-catalog";
 import { usePersonalizedStoryArt } from "./usePersonalizedStoryArt";
 
@@ -29,8 +29,8 @@ export function GuardianStorySettingsView({
   art: PersonalizedStoryArtState;
   error: string;
   isSaving: boolean;
-  onSelectLevel: (level: StoryLevelId) => void;
-  selectedLevel: StoryLevelId;
+  onSelectLevel: (level: LearnerStoryLevelId) => void;
+  selectedLevel: LearnerStoryLevelId;
   statusMessage: string;
 }) {
   const showArt =
@@ -73,26 +73,29 @@ export function GuardianStorySettingsView({
             className="grid grid-cols-2 lg:grid-cols-4"
             role="tablist"
           >
-            {STORY_LEVELS.map((level, levelIndex) => (
-              <SegmentedButton
-                aria-controls="guardian-story-level-status"
-                aria-disabled={isSaving ? true : undefined}
-                className="min-h-14 justify-start px-2 text-left text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm sm:justify-center"
-                key={level.id}
-                onClick={() => onSelectLevel(level.id)}
-                role="tab"
-                selected={level.id === selectedLevel}
-                type="button"
-              >
-                <span
-                  aria-hidden="true"
-                  className="grid size-6 shrink-0 place-items-center rounded-full bg-white/85 text-xs text-brand-navy"
+            {LEARNER_STORY_LEVEL_IDS.map((levelId, levelIndex) => {
+              const level = getStoryLevel(levelId);
+              return (
+                <SegmentedButton
+                  aria-controls="guardian-story-level-status"
+                  aria-disabled={isSaving ? true : undefined}
+                  className="min-h-14 justify-start px-2 text-left text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm sm:justify-center"
+                  key={levelId}
+                  onClick={() => onSelectLevel(levelId)}
+                  role="tab"
+                  selected={levelId === selectedLevel}
+                  type="button"
                 >
-                  {levelIndex + 1}
-                </span>
-                <span>{level.label}</span>
-              </SegmentedButton>
-            ))}
+                  <span
+                    aria-hidden="true"
+                    className="grid size-6 shrink-0 place-items-center rounded-full bg-white/85 text-xs text-brand-navy"
+                  >
+                    {levelIndex + 1}
+                  </span>
+                  <span>{level.label}</span>
+                </SegmentedButton>
+              );
+            })}
           </SegmentedControl>
 
           <p
@@ -151,7 +154,7 @@ export function GuardianStorySettings() {
   const [statusMessage, setStatusMessage] = useState("");
   const savingRef = useRef(false);
 
-  async function selectLevel(level: StoryLevelId) {
+  async function selectLevel(level: LearnerStoryLevelId) {
     if (savingRef.current || level === profile.storyLevel) return;
     savingRef.current = true;
     setError("");

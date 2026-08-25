@@ -1,12 +1,33 @@
 import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { basename, dirname, extname, join } from "node:path";
+import { randomUUID } from "node:crypto";
+import { constants, existsSync } from "node:fs";
+import {
+  link,
+  lstat,
+  mkdir,
+  open,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import {
+  basename,
+  dirname,
+  extname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+  sep,
+} from "node:path";
 import process from "node:process";
 import { setTimeout as wait } from "node:timers/promises";
 import { promisify } from "node:util";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { loadPrivateStoryPreview } from "../lib/private-story-preview.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
 const execFileAsync = promisify(execFile);
@@ -21,9 +42,10 @@ const ELEVENLABS_SPEAKER_VOICE_IDS = {
   dolly: ELEVENLABS_DOLLY_VOICE_ID,
   narrator: ELEVENLABS_NARRATOR_VOICE_ID,
 };
+const PRIVATE_AUDIO_OUTPUT_ERROR =
+  "Private audio output must stay inside the private preview directory";
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const audioDir = join(rootDir, "public", "assets", "audio");
 const args = process.argv.slice(2);
 const force = args.includes("--force");
 const provider = readArg("provider") ?? "elevenlabs";
@@ -144,9 +166,317 @@ function getElevenLabsVoiceSettings(line) {
 }
 
 function getOutputPath(line) {
+  if (line.outputFilePath) {
+    return validatePrivateOutputPath(
+      line.outputFilePath,
+      join(rootDir, "content/private-story-preview"),
+    );
+  }
   if (!outputDir) return join(rootDir, "public", line.src);
 
   return join(outputDir, basename(line.src));
+}
+
+function validatePrivateOutputPath(outputFilePath, previewDirectory) {
+  if (typeof outputFilePath !== "string" || !outputFilePath) {
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  }
+  const directory = resolve(previewDirectory);
+  const outputPath = resolve(outputFilePath);
+  const relativePath = relative(directory, outputPath);
+  if (
+    relativePath === ".." ||
+    relativePath.startsWith(`..${sep}`) ||
+    isAbsolute(relativePath)
+  ) {
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  }
+  return outputPath;
+}
+
+function sameFileIdentity(left, right) {
+  return left.dev === right.dev && left.ino === right.ino;
+}
+
+async function inspectPrivateMutationPath(
+  outputFilePath,
+  previewDirectory,
+  projectRoot,
+  { allowFinalSymlink = false, createParents = false } = {},
+) {
+  try {
+    const root = resolve(projectRoot);
+    const directory = validatePrivateOutputPath(previewDirectory, root);
+    const outputPath = validatePrivateOutputPath(outputFilePath, directory);
+    if (directory === root) throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+
+    const rootStats = await lstat(root);
+    const realRoot = await realpath(root);
+    if (rootStats.isSymbolicLink() || !rootStats.isDirectory()) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    let currentPath = root;
+    for (const segment of relative(root, directory).split(sep)) {
+      currentPath = join(currentPath, segment);
+      const stats = await lstat(currentPath);
+      if (stats.isSymbolicLink() || !stats.isDirectory()) {
+        throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+      }
+      const realCurrentPath = await realpath(currentPath);
+      validatePrivateOutputPath(realCurrentPath, realRoot);
+    }
+
+    const realDirectory = await realpath(directory);
+    if (realDirectory === realRoot) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    validatePrivateOutputPath(realDirectory, realRoot);
+
+    const parentPath = dirname(outputPath);
+    currentPath = directory;
+    let parentMissing = false;
+    for (const segment of relative(directory, parentPath).split(sep)) {
+      currentPath = join(currentPath, segment);
+      let stats;
+      try {
+        stats = await lstat(currentPath);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+        if (!createParents) {
+          parentMissing = true;
+          break;
+        }
+        try {
+          await mkdir(currentPath, { mode: 0o700 });
+        } catch (mkdirError) {
+          if (mkdirError?.code !== "EEXIST") throw mkdirError;
+        }
+        stats = await lstat(currentPath);
+      }
+      if (stats.isSymbolicLink() || !stats.isDirectory()) {
+        throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+      }
+      const realCurrentPath = await realpath(currentPath);
+      validatePrivateOutputPath(realCurrentPath, realDirectory);
+    }
+
+    if (parentMissing) {
+      return {
+        outputPath,
+        outputStats: null,
+        parentPath,
+        parentStats: null,
+      };
+    }
+
+    const parentStats = await lstat(parentPath);
+    let outputStats = null;
+    try {
+      outputStats = await lstat(outputPath);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+    if (
+      outputStats &&
+      (outputStats.isDirectory() ||
+        (outputStats.isSymbolicLink() && !allowFinalSymlink))
+    ) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    return { outputPath, outputStats, parentPath, parentStats };
+  } catch (error) {
+    if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  }
+}
+
+function sameFileSnapshot(left, right) {
+  return (
+    sameFileIdentity(left, right) &&
+    left.size === right.size &&
+    left.mtimeMs === right.mtimeMs &&
+    left.ctimeMs === right.ctimeMs
+  );
+}
+
+async function hasStablePrivateAudioOutput(
+  filePath,
+  previewDirectory,
+  projectRoot,
+) {
+  let fileHandle;
+  try {
+    const initial = await inspectPrivateMutationPath(
+      filePath,
+      previewDirectory,
+      projectRoot,
+    );
+    if (!initial.outputStats) return false;
+    if (!initial.outputStats.isFile() || initial.outputStats.size === 0) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    fileHandle = await open(
+      filePath,
+      constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0),
+    );
+    const before = await fileHandle.stat();
+    if (!before.isFile() || before.size === 0 || !sameFileSnapshot(initial.outputStats, before)) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    const final = await inspectPrivateMutationPath(
+      filePath,
+      previewDirectory,
+      projectRoot,
+    );
+    const after = await fileHandle.stat();
+    if (
+      !final.outputStats ||
+      !sameFileSnapshot(before, after) ||
+      !sameFileSnapshot(after, final.outputStats)
+    ) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    return true;
+  } catch (error) {
+    if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  } finally {
+    try {
+      await fileHandle?.close();
+    } catch {
+      // A failed read-only close does not change the existing output.
+    }
+  }
+}
+
+async function writePrivateAudioFileAtomically(
+  filePath,
+  audioBytes,
+  {
+    beforePublish,
+    forceOverwrite,
+    previewDirectory,
+    projectRoot,
+    writeBytes = (fileHandle, bytes) => fileHandle.writeFile(bytes),
+  },
+) {
+  if (audioBytes.byteLength === 0) {
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  }
+
+  const initial = await inspectPrivateMutationPath(
+    filePath,
+    previewDirectory,
+    projectRoot,
+    { allowFinalSymlink: forceOverwrite, createParents: true },
+  );
+  const temporaryPath = join(
+    initial.parentPath,
+    `.${basename(filePath)}.${process.pid}.${randomUUID()}.tmp`,
+  );
+  let temporaryHandle;
+  let temporaryStats;
+  let published = false;
+
+  try {
+    temporaryHandle = await open(
+      temporaryPath,
+      constants.O_WRONLY |
+        constants.O_CREAT |
+        constants.O_EXCL |
+        (constants.O_NOFOLLOW ?? 0),
+      0o600,
+    );
+    await writeBytes(temporaryHandle, audioBytes);
+    await temporaryHandle.sync();
+    temporaryStats = await temporaryHandle.stat();
+    if (!temporaryStats.isFile() || temporaryStats.size !== audioBytes.byteLength) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    await beforePublish?.();
+    const final = await inspectPrivateMutationPath(
+      filePath,
+      previewDirectory,
+      projectRoot,
+      { allowFinalSymlink: forceOverwrite },
+    );
+    if (!sameFileIdentity(initial.parentStats, final.parentStats)) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+    const publishStats = await lstat(temporaryPath);
+    if (!publishStats.isFile() || !sameFileSnapshot(temporaryStats, publishStats)) {
+      throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+    }
+
+    if (forceOverwrite) {
+      await rename(temporaryPath, filePath);
+    } else {
+      await link(temporaryPath, filePath);
+    }
+    published = true;
+  } catch (error) {
+    if (error?.message === PRIVATE_AUDIO_OUTPUT_ERROR) throw error;
+    throw new Error(PRIVATE_AUDIO_OUTPUT_ERROR);
+  } finally {
+    if (!published && temporaryHandle) {
+      try {
+        await temporaryHandle.truncate(0);
+        await temporaryHandle.sync();
+      } catch {
+        // Continue with close and pathname cleanup without exposing private details.
+      }
+    }
+    try {
+      await temporaryHandle?.close();
+    } catch {
+      // The final path remains untouched when a temporary-file close fails.
+    }
+    try {
+      await rm(temporaryPath, { force: true });
+    } catch {
+      // A failed best-effort cleanup never changes the published final path.
+    }
+  }
+}
+
+export async function getGenerationLines({
+  privateStoriesOnly = false,
+  previewDirectory,
+  projectRoot = rootDir,
+} = {}) {
+  if (!privateStoriesOnly) return STATIC_AUDIO_LINES;
+
+  const directory = resolve(
+    previewDirectory ?? join(projectRoot, "content/private-story-preview"),
+  );
+  const { audioLines } = await loadPrivateStoryPreview({
+    previewDirectory: directory,
+    projectRoot,
+    requireAudio: false,
+  });
+  const privateAudioLines = Object.fromEntries(
+    await Promise.all(
+      Object.entries(audioLines).map(async ([id, line]) => [
+        id,
+        {
+          ...line,
+          outputFilePath: (
+            await inspectPrivateMutationPath(
+              line.outputFilePath,
+              directory,
+              projectRoot,
+            )
+          ).outputPath,
+        },
+      ]),
+    ),
+  );
+
+  return privateAudioLines;
 }
 
 async function requestSpeech(apiKey, line) {
@@ -176,43 +506,122 @@ async function writeAudioFile(filePath, audioBytes) {
   await rm(mp3Path, { force: true });
 }
 
-async function generateAudioFile(apiKey, id, line) {
-  const filePath = getOutputPath(line);
-  if (existsSync(filePath) && !force) {
+async function cancelSpeechResponseBody(response) {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // Provider-controlled cancellation failures must not replace safe diagnostics.
+  }
+}
+
+export async function readSpeechAudioResponse(id, response) {
+  if (!response.ok) {
+    const status = Number.isInteger(response.status) ? response.status : 0;
+    await cancelSpeechResponseBody(response);
+    throw new Error(`${id} failed with HTTP ${status}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+}
+
+export async function requestSpeechWithRateLimitRetry(
+  apiKey,
+  line,
+  {
+    requestSpeechImplementation = requestSpeech,
+    waitImplementation = wait,
+  } = {},
+) {
+  let response = await requestSpeechImplementation(apiKey, line);
+  if (response.status === 429) {
+    await cancelSpeechResponseBody(response);
+    await waitImplementation(7000);
+    response = await requestSpeechImplementation(apiKey, line);
+  }
+  return response;
+}
+
+export async function generateAudioFile(
+  apiKey,
+  id,
+  line,
+  {
+    forceOverwrite = force,
+    previewDirectory = join(rootDir, "content/private-story-preview"),
+    privateWriteOptions = {},
+    projectRoot = rootDir,
+    requestSpeechImplementation = requestSpeech,
+  } = {},
+) {
+  const filePath = line.outputFilePath
+    ? validatePrivateOutputPath(line.outputFilePath, previewDirectory)
+    : getOutputPath(line);
+  if (line.outputFilePath) {
+    if (forceOverwrite) {
+      await inspectPrivateMutationPath(
+        filePath,
+        previewDirectory,
+        projectRoot,
+        { allowFinalSymlink: true },
+      );
+    } else if (
+      await hasStablePrivateAudioOutput(
+        filePath,
+        previewDirectory,
+        projectRoot,
+      )
+    ) {
+      return "skipped";
+    }
+  } else if (existsSync(filePath) && !forceOverwrite) {
     return "skipped";
   }
 
-  let response = await requestSpeech(apiKey, line);
-  if (response.status === 429) {
-    await wait(7000);
-    response = await requestSpeech(apiKey, line);
-  }
+  const response = await requestSpeechWithRateLimitRetry(apiKey, line, {
+    requestSpeechImplementation,
+  });
 
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `${id} failed with ${response.status}: ${detail.slice(0, 300)}`
+  const audioBytes = await readSpeechAudioResponse(id, response);
+  if (line.outputFilePath) {
+    await writePrivateAudioFileAtomically(
+      filePath,
+      audioBytes,
+      {
+        ...privateWriteOptions,
+        forceOverwrite,
+        previewDirectory,
+        projectRoot,
+      },
     );
+  } else {
+    await writeAudioFile(filePath, audioBytes);
   }
-
-  await writeAudioFile(filePath, Buffer.from(await response.arrayBuffer()));
   return "generated";
 }
 
-if (provider !== "elevenlabs") {
-  throw new Error(`Unsupported TTS provider: ${provider}`);
+async function main() {
+  if (provider !== "elevenlabs") {
+    throw new Error(`Unsupported TTS provider: ${provider}`);
+  }
+
+  const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
+  if (!apiKey) {
+    throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
+  }
+
+  const lines = await getGenerationLines({
+    privateStoriesOnly: args.includes("--private-story-preview"),
+    projectRoot: rootDir,
+  });
+
+  for (const [id, line] of Object.entries(lines)) {
+    if (onlyIds.length > 0 && !onlyIds.includes(id)) continue;
+
+    const status = await generateAudioFile(apiKey, id, line);
+    globalThis.console.log(`${status}: ${id} (${provider})`);
+  }
 }
 
-const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
-if (!apiKey) {
-  throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
-}
-
-await mkdir(outputDir ?? audioDir, { recursive: true });
-
-for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
-  if (onlyIds.length > 0 && !onlyIds.includes(id)) continue;
-
-  const status = await generateAudioFile(apiKey, id, line);
-  globalThis.console.log(`${status}: ${id} (${provider})`);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
 }

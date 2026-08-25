@@ -51,10 +51,6 @@ const SAFE_RETURN_PATHS = [
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
-const STORY_LEVEL_IDS = new Set<StoryLevelId>(
-  STORY_LEVELS.map(({ id }) => id),
-);
-
 export const DEFAULT_STORY_LEVEL_ID: StoryLevelId = "first-words";
 
 export function getGuardianPath() {
@@ -110,9 +106,10 @@ export function getStoryShelfPath(
 
 export function resolveStoryShelfLevel(search: string): StoryLevelId {
   const levelId = new URLSearchParams(search).get("level");
-  return levelId && STORY_LEVEL_IDS.has(levelId as StoryLevelId)
-    ? (levelId as StoryLevelId)
-    : DEFAULT_STORY_LEVEL_ID;
+  return (
+    STORY_LEVELS.find((level) => level.id === levelId)?.id ??
+    DEFAULT_STORY_LEVEL_ID
+  );
 }
 
 export function getStoryPagePath(storyId: string, pageIndex: number) {
