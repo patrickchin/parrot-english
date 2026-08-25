@@ -106,6 +106,50 @@ describe("duck dub browser API", () => {
     );
   });
 
+  it("sanitizes rejected transports and malformed success payloads", async () => {
+    const transportDetail = "Network stack exposed: socket 17";
+    const rejectedFetch = async () => {
+      throw new TypeError(transportDetail);
+    };
+    const take = new Blob(["take"], { type: "audio/webm" });
+
+    for (const [operation, message] of [
+      [() => loadDubStatus({ fetch: rejectedFetch }), "Your saved dub could not be loaded."],
+      [() => saveDubLine("line-1", take, { fetch: rejectedFetch }), "Your take was not saved. Try again."],
+      [() => deleteDub({ fetch: rejectedFetch }), "Your saved dub was not deleted."],
+      [
+        () => loadDubStatus({ fetch: async () => Response.json({}) }),
+        "Your saved dub could not be loaded.",
+      ],
+      [
+        () => saveDubLine("line-1", take, { fetch: async () => Response.json({}) }),
+        "Your take was not saved. Try again.",
+      ],
+    ]) {
+      await assert.rejects(operation, (error) => {
+        assert.equal(error.message, message);
+        assert.doesNotMatch(error.message, /socket|stack|17/i);
+        return true;
+      });
+    }
+  });
+
+  it("preserves request cancellation as AbortError", async () => {
+    const abort = new Error("cancelled by caller");
+    abort.name = "AbortError";
+    const rejectedFetch = async () => {
+      throw abort;
+    };
+
+    for (const operation of [
+      () => loadDubStatus({ fetch: rejectedFetch }),
+      () => saveDubLine("line-1", new Blob(["take"]), { fetch: rejectedFetch }),
+      () => deleteDub({ fetch: rejectedFetch }),
+    ]) {
+      await assert.rejects(operation, (error) => error === abort);
+    }
+  });
+
   it("types an interrupted reset without exposing server details", async () => {
     await assert.rejects(
       loadDubStatus({
