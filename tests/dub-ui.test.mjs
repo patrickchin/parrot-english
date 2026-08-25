@@ -117,6 +117,18 @@ function liveStatusText(html) {
   return match[1].replace(/\s+/g, " ").trim();
 }
 
+function buttonTag(html, accessibleName) {
+  const match = html.match(
+    new RegExp(`<button(?=[^>]*aria-label="${accessibleName}")[^>]*>`),
+  );
+  assert.ok(match, `Expected button named ${accessibleName}`);
+  return match[0];
+}
+
+function buttonDisabled(html, accessibleName) {
+  return /\sdisabled=""/.test(buttonTag(html, accessibleName));
+}
+
 describe("duck dubbing presentation", () => {
   it("never asks a learner to claim they are a grown-up", () => {
     const disabled = renderDuckDub({ phase: "intro" }, { recordingEnabled: false });
@@ -233,7 +245,9 @@ describe("duck dubbing presentation", () => {
     await click(buttonWithText(container, "Start dubbing"));
     await click(container.querySelector('[aria-label="Record line 1"]'));
     await click(container.querySelector('[aria-label="Stop recording line 1"]'));
-    await waitFor(() => assert.ok(buttonWithText(container, "Next line")));
+    await waitFor(() =>
+      assert.ok(container.querySelector('[aria-label="Next line"]')),
+    );
 
     assert.equal(createdUrls, 1);
     assert.deepEqual(revokedUrls, []);
@@ -312,10 +326,16 @@ describe("duck dubbing presentation", () => {
 
   it("makes the current lyric unmistakable and keeps the saved guide replayable", () => {
     const html = renderDuckDub({ phase: "line-ready", currentLineIndex: 0 });
-    assert.match(html, /Line 1 of 24/);
+    assert.match(html, /Verse 1 of 6 · Line 1 of 4/);
+    assert.doesNotMatch(html, /Line 1 of 24/);
+    assert.match(html, /aria-valuetext="Verse 1 of 6, line 1 of 4"/);
     assert.match(html, /Now read/);
     assert.match(html, /Five little ducks went out one day\./);
     assert.match(html, /aria-label="Record line 1"/);
+    assert.equal(buttonDisabled(html, "Next line"), true);
+    assert.ok(
+      html.indexOf('aria-label="Record line 1"') < html.indexOf('aria-label="Next line"'),
+    );
     assert.match(html, /aria-label="Replay example"/);
     assert.doesNotMatch(html, /aria-label="Hear the line"/);
     assert.doesNotMatch(html, /Watch my dub/);
@@ -325,19 +345,25 @@ describe("duck dubbing presentation", () => {
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.doesNotMatch(complete, /Watch my dub/);
-    assert.match(complete, />Back to my dub<\/button>/);
+    assert.doesNotMatch(complete, /Back to my dub/);
+    assert.equal(buttonDisabled(complete, "Next line"), false);
   });
 
   it("keeps recording, saving, failure, and review actions child-readable", () => {
     const opening = renderDuckDub({ phase: "mic-opening" });
-    assert.match(opening, /<button[^>]*disabled[^>]*>Opening microphone…<\/button>/);
+    assert.match(opening, /Opening microphone…/);
+    assert.equal(buttonDisabled(opening, "Record line 1"), true);
+    assert.equal(buttonDisabled(opening, "Next line"), true);
 
     const recording = renderDuckDub({ phase: "recording", currentLineIndex: 2 });
     assert.match(recording, /Recording…/);
     assert.match(recording, /aria-label="Stop recording line 3"/);
+    assert.equal(buttonDisabled(recording, "Next line"), true);
 
     const saving = renderDuckDub({ phase: "saving" });
-    assert.match(saving, /<button[^>]*disabled[^>]*>Saving your take…<\/button>/);
+    assert.match(saving, /Saving your take…/);
+    assert.equal(buttonDisabled(saving, "Record line 1"), true);
+    assert.equal(buttonDisabled(saving, "Next line"), true);
 
     const failed = renderDuckDub({
       error: "Your take was not saved. Try again.",
@@ -345,7 +371,8 @@ describe("duck dubbing presentation", () => {
     });
     assert.match(failed, /role="alert"/);
     assert.match(failed, />Save again<\/button>/);
-    assert.doesNotMatch(failed, />Record again<\/button>/);
+    assert.match(failed, /aria-label="Record again line 1"/);
+    assert.equal(buttonDisabled(failed, "Next line"), true);
 
     const rejected = renderDuckDub({
       error: "That recording is too long. Try the line again.",
@@ -363,8 +390,11 @@ describe("duck dubbing presentation", () => {
     assert.match(review, /Your voice/);
     assert.match(review, /aria-label="Your recording waveform"/);
     assert.match(review, /aria-label="Hear my voice"/);
-    assert.match(review, />Next line<\/button>/);
-    assert.match(review, />Record again<\/button>/);
+    assert.equal(buttonDisabled(review, "Next line"), false);
+    assert.match(review, /aria-label="Record again line 1"/);
+    assert.ok(
+      review.indexOf('aria-label="Record again line 1"') < review.indexOf('aria-label="Next line"'),
+    );
 
     const playingTake = renderDuckDub(
       { phase: "line-review" },
@@ -374,6 +404,16 @@ describe("duck dubbing presentation", () => {
       },
     );
     assert.match(playingTake, /aria-label="Stop my voice"/);
+
+    const versePlaying = renderDuckDub({
+      currentLineIndex: 3,
+      phase: "verse-playing",
+      saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
+    });
+    assert.match(versePlaying, />Your verse</);
+    assert.match(versePlaying, />Playing verse 1…</);
+    assert.equal(buttonDisabled(versePlaying, "Record line 4"), true);
+    assert.equal(buttonDisabled(versePlaying, "Next line"), false);
   });
 
   it("keeps retakes learner-facing but removes destructive management", () => {
@@ -383,9 +423,9 @@ describe("duck dubbing presentation", () => {
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.match(ready, /Watch my dub<\/button>/);
-    assert.match(ready, /All 24 lines recorded/);
+    assert.match(ready, /All 6 verses recorded/);
     assert.match(ready, /Your dub is ready!/);
-    assert.doesNotMatch(ready, /aria-label="Line 5 of 24"/);
+    assert.doesNotMatch(ready, /aria-label="Verse 2 of 6, line 1 of 4"/);
     assert.match(ready, /<details(?![^>]*\bopen\b)[^>]*>/);
     assert.match(ready, /<summary[^>]*aria-label="Record another take"/);
     assert.match(ready, />Record another take<\/summary>|>Record another take<span/);
@@ -438,27 +478,27 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, phase: "line-ready" },
         {},
-        "Line 3 of 24. Listen to the example, then record this line.",
+        "Verse 1 of 6, line 3 of 4. Listen to the example, then record this line.",
       ],
       [
         { currentLineIndex: 2, phase: "mic-opening" },
         {},
-        "Line 3 of 24. Opening the microphone.",
+        "Verse 1 of 6, line 3 of 4. Opening the microphone.",
       ],
       [
         { currentLineIndex: 2, phase: "recording" },
         {},
-        "Line 3 of 24. Recording in progress.",
+        "Verse 1 of 6, line 3 of 4. Recording in progress.",
       ],
       [
         { currentLineIndex: 2, phase: "saving" },
         {},
-        "Line 3 of 24. Saving your take.",
+        "Verse 1 of 6, line 3 of 4. Saving your take.",
       ],
       [
         { currentLineIndex: 2, error: "Not saved.", phase: "save-error" },
         {},
-        "Line 3 of 24. Choose Save again.",
+        "Verse 1 of 6, line 3 of 4. Choose Save again.",
       ],
       [
         {
@@ -468,12 +508,32 @@ describe("duck dubbing presentation", () => {
           saveRecovery: "record",
         },
         {},
-        "Line 3 of 24. Choose Record again.",
+        "Verse 1 of 6, line 3 of 4. Choose Record again.",
       ],
       [
         { currentLineIndex: 2, phase: "line-review" },
         {},
-        "Line 3 of 24. Your take is saved. Hear your voice or choose Next line.",
+        "Verse 1 of 6, line 3 of 4. Your take is saved. Hear your voice or choose Next line.",
+      ],
+      [
+        { currentLineIndex: 3, phase: "verse-loading" },
+        {},
+        "Getting verse 1 of 6 ready. Next skips the preview.",
+      ],
+      [
+        { currentLineIndex: 3, phase: "verse-playing" },
+        {},
+        "Playing verse 1 of 6. Next skips to the next verse.",
+      ],
+      [
+        { currentLineIndex: 23, phase: "verse-loading" },
+        {},
+        "Getting verse 6 of 6 ready. Next skips to your completed dub.",
+      ],
+      [
+        { currentLineIndex: 23, phase: "verse-playing" },
+        {},
+        "Playing verse 6 of 6. Next skips to your completed dub.",
       ],
       [
         { currentLineIndex: 2, phase: "final-ready", saved: complete },
@@ -488,7 +548,7 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, phase: "final-playing", saved: complete },
         {},
-        "Playing your dub. Line 3 of 24.",
+        "Playing your dub. Verse 1 of 6, line 3 of 4.",
       ],
     ];
 
@@ -513,7 +573,7 @@ describe("duck dubbing presentation", () => {
 
   it("keeps visible progress and recording text accessible but non-live", () => {
     const html = renderDuckDub({ phase: "recording", currentLineIndex: 2 });
-    assert.match(html, />Line 3 of 24<\/p>/);
+    assert.match(html, />Verse 1 of 6 · Line 3 of 4<\/p>/);
     assert.match(html, />Recording…<\/p>/);
     assert.equal((html.match(/role="status"/g) ?? []).length, 1);
     assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1);

@@ -31,27 +31,43 @@ After a current consent grant, the learner experience has four stages:
    account, replayable, replaceable, and deleted with the account. **Start
    dubbing** or **Continue dubbing** is immediately available.
 2. **Line recording.** Fill the available studio viewport with the animated
-   duck stage and one compact control rail. Show `Line n of 24`, a visually
-   dominant **Now read** line, and one large **Record** / **Stop** action. The
-   saved ElevenLabs narrator guide plays as each line opens and remains
-   available through the secondary **Replay example** action. Recording stops
-   automatically at six seconds.
+   duck stage and one compact control rail. Show `Verse n of 6 · Line n of 4`,
+   a visually dominant **Now read** line, and a fixed two-slot action row with
+   **Record** on the left and **Next line** on the right. **Record** becomes
+   **Stop** in place during capture; **Next line** remains visible but disabled
+   until the take is saved. The saved ElevenLabs narrator guide plays as each
+   line opens and remains available through the secondary **Replay example**
+   action. Recording stops automatically at six seconds.
 3. **Line review.** Create a local object URL as soon as MediaRecorder returns,
    decode that same `Blob` into a real waveform, and expose **Hear my voice**
-   while the upload is saving and before the learner chooses **Next line**. The
-   one large **Next line** action remains primary, with **Record again** quieter.
-   A replacement upload atomically overwrites that line's previous object.
-   Existing progress resumes at the first missing line.
-4. **Final replay.** Unlock **Watch my dub** only after all 24 lines exist.
+   while the upload is saving and before the learner chooses **Next line**.
+   **Record again** replaces **Record** in the left slot and **Next line** stays
+   in the right slot, so neither action moves between states. A replacement
+   upload atomically overwrites that line's previous object. Existing progress
+   resumes at the first missing line.
+4. **Verse replay.** After each fresh fourth line, **Next line** plays those four
+   saved R2 clips with the matching animation and music. The local verse clock
+   rebases the authored cues without fetching the other 20 clips and runs until
+   the decoded fourth take finishes, including a valid six-second take. The
+   visual clock holds on that fourth line throughout its tail instead of entering
+   the next verse early. Playback automatically opens the next verse; **Next
+   line** can skip it immediately.
+   A transient playback failure returns to the saved line review with the local
+   waveform intact so **Next line** retries. Replacing an existing line in a
+   completed dub returns directly to the final screen instead of replaying its
+   verse.
+5. **Final replay.** Unlock **Watch my dub** only after all 24 lines exist.
    Schedule the clips and an original procedural music bed against one shared
    Web Audio clock while the original SVG duck scene advances through the same
    fixed timeline. Return to **Watch my dub** after playback and keep line
    replacement under the learner-facing **Record another take** control.
 
 Like The Choicer Voicer inspiration, each state has one unmistakable primary
-action. The take preview, waveform, example replay, and retake are supporting
-controls rather than competing next steps. The learner can reopen any saved
-line, record a replacement, and replay the final performance.
+action. The recording action and forward action occupy fixed slots, and
+disabled states make the required order explicit. The take preview, waveform,
+example replay, and retake are supporting controls rather than competing next
+steps. The learner can reopen any saved line, record a replacement, and replay
+the final performance.
 
 Adult management lives separately at `/guardian/dubbing`, behind the live
 15-minute guardian unlock. Only that route can accept version-2 voice-storage
@@ -118,13 +134,16 @@ consent, and delete requests. Uploads are raw `Blob` bodies so the Worker can
 apply a strict byte limit without multipart overhead.
 
 `src/dubbing/dub-state.ts` owns pure transitions for loading, introduction,
-line readiness, microphone opening, recording, saving, review, final readiness,
-final loading, final playback, and recoverable errors.
+line readiness, microphone opening, recording, saving, review, verse loading,
+verse playback, final readiness, final loading, final playback, and recoverable
+errors. It distinguishes fresh progress from replacement recording so only a
+newly completed verse triggers the short feedback loop.
 
 `src/dubbing/dub-playback.ts` fetches authenticated clips, decodes them to
-`AudioBuffer`s, schedules every source at its authored cue against one
-`AudioContext`, schedules the music bed, and reports elapsed time for the
-animation. It returns one idempotent stop function that cancels sources,
+`AudioBuffer`s, and schedules either all 24 clips or one canonical contiguous
+four-line verse against one `AudioContext`. Verse playback rebases authored
+cues to a local clock. Both scopes schedule the music bed, report elapsed time
+for the animation, and return one idempotent stop function that cancels sources,
 animation frames, and the context.
 
 `src/dubbing/DuckDub.tsx` composes the large guided studio and owns cancellable
@@ -287,6 +306,7 @@ Recoverable failures stay in context:
 - microphone unsupported or denied: keep the line visible and allow retry;
 - upload failure: retain the new `Blob` in memory and offer **Save again**;
 - saved clip playback failure: offer **Try again** without discarding progress;
+- verse playback failure: retain the local review and let **Next line** retry;
 - one corrupt/undecodable final clip: return to that line for replacement;
 - guide audio unavailable: keep recording enabled because the visible line is
   authoritative;
@@ -298,10 +318,12 @@ Recoverable failures stay in context:
 
 ## Responsive and Accessible Presentation
 
-The game uses one large primary action per state, minimum 48 px controls,
-visible text in addition to icons, and stable accessible names while compact
-labels hide at narrow widths. Status changes use one polite live region;
-permission, upload, and playback failures use an alert.
+The game uses a fixed two-slot Record/Next action row with minimum 48 px
+controls, visible text in addition to icons, and stable accessible names while
+compact labels hide at narrow widths. Record, Stop, and Record again always use
+the first slot; Next line always uses the second and remains disabled until it
+is valid. Status changes use one polite live region; permission, upload, and
+playback failures use an alert.
 
 At 280–390 px the stage, line card, and controls stack inside a vertically
 scrollable `main`. At short landscape sizes the stage and controls use two
@@ -320,14 +342,17 @@ Test-first coverage will include:
 
 - recorder MIME negotiation and recorder-reported Blob types;
 - pure dubbing state transitions and first-missing-line resume logic;
-- script cue ordering, four-second cue spacing, six-second recording maximum,
-  and 98-second duration;
+- script verse grouping, cue ordering, four-second cue spacing, six-second
+  recording maximum, four-line scoped playback through the final decoded take,
+  and 98-second final duration;
 - Worker authentication, route validation, size/type/signature checks, owner
   isolation, atomic replacement, private streaming headers, reset, and the
   account-deletion race fence;
 - browser behavior for not-granted status, guardian grant and learner handoff,
-  recording, saving, retaking, reload resume, final replay, guardian deletion,
-  denied/unsupported microphones, and failed uploads;
+  fixed Record/Next placement, recording, saving, retaking, four-line verse
+  feedback, preview retry/skip, final-line replacement, reload resume, final
+  replay, guardian deletion, denied/unsupported microphones, and failed
+  uploads;
 - learner-route audits proving there is no self-attestation, `Grown-up options`,
   delete action, or grown-up chat-style selector while **Watch my dub** remains;
 - home and dubbing layouts at 280, 320, 390, short landscape, and desktop;

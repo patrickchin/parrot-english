@@ -150,8 +150,12 @@ learner to self-attest as an adult. A guardian grants the durable
 `guardian-voice-r2-v2` consent at `/guardian/dubbing`, then switches back to
 learner mode. The learner records the authentic traditional six-stanza rhyme
 one line at a time. Its 24 lines count down from five ducklings to none, then
-end with sad mother duck bringing all five home. Progress resumes at the first
-missing line and unlocks one synchronized 98-second final performance.
+end with sad mother duck bringing all five home. Progress is saved to the
+signed-in account, resumes at the first missing line, and is presented as six
+four-line verses rather than one long 24-step task. Completing each verse plays
+those four saved voice clips with the matching animation and music before the
+next verse opens. All six verses unlock one synchronized 98-second final
+performance.
 
 Voice clips are private to the account. Entering a line autoplays its checked-in
 ElevenLabs narrator example; **Replay example** remains available. The current
@@ -180,7 +184,7 @@ publicly or sent to speech recognition.
 - Respect reduced motion and prevent horizontal overflow from 280 px upward.
 - Keep lesson controls clear of characters, speech, and the account header.
 - In the dubbing studio, keep the active lyric visually dominant, the title
-  compact, and exactly one primary action for the current state.
+  compact, and the fixed Record/Next action slots in the same physical places.
 
 ## Content Boundaries
 

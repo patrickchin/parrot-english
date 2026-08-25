@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
+import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
 import {
   DubLinePlaybackError,
   scheduleDubAudio,
@@ -111,6 +111,7 @@ function trackAbortListeners(signal) {
 
 function createAudioHarness({
   closeDeferred,
+  decodeDurations = {},
   decodeFailureLineId,
   decodeNeverLineId,
   oscillatorStopFailure,
@@ -213,7 +214,7 @@ function createAudioHarness({
       const lineId = `line-${new Uint8Array(bytes)[0]}`;
       if (lineId === decodeNeverLineId) return new Promise(() => {});
       if (lineId === decodeFailureLineId) throw new Error("codec detail");
-      return { duration: bytes.byteLength };
+      return { duration: decodeDurations[lineId] ?? bytes.byteLength };
     }
 
     async resume() {
@@ -348,6 +349,74 @@ describe("duck dub playback", () => {
     assert.equal(context.closeCalls, 1);
     assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
     assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
+  });
+
+  it("plays one selected verse through its complete six-second final take", async () => {
+    const audio = createAudioHarness({ decodeDurations: { "line-8": 6 } });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+    const playback = await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      lines: DUB_VERSES[1],
+      onEnded() {
+        ended += 1;
+      },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    assert.deepEqual(
+      audio.fetchCalls.map(([url]) => lineIdFromUrl(url)),
+      ["line-5", "line-6", "line-7", "line-8"],
+    );
+    assert.deepEqual(
+      context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
+      [10.12, 14.12, 18.12, 22.12],
+    );
+    assert.equal(context.oscillators.length, 28);
+
+    context.currentTime = 13.62;
+    raf.runNext();
+    assert.deepEqual(ticks, [3_500]);
+    context.currentTime = 28.12;
+    raf.runNext();
+    assert.deepEqual(ticks, [3_500, 18_000]);
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+    assert.equal(raf.callbacks.size, 0);
+
+    playback.stop();
+    assert.equal(context.closeCalls, 1);
+  });
+
+  it("lets the final verse outlive the shorter authored whole-dub tail", async () => {
+    const audio = createAudioHarness({ decodeDurations: { "line-24": 6 } });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      lines: DUB_VERSES[5],
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    assert.deepEqual(
+      audio.fetchCalls.map(([url]) => lineIdFromUrl(url)),
+      ["line-21", "line-22", "line-23", "line-24"],
+    );
+    const context = audio.contexts[0];
+    context.currentTime = 28.12;
+    raf.runNext();
+    assert.deepEqual(ticks, [18_000]);
+    assert.equal(ended, 1);
   });
 
   it("cancels a pending frame and playback idempotently", async () => {
