@@ -20,7 +20,6 @@ export type StoryPage = {
   joinIn: string;
   joinInAudioId: string | null;
   narrationAudioId: string | null;
-  narrationAudioSrc?: string;
   text: string;
 };
 

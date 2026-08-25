@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { act, createElement, useState } from "react";
 import { MemoryRouter } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
-import { createHermeticViteServer } from "./helpers/hermetic-vite-server.mjs";
+import { createServer } from "vite";
 import {
   cleanupMountedRoots,
   click,
@@ -23,23 +23,19 @@ const originalSpeechUtterance = Object.getOwnPropertyDescriptor(
   globalThis,
   "SpeechSynthesisUtterance",
 );
-const viteHarness = await createHermeticViteServer({
+const vite = await createServer({
   appType: "custom",
   logLevel: "silent",
   root: projectRoot,
+  server: { middlewareMode: true },
 });
-const vite = viteHarness.server;
 
 let StoryReader;
 let firstStory;
-let playAudioLine;
 
 before(async () => {
   ({ StoryReader } = await vite.ssrLoadModule(
     "/src/stories/StoryReader.tsx",
-  ));
-  ({ playAudioLine } = await vite.ssrLoadModule(
-    "/src/media/audio-playback.ts",
   ));
   const { STORIES } = await vite.ssrLoadModule(
     "/src/stories/story-catalog.ts",
@@ -61,7 +57,7 @@ afterEach(async () => {
 });
 
 after(async () => {
-  await viteHarness.close();
+  await vite.close();
   restoreDom();
 });
 
@@ -269,27 +265,9 @@ describe("child-first story reader behavior", () => {
     assert.match(container.textContent, /Your turn/);
   });
 
-  it("plays direct narration without device speech or a saved join-in clip", async () => {
+  it("plays saved narration when a read-aloud has no join-in clip", async () => {
     const finishAudio = [];
-    const playbackOptions = [];
     const playedUrls = [];
-    const spoken = [];
-    const directNarrationStory = {
-      ...firstStory,
-      id: "direct-narration-test",
-      pages: [
-        {
-          ...firstStory.pages[0],
-          id: "direct-page-one",
-          joinIn: "Say the synthetic line.",
-          joinInAudioId: null,
-          narrationAudioId: null,
-          narrationAudioSrc:
-            "/assets/private-story-preview/private-fixture/page-001.mp3",
-          text: "This is the exact synthetic narration text.",
-        },
-      ],
-    };
 
     class TestAudio {
       constructor(url) {
@@ -310,262 +288,45 @@ describe("child-first story reader behavior", () => {
       }
     }
 
-    class TestSpeechUtterance {
-      constructor(text) {
-        this.text = text;
-      }
-    }
-
     Object.defineProperty(globalThis, "Audio", {
       configurable: true,
       value: TestAudio,
     });
-    Object.defineProperty(globalThis, "SpeechSynthesisUtterance", {
-      configurable: true,
-      value: TestSpeechUtterance,
-    });
-    Object.defineProperty(globalThis, "speechSynthesis", {
-      configurable: true,
-      value: {
-        cancel() {},
-        getVoices() {
-          return [];
+    const savedNarrationStory = {
+      ...firstStory,
+      id: "saved-narration-only-test",
+      pages: [
+        {
+          ...firstStory.pages[0],
+          joinInAudioId: null,
+          narrationAudioId: "narrator-copy-dolly",
+          text: "Let's copy Dolly!",
         },
-        pause() {},
-        resume() {},
-        speak(utterance) {
-          spoken.push(utterance.text);
-        },
-      },
-    });
-
+      ],
+    };
     const container = await mountStrict(
       createElement(
         MemoryRouter,
-        { initialEntries: ["/stories/direct-narration-test/pages/1"] },
+        { initialEntries: ["/stories/saved-narration-only-test/pages/1"] },
         createElement(StoryReader, {
           backToStories: "/stories",
           onNavigatePage() {},
           pageIndex: 0,
-          playAudioLine(options) {
-            playbackOptions.push(options);
-            return playAudioLine(options);
-          },
-          story: directNarrationStory,
+          story: savedNarrationStory,
         }),
       ),
     );
 
-    assert.match(
-      container.querySelector("[aria-label^='Page 1 of 1']").getAttribute(
-        "aria-label",
-      ),
-      /This is the exact synthetic narration text\./,
-    );
     await click(container.querySelector('[aria-label="Listen"]'));
     await waitFor(() => assert.equal(finishAudio.length, 1));
     assert.deepEqual(playedUrls, [
-      "/assets/private-story-preview/private-fixture/page-001.mp3",
+      "/assets/audio/narrator-copy-dolly.mp3",
     ]);
-    assert.deepEqual(
-      playbackOptions.map(({ audioId, audioSrc, lang, text }) => ({
-        audioId,
-        audioSrc,
-        lang,
-        text,
-      })),
-      [
-        {
-          audioId: "direct-narration-test-direct-page-one-private-narration",
-          audioSrc:
-            "/assets/private-story-preview/private-fixture/page-001.mp3",
-          lang: "en-GB",
-          text: "This is the exact synthetic narration text.",
-        },
-      ],
-    );
-    assert.deepEqual(spoken, []);
 
     await act(async () => finishAudio.shift()());
     await waitFor(() =>
       assert.ok(container.querySelector('[aria-label="Listen again"]')),
     );
-    assert.deepEqual(playedUrls, [
-      "/assets/private-story-preview/private-fixture/page-001.mp3",
-    ]);
-  });
-
-  it("rejects direct narration mixed with static audio metadata", async () => {
-    const createdUrls = [];
-    const playedUrls = [];
-    const spoken = [];
-    const mixedMetadataStory = {
-      ...firstStory,
-      id: "mixed-metadata-test",
-      pages: [
-        {
-          ...firstStory.pages[0],
-          id: "mixed-page-one",
-          joinInAudioId: null,
-          narrationAudioId: "narrator-copy-dolly",
-          narrationAudioSrc:
-            "/assets/private-story-preview/private-fixture/page-001.mp3",
-          text: "Mixed synthetic narration.",
-        },
-      ],
-    };
-
-    class TestAudio {
-      constructor(url) {
-        this.url = url;
-        createdUrls.push(url);
-      }
-
-      pause() {}
-
-      play() {
-        playedUrls.push(this.url);
-        return Promise.resolve();
-      }
-    }
-
-    class TestSpeechUtterance {
-      constructor(text) {
-        this.text = text;
-      }
-    }
-
-    Object.defineProperty(globalThis, "Audio", {
-      configurable: true,
-      value: TestAudio,
-    });
-    Object.defineProperty(globalThis, "SpeechSynthesisUtterance", {
-      configurable: true,
-      value: TestSpeechUtterance,
-    });
-    Object.defineProperty(globalThis, "speechSynthesis", {
-      configurable: true,
-      value: {
-        cancel() {},
-        getVoices() {
-          return [];
-        },
-        pause() {},
-        resume() {},
-        speak(utterance) {
-          spoken.push(utterance.text);
-        },
-      },
-    });
-
-    const container = await mountStrict(
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/stories/mixed-metadata-test/pages/1"] },
-        createElement(StoryReader, {
-          backToStories: "/stories",
-          onNavigatePage() {},
-          pageIndex: 0,
-          story: mixedMetadataStory,
-        }),
-      ),
-    );
-
-    await click(container.querySelector('[aria-label="Listen"]'));
-    await waitFor(() =>
-      assert.match(
-        container.querySelector('[role="alert"]').textContent,
-        /can’t read aloud on this device/i,
-      ),
-    );
-    assert.deepEqual(createdUrls, []);
-    assert.deepEqual(playedUrls, []);
-    assert.deepEqual(spoken, []);
-  });
-
-  it("advances whole-story playback to the next direct narration source", async () => {
-    const finishAudio = [];
-    const navigatedPages = [];
-    const playedUrls = [];
-    const directNarrationStory = {
-      ...firstStory,
-      id: "direct-whole-story-test",
-      pages: [
-        {
-          ...firstStory.pages[0],
-          id: "direct-page-one",
-          joinInAudioId: null,
-          narrationAudioId: null,
-          narrationAudioSrc:
-            "/assets/private-story-preview/private-fixture/page-001.mp3",
-          text: "First synthetic narration.",
-        },
-        {
-          ...firstStory.pages[1],
-          id: "direct-page-two",
-          joinInAudioId: null,
-          narrationAudioId: null,
-          narrationAudioSrc:
-            "/assets/private-story-preview/private-fixture/page-002.mp3",
-          text: "Second synthetic narration.",
-        },
-      ],
-    };
-
-    class TestAudio {
-      constructor(url) {
-        this.url = url;
-      }
-
-      set src(url) {
-        this.url = url;
-      }
-
-      pause() {}
-
-      play() {
-        playedUrls.push(this.url);
-        const onended = this.onended;
-        finishAudio.push(() => onended?.(new window.Event("ended")));
-        return Promise.resolve();
-      }
-    }
-
-    Object.defineProperty(globalThis, "Audio", {
-      configurable: true,
-      value: TestAudio,
-    });
-
-    function WholeStoryHarness() {
-      const [pageIndex, setPageIndex] = useState(0);
-      return createElement(StoryReader, {
-        backToStories: "/stories",
-        onNavigatePage(pageIndex) {
-          navigatedPages.push(pageIndex);
-          setPageIndex(pageIndex);
-        },
-        pageIndex,
-        story: directNarrationStory,
-      });
-    }
-
-    const container = await mountStrict(
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/stories/direct-whole-story-test/pages/1"] },
-        createElement(WholeStoryHarness),
-      ),
-    );
-
-    await click(container.querySelector('[aria-label="Play whole story"]'));
-    await waitFor(() => assert.equal(finishAudio.length, 1));
-    await act(async () => finishAudio.shift()());
-    await waitFor(() => assert.deepEqual(navigatedPages, [1]));
-    await waitFor(() => assert.equal(finishAudio.length, 1));
-    assert.deepEqual(playedUrls, [
-      "/assets/private-story-preview/private-fixture/page-001.mp3",
-      "/assets/private-story-preview/private-fixture/page-002.mp3",
-    ]);
   });
 
   it("starts and advances when whole-story playback is enabled", async () => {

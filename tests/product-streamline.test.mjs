@@ -145,12 +145,21 @@ test("story shelf presents a curated learner library without research controls",
     "/stories",
   );
 
-  assert.equal(STORY_LEVELS.length, 4);
-  assert.equal(STORIES.length, 20);
+  assert.equal(STORY_LEVELS.length, 5);
+  assert.equal(STORIES.length, 22);
+  assert.equal(
+    STORIES.filter(({ level }) => level !== "long-stories").length,
+    20,
+  );
+  assert.equal(
+    STORIES.filter(({ level }) => level === "long-stories").length,
+    2,
+  );
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
   assert.match(html, /Pick a story/);
   assert.match(html, /Tap a picture\. I can read it to you\./);
   assert.match(html, /Little stories/);
+  assert.match(html, /Long stories/);
   assert.doesNotMatch(
     html,
     /Start here|Say it again|Big adventures|Grown-up options|Guardian consent/,
