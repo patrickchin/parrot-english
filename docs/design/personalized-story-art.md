@@ -343,13 +343,17 @@ Account deletion is now implemented as a separate tombstone-and-sweep path:
 
 1. persist an opaque `account_deletion_tombstone` outside the user-row cascade;
 2. mark all `personalized_story_art` rows for that user as `deleting`;
-3. list and purge the full user R2 prefix, including orphaned objects not
-   currently referenced by D1;
-4. only then allow the Better Auth user deletion cascade to remove the user and
+3. list and purge the user R2 prefix, including orphaned objects not currently
+   referenced by D1, while protecting the ten canonical dubbing closure keys;
+4. replace those dubbing keys with one terminal marker plus nine
+   same-generation non-audio fences derived from the persisted deletion
+   tombstone;
+5. only then allow the Better Auth user deletion cascade to remove the user and
    dependent D1 rows.
 
-The tombstone intentionally outlives the user row long enough to fence in-flight
-uploads and reads.
+The tombstone and tiny non-audio dubbing closure intentionally outlive the user
+row. Concurrent deletion hooks converge on that same closure, which fences
+in-flight uploads and resets without retaining any recording bytes.
 
 ## Feature Flags and Current Gates
 

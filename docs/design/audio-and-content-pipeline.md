@@ -45,7 +45,7 @@ use a third-party player or a mixed downloadable video.
 - Five Little Ducks authored script and timing: `src/dubbing/dub-script.ts`
 - Private replaceable voice slots: authenticated
   `/api/dubs/five-little-ducks-v1/*` backed by the existing private R2 account
-  purge prefix, with no D1 metadata
+  purge prefix and deletion tombstone, with no dub-specific D1 metadata
 
 Do not edit `dist` directly.
 

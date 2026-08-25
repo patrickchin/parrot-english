@@ -110,8 +110,8 @@ The Worker exposes one fixed, authenticated API family:
 Only the nine authored line IDs are valid. The user ID always comes from the
 Better Auth session and is never accepted from the browser.
 
-The proof of concept reuses the existing private personalized-art R2 bucket and
-its already-purged account prefix:
+The proof of concept reuses the existing private personalized-art R2 bucket,
+account-deletion tombstone, and owner prefix:
 
 ```text
 personalized-story-art/{encoded-user-id}/learner-dubs/
@@ -119,10 +119,11 @@ personalized-story-art/{encoded-user-id}/learner-dubs/
   five-little-ducks-v1/{line-id}.audio
 ```
 
-This deliberately avoids a new bucket, D1 table, migration, and account-delete
-pipeline. Each fixed `.audio` key is the current slot, so replacing a take
-cannot orphan an older browser format. Split voice data into its own bucket
-when its retention, residency, or access policy differs from private story art.
+This deliberately avoids a new bucket, D1 table, and migration while extending
+the existing account-delete pipeline with a dub-specific storage closure. Each
+fixed `.audio` key is the current slot, so replacing a take cannot orphan an
+older browser format. Split voice data into its own bucket when its retention,
+residency, or access policy differs from private story art.
 
 R2 is the source of truth. `list` determines saved slots, `put` conditionally
 replaces a slot, and `get` streams owner-only audio. Reset keeps the nine fixed
@@ -144,16 +145,20 @@ prefix plus the 512 KiB upload ceiling.
 HTTP metadata stores the normalized content type. Audio custom metadata stores
 the reset generation, request-unique upload nonce, audio state, payload offset,
 consent version, line ID, and recording timestamp. The `.dub-generation`
-coordination object also stores its
-unique reset generation and `deleting` or `ready` state in custom metadata.
-Conditional R2 writes serialize the marker and every fixed slot. Uploads capture
-the ready generation and slot ETag, then conditionally replace only that observed
-slot; resets acquire a new deleting generation and conditionally tombstone all
-nine slots before returning to ready. Status and audio routes accept only
+coordination object also stores its generation and `ready`, `deleting`, or
+terminal `account-deleting` state in custom metadata. Conditional R2 writes
+serialize the marker and every fixed slot. Uploads capture the ready generation
+and slot ETag, then conditionally replace only that observed slot; resets
+acquire a new deleting generation and conditionally tombstone all nine slots
+before returning the marker to ready. Status and audio routes accept only
 audio-state objects for the current ready generation (plus pre-marker legacy
-audio), while account deletion sweeps the marker and tombstones through the same
-owner prefix. Cloudflare currently limits writes to the same R2 key to one per
-second ([R2 limits](https://developers.cloudflare.com/r2/platform/limits/)).
+audio). Account deletion derives its generation from the persisted D1
+tombstone, excludes the ten canonical closure keys from broad prefix deletion,
+then conditionally stores a terminal `account-deleting` marker
+and nine same-generation non-audio fences. Concurrent deletion hooks therefore
+converge on the same closure, and an ordinary reset cannot take over the
+terminal marker. Cloudflare currently limits writes to the same R2 key to one
+per second ([R2 limits](https://developers.cloudflare.com/r2/platform/limits/)).
 Reset therefore waits a relative 1.05 seconds between acquiring the deleting
 marker and finalizing it as ready. All marker and slot conditional writes retry
 error `10058` with bounded backoff only while the exact observed version still
@@ -183,11 +188,14 @@ replace a newer writer. Cleanup failure does not hide the original D1 error.
 After any successful audio write, this D1 check runs before the marker result is
 interpreted and is repeated after either a marker conflict or a successful
 marker check. It never unconditionally deletes a shared fixed slot that a newer
-writer could own. Because dub keys live below the existing per-user purge
-prefix, Better Auth's normal sweep removes tracked clips and coordination
-objects. A late opaque account-deleting fence may remain when its write lands
-after that sweep, but it cannot be served or counted as audio and the permanent
-D1 tombstone prevents a new legitimate upload for that account.
+writer could own. The account-deletion coordinator sweeps non-closure objects
+below the owner prefix, then retains a tiny marker plus nine opaque fixed-slot
+fences with the tombstone-derived generation. Better Auth removes the user only
+after all ten non-audio objects exist. A retry or concurrent hook protects those
+exact keys from its broad sweep and idempotently converges on the same
+generation. This removes every recording while permanently closing stale
+conditional uploads and resets; the D1 tombstone prevents any new legitimate
+upload for the deleted account.
 
 Recordings are never sent to speech recognition, analytics, a public bucket,
 or a third-party media player. The UI makes no claim that a checkbox alone is
@@ -239,9 +247,12 @@ Test-first coverage will include:
 
 ## External Constraints
 
-The source screenshot is The Choicer Voicer's Dub Mode and is an interaction
-reference only. YouTube's API policies prohibit applying alternate audio tracks
-to embedded YouTube videos, so YouTube is not part of this implementation.
+The source screenshot shows Dub Mode in [The Choicer
+Voicer](https://yeahmaybe.itch.io/the-choicer-voicer) and is an interaction
+reference only. [YouTube's API
+policies](https://developers.google.com/youtube/terms/developer-policies)
+prohibit applying alternate audio tracks to embedded YouTube videos, so
+YouTube is not part of this implementation.
 Child voice recordings are personal information in relevant jurisdictions;
 this design therefore keeps them private, owner-scoped, explicitly disclosed,
 deletable, and inside the existing account deletion lifecycle.

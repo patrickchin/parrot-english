@@ -106,10 +106,11 @@ personalized-story-art/{encoded-user-id}/learner-dubs/
     line-{1..9}.audio
 ```
 
-R2 is the source of truth. The marker carries a generation and a `ready` or
-`deleting` state; status and playback expose only clips owned by the current
-ready generation. Each new upload stores a `parrot-dub-audio-v2` envelope with
-the generation and a request-unique upload nonce before the raw audio payload.
+R2 is the source of truth. During normal studio use the marker carries a
+generation and a `ready` or `deleting` state; status and playback expose only
+clips owned by the current ready generation. Each new upload stores a
+`parrot-dub-audio-v2` envelope with the generation and a request-unique upload
+nonce before the raw audio payload.
 Matching metadata records the payload offset, generation, and nonce so an
 authenticated GET can conditionally validate the exact envelope and stream only
 the payload.
@@ -119,10 +120,15 @@ generation fence. Reset conditionally acquires a new `deleting` generation,
 conditionally replaces all nine fixed slots with generation-owned non-audio
 tombstones, and then conditionally finalizes the marker as `ready`; an
 interrupted reset remains fenced until another DELETE completes it. Account
-deletion checks fence an exact in-flight upload with a non-audio
-`account-deleting` tombstone before returning a conflict, while the existing
-per-account R2 prefix sweep removes markers, tombstones, and clips. Dubs require
-no D1 metadata or migration.
+deletion derives one stable generation from the permanent D1 deletion
+tombstone, sweeps every non-closure object below the account prefix, then
+conditionally persists a terminal `account-deleting` marker followed by all
+nine same-generation non-audio slot fences. The exact ten closure keys are
+excluded from every broad sweep, so concurrent deletion hooks converge instead
+of dismantling one another. Better Auth can remove the user only after the
+complete closure exists; ordinary dub resets cannot take over its terminal
+marker. The retained objects contain no recording bytes. Dubs require no new D1
+metadata or migration because they reuse the existing deletion tombstone.
 
 ## Provider Boundaries
 
