@@ -1,8 +1,5 @@
-import { asc, eq, sql } from "drizzle-orm";
-import {
-  learnerProfile,
-  sessionLearnerSelection,
-} from "../src/db/schema.ts";
+import { asc, eq } from "drizzle-orm";
+import { learnerProfile } from "../src/db/schema.ts";
 import {
   containsLikelyFullLearnerName,
   containsPrivateLearnerProfileDetails,
@@ -65,12 +62,7 @@ async function roster(database: Database, identity: AccountIdentity) {
     })
     .from(learnerProfile)
     .where(eq(learnerProfile.authUserId, identity.userId))
-    .orderBy(
-      asc(learnerProfile.createdAt),
-      // learner_profile is a rowid table; its qualified hidden rowid breaks
-      // same-millisecond creation ties without leaking lexical UUID order.
-      asc(sql`${learnerProfile}._rowid_`),
-    );
+    .orderBy(asc(learnerProfile.createdAt), asc(learnerProfile.id));
 
   return {
     activeProfileId:
@@ -193,32 +185,49 @@ export async function handleLearnerProfilesRequest(input: {
       const name = await readPreferredName(input.request);
       await resolveLearnerIdentity(input.database, input.identity);
       const profileId = crypto.randomUUID();
-      const now = new Date();
-      await input.database.batch([
-        input.database.insert(learnerProfile).values({
-          id: profileId,
-          authUserId: input.identity.userId,
-          legacyStorageOwner: false,
-          name,
-        }),
-        input.database
-          .insert(sessionLearnerSelection)
-          .values({
-            sessionId: input.identity.sessionId,
-            authUserId: input.identity.userId,
-            learnerProfileId: profileId,
-            createdAt: now,
-            updatedAt: now,
-          })
-          .onConflictDoUpdate({
-            target: sessionLearnerSelection.sessionId,
-            set: {
-              authUserId: input.identity.userId,
-              learnerProfileId: profileId,
-              updatedAt: now,
-            },
-          }),
-      ] as const);
+      const now = Date.now();
+      await input.database.$client.batch([
+        input.database.$client
+          .prepare(
+            `INSERT INTO learner_profile (
+               id, auth_user_id, legacy_storage_owner, name,
+               created_at, updated_at
+             )
+             SELECT ?, ?, 0, ?, next_created_at, next_created_at
+             FROM (
+               SELECT max(
+                 cast(unixepoch('subsecond') * 1000 as integer),
+                 coalesce(max(created_at), 0) + 1
+               ) AS next_created_at
+               FROM learner_profile
+               WHERE auth_user_id = ?
+             )`,
+          )
+          .bind(
+            profileId,
+            input.identity.userId,
+            name,
+            input.identity.userId,
+          ),
+        input.database.$client
+          .prepare(
+            `INSERT INTO session_learner_selection (
+               session_id, auth_user_id, learner_profile_id,
+               created_at, updated_at
+             ) VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(session_id) DO UPDATE SET
+               auth_user_id = excluded.auth_user_id,
+               learner_profile_id = excluded.learner_profile_id,
+               updated_at = excluded.updated_at`,
+          )
+          .bind(
+            input.identity.sessionId,
+            input.identity.userId,
+            profileId,
+            now,
+            now,
+          ),
+      ]);
       return json(await roster(input.database, input.identity));
     }
 

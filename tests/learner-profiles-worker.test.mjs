@@ -108,7 +108,8 @@ function learnerRows(state) {
     .prepare(
       `SELECT id, auth_user_id, legacy_storage_owner, name, onboarding_status
        FROM learner_profile
-       ORDER BY created_at, learner_profile._rowid_`,
+       WHERE auth_user_id = 'user-a'
+       ORDER BY created_at, id`,
     )
     .all()
     .map((row) => ({ ...row }));
@@ -254,26 +255,6 @@ describe("learner roster Worker routing", () => {
     }
   });
 
-  it("returns learners in insertion order when creation timestamps tie", async () => {
-    insertLearner(state, "z-first");
-    insertLearner(state, "a-second", {
-      legacyStorageOwner: false,
-      name: "Mia",
-    });
-    await createGuardianAccessRepository(database).unlock("session-a");
-
-    const response = await createWorker({ createAuth: () => authStub() }).fetch(
-      request("GET", "/api/learner-profiles"),
-      env,
-    );
-
-    assert.equal(response.status, 200);
-    assert.deepEqual(
-      (await response.json()).profiles.map(({ id }) => id),
-      ["z-first", "a-second"],
-    );
-  });
-
   it("requires authentication and a current Guardian unlock for enabled mutations", async () => {
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
     const anonymous = await createWorker({
@@ -290,7 +271,48 @@ describe("learner roster Worker routing", () => {
     assert.deepEqual(await locked.json(), { error: "guardian_required" });
   });
 
-  it("creates an additional normalized learner and selects it for only the current session", async () => {
+  it("persists additional learners in creation order when the database clock does not advance", async (t) => {
+    state.sqlite.function(
+      "unixepoch",
+      { deterministic: true },
+      (modifier) => {
+        assert.equal(modifier, "subsecond");
+        return timestamp / 1000;
+      },
+    );
+    const ids = [
+      "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      "11111111-1111-4111-8111-111111111111",
+    ];
+    const randomUuidDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis.crypto,
+      "randomUUID",
+    );
+    Object.defineProperty(globalThis.crypto, "randomUUID", {
+      configurable: true,
+      value: () => ids.shift(),
+    });
+    t.after(() => {
+      if (randomUuidDescriptor) {
+        Object.defineProperty(
+          globalThis.crypto,
+          "randomUUID",
+          randomUuidDescriptor,
+        );
+      } else {
+        delete globalThis.crypto.randomUUID;
+      }
+    });
+    insertOtherAccount(state);
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status,
+           created_at, updated_at)
+         VALUES ('other-learner', 'user-b', 1, 'Noah', 'completed', ?, ?)`,
+      )
+      .run(timestamp + 10_000, timestamp + 10_000);
     insertSession(state, "session-b");
     await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
@@ -348,14 +370,53 @@ describe("learner roster Worker routing", () => {
     const appendedPayload = await appendedResponse.json();
     assert.equal(appendedResponse.status, 200);
     assert.deepEqual(
-      appendedPayload.profiles.map(({ name }) => name),
-      ["Learner", "Mia", "Leo"],
+      appendedPayload.profiles.map(({ id, name }) => ({ id, name })),
+      [
+        {
+          id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+          name: "Learner",
+        },
+        {
+          id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          name: "Mia",
+        },
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Leo",
+        },
+      ],
     );
     assert.equal(
       appendedPayload.profiles.find(({ id }) => id === appendedPayload.activeProfileId)
         .name,
       "Leo",
     );
+    assert.deepEqual(
+      state.sqlite
+        .prepare(
+          `SELECT id, created_at
+           FROM learner_profile
+           WHERE auth_user_id = 'user-a'
+           ORDER BY created_at, id`,
+        )
+        .all()
+        .map((row) => ({ ...row })),
+      [
+        {
+          id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+          created_at: timestamp,
+        },
+        {
+          id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          created_at: timestamp + 1,
+        },
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          created_at: timestamp + 2,
+        },
+      ],
+    );
+    assert.equal(ids.length, 0);
   });
 
   it("rejects malformed, non-exact, unsafe, and overlong creation bodies with stable errors", async () => {
