@@ -372,6 +372,88 @@ describe("private learner dub API", () => {
     }
   });
 
+  it("lets a guardian take over a legacy deleting marker after granting fresh consent", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      const consentRepository = createDubConsentRepository(
+        createDatabase(state.d1),
+        {
+          createGeneration: () => "consent-1",
+          now: () => new Date("2026-08-25T08:00:00.000Z"),
+        },
+      );
+      const bucket = createBucket([[MARKER_KEY, {
+        bytes: fenceBytes("marker", "legacy-reset", "deleting"),
+        options: {
+          customMetadata: { generation: "legacy-reset", state: "deleting" },
+        },
+        uploaded: new Date("2026-08-25T07:00:00.000Z"),
+      }]]);
+
+      const initial = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+      assert.equal(initial.status, 200);
+      assert.equal((await initial.json()).consentState, "not_granted");
+      assert.equal(bucket.calls.list.length, 0);
+
+      const grant = await callDub({
+        body: JSON.stringify({
+          accepted: true,
+          consentVersion: CURRENT_CONSENT_VERSION,
+        }),
+        bucket,
+        consentRepository,
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+        path: `${DUB_PATH}/consent`,
+      });
+      assert.equal(grant.status, 204);
+
+      const interrupted = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+      assert.equal(interrupted.status, 409);
+      assert.equal((await interrupted.json()).error, "dub_reset_in_progress");
+
+      const cleanup = await callDub({
+        bucket,
+        consentRepository,
+        generation: () => "reset-2",
+        method: "DELETE",
+        path: DUB_PATH,
+      });
+      assert.equal(cleanup.status, 204);
+      assert.deepEqual(await consentRepository.status("user-1"), {
+        state: "not_granted",
+      });
+      assertResetTombstones(bucket, "reset-2");
+
+      const final = await callDub({
+        bucket,
+        consentRepository,
+        method: "GET",
+        path: DUB_PATH,
+      });
+      assert.equal(final.status, 200);
+      assert.equal((await final.json()).consentState, "not_granted");
+    } finally {
+      state.close();
+    }
+  });
+
   it("returns disabled status without listing R2 when consent is absent or revoking", async () => {
     for (const consentState of ["not_granted", "revoking"]) {
       const bucket = createBucket();

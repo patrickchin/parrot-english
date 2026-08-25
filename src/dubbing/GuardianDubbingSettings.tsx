@@ -13,6 +13,7 @@ import { useGuardianAccess } from "../auth/GuardianAccess";
 import { ActionButton, Card } from "../shared/ui";
 import {
   deleteDub,
+  DubResetInProgressError,
   grantDubConsent,
   loadDubStatus,
   type DubStatus,
@@ -22,6 +23,7 @@ import { DUB_LINES } from "./dub-script";
 type Mutation = "delete" | "grant" | "switch";
 
 export function GuardianDubbingSettingsView({
+  cleanupRequired,
   consentState,
   canRetryStatus,
   error,
@@ -35,6 +37,7 @@ export function GuardianDubbingSettingsView({
   onSwitchToLearner,
   savedCount,
 }: {
+  cleanupRequired: boolean;
   consentState: DubStatus["consentState"] | null;
   canRetryStatus: boolean;
   error: string;
@@ -184,7 +187,7 @@ export function GuardianDubbingSettingsView({
           </Card>
         ) : null}
 
-        {consentState === "revoking" ? (
+        {consentState === "revoking" || cleanupRequired ? (
           <Card className="grid gap-5 p-5 text-center sm:p-7">
             <div className="grid gap-2">
               <h2 className="m-0 text-2xl leading-tight text-brand-navy">
@@ -224,6 +227,7 @@ export function GuardianDubbingSettings({
 }) {
   const { error: guardianError, lock } = useGuardianAccess();
   const navigate = useNavigate();
+  const [cleanupRequired, setCleanupRequired] = useState(false);
   const [status, setStatus] = useState<DubStatus | null>(null);
   const [hasAccepted, setHasAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,6 +267,7 @@ export function GuardianDubbingSettings({
           return false;
         }
         setStatus(nextStatus);
+        setCleanupRequired(false);
         if (nextStatus.consentState !== "not_granted") setHasAccepted(false);
         return true;
       } catch (error) {
@@ -273,7 +278,15 @@ export function GuardianDubbingSettings({
         ) {
           return false;
         }
-        if (invalidateOnFailure) setStatus(null);
+        if (error instanceof DubResetInProgressError) {
+          setStatus(null);
+          setCleanupRequired(true);
+          return false;
+        }
+        if (invalidateOnFailure) {
+          setStatus(null);
+          setCleanupRequired(false);
+        }
         setStatusError(
           messageFor(error, "Voice dubbing settings could not be loaded."),
         );
@@ -351,6 +364,7 @@ export function GuardianDubbingSettings({
 
   function remove() {
     if (
+      !cleanupRequired &&
       status?.consentState !== "granted" &&
       status?.consentState !== "revoking"
     ) {
@@ -387,6 +401,7 @@ export function GuardianDubbingSettings({
   return (
     <GuardianDubbingSettingsView
       canRetryStatus={Boolean(statusError)}
+      cleanupRequired={cleanupRequired}
       consentState={status?.consentState ?? null}
       error={statusError || operationError || guardianError}
       hasAccepted={hasAccepted}

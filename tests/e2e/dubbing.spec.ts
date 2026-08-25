@@ -445,7 +445,7 @@ test("guardian mode deletes a complete private dub and revokes consent", async (
   ).toBeVisible();
 });
 
-test("guardian mode finishes an interrupted consent revocation", async ({
+test("guardian mode recovers a legacy interrupted reset after a fresh grant", async ({
   page,
 }) => {
   await page.goto(
@@ -453,12 +453,40 @@ test("guardian mode finishes an interrupted consent revocation", async ({
   );
 
   await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+  await page.getByRole("checkbox", {
+    name: /I am the learner's guardian/,
+  }).check();
+  await page.getByRole("button", { name: "Allow voice dubbing" }).click();
+
+  await expect(
     page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Allow voice dubbing" }),
+  ).toHaveCount(0);
+  const interruptedStatus = await page.evaluate(async () => {
+    const response = await fetch("/api/dubs/five-little-ducks-v1");
+    return { body: await response.json(), status: response.status };
+  });
+  expect(interruptedStatus).toEqual({
+    body: { error: "dub_reset_in_progress" },
+    status: 409,
+  });
+
   await page.getByRole("button", { name: "Finish removing voice clips" }).click();
   await expect(
     page.getByRole("heading", { name: "Turn on private voice dubbing" }),
   ).toBeVisible();
+  const finalConsentState = await page.evaluate(async () => {
+    const response = await fetch("/api/dubs/five-little-ducks-v1");
+    const body: unknown = await response.json();
+    return typeof body === "object" && body !== null && "consentState" in body
+      ? body.consentState
+      : null;
+  });
+  expect(finalConsentState).toBe("not_granted");
 });
 
 test("keeps a failed cleanup revoking until the guardian retries", async ({

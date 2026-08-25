@@ -450,11 +450,10 @@ function createE2eDubStore(scenario: string | null) {
     : initialE2eDubLineIds(scenario);
   if (persisted === null) sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
   let consentState = (sessionStorage.getItem(consentKey) ??
-    (scenario === "not-granted"
+    (scenario === "not-granted" || scenario === "reset-interrupted"
       ? "not_granted"
       : scenario === "reset-delete-failed" ||
           scenario === "reset-delete-lost-response" ||
-          scenario === "reset-interrupted" ||
           scenario === "revoking"
         ? "revoking"
         : "granted")) as "granted" | "not_granted" | "revoking";
@@ -472,10 +471,12 @@ function createE2eDubStore(scenario: string | null) {
   );
   let failedUpload: Uint8Array | null = null;
   let failAudioFetch = scenario === "audio-fetch-failed";
-  let resetInterrupted =
+  let legacyResetPending =
+    scenario === "reset-interrupted" &&
+    sessionStorage.getItem(resetKey) !== "yes";
+  let resetCleanupPending =
     (scenario === "reset-delete-failed" ||
-      scenario === "reset-delete-lost-response" ||
-      scenario === "reset-interrupted") &&
+      scenario === "reset-delete-lost-response") &&
     sessionStorage.getItem(resetKey) !== "yes";
   let failResetDelete =
     scenario === "reset-delete-failed" &&
@@ -542,6 +543,9 @@ function createE2eDubStore(scenario: string | null) {
             delayNextStatus = false;
             await new Promise<void>((resolve) => window.setTimeout(resolve, 400));
           }
+          if (legacyResetPending && consentState === "granted") {
+            return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
+          }
           return e2eDubJson({
             complete:
               consentState === "granted" &&
@@ -570,9 +574,10 @@ function createE2eDubStore(scenario: string | null) {
             sessionStorage.setItem(resetDeleteFailureKey, "used");
             return new Response(null, { status: 503 });
           }
-          if (resetInterrupted) {
+          if (legacyResetPending || resetCleanupPending) {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
-            resetInterrupted = false;
+            legacyResetPending = false;
+            resetCleanupPending = false;
             sessionStorage.setItem(resetKey, "yes");
             clips.clear();
             persist();

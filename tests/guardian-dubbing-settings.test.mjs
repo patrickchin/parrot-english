@@ -53,6 +53,7 @@ function renderView(overrides = {}) {
       { initialEntries: ["/guardian/dubbing"] },
       createElement(GuardianDubbingSettingsView, {
         canRetryStatus: false,
+        cleanupRequired: false,
         consentState: "not_granted",
         error: "",
         hasAccepted: false,
@@ -291,6 +292,55 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
     /Your saved dub was not deleted/,
   );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
+});
+
+test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
+  let cleanupRequired = true;
+  let deleteCalls = 0;
+  globalThis.fetch = async (_input, init = {}) => {
+    if (init.method === "DELETE") {
+      deleteCalls += 1;
+      if (deleteCalls === 1) return new Response(null, { status: 503 });
+      cleanupRequired = false;
+      return new Response(null, { status: 204 });
+    }
+    return cleanupRequired
+      ? Response.json({ error: "dub_reset_in_progress" }, { status: 409 })
+      : Response.json(dubStatus("not_granted"));
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/dubbing"] },
+      createElement(
+        GuardianProvider,
+        {
+          lockGuardianAccess: async () => ({ mode: "learner" }),
+        },
+        createElement(GuardianDubbingSettings),
+      ),
+    ),
+  );
+
+  await waitFor(() => assert.ok(button(container, "Finish removing voice clips")));
+  assert.match(container.textContent, /Voice clip removal needs to finish/);
+  assert.doesNotMatch(container.textContent, /Allow voice dubbing|Try again/);
+
+  await click(button(container, "Finish removing voice clips"));
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="alert"]')?.textContent ?? "",
+      /Your saved dub was not deleted/,
+    ),
+  );
+  assert.ok(button(container, "Finish removing voice clips"));
+  assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
+
+  await click(button(container, "Finish removing voice clips"));
+  await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
+  assert.equal(deleteCalls, 2);
+  assert.doesNotMatch(container.textContent, /Finish removing voice clips/);
 });
 
 test("switch coalesces overlapping activations and stays recoverable after lock failure", async () => {
