@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement, useRef, useState } from "react";
+import { act, createElement, useEffect, useRef, useState } from "react";
 import {
   Link,
   MemoryRouter,
@@ -40,6 +40,7 @@ let RouteFocusManager;
 let AccountActionProvider;
 let useProfileAccountAction;
 let createGuardianAccessProvider;
+let notifyGuardianAccessRequired;
 let useGuardianAccess;
 
 before(async () => {
@@ -54,8 +55,11 @@ before(async () => {
   ));
   ({ AccountActionProvider, useProfileAccountAction } =
     await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
-  ({ createGuardianAccessProvider, useGuardianAccess } =
-    await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
+  ({
+    createGuardianAccessProvider,
+    notifyGuardianAccessRequired,
+    useGuardianAccess,
+  } = await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
   ({ ConversationSurface } = await vite.ssrLoadModule(
     "/src/conversation/ConversationSurface.tsx",
   ));
@@ -142,6 +146,12 @@ function AccessMode() {
   return createElement("output", { "aria-label": "Guardian access mode" }, mode);
 }
 
+function AccessCapture({ onAccess }) {
+  const access = useGuardianAccess();
+  useEffect(() => onAccess(access), [access, onAccess]);
+  return null;
+}
+
 function UnlockHarness({ api, dialog = false, onUnlocked = () => {} }) {
   const [Provider] = useState(() =>
     createGuardianAccessProvider({ api, schedule: () => () => {} }),
@@ -202,6 +212,7 @@ function authClientForHeader() {
     signUp: { email: async () => ({ error: null }) },
     useSession: () => ({
       data: {
+        session: { id: "header-session" },
         user: {
           email: "patrick@example.test",
           id: "guardian",
@@ -213,6 +224,20 @@ function authClientForHeader() {
       refetch: async () => {},
     }),
   };
+}
+
+function guardianHeaderHarness({ api, onAccess, schedule }) {
+  const Provider = createGuardianAccessProvider({ api, schedule });
+  const TestAuthGate = createAuthGate({
+    client: authClientForHeader(),
+    GuardianAccessBoundary: Provider,
+  });
+  return createElement(
+    TestAuthGate,
+    null,
+    createElement(AccessCapture, { onAccess }),
+    "LEARNER APP",
+  );
 }
 
 function conversationProps(overrides = {}) {
@@ -529,6 +554,150 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
+  it("tears down every open guardian account surface for every learner transition", async () => {
+    for (const transition of ["expiry", "explicit lock", "guardian_required"]) {
+      for (const surface of ["menu", "about", "delete"]) {
+        let access;
+        let expire = () => assert.fail("Expected guardian expiry to be scheduled.");
+        let serverMode = "guardian";
+        const expiresAt = "2099-01-01T00:00:00.000Z";
+        const api = guardianApi({
+          async loadGuardianAccess() {
+            return serverMode === "guardian"
+              ? { expiresAt, mode: "guardian" }
+              : { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            serverMode = "learner";
+            return { mode: "learner" };
+          },
+        });
+        await mountStrict(
+          guardianHeaderHarness({
+            api,
+            onAccess: (nextAccess) => {
+              access = nextAccess;
+            },
+            schedule(callback) {
+              expire = callback;
+              return () => {};
+            },
+          }),
+        );
+
+        await click(
+          await waitFor(() => button("Profile for Patrick, guardian mode")),
+        );
+        if (surface === "about") await click(button("AI and saved data"));
+        if (surface === "delete") await click(button("Delete account"));
+        if (surface === "menu") {
+          assert.ok(document.querySelector('[aria-label="Choose profile mode"]'));
+        } else {
+          assert.ok(document.querySelector('[role="dialog"]'));
+        }
+
+        if (transition === "expiry") {
+          await act(async () => expire());
+        } else if (transition === "explicit lock") {
+          await act(async () => access.lock());
+        } else {
+          await act(async () => notifyGuardianAccessRequired());
+        }
+
+        await waitFor(() => button("Profile for Learner, learner mode"));
+        assert.ok(
+          !document.querySelector('[role="dialog"]'),
+          `${surface} dialog remained exposed after ${transition}`,
+        );
+        assert.ok(
+          !document.querySelector('[aria-label="Choose profile mode"]'),
+          `${surface} menu remained exposed after ${transition}`,
+        );
+        assert.doesNotMatch(
+          document.body.textContent,
+          /AI and saved data|Delete account now|Sign out again/,
+          `${surface} remained exposed after ${transition}`,
+        );
+
+        await cleanupMountedRoots();
+        document.body.replaceChildren();
+      }
+    }
+  });
+
+  it("suppresses a guardian sign-out retry when the header becomes learner mode", async () => {
+    let selectMode;
+    function HeaderHarness() {
+      const [activeMode, setActiveMode] = useState("guardian");
+      selectMode = setActiveMode;
+      return createElement(
+        AccountHeader,
+        accountHeaderProps({
+          activeMode,
+          signOutError: "Sign out did not finish.",
+        }),
+      );
+    }
+
+    await mountStrict(createElement(HeaderHarness));
+    assert.ok(button("Sign out again"));
+    await act(async () => selectMode("learner"));
+
+    assert.equal(
+      [...document.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent.trim() === "Sign out again",
+      ) === undefined,
+      true,
+    );
+    assert.doesNotMatch(document.body.textContent, /Sign out did not finish/);
+  });
+
+  it("offers one access retry and recovers status without a password or reload", async () => {
+    let canRecover = false;
+    const api = guardianApi({
+      async loadGuardianAccess() {
+        if (!canRecover) throw new Error("Guardian status is unavailable.");
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+    });
+    await mountStrict(
+      guardianHeaderHarness({
+        api,
+        onAccess() {},
+        schedule: () => () => {},
+      }),
+    );
+
+    await waitFor(() =>
+      assert.equal(
+        [...document.querySelectorAll('[role="alert"]')].find(
+          (alert) => alert.textContent.trim() !== "",
+        )?.textContent.trim(),
+        "Guardian status is unavailable.",
+      ),
+    );
+    assert.equal(
+      [...document.querySelectorAll("button")].filter(
+        (candidate) => candidate.textContent.trim() === "Try again",
+      ).length,
+      1,
+    );
+
+    canRecover = true;
+    await click(button("Try again"));
+    await waitFor(() => button("Profile for Patrick, guardian mode"));
+    assert.equal(
+      [...document.querySelectorAll('[role="alert"]')].filter(
+        (alert) => alert.textContent.trim() !== "",
+      ).length,
+      0,
+    );
+    assert.ok(!document.querySelector('input[name="password"]'));
+  });
+
   it("keeps all guardian actions before the learner experience registers", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
@@ -663,7 +832,50 @@ describe("keyboard accessibility lifecycles", () => {
 
     assert.deepEqual(passwords, ["wrong-password"]);
     assert.equal(password.value, "");
+    assert.equal(password.getAttribute("aria-invalid"), "true");
+    assert.equal(
+      password.getAttribute("aria-describedby"),
+      document.querySelector('[role="alert"]').id,
+    );
     assert.equal(document.querySelector('output[aria-label="Guardian access mode"]').textContent, "learner");
+  });
+
+  it("renders one field-associated invalid-password alert in the account unlock dialog", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi({
+        async unlockGuardianAccess() {
+          throw new Error("The password did not match this account.");
+        },
+      }),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
+    await click(
+      await waitFor(() => button("Profile for Learner, learner mode")),
+    );
+    await click(button("Guardian"));
+    const password = document.querySelector('input[name="password"]');
+    await input(password, "wrong-password");
+    await click(button("Unlock guardian mode"));
+    await waitFor(() =>
+      assert.equal(
+        [...document.querySelectorAll('[role="alert"]')].filter(
+          (candidate) => candidate.textContent.trim() !== "",
+        ).length,
+        1,
+      ),
+    );
+
+    const alert = [...document.querySelectorAll('[role="alert"]')].find(
+      (candidate) => candidate.textContent.trim() !== "",
+    );
+    assert.equal(alert.textContent.trim(), "The password did not match this account.");
+    assert.equal(password.getAttribute("aria-invalid"), "true");
+    assert.equal(password.getAttribute("aria-describedby"), alert.id);
   });
 
   it("disables unlock controls while pending and submits the password with Enter", async () => {
@@ -694,29 +906,54 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(password.value, ""));
   });
 
-  it("announces a successful unlock and reports guardian mode", async () => {
+  it("announces a deep-link unlock from the stable account shell", async () => {
     let unlocked = 0;
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi(),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
     await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi(),
-        onUnlocked: () => {
-          unlocked += 1;
-        },
-      }),
+      createElement(
+        TestAuthGate,
+        null,
+        createElement(
+          "main",
+          { "aria-label": "Deep-link guardian unlock" },
+          createElement(GuardianUnlockForm, {
+            onCancel() {},
+            onUnlocked: () => {
+              unlocked += 1;
+            },
+          }),
+        ),
+      ),
     );
     const password = document.querySelector('input[name="password"]');
     await input(password, "correct-password");
     await click(button("Unlock guardian mode"));
     await waitFor(() =>
       assert.equal(
-        document.querySelector('[role="status"]').textContent.trim(),
-        "Guardian mode unlocked for 15 minutes",
+        [...document.querySelectorAll('[role="status"]')].filter(
+          (status) =>
+            status.textContent.trim() ===
+            "Guardian mode unlocked for 15 minutes",
+        ).length,
+        1,
       ),
     );
 
     assert.equal(unlocked, 1);
     assert.equal(password.value, "");
-    assert.equal(document.querySelector('output[aria-label="Guardian access mode"]').textContent, "guardian");
+    assert.ok(
+      !document
+        .querySelector('main[aria-label="Deep-link guardian unlock"]')
+        .querySelector('[role="status"]'),
+    );
+    assert.ok(button("Profile for Patrick, guardian mode"));
   });
 
   it("keeps network failures in learner mode and clears the password", async () => {
@@ -876,11 +1113,12 @@ describe("keyboard accessibility lifecycles", () => {
     await click(await waitFor(() => button("Learner")));
     await waitFor(() => button("Profile for Learner, learner mode"));
     await unlock();
-    await waitFor(() => assert.equal(announcements.length, 2));
+    await waitFor(() => assert.equal(announcements.length, 3));
     observer.disconnect();
 
     assert.deepEqual(announcements, [
       "Guardian mode unlocked for 15 minutes",
+      "Learner mode",
       "Guardian mode unlocked for 15 minutes",
     ]);
   });

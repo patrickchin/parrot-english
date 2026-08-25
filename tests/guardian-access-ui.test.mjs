@@ -91,6 +91,39 @@ function createApi(overrides = {}) {
   };
 }
 
+function createStatefulApi() {
+  const unlockCommit = deferred();
+  const server = {
+    abortedUnlockAtCommit: false,
+    commits: [],
+    mode: "learner",
+  };
+  const expiresAt = "2099-08-25T08:15:00.000Z";
+  const api = createApi({
+    async loadGuardianAccess() {
+      this.loadCalls += 1;
+      return server.mode === "guardian"
+        ? { mode: "guardian", expiresAt }
+        : { mode: "learner" };
+    },
+    async lockGuardianAccess() {
+      this.lockCalls += 1;
+      server.commits.push("lock");
+      server.mode = "learner";
+      return { mode: "learner" };
+    },
+    async unlockGuardianAccess(password, options) {
+      this.unlockCalls.push(password);
+      await unlockCommit.promise;
+      server.abortedUnlockAtCommit = options?.signal?.aborted === true;
+      server.commits.push("unlock");
+      server.mode = "guardian";
+      return { mode: "guardian", expiresAt };
+    },
+  });
+  return { api, server, unlockCommit };
+}
+
 function Probe({ onState }) {
   const state = useGuardianAccess();
   useEffect(() => {
@@ -151,7 +184,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     await act(async () => {
       document.dispatchEvent(new window.Event("visibilitychange"));
     });
-    assert.equal(api.loadCalls, 1);
+    assert.equal(api.loadCalls, 2);
 
     Object.defineProperty(document, "visibilityState", {
       configurable: true,
@@ -160,7 +193,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     await act(async () => {
       document.dispatchEvent(new window.Event("visibilitychange"));
     });
-    assert.equal(api.loadCalls, 2);
+    assert.equal(api.loadCalls, 3);
     assert.equal(states.at(-1).mode, "learner");
   });
 
@@ -198,7 +231,10 @@ describe("guardian access provider", { concurrency: false }, () => {
         return this.loadCalls === 1 ? first.promise : second.promise;
       },
     });
-    const Provider = createGuardianAccessProvider({ api });
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
     const onState = (state) => states.push(state);
 
     await mountProvider(Provider, "id:user-1", onState);
@@ -252,7 +288,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     });
     assert.equal(result, "Password did not match.");
     assert.equal(states.at(-1).mode, "learner");
-    assert.equal(states.at(-1).error, "Password did not match.");
+    assert.equal(states.at(-1).error, "");
     assert.deepEqual(api.unlockCalls, ["secret", "wrong"]);
   });
 
@@ -303,7 +339,10 @@ describe("guardian access provider", { concurrency: false }, () => {
         return unlock.promise;
       },
     });
-    const Provider = createGuardianAccessProvider({ api });
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
     await mountProvider(Provider, "id:user-1", (state) => states.push(state));
 
     let unlockResult;
@@ -364,5 +403,107 @@ describe("guardian access provider", { concurrency: false }, () => {
     assert.equal(typeof lockResult, "string");
     assert.ok(lockResult.length > 0);
     assert.equal(states.at(-1).mode, "learner");
+  });
+
+  it("queues a visibility status check behind an in-flight unlock", async () => {
+    const states = [];
+    const { api, server, unlockCommit } = createStatefulApi();
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+
+    let unlockResult;
+    let unlockPromise;
+    await act(async () => {
+      unlockPromise = states.at(-1).unlock("secret").then((result) => {
+        unlockResult = result;
+      });
+      await Promise.resolve();
+    });
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
+    await act(async () => {
+      document.dispatchEvent(new window.Event("visibilitychange"));
+      await Promise.resolve();
+    });
+
+    unlockCommit.resolve();
+    await act(async () => unlockPromise);
+    await act(async () => Promise.resolve());
+
+    assert.equal(unlockResult, null);
+    assert.equal(states.at(-1).mode, "guardian");
+    assert.equal(server.mode, "guardian");
+    assert.deepEqual(server.commits, ["unlock"]);
+    assert.equal(api.loadCalls, 2);
+  });
+
+  it("compensates a stale unlock after guardian-required selects learner mode", async () => {
+    const states = [];
+    const { api, server, unlockCommit } = createStatefulApi();
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+
+    let unlockResult;
+    let unlockPromise;
+    await act(async () => {
+      unlockPromise = states.at(-1).unlock("secret").then((result) => {
+        unlockResult = result;
+      });
+      await Promise.resolve();
+    });
+    await act(async () => notifyGuardianAccessRequired());
+    assert.equal(states.at(-1).mode, "learner");
+
+    unlockCommit.resolve();
+    await act(async () => unlockPromise);
+    await act(async () => Promise.resolve());
+
+    assert.equal(typeof unlockResult, "string");
+    assert.equal(states.at(-1).mode, "learner");
+    assert.equal(server.mode, "learner");
+    assert.deepEqual(server.commits, ["unlock", "lock"]);
+    assert.equal(api.lockCalls, 1);
+  });
+
+  it("serializes unlock then lock commits when learner is the latest intent", async () => {
+    const states = [];
+    const { api, server, unlockCommit } = createStatefulApi();
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+
+    let lockResult;
+    let unlockResult;
+    let lockPromise;
+    let unlockPromise;
+    await act(async () => {
+      unlockPromise = states.at(-1).unlock("secret").then((result) => {
+        unlockResult = result;
+      });
+      lockPromise = states.at(-1).lock().then((result) => {
+        lockResult = result;
+      });
+      await Promise.resolve();
+    });
+
+    unlockCommit.resolve();
+    await act(async () => Promise.all([unlockPromise, lockPromise]));
+    await act(async () => Promise.resolve());
+
+    assert.equal(typeof unlockResult, "string");
+    assert.equal(lockResult, null);
+    assert.equal(states.at(-1).mode, "learner");
+    assert.equal(server.mode, "learner");
+    assert.deepEqual(server.commits, ["unlock", "lock"]);
   });
 });

@@ -60,10 +60,14 @@ lazily. No password, guardian token, or mode history is stored.
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
 before profile reads/updates, profile preference changes, custom-lesson
 creation/generation/updates, and personalized-art mutations when the current
-session lacks a live unlock. Profile-edit conversation start/review/finalize
-uses the same check inside the purpose-aware conversation handler. Owner
-scoping, request validation, rate limits, and art consent still run after the
-mode check; learner-safe reads remain available.
+session lacks a live unlock. Conversation start is purpose-aware: profile edits
+always require the current session's live unlock, while onboarding remains
+learner-safe only until the owner profile is completed or bypassed. The
+authenticated `/review` endpoint is the sole conversation path that persists
+profile answers and repeats that current-session check; browser `/finish` and
+trusted-agent `/end` update conversation status only. Owner scoping, request
+validation, rate limits, and art consent still run after the mode check;
+learner-safe reads remain available.
 
 The Worker and browser share the Drizzle schema in `src/db/schema.ts`. Better
 Auth and product data use one D1 database. `guardian_session_unlock` is keyed

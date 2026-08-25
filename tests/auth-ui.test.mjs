@@ -157,6 +157,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   assert.equal(typeof createAuthGate, "function", "Expected an injectable AuthGate factory");
 
   const session = {
+    session: { id: "session-1" },
     user: { email: "learner@example.com", name: "小明" },
   };
   const sessionError = new Error("stale session");
@@ -315,6 +316,7 @@ test("auth gate container forwards an optional signed-out fallback", () => {
 
 test("auth gate mounts one guardian boundary with the current session identity", () => {
   let session = {
+    session: { id: "session-1" },
     user: { email: " FIRST@Example.com ", id: " user-1 ", name: "Mia" },
   };
   const identities = [];
@@ -339,14 +341,17 @@ test("auth gate mounts one guardian boundary with the current session identity",
   });
 
   renderToStaticMarkup(createElement(TestAuthGate, null, "SIGNED IN"));
-  session = { user: { email: " SECOND@Example.com ", name: "Maya" } };
+  session = {
+    session: { id: "session-2" },
+    user: { email: " SECOND@Example.com ", name: "Maya" },
+  };
   renderToStaticMarkup(createElement(TestAuthGate, null, "CHANGED ACCOUNT"));
   session = null;
   renderToStaticMarkup(createElement(TestAuthGate, null, "SIGNED OUT"));
 
   assert.deepEqual(identities, [
-    "id:user-1",
-    "email:second@example.com",
+    "id:user-1|session:session-1",
+    "email:second@example.com|session:session-2",
     null,
   ]);
 });
@@ -506,16 +511,15 @@ test("failed form state preserves values and disables controls while submitting"
   assert.match(html, /role="alert"/);
 });
 
-test("signed-in views expose signing-out progress on the persistent account control", () => {
-  const html = renderAuthGate({
+test("guardian account controls expose signing-out progress persistently", () => {
+  const html = renderAccountHeader({
+    activeMode: "guardian",
     isSigningOut: true,
-    session: { user: { email: "learner@example.com", name: null } },
   });
 
-  assert.match(html, /LESSON CONTENT/);
   assert.match(
     html,
-    /aria-label="Signing out… Profile for Mia, learner mode"/,
+    /aria-label="Signing out… Profile for Patrick, guardian mode"/,
   );
   assert.match(html, /aria-disabled="true"/);
   assert.match(
@@ -527,16 +531,16 @@ test("signed-in views expose signing-out progress on the persistent account cont
   assert.match(html, /aria-expanded="false"/);
   assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
   const accountButton = html.match(
-    /<button[^>]*aria-label="Signing out… Profile for Mia, learner mode"[\s\S]*?<\/button>/,
+    /<button[^>]*aria-label="Signing out… Profile for Patrick, guardian mode"[\s\S]*?<\/button>/,
   )?.[0];
   assert.ok(accountButton);
   assert.doesNotMatch(accountButton, /title=/);
   assert.doesNotMatch(accountButton, />Signing out…</);
 });
 
-test("signed-in views pre-mount one sign-out alert and keep Account beside a specific retry", () => {
-  const ordinary = renderAuthGate({
-    session: { user: { email: "learner@example.com", name: "Mia" } },
+test("guardian account controls pre-mount one sign-out alert beside a specific retry", () => {
+  const ordinary = renderAccountHeader({
+    activeMode: "guardian",
   });
   const ordinaryBar = ordinary.match(
     /<aside[^>]*aria-label="Account"[^>]*>[\s\S]*?<\/aside>/,
@@ -549,8 +553,8 @@ test("signed-in views pre-mount one sign-out alert and keep Account beside a spe
   );
   assert.doesNotMatch(ordinaryBar, /Sign out again/);
 
-  const failed = renderAuthGate({
-    session: { user: { email: "learner@example.com", name: "Mia" } },
+  const failed = renderAccountHeader({
+    activeMode: "guardian",
     signOutError: "Sign out did not finish.",
   });
   const failedBar = failed.match(
@@ -564,7 +568,7 @@ test("signed-in views pre-mount one sign-out alert and keep Account beside a spe
   );
   assert.match(
     failedBar,
-    /aria-label="Profile for Mia, learner mode"[\s\S]*Sign out again[\s\S]*<\/button>/,
+    /aria-label="Profile for Patrick, guardian mode"[\s\S]*Sign out again[\s\S]*<\/button>/,
   );
   assert.equal((failedBar.match(/role="alert"/g) ?? []).length, 1);
   assert.doesNotMatch(failedBar, /Unable to sign you out|Please try again/);

@@ -101,38 +101,70 @@ export function createGuardianAccessProvider({
     const [snapshot, setSnapshot] = useState(() =>
       initialSnapshot(sessionIdentity),
     );
-    const sequenceRef = useRef(0);
+    const generationRef = useRef(0);
     const controllerRef = useRef<AbortController | null>(null);
     const identityRef = useRef(sessionIdentity);
+    const intentRef = useRef<{
+      identity: string | null;
+      mode: "guardian" | "learner" | null;
+      version: number;
+    }>({ identity: sessionIdentity, mode: null, version: 0 });
+    const settledIntentRef = useRef(0);
+    const operationTailRef = useRef<Promise<void>>(Promise.resolve());
     identityRef.current = sessionIdentity;
 
     const isCurrent = useCallback(
-      (operation: number, identity: string, signal: AbortSignal) =>
-        sequenceRef.current === operation &&
-        identityRef.current === identity &&
-        !signal.aborted,
+      (identity: string, generation: number) =>
+        generationRef.current === generation && identityRef.current === identity,
       [],
     );
 
-    const beginOperation = useCallback((identity: string) => {
-      controllerRef.current?.abort();
-      const controller = new AbortController();
-      controllerRef.current = controller;
-      return {
-        controller,
-        identity,
-        operation: ++sequenceRef.current,
-      };
+    const enqueue = useCallback(function enqueueOperation<Result>(
+      operation: () => Promise<Result>,
+    ) {
+      const result = operationTailRef.current.then(
+        () => operation(),
+        () => operation(),
+      );
+      operationTailRef.current = result.then(
+        () => undefined,
+        () => undefined,
+      );
+      return result;
     }, []);
+
+    const beginIntent = useCallback(
+      (identity: string, mode: "guardian" | "learner") => {
+        const version = intentRef.current.version + 1;
+        intentRef.current = { identity, mode, version };
+        return version;
+      },
+      [],
+    );
+
+    const isLatestIntent = useCallback(
+      (
+        identity: string,
+        mode: "guardian" | "learner",
+        version: number,
+      ) => {
+        const intent = intentRef.current;
+        return (
+          intent.identity === identity &&
+          intent.mode === mode &&
+          intent.version === version
+        );
+      },
+      [],
+    );
 
     const applyState = useCallback(
       (
         state: GuardianAccessState,
         identity: string,
-        operation: number,
-        signal: AbortSignal,
+        generation: number,
       ) => {
-        if (!isCurrent(operation, identity, signal)) return;
+        if (!isCurrent(identity, generation)) return;
         if (
           state.mode === "learner" ||
           Date.parse(state.expiresAt) <= now()
@@ -152,7 +184,8 @@ export function createGuardianAccessProvider({
 
     const load = useCallback(async () => {
       if (sessionIdentity === null) return;
-      const { controller, identity, operation } = beginOperation(sessionIdentity);
+      const identity = sessionIdentity;
+      const generation = generationRef.current;
       setSnapshot((current) =>
         current.identity === identity &&
         current.mode === "loading" &&
@@ -161,30 +194,53 @@ export function createGuardianAccessProvider({
           ? current
           : initialSnapshot(identity),
       );
-      try {
-        const state = await api.loadGuardianAccess({
-          signal: controller.signal,
-        });
-        applyState(state, identity, operation, controller.signal);
-      } catch (error) {
-        if (!isCurrent(operation, identity, controller.signal)) return;
-        setSnapshot({
-          error: messageFor(error),
-          expiresAt: null,
-          identity,
-          mode: "learner",
-        });
-      }
-    }, [applyState, beginOperation, isCurrent, sessionIdentity]);
+      await enqueue(async () => {
+        if (!isCurrent(identity, generation)) return;
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        try {
+          const state = await api.loadGuardianAccess({
+            signal: controller.signal,
+          });
+          if (!isCurrent(identity, generation) || controller.signal.aborted) {
+            return;
+          }
+          const intent = intentRef.current;
+          if (
+            intent.identity === identity &&
+            intent.version !== settledIntentRef.current
+          ) {
+            return;
+          }
+          applyState(state, identity, generation);
+        } catch (error) {
+          if (!isCurrent(identity, generation) || controller.signal.aborted) {
+            return;
+          }
+          setSnapshot({
+            error: messageFor(error),
+            expiresAt: null,
+            identity,
+            mode: "learner",
+          });
+        } finally {
+          if (controllerRef.current === controller) controllerRef.current = null;
+        }
+      });
+    }, [applyState, enqueue, isCurrent, sessionIdentity]);
 
     useEffect(() => {
-      sequenceRef.current += 1;
+      generationRef.current += 1;
       controllerRef.current?.abort();
       controllerRef.current = null;
+      operationTailRef.current = Promise.resolve();
+      const version = intentRef.current.version + 1;
+      intentRef.current = { identity: sessionIdentity, mode: null, version };
+      settledIntentRef.current = version;
       if (sessionIdentity === null) setSnapshot(initialSnapshot(null));
       else void load();
       return () => {
-        sequenceRef.current += 1;
+        generationRef.current += 1;
         controllerRef.current?.abort();
         controllerRef.current = null;
       };
@@ -204,6 +260,60 @@ export function createGuardianAccessProvider({
         ? snapshot
         : initialSnapshot(sessionIdentity);
 
+    const reconcileLearner = useCallback(() => {
+      const identity = identityRef.current;
+      if (identity === null) return;
+      const generation = generationRef.current;
+      const version = beginIntent(identity, "learner");
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+      setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
+      void enqueue(async () => {
+        if (!isCurrent(identity, generation)) return;
+        try {
+          await api.lockGuardianAccess();
+          if (
+            !isCurrent(identity, generation) ||
+            !isLatestIntent(identity, "learner", version)
+          ) {
+            return;
+          }
+          const state = await api.loadGuardianAccess();
+          if (
+            !isCurrent(identity, generation) ||
+            !isLatestIntent(identity, "learner", version)
+          ) {
+            return;
+          }
+          settledIntentRef.current = version;
+          if (state.mode === "learner" || Date.parse(state.expiresAt) <= now()) {
+            setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
+          } else {
+            setSnapshot({
+              error: LOCK_ERROR,
+              expiresAt: null,
+              identity,
+              mode: "learner",
+            });
+          }
+        } catch {
+          if (
+            !isCurrent(identity, generation) ||
+            !isLatestIntent(identity, "learner", version)
+          ) {
+            return;
+          }
+          settledIntentRef.current = version;
+          setSnapshot({
+            error: LOCK_ERROR,
+            expiresAt: null,
+            identity,
+            mode: "learner",
+          });
+        }
+      });
+    }, [beginIntent, enqueue, isCurrent, isLatestIntent]);
+
     useEffect(() => {
       if (
         visibleSnapshot.mode !== "guardian" ||
@@ -214,87 +324,121 @@ export function createGuardianAccessProvider({
       const identity = sessionIdentity;
       const expiresAt = visibleSnapshot.expiresAt;
       return schedule(() => {
-        sequenceRef.current += 1;
-        controllerRef.current?.abort();
-        controllerRef.current = null;
-        setSnapshot((current) =>
-          current.identity === identity && current.expiresAt === expiresAt
-            ? { ...initialSnapshot(identity), mode: "learner" }
-            : current,
-        );
+        const current = snapshot;
+        if (
+          identity !== null &&
+          current.identity === identity &&
+          current.expiresAt === expiresAt
+        ) {
+          reconcileLearner();
+        }
       }, Math.max(0, Date.parse(expiresAt) - now()));
-    }, [sessionIdentity, visibleSnapshot.expiresAt, visibleSnapshot.mode]);
+    }, [
+      reconcileLearner,
+      sessionIdentity,
+      snapshot,
+      visibleSnapshot.expiresAt,
+      visibleSnapshot.mode,
+    ]);
 
     useEffect(
-      () =>
-        subscribeGuardianAccessRequired(() => {
-          sequenceRef.current += 1;
-          controllerRef.current?.abort();
-          controllerRef.current = null;
-          setSnapshot({
-            ...initialSnapshot(identityRef.current),
-            mode: "learner",
-          });
-        }),
-      [],
+      () => subscribeGuardianAccessRequired(reconcileLearner),
+      [reconcileLearner],
     );
 
     const unlock = useCallback(
       async (password: string) => {
         if (sessionIdentity === null) return FALLBACK_ERROR;
-        const { controller, identity, operation } =
-          beginOperation(sessionIdentity);
+        const identity = sessionIdentity;
+        const generation = generationRef.current;
+        const version = beginIntent(identity, "guardian");
         setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
-        try {
-          const state = await api.unlockGuardianAccess(password, {
-            signal: controller.signal,
-          });
-          if (!isCurrent(operation, identity, controller.signal)) {
-            return STALE_OPERATION_ERROR;
+        return enqueue(async () => {
+          if (!isCurrent(identity, generation)) return STALE_OPERATION_ERROR;
+          try {
+            const state = await api.unlockGuardianAccess(password);
+            if (
+              !isCurrent(identity, generation) ||
+              !isLatestIntent(identity, "guardian", version)
+            ) {
+              return STALE_OPERATION_ERROR;
+            }
+            settledIntentRef.current = version;
+            applyState(state, identity, generation);
+            return null;
+          } catch (error) {
+            if (
+              !isCurrent(identity, generation) ||
+              !isLatestIntent(identity, "guardian", version)
+            ) {
+              return STALE_OPERATION_ERROR;
+            }
+            settledIntentRef.current = version;
+            const message = messageFor(error);
+            setSnapshot({
+              error: "",
+              expiresAt: null,
+              identity,
+              mode: "learner",
+            });
+            return message;
           }
-          applyState(state, identity, operation, controller.signal);
-          return null;
-        } catch (error) {
-          if (!isCurrent(operation, identity, controller.signal)) {
-            return STALE_OPERATION_ERROR;
-          }
-          const message = messageFor(error);
-          setSnapshot({
-            error: message,
-            expiresAt: null,
-            identity,
-            mode: "learner",
-          });
-          return message;
-        }
-      }, [applyState, beginOperation, isCurrent, sessionIdentity],
+        });
+      }, [
+        applyState,
+        beginIntent,
+        enqueue,
+        isCurrent,
+        isLatestIntent,
+        sessionIdentity,
+      ],
     );
 
     const lock = useCallback(async () => {
       if (sessionIdentity === null) return FALLBACK_ERROR;
-      const { controller, identity, operation } = beginOperation(sessionIdentity);
+      const identity = sessionIdentity;
+      const generation = generationRef.current;
+      const version = beginIntent(identity, "learner");
       setSnapshot((current) =>
         current.identity === identity ? { ...current, error: "" } : current,
       );
-      try {
-        const state = await api.lockGuardianAccess({ signal: controller.signal });
-        if (!isCurrent(operation, identity, controller.signal)) {
-          return STALE_OPERATION_ERROR;
+      return enqueue(async () => {
+        if (!isCurrent(identity, generation)) return STALE_OPERATION_ERROR;
+        try {
+          const state = await api.lockGuardianAccess();
+          if (
+            !isCurrent(identity, generation) ||
+            !isLatestIntent(identity, "learner", version)
+          ) {
+            return STALE_OPERATION_ERROR;
+          }
+          settledIntentRef.current = version;
+          applyState(state, identity, generation);
+          return null;
+        } catch {
+          if (
+            !isCurrent(identity, generation) ||
+            !isLatestIntent(identity, "learner", version)
+          ) {
+            return STALE_OPERATION_ERROR;
+          }
+          settledIntentRef.current = version;
+          setSnapshot((current) =>
+            current.identity === identity
+              ? { ...current, error: LOCK_ERROR }
+              : current,
+          );
+          return LOCK_ERROR;
         }
-        applyState(state, identity, operation, controller.signal);
-        return null;
-      } catch {
-        if (!isCurrent(operation, identity, controller.signal)) {
-          return STALE_OPERATION_ERROR;
-        }
-        setSnapshot((current) =>
-          current.identity === identity
-            ? { ...current, error: LOCK_ERROR }
-            : current,
-        );
-        return LOCK_ERROR;
-      }
-    }, [applyState, beginOperation, isCurrent, sessionIdentity]);
+      });
+    }, [
+      applyState,
+      beginIntent,
+      enqueue,
+      isCurrent,
+      isLatestIntent,
+      sessionIdentity,
+    ]);
 
     const value = useMemo<GuardianAccessContextValue>(
       () => ({

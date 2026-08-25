@@ -17,6 +17,7 @@ import type { Database } from "./database.ts";
 import { requireGuardianAccess } from "./guardian-access.ts";
 import type { ApiEnv } from "./groq.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import {
   ConversationRepositoryError,
   createConversationRepository,
@@ -144,6 +145,30 @@ function clientConversation(
   };
 }
 
+async function requireProfileConversationAccess(input: {
+  database: Database;
+  identity: LearnerProfileIdentity;
+  purpose: ConversationPurpose;
+}) {
+  if (!updatesLearnerProfile(input.purpose)) return;
+  let needsGuardian = input.purpose === "profile-edit";
+  if (input.purpose === "onboarding") {
+    const profile = await createLearnerProfileRepository(
+      input.database,
+    ).findProfile(input.identity.userId);
+    needsGuardian = Boolean(
+      profile &&
+        (profile.profileStatus === "completed" || profile.lastSkippedAt !== null),
+    );
+  }
+  if (!needsGuardian) return;
+  const denied = await requireGuardianAccess({
+    database: input.database,
+    sessionId: input.identity.sessionId,
+  });
+  if (denied) throw new ConversationApiError(403, "guardian_required");
+}
+
 export async function handleConversationRequest(
   input: ConversationRequestInput,
   overrides: Partial<HandlerDependencies> = {},
@@ -173,15 +198,11 @@ export async function handleConversationRequest(
       if (!isConversationPurpose(purpose)) {
         throw new ConversationApiError(400, "invalid_conversation_purpose");
       }
-      if (purpose === "profile-edit") {
-        const denied = await requireGuardianAccess({
-          database: input.database,
-          sessionId: input.identity.sessionId,
-        });
-        if (denied) {
-          throw new ConversationApiError(403, "guardian_required");
-        }
-      }
+      await requireProfileConversationAccess({
+        database: input.database,
+        identity: input.identity,
+        purpose,
+      });
       let promptStyle: TalkToPeppaPromptStyle | undefined;
       if (purpose === "small-chat") {
         promptStyle =
@@ -309,15 +330,11 @@ export async function handleConversationRequest(
       if (!isConversationPurpose(loaded.conversation.scenarioKey)) {
         throw new ConversationApiError(500, "invalid_stored_data");
       }
-      if (loaded.conversation.scenarioKey === "profile-edit") {
-        const denied = await requireGuardianAccess({
-          database: input.database,
-          sessionId: input.identity!.sessionId,
-        });
-        if (denied) {
-          throw new ConversationApiError(403, "guardian_required");
-        }
-      }
+      await requireProfileConversationAccess({
+        database: input.database,
+        identity: input.identity!,
+        purpose: loaded.conversation.scenarioKey,
+      });
       if (
         loaded.conversation.status !== "completed" &&
         updatesLearnerProfile(loaded.conversation.scenarioKey)

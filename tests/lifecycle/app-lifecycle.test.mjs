@@ -50,6 +50,7 @@ let useLearnerProfile;
 let usePeppaConversation;
 let createAuthGate;
 let createGuardianAccessProvider;
+let useGuardianAccess;
 let GuardianDashboard;
 let GuardianModeBoundary;
 let LearnerModeBoundary;
@@ -69,7 +70,7 @@ before(async () => {
     useAccountExperience,
     useProfileAccountAction,
   } = await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
-  ({ createGuardianAccessProvider } = await vite.ssrLoadModule(
+  ({ createGuardianAccessProvider, useGuardianAccess } = await vite.ssrLoadModule(
     "/src/auth/GuardianAccess.tsx",
   ));
   ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
@@ -816,13 +817,26 @@ function noText(value) {
 }
 
 function createSessionClient(initialState) {
-  let state = initialState;
+  function withTestSession(nextState) {
+    if (!nextState.data || nextState.data.session) return nextState;
+    const userKey =
+      nextState.data.user.id ?? nextState.data.user.email.toLowerCase();
+    return {
+      ...nextState,
+      data: {
+        session: { id: `test-session:${userKey}` },
+        ...nextState.data,
+      },
+    };
+  }
+
+  let state = withTestSession(initialState);
   const listeners = new Set();
   const retry = deferred();
   const signInCalls = [];
 
   function publish(nextState) {
-    state = nextState;
+    state = withTestSession(nextState);
     for (const listener of listeners) listener();
   }
 
@@ -4355,7 +4369,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(createElement(TestAuthGate, null, "AUTHENTICATED APP"));
     assert.equal(
       document.querySelector('[aria-label="Guardian boundary owner"]').dataset.owner,
-      "id:user-1",
+      "id:user-1|session:test-session:user-1",
     );
 
     await act(async () => {
@@ -4367,9 +4381,101 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     assert.equal(
       document.querySelector('[aria-label="Guardian boundary owner"]').dataset.owner,
-      "id:user-2",
+      "id:user-2|session:test-session:user-2",
     );
     assert.equal(boundaryRenders.at(-1).owner, boundaryRenders.at(-1).sessionIdentity);
+  });
+
+  it("fails closed when the same user receives a different Better Auth session", async () => {
+    const secondLoad = deferred();
+    let loadCalls = 0;
+    let replacementSession = false;
+    const Provider = createGuardianAccessProvider({
+      api: {
+        async loadGuardianAccess() {
+          loadCalls += 1;
+          if (!replacementSession) {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          }
+          return secondLoad.promise;
+        },
+        async lockGuardianAccess() {
+          return { mode: "learner" };
+        },
+        async unlockGuardianAccess() {
+          return { mode: "learner" };
+        },
+      },
+      schedule: () => () => {},
+    });
+    function AccessProbe() {
+      const access = useGuardianAccess();
+      return createElement(
+        "output",
+        { "aria-label": "Guardian access mode" },
+        access.mode,
+      );
+    }
+    function GuardianBoundary({ children, sessionIdentity }) {
+      const [owner] = useState(sessionIdentity);
+      return createElement(
+        Provider,
+        { sessionIdentity },
+        createElement(
+          "section",
+          { "data-owner": owner },
+          createElement(AccessProbe),
+          children,
+        ),
+      );
+    }
+    const user = { email: "mia@example.com", id: "user-1", name: "Mia" };
+    const client = createSessionClient({
+      data: { session: { id: "session-a" }, user },
+      error: null,
+      isPending: false,
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: GuardianBoundary,
+    });
+
+    await mountStrict(createElement(TestAuthGate, null, "AUTHENTICATED APP"));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('[aria-label="Guardian access mode"]').textContent,
+        "guardian",
+      ),
+    );
+    const initialLoadCalls = loadCalls;
+
+    await act(async () => {
+      replacementSession = true;
+      client.publish({
+        data: { session: { id: "session-b" }, user },
+        error: null,
+        isPending: false,
+      });
+    });
+
+    const boundary = document.querySelector("section[data-owner]");
+    assert.equal(boundary.dataset.owner, "id:user-1|session:session-b");
+    assert.equal(
+      document.querySelector('[aria-label="Guardian access mode"]').textContent,
+      "loading",
+    );
+    assert.ok(loadCalls > initialLoadCalls);
+
+    secondLoad.resolve({ mode: "learner" });
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('[aria-label="Guardian access mode"]').textContent,
+        "learner",
+      ),
+    );
   });
 
   it("keeps Account available and retries sign out from one persistent alert", async () => {

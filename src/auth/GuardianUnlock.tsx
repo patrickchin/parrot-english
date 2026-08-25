@@ -30,9 +30,9 @@ export const GuardianUnlockForm = forwardRef<
   const [error, setError] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("");
   const pendingRef = useRef(false);
   const titleId = useId();
+  const errorId = `${titleId}-password-error`;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,14 +41,12 @@ export const GuardianUnlockForm = forwardRef<
     pendingRef.current = true;
     setIsPending(true);
     setError("");
-    setStatus("");
     try {
       const nextError = await unlock(password);
       if (nextError) {
         setError(nextError);
         return;
       }
-      setStatus("Guardian mode unlocked for 15 minutes");
       onUnlocked?.();
     } catch {
       setError(UNLOCK_FALLBACK_ERROR);
@@ -90,6 +88,8 @@ export const GuardianUnlockForm = forwardRef<
         >
           <span>Password</span>
           <input
+            aria-describedby={error ? errorId : undefined}
+            aria-invalid={error ? true : undefined}
             autoComplete="current-password"
             autoFocus={autoFocus}
             className={fieldClassName({ tone: "tinted" })}
@@ -108,14 +108,12 @@ export const GuardianUnlockForm = forwardRef<
         {error ? (
           <p
             className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
+            id={errorId}
             role="alert"
           >
             {error}
           </p>
         ) : null}
-        <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
-          {status}
-        </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <ActionButton onClick={onCancel} type="button" variant="surface">
             Cancel

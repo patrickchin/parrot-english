@@ -175,6 +175,9 @@ export async function deleteAccountSession({
 }
 
 interface AuthSession {
+  session: {
+    id: string;
+  };
   user: {
     email: string;
     id?: string | null;
@@ -242,9 +245,16 @@ function AccountExperienceHeader({
   const [announcement, setAnnouncement] = useState("");
   const unlockButtonRef = useRef<HTMLButtonElement>(null);
   const activeMode = access.mode === "guardian" ? "guardian" : "learner";
+  const previousAccessModeRef = useRef(access.mode);
 
   useEffect(() => {
-    if (access.mode !== "guardian") setAnnouncement("");
+    const previousMode = previousAccessModeRef.current;
+    previousAccessModeRef.current = access.mode;
+    if (previousMode === "learner" && access.mode === "guardian") {
+      setAnnouncement("Guardian mode unlocked for 15 minutes");
+    } else if (previousMode === "guardian" && access.mode === "learner") {
+      setAnnouncement("Learner mode");
+    }
   }, [access.mode]);
 
   async function selectLearner() {
@@ -268,10 +278,11 @@ function AccountExperienceHeader({
         guardianLabel={guardianLabel}
         isDialogOpen={isUnlockOpen}
         isModePending={isModePending}
-        isSigningOut={isSigningOut}
+        isSigningOut={activeMode === "guardian" && isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
         onDeleteAccount={onDeleteAccount}
         onOpenProfile={onOpenProfile ?? (() => onNavigate("/profile"))}
+        onRetryError={access.error ? access.retry : undefined}
         onSelectGuardian={(button) => {
           if (access.mode !== "guardian") {
             unlockButtonRef.current = button;
@@ -280,7 +291,7 @@ function AccountExperienceHeader({
         }}
         onSelectLearner={() => void selectLearner()}
         onSignOut={onSignOut}
-        signOutError={signOutError}
+        signOutError={activeMode === "guardian" ? signOutError : ""}
         userEmail={userEmail}
       />
       <span
@@ -295,7 +306,6 @@ function AccountExperienceHeader({
         <GuardianUnlockDialog
           onClose={() => setIsUnlockOpen(false)}
           onUnlocked={() => {
-            setAnnouncement("Guardian mode unlocked for 15 minutes");
             setIsUnlockOpen(false);
             onNavigate("/guardian");
           }}
@@ -577,10 +587,13 @@ const EMPTY_SIGN_OUT_STATE: SignOutState = {
 
 function getSessionIdentity(session: AuthSession | null) {
   if (!session) return null;
+  const sessionId = session.session?.id?.trim();
+  if (!sessionId) return null;
   const id = session.user.id?.trim();
-  return id
+  const userIdentity = id
     ? `id:${id}`
     : `email:${session.user.email.trim().toLowerCase()}`;
+  return `${userIdentity}|session:${sessionId}`;
 }
 
 interface AuthGateClient extends AuthActionClient {

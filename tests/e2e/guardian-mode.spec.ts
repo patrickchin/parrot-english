@@ -276,17 +276,20 @@ test("a seeded guardian expiry stays fixed across refresh", async ({ page }) => 
 test("an expired guardian session returns the same deep link to the password gate", async ({
   page,
 }) => {
+  await page.clock.install({
+    time: new Date("2026-08-25T08:00:00.000Z"),
+  });
   await page.goto(guardianUrl("/guardian/lessons", "expired"));
   await expect(page.getByRole("heading", { name: "My Lessons" })).toBeVisible();
-  await page.waitForTimeout(1_000);
   await page.evaluate(() => {
     window.history.pushState(null, "", "/guardian/stories");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(page.getByRole("heading", { name: "Story settings" })).toBeVisible();
+  await page.clock.fastForward(2_000);
   await expect(
     page.getByRole("heading", { name: "Unlock guardian mode" }),
-  ).toBeVisible({ timeout: 1_500 });
+  ).toBeVisible();
   await expect(page).toHaveURL("/guardian/stories");
   await expect(page.getByRole("heading", { name: "Story settings" })).toHaveCount(0);
 });
@@ -399,6 +402,9 @@ test("learner home, lesson shelf, and story shelf omit management actions", asyn
     ).toHaveCount(0);
     await expect(
       page.getByRole("group", { name: "Choose story level" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("checkbox", { name: "Guardian consent" }),
     ).toHaveCount(0);
     await page.keyboard.press("Escape");
   }

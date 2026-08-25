@@ -33,20 +33,31 @@ function HeaderLabel({ children }: { children: ReactNode }) {
 function AccountError({
   className,
   error,
+  onRetry,
 }: {
   className?: string;
   error: string;
+  onRetry?: () => void;
 }) {
   return (
-    <span
+    <div
       className={cx(
-        "rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md",
+        "grid gap-2 rounded-2xl border-3 border-white bg-red-800 px-3 py-2 text-sm font-extrabold leading-tight text-white shadow-md",
         className,
       )}
-      role="alert"
     >
-      {error}
-    </span>
+      <span role="alert">{error}</span>
+      {onRetry ? (
+        <ActionButton
+          onClick={onRetry}
+          size="compact"
+          type="button"
+          variant="surface"
+        >
+          Try again
+        </ActionButton>
+      ) : null}
+    </div>
   );
 }
 
@@ -111,6 +122,7 @@ export function AccountHeader({
   learnerLabel,
   onDeleteAccount,
   onOpenProfile,
+  onRetryError,
   onSelectGuardian,
   onSelectLearner,
   onSignOut,
@@ -126,6 +138,7 @@ export function AccountHeader({
   learnerLabel: string;
   onDeleteAccount: (password: string) => Promise<string | null>;
   onOpenProfile: () => void;
+  onRetryError?: () => void;
   onSelectGuardian: (button: HTMLButtonElement) => void;
   onSelectLearner: () => void;
   onSignOut: () => void;
@@ -143,6 +156,15 @@ export function AccountHeader({
   const activeLabel = activeMode === "guardian" ? guardianLabel : learnerLabel;
   const activeModeLabel = activeMode === "guardian" ? "Guardian" : "Learner";
   const profileLabel = `Profile for ${activeLabel}, ${activeMode} mode`;
+  const showSignOutRecovery =
+    activeMode === "guardian" && Boolean(signOutError) && !isSigningOut;
+
+  useEffect(() => {
+    if (activeMode === "guardian") return;
+    setIsMenuOpen(false);
+    setIsAboutOpen(false);
+    setIsDeleteOpen(false);
+  }, [activeMode]);
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -246,7 +268,7 @@ export function AccountHeader({
         className={cx(
           "relative inline-flex max-w-full flex-row-reverse items-start gap-4",
           isSigningOut && "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
-          Boolean(signOutError) &&
+          showSignOutRecovery &&
             "w-[12.875rem] !gap-3 min-[360px]:w-[13.375rem] md:w-[13.875rem] wide:w-auto",
         )}
       >
@@ -304,7 +326,7 @@ export function AccountHeader({
             />
           </span>
         </ActionButton>
-        {signOutError && !isSigningOut ? (
+        {showSignOutRecovery ? (
           <ActionButton
             aria-describedby={signOutAlertId}
             className="!min-w-0 flex-1 !gap-0.5 !px-0.5 !py-0 leading-tight whitespace-nowrap short:!min-h-11 wide:flex-none wide:!gap-1 wide:!px-3"
@@ -351,7 +373,7 @@ export function AccountHeader({
         id={signOutAlertId}
         role="alert"
       >
-        {signOutError}
+        {activeMode === "guardian" ? signOutError : ""}
       </span>
       {isMenuOpen && !isSigningOut ? (
         <div
@@ -395,7 +417,7 @@ export function AccountHeader({
               Guardian
             </SegmentedButton>
           </SegmentedControl>
-          {error ? <AccountError error={error} /> : null}
+          {error ? <AccountError error={error} onRetry={onRetryError} /> : null}
           <div
             aria-label="Account menu"
             className="grid gap-1 [&>button]:scroll-my-2"
@@ -444,13 +466,13 @@ export function AccountHeader({
           </div>
         </div>
       ) : null}
-      {isAboutOpen ? (
+      {activeMode === "guardian" && isAboutOpen ? (
         <AboutDialog
           onClose={closeAbout}
           returnFocusRef={accountButtonRef}
         />
       ) : null}
-      {isDeleteOpen ? (
+      {activeMode === "guardian" && isDeleteOpen ? (
         <AccountDeleteDialog
           onClose={closeDelete}
           onDelete={onDeleteAccount}
@@ -461,6 +483,7 @@ export function AccountHeader({
         <AccountError
           className="absolute right-0 top-full mt-2 w-64 sm:w-80"
           error={error}
+          onRetry={onRetryError}
         />
       ) : null}
     </aside>
