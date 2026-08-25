@@ -77,6 +77,20 @@ function createRaf() {
   };
 }
 
+function createTimerHarness() {
+  const callbacks = [];
+  return {
+    setTimeout(callback, delay) {
+      assert.equal(delay, 0);
+      callbacks.push(callback);
+      return callbacks.length;
+    },
+    runNext() {
+      callbacks.shift()?.();
+    },
+  };
+}
+
 function trackAbortListeners(signal) {
   const addEventListener = signal.addEventListener.bind(signal);
   const removeEventListener = signal.removeEventListener.bind(signal);
@@ -437,12 +451,14 @@ describe("duck dub playback", () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const lines = DUB_LINES.slice(0, 2);
+    const calls = [];
     const fallbacks = [];
 
     await startDubPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url) {
+        calls.push(url);
         if (url.includes("/api/dubs/")) return new Response(null, { status: 503 });
         return audio.fetch(url);
       },
@@ -463,7 +479,15 @@ describe("duck dub playback", () => {
     });
 
     assert.deepEqual(fallbacks, [["line-1", "fetch"]]);
-    assert.equal(audio.contexts[0].sources.length, 2);
+    assert.deepEqual(calls, [
+      "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+      guideUrl("line-2"),
+      guideUrl("line-1"),
+    ]);
+    assert.deepEqual(
+      audio.contexts[0].sources.map(({ startTimes }) => startTimes),
+      [[10.12], [14.12]],
+    );
   });
 
   it("retries a private decode with its guide and continues", async () => {
@@ -474,12 +498,14 @@ describe("duck dub playback", () => {
       },
     });
     const raf = createRaf();
+    const calls = [];
     const fallbacks = [];
 
     await startDubPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url, init) {
+        calls.push(url);
         if (url.includes("/api/dubs/")) {
           return new Response(new Uint8Array([1, 9, 3, 4]));
         }
@@ -502,24 +528,38 @@ describe("duck dub playback", () => {
     });
 
     assert.deepEqual(fallbacks, [["line-1", "decode"]]);
-    assert.equal(audio.contexts[0].sources.length, 2);
+    assert.deepEqual(calls, [
+      "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+      guideUrl("line-2"),
+      guideUrl("line-1"),
+    ]);
+    assert.deepEqual(
+      audio.contexts[0].sources.map(({ startTimes }) => startTimes),
+      [[10.12], [14.12]],
+    );
   });
 
   it("omits only a line with no decodable source and reports it once", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
+    const calls = [];
+    const fallbacks = [];
     const unavailable = [];
 
     await startDubPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url, init) {
+        calls.push(url);
         if (lineIdFromUrl(url) === "line-1") {
           return new Response(null, { status: 503 });
         }
         return audio.fetch(url, init);
       },
       lines: DUB_LINES.slice(0, 2),
+      onLineFallback(lineId, stage) {
+        fallbacks.push([lineId, stage]);
+      },
       onLineUnavailable(lineId) {
         unavailable.push(lineId);
       },
@@ -535,8 +575,114 @@ describe("duck dub playback", () => {
       },
     });
 
+    assert.deepEqual(fallbacks, [["line-1", "fetch"]]);
     assert.deepEqual(unavailable, ["line-1"]);
+    assert.deepEqual(calls, [
+      "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+      guideUrl("line-2"),
+      guideUrl("line-1"),
+    ]);
     assert.equal(audio.contexts[0].sources.length, 1);
+  });
+
+  it("ends an all-unavailable four-line scene at zero duration", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const fallbacks = [];
+    const unavailable = [];
+    const ticks = [];
+    let ended = 0;
+
+    const playback = await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      async fetch() {
+        return new Response(null, { status: 503 });
+      },
+      lines: DUB_VERSES[1],
+      onEnded() {
+        ended += 1;
+      },
+      onLineFallback(lineId, stage) {
+        fallbacks.push([lineId, stage]);
+      },
+      onLineUnavailable(lineId) {
+        unavailable.push(lineId);
+      },
+      onTick(elapsedMs) {
+        ticks.push(elapsedMs);
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      resolveAudioSource(line) {
+        return {
+          fallbackUrl: guideUrl(line.id),
+          preferredUrl: `/api/dubs/five-little-ducks-v2/lines/${line.id}/audio`,
+        };
+      },
+    });
+
+    const context = audio.contexts[0];
+    assert.deepEqual(fallbacks, [
+      ["line-5", "fetch"], ["line-6", "fetch"],
+      ["line-7", "fetch"], ["line-8", "fetch"],
+    ]);
+    assert.deepEqual(unavailable, ["line-5", "line-6", "line-7", "line-8"]);
+    assert.equal(context.sources.length, 0);
+    assert.equal(context.oscillators.length, 0);
+
+    context.currentTime = 10.12;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [0]);
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+    assert.equal(raf.callbacks.size, 0);
+    playback.stop();
+    assert.equal(context.closeCalls, 1);
+  });
+
+  it("classifies a preferred body-read failure as fetch before loading its guide", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const fallbacks = [];
+    const privateLineOne = "/api/dubs/five-little-ducks-v2/lines/line-1/audio";
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      async fetch(url, init) {
+        if (url === privateLineOne) {
+          return {
+            ok: true,
+            async arrayBuffer() {
+              throw new Error("body detail");
+            },
+          };
+        }
+        return audio.fetch(url, init);
+      },
+      lines: DUB_LINES.slice(0, 2),
+      onLineFallback(lineId, stage) {
+        fallbacks.push([lineId, stage]);
+      },
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      resolveAudioSource(line) {
+        return line.id === "line-1"
+          ? { fallbackUrl: guideUrl(line.id), preferredUrl: privateLineOne }
+          : { preferredUrl: guideUrl(line.id) };
+      },
+    });
+
+    assert.deepEqual(fallbacks, [["line-1", "fetch"]]);
+    assert.deepEqual(
+      audio.fetchCalls.map(([url]) => url),
+      [guideUrl("line-2"), guideUrl("line-1")],
+    );
+    assert.deepEqual(
+      audio.contexts[0].sources.map(({ startTimes }) => startTimes),
+      [[10.12], [14.12]],
+    );
   });
 
   it("cancels a pending frame and playback idempotently", async () => {
@@ -654,6 +800,8 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const controller = new AbortController();
     const calls = [];
+    const fallbacks = [];
+    const unavailable = [];
     const privateLineOne = "/api/dubs/five-little-ducks-v2/lines/line-1/audio";
     const fetch = (url, init) => {
       calls.push([url, init]);
@@ -672,6 +820,12 @@ describe("duck dub playback", () => {
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch,
       lines: DUB_LINES.slice(0, 2),
+      onLineFallback(lineId, stage) {
+        fallbacks.push([lineId, stage]);
+      },
+      onLineUnavailable(lineId) {
+        unavailable.push(lineId);
+      },
       onTick() {},
       requestAnimationFrame: raf.requestAnimationFrame,
       resolveAudioSource(line) {
@@ -689,11 +843,115 @@ describe("duck dub playback", () => {
       calls.map(([url]) => url),
       [privateLineOne, "/api/dubs/five-little-ducks-v2/lines/line-2/audio", guideUrl("line-1")],
     );
+    assert.deepEqual(fallbacks, [["line-1", "fetch"]]);
+    fallbacks.length = 0;
     controller.abort();
 
     await assert.rejects(starting, { name: "AbortError" });
     assert.ok(calls.slice(1).every(([, init]) => init.signal.aborted));
+    assert.deepEqual(fallbacks, []);
+    assert.deepEqual(unavailable, []);
     assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("surfaces a scheduler setup failure when context close stalls", async () => {
+    const closeDeferred = createDeferred();
+    const audio = createAudioHarness({
+      closeDeferred,
+      oscillatorStopFailure: new Error("music setup failed"),
+    });
+    const raf = createRaf();
+    const timers = createTimerHarness();
+    let rejection;
+
+    const starting = startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      setTimeout: timers.setTimeout,
+    });
+    void starting.catch((error) => {
+      rejection = error;
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+
+    timers.runNext();
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    assert.match(rejection?.message ?? "", /music setup failed/);
+    assert.equal(audio.contexts[0].sources[0].stopCalls, 1);
+    assert.equal(audio.contexts[0].oscillators[0].stopCalls, 2);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+
+    closeDeferred.reject(new Error("late close failure"));
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("lets an external abort win while scheduler cleanup is closing", async () => {
+    const closeDeferred = createDeferred();
+    const audio = createAudioHarness({
+      closeDeferred,
+      oscillatorStopFailure: new Error("music setup failed"),
+    });
+    const raf = createRaf();
+    const controller = new AbortController();
+
+    const starting = startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal: controller.signal,
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+
+    controller.abort();
+    closeDeferred.resolve();
+
+    await assert.rejects(starting, { name: "AbortError" });
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.equal(audio.contexts[0].sources[0].stopCalls, 1);
+    assert.equal(audio.contexts[0].oscillators[0].stopCalls, 2);
+  });
+
+  it("lets a queued external abort win before scheduler cleanup yields", async () => {
+    const audio = createAudioHarness({
+      oscillatorStopFailure: new Error("music setup failed"),
+    });
+    const raf = createRaf();
+    const timers = createTimerHarness();
+    const controller = new AbortController();
+    let rejection;
+
+    timers.setTimeout(() => controller.abort(), 0);
+    const starting = startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      setTimeout: timers.setTimeout,
+      signal: controller.signal,
+    });
+    void starting.catch((error) => {
+      rejection = error;
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+
+    timers.runNext();
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    assert.equal(rejection?.name, "AbortError");
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.equal(audio.contexts[0].sources[0].stopCalls, 1);
+    assert.equal(audio.contexts[0].oscillators[0].stopCalls, 2);
   });
 
   it("rejects promptly when external abort cannot settle a sibling decode", async () => {
