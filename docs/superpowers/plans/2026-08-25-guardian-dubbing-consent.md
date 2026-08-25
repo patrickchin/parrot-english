@@ -151,7 +151,7 @@ it("returns disabled status without listing R2 when consent is absent", async ()
 
 it("rejects upload and audio without a current durable grant", async () => {
   assert.equal((await callUpload({ consentState: "not_granted" })).status, 403);
-  assert.equal((await callAudio({ consentState: "not_granted" })).status, 404);
+  assert.equal((await callAudio({ consentState: "not_granted" })).status, 403);
   assert.equal(bucket.putCalls, 0);
 });
 
@@ -431,9 +431,15 @@ and specs that exist only to operate the deleted control.
 
 - [ ] **Step 4: Verify focused GREEN**
 
-Run: `node --test tests/conversation-ui.test.mjs tests/conversation-api.test.mjs tests/conversation-worker.test.mjs`
+Run:
 
-Expected: all pass; ordinary conversation behavior is unchanged.
+```bash
+node --test tests/conversation-ui.test.mjs tests/conversation-api.test.mjs tests/conversation-worker.test.mjs
+npm run build
+```
+
+Expected: all pass; ordinary conversation behavior is unchanged and deleted
+browser-helper imports leave no TypeScript errors.
 
 - [ ] **Step 5: Commit**
 
