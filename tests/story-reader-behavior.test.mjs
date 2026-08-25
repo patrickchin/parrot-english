@@ -32,10 +32,14 @@ const vite = await createServer({
 
 let StoryReader;
 let firstStory;
+let playAudioLine;
 
 before(async () => {
   ({ StoryReader } = await vite.ssrLoadModule(
     "/src/stories/StoryReader.tsx",
+  ));
+  ({ playAudioLine } = await vite.ssrLoadModule(
+    "/src/media/audio-playback.ts",
   ));
   const { STORIES } = await vite.ssrLoadModule(
     "/src/stories/story-catalog.ts",
@@ -267,6 +271,7 @@ describe("child-first story reader behavior", () => {
 
   it("plays direct narration without device speech or a saved join-in clip", async () => {
     const finishAudio = [];
+    const playbackOptions = [];
     const playedUrls = [];
     const spoken = [];
     const directNarrationStory = {
@@ -342,6 +347,10 @@ describe("child-first story reader behavior", () => {
           backToStories: "/stories",
           onNavigatePage() {},
           pageIndex: 0,
+          playAudioLine(options) {
+            playbackOptions.push(options);
+            return playAudioLine(options);
+          },
           story: directNarrationStory,
         }),
       ),
@@ -358,6 +367,23 @@ describe("child-first story reader behavior", () => {
     assert.deepEqual(playedUrls, [
       "/assets/private-story-preview/private-fixture/page-001.mp3",
     ]);
+    assert.deepEqual(
+      playbackOptions.map(({ audioId, audioSrc, lang, text }) => ({
+        audioId,
+        audioSrc,
+        lang,
+        text,
+      })),
+      [
+        {
+          audioId: "direct-narration-test-direct-page-one-private-narration",
+          audioSrc:
+            "/assets/private-story-preview/private-fixture/page-001.mp3",
+          lang: "en-GB",
+          text: "This is the exact synthetic narration text.",
+        },
+      ],
+    );
     assert.deepEqual(spoken, []);
 
     await act(async () => finishAudio.shift()());
@@ -367,6 +393,91 @@ describe("child-first story reader behavior", () => {
     assert.deepEqual(playedUrls, [
       "/assets/private-story-preview/private-fixture/page-001.mp3",
     ]);
+  });
+
+  it("rejects direct narration mixed with static audio metadata", async () => {
+    const playedUrls = [];
+    const spoken = [];
+    const mixedMetadataStory = {
+      ...firstStory,
+      id: "mixed-metadata-test",
+      pages: [
+        {
+          ...firstStory.pages[0],
+          id: "mixed-page-one",
+          joinInAudioId: null,
+          narrationAudioId: "narrator-copy-dolly",
+          narrationAudioSrc:
+            "/assets/private-story-preview/private-fixture/page-001.mp3",
+          text: "Mixed synthetic narration.",
+        },
+      ],
+    };
+
+    class TestAudio {
+      constructor(url) {
+        this.url = url;
+      }
+
+      pause() {}
+
+      play() {
+        playedUrls.push(this.url);
+        return Promise.resolve();
+      }
+    }
+
+    class TestSpeechUtterance {
+      constructor(text) {
+        this.text = text;
+      }
+    }
+
+    Object.defineProperty(globalThis, "Audio", {
+      configurable: true,
+      value: TestAudio,
+    });
+    Object.defineProperty(globalThis, "SpeechSynthesisUtterance", {
+      configurable: true,
+      value: TestSpeechUtterance,
+    });
+    Object.defineProperty(globalThis, "speechSynthesis", {
+      configurable: true,
+      value: {
+        cancel() {},
+        getVoices() {
+          return [];
+        },
+        pause() {},
+        resume() {},
+        speak(utterance) {
+          spoken.push(utterance.text);
+        },
+      },
+    });
+
+    const container = await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/stories/mixed-metadata-test/pages/1"] },
+        createElement(StoryReader, {
+          backToStories: "/stories",
+          onNavigatePage() {},
+          pageIndex: 0,
+          story: mixedMetadataStory,
+        }),
+      ),
+    );
+
+    await click(container.querySelector('[aria-label="Listen"]'));
+    await waitFor(() =>
+      assert.match(
+        container.querySelector('[role="alert"]').textContent,
+        /can’t read aloud on this device/i,
+      ),
+    );
+    assert.deepEqual(playedUrls, []);
+    assert.deepEqual(spoken, []);
   });
 
   it("advances whole-story playback to the next direct narration source", async () => {

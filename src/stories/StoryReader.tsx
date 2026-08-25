@@ -66,12 +66,14 @@ export function StoryReader({
   onNavigatePage,
   pageIndex,
   personalizedOverrides,
+  playAudioLine: playAudioLineOverride = playAudioLine,
   story,
 }: {
   backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
   personalizedOverrides?: PersonalizedStoryArtMetadata["stories"];
+  playAudioLine?: typeof playAudioLine;
   story: Story;
 }) {
   const [error, setError] = useState("");
@@ -176,7 +178,7 @@ export function StoryReader({
     const joinInAudioId = page.joinInAudioId;
     try {
       if (page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
-        narrationPromise = playAudioLine({
+        narrationPromise = playAudioLineOverride({
           audioId: `${story.id}-${page.id}-private-narration`,
           audioSrc: page.narrationAudioSrc,
           env: audioEnvironmentRef.current ?? undefined,
