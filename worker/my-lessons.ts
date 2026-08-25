@@ -8,11 +8,11 @@ import {
 } from "./lesson-generator.ts";
 import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
 import { createMyLessonRepository } from "./my-lessons-repository.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 import type { ApiEnv } from "./groq.ts";
 
 const MAX_BODY_BYTES = 256 * 1024;
@@ -21,7 +21,7 @@ export type MyLessonsEnv = ApiEnv & LessonGenerationEnv & { DB: D1Database };
 export type MyLessonRequestInput = {
   database: Database;
   env: MyLessonsEnv;
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   request: Request;
 };
 
@@ -118,7 +118,7 @@ export async function handleMyLessonRequest(
 
   try {
     if (url.pathname === "/api/lessons/my" && input.request.method === "GET") {
-      const rows = await repository.listOwned(input.identity.userId);
+      const rows = await repository.listOwned(input.identity);
       return json({ lessons: rows.map(clientLesson) });
     }
 
@@ -129,7 +129,7 @@ export async function handleMyLessonRequest(
       }
       const draft = preparedLesson(body.lesson);
       const row = await repository.create(
-        input.identity.userId,
+        input.identity,
         body.source,
         draft.lesson,
       );
@@ -153,9 +153,7 @@ export async function handleMyLessonRequest(
           "Please describe the lesson topic in 500 characters or fewer.",
         );
       }
-      const childName =
-        (await repository.learnerName(input.identity.userId)) ??
-        input.identity.userName?.trim();
+      const childName = input.identity.learnerName?.trim();
       if (!childName) {
         throw new MyLessonApiError(
           400,
@@ -184,7 +182,7 @@ export async function handleMyLessonRequest(
       const draft = preparedLesson(body.lesson, "edited lesson");
       const row = await repository.updateOwned(
         decodeURIComponent(detailMatch[1]),
-        input.identity.userId,
+        input.identity,
         draft.lesson,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
@@ -194,7 +192,7 @@ export async function handleMyLessonRequest(
     if (detailMatch && input.request.method === "GET") {
       const row = await repository.findOwned(
         decodeURIComponent(detailMatch[1]),
-        input.identity.userId,
+        input.identity,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
       return json({ lesson: clientLesson(row) });

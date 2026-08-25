@@ -117,6 +117,78 @@ describe("My Lessons Worker routing", () => {
     }
   });
 
+  it("keeps same-account sibling lesson lists isolated through Worker routing", async () => {
+    const { state, env } = authenticatedEnvironment();
+    const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+    try {
+      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+      state.sqlite
+        .prepare(
+          `INSERT INTO session
+            (id, expires_at, token, created_at, updated_at, user_id)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          "session-2",
+          timestamp + 86_400_000,
+          "token-2",
+          timestamp,
+          timestamp,
+          "user-1",
+        );
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_profile
+            (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+           VALUES (?, ?, 0, ?, 'not_started', ?, ?)`,
+        )
+        .run("learner-b", "user-1", "Leo", timestamp, timestamp);
+      const insertSelection = state.sqlite.prepare(
+        `INSERT INTO session_learner_selection
+          (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+         VALUES (?, 'user-1', ?, ?, ?)`,
+      );
+      insertSelection.run("session-1", "learner-a", timestamp, timestamp);
+      insertSelection.run("session-2", "learner-b", timestamp, timestamp);
+      const insertLesson = state.sqlite.prepare(
+        `INSERT INTO learner_lesson
+          (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
+         VALUES (?, 'user-1', ?, 'uploaded', '{}', ?, ?)`,
+      );
+      insertLesson.run("lesson-a", "learner-a", timestamp, timestamp);
+      insertLesson.run("lesson-b", "learner-b", timestamp, timestamp);
+
+      const workerFor = (sessionId) =>
+        createWorker({
+          createAuth: () =>
+            authStub({
+              session: { id: sessionId },
+              user: { id: "user-1", name: "Parent", email: "parent@example.test" },
+            }),
+        });
+
+      const learnerA = await workerFor("session-1").fetch(
+        new Request("https://example.test/api/lessons/my"),
+        env,
+      );
+      const learnerB = await workerFor("session-2").fetch(
+        new Request("https://example.test/api/lessons/my"),
+        env,
+      );
+
+      assert.deepEqual(
+        (await learnerA.json()).lessons.map(({ id }) => id),
+        ["lesson-a"],
+      );
+      assert.deepEqual(
+        (await learnerB.json()).lessons.map(({ id }) => id),
+        ["lesson-b"],
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("rate limits generation before invoking its handler", async () => {
     let handlerCalls = 0;
     let limiterCalls = 0;

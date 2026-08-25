@@ -1,6 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
-import { learnerLesson, learnerProfile } from "../src/db/schema.ts";
+import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { learnerLesson } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 type RepositoryOptions = {
   createId?: () => string;
@@ -15,38 +16,54 @@ export function createMyLessonRepository(
   }: RepositoryOptions = {},
 ) {
   async function create(
-    userId: string,
+    identity: LearnerIdentity,
     source: "generated" | "uploaded",
     lesson: unknown,
   ) {
     const timestamp = now();
     const id = createId();
     await database.insert(learnerLesson).values({
-      authUserId: userId,
+      authUserId: identity.userId,
       createdAt: timestamp,
       id,
+      learnerProfileId: identity.learnerProfileId,
       lessonJson: JSON.stringify(lesson),
       source,
       updatedAt: timestamp,
     });
-    return findOwned(id, userId);
+    return findOwned(id, identity);
   }
 
-  async function findOwned(id: string, userId: string) {
+  function learnerOwnership(identity: LearnerIdentity) {
+    const selected = eq(
+      learnerLesson.learnerProfileId,
+      identity.learnerProfileId,
+    );
+    return identity.legacyStorageOwner
+      ? or(selected, isNull(learnerLesson.learnerProfileId))!
+      : selected;
+  }
+
+  async function findOwned(id: string, identity: LearnerIdentity) {
     const [row] = await database
       .select()
       .from(learnerLesson)
       .where(
         and(
           eq(learnerLesson.id, id),
-          eq(learnerLesson.authUserId, userId),
+          eq(learnerLesson.authUserId, identity.userId),
+          learnerOwnership(identity),
         ),
       )
       .limit(1);
     return row ?? null;
   }
 
-  async function updateOwned(id: string, userId: string, lesson: unknown) {
+  async function updateOwned(
+    id: string,
+    identity: LearnerIdentity,
+    lesson: unknown,
+  ) {
     await database
       .update(learnerLesson)
       .set({
@@ -56,28 +73,25 @@ export function createMyLessonRepository(
       .where(
         and(
           eq(learnerLesson.id, id),
-          eq(learnerLesson.authUserId, userId),
+          eq(learnerLesson.authUserId, identity.userId),
+          learnerOwnership(identity),
         ),
       );
-    return findOwned(id, userId);
+    return findOwned(id, identity);
   }
 
-  async function listOwned(userId: string) {
+  async function listOwned(identity: LearnerIdentity) {
     return database
       .select()
       .from(learnerLesson)
-      .where(eq(learnerLesson.authUserId, userId))
+      .where(
+        and(
+          eq(learnerLesson.authUserId, identity.userId),
+          learnerOwnership(identity),
+        ),
+      )
       .orderBy(desc(learnerLesson.updatedAt));
   }
 
-  async function learnerName(userId: string) {
-    const [profile] = await database
-      .select({ name: learnerProfile.name })
-      .from(learnerProfile)
-      .where(eq(learnerProfile.authUserId, userId))
-      .limit(1);
-    return profile?.name?.trim() || null;
-  }
-
-  return { create, findOwned, learnerName, listOwned, updateOwned };
+  return { create, findOwned, listOwned, updateOwned };
 }

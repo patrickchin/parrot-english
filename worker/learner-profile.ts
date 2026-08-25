@@ -37,17 +37,14 @@ import {
   readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
-export interface LearnerProfileIdentity {
-  sessionId: string;
-  userId: string;
-  userName: string | null;
-}
+export type LearnerProfileIdentity = LearnerIdentity;
 
 export interface LearnerProfileRequestInput {
   database: Database;
   env: AuthEnv & ApiEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   request: Request;
 }
 
@@ -151,6 +148,7 @@ function clientProfile(profile: Profile) {
     ),
   };
   return {
+    id: profile.id,
     name: profile.name,
     age: profile.age,
     storyLevel: profile.storyLevel,
@@ -166,7 +164,7 @@ function clientProfile(profile: Profile) {
 
 async function prepareLearnerProfile(
   repository: Repository,
-  identity: LearnerProfileIdentity
+  identity: LearnerIdentity
 ) {
   const stored = await repository.loadProfile(identity);
   const prepared = ensureV2Profile(stored, LEARNER_PROFILE_QUESTIONNAIRE);
@@ -176,7 +174,7 @@ async function prepareLearnerProfile(
     prepared.profileStatus !== stored.profileStatus ||
     prepared.skippedQuestionKeysJson !== stored.skippedQuestionKeysJson
   ) {
-    await repository.saveAnswer(stored.id, {
+    await repository.saveAnswer(identity, {
       answersJson: prepared.answersJson,
       currentQuestionKey: prepared.currentQuestionKey,
       profileStatus: prepared.profileStatus,
@@ -475,7 +473,7 @@ async function saveAnswer({
   });
 
   if (profileEdit) {
-    await repository.saveAnswer(profile.id, {
+    await repository.saveAnswer(input.identity, {
       age: updated.age,
       answersJson: updated.answersJson,
       name: updated.name,
@@ -487,7 +485,7 @@ async function saveAnswer({
       updated,
       LEARNER_PROFILE_QUESTIONNAIRE
     );
-    await repository.saveTransition(profile.id, {
+    await repository.saveTransition(input.identity, {
       age: updated.age,
       answersJson: updated.answersJson,
       completed,
@@ -645,7 +643,7 @@ async function saveProfileAnswers({
 
   let storedProfile = profile;
   if (changed.length > 0 || descriptionChanged) {
-    await repository.saveAnswer(profile.id, {
+    await repository.saveAnswer(input.identity, {
       age: updated.age,
       answersJson: updated.answersJson,
       name: updated.name,
@@ -763,7 +761,7 @@ export async function handleLearnerProfileRequest(
 
       const updated = skipProfileQuestion(profile, question.answerKey);
       const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
-      await repository.saveTransition(profile.id, {
+      await repository.saveTransition(input.identity, {
         age: updated.age,
         answersJson: updated.answersJson,
         completed: next === null && isV2Complete(updated, LEARNER_PROFILE_QUESTIONNAIRE),
@@ -788,7 +786,7 @@ export async function handleLearnerProfileRequest(
       await repository.skipSession(input.identity);
       try {
         const profile = await prepareLearnerProfile(repository, input.identity);
-        await repository.skip(profile.id, input.identity.sessionId);
+        await repository.skip(input.identity);
         return jsonResponse(
           learnerProfilePayload(profile, true, learnerProfileExperienceMode(input.env)),
         );
@@ -809,7 +807,7 @@ export async function handleLearnerProfileRequest(
             missingQuestionKey: missing?.answerKey ?? null,
           });
         }
-        await repository.complete(profile.id);
+        await repository.complete(input.identity);
       }
       const completed = await repository.loadProfile(input.identity);
       return jsonResponse(
@@ -877,7 +875,7 @@ export async function handleLearnerProfileRequest(
         );
       }
       const profile = await repository.saveStoryLevel(
-        input.identity.userId,
+        input.identity,
         record.storyLevel,
       );
       return jsonResponse(profilePayload(profile));

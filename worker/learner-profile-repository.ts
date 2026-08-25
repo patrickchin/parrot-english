@@ -1,16 +1,28 @@
 import { and, eq } from "drizzle-orm";
 import {
   learnerProfile,
+  learnerSessionBypass,
   profileSessionBypass,
 } from "../src/db/schema.ts";
 import type { LearnerStoryLevelId } from "../lib/story-level.ts";
 import type { Database } from "./database.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 type RepositoryOptions = {
   createId?: () => string;
   now?: () => Date;
 };
+
+type LegacyLearnerIdentity = Pick<
+  LearnerIdentity,
+  "sessionId" | "userId" | "userName"
+>;
+
+function isResolvedLearnerIdentity(
+  identity: LegacyLearnerIdentity | LearnerIdentity,
+): identity is LearnerIdentity {
+  return typeof (identity as LearnerIdentity).learnerProfileId === "string";
+}
 
 export function createLearnerProfileRepository(
   database: Database,
@@ -19,18 +31,40 @@ export function createLearnerProfileRepository(
     now = () => new Date(),
   }: RepositoryOptions = {}
 ) {
-  async function findProfile(userId: string) {
+  function findProfile(
+    identity: LearnerIdentity,
+  ): Promise<typeof learnerProfile.$inferSelect | null>;
+  function findProfile(
+    userId: string,
+  ): Promise<typeof learnerProfile.$inferSelect | null>;
+  async function findProfile(identity: LearnerIdentity | string) {
     const [profile] = await database
       .select()
       .from(learnerProfile)
-      .where(eq(learnerProfile.authUserId, userId))
+      .where(
+        typeof identity === "string"
+          ? eq(learnerProfile.authUserId, identity)
+          : and(
+              eq(learnerProfile.id, identity.learnerProfileId),
+              eq(learnerProfile.authUserId, identity.userId),
+            ),
+      )
       .limit(1);
     return profile ?? null;
   }
 
-  async function ensureProfile(identity: LearnerProfileIdentity) {
-    let profile = await findProfile(identity.userId);
+  async function loadProfile(identity: LearnerIdentity) {
+    const profile = await findProfile(identity);
+    if (!profile) throw new Error("Learner profile could not be loaded.");
+    return profile;
+  }
 
+  async function ensureProfile(
+    identity: LegacyLearnerIdentity | LearnerIdentity,
+  ) {
+    if (isResolvedLearnerIdentity(identity)) return loadProfile(identity);
+
+    let profile = await findProfile(identity.userId);
     if (!profile) {
       const timestamp = now();
       await database
@@ -46,14 +80,30 @@ export function createLearnerProfileRepository(
         .onConflictDoNothing({ target: learnerProfile.authUserId });
       profile = await findProfile(identity.userId);
     }
-
     if (!profile) throw new Error("Learner profile could not be created.");
     return profile;
   }
 
-  const loadProfile = ensureProfile;
+  async function hasSessionBypass(
+    identity: LegacyLearnerIdentity | LearnerIdentity,
+  ) {
+    if (isResolvedLearnerIdentity(identity)) {
+      const profile = await findProfile(identity);
+      if (!profile) return false;
+      const [learnerRow] = await database
+        .select({ sessionId: learnerSessionBypass.sessionId })
+        .from(learnerSessionBypass)
+        .where(
+          and(
+            eq(learnerSessionBypass.sessionId, identity.sessionId),
+            eq(learnerSessionBypass.learnerProfileId, identity.learnerProfileId),
+          ),
+      )
+      .limit(1);
+      if (learnerRow) return true;
+      if (!profile.legacyStorageOwner) return false;
+    }
 
-  async function hasSessionBypass(identity: LearnerProfileIdentity) {
     const [row] = await database
       .select({ sessionId: profileSessionBypass.sessionId })
       .from(profileSessionBypass)
@@ -67,8 +117,8 @@ export function createLearnerProfileRepository(
     return Boolean(row);
   }
 
-  async function canBypass(identity: LearnerProfileIdentity) {
-    const profile = await findProfile(identity.userId);
+  async function canBypass(identity: LearnerIdentity) {
+    const profile = await findProfile(identity);
     return (
       profile?.profileStatus === "completed" ||
       profile?.lastSkippedSessionId === identity.sessionId ||
@@ -76,8 +126,29 @@ export function createLearnerProfileRepository(
     );
   }
 
-  async function skipSession(identity: LearnerProfileIdentity) {
+  async function skipSession(
+    identity: LegacyLearnerIdentity | LearnerIdentity,
+  ) {
     const skippedAt = now();
+    if (isResolvedLearnerIdentity(identity)) {
+      const profile = await loadProfile(identity);
+      await database
+        .insert(learnerSessionBypass)
+        .values({
+          learnerProfileId: identity.learnerProfileId,
+          sessionId: identity.sessionId,
+          skippedAt,
+        })
+        .onConflictDoUpdate({
+          target: [
+            learnerSessionBypass.sessionId,
+            learnerSessionBypass.learnerProfileId,
+          ],
+          set: { skippedAt },
+        });
+      if (!profile.legacyStorageOwner) return;
+    }
+
     await database
       .insert(profileSessionBypass)
       .values({
@@ -92,7 +163,7 @@ export function createLearnerProfileRepository(
   }
 
   async function saveAnswer(
-    profileId: string,
+    identity: LearnerIdentity,
     values: {
       age?: number | null;
       answersJson: string;
@@ -105,24 +176,32 @@ export function createLearnerProfileRepository(
     await database
       .update(learnerProfile)
       .set({ ...values, updatedAt: now() })
-      .where(eq(learnerProfile.id, profileId));
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      );
   }
 
   async function saveStoryLevel(
-    userId: string,
+    identity: LearnerIdentity,
     storyLevel: LearnerStoryLevelId,
   ) {
     await database
       .update(learnerProfile)
       .set({ storyLevel, updatedAt: now() })
-      .where(eq(learnerProfile.authUserId, userId));
-    const profile = await findProfile(userId);
-    if (!profile) throw new Error("Learner profile could not be updated.");
-    return profile;
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      );
+    return loadProfile(identity);
   }
 
   async function saveTransition(
-    profileId: string,
+    identity: LearnerIdentity,
     values: {
       age?: number | null;
       answersJson: string;
@@ -145,22 +224,32 @@ export function createLearnerProfileRepository(
         skippedQuestionKeysJson: values.skippedQuestionKeysJson,
         updatedAt: timestamp,
       })
-      .where(eq(learnerProfile.id, profileId));
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      );
   }
 
-  async function skip(profileId: string, sessionId: string) {
+  async function skip(identity: LearnerIdentity) {
     const timestamp = now();
     await database
       .update(learnerProfile)
       .set({
         lastSkippedAt: timestamp,
-        lastSkippedSessionId: sessionId,
+        lastSkippedSessionId: identity.sessionId,
         updatedAt: timestamp,
       })
-      .where(eq(learnerProfile.id, profileId));
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      );
   }
 
-  async function complete(profileId: string) {
+  async function complete(identity: LearnerIdentity) {
     const timestamp = now();
     await database
       .update(learnerProfile)
@@ -170,7 +259,12 @@ export function createLearnerProfileRepository(
         profileStatus: "completed",
         updatedAt: timestamp,
       })
-      .where(eq(learnerProfile.id, profileId));
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      );
   }
 
   return {
