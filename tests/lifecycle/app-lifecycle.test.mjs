@@ -810,7 +810,7 @@ function installSpeechRecorder() {
 async function advanceToJoinInBeat(ControlledAudio) {
   await finishLessonArtworkLoading();
   await click(button("Start lesson"));
-  for (let index = 0; index < 4; index += 1) {
+  for (let index = 0; index < 2; index += 1) {
     await waitFor(() =>
       assert.equal(ControlledAudio.instances.length, index + 1),
     );

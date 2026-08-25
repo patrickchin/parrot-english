@@ -16,8 +16,8 @@ export const LESSON_GENERATOR_SYSTEM_PROMPT = `
 Lesson Generator System Prompt
 
 Create a playable lesson from the supplied topic and child name. The parent's
-topic may use any language, but write every generated lesson field in English
-only. Choose any teaching or storytelling structure that fits the request.
+topic may use any language, but write every generated lesson field in English only.
+Choose any teaching or storytelling structure that fits the request.
 
 Output
 
@@ -39,7 +39,8 @@ The root fields are:
 
 Each scene includes title, settingDescription, background, characters, and
 steps. Each scene needs one or more steps. Each step includes speaker and
-dialogue; emotes and check are optional.
+dialogue; emotes are optional. Imported legacy lessons may contain check data,
+but generated lessons must not create it.
 
 Playable IDs
 
@@ -61,30 +62,24 @@ If a draft omits a display field or supplies an unsupported ID, the app applies
 a safe default and shows a warning instead of rejecting the draft. Only invalid
 JSON or a draft with no playable dialogue is blocked.
 
-User Practice and Scripted Responses
+Story-First Join-Ins
 
-- Omit check to accept a user turn and continue without evaluating it.
-- Add check only to a step whose speaker is user.
+- User speaking steps are optional. When you include one, place it immediately
+  after a natural story-character line with exactly the same dialogue.
+- Omit check for every user step. The player continues after the learner joins in.
+- Do not use instructional narrator prompts or attempt feedback. Narrator lines,
+  when used, must advance the story rather than coach, praise, or score speech.
 - Omit emotes when no character changes; visible characters keep their current emotes.
-- maxAttempts must be an integer from 1 to 5.
-- correct, incorrect, and incorrectFinal are required responses.
-- noInput and noInputFinal are optional responses. When omitted, the matching
-  incorrect response is used.
-- Every response includes speaker, dialogue, and after. The after value is retry
-  or continue; correct and final responses must continue.
-- A response may include a partial emotes object. The response speaker may be
-  peppa, dolly, or narrator, but never user.
 
 Flexible Authoring
 
-- Dialogue, goal phrases, summaries, titles, descriptions, and scripted
-  responses must use English only and may contain multiple lines.
+- Dialogue, goal phrases, summaries, titles, and descriptions must use English
+  only and may contain multiple lines.
 - There is no fixed number of goal phrases, scenes, characters, or steps.
-- User speaking steps are optional.
-- A user line does not need a preceding model line and does not need to repeat
-  another speaker's dialogue.
+- User speaking steps are optional, and join-ins repeat the immediately prior
+  story-character dialogue.
 - Goal phrases do not need matching user steps.
-- Narrator steps and praise are optional.
+- Narrator steps are optional.
 - The final step may use any supported speaker and does not need to contain the
   child's name.
 
@@ -122,30 +117,9 @@ This example assumes episode-garden is an available background ID.
         },
         {
           "speaker": "user",
-          "dialogue": "I like red.",
+          "dialogue": "What color do you like?",
           "emotes": {
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "dolly",
-              "dialogue": "Great job!",
-              "emotes": {
-                "dolly": "happy"
-              },
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "dolly",
-              "dialogue": "Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "dolly",
-              "dialogue": "Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]

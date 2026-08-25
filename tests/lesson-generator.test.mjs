@@ -37,9 +37,17 @@ describe("lesson script generation", () => {
       LESSON_GENERATOR_SYSTEM_PROMPT,
     );
     assert.match(calls[0].body.messages[0].content, /English only/i);
+    assert.match(
+      calls[0].body.messages[0].content,
+      /Omit check for every user step/i,
+    );
+    assert.match(
+      calls[0].body.messages[0].content,
+      /Do not use instructional narrator prompts or attempt feedback/i,
+    );
     assert.doesNotMatch(
       calls[0].body.messages[0].content,
-      /exactly|must.*repeat|narrator praise|two and seven words/i,
+      /narrator praise|two and seven words/i,
     );
     assert.match(calls[0].body.messages[1].content, /ordering ice cream/);
     assert.match(calls[0].body.messages[1].content, /Mia/);

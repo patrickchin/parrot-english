@@ -16,7 +16,10 @@
       "title": "The Picnic Blanket",
       "settingDescription": "Peppa and Dolly sit around the checked blanket with the open picnic basket between them.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -40,24 +43,11 @@
       "title": "Dolly Offers Juice",
       "settingDescription": "Dolly holds the juice bottle beside the cups while Peppa listens across the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
-        {
-          "speaker": "dolly",
-          "dialogue": "Would you like some juice?",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
-          "speaker": "narrator",
-          "dialogue": "Let's copy Dolly!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "happy"
-          }
-        },
         {
           "speaker": "dolly",
           "dialogue": "Would you like some juice?",
@@ -72,24 +62,6 @@
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]
@@ -98,7 +70,10 @@
       "title": "Peppa Says Yes",
       "settingDescription": "Peppa looks at the empty cup while Dolly holds the juice beside the fruit basket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -109,45 +84,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's copy Dolly!",
-          "emotes": {
-            "peppa": "happy",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "Yes, please!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "Yes, please!",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]
@@ -156,7 +97,10 @@
       "title": "A Cup of Juice",
       "settingDescription": "Dolly places a cup of juice in front of Peppa across the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -180,7 +124,10 @@
       "title": "Picnic Time Together",
       "settingDescription": "Peppa holds her juice as Dolly sits with her beside the food on the blanket.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -196,14 +143,6 @@
           "emotes": {
             "peppa": "happy",
             "dolly": "talking"
-          }
-        },
-        {
-          "speaker": "narrator",
-          "dialogue": "Great job!",
-          "emotes": {
-            "peppa": "happy",
-            "dolly": "happy"
           }
         }
       ]
