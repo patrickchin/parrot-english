@@ -58,7 +58,7 @@ function render(overrides = {}) {
 }
 
 describe("accessible realtime conversation surface", () => {
-  it("starts with one child action and keeps chat style in grown-up options", () => {
+  it("starts with one child action without grown-up chat controls", () => {
     const html = render();
 
     assert.match(html, /Ready to talk/);
@@ -67,15 +67,9 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /peppa-happy-384\.webp 384w/);
     assert.match(html, /peppa-happy-1024\.webp 1024w/);
     assert.match(html, /Tap Talk to Peppa\./);
-    assert.match(html, /aria-label="Grown-up chat style: Tiny turns"/);
-    assert.match(html, /Grown-up: Tiny turns/);
-    assert.match(html, /<select[^>]*id="peppa-prompt-style"/);
-    assert.match(html, /Tiny turns/);
-    assert.match(html, /Gentle guide/);
-    assert.match(html, /Playful pal/);
     assert.match(html, /aria-label="Start chat"/);
     assert.match(html, /Talk to Peppa/);
-    assert.match(html, /just a few words/i);
+    assert.doesNotMatch(html, /Grown-up chat style|Grown-up:/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.doesNotMatch(html, /About this chat/);
     assert.doesNotMatch(html, /Finish conversation|Response latency|Timing…/);
@@ -133,11 +127,7 @@ describe("accessible realtime conversation surface", () => {
     assert.doesNotMatch(profileEdit, /Help Peppa know you|Finish conversation/);
   });
 
-  it("describes the selected style without showing setup in profile flows", () => {
-    const guide = render({ promptStyle: "gentle-guide" });
-    assert.match(guide, /helps you say one easy sentence/);
-    assert.match(guide, /<option value="gentle-guide" selected=""/);
-
+  it("does not show chat setup in profile flows", () => {
     const onboarding = render({ purpose: "onboarding" });
     assert.match(onboarding, /Wait here. The voice chat is getting ready/);
     assert.doesNotMatch(onboarding, /Chat style|Start chat|Gentle guide/);

@@ -37,19 +37,8 @@ export async function useIncompleteProfile(page: Page) {
   });
 }
 
-export async function startSmallChat(
-  page: Page,
-  promptStyle?: "tiny-turns" | "gentle-guide" | "playful-pal",
-) {
+export async function startSmallChat(page: Page) {
   const start = page.getByRole("button", { name: "Start chat" });
   await expect(start).toBeVisible();
-  if (promptStyle) {
-    await page
-      .getByLabel(/^Grown-up chat style:/)
-      .click();
-    await page
-      .getByRole("combobox", { name: "Chat style" })
-      .selectOption(promptStyle);
-  }
   await start.click();
 }
