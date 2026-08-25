@@ -226,12 +226,15 @@ git commit -m "feat: isolate grown-up access from learner profile"
 
 **Files:**
 - Modify: `tests/learner-profile-ui.test.mjs`
+- Modify: `tests/e2e/header.spec.ts`
 - Modify: `tests/e2e/surrounding-pages.spec.ts`
 - Modify: `tests/e2e/learner-profile-viewport-stability.spec.ts`
 - Modify: `tests/e2e/shared-focus-visibility.spec.ts`
 - Modify: `src/app/GuardianDashboard.tsx`
 - Modify: `src/app/AboutDialog.tsx`
+- Modify: `src/auth/AuthGate.tsx`
 - Modify: `src/learner-profile/ProfileEditor.tsx`
+- Modify: `src/testing/e2e-browser-mocks.ts`
 
 **Interfaces:**
 - Consumes: `getProfilePath`, Guardian dashboard cards, and existing profile editor callbacks.
@@ -276,6 +279,12 @@ In `ProfileEditor.tsx`, add the `Guardian settings` eyebrow and change the page
 heading to `Learner details`. In `AboutDialog.tsx`, replace instructions that
 say `Use Learner profile` with `Use Learner details in Guardian mode`.
 
+In `AuthGate.tsx`, replace the remaining fallback-generated `/profile` URL with
+`getProfilePath(...)` so every app-generated adult editor link uses the
+canonical Guardian-owned route. Update `e2e-browser-mocks.ts` to recognize the
+canonical editor route, and move responsive header/editor coverage to that
+canonical path while retaining explicit legacy-alias coverage elsewhere.
+
 - [ ] **Step 4: Run focused tests and verify GREEN**
 
 Run the same unit and Playwright commands from Step 2.
@@ -285,7 +294,7 @@ Expected: all focused tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/learner-profile-ui.test.mjs tests/e2e/surrounding-pages.spec.ts tests/e2e/learner-profile-viewport-stability.spec.ts tests/e2e/shared-focus-visibility.spec.ts src/app/GuardianDashboard.tsx src/app/AboutDialog.tsx src/learner-profile/ProfileEditor.tsx
+git add tests/learner-profile-ui.test.mjs tests/e2e/header.spec.ts tests/e2e/surrounding-pages.spec.ts tests/e2e/learner-profile-viewport-stability.spec.ts tests/e2e/shared-focus-visibility.spec.ts src/app/GuardianDashboard.tsx src/app/AboutDialog.tsx src/auth/AuthGate.tsx src/learner-profile/ProfileEditor.tsx src/testing/e2e-browser-mocks.ts
 git commit -m "feat: move learner details into guardian navigation"
 ```
 
