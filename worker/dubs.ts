@@ -78,6 +78,18 @@ type AudioStorage =
       uploadNonce: string | undefined;
     };
 
+type AudioByteRange = {
+  end: number;
+  length: number;
+  start: number;
+};
+
+type AudioPayload = {
+  object: R2ObjectBody;
+  range: AudioByteRange | null;
+  totalLength: number;
+};
+
 class DubApiError extends Error {
   readonly code: string;
   readonly headers?: HeadersInit;
@@ -281,6 +293,60 @@ function equalBytes(left: Uint8Array, right: Uint8Array) {
     left.every((value, index) => value === right[index]);
 }
 
+function rangeNotSatisfiable(totalLength: number): never {
+  throw new DubApiError(
+    416,
+    "range_not_satisfiable",
+    undefined,
+    {
+      "Accept-Ranges": "bytes",
+      "Content-Range": `bytes */${totalLength}`,
+      "X-Content-Type-Options": "nosniff",
+    },
+  );
+}
+
+function parseAudioRange(
+  value: string | null,
+  totalLength: number,
+): AudioByteRange | null {
+  if (value === null) return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(value);
+  if (!match || (match[1] === "" && match[2] === "")) {
+    return rangeNotSatisfiable(totalLength);
+  }
+
+  const parsePosition = (position: string) => {
+    const parsed = Number(position);
+    return Number.isSafeInteger(parsed) ? parsed : null;
+  };
+
+  if (match[1] === "") {
+    const suffixLength = parsePosition(match[2]);
+    if (suffixLength === null || suffixLength <= 0) {
+      return rangeNotSatisfiable(totalLength);
+    }
+    const length = Math.min(suffixLength, totalLength);
+    const start = totalLength - length;
+    return { end: totalLength - 1, length, start };
+  }
+
+  const start = parsePosition(match[1]);
+  const requestedEnd = match[2] === ""
+    ? totalLength - 1
+    : parsePosition(match[2]);
+  if (
+    start === null ||
+    requestedEnd === null ||
+    start >= totalLength ||
+    requestedEnd < start
+  ) {
+    return rangeNotSatisfiable(totalLength);
+  }
+  const end = Math.min(requestedEnd, totalLength - 1);
+  return { end, length: end - start + 1, start };
+}
+
 async function validateAudioPrefix(
   bucket: R2Bucket,
   key: string,
@@ -310,21 +376,33 @@ async function getAudioPayload(
   key: string,
   object: R2Object,
   ready: string | null,
-) {
+  rangeHeader: string | null,
+): Promise<AudioPayload | null> {
   const storage = audioStorage(object, ready);
   if (!storage) return null;
   if (storage.kind === "legacy") {
+    const range = parseAudioRange(rangeHeader, object.size);
     const legacy = await bucket.get(key, {
       onlyIf: { etagMatches: object.etag },
+      ...(range
+        ? { range: { length: range.length, offset: range.start } }
+        : {}),
     });
     return hasBody(legacy) && audioStorage(legacy, ready)?.kind === "legacy"
-      ? legacy
+      ? { object: legacy, range, totalLength: object.size }
       : null;
   }
   if (!await validateAudioPrefix(bucket, key, object, storage)) return null;
+  const totalLength = object.size - storage.prefix.byteLength;
+  const range = parseAudioRange(rangeHeader, totalLength);
   const payload = await bucket.get(key, {
     onlyIf: { etagMatches: object.etag },
-    range: { offset: storage.prefix.byteLength },
+    range: range
+      ? {
+          length: range.length,
+          offset: storage.prefix.byteLength + range.start,
+        }
+      : { offset: storage.prefix.byteLength },
   });
   if (
     !hasBody(payload) ||
@@ -335,7 +413,7 @@ async function getAudioPayload(
   ) {
     return null;
   }
-  return payload;
+  return { object: payload, range, totalLength };
 }
 
 async function assertResetOwner(
@@ -613,18 +691,38 @@ export async function handleDubRequest(
       const generation = await readyGeneration(bucket, userId);
       const key = objectKey(userId, route.lineId!);
       const head = await bucket.head(key);
-      const object = head
-        ? await getAudioPayload(bucket, key, head, generation)
+      const payload = head
+        ? await getAudioPayload(
+            bucket,
+            key,
+            head,
+            generation,
+            input.request.headers.get("Range"),
+          )
         : null;
-      if (!object) throw new DubApiError(404, "not_found");
+      if (!payload) throw new DubApiError(404, "not_found");
       if (await readyGeneration(bucket, userId) !== generation) {
         throw new DubApiError(404, "not_found");
       }
       const headers = new Headers();
-      object.writeHttpMetadata(headers);
+      payload.object.writeHttpMetadata(headers);
+      headers.set("Accept-Ranges", "bytes");
       headers.set("Cache-Control", "private, no-store");
+      headers.set(
+        "Content-Length",
+        String(payload.range?.length ?? payload.totalLength),
+      );
+      if (payload.range) {
+        headers.set(
+          "Content-Range",
+          `bytes ${payload.range.start}-${payload.range.end}/${payload.totalLength}`,
+        );
+      }
       headers.set("X-Content-Type-Options", "nosniff");
-      return new Response(object.body, { headers });
+      return new Response(payload.object.body, {
+        headers,
+        status: payload.range ? 206 : 200,
+      });
     }
 
     if (input.request.method !== "PUT") {

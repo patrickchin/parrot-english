@@ -92,7 +92,14 @@ function createBucket(seed = [], {
       version: value.version ?? `seed-version-${index + 1}`,
     },
   ]));
-  const calls = { delete: [], get: [], head: [], list: [], put: [] };
+  const calls = {
+    delete: [],
+    get: [],
+    getOptions: [],
+    head: [],
+    list: [],
+    put: [],
+  };
   const lastWriteAt = new Map(seed
     .filter(([, value]) => value.uploaded)
     .map(([key, value]) => [key, value.uploaded.getTime()]));
@@ -122,6 +129,7 @@ function createBucket(seed = [], {
     },
     async get(key, options = {}) {
       calls.get.push(key);
+      calls.getOptions.push({ key, options });
       const item = stored.get(key);
       if (!item) return null;
       if (
@@ -1201,6 +1209,190 @@ describe("private learner dub API", () => {
       assert.equal(response.status, 200, lineId);
       assert.deepEqual(new Uint8Array(await response.arrayBuffer()), expected, lineId);
     }
+  });
+
+  it("streams v2 audio ranges relative to the decoded payload", async () => {
+    const generation = "range-generation";
+    const uploadNonce = "range-upload";
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10, 11, 12]);
+    const envelope = envelopedAudio(generation, audio, uploadNonce);
+    const bucket = createBucket([
+      [MARKER_KEY, {
+        bytes: fenceBytes("marker", generation, "ready"),
+        options: {
+          customMetadata: { generation, state: "ready" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+      [slotKey("line-1"), {
+        bytes: envelope.bytes,
+        options: {
+          customMetadata: {
+            generation,
+            payloadOffset: String(envelope.payloadOffset),
+            state: "audio",
+            uploadNonce,
+          },
+          httpMetadata: { contentType: "audio/webm" },
+        },
+        uploaded: new Date("2026-08-25T09:00:00.000Z"),
+      }],
+    ]);
+
+    const cases = [
+      {
+        expected: audio.subarray(0, 2),
+        expectedContentRange: `bytes 0-1/${audio.byteLength}`,
+        expectedR2Range: { length: 2, offset: envelope.payloadOffset },
+        range: "bytes=0-1",
+      },
+      {
+        expected: audio.subarray(4),
+        expectedContentRange: `bytes 4-7/${audio.byteLength}`,
+        expectedR2Range: {
+          length: audio.byteLength - 4,
+          offset: envelope.payloadOffset + 4,
+        },
+        range: "bytes=4-",
+      },
+      {
+        expected: audio.subarray(-3),
+        expectedContentRange: `bytes 5-7/${audio.byteLength}`,
+        expectedR2Range: {
+          length: 3,
+          offset: envelope.payloadOffset + audio.byteLength - 3,
+        },
+        range: "bytes=-3",
+      },
+    ];
+
+    for (const rangeCase of cases) {
+      const response = await callDub({
+        bucket,
+        headers: { Range: rangeCase.range },
+        method: "GET",
+        path: `${DUB_PATH}/lines/line-1/audio`,
+      });
+
+      assert.equal(response.status, 206, rangeCase.range);
+      assert.equal(response.headers.get("Accept-Ranges"), "bytes");
+      assert.equal(
+        response.headers.get("Content-Range"),
+        rangeCase.expectedContentRange,
+      );
+      assert.equal(
+        response.headers.get("Content-Length"),
+        String(rangeCase.expected.byteLength),
+      );
+      assert.equal(response.headers.get("Content-Type"), "audio/webm");
+      assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+      assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
+      assert.deepEqual(
+        new Uint8Array(await response.arrayBuffer()),
+        rangeCase.expected,
+      );
+      assert.deepEqual(
+        bucket.calls.getOptions.at(-1),
+        {
+          key: slotKey("line-1"),
+          options: {
+            onlyIf: { etagMatches: bucket.stored.get(slotKey("line-1")).etag },
+            range: rangeCase.expectedR2Range,
+          },
+        },
+        rangeCase.range,
+      );
+    }
+
+    const full = await callDub({
+      bucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    });
+    assert.equal(full.status, 200);
+    assert.equal(full.headers.get("Accept-Ranges"), "bytes");
+    assert.equal(full.headers.get("Content-Range"), null);
+    assert.equal(full.headers.get("Content-Length"), String(audio.byteLength));
+    assert.deepEqual(new Uint8Array(await full.arrayBuffer()), audio);
+    assert.deepEqual(bucket.calls.getOptions.at(-1), {
+      key: slotKey("line-1"),
+      options: {
+        onlyIf: { etagMatches: bucket.stored.get(slotKey("line-1")).etag },
+        range: { offset: envelope.payloadOffset },
+      },
+    });
+  });
+
+  it("maps legacy raw byte ranges from offset zero", async () => {
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10]);
+    const bucket = createBucket([[slotKey("line-1"), {
+      bytes: audio,
+      options: {
+        customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
+        httpMetadata: { contentType: "audio/webm" },
+      },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+
+    const response = await callDub({
+      bucket,
+      headers: { Range: "bytes=0-1" },
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    });
+
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get("Content-Range"), "bytes 0-1/6");
+    assert.equal(response.headers.get("Content-Length"), "2");
+    assert.deepEqual(
+      new Uint8Array(await response.arrayBuffer()),
+      audio.subarray(0, 2),
+    );
+    assert.deepEqual(bucket.calls.getOptions.at(-1), {
+      key: slotKey("line-1"),
+      options: {
+        onlyIf: { etagMatches: bucket.stored.get(slotKey("line-1")).etag },
+        range: { length: 2, offset: 0 },
+      },
+    });
+  });
+
+  it("rejects malformed, multiple, and unsatisfiable audio ranges privately", async () => {
+    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10]);
+    const bucket = createBucket([[slotKey("line-1"), {
+      bytes: audio,
+      options: {
+        customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
+        httpMetadata: { contentType: "audio/webm" },
+      },
+      uploaded: new Date("2026-08-25T09:00:00.000Z"),
+    }]]);
+
+    for (const range of [
+      "items=0-1",
+      "bytes=0-1,3-4",
+      "bytes=99-",
+      "bytes=4-2",
+      "bytes=-0",
+    ]) {
+      const response = await callDub({
+        bucket,
+        headers: { Range: range },
+        method: "GET",
+        path: `${DUB_PATH}/lines/line-1/audio`,
+      });
+
+      assert.equal(response.status, 416, range);
+      assert.equal(response.headers.get("Accept-Ranges"), "bytes", range);
+      assert.equal(response.headers.get("Content-Range"), "bytes */6", range);
+      assert.equal(response.headers.get("Cache-Control"), "private, no-store", range);
+      assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff", range);
+      assert.deepEqual(await response.json(), {
+        error: "range_not_satisfiable",
+        message: "range_not_satisfiable",
+      });
+    }
+    assert.equal(bucket.calls.get.length, 0);
   });
 
   it("counts and serves only current-generation audio while preserving legacy mode", async () => {
