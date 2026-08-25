@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { ESLint } from "eslint";
 
 const verificationUrl = new URL(
   "../.github/workflows/verify-pr.yml",
@@ -44,4 +46,19 @@ test("main deployment does not repeat the pull-request verification sequence", (
   assert.doesNotMatch(workflow, /run: npm test/);
   assert.doesNotMatch(workflow, /run: npm run lint/);
   assert.match(workflow, /run: npm run build/);
+});
+
+test("lint ignores browser artifacts generated earlier in pull-request verification", async () => {
+  const eslint = new ESLint({ cwd: fileURLToPath(new URL("../", import.meta.url)) });
+
+  for (const artifact of [
+    "playwright-report/trace/assets/code.js",
+    "test-results/run/trace.zip",
+  ]) {
+    assert.equal(
+      await eslint.isPathIgnored(fileURLToPath(new URL(`../${artifact}`, import.meta.url))),
+      true,
+      artifact,
+    );
+  }
 });

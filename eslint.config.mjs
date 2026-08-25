@@ -18,7 +18,13 @@ const browserGlobals = {
 };
 
 export default defineConfig([
-  globalIgnores(["dist/**", ".wrangler/**", "node_modules/**"]),
+  globalIgnores([
+    "dist/**",
+    ".wrangler/**",
+    "node_modules/**",
+    "playwright-report/**",
+    "test-results/**",
+  ]),
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
