@@ -31,5 +31,5 @@ for (const line of Object.values(LESSON_JOIN_IN_AUDIO_LINES)) {
     "-i", sourcePath, "-i", sourcePath, "-i", sourcePath,
     "-filter_complex", filterGraph, "-map", "[out]", outputPath,
   ]);
-  console.log(`generated: ${line.id}`);
+  globalThis.console.log(`generated: ${line.id}`);
 }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
+import { TextDecoder, TextEncoder } from "node:util";
 import { markAccountDeletionPending } from "../worker/account-deletion.ts";
 import { createDatabase } from "../worker/database.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";

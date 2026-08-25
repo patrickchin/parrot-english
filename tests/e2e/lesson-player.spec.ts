@@ -112,9 +112,18 @@ async function mockSceneArtwork(page: Page) {
   });
 }
 
-async function openParrotLesson(page: Page, scenario: string) {
+async function openParrotLesson(
+  page: Page,
+  scenario: string,
+  microphoneScenario?: "denied",
+) {
   await mockSceneArtwork(page);
-  await page.goto(`${parrotLessonPath}?parrotE2eLesson=${scenario}`);
+  await page.goto(
+    `${parrotLessonPath}?parrotE2eLesson=${scenario}` +
+      (microphoneScenario
+        ? `&parrotE2eMicrophone=${microphoneScenario}`
+        : ""),
+  );
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
@@ -546,7 +555,7 @@ test("a malformed successful consent response still fails closed", async ({ page
 test("denied preflight shows one calm note and continues cue-only", async ({
   page,
 }) => {
-  await openParrotLesson(page, "denied-preflight");
+  await openParrotLesson(page, "held-cue", "denied");
   await startLesson(page);
 
   await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
@@ -559,6 +568,7 @@ test("denied preflight shows one calm note and continues cue-only", async ({
       .getByRole("alert")
       .getByText("The microphone is unavailable, but the story will keep going."),
   ).toHaveCount(0);
+  await controlLessonMedia(page, "releaseNextCue");
   await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
   const snapshot = await mediaSnapshot(page);
   expect(snapshot.getUserMediaCalls).toBe(1);
