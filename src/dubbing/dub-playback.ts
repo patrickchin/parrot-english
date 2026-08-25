@@ -258,7 +258,14 @@ export async function startDubPlayback({
       }
     };
     const lineLoads = lines.map(async (line) => {
-      const { fallbackUrl, preferredUrl } = resolveAudioSource(line);
+      let source: DubAudioSource;
+      try {
+        source = resolveAudioSource(line);
+      } catch {
+        onLineUnavailable?.(line.id);
+        return null;
+      }
+      const { fallbackUrl, preferredUrl } = source;
       try {
         return [line, await loadAndDecode(preferredUrl, line.id)] as const;
       } catch (error) {

@@ -166,6 +166,55 @@ describe("five little ducks dub domain", () => {
     assert.equal(state.selectedLineIndex, 1);
   });
 
+  it("preserves retryable save recovery while guide and take audio play", () => {
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      savedLineIds: [],
+    });
+    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "CONTINUE" });
+    state = reduceDubState(state, {
+      type: "SAVE_FAILED",
+      message: "Try again.",
+      recovery: "save",
+    });
+
+    state = reduceDubState(state, {
+      type: "OPERATION_STARTED",
+      operation: "guide-playing",
+    });
+    assert.equal(state.saveRecovery, "save");
+    assert.equal(state.error, "Try again.");
+    assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
+    state = reduceDubState(state, { type: "OPERATION_FINISHED" });
+    state = reduceDubState(state, {
+      type: "OPERATION_STARTED",
+      operation: "take-playing",
+    });
+    assert.equal(state.saveRecovery, "save");
+    assert.equal(state.error, "Try again.");
+    assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
+  });
+
+  it("atomically finishes cancellable playback only after accepted navigation", () => {
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      savedLineIds: [],
+    });
+    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "CONTINUE" });
+    state = reduceDubState(state, {
+      type: "OPERATION_STARTED",
+      operation: "playback",
+      playbackScope: "scene",
+    });
+
+    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" });
+    assert.equal(state.selectedLineIndex, 1);
+    assert.equal(state.operation, "idle");
+    assert.equal(state.playbackScope, null);
+  });
+
   it("blocks navigation during destructive and recording operations", () => {
     let state = reduceDubState(createInitialDubState(), { type: "LOADED", savedLineIds: [] });
     state = reduceDubState(state, { type: "CONFIRMED" });

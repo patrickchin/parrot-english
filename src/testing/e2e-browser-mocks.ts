@@ -14,6 +14,8 @@ const E2E_DUB_SCENARIOS = new Set([
   "almost-complete",
   "both-source-failed",
   "corrupt-line-5",
+  "delete-failed",
+  "delete-held",
   "empty",
   "partial",
   "complete",
@@ -21,6 +23,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "reset-delete-failed",
   "reset-interrupted",
   "upload-failed",
+  "upload-retry-held",
   "upload-rejected",
   "verse-fetch-failed",
 ]);
@@ -413,7 +416,12 @@ function initialE2eDubLineIds(scenario: string) {
     return [...E2E_DUB_LINE_IDS];
   }
   if (scenario === "almost-complete") return E2E_DUB_LINE_IDS.slice(0, 23);
-  if (scenario === "partial" || scenario === "verse-fetch-failed") {
+  if (
+    scenario === "delete-failed" ||
+    scenario === "delete-held" ||
+    scenario === "partial" ||
+    scenario === "verse-fetch-failed"
+  ) {
     return E2E_DUB_LINE_IDS.slice(0, 3);
   }
   return [];
@@ -450,6 +458,12 @@ function createE2eDubStore(scenario: string | null) {
     scenario === "reset-delete-failed" &&
     sessionStorage.getItem(resetDeleteFailureKey) !== "used";
   let delayNextStatus = false;
+  let pendingDelete: ((response: Response) => void) | null = null;
+  let pendingRetryUpload: {
+    blob: Blob;
+    lineId: string;
+    resolve(response: Response): void;
+  } | null = null;
   const guideFetches: string[] = [];
   const privateFetches: string[] = [];
   const uploads: string[] = [];
@@ -504,6 +518,14 @@ function createE2eDubStore(scenario: string | null) {
           });
         }
         if (method === "DELETE") {
+          if (scenario === "delete-failed") {
+            return new Response(null, { status: 503 });
+          }
+          if (scenario === "delete-held") {
+            return new Promise<Response>((resolve) => {
+              pendingDelete = resolve;
+            });
+          }
           if (resetInterrupted) {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
             resetInterrupted = false;
@@ -567,7 +589,7 @@ function createE2eDubStore(scenario: string | null) {
         return new Response(null, { status: 413 });
       }
       if (
-        scenario === "upload-failed" &&
+        (scenario === "upload-failed" || scenario === "upload-retry-held") &&
         sessionStorage.getItem(failureKey) !== "used"
       ) {
         failedUpload = bytes;
@@ -581,6 +603,11 @@ function createE2eDubStore(scenario: string | null) {
       ) {
         return new Response(null, { status: 409 });
       }
+      if (scenario === "upload-retry-held") {
+        return new Promise<Response>((resolve) => {
+          pendingRetryUpload = { blob: clip, lineId, resolve };
+        });
+      }
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
       return e2eJson({ recordedAt: E2E_DUB_RECORDED_AT });
@@ -593,6 +620,27 @@ function createE2eDubStore(scenario: string | null) {
         privateFetches: [...privateFetches],
         uploads: [...uploads],
       };
+    },
+    releaseDelete() {
+      if (!pendingDelete) return false;
+      const resolve = pendingDelete;
+      pendingDelete = null;
+      clips.clear();
+      persist();
+      resolve(new Response(null, {
+        headers: { "Cache-Control": "private, no-store" },
+        status: 204,
+      }));
+      return true;
+    },
+    releaseUpload() {
+      if (!pendingRetryUpload) return false;
+      const pending = pendingRetryUpload;
+      pendingRetryUpload = null;
+      clips.set(pending.lineId, pending.blob);
+      persist();
+      pending.resolve(e2eJson({ recordedAt: E2E_DUB_RECORDED_AT }));
+      return true;
     },
   };
 }
@@ -915,7 +963,11 @@ function installE2eProfileFetchMock() {
   if (dubStore) {
     Object.defineProperty(window, "__parrotE2eDub", {
       configurable: true,
-      value: { snapshot: () => dubStore.snapshot() },
+      value: {
+        releaseDelete: () => dubStore.releaseDelete(),
+        releaseUpload: () => dubStore.releaseUpload(),
+        snapshot: () => dubStore.snapshot(),
+      },
     });
   }
 

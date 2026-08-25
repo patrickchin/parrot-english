@@ -447,6 +447,66 @@ describe("duck dub playback", () => {
     );
   });
 
+  it("contains a resolver exception to its line while the remaining animation and music continue", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const unavailable = [];
+    const ticks = [];
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      lines: DUB_LINES.slice(0, 2),
+      onLineUnavailable(lineId) {
+        unavailable.push(lineId);
+      },
+      onTick(elapsedMs) {
+        ticks.push(elapsedMs);
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      resolveAudioSource(line) {
+        if (line.id === "line-1") throw new Error("guide lookup failed");
+        return { preferredUrl: guideUrl(line.id) };
+      },
+    });
+
+    assert.deepEqual(unavailable, ["line-1"]);
+    assert.deepEqual(audio.fetchCalls.map(([url]) => url), [guideUrl("line-2")]);
+    assert.equal(audio.contexts[0].sources.length, 1);
+    assert.ok(audio.contexts[0].oscillators.length > 0);
+    audio.contexts[0].currentTime = 11.12;
+    raf.runNext();
+    assert.deepEqual(ticks, [1_000]);
+  });
+
+  it("attempts a saved private source without a guide while another unresolved line is omitted", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const unavailable = [];
+    const privateLineOne = "/api/dubs/five-little-ducks-v2/lines/line-1/audio";
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      lines: DUB_LINES.slice(0, 2),
+      onLineUnavailable(lineId) {
+        unavailable.push(lineId);
+      },
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      resolveAudioSource(line) {
+        if (line.id === "line-2") throw new Error("guide lookup failed");
+        return { preferredUrl: privateLineOne };
+      },
+    });
+
+    assert.deepEqual(unavailable, ["line-2"]);
+    assert.deepEqual(audio.fetchCalls.map(([url]) => url), [privateLineOne]);
+    assert.equal(audio.contexts[0].sources.length, 1);
+  });
+
   it("retries a private fetch with its guide and starts every voice", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();

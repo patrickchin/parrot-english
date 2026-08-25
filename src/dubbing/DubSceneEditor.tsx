@@ -15,6 +15,7 @@ export type DubSceneEditorProps = {
   activeLine: DubLine;
   activeSceneIndex: number;
   error: string;
+  locked: boolean;
   needsRetake: ReadonlySet<string>;
   onBack(): void;
   onHearGuide(): void;
@@ -28,6 +29,7 @@ export type DubSceneEditorProps = {
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
   saveRecovery: "record" | "save" | null;
   saved: Readonly<Record<string, string>>;
+  visualLine: DubLine;
 };
 
 function lineState({
@@ -48,6 +50,7 @@ export function DubSceneEditor({
   activeLine,
   activeSceneIndex,
   error,
+  locked,
   needsRetake,
   onBack,
   onHearGuide,
@@ -61,15 +64,14 @@ export function DubSceneEditor({
   recordButtonRef,
   saveRecovery,
   saved,
+  visualLine,
 }: DubSceneEditorProps) {
   const sceneLines = DUB_VERSES[activeSceneIndex] ?? DUB_VERSES[0];
   const activeSceneLineIndex = Math.max(0, DUB_LINES.indexOf(activeLine));
   const sceneNumber = Math.floor(activeSceneLineIndex / DUB_LINES_PER_VERSE) + 1;
-  const unsafeOperation = operation === "mic-opening"
-    || operation === "saving";
   const recording = operation === "recording";
   const recordAgain = pendingTake !== null || saveRecovery !== null;
-  const mediaLocked = unsafeOperation || recording;
+  const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
   const playbackLabel = operation === "playback"
     ? "Stop this scene"
@@ -79,7 +81,7 @@ export function DubSceneEditor({
   const takeLabel = operation === "take-playing" ? "Stop my voice" : "Hear my voice";
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
+    <main aria-busy={locked} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-[1600px] gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
         <section className="grid content-start gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -89,10 +91,10 @@ export function DubSceneEditor({
             </p>
           </div>
           <section className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
-            <DuckScene compact line={activeLine} playing={operation === "playback"} />
+            <DuckScene compact line={visualLine} playing={operation === "playback"} />
           </section>
           <ActionButton
-            aria-label={operation === "playback" ? "Stop this scene" : "Play this scene"}
+            aria-label={playbackLabel}
             disabled={operation === "playback-loading" || navigationLocked}
             onClick={onToggleScenePlayback}
             size="large"
@@ -143,7 +145,7 @@ export function DubSceneEditor({
             </TextButton>
             <ActionButton
               aria-label={recording ? "Stop recording" : recordAgain ? "Record again" : "Record line"}
-              disabled={unsafeOperation}
+              disabled={locked}
               fullWidth
               onClick={onRecord}
               ref={recordButtonRef}
@@ -154,7 +156,7 @@ export function DubSceneEditor({
               {recording ? "Stop recording" : recordAgain ? "Record again" : "Record line"}
             </ActionButton>
             {saveRecovery === "save" ? (
-              <TextButton className="min-h-12 justify-self-start" onClick={onRetrySave}>Save again</TextButton>
+              <TextButton className="min-h-12 justify-self-start" disabled={locked} onClick={onRetrySave}>Save again</TextButton>
             ) : null}
           </section>
 
@@ -171,7 +173,7 @@ export function DubSceneEditor({
           {pendingTake ? (
             <section aria-label="Your recorded line" className="grid gap-2 rounded-2xl border-3 border-cyan-200 bg-cyan-50 p-3">
               <DubTakeWaveform blob={pendingTake} />
-              <TextButton aria-label={takeLabel} className="min-h-12 justify-self-start gap-2" onClick={onHearTake}>
+              <TextButton aria-label={takeLabel} className="min-h-12 justify-self-start gap-2" disabled={mediaLocked} onClick={onHearTake}>
                 {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {takeLabel}
               </TextButton>
             </section>

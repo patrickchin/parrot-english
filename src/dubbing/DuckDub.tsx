@@ -32,7 +32,11 @@ import {
   getDubVerseLineAtElapsed,
   type DubLine,
 } from "./dub-script";
-import { createInitialDubState, reduceDubState } from "./dub-state";
+import {
+  createInitialDubState,
+  reduceDubState,
+  type DubOperation,
+} from "./dub-state";
 
 type TakePreview = {
   blob: Blob;
@@ -55,6 +59,38 @@ function unavailableLineMessage(lineId: string) {
   const sceneNumber = Math.floor(lineIndex / DUB_LINES_PER_VERSE) + 1;
   const lineNumber = lineIndex % DUB_LINES_PER_VERSE + 1;
   return `Scene ${sceneNumber}, line ${lineNumber} could not play. The video will continue without it.`;
+}
+
+function isUnsafeOperation(operation: DubOperation) {
+  return operation === "deleting"
+    || operation === "mic-opening"
+    || operation === "recording"
+    || operation === "saving";
+}
+
+function isControlLocked(operation: DubOperation) {
+  return operation === "deleting"
+    || operation === "mic-opening"
+    || operation === "saving";
+}
+
+export function resolveDubLineAudioSource(
+  line: DubLine,
+  saved: Readonly<Record<string, string>>,
+  resolveGuide: typeof getStaticAudioLineForSpeech = getStaticAudioLineForSpeech,
+): DubAudioSource {
+  if (Object.hasOwn(saved, line.id)) {
+    const preferredUrl = getDubLineAudioUrl(line.id);
+    try {
+      return {
+        fallbackUrl: resolveGuide("narrator", line.text).src,
+        preferredUrl,
+      };
+    } catch {
+      return { preferredUrl };
+    }
+  }
+  return { preferredUrl: resolveGuide("narrator", line.text).src };
 }
 
 function DubEntry({
@@ -106,6 +142,7 @@ function DubEntry({
               <input
                 checked={confirmed}
                 className="mt-1 size-5 shrink-0 accent-brand-blue"
+                disabled={deleting}
                 onChange={(event) => onConfirm(event.currentTarget.checked)}
                 required
                 type="checkbox"
@@ -122,8 +159,8 @@ function DubEntry({
               >
                 Grown-up options <span aria-hidden="true">▾</span>
               </summary>
-              <TextButton className="mt-3 min-h-12 text-red-800" onClick={onDelete}>
-                Delete saved recordings
+              <TextButton className="mt-3 min-h-12 text-red-800" disabled={deleting} onClick={onDelete}>
+                {deleting ? "Deleting saved recordings…" : "Delete saved recordings"}
               </TextButton>
             </details>
           </>
@@ -347,6 +384,7 @@ export function DuckDub() {
   }
 
   async function startRecording() {
+    if (isUnsafeOperation(state.operation)) return;
     const generation = cancelMedia(true);
     const lineId = DUB_LINES[state.selectedLineIndex].id;
     const controller = new AbortController();
@@ -379,10 +417,12 @@ export function DuckDub() {
       void finishRecording();
       return;
     }
+    if (isUnsafeOperation(state.operation)) return;
     void startRecording();
   }
 
   function handleHearGuide() {
+    if (isUnsafeOperation(state.operation)) return;
     const generation = cancelMedia(false);
     const controller = new AbortController();
     guideControllerRef.current = controller;
@@ -417,6 +457,7 @@ export function DuckDub() {
       dispatch({ type: "OPERATION_FINISHED" });
       return;
     }
+    if (isUnsafeOperation(state.operation)) return;
     const preview = takePreviewRef.current;
     if (!preview) return;
     const generation = cancelMedia(false);
@@ -437,14 +478,11 @@ export function DuckDub() {
   }
 
   function resolveLineAudio(line: DubLine): DubAudioSource {
-    const guide = getStaticAudioLineForSpeech("narrator", line.text);
-    return Object.hasOwn(state.saved, line.id)
-      ? { preferredUrl: getDubLineAudioUrl(line.id), fallbackUrl: guide.src }
-      : { preferredUrl: guide.src };
+    return resolveDubLineAudioSource(line, state.saved);
   }
 
   async function startPlayback(scope: "full" | "scene") {
-    if (state.saveRecovery === "save") return;
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     if (
       (state.operation === "playback" || state.operation === "playback-loading")
       && state.playbackScope === scope
@@ -502,40 +540,38 @@ export function DuckDub() {
   }
 
   function handleContinue() {
-    if (state.saveRecovery === "save") return;
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     cancelMedia(true);
-    dispatch({ type: "OPERATION_FINISHED" });
     dispatch({ type: "CONTINUE" });
   }
 
   function handleOpenScene(sceneIndex: number) {
-    if (state.saveRecovery === "save") return;
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     cancelMedia(true);
-    dispatch({ type: "OPERATION_FINISHED" });
     dispatch({ type: "OPEN_SCENE", sceneIndex });
   }
 
   function handleSelectLine(lineId: string) {
-    if (state.saveRecovery === "save") return;
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     cancelMedia(true);
-    dispatch({ type: "OPERATION_FINISHED" });
     dispatch({ type: "SELECT_LINE", lineId });
   }
 
   function handleBack() {
-    if (state.saveRecovery === "save") return;
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     cancelMedia(true);
-    dispatch({ type: "OPERATION_FINISHED" });
     dispatch({ type: "BACK_TO_PROJECT" });
   }
 
   function handleRetrySave() {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery !== "save") return;
     const generation = cancelMedia(false);
     dispatch({ type: "OPERATION_STARTED", operation: "saving" });
     void uploadPendingTake(generation);
   }
 
   async function handleDelete() {
+    if (isUnsafeOperation(state.operation)) return;
     if (!window.confirm("Grown-up: delete every saved voice clip in this dub?")) return;
     cancelMedia(true);
     statusControllerRef.current?.abort();
@@ -547,6 +583,7 @@ export function DuckDub() {
     try {
       await deleteDub({ signal: controller.signal });
       if (!mountedRef.current || deleteControllerRef.current !== controller) return;
+      cancelMedia(true);
       setConfirmed(false);
       setResetInterrupted(false);
       setPlaybackLineIndex(0);
@@ -554,7 +591,12 @@ export function DuckDub() {
     } catch (error) {
       if (controller.signal.aborted) return;
       setResetInterrupted(false);
-      setLoadError(error instanceof Error ? error.message : "Your saved dub was not deleted.");
+      const message = error instanceof Error ? error.message : "Your saved dub was not deleted.";
+      if (state.view === "project" || state.view === "scene") {
+        dispatch({ type: "SET_ERROR", message });
+      } else {
+        setLoadError(message);
+      }
       dispatch({ type: "OPERATION_FINISHED" });
     } finally {
       if (deleteControllerRef.current === controller) deleteControllerRef.current = null;
@@ -562,6 +604,7 @@ export function DuckDub() {
   }
 
   function handleRetryLoad() {
+    if (isUnsafeOperation(state.operation)) return;
     setLoadError("");
     setResetInterrupted(false);
     dispatch({ type: "SET_ERROR", message: "" });
@@ -569,10 +612,51 @@ export function DuckDub() {
   }
 
   const selectedLine = DUB_LINES[state.selectedLineIndex];
-  const activeLine = state.operation === "playback" || state.operation === "playback-loading"
-    ? DUB_LINES[playbackLineIndex]
+  const playbackLine = DUB_LINES[playbackLineIndex] ?? selectedLine;
+  const visualLine = state.operation === "playback" || state.operation === "playback-loading"
+    ? playbackLine
     : selectedLine;
   const deleting = state.operation === "deleting";
+  const locked = isControlLocked(state.operation);
+  const selectedSceneNumber = state.selectedSceneIndex + 1;
+  const selectedSceneLineNumber = state.selectedLineIndex % DUB_LINES_PER_VERSE + 1;
+  const playbackSceneNumber = Math.floor(playbackLineIndex / DUB_LINES_PER_VERSE) + 1;
+  const playbackSceneLineNumber = playbackLineIndex % DUB_LINES_PER_VERSE + 1;
+  const savedCount = Object.keys(state.saved).length;
+  let liveStatus = "Ready for grown-up consent.";
+  const activeError = state.error || loadError;
+  if (activeError) {
+    liveStatus = activeError;
+  } else if (state.operation === "deleting") {
+    liveStatus = "Deleting your dub…";
+  } else if (state.operation === "mic-opening") {
+    liveStatus = "Opening microphone…";
+  } else if (state.operation === "recording") {
+    liveStatus = "Recording…";
+  } else if (state.operation === "saving") {
+    liveStatus = "Saving your take…";
+  } else if (state.operation === "guide-playing") {
+    liveStatus = `Playing example for Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber}.`;
+  } else if (state.operation === "take-playing") {
+    liveStatus = `Playing your recording for Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber}.`;
+  } else if (state.operation === "playback-loading") {
+    liveStatus = state.playbackScope === "full" ? "Loading full video…" : "Loading scene…";
+  } else if (state.operation === "playback") {
+    liveStatus = state.playbackScope === "full"
+      ? `Playing full video: Scene ${playbackSceneNumber}, line ${playbackSceneLineNumber}.`
+      : `Playing Scene ${state.selectedSceneIndex + 1}: line ${playbackSceneLineNumber}.`;
+  } else if (state.view === "loading") {
+    liveStatus = "Loading your private dub…";
+  } else if (state.view === "project") {
+    liveStatus = `${savedCount} of ${DUB_LINES.length} voice clips recorded.`;
+  } else if (state.view === "scene") {
+    const selectedState = Object.hasOwn(state.needsRetake, selectedLine.id)
+      ? "Needs retake"
+      : Object.hasOwn(state.saved, selectedLine.id)
+        ? "Recorded"
+        : "Generated";
+    liveStatus = `Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber} selected. ${selectedState}.`;
+  }
 
   let content;
   if (state.view === "loading") {
@@ -593,17 +677,19 @@ export function DuckDub() {
         error={loadError}
         onConfirm={setConfirmed}
         onDelete={() => void handleDelete()}
-        onEnter={() => confirmed && dispatch({ type: "CONFIRMED" })}
+        onEnter={() => confirmed && !isUnsafeOperation(state.operation) && dispatch({ type: "CONFIRMED" })}
         onRetryLoad={handleRetryLoad}
         resetInterrupted={resetInterrupted}
-        savedCount={Object.keys(state.saved).length}
+        savedCount={savedCount}
       />
     );
   } else if (state.view === "project") {
     content = (
       <DubProjectHome
-        activeLine={activeLine}
+        activeLine={selectedLine}
+        deleting={deleting}
         error={state.error}
+        locked={locked}
         needsRetake={new Set(Object.keys(state.needsRetake))}
         onContinue={handleContinue}
         onDelete={() => void handleDelete()}
@@ -617,14 +703,16 @@ export function DuckDub() {
               : "idle"
           : "idle"}
         saved={state.saved}
+        visualLine={visualLine}
       />
     );
   } else {
     content = (
       <DubSceneEditor
-        activeLine={activeLine}
+        activeLine={selectedLine}
         activeSceneIndex={state.selectedSceneIndex}
         error={state.error}
+        locked={locked}
         needsRetake={new Set(Object.keys(state.needsRetake))}
         onBack={handleBack}
         onHearGuide={handleHearGuide}
@@ -638,6 +726,7 @@ export function DuckDub() {
         recordButtonRef={recordButtonRef}
         saveRecovery={state.saveRecovery}
         saved={state.saved}
+        visualLine={visualLine}
       />
     );
   }
@@ -649,6 +738,15 @@ export function DuckDub() {
           Back home
         </HeaderLink>
       </RouteHeader>
+      <span
+        aria-atomic="true"
+        aria-label="Dub updates"
+        aria-live="polite"
+        className="sr-only"
+        role="status"
+      >
+        {liveStatus}
+      </span>
       {content}
     </>
   );

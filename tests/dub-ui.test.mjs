@@ -14,6 +14,7 @@ const vite = await createServer({
 const { DuckScene } = await vite.ssrLoadModule("/src/dubbing/DuckScene.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
+const { resolveDubLineAudioSource } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const { DUB_LINES } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
 
 after(async () => vite.close());
@@ -21,6 +22,8 @@ after(async () => vite.close());
 function renderProjectHome(viewProps = {}) {
   return renderToStaticMarkup(createElement(DubProjectHome, {
     activeLine: DUB_LINES[0],
+    deleting: false,
+    locked: false,
     needsRetake: new Set(),
     onContinue() {},
     onDelete() {},
@@ -47,8 +50,10 @@ function renderSceneEditor(viewProps = {}) {
     onToggleScenePlayback() {},
     operation: "idle",
     pendingTake: null,
+    locked: false,
     saveRecovery: null,
     saved: {},
+    visualLine: DUB_LINES[0],
     ...viewProps,
   }));
 }
@@ -134,6 +139,17 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, /Next line/);
   });
 
+  it("uses playback progress only for the scene visual, not selection or prompt", () => {
+    const html = renderSceneEditor({
+      activeLine: DUB_LINES[1],
+      visualLine: DUB_LINES[3],
+    });
+    assert.match(html, /aria-current="true"[^>]*aria-label="Line 2, selected, generated"/);
+    assert.match(html, />Over the hill and far away\.<\/p>/);
+    assert.match(html, /The ducklings come back to the pond\./);
+    assert.doesNotMatch(html, /aria-current="true"[^>]*aria-label="Line 4, selected/);
+  });
+
   it("turns the fixed record action into the immediate stop action", () => {
     const html = renderSceneEditor({ operation: "recording" });
     assert.match(html, /aria-label="Stop recording"/);
@@ -154,6 +170,39 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /role="alert"/);
   });
 
+  it("keeps replay controls visible but disabled during a retry save", () => {
+    const html = renderSceneEditor({
+      operation: "saving",
+      pendingTake: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
+      saveRecovery: "save",
+    });
+    assert.match(html, /<button[^>]*disabled[^>]*>[^<]*<svg[^>]*>.*Hear example<\/button>/s);
+    assert.match(html, /<button(?=[^>]*aria-label="Hear my voice")(?=[^>]*disabled)[^>]*>/);
+    assert.match(html, /<button[^>]*disabled[^>]*>Save again<\/button>/);
+  });
+
+  it("exposes accurate loading names and exclusive deletion locks", () => {
+    const projectLoading = renderProjectHome({ playback: "loading" });
+    assert.match(projectLoading, /aria-label="Loading full video…"[^>]*disabled/);
+    assert.doesNotMatch(projectLoading, /aria-label="Play full video"/);
+
+    const sceneLoading = renderSceneEditor({ operation: "playback-loading" });
+    assert.match(sceneLoading, /aria-label="Loading scene…"[^>]*disabled/);
+    assert.doesNotMatch(sceneLoading, /aria-label="Play this scene"/);
+
+    const deletingProject = renderProjectHome({ deleting: true, locked: true });
+    assert.match(deletingProject, /<main[^>]*aria-busy="true"/);
+    assert.match(deletingProject, /aria-label="Play full video"[^>]*disabled/);
+    assert.match(deletingProject, /aria-label="Scene 1, draft"[^>]*disabled/);
+    assert.match(deletingProject, /<button[^>]*disabled[^>]*>Deleting my dub…<\/button>/);
+
+    const deletingScene = renderSceneEditor({ locked: true, operation: "deleting" });
+    assert.match(deletingScene, /<main[^>]*aria-busy="true"/);
+    assert.match(deletingScene, /aria-label="Play this scene"[^>]*disabled/);
+    assert.match(deletingScene, /aria-label="Record line"[^>]*disabled/);
+    assert.match(deletingScene, /<button[^>]*disabled[^>]*>Back to full video<\/button>/);
+  });
+
   it("discards rejected-take preview and exposes one Record again action", () => {
     const html = renderSceneEditor({
       error: "That recording is too long.",
@@ -172,5 +221,22 @@ describe("duck dubbing storyboard presentation", () => {
       operation: "take-playing",
       pendingTake: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
     }), /aria-label="Stop my voice"/);
+  });
+
+  it("keeps private playback resolvable when a saved line has no guide", () => {
+    const source = resolveDubLineAudioSource(
+      DUB_LINES[4],
+      { "line-5": "saved" },
+      () => { throw new Error("guide missing"); },
+    );
+    assert.deepEqual(source, {
+      preferredUrl: "/api/dubs/five-little-ducks-v2/lines/line-5/audio",
+    });
+    assert.throws(
+      () => resolveDubLineAudioSource(DUB_LINES[5], {}, () => {
+        throw new Error("guide missing");
+      }),
+      /guide missing/,
+    );
   });
 });

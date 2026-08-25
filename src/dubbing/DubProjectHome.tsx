@@ -10,7 +10,9 @@ import {
 
 export type DubProjectHomeProps = {
   activeLine: DubLine;
+  deleting: boolean;
   error?: string;
+  locked: boolean;
   needsRetake: ReadonlySet<string>;
   onContinue(): void;
   onDelete(): void;
@@ -18,6 +20,7 @@ export type DubProjectHomeProps = {
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
   saved: Readonly<Record<string, string>>;
+  visualLine?: DubLine;
 };
 
 function sceneState({
@@ -34,7 +37,9 @@ function sceneState({
 
 export function DubProjectHome({
   activeLine,
+  deleting,
   error = "",
+  locked,
   needsRetake,
   onContinue,
   onDelete,
@@ -42,6 +47,7 @@ export function DubProjectHome({
   onTogglePlayback,
   playback,
   saved,
+  visualLine = activeLine,
 }: DubProjectHomeProps) {
   const recorded = DUB_LINES.filter(({ id }) => Object.hasOwn(saved, id)).length;
   const allRecorded = recorded === DUB_LINES.length;
@@ -58,7 +64,7 @@ export function DubProjectHome({
       : "Play full video";
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
+    <main aria-busy={deleting} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-[1600px] gap-5">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -76,13 +82,13 @@ export function DubProjectHome({
           aria-label="Full video player"
           className="grid aspect-video min-h-0 overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
         >
-          <DuckScene compact line={activeLine} playing={playback === "playing"} />
+          <DuckScene compact line={visualLine} playing={playback === "playing"} />
         </section>
 
         <div className="flex flex-wrap justify-between gap-3">
           <ActionButton
-            aria-label={playback === "playing" ? "Stop full video" : "Play full video"}
-            disabled={playback === "loading"}
+            aria-label={playbackLabel}
+            disabled={playback === "loading" || locked}
             onClick={onTogglePlayback}
             size="large"
             variant="navy"
@@ -91,7 +97,7 @@ export function DubProjectHome({
             {playbackLabel}
           </ActionButton>
           {!allRecorded ? (
-            <ActionButton onClick={onContinue} size="large">
+            <ActionButton disabled={locked} onClick={onContinue} size="large">
               Continue Scene {continueSceneIndex + 1}
             </ActionButton>
           ) : null}
@@ -106,6 +112,7 @@ export function DubProjectHome({
                 aria-current={selected ? "page" : undefined}
                 aria-label={`Scene ${sceneIndex + 1}, ${state}`}
                 className="min-h-20 flex-col rounded-2xl px-3 py-3 text-sm"
+                disabled={locked}
                 key={sceneIndex}
                 onClick={() => onOpenScene(sceneIndex)}
                 shape="rounded"
@@ -132,8 +139,8 @@ export function DubProjectHome({
             Grown-up options
             <span aria-hidden="true" className="group-open:rotate-180">▾</span>
           </summary>
-          <TextButton className="mt-2 min-h-12 text-red-800" onClick={onDelete}>
-            Delete my dub
+          <TextButton className="mt-2 min-h-12 text-red-800" disabled={locked} onClick={onDelete}>
+            {deleting ? "Deleting my dub…" : "Delete my dub"}
           </TextButton>
         </details>
       </section>
