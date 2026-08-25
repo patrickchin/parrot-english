@@ -108,7 +108,7 @@ function learnerRows(state) {
     .prepare(
       `SELECT id, auth_user_id, legacy_storage_owner, name, onboarding_status
        FROM learner_profile
-       ORDER BY created_at, id`,
+       ORDER BY created_at, learner_profile._rowid_`,
     )
     .all()
     .map((row) => ({ ...row }));
@@ -254,6 +254,26 @@ describe("learner roster Worker routing", () => {
     }
   });
 
+  it("returns learners in insertion order when creation timestamps tie", async () => {
+    insertLearner(state, "z-first");
+    insertLearner(state, "a-second", {
+      legacyStorageOwner: false,
+      name: "Mia",
+    });
+    await createGuardianAccessRepository(database).unlock("session-a");
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("GET", "/api/learner-profiles"),
+      env,
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      (await response.json()).profiles.map(({ id }) => id),
+      ["z-first", "a-second"],
+    );
+  });
+
   it("requires authentication and a current Guardian unlock for enabled mutations", async () => {
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
     const anonymous = await createWorker({
@@ -274,8 +294,9 @@ describe("learner roster Worker routing", () => {
     insertSession(state, "session-b");
     await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+    const worker = createWorker({ createAuth: () => authStub() });
 
-    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+    const response = await worker.fetch(
       request("POST", "/api/learner-profiles", { name: "  Ｍｉａ  " }),
       env,
     );
@@ -318,6 +339,22 @@ describe("learner roster Worker routing", () => {
         .all()
         .map((row) => ({ ...row })),
       [{ session_id: "session-a", learner_profile_id: payload.activeProfileId }],
+    );
+
+    const appendedResponse = await worker.fetch(
+      request("POST", "/api/learner-profiles", { name: "Leo" }),
+      env,
+    );
+    const appendedPayload = await appendedResponse.json();
+    assert.equal(appendedResponse.status, 200);
+    assert.deepEqual(
+      appendedPayload.profiles.map(({ name }) => name),
+      ["Learner", "Mia", "Leo"],
+    );
+    assert.equal(
+      appendedPayload.profiles.find(({ id }) => id === appendedPayload.activeProfileId)
+        .name,
+      "Leo",
     );
   });
 

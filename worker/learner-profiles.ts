@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import {
   learnerProfile,
   sessionLearnerSelection,
@@ -65,7 +65,12 @@ async function roster(database: Database, identity: AccountIdentity) {
     })
     .from(learnerProfile)
     .where(eq(learnerProfile.authUserId, identity.userId))
-    .orderBy(asc(learnerProfile.createdAt), asc(learnerProfile.id));
+    .orderBy(
+      asc(learnerProfile.createdAt),
+      // learner_profile is a rowid table; its qualified hidden rowid breaks
+      // same-millisecond creation ties without leaking lexical UUID order.
+      asc(sql`${learnerProfile}._rowid_`),
+    );
 
   return {
     activeProfileId:
