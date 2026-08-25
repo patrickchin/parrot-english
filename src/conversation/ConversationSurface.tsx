@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
-import type { TalkToPeppaPromptStyle } from "../../lib/talk-to-peppa-prompt-style";
 import { HeaderButton, RouteHeader } from "../app/AppHeader";
 import { LESSON_LEARNING_PATH } from "../app/learning-paths";
 import {
@@ -56,14 +55,12 @@ type ConversationSurfaceProps = {
   onBack: () => void;
   onChooseLesson: () => void;
   onFinish: () => void;
-  onPromptStyleChange: (style: TalkToPeppaPromptStyle) => void;
   onRepeatAudio: () => void;
   onRetryVoice: () => void;
   onStart: () => void;
   onStartAudio: () => void;
   onToggleMicrophone: () => void;
   purpose: ConversationPurpose;
-  promptStyle: TalkToPeppaPromptStyle;
   recoveryPhase: ConversationRecoveryPhase;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
