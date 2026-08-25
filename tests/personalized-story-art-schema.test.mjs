@@ -199,7 +199,12 @@ describe("personalized story art persistence contract", () => {
     );
     assert.deepEqual(
       Object.keys(getTableColumns(schema.accountDeletionTombstone)),
-      ["userIdHash", "r2Prefix", "requestedAt"],
+      [
+        "userIdHash",
+        "r2Prefix",
+        "requestedAt",
+        "learnerStorageIdentitiesJson",
+      ],
     );
 
     const database = createMigratedDatabase();
@@ -207,6 +212,14 @@ describe("personalized story art persistence contract", () => {
       const sql = tableSql(database, "account_deletion_tombstone");
       assert.match(sql ?? "", /[`"]?user_id_hash[`"]?\s+text\s+PRIMARY KEY/i);
       assert.match(sql ?? "", /[`"]?r2_prefix[`"]?\s+text\s+NOT NULL/i);
+      assert.match(
+        sql ?? "",
+        /[`"]?learner_storage_identities_json[`"]?\s+text\s+NOT NULL\s+DEFAULT\s+'\[\]'/i,
+      );
+      assert.match(
+        sql ?? "",
+        /CHECK\s*\(\s*json_valid\s*\(\s*[`"]?learner_storage_identities_json[`"]?\s*\)\s*\)/i,
+      );
       assert.doesNotMatch(
         sql ?? "",
         /REFERENCES [`"]?user[`"]?/i,

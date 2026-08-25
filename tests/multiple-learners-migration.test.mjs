@@ -92,8 +92,32 @@ it("expands legacy data into learner ownership without breaking singleton storag
     for (const migration of before) database.exec(migration.sql);
     seedLegacyAccount(database, { userId: "guardian-1", profileId: "learner-1" });
     seedProfilelessAccount(database, { userId: "guardian-2", sessionId: "session-2" });
+    database.exec(`
+      INSERT INTO account_deletion_tombstone (user_id_hash, r2_prefix, requested_at)
+      VALUES ('deletion-hash-1', 'personalized-story-art/guardian-deleted/', 220);
+    `);
 
     database.exec(expansion.sql);
+
+    assert.deepEqual(
+      { ...database.prepare(
+        `SELECT user_id_hash, learner_storage_identities_json
+           FROM account_deletion_tombstone`,
+      ).get() },
+      {
+        learner_storage_identities_json: "[]",
+        user_id_hash: "deletion-hash-1",
+      },
+      "Existing deletion tombstones gain an empty durable learner closure",
+    );
+    assert.throws(
+      () => database.prepare(
+        `UPDATE account_deletion_tombstone
+            SET learner_storage_identities_json = 'not-json'
+          WHERE user_id_hash = 'deletion-hash-1'`,
+      ).run(),
+      /constraint/i,
+    );
 
     assert.deepEqual(
       { ...database.prepare(

@@ -55,6 +55,42 @@ function deferred() {
   return { promise, resolve };
 }
 
+function delayD1ReadWhen(d1, predicate, { beforeRead, release }) {
+  let delayed = false;
+
+  function wrapStatement(statement, sql) {
+    return new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) =>
+            wrapStatement(target.bind(...parameters), sql);
+        }
+        if (
+          !delayed &&
+          ["all", "first", "raw"].includes(property) &&
+          predicate(sql)
+        ) {
+          return async (...parameters) => {
+            delayed = true;
+            beforeRead();
+            await release;
+            return target[property](...parameters);
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  }
+
+  return {
+    ...d1,
+    prepare(sql) {
+      return wrapStatement(d1.prepare(sql), sql);
+    },
+  };
+}
+
 function createBucket(seed = []) {
   let version = 0;
   const stored = new Map(seed.map((item, index) => [
@@ -701,6 +737,146 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
+  it("reuses the durable learner closure when a concurrent hook snapshots after cascade", async () => {
+    const state = seedDatabase();
+    const snapshotStarted = deferred();
+    const releaseSnapshot = deferred();
+    const audioPutStarted = deferred();
+    const releaseAudioPut = deferred();
+    const bucket = createBucket();
+    const put = bucket.put.bind(bucket);
+    let cleanupAttempts = 0;
+    let pendingChecks = 0;
+    let uploadOutcome;
+    let hookB;
+
+    bucket.put = async (key, bytes, options) => {
+      if (options?.customMetadata?.state === "audio") {
+        audioPutStarted.resolve();
+        await releaseAudioPut.promise;
+      }
+      if (
+        options?.customMetadata?.state === "account-deleting" &&
+        options.customMetadata.generation === "upload-cleanup"
+      ) {
+        cleanupAttempts += 1;
+        throw new Error("upload-side R2 cleanup failed");
+      }
+      return put(key, bytes, options);
+    };
+
+    try {
+      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+      const insertLearner = state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, 'not_started', ?)`,
+      );
+      insertLearner.run("learner-a", USER_ID, "Mia", 1);
+      insertLearner.run("learner-b", USER_ID, "Leo", 0);
+      insertLearner.run("learner-c", USER_ID, "Ava", 0);
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      const insertConsent = state.sqlite.prepare(
+        `INSERT INTO learner_dub_consent
+          (learner_profile_id, auth_user_id, consent_version, grant_generation,
+           state, granted_at, updated_at)
+         VALUES (?, ?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
+      );
+      insertConsent.run("learner-b", USER_ID, timestamp, timestamp);
+      insertConsent.run("learner-c", USER_ID, timestamp, timestamp);
+
+      uploadOutcome = callDub({
+        bucket,
+        database: state.database,
+        generation: () => "upload-cleanup",
+        identity: {
+          learnerName: "Leo",
+          learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          sessionId: "session-b",
+          userId: USER_ID,
+          userName: "Parent",
+        },
+        method: "PUT",
+        path: `${DUB_PATH}/lines/line-1`,
+        pending: async () => {
+          if (++pendingChecks === 1) return false;
+          throw new Error("post-store D1 read failed");
+        },
+      }).then(
+        (response) => ({ response }),
+        (error) => ({ error }),
+      );
+      await audioPutStarted.promise;
+
+      const hookBDatabase = createDatabase(delayD1ReadWhen(
+        state.d1,
+        (sql) => /from "learner_profile"/i.test(sql),
+        {
+          beforeRead: () => snapshotStarted.resolve(),
+          release: releaseSnapshot.promise,
+        },
+      ));
+      hookB = prepareDeletion({
+        bucket,
+        database: hookBDatabase,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      await snapshotStarted.promise;
+
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
+      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assert.deepEqual(
+        JSON.parse(state.sqlite.prepare(
+          `SELECT learner_storage_identities_json
+             FROM account_deletion_tombstone`,
+        ).get().learner_storage_identities_json),
+        [
+          { learnerProfileId: "learner-a", legacyStorageOwner: true },
+          { learnerProfileId: "learner-b", legacyStorageOwner: false },
+          { learnerProfileId: "learner-c", legacyStorageOwner: false },
+        ],
+      );
+
+      state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
+      assert.equal(
+        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile")
+          .get().count,
+        0,
+      );
+      releaseSnapshot.resolve();
+      await hookB;
+
+      releaseAudioPut.resolve();
+      const settledUpload = await uploadOutcome;
+
+      assert.equal(settledUpload.error, undefined);
+      assert.equal(settledUpload.response.status, 409);
+      assert.equal(pendingChecks, 1);
+      assert.equal(cleanupAttempts, 0);
+      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
+      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assert.equal(
+        [...bucket.stored.values()].some(
+          (item) => item.options.customMetadata.state === "audio",
+        ),
+        false,
+      );
+    } finally {
+      releaseSnapshot.resolve();
+      releaseAudioPut.resolve();
+      await Promise.allSettled([hookB, uploadOutcome].filter(Boolean));
+      state.close();
+    }
+  });
+
   it("converges concurrent hooks on the persisted deletion generation", async () => {
     const state = seedDatabase();
     const bucket = createBucket([
@@ -729,13 +905,18 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
       ]);
 
-      assertDeletionFences(bucket, DELETION_GENERATION);
+      const tombstone = state.sqlite.prepare(
+        `SELECT user_id_hash, requested_at FROM account_deletion_tombstone`,
+      ).get();
+      const persistedGeneration =
+        `account-deletion-v1:${tombstone.user_id_hash}:${tombstone.requested_at}`;
+      assertDeletionFences(bucket, persistedGeneration);
       assertNoClosureDeletes(bucket);
       assert.deepEqual(
         new Set(CLOSURE_KEYS.map(
           (key) => bucket.stored.get(key).options.customMetadata.generation,
         )),
-        new Set([DELETION_GENERATION]),
+        new Set([persistedGeneration]),
       );
     } finally {
       state.close();

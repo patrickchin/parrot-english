@@ -588,7 +588,16 @@ export const accountDeletionTombstone = sqliteTable(
     userIdHash: text("user_id_hash").primaryKey(),
     r2Prefix: text("r2_prefix").notNull(),
     requestedAt: integer("requested_at", { mode: "timestamp_ms" }).notNull(),
+    learnerStorageIdentitiesJson: text("learner_storage_identities_json")
+      .default("[]")
+      .notNull(),
   },
+  (table) => [
+    check(
+      "account_deletion_tombstone_learner_storage_identities_json_check",
+      sql`json_valid(${table.learnerStorageIdentitiesJson})`,
+    ),
+  ],
 );
 
 export const userRelations = relations(user, ({ many, one }) => ({

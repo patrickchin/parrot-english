@@ -160,13 +160,26 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "learner_storage_identities_json": {
+          "name": "learner_storage_identities_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'[]'"
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "account_deletion_tombstone_learner_storage_identities_json_check": {
+          "name": "account_deletion_tombstone_learner_storage_identities_json_check",
+          "value": "json_valid(\"account_deletion_tombstone\".\"learner_storage_identities_json\")"
+        }
+      }
     },
     "conversation_fact": {
       "name": "conversation_fact",

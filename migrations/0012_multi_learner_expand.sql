@@ -1,3 +1,5 @@
+ALTER TABLE account_deletion_tombstone ADD COLUMN learner_storage_identities_json text NOT NULL DEFAULT '[]' CHECK (json_valid(learner_storage_identities_json));
+--> statement-breakpoint
 ALTER TABLE learner_profile ADD COLUMN legacy_storage_owner integer NOT NULL DEFAULT 1 CHECK (legacy_storage_owner IN (0, 1));
 --> statement-breakpoint
 CREATE UNIQUE INDEX learner_profile_id_user_unique ON learner_profile(id, auth_user_id);
