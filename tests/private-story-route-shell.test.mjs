@@ -166,7 +166,11 @@ test("App selects the synthetic private story shell before account and profile g
     assert.match(shelf.textContent, /Fixture Long Story/);
     assert.equal(routedLocation, "/stories?level=long-stories");
   });
-  assert.match(shelf.textContent, /Pick a story level/);
+  assert.doesNotMatch(shelf.textContent, /Grown-up options|Pick a story level/);
+  assert.equal(
+    shelf.querySelector('[aria-label="Pick a story group"]'),
+    null,
+  );
   assert.doesNotMatch(shelf.textContent, /Personalized story art/);
   assert.equal(shelf.querySelector('[aria-label="Account"]'), null);
   assert.equal(shelf.querySelector('[aria-label="Unlock guardian mode"]'), null);
