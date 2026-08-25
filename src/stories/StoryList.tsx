@@ -1,26 +1,43 @@
-import { ArrowLeft, Headphones } from "lucide-react";
+import { ArrowLeft, Headphones, Settings2 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
   getStoryPagePath,
   getStoryShelfPath,
+  resolveStoryShelfLevel,
 } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
-import { InteractiveCardLink } from "../shared/ui";
+import {
+  InteractiveCardLink,
+  SegmentedButton,
+  SegmentedControl,
+} from "../shared/ui";
+import { IS_PRIVATE_STORY_PREVIEW } from "./private-story-preview";
 import { StoryArtwork } from "./StoryArtwork";
-import { getStoryLevel, STORIES } from "./story-catalog";
+import {
+  getStoryLevel,
+  STORIES,
+  STORY_LEVELS,
+} from "./story-catalog";
+import type { StoryLevelId } from "./story-types";
 
 const STORY_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 273px";
 
 export function StoryList() {
+  return IS_PRIVATE_STORY_PREVIEW ? (
+    <PrivateStoryList />
+  ) : (
+    <LearnerStoryList />
+  );
+}
+
+function LearnerStoryList() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useLearnerProfile();
   const activeLevelId = profile.storyLevel;
-  const activeLevel = getStoryLevel(activeLevelId);
-  const stories = STORIES.filter((story) => story.level === activeLevelId);
   const canonicalPath = getStoryShelfPath(activeLevelId);
 
   useEffect(() => {
@@ -28,6 +45,41 @@ export function StoryList() {
       navigate(canonicalPath, { replace: true });
     }
   }, [canonicalPath, location.pathname, location.search, navigate]);
+
+  return <StoryShelf activeLevelId={activeLevelId} />;
+}
+
+function PrivateStoryList() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const requestedLevelId = new URLSearchParams(location.search).get("level");
+  const activeLevelId = resolveStoryShelfLevel(location.search);
+
+  useEffect(() => {
+    if (requestedLevelId && requestedLevelId !== activeLevelId) {
+      navigate(getStoryShelfPath(activeLevelId), { replace: true });
+    }
+  }, [activeLevelId, navigate, requestedLevelId]);
+
+  return (
+    <StoryShelf
+      activeLevelId={activeLevelId}
+      onSelectLevel={(levelId) =>
+        navigate(getStoryShelfPath(levelId), { replace: true })
+      }
+    />
+  );
+}
+
+function StoryShelf({
+  activeLevelId,
+  onSelectLevel,
+}: {
+  activeLevelId: StoryLevelId;
+  onSelectLevel?: (levelId: StoryLevelId) => void;
+}) {
+  const activeLevel = getStoryLevel(activeLevelId);
+  const stories = STORIES.filter((story) => story.level === activeLevelId);
 
   return (
     <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-10 pt-20 short:pt-16 sm:px-4 md:px-8 md:pb-14 md:pt-24 lg:px-16">
@@ -109,6 +161,56 @@ export function StoryList() {
           </div>
         </section>
 
+        {onSelectLevel ? (
+          <details
+            className="group mt-1"
+            open={activeLevelId !== "first-words" || undefined}
+          >
+            <summary
+              aria-label="Grown-up options"
+              className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 rounded-2xl border-3 border-white bg-white/75 px-4 text-center text-sm font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden"
+            >
+              <Settings2 aria-hidden="true" className="size-4" />
+              Grown-up options
+              <span aria-hidden="true" className="group-open:rotate-180">
+                ▾
+              </span>
+            </summary>
+            <div className="mt-4 grid gap-4 rounded-[1.5rem] border-4 border-white bg-white/90 p-3 shadow-card sm:p-4">
+              <div>
+                <h2 className="mb-2 mt-0 px-1 text-center text-base leading-none text-brand-navy sm:text-lg">
+                  Pick a story level
+                </h2>
+                <SegmentedControl
+                  aria-label="Pick a story group"
+                  className="grid grid-cols-2 lg:grid-cols-4"
+                  role="tablist"
+                >
+                  {STORY_LEVELS.map((level, levelIndex) => (
+                    <SegmentedButton
+                      aria-controls="story-level-panel"
+                      className="min-h-14 justify-start px-2 text-left text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm sm:justify-center"
+                      id={`story-level-tab-${level.id}`}
+                      key={level.id}
+                      onClick={() => onSelectLevel(level.id)}
+                      role="tab"
+                      selected={level.id === activeLevelId}
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="grid size-6 shrink-0 place-items-center rounded-full bg-white/85 text-xs text-brand-navy"
+                      >
+                        {levelIndex + 1}
+                      </span>
+                      <span>{level.label}</span>
+                    </SegmentedButton>
+                  ))}
+                </SegmentedControl>
+              </div>
+            </div>
+          </details>
+        ) : null}
       </section>
     </main>
   );

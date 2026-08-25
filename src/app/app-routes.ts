@@ -3,8 +3,8 @@ import {
   resolveStory as resolveCatalogStory,
   type Story,
   STORY_LEVELS,
-  type StoryLevelId,
 } from "../stories/story-catalog";
+import type { StoryLevelId } from "../stories/story-types";
 import { isSafeRouteId } from "../../lib/route-id";
 
 export type LessonSource = "parrot" | "my";

@@ -1,9 +1,9 @@
-import type { StoryLevelId } from "../../lib/story-level.ts";
 import { STORY_SCRIPT_CANDIDATES } from "./story-script-candidates.ts";
 import { PRIVATE_STORY_PREVIEW_STORIES } from "./private-story-preview.ts";
 import type {
   Story,
   StoryLevel,
+  StoryLevelId as CatalogStoryLevelId,
   StoryVocabularyProfile,
   StoryVocabularyProfileId,
 } from "./story-types.ts";
@@ -208,7 +208,7 @@ export function countStoryWords(text: string): number {
   return text.match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g)?.length ?? 0;
 }
 
-export function getStoryLevel(levelId: StoryLevelId): StoryLevel {
+export function getStoryLevel(levelId: CatalogStoryLevelId): StoryLevel {
   const level = STORY_LEVELS.find(({ id }) => id === levelId);
   if (!level) {
     throw new Error(`Unknown story level: ${levelId}`);
