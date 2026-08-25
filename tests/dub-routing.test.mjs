@@ -43,6 +43,36 @@ function environment() {
   };
 }
 
+function authenticatedEnvironment() {
+  const state = createTestD1Database();
+  const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+  state.sqlite.prepare(
+    `INSERT INTO user
+      (id, name, email, email_verified, created_at, updated_at)
+     VALUES (?, ?, ?, 1, ?, ?)`,
+  ).run("user-1", "Parent", "parent@example.test", timestamp, timestamp);
+  state.sqlite.prepare(
+    `INSERT INTO session
+      (id, expires_at, token, created_at, updated_at, user_id)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(
+    "session-1",
+    timestamp + 86_400_000,
+    "token-1",
+    timestamp,
+    timestamp,
+    "user-1",
+  );
+  state.sqlite.prepare(
+    `INSERT INTO learner_profile
+      (id, auth_user_id, name, onboarding_status, created_at, updated_at)
+     VALUES (?, ?, ?, 'not_started', ?, ?)`,
+  ).run("learner-a", "user-1", "Mia", timestamp, timestamp);
+  const result = environment();
+  result.env.DB = state.d1;
+  return { ...result, state };
+}
+
 function request(method, path, body) {
   const init = body === undefined ? { method } : { body, method };
   return new Request(`https://example.test${path}`, init);
@@ -226,31 +256,38 @@ describe("dub Worker routing", () => {
       session: { id: "session-1" },
       user: { email: "parent@example.test", id: "user-1", name: " Parent " },
     };
-    const worker = createWorker({
-      createAuth: () => authStub(session, sessionCalls),
-      async handleDubRequest(input) {
-        calls.push(input);
-        return Response.json({ routed: true });
-      },
-    });
-    const { env, getAssetCalls } = environment();
-    const dubRequest = request("GET", DUB_PATH);
+    const { env, getAssetCalls, state } = authenticatedEnvironment();
+    try {
+      const worker = createWorker({
+        createAuth: () => authStub(session, sessionCalls),
+        async handleDubRequest(input) {
+          calls.push(input);
+          return Response.json({ routed: true });
+        },
+      });
+      const dubRequest = request("GET", DUB_PATH);
 
-    const response = await worker.fetch(dubRequest, env);
+      const response = await worker.fetch(dubRequest, env);
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { routed: true });
-    assert.equal(sessionCalls.length, 1);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].request, dubRequest);
-    assert.equal(calls[0].env, env);
-    assert.equal(calls[0].database.$client, env.DB);
-    assert.deepEqual(calls[0].identity, {
-      sessionId: "session-1",
-      userId: "user-1",
-      userName: "Parent",
-    });
-    assert.equal(getAssetCalls(), 0);
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { routed: true });
+      assert.equal(sessionCalls.length, 1);
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].request, dubRequest);
+      assert.equal(calls[0].env, env);
+      assert.equal(calls[0].database.$client, env.DB);
+      assert.deepEqual(calls[0].identity, {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+      });
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
   });
 
   it("authenticates supported routes before returning method errors", async () => {
@@ -259,22 +296,28 @@ describe("dub Worker routing", () => {
       session: { id: "session-1" },
       user: { id: "user-1", name: "Parent" },
     };
-    const worker = createWorker({ createAuth: () => authStub(session, sessionCalls) });
-    const { env, getAssetCalls } = environment();
-    const routes = [
-      ["POST", DUB_PATH, "GET, DELETE"],
-      ["GET", `${DUB_PATH}/lines/line-1`, "PUT"],
-      ["PUT", `${DUB_PATH}/lines/line-1/audio`, "GET"],
-    ];
+    const { env, getAssetCalls, state } = authenticatedEnvironment();
+    try {
+      const worker = createWorker({
+        createAuth: () => authStub(session, sessionCalls),
+      });
+      const routes = [
+        ["POST", DUB_PATH, "GET, DELETE"],
+        ["GET", `${DUB_PATH}/lines/line-1`, "PUT"],
+        ["PUT", `${DUB_PATH}/lines/line-1/audio`, "GET"],
+      ];
 
-    for (const [method, path, allow] of routes) {
-      const response = await worker.fetch(request(method, path), env);
-      assert.equal(response.status, 405, `${method} ${path}`);
-      assert.equal(response.headers.get("Allow"), allow, `${method} ${path}`);
-      assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+      for (const [method, path, allow] of routes) {
+        const response = await worker.fetch(request(method, path), env);
+        assert.equal(response.status, 405, `${method} ${path}`);
+        assert.equal(response.headers.get("Allow"), allow, `${method} ${path}`);
+        assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+      }
+      assert.equal(sessionCalls.length, routes.length);
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
     }
-    assert.equal(sessionCalls.length, routes.length);
-    assert.equal(getAssetCalls(), 0);
   });
 
   it("does not claim lookalike non-dub paths", async () => {

@@ -78,6 +78,14 @@ describe("onboarding Worker routing", () => {
   });
 
   it("passes only server session identity and the shared D1 database to the handler", async () => {
+    const state = createSeededDatabase();
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, created_at, updated_at)
+         VALUES ('learner-a', 'user-1', 'Mia', 'not_started', 1000, 1000)`,
+      )
+      .run();
     const session = {
       session: { id: "session-1" },
       user: { id: "user-1", name: "Mia", email: "mia@example.test" },
@@ -92,24 +100,74 @@ describe("onboarding Worker routing", () => {
       },
     });
     const { env, getAssetCalls } = createEnvironment();
+    env.DB = state.d1;
     const request = new Request("https://example.test/api/learner-profile", {
       headers: { Cookie: "better-auth.session_token=secret-token" },
     });
 
-    const response = await worker.fetch(request, env);
+    try {
+      const response = await worker.fetch(request, env);
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { routed: true });
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].request, request);
-    assert.equal(calls[0].env, env);
-    assert.deepEqual(calls[0].identity, {
-      sessionId: "session-1",
-      userId: "user-1",
-      userName: "Mia",
-    });
-    assert.equal(calls[0].database.$client, env.DB);
-    assert.equal(getAssetCalls(), 0);
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { routed: true });
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].request, request);
+      assert.equal(calls[0].env, env);
+      assert.deepEqual(calls[0].identity, {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Mia",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+      });
+      assert.equal(calls[0].database.$client, env.DB);
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns a no-store selection-required response before learner profile work", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+      const insert = state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+         VALUES (?, 'user-1', ?, ?, 'not_started', 1000, 1000)`,
+      );
+      insert.run("learner-a", 1, "Mia");
+      insert.run("learner-b", 0, "Leo");
+      let handlerCalls = 0;
+      const worker = createWorker({
+        createAuth: () =>
+          createAuthStub({
+            session: { id: "session-1" },
+            user: { id: "user-1", name: "Mia" },
+          }).auth,
+        async handleLearnerProfileRequest() {
+          handlerCalls += 1;
+          return Response.json({ routed: true });
+        },
+      });
+      const { env } = createEnvironment();
+      env.DB = state.d1;
+
+      const response = await worker.fetch(
+        new Request("https://example.test/api/learner-profile"),
+        env,
+      );
+
+      assert.equal(response.status, 409);
+      assert.equal(response.headers.get("Cache-Control"), "no-store");
+      assert.deepEqual(await response.json(), {
+        error: "learner_selection_required",
+      });
+      assert.equal(handlerCalls, 0);
+    } finally {
+      state.close();
+    }
   });
 });
 

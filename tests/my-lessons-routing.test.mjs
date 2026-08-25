@@ -39,6 +39,13 @@ function authenticatedEnvironment() {
       timestamp,
       "user-1",
     );
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_profile
+        (id, auth_user_id, name, onboarding_status, created_at, updated_at)
+       VALUES (?, ?, ?, 'not_started', ?, ?)`,
+    )
+    .run("learner-a", "user-1", "Mia", timestamp, timestamp);
   return {
     state,
     env: { ...environment(), DB: state.d1 },
@@ -86,21 +93,28 @@ describe("My Lessons Worker routing", () => {
         return Response.json({ routed: true });
       },
     });
-    const env = environment();
-    const request = new Request("https://example.test/api/lessons/my");
+    const { state, env } = authenticatedEnvironment();
+    try {
+      const request = new Request("https://example.test/api/lessons/my");
 
-    const response = await worker.fetch(request, env);
+      const response = await worker.fetch(request, env);
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { routed: true });
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].request, request);
-    assert.equal(calls[0].database.$client, env.DB);
-    assert.deepEqual(calls[0].identity, {
-      sessionId: "session-1",
-      userId: "user-1",
-      userName: "Parent",
-    });
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { routed: true });
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].request, request);
+      assert.equal(calls[0].database.$client, env.DB);
+      assert.deepEqual(calls[0].identity, {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+      });
+    } finally {
+      state.close();
+    }
   });
 
   it("rate limits generation before invoking its handler", async () => {

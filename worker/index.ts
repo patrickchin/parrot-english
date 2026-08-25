@@ -23,6 +23,10 @@ import {
 } from "./guardian-access.ts";
 import { handleLearnerProfileRequest } from "./learner-profile.ts";
 import {
+  handleLearnerProfilesRequest,
+  type LearnerProfilesEnv,
+} from "./learner-profiles.ts";
+import {
   handleConversationRequest,
   type ConversationEnv,
 } from "./conversations.ts";
@@ -37,6 +41,10 @@ import {
 import { handleDubRequest, type DubEnv } from "./dubs.ts";
 import { isEncodedDubRouteAlias } from "./dub-route.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
+import {
+  resolveLearnerIdentity,
+  type AccountIdentity,
+} from "./request-identity.ts";
 
 interface AssetFetcher {
   fetch(request: Request): Promise<Response>;
@@ -47,6 +55,7 @@ interface Env
     BuildInfoEnv,
     RateLimitEnv,
     ConversationEnv,
+    LearnerProfilesEnv,
     MyLessonsEnv,
     PersonalizedStoryArtEnv,
     DubEnv {
@@ -66,6 +75,7 @@ interface WorkerDependencies {
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
+  handleLearnerProfilesRequest: typeof handleLearnerProfilesRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
@@ -78,6 +88,13 @@ function isLearnerProfilePath(pathname: string) {
     pathname.startsWith("/api/learner-profile/") ||
     pathname === "/api/profile" ||
     pathname === "/api/profile/preferences"
+  );
+}
+
+function isLearnerProfilesPath(pathname: string) {
+  return (
+    pathname === "/api/learner-profiles" ||
+    pathname.startsWith("/api/learner-profiles/")
   );
 }
 
@@ -99,6 +116,13 @@ function isPersonalizedStoryArtPath(pathname: string) {
 
 function isDubPath(pathname: string) {
   return pathname === "/api/dubs" || pathname.startsWith("/api/dubs/");
+}
+
+function learnerSelectionRequired() {
+  return Response.json(
+    { error: "learner_selection_required" },
+    { status: 409, headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export function createWorker(
@@ -125,6 +149,8 @@ export function createWorker(
     dependencies.handleGuardianAccessRequest ?? handleGuardianAccessRequest;
   const learnerProfileRequest =
     dependencies.handleLearnerProfileRequest ?? handleLearnerProfileRequest;
+  const learnerProfilesRequest =
+    dependencies.handleLearnerProfilesRequest ?? handleLearnerProfilesRequest;
   const conversationRequest =
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const myLessonRequest =
@@ -159,6 +185,37 @@ export function createWorker(
         return authFactory(env).handler(request);
       }
 
+      if (isLearnerProfilesPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json(
+            { error: "unauthorized" },
+            { status: 401, headers: { "Cache-Control": "no-store" } },
+          );
+        }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
+        const database = createDatabase(env.DB);
+        if (requiresGuardianAccess(url.pathname, request.method)) {
+          const denied = await requireGuardianAccess({
+            database,
+            sessionId: accountIdentity.sessionId,
+          });
+          if (denied) return denied;
+        }
+        return learnerProfilesRequest({
+          database,
+          env,
+          identity: accountIdentity,
+          request,
+        });
+      }
+
       if (isDubPath(url.pathname)) {
         const session = await authFactory(env).api.getSession({
           headers: request.headers,
@@ -172,6 +229,11 @@ export function createWorker(
             },
           );
         }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
         if (isEncodedDubRouteAlias(url.pathname)) {
           return Response.json(
             { error: "not_found", message: "not_found" },
@@ -185,18 +247,18 @@ export function createWorker(
         if (requiresGuardianAccess(url.pathname, request.method)) {
           const denied = await requireGuardianAccess({
             database,
-            sessionId: session.session.id,
+            sessionId: accountIdentity.sessionId,
           });
           if (denied) return denied;
+        }
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        if (learner.status === "selection_required") {
+          return learnerSelectionRequired();
         }
         return dubRequest({
           database,
           env,
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-            userName: session.user.name?.trim() || null,
-          },
+          identity: learner.identity,
           request,
         });
       }
@@ -210,20 +272,22 @@ export function createWorker(
             { status: 401, headers: { "Cache-Control": "no-store" } },
           );
         }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
         if (request.method === "POST") {
           const rateLimited = await guardianUnlockRateLimit(
             request,
             env,
-            session.user.id,
+            accountIdentity.userId,
           );
           if (rateLimited) return rateLimited;
         }
         return guardianAccessRequest({
           database: createDatabase(env.DB),
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-          },
+          identity: accountIdentity,
           request,
           verifyPassword: async (password) => {
             try {
@@ -252,11 +316,16 @@ export function createWorker(
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
         const database = createDatabase(env.DB);
         if (requiresGuardianAccess(url.pathname, request.method)) {
           const denied = await requireGuardianAccess({
             database,
-            sessionId: session.session.id,
+            sessionId: accountIdentity.sessionId,
           });
           if (denied) return denied;
         }
@@ -268,7 +337,7 @@ export function createWorker(
           const rateLimited = await learnerProfileTranscriptionRateLimit(
             request,
             env,
-            session.user.id
+            accountIdentity.userId
           );
           if (rateLimited) return rateLimited;
         }
@@ -280,19 +349,20 @@ export function createWorker(
           const rateLimited = await learnerProfileEnrichmentRateLimit(
             request,
             env,
-            session.user.id
+            accountIdentity.userId
           );
           if (rateLimited) return rateLimited;
+        }
+
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        if (learner.status === "selection_required") {
+          return learnerSelectionRequired();
         }
 
         return learnerProfileRequest({
           database,
           env,
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-            userName: session.user.name?.trim() || null,
-          },
+          identity: learner.identity,
           request,
         });
       }
@@ -312,14 +382,20 @@ export function createWorker(
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
+        const database = createDatabase(env.DB);
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        if (learner.status === "selection_required") {
+          return learnerSelectionRequired();
+        }
         return conversationRequest({
-          database: createDatabase(env.DB),
+          database,
           env,
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-            userName: session.user.name?.trim() || null,
-          },
+          identity: learner.identity,
           request,
         });
       }
@@ -331,13 +407,22 @@ export function createWorker(
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
         const database = createDatabase(env.DB);
         if (requiresGuardianAccess(url.pathname, request.method)) {
           const denied = await requireGuardianAccess({
             database,
-            sessionId: session.session.id,
+            sessionId: accountIdentity.sessionId,
           });
           if (denied) return denied;
+        }
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        if (learner.status === "selection_required") {
+          return learnerSelectionRequired();
         }
         if (
           url.pathname === "/api/lessons/my/generate" &&
@@ -346,18 +431,14 @@ export function createWorker(
           const rateLimited = await lessonGenerationRateLimit(
             request,
             env,
-            session.user.id,
+            accountIdentity.userId,
           );
           if (rateLimited) return rateLimited;
         }
         return myLessonRequest({
           database,
           env,
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-            userName: session.user.name?.trim() || null,
-          },
+          identity: learner.identity,
           request,
         });
       }
@@ -369,30 +450,35 @@ export function createWorker(
         if (!session) {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
         const database = createDatabase(env.DB);
         if (requiresGuardianAccess(url.pathname, request.method)) {
           const denied = await requireGuardianAccess({
             database,
-            sessionId: session.session.id,
+            sessionId: accountIdentity.sessionId,
           });
           if (denied) return denied;
+        }
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        if (learner.status === "selection_required") {
+          return learnerSelectionRequired();
         }
         if (request.method === "POST") {
           const rateLimited = await personalizedStoryArtRateLimit(
             request,
             env,
-            session.user.id,
+            accountIdentity.userId,
           );
           if (rateLimited) return rateLimited;
         }
         return personalizedStoryArtRequest({
           database,
           env,
-          identity: {
-            sessionId: session.session.id,
-            userId: session.user.id,
-            userName: session.user.name?.trim() || null,
-          },
+          identity: learner.identity,
           request,
         });
       }

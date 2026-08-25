@@ -2,6 +2,7 @@ import { and, eq, lte } from "drizzle-orm";
 import { guardianSessionUnlock } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import { parseDubRoute } from "./dub-route.ts";
+import type { AccountIdentity } from "./request-identity.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
@@ -126,7 +127,7 @@ async function readPassword(request: Request) {
 
 export async function handleGuardianAccessRequest(input: {
   database: Database;
-  identity: { sessionId: string; userId: string };
+  identity: AccountIdentity;
   request: Request;
   verifyPassword: (password: string) => Promise<boolean>;
 }): Promise<Response> {
@@ -178,6 +179,12 @@ export async function requireGuardianAccess(input: {
 }
 
 export function requiresGuardianAccess(pathname: string, method: string) {
+  if (pathname === "/api/learner-profiles") {
+    return method === "GET" || method === "POST";
+  }
+  if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(pathname)) {
+    return method === "PUT";
+  }
   const dubRoute = parseDubRoute(pathname);
   if (dubRoute?.consent) {
     return method === "PUT";

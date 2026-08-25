@@ -144,22 +144,26 @@ describe("personalized story art Worker routing", () => {
   });
 
   it("treats malformed encoded story ids as not found instead of crashing", async () => {
-    const worker = createWorker({
-      createAuth: () =>
-        authStub({
-          session: { id: "session-1" },
-          user: { id: "user-1", name: "Parent" },
-        }),
-    });
-    const { env, getAssetCalls } = environment();
+    const { state, env, getAssetCalls } = authenticatedEnvironment();
+    try {
+      const worker = createWorker({
+        createAuth: () =>
+          authStub({
+            session: { id: "session-1" },
+            user: { id: "user-1", name: "Parent" },
+          }),
+      });
 
-    const response = await worker.fetch(
-      new Request("https://example.test/api/stories/%E0%A4%A/personalized-art"),
-      env,
-    );
+      const response = await worker.fetch(
+        new Request("https://example.test/api/stories/%E0%A4%A/personalized-art"),
+        env,
+      );
 
-    assert.equal(response.status, 404);
-    assert.deepEqual(await response.json(), { error: "not_found" });
-    assert.equal(getAssetCalls(), 0);
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
   });
 });

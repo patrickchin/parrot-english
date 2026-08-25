@@ -533,6 +533,7 @@ describe("Worker authentication", () => {
     assert.deepEqual(receivedIdentity, {
       sessionId: "session-1",
       userId: "user-1",
+      userName: null,
     });
     assert.equal(authStub.getSessionCalls(), 1);
     assert.equal(authStub.getPasswordCalls().length, 1);
