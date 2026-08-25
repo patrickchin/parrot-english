@@ -150,11 +150,11 @@ describe("app route helpers", () => {
     );
     assert.equal(
       routes.getProfilePath("/lessons?source=home#ready-made"),
-      "/profile?returnTo=%2Flessons%3Fsource%3Dhome%23ready-made",
+      "/guardian/profile?returnTo=%2Flessons%3Fsource%3Dhome%23ready-made",
     );
     assert.equal(
       routes.getRedoLearnerProfilePath("/profile"),
-      "/profile/setup?redo=1&returnTo=%2Fprofile",
+      "/guardian/profile/setup?redo=1&returnTo=%2Fprofile",
     );
     assert.equal(
       routes.isRedoLearnerProfileRequest("?redo=1&returnTo=%2Fprofile"),
@@ -168,11 +168,21 @@ describe("app route helpers", () => {
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
+    assert.equal(
+      routes.getProfilePath("/guardian"),
+      "/guardian/profile?returnTo=%2Fguardian",
+    );
+    assert.equal(
+      routes.getRedoLearnerProfilePath("/guardian/profile"),
+      "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+    );
 
     for (const [pathname, search = ""] of [
       ["/guardian"],
       ["/guardian/dubbing"],
       ["/guardian/lessons"],
+      ["/guardian/profile"],
+      ["/guardian/profile/setup", "?redo=1"],
       ["/guardian/stories"],
       ["/profile"],
       ["/profile/setup", "?redo=1"],
@@ -195,6 +205,9 @@ describe("app route helpers", () => {
     ]) {
       assert.equal(routes.isGuardianRoute(pathname, search), false);
     }
+
+    assert.equal(routes.isGuardianRoute("/profile/setup"), false);
+    assert.equal(routes.isGuardianRoute("/profile/setup", "?redo=1"), true);
   });
 
   it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {
@@ -205,6 +218,8 @@ describe("app route helpers", () => {
       ["/Profile/Setup//", "learner-profile"],
       ["/profile", "profile"],
       ["/Profile//", "profile"],
+      ["/guardian/profile", "profile"],
+      ["/guardian/profile/setup", "learner-profile"],
     ]) {
       assert.equal(routes.getGateRouteKind(pathname), kind);
     }

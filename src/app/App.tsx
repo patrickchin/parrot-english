@@ -141,6 +141,8 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian",
   "/guardian/dubbing",
   "/guardian/lessons",
+  "/guardian/profile",
+  "/guardian/profile/setup",
   "/guardian/stories",
   "/talk-to-peppa",
   "/lessons",
@@ -1323,6 +1325,8 @@ export function ApplicationRoutes({
           path="/stories/:storyId/pages/:pageNumber"
         />
         <Route element={<Navigate replace to={loginTarget} />} path="/login" />
+        <Route element={null} path="/guardian/profile/setup" />
+        <Route element={null} path="/guardian/profile" />
         <Route element={null} path="/profile/setup" />
         <Route element={null} path="/profile" />
         <Route element={<Navigate replace to="/" />} path="*" />
