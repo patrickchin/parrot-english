@@ -1348,6 +1348,7 @@ export function AuthenticatedApplication({
   const isLearnerProfileRoute = gateRoute === "learner-profile";
   const isProfileRoute = gateRoute === "profile";
   const isConversationRoute = isTalkToPeppaRoute(location.pathname);
+  const guardianRoute = isGuardianRoute(location.pathname, location.search);
   const redoLearnerProfile =
     isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
   const safeReturnTo = getSafeReturnTo(location.search) ?? "/";
@@ -1398,11 +1399,11 @@ export function AuthenticatedApplication({
     return applicationRoutes;
   }
 
-  if (onLoginRoute || (isLearnerProfileRoute && !redoLearnerProfile)) {
+  if (onLoginRoute || (isLearnerProfileRoute && !guardianRoute)) {
     return routeContent;
   }
 
-  if (isGuardianRoute(location.pathname, location.search)) {
+  if (guardianRoute) {
     return (
       <GuardianModeBoundary onBeforeNavigate={onExitLessonRoute}>
         {routeContent}

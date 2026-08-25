@@ -158,8 +158,8 @@ export function AccountHeader({
     activeMode === "guardian" && Boolean(signOutError) && !isSigningOut;
 
   useEffect(() => {
-    if (activeMode === "guardian") return;
     setIsMenuOpen(false);
+    if (activeMode === "guardian") return;
     setIsAboutOpen(false);
     setIsDeleteOpen(false);
   }, [activeMode]);
@@ -399,6 +399,14 @@ export function AccountHeader({
             aria-label="Account menu"
             className="grid gap-1 [&>button]:scroll-my-2"
             id={menuId}
+            onBlur={(event) => {
+              if (
+                !isDialogOpen &&
+                !event.currentTarget.contains(event.relatedTarget as Node | null)
+              ) {
+                setIsMenuOpen(false);
+              }
+            }}
             onKeyDown={handleMenuKeyDown}
             role="menu"
           >

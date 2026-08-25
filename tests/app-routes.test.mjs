@@ -182,6 +182,7 @@ describe("app route helpers", () => {
       ["/guardian/dubbing"],
       ["/guardian/lessons"],
       ["/guardian/profile"],
+      ["/guardian/profile/setup"],
       ["/guardian/profile/setup", "?redo=1"],
       ["/guardian/stories"],
       ["/profile"],
@@ -277,15 +278,43 @@ describe("app route helpers", () => {
     }
   });
 
-  it("preserves a learner-profile return target when reauthentication is required", () => {
-    for (const pathname of ["/profile/setup", "/Profile/Setup//", "/PROFILE/SETUP///"]) {
+  it("preserves an initial legacy learner-profile return target when reauthentication is required", () => {
+    for (const [pathname, search] of [
+      ["/profile/setup", "?returnTo=%2Fprogress"],
+      ["/Profile/Setup//", "?returnTo=%2Fprogress"],
+      ["/PROFILE/SETUP///", "?redo=01&returnTo=%2Fprogress"],
+    ]) {
       assert.equal(
-        routes.getRequestedProtectedTarget(
-          pathname,
-          "?returnTo=%2Fprogress",
-          "",
-        ),
+        routes.getRequestedProtectedTarget(pathname, search, ""),
         "/progress",
+      );
+    }
+  });
+
+  it("preserves canonical and legacy redo management URLs through reauthentication", () => {
+    for (const [pathname, search, hash, expected] of [
+      [
+        "/guardian/profile/setup",
+        "?returnTo=%2Fguardian",
+        "#questions",
+        "/guardian/profile/setup?returnTo=%2Fguardian#questions",
+      ],
+      [
+        "/guardian/profile/setup",
+        "?redo=1&returnTo=%2Fguardian%2Fprofile",
+        "",
+        "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+      ],
+      [
+        "/profile/setup",
+        "?redo=1&returnTo=%2Fguardian",
+        "#review",
+        "/profile/setup?redo=1&returnTo=%2Fguardian#review",
+      ],
+    ]) {
+      assert.equal(
+        routes.getRequestedProtectedTarget(pathname, search, hash),
+        expected,
       );
     }
   });

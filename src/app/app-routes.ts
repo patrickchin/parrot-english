@@ -206,7 +206,10 @@ export function getRequestedProtectedTarget(
   hash: string,
 ) {
   const gateRoute = getGateRouteKind(pathname);
-  if (gateRoute === "login" || gateRoute === "learner-profile") {
+  if (
+    gateRoute === "login" ||
+    (gateRoute === "learner-profile" && !isGuardianRoute(pathname, search))
+  ) {
     return getSafeReturnTo(search) ?? "/";
   }
 

@@ -292,6 +292,44 @@ describe("guardian access provider", { concurrency: false }, () => {
     assert.deepEqual(api.unlockCalls, ["secret", "wrong"]);
   });
 
+  it("rejects learner and expired unlock responses as unsuccessful", async () => {
+    const states = [];
+    const clock = createClock("2026-08-25T08:00:00.000Z");
+    const responses = [
+      { mode: "learner" },
+      { mode: "guardian", expiresAt: "2026-08-25T07:59:59.000Z" },
+    ];
+    const api = createApi({
+      async unlockGuardianAccess(password) {
+        this.unlockCalls.push(password);
+        return responses.shift();
+      },
+    });
+    const Provider = createGuardianAccessProvider({
+      api,
+      now: () => clock.now,
+      schedule: clock.schedule,
+    });
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+
+    for (const password of ["learner-response", "expired-response"]) {
+      let result;
+      await act(async () => {
+        result = await states.at(-1).unlock(password);
+      });
+      assert.equal(
+        result,
+        "Guardian access could not be checked. Please try again.",
+      );
+      assert.equal(states.at(-1).mode, "learner");
+    }
+
+    assert.deepEqual(api.unlockCalls, [
+      "learner-response",
+      "expired-response",
+    ]);
+  });
+
   it("keeps guardian mode on lock failure and becomes learner after a successful lock", async () => {
     const states = [];
     const clock = createClock("2026-08-25T08:00:00.000Z");

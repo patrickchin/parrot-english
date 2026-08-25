@@ -829,7 +829,9 @@ describe("keyboard accessibility lifecycles", () => {
     );
     const password = document.querySelector('input[name="password"]');
     await input(password, "wrong-password");
-    await click(button("Unlock guardian mode"));
+    const unlock = button("Unlock guardian mode");
+    unlock.focus();
+    await click(unlock);
     await waitFor(() =>
       assert.equal(
         document.querySelector('[role="alert"]').textContent.trim(),
@@ -844,6 +846,7 @@ describe("keyboard accessibility lifecycles", () => {
       password.getAttribute("aria-describedby"),
       document.querySelector('[role="alert"]').id,
     );
+    assert.equal(document.activeElement, password);
     assert.equal(document.querySelector('output[aria-label="Guardian access mode"]').textContent, "learner");
   });
 
@@ -867,7 +870,9 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("Grown-up accessAccount password required"));
     const password = document.querySelector('input[name="password"]');
     await input(password, "wrong-password");
-    await click(button("Unlock guardian mode"));
+    const unlock = button("Unlock guardian mode");
+    unlock.focus();
+    await click(unlock);
     await waitFor(() =>
       assert.equal(
         [...document.querySelectorAll('[role="alert"]')].filter(
@@ -883,6 +888,59 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(alert.textContent.trim(), "The password did not match this account.");
     assert.equal(password.getAttribute("aria-invalid"), "true");
     assert.equal(password.getAttribute("aria-describedby"), alert.id);
+    assert.equal(document.activeElement, password);
+  });
+
+  it("keeps learner and expired unlock responses in the password form", async () => {
+    for (const { dialog, response } of [
+      { dialog: false, response: { mode: "learner" } },
+      {
+        dialog: true,
+        response: {
+          expiresAt: "2000-01-01T00:00:00.000Z",
+          mode: "guardian",
+        },
+      },
+    ]) {
+      let unlocked = 0;
+      await mountStrict(
+        createElement(UnlockHarness, {
+          api: guardianApi({
+            async unlockGuardianAccess() {
+              return response;
+            },
+          }),
+          dialog,
+          onUnlocked: () => {
+            unlocked += 1;
+          },
+        }),
+      );
+      if (dialog) await click(button("Open guardian mode"));
+      const password = document.querySelector('input[name="password"]');
+      await input(password, "correct-password");
+      const unlock = button("Unlock guardian mode");
+      unlock.focus();
+      await click(unlock);
+      await waitFor(() =>
+        assert.equal(
+          document.querySelector('[role="alert"]')?.textContent.trim(),
+          "Guardian access could not be checked. Please try again.",
+        ),
+      );
+
+      assert.equal(unlocked, 0);
+      assert.equal(document.activeElement, password);
+      assert.equal(
+        document.querySelector('output[aria-label="Guardian access mode"]')
+          .textContent,
+        "learner",
+      );
+      if (dialog) assert.ok(document.querySelector('[role="dialog"]'));
+
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
   });
 
   it("disables unlock controls while pending and submits the password with Enter", async () => {
@@ -1063,6 +1121,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(window.location.pathname, "/guardian"));
 
     assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(document.querySelector('[role="menu"]'), null);
     assert.match(
       document.body.textContent,
       /Guardian mode unlocked for 15 minutes/,
@@ -1119,7 +1178,10 @@ describe("keyboard accessibility lifecycles", () => {
     }
 
     await unlock();
-    await click(await waitFor(() => button("Switch to learner")));
+    await click(
+      await waitFor(() => button("Profile for Patrick, guardian mode")),
+    );
+    await click(button("Switch to learner"));
     await waitFor(() => button("Profile for Learner, learner mode"));
     await unlock();
     await waitFor(() => assert.equal(announcements.length, 3));
@@ -1245,5 +1307,31 @@ describe("keyboard accessibility lifecycles", () => {
     );
     await press(document.activeElement, "Escape");
     assert.equal(document.activeElement, trigger);
+  });
+
+  it("closes the account menu when focus leaves it", async () => {
+    await mountStrict(
+      createElement(
+        "div",
+        null,
+        createElement(AccountHeader, accountHeaderProps()),
+        createElement("button", { type: "button" }, "Play a lesson"),
+      ),
+    );
+
+    await click(button("Profile for Mia, learner mode"));
+    const menu = document.querySelector('[role="menu"]');
+    assert.ok(menu);
+    await waitFor(() =>
+      assert.equal(
+        document.activeElement,
+        menu.querySelector('[role="menuitem"]'),
+      ),
+    );
+
+    const destination = button("Play a lesson");
+    await act(async () => destination.focus());
+    await waitFor(() => assert.equal(document.querySelector('[role="menu"]'), null));
+    assert.equal(document.activeElement, destination);
   });
 });

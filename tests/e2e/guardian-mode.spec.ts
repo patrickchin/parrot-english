@@ -124,6 +124,7 @@ test("incorrect password keeps learner mode and the unlock dialog open", async (
   await expect(dialog.getByRole("alert")).toHaveText(
     "The password did not match this account.",
   );
+  await expect(password).toBeFocused();
   await expect(dialog).toBeVisible();
   await expectInsideViewport(dialog, viewport);
   await expect(page).toHaveURL("/");
@@ -171,6 +172,10 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   }
 
   const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu).toHaveCount(0);
+  await page
+    .getByRole("button", { name: /Profile for Mia, guardian mode/ })
+    .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Switch to learner",
     "Manage learner details",
@@ -188,6 +193,10 @@ for (const { path, protectedName, seedEditLesson } of [
   {
     path: "/guardian/profile?returnTo=%2Fguardian",
     protectedName: "Learner details",
+  },
+  {
+    path: "/guardian/profile/setup?parrotE2eProfile=viewport-stability",
+    protectedName: "Answer 6 questions",
   },
   {
     path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
@@ -426,6 +435,15 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   await expect(guardian).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  const tabMenu = page.getByRole("menu", { name: "Account menu" });
+  await expect(
+    tabMenu.getByRole("menuitem", { name: /Grown-up access/ }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(tabMenu).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Play a lesson" })).toBeFocused();
 
   await page.goto(guardianUrl("/guardian", "guardian"));
   const guardianTrigger = page.getByRole("button", {
