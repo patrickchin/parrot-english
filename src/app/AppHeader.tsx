@@ -20,8 +20,6 @@ import {
   ActionLink,
   cx,
   MenuButton,
-  SegmentedButton,
-  SegmentedControl,
 } from "../shared/ui";
 import { AboutDialog } from "./AboutDialog";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
@@ -396,27 +394,6 @@ export function AccountHeader({
               </p>
             ) : null}
           </div>
-          <SegmentedControl
-            aria-label="Choose profile mode"
-            className="grid-cols-2"
-          >
-            <SegmentedButton
-              disabled={isModePending}
-              onClick={onSelectLearner}
-              selected={activeMode === "learner"}
-              type="button"
-            >
-              Learner
-            </SegmentedButton>
-            <SegmentedButton
-              disabled={isModePending}
-              onClick={(event) => onSelectGuardian(event.currentTarget)}
-              selected={activeMode === "guardian"}
-              type="button"
-            >
-              Guardian
-            </SegmentedButton>
-          </SegmentedControl>
           {error ? <AccountError error={error} onRetry={onRetryError} /> : null}
           <div
             aria-label="Account menu"
@@ -425,13 +402,38 @@ export function AccountHeader({
             onKeyDown={handleMenuKeyDown}
             role="menu"
           >
+            {activeMode === "learner" ? (
+              <MenuButton
+                disabled={isModePending}
+                onClick={(event) => onSelectGuardian(event.currentTarget)}
+                role="menuitem"
+                type="button"
+              >
+                <ShieldCheck aria-hidden="true" className="size-5 shrink-0" />
+                <span className="grid gap-1">
+                  <span>Grown-up access</span>
+                  <span className="text-xs font-bold">
+                    Account password required
+                  </span>
+                </span>
+              </MenuButton>
+            ) : (
+              <MenuButton
+                disabled={isModePending}
+                onClick={onSelectLearner}
+                role="menuitem"
+                type="button"
+              >
+                Switch to learner
+              </MenuButton>
+            )}
             {activeMode === "guardian" ? (
               <MenuButton
                 onClick={() => selectAction(onOpenProfile)}
                 role="menuitem"
                 type="button"
               >
-                Learner profile
+                Manage learner details
               </MenuButton>
             ) : null}
             {activeMode === "guardian" ? (

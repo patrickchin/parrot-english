@@ -502,49 +502,46 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.activeElement, opener);
   });
 
-  it("learner mode exposes only the profile switch beneath the active identity", async () => {
+  it("learner mode exposes only the locked grown-up gateway beneath the active identity", async () => {
     await mountStrict(createElement(AccountHeader, accountHeaderProps()));
 
     await click(button("Profile for Mia, learner mode"));
-    const switcher = document.querySelector(
-      '[role="group"][aria-label="Choose profile mode"]',
-    );
-    assert.ok(switcher);
+    const menu = document.querySelector('[role="menu"]');
+    assert.ok(menu);
     assert.deepEqual(
-      [...switcher.querySelectorAll("button")].map((item) => item.textContent.trim()),
-      ["Learner", "Guardian"],
+      [...menu.querySelectorAll('[role="menuitem"]')].map((item) =>
+        item.textContent.trim(),
+      ),
+      ["Grown-up accessAccount password required"],
     );
-    assert.equal(button("Learner").getAttribute("aria-pressed"), "true");
-    assert.equal(button("Guardian").getAttribute("aria-pressed"), "false");
     assert.match(document.body.textContent, /Mia/);
-    assert.equal(document.querySelector('[role="menu"]').children.length, 0);
+    assert.equal(
+      document.querySelector('[aria-label="Choose profile mode"]'),
+      null,
+    );
     assert.doesNotMatch(
       document.body.textContent,
-      /AI and saved data|Sign out|Delete account|Learner profile/,
+      /AI and saved data|Sign out|Delete account|Manage learner details/,
     );
   });
 
-  it("guardian mode keeps all management actions after the profile switch", async () => {
+  it("guardian mode keeps all management actions after its one-way learner switch", async () => {
     await mountStrict(
       createElement(AccountHeader, accountHeaderProps({ activeMode: "guardian" })),
     );
 
     await click(button("Profile for Patrick, guardian mode"));
-    const switcher = document.querySelector(
-      '[role="group"][aria-label="Choose profile mode"]',
-    );
     const menu = document.querySelector('[role="menu"]');
-    assert.ok(switcher);
     assert.ok(menu);
-    assert.equal(button("Learner").getAttribute("aria-pressed"), "false");
-    assert.equal(button("Guardian").getAttribute("aria-pressed"), "true");
+    assert.equal(document.querySelector('[aria-label="Choose profile mode"]'), null);
     assert.deepEqual(
       [...menu.children].map((item) => ({
         role: item.getAttribute("role"),
         text: item.textContent.trim(),
       })),
       [
-        { role: "menuitem", text: "Learner profile" },
+        { role: "menuitem", text: "Switch to learner" },
+        { role: "menuitem", text: "Manage learner details" },
         { role: "menuitem", text: "AI and saved data" },
         { role: "menuitem", text: "Sign out" },
         { role: "menuitem", text: "Delete account" },
@@ -589,7 +586,7 @@ describe("keyboard accessibility lifecycles", () => {
         if (surface === "about") await click(button("AI and saved data"));
         if (surface === "delete") await click(button("Delete account"));
         if (surface === "menu") {
-          assert.ok(document.querySelector('[aria-label="Choose profile mode"]'));
+          assert.ok(document.querySelector('[role="menu"]'));
         } else {
           assert.ok(document.querySelector('[role="dialog"]'));
         }
@@ -608,7 +605,7 @@ describe("keyboard accessibility lifecycles", () => {
           `${surface} dialog remained exposed after ${transition}`,
         );
         assert.ok(
-          !document.querySelector('[aria-label="Choose profile mode"]'),
+          !document.querySelector('[role="menu"]'),
           `${surface} menu remained exposed after ${transition}`,
         );
         assert.doesNotMatch(
@@ -719,7 +716,13 @@ describe("keyboard accessibility lifecycles", () => {
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
       ),
-      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+      [
+        "Switch to learner",
+        "Manage learner details",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
     );
   });
 
@@ -760,9 +763,15 @@ describe("keyboard accessibility lifecycles", () => {
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
       ),
-      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+      [
+        "Switch to learner",
+        "Manage learner details",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
     );
-    await click(button("Learner profile"));
+    await click(button("Manage learner details"));
     assert.deepEqual(navigations, ["/profile"]);
   });
 
@@ -855,7 +864,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Guardian"));
+    await click(button("Grown-up accessAccount password required"));
     const password = document.querySelector('input[name="password"]');
     await input(password, "wrong-password");
     await click(button("Unlock guardian mode"));
@@ -1016,7 +1025,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Patrick, guardian mode"),
     );
     await click(trigger);
-    await click(button("Learner"));
+    await click(button("Switch to learner"));
     await waitFor(() =>
       assert.ok(
         [...document.querySelectorAll('[role="alert"]')].some((alert) =>
@@ -1027,8 +1036,8 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.equal(button("Guardian").getAttribute("aria-pressed"), "true");
-    assert.equal(button("Learner").getAttribute("aria-pressed"), "false");
+    assert.ok(button("Profile for Patrick, guardian mode"));
+    assert.ok(button("Switch to learner"));
   });
 
   it("navigates a successful profile-dropdown unlock to guardian home", async () => {
@@ -1046,7 +1055,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Guardian");
+    const guardian = button("Grown-up accessAccount password required");
     await click(guardian);
     const password = document.querySelector('input[name="password"]');
     await input(password, "correct-password");
@@ -1087,13 +1096,15 @@ describe("keyboard accessibility lifecycles", () => {
 
     async function unlock() {
       let guardian = [...document.querySelectorAll("button")].find(
-        (candidate) => candidate.textContent.trim() === "Guardian",
+        (candidate) =>
+          candidate.textContent.trim() ===
+          "Grown-up accessAccount password required",
       );
       if (!guardian) {
         await click(
           await waitFor(() => button("Profile for Learner, learner mode")),
         );
-        guardian = button("Guardian");
+        guardian = button("Grown-up accessAccount password required");
       }
       await click(guardian);
       const password = document.querySelector('input[name="password"]');
@@ -1108,7 +1119,7 @@ describe("keyboard accessibility lifecycles", () => {
     }
 
     await unlock();
-    await click(await waitFor(() => button("Learner")));
+    await click(await waitFor(() => button("Switch to learner")));
     await waitFor(() => button("Profile for Learner, learner mode"));
     await unlock();
     await waitFor(() => assert.equal(announcements.length, 3));
@@ -1135,7 +1146,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Guardian");
+    const guardian = button("Grown-up accessAccount password required");
     await click(guardian);
     const password = document.querySelector('input[name="password"]');
     await act(async () =>
@@ -1147,7 +1158,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.ok(document.querySelector('[aria-label="Choose profile mode"]'));
+    assert.ok(document.querySelector('[role="menu"]'));
     await press(password, "Escape");
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.activeElement, guardian);
@@ -1164,23 +1175,29 @@ describe("keyboard accessibility lifecycles", () => {
     const items = [...document.querySelectorAll('[role="menuitem"]')];
     assert.deepEqual(
       items.map((item) => item.textContent.trim()),
-      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+      [
+        "Switch to learner",
+        "Manage learner details",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
     );
     await waitFor(() => assert.equal(document.activeElement, items[0]));
 
     await press(items[0], "ArrowDown");
     assert.equal(document.activeElement, items[1]);
     await press(items[1], "End");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "ArrowUp");
-    assert.equal(document.activeElement, items[2]);
-    await press(items[2], "ArrowDown");
+    assert.equal(document.activeElement, items[4]);
+    await press(items[4], "ArrowUp");
     assert.equal(document.activeElement, items[3]);
     await press(items[3], "ArrowDown");
+    assert.equal(document.activeElement, items[4]);
+    await press(items[4], "ArrowDown");
     assert.equal(document.activeElement, items[0]);
     await press(items[0], "ArrowUp");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "Home");
+    assert.equal(document.activeElement, items[4]);
+    await press(items[4], "Home");
     assert.equal(document.activeElement, items[0]);
 
     await press(items[0], "Escape");
@@ -1207,7 +1224,7 @@ describe("keyboard accessibility lifecycles", () => {
         },
         components: [],
       });
-    await click(reopenedItems[1]);
+    await click(reopenedItems[2]);
     await waitFor(() =>
       assert.equal(document.activeElement, button("Close AI and saved data")),
     );

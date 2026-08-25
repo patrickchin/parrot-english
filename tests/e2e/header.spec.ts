@@ -529,7 +529,7 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBe(currentCase.direction);
 
     const firstAction = page.getByRole("menuitem", {
-      name: "Learner profile",
+      name: "Switch to learner",
     });
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
@@ -845,7 +845,7 @@ test("wide pending sign out keeps its established 180px frame", async ({
   ).toBeVisible();
 });
 
-test("the learner profile opens a mode-only account menu", async ({ page }) => {
+test("the learner profile opens a locked grown-up access gateway", async ({ page }) => {
   await page.goto("/lessons");
 
   const accountMenu = page.getByRole("button", {
@@ -857,10 +857,17 @@ test("the learner profile opens a mode-only account menu", async ({ page }) => {
 
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Grown-up accessAccount password required",
+  ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
-  ).toBeVisible();
-  await expect(menu.getByRole("menuitem")).toHaveCount(0);
+  ).toHaveCount(0);
+  await expect(
+    menu.getByRole("menuitem", {
+      name: /AI and saved data|Sign out|Delete account/,
+    }),
+  ).toHaveCount(0);
 });
 
 test("account actions separate routine sign out from staged deletion", async ({
@@ -883,11 +890,15 @@ test("account actions separate routine sign out from staged deletion", async ({
     const menu = page.getByRole("menu", { name: "Account menu" });
     const items = menu.getByRole("menuitem");
     await expect(items).toHaveText([
-      "Learner profile",
+      "Switch to learner",
+      "Manage learner details",
       "AI and saved data",
       "Sign out",
       "Delete account",
     ]);
+    await expect(
+      page.getByRole("group", { name: "Choose profile mode" }),
+    ).toHaveCount(0);
 
     const about = menu.getByRole("menuitem", { name: "AI and saved data" });
     const signOut = menu.getByRole("menuitem", { name: "Sign out" });
@@ -912,9 +923,9 @@ test("account actions separate routine sign out from staged deletion", async ({
       expect(box.height).toBeGreaterThanOrEqual(44);
       itemBoxes.push(box);
     }
-    const ordinaryGap = itemBoxes[2].y - (itemBoxes[1].y + itemBoxes[1].height);
+    const ordinaryGap = itemBoxes[3].y - (itemBoxes[2].y + itemBoxes[2].height);
     const destructiveGap =
-      itemBoxes[3].y - (itemBoxes[2].y + itemBoxes[2].height);
+      itemBoxes[4].y - (itemBoxes[3].y + itemBoxes[3].height);
     expect(ordinaryGap).toBeGreaterThanOrEqual(4);
     expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 8);
 

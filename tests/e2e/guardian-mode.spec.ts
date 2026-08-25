@@ -58,20 +58,21 @@ function guardianUrl(path: string, scenario: string) {
   return `${path}${separator}parrotE2eGuardian=${scenario}`;
 }
 
-async function openModeSwitch(page: Page, mode: "guardian" | "learner") {
-  const switcher = page.getByRole("group", { name: "Choose profile mode" });
-  if (await switcher.isVisible()) return switcher;
-  const trigger = page.getByRole("button", {
-    name: new RegExp(`Profile for .+, ${mode} mode`),
-  });
-  await trigger.click();
-  return switcher;
+async function openLearnerAccountMenu(page: Page) {
+  await page
+    .getByRole("button", { name: /Profile for .+, learner mode/ })
+    .click();
+  return page.getByRole("menu", { name: "Account menu" });
+}
+
+async function openGuardianUnlock(page: Page) {
+  const menu = await openLearnerAccountMenu(page);
+  await menu.getByRole("menuitem", { name: /Grown-up access/ }).click();
+  return page.getByRole("dialog", { name: "Unlock guardian mode" });
 }
 
 async function unlockFromMenu(page: Page) {
-  const switcher = await openModeSwitch(page, "learner");
-  await switcher.getByRole("button", { name: "Guardian" }).click();
-  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  const dialog = await openGuardianUnlock(page);
   await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
   await expect(dialog).toHaveCount(0);
@@ -86,29 +87,20 @@ for (const viewport of requiredViewports) {
     const trigger = page.getByRole("button", {
       name: /Profile for Mia, learner mode/,
     });
-    const switcher = await openModeSwitch(page, "learner");
-    const identity = page.getByRole("group", { name: "Active profile" });
+    const menu = await openLearnerAccountMenu(page);
+    const panel = menu.locator("..");
 
     await expectInsideViewport(trigger, viewport);
-    await expectInsideViewport(switcher, viewport);
-    const identityBox = await visibleBox(identity);
-    const switcherBox = await visibleBox(switcher);
-    await expect(identity.locator("xpath=following-sibling::*[1]")).toHaveAttribute(
-      "aria-label",
-      "Choose profile mode",
-    );
-    const switcherGap = switcherBox.y - (identityBox.y + identityBox.height);
-    expect(switcherGap).toBeGreaterThanOrEqual(0);
-    expect(switcherGap).toBeLessThanOrEqual(16);
+    await expectInsideViewport(panel, viewport);
+    await expect(menu.getByRole("menuitem")).toHaveText([
+      "Grown-up accessAccount password required",
+    ]);
     await expect(
-      switcher.getByRole("button", { name: "Learner" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      switcher.getByRole("button", { name: "Guardian" }),
-    ).toHaveAttribute("aria-pressed", "false");
+      page.getByRole("group", { name: "Choose profile mode" }),
+    ).toHaveCount(0);
     expect(await horizontalOverflow(page)).toBe(false);
 
-    await switcher.getByRole("button", { name: "Guardian" }).click();
+    await menu.getByRole("menuitem", { name: /Grown-up access/ }).click();
     const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
     await expectInsideViewport(dialog, viewport);
     await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -121,9 +113,7 @@ test("incorrect password keeps learner mode and the unlock dialog open", async (
   const viewport = { width: 280, height: 568 };
   await page.setViewportSize(viewport);
   await page.goto("/");
-  const switcher = await openModeSwitch(page, "learner");
-  await switcher.getByRole("button", { name: "Guardian" }).click();
-  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  const dialog = await openGuardianUnlock(page);
   const password = dialog.getByLabel("Password");
 
   await expect(password).toBeFocused();
@@ -143,9 +133,7 @@ test("unlock request failure never navigates to guardian content", async ({
   page,
 }) => {
   await page.goto(guardianUrl("/", "unlock-error"));
-  const switcher = await openModeSwitch(page, "learner");
-  await switcher.getByRole("button", { name: "Guardian" }).click();
-  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  const dialog = await openGuardianUnlock(page);
   await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
 
@@ -181,19 +169,17 @@ test("successful unlock opens guardian management and announces the fifteen-minu
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
 
-  const switcher = await openModeSwitch(page, "guardian");
-  await expect(
-    switcher.getByRole("button", { name: "Guardian" }),
-  ).toHaveAttribute("aria-pressed", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
-  for (const item of [
-    "Learner profile",
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Switch to learner",
+    "Manage learner details",
     "AI and saved data",
     "Sign out",
     "Delete account",
-  ]) {
-    await expect(menu.getByRole("menuitem", { name: item })).toBeVisible();
-  }
+  ]);
+  await expect(
+    page.getByRole("group", { name: "Choose profile mode" }),
+  ).toHaveCount(0);
 });
 
 test("a locked guardian deep link never flashes protected content", async ({
@@ -372,9 +358,10 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
     name: /Profile for Mia, learner mode/,
   });
   await trigger.click();
-  const guardian = page
-    .getByRole("group", { name: "Choose profile mode" })
-    .getByRole("button", { name: "Guardian" });
+  const learnerMenu = page.getByRole("menu", { name: "Account menu" });
+  const guardian = learnerMenu.getByRole("menuitem", {
+    name: /Grown-up access/,
+  });
   await guardian.click();
   const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
   await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -388,16 +375,23 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   });
   await guardianTrigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
-  const profile = menu.getByRole("menuitem", { name: "Learner profile" });
+  const switchToLearner = menu.getByRole("menuitem", {
+    name: "Switch to learner",
+  });
+  const profile = menu.getByRole("menuitem", {
+    name: "Manage learner details",
+  });
   const data = menu.getByRole("menuitem", { name: "AI and saved data" });
   const deletion = menu.getByRole("menuitem", { name: "Delete account" });
+  await expect(switchToLearner).toBeFocused();
+  await page.keyboard.press("ArrowDown");
   await expect(profile).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(data).toBeFocused();
   await page.keyboard.press("End");
   await expect(deletion).toBeFocused();
   await page.keyboard.press("Home");
-  await expect(profile).toBeFocused();
+  await expect(switchToLearner).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(guardianTrigger).toBeFocused();
   await expect(menu).toHaveCount(0);
@@ -430,11 +424,18 @@ test("learner routes omit adult management actions", async ({
     },
   ]) {
     await page.goto(path);
-    const switcher = await openModeSwitch(page, "learner");
+    const menu = await openLearnerAccountMenu(page);
+    await expect(menu.getByRole("menuitem")).toHaveText([
+      "Grown-up accessAccount password required",
+    ]);
     await expect(
-      switcher.getByRole("button", { name: "Learner" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByRole("menuitem")).toHaveCount(0);
+      page.getByRole("group", { name: "Choose profile mode" }),
+    ).toHaveCount(0);
+    await expect(
+      menu.getByRole("menuitem", {
+        name: /AI and saved data|Sign out|Delete account/,
+      }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: /Create custom lesson|Edit lesson/ }),
     ).toHaveCount(0);
