@@ -106,9 +106,13 @@ function createCompatibilityHistory(context, { includeEnableMigration = true } =
 }
 
 function runCompatibilityGuard(cwd, env = {}) {
+  const childEnv = { ...process.env };
+  if (!Object.hasOwn(env, "MULTI_LEARNER_COMPATIBILITY_DEPLOYED")) {
+    delete childEnv.MULTI_LEARNER_COMPATIBILITY_DEPLOYED;
+  }
   return spawnSync(process.execPath, [fileURLToPath(compatibilityGuardUrl)], {
     cwd,
-    env: { ...process.env, ...env },
+    env: { ...childEnv, ...env },
     encoding: "utf8",
   });
 }
