@@ -2,7 +2,7 @@
 
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { lstat, readFile, readdir, readlink } from "node:fs/promises";
+import { lstat, readFile, readdir, readlink, realpath } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { promisify } from "node:util";
@@ -47,6 +47,14 @@ function fileLeaks(filePath, contents, variants) {
   );
 }
 
+function redactLeakedPath(filePath, variants) {
+  let redactedPath = normalizePath(filePath);
+  for (const marker of [...variants].sort((left, right) => right.length - left.length)) {
+    redactedPath = redactedPath.replaceAll(marker, "[private-marker]");
+  }
+  return JSON.stringify(redactedPath).slice(1, -1);
+}
+
 export function scanPrivateStoryIsolation({
   distFiles = [],
   markers = [],
@@ -55,7 +63,7 @@ export function scanPrivateStoryIsolation({
   const variants = markerVariants(markers);
   const leakedPaths = [...trackedFiles, ...distFiles]
     .filter(([filePath, contents]) => fileLeaks(filePath, contents, variants))
-    .map(([filePath]) => normalizePath(filePath));
+    .map(([filePath]) => redactLeakedPath(filePath, variants));
   const uniquePaths = [...new Set(leakedPaths)].sort();
 
   return {
@@ -87,17 +95,75 @@ function resolveInsideProject(projectRoot, filePath) {
   return resolved;
 }
 
+function pathEscapes(root, target) {
+  const relativePath = path.relative(root, target);
+  return (
+    !relativePath ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  );
+}
+
+async function resolveDistDirectory(projectRoot, distDirectory) {
+  const root = path.resolve(projectRoot);
+  const directory = path.resolve(root, distDirectory ?? "dist");
+  if (pathEscapes(root, directory)) {
+    throw new Error("The dist directory must stay inside the project root");
+  }
+
+  const realRoot = await realpath(root);
+  let currentPath = root;
+  for (const segment of path.relative(root, directory).split(path.sep)) {
+    currentPath = path.join(currentPath, segment);
+    try {
+      await lstat(currentPath);
+      if (pathEscapes(realRoot, await realpath(currentPath))) {
+        throw new Error("The dist directory must stay inside the project root");
+      }
+    } catch (error) {
+      if (error?.code === "ENOENT") break;
+      throw error;
+    }
+  }
+
+  return directory;
+}
+
 async function readTrackedFiles(projectRoot, trackedPaths) {
-  return Promise.all(
+  const files = await Promise.all(
     trackedPaths.map(async (filePath) => {
       const absolutePath = resolveInsideProject(projectRoot, filePath);
-      const fileStats = await lstat(absolutePath);
-      const contents = fileStats.isSymbolicLink()
-        ? await readlink(absolutePath)
-        : await readFile(absolutePath);
-      return [filePath, contents];
+      try {
+        const fileStats = await lstat(absolutePath);
+        const contents = fileStats.isSymbolicLink()
+          ? await readlink(absolutePath)
+          : await readFile(absolutePath);
+        return [filePath, contents];
+      } catch (error) {
+        if (error?.code === "ENOENT") return null;
+        throw error;
+      }
     }),
   );
+  return files.filter(Boolean);
+}
+
+async function readIndexFiles(projectRoot, trackedPaths) {
+  const files = [];
+  for (const filePath of trackedPaths) {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["cat-file", "blob", `:${filePath}`],
+      {
+        cwd: projectRoot,
+        encoding: null,
+        maxBuffer: 128 * 1024 * 1024,
+      },
+    );
+    files.push([filePath, stdout]);
+  }
+  return files;
 }
 
 async function readDirectoryFiles(directory, projectRoot) {
@@ -120,11 +186,15 @@ async function readDirectoryFiles(directory, projectRoot) {
 }
 
 export async function verifyPrivateStoryIsolation({
-  distDirectory = path.join(rootDir, "dist"),
+  distDirectory,
   previewDirectory,
   projectRoot = rootDir,
   requirePrivateInputs = false,
 } = {}) {
+  const resolvedDistDirectory = await resolveDistDirectory(
+    projectRoot,
+    distDirectory,
+  );
   const directory = path.resolve(
     previewDirectory ?? path.join(projectRoot, PRIVATE_INPUT_DIRECTORY),
   );
@@ -133,39 +203,51 @@ export async function verifyPrivateStoryIsolation({
     projectRoot,
     PRIVATE_INPUT_DIRECTORY,
   );
-  if (privateTrackedPaths.length) {
-    const result = scanPrivateStoryIsolation({
-      trackedFiles: privateTrackedPaths.map((filePath) => [filePath, ""]),
-    });
-    return { ...result, status: "leaks" };
-  }
-  if (!existsSync(manifestPath)) {
-    if (requirePrivateInputs) throw new Error("Private story inputs are required");
-    return {
-      leakedPaths: [],
-      message: "Private story inputs absent; skipped.",
-      status: "skipped",
-    };
+  const hasPrivateInputs = existsSync(manifestPath);
+  if (!hasPrivateInputs && requirePrivateInputs) {
+    throw new Error("Private story inputs are required");
   }
 
-  const { markers } = await loadPrivateStoryPreview({
-    previewDirectory: directory,
-    projectRoot,
-    requireAudio: false,
-  });
+  const markers = hasPrivateInputs
+    ? (
+        await loadPrivateStoryPreview({
+          previewDirectory: directory,
+          projectRoot,
+          requireAudio: false,
+        })
+      ).markers
+    : [];
   const trackedPaths = await gitTrackedPaths(projectRoot);
-  const trackedFiles = await readTrackedFiles(
-    projectRoot,
-    trackedPaths.filter(
-      (filePath) => !normalizePath(filePath).startsWith(`${PRIVATE_INPUT_DIRECTORY}/`),
-    ),
+  const publicTrackedPaths = trackedPaths.filter(
+    (filePath) => !normalizePath(filePath).startsWith(`${PRIVATE_INPUT_DIRECTORY}/`),
   );
-  const distFiles = await readDirectoryFiles(distDirectory, projectRoot);
-  const result = scanPrivateStoryIsolation({ distFiles, markers, trackedFiles });
+  const [indexFiles, workingTreeFiles] = await Promise.all([
+    readIndexFiles(projectRoot, publicTrackedPaths),
+    readTrackedFiles(projectRoot, publicTrackedPaths),
+  ]);
+  const distFiles = existsSync(resolvedDistDirectory)
+    ? await readDirectoryFiles(resolvedDistDirectory, projectRoot)
+    : [];
+  const result = scanPrivateStoryIsolation({
+    distFiles,
+    markers,
+    trackedFiles: [
+      ...privateTrackedPaths.map((filePath) => [filePath, ""]),
+      ...indexFiles,
+      ...workingTreeFiles,
+    ],
+  });
 
   return {
     ...result,
-    status: result.leakedPaths.length ? "leaks" : "clean",
+    message:
+      result.message ||
+      (hasPrivateInputs ? "" : "Private story inputs absent; skipped."),
+    status: result.leakedPaths.length
+      ? "leaks"
+      : hasPrivateInputs
+        ? "clean"
+        : "skipped",
   };
 }
 
@@ -179,9 +261,7 @@ function readArg(name) {
 async function main() {
   try {
     const result = await verifyPrivateStoryIsolation({
-      distDirectory: readArg("dist")
-        ? path.resolve(rootDir, readArg("dist"))
-        : undefined,
+      distDirectory: readArg("dist"),
       requirePrivateInputs: process.argv.includes("--require-private-inputs"),
     });
     if (result.status === "leaks") {

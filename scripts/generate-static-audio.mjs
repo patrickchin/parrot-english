@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import {
   basename,
@@ -181,6 +181,40 @@ function validatePrivateOutputPath(outputFilePath, previewDirectory) {
   return outputPath;
 }
 
+async function validatePrivateOutputPathOnDisk(
+  outputFilePath,
+  previewDirectory,
+) {
+  const outputPath = validatePrivateOutputPath(
+    outputFilePath,
+    previewDirectory,
+  );
+  const directory = resolve(previewDirectory);
+  const directoryStats = await lstat(directory);
+  if (directoryStats.isSymbolicLink()) {
+    throw new Error("Private audio output must stay inside the private preview directory");
+  }
+  const realDirectory = await realpath(directory);
+  const relativePath = relative(directory, outputPath);
+  let currentPath = directory;
+
+  for (const segment of relativePath.split(process.platform === "win32" ? "\\" : "/")) {
+    currentPath = join(currentPath, segment);
+    try {
+      const currentStats = await lstat(currentPath);
+      if (currentStats.isSymbolicLink()) {
+        throw new Error("Private audio output must stay inside the private preview directory");
+      }
+      validatePrivateOutputPath(await realpath(currentPath), realDirectory);
+    } catch (error) {
+      if (error?.code === "ENOENT") break;
+      throw error;
+    }
+  }
+
+  return outputPath;
+}
+
 export async function getGenerationLines({
   includePrivateStories = false,
   previewDirectory,
@@ -197,16 +231,18 @@ export async function getGenerationLines({
     requireAudio: false,
   });
   const privateAudioLines = Object.fromEntries(
-    Object.entries(audioLines).map(([id, line]) => [
-      id,
-      {
-        ...line,
-        outputFilePath: validatePrivateOutputPath(
-          line.outputFilePath,
-          directory,
-        ),
-      },
-    ]),
+    await Promise.all(
+      Object.entries(audioLines).map(async ([id, line]) => [
+        id,
+        {
+          ...line,
+          outputFilePath: await validatePrivateOutputPathOnDisk(
+            line.outputFilePath,
+            directory,
+          ),
+        },
+      ]),
+    ),
   );
 
   return { ...STATIC_AUDIO_LINES, ...privateAudioLines };
