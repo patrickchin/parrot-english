@@ -142,13 +142,20 @@ function textLeaks(value, { excerptFingerprints, variants }) {
   );
 }
 
-function fileLeaks(filePath, contents, context) {
+function contentsLeak(contents, context) {
   return (
-    containsPrivatePath(filePath) ||
-    textLeaks(filePath, context) ||
     textLeaks(contents, context) ||
     (context.audioHashes.size > 0 && context.audioHashes.has(hash(contents)))
   );
+}
+
+function fileLeaks(filePath, contents, context, contentKey, contentLeakCache) {
+  if (containsPrivatePath(filePath) || textLeaks(filePath, context)) return true;
+  if (!contentKey) return contentsLeak(contents, context);
+  if (!contentLeakCache.has(contentKey)) {
+    contentLeakCache.set(contentKey, contentsLeak(contents, context));
+  }
+  return contentLeakCache.get(contentKey);
 }
 
 function removeMarkers(value, variants) {
@@ -258,9 +265,17 @@ export function scanPrivateStoryIsolation({
   trackedFiles = [],
 } = {}) {
   const context = createPrivacyContext({ audioHashes, markers, sourceUnits });
+  const contentLeakCache = new Map();
   const leakedPaths = [...trackedFiles, ...distFiles].filter(
-    ([label, contents, scannedPath, unreadable]) =>
-      unreadable || fileLeaks(scannedPath ?? label, contents, context),
+    ([label, contents, scannedPath, unreadable, contentKey]) =>
+      unreadable ||
+      fileLeaks(
+        scannedPath ?? label,
+        contents,
+        context,
+        contentKey,
+        contentLeakCache,
+      ),
   );
   const safePaths = leakedPaths.map(([label]) => safeLeakDiagnostic(label, context));
   const uniquePaths = [...new Set(safePaths)].sort();
@@ -729,10 +744,16 @@ async function historyFiles(projectRoot, baseRevision, budget) {
               entry.newObjectId,
             ]);
             blobCache.set(entry.newObjectId, contents);
+            budget.add(contents);
           }
-          budget.add(contents);
         }
-        files.push([label, contents, entry.path]);
+        files.push([
+          label,
+          contents,
+          entry.path,
+          false,
+          GIT_BLOB_MODES.has(entry.newMode) ? entry.newObjectId : undefined,
+        ]);
       }
     }
   }

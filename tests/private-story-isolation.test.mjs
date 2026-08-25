@@ -62,6 +62,24 @@ async function commit(projectRoot, message) {
   ]);
 }
 
+async function commitAndDeleteFiles(projectRoot, files) {
+  const filePaths = files.map(([filePath]) => filePath);
+  await Promise.all(
+    files.map(([filePath, contents]) =>
+      mkdir(join(projectRoot, filePath, ".."), { recursive: true }).then(() =>
+        writeFile(join(projectRoot, filePath), contents)
+      )
+    ),
+  );
+  await git(projectRoot, ["add", "--", ...filePaths]);
+  await commit(projectRoot, "add synthetic historical blobs");
+  const { stdout } = await git(projectRoot, ["rev-parse", "HEAD"]);
+  await Promise.all(filePaths.map((filePath) => rm(join(projectRoot, filePath))));
+  await git(projectRoot, ["add", "-u", "--", ...filePaths]);
+  await commit(projectRoot, "remove synthetic historical blobs");
+  return stdout.trim();
+}
+
 async function createReleaseAuditFixture({
   audioBytes = [
     Buffer.from("ID3 default synthetic narration one"),
@@ -1070,6 +1088,54 @@ describe("private story isolation scanner", () => {
     assert.equal(result.message.includes("Fixture Story"), false);
   });
 
+  it("charges one retained historical blob once across distinct paths", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const sharedBlob = Buffer.alloc(256 * 1024, 0xff);
+    Buffer.from("Fixture Story").copy(sharedBlob);
+    const filePaths = ["archive/copy-one.bin", "archive/copy-two.bin"];
+    const addCommit = await commitAndDeleteFiles(
+      projectRoot,
+      filePaths.map((filePath) => [filePath, sharedBlob]),
+    );
+
+    const result = await verifyPrivateStoryIsolation({
+      baseRevision,
+      maxScannedBytes: 320 * 1024,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+
+    assert.deepEqual(
+      result.leakedPaths,
+      filePaths.map(
+        (filePath) => `git-history ${addCommit.slice(0, 12)} ${filePath}`,
+      ),
+    );
+  });
+
+  it("charges distinct historical blobs separately", async () => {
+    const { baseRevision, projectRoot } = await createReleaseAuditFixture();
+    const firstBlob = Buffer.alloc(256 * 1024, 0xfe);
+    const secondBlob = Buffer.alloc(256 * 1024, 0xfd);
+    Buffer.from("Fixture Story").copy(firstBlob);
+    Buffer.from("Fixture Story").copy(secondBlob);
+    await commitAndDeleteFiles(projectRoot, [
+      ["archive/unique-one.bin", firstBlob],
+      ["archive/unique-two.bin", secondBlob],
+    ]);
+
+    await assert.rejects(
+      () =>
+        verifyPrivateStoryIsolation({
+          baseRevision,
+          maxScannedBytes: 320 * 1024,
+          projectRoot,
+          requirePrivateInputs: true,
+        }),
+      { message: "Private story isolation scan exceeded its byte budget" },
+    );
+  });
+
   it("reports a force-added transaction file after it was deleted from history", async () => {
     const { baseRevision, projectRoot } = await createReleaseAuditFixture();
     const leakedPath =
@@ -1381,7 +1447,7 @@ describe("private story isolation scanner", () => {
     ]);
   });
 
-  it("scans narration and marker bytes at raw POSIX worktree paths or fails closed", async () => {
+  it("scans narration and marker bytes at raw POSIX worktree paths", async (testContext) => {
     const privateAudio = Buffer.from("ID3 raw working-tree narration bytes");
     const { baseRevision, projectRoot } = await createReleaseAuditFixture({
       audioBytes: [privateAudio, Buffer.from("ID3 other narration bytes")],
@@ -1412,34 +1478,35 @@ describe("private story isolation scanner", () => {
       ),
     );
     await commit(projectRoot, "add raw working-tree paths");
-    const createdPathIndexes = [];
-    for (const [index, rawPath] of rawPaths.entries()) {
+    let createdPathCount = 0;
+    for (const rawPath of rawPaths) {
       try {
         await writeFile(
           Buffer.concat([Buffer.from(`${projectRoot}/`), rawPath]),
           "public content\n",
         );
-        createdPathIndexes.push(index);
+        createdPathCount += 1;
       } catch (error) {
         if (!["EILSEQ", "EINVAL", "ENOTSUP", "ERR_INVALID_ARG_TYPE"].includes(error?.code)) {
           throw error;
         }
+        testContext.skip("filesystem does not represent raw non-UTF-8 paths");
+        return;
       }
     }
 
-    if (createdPathIndexes.length === rawPaths.length) {
-      const cleanResult = await verifyPrivateStoryIsolation({
-        baseRevision,
-        projectRoot,
-        requirePrivateInputs: true,
-      });
-      assert.equal(cleanResult.status, "clean");
-    }
+    assert.equal(createdPathCount, 2);
+    const cleanResult = await verifyPrivateStoryIsolation({
+      baseRevision,
+      projectRoot,
+      requirePrivateInputs: true,
+    });
+    assert.equal(cleanResult.status, "clean");
 
     await Promise.all(
-      createdPathIndexes.map((index) =>
+      rawPaths.map((rawPath, index) =>
         writeFile(
-          Buffer.concat([Buffer.from(`${projectRoot}/`), rawPaths[index]]),
+          Buffer.concat([Buffer.from(`${projectRoot}/`), rawPath]),
           index === 0 ? privateAudio : Buffer.from("Fixture Story\n"),
         )
       ),
