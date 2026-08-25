@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const GUARDIAN_PASSWORD = "e2e-guardian-password";
 const LOCK_ERROR =
@@ -182,45 +183,102 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveCount(0);
 });
 
-test("a locked guardian deep link never flashes protected content", async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    const inspected = new WeakSet<Node>();
-    const inspect = (node: Node) => {
-      if (inspected.has(node)) return;
-      inspected.add(node);
-      if (
-        node instanceof HTMLHeadingElement &&
-        node.textContent?.trim() === "Story settings"
-      ) {
-        (window as Window & { __protectedHeadingSeen?: boolean })
-          .__protectedHeadingSeen = true;
-      }
-      node.childNodes.forEach(inspect);
-    };
-    document.addEventListener("DOMContentLoaded", () => {
-      inspect(document.body);
-      new MutationObserver((records) => {
-        records.forEach((record) => record.addedNodes.forEach(inspect));
-      }).observe(document.body, { childList: true, subtree: true });
-    });
-  });
-  await page.goto("/guardian/stories");
+for (const { path, protectedName, seedEditLesson } of [
+  { path: "/guardian", protectedName: "Guardian dashboard" },
+  {
+    path: "/guardian/profile?returnTo=%2Fguardian",
+    protectedName: "Learner details",
+  },
+  {
+    path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+    protectedName: "Update my profile",
+  },
+  { path: "/guardian/lessons", protectedName: "My Lessons" },
+  { path: "/guardian/stories", protectedName: "Story settings" },
+  { path: "/guardian/dubbing", protectedName: "Voice dubbing" },
+  {
+    path: "/profile?returnTo=%2Fguardian",
+    protectedName: "Learner details",
+  },
+  {
+    path: "/profile/setup?redo=1&returnTo=%2Fguardian",
+    protectedName: "Update my profile",
+  },
+  { path: "/lessons/my/create", protectedName: "Create a custom lesson" },
+  {
+    path: "/lessons/my/boundary-fixture/edit",
+    protectedName: "Edit Lesson",
+    seedEditLesson: true,
+  },
+]) {
+  test(`locked ${path} shows only the password gate`, async ({ page }) => {
+    if (seedEditLesson) {
+      await page.route("**/api/lessons/my/boundary-fixture", async (route) => {
+        await route.fulfill({
+          body: JSON.stringify({
+            lesson: {
+              id: "boundary-fixture",
+              lesson: createLessonScript(),
+              source: "generated",
+            },
+          }),
+          contentType: "application/json",
+          status: 200,
+        });
+      });
+    }
 
-  await expect(
-    page.getByRole("heading", { name: "Unlock guardian mode" }),
-  ).toBeVisible();
-  await expect(page).toHaveURL("/guardian/stories");
-  await expect(page.getByRole("heading", { name: "Story settings" })).toHaveCount(0);
-  expect(
-    await page.evaluate(
-      () =>
-        (window as Window & { __protectedHeadingSeen?: boolean })
-          .__protectedHeadingSeen ?? false,
-    ),
-  ).toBe(false);
-});
+    await page.addInitScript((expectedProtectedName) => {
+      const inspected = new WeakSet<Node>();
+      const inspect = (node: Node) => {
+        if (inspected.has(node)) return;
+        inspected.add(node);
+        if (
+          node instanceof HTMLHeadingElement &&
+          node.textContent?.trim() === expectedProtectedName
+        ) {
+          (window as Window & { __protectedHeadingSeen?: boolean })
+            .__protectedHeadingSeen = true;
+        }
+        node.childNodes.forEach(inspect);
+      };
+      document.addEventListener("DOMContentLoaded", () => {
+        inspect(document.body);
+        new MutationObserver((records) => {
+          records.forEach((record) => record.addedNodes.forEach(inspect));
+        }).observe(document.body, { childList: true, subtree: true });
+      });
+    }, protectedName);
+
+    const requestedUrl = guardianUrl(path, "learner");
+    await page.goto(requestedUrl);
+
+    await expect(
+      page.getByRole("heading", { name: "Unlock guardian mode" }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(requestedUrl);
+    await expect(
+      page.getByRole("heading", { name: protectedName }),
+    ).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { __protectedHeadingSeen?: boolean })
+            .__protectedHeadingSeen ?? false,
+      ),
+    ).toBe(false);
+
+    await page.getByRole("main").getByLabel("Password").fill(GUARDIAN_PASSWORD);
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: "Unlock guardian mode" })
+      .click();
+    await expect(page).toHaveURL(requestedUrl);
+    await expect(
+      page.getByRole("heading", { exact: true, name: protectedName }),
+    ).toBeVisible();
+  });
+}
 
 test("a guardian-mode duck dub deep link asks to switch profiles", async ({
   page,
