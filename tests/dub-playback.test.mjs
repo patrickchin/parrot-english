@@ -645,7 +645,7 @@ describe("duck dub playback", () => {
     assert.equal(audio.contexts[0].sources.length, 1);
   });
 
-  it("ends an all-unavailable four-line scene at zero duration", async () => {
+  it("keeps an all-unavailable scene on its authored clock with music", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const fallbacks = [];
@@ -688,17 +688,54 @@ describe("duck dub playback", () => {
     ]);
     assert.deepEqual(unavailable, ["line-5", "line-6", "line-7", "line-8"]);
     assert.equal(context.sources.length, 0);
-    assert.equal(context.oscillators.length, 0);
+    assert.equal(context.oscillators.length, 25);
 
-    context.currentTime = 10.12;
+    context.currentTime = 18.12;
     raf.runNext();
 
-    assert.deepEqual(ticks, [0]);
+    assert.deepEqual(ticks.map(Math.round), [8_000]);
+    assert.equal(ended, 0);
+    assert.equal(raf.callbacks.size, 1);
+
+    context.currentTime = 26.12;
+    raf.runNext();
+
+    assert.deepEqual(ticks.map(Math.round), [8_000, 16_000]);
     assert.equal(ended, 1);
     assert.equal(context.closeCalls, 1);
     assert.equal(raf.callbacks.size, 0);
     playback.stop();
     assert.equal(context.closeCalls, 1);
+  });
+
+  it("holds a scene through a missing trailing slot and a longer decoded tail", async () => {
+    const audio = createAudioHarness({ decodeDurations: { "line-7": 10 } });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      async fetch(url, init) {
+        if (lineIdFromUrl(url) === "line-8") {
+          return new Response(null, { status: 503 });
+        }
+        return audio.fetch(url, init);
+      },
+      lines: DUB_VERSES[1],
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    assert.equal(context.oscillators.length, 28);
+    context.currentTime = 28.12;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [18_000]);
+    assert.equal(ended, 1);
   });
 
   it("classifies a preferred body-read failure as fetch before loading its guide", async () => {

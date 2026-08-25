@@ -15,6 +15,7 @@ export type ControlVariant =
   | "success"
   | "surface";
 export type ControlSize =
+  | "none"
   | "compact"
   | "default"
   | "large"

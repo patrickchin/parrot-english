@@ -6,6 +6,8 @@ const MOCK_AUDIO_DELAY_MS = 200;
 const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
 const MOCK_RECORDING_DELAY_MS = 5000;
 const playedAudioSources: string[] = [];
+const createdObjectUrls: string[] = [];
+const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
@@ -17,6 +19,8 @@ const E2E_DUB_SCENARIOS = new Set([
   "delete-failed",
   "delete-held",
   "empty",
+  "load-held",
+  "multiple-source-failed",
   "partial",
   "complete",
   "playback-setup-failed",
@@ -274,6 +278,20 @@ function getE2eDubScenario() {
   return scenario && E2E_DUB_SCENARIOS.has(scenario) ? scenario : null;
 }
 
+if (getE2eDubScenario()) {
+  const createObjectURL = URL.createObjectURL.bind(URL);
+  const revokeObjectURL = URL.revokeObjectURL.bind(URL);
+  URL.createObjectURL = (blob) => {
+    const url = createObjectURL(blob);
+    createdObjectUrls.push(url);
+    return url;
+  };
+  URL.revokeObjectURL = (url) => {
+    revokedObjectUrls.push(url);
+    revokeObjectURL(url);
+  };
+}
+
 function getE2eProfileScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
     "parrotE2eProfile",
@@ -416,6 +434,7 @@ function initialE2eDubLineIds(scenario: string) {
     scenario === "both-source-failed" ||
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
+    scenario === "multiple-source-failed" ||
     scenario === "playback-setup-failed" ||
     scenario === "reset-delete-failed" ||
     scenario === "reset-interrupted"
@@ -487,13 +506,20 @@ function createE2eDubStore(scenario: string | null) {
       );
       if (method === "GET" && guideMatch) {
         guideFetches.push(url.pathname);
-        if (scenario === "both-source-failed" && guideMatch[1] === "line-5") {
+        if (
+          (scenario === "both-source-failed" && guideMatch[1] === "line-5") ||
+          (scenario === "multiple-source-failed" && ["line-5", "line-8"].includes(guideMatch[1]))
+        ) {
+          if (scenario === "multiple-source-failed" && guideMatch[1] === "line-5") {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
+          }
           return new Response(null, { status: 503 });
         }
         return null;
       }
       if (url.pathname === E2E_DUB_API) {
         if (method === "GET") {
+          if (scenario === "load-held") return new Promise<Response>(() => {});
           if (resetInterrupted) {
             return Response.json(
               {
@@ -562,7 +588,10 @@ function createE2eDubStore(scenario: string | null) {
       const [, lineId, audioPath] = lineMatch;
       if (method === "GET" && audioPath) {
         privateFetches.push(url.pathname);
-        if (scenario === "both-source-failed" && lineId === "line-5") {
+        if (
+          (scenario === "both-source-failed" && lineId === "line-5") ||
+          (scenario === "multiple-source-failed" && ["line-5", "line-8"].includes(lineId))
+        ) {
           return new Response(null, { status: 503 });
         }
         if (failAudioFetch) {
@@ -622,9 +651,11 @@ function createE2eDubStore(scenario: string | null) {
     snapshot() {
       return {
         audioContextDoubleCloses,
+        createdObjectUrls: [...createdObjectUrls],
         guideFetches: [...guideFetches],
         playedAudioSources: [...playedAudioSources],
         privateFetches: [...privateFetches],
+        revokedObjectUrls: [...revokedObjectUrls],
         uploads: [...uploads],
       };
     },

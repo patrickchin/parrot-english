@@ -155,7 +155,12 @@ function getPlaybackScope(lines: readonly DubLine[]) {
   const endLineIndex = firstLineIndex + lines.length;
   const fullDub = firstLineIndex === 0 && endLineIndex === DUB_LINES.length;
   const cueOffsetMs = fullDub ? 0 : lines[0].cueMs;
-  return { cueOffsetMs, fullDub };
+  const authoredEndMs = DUB_LINES[endLineIndex]?.cueMs ?? DUB_DURATION_MS;
+  return {
+    authoredDurationMs: authoredEndMs - cueOffsetMs,
+    cueOffsetMs,
+    fullDub,
+  };
 }
 
 export async function startDubPlayback({
@@ -172,7 +177,7 @@ export async function startDubPlayback({
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
-  const { cueOffsetMs, fullDub } = getPlaybackScope(lines);
+  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines);
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -299,7 +304,7 @@ export async function startDubPlayback({
     if (signal?.aborted) throw createAbortError();
     const durationMs = fullDub
       ? DUB_DURATION_MS
-      : Math.max(0, ...decodedLines.map(([line, buffer]) =>
+      : Math.max(authoredDurationMs, ...decodedLines.map(([line, buffer]) =>
           line.cueMs - cueOffsetMs + buffer.duration * 1_000));
     await Promise.race([context.resume(), startupAbort]);
     if (signal?.aborted) throw createAbortError();

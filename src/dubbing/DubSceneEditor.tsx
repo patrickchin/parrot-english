@@ -6,10 +6,11 @@ import { DubTakeWaveform } from "./DubTakeWaveform";
 import {
   DUB_LINES,
   DUB_LINES_PER_VERSE,
+  DUB_SCENE_TITLES,
   DUB_VERSES,
   type DubLine,
 } from "./dub-script";
-import type { DubOperation } from "./dub-state";
+import { getDubSceneStatus, type DubOperation } from "./dub-state";
 
 export type DubSceneEditorProps = {
   activeLine: DubLine;
@@ -36,18 +37,22 @@ export type DubSceneEditorProps = {
   visualLine: DubLine;
 };
 
-function lineState({
+function getLineState({
   activeLine,
   line,
   needsRetake,
   saved,
 }: Pick<DubSceneEditorProps, "activeLine" | "needsRetake" | "saved"> & { line: DubLine }) {
-  const state = needsRetake.has(line.id)
-    ? "needs retake"
+  const label = needsRetake.has(line.id)
+    ? "Needs retake"
     : Object.hasOwn(saved, line.id)
-      ? "recorded"
-      : "generated";
-  return line.id === activeLine.id ? `selected, ${state}` : state;
+      ? "Recorded"
+      : "Generated";
+  const selected = line.id === activeLine.id;
+  return {
+    accessible: `${selected ? "selected, " : ""}${label.toLowerCase()}`,
+    label: selected ? `Selected · ${label}` : label,
+  };
 }
 
 export function DubSceneEditor({
@@ -75,6 +80,11 @@ export function DubSceneEditor({
   visualLine,
 }: DubSceneEditorProps) {
   const sceneLines = DUB_VERSES[activeSceneIndex] ?? DUB_VERSES[0];
+  const sceneTitle = DUB_SCENE_TITLES[activeSceneIndex] ?? DUB_SCENE_TITLES[0];
+  const retakeState: Record<string, true> = Object.fromEntries(
+    [...needsRetake].map((lineId) => [lineId, true]),
+  );
+  const sceneStatus = getDubSceneStatus({ needsRetake: retakeState, saved }, activeSceneIndex);
   const activeSceneLineIndex = Math.max(0, DUB_LINES.indexOf(activeLine));
   const sceneNumber = Math.floor(activeSceneLineIndex / DUB_LINES_PER_VERSE) + 1;
   const recording = operation === "recording";
@@ -89,47 +99,54 @@ export function DubSceneEditor({
   const takeLabel = operation === "take-playing" ? "Stop my voice" : "Hear my voice";
 
   return (
-    <main aria-busy={locked} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
-      <section aria-label="Scene editor workspace" className="mx-auto grid w-full max-w-[1600px] gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
-        <section className="grid content-start gap-4">
+    <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
+      <section aria-label="Scene editor workspace" className="mx-auto grid w-full max-w-[1600px] gap-5 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,0.95fr)_minmax(20rem,1.05fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.55fr)_minmax(22rem,0.9fr)]">
+        <section className="grid content-start gap-4 short-wide:min-h-0 short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:gap-1">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <TextButton className="min-h-12 gap-1" disabled={navigationLocked} onClick={onBack}>Back to full video</TextButton>
             <p aria-current="page" className="m-0 font-black text-brand-blue">
               Scene {sceneNumber} of {DUB_VERSES.length}
             </p>
           </div>
-          <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
+          <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl">
             <DuckScene compact line={visualLine} playing={operation === "playback"} />
           </section>
         </section>
 
-        <aside aria-label="Scene line controls" className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
-          <div>
+        <aside aria-label="Scene line controls" className="grid content-start gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card short-wide:min-h-0 short-wide:grid-cols-[6.5rem_minmax(0,1fr)] short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:content-stretch short-wide:gap-1 short-wide:rounded-2xl short-wide:p-2">
+          <div className="short-wide:col-span-2 short-wide:flex short-wide:items-end short-wide:justify-between short-wide:gap-2">
             <p className="m-0 text-sm font-black uppercase tracking-[0.16em] text-brand-blue">Choose a line</p>
-            <h1 className="m-0 text-2xl text-brand-ink" ref={sceneHeadingRef} tabIndex={-1}>Record this scene</h1>
+            <div>
+              <h1 className="m-0 text-2xl text-brand-ink short-wide:text-lg" ref={sceneHeadingRef} tabIndex={-1}>{sceneTitle}</h1>
+              <p className="m-0 text-sm font-black text-brand-blue short-wide:text-xs">{sceneStatus.recorded} of 4 recorded</p>
+            </div>
           </div>
-          <section aria-label="Scene line selectors" className="grid grid-cols-2 gap-2">
+          <section aria-label="Scene line selectors" className="grid grid-cols-2 gap-2 short-wide:grid-cols-1 short-wide:gap-1">
             {sceneLines.map((line, index) => {
               const selected = line.id === activeLine.id;
+              const state = getLineState({ activeLine, line, needsRetake, saved });
               return (
                 <ActionButton
+                  align="start"
                   aria-current={selected ? "true" : undefined}
-                  aria-label={`Line ${index + 1}, ${lineState({ activeLine, line, needsRetake, saved })}`}
-                  className="min-h-16 rounded-2xl px-3 py-2 text-left text-sm"
+                  aria-label={`Line ${index + 1}, ${state.accessible}`}
+                  className="grid min-h-16 w-full min-w-0 content-center justify-items-start gap-1 rounded-2xl px-2 py-2 text-left text-sm short-wide:min-h-12 short-wide:gap-0 short-wide:px-1.5 short-wide:py-1 short-wide:text-xs"
                   disabled={navigationLocked}
                   key={line.id}
                   onClick={() => onSelectLine(line.id)}
                   shape="rounded"
+                  size="none"
                   variant={selected ? "navy" : "surface"}
                 >
-                  Line {index + 1}
+                  <span>Line {index + 1}</span>
+                  <span className="text-xs normal-case short-wide:text-[0.65rem]">{state.label}</span>
                 </ActionButton>
               );
             })}
           </section>
 
-          <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3">
-            <h2 className="m-0 text-xl font-black leading-snug text-brand-ink" ref={lineHeadingRef} tabIndex={-1}>{activeLine.text}</h2>
+          <section aria-label="Line controls" className="grid gap-3 rounded-2xl bg-sky-50 p-3 short-wide:col-start-2 short-wide:row-start-2 short-wide:min-h-0 short-wide:content-start short-wide:gap-1 short-wide:p-1.5">
+            <h2 className="m-0 text-xl font-black leading-snug text-brand-ink short-wide:text-sm" ref={lineHeadingRef} tabIndex={-1}>{activeLine.text}</h2>
             <ActionButton
               aria-label={playbackLabel}
               disabled={operation === "playback-loading" || navigationLocked}

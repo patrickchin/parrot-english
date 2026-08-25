@@ -116,7 +116,7 @@ export function DubEntry({
 }) {
   const loading = error !== "" || resetInterrupted;
   return (
-    <main aria-busy={deleting} className="min-h-dvh overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
+    <main aria-busy={deleting} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-2xl gap-4 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-card">
         <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
         {loading ? (
@@ -199,7 +199,7 @@ export function DubLoading({
     );
   }
   return (
-    <main aria-busy={deleting} className="grid min-h-dvh place-items-center bg-story-shelf px-3 pt-20">
+    <main aria-busy={deleting} className="grid h-dvh w-screen place-items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pt-20">
       <section className="grid justify-items-center gap-4">
         <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
         <ActionButton disabled>Loading your private dub…</ActionButton>
@@ -506,7 +506,7 @@ export function DuckDub() {
     const controller = new AbortController();
     const sceneIndex = state.selectedSceneIndex;
     const lines = scope === "full" ? DUB_LINES : DUB_VERSES[sceneIndex];
-    let unavailableMessage = "";
+    const unavailableLineIds = new Set<DubLine["id"]>();
     playbackControllerRef.current = controller;
     setPlaybackLineIndex(scope === "full" ? 0 : sceneIndex * DUB_LINES_PER_VERSE);
     dispatch({ type: "OPERATION_STARTED", operation: "playback-loading", playbackScope: scope });
@@ -527,7 +527,7 @@ export function DuckDub() {
           dispatch({ type: "MARK_NEEDS_RETAKE", lineId });
         },
         onLineUnavailable(lineId) {
-          unavailableMessage = unavailableLineMessage(lineId);
+          unavailableLineIds.add(lineId);
         },
         onTick(elapsedMs) {
           if (generation !== mediaGenerationRef.current) return;
@@ -545,6 +545,10 @@ export function DuckDub() {
       }
       playbackRef.current = playback;
       dispatch({ type: "OPERATION_STARTED", operation: "playback", playbackScope: scope });
+      const unavailableMessage = DUB_LINES
+        .filter(({ id }) => unavailableLineIds.has(id))
+        .map(({ id }) => unavailableLineMessage(id))
+        .join(" ");
       if (unavailableMessage) dispatch({ type: "SET_ERROR", message: unavailableMessage });
     } catch (error) {
       if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
@@ -556,8 +560,9 @@ export function DuckDub() {
 
   function handleContinue() {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    cancelMedia(true);
+    const generation = cancelMedia(true);
     dispatch({ type: "CONTINUE" });
+    focusAfterRender(sceneHeadingRef, generation);
   }
 
   function handleOpenScene(sceneIndex: number) {
@@ -569,7 +574,7 @@ export function DuckDub() {
 
   function handleSelectLine(lineId: string) {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    const generation = cancelMedia(true);
+    const generation = cancelMedia(lineId !== DUB_LINES[state.selectedLineIndex].id);
     dispatch({ type: "SELECT_LINE", lineId });
     focusAfterRender(lineHeadingRef, generation);
   }

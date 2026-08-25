@@ -81,8 +81,10 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, />0 of 24 voice clips recorded</);
     assert.match(html, />Continue Scene 1</);
     for (let scene = 1; scene <= 6; scene += 1) {
-      assert.match(html, new RegExp(`aria-label="Scene ${scene}, draft"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene}, Not started"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene} thumbnail"[^>]*role="img"`));
     }
+    assert.equal((html.match(/>Not started</g) ?? []).length, 6);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
   });
 
@@ -95,8 +97,21 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, />All scenes recorded</);
     assert.doesNotMatch(html, /Continue Scene/);
     for (let scene = 1; scene <= 6; scene += 1) {
-      assert.match(html, new RegExp(`aria-label="Scene ${scene}, recorded"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene}, Done"`));
     }
+  });
+
+  it("keeps an all-saved project a Draft when a private take needs retake", () => {
+    const html = renderProjectHome({
+      activeLine: DUB_LINES[4],
+      needsRetake: new Set(["line-5"]),
+      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+    });
+    assert.match(html, />Draft</);
+    assert.doesNotMatch(html, />Your dub</);
+    assert.match(html, />All scenes recorded</);
+    assert.doesNotMatch(html, /Continue Scene/);
+    assert.match(html, /aria-label="Scene 2, Needs retake"/);
   });
 
   it("continues from the first missing scene independently of the preview", () => {
@@ -116,7 +131,7 @@ describe("duck dubbing storyboard presentation", () => {
       saved: { "line-5": "saved" },
     });
     assert.match(html, /aria-label="Stop full video"/);
-    assert.match(html, /aria-label="Scene 2, needs retake"/);
+    assert.match(html, /aria-label="Scene 2, Needs retake"/);
     assert.match(html, /role="alert"/);
   });
 
@@ -135,9 +150,14 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, />Back to full video</);
     assert.match(html, /aria-label="Play this scene"/);
     assert.match(html, /aria-current="page"[^>]*>Scene 1 of 6/);
+    assert.match(html, /<h1[^>]*>Five little ducks<\/h1>/);
+    assert.match(html, />1 of 4 recorded</);
     assert.match(html, /aria-current="true"[^>]*aria-label="Line 1, selected, recorded"/);
     assert.match(html, /aria-label="Line 2, generated"/);
     assert.match(html, /aria-label="Line 3, needs retake"/);
+    assert.match(html, />Selected · Recorded</);
+    assert.match(html, />Generated</);
+    assert.match(html, />Needs retake</);
     assert.match(html, /Hear example/);
     assert.match(html, /aria-label="Record line"/);
     assert.doesNotMatch(html, /Next line/);
@@ -197,7 +217,7 @@ describe("duck dubbing storyboard presentation", () => {
     const deletingProject = renderProjectHome({ deleting: true, locked: true });
     assert.match(deletingProject, /<main[^>]*aria-busy="true"/);
     assert.match(deletingProject, /aria-label="Play full video"[^>]*disabled/);
-    assert.match(deletingProject, /aria-label="Scene 1, draft"[^>]*disabled/);
+    assert.match(deletingProject, /aria-label="Scene 1, Not started"[^>]*disabled/);
     assert.match(deletingProject, /<button[^>]*disabled[^>]*>Deleting my dub…<\/button>/);
 
     const deletingScene = renderSceneEditor({ locked: true, operation: "deleting" });
