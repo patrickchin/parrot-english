@@ -30,6 +30,7 @@ function slotKey(slot: LessonRecordingSlot): string {
 export function createLessonRecordingQueue({ save }: { save: Save }) {
   const tails = new Map<string, Promise<void>>();
   const failures = new Map<string, RetainedFailure>();
+  const generations = new Map<string, number>();
   const listeners = new Set<() => void>();
   let pending = 0;
   let currentSnapshot: RecordingSnapshot = { pending: 0, failed: 0 };
@@ -47,6 +48,9 @@ export function createLessonRecordingQueue({ save }: { save: Save }) {
 
   function enqueue(slot: LessonRecordingSlot, blob: Blob): void {
     const key = slotKey(slot);
+    const generation = (generations.get(key) ?? 0) + 1;
+    generations.set(key, generation);
+    failures.delete(key);
     pending += 1;
     publish();
     const previous = tails.get(key) ?? Promise.resolve();
@@ -55,11 +59,15 @@ export function createLessonRecordingQueue({ save }: { save: Save }) {
       .then(async () => {
         try {
           await save(blob, slot);
-          failures.delete(key);
-          publish();
+          if (generations.get(key) === generation) {
+            failures.delete(key);
+            publish();
+          }
         } catch {
-          failures.set(key, { blob, slot });
-          publish();
+          if (generations.get(key) === generation) {
+            failures.set(key, { blob, slot });
+            publish();
+          }
         } finally {
           pending -= 1;
           publish();

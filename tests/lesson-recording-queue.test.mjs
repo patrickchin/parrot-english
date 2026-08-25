@@ -25,6 +25,42 @@ function flush() {
 }
 
 describe("lesson recording save queue", () => {
+  it("does not retry an older failure behind a newer in-flight capture", async () => {
+    const older = new Blob(["older"], { type: "audio/webm" });
+    const newer = new Blob(["newer"], { type: "audio/webm" });
+    const firstSave = deferred();
+    const newerSave = deferred();
+    const saved = [];
+    let attempts = 0;
+    const save = async (blob) => {
+      saved.push(blob);
+      if (attempts++ === 0) {
+        await firstSave.promise;
+        throw new Error("offline");
+      }
+      if (attempts === 2) {
+        await newerSave.promise;
+        throw new Error("still offline");
+      }
+      return { saved: true, recordedAt: "now" };
+    };
+    const queue = createLessonRecordingQueue({ save });
+
+    queue.enqueue(PARROT_SLOT, older);
+    await flush();
+    firstSave.resolve();
+    await queue.settle();
+
+    queue.enqueue(PARROT_SLOT, newer);
+    await flush();
+    const retry = queue.retryFailed();
+    newerSave.resolve();
+    await retry;
+
+    assert.deepEqual(saved, [older, newer]);
+    assert.equal(queue.snapshot().failed, 1);
+  });
+
   it("serializes saves for one slot in enqueue order", async () => {
     const gates = [deferred(), deferred()];
     const saved = [];
@@ -92,6 +128,25 @@ describe("lesson recording save queue", () => {
     gates[1].resolve();
     await queue.settle();
     assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
+  });
+
+  it("does not construct abort controllers", async () => {
+    const OriginalAbortController = globalThis.AbortController;
+    let constructed = 0;
+    globalThis.AbortController = function (...args) {
+      constructed += 1;
+      return new OriginalAbortController(...args);
+    };
+    try {
+      const queue = createLessonRecordingQueue({
+        save: async () => ({ saved: true, recordedAt: "now" }),
+      });
+      queue.enqueue(PARROT_SLOT, new Blob(["audio"], { type: "audio/webm" }));
+      await queue.settle();
+      assert.equal(constructed, 0);
+    } finally {
+      globalThis.AbortController = OriginalAbortController;
+    }
   });
 
   it("retains only the newest thrown failure per slot and retries it", async () => {
