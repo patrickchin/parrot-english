@@ -10,9 +10,10 @@ import {
   getDubLineAtElapsed,
 } from "../src/dubbing/dub-script.ts";
 import {
-  createInitialDubState,
+  createInitialDubEditorState,
   firstMissingDubLineIndex,
-  reduceDubState,
+  getDubSceneStatus,
+  reduceDubEditorState,
 } from "../src/dubbing/dub-state.ts";
 
 describe("five little ducks dub domain", () => {
@@ -92,157 +93,183 @@ describe("five little ducks dub domain", () => {
     assert.equal(dubScript.getDubVerseLineAtElapsed(1, 17_999).id, "line-8");
   });
 
-  it("resumes at the first missing line and unlocks the final replay", () => {
+  it("resumes at the first missing line and opens exact scene selections", () => {
     assert.equal(firstMissingDubLineIndex(new Set(["line-1", "line-2"])), 2);
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDubEditorState(createInitialDubEditorState(), {
       type: "LOADED",
-      savedLineIds: DUB_LINES.map(({ id }) => id),
+      savedLineIds: DUB_LINES.slice(0, 5).map(({ id }) => id),
     });
-    assert.equal(state.currentLineIndex, 0);
-    state = reduceDubState(state, { type: "CONFIRMED" });
-    assert.equal(state.phase, "final-ready");
+    state = reduceDubEditorState(state, { type: "CONFIRMED" });
+    assert.equal(state.view, "project");
+    state = reduceDubEditorState(state, { type: "CONTINUE" });
+    assert.deepEqual(
+      [state.view, state.selectedSceneIndex, state.selectedLineIndex],
+      ["scene", 1, 5],
+    );
+    state = reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
+    assert.deepEqual([state.selectedSceneIndex, state.selectedLineIndex], [4, 16]);
+    state = reduceDubEditorState(state, { type: "SELECT_LINE", lineId: "line-20" });
+    assert.equal(state.selectedLineIndex, 19);
   });
 
-  it("selects only canonical saved lines without leaving final-ready", () => {
-    const saved = Object.fromEntries(
-      DUB_LINES.map(({ id }) => [id, "2026-08-25T10:00:00.000Z"]),
+  it("reports every scene status from saved and retake state", () => {
+    assert.deepEqual(
+      getDubSceneStatus({ needsRetake: {}, saved: {} }, 0),
+      { kind: "not-started", recorded: 0 },
     );
-    const state = {
-      ...createInitialDubState(),
-      error: "Old playback error",
-      phase: "final-ready",
-      saved,
-    };
-
-    const selected = reduceDubState(state, {
-      type: "SELECT_LINE",
-      lineId: "line-5",
-    });
-    assert.equal(selected.currentLineIndex, 4);
-    assert.equal(selected.error, "");
-    assert.equal(selected.phase, "final-ready");
-    assert.equal(selected.saved, saved);
-
-    assert.equal(
-      reduceDubState(state, { type: "SELECT_LINE", lineId: "line-99" }),
-      state,
+    assert.deepEqual(
+      getDubSceneStatus(
+        {
+          needsRetake: {},
+          saved: { "line-1": "2026-08-25T10:00:00.000Z" },
+        },
+        0,
+      ),
+      { kind: "in-progress", recorded: 1 },
     );
-    const unsaved = { ...state, saved: { "line-1": saved["line-1"] } };
-    assert.equal(
-      reduceDubState(unsaved, { type: "SELECT_LINE", lineId: "line-5" }),
-      unsaved,
+    assert.deepEqual(
+      getDubSceneStatus(
+        {
+          needsRetake: {},
+          saved: Object.fromEntries(
+            DUB_LINES.slice(0, 4).map(({ id }) => [id, "2026-08-25T10:00:00.000Z"]),
+          ),
+        },
+        0,
+      ),
+      { kind: "done", recorded: 4 },
     );
-
-    const inherited = {
-      ...state,
-      saved: Object.create({ "line-5": saved["line-5"] }),
-    };
-    assert.equal(
-      reduceDubState(inherited, { type: "SELECT_LINE", lineId: "line-5" }),
-      inherited,
+    assert.deepEqual(
+      getDubSceneStatus(
+        {
+          needsRetake: { "line-4": true },
+          saved: {
+            "line-1": "2026-08-25T10:00:00.000Z",
+            "line-2": "2026-08-25T10:00:00.000Z",
+            "line-3": "2026-08-25T10:00:00.000Z",
+            "line-4": "2026-08-25T10:00:00.000Z",
+          },
+        },
+        0,
+      ),
+      { kind: "needs-retake", recorded: 4 },
     );
   });
 
-  it("keeps a failed upload reviewable and advances after a saved take", () => {
-    let state = reduceDubState(createInitialDubState(), {
+  it("keeps the same line selected after save and clears needs-retake replacements", () => {
+    let state = reduceDubEditorState(createInitialDubEditorState(), {
       type: "LOADED",
-      savedLineIds: [],
+      savedLineIds: DUB_LINES.slice(0, 20).map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
-    state = reduceDubState(state, { type: "MIC_OPENING" });
-    state = reduceDubState(state, { type: "MIC_STARTED" });
-    state = reduceDubState(state, { type: "SAVE_STARTED" });
-    state = reduceDubState(state, {
+    state = reduceDubEditorState(state, { type: "CONFIRMED" });
+    state = reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
+    state = reduceDubEditorState(state, { type: "SELECT_LINE", lineId: "line-20" });
+    state = reduceDubEditorState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-20" });
+    state = reduceDubEditorState(state, {
+      type: "OPERATION_STARTED",
+      operation: "saving",
+    });
+    state = reduceDubEditorState(state, {
+      type: "SAVE_SUCCEEDED",
+      lineId: "line-20",
+      recordedAt: "2026-08-25T10:00:00.000Z",
+    });
+    assert.deepEqual(
+      [state.view, state.selectedSceneIndex, state.selectedLineIndex],
+      ["scene", 4, 19],
+    );
+    assert.equal(state.saved["line-20"], "2026-08-25T10:00:00.000Z");
+    assert.equal(state.needsRetake["line-20"], undefined);
+    assert.equal(state.operation, "idle");
+    assert.equal(state.saveRecovery, null);
+  });
+
+  it("allows safe back navigation and blocks scene changes during save or retry recovery", () => {
+    let state = reduceDubEditorState(createInitialDubEditorState(), {
+      type: "LOADED",
+      savedLineIds: DUB_LINES.slice(0, 8).map(({ id }) => id),
+    });
+    state = reduceDubEditorState(state, { type: "CONFIRMED" });
+    state = reduceDubEditorState(state, { type: "CONTINUE" });
+    state = reduceDubEditorState(state, { type: "BACK_TO_PROJECT" });
+    assert.equal(state.view, "project");
+
+    state = reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 2 });
+    state = reduceDubEditorState(state, {
+      type: "OPERATION_STARTED",
+      operation: "saving",
+    });
+    const savingState = state;
+    assert.equal(
+      reduceDubEditorState(state, { type: "SELECT_LINE", lineId: "line-12" }),
+      savingState,
+    );
+    assert.equal(
+      reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 4 }),
+      savingState,
+    );
+    assert.equal(
+      reduceDubEditorState(state, { type: "BACK_TO_PROJECT" }),
+      savingState,
+    );
+
+    state = reduceDubEditorState(state, {
       type: "SAVE_FAILED",
       message: "Try again.",
       recovery: "save",
     });
-    assert.equal(state.phase, "save-error");
+    const retryState = state;
+    assert.equal(state.error, "Try again.");
     assert.equal(state.saveRecovery, "save");
-    state = reduceDubState(state, {
-      type: "SAVE_FAILED",
-      message: "Record again.",
-      recovery: "record",
+    assert.equal(state.operation, "idle");
+    assert.equal(
+      reduceDubEditorState(state, { type: "SELECT_LINE", lineId: "line-12" }),
+      retryState,
+    );
+    assert.equal(
+      reduceDubEditorState(state, { type: "OPEN_SCENE", sceneIndex: 4 }),
+      retryState,
+    );
+    assert.equal(
+      reduceDubEditorState(state, { type: "BACK_TO_PROJECT" }),
+      retryState,
+    );
+
+    state = reduceDubEditorState(state, {
+      type: "CLEAR_NEEDS_RETAKE",
+      lineId: "line-12",
     });
-    assert.equal(state.saveRecovery, "record");
-    state = reduceDubState(state, {
-      type: "SAVE_SUCCEEDED",
-      lineId: "line-1",
-      recordedAt: "2026-08-25T10:00:00.000Z",
-    });
-    assert.equal(state.phase, "line-review");
-    state = reduceDubState(state, { type: "NEXT_LINE" });
-    assert.equal(state.currentLineIndex, 1);
+    state = reduceDubEditorState(state, { type: "OPERATION_FINISHED" });
+    state = reduceDubEditorState(state, { type: "SET_ERROR", message: "Cleared." });
+    assert.equal(state.operation, "idle");
+    assert.equal(state.error, "Cleared.");
   });
 
-  it("previews each newly completed four-line verse before advancing", () => {
-    let state = reduceDubState(createInitialDubState(), {
+  it("resets the editor back to intro", () => {
+    let state = reduceDubEditorState(createInitialDubEditorState(), {
       type: "LOADED",
-      savedLineIds: ["line-1", "line-2", "line-3"],
+      savedLineIds: DUB_LINES.map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
-    assert.equal(state.currentLineIndex, 3);
-    assert.equal(state.lineMode, "fresh");
-
-    state = reduceDubState(state, {
-      type: "SAVE_SUCCEEDED",
-      lineId: "line-4",
-      recordedAt: "2026-08-25T10:00:00.000Z",
+    state = reduceDubEditorState(state, { type: "CONFIRMED" });
+    state = reduceDubEditorState(state, { type: "CONTINUE" });
+    state = reduceDubEditorState(state, {
+      type: "OPERATION_STARTED",
+      operation: "playback",
+      playbackScope: "scene",
     });
-    state = reduceDubState(state, { type: "VERSE_LOADING" });
-    assert.equal(state.phase, "verse-loading");
-    state = reduceDubState(state, { type: "VERSE_STARTED" });
-    assert.equal(state.phase, "verse-playing");
-    state = reduceDubState(state, { type: "VERSE_FAILED" });
-    assert.equal(state.phase, "line-review");
-    assert.equal(state.currentLineIndex, 3);
-    state = reduceDubState(state, { type: "VERSE_LOADING" });
-    state = reduceDubState(state, { type: "VERSE_STARTED" });
-    state = reduceDubState(state, { type: "VERSE_FINISHED" });
-    assert.equal(state.phase, "line-ready");
-    assert.equal(state.currentLineIndex, 4);
-    assert.equal(state.lineMode, "fresh");
-  });
-
-  it("returns a completed-dub replacement directly to the final replay", () => {
-    const savedLineIds = DUB_LINES.map(({ id }) => id);
-    let state = reduceDubState(createInitialDubState(), {
-      type: "LOADED",
-      savedLineIds,
+    state = reduceDubEditorState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-1" });
+    state = reduceDubEditorState(state, { type: "SET_ERROR", message: "Something happened." });
+    state = reduceDubEditorState(state, { type: "RESET_SUCCEEDED" });
+    assert.deepEqual(state, {
+      error: "",
+      needsRetake: {},
+      operation: "idle",
+      playbackScope: null,
+      saveRecovery: null,
+      saved: {},
+      selectedLineIndex: 0,
+      selectedSceneIndex: 0,
+      view: "intro",
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
-    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-8" });
-    state = reduceDubState(state, { type: "RETAKE" });
-    assert.equal(state.lineMode, "replacement");
-    state = reduceDubState(state, {
-      type: "SAVE_SUCCEEDED",
-      lineId: "line-8",
-      recordedAt: "2026-08-25T10:00:00.000Z",
-    });
-    state = reduceDubState(state, { type: "NEXT_LINE" });
-    assert.equal(state.phase, "final-ready");
-  });
-
-  it("marks the default final line as a replacement without a select change", () => {
-    let state = reduceDubState(createInitialDubState(), {
-      type: "LOADED",
-      savedLineIds: DUB_LINES.slice(0, 23).map(({ id }) => id),
-    });
-    state = reduceDubState(state, { type: "CONFIRMED" });
-    state = reduceDubState(state, {
-      type: "SAVE_SUCCEEDED",
-      lineId: "line-24",
-      recordedAt: "2026-08-25T10:00:00.000Z",
-    });
-    state = reduceDubState(state, { type: "VERSE_LOADING" });
-    state = reduceDubState(state, { type: "VERSE_STARTED" });
-    state = reduceDubState(state, { type: "VERSE_FINISHED" });
-    assert.equal(state.phase, "final-ready");
-    assert.equal(state.currentLineIndex, 23);
-    assert.equal(state.lineMode, "fresh");
-
-    state = reduceDubState(state, { type: "RETAKE" });
-    assert.equal(state.phase, "line-ready");
-    assert.equal(state.lineMode, "replacement");
   });
 });
