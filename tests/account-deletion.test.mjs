@@ -28,6 +28,12 @@ const LEGACY_LINE_IDS = Array.from(
   (_, index) => `line-${index + 1}`,
 );
 const legacySlotKey = (lineId) => `${LEGACY_DUB_PREFIX}${lineId}.audio`;
+const learnerDubPrefix = (learnerProfileId) =>
+  `${USER_PREFIX}learners/${learnerProfileId}/learner-dubs/five-little-ducks-v2/`;
+const learnerMarkerKey = (learnerProfileId) =>
+  `${learnerDubPrefix(learnerProfileId)}.dub-generation`;
+const learnerSlotKey = (learnerProfileId, lineId) =>
+  `${learnerDubPrefix(learnerProfileId)}${lineId}.audio`;
 const CLOSURE_KEYS = [
   MARKER_KEY,
   ...LINE_IDS.map(slotKey),
@@ -175,6 +181,30 @@ function assertDeletionFences(bucket, generation) {
   }
 }
 
+function assertLearnerDeletionFences(bucket, learnerProfileId, generation) {
+  const marker = bucket.stored.get(learnerMarkerKey(learnerProfileId));
+  assert.deepEqual(
+    marker?.bytes,
+    fenceBytes("marker", generation, "account-deleting"),
+  );
+  assert.deepEqual(marker?.options.customMetadata, {
+    generation,
+    state: "account-deleting",
+  });
+  for (const lineId of LINE_IDS) {
+    const item = bucket.stored.get(learnerSlotKey(learnerProfileId, lineId));
+    assert.deepEqual(
+      item?.bytes,
+      fenceBytes("slot", generation, "account-deleting"),
+      `${learnerProfileId} ${lineId}`,
+    );
+    assert.deepEqual(item?.options.customMetadata, {
+      generation,
+      state: "account-deleting",
+    }, `${learnerProfileId} ${lineId}`);
+  }
+}
+
 function assertNoClosureDeletes(bucket) {
   const closureKeys = new Set(CLOSURE_KEYS);
   assert.equal(
@@ -188,6 +218,7 @@ async function callDub({
   bucket,
   database,
   generation = () => "reset-1",
+  identity,
   method,
   path,
   pending = async () => false,
@@ -198,7 +229,14 @@ async function callDub({
   return handleDubRequest({
     database,
     env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
-    identity: { sessionId: "session-1", userId: USER_ID, userName: "Parent" },
+    identity: identity ?? {
+      learnerName: "Mia",
+      learnerProfileId: "learner-a",
+      legacyStorageOwner: true,
+      sessionId: "session-1",
+      userId: USER_ID,
+      userName: "Parent",
+    },
     request: new Request(`https://example.test${path}`, {
       ...(body === undefined ? {} : { body }),
       headers: body === undefined
@@ -267,6 +305,109 @@ function seedDatabase() {
 }
 
 describe("account deletion personalized-art lifecycle", () => {
+  it("fences in-flight uploads in the legacy namespace and every learner subtree", async () => {
+    const state = seedDatabase();
+    const allAudioPutsStarted = deferred();
+    const releaseAudioPuts = deferred();
+    const bucket = createBucket();
+    const put = bucket.put.bind(bucket);
+    let audioPuts = 0;
+    bucket.put = async (key, bytes, options) => {
+      if (options?.customMetadata?.state === "audio") {
+        audioPuts += 1;
+        if (audioPuts === 3) allAudioPutsStarted.resolve();
+        await releaseAudioPuts.promise;
+      }
+      return put(key, bytes, options);
+    };
+    let uploads = [];
+
+    try {
+      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+      const insertLearner = state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, 'not_started', ?)`,
+      );
+      insertLearner.run("learner-a", USER_ID, "Mia", 1);
+      insertLearner.run("learner-b", USER_ID, "Leo", 0);
+      insertLearner.run("learner-c", USER_ID, "Ava", 0);
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      const insertConsent = state.sqlite.prepare(
+        `INSERT INTO learner_dub_consent
+          (learner_profile_id, auth_user_id, consent_version, grant_generation,
+           state, granted_at, updated_at)
+         VALUES (?, ?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
+      );
+      insertConsent.run("learner-b", USER_ID, timestamp, timestamp);
+      insertConsent.run("learner-c", USER_ID, timestamp, timestamp);
+      const identities = [
+        {
+          learnerName: "Mia",
+          learnerProfileId: "learner-a",
+          legacyStorageOwner: true,
+          sessionId: "session-a",
+          userId: USER_ID,
+          userName: "Parent",
+        },
+        {
+          learnerName: "Leo",
+          learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          sessionId: "session-b",
+          userId: USER_ID,
+          userName: "Parent",
+        },
+        {
+          learnerName: "Ava",
+          learnerProfileId: "learner-c",
+          legacyStorageOwner: false,
+          sessionId: "session-c",
+          userId: USER_ID,
+          userName: "Parent",
+        },
+      ];
+      uploads = identities.map((identity) => callDub({
+        bucket,
+        database: state.database,
+        identity,
+        method: "PUT",
+        path: `${DUB_PATH}/lines/line-1`,
+      }));
+      await allAudioPutsStarted.promise;
+
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+
+      assertDeletionFences(bucket, DELETION_GENERATION);
+      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
+      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assert.equal(
+        [...bucket.stored.values()].some(
+          (item) => item.options.customMetadata.state === "audio",
+        ),
+        false,
+      );
+      releaseAudioPuts.resolve();
+      const responses = await Promise.all(uploads);
+      assert.deepEqual(responses.map(({ status }) => status), [409, 409, 409]);
+      assert.equal(
+        [...bucket.stored.values()].some(
+          (item) => item.options.customMetadata.state === "audio",
+        ),
+        false,
+      );
+    } finally {
+      releaseAudioPuts.resolve();
+      await Promise.allSettled(uploads);
+      state.close();
+    }
+  });
+
   it("tombstones the account and art, purges every R2 object, and retains only dub deletion fences", async () => {
     const state = seedDatabase();
     const events = [];

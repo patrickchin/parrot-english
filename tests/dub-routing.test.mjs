@@ -290,6 +290,49 @@ describe("dub Worker routing", () => {
     }
   });
 
+  it("passes the selected nonlegacy learner identity to the dub handler", async () => {
+    const session = {
+      session: { id: "session-1" },
+      user: { id: "user-1", name: " Parent " },
+    };
+    const { env, state } = authenticatedEnvironment();
+    try {
+      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+      state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, 'not_started', 0)`,
+      ).run("learner-b", "user-1", "Leo");
+      state.sqlite.prepare(
+        `INSERT INTO session_learner_selection
+          (session_id, auth_user_id, learner_profile_id)
+         VALUES (?, ?, ?)`,
+      ).run("session-1", "user-1", "learner-b");
+      let routedIdentity;
+      const worker = createWorker({
+        createAuth: () => authStub(session, []),
+        async handleDubRequest(input) {
+          routedIdentity = input.identity;
+          return new Response(null, { status: 204 });
+        },
+      });
+
+      const response = await worker.fetch(request("GET", DUB_PATH), env);
+
+      assert.equal(response.status, 204);
+      assert.deepEqual(routedIdentity, {
+        learnerName: "Leo",
+        learnerProfileId: "learner-b",
+        legacyStorageOwner: false,
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent",
+      });
+    } finally {
+      state.close();
+    }
+  });
+
   it("authenticates supported routes before returning method errors", async () => {
     const sessionCalls = [];
     const session = {

@@ -2,21 +2,21 @@ import { eq, sql } from "drizzle-orm";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   accountDeletionTombstone,
+  learnerProfile,
   personalizedStoryArt,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import {
+  createDubStorageKeys,
+  type DubStorageKeys,
   fenceBody,
   hasState,
   isR2WriteRateError,
   LEGACY_DUB_LINE_IDS,
-  legacyMarkerKey,
-  legacyObjectKey,
-  markerKey,
   MAX_R2_WRITE_ATTEMPTS,
-  objectKey,
   retryDelay,
 } from "./dub-storage.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 type Clock = () => Date;
 type Wait = (delay: number) => Promise<void>;
@@ -33,6 +33,23 @@ const MAX_FENCE_CONFLICTS = 16;
 
 function r2PrefixForUser(userId: string) {
   return `personalized-story-art/${encodeURIComponent(userId)}/`;
+}
+
+export async function listLearnerStorageIdentities(
+  database: Database,
+  userId: string,
+): Promise<Array<Pick<
+  LearnerIdentity,
+  "userId" | "learnerProfileId" | "legacyStorageOwner"
+>>> {
+  return database
+    .select({
+      learnerProfileId: learnerProfile.id,
+      legacyStorageOwner: learnerProfile.legacyStorageOwner,
+      userId: learnerProfile.authUserId,
+    })
+    .from(learnerProfile)
+    .where(eq(learnerProfile.authUserId, userId));
 }
 
 export async function accountDeletionTombstoneKey(userId: string) {
@@ -162,6 +179,69 @@ async function persistFence(
   throw new Error("Dub account-deletion fence contention exceeded.");
 }
 
+function storageClosureKeys(storage: DubStorageKeys) {
+  const keys = [
+    storage.markerKey,
+    ...DUB_LINES.map(({ id }) => storage.objectKey(id)),
+  ];
+  if (storage.retiredLegacyMarkerKey) {
+    keys.push(storage.retiredLegacyMarkerKey);
+    for (const lineId of LEGACY_DUB_LINE_IDS) {
+      const key = storage.retiredLegacyObjectKey(lineId);
+      if (key) keys.push(key);
+    }
+  }
+  return keys;
+}
+
+async function persistStorageFences(
+  bucket: AccountDeletionInput["bucket"],
+  storage: DubStorageKeys,
+  generation: string,
+  wait: Wait,
+) {
+  await persistFence(
+    bucket,
+    storage.markerKey,
+    "marker",
+    generation,
+    "account-deleting",
+    wait,
+  );
+  for (const { id } of DUB_LINES) {
+    await persistFence(
+      bucket,
+      storage.objectKey(id),
+      "slot",
+      generation,
+      "account-deleting",
+      wait,
+    );
+  }
+  if (!storage.retiredLegacyMarkerKey) return;
+  await persistFence(
+    bucket,
+    storage.retiredLegacyMarkerKey,
+    "marker",
+    generation,
+    "account-deleting",
+    wait,
+  );
+  for (const lineId of LEGACY_DUB_LINE_IDS) {
+    const key = storage.retiredLegacyObjectKey(lineId);
+    if (key) {
+      await persistFence(
+        bucket,
+        key,
+        "slot",
+        generation,
+        "account-deleting",
+        wait,
+      );
+    }
+  }
+}
+
 export async function prepareAccountDeletion({
   bucket,
   database,
@@ -170,17 +250,26 @@ export async function prepareAccountDeletion({
   wait = (delay: number) => scheduler.wait(delay),
 }: AccountDeletionInput) {
   const tombstone = await markAccountDeletionPending(database, userId, now);
+  const identities = await listLearnerStorageIdentities(database, userId);
+  const legacyIdentity = identities.find(({ legacyStorageOwner }) =>
+    legacyStorageOwner
+  );
+  const storages = [
+    createDubStorageKeys(legacyIdentity ?? {
+      learnerProfileId: "",
+      legacyStorageOwner: true,
+      userId,
+    }),
+    ...identities
+      .filter(({ legacyStorageOwner }) => !legacyStorageOwner)
+      .map(createDubStorageKeys),
+  ];
   const { r2Prefix } = tombstone;
   const generation = accountDeletionGeneration(
     tombstone.userIdHash,
     tombstone.requestedAt,
   );
-  const closureKeys = new Set([
-    markerKey(userId),
-    ...DUB_LINES.map(({ id }) => objectKey(userId, id)),
-    legacyMarkerKey(userId),
-    ...LEGACY_DUB_LINE_IDS.map((lineId) => legacyObjectKey(userId, lineId)),
-  ]);
+  const closureKeys = new Set(storages.flatMap(storageClosureKeys));
   let cursor: string | undefined;
   let hasMore = true;
   const seenCursors = new Set<string>();
@@ -207,40 +296,7 @@ export async function prepareAccountDeletion({
     }
   }
 
-  await persistFence(
-    bucket,
-    markerKey(userId),
-    "marker",
-    generation,
-    "account-deleting",
-    wait,
-  );
-  for (const { id } of DUB_LINES) {
-    await persistFence(
-      bucket,
-      objectKey(userId, id),
-      "slot",
-      generation,
-      "account-deleting",
-      wait,
-    );
-  }
-  await persistFence(
-    bucket,
-    legacyMarkerKey(userId),
-    "marker",
-    generation,
-    "account-deleting",
-    wait,
-  );
-  for (const lineId of LEGACY_DUB_LINE_IDS) {
-    await persistFence(
-      bucket,
-      legacyObjectKey(userId, lineId),
-      "slot",
-      generation,
-      "account-deleting",
-      wait,
-    );
+  for (const storage of storages) {
+    await persistStorageFences(bucket, storage, generation, wait);
   }
 }

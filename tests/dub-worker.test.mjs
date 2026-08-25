@@ -20,6 +20,17 @@ const LEGACY_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-du
 const LEGACY_LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
 const LEGACY_MARKER_KEY = `${LEGACY_PREFIX}.dub-generation`;
 const legacySlotKey = (lineId) => `${LEGACY_PREFIX}${lineId}.audio`;
+const SIBLING_PREFIX =
+  "personalized-story-art/user-1/learners/learner-b/learner-dubs/five-little-ducks-v2/";
+const siblingSlotKey = (lineId) => `${SIBLING_PREFIX}${lineId}.audio`;
+const DEFAULT_IDENTITY = {
+  learnerName: "Mia",
+  learnerProfileId: "learner-a",
+  legacyStorageOwner: true,
+  sessionId: "session-1",
+  userId: "user-1",
+  userName: "Parent",
+};
 
 function encoded(value) {
   return new TextEncoder().encode(JSON.stringify(value));
@@ -309,7 +320,9 @@ async function callDub({
   body,
   bucket = createBucket(),
   consentRepository = createConsentRepository(),
+  database = {},
   headers = {},
+  identity,
   method,
   path,
   pending = async () => false,
@@ -323,9 +336,9 @@ async function callDub({
     ? { headers, method }
     : { body, headers, method };
   return handleDubRequest({
-    database: {},
+    database,
     env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
-    identity: { sessionId: "session-1", userId, userName: "Parent" },
+    identity: identity ?? { ...DEFAULT_IDENTITY, userId },
     request: new Request(`https://example.test${path}`, init),
   }, {
     consentRepository,
@@ -338,6 +351,130 @@ async function callDub({
 }
 
 describe("private learner dub API", () => {
+  it("isolates sibling consent, status, storage keys, and reset fences", async () => {
+    const state = createTestD1Database();
+    try {
+      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+      state.sqlite.prepare(
+        `INSERT INTO user
+          (id, name, email, email_verified, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?)`,
+      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+      state.sqlite.exec("DROP INDEX learner_profile_auth_user_id_unique");
+      const insertLearner = state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, 'not_started', ?)`,
+      );
+      insertLearner.run("learner-a", "user-1", "Mia", 1);
+      insertLearner.run("learner-b", "user-1", "Leo", 0);
+      const database = createDatabase(state.d1);
+      let consentSequence = 0;
+      const consentRepository = createDubConsentRepository(database, {
+        createGeneration: () => `consent-${++consentSequence}`,
+        now: () => new Date("2026-08-25T08:00:00.000Z"),
+      });
+      const legacyIdentity = {
+        learnerName: "Mia",
+        learnerProfileId: "learner-a",
+        legacyStorageOwner: true,
+        sessionId: "legacy-session",
+        userId: "user-1",
+        userName: "Guardian",
+      };
+      const siblingIdentity = {
+        learnerName: "Leo",
+        learnerProfileId: "learner-b",
+        legacyStorageOwner: false,
+        sessionId: "new-session",
+        userId: "user-1",
+        userName: "Guardian",
+      };
+      const legacyKey = slotKey("line-1");
+      const bucket = createBucket([[legacyKey, {
+        bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]),
+        options: { httpMetadata: { contentType: "audio/webm" } },
+        uploaded: new Date("2026-08-25T07:00:00.000Z"),
+      }]]);
+
+      await consentRepository.grant(legacyIdentity);
+      const legacyStatus = await (await callDub({
+        bucket,
+        consentRepository,
+        database,
+        identity: legacyIdentity,
+        method: "GET",
+        path: DUB_PATH,
+      })).json();
+      const siblingBeforeGrant = await (await callDub({
+        bucket,
+        consentRepository,
+        database,
+        identity: siblingIdentity,
+        method: "GET",
+        path: DUB_PATH,
+      })).json();
+      assert.equal(legacyStatus.lines.filter(({ saved }) => saved).length, 1);
+      assert.equal(siblingBeforeGrant.lines.filter(({ saved }) => saved).length, 0);
+      assert.equal(siblingBeforeGrant.consentState, "not_granted");
+
+      await consentRepository.grant(siblingIdentity);
+      const upload = await callDub({
+        body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 2]),
+        bucket,
+        consentRepository,
+        database,
+        headers: CONSENT_HEADERS,
+        identity: siblingIdentity,
+        method: "PUT",
+        path: `${DUB_PATH}/lines/line-1`,
+      });
+      assert.equal(upload.status, 201);
+      const siblingAudioPut = bucket.calls.put.find(
+        ({ options }) => options.customMetadata?.state === "audio",
+      );
+      assert.match(
+        siblingAudioPut.key,
+        /\/learners\/learner-b\/learner-dubs\//,
+      );
+      assert.ok(await bucket.head(legacyKey));
+      assert.ok(await bucket.head(siblingSlotKey("line-1")));
+
+      const reset = await callDub({
+        bucket,
+        consentRepository,
+        database,
+        generation: () => "sibling-reset",
+        identity: siblingIdentity,
+        method: "DELETE",
+        path: DUB_PATH,
+      });
+      assert.equal(reset.status, 204);
+      assert.equal(
+        (await bucket.head(legacyKey)).customMetadata?.state,
+        undefined,
+      );
+      assert.equal(
+        (await bucket.head(siblingSlotKey("line-1"))).customMetadata?.state,
+        "tombstone",
+      );
+      const legacyAfterReset = await (await callDub({
+        bucket,
+        consentRepository,
+        database,
+        identity: legacyIdentity,
+        method: "GET",
+        path: DUB_PATH,
+      })).json();
+      assert.equal(
+        legacyAfterReset.lines.filter(({ saved }) => saved).length,
+        1,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("keeps the first durable generation without reviving the retired v1 prefix", async () => {
     const state = createTestD1Database();
     try {
@@ -380,7 +517,7 @@ describe("private learner dub API", () => {
       });
 
       assert.equal((await grant()).status, 204);
-      const first = await consentRepository.status("user-1");
+      const first = await consentRepository.status(DEFAULT_IDENTITY);
       assert.equal(first.state, "granted");
       assert.equal(first.grantGeneration, "consent-1");
       const firstStatus = await callDub({
@@ -402,7 +539,7 @@ describe("private learner dub API", () => {
 
       const repeated = await Promise.all([grant(), grant()]);
       assert.deepEqual(repeated.map(({ status }) => status), [204, 204]);
-      const current = await consentRepository.status("user-1");
+      const current = await consentRepository.status(DEFAULT_IDENTITY);
       assert.equal(current.state, "granted");
       assert.equal(current.grantGeneration, first.grantGeneration);
       assert.equal(generationCalls, 1);
@@ -481,7 +618,7 @@ describe("private learner dub API", () => {
         path: DUB_PATH,
       });
       assert.equal(cleanup.status, 204);
-      assert.deepEqual(await consentRepository.status("user-1"), {
+      assert.deepEqual(await consentRepository.status(DEFAULT_IDENTITY), {
         state: "not_granted",
       });
       assertResetTombstones(bucket, "reset-2");
