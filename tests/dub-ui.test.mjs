@@ -107,7 +107,8 @@ describe("duck dubbing presentation", () => {
     assert.match(html, /Line 1 of 9/);
     assert.match(html, /Five little ducks went out to play\./);
     assert.match(html, /aria-label="Record line 1"/);
-    assert.match(html, /aria-label="Hear the line again"/);
+    assert.match(html, /aria-label="Hear the line"/);
+    assert.doesNotMatch(html, /Hear the line again/);
     assert.doesNotMatch(html, /Watch my dub/);
 
     const complete = renderDuckDub({
@@ -115,6 +116,7 @@ describe("duck dubbing presentation", () => {
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.doesNotMatch(complete, /Watch my dub/);
+    assert.match(complete, />Back to my dub<\/button>/);
   });
 
   it("keeps recording, saving, failure, and review actions child-readable", () => {
@@ -134,7 +136,7 @@ describe("duck dubbing presentation", () => {
     });
     assert.match(failed, /role="alert"/);
     assert.match(failed, />Save again<\/button>/);
-    assert.doesNotMatch(failed, /Try recording again/);
+    assert.match(failed, />Record again<\/button>/);
 
     const review = renderDuckDub({ phase: "line-review" });
     assert.match(review, />Next line<\/button>/);
@@ -149,6 +151,9 @@ describe("duck dubbing presentation", () => {
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.match(ready, /Watch my dub<\/button>/);
+    assert.match(ready, /All 9 lines recorded/);
+    assert.match(ready, /Your dub is ready!/);
+    assert.doesNotMatch(ready, /aria-label="Line 5 of 9"/);
     assert.match(ready, /<details(?![^>]*\bopen\b)[^>]*>/);
     assert.match(ready, /<summary[^>]*aria-label="Grown-up options"/);
     assert.match(ready, />Grown-up options<\/summary>|>Grown-up options<span/);
@@ -225,7 +230,7 @@ describe("duck dubbing presentation", () => {
       [
         { currentLineIndex: 2, error: "Not saved.", phase: "save-error" },
         {},
-        "Line 3 of 9. Choose Save again.",
+        "Line 3 of 9. Choose Save again or Record again.",
       ],
       [
         { currentLineIndex: 2, phase: "line-review" },

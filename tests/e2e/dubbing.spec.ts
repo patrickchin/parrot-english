@@ -85,7 +85,7 @@ test("records, saves, reviews, and resumes the nine-line dub at line 2", async (
   await enterStudio(page, "Start dubbing");
 
   await expect(page.getByRole("button", { name: "Record line 1" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Hear the line again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hear the line" })).toBeVisible();
   await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
   await page.getByRole("button", { name: "Record line 1" }).click();
   await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
@@ -109,7 +109,7 @@ test("keeps the same take available when its first upload fails", async ({ page 
   await page.getByRole("button", { name: "Record line 1" }).click();
   await page.getByRole("button", { name: "Stop recording line 1" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Try recording again" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
   await page.getByRole("button", { name: "Save again" }).click();
   await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
 });
@@ -119,13 +119,21 @@ test("replaces selected middle line 5 and keeps the complete dub after reload", 
   await page.reload();
   await enterStudio(page, "Continue dubbing");
 
+  await expect(page.getByText("All 9 lines recorded", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your dub is ready!", { exact: true })).toBeVisible();
+  await expect(page.getByText("Line 1 of 9", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Watch my dub" })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Choose a saved line" })).toBeHidden();
   await page.getByLabel("Grown-up options").click();
   const lineSelect = page.getByRole("combobox", { name: "Choose a saved line" });
   await lineSelect.selectOption("line-5");
-  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
-  await expect(page.getByText("Three little ducks raced through the reeds.", { exact: true })).toBeVisible();
+  await expect(lineSelect).toHaveValue("line-5");
+  await expect(page.getByText("Your dub is ready!", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Record selected line" }).click();
+  await expect(page.getByRole("button", { name: "Back to my dub" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to my dub" }).click();
+  await expect(page.getByRole("button", { name: "Watch my dub" })).toBeVisible();
+  await page.getByLabel("Grown-up options").click();
   await page.getByRole("button", { name: "Record selected line" }).click();
   await page.getByRole("button", { name: "Record line 5" }).click();
   await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
@@ -140,8 +148,10 @@ test("replaces selected middle line 5 and keeps the complete dub after reload", 
   await page.reload();
   await enterStudio(page, "Continue dubbing");
   await page.getByLabel("Grown-up options").click();
-  await page.getByRole("combobox", { name: "Choose a saved line" }).selectOption("line-5");
-  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
+  const reloadedLineSelect = page.getByRole("combobox", { name: "Choose a saved line" });
+  await reloadedLineSelect.selectOption("line-5");
+  await expect(reloadedLineSelect).toHaveValue("line-5");
+  await expect(page.getByText("Your dub is ready!", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Watch my dub" }).click();
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
   await page.getByRole("button", { name: "Stop playback" }).click();
@@ -190,7 +200,8 @@ test("hides generic playback setup details and keeps final controls usable", asy
   const lineSelect = page.getByRole("combobox", { name: "Choose a saved line" });
   await expect(lineSelect).toBeEnabled();
   await lineSelect.selectOption("line-5");
-  await expect(page.getByText("Line 5 of 9", { exact: true })).toBeVisible();
+  await expect(lineSelect).toHaveValue("line-5");
+  await expect(page.getByText("Your dub is ready!", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Watch my dub" })).toBeEnabled();
 });
 

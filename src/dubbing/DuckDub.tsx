@@ -105,7 +105,7 @@ function dubStatusMessage({
     return `${line} Saving your take.`;
   }
   if (state.phase === "save-error") {
-    return `${line} Choose Save again.`;
+    return `${line} Choose Save again or Record again.`;
   }
   if (state.phase === "line-review") {
     return `${line} Your take is saved. Choose Next line to continue.`;
@@ -129,6 +129,7 @@ function renderDubControls({
   state,
 }: DubControlsProps) {
   const lineNumber = Math.max(0, DUB_LINES.findIndex(({ id }) => id === activeLine.id)) + 1;
+  const complete = DUB_LINES.every(({ id }) => id in state.saved);
   if (state.phase === "loading") {
     if (isDeleting) {
       return <ActionButton disabled>Deleting your dub…</ActionButton>;
@@ -163,7 +164,12 @@ function renderDubControls({
     return <ActionButton disabled>Saving your take…</ActionButton>;
   }
   if (state.phase === "save-error") {
-    return <ActionButton onClick={handlers.onSaveAgain}>Save again</ActionButton>;
+    return (
+      <>
+        <ActionButton onClick={handlers.onSaveAgain}>Save again</ActionButton>
+        <TextButton className="min-h-12" onClick={handlers.onRetake}>Record again</TextButton>
+      </>
+    );
   }
   if (state.phase === "line-review") {
     return (
@@ -240,13 +246,17 @@ function renderDubControls({
       >
         <Mic aria-hidden="true" /> Record
       </ActionButton>
-      <TextButton
-        aria-label="Hear the line again"
-        className="min-h-12 gap-2"
-        onClick={handlers.onHearGuide}
-      >
-        <Volume2 aria-hidden="true" /> Hear the line again
-      </TextButton>
+      {complete ? (
+        <TextButton className="min-h-12" onClick={handlers.onNext}>Back to my dub</TextButton>
+      ) : (
+        <TextButton
+          aria-label="Hear the line"
+          className="min-h-12 gap-2"
+          onClick={handlers.onHearGuide}
+        >
+          <Volume2 aria-hidden="true" /> Hear the line
+        </TextButton>
+      )}
     </>
   );
 }
@@ -283,6 +293,7 @@ export function DuckDubView({
   state: DubState;
 }) {
   const lineIndex = Math.max(0, DUB_LINES.findIndex(({ id }) => id === line.id));
+  const isFinalReady = state.phase === "final-ready";
   const error = state.error || loadError;
   const statusMessage = dubStatusMessage({
     isDeleting,
@@ -326,10 +337,14 @@ export function DuckDubView({
         <section className="grid content-center gap-4 rounded-3xl border-4 border-white bg-white/90 p-4 shadow-card">
           {state.phase !== "intro" ? (
             <p
-              aria-label={`Line ${lineIndex + 1} of ${DUB_LINES.length}`}
+              aria-label={isFinalReady
+                ? `All ${DUB_LINES.length} lines recorded`
+                : `Line ${lineIndex + 1} of ${DUB_LINES.length}`}
               className="m-0 text-sm font-black uppercase tracking-wider text-brand-blue"
             >
-              Line {lineIndex + 1} of {DUB_LINES.length}
+              {isFinalReady
+                ? `All ${DUB_LINES.length} lines recorded`
+                : `Line ${lineIndex + 1} of ${DUB_LINES.length}`}
             </p>
           ) : null}
           <h1 className="m-0 text-3xl leading-none text-brand-ink md:text-5xl" id="dub-title">
@@ -337,7 +352,7 @@ export function DuckDubView({
           </h1>
           {state.phase !== "intro" ? (
             <p className="m-0 text-xl font-black leading-snug text-brand-ink">
-              {line.text}
+              {isFinalReady ? "Your dub is ready!" : line.text}
             </p>
           ) : null}
           {state.phase === "intro" ? (

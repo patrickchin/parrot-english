@@ -157,7 +157,7 @@ test("authenticated application routes include the core learner activities", () 
   );
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
-  assert.match(dub, /Your recordings are private/);
+  assert.match(dub, /Loading your private dub…/);
   assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
