@@ -20,6 +20,7 @@ type StartDubPlaybackOptions = {
   fetch?: typeof globalThis.fetch;
   onTick: (elapsedMs: number) => void;
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
+  setTimeout?: typeof globalThis.setTimeout;
   signal?: AbortSignal;
 };
 
@@ -127,6 +128,7 @@ export async function startDubPlayback({
   fetch: request = globalThis.fetch,
   onTick,
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
+  setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
   const context = new AudioContextClass();
@@ -135,16 +137,21 @@ export async function startDubPlayback({
   let oscillators: OscillatorNode[] = [];
   let stopVoices: (() => void) | null = null;
   let stopped = false;
+  let abortListenerRemoved = false;
   let closePromise: Promise<void> | null = null;
   let rejectStartupAbort!: (error: Error) => void;
   const startupAbort = new Promise<never>((_, reject) => {
     rejectStartupAbort = reject;
   });
 
-  const stopPlayback = () => {
+  const removeAbortListener = () => {
+    if (abortListenerRemoved) return;
+    abortListenerRemoved = true;
+    signal?.removeEventListener("abort", handleAbort);
+  };
+  const beginCleanup = () => {
     if (stopped) return closePromise ?? Promise.resolve();
     stopped = true;
-    signal?.removeEventListener("abort", handleAbort);
     loadController.abort();
     if (frameId !== null) {
       cancelFrame(frameId);
@@ -158,6 +165,10 @@ export async function startDubPlayback({
       closePromise = Promise.resolve();
     }
     return closePromise;
+  };
+  const stopPlayback = () => {
+    removeAbortListener();
+    return beginCleanup();
   };
   const handleAbort = () => {
     rejectStartupAbort(createAbortError());
@@ -274,10 +285,19 @@ export async function startDubPlayback({
       },
     };
   } catch (error) {
-    const cleanup = stopPlayback();
-    if (signal?.aborted) throw createAbortError();
-    await Promise.race([cleanup, startupAbort]);
-    if (signal?.aborted) throw createAbortError();
-    throw error;
+    const cleanup = beginCleanup();
+    try {
+      if (signal?.aborted) throw createAbortError();
+      const cleanupGrace = new Promise<void>((resolve) => {
+        // One task turn lets an already-queued caller abort win without
+        // allowing a non-cooperative AudioContext.close() to hang startup.
+        scheduleTimeout(resolve, 0);
+      });
+      await Promise.race([cleanup, startupAbort, cleanupGrace]);
+      if (signal?.aborted) throw createAbortError();
+      throw error;
+    } finally {
+      removeAbortListener();
+    }
   }
 }

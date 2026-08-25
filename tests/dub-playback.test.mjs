@@ -79,6 +79,35 @@ function createRaf() {
   };
 }
 
+function createTimerHarness() {
+  const callbacks = [];
+  return {
+    setTimeout(callback, delay) {
+      assert.equal(delay, 0);
+      callbacks.push(callback);
+      return callbacks.length;
+    },
+    runNext() {
+      callbacks.shift()?.();
+    },
+  };
+}
+
+function trackAbortListeners(signal) {
+  const addEventListener = signal.addEventListener.bind(signal);
+  const removeEventListener = signal.removeEventListener.bind(signal);
+  const calls = { adds: 0, removes: 0 };
+  signal.addEventListener = (type, listener, options) => {
+    if (type === "abort") calls.adds += 1;
+    return addEventListener(type, listener, options);
+  };
+  signal.removeEventListener = (type, listener, options) => {
+    if (type === "abort") calls.removes += 1;
+    return removeEventListener(type, listener, options);
+  };
+  return calls;
+}
+
 function createAudioHarness({
   closeDeferred,
   decodeFailureLineId,
@@ -562,18 +591,7 @@ describe("duck dub playback", () => {
     const controller = new AbortController();
     const request = createFailingFetch("line-99", () => assert.fail("unused"));
     const signal = controller.signal;
-    const addEventListener = signal.addEventListener.bind(signal);
-    const removeEventListener = signal.removeEventListener.bind(signal);
-    let externalAdds = 0;
-    let externalRemoves = 0;
-    signal.addEventListener = (type, listener, options) => {
-      if (type === "abort") externalAdds += 1;
-      return addEventListener(type, listener, options);
-    };
-    signal.removeEventListener = (type, listener, options) => {
-      if (type === "abort") externalRemoves += 1;
-      return removeEventListener(type, listener, options);
-    };
+    const listenerCalls = trackAbortListeners(signal);
 
     const starting = startDubPlayback({
       AudioContext: audio.AudioContext,
@@ -593,8 +611,8 @@ describe("duck dub playback", () => {
       request.abortedLineIds.sort(),
       DUB_LINES.map(({ id }) => id).sort(),
     );
-    assert.equal(externalAdds, 1);
-    assert.equal(externalRemoves, 1);
+    assert.equal(listenerCalls.adds, 1);
+    assert.equal(listenerCalls.removes, 1);
     assert.equal(audio.contexts[0].closeCalls, 1);
     assert.equal(audio.contexts[0].resumeCalls, 0);
     assert.equal(audio.contexts[0].sources.length, 0);
@@ -662,6 +680,100 @@ describe("duck dub playback", () => {
     assert.equal(raf.callbacks.size, 0);
   });
 
+  it("surfaces a typed line failure when context close stalls", async () => {
+    const closeDeferred = createDeferred();
+    const audio = createAudioHarness({ closeDeferred });
+    const raf = createRaf();
+    const timers = createTimerHarness();
+    const request = createFailingFetch(
+      "line-5",
+      () => new Response(null, { status: 503 }),
+    );
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const listenerCalls = trackAbortListeners(signal);
+    let rejection;
+
+    const starting = startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: request.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      setTimeout: timers.setTimeout,
+      signal,
+    });
+    void starting.catch((error) => {
+      rejection = error;
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+
+    timers.runNext();
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    assert.ok(rejection instanceof DubLinePlaybackError);
+    assert.equal(rejection.lineId, "line-5");
+    assert.equal(rejection.stage, "fetch");
+    assert.equal(listenerCalls.adds, 1);
+    assert.equal(listenerCalls.removes, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.equal(audio.contexts[0].sources.length, 0);
+    assert.equal(audio.contexts[0].gains.length, 0);
+    assert.equal(audio.contexts[0].oscillators.length, 0);
+    assert.equal(raf.callbacks.size, 0);
+
+    closeDeferred.reject(new Error("late close failure"));
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("lets caller abort win before stalled failure cleanup yields", async () => {
+    const closeDeferred = createDeferred();
+    const audio = createAudioHarness({ closeDeferred });
+    const raf = createRaf();
+    const timers = createTimerHarness();
+    const request = createFailingFetch(
+      "line-5",
+      () => new Response(null, { status: 503 }),
+    );
+    const controller = new AbortController();
+    const signal = controller.signal;
+    const listenerCalls = trackAbortListeners(signal);
+    let rejection;
+
+    const starting = startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: request.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+      setTimeout: timers.setTimeout,
+      signal,
+    });
+    void starting.catch((error) => {
+      rejection = error;
+    });
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+
+    controller.abort();
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    assert.equal(rejection?.name, "AbortError");
+    assert.equal(listenerCalls.adds, 1);
+    assert.equal(listenerCalls.removes, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.equal(audio.contexts[0].sources.length, 0);
+    assert.equal(audio.contexts[0].gains.length, 0);
+    assert.equal(audio.contexts[0].oscillators.length, 0);
+    assert.equal(raf.callbacks.size, 0);
+
+    closeDeferred.reject(new Error("late close failure"));
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
   it("rejects promptly when abort interrupts stalled resume and close", async () => {
     const closeDeferred = createDeferred();
     const resumeDeferred = createDeferred();
@@ -669,18 +781,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const controller = new AbortController();
     const signal = controller.signal;
-    const addEventListener = signal.addEventListener.bind(signal);
-    const removeEventListener = signal.removeEventListener.bind(signal);
-    let externalAdds = 0;
-    let externalRemoves = 0;
-    signal.addEventListener = (type, listener, options) => {
-      if (type === "abort") externalAdds += 1;
-      return addEventListener(type, listener, options);
-    };
-    signal.removeEventListener = (type, listener, options) => {
-      if (type === "abort") externalRemoves += 1;
-      return removeEventListener(type, listener, options);
-    };
+    const listenerCalls = trackAbortListeners(signal);
     let rejection;
 
     const starting = startDubPlayback({
@@ -701,8 +802,8 @@ describe("duck dub playback", () => {
     await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
 
     assert.equal(rejection?.name, "AbortError");
-    assert.equal(externalAdds, 1);
-    assert.equal(externalRemoves, 1);
+    assert.equal(listenerCalls.adds, 1);
+    assert.equal(listenerCalls.removes, 1);
     assert.equal(audio.contexts[0].closeCalls, 1);
     assert.ok(audio.fetchCalls.every(([, init]) => init.signal.aborted));
     assert.equal(audio.contexts[0].sources.length, 0);
