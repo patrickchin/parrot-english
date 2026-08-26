@@ -103,7 +103,7 @@ describe("story script catalog", () => {
     assert.doesNotMatch(container.textContent, /Big adventures/);
     assert.doesNotMatch(
       container.textContent,
-      /Grown-up options|Pick a story level|Guardian consent|Upload learner photo|Generate story art/,
+      /Grown-up options|Pick a story level|Guardian consent|Upload .* photo|Generate story art/,
     );
   });
 
@@ -144,18 +144,11 @@ describe("story script catalog", () => {
     assert.equal(STORY_VOCABULARY_PROFILES.length, 4);
     assert.deepEqual(
       STORY_LEVELS.map(({ id }) => id),
-      [
-        "first-words",
-        "repeating-patterns",
-        "tiny-stories",
-        "early-a1",
-      ],
+      ["first-words", "repeating-patterns", "tiny-stories", "early-a1"],
     );
     assert.deepEqual(
       STORIES.map(({ level }) => level),
-      [
-        ...STORY_LEVELS.flatMap(({ id }) => Array(5).fill(id)),
-      ],
+      [...STORY_LEVELS.flatMap(({ id }) => Array(5).fill(id))],
     );
 
     for (const level of STORY_LEVELS) {
@@ -169,9 +162,13 @@ describe("story script catalog", () => {
 
   it("keeps every story, page, title, and prompt experiment distinct", () => {
     assert.equal(new Set(STORIES.map(({ id }) => id)).size, STORIES.length);
-    assert.equal(new Set(STORIES.map(({ title }) => title)).size, STORIES.length);
     assert.equal(
-      new Set(STORIES.map(({ promptExperiment }) => promptExperiment.focus)).size,
+      new Set(STORIES.map(({ title }) => title)).size,
+      STORIES.length,
+    );
+    assert.equal(
+      new Set(STORIES.map(({ promptExperiment }) => promptExperiment.focus))
+        .size,
       STORIES.length,
     );
 
@@ -192,9 +189,18 @@ describe("story script catalog", () => {
       ]);
       assert.ok(story.summary.trim(), `${story.title} summary`);
       assert.ok(story.completionText.trim(), `${story.title} completion`);
-      assert.ok(story.promptExperiment.instruction.trim(), `${story.title} prompt`);
-      assert.ok(story.promptExperiment.hypothesis.trim(), `${story.title} hypothesis`);
-      assert.ok(story.pages.length >= 5 && story.pages.length <= 7, `${story.title} pages`);
+      assert.ok(
+        story.promptExperiment.instruction.trim(),
+        `${story.title} prompt`,
+      );
+      assert.ok(
+        story.promptExperiment.hypothesis.trim(),
+        `${story.title} hypothesis`,
+      );
+      assert.ok(
+        story.pages.length >= 5 && story.pages.length <= 7,
+        `${story.title} pages`,
+      );
       assert.equal(
         new Set(story.pages.map(({ id }) => id)).size,
         story.pages.length,
@@ -209,7 +215,9 @@ describe("story script catalog", () => {
       const narrativeWords = countStoryWords(
         story.pages.map(({ text }) => text).join(" "),
       );
-      const pageWordCounts = story.pages.map(({ text }) => countStoryWords(text));
+      const pageWordCounts = story.pages.map(({ text }) =>
+        countStoryWords(text),
+      );
 
       assert.ok(
         narrativeWords <= level.maxNarrativeWordsTotal,
@@ -245,15 +253,15 @@ describe("story script catalog", () => {
         );
       }
       const scriptTokens = completeScript.match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
-      const targetTokens = story.targetWords
-        .join(" ")
-        .toLowerCase()
-        .match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
+      const targetTokens =
+        story.targetWords
+          .join(" ")
+          .toLowerCase()
+          .match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
       if (story.promptExperiment.exactRefrain) {
         assert.ok(
           story.pages.filter(
-            ({ joinIn }) =>
-              joinIn === story.promptExperiment.exactRefrain,
+            ({ joinIn }) => joinIn === story.promptExperiment.exactRefrain,
           ).length >= 3,
           `${story.title} repeats its exact refrain on at least three pages`,
         );
@@ -326,9 +334,15 @@ describe("story script catalog", () => {
         const priorJoinInId = joinInAudioByText.get(page.joinIn);
         if (priorJoinInId) assert.equal(page.joinInAudioId, priorJoinInId);
         else joinInAudioByText.set(page.joinIn, page.joinInAudioId);
-        assert.ok(page.artwork.alt.trim(), `${story.title}/${page.id} image alt`);
+        assert.ok(
+          page.artwork.alt.trim(),
+          `${story.title}/${page.id} image alt`,
+        );
         assert.doesNotMatch(page.artwork.alt, /placeholder/i);
-        assert.ok(page.artwork.prompt.trim(), `${story.title}/${page.id} image prompt`);
+        assert.ok(
+          page.artwork.prompt.trim(),
+          `${story.title}/${page.id} image prompt`,
+        );
       }
     }
 
@@ -360,11 +374,10 @@ describe("story script catalog", () => {
       ),
     };
 
-    assert.deepEqual(auditStoryVocabulary(storyWithUnknownWords).unlistedWords, [
-      "bed",
-      "thing",
-      "xylophone",
-    ]);
+    assert.deepEqual(
+      auditStoryVocabulary(storyWithUnknownWords).unlistedWords,
+      ["bed", "thing", "xylophone"],
+    );
   });
 
   it("replaces the dense Lantern Trail wording without changing its stable ID", () => {

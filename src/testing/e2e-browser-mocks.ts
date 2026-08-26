@@ -1,4 +1,5 @@
 import questionnaire from "../../content/learner-profile/questionnaire-v2.json";
+import generatedLessonTemplate from "../../content/lessons/01-peppas-high-ball.json";
 
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
 
@@ -34,11 +35,7 @@ const E2E_DUB_API = "/api/dubs/five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
 const E2E_DUB_CONSENT_VERSION = "guardian-voice-r2-v2";
 const E2E_DUB_SCENARIO_KEY = "parrot-e2e-dub:active-scenario";
-const E2E_MICROPHONE_SCENARIOS = new Set([
-  "delayed",
-  "denied",
-  "unsupported",
-]);
+const E2E_MICROPHONE_SCENARIOS = new Set(["delayed", "denied", "unsupported"]);
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
 const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
@@ -47,6 +44,7 @@ const E2E_PROFILE_OPERATION_SCENARIO = "held";
 const E2E_GUARDIAN_PASSWORD = "e2e-guardian-password";
 const E2E_GUARDIAN_ACCESS_TTL_MS = 15 * 60 * 1000;
 const E2E_EXPIRED_ACCESS_DELAY_MS = 2_000;
+const E2E_GUARDIAN_SCENARIO_KEY = "parrot-e2e-guardian:active-scenario";
 const E2E_GUARDIAN_SCENARIOS = new Set([
   "learner",
   "guardian",
@@ -74,6 +72,17 @@ const E2E_PROFILE_SCENARIOS = new Set([
   E2E_PROFILE_RESUME_SCENARIO,
   E2E_PROFILE_VIEWPORT_SCENARIO,
 ]);
+const E2E_LEARNER_SCENARIOS = new Set([
+  "multiple",
+  "selection-required",
+  "select-error",
+  "create-error",
+  "stale-selection",
+]);
+const E2E_LEARNER_SCENARIO_KEY = "parrot-e2e-learners:active-scenario";
+const E2E_LEARNER_SESSION_KEY = "parrot-e2e-learners:active-session";
+const E2E_LEARNER_ACCOUNT_KEY_PREFIX = "parrot-e2e-learners:account";
+const E2E_STORY_ART_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 
 const E2E_INCOMPLETE_PROFILE = {
   canBypass: false,
@@ -252,9 +261,822 @@ const E2E_VIEWPORT_EDITOR_STATE = {
   questions: E2E_VIEWPORT_QUESTIONS,
 };
 
+type MockLearnerScenario =
+  | "create-error"
+  | "multiple"
+  | "select-error"
+  | "selection-required"
+  | "stale-selection";
+
+type MockLearnerProfile = {
+  age: number | null;
+  answers: {
+    legacyAnswers: Record<string, unknown> | null;
+    questionnaireVersion: number;
+    responses: Record<string, unknown>;
+    schemaVersion: 2;
+  };
+  completedAt: string | null;
+  currentQuestionKey: string | null;
+  description: string | null;
+  id: string;
+  name: string;
+  profileStatus: "completed" | "in_progress" | "not_started";
+  questionnaireVersion: number;
+  storyLevel:
+    "early-a1" | "first-words" | "repeating-patterns" | "tiny-stories";
+};
+
+type MockLessonDescriptor = {
+  createdAt: string;
+  id: string;
+  lesson: unknown;
+  source: "generated" | "uploaded";
+  updatedAt: string;
+};
+
+type MockStoryArtState = {
+  hasStoredArt: boolean;
+  updatedAt: string | null;
+};
+
+type MockDubState = {
+  consentState: "granted" | "not_granted" | "revoking";
+  savedLineIds: string[];
+};
+
+type MockLearnerState = {
+  art: Map<string, MockStoryArtState>;
+  conversationIds: Set<string>;
+  createdAt: string;
+  dub: MockDubState;
+  lessons: Map<string, MockLessonDescriptor>;
+  profile: MockLearnerProfile;
+};
+
+type MockAccountState = {
+  activeProfileId: string | null;
+  learners: Map<string, MockLearnerState>;
+};
+
+type StoredMockLearnerState = Omit<
+  MockLearnerState,
+  "art" | "conversationIds" | "lessons"
+> & {
+  art: Array<[string, MockStoryArtState]>;
+  conversationIds: string[];
+  lessons: Array<[string, MockLessonDescriptor]>;
+};
+
+type StoredMockAccountState = {
+  activeProfileId: string | null;
+  learners: Array<[string, StoredMockLearnerState]>;
+};
+
+function getE2eLearnerScenario(): MockLearnerScenario | null {
+  const requested = new URL(window.location.href).searchParams.get(
+    "parrotE2eLearners",
+  );
+  if (requested && E2E_LEARNER_SCENARIOS.has(requested)) {
+    sessionStorage.setItem(E2E_LEARNER_SCENARIO_KEY, requested);
+    return requested as MockLearnerScenario;
+  }
+  const persisted = sessionStorage.getItem(E2E_LEARNER_SCENARIO_KEY);
+  return persisted && E2E_LEARNER_SCENARIOS.has(persisted)
+    ? (persisted as MockLearnerScenario)
+    : null;
+}
+
+function getE2eLearnerSessionId() {
+  const requested = new URL(window.location.href).searchParams.get(
+    "parrotE2eSession",
+  );
+  if (requested) {
+    sessionStorage.setItem(E2E_LEARNER_SESSION_KEY, requested);
+    return requested;
+  }
+  return sessionStorage.getItem(E2E_LEARNER_SESSION_KEY) ?? "e2e-session";
+}
+
+function mockQuestion(answerKey: string) {
+  const question = questionnaire.questions.find(
+    (candidate) => candidate.answerKey === answerKey,
+  );
+  if (!question) return null;
+  return {
+    answerKey: question.answerKey,
+    audio: {
+      id: question.audioId,
+      src: `/assets/audio/${question.audioId}.mp3`,
+      text: question.promptEn,
+    },
+    maxLength: question.maxLength,
+    position: question.position,
+    promptEn: question.promptEn,
+    promptZh: question.promptZh,
+    required: question.required,
+  };
+}
+
+function mockQuestions() {
+  return questionnaire.questions.map((question) =>
+    mockQuestion(question.answerKey)!,
+  );
+}
+
+function createMockProfile(
+  id: string,
+  name: string,
+  age: number | null,
+  completed: boolean,
+): MockLearnerProfile {
+  return {
+    age,
+    answers: {
+      legacyAnswers: null,
+      questionnaireVersion: 2,
+      responses: completed
+        ? {
+            name: {
+              acknowledgment: "Thank you!",
+              answeredAt: E2E_DUB_RECORDED_AT,
+              enrichmentStatus: "generated",
+              question: "Hi! I'm Peppa. What's your name?",
+              rawAnswer: name,
+              summary: name,
+            },
+          }
+        : {},
+      schemaVersion: 2,
+    },
+    completedAt: completed ? E2E_DUB_RECORDED_AT : null,
+    currentQuestionKey: completed ? null : "name",
+    description: null,
+    id,
+    name,
+    profileStatus: completed ? "completed" : "not_started",
+    questionnaireVersion: 2,
+    storyLevel: "first-words",
+  };
+}
+
+function createMockLearner(
+  id: string,
+  name: string,
+  age: number | null,
+  createdAt: string,
+  completed = true,
+): MockLearnerState {
+  return {
+    art: new Map(),
+    conversationIds: new Set(),
+    createdAt,
+    dub: { consentState: "not_granted", savedLineIds: [] },
+    lessons: new Map(),
+    profile: createMockProfile(id, name, age, completed),
+  };
+}
+
+function initialMockAccountState(
+  scenario: MockLearnerScenario,
+): MockAccountState {
+  const learners = new Map<string, MockLearnerState>([
+    [
+      "learner-mia",
+      createMockLearner("learner-mia", "Mia", 8, "2026-08-01T08:00:00.000Z"),
+    ],
+    [
+      "learner-noah",
+      createMockLearner("learner-noah", "Noah", 10, "2026-08-02T08:00:00.000Z"),
+    ],
+  ]);
+  return {
+    activeProfileId: scenario === "selection-required" ? null : "learner-mia",
+    learners,
+  };
+}
+
+function storeMockAccountState(
+  state: MockAccountState,
+): StoredMockAccountState {
+  return {
+    activeProfileId: state.activeProfileId,
+    learners: [...state.learners].map(([id, learner]) => [
+      id,
+      {
+        ...learner,
+        art: [...learner.art],
+        conversationIds: [...learner.conversationIds],
+        lessons: [...learner.lessons],
+      },
+    ]),
+  };
+}
+
+function restoreMockAccountState(
+  state: StoredMockAccountState,
+): MockAccountState {
+  return {
+    activeProfileId: state.activeProfileId,
+    learners: new Map(
+      state.learners.map(([id, learner]) => [
+        id,
+        {
+          ...learner,
+          art: new Map(learner.art),
+          conversationIds: new Set(learner.conversationIds),
+          lessons: new Map(learner.lessons),
+        },
+      ]),
+    ),
+  };
+}
+
+function isStoredMockAccountState(
+  value: unknown,
+): value is StoredMockAccountState {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<StoredMockAccountState>;
+  return (
+    (candidate.activeProfileId === null ||
+      typeof candidate.activeProfileId === "string") &&
+    Array.isArray(candidate.learners)
+  );
+}
+
+function createE2eLearnerAccount(
+  scenario: MockLearnerScenario,
+  sessionId: string,
+) {
+  const storageKey = `${E2E_LEARNER_ACCOUNT_KEY_PREFIX}:${scenario}:${sessionId}`;
+  let state = initialMockAccountState(scenario);
+  const saved = localStorage.getItem(storageKey);
+  if (saved) {
+    try {
+      const parsed: unknown = JSON.parse(saved);
+      if (isStoredMockAccountState(parsed))
+        state = restoreMockAccountState(parsed);
+    } catch {
+      // Use the deterministic initial account when stored test state is corrupt.
+    }
+  }
+
+  let heldSelection: {
+    resolve: (response: Response) => void;
+    response: Response;
+  } | null = null;
+  let staleSelectionUsed = false;
+
+  function persist() {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify(storeMockAccountState(state)),
+    );
+  }
+
+  function roster() {
+    return {
+      activeProfileId: state.activeProfileId,
+      profiles: [...state.learners.values()].map(({ createdAt, profile }) => ({
+        age: profile.age,
+        createdAt,
+        id: profile.id,
+        name: profile.name,
+        profileStatus: profile.profileStatus,
+      })),
+    };
+  }
+
+  function selectedLearner() {
+    return state.activeProfileId
+      ? (state.learners.get(state.activeProfileId) ?? null)
+      : null;
+  }
+
+  function selectionRequired() {
+    return e2eJson(
+      {
+        error: "learner_selection_required",
+        message: "Ask a grown-up to choose a learner.",
+      },
+      409,
+    );
+  }
+
+  function fullProfileState(learner: MockLearnerState) {
+    const answered = Object.keys(learner.profile.answers.responses).length;
+    const question = learner.profile.currentQuestionKey
+      ? mockQuestion(learner.profile.currentQuestionKey)
+      : null;
+    return {
+      canBypass: learner.profile.profileStatus === "completed",
+      experienceMode:
+        learner.profile.profileStatus === "completed" &&
+        getE2eProfileScenario() !== E2E_PROFILE_VIEWPORT_SCENARIO
+          ? "realtime"
+          : "form",
+      mode: "full",
+      profile: learner.profile,
+      progress: {
+        answered,
+        current: question?.position ?? questionnaire.questions.length,
+        total: questionnaire.questions.length,
+      },
+      question,
+      questionnaire: { version: questionnaire.version },
+    };
+  }
+
+  function profileEditorState(learner: MockLearnerState) {
+    return { profile: learner.profile, questions: mockQuestions() };
+  }
+
+  function updateAnswer(
+    learner: MockLearnerState,
+    answerKey: string,
+    raw: string,
+  ) {
+    const value = raw.normalize("NFKC").trim();
+    const questionIndex = questionnaire.questions.findIndex(
+      (question) => question.answerKey === answerKey,
+    );
+    if (questionIndex < 0) return false;
+    learner.profile.answers.responses[answerKey] = {
+      acknowledgment: "Thank you!",
+      answeredAt: E2E_DUB_RECORDED_AT,
+      enrichmentStatus: "generated",
+      question: questionnaire.questions[questionIndex]!.promptEn,
+      rawAnswer: value,
+      summary: value,
+    };
+    if (answerKey === "name" && value) learner.profile.name = value;
+    if (answerKey === "age" && /^\d+$/.test(value)) {
+      learner.profile.age = Number.parseInt(value, 10);
+    }
+    const next = questionnaire.questions[questionIndex + 1];
+    learner.profile.currentQuestionKey = next?.answerKey ?? null;
+    learner.profile.profileStatus = next ? "in_progress" : "completed";
+    learner.profile.completedAt = next ? null : E2E_DUB_RECORDED_AT;
+    persist();
+    return true;
+  }
+
+  async function jsonBody(request: Request) {
+    try {
+      return (await request.clone().json()) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+
+  function dubStatus(learner: MockLearnerState) {
+    const saved = new Set(learner.dub.savedLineIds);
+    return {
+      complete:
+        learner.dub.consentState === "granted" &&
+        E2E_DUB_LINE_IDS.every((id) => saved.has(id)),
+      consentState: learner.dub.consentState,
+      dubId: "five-little-ducks-v2",
+      guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
+      lines: E2E_DUB_LINE_IDS.map((id) => ({
+        id,
+        recordedAt: saved.has(id) ? E2E_DUB_RECORDED_AT : null,
+        saved: learner.dub.consentState === "granted" && saved.has(id),
+      })),
+      recordingEnabled: learner.dub.consentState === "granted",
+    };
+  }
+
+  async function handleDub(url: URL, method: string, request: Request) {
+    if (!url.pathname.startsWith("/api/dubs/")) return null;
+    const learner = selectedLearner();
+    if (!learner) return selectionRequired();
+
+    if (url.pathname === `${E2E_DUB_API}/consent`) {
+      if (method !== "PUT")
+        return e2eDubJson({ error: "method_not_allowed" }, 405);
+      if (currentGuardianAccess().mode !== "guardian") {
+        return e2eDubJson({ error: "guardian_required" }, 403);
+      }
+      const body = await jsonBody(request);
+      if (
+        body.accepted !== true ||
+        body.consentVersion !== E2E_DUB_CONSENT_VERSION
+      ) {
+        return e2eDubJson({ error: "invalid_request" }, 400);
+      }
+      learner.dub.consentState = "granted";
+      persist();
+      return new Response(null, { status: 204 });
+    }
+
+    if (url.pathname === E2E_DUB_API) {
+      if (method === "GET") return e2eDubJson(dubStatus(learner));
+      if (method === "DELETE") {
+        if (currentGuardianAccess().mode !== "guardian") {
+          return e2eDubJson({ error: "guardian_required" }, 403);
+        }
+        learner.dub = { consentState: "not_granted", savedLineIds: [] };
+        persist();
+        return new Response(null, { status: 204 });
+      }
+    }
+
+    const line = url.pathname.match(
+      /^\/api\/dubs\/five-little-ducks-v2\/lines\/(line-(?:[1-9]|1[0-9]|2[0-4]))(\/audio)?$/,
+    );
+    if (!line) return e2eDubJson({ error: "not_found" }, 404);
+    if (learner.dub.consentState !== "granted") {
+      return e2eDubJson({ error: "dubbing_not_enabled" }, 403);
+    }
+    const [, lineId, audio] = line;
+    if (method === "GET" && audio) {
+      return learner.dub.savedLineIds.includes(lineId)
+        ? new Response(createE2eDubBlob(), {
+            headers: { "Content-Type": "audio/webm" },
+          })
+        : new Response(null, { status: 404 });
+    }
+    if (method === "PUT" && !audio) {
+      if (!learner.dub.savedLineIds.includes(lineId)) {
+        learner.dub.savedLineIds.push(lineId);
+      }
+      persist();
+      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
+    }
+    return e2eDubJson({ error: "method_not_allowed" }, 405);
+  }
+
+  async function handleArt(url: URL, method: string): Promise<Response | null> {
+    const match = url.pathname.match(
+      /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
+    );
+    if (!match) return null;
+    const learner = selectedLearner();
+    if (!learner) return selectionRequired();
+    const storyId = decodeURIComponent(match[1]!);
+    const art = learner.art.get(storyId) ?? {
+      hasStoredArt: false,
+      updatedAt: null,
+    };
+    if (match[2]) {
+      return art.hasStoredArt
+        ? new Response(new Uint8Array([137, 80, 78, 71]), {
+            headers: { "Content-Type": "image/png" },
+          })
+        : new Response(null, { status: 404 });
+    }
+    if (method === "GET") {
+      return e2eJson({
+        enabled: true,
+        guardianConsentVersion: E2E_STORY_ART_CONSENT_VERSION,
+        hasStoredArt: art.hasStoredArt,
+        stories: art.hasStoredArt
+          ? {
+              [storyId]: {
+                pages: {
+                  "my-red-ball": {
+                    alt: `${learner.profile.name} holding a bright red ball`,
+                    src: `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset?v=1786276800000`,
+                  },
+                },
+              },
+            }
+          : {},
+        updatedAt: art.updatedAt,
+      });
+    }
+    if (method === "POST") {
+      learner.art.set(storyId, {
+        hasStoredArt: true,
+        updatedAt: E2E_DUB_RECORDED_AT,
+      });
+      persist();
+      const created: Response | null = await handleArt(url, "GET");
+      return e2eJson(await created!.json(), 201);
+    }
+    if (method === "DELETE") {
+      learner.art.delete(storyId);
+      persist();
+      return new Response(null, { status: 204 });
+    }
+    return e2eJson({ error: "method_not_allowed" }, 405);
+  }
+
+  async function handle(input: RequestInfo | URL, init?: RequestInit) {
+    const request =
+      input instanceof Request
+        ? input
+        : new Request(
+            input instanceof URL
+              ? input.href
+              : new URL(input, window.location.href),
+            init,
+          );
+    const url = new URL(request.url, window.location.href);
+    if (url.origin !== window.location.origin) return null;
+    const method = (init?.method ?? request.method ?? "GET").toUpperCase();
+
+    const dub = await handleDub(url, method, request);
+    if (dub) return dub;
+    const art = await handleArt(url, method);
+    if (art) return art;
+
+    if (url.pathname === "/api/learner-profiles") {
+      if (method === "GET") return e2eJson(roster());
+      if (method === "POST") {
+        if (scenario === "create-error") {
+          return e2eJson(
+            {
+              error: "create_failed",
+              message: "The learner could not be added.",
+            },
+            503,
+          );
+        }
+        const body = await jsonBody(request);
+        const name =
+          typeof body.name === "string"
+            ? body.name.normalize("NFKC").trim()
+            : "";
+        if (!name) {
+          return e2eJson(
+            {
+              error: "invalid_name",
+              message: "Please enter a preferred name.",
+            },
+            400,
+          );
+        }
+        const id = `learner-${name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-")}-${state.learners.size + 1}`;
+        const learner = createMockLearner(
+          id,
+          name,
+          null,
+          new Date(Date.UTC(2026, 7, state.learners.size + 3, 8)).toISOString(),
+          false,
+        );
+        state.learners.set(id, learner);
+        state.activeProfileId = id;
+        persist();
+        return e2eJson(roster());
+      }
+      return e2eJson({ error: "method_not_allowed" }, 405);
+    }
+
+    const selection = url.pathname.match(
+      /^\/api\/learner-profiles\/([^/]+)\/active$/,
+    );
+    if (selection && method === "PUT") {
+      let profileId = "";
+      try {
+        profileId = decodeURIComponent(selection[1]!);
+      } catch {
+        return e2eJson({ error: "not_found" }, 404);
+      }
+      if (!state.learners.has(profileId))
+        return e2eJson({ error: "not_found" }, 404);
+      if (scenario === "select-error" && profileId !== state.activeProfileId) {
+        return e2eJson(
+          { error: "select_failed", message: "Could not select this learner." },
+          503,
+        );
+      }
+      state.activeProfileId = profileId;
+      persist();
+      const response = e2eJson(roster());
+      if (scenario === "stale-selection" && !staleSelectionUsed) {
+        staleSelectionUsed = true;
+        return new Promise<Response>((resolve) => {
+          heldSelection = { resolve, response };
+        });
+      }
+      return response;
+    }
+
+    const learner = selectedLearner();
+    const learnerOwnedPath =
+      url.pathname.startsWith("/api/learner-profile") ||
+      url.pathname === "/api/profile" ||
+      url.pathname === "/api/profile/preferences" ||
+      url.pathname.startsWith("/api/lessons/my") ||
+      url.pathname.startsWith("/api/conversations");
+    if (learnerOwnedPath && !learner) return selectionRequired();
+    if (!learner) return null;
+
+    if (url.pathname === "/api/learner-profile" && method === "GET") {
+      return e2eJson(fullProfileState(learner));
+    }
+    if (
+      url.pathname === "/api/learner-profile/transcribe" &&
+      method === "POST"
+    ) {
+      return e2eJson({ transcript: learner.profile.name });
+    }
+    if (url.pathname === "/api/learner-profile/answer" && method === "PUT") {
+      const body = await jsonBody(request);
+      if (
+        typeof body.questionKey !== "string" ||
+        typeof body.rawAnswer !== "string" ||
+        !updateAnswer(learner, body.questionKey, body.rawAnswer)
+      ) {
+        return e2eJson({ error: "invalid_request" }, 400);
+      }
+      return e2eJson(fullProfileState(learner));
+    }
+    if (
+      (url.pathname === "/api/learner-profile/skip" ||
+        url.pathname === "/api/learner-profile/complete") &&
+      method === "POST"
+    ) {
+      learner.profile.profileStatus = "completed";
+      learner.profile.currentQuestionKey = null;
+      learner.profile.completedAt = E2E_DUB_RECORDED_AT;
+      persist();
+      return e2eJson(fullProfileState(learner));
+    }
+    if (
+      url.pathname === "/api/learner-profile/question/skip" &&
+      method === "POST"
+    ) {
+      const body = await jsonBody(request);
+      const index = questionnaire.questions.findIndex(
+        (question) => question.answerKey === body.questionKey,
+      );
+      learner.profile.currentQuestionKey =
+        questionnaire.questions[index + 1]?.answerKey ?? null;
+      persist();
+      return e2eJson(fullProfileState(learner));
+    }
+
+    if (url.pathname === "/api/profile" && method === "GET") {
+      return e2eJson(profileEditorState(learner));
+    }
+    if (url.pathname === "/api/profile" && method === "PUT") {
+      const body = await jsonBody(request);
+      const answers =
+        body.answers && typeof body.answers === "object"
+          ? (body.answers as Record<string, unknown>)
+          : {};
+      if (typeof answers.name === "string" && answers.name.trim()) {
+        learner.profile.name = answers.name.normalize("NFKC").trim();
+      }
+      if (typeof answers.age === "string" && /^\d+$/.test(answers.age.trim())) {
+        learner.profile.age = Number.parseInt(answers.age.trim(), 10);
+      }
+      if (typeof answers.description === "string") {
+        learner.profile.description = answers.description.trim() || null;
+      }
+      persist();
+      return e2eJson(profileEditorState(learner));
+    }
+    if (url.pathname === "/api/profile/preferences" && method === "PUT") {
+      const body = await jsonBody(request);
+      if (typeof body.storyLevel === "string") {
+        learner.profile.storyLevel =
+          body.storyLevel as MockLearnerProfile["storyLevel"];
+      }
+      persist();
+      return e2eJson(profileEditorState(learner));
+    }
+
+    if (url.pathname === "/api/lessons/my/generate" && method === "POST") {
+      const body = await jsonBody(request);
+      const topic =
+        typeof body.topic === "string" && body.topic.trim()
+          ? body.topic.normalize("NFKC").trim()
+          : "English practice";
+      const lesson = structuredClone(generatedLessonTemplate);
+      lesson.childName = learner.profile.name;
+      lesson.title = `${topic} with ${learner.profile.name}`;
+      return e2eJson({ lesson, warnings: [] });
+    }
+    if (url.pathname === "/api/lessons/my" && method === "GET") {
+      return e2eJson({ lessons: [...learner.lessons.values()] });
+    }
+    if (url.pathname === "/api/lessons/my" && method === "POST") {
+      const body = await jsonBody(request);
+      const id = `lesson-${learner.profile.id}-${learner.lessons.size + 1}`;
+      const descriptor: MockLessonDescriptor = {
+        createdAt: E2E_DUB_RECORDED_AT,
+        id,
+        lesson: body.lesson,
+        source: body.source === "generated" ? "generated" : "uploaded",
+        updatedAt: E2E_DUB_RECORDED_AT,
+      };
+      learner.lessons.set(id, descriptor);
+      persist();
+      return e2eJson({ lesson: descriptor }, 201);
+    }
+    const lessonMatch = url.pathname.match(/^\/api\/lessons\/my\/([^/]+)$/);
+    if (lessonMatch) {
+      const id = decodeURIComponent(lessonMatch[1]!);
+      const descriptor = learner.lessons.get(id);
+      if (!descriptor) return e2eJson({ error: "not_found" }, 404);
+      if (method === "GET") return e2eJson({ lesson: descriptor });
+      if (method === "PUT") {
+        const body = await jsonBody(request);
+        descriptor.lesson = body.lesson;
+        descriptor.updatedAt = E2E_DUB_RECORDED_AT;
+        persist();
+        return e2eJson({ lesson: descriptor, warnings: [] });
+      }
+    }
+
+    if (url.pathname === "/api/conversations" && method === "POST") {
+      const id = `${learner.profile.id}-conversation-${learner.conversationIds.size + 1}`;
+      learner.conversationIds.add(id);
+      persist();
+      return e2eJson(
+        {
+          conversation: {
+            authUserId: "e2e-user",
+            controllerState: {},
+            createdAt: E2E_DUB_RECORDED_AT,
+            endedAt: null,
+            finishReason: null,
+            id,
+            roomName: `${id}-room`,
+            scenarioKey: "onboarding",
+            scenarioVersion: 1,
+            startedAt: E2E_DUB_RECORDED_AT,
+            status: "starting",
+            updatedAt: E2E_DUB_RECORDED_AT,
+          },
+          livekit: {
+            participantToken: "parrot-e2e-participant-token",
+            url: "wss://parrot-e2e.invalid",
+          },
+          scenario: {
+            key: "onboarding",
+            maxOptionalExchanges: 3,
+            requiredDetails: ["name", "age"],
+            summaryMode: "prose",
+            version: 1,
+          },
+        },
+        201,
+      );
+    }
+    const conversation = url.pathname.match(
+      /^\/api\/conversations\/([^/]+)(\/finish|\/review)?$/,
+    );
+    if (conversation) {
+      const id = decodeURIComponent(conversation[1]!);
+      if (!learner.conversationIds.has(id)) {
+        return e2eJson({ error: "not_found" }, 404);
+      }
+      if (conversation[2] === "/review") {
+        return e2eJson({
+          bypassed: false,
+          conversationId: id,
+          profileCompleted: true,
+        });
+      }
+      if (conversation[2] === "/finish") {
+        return e2eJson({ conversation: { id, status: "finished" } });
+      }
+      return e2eJson({
+        conversation: {
+          id,
+          turns: [
+            {
+              id: `${id}-greeting`,
+              role: "assistant",
+              text: `Lovely chat, ${learner.profile.name}!`,
+            },
+          ],
+        },
+      });
+    }
+
+    return null;
+  }
+
+  persist();
+  return {
+    handle,
+    releaseStaleSelection() {
+      if (!heldSelection) return false;
+      const pending = heldSelection;
+      heldSelection = null;
+      pending.resolve(pending.response);
+      return true;
+    },
+    snapshot() {
+      return {
+        activeProfileId: state.activeProfileId,
+        profiles: roster().profiles,
+        sessionId,
+        staleSelectionPending: heldSelection !== null,
+      };
+    },
+  };
+}
+
 function getE2eScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
-    "parrotE2eScenario"
+    "parrotE2eScenario",
   );
 
   return scenario && E2E_SCENARIOS.has(scenario) ? scenario : DEFAULT_SCENARIO;
@@ -319,16 +1141,10 @@ function getE2eProfileVisualPhase() {
 }
 
 type E2EProfileOperation =
-  | "answerSave"
-  | "questionSkip"
-  | "skipForNow"
-  | "transcription";
+  "answerSave" | "questionSkip" | "skipForNow" | "transcription";
 
 type E2EProfileOperationPhase =
-  | "listening"
-  | "opening"
-  | "thinking"
-  | "writing";
+  "listening" | "opening" | "thinking" | "writing";
 
 type E2EOperationCounters = {
   aborted: number;
@@ -449,7 +1265,8 @@ function createE2eDubStore(scenario: string | null) {
   const savedLineIds = persisted
     ? (JSON.parse(persisted) as string[])
     : initialE2eDubLineIds(scenario);
-  if (persisted === null) sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
+  if (persisted === null)
+    sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
   let consentState = (sessionStorage.getItem(consentKey) ??
     (scenario === "not-granted" || scenario === "reset-interrupted"
       ? "not_granted"
@@ -500,9 +1317,10 @@ function createE2eDubStore(scenario: string | null) {
   }
 
   function disabledDubResponse() {
-    const error = consentState === "revoking"
-      ? "dub_consent_revoking"
-      : "dubbing_not_enabled";
+    const error =
+      consentState === "revoking"
+        ? "dub_consent_revoking"
+        : "dubbing_not_enabled";
     return e2eDubJson({ error }, consentState === "revoking" ? 409 : 403);
   }
 
@@ -510,7 +1328,8 @@ function createE2eDubStore(scenario: string | null) {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
       if (url.pathname === `${E2E_DUB_API}/consent`) {
-        if (method !== "PUT") return e2eDubJson({ error: "method_not_allowed" }, 405);
+        if (method !== "PUT")
+          return e2eDubJson({ error: "method_not_allowed" }, 405);
         if (currentGuardianAccess().mode !== "guardian") {
           return e2eDubJson({ error: "guardian_required" }, 403);
         }
@@ -544,7 +1363,9 @@ function createE2eDubStore(scenario: string | null) {
         if (method === "GET") {
           if (delayNextStatus) {
             delayNextStatus = false;
-            await new Promise<void>((resolve) => window.setTimeout(resolve, 400));
+            await new Promise<void>((resolve) =>
+              window.setTimeout(resolve, 400),
+            );
           }
           if (legacyResetPending && consentState === "granted") {
             return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
@@ -578,7 +1399,9 @@ function createE2eDubStore(scenario: string | null) {
             return new Response(null, { status: 503 });
           }
           if (legacyResetPending || resetCleanupPending) {
-            await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
+            await new Promise<void>((resolve) =>
+              window.setTimeout(resolve, 250),
+            );
             legacyResetPending = false;
             resetCleanupPending = false;
             sessionStorage.setItem(resetKey, "yes");
@@ -628,7 +1451,8 @@ function createE2eDubStore(scenario: string | null) {
             })
           : new Response(null, { status: 404 });
       }
-      if (method !== "PUT" || audioPath) return new Response(null, { status: 405 });
+      if (method !== "PUT" || audioPath)
+        return new Response(null, { status: 405 });
 
       uploads.push(url.pathname);
       const clip = await request.blob();
@@ -679,18 +1503,24 @@ type MockGuardianAccess = {
 };
 
 type MockGuardianScenario =
-  | "learner"
-  | "guardian"
-  | "unlock-error"
-  | "lock-error"
-  | "expired";
+  "learner" | "guardian" | "unlock-error" | "lock-error" | "expired";
 
 function getE2eGuardianScenario(): MockGuardianScenario {
-  const scenario = new URL(window.location.href).searchParams.get(
+  const persistForLearnerScenario = getE2eLearnerScenario() !== null;
+  const requested = new URL(window.location.href).searchParams.get(
     "parrotE2eGuardian",
   );
-  return scenario && E2E_GUARDIAN_SCENARIOS.has(scenario)
-    ? (scenario as MockGuardianScenario)
+  if (requested && E2E_GUARDIAN_SCENARIOS.has(requested)) {
+    if (persistForLearnerScenario) {
+      sessionStorage.setItem(E2E_GUARDIAN_SCENARIO_KEY, requested);
+    }
+    return requested as MockGuardianScenario;
+  }
+  const persisted = persistForLearnerScenario
+    ? sessionStorage.getItem(E2E_GUARDIAN_SCENARIO_KEY)
+    : null;
+  return persisted && E2E_GUARDIAN_SCENARIOS.has(persisted)
+    ? (persisted as MockGuardianScenario)
     : "learner";
 }
 
@@ -700,13 +1530,17 @@ const guardianStorageKey = `parrot-e2e-guardian-access:${guardianScenario}`;
 function initialGuardianAccess(): MockGuardianAccess {
   if (guardianScenario === "guardian" || guardianScenario === "lock-error") {
     return {
-      expiresAt: new Date(Date.now() + E2E_GUARDIAN_ACCESS_TTL_MS).toISOString(),
+      expiresAt: new Date(
+        Date.now() + E2E_GUARDIAN_ACCESS_TTL_MS,
+      ).toISOString(),
       mode: "guardian",
     };
   }
   if (guardianScenario === "expired") {
     return {
-      expiresAt: new Date(Date.now() + E2E_EXPIRED_ACCESS_DELAY_MS).toISOString(),
+      expiresAt: new Date(
+        Date.now() + E2E_EXPIRED_ACCESS_DELAY_MS,
+      ).toISOString(),
       mode: "guardian",
     };
   }
@@ -753,6 +1587,12 @@ function currentGuardianAccess() {
 }
 
 function requiresGuardianAccess(url: URL, method: string) {
+  if (url.pathname === "/api/learner-profiles") {
+    return method === "GET" || method === "POST";
+  }
+  if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(url.pathname)) {
+    return method === "PUT";
+  }
   if (url.pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
   }
@@ -782,7 +1622,8 @@ async function guardianResponse(
       const body = init?.body ?? (request ? await request.clone().text() : "");
       let password = "";
       try {
-        password = (JSON.parse(String(body)) as { password?: unknown }).password as string;
+        password = (JSON.parse(String(body)) as { password?: unknown })
+          .password as string;
       } catch {
         return e2eJson({ error: "invalid_json" }, 400);
       }
@@ -987,11 +1828,24 @@ function rejectNextProfileRecording() {
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
   const dubStore = createE2eDubStore(getE2eDubScenario());
+  const learnerScenario = getE2eLearnerScenario();
+  const learnerAccount = learnerScenario
+    ? createE2eLearnerAccount(learnerScenario, getE2eLearnerSessionId())
+    : null;
 
   if (dubStore) {
     Object.defineProperty(window, "__parrotE2eDub", {
       configurable: true,
       value: { snapshot: () => dubStore.snapshot() },
+    });
+  }
+  if (learnerAccount) {
+    Object.defineProperty(window, "__parrotE2eLearners", {
+      configurable: true,
+      value: {
+        releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
+        snapshot: () => learnerAccount.snapshot(),
+      },
     });
   }
 
@@ -1016,6 +1870,10 @@ function installE2eProfileFetchMock() {
     }
     const guardedResponse = await guardianResponse(input, init, url, method);
     if (guardedResponse) return guardedResponse;
+    if (learnerAccount) {
+      const learnerResponse = await learnerAccount.handle(input, init);
+      if (learnerResponse) return learnerResponse;
+    }
     const profileOperation = profileOperationForRequest(url, method);
 
     const visualPhase = getE2eProfileVisualPhase();
@@ -1023,7 +1881,9 @@ function installE2eProfileFetchMock() {
       visualPhase === "ready" && profileOperation === "transcription";
 
     if (shouldResolveReadyTranscription) {
-      return e2eJson(defaultProfileOperationPayload("transcription", profileScenario));
+      return e2eJson(
+        defaultProfileOperationPayload("transcription", profileScenario),
+      );
     }
 
     if (hasHeldE2eProfileOperations() && profileOperation) {
@@ -1115,10 +1975,7 @@ class MockAudioElement {
 
   async play() {
     playedAudioSources.push(this.src);
-    if (
-      hasHeldE2eProfilePlayback() &&
-      this.src.includes("learner-profile")
-    ) {
+    if (hasHeldE2eProfilePlayback() && this.src.includes("learner-profile")) {
       if (!this.held) {
         this.held = true;
         pendingProfilePlayback.add(this);
@@ -1153,7 +2010,7 @@ class MockMediaRecorder {
 
   constructor(
     readonly stream: MediaStream,
-    readonly options?: MediaRecorderOptions
+    readonly options?: MediaRecorderOptions,
   ) {}
 
   start() {
@@ -1229,7 +2086,10 @@ class MockAudioContext {
   async close() {
     if (this.closed) {
       audioContextDoubleCloses += 1;
-      throw new DOMException("Cannot close a closed AudioContext.", "InvalidStateError");
+      throw new DOMException(
+        "Cannot close a closed AudioContext.",
+        "InvalidStateError",
+      );
     }
     this.closed = true;
   }
@@ -1331,24 +2191,16 @@ function microphoneSnapshot() {
 }
 
 function resolveThinkingOperation() {
-  const operation = ([
-    "answerSave",
-    "questionSkip",
-    "skipForNow",
-  ] as E2EProfileOperation[]).find(
-    (candidate) => pendingProfileOperations[candidate].length > 0,
-  );
+  const operation = (
+    ["answerSave", "questionSkip", "skipForNow"] as E2EProfileOperation[]
+  ).find((candidate) => pendingProfileOperations[candidate].length > 0);
   return operation ? resolveNextProfileOperation(operation) : false;
 }
 
 function rejectThinkingOperation() {
-  const operation = ([
-    "answerSave",
-    "questionSkip",
-    "skipForNow",
-  ] as E2EProfileOperation[]).find(
-    (candidate) => pendingProfileOperations[candidate].length > 0,
-  );
+  const operation = (
+    ["answerSave", "questionSkip", "skipForNow"] as E2EProfileOperation[]
+  ).find((candidate) => pendingProfileOperations[candidate].length > 0);
   return operation ? rejectNextProfileOperation(operation) : false;
 }
 

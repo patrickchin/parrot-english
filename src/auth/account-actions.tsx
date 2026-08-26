@@ -12,6 +12,7 @@ import {
 export type AccountExperience = {
   error: string;
   guardianUnlockDestination?: string | null;
+  hasActiveLearner: boolean;
   learnerName: string | null;
   onOpenProfile: (() => void) | null;
 };
@@ -25,7 +26,9 @@ type AccountActionContextValue = {
   setAction: AccountExperienceSetter;
 };
 
-const AccountActionContext = createContext<AccountActionContextValue | null>(null);
+const AccountActionContext = createContext<AccountActionContextValue | null>(
+  null,
+);
 
 export function AccountActionProvider({
   children,

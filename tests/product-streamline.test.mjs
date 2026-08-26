@@ -62,7 +62,7 @@ test("home gives children four clear, working learning choices", () => {
   );
 });
 
-test("guardian dashboard presents five focused grown-up destinations", () => {
+test("guardian dashboard presents focused grown-up destinations", () => {
   assert.equal(
     typeof GuardianDashboardView,
     "function",
@@ -82,6 +82,7 @@ test("guardian dashboard presents five focused grown-up destinations", () => {
   );
 
   for (const heading of [
+    "Learner profiles",
     "Learner details",
     "My Lessons",
     "Story settings",
@@ -90,14 +91,15 @@ test("guardian dashboard presents five focused grown-up destinations", () => {
   ]) {
     assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
   }
-  assert.equal((html.match(/<h2/g) ?? []).length, 5);
+  assert.equal((html.match(/<h2/g) ?? []).length, 6);
   assert.deepEqual(hrefs, [
+    "/guardian/learners",
     "/guardian/profile?returnTo=%2Fguardian",
     "/guardian/lessons",
     "/guardian/stories",
     "/guardian/dubbing",
   ]);
-  assert.match(html, /Managing Mia/);
+  assert.match(html, /Managing <bdi[^>]*>Mia<\/bdi>/);
   assert.match(html, /Manage learner details/);
   assert.match(html, /AI and saved data.*sign out.*delete/i);
   assert.match(html, /Switch to learner/);
@@ -183,7 +185,13 @@ test("the shipped application no longer carries the pixel-game prototype", () =>
     existsSync(new URL("../src/games/PixelLessonLab.tsx", import.meta.url)),
     false,
   );
-  assert.equal(existsSync(new URL("../worker/pixel-lessons.ts", import.meta.url)), false);
+  assert.equal(
+    existsSync(new URL("../worker/pixel-lessons.ts", import.meta.url)),
+    false,
+  );
   assert.doesNotMatch(appSource, /PixelLesson|PixelWorld|path="\/games/);
-  assert.doesNotMatch(workerSource, /pixelLesson|PixelLesson|\/api\/pixel-lessons/);
+  assert.doesNotMatch(
+    workerSource,
+    /pixelLesson|PixelLesson|\/api\/pixel-lessons/,
+  );
 });

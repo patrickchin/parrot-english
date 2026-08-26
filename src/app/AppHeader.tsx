@@ -15,12 +15,7 @@ import {
   type ReactNode,
 } from "react";
 import type { LinkProps } from "react-router";
-import {
-  ActionButton,
-  ActionLink,
-  cx,
-  MenuButton,
-} from "../shared/ui";
+import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
 import { AboutDialog } from "./AboutDialog";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 
@@ -70,6 +65,35 @@ export function RouteHeader({ children }: { children: ReactNode }) {
   );
 }
 
+export function BidiLearnerName({
+  fallback = "Learner",
+  learnerName,
+}: {
+  fallback?: string;
+  learnerName: string;
+}) {
+  return (
+    <bdi className="min-w-0 [overflow-wrap:anywhere]" dir="auto">
+      {learnerName.trim() || fallback}
+    </bdi>
+  );
+}
+
+export function GuardianLearnerContextLabel({
+  learnerName,
+}: {
+  learnerName: string;
+}) {
+  return (
+    <p
+      className="m-0 min-w-0 max-w-full text-xs font-black uppercase tracking-[0.18em] text-brand-blue [overflow-wrap:anywhere] sm:text-sm"
+      dir="ltr"
+    >
+      Managing <BidiLearnerName learnerName={learnerName} />
+    </p>
+  );
+}
+
 export function HeaderButton({
   children,
   icon,
@@ -114,11 +138,14 @@ export function AccountHeader({
   activeMode,
   error,
   guardianLabel,
+  hasActiveLearner = true,
   isDialogOpen = false,
   isModePending,
   isSigningOut,
   learnerLabel,
   onDeleteAccount,
+  onOpenGuardianDashboard,
+  onOpenLearnerProfiles,
   onOpenProfile,
   onRetryError,
   onSelectGuardian,
@@ -130,11 +157,14 @@ export function AccountHeader({
   activeMode: "guardian" | "learner";
   error: string;
   guardianLabel: string;
+  hasActiveLearner?: boolean;
   isDialogOpen?: boolean;
   isModePending: boolean;
   isSigningOut: boolean;
   learnerLabel: string;
   onDeleteAccount: (password: string) => Promise<string | null>;
+  onOpenGuardianDashboard: () => void;
+  onOpenLearnerProfiles: () => void;
   onOpenProfile: () => void;
   onRetryError?: () => void;
   onSelectGuardian: (button: HTMLButtonElement) => void;
@@ -151,7 +181,9 @@ export function AccountHeader({
   const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
   const signOutAlertId = useId();
-  const activeLabel = activeMode === "guardian" ? guardianLabel : learnerLabel;
+  const managedLearnerLabel = learnerLabel.trim() || "Learner";
+  const activeLabel =
+    activeMode === "guardian" ? guardianLabel : managedLearnerLabel;
   const activeModeLabel = activeMode === "guardian" ? "Guardian" : "Learner";
   const profileLabel = `Profile for ${activeLabel}, ${activeMode} mode`;
   const showSignOutRecovery =
@@ -222,9 +254,7 @@ export function AccountHeader({
     setIsMenuOpen(true);
   }
 
-  function handleAccountKeyDown(
-    event: ReactKeyboardEvent<HTMLButtonElement>,
-  ) {
+  function handleAccountKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
     if (isSigningOut) return;
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
@@ -244,14 +274,15 @@ export function AccountHeader({
     if (items.length === 0) return;
     event.preventDefault();
 
-    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+    const currentIndex = items.indexOf(
+      document.activeElement as HTMLButtonElement,
+    );
     let nextIndex = 0;
     if (event.key === "End") nextIndex = items.length - 1;
     else if (event.key === "ArrowDown") {
       nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
     } else if (event.key === "ArrowUp") {
-      nextIndex =
-        currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+      nextIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
     }
     items[nextIndex]?.focus();
   }
@@ -273,9 +304,7 @@ export function AccountHeader({
         <ActionButton
           aria-disabled={isSigningOut || undefined}
           aria-label={
-            isSigningOut
-              ? `Signing out… ${profileLabel}`
-              : profileLabel
+            isSigningOut ? `Signing out… ${profileLabel}` : profileLabel
           }
           aria-controls={menuId}
           aria-expanded={isMenuOpen}
@@ -309,7 +338,9 @@ export function AccountHeader({
               )}
             </span>
             <span className="hidden min-w-0 leading-tight wide:grid">
-              <span className="max-w-40 truncate">{activeLabel}</span>
+              <span className="max-w-40 truncate">
+                <BidiLearnerName learnerName={activeLabel} />
+              </span>
               <span className="text-[0.65rem] uppercase tracking-wider text-sky-100">
                 {activeModeLabel}
               </span>
@@ -374,23 +405,26 @@ export function AccountHeader({
         {activeMode === "guardian" ? signOutError : ""}
       </span>
       {isMenuOpen && !isSigningOut ? (
-        <div
-          className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"
-        >
+        <div className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] w-72 min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]">
           <div
             aria-label="Active profile"
             className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
             role="group"
           >
-            <p className="m-0 min-w-0 break-words" dir="auto">
-              {activeLabel}
+            <p className="m-0 min-w-0 [overflow-wrap:anywhere]">
+              <BidiLearnerName learnerName={activeLabel} />
             </p>
             <p className="m-0 text-[0.65rem] uppercase tracking-wider">
               {activeModeLabel}
             </p>
             {activeMode === "guardian" && guardianLabel !== userEmail ? (
-              <p className="m-0 min-w-0 break-words" dir="auto">
+              <p className="m-0 min-w-0 [overflow-wrap:anywhere]" dir="auto">
                 {userEmail}
+              </p>
+            ) : null}
+            {activeMode === "guardian" && hasActiveLearner ? (
+              <p className="m-0 min-w-0 [overflow-wrap:anywhere]" dir="ltr">
+                Managing <BidiLearnerName learnerName={managedLearnerLabel} />
               </p>
             ) : null}
           </div>
@@ -402,7 +436,9 @@ export function AccountHeader({
             onBlur={(event) => {
               if (
                 !isDialogOpen &&
-                !event.currentTarget.contains(event.relatedTarget as Node | null)
+                !event.currentTarget.contains(
+                  event.relatedTarget as Node | null,
+                )
               ) {
                 setIsMenuOpen(false);
               }
@@ -425,27 +461,55 @@ export function AccountHeader({
                   </span>
                 </span>
               </MenuButton>
-            ) : (
-              <MenuButton
-                disabled={isModePending}
-                onClick={onSelectLearner}
-                role="menuitem"
-                type="button"
-              >
-                Switch to learner
-              </MenuButton>
-            )}
-            {activeMode === "guardian" ? (
-              <MenuButton
-                onClick={() => selectAction(onOpenProfile)}
-                role="menuitem"
-                type="button"
-              >
-                Manage learner details
-              </MenuButton>
             ) : null}
             {activeMode === "guardian" ? (
               <>
+                <MenuButton
+                  onClick={() => selectAction(onOpenGuardianDashboard)}
+                  role="menuitem"
+                  type="button"
+                >
+                  Guardian dashboard
+                </MenuButton>
+                <MenuButton
+                  onClick={() => selectAction(onOpenLearnerProfiles)}
+                  role="menuitem"
+                  type="button"
+                >
+                  Learner profiles
+                </MenuButton>
+                {hasActiveLearner ? (
+                  <>
+                    <MenuButton
+                      onClick={() => selectAction(onOpenProfile)}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <span
+                        className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
+                        dir="ltr"
+                      >
+                        Manage{" "}
+                        <BidiLearnerName learnerName={managedLearnerLabel} />
+                        &apos;s details
+                      </span>
+                    </MenuButton>
+                    <MenuButton
+                      disabled={isModePending}
+                      onClick={onSelectLearner}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <span
+                        className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
+                        dir="ltr"
+                      >
+                        Switch to{" "}
+                        <BidiLearnerName learnerName={managedLearnerLabel} />
+                      </span>
+                    </MenuButton>
+                  </>
+                ) : null}
                 <MenuButton
                   onClick={() => selectAction(() => setIsAboutOpen(true))}
                   role="menuitem"
@@ -477,10 +541,7 @@ export function AccountHeader({
         </div>
       ) : null}
       {activeMode === "guardian" && isAboutOpen ? (
-        <AboutDialog
-          onClose={closeAbout}
-          returnFocusRef={accountButtonRef}
-        />
+        <AboutDialog onClose={closeAbout} returnFocusRef={accountButtonRef} />
       ) : null}
       {activeMode === "guardian" && isDeleteOpen ? (
         <AccountDeleteDialog

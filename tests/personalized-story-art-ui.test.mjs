@@ -41,14 +41,29 @@ after(async () => {
   await vite.close();
 });
 
-function renderInRouter(element, initialEntry = "/stories/the-red-ball/pages/1") {
+function renderInRouter(
+  element,
+  initialEntry = "/stories/the-red-ball/pages/1",
+) {
   return renderToStaticMarkup(
     createElement(MemoryRouter, { initialEntries: [initialEntry] }, element),
   );
 }
 
+function textFromMarkup(markup) {
+  return markup
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&amp;", "&");
+}
+
 function renderStoryArtwork(props) {
-  assert.equal(typeof StoryArtwork, "function", "Expected StoryArtwork to load");
+  assert.equal(
+    typeof StoryArtwork,
+    "function",
+    "Expected StoryArtwork to load",
+  );
   return renderToStaticMarkup(createElement(StoryArtwork, props));
 }
 
@@ -72,7 +87,9 @@ function renderSetupPanel(props) {
     "function",
     "Expected PersonalizedStoryArtPanel in src/stories/PersonalizedStoryArtPanel.tsx",
   );
-  return renderToStaticMarkup(createElement(PersonalizedStoryArtPanel, props));
+  return renderToStaticMarkup(
+    createElement(PersonalizedStoryArtPanel, { learnerName: "Mia", ...props }),
+  );
 }
 
 describe("personalized story art UI", () => {
@@ -121,7 +138,10 @@ describe("personalized story art UI", () => {
     const sizes = "(max-width: 519px) calc(100vw - 24px), 273px";
 
     const publicHtml = renderStoryArtwork({ artwork, sizes });
-    assert.match(publicHtml, new RegExp(`sizes="${sizes.replace(/[()]/g, "\\$&")}"`));
+    assert.match(
+      publicHtml,
+      new RegExp(`sizes="${sizes.replace(/[()]/g, "\\$&")}"`),
+    );
     assert.match(
       publicHtml,
       /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v3\/stories\/the-red-ball-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v3\/stories\/the-red-ball-cover-768\.webp 768w"/,
@@ -208,11 +228,14 @@ describe("personalized story art UI", () => {
       personalizedArtwork: null,
       storyTitle: "The Red Ball",
     });
+    const lockedText = textFromMarkup(locked);
     assert.match(locked, /guardian consent/i);
     assert.match(locked, /I am 18 or older/i);
+    assert.match(lockedText, /look like Mia/);
+    assert.match(lockedText, /I am Mia's guardian/i);
     assert.match(locked, /Cloudflare Workers AI/i);
     assert.match(locked, /type="checkbox"/);
-    assert.match(locked, /Upload learner photo/);
+    assert.match(lockedText, /Upload Mia's photo/);
     assert.match(locked, /Generate story art/);
     assert.match(locked, /disabled=""/);
 
@@ -263,7 +286,10 @@ describe("personalized story art UI", () => {
 
     assert.match(html, /aria-label="Personalized story art"/);
     assert.match(html, /Delete stored story art/);
-    assert.doesNotMatch(html, /Upload learner photo|Generate story art/);
+    assert.doesNotMatch(
+      textFromMarkup(html),
+      /Upload .* photo|Generate story art/,
+    );
 
     const completed = renderSetupPanel({
       consentChecked: false,
@@ -281,8 +307,8 @@ describe("personalized story art UI", () => {
 
     assert.match(completed, /Personalized story art removed\./);
     assert.doesNotMatch(
-      completed,
-      /Delete stored story art|Upload learner photo|Generate story art/,
+      textFromMarkup(completed),
+      /Delete stored story art|Upload .* photo|Generate story art/,
     );
   });
 });

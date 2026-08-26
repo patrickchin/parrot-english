@@ -108,18 +108,21 @@ export class LearnerProfileApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly fieldErrors: Record<string, string>;
+  readonly isFieldError: boolean;
 
   constructor(
     status: number,
     code: string,
     message: string,
     fieldErrors: Record<string, string> = {},
+    isFieldError = false,
   ) {
     super(message);
     this.name = "LearnerProfileApiError";
     this.status = status;
     this.code = code;
     this.fieldErrors = fieldErrors;
+    this.isFieldError = isFieldError;
   }
 }
 
@@ -137,7 +140,10 @@ function stringRecord(value: unknown) {
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
-  { fetch: request = globalThis.fetch, signal }: LearnerProfileRequestOptions = {}
+  {
+    fetch: request = globalThis.fetch,
+    signal,
+  }: LearnerProfileRequestOptions = {},
 ): Promise<Result> {
   const response = await request(path, { ...init, signal });
   let payload: unknown;
@@ -175,6 +181,7 @@ async function requestJson<Result>(
       code,
       message,
       stringRecord(errorPayload.fieldErrors),
+      typeof errorPayload.fieldError === "string",
     );
   }
 
@@ -186,7 +193,7 @@ function jsonRequest<Result>(
   method: "PUT",
   questionKey: string,
   rawAnswer: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   return requestJson<Result>(
     path,
@@ -195,7 +202,7 @@ function jsonRequest<Result>(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionKey, rawAnswer }),
     },
-    options
+    options,
   );
 }
 
@@ -224,6 +231,45 @@ function requireValidProfileState(state: ProfileState): ProfileState {
     );
   }
   return state;
+}
+
+function requireValidLearnerProfileRoster(
+  roster: LearnerProfileRoster,
+): LearnerProfileRoster {
+  const profiles = roster?.profiles;
+  const activeProfileId = roster?.activeProfileId;
+  const ids = new Set<string>();
+  const validProfiles =
+    Array.isArray(profiles) &&
+    profiles.every((profile) => {
+      if (
+        profile === null ||
+        typeof profile !== "object" ||
+        typeof profile.id !== "string" ||
+        !profile.id.trim() ||
+        ids.has(profile.id) ||
+        typeof profile.name !== "string" ||
+        !profile.name.trim()
+      ) {
+        return false;
+      }
+      ids.add(profile.id);
+      return true;
+    });
+  const validActiveProfile =
+    activeProfileId === null ||
+    (typeof activeProfileId === "string" &&
+      Boolean(activeProfileId.trim()) &&
+      ids.has(activeProfileId));
+
+  if (!validProfiles || !validActiveProfile) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_roster",
+      "Learner profiles could not be loaded.",
+    );
+  }
+  return roster;
 }
 
 async function learnerProfileRequest(
@@ -270,7 +316,7 @@ export async function loadLearnerProfile(
 export function saveLearnerProfileAnswer(
   questionKey: string,
   rawAnswer: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   return learnerProfileRequest(
     "/api/learner-profile/answer",
@@ -279,7 +325,7 @@ export function saveLearnerProfileAnswer(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionKey, rawAnswer }),
     },
-    options
+    options,
   );
 }
 
@@ -287,13 +333,13 @@ export function skipLearnerProfile(options?: LearnerProfileRequestOptions) {
   return learnerProfileRequest(
     "/api/learner-profile/skip",
     { method: "POST" },
-    options
+    options,
   );
 }
 
 export function skipLearnerProfileQuestion(
   questionKey: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   return learnerProfileRequest(
     "/api/learner-profile/question/skip",
@@ -302,7 +348,7 @@ export function skipLearnerProfileQuestion(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionKey }),
     },
-    options
+    options,
   );
 }
 
@@ -310,12 +356,22 @@ export function completeLearnerProfile(options?: LearnerProfileRequestOptions) {
   return learnerProfileRequest(
     "/api/learner-profile/complete",
     { method: "POST" },
-    options
+    options,
+  );
+}
+
+async function learnerProfilesRequest(
+  path: string,
+  init: RequestInit,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requireValidLearnerProfileRoster(
+    await requestJson<LearnerProfileRoster>(path, init, options),
   );
 }
 
 export function loadLearnerProfiles(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileRoster>(
+  return learnerProfilesRequest(
     "/api/learner-profiles",
     { method: "GET" },
     options,
@@ -326,7 +382,7 @@ export function createLearnerProfile(
   name: string,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<LearnerProfileRoster>(
+  return learnerProfilesRequest(
     "/api/learner-profiles",
     {
       method: "POST",
@@ -341,7 +397,7 @@ export function selectLearnerProfile(
   profileId: string,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<LearnerProfileRoster>(
+  return learnerProfilesRequest(
     `/api/learner-profiles/${encodeURIComponent(profileId)}/active`,
     { method: "PUT" },
     options,
@@ -349,17 +405,13 @@ export function selectLearnerProfile(
 }
 
 export function loadProfile(options?: LearnerProfileRequestOptions) {
-  return profileRequest(
-    "/api/profile",
-    { method: "GET" },
-    options
-  );
+  return profileRequest("/api/profile", { method: "GET" }, options);
 }
 
 export async function saveProfileAnswer(
   questionKey: string,
   rawAnswer: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   return requireValidProfileState(
     await jsonRequest<ProfileState>(
@@ -404,13 +456,13 @@ export function saveStoryLevel(
 
 export function transcribeLearnerProfileAudio(
   audio: Blob,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   const formData = new FormData();
   formData.set("audio", audio, "learner-profile-answer.webm");
   return requestJson<{ transcript: string }>(
     "/api/learner-profile/transcribe",
     { method: "POST", body: formData },
-    options
+    options,
   );
 }

@@ -8,7 +8,12 @@ import {
   type Ref,
 } from "react";
 import { useNavigate } from "react-router";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import {
+  BidiLearnerName,
+  GuardianLearnerContextLabel,
+  HeaderLink,
+  RouteHeader,
+} from "../app/AppHeader";
 import { getDuckDubPath, getGuardianPath } from "../app/app-routes";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { ActionButton, Card } from "../shared/ui";
@@ -30,6 +35,7 @@ export function GuardianDubbingSettingsView({
   error,
   hasAccepted,
   isLoading,
+  learnerName,
   mutation,
   onAcceptedChange,
   onDelete,
@@ -45,6 +51,7 @@ export function GuardianDubbingSettingsView({
   error: string;
   hasAccepted: boolean;
   isLoading: boolean;
+  learnerName: string;
   mutation: Mutation | null;
   onAcceptedChange: (accepted: boolean) => void;
   onDelete: () => void;
@@ -54,6 +61,7 @@ export function GuardianDubbingSettingsView({
   savedCount: number;
   stateHeadingRef?: Ref<HTMLHeadingElement>;
 }) {
+  const managedLearnerName = learnerName.trim() || "Learner";
   const busy = isLoading || mutation !== null;
 
   function submitGrant(event: FormEvent<HTMLFormElement>) {
@@ -75,11 +83,16 @@ export function GuardianDubbingSettingsView({
 
       <section className="mx-auto grid w-full max-w-3xl gap-6">
         <header className="grid gap-2 text-center">
+          <GuardianLearnerContextLabel learnerName={managedLearnerName} />
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Voice dubbing
           </h1>
-          <p className="m-0 font-bold leading-relaxed text-slate-600">
-            Manage private voice clips for Five Little Ducks.
+          <p
+            className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+            dir="ltr"
+          >
+            Manage <BidiLearnerName learnerName={managedLearnerName} />
+            &apos;s private voice clips for Five Little Ducks.
           </p>
         </header>
 
@@ -121,10 +134,15 @@ export function GuardianDubbingSettingsView({
               >
                 Turn on private voice dubbing
               </h2>
-              <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Five Little Ducks saves the learner&apos;s voice clips privately
-                in this account. They are used only for the learner&apos;s private
-                playback and are deleted with the account.
+              <p
+                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+                dir="ltr"
+              >
+                Five Little Ducks saves{" "}
+                <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s private voice clips in this account. They are used only
+                for <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s private playback and are deleted with the account.
               </p>
             </div>
 
@@ -134,12 +152,15 @@ export function GuardianDubbingSettingsView({
                   checked={hasAccepted}
                   className="mt-1 size-5 shrink-0 accent-brand-blue"
                   disabled={busy}
-                  onChange={(event) => onAcceptedChange(event.currentTarget.checked)}
+                  onChange={(event) =>
+                    onAcceptedChange(event.currentTarget.checked)
+                  }
                   type="checkbox"
                 />
-                <span>
-                  I am the learner&apos;s guardian and I consent to saving these
-                  private voice clips.
+                <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
+                  I am <BidiLearnerName learnerName={managedLearnerName} />
+                  &apos;s guardian and I consent to saving these private voice
+                  clips.
                 </span>
               </label>
               <ActionButton
@@ -168,8 +189,12 @@ export function GuardianDubbingSettingsView({
               <p className="m-0 font-extrabold text-brand-blue">
                 {savedCount} of {DUB_LINES.length} lines saved
               </p>
-              <p className="m-0 font-bold leading-relaxed text-slate-600">
-                The learner can record and replace lines in Five Little Ducks.
+              <p
+                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+                dir="ltr"
+              >
+                <BidiLearnerName learnerName={managedLearnerName} /> can record
+                and replace lines in Five Little Ducks.
               </p>
             </div>
             <div className="grid gap-3">
@@ -179,9 +204,14 @@ export function GuardianDubbingSettingsView({
                 onClick={onSwitchToLearner}
                 type="button"
               >
-                {mutation === "switch"
-                  ? "Switching to learner…"
-                  : "Switch to learner and start dubbing"}
+                <span
+                  className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
+                  dir="ltr"
+                >
+                  {mutation === "switch" ? "Switching to " : "Switch to "}
+                  <BidiLearnerName learnerName={managedLearnerName} />
+                  {mutation === "switch" ? "…" : " and start dubbing"}
+                </span>
               </ActionButton>
               <ActionButton
                 disabled={busy}
@@ -190,9 +220,20 @@ export function GuardianDubbingSettingsView({
                 type="button"
                 variant="dangerSurface"
               >
-                {mutation === "delete"
-                  ? "Removing voice clips…"
-                  : "Turn off voice dubbing and delete saved clips"}
+                <span
+                  className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
+                  dir="ltr"
+                >
+                  {mutation === "delete" ? (
+                    "Removing voice clips…"
+                  ) : (
+                    <>
+                      Turn off{" "}
+                      <BidiLearnerName learnerName={managedLearnerName} />
+                      &apos;s voice dubbing and delete saved clips
+                    </>
+                  )}
+                </span>
               </ActionButton>
             </div>
           </Card>
@@ -208,9 +249,13 @@ export function GuardianDubbingSettingsView({
               >
                 Voice clip removal needs to finish
               </h2>
-              <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Voice dubbing stays unavailable until every saved clip has been
-                removed.
+              <p
+                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+                dir="ltr"
+              >
+                <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s voice dubbing stays unavailable until every saved clip
+                has been removed.
               </p>
             </div>
             <ActionButton
@@ -236,8 +281,10 @@ function messageFor(error: unknown, fallback: string) {
 }
 
 export function GuardianDubbingSettings({
+  learnerName,
   onBeforeNavigate,
 }: {
+  learnerName: string;
   onBeforeNavigate?: () => void;
 }) {
   const { error: guardianError, lock } = useGuardianAccess();
@@ -310,10 +357,7 @@ export function GuardianDubbingSettings({
         );
         return false;
       } finally {
-        if (
-          mountedRef.current &&
-          generation === loadGenerationRef.current
-        ) {
+        if (mountedRef.current && generation === loadGenerationRef.current) {
           setIsLoading(false);
         }
         if (loadControllerRef.current === controller) {
@@ -359,7 +403,10 @@ export function GuardianDubbingSettings({
       succeeded = true;
     } catch (error) {
       if (!controller.signal.aborted) {
-        failure = messageFor(error, "Voice dubbing settings could not be changed.");
+        failure = messageFor(
+          error,
+          "Voice dubbing settings could not be changed.",
+        );
       }
     }
 
@@ -431,6 +478,7 @@ export function GuardianDubbingSettings({
       error={statusError || operationError || guardianError}
       hasAccepted={hasAccepted}
       isLoading={isLoading}
+      learnerName={learnerName}
       mutation={mutation}
       onAcceptedChange={setHasAccepted}
       onDelete={remove}

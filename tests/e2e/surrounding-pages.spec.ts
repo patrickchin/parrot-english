@@ -107,7 +107,9 @@ test("ready-made lessons show distinct story-specific artwork", async ({
       `${artwork.src.replace(/\.webp$/, "-384.webp")} 384w, ${artwork.src.replace(/\.webp$/, "-768.webp")} 768w`,
     );
     await expect
-      .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
+      .poll(() =>
+        image.evaluate((element: HTMLImageElement) => element.naturalWidth),
+      )
       .toBeGreaterThan(0);
   }
 
@@ -116,8 +118,8 @@ test("ready-made lessons show distinct story-specific artwork", async ({
       readyMadeLessons
         .first()
         .getByRole("img")
-        .evaluate((element: HTMLImageElement) =>
-          new URL(element.currentSrc).pathname,
+        .evaluate(
+          (element: HTMLImageElement) => new URL(element.currentSrc).pathname,
         ),
     )
     .toMatch(
@@ -147,10 +149,7 @@ test("every ready-made lesson exposes one canonical start link", async ({
       cards.nth(index).getByRole("link", {
         name: `Start lesson: ${lesson.title}`,
       }),
-    ).toHaveAttribute(
-      "href",
-      `/lessons/parrot/${lesson.id}/scenes/1`,
-    );
+    ).toHaveAttribute("href", `/lessons/parrot/${lesson.id}/scenes/1`);
     await expect(
       cards.nth(index).getByRole("link", { name: /full-scene/i }),
     ).toHaveCount(0);
@@ -185,10 +184,9 @@ for (const viewport of [
       name: "Peppa's High Ball",
     });
     const artwork = firstLesson.getByRole("img");
-    const practiceLine = firstLesson.getByText(
-      "Say: Can you help me?",
-      { exact: true },
-    );
+    const practiceLine = firstLesson.getByText("Say: Can you help me?", {
+      exact: true,
+    });
     const start = firstLesson.getByRole("link", {
       name: "Start lesson: Peppa's High Ball",
     });
@@ -219,12 +217,8 @@ for (const viewport of [
       );
     } else {
       expect(Math.abs(cardBox.y - secondCardBox.y)).toBeLessThanOrEqual(2);
-      expect(secondCardBox.x).toBeGreaterThanOrEqual(
-        cardBox.x + cardBox.width,
-      );
-      expect(thirdCardBox.y).toBeGreaterThanOrEqual(
-        cardBox.y + cardBox.height,
-      );
+      expect(secondCardBox.x).toBeGreaterThanOrEqual(cardBox.x + cardBox.width);
+      expect(thirdCardBox.y).toBeGreaterThanOrEqual(cardBox.y + cardBox.height);
       expect(titleBox.y).toBeGreaterThanOrEqual(
         artworkBox.y + artworkBox.height,
       );
@@ -239,7 +233,9 @@ for (const viewport of [
     await expect
       .poll(() => main.evaluate((element) => element.scrollTop))
       .toBeGreaterThan(0);
-    await expect(page.getByText("Grown-up tools", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Grown-up tools", { exact: true })).toHaveCount(
+      0,
+    );
     await expect(
       page.getByRole("link", { name: "Create custom lesson" }),
     ).toHaveCount(0);
@@ -463,7 +459,9 @@ for (const viewport of [
     await retry.press("Enter");
     expect(attempts).toBe(attemptsBeforeRetry + 1);
     await expect(page).toHaveURL("/lessons");
-    expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(
+      0,
+    );
     await expectContained(panel, retry);
     await expectNoHorizontalOverflow(page);
 
@@ -586,7 +584,9 @@ test("signed-out protected routes preserve the destination and show account acce
   await page.goto("/lessons");
 
   await expect(page).toHaveURL("/login?returnTo=%2Flessons");
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Password")).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -639,9 +639,7 @@ test("an incomplete learner sees a skippable profile setup before the requested 
   await routeIncompleteLearnerProfile(page);
   await page.goto("/lessons");
 
-  await expect(page).toHaveURL(
-    "/profile/setup?returnTo=%2Flessons",
-  );
+  await expect(page).toHaveURL("/profile/setup?returnTo=%2Flessons");
   await expect(
     page.getByRole("heading", { name: "Answer 6 questions" }),
   ).toBeVisible();
@@ -675,9 +673,7 @@ test("guardian learner details has a clear dashboard exit and distinguishes setu
   page,
 }) => {
   await page.setViewportSize({ height: 568, width: 320 });
-  await page.goto(
-    guardianPath("/guardian/profile?returnTo=%2Fguardian"),
-  );
+  await page.goto(guardianPath("/guardian/profile?returnTo=%2Fguardian"));
 
   await expect(
     page.getByRole("heading", { name: "Learner details" }),
@@ -693,13 +689,22 @@ test("guardian learner details has a clear dashboard exit and distinguishes setu
   ).toBeVisible();
 });
 
-test("guardian learner details returns to the manager that opened it", async ({ page }) => {
+test("guardian learner details returns to the manager that opened it", async ({
+  page,
+}) => {
   await page.goto(guardianPath("/guardian/lessons"));
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  await page.getByRole("menuitem", { name: "Manage learner details" }).click();
+  await page.getByRole("menuitem", { name: "Manage Mia's details" }).click();
 
+  await expect(page).toHaveURL(
+    "/guardian/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
+  );
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
+  await page.getByRole("menuitem", { name: "Manage Mia's details" }).click();
   await expect(page).toHaveURL(
     "/guardian/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
   );
@@ -742,13 +747,15 @@ test("account menu separates learner details from account sign-out", async ({
     .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(
-    menu.getByRole("menuitem", { name: "Manage learner details" }),
+    menu.getByRole("menuitem", { name: "Manage Mia's details" }),
   ).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
 
   await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian/);
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeFocused();
 });
 
 test("account deletion requires the password and returns to sign in only after private-data purge succeeds", async ({
@@ -786,7 +793,7 @@ test("account deletion requires the password and returns to sign in only after p
   await page.getByRole("menuitem", { name: "Delete account" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "This removes your account, learner profile, My Lessons, saved conversation text, and private story art from Parrot.",
+    "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips, and private story art from Parrot.",
   );
   const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();
@@ -795,6 +802,8 @@ test("account deletion requires the password and returns to sign in only after p
   await confirm.click();
 
   await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian/);
-  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeFocused();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeFocused();
   expect(deletePayload).toEqual({ password: "parent-password" });
 });

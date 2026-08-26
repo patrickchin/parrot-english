@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { act, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import {
-  MemoryRouter,
-  useLocation,
-} from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import test from "node:test";
 import { createServer } from "vite";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
@@ -67,11 +64,16 @@ function renderInRouter(element) {
 
 function LocationProbe() {
   const location = useLocation();
-  return createElement("output", { "aria-label": "Current route" }, location.pathname);
+  return createElement(
+    "output",
+    { "aria-label": "Current route" },
+    location.pathname,
+  );
 }
 
 function currentRoute(container) {
-  return container.querySelector('output[aria-label="Current route"]')?.textContent;
+  return container.querySelector('output[aria-label="Current route"]')
+    ?.textContent;
 }
 
 function button(container, name) {
@@ -92,6 +94,7 @@ test("guardian lesson manager owns custom-lesson authoring actions", () => {
     createElement(GuardianLessonManagerView, {
       error: "",
       isSwitchingLessonId: null,
+      learnerName: "Mia",
       lessons: [savedLesson],
       myLessonsLoadPhase: "ready",
       onRetryMyLessons() {},
@@ -99,6 +102,7 @@ test("guardian lesson manager owns custom-lesson authoring actions", () => {
     }),
   );
 
+  assert.match(html, /Managing <bdi[^>]*>Mia<\/bdi>/);
   assert.match(html, /<h1[^>]*>My Lessons<\/h1>/);
   assert.match(html, /aria-label="Create custom lesson"/);
   assert.match(html, /href="\/lessons\/my\/create"/);
@@ -141,7 +145,7 @@ test("switch and play stays on the guardian page until locking succeeds", async 
       createElement(
         MemoryRouter,
         { initialEntries: ["/guardian/lessons"] },
-        createElement(GuardianLessonManager),
+        createElement(GuardianLessonManager, { learnerName: "Mia" }),
         createElement(LocationProbe),
       ),
     ),
@@ -165,9 +169,6 @@ test("switch and play stays on the guardian page until locking succeeds", async 
 
   pendingLock.resolve({ mode: "learner" });
   await waitFor(() =>
-    assert.equal(
-      currentRoute(container),
-      "/lessons/my/lesson%2Fid/scenes/1",
-    ),
+    assert.equal(currentRoute(container), "/lessons/my/lesson%2Fid/scenes/1"),
   );
 });

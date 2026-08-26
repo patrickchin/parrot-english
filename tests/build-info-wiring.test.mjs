@@ -55,7 +55,7 @@ test("the account AI and saved data panel is wired to deployed component metadat
   assert.match(about, /AI and saved data/);
   assert.match(about, /How Parrot uses AI/);
   assert.match(about, /Raw audio is not\s+added to the Parrot account/);
-  assert.match(about, /Talk to Peppa does not change the learner profile/);
+  assert.match(about, /Talk to Peppa does not change learner profiles/);
   assert.match(about, /The photo is not added to the account/);
   assert.match(about, /Technical build details/);
   assert.match(about, /\/api\/build-info/);

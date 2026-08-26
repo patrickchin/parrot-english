@@ -9,7 +9,11 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { getLessonLanguageWarnings } from "../../lib/lesson-language";
 import { getGuardianLessonsPath } from "../app/app-routes";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import {
+  GuardianLearnerContextLabel,
+  HeaderLink,
+  RouteHeader,
+} from "../app/AppHeader";
 import {
   ActionButton,
   Card,
@@ -42,7 +46,7 @@ export function LessonPreview({
   isSaving,
   lesson,
   onSave,
-  saveLabel = "Save and play lesson",
+  saveLabel = "Save lesson",
   savingLabel = "Saving lesson...",
   warnings,
 }: {
@@ -222,7 +226,7 @@ export function ScriptEditor({
   );
 }
 
-export function LessonCreator() {
+export function LessonCreator({ learnerName }: { learnerName: string }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = selectedTab(searchParams.get("tab"));
@@ -328,10 +332,7 @@ export function LessonCreator() {
     setError("");
     setNotice("");
     try {
-      const reviewedDraft = parseLessonScript(
-        scriptText,
-        "pasted script",
-      );
+      const reviewedDraft = parseLessonScript(scriptText, "pasted script");
       setLesson(reviewedDraft.lesson);
       setWarnings(reviewedDraft.warnings);
       setLessonSource("uploaded");
@@ -391,11 +392,12 @@ export function LessonCreator() {
       </RouteHeader>
 
       <Card className="mx-auto grid w-full max-w-6xl gap-6 p-5 md:p-9">
-        <header className="text-center">
+        <header className="grid gap-2 text-center">
+          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
             Create a custom lesson
           </h1>
-          <p className="mb-0 mt-3 text-lg font-bold text-slate-600">
+          <p className="m-0 mt-1 text-lg font-bold text-slate-600">
             Grown-up tools: start with AI or import a lesson, then shape every
             detail in the visual editor.
           </p>
@@ -466,7 +468,9 @@ export function LessonCreator() {
                     type="submit"
                   >
                     <Sparkles aria-hidden="true" className="size-5" />
-                    {busyAction === "generate" ? "Making lesson…" : "Make lesson"}
+                    {busyAction === "generate"
+                      ? "Making lesson…"
+                      : "Make lesson"}
                   </ActionButton>
                 </form>
               </section>
@@ -550,9 +554,7 @@ export function LessonCreator() {
               type="submit"
               variant="success"
             >
-              {busyAction === "save"
-                ? "Saving lesson..."
-                : "Save and play lesson"}
+              {busyAction === "save" ? "Saving lesson..." : "Save lesson"}
             </ActionButton>
           </form>
         ) : null}

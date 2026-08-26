@@ -34,11 +34,11 @@ const focusScenarios: Array<{
     keepSurfaceFocus: true,
     name: "dark navy account menu",
     prepare: async (page) => {
-      await page.goto(guardianPath("/"));
+      await page.goto(guardianPath("/guardian"));
       await page
         .getByRole("button", { name: "Profile for Mia, guardian mode" })
         .click();
-      return page.getByRole("menuitem", { name: "Manage learner details" });
+      return page.getByRole("menuitem", { name: "Manage Mia's details" });
     },
     viewport: { height: 844, width: 390 },
   },
@@ -1435,16 +1435,21 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  const switchToLearner = page.getByRole("menuitem", {
-    name: "Switch to learner",
-  });
-  await expect(switchToLearner).toBeFocused();
+  await expect(
+    page.getByRole("menuitem", { name: "Guardian dashboard" }),
+  ).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  const profile = page.getByRole("menuitem", { name: "Manage learner details" });
+  await expect(
+    page.getByRole("menuitem", { name: "Learner profiles" }),
+  ).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  const profile = page.getByRole("menuitem", { name: "Manage Mia's details" });
   await expect(profile).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  const data = page.getByRole("menuitem", { name: "AI and saved data" });
-  await expect(data).toBeFocused();
+  const switchToLearner = page.getByRole("menuitem", {
+    name: "Switch to Mia",
+  });
+  await expect(switchToLearner).toBeFocused();
   const unfocusedShadow = await profile.evaluate(
     (element) => getComputedStyle(element).boxShadow,
   );
@@ -1490,7 +1495,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
     );
   });
   await profile.press("ArrowDown");
-  await expect(data).toBeFocused();
+  await expect(switchToLearner).toBeFocused();
   const initialBlurShadow = await profile.evaluate(
     (element) =>
       (element as HTMLElement & { parrotInitialBlurShadow?: string })

@@ -142,7 +142,9 @@ test("unlock request failure never navigates to guardian content", async ({
   await expect(dialog.getByRole("alert")).toHaveText(
     "Guardian access could not be checked. Please try again.",
   );
-  await expect(page.getByRole("heading", { name: "Guardian dashboard" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toHaveCount(0);
   await expect(page).toHaveURL(guardianUrl("/", "unlock-error"));
 });
 
@@ -177,8 +179,10 @@ test("successful unlock opens guardian management and announces the fifteen-minu
     .getByRole("button", { name: /Profile for Mia, guardian mode/ })
     .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Switch to learner",
-    "Manage learner details",
+    "Guardian dashboard",
+    "Learner profiles",
+    "Manage Mia's details",
+    "Switch to Mia",
     "AI and saved data",
     "Sign out",
     "Delete account",
@@ -188,7 +192,7 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveCount(0);
 });
 
-for (const { path, protectedName, seedEditLesson } of [
+for (const { path, protectedName, seedEditLesson, unlockedPath } of [
   { path: "/guardian", protectedName: "Guardian dashboard" },
   {
     path: "/guardian/profile?returnTo=%2Fguardian",
@@ -197,6 +201,7 @@ for (const { path, protectedName, seedEditLesson } of [
   {
     path: "/guardian/profile/setup?parrotE2eProfile=viewport-stability",
     protectedName: "Guardian dashboard",
+    unlockedPath: "/guardian",
   },
   {
     path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
@@ -246,8 +251,9 @@ for (const { path, protectedName, seedEditLesson } of [
           node instanceof HTMLHeadingElement &&
           node.textContent?.trim() === expectedProtectedName
         ) {
-          (window as Window & { __protectedHeadingSeen?: boolean })
-            .__protectedHeadingSeen = true;
+          (
+            window as Window & { __protectedHeadingSeen?: boolean }
+          ).__protectedHeadingSeen = true;
         }
         node.childNodes.forEach(inspect);
       };
@@ -282,7 +288,7 @@ for (const { path, protectedName, seedEditLesson } of [
       .getByRole("main")
       .getByRole("button", { name: "Unlock guardian mode" })
       .click();
-    await expect(page).toHaveURL(requestedUrl);
+    await expect(page).toHaveURL(unlockedPath ?? requestedUrl);
     await expect(
       page.getByRole("heading", { exact: true, name: protectedName }),
     ).toBeVisible();
@@ -293,10 +299,7 @@ test("a guardian-mode duck dub deep link asks to switch profiles", async ({
   page,
 }) => {
   await page.goto(
-    guardianUrl(
-      "/dubs/five-little-ducks?parrotE2eDub=partial",
-      "guardian",
-    ),
+    guardianUrl("/dubs/five-little-ducks?parrotE2eDub=partial", "guardian"),
   );
 
   await expect(
@@ -307,9 +310,7 @@ test("a guardian-mode duck dub deep link asks to switch profiles", async ({
   ).toHaveCount(0);
 });
 
-test("a valid guardian unlock resumes after refresh", async ({
-  page,
-}) => {
+test("a valid guardian unlock resumes after refresh", async ({ page }) => {
   await page.goto("/");
   await unlockFromMenu(page);
   await page.reload();
@@ -322,7 +323,9 @@ test("a valid guardian unlock resumes after refresh", async ({
   ).toBeVisible();
 });
 
-test("a seeded guardian expiry stays fixed across refresh", async ({ page }) => {
+test("a seeded guardian expiry stays fixed across refresh", async ({
+  page,
+}) => {
   await page.goto(guardianUrl("/", "guardian"));
   await expect(
     page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
@@ -359,13 +362,17 @@ test("an expired guardian session returns the same deep link to the password gat
     window.history.pushState(null, "", "/guardian/stories");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
-  await expect(page.getByRole("heading", { name: "Story settings" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toBeVisible();
   await page.clock.fastForward(2_000);
   await expect(
     page.getByRole("heading", { name: "Unlock guardian mode" }),
   ).toBeVisible();
   await expect(page).toHaveURL("/guardian/stories");
-  await expect(page.getByRole("heading", { name: "Story settings" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toHaveCount(0);
 });
 
 test("failed dashboard lock preserves guardian content and navigation", async ({
@@ -378,9 +385,9 @@ test("failed dashboard lock preserves guardian content and navigation", async ({
 
   await page.getByRole("button", { name: "Switch to learner" }).click();
 
-  await expect(
-    page.getByRole("main").getByRole("alert"),
-  ).toHaveText(LOCK_ERROR);
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    LOCK_ERROR,
+  );
   await expect(dashboard).toBeVisible();
   await expect(page).toHaveURL(url);
 });
@@ -390,14 +397,16 @@ test("failed learner-boundary lock preserves the requested learner route", async
 }) => {
   const url = guardianUrl("/lessons", "lock-error");
   await page.goto(url);
-  const boundary = page.getByRole("heading", { name: "Switch to learner mode" });
+  const boundary = page.getByRole("heading", {
+    name: "Switch to learner mode",
+  });
   await expect(boundary).toBeVisible();
 
   await page.getByRole("button", { name: "Switch to learner mode" }).click();
 
-  await expect(
-    page.getByRole("main").getByRole("alert"),
-  ).toHaveText(LOCK_ERROR);
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    LOCK_ERROR,
+  );
   await expect(boundary).toBeVisible();
   await expect(page).toHaveURL(url);
 });
@@ -451,23 +460,33 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   });
   await guardianTrigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
+  const dashboard = menu.getByRole("menuitem", {
+    name: "Guardian dashboard",
+  });
+  const learnerProfiles = menu.getByRole("menuitem", {
+    name: "Learner profiles",
+  });
   const switchToLearner = menu.getByRole("menuitem", {
-    name: "Switch to learner",
+    name: "Switch to Mia",
   });
   const profile = menu.getByRole("menuitem", {
-    name: "Manage learner details",
+    name: "Manage Mia's details",
   });
   const data = menu.getByRole("menuitem", { name: "AI and saved data" });
   const deletion = menu.getByRole("menuitem", { name: "Delete account" });
-  await expect(switchToLearner).toBeFocused();
+  await expect(dashboard).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(learnerProfiles).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(profile).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(switchToLearner).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(data).toBeFocused();
   await page.keyboard.press("End");
   await expect(deletion).toBeFocused();
   await page.keyboard.press("Home");
-  await expect(switchToLearner).toBeFocused();
+  await expect(dashboard).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(guardianTrigger).toBeFocused();
   await expect(menu).toHaveCount(0);
@@ -476,7 +495,7 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
 async function expectNoLearnerAdultControls(page: Page) {
   await expect(
     page.getByRole("checkbox", {
-      name: /I’m the grown-up|I am the learner's guardian/i,
+      name: /I’m the grown-up|I am (?:the learner|.+)'s guardian/i,
     }),
   ).toHaveCount(0);
   await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
@@ -486,9 +505,7 @@ async function expectNoLearnerAdultControls(page: Page) {
   await expect(page.getByLabel(/^Grown-up chat style:/)).toHaveCount(0);
 }
 
-test("learner routes omit adult management actions", async ({
-  page,
-}) => {
+test("learner routes omit adult management actions", async ({ page }) => {
   for (const { path, watchDub } of [
     { path: "/", watchDub: false },
     { path: "/talk-to-peppa", watchDub: false },
@@ -517,14 +534,16 @@ test("learner routes omit adult management actions", async ({
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", {
-        name: /Sign out|Delete account|Upload learner photo|Generate story art/,
+        name: /Sign out|Delete account|Generate story art/,
       }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("group", { name: "Choose story level" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("checkbox", { name: "Guardian consent" }),
+      page.getByRole("checkbox", {
+        name: /I am 18 or older.*guardian/i,
+      }),
     ).toHaveCount(0);
     await expectNoLearnerAdultControls(page);
     if (watchDub) {
@@ -573,7 +592,9 @@ for (const viewport of [
     await start.click();
 
     const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status").filter({ hasText: "Look! My ball!" });
+    const speech = page
+      .getByRole("status")
+      .filter({ hasText: "Look! My ball!" });
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });

@@ -53,7 +53,7 @@ test("saved lesson edit route starts with an accessible GUI loading state", () =
         Routes,
         null,
         createElement(Route, {
-          element: createElement(LessonEditor),
+          element: createElement(LessonEditor, { learnerName: "Mia" }),
           path: "/lessons/my/:lessonId/edit",
         }),
       ),
@@ -61,6 +61,7 @@ test("saved lesson edit route starts with an accessible GUI loading state", () =
   );
 
   assert.match(html, /<h1[^>]*>Edit Lesson<\/h1>/);
+  assert.match(html, /Managing <bdi[^>]*>Mia<\/bdi>/);
   assert.match(html, /role="status"/);
   assert.match(html, /Loading lesson/);
   assert.match(
@@ -94,7 +95,7 @@ test("saving edited lessons returns to Guardian lessons", async () => {
         Routes,
         null,
         createElement(Route, {
-          element: createElement(LessonEditor),
+          element: createElement(LessonEditor, { learnerName: "Mia" }),
           path: "/lessons/my/:lessonId/edit",
         }),
         createElement(Route, {
@@ -109,14 +110,13 @@ test("saving edited lessons returns to Guardian lessons", async () => {
   await waitFor(() =>
     assert.ok(
       [...document.querySelectorAll("button")].find(
-        (candidate) =>
-          candidate.textContent.trim() === "Save changes and play",
+        (candidate) => candidate.textContent.trim() === "Save changes",
       ),
     ),
   );
   await click(
     [...document.querySelectorAll("button")].find(
-      (candidate) => candidate.textContent.trim() === "Save changes and play",
+      (candidate) => candidate.textContent.trim() === "Save changes",
     ),
   );
   await waitFor(() =>

@@ -1,19 +1,28 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import type { LearnerProfileSummary } from "./learner-profile-api";
+import type {
+  LearnerProfileRoster,
+  LearnerProfileSummary,
+} from "./learner-profile-api";
 
 type LearnerProfileContextValue = {
   profile: LearnerProfileSummary;
   replaceProfile: (profile: LearnerProfileSummary) => void;
 };
 
-const LearnerProfileContext =
-  createContext<LearnerProfileContextValue | null>(null);
+const LearnerProfileContext = createContext<LearnerProfileContextValue | null>(
+  null,
+);
 
 export type LearnerSelectionContextValue = {
   activeProfileId: string | null;
+  createAndSelectLearner: (
+    name: string,
+    existingProfileIds: readonly string[],
+  ) => Promise<LearnerProfileRoster>;
   reloadSelectedLearner: (
     expectedProfileId: string,
   ) => Promise<LearnerProfileSummary>;
+  selectLearner: (profileId: string) => Promise<LearnerProfileRoster>;
 };
 
 const LearnerSelectionContext =
@@ -40,11 +49,23 @@ export function useLearnerProfile() {
 export function LearnerSelectionProvider({
   activeProfileId,
   children,
+  createAndSelectLearner,
   reloadSelectedLearner,
+  selectLearner,
 }: LearnerSelectionContextValue & { children: ReactNode }) {
   const value = useMemo(
-    () => ({ activeProfileId, reloadSelectedLearner }),
-    [activeProfileId, reloadSelectedLearner],
+    () => ({
+      activeProfileId,
+      createAndSelectLearner,
+      reloadSelectedLearner,
+      selectLearner,
+    }),
+    [
+      activeProfileId,
+      createAndSelectLearner,
+      reloadSelectedLearner,
+      selectLearner,
+    ],
   );
   return (
     <LearnerSelectionContext.Provider value={value}>

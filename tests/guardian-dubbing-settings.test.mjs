@@ -58,6 +58,7 @@ function renderView(overrides = {}) {
         error: "",
         hasAccepted: false,
         isLoading: false,
+        learnerName: "Mia",
         mutation: null,
         onAcceptedChange() {},
         onDelete() {},
@@ -71,23 +72,41 @@ function renderView(overrides = {}) {
   );
 }
 
+function textFromMarkup(markup) {
+  return markup
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&amp;", "&");
+}
+
 test("guardian settings owns voice consent and deletion", () => {
   const disabled = renderView({ consentState: "not_granted" });
+  const disabledText = textFromMarkup(disabled);
+  assert.match(disabledText, /Managing Mia/);
   assert.match(disabled, /Allow voice dubbing/);
-  assert.match(disabled, /I am the learner(?:&#x27;|')s guardian/);
+  assert.match(disabledText, /I am Mia's guardian/);
+  assert.match(disabledText, /Mia's private voice clips/);
   assert.match(disabled, /type="checkbox"/);
   assert.match(disabled, /<button[^>]*disabled=""[^>]*>Allow voice dubbing/);
 
   const enabled = renderView({ consentState: "granted", savedCount: 4 });
+  const enabledText = textFromMarkup(enabled);
   assert.match(enabled, /4 of 24 lines saved/);
-  assert.match(enabled, /Switch to learner and start dubbing/);
-  assert.match(enabled, /Turn off voice dubbing and delete saved clips/);
+  assert.match(enabledText, /Switch to Mia and start dubbing/);
+  assert.match(
+    enabledText,
+    /Turn off Mia's voice dubbing and delete saved clips/,
+  );
   assert.doesNotMatch(enabled, /type="checkbox"/);
 
   const revoking = renderView({ consentState: "revoking" });
   assert.match(revoking, /Finish removing voice clips/);
   assert.doesNotMatch(revoking, /Allow voice dubbing/);
-  assert.doesNotMatch(revoking, /Switch to learner and start dubbing/);
+  assert.doesNotMatch(
+    textFromMarkup(revoking),
+    /Switch to Mia and start dubbing/,
+  );
 });
 
 test("guardian settings exposes progress and recovery states accessibly", () => {
@@ -110,7 +129,7 @@ test("guardian settings exposes progress and recovery states accessibly", () => 
   assert.match(deleting, /Removing voice clips…/);
 
   const switching = renderView({ consentState: "granted", mutation: "switch" });
-  assert.match(switching, /Switching to learner…/);
+  assert.match(textFromMarkup(switching), /Switching to Mia…/);
 });
 
 function dubStatus(consentState, savedCount = 0) {
@@ -146,7 +165,11 @@ function GuardianProvider({ children, lockGuardianAccess }) {
 
 function LocationProbe() {
   const location = useLocation();
-  return createElement("output", { "aria-label": "Current route" }, location.pathname);
+  return createElement(
+    "output",
+    { "aria-label": "Current route" },
+    location.pathname,
+  );
 }
 
 function button(container, label) {
@@ -180,12 +203,14 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
         {
           lockGuardianAccess: async () => ({ mode: "learner" }),
         },
-        createElement(GuardianDubbingSettings),
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
       ),
     ),
   );
 
-  await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
+  await waitFor(() =>
+    assert.match(container.textContent, /Allow voice dubbing/),
+  );
   assert.equal(document.activeElement, document.body);
   const grantButton = button(container, "Allow voice dubbing");
   assert.equal(grantButton.disabled, true);
@@ -203,10 +228,9 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
   await waitFor(() =>
     assert.match(container.textContent, /Voice dubbing is on/),
   );
-  await waitFor(() => assert.equal(
-    document.activeElement?.textContent,
-    "Voice dubbing is on",
-  ));
+  await waitFor(() =>
+    assert.equal(document.activeElement?.textContent, "Voice dubbing is on"),
+  );
 });
 
 test("a committed grant with a lost response reloads authoritative granted status", async () => {
@@ -233,7 +257,7 @@ test("a committed grant with a lost response reloads authoritative granted statu
         {
           lockGuardianAccess: async () => ({ mode: "learner" }),
         },
-        createElement(GuardianDubbingSettings),
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
       ),
     ),
   );
@@ -242,7 +266,9 @@ test("a committed grant with a lost response reloads authoritative granted statu
   assert.equal(container.querySelector('input[type="checkbox"]'), null);
   loadFails = false;
   await click(button(container, "Try again"));
-  await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
+  await waitFor(() =>
+    assert.match(container.textContent, /Allow voice dubbing/),
+  );
 
   const getCallsBeforeGrant = getCalls;
   await click(container.querySelector('input[type="checkbox"]'));
@@ -279,14 +305,18 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
         {
           lockGuardianAccess: async () => ({ mode: "learner" }),
         },
-        createElement(GuardianDubbingSettings),
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
       ),
     ),
   );
   await waitFor(() =>
-    assert.ok(button(container, "Turn off voice dubbing and delete saved clips")),
+    assert.ok(
+      button(container, "Turn off Mia's voice dubbing and delete saved clips"),
+    ),
   );
-  await click(button(container, "Turn off voice dubbing and delete saved clips"));
+  await click(
+    button(container, "Turn off Mia's voice dubbing and delete saved clips"),
+  );
 
   await waitFor(() =>
     assert.ok(button(container, "Finish removing voice clips")),
@@ -297,10 +327,12 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
     /Your saved dub was not deleted/,
   );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
-  await waitFor(() => assert.equal(
-    document.activeElement?.textContent,
-    "Voice clip removal needs to finish",
-  ));
+  await waitFor(() =>
+    assert.equal(
+      document.activeElement?.textContent,
+      "Voice clip removal needs to finish",
+    ),
+  );
 });
 
 test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
@@ -327,12 +359,14 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
         {
           lockGuardianAccess: async () => ({ mode: "learner" }),
         },
-        createElement(GuardianDubbingSettings),
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
       ),
     ),
   );
 
-  await waitFor(() => assert.ok(button(container, "Finish removing voice clips")));
+  await waitFor(() =>
+    assert.ok(button(container, "Finish removing voice clips")),
+  );
   assert.match(container.textContent, /Voice clip removal needs to finish/);
   assert.doesNotMatch(container.textContent, /Allow voice dubbing|Try again/);
 
@@ -347,11 +381,15 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
 
   await click(button(container, "Finish removing voice clips"));
-  await waitFor(() => assert.match(container.textContent, /Allow voice dubbing/));
-  await waitFor(() => assert.equal(
-    document.activeElement?.textContent,
-    "Turn on private voice dubbing",
-  ));
+  await waitFor(() =>
+    assert.match(container.textContent, /Allow voice dubbing/),
+  );
+  await waitFor(() =>
+    assert.equal(
+      document.activeElement?.textContent,
+      "Turn on private voice dubbing",
+    ),
+  );
   assert.equal(deleteCalls, 2);
   assert.doesNotMatch(container.textContent, /Finish removing voice clips/);
 });
@@ -377,16 +415,16 @@ test("switch coalesces overlapping activations and stays recoverable after lock 
             return { mode: "learner" };
           },
         },
-        createElement(GuardianDubbingSettings),
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
         createElement(LocationProbe),
       ),
     ),
   );
   await waitFor(() =>
-    assert.ok(button(container, "Switch to learner and start dubbing")),
+    assert.ok(button(container, "Switch to Mia and start dubbing")),
   );
 
-  const switchButton = button(container, "Switch to learner and start dubbing");
+  const switchButton = button(container, "Switch to Mia and start dubbing");
   await act(() => {
     switchButton.click();
     switchButton.disabled = false;
@@ -413,10 +451,11 @@ test("switch coalesces overlapping activations and stays recoverable after lock 
     false,
   );
 
-  await click(button(container, "Switch to learner and start dubbing"));
+  await click(button(container, "Switch to Mia and start dubbing"));
   await waitFor(() =>
     assert.equal(
-      container.querySelector('output[aria-label="Current route"]')?.textContent,
+      container.querySelector('output[aria-label="Current route"]')
+        ?.textContent,
       "/dubs/five-little-ducks",
     ),
   );
@@ -438,7 +477,7 @@ test("unmount aborts an unfinished authoritative status load", async () => {
         {
           lockGuardianAccess: async () => ({ mode: "learner" }),
         },
-        createElement(GuardianDubbingSettings),
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
       ),
     ),
   );

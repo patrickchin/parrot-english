@@ -51,7 +51,9 @@ function fenceBytes(kind, generation, state) {
 
 function deferred() {
   let resolve;
-  const promise = new Promise((settle) => { resolve = settle; });
+  const promise = new Promise((settle) => {
+    resolve = settle;
+  });
   return { promise, resolve };
 }
 
@@ -93,21 +95,25 @@ function delayD1ReadWhen(d1, predicate, { beforeRead, release }) {
 
 function createBucket(seed = []) {
   let version = 0;
-  const stored = new Map(seed.map((item, index) => [
-    item.key,
-    {
-      bytes: item.bytes ?? new Uint8Array(),
-      etag: item.etag ?? createHash("md5")
-        .update(item.bytes ?? new Uint8Array())
-        .digest("hex"),
-      options: {
-        customMetadata: item.customMetadata ?? {},
-        httpMetadata: item.httpMetadata,
+  const stored = new Map(
+    seed.map((item, index) => [
+      item.key,
+      {
+        bytes: item.bytes ?? new Uint8Array(),
+        etag:
+          item.etag ??
+          createHash("md5")
+            .update(item.bytes ?? new Uint8Array())
+            .digest("hex"),
+        options: {
+          customMetadata: item.customMetadata ?? {},
+          httpMetadata: item.httpMetadata,
+        },
+        uploaded: item.uploaded ?? new Date("2026-08-25T10:00:00.000Z"),
+        version: item.version ?? `seed-${index + 1}`,
       },
-      uploaded: item.uploaded ?? new Date("2026-08-25T10:00:00.000Z"),
-      version: item.version ?? `seed-${index + 1}`,
-    },
-  ]));
+    ]),
+  );
   const calls = { delete: [], head: [], list: [], put: [] };
 
   function object(key, item) {
@@ -189,10 +195,14 @@ function assertDeletionFences(bucket, generation) {
       fenceBytes("slot", generation, "account-deleting"),
       lineId,
     );
-    assert.deepEqual(item?.options.customMetadata, {
-      generation,
-      state: "account-deleting",
-    }, lineId);
+    assert.deepEqual(
+      item?.options.customMetadata,
+      {
+        generation,
+        state: "account-deleting",
+      },
+      lineId,
+    );
   }
   assert.deepEqual(
     bucket.stored.get(LEGACY_MARKER_KEY)?.bytes,
@@ -234,10 +244,14 @@ function assertLearnerDeletionFences(bucket, learnerProfileId, generation) {
       fenceBytes("slot", generation, "account-deleting"),
       `${learnerProfileId} ${lineId}`,
     );
-    assert.deepEqual(item?.options.customMetadata, {
-      generation,
-      state: "account-deleting",
-    }, `${learnerProfileId} ${lineId}`);
+    assert.deepEqual(
+      item?.options.customMetadata,
+      {
+        generation,
+        state: "account-deleting",
+      },
+      `${learnerProfileId} ${lineId}`,
+    );
   }
 }
 
@@ -259,37 +273,40 @@ async function callDub({
   path,
   pending = async () => false,
 }) {
-  const body = method === "PUT"
-    ? new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1])
-    : undefined;
-  return handleDubRequest({
-    database,
-    env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
-    identity: identity ?? {
-      learnerName: "Mia",
-      learnerProfileId: "learner-a",
-      legacyStorageOwner: true,
-      sessionId: "session-1",
-      userId: USER_ID,
-      userName: "Parent",
+  const body =
+    method === "PUT" ? new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]) : undefined;
+  return handleDubRequest(
+    {
+      database,
+      env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
+      identity: identity ?? {
+        learnerName: "Mia",
+        learnerProfileId: "learner-a",
+        legacyStorageOwner: true,
+        sessionId: "session-1",
+        userId: USER_ID,
+        userName: "Parent",
+      },
+      request: new Request(`https://example.test${path}`, {
+        ...(body === undefined ? {} : { body }),
+        headers:
+          body === undefined
+            ? {}
+            : {
+                "Content-Type": "audio/webm",
+                "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
+              },
+        method,
+      }),
     },
-    request: new Request(`https://example.test${path}`, {
-      ...(body === undefined ? {} : { body }),
-      headers: body === undefined
-        ? {}
-        : {
-            "Content-Type": "audio/webm",
-            "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
-          },
-      method,
-    }),
-  }, {
-    createGeneration: generation,
-    createUploadNonce: () => "upload-1",
-    isDeletionPending: pending,
-    now: () => new Date("2026-08-25T10:00:00.000Z"),
-    wait: async () => {},
-  });
+    {
+      createGeneration: generation,
+      createUploadNonce: () => "upload-1",
+      isDeletionPending: pending,
+      now: () => new Date("2026-08-25T10:00:00.000Z"),
+      wait: async () => {},
+    },
+  );
 }
 
 function prepareDeletion(input) {
@@ -306,11 +323,13 @@ function seedDatabase() {
       "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
     )
     .run(USER_ID, "Parent One", "one@example.test", 1_000, 1_000);
-  state.sqlite.prepare(
-    `INSERT INTO guardian_dub_consent
+  state.sqlite
+    .prepare(
+      `INSERT INTO guardian_dub_consent
       (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
      VALUES (?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
-  ).run(USER_ID, 1_000, 1_000);
+    )
+    .run(USER_ID, 1_000, 1_000);
   const insertArt = state.sqlite.prepare(
     `INSERT INTO personalized_story_art (
       id, auth_user_id, story_id, status, r2_object_key, content_type,
@@ -341,6 +360,57 @@ function seedDatabase() {
 }
 
 describe("account deletion personalized-art lifecycle", () => {
+  it("bounds final fence writes while closing every learner subtree", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const put = bucket.put.bind(bucket);
+    let activeWrites = 0;
+    let maxActiveWrites = 0;
+
+    try {
+      const insertLearner = state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, 'not_started', ?)`,
+      );
+      insertLearner.run("learner-a", USER_ID, "Mia", 1);
+      insertLearner.run("learner-b", USER_ID, "Leo", 0);
+      insertLearner.run("learner-c", USER_ID, "Ava", 0);
+
+      bucket.put = async (key, bytes, options) => {
+        activeWrites += 1;
+        maxActiveWrites = Math.max(maxActiveWrites, activeWrites);
+        try {
+          await Promise.resolve();
+          return await put(key, bytes, options);
+        } finally {
+          activeWrites -= 1;
+        }
+      };
+
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+
+      assert.ok(
+        maxActiveWrites > 1,
+        "Fence writes should make bounded progress in parallel",
+      );
+      assert.ok(
+        maxActiveWrites <= 4,
+        "Fence write concurrency must stay bounded",
+      );
+      assertDeletionFences(bucket, DELETION_GENERATION);
+      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
+      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+    } finally {
+      state.close();
+    }
+  });
+
   it("fences in-flight uploads in the legacy namespace and every learner subtree", async () => {
     const state = seedDatabase();
     const allAudioPutsStarted = deferred();
@@ -402,13 +472,15 @@ describe("account deletion personalized-art lifecycle", () => {
           userName: "Parent",
         },
       ];
-      uploads = identities.map((identity) => callDub({
-        bucket,
-        database: state.database,
-        identity,
-        method: "PUT",
-        path: `${DUB_PATH}/lines/line-1`,
-      }));
+      uploads = identities.map((identity) =>
+        callDub({
+          bucket,
+          database: state.database,
+          identity,
+          method: "PUT",
+          path: `${DUB_PATH}/lines/line-1`,
+        }),
+      );
       await allAudioPutsStarted.promise;
 
       await prepareDeletion({
@@ -429,7 +501,10 @@ describe("account deletion personalized-art lifecycle", () => {
       );
       releaseAudioPuts.resolve();
       const responses = await Promise.all(uploads);
-      assert.deepEqual(responses.map(({ status }) => status), [409, 409, 409]);
+      assert.deepEqual(
+        responses.map(({ status }) => status),
+        [409, 409, 409],
+      );
       assert.equal(
         [...bucket.stored.values()].some(
           (item) => item.options.customMetadata.state === "audio",
@@ -462,9 +537,7 @@ describe("account deletion personalized-art lifecycle", () => {
         [
           "page-2",
           {
-            objects: [
-              { key: `${USER_PREFIX}future-story/versions/two.webp` },
-            ],
+            objects: [{ key: `${USER_PREFIX}future-story/versions/two.webp` }],
             truncated: false,
           },
         ],
@@ -496,7 +569,10 @@ describe("account deletion personalized-art lifecycle", () => {
         userId: USER_ID,
       });
 
-      assert.equal(await isAccountDeletionPending(state.database, USER_ID), true);
+      assert.equal(
+        await isAccountDeletionPending(state.database, USER_ID),
+        true,
+      );
       assert.deepEqual(events, [
         {
           keys: [
@@ -545,9 +621,11 @@ describe("account deletion personalized-art lifecycle", () => {
     const state = seedDatabase();
     let failDelete = true;
     try {
-      const bucket = createBucket([{
-        key: `${USER_PREFIX}the-red-ball/versions/one.webp`,
-      }]);
+      const bucket = createBucket([
+        {
+          key: `${USER_PREFIX}the-red-ball/versions/one.webp`,
+        },
+      ]);
       const remove = bucket.delete.bind(bucket);
       bucket.delete = async (keys) => {
         if (failDelete) throw new Error("temporary R2 failure");
@@ -562,10 +640,14 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
         /temporary R2 failure/,
       );
-      assert.equal(await isAccountDeletionPending(state.database, USER_ID), true);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM user WHERE id = ?").get(USER_ID)
-          .count,
+        await isAccountDeletionPending(state.database, USER_ID),
+        true,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(USER_ID).count,
         1,
       );
       assert.deepEqual(
@@ -587,8 +669,9 @@ describe("account deletion personalized-art lifecycle", () => {
       assertDeletionFences(bucket, DELETION_GENERATION);
       state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM user WHERE id = ?").get(USER_ID)
-          .count,
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(USER_ID).count,
         0,
       );
     } finally {
@@ -681,15 +764,17 @@ describe("account deletion personalized-art lifecycle", () => {
         ({ options }) =>
           options.customMetadata?.generation === DELETION_GENERATION,
       );
-      assert.equal(finalWrites[0].key, MARKER_KEY, "The marker fence must land first");
+      assert.equal(
+        finalWrites[0].key,
+        MARKER_KEY,
+        "The marker fence must land first",
+      );
       assertNoClosureDeletes(bucket);
 
       state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
-      await put(
-        `${USER_PREFIX}orphan.webp`,
-        new Uint8Array([1]),
-        { customMetadata: { state: "art" } },
-      );
+      await put(`${USER_PREFIX}orphan.webp`, new Uint8Array([1]), {
+        customMetadata: { state: "art" },
+      });
       releaseSecondList.resolve();
       await secondDeleteFinished.promise;
 
@@ -724,7 +809,8 @@ describe("account deletion personalized-art lifecycle", () => {
         false,
       );
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
           .get(USER_ID).count,
         0,
       );
@@ -807,14 +893,16 @@ describe("account deletion personalized-art lifecycle", () => {
       );
       await audioPutStarted.promise;
 
-      const hookBDatabase = createDatabase(delayD1ReadWhen(
-        state.d1,
-        (sql) => /from "learner_profile"/i.test(sql),
-        {
-          beforeRead: () => snapshotStarted.resolve(),
-          release: releaseSnapshot.promise,
-        },
-      ));
+      const hookBDatabase = createDatabase(
+        delayD1ReadWhen(
+          state.d1,
+          (sql) => /from "learner_profile"/i.test(sql),
+          {
+            beforeRead: () => snapshotStarted.resolve(),
+            release: releaseSnapshot.promise,
+          },
+        ),
+      );
       hookB = prepareDeletion({
         bucket,
         database: hookBDatabase,
@@ -832,10 +920,14 @@ describe("account deletion personalized-art lifecycle", () => {
       assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
       assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
       assert.deepEqual(
-        JSON.parse(state.sqlite.prepare(
-          `SELECT learner_storage_identities_json
+        JSON.parse(
+          state.sqlite
+            .prepare(
+              `SELECT learner_storage_identities_json
              FROM account_deletion_tombstone`,
-        ).get().learner_storage_identities_json),
+            )
+            .get().learner_storage_identities_json,
+        ),
         [
           { learnerProfileId: "learner-a", legacyStorageOwner: true },
           { learnerProfileId: "learner-b", legacyStorageOwner: false },
@@ -845,7 +937,8 @@ describe("account deletion personalized-art lifecycle", () => {
 
       state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile")
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM learner_profile")
           .get().count,
         0,
       );
@@ -903,17 +996,20 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
       ]);
 
-      const tombstone = state.sqlite.prepare(
-        `SELECT user_id_hash, requested_at FROM account_deletion_tombstone`,
-      ).get();
-      const persistedGeneration =
-        `account-deletion-v1:${tombstone.user_id_hash}:${tombstone.requested_at}`;
+      const tombstone = state.sqlite
+        .prepare(
+          `SELECT user_id_hash, requested_at FROM account_deletion_tombstone`,
+        )
+        .get();
+      const persistedGeneration = `account-deletion-v1:${tombstone.user_id_hash}:${tombstone.requested_at}`;
       assertDeletionFences(bucket, persistedGeneration);
       assertNoClosureDeletes(bucket);
       assert.deepEqual(
-        new Set(CLOSURE_KEYS.map(
-          (key) => bucket.stored.get(key).options.customMetadata.generation,
-        )),
+        new Set(
+          CLOSURE_KEYS.map(
+            (key) => bucket.stored.get(key).options.customMetadata.generation,
+          ),
+        ),
         new Set([persistedGeneration]),
       );
     } finally {
@@ -1037,16 +1133,23 @@ describe("account deletion personalized-art lifecycle", () => {
     };
 
     try {
-      await assert.rejects(prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async () => {},
-      }), /final fence failed/);
+      await assert.rejects(
+        prepareDeletion({
+          bucket,
+          database: state.database,
+          userId: USER_ID,
+          wait: async () => {},
+        }),
+        /final fence failed/,
+      );
       assert.equal(failedFenceAttempts, 1, "Non-rate failures are not retried");
-      assert.equal(await isAccountDeletionPending(state.database, USER_ID), true);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+        await isAccountDeletionPending(state.database, USER_ID),
+        true,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
           .get(USER_ID).count,
         1,
       );
@@ -1097,11 +1200,16 @@ describe("account deletion personalized-art lifecycle", () => {
         bucket,
         database: state.database,
         userId: USER_ID,
-        wait: async (delay) => { waits.push(delay); },
+        wait: async (delay) => {
+          waits.push(delay);
+        },
       });
       assert.equal(attempts, 3);
       assert.equal(waits.length, 2);
-      assert.equal(waits.every((delay) => delay >= 1_000), true);
+      assert.equal(
+        waits.every((delay) => delay >= 1_000),
+        true,
+      );
       assertDeletionFences(bucket, DELETION_GENERATION);
     } finally {
       state.close();
@@ -1119,17 +1227,23 @@ describe("account deletion personalized-art lifecycle", () => {
     };
 
     try {
-      await assert.rejects(prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async (delay) => { waits.push(delay); },
-      }), /10058/);
+      await assert.rejects(
+        prepareDeletion({
+          bucket,
+          database: state.database,
+          userId: USER_ID,
+          wait: async (delay) => {
+            waits.push(delay);
+          },
+        }),
+        /10058/,
+      );
       assert.equal(attempts, 3);
       assert.equal(waits.length, 2);
       assert.equal(bucket.calls.put.length, 0);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
           .get(USER_ID).count,
         1,
       );
@@ -1166,12 +1280,17 @@ describe("account deletion personalized-art lifecycle", () => {
         bucket,
         database: state.database,
         userId: USER_ID,
-        wait: async (delay) => { waits.push(delay); },
+        wait: async (delay) => {
+          waits.push(delay);
+        },
       });
       assert.equal(markerAttempts, 3);
       assert.equal(lineThreeAttempts, 2);
       assert.equal(waits.length, 3);
-      assert.equal(waits.every((delay) => delay >= 1_000), true);
+      assert.equal(
+        waits.every((delay) => delay >= 1_000),
+        true,
+      );
       assertDeletionFences(bucket, DELETION_GENERATION);
     } finally {
       state.close();
@@ -1192,16 +1311,22 @@ describe("account deletion personalized-art lifecycle", () => {
     };
 
     try {
-      await assert.rejects(prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async (delay) => { waits.push(delay); },
-      }), /10058/);
+      await assert.rejects(
+        prepareDeletion({
+          bucket,
+          database: state.database,
+          userId: USER_ID,
+          wait: async (delay) => {
+            waits.push(delay);
+          },
+        }),
+        /10058/,
+      );
       assert.equal(attempts, 3);
       assert.equal(waits.length, 2);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
           .get(USER_ID).count,
         1,
       );

@@ -36,6 +36,7 @@ type AccountDeletionInput = {
 
 const MAX_FENCE_CONFLICTS = 16;
 const MAX_TOMBSTONE_CONFLICTS = 16;
+const MAX_PARALLEL_FENCE_WRITES = 4;
 
 function r2PrefixForUser(userId: string) {
   return `personalized-story-art/${encodeURIComponent(userId)}/`;
@@ -163,7 +164,9 @@ async function persistLearnerStorageClosure(
       return merged.map((identity) => ({ ...identity, userId }));
     }
   }
-  throw new Error("Account deletion learner storage closure contention exceeded.");
+  throw new Error(
+    "Account deletion learner storage closure contention exceeded.",
+  );
 }
 
 export async function accountDeletionTombstoneKey(userId: string) {
@@ -246,10 +249,7 @@ async function deleteWithRetry(
       await bucket.delete(keys);
       return;
     } catch (error) {
-      if (
-        !isR2WriteRateError(error) ||
-        attempt === MAX_R2_WRITE_ATTEMPTS - 1
-      ) {
+      if (!isR2WriteRateError(error) || attempt === MAX_R2_WRITE_ATTEMPTS - 1) {
         throw error;
       }
       await wait(retryDelay(attempt));
@@ -258,9 +258,7 @@ async function deleteWithRetry(
 }
 
 function conditionalWrite(object: R2Object | null) {
-  return object
-    ? { etagMatches: object.etag }
-    : { etagDoesNotMatch: "*" };
+  return object ? { etagMatches: object.etag } : { etagDoesNotMatch: "*" };
 }
 
 async function persistFence(
@@ -308,52 +306,35 @@ function storageClosureKeys(storage: DubStorageKeys) {
   return keys;
 }
 
-async function persistStorageFences(
-  bucket: AccountDeletionInput["bucket"],
-  storage: DubStorageKeys,
-  generation: string,
-  wait: Wait,
-) {
-  await persistFence(
-    bucket,
-    storage.markerKey,
-    "marker",
-    generation,
-    "account-deleting",
-    wait,
-  );
-  for (const { id } of DUB_LINES) {
-    await persistFence(
-      bucket,
-      storage.objectKey(id),
-      "slot",
-      generation,
-      "account-deleting",
-      wait,
-    );
-  }
-  if (!storage.retiredLegacyMarkerKey) return;
-  await persistFence(
-    bucket,
-    storage.retiredLegacyMarkerKey,
-    "marker",
-    generation,
-    "account-deleting",
-    wait,
-  );
-  for (const lineId of LEGACY_DUB_LINE_IDS) {
-    const key = storage.retiredLegacyObjectKey(lineId);
-    if (key) {
-      await persistFence(
-        bucket,
-        key,
-        "slot",
-        generation,
-        "account-deleting",
-        wait,
-      );
+async function runBoundedFenceWrites(tasks: Array<() => Promise<void>>) {
+  let nextTask = 0;
+  let failed = false;
+  let failure: unknown;
+
+  async function worker() {
+    while (!failed) {
+      const taskIndex = nextTask;
+      nextTask += 1;
+      const task = tasks[taskIndex];
+      if (!task) return;
+      try {
+        await task();
+      } catch (error) {
+        if (!failed) {
+          failed = true;
+          failure = error;
+        }
+      }
     }
   }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(MAX_PARALLEL_FENCE_WRITES, tasks.length) },
+      () => worker(),
+    ),
+  );
+  if (failed) throw failure;
 }
 
 export async function prepareAccountDeletion({
@@ -371,15 +352,17 @@ export async function prepareAccountDeletion({
     userId,
     liveIdentities,
   );
-  const legacyIdentity = identities.find(({ legacyStorageOwner }) =>
-    legacyStorageOwner
+  const legacyIdentity = identities.find(
+    ({ legacyStorageOwner }) => legacyStorageOwner,
   );
   const storages = [
-    createDubStorageKeys(legacyIdentity ?? {
-      learnerProfileId: "",
-      legacyStorageOwner: true,
-      userId,
-    }),
+    createDubStorageKeys(
+      legacyIdentity ?? {
+        learnerProfileId: "",
+        legacyStorageOwner: true,
+        userId,
+      },
+    ),
     ...identities
       .filter(({ legacyStorageOwner }) => !legacyStorageOwner)
       .map(createDubStorageKeys),
@@ -401,7 +384,9 @@ export async function prepareAccountDeletion({
     });
     const listedKeys = page.objects.map(({ key }) => key);
     if (listedKeys.some((key) => !key.startsWith(r2Prefix))) {
-      throw new Error("R2 returned an object outside the account deletion prefix.");
+      throw new Error(
+        "R2 returned an object outside the account deletion prefix.",
+      );
     }
     const keys = listedKeys.filter((key) => !closureKeys.has(key));
     if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
@@ -409,14 +394,35 @@ export async function prepareAccountDeletion({
     hasMore = page.truncated;
     if (page.truncated) {
       if (!page.cursor || seenCursors.has(page.cursor)) {
-        throw new Error("R2 account deletion listing did not advance its cursor.");
+        throw new Error(
+          "R2 account deletion listing did not advance its cursor.",
+        );
       }
       seenCursors.add(page.cursor);
       cursor = page.cursor;
     }
   }
 
-  for (const storage of storages) {
-    await persistStorageFences(bucket, storage, generation, wait);
-  }
+  const fenceTask = (key: string, kind: "marker" | "slot") => () =>
+    persistFence(bucket, key, kind, generation, "account-deleting", wait);
+
+  await runBoundedFenceWrites(
+    storages.map((storage) => fenceTask(storage.markerKey, "marker")),
+  );
+  await runBoundedFenceWrites(
+    storages.flatMap((storage) =>
+      storage.retiredLegacyMarkerKey
+        ? [fenceTask(storage.retiredLegacyMarkerKey, "marker")]
+        : [],
+    ),
+  );
+  await runBoundedFenceWrites(
+    storages.flatMap((storage) => [
+      ...DUB_LINES.map(({ id }) => fenceTask(storage.objectKey(id), "slot")),
+      ...LEGACY_DUB_LINE_IDS.flatMap((lineId) => {
+        const key = storage.retiredLegacyObjectKey(lineId);
+        return key ? [fenceTask(key, "slot")] : [];
+      }),
+    ]),
+  );
 }

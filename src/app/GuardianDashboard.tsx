@@ -3,9 +3,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { ActionLink, Card } from "../shared/ui";
-import { HeaderButton, RouteHeader } from "./AppHeader";
+import {
+  GuardianLearnerContextLabel,
+  HeaderButton,
+  RouteHeader,
+} from "./AppHeader";
 import {
   getGuardianDubbingPath,
+  getGuardianLearnersPath,
   getGuardianPath,
   getGuardianLessonsPath,
   getGuardianStoriesPath,
@@ -39,9 +44,7 @@ export function GuardianDashboardView({
 
       <section className="mx-auto grid w-full max-w-5xl gap-6">
         <header className="grid gap-2 text-center">
-          <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue sm:text-sm">
-            Managing {learnerName}
-          </p>
+          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Guardian dashboard
           </h1>
@@ -59,12 +62,29 @@ export function GuardianDashboardView({
         <div className="grid gap-4 md:grid-cols-2">
           <Card className="grid content-start gap-4 p-6">
             <h2 className="m-0 text-2xl leading-tight text-brand-navy">
+              Learner profiles
+            </h2>
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              Add a learner, choose who is active, or manage each learner&apos;s
+              details.
+            </p>
+            <ActionLink className="mt-auto" to={getGuardianLearnersPath()}>
+              Manage learner profiles
+            </ActionLink>
+          </Card>
+
+          <Card className="grid content-start gap-4 p-6">
+            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
               Learner details
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review and update the learner&apos;s name, age, and profile details.
+              Review and update the learner&apos;s name, age, and profile
+              details.
             </p>
-            <ActionLink className="mt-auto" to={getProfilePath(getGuardianPath())}>
+            <ActionLink
+              className="mt-auto"
+              to={getProfilePath(getGuardianPath())}
+            >
               Manage learner details
             </ActionLink>
           </Card>

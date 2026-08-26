@@ -529,7 +529,7 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBe(currentCase.direction);
 
     const firstAction = page.getByRole("menuitem", {
-      name: "Switch to learner",
+      name: "Guardian dashboard",
     });
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
@@ -890,8 +890,10 @@ test("account actions separate routine sign out from staged deletion", async ({
     const menu = page.getByRole("menu", { name: "Account menu" });
     const items = menu.getByRole("menuitem");
     await expect(items).toHaveText([
-      "Switch to learner",
-      "Manage learner details",
+      "Guardian dashboard",
+      "Learner profiles",
+      "Manage Mia's details",
+      "Switch to Mia",
       "AI and saved data",
       "Sign out",
       "Delete account",
@@ -923,9 +925,9 @@ test("account actions separate routine sign out from staged deletion", async ({
       expect(box.height).toBeGreaterThanOrEqual(44);
       itemBoxes.push(box);
     }
-    const ordinaryGap = itemBoxes[3].y - (itemBoxes[2].y + itemBoxes[2].height);
+    const ordinaryGap = itemBoxes[5].y - (itemBoxes[4].y + itemBoxes[4].height);
     const destructiveGap =
-      itemBoxes[4].y - (itemBoxes[3].y + itemBoxes[3].height);
+      itemBoxes[6].y - (itemBoxes[5].y + itemBoxes[5].height);
     expect(ordinaryGap).toBeGreaterThanOrEqual(4);
     expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 8);
 
@@ -1053,7 +1055,7 @@ test("AI and saved data explains caregiver facts before optional technical detai
     }),
   ).toBeVisible();
   await expect(
-    about.getByText("Talk to Peppa does not change the learner profile.", {
+    about.getByText("Talk to Peppa does not change learner profiles.", {
       exact: false,
     }),
   ).toBeVisible();

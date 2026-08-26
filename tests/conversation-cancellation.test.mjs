@@ -268,11 +268,15 @@ describe("conversation learner lifecycle cancellation", () => {
     await click(button("Reset voice"));
     assert.equal(startSignals[1]?.aborted, true);
     assert.equal(output("Conversation status").textContent, "ready");
-    await waitFor(() => assert.deepEqual(retired, [{
-      id: "stale-before-reset",
-      reason: "superseded_start",
-      signal: undefined,
-    }]));
+    await waitFor(() =>
+      assert.deepEqual(retired, [
+        {
+          id: "stale-before-reset",
+          reason: "superseded_start",
+          signal: undefined,
+        },
+      ]),
+    );
 
     secondStart.resolve(startResponse("late-after-reset"));
     await waitFor(() => assert.equal(retired.length, 2));
@@ -283,6 +287,58 @@ describe("conversation learner lifecycle cancellation", () => {
     });
     assert.equal(transports, 0);
     assert.equal(completed, 0);
+  });
+
+  it("does not let a hung late-start cleanup block the next learner's conversation", async () => {
+    const lateStart = deferred();
+    const staleRetirement = deferred();
+    let starts = 0;
+    let retirementCalls = 0;
+    let transports = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/conversations" && init.method === "POST") {
+        starts += 1;
+        return starts === 1
+          ? lateStart.promise
+          : startResponse("next-learner-conversation");
+      }
+      if (
+        path === "/api/conversations/stale-learner-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        retirementCalls += 1;
+        assert.equal(init.signal, undefined);
+        return staleRetirement.promise;
+      }
+      if (
+        path === "/api/conversations/next-learner-conversation/finish" &&
+        init.method === "POST"
+      ) {
+        return json({ conversation: {} });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(ConversationCancellationHarness, {
+        createTransport: () => {
+          transports += 1;
+          return transportProbe().transport;
+        },
+      }),
+    );
+    await click(button("Start voice"));
+    assert.equal(starts, 1);
+    await click(button("Reset voice"));
+
+    lateStart.resolve(startResponse("stale-learner-conversation"));
+    await waitFor(() => assert.equal(retirementCalls, 1));
+    await click(button("Start voice"));
+
+    await waitFor(() => assert.equal(starts, 2));
+    await waitFor(() => assert.equal(transports, 1));
+    staleRetirement.resolve(json({ conversation: {} }));
+    await flush();
   });
 
   it("disconnects and clears an active conversation while retirement continues", async () => {
@@ -298,7 +354,10 @@ describe("conversation learner lifecycle cancellation", () => {
         path === "/api/conversations/active-before-reset/finish" &&
         init.method === "POST"
       ) {
-        retired.push({ reason: JSON.parse(init.body).reason, signal: init.signal });
+        retired.push({
+          reason: JSON.parse(init.body).reason,
+          signal: init.signal,
+        });
         return json({ conversation: {} });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -331,9 +390,11 @@ describe("conversation learner lifecycle cancellation", () => {
     assert.equal(output("Conversation turns").textContent, "[]");
     assert.equal(output("Live transcript").textContent, "");
     assert.equal(output("Can finish").textContent, "false");
-    await waitFor(() => assert.deepEqual(retired, [
-      { reason: "left_conversation", signal: undefined },
-    ]));
+    await waitFor(() =>
+      assert.deepEqual(retired, [
+        { reason: "left_conversation", signal: undefined },
+      ]),
+    );
     await flush();
     assert.equal(starts, 1, "reset remains deactivated until active changes");
   });
@@ -587,9 +648,13 @@ describe("conversation learner lifecycle cancellation", () => {
 
     await click(button("Reset voice"));
     assert.equal(summarySignal.aborted, true);
-    summary.resolve(json({ conversation: { turns: [
-      { id: "stored", role: "assistant", text: "Late summary" },
-    ] } }));
+    summary.resolve(
+      json({
+        conversation: {
+          turns: [{ id: "stored", role: "assistant", text: "Late summary" }],
+        },
+      }),
+    );
     await flush();
 
     assert.equal(reviews, 0);
@@ -702,9 +767,11 @@ describe("conversation learner lifecycle cancellation", () => {
 
     await click(button("Reset voice"));
     assert.equal(learnerFinishSignal.aborted, true);
-    await waitFor(() => assert.deepEqual(cleanupReasons, [
-      { reason: "left_conversation", signal: undefined },
-    ]));
+    await waitFor(() =>
+      assert.deepEqual(cleanupReasons, [
+        { reason: "left_conversation", signal: undefined },
+      ]),
+    );
     learnerFinish.resolve(json({ conversation: {} }));
     await flush();
 

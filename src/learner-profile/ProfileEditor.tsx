@@ -1,21 +1,23 @@
 import { ArrowLeft } from "lucide-react";
 import type { FormEvent } from "react";
-import { HeaderButton, RouteHeader } from "../app/AppHeader";
+import {
+  BidiLearnerName,
+  GuardianLearnerContextLabel,
+  HeaderButton,
+  RouteHeader,
+} from "../app/AppHeader";
 import {
   LearnerProfileCard,
   LearnerProfilePeppaArt,
   LearnerProfileScreen,
 } from "./LearnerProfileLayout";
-import {
-  ActionButton,
-  fieldClassName,
-  TextButton,
-} from "../shared/ui";
+import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
 
 type ProfileEditorViewProps = {
   drafts: Record<string, string>;
   fieldErrors: Record<string, string>;
   isSaving: boolean;
+  learnerName: string;
   onCancel: () => void;
   onClose: () => void;
   onRedoLearnerProfile: () => void;
@@ -28,6 +30,7 @@ export function ProfileEditorView({
   drafts,
   fieldErrors,
   isSaving,
+  learnerName,
   onCancel,
   onClose,
   onRedoLearnerProfile,
@@ -60,9 +63,7 @@ export function ProfileEditorView({
         width="narrow"
       >
         <header>
-          <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue sm:text-sm">
-            Guardian settings
-          </p>
+          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1
             className="mb-0 mt-2 text-3xl leading-none text-brand-ink sm:text-5xl"
             id="profile-title"
@@ -97,7 +98,10 @@ export function ProfileEditorView({
               />
             </label>
             {fieldErrors.name ? (
-              <p className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
+              <p
+                className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
+                role="alert"
+              >
                 {fieldErrors.name}
               </p>
             ) : null}
@@ -118,17 +122,24 @@ export function ProfileEditorView({
               />
             </label>
             {fieldErrors.age ? (
-              <p className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
+              <p
+                className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
+                role="alert"
+              >
                 {fieldErrors.age}
               </p>
             ) : null}
 
             <label
-              className="grid gap-2 font-black text-brand-ink"
+              className="grid min-w-0 gap-2 font-black text-brand-ink"
               htmlFor="profile-description"
             >
-              <span>
-                About {(drafts.name ?? "").trim() || "this learner"}
+              <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
+                About{" "}
+                <BidiLearnerName
+                  fallback="this learner"
+                  learnerName={drafts.name ?? ""}
+                />
               </span>
               <textarea
                 className={fieldClassName({
@@ -145,7 +156,10 @@ export function ProfileEditorView({
               />
             </label>
             {fieldErrors.description ? (
-              <p className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
+              <p
+                className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
+                role="alert"
+              >
                 {fieldErrors.description}
               </p>
             ) : null}
@@ -168,8 +182,8 @@ export function ProfileEditorView({
                 Redo learner setup
               </h2>
               <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Answer Peppa’s setup questions again. For a normal chat, go
-                Home and choose Talk to Peppa.
+                Answer Peppa’s setup questions again. For a normal chat, go Home
+                and choose Talk to Peppa.
               </p>
               <ActionButton
                 className="mt-1 min-w-0"
@@ -186,23 +200,19 @@ export function ProfileEditorView({
           </section>
 
           {pageError ? (
-            <p className="mt-4 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900" role="alert">
+            <p
+              className="mt-4 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
+              role="alert"
+            >
               {pageError}
             </p>
           ) : null}
 
           <footer className="mt-6 flex items-center justify-between gap-4 border-t-3 border-sky-100 bg-white/95 pb-1 pt-4 max-sm:flex-col max-sm:items-stretch">
-            <ActionButton
-              disabled={isSaving}
-              type="submit"
-            >
+            <ActionButton disabled={isSaving} type="submit">
               {isSaving ? "Saving…" : "Save changes"}
             </ActionButton>
-            <TextButton
-              disabled={isSaving}
-              onClick={onCancel}
-              type="button"
-            >
+            <TextButton disabled={isSaving} onClick={onCancel} type="button">
               Cancel
             </TextButton>
           </footer>

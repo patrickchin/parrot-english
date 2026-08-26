@@ -1,23 +1,22 @@
 import { ArrowLeft, Pencil, Play, Plus } from "lucide-react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { useNavigate } from "react-router";
+import { getLessonScenePath, getMyLessonEditPath } from "../app/app-routes";
 import {
-  getLessonScenePath,
-  getMyLessonEditPath,
-} from "../app/app-routes";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+  GuardianLearnerContextLabel,
+  HeaderLink,
+  RouteHeader,
+} from "../app/AppHeader";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { ActionButton, ActionLink, Card, cx } from "../shared/ui";
 import type { MyLessonDescriptor } from "./my-lessons-api";
-import {
-  useMyLessons,
-  type MyLessonsLoadPhase,
-} from "./useMyLessons";
+import { useMyLessons, type MyLessonsLoadPhase } from "./useMyLessons";
 
 type GuardianLessonManagerViewProps = {
   error: string;
   headingRef?: RefObject<HTMLHeadingElement | null>;
   isSwitchingLessonId: string | null;
+  learnerName: string;
   lessons: MyLessonDescriptor[];
   myLessonsLoadPhase: MyLessonsLoadPhase;
   onRetryMyLessons: () => void;
@@ -28,6 +27,7 @@ export function GuardianLessonManagerView({
   error,
   headingRef,
   isSwitchingLessonId,
+  learnerName,
   lessons,
   myLessonsLoadPhase,
   onRetryMyLessons,
@@ -47,6 +47,7 @@ export function GuardianLessonManagerView({
 
       <section className="mx-auto grid w-full max-w-5xl gap-6">
         <header className="grid justify-items-center gap-4 text-center">
+          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1
             className="m-0 rounded-lg text-4xl leading-none tracking-tight text-brand-ink outline-none focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink sm:text-6xl"
             ref={headingRef}
@@ -79,8 +80,7 @@ export function GuardianLessonManagerView({
           id="guardian-my-lessons-status"
           role="status"
         >
-          {myLessonsLoadPhase === "loading" ||
-          myLessonsLoadPhase === "retrying"
+          {myLessonsLoadPhase === "loading" || myLessonsLoadPhase === "retrying"
             ? "Loading My Lessons…"
             : myLessonsLoadPhase === "error"
               ? "We couldn't load My Lessons."
@@ -89,12 +89,9 @@ export function GuardianLessonManagerView({
                 : "No custom lessons yet."}
         </p>
 
-        {myLessonsLoadPhase === "error" ||
-        myLessonsLoadPhase === "retrying" ? (
+        {myLessonsLoadPhase === "error" || myLessonsLoadPhase === "retrying" ? (
           <ActionButton
-            aria-disabled={
-              myLessonsLoadPhase === "retrying" ? true : undefined
-            }
+            aria-disabled={myLessonsLoadPhase === "retrying" ? true : undefined}
             aria-describedby="guardian-my-lessons-status"
             className={cx(
               "mx-auto",
@@ -155,7 +152,11 @@ export function GuardianLessonManagerView({
   );
 }
 
-export function GuardianLessonManager() {
+export function GuardianLessonManager({
+  learnerName,
+}: {
+  learnerName: string;
+}) {
   const { error: guardianError, lock } = useGuardianAccess();
   const { lessons, phase, retry } = useMyLessons();
   const navigate = useNavigate();
@@ -199,6 +200,7 @@ export function GuardianLessonManager() {
       error={switchError || guardianError}
       headingRef={headingRef}
       isSwitchingLessonId={isSwitchingLessonId}
+      learnerName={learnerName}
       lessons={lessons}
       myLessonsLoadPhase={phase}
       onRetryMyLessons={retryMyLessons}

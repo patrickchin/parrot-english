@@ -13,7 +13,11 @@ import {
 } from "react";
 import { useNavigate } from "react-router";
 import { AccountHeader } from "../app/AppHeader";
-import { getGuardianPath, getProfilePath } from "../app/app-routes";
+import {
+  getGuardianLearnersPath,
+  getGuardianPath,
+  getProfilePath,
+} from "../app/app-routes";
 import {
   getAuthErrorMessage,
   validateAuthForm,
@@ -25,10 +29,7 @@ import {
   type AccountExperience,
 } from "./account-actions";
 import { authClient } from "./auth-client";
-import {
-  GuardianAccessProvider,
-  useGuardianAccess,
-} from "./GuardianAccess";
+import { GuardianAccessProvider, useGuardianAccess } from "./GuardianAccess";
 import { GuardianUnlockDialog } from "./GuardianUnlock";
 import {
   ActionButton,
@@ -46,7 +47,10 @@ interface AuthActionResult {
 export interface AuthActionClient {
   deleteUser(fields: { password: string }): Promise<AuthActionResult>;
   signIn: {
-    email(fields: { email: string; password: string }): Promise<AuthActionResult>;
+    email(fields: {
+      email: string;
+      password: string;
+    }): Promise<AuthActionResult>;
   };
   signOut(): Promise<AuthActionResult>;
   signUp: {
@@ -196,6 +200,7 @@ interface AuthGateViewProps {
   isRetrying: boolean;
   isSigningOut: boolean;
   isSubmitting: boolean;
+  hasActiveLearner: boolean;
   learnerName: string | null;
   mode: AuthMode;
   onDeleteAccount: (password: string) => Promise<string | null>;
@@ -223,6 +228,7 @@ function AccountExperienceHeader({
   error,
   guardianLabel,
   guardianUnlockDestination,
+  hasActiveLearner,
   isSigningOut,
   learnerName,
   onDeleteAccount,
@@ -235,6 +241,7 @@ function AccountExperienceHeader({
   error: string;
   guardianLabel: string;
   guardianUnlockDestination?: string | null;
+  hasActiveLearner: boolean;
   isSigningOut: boolean;
   learnerName: string | null;
   onDeleteAccount: (password: string) => Promise<string | null>;
@@ -281,11 +288,14 @@ function AccountExperienceHeader({
         activeMode={activeMode}
         error={access.error || error}
         guardianLabel={guardianLabel}
+        hasActiveLearner={hasActiveLearner}
         isDialogOpen={isUnlockOpen}
         isModePending={isModePending}
         isSigningOut={activeMode === "guardian" && isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
         onDeleteAccount={onDeleteAccount}
+        onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
+        onOpenLearnerProfiles={() => onNavigate(getGuardianLearnersPath())}
         onOpenProfile={
           onOpenProfile ?? (() => onNavigate(getProfilePath(getGuardianPath())))
         }
@@ -328,6 +338,7 @@ export function AuthGateView({
   fields,
   formError,
   guardianUnlockDestination,
+  hasActiveLearner,
   isPending,
   isRetrying,
   isSigningOut,
@@ -438,8 +449,8 @@ export function AuthGateView({
           </header>
           {isSignUp ? (
             <p className="mb-6 mt-0 font-bold leading-relaxed text-slate-600">
-              Use an adult or learner account name. You’ll set up the learner
-              profile next.
+              Use the grown-up’s name for this Guardian account. You can add
+              learner profiles next.
             </p>
           ) : null}
 
@@ -478,7 +489,9 @@ export function AuthGateView({
                     autoComplete="name"
                     id="auth-name"
                     name="name"
-                    onChange={(event) => onFieldChange("name", event.target.value)}
+                    onChange={(event) =>
+                      onFieldChange("name", event.target.value)
+                    }
                     required
                     className={fieldClassName({ tone: "tinted" })}
                     type="text"
@@ -497,7 +510,9 @@ export function AuthGateView({
                   id="auth-email"
                   inputMode="email"
                   name="email"
-                  onChange={(event) => onFieldChange("email", event.target.value)}
+                  onChange={(event) =>
+                    onFieldChange("email", event.target.value)
+                  }
                   required
                   className={fieldClassName({ tone: "tinted" })}
                   type="email"
@@ -515,7 +530,9 @@ export function AuthGateView({
                   id="auth-password"
                   minLength={8}
                   name="password"
-                  onChange={(event) => onFieldChange("password", event.target.value)}
+                  onChange={(event) =>
+                    onFieldChange("password", event.target.value)
+                  }
                   required
                   className={fieldClassName({ tone: "tinted" })}
                   type="password"
@@ -551,7 +568,8 @@ export function AuthGateView({
     );
   }
 
-  const userLabel = session.user.name?.trim() || session.user.email || "Learner";
+  const userLabel =
+    session.user.name?.trim() || session.user.email || "Learner";
   const accountError = profileError || formError;
 
   return (
@@ -560,6 +578,7 @@ export function AuthGateView({
         error={accountError}
         guardianLabel={userLabel}
         guardianUnlockDestination={guardianUnlockDestination}
+        hasActiveLearner={hasActiveLearner}
         isSigningOut={isSigningOut}
         learnerName={learnerName}
         onDeleteAccount={onDeleteAccount}
@@ -667,6 +686,8 @@ export function createAuthGate({
       stateHook<ProfileActionState>(EMPTY_PROFILE_ACTION_STATE);
     const signOutAttemptRef = useRef<{ owner: string } | null>(null);
     const sessionIdentity = getSessionIdentity(session);
+    const currentSessionIdentityRef = useRef(sessionIdentity);
+    currentSessionIdentityRef.current = sessionIdentity;
     const profileAction =
       profileActionState.owner === sessionIdentity
         ? profileActionState.action
@@ -676,6 +697,9 @@ export function createAuthGate({
     >(
       (nextAction) => {
         setProfileActionState((current) => {
+          if (currentSessionIdentityRef.current !== sessionIdentity) {
+            return current;
+          }
           const currentAction =
             current.owner === sessionIdentity ? current.action : null;
           const action =
@@ -785,6 +809,7 @@ export function createAuthGate({
             isRetrying={isRetrying}
             isSigningOut={ownsSignOutState && signOutState.isPending}
             isSubmitting={isSubmitting}
+            hasActiveLearner={profileAction?.hasActiveLearner ?? false}
             learnerName={profileAction?.learnerName ?? null}
             guardianUnlockDestination={
               profileAction?.guardianUnlockDestination ?? null
@@ -794,7 +819,9 @@ export function createAuthGate({
             onFieldChange={updateField}
             onModeChange={selectMode}
             onNavigate={navigate}
-            onOpenProfile={profileAction?.onOpenProfile ?? null}
+            onOpenProfile={
+              profileAction ? (profileAction.onOpenProfile ?? (() => {})) : null
+            }
             onRetry={() => void handleRetry()}
             onSignOut={handleSignOut}
             onSubmit={handleSubmit}

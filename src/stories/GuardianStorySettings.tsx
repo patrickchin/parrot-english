@@ -1,14 +1,15 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import {
+  BidiLearnerName,
+  GuardianLearnerContextLabel,
+  HeaderLink,
+  RouteHeader,
+} from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import { saveStoryLevel } from "../learner-profile/learner-profile-api";
 import { isAbortError } from "../media/audio-playback";
-import {
-  Card,
-  SegmentedButton,
-  SegmentedControl,
-} from "../shared/ui";
+import { Card, SegmentedButton, SegmentedControl } from "../shared/ui";
 import { PersonalizedStoryArtPanel } from "./PersonalizedStoryArtPanel";
 import {
   getStoryLevel,
@@ -23,6 +24,7 @@ export function GuardianStorySettingsView({
   art,
   error,
   isSaving,
+  learnerName,
   onSelectLevel,
   selectedLevel,
   statusMessage,
@@ -30,10 +32,12 @@ export function GuardianStorySettingsView({
   art: PersonalizedStoryArtState;
   error: string;
   isSaving: boolean;
+  learnerName: string;
   onSelectLevel: (level: LearnerStoryLevelId) => void;
   selectedLevel: LearnerStoryLevelId;
   statusMessage: string;
 }) {
+  const managedLearnerName = learnerName.trim() || "Learner";
   const showArt =
     art.featureEnabled || art.metadata.hasStoredArt || art.statusMessage;
 
@@ -51,11 +55,16 @@ export function GuardianStorySettingsView({
 
       <section className="mx-auto grid w-full max-w-5xl gap-6">
         <header className="grid gap-2 text-center">
+          <GuardianLearnerContextLabel learnerName={managedLearnerName} />
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Story settings
           </h1>
-          <p className="m-0 font-bold leading-relaxed text-slate-600">
-            Choose stories and manage optional personalized art for the learner.
+          <p
+            className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+            dir="ltr"
+          >
+            Choose stories and manage optional personalized art for{" "}
+            <BidiLearnerName learnerName={managedLearnerName} />.
           </p>
         </header>
 
@@ -64,8 +73,12 @@ export function GuardianStorySettingsView({
             <h2 className="m-0 text-2xl leading-tight text-brand-navy">
               Choose story level
             </h2>
-            <p className="m-0 text-sm font-bold text-slate-600">
-              The learner story shelf always opens at this level.
+            <p
+              className="m-0 min-w-0 text-sm font-bold text-slate-600 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s story shelf always opens at this level.
             </p>
           </div>
 
@@ -132,6 +145,7 @@ export function GuardianStorySettingsView({
               hasSelectedPhoto={art.hasSelectedPhoto}
               hasStoredArt={Boolean(art.metadata.hasStoredArt)}
               isGenerating={art.isGenerating}
+              learnerName={managedLearnerName}
               onConsentChange={art.setConsentChecked}
               onFileChange={art.setSelectedFile}
               onGenerate={() => void art.generate()}
@@ -147,7 +161,11 @@ export function GuardianStorySettingsView({
   );
 }
 
-export function GuardianStorySettings() {
+export function GuardianStorySettings({
+  learnerName,
+}: {
+  learnerName: string;
+}) {
   const { profile, replaceProfile } = useLearnerProfile();
   const art = usePersonalizedStoryArt();
   const [error, setError] = useState("");
@@ -171,6 +189,7 @@ export function GuardianStorySettings() {
 
   async function selectLevel(level: LearnerStoryLevelId) {
     if (savingRef.current || level === profile.storyLevel) return;
+    const expectedProfileId = profile.id;
     const controller = new AbortController();
     const epoch = saveEpochRef.current + 1;
     saveControllerRef.current?.abort();
@@ -188,6 +207,9 @@ export function GuardianStorySettings() {
     try {
       const result = await saveStoryLevel(level, { signal: controller.signal });
       if (!isCurrent()) return;
+      if (result.profile.id !== expectedProfileId) {
+        throw new Error("The selected learner profile could not be saved.");
+      }
       replaceProfile(result.profile);
       setStatusMessage(`Story level saved: ${getStoryLevel(level).label}.`);
     } catch (caughtError) {
@@ -213,6 +235,7 @@ export function GuardianStorySettings() {
       art={art}
       error={error}
       isSaving={isSaving}
+      learnerName={learnerName}
       onSelectLevel={(level) => void selectLevel(level)}
       selectedLevel={profile.storyLevel}
       statusMessage={statusMessage}

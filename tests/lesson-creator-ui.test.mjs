@@ -54,7 +54,7 @@ function renderCreator(initialEntry) {
     createElement(
       MemoryRouter,
       { initialEntries: [initialEntry] },
-      createElement(LessonCreator),
+      createElement(LessonCreator, { learnerName: "Mia" }),
     ),
   );
 }
@@ -67,6 +67,7 @@ test("custom lesson creation defaults to a simple AI path", () => {
   )?.[0];
 
   assert.match(html, /<h1[^>]*>Create a custom lesson<\/h1>/);
+  assert.match(html, /Managing <bdi[^>]*>Mia<\/bdi>/);
   assert.match(html, /grown-up/i);
   assert.ok(tabList);
   assert.match(tabList, /role="tablist"/);
@@ -133,7 +134,7 @@ test("saving a custom lesson returns to Guardian lessons", async () => {
     createElement(
       MemoryRouter,
       { initialEntries: ["/lessons/my/create"] },
-      createElement(LessonCreator),
+      createElement(LessonCreator, { learnerName: "Mia" }),
       createElement(CurrentRoute),
     ),
   );
@@ -147,13 +148,13 @@ test("saving a custom lesson returns to Guardian lessons", async () => {
   await waitFor(() =>
     assert.ok(
       [...document.querySelectorAll("button")].find(
-        (candidate) => candidate.textContent.trim() === "Save and play lesson",
+        (candidate) => candidate.textContent.trim() === "Save lesson",
       ),
     ),
   );
   await click(
     [...document.querySelectorAll("button")].find(
-      (candidate) => candidate.textContent.trim() === "Save and play lesson",
+      (candidate) => candidate.textContent.trim() === "Save lesson",
     ),
   );
   await waitFor(() =>

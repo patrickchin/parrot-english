@@ -16,12 +16,14 @@ import {
 } from "../auth/account-actions";
 import { selectConversationPurpose } from "../../lib/conversation-purpose";
 import {
+  createLearnerProfile as createLearnerProfileRequest,
   loadLearnerProfile,
   loadProfile,
   LearnerProfileApiError,
   saveLearnerProfileAnswer,
   saveProfileAnswer,
   saveProfileAnswers,
+  selectLearnerProfile as selectLearnerProfileRequest,
   skipLearnerProfile,
   skipLearnerProfileQuestion,
   transcribeLearnerProfileAudio,
@@ -29,6 +31,7 @@ import {
   type LearnerProfileSummary,
   type LearnerProfileAcknowledgment as Acknowledgment,
   type LearnerProfileQuestion,
+  type LearnerProfileRoster,
   type LearnerProfileState,
   type ProfileState,
 } from "./learner-profile-api";
@@ -127,6 +130,7 @@ type LearnerProfileGateViewProps = {
   completedLearnerProfileFallback: ReactNode;
   conversationProps: ConversationProps | null;
   data: LearnerProfileState | null;
+  guardianDashboardRoute?: boolean;
   guardianRoute?: boolean;
   guardianSelectionFallback?: ReactNode;
   isConversationRoute: boolean;
@@ -139,6 +143,7 @@ type LearnerProfileGateViewProps = {
   loadError: string;
   onAcknowledgmentNext: () => void;
   onCloseConversationRoute: () => void;
+  onCloseGuardianRoute?: () => void;
   onCloseProfileRoute: () => void;
   onRetry: () => void;
   onRetryProfile: () => void;
@@ -207,6 +212,7 @@ export function LearnerProfileGateView({
   completedLearnerProfileFallback,
   conversationProps,
   data,
+  guardianDashboardRoute = false,
   guardianRoute = false,
   guardianSelectionFallback,
   isConversationRoute,
@@ -219,6 +225,7 @@ export function LearnerProfileGateView({
   loadError,
   onAcknowledgmentNext,
   onCloseConversationRoute,
+  onCloseGuardianRoute,
   onCloseProfileRoute,
   onRetry,
   onRetryProfile,
@@ -240,7 +247,30 @@ export function LearnerProfileGateView({
   const canAccessProtectedRoutes = Boolean(
     guardianRoute || data?.mode === "bypass-only" || learnerProfileComplete,
   );
-  const canEditProfile = Boolean(fullData && (guardianRoute || learnerProfileComplete));
+  const canEditProfile = Boolean(
+    fullData && (guardianRoute || learnerProfileComplete),
+  );
+
+  if (guardianRoute && isLearnerProfileRoute && !redoLearnerProfile) {
+    return <>{completedLearnerProfileFallback}</>;
+  }
+
+  if (guardianRoute && learnerManagerRoute) {
+    return <>{children}</>;
+  }
+
+  if (
+    guardianRoute &&
+    isLearnerProfileRoute &&
+    redoLearnerProfile &&
+    data?.mode === "bypass-only"
+  ) {
+    return <>{completedLearnerProfileFallback}</>;
+  }
+
+  if (guardianRoute && data?.mode === "bypass-only") {
+    return <>{guardianSelectionFallback ?? completedLearnerProfileFallback}</>;
+  }
 
   if (isLoading) {
     return (
@@ -257,6 +287,7 @@ export function LearnerProfileGateView({
   }
 
   if (loadError) {
+    if (guardianRoute && guardianDashboardRoute) return <>{children}</>;
     return (
       <LearnerProfileScreen>
         <LearnerProfileStatusCard role="alert">
@@ -269,8 +300,15 @@ export function LearnerProfileGateView({
             {loadError}
           </p>
           <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
-            {redoLearnerProfile ? (
-              <TextButton onClick={onCloseProfileRoute} type="button">
+            {redoLearnerProfile || guardianRoute ? (
+              <TextButton
+                onClick={
+                  guardianRoute && !redoLearnerProfile
+                    ? (onCloseGuardianRoute ?? onCloseProfileRoute)
+                    : onCloseProfileRoute
+                }
+                type="button"
+              >
                 Back
               </TextButton>
             ) : isConversationRoute ? (
@@ -518,6 +556,30 @@ function readableError(error: unknown) {
     : "Something went wrong. Please try again.";
 }
 
+function requireRosterActiveProfile(
+  roster: LearnerProfileRoster,
+  expectedProfileId?: string,
+) {
+  const activeProfileId = roster.activeProfileId;
+  if (
+    activeProfileId === null ||
+    (expectedProfileId !== undefined && activeProfileId !== expectedProfileId)
+  ) {
+    throw new Error("The selected learner could not be loaded.");
+  }
+  const profile = roster.profiles.find(({ id }) => id === activeProfileId);
+  if (!profile) {
+    throw new Error("The selected learner could not be loaded.");
+  }
+  return profile;
+}
+
+function throwIfLearnerMutationAborted(signal: AbortSignal) {
+  if (signal.aborted) {
+    throw new DOMException("The learner change was cancelled.", "AbortError");
+  }
+}
+
 type PendingAcknowledgment =
   | {
       kind: "learner-profile";
@@ -636,6 +698,7 @@ export function createProfileRouteLifecycle(
 type LearnerProfileGateProps = {
   children: ReactNode;
   completedLearnerProfileFallback: ReactNode;
+  guardianDashboardRoute?: boolean;
   guardianRoute?: boolean;
   guardianSelectionFallback?: ReactNode;
   guardianUnlockDestination?: string;
@@ -644,6 +707,7 @@ type LearnerProfileGateProps = {
   isProfileRoute: boolean;
   learnerManagerRoute?: boolean;
   learnerProfileFallback: ReactNode;
+  onCloseGuardianRoute?: () => void;
   onCloseProfileRoute: () => void;
   onConversationCompleted: () => void;
   onOpenLessons: () => void;
@@ -656,6 +720,7 @@ type LearnerProfileGateProps = {
 export function LearnerProfileGate({
   children,
   completedLearnerProfileFallback,
+  guardianDashboardRoute = false,
   guardianRoute = false,
   guardianSelectionFallback,
   guardianUnlockDestination,
@@ -664,6 +729,7 @@ export function LearnerProfileGate({
   isProfileRoute,
   learnerManagerRoute = false,
   learnerProfileFallback,
+  onCloseGuardianRoute,
   onCloseProfileRoute,
   onConversationCompleted,
   onOpenLessons,
@@ -681,6 +747,7 @@ export function LearnerProfileGate({
   const [redoQuestionIndex, setRedoQuestionIndex] = useState(0);
   const [draft, setDraft] = useState("");
   const [fieldError, setFieldError] = useState("");
+  const [fieldErrorIsAnswer, setFieldErrorIsAnswer] = useState(false);
   const [questionPresentation, setQuestionPresentation] =
     useState<QuestionPresentation>(IDLE_QUESTION_PRESENTATION);
   const [questionPlaybackPending, setQuestionPlaybackPending] = useState(false);
@@ -699,6 +766,10 @@ export function LearnerProfileGate({
     useState<PendingAcknowledgment | null>(null);
   const operationRef = useRef(0);
   const learnerLoadControllerRef = useRef<AbortController | null>(null);
+  const learnerMutationControllerRef = useRef<AbortController | null>(null);
+  const learnerMutationTailRef = useRef<Promise<void>>(Promise.resolve());
+  const gateMountedRef = useRef(false);
+  const gateMountEpochRef = useRef(0);
   const questionOperationRef = useRef<ActiveQuestionOperation | null>(null);
   const questionPlaybackRef = useRef<ActiveQuestionPlayback | null>(null);
   const profileLoadOperationRef = useRef<number | null>(null);
@@ -719,9 +790,9 @@ export function LearnerProfileGate({
     : "form";
   const isFormRedoRoute = Boolean(
     redoLearnerProfile &&
-      isLearnerProfileRoute &&
-      fullData &&
-      selectedExperience === "form",
+    isLearnerProfileRoute &&
+    fullData &&
+    selectedExperience === "form",
   );
   const profileRouteActive = isProfileRoute || isFormRedoRoute;
 
@@ -775,6 +846,7 @@ export function LearnerProfileGate({
     setRedoQuestionIndex(0);
     setDraft("");
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
     setQuestionPlaybackPending(false);
     setProfileState(null);
@@ -831,6 +903,7 @@ export function LearnerProfileGate({
       };
       questionOperationRef.current = active;
       setFieldError("");
+      setFieldErrorIsAnswer(false);
       setQuestionPresentation({ pendingAction: owner, status });
       return active;
     },
@@ -920,8 +993,14 @@ export function LearnerProfileGate({
 
   useIsomorphicLayoutEffect(() => {
     const ownership = profileOperationOwnershipRef.current;
+    gateMountedRef.current = true;
+    gateMountEpochRef.current += 1;
     ownership?.mount();
     return () => {
+      gateMountedRef.current = false;
+      gateMountEpochRef.current += 1;
+      learnerMutationControllerRef.current?.abort();
+      learnerMutationControllerRef.current = null;
       ownership?.unmount();
       abortQuestionPlayback(false);
       abortQuestionOperation(false);
@@ -939,6 +1018,7 @@ export function LearnerProfileGate({
 
   const startActiveLearnerLoad = useCallback(
     (expectedProfileId?: string) => {
+      const requiresExpectedProfile = expectedProfileId !== undefined;
       const operation = nextOperation();
       learnerLoadControllerRef.current?.abort();
       const controller = new AbortController();
@@ -953,14 +1033,14 @@ export function LearnerProfileGate({
           }
           if (next.mode === "selection-required") {
             setIsLoading(false);
-            setData(next);
-            if (expectedProfileId) {
+            if (requiresExpectedProfile) {
               throw new Error("The selected learner could not be loaded.");
             }
+            setData(next);
             return null;
           }
           if (
-            expectedProfileId &&
+            requiresExpectedProfile &&
             (next.mode !== "full" || next.profile.id !== expectedProfileId)
           ) {
             throw new Error("The selected learner could not be loaded.");
@@ -999,10 +1079,8 @@ export function LearnerProfileGate({
     const request = startActiveLearnerLoad();
     void request.promise.catch(() => {});
     return () => {
-      request.controller.abort();
-      if (learnerLoadControllerRef.current === request.controller) {
-        learnerLoadControllerRef.current = null;
-      }
+      learnerLoadControllerRef.current?.abort();
+      learnerLoadControllerRef.current = null;
     };
   }, [startActiveLearnerLoad]);
 
@@ -1078,6 +1156,7 @@ export function LearnerProfileGate({
     setUseFormFallback(false);
     setDraft("");
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
     setQuestionPlaybackPending(false);
     setPendingAcknowledgment(null);
@@ -1092,6 +1171,9 @@ export function LearnerProfileGate({
 
   const reloadSelectedLearner = useCallback(
     async (expectedProfileId: string) => {
+      if (!expectedProfileId.trim()) {
+        throw new Error("The selected learner could not be loaded.");
+      }
       resetLearnerSelection();
       const profile = await startActiveLearnerLoad(expectedProfileId).promise;
       if (!profile) {
@@ -1100,6 +1182,115 @@ export function LearnerProfileGate({
       return profile;
     },
     [resetLearnerSelection, startActiveLearnerLoad],
+  );
+
+  const reconcileLearnerAfterMutation = useCallback(
+    async (signal: AbortSignal) => {
+      throwIfLearnerMutationAborted(signal);
+      resetLearnerSelection();
+      try {
+        await startActiveLearnerLoad().promise;
+      } catch {
+        // The active learner stays cleared when reconciliation cannot load it.
+      }
+      throwIfLearnerMutationAborted(signal);
+    },
+    [resetLearnerSelection, startActiveLearnerLoad],
+  );
+
+  const runLearnerMutation = useCallback(
+    <Result,>(operation: (signal: AbortSignal) => Promise<Result>) => {
+      const requestedEpoch = gateMountEpochRef.current;
+      const queued = learnerMutationTailRef.current.then(async () => {
+        if (
+          !gateMountedRef.current ||
+          gateMountEpochRef.current !== requestedEpoch
+        ) {
+          throw new DOMException(
+            "The learner change was cancelled.",
+            "AbortError",
+          );
+        }
+        const controller = new AbortController();
+        learnerMutationControllerRef.current = controller;
+        try {
+          const result = await operation(controller.signal);
+          if (
+            controller.signal.aborted ||
+            !gateMountedRef.current ||
+            gateMountEpochRef.current !== requestedEpoch
+          ) {
+            throw new DOMException(
+              "The learner change was cancelled.",
+              "AbortError",
+            );
+          }
+          return result;
+        } finally {
+          if (learnerMutationControllerRef.current === controller) {
+            learnerMutationControllerRef.current = null;
+          }
+        }
+      });
+      learnerMutationTailRef.current = queued.then(
+        () => undefined,
+        () => undefined,
+      );
+      return queued;
+    },
+    [],
+  );
+
+  const selectLearner = useCallback(
+    (profileId: string) =>
+      runLearnerMutation(async (signal) => {
+        try {
+          if (!profileId.trim()) {
+            throw new Error("The selected learner could not be loaded.");
+          }
+          const roster = await selectLearnerProfileRequest(profileId, {
+            signal,
+          });
+          throwIfLearnerMutationAborted(signal);
+          const selectedProfile = requireRosterActiveProfile(roster, profileId);
+          await reloadSelectedLearner(selectedProfile.id);
+          return roster;
+        } catch (error) {
+          if (!signal.aborted) {
+            await reconcileLearnerAfterMutation(signal);
+          }
+          throw error;
+        }
+      }),
+    [reconcileLearnerAfterMutation, reloadSelectedLearner, runLearnerMutation],
+  );
+
+  const createAndSelectLearner = useCallback(
+    (name: string, existingProfileIds: readonly string[]) =>
+      runLearnerMutation(async (signal) => {
+        try {
+          const normalizedName = name.normalize("NFKC").trim();
+          const roster = await createLearnerProfileRequest(normalizedName, {
+            signal,
+          });
+          throwIfLearnerMutationAborted(signal);
+          const createdProfile = requireRosterActiveProfile(roster);
+          if (
+            existingProfileIds.includes(createdProfile.id) ||
+            createdProfile.name !== normalizedName
+          ) {
+            throw new Error("The newly added learner could not be loaded.");
+          }
+          await reloadSelectedLearner(createdProfile.id);
+          return roster;
+        } catch (error) {
+          if (!signal.aborted) {
+            await reconcileLearnerAfterMutation(signal);
+          }
+          throw error;
+        }
+      }),
+    [reconcileLearnerAfterMutation, reloadSelectedLearner, runLearnerMutation],
   );
   const activeQuestion = fullData?.question ?? null;
   const activeProfile = fullData?.profile ?? null;
@@ -1116,6 +1307,7 @@ export function LearnerProfileGate({
     nextOperation();
     setDraft(answerForQuestion(activeProfile!, activeQuestion!));
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
   }, [
     abortQuestionOperation,
@@ -1133,6 +1325,7 @@ export function LearnerProfileGate({
     nextOperation();
     setDraft(answerForQuestion(profileState.profile, redoQuestion));
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
   }, [
     abortQuestionOperation,
@@ -1150,6 +1343,7 @@ export function LearnerProfileGate({
     if (!active) return;
     setStarted(true);
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     if (!fullData.question.audio) {
       finishQuestionPlayback(active);
       return;
@@ -1175,6 +1369,7 @@ export function LearnerProfileGate({
     const active = beginQuestionPlayback();
     if (!active) return;
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     try {
       await replayLearnerProfileQuestion(activeQuestion.audio, {
         signal: active.controller.signal,
@@ -1193,6 +1388,7 @@ export function LearnerProfileGate({
     const active = beginQuestionPlayback();
     if (!active) return;
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     try {
       await replayLearnerProfileQuestion(redoQuestion.audio, {
         signal: active.controller.signal,
@@ -1249,7 +1445,8 @@ export function LearnerProfileGate({
       const transcript = await captureLearnerProfileAnswer({
         record: ({ signal } = {}) =>
           recordSpeechClip({
-            onRecordingStart: () => updateQuestionOperation(active, "recording"),
+            onRecordingStart: () =>
+              updateQuestionOperation(active, "recording"),
             signal,
           }),
         signal: active.controller.signal,
@@ -1296,6 +1493,9 @@ export function LearnerProfileGate({
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
         setFieldError(readableError(error));
+        setFieldErrorIsAnswer(
+          error instanceof LearnerProfileApiError && error.isFieldError,
+        );
       }
     } finally {
       finishQuestionOperation(active);
@@ -1319,7 +1519,9 @@ export function LearnerProfileGate({
         (question) => question.answerKey === redoQuestion.answerKey,
       );
       const nextIndex =
-        savedQuestionIndex >= 0 ? savedQuestionIndex + 1 : redoQuestionIndex + 1;
+        savedQuestionIndex >= 0
+          ? savedQuestionIndex + 1
+          : redoQuestionIndex + 1;
       if (nextIndex >= saved.questions.length) {
         clearProfileEditor();
         void refresh();
@@ -1330,9 +1532,13 @@ export function LearnerProfileGate({
       setProfileState(saved);
       setRedoQuestionIndex(nextIndex);
       setFieldError("");
+      setFieldErrorIsAnswer(false);
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
         setFieldError(readableError(error));
+        setFieldErrorIsAnswer(
+          error instanceof LearnerProfileApiError && error.isFieldError,
+        );
       }
     } finally {
       finishQuestionOperation(active);
@@ -1348,6 +1554,7 @@ export function LearnerProfileGate({
     const operation = active?.operation ?? nextOperation();
     setLoadError("");
     setFieldError("");
+    setFieldErrorIsAnswer(false);
     try {
       const next = await skipLearnerProfile(
         active ? { signal: active.controller.signal } : undefined,
@@ -1369,8 +1576,10 @@ export function LearnerProfileGate({
         return;
       }
       const message = readableError(error);
-      if (data) setFieldError(message);
-      else setLoadError(message);
+      if (data) {
+        setFieldError(message);
+        setFieldErrorIsAnswer(false);
+      } else setLoadError(message);
     } finally {
       if (active) finishQuestionOperation(active);
     }
@@ -1388,6 +1597,7 @@ export function LearnerProfileGate({
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
         setFieldError(readableError(error));
+        setFieldErrorIsAnswer(false);
       }
     } finally {
       finishQuestionOperation(active);
@@ -1421,10 +1631,13 @@ export function LearnerProfileGate({
   }, [clearProfileEditor, isActiveProfileRoute, onCloseProfileRoute]);
 
   const closeRedoProfileQuestions = useCallback(() => {
-    if (!redoLearnerProfile && !isActiveProfileRoute()) return;
+    const profileWasActive = isActiveProfileRoute();
+    if (!redoLearnerProfile && !profileWasActive) return;
     setPendingAcknowledgment(null);
     clearProfileEditor();
-    profileRouteLifecycleRef.current?.markExitHandled();
+    if (profileWasActive) {
+      profileRouteLifecycleRef.current?.markExitHandled();
+    }
     onRedoCompleted();
   }, [
     clearProfileEditor,
@@ -1586,9 +1799,17 @@ export function LearnerProfileGate({
 
   const canEditProfile = Boolean(
     fullData &&
-      (guardianRoute ||
-        fullData.canBypass ||
-        fullData.profile.profileStatus === "completed"),
+    (guardianRoute ||
+      fullData.canBypass ||
+      fullData.profile.profileStatus === "completed"),
+  );
+  const hasActiveLearner = fullData !== null;
+  const activeLearnerName = fullData?.profile.name ?? null;
+  const onOpenProfileRouteRef = useRef(onOpenProfileRoute);
+  onOpenProfileRouteRef.current = onOpenProfileRoute;
+  const openProfileFromAccount = useCallback(
+    () => onOpenProfileRouteRef.current(),
+    [],
   );
   useEffect(() => {
     if (
@@ -1614,25 +1835,28 @@ export function LearnerProfileGate({
       return {
         error: "",
         guardianUnlockDestination: guardianUnlockDestination ?? null,
+        hasActiveLearner: false,
         learnerName: null,
         onOpenProfile: null,
       };
     }
-    return fullData && fullData.profile.profileStatus === "completed"
+    return hasActiveLearner
       ? {
           error: "",
-          learnerName: fullData.profile.name,
+          hasActiveLearner: true,
+          learnerName: activeLearnerName,
           onOpenProfile:
-            canEditProfile && !isProfileRoute ? onOpenProfileRoute : null,
+            canEditProfile && !isProfileRoute ? openProfileFromAccount : null,
         }
       : null;
   }, [
+    activeLearnerName,
     canEditProfile,
     data?.mode,
-    fullData,
     guardianUnlockDestination,
+    hasActiveLearner,
     isProfileRoute,
-    onOpenProfileRoute,
+    openProfileFromAccount,
   ]);
   useProfileAccountAction(profileAction);
 
@@ -1640,6 +1864,7 @@ export function LearnerProfileGate({
   const questionProps: QuestionProps | null = activeQuestion
     ? {
         fieldError,
+        fieldErrorIsAnswer,
         mode: "learner-profile",
         onReplay: () => void handleReplay(),
         onSkip: () => void handleSkip(),
@@ -1648,6 +1873,10 @@ export function LearnerProfileGate({
         onTranscribe: () => void handleTranscribe(),
         onValueChange: (value) => {
           setDraft(value);
+          if (fieldErrorIsAnswer) {
+            setFieldError("");
+            setFieldErrorIsAnswer(false);
+          }
           setQuestionPresentation((current) =>
             current.status === "ready" ? IDLE_QUESTION_PRESENTATION : current,
           );
@@ -1664,6 +1893,7 @@ export function LearnerProfileGate({
   const profileQuestionProps: QuestionProps | null = redoQuestion
     ? {
         fieldError,
+        fieldErrorIsAnswer,
         mode: "profile",
         onBack: closeRedoProfileQuestions,
         onReplay: () => void handleRedoReplay(),
@@ -1673,6 +1903,10 @@ export function LearnerProfileGate({
         onTranscribe: () => void handleRedoTranscribe(),
         onValueChange: (value) => {
           setDraft(value);
+          if (fieldErrorIsAnswer) {
+            setFieldError("");
+            setFieldErrorIsAnswer(false);
+          }
           setQuestionPresentation((current) =>
             current.status === "ready" ? IDLE_QUESTION_PRESENTATION : current,
           );
@@ -1708,7 +1942,7 @@ export function LearnerProfileGate({
   }
 
   const protectedChildren =
-    data?.mode === "full" ? (
+    data?.mode === "full" && !learnerManagerRoute ? (
       <LearnerProfileProvider
         key={data.profile.id}
         profile={data.profile}
@@ -1723,59 +1957,64 @@ export function LearnerProfileGate({
   return (
     <LearnerSelectionProvider
       activeProfileId={data?.mode === "full" ? data.profile.id : null}
+      createAndSelectLearner={createAndSelectLearner}
       reloadSelectedLearner={reloadSelectedLearner}
+      selectLearner={selectLearner}
     >
       <LearnerProfileGateView
-      acknowledgment={acknowledgment}
-      completedLearnerProfileFallback={completedLearnerProfileFallback}
-      conversationProps={
-        selectedExperience === "realtime" ? conversationProps : null
-      }
+        acknowledgment={acknowledgment}
+        completedLearnerProfileFallback={completedLearnerProfileFallback}
+        conversationProps={
+          selectedExperience === "realtime" ? conversationProps : null
+        }
         data={data}
+        guardianDashboardRoute={guardianDashboardRoute}
         guardianRoute={guardianRoute}
         guardianSelectionFallback={guardianSelectionFallback}
-      isConversationRoute={isConversationRoute}
+        isConversationRoute={isConversationRoute}
         isLearnerProfileRoute={isLearnerProfileRoute}
         learnerManagerRoute={learnerManagerRoute}
         isProfileFormRedo={isFormRedoRoute}
-      isProfileLoading={isProfileLoading}
-      isProfileRoute={isProfileRoute}
-      isLoading={isLoading}
-      loadError={loadError}
-      onAcknowledgmentNext={handleAcknowledgmentNext}
-      onCloseConversationRoute={onConversationCompleted}
-      onCloseProfileRoute={
-        redoLearnerProfile ? closeRedoProfileQuestions : closeProfileEditor
-      }
-      onRetry={() => void refresh()}
-      onRetryProfile={() => void handleOpenProfile()}
-      onSkip={() => void handleSkip()}
-      onStart={() => void handleStart()}
-      learnerProfileFallback={learnerProfileFallback}
-      profileEditor={
-        isProfileRoute && profileState
-          ? {
-              drafts: profileDrafts,
-              fieldErrors: profileFieldErrors,
-              isSaving: isProfileSaving,
-              onCancel: closeProfileEditor,
-              onClose: closeProfileEditor,
-              onRedoLearnerProfile: handleRedoLearnerProfile,
-              onSave: () => void handleProfileSave(),
-              onValueChange: handleProfileValueChange,
-              pageError: profilePageError,
-            }
-          : null
-      }
-      profileLoadError={profileLoadError}
-      profileQuestionProps={profileQuestionProps}
-      questionProps={
-        (isProfileRoute || isFormRedoRoute) && profileState
-          ? null
-          : questionProps
-      }
-      redoLearnerProfile={redoLearnerProfile}
-      started={started}
+        isProfileLoading={isProfileLoading}
+        isProfileRoute={isProfileRoute}
+        isLoading={isLoading}
+        loadError={loadError}
+        onAcknowledgmentNext={handleAcknowledgmentNext}
+        onCloseConversationRoute={onConversationCompleted}
+        onCloseGuardianRoute={onCloseGuardianRoute}
+        onCloseProfileRoute={
+          redoLearnerProfile ? closeRedoProfileQuestions : closeProfileEditor
+        }
+        onRetry={() => void refresh()}
+        onRetryProfile={() => void handleOpenProfile()}
+        onSkip={() => void handleSkip()}
+        onStart={() => void handleStart()}
+        learnerProfileFallback={learnerProfileFallback}
+        profileEditor={
+          isProfileRoute && profileState
+            ? {
+                drafts: profileDrafts,
+                fieldErrors: profileFieldErrors,
+                isSaving: isProfileSaving,
+                learnerName: fullData?.profile.name ?? "Learner",
+                onCancel: closeProfileEditor,
+                onClose: closeProfileEditor,
+                onRedoLearnerProfile: handleRedoLearnerProfile,
+                onSave: () => void handleProfileSave(),
+                onValueChange: handleProfileValueChange,
+                pageError: profilePageError,
+              }
+            : null
+        }
+        profileLoadError={profileLoadError}
+        profileQuestionProps={profileQuestionProps}
+        questionProps={
+          (isProfileRoute || isFormRedoRoute) && profileState
+            ? null
+            : questionProps
+        }
+        redoLearnerProfile={redoLearnerProfile}
+        started={started}
       >
         {protectedChildren}
       </LearnerProfileGateView>

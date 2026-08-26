@@ -187,7 +187,8 @@ export function AboutDialog({
     void loadBuildInfo(controller.signal)
       .then(setBuildInfo)
       .catch((reason: unknown) => {
-        if (reason instanceof DOMException && reason.name === "AbortError") return;
+        if (reason instanceof DOMException && reason.name === "AbortError")
+          return;
         setError(
           "Technical details could not load. The AI and saved data notes above are still available.",
         );
@@ -260,22 +261,26 @@ export function AboutDialog({
         >
           <ul className="m-0 grid list-disc gap-2 pl-5">
             <li>
-              Parrot keeps the learner profile, custom lessons, and conversation
-              words as text. A conversation that ends early may still have saved
-              text.
+              Parrot keeps all learner profiles and their saved data, including
+              custom lessons and conversation words as text. A conversation that
+              ends early may still have saved text.
             </li>
             <li>
-              Talk to Peppa does not change the learner profile. Learner setup
-              and profile editing can.
+              Talk to Peppa does not change learner profiles. Learner setup and
+              Guardian profile editing can.
             </li>
             <li>
-              Voice services process audio during an activity. Raw audio is not
-              added to the Parrot account.
+              Voice services process audio during Talk to Peppa and speech
+              checks. Raw audio is not added to the Parrot account. If a
+              Guardian turns on Five Little Ducks voice dubbing, that
+              learner&apos;s private voice clips are saved separately until the
+              Guardian deletes them or deletes the account.
             </li>
             <li>
               If a grown-up chooses story art, a cropped photo is sent to
               Cloudflare Workers AI. The photo is not added to the account.
-              Parrot keeps one private storybook picture until it is deleted.
+              Parrot keeps each learner&apos;s private storybook picture until
+              it is deleted.
             </li>
           </ul>
           <p className="m-0 text-xs text-slate-500">
@@ -289,14 +294,15 @@ export function AboutDialog({
           title="What you can do"
         >
           <p className="m-0">
-            A child can finish a conversation at any time. Use Learner details
-            in Guardian mode to change saved details. Delete optional art on its
-            story page.
+            A learner can finish a conversation at any time. Use Learner
+            profiles in Guardian mode to choose whose saved details to manage.
+            Delete optional art on its story page.
           </p>
           <p className="m-0">
-            Delete account removes the account, learner profile, custom lessons,
-            saved conversation text, and private story art from Parrot. A small
-            deletion marker stays so old private art cannot return.
+            Delete account removes the account, all learner profiles and their
+            saved data, including custom lessons, saved conversation text,
+            private voice clips, and private story art. A small deletion marker
+            stays so old private art cannot return.
           </p>
         </AboutSection>
 
@@ -320,10 +326,10 @@ export function AboutDialog({
           <div className="grid gap-3 border-t-3 border-sky-100 p-3">
             <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
               Current services include Cloudflare for hosting and story art,
-              LiveKit for live voice transport, OpenAI for lesson generation
-              and live voice, and Groq for speech checks and profile summaries.
-              Some saved lesson and profile audio was made with ElevenLabs
-              before deployment.
+              LiveKit for live voice transport, OpenAI for lesson generation and
+              live voice, and Groq for speech checks and profile summaries. Some
+              saved lesson and profile audio was made with ElevenLabs before
+              deployment.
             </p>
 
             <BuildCard
@@ -412,12 +418,7 @@ export function AboutDialog({
             ) : null}
           </div>
         </details>
-        <ActionButton
-          fullWidth
-          onClick={onClose}
-          type="button"
-          variant="navy"
-        >
+        <ActionButton fullWidth onClick={onClose} type="button" variant="navy">
           Done
         </ActionButton>
       </section>
