@@ -46,6 +46,7 @@ let AccountActionProvider;
 let ConversationSurface;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
+let LearnerProfileProvider;
 let useLearnerProfile;
 let useLearnerSelection;
 let usePeppaConversation;
@@ -81,9 +82,10 @@ before(async () => {
   ({ LearnerProfileGate } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileGate.tsx",
   ));
-  ({ useLearnerProfile, useLearnerSelection } = await vite
-    .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
-    .catch(() => ({})));
+  ({ LearnerProfileProvider, useLearnerProfile, useLearnerSelection } =
+    await vite
+      .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+      .catch(() => ({})));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
   ));
@@ -457,19 +459,21 @@ function conversationSurfaceProps(overrides = {}) {
   };
 }
 
-function ProfileRouteHarness({ children, initialRoute = "/" }) {
+function ProfileRouteHarness({ children, initialRoute = "/guardian" }) {
   const [route, setRoute] = useState(initialRoute);
+  const isProfileRoute = route === "/guardian/profile";
 
   return createElement(
     LearnerProfileGate,
     {
       completedLearnerProfileFallback: children,
+      guardianRoute: route.startsWith("/guardian"),
       isLearnerProfileRoute: false,
-      isProfileRoute: route === "/profile",
+      isProfileRoute,
       learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
-      onCloseProfileRoute: () => setRoute("/"),
+      onCloseProfileRoute: () => setRoute("/guardian"),
       onOpenLessons() {},
-      onOpenProfileRoute: () => setRoute("/profile"),
+      onOpenProfileRoute: () => setRoute("/guardian/profile"),
     },
     children,
   );
@@ -722,7 +726,14 @@ function applicationRoutesInMemory({ initialEntries, initialIndex }) {
     createElement(
       "div",
       null,
-      createElement(ApplicationRoutes, { loginTarget: "/" }),
+      createElement(
+        LearnerProfileProvider,
+        {
+          profile: completedLearnerProfileState().profile,
+          replaceProfile() {},
+        },
+        createElement(ApplicationRoutes, { loginTarget: "/" }),
+      ),
       createElement(RouterHistoryControls),
     ),
   );
@@ -990,66 +1001,23 @@ async function finishLessonArtworkLoading() {
   );
 }
 
-function installSpeechRecorder() {
-  class TestMediaRecorder {
-    constructor() {
-      this.ondataavailable = null;
-      this.onerror = null;
-      this.onstop = null;
-      this.state = "inactive";
-    }
-
-    start() {
-      this.state = "recording";
-    }
-
-    stop() {
-      if (this.state !== "recording") return;
-      this.state = "inactive";
-      this.ondataavailable?.({
-        data: new Blob(["recorded audio"], { type: "audio/webm" }),
-      });
-      this.onstop?.();
-    }
-  }
-
-  globalThis.MediaRecorder = TestMediaRecorder;
-  Object.defineProperty(navigator, "mediaDevices", {
-    configurable: true,
-    value: {
-      async getUserMedia() {
-        return { getTracks: () => [{ stop() {} }] };
-      },
-    },
-  });
-}
-
-async function advanceToLearnerTurn(ControlledAudio) {
+async function advanceToJoinInBeat(ControlledAudio) {
   await finishLessonArtworkLoading();
-  await click(button("Start lesson"));
-  for (let index = 0; index < 4; index += 1) {
+  await click(button("Let's go"));
+  for (let index = 0; index < 2; index += 1) {
     await waitFor(() =>
       assert.equal(ControlledAudio.instances.length, index + 1),
     );
     await act(async () => ControlledAudio.instances[index].finish());
   }
   await waitFor(() => {
-    const microphone = button("Tap to talk");
-    assert.equal(microphone.hasAttribute("aria-pressed"), false);
-    assert.match(microphone.textContent, /Tap to talk/);
+    text(/Join in/);
+    assert.equal(
+      document.querySelector('[aria-label="Speaking controls"]'),
+      null,
+    );
+    assert.equal(document.querySelector('[aria-label="Speaking feedback"]'), null);
   });
-}
-
-async function recordLearnerTurn() {
-  const microphone = button("Tap to talk");
-  await click(microphone);
-  await waitFor(() => {
-    assert.equal(microphone.hasAttribute("aria-pressed"), false);
-    assert.match(microphone.textContent, /Tap when done/);
-  });
-
-  await click(microphone);
-  await waitFor(() => text(/Checking your words/));
 }
 
 function text(value) {
@@ -6842,7 +6810,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(
         ProfileRouteHarness,
-        { initialRoute: "/profile" },
+        { initialRoute: "/guardian/profile" },
         createElement("p", null, "PROFILE LESSONS"),
       ),
     );
@@ -6915,7 +6883,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       createElement(
         ProfileRouteHarness,
-        { initialRoute: "/profile" },
+        { initialRoute: "/guardian/profile" },
         createElement("p", null, "PROFILE LESSONS"),
       ),
     );
@@ -6971,7 +6939,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
     const popDestination = currentRoute();
     await finishLessonArtworkLoading();
-    await click(button("Start lesson"));
+    await click(button("Let's go"));
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
     const firstPlayback = ControlledAudio.instances[0];
     const staleFirstCompletion = firstPlayback.onended;
@@ -6981,7 +6949,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(2)));
     await finishLessonArtworkLoading();
     await waitFor(() =>
-      assert.equal(document.activeElement, button("Start lesson")),
+      assert.equal(document.activeElement, button("Let's go")),
     );
     noText(new RegExp(firstLesson.scenes[1].title));
     assert.equal(firstPlayback.paused, true);
@@ -6989,7 +6957,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(new RegExp(firstLesson.scenes[1].title));
     assert.equal(currentRoute().path, lessonScenePath(2));
 
-    await click(button("Start lesson"));
+    await click(button("Let's go"));
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 2));
     await waitFor(() => text(new RegExp(firstLesson.scenes[1].title)));
     const secondPlayback = ControlledAudio.instances[1];
@@ -7006,7 +6974,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
     assert.equal(currentRoute().key, popDestination.key);
     await waitFor(() =>
-      assert.equal(document.activeElement, button("Start lesson")),
+      assert.equal(document.activeElement, button("Let's go")),
     );
     noText(new RegExp(firstLesson.scenes[0].title));
     assert.equal(secondPlayback.paused, true);
@@ -7014,7 +6982,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(new RegExp(firstLesson.scenes[0].title));
     assert.equal(currentRoute().path, lessonScenePath(1));
     await waitFor(() =>
-      assert.equal(document.activeElement, button("Start lesson")),
+      assert.equal(document.activeElement, button("Let's go")),
     );
   });
 
@@ -7025,7 +6993,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       applicationRoutesInMemory({ initialEntries: [lessonScenePath(1)] }),
     );
     await finishLessonArtworkLoading();
-    await click(button("Start lesson"));
+    await click(button("Let's go"));
     await waitFor(() => assert.equal(ControlledAudio.instances.length, 1));
 
     await act(async () => ControlledAudio.instances[0].fail());
@@ -7044,46 +7012,21 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/The sound stopped/);
   });
 
-  it("moves a mounted learner turn through recording, checking, and feedback", async () => {
+  it("enters a mounted learner turn as a join-in beat without correction controls", async () => {
     const ControlledAudio = installControlledAudio();
-    installSpeechRecorder();
-    const evaluation = deferred();
-    globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/evaluate-speech");
-      assert.equal(init.method, "POST");
-      assert.equal(init.body.get("targetText"), "It is up high!");
-      return evaluation.promise;
-    };
 
     await mountStrict(
       applicationRoutesInMemory({ initialEntries: [lessonScenePath(1)] }),
     );
     assert.equal(currentRoute().path, lessonScenePath(1));
-    await advanceToLearnerTurn(ControlledAudio);
-    await recordLearnerTurn();
-    evaluation.resolve(
-      json({
-        transcript: "It is up high!",
-        similarity: 1,
-        outcome: "correct",
-      }),
-    );
-    await waitFor(() => text(/Great job!/));
+    await advanceToJoinInBeat(ControlledAudio);
+    noText(/Tap to talk|Checking your words|Great job!/);
   });
 
-  it("aborts a stale evaluation when browser history changes the lesson route", async () => {
+  it("leaves a join-in beat without pending correction work when browser history changes the lesson route", async () => {
     const ControlledAudio = installControlledAudio();
-    installSpeechRecorder();
-    const evaluation = deferred();
-    let evaluationSignal = null;
-    globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/evaluate-speech");
-      assert.equal(init.method, "POST");
-      evaluationSignal = init.signal;
-      return evaluation.promise;
-    };
 
-    const destinationKey = "evaluation-pop-destination";
+    const destinationKey = "join-in-pop-destination";
     await mountStrict(
       applicationRoutesInMemory({
         initialEntries: [
@@ -7094,10 +7037,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
     assert.equal(currentRoute().path, lessonScenePath(1));
-    await advanceToLearnerTurn(ControlledAudio);
-    await recordLearnerTurn();
-    await waitFor(() => assert.ok(evaluationSignal));
-    assert.equal(evaluationSignal.aborted, false);
+    await advanceToJoinInBeat(ControlledAudio);
 
     await act(async () => {
       window.dispatchEvent(
@@ -7106,32 +7046,19 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         }),
       );
     });
-    assert.equal(evaluationSignal.aborted, true);
     await click(button("History back"));
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(2)));
     assert.equal(currentRoute().key, destinationKey);
     await finishLessonArtworkLoading();
     await waitFor(() =>
-      assert.equal(document.activeElement, button("Start lesson")),
+      assert.equal(document.activeElement, button("Let's go")),
     );
 
-    await act(async () => {
-      evaluation.resolve(
-        json({
-          transcript: "It is up high!",
-          similarity: 1,
-          outcome: "correct",
-        }),
-      );
-      await evaluation.promise;
-    });
     await flush();
 
     assert.equal(currentRoute().path, lessonScenePath(2));
     noText(new RegExp(firstLesson.scenes[1].title));
-    noText(
-      /Checking your words|Great job!|Speech check failed|Audio unavailable/,
-    );
-    assert.equal(document.activeElement, button("Start lesson"));
+    noText(/Tap to talk|Checking your words|Great job!|Speech check failed|Audio unavailable/);
+    assert.equal(document.activeElement, button("Let's go"));
   });
 });

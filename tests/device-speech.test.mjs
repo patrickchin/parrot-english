@@ -71,6 +71,33 @@ describe("on-device lesson speech", () => {
     await operation;
   });
 
+  it("sets an explicitly requested device-speech volume", async () => {
+    let utterance;
+    const operation = playDeviceSpeech({
+      speaker: "narrator",
+      text: "Hello",
+      volume: 0.28,
+      env: {
+        cancel() {},
+        createUtterance(text) {
+          utterance = { text };
+          return utterance;
+        },
+        getVoices() {
+          return [];
+        },
+        pause() {},
+        resume() {},
+        speak(value) {
+          globalThis.queueMicrotask(() => value.onend?.());
+        },
+      },
+    });
+
+    assert.equal(utterance.volume, 0.28);
+    await operation;
+  });
+
   it("cancels active device speech when playback is aborted", async () => {
     const controller = new AbortController();
     let cancelCount = 0;

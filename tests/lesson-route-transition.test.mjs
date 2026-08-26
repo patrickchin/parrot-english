@@ -36,22 +36,16 @@ function target(state, event) {
 }
 
 describe("lesson route transitions", () => {
-  it("returns the next scene when a scripted response continues", () => {
+  it("returns the next scene when a join-in beat completes", () => {
     assert.equal(
       target(
         {
           ...createInitialLessonState(),
-          phase: LessonPhase.Responding,
+          phase: LessonPhase.JoiningIn,
           sceneIndex: 0,
           stepIndex: 1,
-          response: {
-            speaker: "narrator",
-            dialogue: "Well done!",
-            after: "continue",
-          },
-          responseOutcome: "correct",
         },
-        { type: "RESPONSE_DONE" },
+        { type: "JOIN_IN_DONE" },
       ),
       1,
     );

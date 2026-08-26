@@ -257,9 +257,10 @@ test("canonical Parrot scene routes start without premature scene content", () =
 
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.match(html, /5 parts/);
-  assert.match(html, /1\. Listen/);
-  assert.match(html, /2\. Talk/);
-  assert.match(html, /aria-label="Start lesson"/);
+  assert.match(html, /Watch and join in/);
+  assert.match(html, /say the big words with the group/);
+  assert.match(html, /Loading picture…/);
+  assert.doesNotMatch(html, /1\. Listen|2\. Talk|aria-label="Start lesson"/);
   assert.doesNotMatch(html, /Peppa Cannot Reach/);
   assert.doesNotMatch(html, /The Ball Up High/);
   assert.doesNotMatch(html, /Scene 2 of 5/);

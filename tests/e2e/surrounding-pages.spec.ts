@@ -480,6 +480,7 @@ test("My Lessons keeps recovery stable across a failed retry and populated succe
   const savedLesson = {
     id: "recovered-garden",
     lesson: createLessonScript({ title: "Recovered Garden" }),
+    revision: "a".repeat(64),
     source: "uploaded",
   };
   let attempts = 0;
@@ -793,7 +794,7 @@ test("account deletion requires the password and returns to sign in only after p
   await page.getByRole("menuitem", { name: "Delete account" }).click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips, and private story art from Parrot.",
+    "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips from Five Little Ducks, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
   );
   const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();

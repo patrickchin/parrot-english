@@ -90,6 +90,60 @@ function unmappedCount(database, table) {
     .get().count;
 }
 
+it("adds a durable personalized-art candidate closure without rewriting the staged learner migrations", () => {
+  const migrations = readMigrations();
+  const closure = migrations.find(
+    ({ name }) =>
+      name === "0014_personalized_art_deletion_closure.sql",
+  );
+  assert.ok(closure, "Expected the post-enable candidate-closure migration");
+  const database = new DatabaseSync(":memory:");
+  database.exec("PRAGMA foreign_keys = ON");
+
+  try {
+    for (const migration of migrations.filter(
+      ({ name }) =>
+        name < closure.name && name !== "0013_multi_learner_enable.sql",
+    )) {
+      database.exec(migration.sql);
+    }
+    database.exec(`
+      INSERT INTO account_deletion_tombstone (user_id_hash, r2_prefix, requested_at)
+      VALUES ('deletion-hash-1', 'personalized-story-art/guardian-deleted/', 220);
+    `);
+
+    database.exec(closure.sql);
+
+    assert.deepEqual(
+      {
+        ...database
+          .prepare(
+            `SELECT user_id_hash, personalized_art_candidate_keys_json
+             FROM account_deletion_tombstone`,
+          )
+          .get(),
+      },
+      {
+        personalized_art_candidate_keys_json: "[]",
+        user_id_hash: "deletion-hash-1",
+      },
+    );
+    assert.throws(
+      () =>
+        database
+          .prepare(
+            `UPDATE account_deletion_tombstone
+             SET personalized_art_candidate_keys_json = 'not-json'
+             WHERE user_id_hash = 'deletion-hash-1'`,
+          )
+          .run(),
+      /constraint/i,
+    );
+  } finally {
+    database.close();
+  }
+});
+
 it("expands legacy data into learner ownership without breaking singleton storage", () => {
   const migrations = readMigrations();
   const before = migrations.filter(({ name }) => name < "0012_");

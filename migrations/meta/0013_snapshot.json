@@ -856,6 +856,21 @@
           "notNull": true,
           "autoincrement": false
         },
+        "recording_generation": {
+          "name": "recording_generation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "recording_cleanup_before_generation": {
+          "name": "recording_cleanup_before_generation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -1033,6 +1048,35 @@
         },
         "completed_at": {
           "name": "completed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lesson_recording_consent_version": {
+          "name": "lesson_recording_consent_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lesson_recording_consent_at": {
+          "name": "lesson_recording_consent_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lesson_recording_generation": {
+          "name": "lesson_recording_generation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "lesson_recording_cleanup_before_generation": {
+          "name": "lesson_recording_cleanup_before_generation",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

@@ -18,8 +18,11 @@ type ProfileEditorViewProps = {
   fieldErrors: Record<string, string>;
   isSaving: boolean;
   learnerName: string;
+  lessonRecordingCleanupPending: boolean;
+  lessonRecordingConsent: boolean;
   onCancel: () => void;
   onClose: () => void;
+  onLessonRecordingConsentChange: (enabled: boolean) => void;
   onRedoLearnerProfile: () => void;
   onSave: () => void;
   onValueChange: (answerKey: string, value: string) => void;
@@ -31,8 +34,11 @@ export function ProfileEditorView({
   fieldErrors,
   isSaving,
   learnerName,
+  lessonRecordingCleanupPending,
+  lessonRecordingConsent,
   onCancel,
   onClose,
+  onLessonRecordingConsentChange,
   onRedoLearnerProfile,
   onSave,
   onValueChange,
@@ -41,6 +47,22 @@ export function ProfileEditorView({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSave();
+  }
+
+  function changeLessonRecordingConsent() {
+    if (lessonRecordingCleanupPending && !lessonRecordingConsent) {
+      onLessonRecordingConsentChange(false);
+      return;
+    }
+    if (
+      lessonRecordingConsent &&
+      !window.confirm(
+        "Stop lesson voice recordings and delete all saved lesson voice recordings? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    onLessonRecordingConsentChange(!lessonRecordingConsent);
   }
 
   return (
@@ -164,6 +186,52 @@ export function ProfileEditorView({
               </p>
             ) : null}
           </fieldset>
+
+          <section
+            aria-labelledby="lesson-recording-consent-title"
+            className="mt-5 grid gap-3 rounded-3xl bg-sky-50 p-4"
+          >
+            <div className="grid gap-2">
+              <h2
+                className="m-0 text-xl text-brand-ink"
+                id="lesson-recording-consent-title"
+              >
+                Lesson voice recordings
+              </h2>
+              <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
+                Recording starts automatically during each join-in moment.
+                Permission and clips apply only to this learner profile, and one
+                latest clip is saved per join-in moment. A Guardian manages each
+                learner independently and can stop and delete the clips at any
+                time.
+              </p>
+              <p
+                aria-live="polite"
+                className="m-0 min-h-15 text-sm font-black text-brand-ink min-[360px]:min-h-10 sm:min-h-5"
+                role="status"
+              >
+                {lessonRecordingCleanupPending
+                  ? lessonRecordingConsent
+                    ? "Lesson recording is currently allowed. Earlier saved clips are still being deleted."
+                    : "Lesson recording is off. Saved clips are still being deleted."
+                  : `Lesson recording is currently ${lessonRecordingConsent ? "allowed" : "off"}.`}
+              </p>
+            </div>
+            <ActionButton
+              disabled={isSaving}
+              fullWidth
+              onClick={changeLessonRecordingConsent}
+              size="compact"
+              type="button"
+              variant={lessonRecordingConsent ? "dangerSurface" : "navy"}
+            >
+              {lessonRecordingConsent
+                ? "Stop and delete lesson recordings"
+                : lessonRecordingCleanupPending
+                  ? "Finish deleting lesson recordings"
+                : "Allow lesson voice recordings"}
+            </ActionButton>
+          </section>
 
           <section
             aria-labelledby="redo-learner-setup-title"

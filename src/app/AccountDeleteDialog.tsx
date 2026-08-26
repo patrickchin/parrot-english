@@ -80,9 +80,9 @@ export function AccountDeleteDialog({
 
         <p className="m-0 font-bold leading-relaxed text-slate-700">
           This removes your account, all learner profiles and their My Lessons,
-          saved conversation text, private voice clips, and private story art
-          from Parrot. A small deletion marker stays so old private art cannot
-          return.
+          saved conversation text, private voice clips from Five Little Ducks,
+          lesson voice recordings, and private story art from Parrot. A small
+          deletion marker stays so old private art cannot return.
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>

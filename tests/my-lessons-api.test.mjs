@@ -10,6 +10,8 @@ import {
 } from "../src/lessons/my-lessons-api.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
+const REVISION = "a".repeat(64);
+
 function jsonFetch(payload, status = 200) {
   const calls = [];
   return {
@@ -38,7 +40,12 @@ describe("My Lessons browser API", () => {
       signal: undefined,
     });
 
-    const descriptor = { id: "lesson-1", lesson, source: "generated" };
+    const descriptor = {
+      id: "lesson-1",
+      lesson,
+      revision: REVISION,
+      source: "generated",
+    };
     const save = jsonFetch({ lesson: descriptor }, 201);
     assert.deepEqual(
       await saveMyLesson(lesson, "generated", { fetch: save.fetch }),
@@ -55,6 +62,7 @@ describe("My Lessons browser API", () => {
     const descriptor = {
       id: "lesson/id",
       lesson: createLessonScript(),
+      revision: REVISION,
       source: "uploaded",
     };
     const list = jsonFetch({ lessons: [descriptor] });
@@ -74,6 +82,7 @@ describe("My Lessons browser API", () => {
       lesson: {
         id: "lesson-1",
         lesson: {},
+        revision: REVISION,
         source: "generated",
       },
     });
@@ -96,6 +105,7 @@ describe("My Lessons browser API", () => {
     const descriptor = {
       id: "lesson-1",
       lesson,
+      revision: REVISION,
       source: "generated",
     };
     const cases = [
@@ -108,6 +118,8 @@ describe("My Lessons browser API", () => {
       ["parent-dot ID", { lessons: [{ ...descriptor, id: ".." }] }],
       ["unencodable ID", { lessons: [{ ...descriptor, id: "\ud800" }] }],
       ["unknown source", { lessons: [{ ...descriptor, source: "legacy" }] }],
+      ["missing revision", { lessons: [{ ...descriptor, revision: undefined }] }],
+      ["invalid revision", { lessons: [{ ...descriptor, revision: "short" }] }],
       ["invalid timestamp", { lessons: [{ ...descriptor, updatedAt: 7 }] }],
       ["invalid lesson", { lessons: [{ ...descriptor, lesson: {} }] }],
       ["duplicate IDs", { lessons: [descriptor, descriptor] }],
@@ -161,6 +173,7 @@ describe("My Lessons browser API", () => {
           futureMetadata: { keptByServer: true },
           id: "lesson-1",
           lesson,
+          revision: REVISION,
           source: "uploaded",
           updatedAt: "2026-08-21T01:00:00.000Z",
         },
@@ -172,6 +185,7 @@ describe("My Lessons browser API", () => {
         createdAt: "2026-08-21T00:00:00.000Z",
         id: "lesson-1",
         lesson,
+        revision: REVISION,
         source: "uploaded",
         updatedAt: "2026-08-21T01:00:00.000Z",
       },
@@ -180,7 +194,12 @@ describe("My Lessons browser API", () => {
 
   it("updates an encoded learner lesson ID with a same-origin PUT request", async () => {
     const lesson = createLessonScript({ title: "Edited Garden Help" });
-    const descriptor = { id: "lesson/id", lesson, source: "uploaded" };
+    const descriptor = {
+      id: "lesson/id",
+      lesson,
+      revision: REVISION,
+      source: "uploaded",
+    };
     const update = jsonFetch({ lesson: descriptor, warnings: ["Draft warning"] });
 
     assert.deepEqual(

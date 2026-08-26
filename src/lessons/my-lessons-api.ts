@@ -9,6 +9,7 @@ export type MyLessonDescriptor = {
   createdAt?: string;
   id: string;
   lesson: Lesson;
+  revision: string;
   source: MyLessonSource;
   updatedAt?: string;
 };
@@ -135,6 +136,7 @@ function requireMyLessonDescriptor(
     createdAt?: unknown;
     id?: unknown;
     lesson?: unknown;
+    revision?: unknown;
     source?: unknown;
     updatedAt?: unknown;
   };
@@ -143,6 +145,12 @@ function requireMyLessonDescriptor(
   }
   if (descriptor.source !== "generated" && descriptor.source !== "uploaded") {
     throw new Error(`${path}.source is not supported.`);
+  }
+  if (
+    typeof descriptor.revision !== "string" ||
+    !/^[0-9a-f]{64}$/.test(descriptor.revision)
+  ) {
+    throw new Error(`${path}.revision must be a SHA-256 revision.`);
   }
   for (const key of ["createdAt", "updatedAt"] as const) {
     const timestamp = descriptor[key];
@@ -161,6 +169,7 @@ function requireMyLessonDescriptor(
       LESSON_VISUAL_CATALOG,
       `${path}.lesson`,
     ),
+    revision: descriptor.revision,
     source: descriptor.source,
     ...(descriptor.updatedAt !== undefined
       ? { updatedAt: descriptor.updatedAt as string }

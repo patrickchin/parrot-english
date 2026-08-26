@@ -12,18 +12,40 @@ rollback floor. Record it outside Git in the GitHub repository variable
 `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`. Do not write the SHA into its own commit:
 amending or rebuilding that commit changes the value being recorded.
 
+The current merged tree is intentionally deployment-blocked: it contains
+`0013_multi_learner_enable.sql` and enables multiple learners, but no eligible
+guarded compatibility SHA has been deployed or recorded. This repository also
+does not provide a traffic or account-deletion maintenance control. Merging the
+feature code is not authorization to set the repository variable or deploy it.
+
 The required order is:
 
-1. Deploy the compatibility commit with 0012 and MULTI_LEARNER_PROFILES_ENABLED=0.
-2. Verify /api/build-info reports that exact commit and run the singleton smoke checks.
-3. Set repository variable MULTI_LEARNER_COMPATIBILITY_DEPLOYED to that commit SHA.
-4. Deploy the enable commit containing 0013 and MULTI_LEARNER_PROFILES_ENABLED=1.
-5. Never roll back below the recorded compatibility SHA after 0013 applies.
+1. Prepare and review, but do not merge, a follow-up main PR that removes exactly
+   `migrations/0013_multi_learner_enable.sql` and sets
+   `MULTI_LEARNER_PROFILES_ENABLED=0`, while retaining 0012, 0014, and the
+   guarded personalized-art protocol.
+2. Activate and verify an externally approved hold on account deletion and
+   relevant traffic before merging the compatibility PR.
+3. Merge that PR while the hold remains active. Capture its main merge SHA and
+   follow the automatic main-push workflow as the compatibility deployment.
+4. Verify the previous Worker has no in-flight personalized-art requests, then
+   wait the full five-minute art-generation lease window without releasing the
+   hold.
+5. Verify `/api/build-info`, migration state, and singleton smoke checks, then
+   record that exact SHA in `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`.
+6. Release the external hold in a controlled step only after the compatible
+   Worker and drain evidence are complete.
+7. Merge a descendant main PR that restores exactly 0013 and
+   `MULTI_LEARNER_PROFILES_ENABLED=1`; its automatic main-push workflow is the
+   enable deployment.
+8. Never roll back below the recorded compatibility SHA after 0013 applies.
 
-Use the checked-in `Deploy to Cloudflare Workers` workflow in
-`.github/workflows/deploy-cloudflare.yml` for both application releases. Run it
-with `media_only=false`. Do not apply either migration manually ahead of its
-corresponding Worker release.
+The checked-in `Deploy to Cloudflare Workers` workflow in
+`.github/workflows/deploy-cloudflare.yml` runs automatically on every main
+push; that path performs the application deployment because `media_only` is
+not enabled. Do not manually dispatch a duplicate workflow after either merge,
+and do not apply migrations manually ahead of their corresponding Worker
+release.
 
 ## Ownership Invariants to Preserve
 
@@ -67,20 +89,25 @@ corresponding Worker release.
    names, profile IDs, R2 keys, photos, recordings, prompts, or response bodies
    containing private content.
 
-## Release 1: Compatibility Worker and `0012`
+## Release 1: Compatibility Worker, `0012`, and `0014`
 
-### 1. Identify the exact compatibility commit
+### 1. Prepare and verify the compatibility PR without merging it
 
-Check out the latest reviewed commit before the enable migration was added and
-record its immutable SHA:
+Prepare and review the follow-up main PR described above, but do not merge it
+yet. From its reviewed head, verify the intended compatibility tree:
 
 ```bash
-export PARROT_COMPATIBILITY_SHA="$(git rev-parse HEAD)"
-git show --check "$PARROT_COMPATIBILITY_SHA"
+export PARROT_COMPATIBILITY_PR_HEAD="$(git rev-parse HEAD)"
+git show --check "$PARROT_COMPATIBILITY_PR_HEAD"
 test -f migrations/0012_multi_learner_expand.sql
+test -f migrations/0014_personalized_art_deletion_closure.sql
 test ! -f migrations/0013_multi_learner_enable.sql
 rg '"MULTI_LEARNER_PROFILES_ENABLED": "0"' wrangler.jsonc
 ```
+
+The deployable compatibility merge SHA does not exist yet. Do not set
+`PARROT_COMPATIBILITY_SHA` from the PR head; capture it only after the held
+merge in step 3.
 
 The commit must contain the compatibility Worker as well as `0012`. It must:
 
@@ -89,30 +116,61 @@ The commit must contain the compatibility Worker as well as `0012`. It must:
 - recognize null-profile compatibility rows only for the marked legacy
   learner;
 - retain the old singleton tables and unique indexes;
+- prevent personalized-art candidate tracking after an account-deletion
+  tombstone, create candidate objects conditionally, persist candidate keys in
+  the deletion closure, and fence those keys before user deletion can cascade;
 - keep profile creation and selection mutations disabled.
 
-Do not substitute a rebuilt or cherry-picked commit after recording the SHA.
+`0014_personalized_art_deletion_closure.sql` is intentionally a new migration;
+do not amend the already-staged `0012`. The compatibility revision includes
+0014 while omitting 0013, so Wrangler can apply the additive deletion-closure
+column before the cardinality-enabling migration is introduced.
 
-### 2. Deploy the exact compatibility commit
+Do not merge until the next step's external hold is active and verified.
 
-Run the existing GitHub Actions workflow against a branch or tag that resolves
-exactly to `PARROT_COMPATIBILITY_SHA`. If a release tag is used, verify it
-before dispatch:
+### 2. Activate and verify the external hold
+
+Before merging the compatibility PR, activate an externally approved
+control that holds account deletion and relevant traffic. No such control is
+checked into this repository. Verify through the approved operational path
+that the hold is effective, and record that evidence without private account
+or learner data. Keep the hold active throughout migration application, Worker
+deployment, old-revision drain, and every compatibility verification below.
+
+Do not merge the PR if the hold is absent or unverified. Its main push starts
+the workflow automatically, and the old Worker can otherwise accept an account
+deletion while D1 migrations and the compatible Worker deployment are still
+in progress.
+
+### 3. Merge the PR and follow its automatic compatibility deployment
+
+With the verified hold still active, merge the compatibility PR into main. The
+main push automatically starts `Deploy to Cloudflare Workers`; treat that run
+as the compatibility deployment. Fetch main and capture the exact merge SHA:
 
 ```bash
-git rev-parse <compatibility-release-ref>
-git rev-parse "$PARROT_COMPATIBILITY_SHA"
+git fetch origin main
+export PARROT_COMPATIBILITY_SHA="$(git rev-parse origin/main)"
+git show --check "$PARROT_COMPATIBILITY_SHA"
 ```
 
-Those values must match. Dispatch `Deploy to Cloudflare Workers` with
-`media_only=false`. After its dependency and static-media steps, the workflow
-builds, runs the compatibility guard, applies pending D1 migrations, and
-deploys the Worker. For this release the guard is a no-op because `0013` is
-absent.
+Confirm the automatic workflow run is attached to that exact SHA and preserve
+its URL. Do not manually dispatch a second run. After its dependency and
+static-media steps, the workflow builds, runs the compatibility guard, applies
+pending D1 migrations, and deploys the Worker. For this release the guard is a
+no-op because `0013` is absent. Do not substitute a rebuilt or cherry-picked
+commit after capturing the merge SHA.
 
-### 3. Verify the deployed compatibility commit
+After the new Worker is active, verify the previous revision has no in-flight
+personalized-art generation requests, then wait the full five-minute art-
+generation lease window while the external hold remains active. The previous
+revision used unguarded tracking and unconditional candidate writes; skipping
+this drain can let one old request bypass the new candidate fence. Do not
+record the compatibility SHA or proceed without evidence for this drain.
 
-Verify that production reports the exact SHA from step 1:
+### 4. Verify the deployed compatibility commit
+
+Verify that production reports the exact merge SHA captured in step 3:
 
 ```bash
 curl -fsS https://parrotbook.com/api/build-info
@@ -121,7 +179,8 @@ curl -fsS https://parrotbook.com/api/build-info
 `backend.commitSha` must equal `PARROT_COMPATIBILITY_SHA`. A successful workflow
 run is not sufficient if the build-info value differs.
 
-Confirm remote D1 reports `0012` as applied and `0013` as pending or absent:
+Confirm remote D1 reports `0012` and `0014` as applied and `0013` as pending or
+absent:
 
 ```bash
 npx wrangler d1 migrations list parrot-english --remote
@@ -132,7 +191,7 @@ minimum, confirm each live account has one marked legacy profile and no
 learner-owned child row was lost during backfill. Do not print profile content
 or learner names into the release log.
 
-### 4. Run singleton compatibility smoke checks
+### 5. Run singleton compatibility smoke checks
 
 Use a nonproduction test account that had data before `0012`:
 
@@ -155,7 +214,7 @@ Stop here if any legacy data is missing, a learner route exposes Guardian
 controls, or a Guardian route is stranded. Do not record the compatibility SHA
 until the compatibility release itself is healthy.
 
-### 5. Record the verified rollback floor
+### 6. Record the verified rollback floor
 
 Set the repository variable only after build-info, D1, and smoke checks pass:
 
@@ -169,33 +228,54 @@ CLI command and compare it byte-for-byte with `/api/build-info`. This value is
 the durable proof that production ran the compatibility Worker before `0013`.
 Do not replace it with the later enable commit.
 
+### 7. Release the external hold
+
+Release the externally approved hold in a controlled operational step only
+after the compatible Worker SHA, migration state, completed old-revision drain,
+singleton smoke checks, and recorded rollback-floor variable have all been
+verified. Confirm ordinary traffic resumes through the compatible Worker. Do
+not exercise a real account deletion merely to test the release.
+
 ## Release 2: Enable Worker and `0013`
 
-### 1. Verify the enable checkout
+### 1. Prepare and verify the enable PR
 
-The enable release must descend from the recorded compatibility commit and
-contain both migrations with the feature flag enabled:
+The enable release is a new descendant main PR that restores exactly 0013 and
+the feature flag after the compatibility SHA is recorded. Before merging,
+verify its reviewed head:
 
 ```bash
-export PARROT_ENABLE_SHA="$(git rev-parse HEAD)"
+export PARROT_ENABLE_PR_HEAD="$(git rev-parse HEAD)"
 test -f migrations/0012_multi_learner_expand.sql
 test -f migrations/0013_multi_learner_enable.sql
+test -f migrations/0014_personalized_art_deletion_closure.sql
 rg '"MULTI_LEARNER_PROFILES_ENABLED": "1"' wrangler.jsonc
-git merge-base --is-ancestor "$PARROT_COMPATIBILITY_SHA" "$PARROT_ENABLE_SHA"
+git merge-base --is-ancestor "$PARROT_COMPATIBILITY_SHA" "$PARROT_ENABLE_PR_HEAD"
 MULTI_LEARNER_COMPATIBILITY_DEPLOYED="$PARROT_COMPATIBILITY_SHA" \
   ./scripts/verify-multi-learner-compatibility-release.mjs
 ```
 
 The verification script fails if the repository variable is empty, does not
 resolve to an ancestor, lacks `0012`, or already contains `0013`. Repeat the
-full local gates after resolving the final enable commit SHA.
+full local gates on the reviewed enable PR head before merging it.
 
-### 2. Deploy the enable commit
+### 2. Merge the enable PR and follow its automatic deployment
 
-Dispatch the same `Deploy to Cloudflare Workers` workflow with
-`media_only=false`. The `Verify multi-learner compatibility release` step runs
-before `Apply D1 migrations`. It prevents an accidental one-shot rollout; it
-does not replace Release 1.
+Merge the reviewed enable PR into main. Its main push automatically starts
+`Deploy to Cloudflare Workers`; treat that run as the enable deployment. Fetch
+main and capture the exact merge SHA while following that workflow run:
+
+```bash
+git fetch origin main
+export PARROT_ENABLE_SHA="$(git rev-parse origin/main)"
+git show --check "$PARROT_ENABLE_SHA"
+git merge-base --is-ancestor "$PARROT_COMPATIBILITY_SHA" "$PARROT_ENABLE_SHA"
+```
+
+Confirm the automatic workflow run is attached to `PARROT_ENABLE_SHA`. Do not
+manually dispatch a second run. The `Verify multi-learner compatibility
+release` step runs before `Apply D1 migrations`. It prevents an accidental
+one-shot rollout; it does not replace Release 1.
 
 `0013_multi_learner_enable.sql` repeats every expansion backfill to catch writes
 from the deploy gap, fails if learner-owned rows or eligible single-profile
@@ -212,7 +292,7 @@ npx wrangler d1 migrations list parrot-english --remote
 ```
 
 `backend.commitSha` must equal `PARROT_ENABLE_SHA`, and remote D1 must report
-both `0012` and `0013` as applied.
+`0012`, `0013`, and `0014` as applied.
 
 Use controlled test profiles to verify:
 

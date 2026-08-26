@@ -672,6 +672,7 @@ export async function handlePersonalizedStoryArtRequest(
           route.storyId,
           token,
           key,
+          tombstoneKey,
         );
       } catch (error) {
         await releaseLease(route.storyId, token);
@@ -679,21 +680,51 @@ export async function handlePersonalizedStoryArtRequest(
       }
       if (!tracked) {
         await releaseLease(route.storyId, token);
+        if (
+          await isAccountDeletionPending(
+            input.database,
+            input.identity.userId,
+          )
+        ) {
+          throw accountDeletionPendingError();
+        }
         throw generationInProgressError();
       }
 
+      let stored;
       try {
-        await input.env.PERSONALIZED_STORY_ART_BUCKET.put(key, generated.bytes, {
-          customMetadata: {
-            guardianConsentVersion: CURRENT_GUARDIAN_CONSENT_VERSION,
+        stored = await input.env.PERSONALIZED_STORY_ART_BUCKET.put(
+          key,
+          generated.bytes,
+          {
+            customMetadata: {
+              guardianConsentVersion: CURRENT_GUARDIAN_CONSENT_VERSION,
+            },
+            httpMetadata: {
+              contentType: generated.contentType,
+            },
+            onlyIf: { etagDoesNotMatch: "*" },
           },
-          httpMetadata: {
-            contentType: generated.contentType,
-          },
-        });
+        );
       } catch (error) {
         await cleanupCandidateAndRelease(route.storyId, token, key);
         throw error;
+      }
+      if (stored === null) {
+        await releaseLease(route.storyId, token);
+        if (
+          await isAccountDeletionPending(
+            input.database,
+            input.identity.userId,
+          )
+        ) {
+          throw accountDeletionPendingError();
+        }
+        throw new PersonalizedStoryArtApiError(
+          500,
+          "object_key_collision",
+          "A unique storage key could not be created.",
+        );
       }
 
       try {

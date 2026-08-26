@@ -1,93 +1,271 @@
 import { Buffer } from "node:buffer";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const lessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
+const parrotLessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
 const tinySceneWebp = Buffer.from(
   "UklGRh4AAABXRUJQVlA4TBEAAAAvDwACAAfQ5sp1vf+BiOh/AAA=",
   "base64",
 );
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
-const longFeedback =
-  "You kept trying and said the whole picnic sentence clearly, so Peppa and Dolly can carry the basket to the big tree with you now.";
-const reviewedCharacterLine =
-  "Peppa and Dolly see one bright red kite over the green garden today.";
-const longAccountEmail =
-  "family.account.for.alexandria.montgomery@example.test";
+const myLessonRevision = "a".repeat(64);
 
-const viewports = [
-  { name: "ultra-narrow phone", width: 280, height: 568 },
-  { name: "regular phone", width: 390, height: 844 },
-  { name: "short landscape", width: 768, height: 600 },
-  { name: "desktop", width: 1440, height: 900 },
-];
+type LessonMediaSnapshot = {
+  consentRequests: number;
+  cueCancellations: number;
+  cues: Array<{
+    endedAt: number | null;
+    kind: "device" | "static";
+    startedAt: number;
+    text: string;
+    volume: number;
+  }>;
+  evaluateRequests: number;
+  getUserMediaCalls: number;
+  pendingCues: number;
+  pendingUploads: number;
+  recorderStarts: Array<{ id: number; startedAt: number }>;
+  recorderStops: Array<{ id: number; stoppedAt: number }>;
+  stoppedTracks: number;
+  uploads: Array<{
+    attempt: number;
+    lessonId: string;
+    outcome:
+      | "failed"
+      | "held"
+      | "lesson_changed"
+      | "recording_disabled"
+      | "saved";
+    revision: string | null;
+    sceneIndex: number;
+    size: number;
+    source: "my" | "parrot";
+    stepIndex: number;
+    type: string;
+  }>;
+};
 
-const microphoneViewports = [
-  { name: "ultra-narrow phone", width: 280, height: 568 },
-  { name: "regular phone", width: 390, height: 844 },
-  { name: "short landscape", width: 640, height: 360 },
-  { name: "desktop", width: 1440, height: 900 },
-];
+type LessonMediaController = {
+  failNextCue(): boolean;
+  rejectNextUpload(): boolean;
+  releaseNextCue(): boolean;
+  resolveNextUpload(): boolean;
+  snapshot(): LessonMediaSnapshot;
+};
 
-const boxedLandscapeViewports = [
-  { name: "small phone landscape", width: 640, height: 360 },
-  { name: "large phone landscape", width: 768, height: 360 },
-  { name: "wide short window", width: 1280, height: 360 },
-  { name: "short tablet", width: 768, height: 600 },
-];
+type LessonMicrophoneController = {
+  pending: number;
+  rejected: number;
+  rejectNext(): boolean;
+  requests: number;
+  resolved: number;
+  resolveNext(): boolean;
+  stoppedTracks: number;
+};
 
-const boxedResponsiveViewports = [
-  { name: "ultra-narrow phone", width: 280, height: 568 },
-  { name: "regular phone", width: 390, height: 844 },
-  { name: "compact portrait window", width: 430, height: 600 },
-  { name: "small phone landscape", width: 640, height: 360 },
-  { name: "large phone landscape", width: 768, height: 360 },
-  { name: "portrait tablet", width: 768, height: 1024 },
-  { name: "small desktop", width: 1024, height: 768 },
-  { name: "compact laptop", width: 1280, height: 720 },
-  { name: "regular laptop", width: 1366, height: 768 },
-  { name: "large laptop", width: 1440, height: 900 },
-  { name: "full HD desktop", width: 1920, height: 1080 },
-  { name: "large desktop", width: 2560, height: 1440 },
-];
+const myLesson = {
+  childName: "Mia",
+  detailedSummary: "Mia joins Peppa for one bright kite line.",
+  goalPhrases: ["Red kite!"],
+  location: {
+    description: "A sunny garden with one red kite.",
+    name: "The garden",
+  },
+  scenes: [
+    {
+      background: "episode-garden",
+      characters: ["peppa"],
+      settingDescription: "Peppa looks at a red kite in the garden.",
+      steps: [
+        {
+          dialogue: "Red kite!",
+          emotes: { peppa: "listening" },
+          speaker: "user",
+        },
+      ],
+      title: "The Red Kite",
+    },
+  ],
+  summary: "Mia joins in with a kite story.",
+  title: "The Red Kite",
+};
 
-const adaptiveDesktopViewports = [
-  { name: "narrow desktop boundary", width: 900, height: 560 },
-  { name: "narrow desktop", width: 960, height: 600 },
-  { name: "sub-1024 desktop", width: 1023, height: 600 },
-  { name: "compact-height desktop boundary", width: 1024, height: 560 },
-  { name: "short desktop", width: 1024, height: 600 },
-  { name: "short compact laptop", width: 1280, height: 600 },
-  { name: "short regular laptop", width: 1366, height: 600 },
-  { name: "small desktop", width: 1024, height: 768 },
-  { name: "compact laptop", width: 1280, height: 720 },
-  { name: "regular laptop", width: 1366, height: 768 },
-  { name: "large laptop", width: 1440, height: 900 },
-  { name: "full HD desktop", width: 1920, height: 1080 },
-  { name: "large desktop", width: 2560, height: 1440 },
-  { name: "ultrawide desktop", width: 3440, height: 1440 },
-];
+const longDialogueLesson = {
+  ...myLesson,
+  detailedSummary: "Mia helps Peppa and Dolly carry a picnic basket.",
+  goalPhrases: [longDialogue],
+  scenes: [
+    {
+      background: "episode-garden",
+      characters: ["peppa", "dolly"],
+      settingDescription: "Peppa and Dolly wait beside a full picnic basket.",
+      steps: [
+        {
+          dialogue: longDialogue,
+          emotes: { dolly: "listening", peppa: "listening" },
+          speaker: "user",
+        },
+      ],
+      title: "Packing the Picnic",
+    },
+  ],
+  summary: "Mia joins Peppa and Dolly for a picnic.",
+  title: "The Big Picnic",
+};
 
-function usesBoxedSideBySideLayout(viewport: {
-  width: number;
-  height: number;
-}) {
-  return viewport.width >= 560 && viewport.width > viewport.height;
+async function mockSceneArtwork(page: Page) {
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
+  });
 }
 
-function usesSceneSafePanel(viewport: { width: number; height: number }) {
-  return (
-    viewport.width >= 900 &&
-    viewport.height >= 560 &&
-    viewport.width > viewport.height
+async function openParrotLesson(
+  page: Page,
+  scenario: string,
+  microphoneScenario?: "denied",
+) {
+  await mockSceneArtwork(page);
+  await page.goto(
+    `${parrotLessonPath}?parrotE2eLesson=${scenario}` +
+      (microphoneScenario
+        ? `&parrotE2eMicrophone=${microphoneScenario}`
+        : ""),
   );
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
 }
 
-function usesLayeredLearningPane(viewport: { width: number; height: number }) {
-  return (
-    (viewport.width >= 560 && viewport.height <= 420) ||
-    (viewport.width >= 768 && viewport.height <= 480)
+async function openMyLesson(
+  page: Page,
+  scenario: string,
+  { id = "device-guide", lesson = myLesson }: { id?: string; lesson?: unknown } = {},
+) {
+  await page.route(`**/api/lessons/my/${id}`, async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        lesson: {
+          id,
+          lesson,
+          revision: myLessonRevision,
+          source: "generated",
+        },
+      }),
+    });
+  });
+  await page.goto(`/lessons/my/${id}/scenes/1?parrotE2eLesson=${scenario}`);
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+}
+
+async function openSceneOneWithSceneTwoBehind(page: Page, scenario: string) {
+  await mockSceneArtwork(page);
+  const query = `?parrotE2eLesson=${scenario}`;
+  await page.goto(
+    `/lessons/parrot/01-peppas-high-ball/scenes/2${query}`,
   );
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+  await page.evaluate(
+    ({ sceneOne }) => {
+      const current = window.history.state ?? {};
+      window.history.pushState(
+        {
+          ...current,
+          idx: Number(current.idx ?? 0) + 1,
+          key: "held-preflight-scene-1",
+        },
+        "",
+        sceneOne,
+      );
+      window.dispatchEvent(
+        new PopStateEvent("popstate", { state: window.history.state }),
+      );
+    },
+    { sceneOne: `${parrotLessonPath}${query}` },
+  );
+  await expect(page).toHaveURL(/\/scenes\/1/);
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeFocused();
+}
+
+async function startLesson(page: Page) {
+  await page.getByRole("button", { exact: true, name: "Let's go" }).click();
+}
+
+function joinInPrompt(page: Page, phrase?: string) {
+  const prompt = page.getByRole("region", { name: "Join in" });
+  return phrase ? prompt.filter({ hasText: phrase }) : prompt;
+}
+
+async function mediaSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMedia?: LessonMediaController;
+      }
+    ).__parrotE2eLessonMedia;
+    if (!controller) throw new Error("Lesson media controller is missing.");
+    return controller.snapshot();
+  });
+}
+
+async function controlLessonMedia(
+  page: Page,
+  action:
+    | "failNextCue"
+    | "rejectNextUpload"
+    | "releaseNextCue"
+    | "resolveNextUpload",
+) {
+  const acted = await page.evaluate((nextAction) => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMedia?: LessonMediaController;
+      }
+    ).__parrotE2eLessonMedia;
+    if (!controller) throw new Error("Lesson media controller is missing.");
+    return controller[nextAction]();
+  }, action);
+  expect(acted).toBe(true);
+}
+
+async function microphoneSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMicrophone?: LessonMicrophoneController;
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    return {
+      pending: controller.pending,
+      rejected: controller.rejected,
+      requests: controller.requests,
+      resolved: controller.resolved,
+      stoppedTracks: controller.stoppedTracks,
+    };
+  });
+}
+
+async function controlLessonMicrophone(
+  page: Page,
+  action: "rejectNext" | "resolveNext",
+) {
+  const acted = await page.evaluate((nextAction) => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMicrophone?: LessonMicrophoneController;
+      }
+    ).__parrotE2eLessonMicrophone;
+    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    return controller[nextAction]();
+  }, action);
+  expect(acted).toBe(true);
 }
 
 async function visibleBox(locator: Locator) {
@@ -99,10 +277,9 @@ async function visibleBox(locator: Locator) {
 
 async function expectInsideViewport(
   locator: Locator,
-  viewport: { width: number; height: number },
+  viewport: { height: number; width: number },
 ) {
   const box = await visibleBox(locator);
-
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.y).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
@@ -110,284 +287,21 @@ async function expectInsideViewport(
   return box;
 }
 
-async function expectBefore(upper: Locator, lower: Locator) {
-  const upperBox = await visibleBox(upper);
-  const lowerBox = await visibleBox(lower);
-  expect(upperBox.y + upperBox.height).toBeLessThanOrEqual(lowerBox.y + 1);
-}
-
-async function expectLeftOf(left: Locator, right: Locator) {
-  const leftBox = await visibleBox(left);
-  const rightBox = await visibleBox(right);
-  expect(leftBox.x + leftBox.width).toBeLessThanOrEqual(rightBox.x + 1);
-}
-
 async function expectNoOverlap(first: Locator, second: Locator) {
   const firstBox = await visibleBox(first);
   const secondBox = await visibleBox(second);
-  const horizontalOverlap =
+  const horizontal =
     Math.min(firstBox.x + firstBox.width, secondBox.x + secondBox.width) -
     Math.max(firstBox.x, secondBox.x);
-  const verticalOverlap =
+  const vertical =
     Math.min(firstBox.y + firstBox.height, secondBox.y + secondBox.height) -
     Math.max(firstBox.y, secondBox.y);
-
-  expect(horizontalOverlap > 0 && verticalOverlap > 0).toBe(false);
-}
-
-async function expectFocusedPaintClearOf(focused: Locator, obstacle: Locator) {
-  const focusedBox = await visibleBox(focused);
-  const obstacleBox = await visibleBox(obstacle);
-  const indicator = await focused.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      focusVisible: element.matches(":focus-visible"),
-      offset: Number.parseFloat(style.outlineOffset),
-      style: style.outlineStyle,
-      width: Number.parseFloat(style.outlineWidth),
-    };
-  });
-  expect(indicator.focusVisible).toBe(true);
-  expect(indicator.style).not.toBe("none");
-  const extent = indicator.offset + indicator.width;
-  const horizontalOverlap =
-    Math.min(
-      focusedBox.x + focusedBox.width + extent,
-      obstacleBox.x + obstacleBox.width,
-    ) - Math.max(focusedBox.x - extent, obstacleBox.x);
-  const verticalOverlap =
-    Math.min(
-      focusedBox.y + focusedBox.height + extent,
-      obstacleBox.y + obstacleBox.height,
-    ) - Math.max(focusedBox.y - extent, obstacleBox.y);
-  expect(horizontalOverlap > 0 && verticalOverlap > 0).toBe(false);
-}
-
-async function installFallbackAccountIdentity(page: Page) {
-  await page.route("**/api/auth/get-session", async (route) => {
-    const response = await route.fetch();
-    const payload = (await response.json()) as {
-      user: { email: string; name?: string | null };
-    };
-    payload.user.name = "   ";
-    payload.user.email = longAccountEmail;
-    await route.fulfill({ response, json: payload });
-  });
-}
-
-async function expectNoPageOverflow(page: Page) {
-  await expect
-    .poll(() =>
-      page.evaluate(() => ({
-        horizontal: document.documentElement.scrollWidth > window.innerWidth,
-        vertical: document.documentElement.scrollHeight > window.innerHeight,
-      })),
-    )
-    .toEqual({ horizontal: false, vertical: false });
-}
-
-async function expectAnimationCount(locator: Locator, count: number) {
-  await expect
-    .poll(() =>
-      locator.evaluate(
-        (element) =>
-          element
-            .getAnimations({ subtree: true })
-            .filter((animation) => animation.playState === "running").length,
-      ),
-    )
-    .toBe(count);
-}
-
-async function observeMicrophonePendingFeedback(action: Locator) {
-  await action.evaluate((button) => {
-    const metrics = window as Window & {
-      parrotLessonMicrophoneFeedbackMs?: number;
-      parrotLessonMicrophoneFeedbackFrameMs?: number;
-      parrotLessonMicrophoneFeedbackStart?: number;
-    };
-    metrics.parrotLessonMicrophoneFeedbackMs = undefined;
-    metrics.parrotLessonMicrophoneFeedbackFrameMs = undefined;
-    metrics.parrotLessonMicrophoneFeedbackStart = undefined;
-    button.addEventListener(
-      "click",
-      () => {
-        metrics.parrotLessonMicrophoneFeedbackStart = performance.now();
-      },
-      { capture: true, once: true },
-    );
-    const observer = new MutationObserver(() => {
-      if (
-        button.textContent?.includes("Opening mic") &&
-        button.getAttribute("aria-disabled") === "true" &&
-        metrics.parrotLessonMicrophoneFeedbackStart !== undefined
-      ) {
-        metrics.parrotLessonMicrophoneFeedbackMs =
-          performance.now() - metrics.parrotLessonMicrophoneFeedbackStart;
-        requestAnimationFrame(() => {
-          metrics.parrotLessonMicrophoneFeedbackFrameMs =
-            performance.now() - metrics.parrotLessonMicrophoneFeedbackStart!;
-        });
-        observer.disconnect();
-      }
-    });
-    observer.observe(button, {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true,
-    });
-  });
-}
-
-async function expectImmediateMicrophoneFeedback(page: Page) {
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as Window & {
-              parrotLessonMicrophoneFeedbackMs?: number;
-            }
-          ).parrotLessonMicrophoneFeedbackMs ?? null,
-      ),
-    )
-    .not.toBeNull();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as Window & {
-              parrotLessonMicrophoneFeedbackFrameMs?: number;
-            }
-          ).parrotLessonMicrophoneFeedbackFrameMs ?? null,
-      ),
-    )
-    .not.toBeNull();
-  const timing = await page.evaluate(() => {
-    const metrics = window as Window & {
-      parrotLessonMicrophoneFeedbackMs?: number;
-      parrotLessonMicrophoneFeedbackFrameMs?: number;
-    };
-    return {
-      mutationMs: metrics.parrotLessonMicrophoneFeedbackMs!,
-      nextFrameMs: metrics.parrotLessonMicrophoneFeedbackFrameMs!,
-    };
-  });
-  expect(timing.mutationMs).toBeLessThan(100);
-  expect(timing.nextFrameMs).toBeLessThan(100);
-}
-
-function expectSameControlSlot(
-  before: Awaited<ReturnType<typeof visibleBox>>,
-  after: Awaited<ReturnType<typeof visibleBox>>,
-) {
-  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
-  expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(2);
-}
-
-async function expectFocusPaintContained(
-  action: Locator,
-  viewport: { height: number; width: number },
-  nextControl?: Locator,
-) {
-  const box = await visibleBox(action);
-  const indicator = await action.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return {
-      offset: Number.parseFloat(style.outlineOffset),
-      width: Number.parseFloat(style.outlineWidth),
-    };
-  });
-  expect(indicator.width).toBeGreaterThanOrEqual(4);
-  expect(indicator.offset).toBeGreaterThanOrEqual(4);
-  const extent = indicator.width + indicator.offset;
-  expect(box.x - extent).toBeGreaterThanOrEqual(0);
-  expect(box.y - extent).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width + extent).toBeLessThanOrEqual(viewport.width);
-  expect(box.y + box.height + extent).toBeLessThanOrEqual(viewport.height);
-  if (nextControl) {
-    const nextBox = await visibleBox(nextControl);
-    expect(box.x + box.width + extent).toBeLessThanOrEqual(nextBox.x + 1);
-  }
-}
-
-type LessonMicrophoneController = {
-  pending: number;
-  rejected: number;
-  rejectNext: () => boolean;
-  requests: number;
-  resolved: number;
-  resolveNext: () => boolean;
-  stoppedTracks: number;
-};
-
-async function readLessonMicrophoneController(page: Page) {
-  return page.evaluate(() => {
-    const controller = (
-      window as Window & {
-        __parrotE2eLessonMicrophone?: LessonMicrophoneController;
-      }
-    ).__parrotE2eLessonMicrophone;
-    if (!controller)
-      throw new Error("Lesson microphone controller is missing.");
-    return {
-      pending: controller.pending,
-      rejected: controller.rejected,
-      requests: controller.requests,
-      resolved: controller.resolved,
-      stoppedTracks: controller.stoppedTracks,
-    };
-  });
-}
-
-async function settleLessonMicrophone(
-  page: Page,
-  outcome: "reject" | "resolve",
-) {
-  const settled = await page.evaluate((nextOutcome) => {
-    const controller = (
-      window as Window & {
-        __parrotE2eLessonMicrophone?: LessonMicrophoneController;
-      }
-    ).__parrotE2eLessonMicrophone;
-    if (!controller)
-      throw new Error("Lesson microphone controller is missing.");
-    return nextOutcome === "resolve"
-      ? controller.resolveNext()
-      : controller.rejectNext();
-  }, outcome);
-  expect(settled).toBe(true);
-}
-
-async function rememberMicrophoneNode(action: Locator) {
-  await action.evaluate((button) => {
-    (
-      window as Window & { __parrotE2eLessonMicrophoneNode?: Element }
-    ).__parrotE2eLessonMicrophoneNode = button;
-  });
-}
-
-async function expectRememberedMicrophoneNode(action: Locator) {
-  await expect
-    .poll(() =>
-      action.evaluate(
-        (button) =>
-          button ===
-          (window as Window & { __parrotE2eLessonMicrophoneNode?: Element })
-            .__parrotE2eLessonMicrophoneNode,
-      ),
-    )
-    .toBe(true);
+  expect(horizontal > 0 && vertical > 0).toBe(false);
 }
 
 async function expectContainedBy(child: Locator, parent: Locator) {
   const childBox = await visibleBox(child);
   const parentBox = await visibleBox(parent);
-
   expect(childBox.x).toBeGreaterThanOrEqual(parentBox.x);
   expect(childBox.y).toBeGreaterThanOrEqual(parentBox.y);
   expect(childBox.x + childBox.width).toBeLessThanOrEqual(
@@ -399,15 +313,10 @@ async function expectContainedBy(child: Locator, parent: Locator) {
 }
 
 async function expectLongTextReachable(locator: Locator) {
-  const metrics = await locator.evaluate((element) => {
-    const target = element as HTMLElement;
-    return {
-      clientHeight: target.clientHeight,
-      scrollHeight: target.scrollHeight,
-    };
-  });
-
-  expect(metrics.scrollHeight).toBeGreaterThanOrEqual(metrics.clientHeight);
+  const metrics = await locator.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
   if (metrics.scrollHeight > metrics.clientHeight) {
     await expect(locator).toHaveAttribute("tabindex", "0");
     await locator.focus();
@@ -424,576 +333,79 @@ async function expectLongTextReachable(locator: Locator) {
   }
 }
 
-async function installAudioDelay(
-  page: Page,
-  delayMs: number,
-  heldAudio?: { delayMs: number; source: string },
-) {
-  await page
-    .getByRole("button", { name: /Start lesson|Replay lesson/ })
-    .waitFor();
-  await page.evaluate(
-    ({ defaultDelay, held }) => {
-      class DelayedAudio {
-        onended: ((event: Event) => void) | null = null;
-        onerror: ((event: Event) => void) | null = null;
-        private remainingMs: number;
-        private startedAt = 0;
-        private timeoutId: number | null = null;
-
-        constructor(readonly src = "") {
-          const testWindow = window as Window & {
-            __lessonAudioCreations?: number;
-          };
-          testWindow.__lessonAudioCreations =
-            (testWindow.__lessonAudioCreations ?? 0) + 1;
-          this.remainingMs =
-            held && this.src.includes(held.source)
-              ? held.delayMs
-              : defaultDelay;
-        }
-
-        pause() {
-          if (this.timeoutId === null) return;
-          window.clearTimeout(this.timeoutId);
-          this.timeoutId = null;
-          this.remainingMs = Math.max(
-            0,
-            this.remainingMs - (performance.now() - this.startedAt),
-          );
-        }
-
-        async play() {
-          if (this.timeoutId !== null) return;
-          this.startedAt = performance.now();
-          this.timeoutId = window.setTimeout(() => {
-            this.timeoutId = null;
-            this.remainingMs = 0;
-            this.onended?.(new Event("ended"));
-          }, this.remainingMs);
-        }
-      }
-
-      Object.defineProperty(window, "Audio", {
-        configurable: true,
-        value: DelayedAudio,
-      });
-    },
-    { defaultDelay: delayMs, held: heldAudio },
-  );
+async function expectNoPageOverflow(page: Page) {
+  const metrics = await page.evaluate(() => ({
+    height: window.innerHeight,
+    scrollHeight: document.documentElement.scrollHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+    width: window.innerWidth,
+  }));
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.width);
+  expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.height);
 }
 
-async function installAudioFailure(page: Page) {
-  await page
-    .getByRole("button", { name: /Start lesson|Replay lesson/ })
-    .waitFor();
-  await page.evaluate(() => {
-    class FailedAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-
-      constructor(readonly src = "") {}
-
-      pause() {}
-
-      async play() {
-        throw new Error("Audio playback failed.");
-      }
-    }
-
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: FailedAudio,
-    });
+test("the decoded artwork gates the focused start action", async ({ page }) => {
+  let releaseArtwork!: () => void;
+  const artworkReady = new Promise<void>((resolve) => {
+    releaseArtwork = resolve;
   });
-}
-
-async function installDeviceSpeechDelay(page: Page, delayMs = 5_000) {
-  await page.addInitScript(
-    ({ delay }) => {
-      class DelayedSpeechUtterance {
-        lang = "";
-        onend: (() => void) | null = null;
-        onerror: (() => void) | null = null;
-        pitch = 1;
-        rate = 1;
-        text: string;
-        voice = null;
-        volume = 1;
-
-        constructor(text: string) {
-          this.text = text;
-        }
-      }
-
-      let pendingTimer: number | null = null;
-      Object.defineProperty(window, "SpeechSynthesisUtterance", {
-        configurable: true,
-        value: DelayedSpeechUtterance,
-      });
-      Object.defineProperty(window, "speechSynthesis", {
-        configurable: true,
-        value: {
-          cancel() {
-            if (pendingTimer !== null) window.clearTimeout(pendingTimer);
-            pendingTimer = null;
-          },
-          getVoices() {
-            return [
-              {
-                default: true,
-                lang: "en-US",
-                localService: true,
-                name: "Test English",
-              },
-            ];
-          },
-          pause() {},
-          resume() {},
-          speak(utterance: DelayedSpeechUtterance) {
-            pendingTimer = window.setTimeout(() => {
-              pendingTimer = null;
-              utterance.onend?.();
-            }, delay);
-          },
-        },
-      });
-    },
-    { delay: delayMs },
-  );
-}
-
-async function waitForLearnerTurn(page: Page) {
-  const microphone = page
-    .getByRole("navigation", { name: "Speaking controls" })
-    .getByRole("button")
-    .first();
-  await expect(microphone).toBeVisible({ timeout: 8_000 });
-  await expect(microphone).toHaveAccessibleName("Tap to talk");
-  return microphone;
-}
-
-async function mockLongDialogueLesson(page: Page) {
-  await page.route("**/api/lessons/my/long-dialogue", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        lesson: {
-          id: "long-dialogue",
-          source: "generated",
-          lesson: {
-            title: "The Big Picnic",
-            childName: "Mia",
-            goalPhrases: [longDialogue],
-            summary: "Peppa and Dolly get ready for a picnic.",
-            detailedSummary:
-              "Mia helps Peppa and Dolly carry a picnic basket to the tree.",
-            location: {
-              name: "The garden",
-              description: "A sunny garden with a tall tree.",
-            },
-            scenes: [
-              {
-                title: "Packing the Picnic",
-                settingDescription:
-                  "Peppa and Dolly wait beside a full picnic basket.",
-                background: "episode-garden",
-                characters: ["peppa", "dolly"],
-                steps: [
-                  {
-                    speaker: "user",
-                    dialogue: longDialogue,
-                    emotes: {
-                      peppa: "listening",
-                      dolly: "listening",
-                    },
-                    check: {
-                      maxAttempts: 2,
-                      correct: {
-                        speaker: "narrator",
-                        dialogue: longFeedback,
-                        after: "continue",
-                      },
-                      incorrect: {
-                        speaker: "narrator",
-                        dialogue: "Almost! Try again.",
-                        after: "retry",
-                      },
-                      incorrectFinal: {
-                        speaker: "narrator",
-                        dialogue: "Good try! Let's keep going.",
-                        after: "continue",
-                      },
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      }),
-    });
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    await artworkReady;
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
   });
-}
-
-async function mockLayeredListeningLesson(
-  page: Page,
-  {
-    characters,
-    dialogue = "Look at the red kite!",
-    id,
-  }: {
-    characters: Array<"dolly" | "peppa">;
-    dialogue?: string;
-    id: string;
-  },
-) {
-  const speaker = characters.at(-1) ?? "dolly";
-  await page.route(`**/api/lessons/my/${id}`, async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        lesson: {
-          id,
-          source: "generated",
-          lesson: {
-            title: "The Red Kite",
-            childName: "Mia",
-            goalPhrases: [dialogue],
-            summary: "Friends find a red kite in the garden.",
-            detailedSummary:
-              "Mia listens and talks about the bright red kite with Peppa and Dolly.",
-            location: {
-              name: "The garden",
-              description: "A sunny garden with a red kite.",
-            },
-            scenes: [
-              {
-                title: "The Red Kite",
-                settingDescription:
-                  "The friends look at one bright red kite in the sky.",
-                background: "episode-garden",
-                characters,
-                steps: [
-                  {
-                    speaker,
-                    dialogue,
-                    emotes: Object.fromEntries(
-                      characters.map((character) => [
-                        character,
-                        character === speaker ? "talking" : "listening",
-                      ]),
-                    ),
-                  },
-                  {
-                    speaker: "user",
-                    dialogue: "Red kite!",
-                    emotes: Object.fromEntries(
-                      characters.map((character) => [character, "listening"]),
-                    ),
-                  },
-                ],
-              },
-            ],
-          },
-        },
-      }),
-    });
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`, {
+    waitUntil: "domcontentloaded",
   });
-}
 
-async function mockSavedLessonPortrait(page: Page) {
-  await page.route(
-    /\/api\/stories\/the-red-ball\/personalized-art(?:\/asset)?(?:\?.*)?$/,
-    async (route) => {
-      const pathname = new URL(route.request().url()).pathname;
-      if (pathname.endsWith("/asset")) {
-        await route.fulfill({
-          body: [
-            '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">',
-            '<rect width="96" height="96" rx="20" fill="#ffcf40"/>',
-            '<circle cx="48" cy="39" r="20" fill="#f5b895"/>',
-            '<path d="M20 96c2-25 16-36 28-36s26 11 28 36" fill="#315f89"/>',
-            "</svg>",
-          ].join(""),
-          contentType: "image/svg+xml",
-        });
-        return;
-      }
-
-      await route.fulfill({
-        body: JSON.stringify({
-          enabled: true,
-          hasStoredArt: true,
-          stories: {
-            "the-red-ball": {
-              pages: {
-                "my-red-ball": {
-                  alt: "A child holding a bright red ball",
-                  src: "/api/stories/the-red-ball/personalized-art/asset?v=1787276800000",
-                },
-              },
-            },
-          },
-          updatedAt: "2026-08-21T00:00:00.000Z",
-        }),
-        contentType: "application/json",
-      });
-    },
-  );
-}
-
-test("the start state introduces the lesson without premature scene UI", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.route(
-    "https://media.parrotbook.com/**/full-scenes/**",
-    async (route) => {
-      const pathname = new URL(route.request().url()).pathname;
-      if (!pathname.startsWith("/assets/v3/full-scenes/")) {
-        await route.abort("failed");
-        return;
-      }
-      await route.fulfill({
-        body: tinySceneWebp,
-        contentType: "image/webp",
-        status: 200,
-      });
-    },
-  );
-  await page.goto(lessonPath);
-
-  const introduction = page.getByRole("region", {
-    name: "Lesson introduction",
-  });
-  await expect(introduction).toBeVisible();
-  await expect(
-    introduction.getByRole("heading", { name: "Peppa's High Ball" }),
-  ).toBeVisible();
-  await expect(
-    introduction.getByText("5 parts", { exact: true }),
-  ).toBeVisible();
-  const directions = introduction.getByRole("list", { name: "How to play" });
-  await expect(
-    directions.getByText("1. Listen", { exact: true }),
-  ).toBeVisible();
-  await expect(directions.getByText("2. Talk", { exact: true })).toBeVisible();
-
-  const start = page.getByRole("button", { name: "Start lesson" });
+  const loading = page.getByRole("button", { name: "Loading picture…" });
+  await expect(loading).toBeDisabled();
+  await expect(page.getByRole("region", { name: "Lesson progress" })).toHaveCount(0);
+  releaseArtwork();
+  const start = page.getByRole("button", { exact: true, name: "Let's go" });
+  await expect(start).toBeVisible();
   await expect(start).toBeFocused();
-  const artwork = page.getByRole("region", { name: "Lesson artwork" });
-  await expect(artwork).toBeVisible();
-  const sceneImage = artwork.getByAltText(
-    "Peppa and Dolly look up at the red ball caught high in the tree",
+  await expect(page.getByRole("status", { name: "Lesson updates" })).toHaveText(
+    "Press Let's go to begin",
   );
-  await expect(sceneImage).toBeVisible();
-  await expect
-    .poll(() =>
-      sceneImage.evaluate(
-        (image: HTMLImageElement) =>
-          image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
-      ),
-    )
-    .toBe(true);
-  await expect(
-    page.getByAltText("A sunny garden with flowers and a tall tree"),
-  ).toBeHidden();
-  await expect(page.getByText(/Wide · 16:9|Full-scene artwork/)).toHaveCount(0);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toBeHidden();
-  await expect(page.getByText("Look! My ball!", { exact: true })).toBeHidden();
-  await expect(artwork.getByRole("img")).toHaveCount(1);
-  await expect(
-    page.getByRole("navigation", { name: "Speaking controls" }),
-  ).toBeHidden();
-  await expect(page.getByLabel(/Build version/)).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Previous scene" }),
-  ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Next scene" })).toHaveCount(0);
-  await expectNoPageOverflow(page);
 });
 
-test("lesson start waits for the matching rendered picture to decode", async ({
-  page,
-}) => {
-  let releaseCurrentImage!: () => void;
-  const currentImageGate = new Promise<void>((resolve) => {
-    releaseCurrentImage = resolve;
-  });
-  await page.route(
-    "https://media.parrotbook.com/**/full-scenes/**",
-    async (route) => {
-      if (route.request().url().endsWith("01-ball-up-high.webp")) {
-        await currentImageGate;
-      }
-      await route.fulfill({
-        body: tinySceneWebp,
-        contentType: "image/webp",
-        status: 200,
-      });
-    },
-  );
-  await page.goto(lessonPath, { waitUntil: "domcontentloaded" });
-  const start = page.getByRole("button", { name: "Start lesson" });
-  await start.waitFor();
-  await page.evaluate(() => {
-    class CountingAudio {
-      onended: ((event: Event) => void) | null = null;
-      onerror: ((event: Event) => void) | null = null;
-
-      pause() {}
-
-      async play() {
-        const metrics = window as Window & { __parrotAudioPlayCount?: number };
-        metrics.__parrotAudioPlayCount =
-          (metrics.__parrotAudioPlayCount ?? 0) + 1;
-      }
+test("failed artwork can be retried before the story begins", async ({ page }) => {
+  let requests = 0;
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    requests += 1;
+    if (requests === 1) {
+      await route.abort("failed");
+      return;
     }
-
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: CountingAudio,
-    });
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
   });
-  await expect(start).toBeDisabled();
-  await expect(start).toContainText("Loading picture…");
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`);
 
-  const artworkImage = page
-    .getByRole("region", { name: "Lesson artwork" })
-    .getByRole("img");
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as Window & { __parrotAudioPlayCount?: number })
-            .__parrotAudioPlayCount ?? 0,
-      ),
-    )
-    .toBe(0);
-  await expect
-    .poll(() =>
-      artworkImage.evaluate(
-        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-      ),
-    )
-    .toBe(false);
+  await expect(page.getByText("No picture yet.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Try loading picture again" }).click();
   await expect(
-    page
-      .getByRole("region", { name: "Lesson artwork" })
-      .getByRole("status"),
-  ).toContainText("Loading picture…");
-  await expect(
-    page.getByRole("navigation", { name: "Lesson playback controls" }),
-  ).toBeHidden();
-
-  releaseCurrentImage();
-  await expect
-    .poll(() =>
-      artworkImage.evaluate(
-        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-      ),
-    )
-    .toBe(true);
-  await expect(start).toBeEnabled();
-  await expect(start).toContainText("Let’s go!");
-  await start.click();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as Window & { __parrotAudioPlayCount?: number })
-            .__parrotAudioPlayCount ?? 0,
-      ),
-    )
-    .toBe(1);
-  await expect(
-    page.getByRole("navigation", { name: "Lesson playback controls" }),
+    page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Lesson progress" })).toHaveCount(0);
 });
 
-test("a failed lesson picture can be retried before playback continues", async ({
+test("stalled artwork becomes retryable without exposing scene controls", async ({
   page,
 }) => {
-  let allowCurrentImage = false;
-  await page.route(
-    "https://media.parrotbook.com/**/full-scenes/**",
-    async (route) => {
-      if (
-        route.request().url().endsWith("01-ball-up-high.webp") &&
-        !allowCurrentImage
-      ) {
-        await route.abort("failed");
-        return;
-      }
-      await route.fulfill({
-        body: tinySceneWebp,
-        contentType: "image/webp",
-        status: 200,
-      });
-    },
-  );
-  await page.goto(lessonPath);
-
-  const pictureError = page.getByRole("alert").filter({
-    hasText: "No picture yet.",
-  });
-  await expect(pictureError).toBeVisible();
-  await expect(
-    page.getByRole("region", { name: "Lesson introduction" }),
-  ).toBeHidden();
-  await expect(
-    page.getByRole("navigation", { name: "Lesson playback controls" }),
-  ).toBeHidden();
-  allowCurrentImage = true;
-  await page
-    .getByRole("button", { name: "Try loading picture again" })
-    .click();
-
-  const artworkImage = page
-    .getByRole("region", { name: "Lesson artwork" })
-    .getByRole("img");
-  await expect
-    .poll(() =>
-      artworkImage.evaluate(
-        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-      ),
-    )
-    .toBe(true);
-  await expect(pictureError).toBeHidden();
-  const start = page.getByRole("button", { name: "Start lesson" });
-  await expect(start).toBeEnabled();
-  await start.click();
-  await expect(
-    page.getByRole("navigation", { name: "Lesson playback controls" }),
-  ).toBeVisible();
-});
-
-test("a stalled lesson picture becomes retryable", async ({ page }) => {
-  let releaseCurrentImage!: () => void;
-  const currentImageGate = new Promise<void>((resolve) => {
-    releaseCurrentImage = resolve;
+  let releaseArtwork!: () => void;
+  const artworkReady = new Promise<void>((resolve) => {
+    releaseArtwork = resolve;
   });
   await page.clock.install();
-  await page.route(
-    "https://media.parrotbook.com/**/full-scenes/**",
-    async (route) => {
-      if (route.request().url().endsWith("01-ball-up-high.webp")) {
-        await currentImageGate;
-      }
-      await route.fulfill({
-        body: tinySceneWebp,
-        contentType: "image/webp",
-        status: 200,
-      });
-    },
-  );
-  await page.goto(lessonPath, { waitUntil: "domcontentloaded" });
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    await artworkReady;
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
+  });
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`, {
+    waitUntil: "domcontentloaded",
+  });
 
-  const start = page.getByRole("button", { name: "Start lesson" });
-  await expect(start).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Loading picture…" })).toBeDisabled();
   await page.clock.fastForward(8_001);
   await expect(
     page.getByRole("alert").filter({ hasText: "No picture yet." }),
@@ -1001,1751 +413,734 @@ test("a stalled lesson picture becomes retryable", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Try loading picture again" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Lesson playback controls" }),
+  ).toHaveCount(0);
 
-  releaseCurrentImage();
+  releaseArtwork();
 });
 
-for (const viewport of viewports) {
-  test(`listening and learner turns stay composed on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(lessonPath);
-    await installAudioDelay(page, 5_000);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const progress = page.getByRole("progressbar", { name: "Scene progress" });
-    const speech = page.getByRole("status").filter({
-      hasText: "Look! My ball!",
-    });
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const back = page.getByRole("button", { name: "Back to lesson list" });
-    const account = page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
-    });
-
-    await expect(hud).toContainText("The Ball Up High");
-    await expect(progress).toHaveAttribute("aria-valuenow", "1");
-    await expect(progress).toHaveAttribute("aria-valuemax", "5");
-    await expect(speech).toContainText("Listen");
-    await expectInsideViewport(hud, viewport);
-    await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(artwork, viewport);
-    await expectNoOverlap(back, hud);
-    await expectNoOverlap(account, hud);
-    await expectBefore(hud, speech);
-    await expect(
-      page.getByRole("region", { name: "Lesson introduction" }),
-    ).toBeHidden();
-    const playbackControls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    await expectInsideViewport(playbackControls, viewport);
-    const previous = playbackControls.getByRole("button", {
-      name: "Previous scene",
-    });
-    const pause = playbackControls.getByRole("button", {
-      name: "Pause lesson",
-    });
-    const next = playbackControls.getByRole("button", { name: "Next scene" });
-    await expect(previous).toBeDisabled();
-    await expect(pause).toBeVisible();
-    await expect(next).toBeEnabled();
-    const playbackBoxes = await Promise.all(
-      [previous, pause, next].map((control) =>
-        expectInsideViewport(control, viewport),
-      ),
-    );
-    for (const box of playbackBoxes) {
-      expect(box.width).toBeGreaterThanOrEqual(44);
-      expect(box.height).toBeGreaterThanOrEqual(44);
-    }
-    expect(
-      Math.max(...playbackBoxes.map(({ width }) => width)) -
-        Math.min(...playbackBoxes.map(({ width }) => width)),
-    ).toBeLessThanOrEqual(1);
-    expect(
-      Math.max(...playbackBoxes.map(({ height }) => height)) -
-        Math.min(...playbackBoxes.map(({ height }) => height)),
-    ).toBeLessThanOrEqual(1);
-
-    await page.goto(lessonPath);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-    const microphone = await waitForLearnerTurn(page);
-    const prompt = page.getByRole("region", { name: "Your turn" });
-    const controls = page.getByRole("navigation", {
-      name: "Speaking controls",
-    });
-    const skip = controls.getByRole("button", {
-      name: "Skip speaking turn",
-    });
-
-    await expect(prompt).toContainText("It is up high!");
-    await expect(prompt).toContainText("Your turn");
-    await expect(
-      page.getByRole("status", { name: "Lesson updates" }),
-    ).toContainText("Say: It is up high!");
-    await expect(microphone).toContainText("Tap to talk");
-    await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
-    await expect(skip).toContainText("Skip");
-    await expectInsideViewport(prompt, viewport);
-    await expectInsideViewport(controls, viewport);
-    const [microphoneBox, skipBox] = await Promise.all([
-      expectInsideViewport(microphone, viewport),
-      expectInsideViewport(skip, viewport),
-    ]);
-    expect(microphoneBox.width).toBeGreaterThanOrEqual(44);
-    expect(microphoneBox.height).toBeGreaterThanOrEqual(44);
-    expect(skipBox.width).toBeGreaterThanOrEqual(44);
-    expect(skipBox.height).toBeGreaterThanOrEqual(44);
-    expect(Math.abs(microphoneBox.height - skipBox.height)).toBeLessThanOrEqual(
-      1,
-    );
-    await expectInsideViewport(artwork, viewport);
-    await expectBefore(hud, prompt);
-    await expectNoOverlap(prompt, controls);
-    await expectLeftOf(microphone, skip);
-    await expectNoPageOverflow(page);
+test("narration remains distinct from character speech", async ({ page }) => {
+  const narrationLesson = structuredClone(myLesson);
+  narrationLesson.scenes[0].steps.unshift({
+    dialogue: "The kite dances in the wind.",
+    emotes: { peppa: "listening" },
+    speaker: "narrator",
   });
-}
-
-test("learner profile stays clear of the lesson HUD across the short-header seam", async ({
-  page,
-}) => {
-  await installFallbackAccountIdentity(page);
-  const boundaryViewports = [
-    { height: 620, name: "last short pixel", width: 768 },
-    { height: 621, name: "first post-short pixel", width: 768 },
-    { height: 641, name: "profile focus seam", width: 768 },
-    { height: 900, name: "last compact desktop pixel", width: 1359 },
-    { height: 900, name: "first wide pixel", width: 1360 },
-    { height: 900, name: "wide desktop", width: 1440 },
-  ];
-
-  for (const viewport of boundaryViewports) {
-    await page.setViewportSize(viewport);
-    await page.goto(lessonPath);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const account = page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
-    });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const accountBox = await expectInsideViewport(account, viewport);
-    await expectInsideViewport(hud, viewport);
-    await expectNoOverlap(account, hud);
-    if (viewport.width < 1360) {
-      expect(accountBox.width).toBe(accountBox.height);
-    } else {
-      await expect(account).toContainText("Mia");
-      await expect(account).toContainText("Learner");
-      await expect(account).not.toContainText(longAccountEmail);
-    }
-
-    await account.focus();
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Shift+Tab");
-    await expect(account).toBeFocused();
-    await expectFocusedPaintClearOf(account, hud);
-    await expectNoPageOverflow(page);
-  }
-});
-
-for (const viewport of boxedLandscapeViewports) {
-  test(`boxed lesson keeps its learning layers separate on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(lessonPath);
-    await installAudioDelay(page, 5_000);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status").filter({
-      hasText: "Look! My ball!",
-    });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-
-    const artworkBox = await expectInsideViewport(artwork, viewport);
-    expect(artworkBox.width).toBeGreaterThanOrEqual(300);
-    expect(artworkBox.height).toBeGreaterThanOrEqual(165);
-    await expectInsideViewport(hud, viewport);
-    await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(controls, viewport);
-    await expectLeftOf(artwork, hud);
-    await expectLeftOf(artwork, speech);
-    await expectLeftOf(artwork, controls);
-    await expectNoOverlap(artwork, hud);
-    await expectNoOverlap(artwork, speech);
-    await expectNoOverlap(artwork, controls);
-    await expectBefore(hud, speech);
-    await expectNoOverlap(speech, controls);
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of adaptiveDesktopViewports) {
-  test(`boxed artwork fills the available story stage on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(lessonPath);
-    await installAudioDelay(page, 5_000);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const activeContent = page.getByRole("region", {
-      name: "Active lesson content",
-    });
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const learningPanel = page.getByRole("region", {
-      name: "Lesson words and controls",
-    });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status").filter({
-      hasText: "Look! My ball!",
-    });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    const activeBox = await expectInsideViewport(activeContent, viewport);
-    const artworkBox = await expectInsideViewport(artwork, viewport);
-    const largestContainedWidth = Math.min(
-      activeBox.width,
-      (activeBox.height * 16) / 9,
-    );
-
-    expect(artworkBox.width).toBeGreaterThanOrEqual(largestContainedWidth - 8);
-    expect(artworkBox.width / artworkBox.height).toBeCloseTo(16 / 9, 1);
-    const panelBox = await expectInsideViewport(learningPanel, viewport);
-    expect(panelBox.width).toBeLessThanOrEqual(artworkBox.width * 0.33);
-    expect(panelBox.width).toBeLessThanOrEqual(448);
-    expect(panelBox.height).toBeLessThanOrEqual(320);
-    await expectContainedBy(learningPanel, artwork);
-    for (const surface of [hud, speech, controls]) {
-      await expectInsideViewport(surface, viewport);
-      await expectContainedBy(surface, learningPanel);
-    }
-    const line = speech.getByText("Look! My ball!", { exact: true });
-    await expectInsideViewport(line, viewport);
-    await expectContainedBy(line, speech);
-    await expect
-      .poll(() =>
-        line.evaluate(
-          (element) => element.scrollHeight <= element.clientHeight,
-        ),
-      )
-      .toBe(true);
-    await expectNoOverlap(hud, speech);
-    await expectNoOverlap(hud, controls);
-    await expectNoOverlap(speech, controls);
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "small desktop", width: 1024, height: 768 },
-  { name: "large laptop", width: 1440, height: 900 },
-]) {
-  test(`crowded artwork uses a shallow learning ribbon on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto("/lessons/parrot/05-market-day/scenes/1");
-    await installAudioDelay(page, 5_000);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const activeContent = page.getByRole("region", {
-      name: "Active lesson content",
-    });
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const learningPanel = page.getByRole("region", {
-      name: "Lesson words and controls",
-    });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status").filter({
-      hasText: "Welcome to my fruit stand!",
-    });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    const activeBox = await expectInsideViewport(activeContent, viewport);
-    const artworkBox = await expectInsideViewport(artwork, viewport);
-    const largestContainedWidth = Math.min(
-      activeBox.width,
-      (activeBox.height * 16) / 9,
-    );
-
-    expect(artworkBox.width).toBeGreaterThanOrEqual(largestContainedWidth - 8);
-    const panelBox = await expectInsideViewport(learningPanel, viewport);
-    expect(panelBox.width).toBeGreaterThanOrEqual(artworkBox.width * 0.7);
-    expect(panelBox.height).toBeLessThanOrEqual(artworkBox.height * 0.22);
-    await expectContainedBy(learningPanel, artwork);
-    for (const surface of [hud, speech, controls]) {
-      await expectInsideViewport(surface, viewport);
-      await expectContainedBy(surface, learningPanel);
-    }
-    await expectLeftOf(hud, speech);
-    await expectLeftOf(speech, controls);
-    await expectNoOverlap(hud, speech);
-    await expectNoOverlap(speech, controls);
-    await expectNoPageOverflow(page);
-  });
-}
-
-test("playback controls keep one anchor while scene composition changes", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(lessonPath);
-  await installAudioDelay(page, 5_000);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  const controls = page.getByRole("navigation", {
-    name: "Lesson playback controls",
-  });
-  const firstBox = await visibleBox(controls);
-  const next = controls.getByRole("button", { name: "Next scene" });
-  await next.click();
-  await expect(page).toHaveURL(/\/scenes\/2$/);
-  await next.click();
-  await expect(page).toHaveURL(/\/scenes\/3$/);
-  const thirdArtwork = page.getByAltText(
-    "Peppa asks Dolly for help beneath the tree while the ball stays high above",
-  );
-  await expect
-    .poll(() =>
-      thirdArtwork.evaluate(
-        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-      ),
-    )
-    .toBe(true);
-  const thirdBox = await visibleBox(controls);
-
-  expect(Math.abs(thirdBox.x - firstBox.x)).toBeLessThanOrEqual(8);
-  expect(Math.abs(thirdBox.y - firstBox.y)).toBeLessThanOrEqual(8);
-  expect(Math.abs(thirdBox.width - firstBox.width)).toBeLessThanOrEqual(2);
-  expect(Math.abs(thirdBox.height - firstBox.height)).toBeLessThanOrEqual(2);
-});
-
-for (const viewport of boxedResponsiveViewports) {
-  test(`boxed artwork stays large and clear while listening on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(lessonPath);
-    await installAudioDelay(page, 5_000);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status").filter({
-      hasText: "Look! My ball!",
-    });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-
-    const artworkBox = await expectInsideViewport(artwork, viewport);
-    await expectInsideViewport(hud, viewport);
-    await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(controls, viewport);
-    await expectNoOverlap(speech, controls);
-
-    if (usesSceneSafePanel(viewport)) {
-      const learningPanel = page.getByRole("region", {
-        name: "Lesson words and controls",
-      });
-      await expectContainedBy(learningPanel, artwork);
-      for (const surface of [hud, speech, controls]) {
-        await expectContainedBy(surface, learningPanel);
-      }
-    } else if (usesBoxedSideBySideLayout(viewport)) {
-      await expectLeftOf(artwork, hud);
-      await expectLeftOf(artwork, speech);
-      await expectLeftOf(artwork, controls);
-      await expectNoOverlap(artwork, hud);
-      await expectNoOverlap(artwork, speech);
-      await expectNoOverlap(artwork, controls);
-      if (viewport.height > 620) {
-        expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width * 0.55);
-      }
-    } else {
-      await expectBefore(hud, artwork);
-      await expectBefore(artwork, speech);
-      await expectBefore(speech, controls);
-      await expectNoOverlap(artwork, hud);
-      await expectNoOverlap(artwork, speech);
-      await expectNoOverlap(artwork, controls);
-      expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width - 24);
-    }
-
-    expect(artworkBox.width / artworkBox.height).toBeCloseTo(16 / 9, 1);
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "compact portrait window", width: 430, height: 600 },
-  { name: "compact-height desktop boundary", width: 1024, height: 560 },
-  { name: "small desktop", width: 1024, height: 768 },
-  { name: "compact laptop", width: 1280, height: 720 },
-  { name: "large laptop", width: 1440, height: 900 },
-  { name: "large desktop", width: 2560, height: 1440 },
-]) {
-  test(`boxed artwork stays clear through learner and feedback states on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto(lessonPath);
-    await installAudioDelay(page, 25, {
-      delayMs: 5_000,
-      source: "feedback-",
-    });
-    await page.getByRole("button", { name: "Start lesson" }).click();
-    await waitForLearnerTurn(page);
-
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const prompt = page.getByRole("region", { name: "Your turn" });
-    const speakingControls = page.getByRole("navigation", {
-      name: "Speaking controls",
-    });
-
-    await expectInsideViewport(artwork, viewport);
-    await expectInsideViewport(prompt, viewport);
-    await expectInsideViewport(speakingControls, viewport);
-    if (usesSceneSafePanel(viewport)) {
-      const learningPanel = page.getByRole("region", {
-        name: "Lesson words and controls",
-      });
-      for (const surface of [hud, prompt, speakingControls]) {
-        await expectContainedBy(surface, learningPanel);
-      }
-      await expectContainedBy(
-        prompt.getByText("It is up high!", { exact: true }),
-        prompt,
-      );
-    } else {
-      await expectNoOverlap(artwork, hud);
-      await expectNoOverlap(artwork, prompt);
-      await expectNoOverlap(artwork, speakingControls);
-    }
-    await expectNoOverlap(prompt, speakingControls);
-
-    const microphone = speakingControls.getByRole("button").first();
-    await microphone.click();
-    await microphone.click();
-
-    const feedback = page.getByRole("region", { name: "Speaking feedback" });
-    const playbackControls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    await expect(feedback).toBeVisible();
-    await expectInsideViewport(feedback, viewport);
-    await expectInsideViewport(playbackControls, viewport);
-    if (usesSceneSafePanel(viewport)) {
-      const learningPanel = page.getByRole("region", {
-        name: "Lesson words and controls",
-      });
-      for (const surface of [hud, feedback, playbackControls]) {
-        await expectContainedBy(surface, learningPanel);
-      }
-    } else {
-      await expectNoOverlap(artwork, feedback);
-      await expectNoOverlap(artwork, playbackControls);
-    }
-    await expectNoOverlap(feedback, playbackControls);
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const fixture of [
-  {
-    characters: ["dolly"] as Array<"dolly" | "peppa">,
-    dialogue: "Look at the red kite!",
-    id: "one-character-landscape",
-    viewport: {
-      name: "one character at the boundary",
-      width: 560,
-      height: 360,
-    },
-  },
-  {
-    characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
-    dialogue: "Look at the red kite!",
-    id: "two-character-boundary",
-    viewport: {
-      name: "two characters at the boundary",
-      width: 560,
-      height: 360,
-    },
-  },
-  ...[
-    { name: "421px-tall phone landscape", width: 844, height: 421 },
-    { name: "430px-tall phone landscape", width: 932, height: 430 },
-    { name: "two-pane height boundary", width: 768, height: 480 },
-  ].map((viewport) => ({
-    characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
-    dialogue: reviewedCharacterLine,
-    id: `two-character-${viewport.width}x${viewport.height}`,
-    viewport,
-  })),
-  ...boxedLandscapeViewports
-    .filter((viewport) => viewport.height <= 420)
-    .map((viewport) => ({
-      characters: ["peppa", "dolly"] as Array<"dolly" | "peppa">,
-      dialogue:
-        viewport.width === 768 && viewport.height === 360
-          ? reviewedCharacterLine
-          : "Look at the red kite!",
-      id: `two-character-${viewport.width}x${viewport.height}`,
-      viewport,
-    })),
-]) {
-  test(`layered lesson keeps characters and learning UI separate with ${fixture.viewport.name}`, async ({
-    page,
-  }) => {
-    const {
-      characters,
-      dialogue = "Look at the red kite!",
-      id,
-      viewport,
-    } = fixture;
-    await page.setViewportSize(viewport);
-    await installDeviceSpeechDelay(page);
-    await mockLayeredListeningLesson(page, { characters, dialogue, id });
-    await page.goto(`/lessons/my/${id}/scenes/1`);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status", {
-      name: `${characters.at(-1) === "peppa" ? "Peppa" : "Dolly"} is speaking`,
-    });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    const characterImages = characters.map((character) =>
-      page.getByRole("img", {
-        name: new RegExp(
-          `^${character[0].toUpperCase()}${character.slice(1)} `,
-        ),
+  await page.route("**/api/lessons/my/narration-guide", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        lesson: {
+          id: "narration-guide",
+          lesson: narrationLesson,
+          revision: myLessonRevision,
+          source: "generated",
+        },
       }),
-    );
-
-    const line = speech.getByText(dialogue, { exact: true });
-    await expect(line).toBeVisible();
-    await expect(speech).toContainText(
-      `Listen · ${characters.at(-1) === "peppa" ? "Peppa" : "Dolly"}`,
-    );
-    await expectInsideViewport(hud, viewport);
-    await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(controls, viewport);
-    await expectBefore(hud, speech);
-    await expectNoOverlap(speech, controls);
-    await expect
-      .poll(() =>
-        line.evaluate(
-          (element) => element.scrollHeight <= element.clientHeight,
-        ),
-      )
-      .toBe(true);
-    await expect(line).not.toHaveAttribute("tabindex", "0");
-
-    for (const character of characterImages) {
-      const characterBox = await expectInsideViewport(character, viewport);
-      expect(characterBox.width).toBeGreaterThanOrEqual(100);
-      expect(characterBox.height).toBeGreaterThanOrEqual(165);
-      await expectLeftOf(character, hud);
-      await expectLeftOf(character, speech);
-      await expectLeftOf(character, controls);
-      await expectNoOverlap(character, hud);
-      await expectNoOverlap(character, speech);
-      await expectNoOverlap(character, controls);
-    }
-
-    for (const button of await controls.getByRole("button").all()) {
-      const buttonBox = await visibleBox(button);
-      expect(buttonBox.width).toBeGreaterThanOrEqual(44);
-      expect(buttonBox.height).toBeGreaterThanOrEqual(44);
-    }
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "first stabilized vertical pixel", width: 768, height: 481 },
-  { name: "short tablet", width: 768, height: 600 },
-  { name: "compact-band boundary", width: 768, height: 640 },
-  { name: "first smooth transition pixel", width: 768, height: 641 },
-  { name: "matched default geometry", width: 768, height: 807 },
-]) {
-  test(`layered lesson keeps its vertical composition collision-free at the ${viewport.name}`, async ({
-    page,
-  }) => {
-    const id = `vertical-${viewport.width}x${viewport.height}`;
-    await page.setViewportSize(viewport);
-    await installDeviceSpeechDelay(page);
-    await mockLayeredListeningLesson(page, {
-      characters: ["peppa", "dolly"],
-      id,
     });
-    await page.goto(`/lessons/my/${id}/scenes/1`);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status", { name: "Dolly is speaking" });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    const peppa = page.getByRole("img", { name: /^Peppa / });
-    const dolly = page.getByRole("img", { name: /^Dolly / });
-
-    const hudBox = await expectInsideViewport(hud, viewport);
-    if (viewport.height === 600) {
-      expect(hudBox.height).toBeGreaterThanOrEqual(68);
-    }
-    await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(controls, viewport);
-    await expectBefore(hud, speech);
-    for (const character of [peppa, dolly]) {
-      await expectInsideViewport(character, viewport);
-      await expectBefore(speech, character);
-      await expectBefore(character, controls);
-      await expectNoOverlap(speech, character);
-      await expectNoOverlap(character, controls);
-    }
-    await expectNoPageOverflow(page);
   });
-}
-
-for (const viewport of [
-  { name: "small phone landscape", width: 640, height: 360 },
-  { name: "large phone landscape", width: 768, height: 360 },
-  { name: "vertical transition", width: 768, height: 481 },
-  { name: "smoothed vertical transition", width: 768, height: 641 },
-  { name: "vertical transition midpoint", width: 768, height: 720 },
-  { name: "matched default geometry", width: 768, height: 807 },
-]) {
-  test(`long generated dialogue stays contained on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await mockLongDialogueLesson(page);
-    await page.goto("/lessons/my/long-dialogue/scenes/1");
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const prompt = page.getByRole("region", { name: "Your turn" });
-    const phrase = prompt.getByText(longDialogue, { exact: true });
-    const peppa = page.getByRole("img", { name: /^Peppa / });
-    const dolly = page.getByRole("img", { name: /^Dolly / });
-    const controls = page.getByRole("navigation", {
-      name: "Speaking controls",
-    });
-
-    await expectInsideViewport(prompt, viewport);
-    await expectInsideViewport(phrase, viewport);
-    await expectContainedBy(phrase, prompt);
-    await expectLongTextReachable(phrase);
-    await expectBefore(hud, prompt);
-    await expectNoOverlap(prompt, controls);
-    for (const character of [peppa, dolly]) {
-      if (usesLayeredLearningPane(viewport)) {
-        await expectLeftOf(character, prompt);
-        await expectLeftOf(character, controls);
-      } else {
-        await expectBefore(prompt, character);
-        await expectBefore(character, controls);
-      }
-      await expectNoOverlap(character, prompt);
-      await expectNoOverlap(character, controls);
-    }
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "short learning pane", width: 640, height: 360 },
-  { name: "vertical transition", width: 768, height: 481 },
-  { name: "smoothed vertical transition", width: 768, height: 641 },
-  { name: "vertical transition midpoint", width: 768, height: 720 },
-  { name: "matched default geometry", width: 768, height: 807 },
-]) {
-  test(`long generated character speech stays reachable at the ${viewport.name}`, async ({
-    page,
-  }) => {
-    const id = `long-character-speech-${viewport.width}x${viewport.height}`;
-    await page.setViewportSize(viewport);
-    await installDeviceSpeechDelay(page);
-    await mockLayeredListeningLesson(page, {
-      characters: ["peppa", "dolly"],
-      dialogue: longDialogue,
-      id,
-    });
-    await page.goto(`/lessons/my/${id}/scenes/1`);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const speech = page.getByRole("status", { name: "Dolly is speaking" });
-    const phrase = speech.getByText(longDialogue, { exact: true });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-
-    await expectInsideViewport(speech, viewport);
-    await expectInsideViewport(phrase, viewport);
-    await expectContainedBy(phrase, speech);
-    await expectLongTextReachable(phrase);
-    await expectBefore(hud, speech);
-    await expectNoOverlap(speech, controls);
-    for (const character of [
-      page.getByRole("img", { name: /^Peppa / }),
-      page.getByRole("img", { name: /^Dolly / }),
-    ]) {
-      if (usesLayeredLearningPane(viewport)) {
-        await expectLeftOf(character, speech);
-        await expectLeftOf(character, controls);
-      } else {
-        await expectBefore(speech, character);
-        await expectBefore(character, controls);
-      }
-      await expectNoOverlap(character, speech);
-      await expectNoOverlap(character, controls);
-    }
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "short learning pane", width: 640, height: 360 },
-  { name: "vertical transition", width: 768, height: 481 },
-  { name: "smoothed vertical transition", width: 768, height: 641 },
-  { name: "vertical transition midpoint", width: 768, height: 720 },
-  { name: "matched default geometry", width: 768, height: 807 },
-]) {
-  test(`long generated feedback stays reachable at the ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await installDeviceSpeechDelay(page);
-    await mockLongDialogueLesson(page);
-    await page.goto("/lessons/my/long-dialogue/scenes/1");
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const microphone = await waitForLearnerTurn(page);
-    await microphone.click();
-    await microphone.click();
-
-    const feedback = page.getByRole("region", { name: "Speaking feedback" });
-    const phrase = feedback.getByText(longFeedback, { exact: true });
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    const peppa = page.getByRole("img", { name: /^Peppa / });
-    const dolly = page.getByRole("img", { name: /^Dolly / });
-    await expect(phrase).toBeVisible({ timeout: 3_000 });
-    await expectInsideViewport(feedback, viewport);
-    await expectInsideViewport(phrase, viewport);
-    await expectContainedBy(phrase, feedback);
-    await expectLongTextReachable(phrase);
-    await expectNoOverlap(feedback, controls);
-    for (const character of [peppa, dolly]) {
-      if (usesLayeredLearningPane(viewport)) {
-        await expectLeftOf(character, feedback);
-        await expectLeftOf(character, controls);
-      } else {
-        await expectBefore(feedback, character);
-        await expectBefore(character, controls);
-      }
-      await expectNoOverlap(character, feedback);
-      await expectNoOverlap(character, controls);
-    }
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "small phone landscape", width: 640, height: 360 },
-  { name: "large phone landscape", width: 768, height: 360 },
-]) {
-  test(`built-in final feedback stays name-free on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    const finalLine = "Great job!";
-    await page.setViewportSize(viewport);
-    await page.goto("/lessons/parrot/04-playground-words/scenes/5");
-    await installAudioDelay(page, 25, {
-      delayMs: 15_000,
-      source: "narrator-feedback-success",
-    });
-    await page.getByRole("button", { name: "Start lesson" }).click();
-    await waitForLearnerTurn(page);
-    await page.getByRole("button", { name: "Skip speaking turn" }).click();
-
-    const artwork = page.getByRole("region", { name: "Lesson artwork" });
-    const narration = page.getByRole("status", { name: "Lesson narration" });
-    const line = narration.getByText(finalLine, { exact: true });
-
-    await expect(line).toBeVisible();
-    await expect(narration).not.toContainText("Bella");
-    await expectInsideViewport(narration, viewport);
-    await expectLeftOf(artwork, narration);
-    await expectNoOverlap(artwork, narration);
-    await expect
-      .poll(() =>
-        line.evaluate(
-          (element) => element.scrollHeight <= element.clientHeight,
-        ),
-      )
-      .toBe(true);
-  });
-}
-
-test("a saved portrait stays inside a boxed learner turn in short landscape", async ({
-  page,
-}) => {
-  const viewport = { width: 640, height: 360 };
-  await page.setViewportSize(viewport);
-  await mockSavedLessonPortrait(page);
-  await page.goto(lessonPath);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  await waitForLearnerTurn(page);
-
-  const artwork = page.getByRole("region", { name: "Lesson artwork" });
-  const prompt = page.getByRole("region", { name: "Your turn" });
-  const portrait = prompt.getByRole("img", { name: "You in storybook style" });
-  const controls = page.getByRole("navigation", { name: "Speaking controls" });
-
-  const portraitBox = await expectInsideViewport(portrait, viewport);
-  expect(portraitBox.width).toBeGreaterThanOrEqual(44);
-  expect(portraitBox.height).toBeGreaterThanOrEqual(44);
-  await expectContainedBy(portrait, prompt);
-  await expectLeftOf(artwork, prompt);
-  await expectLeftOf(artwork, controls);
-  await expectNoOverlap(artwork, prompt);
-  await expectNoOverlap(artwork, controls);
-  await expectNoOverlap(prompt, controls);
-  await expectNoPageOverflow(page);
-});
-
-test("a saved portrait keeps the full desktop story stage stable", async ({
-  page,
-}) => {
-  const viewport = { width: 1024, height: 768 };
-  await page.setViewportSize(viewport);
-  await mockSavedLessonPortrait(page);
-  await page.goto(lessonPath);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  await waitForLearnerTurn(page);
-
-  const activeContent = page.getByRole("region", {
-    name: "Active lesson content",
-  });
-  const artwork = page.getByRole("region", { name: "Lesson artwork" });
-  const learningPanel = page.getByRole("region", {
-    name: "Lesson words and controls",
-  });
-  const prompt = page.getByRole("region", { name: "Your turn" });
-  const portrait = prompt.getByRole("img", { name: "You in storybook style" });
-  const controls = page.getByRole("navigation", { name: "Speaking controls" });
-  const activeBox = await expectInsideViewport(activeContent, viewport);
-  const artworkBox = await expectInsideViewport(artwork, viewport);
-  const largestContainedWidth = Math.min(
-    activeBox.width,
-    (activeBox.height * 16) / 9,
+  await page.goto(
+    "/lessons/my/narration-guide/scenes/1?parrotE2eLesson=device-no-consent",
   );
+  await startLesson(page);
 
-  expect(artworkBox.width).toBeGreaterThanOrEqual(largestContainedWidth - 8);
-  const portraitBox = await expectInsideViewport(portrait, viewport);
-  expect(portraitBox.width).toBeGreaterThanOrEqual(44);
-  expect(portraitBox.height).toBeGreaterThanOrEqual(44);
-  await expectContainedBy(learningPanel, artwork);
-  await expectContainedBy(portrait, prompt);
-  for (const surface of [prompt, controls]) {
-    await expectContainedBy(surface, learningPanel);
-  }
-  await expectNoOverlap(prompt, controls);
-  await expectNoPageOverflow(page);
+  await expect(page.getByRole("status", { name: "Lesson narration" })).toBeVisible();
+  await expect(page.getByText("Story", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Listen · Narrator/)).toHaveCount(0);
 });
 
-test("playback controls pause, resume, and navigate between scenes", async ({
+test("ordinary sound failure keeps its existing retry and skip recovery", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(lessonPath);
-  await installAudioDelay(page, 5_000);
-  await page.getByRole("button", { name: "Start lesson" }).click();
+  await openParrotLesson(page, "story-failure");
+  await startLesson(page);
+  await expect(
+    page
+      .getByRole("alert")
+      .getByText("The sound stopped. Try it again or skip this sound.", {
+        exact: true,
+      }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try sound" })).toBeVisible();
+  await page.getByRole("button", { name: "Skip sound" }).click();
+  await expect(page.getByRole("status", { name: "Dolly is speaking" })).toBeVisible();
+});
 
-  const controls = page.getByRole("navigation", {
-    name: "Lesson playback controls",
-  });
+test("consent preflight leads to a fresh capture for every automatic beat", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "recording");
+  await expect.poll(async () => (await mediaSnapshot(page)).consentRequests).toBe(1);
+
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
   await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as Window & { __lessonAudioCreations?: number })
-            .__lessonAudioCreations ?? 0,
-      ),
-    )
+    .poll(async () => (await mediaSnapshot(page)).uploads.length)
+    .toBeGreaterThanOrEqual(1);
+  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).uploads.length)
+    .toBeGreaterThanOrEqual(2);
+
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.consentRequests).toBe(1);
+  expect(snapshot.recorderStarts.length).toBeGreaterThanOrEqual(2);
+  expect(snapshot.getUserMediaCalls).toBe(snapshot.recorderStarts.length + 1);
+  expect(new Set(snapshot.recorderStarts.map(({ id }) => id)).size).toBe(
+    snapshot.recorderStarts.length,
+  );
+  expect(snapshot.cues.slice(0, 2).map(({ kind, volume }) => ({ kind, volume }))).toEqual([
+    { kind: "static", volume: 0.28 },
+    { kind: "static", volume: 0.28 },
+  ]);
+  expect(snapshot.recorderStarts[0].startedAt).toBeLessThanOrEqual(
+    snapshot.cues[0].startedAt,
+  );
+  expect(snapshot.recorderStops[0].stoppedAt - snapshot.cues[0].endedAt!).toBeGreaterThanOrEqual(
+    240,
+  );
+  expect(snapshot.uploads.slice(0, 2)).toMatchObject([
+    {
+      lessonId: "01-peppas-high-ball",
+      sceneIndex: 0,
+      size: expect.any(Number),
+      source: "parrot",
+      stepIndex: 2,
+      type: "audio/webm",
+    },
+    {
+      lessonId: "01-peppas-high-ball",
+      sceneIndex: 1,
+      size: expect.any(Number),
+      source: "parrot",
+      stepIndex: 1,
+      type: "audio/webm",
+    },
+  ]);
+  expect(snapshot.uploads.every(({ size }) => size > 0)).toBe(true);
+  expect(snapshot.evaluateRequests).toBe(0);
+  await expect(
+    page.getByText(/checking your words|tap to talk|skip speaking|great job/i),
+  ).toHaveCount(0);
+});
+
+test("missing consent makes no microphone request and keeps the same cue", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-cue-no-consent");
+  await startLesson(page);
+
+  const prompt = joinInPrompt(page, "It is up high!");
+  await expect(prompt).toBeVisible();
+  await expect(prompt.getByText("Voices are joining in", { exact: true })).toBeVisible();
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.getUserMediaCalls).toBe(0);
+  expect(snapshot.recorderStarts).toHaveLength(0);
+  expect(snapshot.cues[0]).toMatchObject({ kind: "static", volume: 0.28 });
+});
+
+test("an unreadable consent state fails closed without touching the microphone", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "consent-error");
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  expect((await mediaSnapshot(page)).getUserMediaCalls).toBe(0);
+});
+
+test("a malformed successful consent response still fails closed", async ({ page }) => {
+  await openParrotLesson(page, "malformed-consent");
+  await startLesson(page);
+
+  const prompt = joinInPrompt(page, "It is up high!");
+  await expect(prompt).toBeVisible();
+  await expect(prompt.getByText("Voices are joining in", { exact: true })).toBeVisible();
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.getUserMediaCalls).toBe(0);
+  expect(snapshot.recorderStarts).toHaveLength(0);
+});
+
+test("denied preflight shows one calm note and continues cue-only", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-cue", "denied");
+  await startLesson(page);
+
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  const help = page.getByRole("status", { name: "Speaking help" });
+  await expect(
+    help.getByText("The microphone is unavailable, but the story will keep going."),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("alert")
+      .getByText("The microphone is unavailable, but the story will keep going."),
+  ).toHaveCount(0);
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.getUserMediaCalls).toBe(1);
+  expect(snapshot.recorderStarts).toHaveLength(0);
+  expect(snapshot.uploads).toHaveLength(0);
+});
+
+test("a later beat microphone failure disables only future captures", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-later-mic-failure");
+  await startLesson(page);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).uploads.length)
     .toBe(1);
-  await controls.getByRole("button", { name: "Pause lesson" }).click();
-  await expect(
-    controls.getByRole("button", { name: "Resume lesson" }),
-  ).toBeVisible();
-  await expect(page.getByText("Look! My ball!", { exact: true })).toBeVisible();
-
-  await controls.getByRole("button", { name: "Resume lesson" }).click();
-  await expect(
-    controls.getByRole("button", { name: "Pause lesson" }),
-  ).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as Window & { __lessonAudioCreations?: number })
-            .__lessonAudioCreations ?? 0,
-      ),
-    )
-    .toBe(1);
-  await controls.getByRole("button", { name: "Next scene" }).click();
-  await expect(page).toHaveURL(/\/scenes\/2$/);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toContainText("Peppa Cannot Reach");
-
-  await controls.getByRole("button", { name: "Previous scene" }).click();
-  await expect(page).toHaveURL(/\/scenes\/1$/);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toContainText("The Ball Up High");
-});
-
-test("Skip advances past the learner line without evaluation", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(lessonPath);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  await waitForLearnerTurn(page);
-
-  await page.getByRole("button", { name: "Skip speaking turn" }).click();
-
-  await expect(page).toHaveURL(/\/scenes\/2$/);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toContainText("Peppa Cannot Reach");
-  await expect(
-    page.getByRole("region", { name: "Speaking feedback" }),
-  ).toBeHidden();
-});
-
-test("narration is distinct from character speech", async ({ page }) => {
-  await page.goto(lessonPath);
-  await installAudioDelay(page, 50, {
-    delayMs: 5_000,
-    source: "narrator-copy-dolly",
-  });
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  const narration = page.getByRole("status", { name: "Lesson narration" });
-  await expect(narration).toContainText("Let's copy Dolly!", {
-    timeout: 3_000,
-  });
-  await expect(narration).toContainText("Story");
-});
-
-test("checking and feedback replace the speaking action", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(lessonPath);
-  await installAudioDelay(page, 10);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-
-  await microphone.click();
-  await expect(microphone).toContainText("Tap when done");
-  await expect(microphone).toHaveAccessibleName("Tap when done");
-  await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
-
-  await microphone.click();
-  await expect(
-    page.getByRole("status").filter({ hasText: "Checking your words…" }),
-  ).toBeVisible();
-  await expect(microphone).toBeHidden();
-
-  const feedback = page.getByRole("region", { name: "Speaking feedback" });
-  const speakingControls = page.getByRole("navigation", {
-    name: "Speaking controls",
-  });
-  await expect(feedback).toContainText("You did it!", { timeout: 3_000 });
-  await expect(feedback).toContainText("Great job!");
-  await expect(speakingControls).toBeHidden();
-  await page.waitForTimeout(800);
-  await expect(feedback).toBeVisible();
-  await expect(feedback).toBeHidden({ timeout: 3_000 });
-  await expect(page).toHaveURL(/\/scenes\/2$/);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toContainText("Peppa Cannot Reach");
-});
-
-test("retry feedback uses universal, name-free copy", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${lessonPath}?parrotE2eScenario=incorrect`);
-  await installAudioDelay(page, 10, {
-    delayMs: 15_000,
-    source: "narrator-feedback-retry.mp3",
-  });
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-
-  await microphone.click();
-  await microphone.click();
-
-  const feedback = page.getByRole("region", { name: "Speaking feedback" });
-  await expect(feedback).toContainText("Try once more", { timeout: 3_000 });
-  await expect(feedback).toContainText("Almost! Try again.");
-  await expect(feedback).not.toContainText("Bella");
-});
-
-test("microphone setup keeps one immediate focused action and blocks every duplicate activation", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-  const controls = page.getByRole("navigation", { name: "Speaking controls" });
-  const skip = controls.getByRole("button", { name: "Skip speaking turn" });
-  const prompt = page.getByRole("region", { name: "Your turn" });
-  const initialBox = await visibleBox(microphone);
-  await microphone.focus();
-  await rememberMicrophoneNode(microphone);
-  await observeMicrophonePendingFeedback(microphone);
-
-  await controls.getByRole("button").evaluateAll((buttons) => {
-    const [microphoneButton, skipButton] = buttons as HTMLButtonElement[];
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      microphoneButton.click();
-    }
-    skipButton.click();
-  });
-
-  const pending = controls.getByRole("button", { name: "Opening mic…" });
-  await expect(pending).toHaveAttribute("aria-disabled", "true");
-  await expect(pending).not.toHaveAttribute("disabled", "");
-  await expect(pending).not.toHaveAttribute("aria-busy", /.+/);
-  await expect(pending).not.toHaveAttribute("aria-pressed", /.+/);
-  await expect(pending).toHaveCSS("opacity", "1");
-  await expect(pending).toBeFocused();
-  await expectRememberedMicrophoneNode(pending);
-  await expect(skip).toBeDisabled();
-  await expect(prompt).toContainText("Your turn");
-  await expect(prompt).not.toContainText("Opening mic");
-  await expect(page.getByText(/Opening mic/)).toHaveCount(1);
-  await expectAnimationCount(prompt, 0);
-  await expectAnimationCount(pending, 1);
-  await expectAnimationCount(page.getByRole("main"), 1);
-  expectSameControlSlot(initialBox, await visibleBox(pending));
-  await expectFocusPaintContained(pending, { width: 390, height: 844 }, skip);
-  await expectImmediateMicrophoneFeedback(page);
-  await expect(page).toHaveURL(/\/scenes\/1\?parrotE2eMicrophone=delayed$/);
-  await expect
-    .poll(() => readLessonMicrophoneController(page))
-    .toEqual({
-      pending: 1,
-      rejected: 0,
-      requests: 1,
-      resolved: 0,
-      stoppedTracks: 0,
-    });
-
-  await pending.press("Enter");
-  await pending.press("Space");
-  await pending.evaluate((button: HTMLButtonElement) => {
-    button.click();
-  });
-  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-    pending: 1,
-    requests: 1,
-  });
-  await expect(pending).toBeFocused();
-
-  await settleLessonMicrophone(page, "resolve");
-  const recording = controls.getByRole("button", { name: "Tap when done" });
-  await expect(recording).toBeFocused();
-  await expectRememberedMicrophoneNode(recording);
-  await expect(recording).not.toHaveAttribute("aria-disabled", /.+/);
-  await expect(recording).not.toHaveAttribute("aria-pressed", /.+/);
-  expectSameControlSlot(initialBox, await visibleBox(recording));
-  await expect(prompt).toContainText("Listening");
-  await recording.click();
-  await expect
-    .poll(() => readLessonMicrophoneController(page))
-    .toMatchObject({ stoppedTracks: 1 });
-});
-
-test("a rejected microphone request reactivates the same focused retry", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 280, height: 568 });
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  const microphone = await waitForLearnerTurn(page);
-  const lessonUpdates = page.getByRole("status", { name: "Lesson updates" });
-  const lessonContext = await lessonUpdates.textContent();
-  await microphone.focus();
-  await rememberMicrophoneNode(microphone);
-  await microphone.click();
-  const pending = page.getByRole("button", { name: "Opening mic…" });
-  await expect(pending).toBeFocused();
-
-  await settleLessonMicrophone(page, "reject");
-  const controls = page.getByRole("navigation", { name: "Speaking controls" });
-  const retry = controls.getByRole("button", { name: "Try mic" });
-  await expect(retry).toBeVisible();
-  await expect(retry).toBeFocused();
-  await expectRememberedMicrophoneNode(retry);
-  await expect(retry).not.toHaveAttribute("disabled", "");
-  await expect(retry).not.toHaveAttribute("aria-disabled", /.+/);
-  await expect(retry).not.toHaveAttribute("aria-busy", /.+/);
-  await expect(retry).not.toHaveAttribute("aria-pressed", /.+/);
-  await expect(
-    page.getByRole("region", { name: "Speaking help" }),
-  ).toContainText("The mic is off. Say the words. Then tap Done.");
-  await expect(
-    page.getByRole("status", { name: "Speaking updates" }),
-  ).toContainText("The mic is off. Say the words. Then tap Done.");
-  await expect(lessonUpdates).toHaveText(lessonContext ?? "");
-  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-    pending: 0,
-    rejected: 1,
-    requests: 1,
-  });
-
-  await retry.click();
-  await expect(
-    controls.getByRole("button", { name: "Opening mic…" }),
-  ).toHaveAttribute("aria-disabled", "true");
-  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-    pending: 1,
-    requests: 2,
-  });
-  await expect(
-    page.getByRole("status", { name: "Speaking updates" }),
-  ).toHaveText("");
-  await expect(lessonUpdates).toHaveText(lessonContext ?? "");
-  await settleLessonMicrophone(page, "reject");
-});
-
-test("a microphone failure is announced without stealing moved focus", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  const microphone = await waitForLearnerTurn(page);
-  const lessonUpdates = page.getByRole("status", { name: "Lesson updates" });
-  const speakingUpdates = page.getByRole("status", {
-    name: "Speaking updates",
-  });
-  await expect(speakingUpdates).toBeAttached();
-  await expect(speakingUpdates).toHaveText("");
-  await expect(lessonUpdates).toContainText("Your turn. Say: It is up high!");
-  await expect(lessonUpdates).not.toContainText("Tap the microphone");
-  const lessonContext = await lessonUpdates.textContent();
-  await microphone.click();
+  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+  await expect.poll(async () => (await microphoneSnapshot(page)).pending).toBe(1);
   const back = page.getByRole("button", { name: "Back to lesson list" });
   await back.focus();
-  await expect(back).toBeFocused();
-
-  await settleLessonMicrophone(page, "reject");
-  await expect(back).toBeFocused();
+  await controlLessonMicrophone(page, "rejectNext");
   await expect(
-    page.getByRole("region", { name: "Speaking help" }),
-  ).toContainText("The mic is off. Say the words. Then tap Done.");
-  await expect(speakingUpdates).toContainText(
-    "The mic is off. Say the words. Then tap Done.",
-  );
-  await expect(lessonUpdates).toHaveText(lessonContext ?? "");
-});
-
-test("a late microphone resolution after leaving stops its media track", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  await (await waitForLearnerTurn(page)).click();
-  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-    pending: 1,
-    requests: 1,
-  });
-
-  await page.getByRole("button", { name: "Back to lesson list" }).click();
-  await expect(
-    page.getByRole("link", { name: "Start lesson: Peppa's High Ball" }),
+    page
+      .getByRole("status", { name: "Speaking help" })
+      .getByText("The microphone is unavailable, but the story will keep going."),
   ).toBeVisible();
-  await settleLessonMicrophone(page, "resolve");
+  await expect(back).toBeFocused();
+  await expect(joinInPrompt(page, "Can you help me, please?")).toBeVisible();
 
-  await expect
-    .poll(() => readLessonMicrophoneController(page))
-    .toEqual({
-      pending: 0,
-      rejected: 0,
-      requests: 1,
-      resolved: 1,
-      stoppedTracks: 1,
-    });
-  await expect(page.getByRole("button", { name: "Tap when done" })).toHaveCount(
-    0,
-  );
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.getUserMediaCalls).toBe(3);
+  expect(snapshot.recorderStarts).toHaveLength(1);
+  expect(snapshot.uploads).toHaveLength(1);
 });
 
-test("an old microphone rejection cannot clear a newer pending lesson request", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const oldMicrophone = await waitForLearnerTurn(page);
-  await oldMicrophone.click();
-  await expect(
-    page.getByRole("button", { name: "Opening mic…" }),
-  ).toHaveAttribute("aria-disabled", "true");
-
-  await page.getByRole("button", { name: "Back to lesson list" }).click();
-  const lessonLink = page.getByRole("link", {
-    name: "Start lesson: Peppa's High Ball",
-  });
-  await expect(lessonLink).toBeVisible();
-  await lessonLink.click();
-  await expect(
-    page.getByRole("button", { name: "Start lesson" }),
-  ).toBeVisible();
-  await page.evaluate(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("parrotE2eMicrophone", "delayed");
-    window.history.replaceState(window.history.state, "", url);
-  });
-
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const currentMicrophone = await waitForLearnerTurn(page);
-  await currentMicrophone.focus();
-  await rememberMicrophoneNode(currentMicrophone);
-  await currentMicrophone.click();
-  const currentPending = page.getByRole("button", { name: "Opening mic…" });
-  await expect(currentPending).toBeFocused();
-  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-    pending: 2,
-    requests: 2,
-  });
-
-  await settleLessonMicrophone(page, "reject");
-  await expect(currentPending).toHaveAttribute("aria-disabled", "true");
-  await expect(currentPending).toBeFocused();
-  await expectRememberedMicrophoneNode(currentPending);
-  await expect(page).toHaveURL(/\/scenes\/1\?parrotE2eMicrophone=delayed$/);
-  await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-    pending: 1,
-    rejected: 1,
-    requests: 2,
-  });
-
-  await settleLessonMicrophone(page, "resolve");
-  const recording = page.getByRole("button", { name: "Tap when done" });
-  await expect(recording).toBeFocused();
-  await expectRememberedMicrophoneNode(recording);
-});
-
-for (const key of ["Enter", "Space"] as const) {
-  test(`${key} starts exactly one focused microphone request`, async ({
+for (const outcome of ["rejectNext", "resolveNext"] as const) {
+  test(`a ${outcome === "rejectNext" ? "rejected" : "resolved"} cancelled preflight cannot affect the routed scene`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-    await page.getByRole("button", { name: "Start lesson" }).click();
-    const microphone = await waitForLearnerTurn(page);
-    await microphone.focus();
-    await rememberMicrophoneNode(microphone);
+    await openSceneOneWithSceneTwoBehind(page, "held-preflight");
+    await startLesson(page);
+    await expect.poll(async () => (await microphoneSnapshot(page)).pending).toBe(1);
 
-    await microphone.press(key);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/scenes\/2/);
+    const nextStart = page.getByRole("button", { exact: true, name: "Let's go" });
+    await expect(nextStart).toBeFocused();
+    await nextStart.click();
+    await expect.poll(async () => (await mediaSnapshot(page)).getUserMediaCalls).toBe(2);
+    await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+    await controlLessonMicrophone(page, outcome);
+    await expect.poll(async () => (await microphoneSnapshot(page)).pending).toBe(0);
 
-    const pending = page.getByRole("button", { name: "Opening mic…" });
-    await expect(pending).toBeFocused();
-    await expectRememberedMicrophoneNode(pending);
-    await expect(readLessonMicrophoneController(page)).resolves.toMatchObject({
-      pending: 1,
-      requests: 1,
-    });
-    await settleLessonMicrophone(page, "reject");
-  });
-}
-
-test("microphone pending feedback has no running motion when reduced motion is requested", async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=delayed`);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-
-  await microphone.focus();
-  await microphone.click();
-  const pending = page.getByRole("button", { name: "Opening mic…" });
-  await expect(pending).toHaveAttribute("aria-disabled", "true");
-  await expect(pending).toBeFocused();
-  await expectAnimationCount(page.getByRole("main"), 0);
-});
-
-for (const presentation of ["boxed", "layered"] as const) {
-  for (const viewport of microphoneViewports) {
-    test(`${presentation} microphone pending action stays stable on a ${viewport.name}`, async ({
-      page,
-    }) => {
-      await page.setViewportSize(viewport);
-      if (presentation === "layered") await mockLongDialogueLesson(page);
-      const route =
-        presentation === "boxed"
-          ? lessonPath
-          : "/lessons/my/long-dialogue/scenes/1";
-      await page.goto(`${route}?parrotE2eMicrophone=delayed`);
-      await page.getByRole("button", { name: "Start lesson" }).click();
-
-      const microphone = await waitForLearnerTurn(page);
-      const prompt = page.getByRole("region", { name: "Your turn" });
-      const controls = page.getByRole("navigation", {
-        name: "Speaking controls",
-      });
-      const initialBox = await visibleBox(microphone);
-      await microphone.focus();
-      await microphone.click();
-
-      const pending = controls.getByRole("button", { name: "Opening mic…" });
-      const skip = controls.getByRole("button", {
-        name: "Skip speaking turn",
-      });
-      await expect(pending).toBeFocused();
-      await expect(pending).toHaveAttribute("aria-disabled", "true");
-      await expect(prompt).toContainText("Your turn");
-      await expect(prompt).not.toContainText("Opening mic");
-      await expect(page.getByText(/Opening mic/)).toHaveCount(1);
-      await expectAnimationCount(pending, 1);
-      expectSameControlSlot(initialBox, await visibleBox(pending));
-      await expectFocusPaintContained(pending, viewport, skip);
-      await expectInsideViewport(prompt, viewport);
-      await expectInsideViewport(controls, viewport);
-      await expectNoOverlap(prompt, controls);
-      await expectNoPageOverflow(page);
-      await expect(readLessonMicrophoneController(page)).resolves.toMatchObject(
-        {
-          pending: 1,
-          requests: 1,
-        },
-      );
-    });
-  }
-}
-
-test("completion becomes a focused end screen and replay restarts the story", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto(lessonPath);
-  await installAudioDelay(page, 10);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-
-  for (let turn = 0; turn < 6; turn += 1) {
-    const microphone = await waitForLearnerTurn(page);
-    await microphone.click();
-    await expect(microphone).toHaveAccessibleName("Tap when done");
-    await expect(microphone).not.toHaveAttribute("aria-pressed", /.+/);
-    await microphone.click();
-    if (turn === 0) {
-      await expect(page).toHaveURL(/\/scenes\/2$/, { timeout: 4_000 });
-    }
-  }
-
-  const completion = page.getByRole("region", { name: "Lesson completion" });
-  await expect(completion).toContainText("Lesson complete!", {
-    timeout: 5_000,
-  });
-  await expect(completion).toContainText("You finished Peppa's High Ball!");
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toBeHidden();
-  await expect(
-    page.getByRole("navigation", { name: "Speaking controls" }),
-  ).toBeHidden();
-  await expect(page.getByAltText(/Peppa/)).toBeHidden();
-  await expect(page.getByText("Great job!", { exact: true })).toBeHidden();
-
-  await installAudioDelay(page, 2_000);
-  const audioCreationsBeforeReplay = await page.evaluate(
-    () =>
-      (window as Window & { __lessonAudioCreations?: number })
-        .__lessonAudioCreations ?? 0,
-  );
-  await page.evaluate(() => {
-    const decode = HTMLImageElement.prototype.decode;
-    Object.defineProperty(HTMLImageElement.prototype, "decode", {
-      configurable: true,
-      value(this: HTMLImageElement) {
-        if (this.src.endsWith("01-ball-up-high.webp")) {
-          return new Promise<void>(() => undefined);
-        }
-        return decode.call(this);
-      },
-    });
-  });
-  await completion.getByRole("button", { name: "Replay lesson" }).click();
-  await expect(completion).toBeHidden();
-  await expect(page).toHaveURL(/\/scenes\/1$/);
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (window as Window & { __lessonAudioCreations?: number })
-            .__lessonAudioCreations ?? 0,
-      ),
-    )
-    .toBe(audioCreationsBeforeReplay + 1);
-  await expect(
-    page.getByRole("region", { name: "Lesson progress" }),
-  ).toBeVisible();
-  await expect(page.getByText("Look! My ball!", { exact: true })).toBeVisible();
-});
-
-for (const viewport of viewports) {
-  test(`long learner dialogue stays readable on a ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await mockLongDialogueLesson(page);
-    await page.goto("/lessons/my/long-dialogue/scenes/1");
-    await page.getByRole("button", { name: "Start lesson" }).click();
-
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const prompt = page.getByRole("region", { name: "Your turn" });
-    const phrase = prompt.getByText(longDialogue, { exact: true });
-    const peppa = page.getByAltText(/Peppa/);
-    const dolly = page.getByAltText(/Dolly/);
-    const controls = page.getByRole("navigation", {
-      name: "Speaking controls",
-    });
-
-    await expectInsideViewport(prompt, viewport);
-    await expectInsideViewport(phrase, viewport);
-    await expectBefore(hud, prompt);
-    if (usesLayeredLearningPane(viewport)) {
-      await expectLeftOf(peppa, prompt);
-      await expectLeftOf(dolly, prompt);
-      await expectLeftOf(peppa, controls);
-      await expectLeftOf(dolly, controls);
-      await expectNoOverlap(peppa, prompt);
-      await expectNoOverlap(dolly, prompt);
-      await expectNoOverlap(peppa, controls);
-      await expectNoOverlap(dolly, controls);
-    } else {
-      await expectBefore(prompt, peppa);
-      await expectBefore(prompt, dolly);
-      await expectBefore(peppa, controls);
-      await expectBefore(dolly, controls);
-    }
-    await expectNoPageOverflow(page);
-    if (usesLayeredLearningPane(viewport)) {
-      await expectLongTextReachable(phrase);
-    } else {
-      await expect
-        .poll(() =>
-          prompt.evaluate(
-            (element) => element.scrollHeight <= element.clientHeight,
-          ),
-        )
-        .toBe(true);
+    await expect(page.getByRole("status", { name: "Speaking help" })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/scenes\/2/);
+    await controlLessonMedia(page, "releaseNextCue");
+    await expect
+      .poll(async () => (await mediaSnapshot(page)).uploads[0]?.sceneIndex)
+      .toBe(1);
+    const microphone = await microphoneSnapshot(page);
+    expect(microphone.requests).toBe(1);
+    if (outcome === "resolveNext") {
+      expect(microphone.stoppedTracks).toBe(1);
     }
   });
 }
 
-test("a denied microphone offers calm unscored practice on a narrow phone", async ({
-  page,
-}) => {
-  const viewport = { width: 280, height: 568 };
-  await page.setViewportSize(viewport);
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=denied`);
+test("My Lessons use the exact on-device guide at quiet volume", async ({ page }) => {
+  await openMyLesson(page, "device-no-consent");
+  await startLesson(page);
+  await expect(joinInPrompt(page, "Red kite!")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-  await microphone.click();
-
-  const artwork = page.getByRole("region", { name: "Lesson artwork" });
-  const hud = page.getByRole("region", { name: "Lesson progress" });
-  const prompt = page.getByRole("region", { name: "Your turn" });
-  const help = page.getByRole("region", { name: "Speaking help" });
-  const controls = page.getByRole("navigation", {
-    name: "Speaking controls",
-  });
-  const done = controls.getByRole("button", { name: "Done with speaking" });
-  const retry = controls.getByRole("button", {
-    name: "Try mic",
-  });
-  await expect(help).toContainText(
-    "The mic is off. Say the words. Then tap Done.",
-  );
-  const updates = page.getByRole("status", { name: "Lesson updates" });
-  await expect(updates).not.toContainText("Tap the microphone");
-  await expect(page.getByText(/allow microphone access/i)).toHaveCount(0);
-  await expect(done).toContainText("Done");
-  await expect(retry).toContainText("Try mic");
-  await expectInsideViewport(artwork, viewport);
-  await expectInsideViewport(hud, viewport);
-  await expectInsideViewport(prompt, viewport);
-  await expectInsideViewport(help, viewport);
-  for (const surface of [hud, prompt, help, controls]) {
-    await expectNoOverlap(artwork, surface);
-  }
-  for (const [index, surface] of [hud, prompt, help, controls].entries()) {
-    for (const nextSurface of [hud, prompt, help, controls].slice(index + 1)) {
-      await expectNoOverlap(surface, nextSurface);
-    }
-  }
-  const [doneBox, retryBox] = await Promise.all([
-    expectInsideViewport(done, viewport),
-    expectInsideViewport(retry, viewport),
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.getUserMediaCalls).toBe(0);
+  expect(snapshot.cues).toMatchObject([
+    { kind: "device", text: "Red kite!", volume: 0.28 },
   ]);
-  expect(doneBox.width).toBeGreaterThanOrEqual(44);
-  expect(doneBox.height).toBeGreaterThanOrEqual(44);
-  expect(retryBox.width).toBeGreaterThanOrEqual(44);
-  expect(retryBox.height).toBeGreaterThanOrEqual(44);
-  await expectBefore(help, controls);
-  await expectNoPageOverflow(page);
-
-  await done.click();
-  await expect(page).toHaveURL(/\/scenes\/2$/);
-  await expect(
-    page.getByRole("region", { name: "Speaking feedback" }),
-  ).toBeHidden();
 });
 
-test("desktop microphone help becomes one compact recovery panel", async ({
+test("cue failure discards partial capture, holds the phrase for 700ms, and advances", async ({
   page,
 }) => {
-  const viewport = { width: 1440, height: 900 };
-  await page.setViewportSize(viewport);
-  await page.goto(`${lessonPath}?parrotE2eMicrophone=denied`);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-  await microphone.click();
+  const clockStartedAt = Date.parse("2026-08-26T08:00:00.000Z");
+  await page.clock.install({ time: clockStartedAt });
+  await openParrotLesson(page, "held-cue");
+  await startLesson(page);
+  await page.clock.runFor(450);
+  const prompt = joinInPrompt(page, "It is up high!");
+  await expect(prompt).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
 
-  const artwork = page.getByRole("region", { name: "Lesson artwork" });
-  const learningPanel = page.getByRole("region", {
-    name: "Lesson words and controls",
-  });
-  const hud = page.getByRole("region", { name: "Lesson progress" });
-  const prompt = page.getByRole("region", { name: "Your turn" });
-  const help = page.getByRole("region", { name: "Speaking help" });
-  const controls = page.getByRole("navigation", {
-    name: "Speaking controls",
-  });
-  const artworkBox = await expectInsideViewport(artwork, viewport);
-  const panelBox = await expectInsideViewport(learningPanel, viewport);
+  await page.clock.pauseAt(clockStartedAt + 10_000);
+  await controlLessonMedia(page, "failNextCue");
+  await page.clock.runFor(699);
+  await expect(prompt).toBeVisible();
+  await expect(page).toHaveURL(/\/scenes\/1/);
 
-  expect(artworkBox.width).toBeGreaterThanOrEqual(viewport.width * 0.68);
-  expect(artworkBox.width / artworkBox.height).toBeCloseTo(16 / 9, 1);
-  expect(panelBox.height).toBeLessThanOrEqual(artworkBox.height * 0.8);
-  await expectLeftOf(artwork, learningPanel);
-  await expectNoOverlap(artwork, learningPanel);
-  for (const surface of [hud, prompt, help, controls]) {
-    await expectContainedBy(surface, learningPanel);
-  }
-  for (const [index, surface] of [hud, prompt, help, controls].entries()) {
-    for (const nextSurface of [hud, prompt, help, controls].slice(index + 1)) {
-      await expectNoOverlap(surface, nextSurface);
-    }
-  }
-  for (const button of await controls.getByRole("button").all()) {
-    const box = await expectInsideViewport(button, viewport);
-    expect(box.width).toBeGreaterThanOrEqual(44);
-    expect(box.height).toBeGreaterThanOrEqual(44);
-  }
-  await expectNoPageOverflow(page);
+  await page.clock.runFor(1);
+  await expect(page).toHaveURL(/\/scenes\/2/);
+
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.recorderStarts).toHaveLength(1);
+  expect(snapshot.uploads).toHaveLength(0);
 });
 
-test("a boxed sound error stays clear in short landscape", async ({ page }) => {
-  const viewport = { width: 640, height: 360 };
-  await page.setViewportSize(viewport);
-  await page.goto(lessonPath);
-  await installAudioFailure(page);
-  await page.getByRole("button", { name: "Start lesson" }).click();
+test("pausing a join-in cancels it and resume starts the same beat cleanly", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-cue");
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
 
-  const artwork = page.getByRole("region", { name: "Lesson artwork" });
-  const hud = page.getByRole("region", { name: "Lesson progress" });
-  const speech = page.getByRole("status").filter({
-    hasText: "Look! My ball!",
-  });
-  const notice = page.getByRole("alert").filter({
-    hasText: "The sound stopped.",
-  });
-  const controls = page.getByRole("navigation", {
-    name: "Lesson playback controls",
-  });
+  await page.getByRole("button", { name: "Pause lesson" }).click();
+  await expect(page.getByRole("button", { name: "Resume lesson" })).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
+  expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 
-  await expect(notice).toContainText(
-    "The sound stopped. Try it again or skip this sound.",
+  await page.getByRole("button", { name: "Resume lesson" }).click();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).recorderStarts.length)
+    .toBe(2);
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect.poll(async () => (await mediaSnapshot(page)).uploads.length).toBe(1);
+  expect((await mediaSnapshot(page)).uploads[0]).toMatchObject({
+    sceneIndex: 0,
+    stepIndex: 2,
+  });
+});
+
+test("next and previous navigation cancel only the unfinished visible capture", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-cue");
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+
+  await page.getByRole("button", { name: "Next scene" }).click();
+  await expect(page).toHaveURL(/\/scenes\/2/);
+  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
+  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+
+  await page.getByRole("button", { name: "Previous scene" }).click();
+  await expect(page).toHaveURL(/\/scenes\/1/);
+  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(2);
+  expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
+});
+
+test("Back cancels an unfinished cue without creating a recording", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-cue");
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+
+  await page.getByRole("button", { name: "Back to lesson list" }).click();
+  await expect(page).toHaveURL(/\/lessons$/);
+  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
+  expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
+});
+
+test("history POP cancels the current beat and restores an idle routed scene", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "held-cue-no-consent");
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await page.getByRole("button", { name: "Next scene" }).click();
+  await expect(page).toHaveURL(/\/scenes\/2/);
+  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/scenes\/1/);
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeFocused();
+  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(2);
+});
+
+test("ordinary story audio still pauses and resumes in place", async ({ page }) => {
+  await openParrotLesson(page, "held-story");
+  await startLesson(page);
+  await expect(page.getByRole("status", { name: "Peppa is speaking" })).toBeVisible();
+  await page.getByRole("button", { name: "Pause lesson" }).click();
+  await expect(page.getByRole("button", { name: "Resume lesson" })).toBeVisible();
+  await page.getByRole("button", { name: "Resume lesson" }).click();
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect(page.getByRole("status", { name: "Dolly is speaking" })).toBeVisible();
+});
+
+test("a held upload never blocks completion and reports neutral saving", async ({
+  page,
+}) => {
+  await openMyLesson(page, "upload-held");
+  await startLesson(page);
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(page.getByText("Saving your voices…", { exact: true })).toBeVisible();
+  expect((await mediaSnapshot(page)).pendingUploads).toBe(1);
+
+  await controlLessonMedia(page, "resolveNextUpload");
+  await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
+});
+
+test("completion focuses Replay and restarts without reloading consent", async ({
+  page,
+}) => {
+  await openMyLesson(page, "device-no-consent");
+  await startLesson(page);
+  const replay = page.getByRole("button", { name: "Replay lesson" });
+  await expect(replay).toBeFocused();
+  await replay.click();
+  await expect(joinInPrompt(page, "Red kite!")).toBeVisible();
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.consentRequests).toBe(1);
+  expect(snapshot.getUserMediaCalls).toBe(0);
+});
+
+test("failed background saving can be retried without repeating the line", async ({
+  page,
+}) => {
+  await openMyLesson(page, "upload-retry-held");
+  await startLesson(page);
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  const retry = page.getByRole("button", { name: "Try saving again" });
+  await expect(retry).toBeVisible();
+  expect((await mediaSnapshot(page)).uploads[0].outcome).toBe("failed");
+
+  await retry.click();
+  await expect(retry).toHaveCount(0);
+  const replay = page.getByRole("button", { name: "Replay lesson" });
+  await expect(page.getByText("Saving your voices…", { exact: true })).toBeVisible();
+  await expect(replay).toBeFocused();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(1);
+  await controlLessonMedia(page, "resolveNextUpload");
+  await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
+  await expect(replay).toBeFocused();
+  await expect.poll(async () => (await mediaSnapshot(page)).uploads.length).toBe(2);
+  expect((await mediaSnapshot(page)).uploads[1].outcome).toBe("saved");
+  await expect(page.getByText(/say it again|try the words again/i)).toHaveCount(0);
+});
+
+test("a completed blob keeps uploading after the lesson route exits", async ({
+  page,
+}) => {
+  await openMyLesson(page, "upload-held");
+  await startLesson(page);
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(1);
+
+  await page.getByRole("button", { name: "Back to lesson list" }).click();
+  await expect(page).toHaveURL(/\/lessons$/);
+  await controlLessonMedia(page, "resolveNextUpload");
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(0);
+  expect((await mediaSnapshot(page)).uploads[0].outcome).toBe("saved");
+});
+
+test("a server recording-disabled result prevents later microphone capture", async ({
+  page,
+}) => {
+  await openParrotLesson(page, "recording-disabled");
+  await startLesson(page);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).uploads[0]?.outcome)
+    .toBe("recording_disabled");
+  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.getUserMediaCalls).toBe(2);
+  expect(snapshot.recorderStarts).toHaveLength(1);
+});
+
+test("pending account deletion settles saving and disables later captures", async ({
+  page,
+}) => {
+  const twoBeatLesson = structuredClone(myLesson);
+  twoBeatLesson.scenes[0].steps.push(
+    {
+      dialogue: "The kite turns.",
+      emotes: { peppa: "listening" },
+      speaker: "narrator",
+    },
+    {
+      dialogue: "Green kite!",
+      emotes: { peppa: "listening" },
+      speaker: "user",
+    },
   );
-  await expectInsideViewport(artwork, viewport);
-  for (const surface of [hud, speech, notice, controls]) {
-    await expectInsideViewport(surface, viewport);
-    await expectLeftOf(artwork, surface);
-    await expectNoOverlap(artwork, surface);
-  }
-  for (const [index, surface] of [hud, speech, notice, controls].entries()) {
-    for (const nextSurface of [hud, speech, notice, controls].slice(index + 1)) {
-      await expectNoOverlap(surface, nextSurface);
-    }
-  }
-  for (const button of await notice.getByRole("button").all()) {
-    const buttonBox = await expectInsideViewport(button, viewport);
-    expect(buttonBox.width).toBeGreaterThanOrEqual(44);
-    expect(buttonBox.height).toBeGreaterThanOrEqual(44);
-  }
-  await expectNoPageOverflow(page);
+  await openMyLesson(page, "account-deletion-pending", {
+    id: "deletion-guide",
+    lesson: twoBeatLesson,
+  });
+  await startLesson(page);
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(0);
+  expect((await mediaSnapshot(page)).uploads[0]?.outcome).toBe(
+    "recording_disabled",
+  );
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.uploads).toMatchObject([
+    {
+      lessonId: "deletion-guide",
+      outcome: "recording_disabled",
+      sceneIndex: 0,
+      source: "my",
+      stepIndex: 0,
+    },
+  ]);
+  expect(snapshot.getUserMediaCalls).toBe(2);
+  expect(snapshot.recorderStarts).toHaveLength(1);
+  expect(snapshot.cues.map(({ text }) => text)).toEqual([
+    "Red kite!",
+    "The kite turns.",
+    "Green kite!",
+  ]);
+  await expect(page.getByRole("button", { name: "Try saving again" })).toHaveCount(0);
+  await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
+});
+
+test("a stale open My Lesson sends its loaded revision once and stops future capture", async ({
+  page,
+}) => {
+  const twoBeatLesson = structuredClone(myLesson);
+  twoBeatLesson.scenes[0].steps.push(
+    {
+      dialogue: "The kite turns.",
+      emotes: { peppa: "listening" },
+      speaker: "narrator",
+    },
+    {
+      dialogue: "Green kite!",
+      emotes: { peppa: "listening" },
+      speaker: "user",
+    },
+  );
+  await openMyLesson(page, "lesson-changed", {
+    id: "stale-guide",
+    lesson: twoBeatLesson,
+  });
+  await startLesson(page);
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  const afterConflict = await mediaSnapshot(page);
+  expect(afterConflict.uploads).toMatchObject([
+    {
+      lessonId: "stale-guide",
+      outcome: "lesson_changed",
+      revision: myLessonRevision,
+      sceneIndex: 0,
+      source: "my",
+      stepIndex: 0,
+    },
+  ]);
+
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  const completed = await mediaSnapshot(page);
+  expect(completed.recorderStarts).toHaveLength(1);
+  expect(completed.getUserMediaCalls).toBe(2);
+  expect(completed.uploads).toHaveLength(1);
+  await expect(page.getByRole("button", { name: "Try saving again" })).toHaveCount(0);
+});
+
+test("a recording stop failure discards only that clip and continues", async ({
+  page,
+}) => {
+  await openMyLesson(page, "stop-failure");
+  await startLesson(page);
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 });
 
 for (const viewport of [
-  { name: "portrait phone", width: 390, height: 844 },
-  { name: "vertical tablet", width: 768, height: 600 },
+  { name: "280x653 boundary", width: 280, height: 653 },
+  { name: "390x844 phone", width: 390, height: 844 },
+  { name: "667x375 short-wide", width: 667, height: 375 },
+  { name: "desktop", width: 1440, height: 900 },
 ]) {
-  test(`a generated lesson can finish without recording on a ${viewport.name}`, async ({
+  test(`lesson intro, join-in, and completion stay contained on ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await mockLongDialogueLesson(page);
-    await page.goto(
-      "/lessons/my/long-dialogue/scenes/1?parrotE2eMicrophone=unsupported",
-    );
-    await page.getByRole("button", { name: "Start lesson" }).click();
-    const microphone = await waitForLearnerTurn(page);
-    await microphone.click();
-
-    const prompt = page.getByRole("region", { name: "Your turn" });
-    const phrase = prompt.getByText(longDialogue, { exact: true });
-    const help = page.getByRole("region", { name: "Speaking help" });
-    const controls = page.getByRole("navigation", {
-      name: "Speaking controls",
+    await openParrotLesson(page, "held-cue-no-consent");
+    const intro = page.getByRole("region", { name: "Lesson introduction" });
+    const introHeading = intro.getByRole("heading", {
+      exact: true,
+      level: 1,
+      name: "Watch and join in",
     });
-    const done = controls.getByRole("button", { name: "Done with speaking" });
-    await expect(help).toContainText(
-      "No mic here. Say the words. Then tap Done.",
-    );
-    await expect(
-      controls.getByRole("button", { name: "Try mic" }),
-    ).toBeVisible();
+    const start = intro.getByRole("button", { exact: true, name: "Let's go" });
+    const account = page.getByRole("button", {
+      name: "Profile for Mia, learner mode",
+    });
+    const routeBack = page.getByRole("button", {
+      name: "Back to lesson list",
+    });
+    await expectInsideViewport(introHeading, viewport);
+    await expectInsideViewport(start, viewport);
+    await expect(start).toHaveAccessibleName("Let's go");
+    await expectInsideViewport(account, viewport);
+    await expectInsideViewport(routeBack, viewport);
+    await expectNoOverlap(introHeading, account);
+    await expectNoOverlap(introHeading, routeBack);
+    await expectNoOverlap(start, account);
+    await expectNoOverlap(start, routeBack);
+    await expectNoOverlap(account, routeBack);
+    await expectNoPageOverflow(page);
+    await startLesson(page);
+
+    const prompt = joinInPrompt(page, "It is up high!");
+    const joinInHeading = prompt.getByRole("heading", {
+      exact: true,
+      name: "Join in",
+    });
+    const phrase = prompt.getByText("It is up high!", { exact: true });
+    const status = prompt.getByRole("status");
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const artwork = page.getByRole("region", { name: "Lesson artwork" });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    await expect(joinInHeading).toBeVisible();
+    await expect(phrase).toBeVisible();
+    await expect(status).toHaveText("Voices are joining in");
+    await expectInsideViewport(artwork, viewport);
+    await expectInsideViewport(hud, viewport);
     await expectInsideViewport(prompt, viewport);
-    await expectInsideViewport(phrase, viewport);
-    await expectInsideViewport(help, viewport);
     await expectInsideViewport(controls, viewport);
-    await expectNoOverlap(prompt, help);
     await expectNoOverlap(prompt, controls);
-    await expectNoOverlap(help, controls);
-    for (const character of [
-      page.getByRole("img", { name: /^Peppa / }),
-      page.getByRole("img", { name: /^Dolly / }),
-    ]) {
-      await expectInsideViewport(character, viewport);
-      await expectNoOverlap(character, prompt);
-      await expectNoOverlap(character, help);
-      await expectNoOverlap(character, controls);
-    }
+    await expectNoOverlap(prompt, hud);
+    await expectNoOverlap(prompt, routeBack);
+    await expectNoOverlap(prompt, account);
+    await expectNoOverlap(artwork, routeBack);
+    await expectNoOverlap(artwork, account);
+    await expectNoOverlap(hud, routeBack);
+    await expectNoOverlap(hud, account);
+    await expectNoOverlap(controls, routeBack);
+    await expectNoOverlap(controls, account);
     await expectNoPageOverflow(page);
 
-    await done.click();
-    await expect(
-      page.getByRole("region", { name: "Lesson completion" }),
-    ).toContainText("Lesson complete!");
-    await expect(
-      page.getByRole("region", { name: "Speaking feedback" }),
-    ).toBeHidden();
+    await openMyLesson(page, "device-no-consent", {
+      id: `responsive-completion-${viewport.width}-${viewport.height}`,
+    });
+    await startLesson(page);
+
+    const completion = page.getByRole("region", { name: "Lesson completion" });
+    const completionHeading = completion.getByRole("heading", {
+      exact: true,
+      level: 1,
+      name: "Lesson complete!",
+    });
+    const replay = completion.getByRole("button", { name: "Replay lesson" });
+    const completionBack = completion.getByRole("button", {
+      exact: true,
+      name: "Back to lessons",
+    });
+    const completionStatus = page.getByRole("status", {
+      name: "Lesson updates",
+    });
+    await expectInsideViewport(completionHeading, viewport);
+    await expectInsideViewport(replay, viewport);
+    await expectInsideViewport(completionBack, viewport);
+    await expect(replay).toHaveAccessibleName("Replay lesson");
+    await expect(completionBack).toHaveAccessibleName("Back to lessons");
+    await expect(completionStatus).toHaveText("Lesson complete");
+    await expectNoOverlap(replay, completionBack);
+    await expectNoOverlap(replay, routeBack);
+    await expectNoOverlap(replay, account);
+    await expectNoOverlap(completionBack, routeBack);
+    await expectNoOverlap(completionBack, account);
+    await expectNoOverlap(account, routeBack);
+    await expectNoPageOverflow(page);
   });
 }
 
-test("generated fallback keeps long practice words clear in short landscape", async ({
-  page,
-}) => {
-  const viewport = { width: 640, height: 360 };
-  await page.setViewportSize(viewport);
-  await mockLongDialogueLesson(page);
-  await page.goto(
-    "/lessons/my/long-dialogue/scenes/1?parrotE2eMicrophone=unsupported",
-  );
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-  await microphone.click();
-
-  const prompt = page.getByRole("region", { name: "Your turn" });
-  const phrase = prompt.getByText(longDialogue, { exact: true });
-  const help = page.getByRole("region", { name: "Speaking help" });
-  const controls = page.getByRole("navigation", { name: "Speaking controls" });
-  const peppa = page.getByRole("img", { name: /^Peppa / });
-  const dolly = page.getByRole("img", { name: /^Dolly / });
-
-  await expectLongTextReachable(phrase);
-  await expectInsideViewport(prompt, viewport);
-  await expectInsideViewport(help, viewport);
-  await expectInsideViewport(controls, viewport);
-  await expectNoOverlap(prompt, help);
-  await expectNoOverlap(prompt, controls);
-  await expectNoOverlap(help, controls);
-  for (const character of [peppa, dolly]) {
-    await expectNoOverlap(character, help);
-    await expectNoOverlap(character, prompt);
-    await expectNoOverlap(character, controls);
-  }
-  await expectNoPageOverflow(page);
-
-  await controls.getByRole("button", { name: "Done with speaking" }).click();
-  await expect(
-    page.getByRole("region", { name: "Lesson completion" }),
-  ).toContainText("Lesson complete!");
-});
-
-test("a failed speech check preserves the turn and offers unscored progress", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.route("**/api/evaluate-speech", async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({ message: "Speech provider returned HTTP 503." }),
-      contentType: "application/json",
-      status: 503,
+for (const viewport of [
+  { name: "ultra-narrow", width: 280, height: 568 },
+  { name: "short landscape", width: 640, height: 360 },
+  { name: "compact landscape", width: 768, height: 481 },
+  { name: "compact", width: 768, height: 600 },
+  { name: "compact tall", width: 768, height: 807 },
+]) {
+  test(`long generated join-in stays reachable and layered at ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await openMyLesson(page, "held-cue-no-consent", {
+      id: `long-guide-${viewport.width}-${viewport.height}`,
+      lesson: longDialogueLesson,
     });
+    await startLesson(page);
+
+    const prompt = joinInPrompt(page, longDialogue);
+    const heading = prompt.getByRole("heading", { exact: true, name: "Join in" });
+    const phrase = prompt.getByText(longDialogue, { exact: true });
+    const status = prompt.getByRole("status");
+    const controls = page.getByRole("navigation", {
+      name: "Lesson playback controls",
+    });
+    const hud = page.getByRole("region", { name: "Lesson progress" });
+    const back = page.getByRole("button", { name: "Back to lesson list" });
+    const peppa = page.getByRole("img", { name: "Peppa" });
+    const dolly = page.getByRole("img", { name: "Dolly" });
+
+    await expect(heading).toBeVisible();
+    await expect(phrase).toBeVisible();
+    await expect(status).toHaveText("Voices are joining in");
+    await expectInsideViewport(prompt, viewport);
+    await expectInsideViewport(controls, viewport);
+    await expectInsideViewport(hud, viewport);
+    await expectInsideViewport(back, viewport);
+    await expectContainedBy(heading, prompt);
+    await expectContainedBy(phrase, prompt);
+    await expectContainedBy(status, prompt);
+    await expectLongTextReachable(phrase);
+
+    if (viewport.name === "compact") {
+      const centers = await heading.evaluate((element) => {
+        const promptRect = element.parentElement!.getBoundingClientRect();
+        const iconRect = element.querySelector("svg")!.getBoundingClientRect();
+        const textNode = [...element.childNodes].find(
+          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+        )!;
+        const textRange = document.createRange();
+        textRange.selectNodeContents(textNode);
+        const textRect = textRange.getBoundingClientRect();
+        return {
+          content: (Math.min(iconRect.left, textRect.left) +
+            Math.max(iconRect.right, textRect.right)) / 2,
+          prompt: promptRect.left + promptRect.width / 2,
+        };
+      });
+      expect(Math.abs(centers.content - centers.prompt)).toBeLessThanOrEqual(2);
+    }
+
+    const promptMetrics = await prompt.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(promptMetrics.scrollHeight).toBeLessThanOrEqual(
+      promptMetrics.clientHeight + 1,
+    );
+    for (const fixedPart of [heading, status]) {
+      const metrics = await fixedPart.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+      }));
+      expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
+      await expect(fixedPart).not.toHaveAttribute("tabindex", "0");
+    }
+
+    await expectNoOverlap(prompt, controls);
+    await expectNoOverlap(prompt, hud);
+    await expectNoOverlap(prompt, back);
+    await expectNoOverlap(prompt, peppa);
+    await expectNoOverlap(prompt, dolly);
+    await expectNoOverlap(controls, peppa);
+    await expectNoOverlap(controls, dolly);
+    await expectNoPageOverflow(page);
   });
-  await page.goto(lessonPath);
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const microphone = await waitForLearnerTurn(page);
-  await microphone.click();
-  await microphone.click();
-
-  const help = page.getByRole("region", { name: "Speaking help" });
-  await expect(help).toContainText(
-    "We could not check your words. Tap Done to keep going.",
-    { timeout: 3_000 },
-  );
-  await expect(page).toHaveURL(/\/scenes\/1$/);
-  await expect(page.getByText(/HTTP 503|Speech check failed/i)).toHaveCount(0);
-  await expect(
-    page.getByRole("region", { name: "Speaking feedback" }),
-  ).toBeHidden();
-
-  await page.getByRole("button", { name: "Done with speaking" }).click();
-  await expect(page).toHaveURL(/\/scenes\/2$/);
-  await expect(
-    page.getByRole("region", { name: "Speaking feedback" }),
-  ).toBeHidden();
-});
+}

@@ -458,10 +458,15 @@ test("learner lesson HUD excludes sign-out recovery controls", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
-  await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
-  await page.getByRole("button", { name: "Start lesson" }).click();
-  const speech = page.getByRole("region", { name: "Your turn" });
-  await expect(speech).toContainText("It is up high!");
+  await page.goto(
+    "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=held-cue-no-consent",
+  );
+  await page.getByRole("button", { exact: true, name: "Let's go" }).click();
+  const speech = page
+    .getByRole("region", { name: "Join in" })
+    .filter({ hasText: "It is up high!" });
+  await expect(speech.getByText("It is up high!", { exact: true })).toBeVisible();
+  await expect(speech.getByRole("status")).toHaveText("Voices are joining in");
   await waitForVisualAssets(page);
   await applyTextSpacing(page);
 

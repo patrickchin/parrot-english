@@ -115,6 +115,9 @@ const focusScenarios: Array<{
     name: "image-adjacent lesson player",
     prepare: async (page) => {
       await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
+      await expect(
+        page.getByRole("button", { exact: true, name: "Let's go" }),
+      ).toBeFocused();
       return page.getByRole("button", { name: "Back to lesson list" });
     },
     viewport: { height: 900, width: 1440 },

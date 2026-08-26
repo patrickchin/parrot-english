@@ -77,6 +77,12 @@ function createCompatibilityHistory(context, { includeEnableMigration = true } =
       2,
     )}\n`,
   );
+  const expansionSha = commitAll(root, "expansion");
+  writeRepoFile(
+    root,
+    "migrations/0014_personalized_art_deletion_closure.sql",
+    "-- durable candidate closure migration\n",
+  );
   const compatibilitySha = commitAll(root, "compatibility");
 
   let headSha = compatibilitySha;
@@ -102,7 +108,14 @@ function createCompatibilityHistory(context, { includeEnableMigration = true } =
     headSha = commitAll(root, "enable");
   }
 
-  return { root, compatibilitySha, foreignSha, headSha, initialSha };
+  return {
+    root,
+    compatibilitySha,
+    expansionSha,
+    foreignSha,
+    headSha,
+    initialSha,
+  };
 }
 
 function runCompatibilityGuard(cwd, env = {}) {
@@ -137,6 +150,19 @@ test("pull requests run one complete verification job including lifecycle tests"
   assert.match(workflow, /run: npm run build/);
   assert.doesNotMatch(workflow, /npm run test:lifecycle/);
   assert.equal((workflow.match(/^ {2}verify:/gm) ?? []).length, 1);
+});
+
+test("pull requests install FFmpeg before media integrity tests run", () => {
+  const workflow = readFileSync(verificationUrl, "utf8");
+  const installIndex = workflow.indexOf("name: Install FFmpeg");
+  const testIndex = workflow.indexOf("run: npm test");
+
+  assert.notEqual(installIndex, -1, "Expected FFmpeg installation in CI.");
+  assert.match(
+    workflow.slice(installIndex, testIndex),
+    /sudo apt-get install --yes ffmpeg/,
+  );
+  assert.ok(installIndex < testIndex, "Expected FFmpeg before npm test.");
 });
 
 test("main deployment does not repeat the pull-request verification sequence", () => {
@@ -215,6 +241,13 @@ test("compatibility guard enforces the rollback-floor invariants once the enable
       env: { [variableName]: repository.initialSha },
       expectedStatus: 1,
       expectedStderr: /must include migrations\/0012_multi_learner_expand\.sql/,
+    },
+    {
+      name: "ancestor without the guarded art-deletion closure",
+      env: { [variableName]: repository.expansionSha },
+      expectedStatus: 1,
+      expectedStderr:
+        /must include migrations\/0014_personalized_art_deletion_closure\.sql/,
     },
     {
       name: "enable commit reused as the compatibility release",

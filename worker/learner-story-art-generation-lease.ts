@@ -130,6 +130,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
     storyId: string,
     token: string,
     candidateR2ObjectKey: string,
+    accountDeletionTombstoneKey: string,
   ) {
     const updatedAt = now().getTime();
     const result = await database
@@ -138,7 +139,10 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         SET candidate_r2_object_key = ?, lease_expires_at = ?, updated_at = ?
         WHERE learner_profile_id = ? AND auth_user_id = ? AND story_id = ?
           AND generation_token = ? AND candidate_r2_object_key IS NULL
-          AND lease_expires_at > ?`,
+          AND lease_expires_at > ?
+          AND NOT EXISTS (
+            SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
+          )`,
       )
       .bind(
         candidateR2ObjectKey,
@@ -149,6 +153,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         storyId,
         token,
         updatedAt,
+        accountDeletionTombstoneKey,
       )
       .run();
     return changed(result);

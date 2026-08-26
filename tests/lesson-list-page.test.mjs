@@ -17,6 +17,9 @@ const vite = await createServer({
 });
 
 const { ApplicationRoutes } = await vite.ssrLoadModule("/src/app/App.tsx");
+const { LearnerProfileProvider } = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerProfileContext.tsx",
+);
 const { LESSONS } = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
 const { LessonList, LessonListView } = await vite.ssrLoadModule(
   "/src/lessons/LessonList.tsx",
@@ -35,6 +38,36 @@ function renderInRouter(element, initialEntry = "/lessons") {
 function renderLessonList() {
   assert.equal(typeof LessonList, "function", "Expected an executable LessonList");
   return renderInRouter(createElement(LessonList));
+}
+
+function renderApplicationRoutes(initialEntry) {
+  return renderInRouter(
+    createElement(
+      LearnerProfileProvider,
+      {
+        profile: {
+          id: "learner-mia",
+          age: 6,
+          answers: {
+            legacyAnswers: null,
+            questionnaireVersion: 2,
+            responses: {},
+            schemaVersion: 2,
+          },
+          completedAt: "2026-08-25T08:00:00.000Z",
+          currentQuestionKey: null,
+          description: "Likes animals",
+          name: "Mia",
+          profileStatus: "completed",
+          questionnaireVersion: 2,
+          storyLevel: "first-words",
+        },
+        replaceProfile() {},
+      },
+      createElement(ApplicationRoutes, { loginTarget: "/" }),
+    ),
+    initialEntry,
+  );
 }
 
 function getParrotLessonHrefs(html) {
@@ -208,6 +241,7 @@ test("saved lessons stay playable without custom-lesson management actions", () 
         {
           id: "lesson/id",
           lesson: createLessonScript({ title: "Editable Garden" }),
+          revision: "a".repeat(64),
           source: "uploaded",
         },
       ],
@@ -230,14 +264,13 @@ test("a canonical Parrot catalog href renders its directly matched lesson route"
   const [firstHref] = getParrotLessonHrefs(renderLessonList());
 
   assert.ok(firstHref, "Expected a canonical Parrot lesson link");
-  const html = renderInRouter(
-    createElement(ApplicationRoutes, { loginTarget: "/" }),
-    firstHref,
-  );
+  const html = renderApplicationRoutes(firstHref);
 
   assert.match(html, /Parrot English speaking lesson/);
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.doesNotMatch(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
-  assert.match(html, /aria-label="Start lesson"/);
+  assert.match(html, /Watch and join in/);
+  assert.match(html, /Loading picture…/);
+  assert.doesNotMatch(html, /aria-label="Start lesson"/);
   assert.match(html, />Back to lessons</);
 });

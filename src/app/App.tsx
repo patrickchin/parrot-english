@@ -13,6 +13,7 @@ import {
   useReducer,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import {
   matchPath,
@@ -25,6 +26,7 @@ import {
 } from "react-router";
 import {
   getLessonAudioLine,
+  getLessonJoinInAudioLine,
   getLessonSpeechLine,
 } from "../../lib/lesson-audio";
 import { getLessonProgressLabel } from "../../lib/lesson-progress";
@@ -86,7 +88,7 @@ import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
-import { evaluateSpeech } from "../lessons/evaluation-request";
+import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
   VISUAL_CATALOG,
   type Lesson,
@@ -104,25 +106,26 @@ import {
   LessonCharacters,
   LessonCompletion,
   LessonErrorBanner,
-  LessonFeedback,
   LessonHud,
   LessonIntroduction,
+  LessonJoinInPrompt,
   LessonPlaybackControls,
-  LessonSpeakingControls,
   LessonSpeech,
   LessonStage,
-  LessonUserPrompt,
 } from "../lessons/LessonPlayerUi";
 import { playDeviceSpeech } from "../media/device-speech";
 import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
-  MicrophoneAccessError,
-  RecordingUnsupportedError,
+  requestMicrophoneAccess,
   startSpeechRecording,
   type SpeechRecordingSession,
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
-import { finishSpeechOperation } from "../lessons/speech-operation";
+import {
+  loadLessonRecordingConsent,
+  saveLessonRecording,
+} from "../lessons/lesson-recording-api";
+import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
@@ -217,19 +220,14 @@ const DuckDub = import.meta.env.SSR
       })),
     );
 
-const RECORDING_UNSUPPORTED_MESSAGE =
-  "No mic here. Say the words. Then tap Done.";
-const MICROPHONE_ACCESS_MESSAGE =
-  "The mic is off. Say the words. Then tap Done.";
-const MICROPHONE_ERROR_MESSAGE =
-  "The mic did not work. Say the words. Then tap Done.";
-const SPEECH_CHECK_ERROR_MESSAGE =
-  "We could not check your words. Tap Done to keep going.";
+const JOIN_IN_TAIL_MS = 250;
+const JOIN_IN_FAILURE_DISPLAY_MS = 700;
+const MICROPHONE_NOTICE =
+  "The microphone is unavailable, but the story will keep going.";
 const LESSON_AUDIO_ERROR_MESSAGE =
   "The sound stopped. Try it again or skip this sound.";
-const MINIMUM_LESSON_FEEDBACK_MS = 1_500;
 
-type LessonEvent =
+export type LessonEvent =
   | { type: "PLAY_SCENE" }
   | { type: "PAUSE_SCENE" }
   | { type: "SCENE_PREVIOUS" }
@@ -237,31 +235,19 @@ type LessonEvent =
   | { type: "REPLAY_LESSON" }
   | { type: "SELECT_SCENE"; sceneIndex: number }
   | { type: "LINE_DONE" }
-  | { type: "MIC_STARTED" }
-  | { type: "MIC_RELEASED" }
-  | { type: "SKIP_USER" }
-  | { type: "RECORDING_CANCELLED" }
-  | {
-      type: "EVALUATED";
-      outcome: "correct" | "incorrect" | "noInput";
-      transcript: string;
-    }
-  | { type: "EVALUATION_FAILED" }
-  | { type: "RESPONSE_DONE" }
+  | { type: "JOIN_IN_DONE" }
   | { type: "RESET" };
 
 type LessonPlayerProps = {
-  audioMode: "device" | "static";
   fullSceneArtwork?: FullSceneImage[];
   lesson: Lesson;
+  lessonId: string;
+  lessonRevision?: string;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
-  promptPortrait?: {
-    alt: string;
-    src: string;
-  } | null;
   routedLocationKey: string;
   routedSceneIndex: number;
+  source: LessonSource;
 };
 
 type RegisterLessonRouteExitBarrier = (barrier: () => void) => () => void;
@@ -269,26 +255,18 @@ type RegisterLessonRouteExitBarrier = (barrier: () => void) => () => void;
 const LessonRouteExitBarrierContext =
   createContext<RegisterLessonRouteExitBarrier>(() => () => {});
 
-function getMicrophoneErrorMessage(caughtError: unknown) {
-  if (caughtError instanceof RecordingUnsupportedError) {
-    return RECORDING_UNSUPPORTED_MESSAGE;
-  }
-  if (caughtError instanceof MicrophoneAccessError) {
-    return MICROPHONE_ACCESS_MESSAGE;
-  }
-  return MICROPHONE_ERROR_MESSAGE;
-}
-
 export function LessonPlayer({
-  audioMode,
   fullSceneArtwork,
   lesson: currentLesson,
+  lessonId,
+  lessonRevision,
   onBack,
   onNavigateScene,
-  promptPortrait,
   routedLocationKey,
   routedSceneIndex,
+  source,
 }: LessonPlayerProps) {
+  const { profile: learnerProfile } = useLearnerProfile();
   const registerLessonRouteExitBarrier = useContext(
     LessonRouteExitBarrierContext,
   );
@@ -300,8 +278,8 @@ export function LessonPlayer({
     { ...createInitialLessonState(), sceneIndex: routedSceneIndex },
   );
   const [error, setError] = useState("");
-  const [speechFallback, setSpeechFallback] = useState("");
-  const [isStartingRecording, setIsStartingRecording] = useState(false);
+  const [microphoneNotice, setMicrophoneNotice] = useState("");
+  const [joinInRecording, setJoinInRecording] = useState(false);
   const [historyPopSequence, setHistoryPopSequence] = useState(0);
   const [audioRetrySequence, setAudioRetrySequence] = useState(0);
   const [decodedArtworkSources, setDecodedArtworkSources] = useState<
@@ -312,11 +290,14 @@ export function LessonPlayer({
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
+  const preflightControllerRef = useRef<AbortController | null>(null);
   const recordingRef = useRef<SpeechRecordingSession | null>(null);
-  const recordingControllerRef = useRef<AbortController | null>(null);
-  const evaluationControllerRef = useRef<AbortController | null>(null);
-  const recordingSequenceRef = useRef(0);
-  const recordingActiveRef = useRef(false);
+  const recordingPermissionRef = useRef(false);
+  const startPendingRef = useRef(false);
+  const consentPromiseRef = useRef<Promise<boolean> | null>(null);
+  const recordingQueueRef = useRef<
+    ReturnType<typeof createLessonRecordingQueue> | null
+  >(null);
   const startActionRef = useRef<HTMLButtonElement | null>(null);
   const routeActivityGuardRef = useRef(createLessonRouteActivityGuard());
   const routedSceneRef = useRef(routedSceneIndex);
@@ -329,6 +310,38 @@ export function LessonPlayer({
     event: LessonEvent;
     sceneIndex: number;
   } | null>(null);
+
+  if (!recordingQueueRef.current) {
+    recordingQueueRef.current = createLessonRecordingQueue({
+      save: async (blob, slot) => {
+        const result = await saveLessonRecording(blob, slot, {
+          expectedLearnerProfileId: learnerProfile.id,
+        });
+        if (!result.saved) recordingPermissionRef.current = false;
+        return result;
+      },
+    });
+  }
+  const recordingQueue = recordingQueueRef.current;
+  const recordingSnapshot = useSyncExternalStore(
+    recordingQueue.subscribe,
+    recordingQueue.snapshot,
+    recordingQueue.snapshot,
+  );
+
+  const loadConsentOnce = useCallback(() => {
+    if (!consentPromiseRef.current) {
+      consentPromiseRef.current = loadLessonRecordingConsent()
+        .then(({ enabled }) => enabled === true)
+        .catch(() => false);
+    }
+    return consentPromiseRef.current;
+  }, []);
+
+  useEffect(() => {
+    void loadConsentOnce();
+  }, [loadConsentOnce]);
+
   const handleArtworkDecoded = useCallback((src: string) => {
     setDecodedArtworkSources((decodedSources) => {
       if (decodedSources.has(src)) return decodedSources;
@@ -344,25 +357,25 @@ export function LessonPlayer({
   const handleArtworkRetry = useCallback((src: string) => {
     setFailedArtworkSrc((failedSrc) => (failedSrc === src ? "" : failedSrc));
   }, []);
+  const showMicrophoneNotice = useCallback(() => {
+    setMicrophoneNotice((current) => current || MICROPHONE_NOTICE);
+  }, []);
 
   useLayoutEffect(() => {
     stateRef.current = state;
   }, [state]);
 
   const cancelPendingWork = useCallback(() => {
-    setIsStartingRecording(false);
-    recordingActiveRef.current = false;
-    recordingSequenceRef.current += 1;
     playbackGenerationRef.current += 1;
+    startPendingRef.current = false;
+    preflightControllerRef.current?.abort();
+    preflightControllerRef.current = null;
     playbackControllerRef.current?.abort();
     playbackControllerRef.current = null;
     playbackControlRef.current = null;
-    recordingControllerRef.current?.abort();
-    recordingControllerRef.current = null;
     recordingRef.current?.cancel();
     recordingRef.current = null;
-    evaluationControllerRef.current?.abort();
-    evaluationControllerRef.current = null;
+    setJoinInRecording(false);
   }, []);
 
   const invalidateRouteActivity = useCallback(() => {
@@ -426,7 +439,6 @@ export function LessonPlayer({
       if (targetSceneIndex !== null) {
         invalidateRouteActivity();
         setError("");
-        setSpeechFallback("");
         pendingHistoryPopTokenRef.current = null;
         pendingRoutedEventRef.current = {
           event,
@@ -439,7 +451,6 @@ export function LessonPlayer({
       if (cancel) {
         cancelPendingWork();
         setError("");
-        setSpeechFallback("");
       }
       dispatch(event);
     },
@@ -471,7 +482,6 @@ export function LessonPlayer({
 
     cancelPendingWork();
     setError("");
-    setSpeechFallback("");
     dispatch(reconciliationEvent);
   }, [
     cancelPendingWork,
@@ -503,16 +513,14 @@ export function LessonPlayer({
     () => getLessonScenePresentation(state, currentLesson, VISUAL_CATALOG),
     [currentLesson, state],
   );
-  const progressLabel = getLessonProgressLabel(
-    state,
-    state.response ?? currentStep,
-  );
-  const playbackPhase =
+  const progressLabel = getLessonProgressLabel(state, currentStep);
+  const storyPlaybackPhase =
     state.phase === LessonPhase.Paused
-      ? state.resumePhase
-      : state.phase === LessonPhase.Speaking ||
-          state.phase === LessonPhase.Responding
-        ? state.phase
+      ? state.resumePhase === LessonPhase.Speaking
+        ? LessonPhase.Speaking
+        : null
+      : state.phase === LessonPhase.Speaking
+        ? LessonPhase.Speaking
         : null;
 
   useEffect(() => {
@@ -536,22 +544,18 @@ export function LessonPlayer({
 
   useEffect(() => {
     if (state.sceneIndex !== routedSceneRef.current) return;
-    if (!playbackPhase) return;
+    if (!storyPlaybackPhase) return;
     const currentArtworkSrc = fullSceneArtwork?.[state.sceneIndex]?.src;
     if (currentArtworkSrc && !decodedArtworkSources.has(currentArtworkSrc)) {
       return;
     }
 
-    const completionEvent: LessonEvent =
-      playbackPhase === LessonPhase.Responding
-        ? { type: "RESPONSE_DONE" }
-        : { type: "LINE_DONE" };
     let startPlayback: (
       signal: AbortSignal,
       onPlaybackControl: (control: PlaybackControl | null) => void,
     ) => Promise<void>;
     try {
-      if (audioMode === "device") {
+      if (source === "my") {
         const speechLine = getLessonSpeechLine(state, currentLesson);
         if (!speechLine) return;
         startPlayback = (signal, onPlaybackControl) =>
@@ -566,6 +570,7 @@ export function LessonPlayer({
       setError(LESSON_AUDIO_ERROR_MESSAGE);
       return;
     }
+
     const generation = playbackGenerationRef.current + 1;
     playbackGenerationRef.current = generation;
     const routeGeneration = routeActivityGuardRef.current.capture();
@@ -574,36 +579,24 @@ export function LessonPlayer({
       getCurrentGeneration: () => playbackGenerationRef.current,
       onCompleted: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatchLessonEvent(completionEvent);
+        dispatchLessonEvent({ type: "LINE_DONE" });
       },
       onFailed: () => {
         if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
         setError(LESSON_AUDIO_ERROR_MESSAGE);
       },
     });
-
     let cancelled = false;
     const controller = new AbortController();
-    const playbackStartedAt = Date.now();
     playbackControllerRef.current = controller;
     setError("");
+
     void startPlayback(controller.signal, (control) => {
       if (playbackGenerationRef.current === generation) {
         playbackControlRef.current = control;
       }
     })
-      .then(async () => {
-        if (playbackPhase === LessonPhase.Responding) {
-          await waitForAbortableDelay(
-            Math.max(
-              0,
-              MINIMUM_LESSON_FEEDBACK_MS - (Date.now() - playbackStartedAt),
-            ),
-            controller.signal,
-          );
-        }
-        playbackOperation.complete();
-      })
+      .then(() => playbackOperation.complete())
       .catch((caughtError: unknown) => {
         if (cancelled || isAbortError(caughtError)) return;
         playbackOperation.fail(caughtError);
@@ -611,6 +604,7 @@ export function LessonPlayer({
       .finally(() => {
         if (playbackControllerRef.current === controller) {
           playbackControllerRef.current = null;
+          playbackControlRef.current = null;
         }
       });
 
@@ -624,14 +618,170 @@ export function LessonPlayer({
     };
   }, [
     audioRetrySequence,
-    audioMode,
     currentLesson,
     decodedArtworkSources,
     dispatchLessonEvent,
     fullSceneArtwork,
-    playbackPhase,
     routedSceneIndex,
-    state.response,
+    source,
+    state.sceneIndex,
+    state.stepIndex,
+    storyPlaybackPhase,
+  ]);
+
+  useEffect(() => {
+    if (state.phase !== LessonPhase.JoiningIn) return;
+    if (state.sceneIndex !== routedSceneRef.current) return;
+    const currentArtworkSrc = fullSceneArtwork?.[state.sceneIndex]?.src;
+    if (currentArtworkSrc && !decodedArtworkSources.has(currentArtworkSrc)) {
+      return;
+    }
+
+    const routeGeneration = routeActivityGuardRef.current.capture();
+    const generation = playbackGenerationRef.current + 1;
+    playbackGenerationRef.current = generation;
+    const controller = new AbortController();
+    playbackControllerRef.current = controller;
+    let session: SpeechRecordingSession | null = null;
+    const slot = {
+      lessonId,
+      ...(lessonRevision ? { lessonRevision } : {}),
+      sceneIndex: state.sceneIndex,
+      source,
+      stepIndex: state.stepIndex,
+    };
+    const isCurrent = () =>
+      !controller.signal.aborted &&
+      playbackGenerationRef.current === generation &&
+      routeActivityGuardRef.current.isCurrent(routeGeneration);
+    const clearSession = () => {
+      if (recordingRef.current === session) recordingRef.current = null;
+      setJoinInRecording(false);
+    };
+
+    setError("");
+    setJoinInRecording(false);
+
+    const playCue = async () => {
+      if (source === "my") {
+        await playDeviceSpeech({
+          onPlaybackControl: (control) => {
+            if (isCurrent()) playbackControlRef.current = control;
+          },
+          signal: controller.signal,
+          speaker: "narrator",
+          text: currentStep.dialogue,
+          volume: 0.28,
+        });
+        return;
+      }
+      const cue = getLessonJoinInAudioLine(state, currentLesson);
+      if (!cue) throw new Error("The join-in cue is missing.");
+      await playAudioLine({
+        ...cue,
+        onPlaybackControl: (control) => {
+          if (isCurrent()) playbackControlRef.current = control;
+        },
+        signal: controller.signal,
+      });
+    };
+
+    const runJoinIn = async () => {
+      if (recordingPermissionRef.current) {
+        try {
+          session = await startSpeechRecording({ signal: controller.signal });
+          if (!isCurrent()) {
+            session.cancel();
+            return;
+          }
+          recordingRef.current = session;
+          setJoinInRecording(true);
+        } catch (caughtError) {
+          if (isAbortError(caughtError) || !isCurrent()) return;
+          recordingPermissionRef.current = false;
+          showMicrophoneNotice();
+          session = null;
+        }
+      }
+
+      try {
+        await playCue();
+      } catch (caughtError) {
+        if (isAbortError(caughtError) || !isCurrent()) return;
+        session?.cancel();
+        session = null;
+        clearSession();
+        try {
+          await waitForAbortableDelay(
+            JOIN_IN_FAILURE_DISPLAY_MS,
+            controller.signal,
+          );
+        } catch {
+          return;
+        }
+        if (isCurrent()) dispatchLessonEvent({ type: "JOIN_IN_DONE" });
+        return;
+      }
+
+      try {
+        await waitForAbortableDelay(JOIN_IN_TAIL_MS, controller.signal);
+      } catch {
+        return;
+      }
+
+      if (session) {
+        const completedSession = session;
+        try {
+          const blob = await completedSession.stop();
+          if (!isCurrent()) return;
+          session = null;
+          if (recordingRef.current === completedSession) {
+            recordingRef.current = null;
+          }
+          setJoinInRecording(false);
+          if (blob.size > 0) recordingQueue.enqueue(slot, blob);
+        } catch (caughtError) {
+          if (isAbortError(caughtError) || !isCurrent()) return;
+          session = null;
+          if (recordingRef.current === completedSession) {
+            recordingRef.current = null;
+          }
+          setJoinInRecording(false);
+        }
+      }
+
+      if (isCurrent()) dispatchLessonEvent({ type: "JOIN_IN_DONE" });
+    };
+
+    void runJoinIn().finally(() => {
+      if (playbackControllerRef.current === controller) {
+        playbackControllerRef.current = null;
+        playbackControlRef.current = null;
+      }
+    });
+
+    return () => {
+      controller.abort();
+      session?.cancel();
+      if (recordingRef.current === session) recordingRef.current = null;
+      if (playbackControllerRef.current === controller) {
+        playbackControllerRef.current = null;
+        playbackControlRef.current = null;
+      }
+      setJoinInRecording(false);
+    };
+  }, [
+    currentLesson,
+    currentStep.dialogue,
+    decodedArtworkSources,
+    dispatchLessonEvent,
+    fullSceneArtwork,
+    lessonId,
+    lessonRevision,
+    recordingQueue,
+    showMicrophoneNotice,
+    source,
+    state.phase,
     state.sceneIndex,
     state.stepIndex,
   ]);
@@ -639,21 +789,18 @@ export function LessonPlayer({
   useEffect(
     () => () => {
       routeActivityGuardRef.current.invalidate();
-      recordingActiveRef.current = false;
-      recordingSequenceRef.current += 1;
       playbackGenerationRef.current += 1;
+      preflightControllerRef.current?.abort();
       playbackControllerRef.current?.abort();
       playbackControlRef.current = null;
-      recordingControllerRef.current?.abort();
       recordingRef.current?.cancel();
-      evaluationControllerRef.current?.abort();
+      recordingRef.current = null;
     },
     [],
   );
 
   function dispatchSceneControl(
     type:
-      | "PLAY_SCENE"
       | "PAUSE_SCENE"
       | "SCENE_PREVIOUS"
       | "SCENE_NEXT"
@@ -669,176 +816,93 @@ export function LessonPlayer({
   }
 
   function handleSkipAudio() {
-    if (!playbackPhase) return;
+    if (!storyPlaybackPhase) return;
     cancelPendingWork();
     setError("");
-    dispatchLessonEvent(
-      playbackPhase === LessonPhase.Responding
-        ? { type: "RESPONSE_DONE" }
-        : { type: "LINE_DONE" },
-    );
+    dispatchLessonEvent({ type: "LINE_DONE" });
   }
 
-  function handleStartAction() {
+  async function handleStartAction() {
     if (state.phase === LessonPhase.Finished) {
       dispatchSceneControl("REPLAY_LESSON");
       return;
     }
+    if (startPendingRef.current) return;
 
     const currentArtwork = fullSceneArtwork?.[state.sceneIndex];
     if (currentArtwork && !decodedArtworkSources.has(currentArtwork.src)) {
       return;
     }
 
-    dispatchSceneControl("PLAY_SCENE");
+    startPendingRef.current = true;
+    const routeGeneration = routeActivityGuardRef.current.capture();
+    const controller = new AbortController();
+    preflightControllerRef.current = controller;
+    try {
+      const consentEnabled = await loadConsentOnce();
+      const isCurrent = () =>
+        !controller.signal.aborted &&
+        routeActivityGuardRef.current.isCurrent(routeGeneration);
+      if (!isCurrent()) return;
+
+      recordingPermissionRef.current = false;
+      if (consentEnabled) {
+        try {
+          await requestMicrophoneAccess({ signal: controller.signal });
+          if (!isCurrent()) return;
+          recordingPermissionRef.current = true;
+        } catch (caughtError) {
+          if (!isCurrent() || isAbortError(caughtError)) return;
+          recordingPermissionRef.current = false;
+          showMicrophoneNotice();
+        }
+      }
+
+      if (isCurrent()) {
+        dispatchLessonEvent({ type: "PLAY_SCENE" });
+      }
+    } finally {
+      if (preflightControllerRef.current === controller) {
+        preflightControllerRef.current = null;
+        startPendingRef.current = false;
+      }
+    }
   }
 
   function handlePauseResume() {
-    const playbackControl = playbackControlRef.current;
-    if (!playbackControl) return;
-
     if (state.phase === LessonPhase.Paused) {
+      if (state.resumePhase === LessonPhase.JoiningIn) {
+        dispatchLessonEvent({ type: "PLAY_SCENE" });
+        return;
+      }
+      const playbackControl = playbackControlRef.current;
+      if (!playbackControl) return;
       playbackControl.resume();
       dispatchLessonEvent({ type: "PLAY_SCENE" });
       return;
     }
 
+    if (state.phase === LessonPhase.JoiningIn) {
+      dispatchSceneControl("PAUSE_SCENE");
+      return;
+    }
+
+    const playbackControl = playbackControlRef.current;
+    if (!playbackControl) return;
     playbackControl.pause();
     dispatchLessonEvent({ type: "PAUSE_SCENE" });
   }
 
-  function handleSkipUser() {
-    if (recordingActiveRef.current && !recordingRef.current) return;
-    dispatchLessonEvent({ type: "SKIP_USER" }, { cancel: true });
-  }
-
-  async function beginRecording() {
-    if (
-      state.phase !== LessonPhase.WaitingForUser ||
-      recordingActiveRef.current ||
-      recordingRef.current
-    ) {
-      return;
-    }
-
-    recordingActiveRef.current = true;
-    setIsStartingRecording(true);
-    const sequence = recordingSequenceRef.current + 1;
-    recordingSequenceRef.current = sequence;
-    const routeGeneration = routeActivityGuardRef.current.capture();
-    const controller = new AbortController();
-    recordingControllerRef.current = controller;
-    setError("");
-    setSpeechFallback("");
-
-    try {
-      const session = await startSpeechRecording({ signal: controller.signal });
-      if (
-        !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
-        !recordingActiveRef.current ||
-        recordingSequenceRef.current !== sequence
-      ) {
-        session.cancel();
-        return;
-      }
-      recordingRef.current = session;
-      setIsStartingRecording(false);
-      dispatch({ type: "MIC_STARTED" });
-    } catch (caughtError) {
-      if (
-        !routeActivityGuardRef.current.isCurrent(routeGeneration) ||
-        recordingSequenceRef.current !== sequence
-      ) {
-        return;
-      }
-      setIsStartingRecording(false);
-      if (recordingControllerRef.current === controller) {
-        recordingControllerRef.current = null;
-      }
-      if (isAbortError(caughtError)) {
-        recordingActiveRef.current = false;
-        return;
-      }
-      recordingActiveRef.current = false;
-      setSpeechFallback(getMicrophoneErrorMessage(caughtError));
-    }
-  }
-
-  async function finishRecording() {
-    if (!recordingActiveRef.current) return;
-    const routeGeneration = routeActivityGuardRef.current.capture();
-    recordingActiveRef.current = false;
-    const generation = recordingSequenceRef.current;
-    const session = recordingRef.current;
-    const recordingController = recordingControllerRef.current;
-    setIsStartingRecording(false);
-    if (recordingRef.current === session) {
-      recordingRef.current = null;
-    }
-
-    if (!session) {
-      recordingController?.abort();
-      if (recordingControllerRef.current === recordingController) {
-        recordingControllerRef.current = null;
-      }
-      return;
-    }
-
-    await finishSpeechOperation({
-      evaluate: currentStep.check ? evaluateSpeech : null,
-      evaluationControllerRef,
-      generation,
-      getCurrentGeneration: () => recordingSequenceRef.current,
-      onEvaluated: (result) => {
-        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatch({
-          type: "EVALUATED",
-          outcome: result.outcome,
-          transcript: result.transcript,
-        });
-      },
-      onFailed: () => {
-        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        if (currentStep.check) {
-          setSpeechFallback(SPEECH_CHECK_ERROR_MESSAGE);
-          dispatch({ type: "EVALUATION_FAILED" });
-        } else {
-          setError("The mic stopped. Try it again.");
-        }
-      },
-      onReleased: () => {
-        if (!routeActivityGuardRef.current.isCurrent(routeGeneration)) return;
-        dispatchLessonEvent({ type: "MIC_RELEASED" });
-      },
-      recordingController,
-      recordingControllerRef,
-      session,
-      targetText: currentStep.dialogue,
-    });
-  }
-
-  function handleToggleRecording() {
-    if (recordingRef.current) {
-      void finishRecording();
-      return;
-    }
-    void beginRecording();
-  }
-
-  const isRecording = state.phase === LessonPhase.Recording;
-  const isEvaluating = state.phase === LessonPhase.Evaluating;
-  const showUserTurn =
-    state.phase === LessonPhase.WaitingForUser || isRecording || isEvaluating;
   const isIdle = state.phase === LessonPhase.Idle;
   const isFinished = state.phase === LessonPhase.Finished;
   const isPaused = state.phase === LessonPhase.Paused;
-  const isResponding =
-    state.phase === LessonPhase.Responding ||
-    (isPaused && state.resumePhase === LessonPhase.Responding);
+  const showJoinIn =
+    state.phase === LessonPhase.JoiningIn ||
+    (isPaused && state.resumePhase === LessonPhase.JoiningIn);
   const showActiveScene = !isIdle && !isFinished;
   const showPlaybackControls =
     state.phase === LessonPhase.Speaking ||
-    state.phase === LessonPhase.Responding ||
+    state.phase === LessonPhase.JoiningIn ||
     isPaused;
   const atFirstScene = state.sceneIndex === 0;
   const atFinalScene = state.sceneIndex === currentLesson.scenes.length - 1;
@@ -847,7 +911,9 @@ export function LessonPlayer({
   );
   const fullScene = fullSceneArtwork?.[state.sceneIndex];
   if (fullSceneArtwork && !fullScene) {
-    throw new Error(`Lesson artwork is missing scene ${state.sceneIndex + 1}.`);
+    throw new Error(
+      "Lesson artwork is missing scene " + (state.sceneIndex + 1) + ".",
+    );
   }
   const reserved = Boolean(fullScene);
   const artworkReady = !fullScene || decodedArtworkSources.has(fullScene.src);
@@ -862,18 +928,11 @@ export function LessonPlayer({
       title={scene.title}
     />
   );
-  const activeDialogue = showUserTurn ? (
-    <LessonUserPrompt
+  const activeDialogue = showJoinIn ? (
+    <LessonJoinInPrompt
       dialogue={currentStep.dialogue}
-      portrait={promptPortrait}
+      recording={joinInRecording}
       reserved={reserved}
-      status={isEvaluating ? "checking" : isRecording ? "recording" : "ready"}
-    />
-  ) : isResponding ? (
-    <LessonFeedback
-      outcome={state.responseOutcome}
-      reserved={reserved}
-      speech={scene.speech}
     />
   ) : (
     <LessonSpeech
@@ -884,31 +943,22 @@ export function LessonPlayer({
       speech={scene.speech}
     />
   );
-  const activeControls = !artworkReady ? null : showUserTurn ? (
-    <LessonSpeakingControls
-      isEvaluating={isEvaluating}
-      isRecording={isRecording}
-      isStartingRecording={isStartingRecording}
-      onSkip={handleSkipUser}
-      onToggleRecording={handleToggleRecording}
-      reserved={reserved}
-      usePracticeFallback={Boolean(speechFallback)}
-    />
-  ) : showPlaybackControls ? (
-    <LessonPlaybackControls
-      atFinalScene={atFinalScene}
-      atFirstScene={atFirstScene}
-      isPaused={isPaused}
-      onNext={() => dispatchSceneControl("SCENE_NEXT")}
-      onPauseResume={handlePauseResume}
-      onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
-      reserved={reserved}
-    />
-  ) : null;
+  const activeControls =
+    artworkReady && showPlaybackControls ? (
+      <LessonPlaybackControls
+        atFinalScene={atFinalScene}
+        atFirstScene={atFirstScene}
+        isPaused={isPaused}
+        onNext={() => dispatchSceneControl("SCENE_NEXT")}
+        onPauseResume={handlePauseResume}
+        onPrevious={() => dispatchSceneControl("SCENE_PREVIOUS")}
+        reserved={reserved}
+      />
+    ) : null;
   const activeNotice =
-    speechFallback || error ? (
+    error || microphoneNotice ? (
       <LessonErrorBanner
-        error={speechFallback || error}
+        error={error || microphoneNotice}
         onRetry={
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleRetryAudio : undefined
         }
@@ -916,9 +966,16 @@ export function LessonPlayer({
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleSkipAudio : undefined
         }
         reserved={reserved}
-        tone={speechFallback ? "help" : "error"}
+        tone={error ? "error" : "help"}
       />
     ) : null;
+  const saveState =
+    recordingSnapshot.pending > 0
+      ? "pending"
+      : recordingSnapshot.failed > 0
+        ? "failed"
+        : "idle";
+
   return (
     <LessonStage
       background={scene.backgroundAsset}
@@ -959,7 +1016,12 @@ export function LessonPlayer({
           lessonTitle={currentLesson.title}
           onBack={handleBack}
           onReplay={handleStartAction}
+          onRetrySaving={() => {
+            void recordingQueue.retryFailed();
+            startActionRef.current?.focus({ preventScroll: true });
+          }}
           ref={startActionRef}
+          saveState={saveState}
         />
       ) : null}
 
@@ -993,36 +1055,27 @@ export function LessonPlayer({
       >
         {isIdle || isFinished
           ? progressLabel
-          : `${progressLabel}.${
-              showUserTurn ? ` Say: ${currentStep.dialogue}.` : ""
-            } Scene ${state.sceneIndex + 1} of ${
-              currentLesson.scenes.length
-            }. ${scene.settingDescription}`}
-        {state.transcript ? ` Heard: ${state.transcript}.` : ""}
-        {error ? ` ${error}` : ""}
-      </div>
-      <div
-        aria-label="Speaking updates"
-        aria-live="polite"
-        className="sr-only"
-        role="status"
-      >
-        {speechFallback}
+          : progressLabel +
+            "." +
+            (showJoinIn ? " Join in: " + currentStep.dialogue + "." : "") +
+            " Scene " +
+            (state.sceneIndex + 1) +
+            " of " +
+            currentLesson.scenes.length +
+            ". " +
+            scene.settingDescription}
+        {error ? " " + error : ""}
       </div>
     </LessonStage>
   );
 }
-
 function LessonRouteDecisionView({
   decision,
-  promptPortrait,
+  lessonRevision,
   source,
 }: {
   decision: LessonRouteDecision;
-  promptPortrait?: {
-    alt: string;
-    src: string;
-  } | null;
+  lessonRevision?: string;
   source: LessonSource;
 }) {
   const location = useLocation();
@@ -1041,51 +1094,49 @@ function LessonRouteDecisionView({
 
   return (
     <LessonPlayer
-      audioMode={source === "my" ? "device" : "static"}
       fullSceneArtwork={fullSceneArtwork}
       key={`${source}:${decision.entry.id}`}
       lesson={decision.entry.lesson}
+      lessonId={decision.entry.id}
+      lessonRevision={lessonRevision}
       onBack={() => navigate("/lessons")}
       onNavigateScene={(sceneIndex) =>
         navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
       }
       routedLocationKey={location.key}
       routedSceneIndex={decision.sceneIndex}
-      promptPortrait={promptPortrait}
+      source={source}
     />
   );
 }
 
 function ParrotLessonRedirect() {
-  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, undefined);
   return (
     <LessonRouteDecisionView
       decision={decision}
-      promptPortrait={personalizedStoryArt.personalizedArtwork}
       source="parrot"
     />
   );
 }
 
 function ParrotLessonSceneRoute() {
-  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId, sceneNumber } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
   return (
     <LessonRouteDecisionView
       decision={decision}
-      promptPortrait={personalizedStoryArt.personalizedArtwork}
       source="parrot"
     />
   );
 }
 
 function MyLessonRoute() {
-  const personalizedStoryArt = usePersonalizedStoryArt();
   const { lessonId, sceneNumber } = useParams();
-  const [entry, setEntry] = useState<LessonCatalogEntry | null>(null);
+  const [entry, setEntry] = useState<
+    (LessonCatalogEntry & { revision: string }) | null
+  >(null);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadSequence, setLoadSequence] = useState(0);
@@ -1101,7 +1152,11 @@ function MyLessonRoute() {
     setLoadError("");
     void loadMyLesson(lessonId, { signal: controller.signal })
       .then((descriptor) => {
-        setEntry({ id: descriptor.id, lesson: descriptor.lesson });
+        setEntry({
+          id: descriptor.id,
+          lesson: descriptor.lesson,
+          revision: descriptor.revision,
+        });
       })
       .catch((caughtError: unknown) => {
         if (controller.signal.aborted) return;
@@ -1147,7 +1202,7 @@ function MyLessonRoute() {
   return (
     <LessonRouteDecisionView
       decision={decision}
-      promptPortrait={personalizedStoryArt.personalizedArtwork}
+      lessonRevision={entry.revision}
       source="my"
     />
   );

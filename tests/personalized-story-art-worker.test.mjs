@@ -1696,6 +1696,72 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("atomically refuses candidate tracking when account deletion begins at the tracking boundary", async () => {
+    const state = seedDatabase();
+    const { markAccountDeletionPending } = await import(
+      "../worker/account-deletion.ts"
+    );
+    let putCalls = 0;
+    let trackChanges = null;
+    try {
+      const response = await call(
+        state,
+        {
+          body: uploadForm(),
+          d1: observeD1RunWhen(
+            state.d1,
+            (sql) =>
+              /UPDATE\s+learner_story_art_generation_lease\s+SET\s+candidate_r2_object_key/i.test(
+                sql,
+              ),
+            {
+              async beforeRun() {
+                await markAccountDeletionPending(state.database, "user-1");
+              },
+              afterRun(result) {
+                trackChanges = result.meta.changes;
+              },
+            },
+          ),
+          method: "POST",
+          bucket: bucketStub({
+            async put() {
+              putCalls += 1;
+            },
+          }),
+        },
+        {
+          createObjectId: () => "generation-1",
+          async generateImage() {
+            return {
+              bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+              contentType: "image/png",
+              extension: "png",
+            };
+          },
+        },
+      );
+
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), {
+        error: "account_deletion_pending",
+        message: "Account deletion is in progress.",
+      });
+      assert.equal(trackChanges, 0);
+      assert.equal(putCalls, 0);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_story_art_generation_lease",
+          )
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("recovers an expired pre-finalize lease by deleting its candidate", async () => {
     const state = seedDatabase();
     const generatedPng = await sharp({

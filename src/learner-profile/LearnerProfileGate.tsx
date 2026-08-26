@@ -21,6 +21,7 @@ import {
   loadProfile,
   LearnerProfileApiError,
   saveLearnerProfileAnswer,
+  saveLessonRecordingConsent,
   saveProfileAnswer,
   saveProfileAnswers,
   selectLearnerProfile as selectLearnerProfileRequest,
@@ -247,9 +248,7 @@ export function LearnerProfileGateView({
   const canAccessProtectedRoutes = Boolean(
     guardianRoute || data?.mode === "bypass-only" || learnerProfileComplete,
   );
-  const canEditProfile = Boolean(
-    fullData && (guardianRoute || learnerProfileComplete),
-  );
+  const canEditProfile = Boolean(fullData && guardianRoute);
 
   if (guardianRoute && isLearnerProfileRoute && !redoLearnerProfile) {
     return <>{completedLearnerProfileFallback}</>;
@@ -808,7 +807,18 @@ export function LearnerProfileGate({
         : current,
     );
     setProfileState((current) =>
-      current?.profile.id === profile.id ? { ...current, profile } : current,
+      current?.profile.id === profile.id
+        ? {
+            ...current,
+            profile: {
+              ...profile,
+              lessonRecordingCleanupPending:
+                current.profile.lessonRecordingCleanupPending,
+              lessonRecordingConsent:
+                current.profile.lessonRecordingConsent,
+            },
+          }
+        : current,
     );
   }, []);
 
@@ -1761,6 +1771,42 @@ export function LearnerProfileGate({
     }
   }
 
+  async function handleLessonRecordingConsentChange(enabled: boolean) {
+    if (!profileState || !isActiveProfileRoute()) return;
+    const boundary = profileOperationBoundaryRef.current;
+    if (!boundary) return;
+    const profileOperation = boundary.begin();
+    const { controller } = profileOperation;
+    setIsProfileSaving(true);
+    setProfilePageError("");
+    try {
+      const saved = await saveLessonRecordingConsent(enabled, {
+        signal: controller.signal,
+      });
+      if (!isCurrentProfileOperation(profileOperation)) return;
+      setProfileState((current) =>
+        current
+          ? {
+              ...current,
+              profile: {
+                ...current.profile,
+                lessonRecordingCleanupPending: saved.cleanupPending,
+                lessonRecordingConsent: saved.enabled,
+              },
+            }
+          : current,
+      );
+    } catch (error) {
+      if (isCurrentProfileOperation(profileOperation) && !isAbortError(error)) {
+        setProfilePageError(readableError(error));
+      }
+    } finally {
+      const isCurrent = isCurrentProfileOperation(profileOperation);
+      boundary.finish(controller);
+      if (isCurrent) setIsProfileSaving(false);
+    }
+  }
+
   function handleAcknowledgmentNext() {
     const pending = pendingAcknowledgment;
     if (!pending) return;
@@ -1797,12 +1843,7 @@ export function LearnerProfileGate({
     onCloseProfileRoute();
   }
 
-  const canEditProfile = Boolean(
-    fullData &&
-    (guardianRoute ||
-      fullData.canBypass ||
-      fullData.profile.profileStatus === "completed"),
-  );
+  const canEditProfile = Boolean(fullData && guardianRoute);
   const hasActiveLearner = fullData !== null;
   const activeLearnerName = fullData?.profile.name ?? null;
   const onOpenProfileRouteRef = useRef(onOpenProfileRoute);
@@ -1997,8 +2038,14 @@ export function LearnerProfileGate({
                 fieldErrors: profileFieldErrors,
                 isSaving: isProfileSaving,
                 learnerName: fullData?.profile.name ?? "Learner",
+                lessonRecordingCleanupPending:
+                  profileState.profile.lessonRecordingCleanupPending,
+                lessonRecordingConsent:
+                  profileState.profile.lessonRecordingConsent,
                 onCancel: closeProfileEditor,
                 onClose: closeProfileEditor,
+                onLessonRecordingConsentChange: (enabled) =>
+                  void handleLessonRecordingConsentChange(enabled),
                 onRedoLearnerProfile: handleRedoLearnerProfile,
                 onSave: () => void handleProfileSave(),
                 onValueChange: handleProfileValueChange,

@@ -11,6 +11,12 @@ const requiredViewports = [
   { width: 640, height: 360 },
   { width: 1440, height: 900 },
 ];
+const lessonPrivacyViewports = [
+  { width: 280, height: 653 },
+  { width: 390, height: 844 },
+  { width: 667, height: 375 },
+  { width: 1440, height: 900 },
+];
 
 type Rect = { height: number; width: number; x: number; y: number };
 
@@ -26,10 +32,15 @@ async function expectInsideViewport(
   viewport: { height: number; width: number },
 ) {
   const box = await visibleBox(locator);
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  const subpixelTolerance = 1;
+  expect(box.x).toBeGreaterThanOrEqual(-subpixelTolerance);
+  expect(box.y).toBeGreaterThanOrEqual(-subpixelTolerance);
+  expect(box.x + box.width).toBeLessThanOrEqual(
+    viewport.width + subpixelTolerance,
+  );
+  expect(box.y + box.height).toBeLessThanOrEqual(
+    viewport.height + subpixelTolerance,
+  );
   return box;
 }
 
@@ -192,6 +203,195 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveCount(0);
 });
 
+for (const viewport of lessonPrivacyViewports) {
+  test(`guardian grants and confirms revocation of lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    const profile = {
+      age: 8,
+      answers: {
+        legacyAnswers: null,
+        questionnaireVersion: 2,
+        responses: {},
+        schemaVersion: 2,
+      },
+      completedAt: "2026-08-26T08:00:00.000Z",
+      currentQuestionKey: null,
+      description: null,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+      questionnaireVersion: 2,
+      storyLevel: "first-words",
+    };
+    let consent = false;
+    let cleanupPending = false;
+    const mutations: boolean[] = [];
+
+    await page.setViewportSize(viewport);
+    await page.route("**/api/learner-profile", (route) =>
+      route.fulfill({
+        json: {
+          canBypass: true,
+          experienceMode: "form",
+          mode: "full",
+          profile,
+          progress: { answered: 6, current: 6, total: 6 },
+          question: null,
+          questionnaire: { version: 2 },
+        },
+      }),
+    );
+    await page.route("**/api/profile", (route) =>
+      route.fulfill({
+        json: {
+          profile: {
+            ...profile,
+            lessonRecordingCleanupPending: cleanupPending,
+            lessonRecordingConsent: consent,
+          },
+          questions: [],
+        },
+      }),
+    );
+    await page.route("**/api/profile/lesson-recording-consent", async (route) => {
+      const body = route.request().postDataJSON() as { enabled: boolean };
+      consent = body.enabled;
+      mutations.push(consent);
+      cleanupPending = !consent && mutations.filter((value) => !value).length === 1;
+      await route.fulfill({ json: { cleanupPending, enabled: consent } });
+    });
+
+    await page.goto(guardianUrl("/guardian/profile", "guardian"));
+
+    const account = page.getByRole("button", {
+      name: "Profile for Mia, guardian mode",
+    });
+    const back = page.getByRole("button", { exact: true, name: "Back" });
+    const consentSection = page.getByRole("region", {
+      name: "Lesson voice recordings",
+    });
+    const grant = consentSection.getByRole("button", {
+      name: "Allow lesson voice recordings",
+    });
+    const recordingState = consentSection.getByRole("status");
+    await consentSection.scrollIntoViewIfNeeded();
+    await expect(consentSection).toContainText(
+      "Recording starts automatically during each join-in moment.",
+    );
+    await expect(consentSection).toContainText(
+      "Permission and clips apply only to this learner profile",
+    );
+    await expect(consentSection).toContainText(
+      "A Guardian manages each learner independently",
+    );
+    await expect(consentSection).toContainText(
+      "one latest clip is saved per join-in moment",
+    );
+    await expect(recordingState).toHaveText(
+      "Lesson recording is currently off.",
+    );
+    const initialRecordingStateBox = await visibleBox(recordingState);
+    await expectInsideViewport(consentSection, viewport);
+    await expectInsideViewport(grant, viewport);
+    await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
+    await expectNoOverlap(grant, account);
+    await expectNoOverlap(grant, back);
+    expect(await horizontalOverflow(page)).toBe(false);
+
+    await grant.click();
+    const revoke = consentSection.getByRole("button", {
+      name: "Stop and delete lesson recordings",
+    });
+    await expect(revoke).toHaveAccessibleName(
+      "Stop and delete lesson recordings",
+    );
+    await expect(recordingState).toHaveText(
+      "Lesson recording is currently allowed.",
+    );
+    await expectInsideViewport(revoke, viewport);
+    await expectNoOverlap(revoke, account);
+    await expectNoOverlap(revoke, back);
+    expect(mutations).toEqual([true]);
+
+    page.once("dialog", async (dialog) => {
+      expect(dialog.type()).toBe("confirm");
+      expect(dialog.message()).toMatch(/delete all saved lesson voice recordings/i);
+      await dialog.accept();
+    });
+    await revoke.click();
+
+    const finishDeletion = consentSection.getByRole("button", {
+      name: "Finish deleting lesson recordings",
+    });
+    await expect(finishDeletion).toHaveAccessibleName(
+      "Finish deleting lesson recordings",
+    );
+    await expect(recordingState).toHaveText(
+      "Lesson recording is off. Saved clips are still being deleted.",
+    );
+    const pendingRecordingStateBox = await visibleBox(recordingState);
+    expect(
+      Math.abs(
+        pendingRecordingStateBox.height - initialRecordingStateBox.height,
+      ),
+    ).toBeLessThanOrEqual(1);
+    await expectInsideViewport(finishDeletion, viewport);
+    expect(await horizontalOverflow(page)).toBe(false);
+    expect(mutations).toEqual([true, false]);
+
+    await finishDeletion.click();
+    await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
+    await expect(recordingState).toHaveText(
+      "Lesson recording is currently off.",
+    );
+    await expectInsideViewport(grant, viewport);
+    expect(mutations).toEqual([true, false, false]);
+  });
+}
+
+test("a locked guardian deep link never flashes protected content", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const inspected = new WeakSet<Node>();
+    const inspect = (node: Node) => {
+      if (inspected.has(node)) return;
+      inspected.add(node);
+      if (
+        node instanceof HTMLHeadingElement &&
+        node.textContent?.trim() === "Story settings"
+      ) {
+        (window as Window & { __protectedHeadingSeen?: boolean })
+          .__protectedHeadingSeen = true;
+      }
+      node.childNodes.forEach(inspect);
+    };
+    document.addEventListener("DOMContentLoaded", () => {
+      inspect(document.body);
+      new MutationObserver((records) => {
+        records.forEach((record) => record.addedNodes.forEach(inspect));
+      }).observe(document.body, { childList: true, subtree: true });
+    });
+  });
+  await page.goto("/guardian/stories");
+
+  await expect(
+    page.getByRole("heading", { name: "Unlock guardian mode" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL("/guardian/stories");
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __protectedHeadingSeen?: boolean })
+          .__protectedHeadingSeen ?? false,
+    ),
+  ).toBe(false);
+});
+
 for (const { path, protectedName, seedEditLesson, unlockedPath } of [
   { path: "/guardian", protectedName: "Guardian dashboard" },
   {
@@ -233,6 +433,7 @@ for (const { path, protectedName, seedEditLesson, unlockedPath } of [
             lesson: {
               id: "boundary-fixture",
               lesson: createLessonScript(),
+              revision: "a".repeat(64),
               source: "generated",
             },
           }),
@@ -545,6 +746,9 @@ test("learner routes omit adult management actions", async ({ page }) => {
         name: /I am 18 or older.*guardian/i,
       }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("checkbox", { name: "Guardian consent" }),
+    ).toHaveCount(0);
     await expectNoLearnerAdultControls(page);
     if (watchDub) {
       await page.getByRole("button", { name: "Continue dubbing" }).click();
@@ -566,39 +770,40 @@ for (const viewport of [
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await page.goto("/lessons/parrot/01-peppas-high-ball/scenes/1");
+    await page.goto(
+      "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=held-cue-no-consent",
+    );
     const profile = page.getByRole("button", {
       name: /Profile for Mia, learner mode/,
     });
     const back = page.getByRole("button", { name: "Back to lesson list" });
-    const start = page.getByRole("button", { name: "Start lesson" });
+    const start = page.getByRole("button", { exact: true, name: "Let's go" });
     await expectInsideViewport(profile, viewport);
     await expectInsideViewport(back, viewport);
     await expectInsideViewport(start, viewport);
     await expectNoOverlap(profile, back);
 
-    await page.evaluate(() => {
-      class HeldAudio {
-        onended: ((event: Event) => void) | null = null;
-        onerror: ((event: Event) => void) | null = null;
-        pause() {}
-        async play() {}
-      }
-      Object.defineProperty(window, "Audio", {
-        configurable: true,
-        value: HeldAudio,
-      });
-    });
     await start.click();
 
     const hud = page.getByRole("region", { name: "Lesson progress" });
     const speech = page
-      .getByRole("status")
-      .filter({ hasText: "Look! My ball!" });
+      .getByRole("region", { name: "Join in" })
+      .filter({ hasText: "It is up high!" });
+    const phrase = speech.getByText("It is up high!", { exact: true });
+    const status = speech.getByRole("status");
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });
-    for (const element of [profile, back, hud, speech, controls]) {
+    await expect(status).toHaveText("Voices are joining in");
+    for (const element of [
+      profile,
+      back,
+      hud,
+      speech,
+      phrase,
+      status,
+      controls,
+    ]) {
       await expectInsideViewport(element, viewport);
     }
     await expectNoOverlap(profile, hud);

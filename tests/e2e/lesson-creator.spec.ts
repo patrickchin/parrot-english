@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const shortPhone = { width: 320, height: 568 };
+const lessonRevision = "a".repeat(64);
 
 function guardianPath(path: string) {
   return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
@@ -86,6 +87,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
         lesson: {
           id: "ai-gui-lesson",
           lesson: savedLesson,
+          revision: lessonRevision,
           source: body.source,
         },
         warnings: [],
@@ -100,6 +102,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
         lesson: {
           id: "ai-gui-lesson",
           lesson: savedLesson,
+          revision: lessonRevision,
           source: "generated",
         },
       }),
@@ -174,6 +177,7 @@ test("lesson editor leads with a visual storyboard and progressively reveals fie
         lesson: {
           id: "visual-first-test",
           lesson: createLessonScript(),
+          revision: lessonRevision,
           source: "generated",
         },
       }),
@@ -325,6 +329,7 @@ test("lesson editor scrolls to its GUI save control on a short phone", async ({
         lesson: {
           id: "scroll-test",
           lesson: createLessonScript(),
+          revision: lessonRevision,
           source: "generated",
         },
       }),
@@ -384,6 +389,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
           lesson: {
             id: "gui-edit-test",
             lesson: savedLesson,
+            revision: lessonRevision,
             source: "generated",
           },
           warnings: [],
@@ -399,6 +405,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
         lesson: {
           id: "gui-edit-test",
           lesson: savedLesson,
+          revision: lessonRevision,
           source: "generated",
         },
       }),
@@ -452,7 +459,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
   );
   expect(payload.lesson.scenes[0].steps.at(-1)).toMatchObject({
     dialogue: "The flowers have all the water they need.",
-    speaker: "narrator",
+    speaker: "peppa",
   });
   await expect(page).toHaveURL("/guardian/lessons");
 });

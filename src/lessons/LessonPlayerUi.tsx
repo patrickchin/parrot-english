@@ -1,7 +1,6 @@
 import {
   ChevronLeft,
   ChevronRight,
-  CircleCheckBig,
   Ear,
   LoaderCircle,
   Mic,
@@ -16,12 +15,12 @@ import {
   type KeyboardEvent,
   type ReactNode,
   useEffect,
+  useId,
   useRef,
   useState,
 } from "react";
 import {
   ActionButton,
-  controlClassName,
   cx,
   IconButton,
   Card,
@@ -47,14 +46,6 @@ type LessonSpeechPresentation = {
   speaker: string;
   text: string;
 };
-
-type LessonFeedbackOutcome =
-  | "correct"
-  | "incorrect"
-  | "incorrectFinal"
-  | "noInput"
-  | "noInputFinal"
-  | null;
 
 function scrollOverflowText(event: KeyboardEvent<HTMLParagraphElement>) {
   const target = event.currentTarget;
@@ -503,33 +494,15 @@ export const LessonIntroduction = forwardRef<
       <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9">
         <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black text-brand-blue">
           <Sparkles aria-hidden="true" className="size-4" />
-          {sceneCount} parts
+          {lessonTitle} · {sceneCount} parts
         </span>
         <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
-          {lessonTitle}
+          Watch and join in
         </h1>
-        <div
-          aria-label="How to play"
-          className="mx-auto my-5 grid max-w-md grid-cols-2 gap-2 text-brand-ink md:my-7 md:gap-3"
-          role="list"
-        >
-          <span
-            className="grid min-h-20 place-items-center gap-1 rounded-2xl bg-sky-100 p-3 text-lg font-black md:min-h-24 md:text-xl"
-            role="listitem"
-          >
-            <Ear aria-hidden="true" className="size-7 text-brand-blue md:size-9" />
-            1. Listen
-          </span>
-          <span
-            className="grid min-h-20 place-items-center gap-1 rounded-2xl bg-emerald-100 p-3 text-lg font-black md:min-h-24 md:text-xl"
-            role="listitem"
-          >
-            <Mic aria-hidden="true" className="size-7 text-brand-green md:size-9" />
-            2. Talk
-          </span>
-        </div>
+        <p className="mx-auto mb-6 mt-3 max-w-md text-lg font-bold leading-snug text-slate-600 short:mb-4 md:mb-8 md:mt-4 md:text-2xl">
+          Watch the story and say the big words with the group whenever you like.
+        </p>
         <ActionButton
-          aria-label="Start lesson"
           className="max-w-sm"
           disabled={!ready}
           fullWidth
@@ -539,7 +512,7 @@ export const LessonIntroduction = forwardRef<
           type="button"
         >
           {ready ? (
-            "Let’s go!"
+            "Let's go"
           ) : (
             <>
               <LoaderCircle
@@ -555,15 +528,25 @@ export const LessonIntroduction = forwardRef<
   );
 });
 
+export type LessonCompletionSaveState = "failed" | "idle" | "pending";
+
 export const LessonCompletion = forwardRef<
   HTMLButtonElement,
   {
     lessonTitle: string;
     onBack: () => void;
     onReplay: () => void;
+    onRetrySaving: () => void;
+    saveState: LessonCompletionSaveState;
   }
 >(function LessonCompletion(
-  { lessonTitle, onBack, onReplay },
+  {
+    lessonTitle,
+    onBack,
+    onReplay,
+    onRetrySaving,
+    saveState,
+  },
   ref,
 ) {
   return (
@@ -579,9 +562,39 @@ export const LessonCompletion = forwardRef<
         <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
           Lesson complete!
         </h1>
-        <p className="mb-5 mt-3 text-lg font-bold leading-snug text-slate-600 md:mb-7 md:text-2xl">
+        <p className="mb-4 mt-3 text-lg font-bold leading-snug text-slate-600 md:text-2xl">
           You finished {lessonTitle}!
         </p>
+        {saveState === "pending" ? (
+          <p
+            aria-live="polite"
+            className="mb-4 mt-0 font-bold text-slate-600"
+            role="status"
+          >
+            Saving your voices…
+          </p>
+        ) : null}
+        {saveState === "failed" ? (
+          <div
+            aria-live="polite"
+            className="mb-4 grid place-items-center gap-2"
+            role="status"
+          >
+            <p className="m-0 font-bold text-slate-600">
+              Some voices have not saved yet.
+            </p>
+            <ActionButton
+              onClick={onRetrySaving}
+              shape="rounded"
+              size="compact"
+              type="button"
+              variant="navy"
+            >
+              <RotateCcw aria-hidden="true" className="size-4" />
+              Try saving again
+            </ActionButton>
+          </div>
+        ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <ActionButton
             aria-label="Replay lesson"
@@ -606,7 +619,6 @@ export const LessonCompletion = forwardRef<
     </section>
   );
 });
-
 export function LessonCharacters({
   characters,
 }: {
@@ -727,6 +739,66 @@ export function LessonSpeech({
   );
 }
 
+export function LessonJoinInPrompt({
+  dialogue,
+  recording,
+  reserved = false,
+}: {
+  dialogue: string;
+  recording: boolean;
+  reserved?: boolean;
+}) {
+  const headingId = useId();
+  const overflowText = useOverflowText(dialogue);
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className={cx(
+        "lesson-dialogue-overlay lesson-user-prompt z-30 grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl border-4 border-white bg-white/95 px-3 py-3 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 md:px-7 md:py-4",
+        reserved
+          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
+          : "absolute left-1/2 top-36 max-h-[calc(72dvh-15rem)] w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
+      )}
+      role="region"
+    >
+      <h2
+        className="m-0 inline-flex items-center justify-self-center gap-1.5 text-sm font-black uppercase tracking-widest text-brand-green md:text-base"
+        id={headingId}
+      >
+        <Mic aria-hidden="true" className="size-4" />
+        Join in
+      </h2>
+      <p
+        className={cx(
+          "m-0 min-h-0 overflow-y-auto overscroll-contain py-1 text-[clamp(1.65rem,8vw,3.5rem)] font-black leading-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink",
+          reserved &&
+            "max-h-32 short-wide:text-[clamp(1.4rem,4.5vw,2.25rem)] tall-wide:max-h-20 tall-wide:text-[clamp(1.25rem,2.2vw,2rem)]",
+        )}
+        onKeyDown={scrollOverflowText}
+        ref={overflowText.ref}
+        tabIndex={overflowText.tabIndex}
+      >
+        {dialogue}
+      </p>
+      <div
+        aria-live="polite"
+        className="m-0 inline-flex min-h-5 items-center justify-center gap-1.5 text-sm font-extrabold text-slate-600"
+        role="status"
+      >
+        {recording ? (
+          <Mic aria-hidden="true" className="size-4 text-brand-green" />
+        ) : (
+          <Ear aria-hidden="true" className="size-4 text-brand-blue" />
+        )}
+        {recording
+          ? "Your microphone is joining in too"
+          : "Voices are joining in"}
+      </div>
+    </section>
+  );
+}
+
 export function LessonUserPrompt({
   dialogue,
   portrait,
@@ -797,62 +869,6 @@ export function LessonUserPrompt({
           {dialogue}
         </p>
       </div>
-    </section>
-  );
-}
-
-export function LessonFeedback({
-  outcome,
-  reserved = false,
-  speech,
-}: {
-  outcome: LessonFeedbackOutcome;
-  reserved?: boolean;
-  speech: LessonSpeechPresentation;
-}) {
-  const overflowText = useOverflowText(speech.text);
-  const isCorrect = outcome === "correct";
-  const isRetry = outcome === "incorrect" || outcome === "noInput";
-  const heading = isCorrect
-    ? "You did it!"
-    : isRetry
-      ? "Try once more"
-      : "Keep going!";
-
-  return (
-    <section
-      aria-label="Speaking feedback"
-      className={cx(
-        "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center text-white shadow-control-navy md:px-7 md:py-4",
-        reserved
-          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
-          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
-        isCorrect
-          ? "bg-emerald-700/95"
-          : isRetry
-            ? "bg-amber-700/95"
-            : "bg-brand-navy/95",
-      )}
-      role="region"
-    >
-      <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-white/85 md:text-sm">
-        <CircleCheckBig aria-hidden="true" className="size-4" />
-        {heading}
-      </span>
-      <p
-        aria-live="polite"
-        className={cx(
-          "m-0 text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-yellow",
-          reserved &&
-            "min-h-0 max-h-32 overflow-y-auto overscroll-contain md:max-h-40 short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
-        )}
-        onKeyDown={scrollOverflowText}
-        ref={overflowText.ref}
-        role="status"
-        tabIndex={overflowText.tabIndex}
-      >
-        {speech.text}
-      </p>
     </section>
   );
 }
@@ -932,127 +948,6 @@ export function LessonPlaybackControls({
   );
 }
 
-export function LessonSpeakingControls({
-  isEvaluating,
-  isRecording,
-  isStartingRecording,
-  onSkip,
-  onToggleRecording,
-  reserved = false,
-  usePracticeFallback = false,
-}: {
-  isEvaluating: boolean;
-  isRecording: boolean;
-  isStartingRecording: boolean;
-  onSkip: () => void;
-  onToggleRecording: () => void;
-  reserved?: boolean;
-  usePracticeFallback?: boolean;
-}) {
-  return (
-    <nav
-      aria-label="Speaking controls"
-      className={cx(
-        "lesson-speaking-controls z-40 flex justify-center gap-2 md:gap-2.5",
-        reserved
-          ? "relative w-full min-w-0 max-w-none"
-          : "absolute bottom-3 left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-6 md:max-w-lg",
-      )}
-    >
-      {isEvaluating ? (
-        <span
-          aria-live="assertive"
-          className={controlClassName({
-            className: reserved
-              ? "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base"
-              : undefined,
-            fullWidth: true,
-            interaction: "static",
-            size: "large",
-            variant: "navy",
-          })}
-          role="status"
-        >
-          <LoaderCircle
-            aria-hidden="true"
-            className="size-6 animate-spin motion-reduce:animate-none"
-          />
-          Checking your words…
-        </span>
-      ) : (
-        <>
-          {usePracticeFallback ? (
-            <ActionButton
-              aria-label="Done with speaking"
-              className={cx(
-                "min-w-0 flex-1",
-                reserved &&
-                  "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base",
-              )}
-              onClick={onSkip}
-              size="large"
-              type="button"
-              variant="success"
-            >
-              Done
-              <ChevronRight aria-hidden="true" className="size-6 md:size-7" />
-            </ActionButton>
-          ) : null}
-          <ActionButton
-            aria-disabled={isStartingRecording || undefined}
-            className={cx(
-              usePracticeFallback ? "shrink-0" : "min-w-0 flex-1",
-              isStartingRecording && "aria-disabled:opacity-100",
-              isRecording && "animate-pulse motion-reduce:animate-none",
-              reserved &&
-                "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base",
-            )}
-            onClick={isStartingRecording ? undefined : onToggleRecording}
-            size="large"
-            type="button"
-            variant={
-              isRecording ? "brand" : usePracticeFallback ? "navy" : "success"
-            }
-          >
-            {isStartingRecording ? (
-              <LoaderCircle
-                aria-hidden="true"
-                className="size-7 animate-spin motion-reduce:animate-none md:size-8"
-              />
-            ) : (
-              <Mic aria-hidden="true" className="size-7 md:size-8" />
-            )}
-            {isStartingRecording
-              ? "Opening mic…"
-              : isRecording
-                ? "Tap when done"
-                : usePracticeFallback
-                  ? "Try mic"
-                  : "Tap to talk"}
-          </ActionButton>
-          {usePracticeFallback ? null : (
-            <ActionButton
-              aria-label="Skip speaking turn"
-              className={cx(
-                "shrink-0",
-                reserved &&
-                  "tall-wide:h-12 tall-wide:px-3 tall-wide:text-base",
-              )}
-              disabled={isStartingRecording}
-              onClick={onSkip}
-              size="large"
-              type="button"
-              variant="navy"
-            >
-              Skip
-            </ActionButton>
-          )}
-        </>
-      )}
-    </nav>
-  );
-}
-
 export function LessonErrorBanner({
   error,
   onRetry,
@@ -1079,7 +974,8 @@ export function LessonErrorBanner({
         tone === "help" ? "bg-brand-navy" : "bg-red-800",
       )}
       data-tone={tone}
-      role={tone === "help" ? "region" : "alert"}
+      aria-live={tone === "help" ? "polite" : undefined}
+      role={tone === "help" ? "status" : "alert"}
     >
       <p className="m-0">{error}</p>
       {onRetry && onSkip ? (

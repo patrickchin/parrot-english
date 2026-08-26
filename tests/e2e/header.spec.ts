@@ -1050,10 +1050,16 @@ test("AI and saved data explains caregiver facts before optional technical detai
     about.getByRole("heading", { name: "What this account keeps" }),
   ).toBeVisible();
   await expect(
+    about.getByText(
+      "With guardian permission, lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
     about.getByText("Raw audio is not added to the Parrot account.", {
       exact: false,
     }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     about.getByText("Talk to Peppa does not change learner profiles.", {
       exact: false,

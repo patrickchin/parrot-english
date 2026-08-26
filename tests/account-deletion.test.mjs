@@ -8,6 +8,7 @@ import {
   prepareAccountDeletion,
 } from "../worker/account-deletion.ts";
 import { handleDubRequest } from "../worker/dubs.ts";
+import { handlePersonalizedStoryArtRequest } from "../worker/personalized-story-art.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const USER_ID = "user-1";
@@ -18,6 +19,14 @@ const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v2/`;
+const LESSON_RECORDING_KEY =
+  `${USER_PREFIX}lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio`;
+const learnerLessonRecordingKey = (learnerProfileId) =>
+  `${USER_PREFIX}learners/${learnerProfileId}/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio`;
+const HELD_ART_CANDIDATE_KEY =
+  `${USER_PREFIX}learners/learner-a/the-red-ball/versions/held-candidate.png`;
+const LEGACY_ART_CANDIDATE_KEY =
+  `${USER_PREFIX}the-red-ball/versions/legacy-held.png`;
 const MARKER_KEY = `${DUB_PREFIX}.dub-generation`;
 const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
 const slotKey = (lineId) => `${DUB_PREFIX}${lineId}.audio`;
@@ -316,6 +325,58 @@ function prepareDeletion(input) {
   });
 }
 
+function callPersonalizedArt({ bucket, database, d1 }) {
+  const formData = new FormData();
+  formData.set(
+    "source",
+    new File([new Uint8Array([137, 80, 78, 71])], "learner.png", {
+      type: "image/png",
+    }),
+  );
+  formData.set("guardianConsentAccepted", "yes");
+  formData.set(
+    "guardianConsentVersion",
+    "guardian-photo-cloudflare-v1",
+  );
+  return handlePersonalizedStoryArtRequest(
+    {
+      database,
+      env: {
+        AI: {},
+        ASSETS: {},
+        DB: d1,
+        PERSONALIZED_STORY_ART_BUCKET: bucket,
+        PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+        PERSONALIZED_STORY_ART_ENABLED: "1",
+      },
+      identity: {
+        learnerName: "Mia",
+        learnerProfileId: "learner-a",
+        legacyStorageOwner: true,
+        sessionId: "session-1",
+        userId: USER_ID,
+        userName: "Parent",
+      },
+      request: new Request(
+        "https://example.test/api/stories/the-red-ball/personalized-art",
+        { body: formData, method: "POST" },
+      ),
+    },
+    {
+      createId: () => "art-held",
+      createObjectId: () => "held-candidate",
+      async generateImage() {
+        return {
+          bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+          contentType: "image/png",
+          extension: "png",
+        };
+      },
+      now: () => new Date("2026-08-25T09:59:00.000Z"),
+    },
+  );
+}
+
 function seedDatabase() {
   const state = createTestD1Database();
   state.sqlite
@@ -360,9 +421,320 @@ function seedDatabase() {
 }
 
 describe("account deletion personalized-art lifecycle", () => {
-  it("bounds final fence writes while closing every learner subtree", async () => {
+  it("fences a held art candidate so a late put cannot survive cascade when upload cleanup fails", async () => {
+    const state = seedDatabase();
+    const candidatePutStarted = deferred();
+    const releaseCandidatePut = deferred();
+    const bucket = createBucket();
+    const put = bucket.put.bind(bucket);
+    const remove = bucket.delete.bind(bucket);
+    let cleanupAttempts = 0;
+    let upload;
+
+    bucket.put = async (key, bytes, options) => {
+      if (
+        key === HELD_ART_CANDIDATE_KEY &&
+        options?.customMetadata?.guardianConsentVersion
+      ) {
+        candidatePutStarted.resolve();
+        await releaseCandidatePut.promise;
+      }
+      return put(key, bytes, options);
+    };
+    bucket.delete = async (keys) => {
+      const list = Array.isArray(keys) ? keys : [keys];
+      if (list.includes(HELD_ART_CANDIDATE_KEY)) {
+        cleanupAttempts += 1;
+        throw new Error("upload cleanup failed");
+      }
+      return remove(keys);
+    };
+
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_profile
+            (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+           VALUES ('learner-a', ?, 'Mia', 'completed', 1)`,
+        )
+        .run(USER_ID);
+
+      upload = callPersonalizedArt({
+        bucket,
+        database: state.database,
+        d1: state.d1,
+      });
+      await candidatePutStarted.promise;
+
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      assert.deepEqual(
+        JSON.parse(
+          state.sqlite
+            .prepare(
+              `SELECT personalized_art_candidate_keys_json
+               FROM account_deletion_tombstone`,
+            )
+            .get().personalized_art_candidate_keys_json,
+        ),
+        [HELD_ART_CANDIDATE_KEY],
+      );
+      assert.deepEqual(
+        bucket.stored.get(HELD_ART_CANDIDATE_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
+
+      state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
+      releaseCandidatePut.resolve();
+      const response = await upload;
+
+      assert.equal(response.status, 409);
+      assert.equal(cleanupAttempts, 0);
+      assert.deepEqual(
+        bucket.stored.get(HELD_ART_CANDIDATE_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
+      const candidatePut = bucket.calls.put.find(
+        ({ key, options }) =>
+          key === HELD_ART_CANDIDATE_KEY &&
+          options?.customMetadata?.guardianConsentVersion,
+      );
+      assert.deepEqual(candidatePut.options.onlyIf, {
+        etagDoesNotMatch: "*",
+      });
+    } finally {
+      releaseCandidatePut.resolve();
+      await Promise.allSettled([upload].filter(Boolean));
+      state.close();
+    }
+  });
+
+  it("retains the durable art-candidate closure and blocks cascade until its fence succeeds", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket([{ key: HELD_ART_CANDIDATE_KEY }]);
+    const put = bucket.put.bind(bucket);
+    let failCandidateFence = true;
+    bucket.put = async (key, bytes, options) => {
+      if (
+        failCandidateFence &&
+        key === HELD_ART_CANDIDATE_KEY &&
+        options?.customMetadata?.state === "account-deleting"
+      ) {
+        throw new Error("candidate fence failed");
+      }
+      return put(key, bytes, options);
+    };
+
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_profile
+            (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+           VALUES ('learner-a', ?, 'Mia', 'completed', 1)`,
+        )
+        .run(USER_ID);
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_story_art_generation_lease (
+            learner_profile_id, auth_user_id, story_id, generation_token,
+            candidate_r2_object_key, lease_expires_at, created_at, updated_at
+          ) VALUES ('learner-a', ?, 'the-red-ball', 'held', ?, ?, 1, 1)`,
+        )
+        .run(USER_ID, HELD_ART_CANDIDATE_KEY, 9_999_999_999_999);
+
+      await assert.rejects(
+        prepareDeletion({
+          bucket,
+          database: state.database,
+          userId: USER_ID,
+          wait: async () => {},
+        }),
+        /candidate fence failed/,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(USER_ID).count,
+        1,
+      );
+      assert.deepEqual(
+        JSON.parse(
+          state.sqlite
+            .prepare(
+              `SELECT personalized_art_candidate_keys_json
+               FROM account_deletion_tombstone`,
+            )
+            .get().personalized_art_candidate_keys_json,
+        ),
+        [HELD_ART_CANDIDATE_KEY],
+      );
+
+      state.sqlite
+        .prepare("DELETE FROM learner_story_art_generation_lease")
+        .run();
+      failCandidateFence = false;
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      assert.deepEqual(
+        bucket.stored.get(HELD_ART_CANDIDATE_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("captures distinct legacy and learner candidates while deduplicating learner mirrors", async () => {
     const state = seedDatabase();
     const bucket = createBucket();
+
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_profile
+            (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+           VALUES
+             ('learner-a', ?, 'Mia', 'completed', 1),
+             ('learner-b', ?, 'Leo', 'completed', 0)`,
+        )
+        .run(USER_ID, USER_ID);
+      state.sqlite
+        .prepare(
+          `INSERT INTO personalized_story_art_generation_lease (
+            auth_user_id, story_id, generation_token,
+            candidate_r2_object_key, lease_expires_at, created_at, updated_at
+          ) VALUES (?, 'the-red-ball', 'legacy-held', ?, ?, 1, 1)`,
+        )
+        .run(USER_ID, LEGACY_ART_CANDIDATE_KEY, 9_999_999_999_999);
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_story_art_generation_lease (
+            learner_profile_id, auth_user_id, story_id, generation_token,
+            candidate_r2_object_key, lease_expires_at, created_at, updated_at
+          ) VALUES ('learner-a', ?, 'the-red-ball', 'learner-held', ?, ?, 1, 1)`,
+        )
+        .run(USER_ID, HELD_ART_CANDIDATE_KEY, 9_999_999_999_999);
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_story_art_generation_lease (
+            learner_profile_id, auth_user_id, story_id, generation_token,
+            candidate_r2_object_key, lease_expires_at, created_at, updated_at
+          ) VALUES ('learner-b', ?, 'the-red-ball', 'learner-mirror', ?, ?, 1, 1)`,
+        )
+        .run(USER_ID, HELD_ART_CANDIDATE_KEY, 9_999_999_999_999);
+
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+
+      assert.deepEqual(
+        JSON.parse(
+          state.sqlite
+            .prepare(
+              `SELECT personalized_art_candidate_keys_json
+               FROM account_deletion_tombstone`,
+            )
+            .get().personalized_art_candidate_keys_json,
+        ),
+        [HELD_ART_CANDIDATE_KEY, LEGACY_ART_CANDIDATE_KEY],
+      );
+      for (const candidateKey of [
+        HELD_ART_CANDIDATE_KEY,
+        LEGACY_ART_CANDIDATE_KEY,
+      ]) {
+        assert.equal(
+          bucket.calls.put.filter(
+            ({ key, options }) =>
+              key === candidateKey &&
+              options?.customMetadata?.state === "account-deleting",
+          ).length,
+          1,
+        );
+        assert.deepEqual(
+          bucket.stored.get(candidateKey)?.options.customMetadata,
+          {
+            generation: DELETION_GENERATION,
+            state: "account-deleting",
+          },
+        );
+      }
+    } finally {
+      state.close();
+    }
+  });
+
+  it("fails closed before R2 work when a persisted candidate escapes the account prefix", async () => {
+    const state = seedDatabase();
+    const initialBucket = createBucket();
+
+    try {
+      await prepareDeletion({
+        bucket: initialBucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      state.sqlite
+        .prepare(
+          `UPDATE account_deletion_tombstone
+           SET personalized_art_candidate_keys_json = ?`,
+        )
+        .run(JSON.stringify(["personalized-story-art/another-user/private.png"]));
+      const retryBucket = createBucket();
+
+      await assert.rejects(
+        prepareDeletion({
+          bucket: retryBucket,
+          database: state.database,
+          userId: USER_ID,
+          wait: async () => {},
+        }),
+        /candidate closure is invalid/,
+      );
+      assert.deepEqual(retryBucket.calls, {
+        delete: [],
+        head: [],
+        list: [],
+        put: [],
+      });
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(USER_ID).count,
+        1,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("bounds final fence writes while closing every learner subtree", async () => {
+    const state = seedDatabase();
+    const siblingRecordingKey = learnerLessonRecordingKey("learner-b");
+    const bucket = createBucket([
+      { key: LESSON_RECORDING_KEY },
+      { key: siblingRecordingKey },
+    ]);
     const put = bucket.put.bind(bucket);
     let activeWrites = 0;
     let maxActiveWrites = 0;
@@ -406,6 +778,12 @@ describe("account deletion personalized-art lifecycle", () => {
       assertDeletionFences(bucket, DELETION_GENERATION);
       assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
       assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      for (const key of [LESSON_RECORDING_KEY, siblingRecordingKey]) {
+        assert.deepEqual(bucket.stored.get(key)?.options.customMetadata, {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        });
+      }
     } finally {
       state.close();
     }
@@ -518,7 +896,7 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
-  it("tombstones the account and art, purges every R2 object, and retains only dub deletion fences", async () => {
+  it("tombstones the account, purges art, and retains dub and recording fences", async () => {
     const state = seedDatabase();
     const events = [];
     try {
@@ -537,7 +915,10 @@ describe("account deletion personalized-art lifecycle", () => {
         [
           "page-2",
           {
-            objects: [{ key: `${USER_PREFIX}future-story/versions/two.webp` }],
+            objects: [
+              { key: `${USER_PREFIX}future-story/versions/two.webp` },
+              { key: LESSON_RECORDING_KEY },
+            ],
             truncated: false,
           },
         ],
@@ -591,6 +972,17 @@ describe("account deletion personalized-art lifecycle", () => {
         },
       ]);
       assertDeletionFences(bucket, DELETION_GENERATION);
+      assert.deepEqual(
+        bucket.stored.get(LESSON_RECORDING_KEY)?.bytes,
+        fenceBytes("slot", DELETION_GENERATION, "account-deleting"),
+      );
+      assert.deepEqual(
+        bucket.stored.get(LESSON_RECORDING_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
       assert.equal(
         [...bucket.stored.values()].every(
           (item) => item.options.customMetadata.state !== "audio",
@@ -1252,11 +1644,12 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
-  it("retries 10058 marker and slot fence writes with injected pacing", async () => {
+  it("retries 10058 marker, dub, and lesson fence writes with injected pacing", async () => {
     const state = seedDatabase();
-    const bucket = createBucket();
+    const bucket = createBucket([{ key: LESSON_RECORDING_KEY }]);
     const put = bucket.put.bind(bucket);
     const waits = [];
+    let lessonAttempts = 0;
     let markerAttempts = 0;
     let lineThreeAttempts = 0;
     bucket.put = async (key, bytes, options) => {
@@ -1270,6 +1663,12 @@ describe("account deletion personalized-art lifecycle", () => {
         lineThreeAttempts += 1;
         if (lineThreeAttempts < 2) {
           throw new Error("put slot: TooManyRequests (10058)");
+        }
+      }
+      if (key === LESSON_RECORDING_KEY) {
+        lessonAttempts += 1;
+        if (lessonAttempts < 3) {
+          throw new Error("put lesson: TooManyRequests (10058)");
         }
       }
       return put(key, bytes, options);
@@ -1286,12 +1685,17 @@ describe("account deletion personalized-art lifecycle", () => {
       });
       assert.equal(markerAttempts, 3);
       assert.equal(lineThreeAttempts, 2);
-      assert.equal(waits.length, 3);
-      assert.equal(
-        waits.every((delay) => delay >= 1_000),
-        true,
-      );
+      assert.equal(lessonAttempts, 3);
+      assert.equal(waits.length, 5);
+      assert.equal(waits.every((delay) => delay >= 1_000), true);
       assertDeletionFences(bucket, DELETION_GENERATION);
+      assert.deepEqual(
+        bucket.stored.get(LESSON_RECORDING_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
     } finally {
       state.close();
     }

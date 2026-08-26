@@ -231,6 +231,16 @@ export const learnerProfile = sqliteTable(
     lastSkippedAt: integer("last_skipped_at", { mode: "timestamp_ms" }),
     lastSkippedSessionId: text("last_skipped_session_id"),
     completedAt: integer("completed_at", { mode: "timestamp_ms" }),
+    lessonRecordingConsentVersion: text("lesson_recording_consent_version"),
+    lessonRecordingConsentAt: integer("lesson_recording_consent_at", {
+      mode: "timestamp_ms",
+    }),
+    lessonRecordingGeneration: integer("lesson_recording_generation")
+      .default(0)
+      .notNull(),
+    lessonRecordingCleanupBeforeGeneration: integer(
+      "lesson_recording_cleanup_before_generation",
+    ),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -362,6 +372,10 @@ export const learnerLesson = sqliteTable(
     ),
     source: text("source").notNull(),
     lessonJson: text("lesson_json").notNull(),
+    recordingGeneration: integer("recording_generation").default(0).notNull(),
+    recordingCleanupBeforeGeneration: integer(
+      "recording_cleanup_before_generation",
+    ),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -600,11 +614,20 @@ export const accountDeletionTombstone = sqliteTable(
     learnerStorageIdentitiesJson: text("learner_storage_identities_json")
       .default("[]")
       .notNull(),
+    personalizedArtCandidateKeysJson: text(
+      "personalized_art_candidate_keys_json",
+    )
+      .default("[]")
+      .notNull(),
   },
   (table) => [
     check(
       "account_deletion_tombstone_learner_storage_identities_json_check",
       sql`json_valid(${table.learnerStorageIdentitiesJson})`,
+    ),
+    check(
+      "account_deletion_tombstone_personalized_art_candidate_keys_json_check",
+      sql`json_valid(${table.personalizedArtCandidateKeysJson})`,
     ),
   ],
 );

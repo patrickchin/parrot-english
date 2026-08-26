@@ -16,6 +16,7 @@ Browser
             -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
             -> /api/conversations/* -> LiveKit -> D1
             -> /api/lessons/my/* -> OpenAI -> D1
+            -> /api/lesson-recordings/* -> learner consent + private R2 slots
             -> /api/stories/*/personalized-art -> Workers AI + D1 + private R2
             -> /api/dubs/five-little-ducks-v2/* -> D1 consent + private R2 clip slots
        -> /api/evaluate-speech -> Groq
@@ -88,8 +89,9 @@ safe; two or more owned learners without a selection return
 `409 learner_selection_required`.
 
 The Worker exposes authentication, Guardian access, the Guardian learner
-roster, learner profile, conversations, My Lessons, story art, build
-information, speech evaluation, and Five Little Ducks dubbing. The
+roster, learner profile, conversations, My Lessons, lesson join-in recordings,
+story art, build information, speech evaluation, and Five Little Ducks
+dubbing. The
 authenticated `/api/dubs/five-little-ducks-v2/*` family owns consent-aware
 status, raw clip upload, private clip streaming, durable consent grant, and
 whole-dub revocation/deletion. Static assets are the final fallback.
@@ -159,14 +161,22 @@ role or long-lived account permission. The active learner is separate server
 state for that same session, so different sessions can manage different
 learners without changing one another.
 
-Dubbing consent is deliberately durable learner state so the selected learner
-may record after Guardian mode is locked. Lesson and dub playback phase, active
-recording, evaluation, selected scene and line, pending local take recovery, and
-session-local Needs-retake markers are transient React state. The saved-line map
-comes from the learner-scoped dub status response, so a reload resumes recorded
-progress without persisting editor-only fallback markers. Route and
-learner-selection changes invalidate pending audio, conversation, story,
-profile, lesson, and dubbing work before the new learner's state is committed.
+Dubbing and lesson-recording consent are deliberately durable learner state so
+the selected learner may record after Guardian mode is locked. Lesson and dub
+playback phase, active recording, selected scene and line, pending local take
+recovery, and session-local Needs-retake markers are transient React state. The
+saved-line map comes from the learner-scoped dub status response, so a reload
+resumes recorded progress without persisting editor-only fallback markers.
+Route and learner-selection changes invalidate pending audio, conversation,
+story, profile, lesson, lesson-recording, and dubbing work before the new
+learner's state is committed.
+
+Completed lesson clips may continue through their background queue after route
+unmount. Every upload therefore includes the learner ID captured by the mounted
+player only as an expected-selection precondition. The Worker compares it with
+the learner identity it independently resolves from the authenticated session
+and rejects a mismatch before reading the audio body. It never trusts that
+header to select a profile or storage namespace.
 
 ```text
 /
@@ -211,6 +221,7 @@ fallback strands an unlocked session at a learner-only screen.
 | Conversation turns and facts | Inherit the conversation's stored learner |
 | Personalized art and generation lease | Learner profile plus story |
 | Dubbing consent and clip namespace | Learner profile |
+| Lesson-recording consent and clip namespace | Learner profile |
 | Rate limits | Guardian account plus existing IP dimensions |
 | Account-deletion tombstone | Guardian account |
 

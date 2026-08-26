@@ -4,56 +4,32 @@ import { getLessonProgressLabel } from "../lib/lesson-progress.js";
 import { LessonPhase, createInitialLessonState } from "../lib/lesson-state.js";
 
 describe("lesson progress label", () => {
-  it("describes idle and paused playback", () => {
+  it("describes idle, paused, and completed playback", () => {
     assert.equal(
       getLessonProgressLabel(createInitialLessonState()),
-      "Press Start to begin"
+      "Press Let's go to begin",
     );
     assert.equal(
-      getLessonProgressLabel({
-        ...createInitialLessonState(),
-        phase: LessonPhase.Paused,
-      }),
-      "Story paused — press Play to resume"
+      getLessonProgressLabel({ ...createInitialLessonState(), phase: LessonPhase.Paused }),
+      "Story paused — press Play to resume",
+    );
+    assert.equal(
+      getLessonProgressLabel({ ...createInitialLessonState(), phase: LessonPhase.Finished }),
+      "Lesson complete",
     );
   });
 
   it("describes automatic character and narrator speech", () => {
     const speaking = { ...createInitialLessonState(), phase: LessonPhase.Speaking };
 
-    assert.equal(
-      getLessonProgressLabel(speaking, { speaker: "dolly" }),
-      "Listen to Dolly"
-    );
-    assert.equal(
-      getLessonProgressLabel(speaking, { speaker: "narrator" }),
-      "Listen to the narrator"
-    );
+    assert.equal(getLessonProgressLabel(speaking, { speaker: "dolly" }), "Listen to Dolly");
+    assert.equal(getLessonProgressLabel(speaking, { speaker: "narrator" }), "Listen to the narrator");
   });
 
-  it("describes every user interaction phase in English", () => {
-    const labels = [
-      [LessonPhase.WaitingForUser, "Your turn"],
-      [LessonPhase.Recording, "Tap the microphone when you're finished"],
-      [LessonPhase.Evaluating, "Checking your speech"],
-      [LessonPhase.Finished, "Lesson complete"],
-    ];
-
-    for (const [phase, expected] of labels) {
-      assert.equal(
-        getLessonProgressLabel({ ...createInitialLessonState(), phase }),
-        expected
-      );
-    }
-  });
-
-  it("names the scripted responder", () => {
+  it("invites the learner to join in", () => {
     assert.equal(
-      getLessonProgressLabel(
-        { ...createInitialLessonState(), phase: LessonPhase.Responding },
-        { speaker: "peppa" },
-      ),
-      "Listen to Peppa",
+      getLessonProgressLabel({ ...createInitialLessonState(), phase: LessonPhase.JoiningIn }),
+      "Join in if you want",
     );
   });
 });

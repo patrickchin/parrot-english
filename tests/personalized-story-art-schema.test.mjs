@@ -219,6 +219,7 @@ describe("personalized story art persistence contract", () => {
         "r2Prefix",
         "requestedAt",
         "learnerStorageIdentitiesJson",
+        "personalizedArtCandidateKeysJson",
       ],
     );
 
@@ -234,6 +235,14 @@ describe("personalized story art persistence contract", () => {
       assert.match(
         sql ?? "",
         /CHECK\s*\(\s*json_valid\s*\(\s*[`"]?learner_storage_identities_json[`"]?\s*\)\s*\)/i,
+      );
+      assert.match(
+        sql ?? "",
+        /[`"]?personalized_art_candidate_keys_json[`"]?\s+text\s+NOT NULL\s+DEFAULT\s+'\[\]'/i,
+      );
+      assert.match(
+        sql ?? "",
+        /CHECK\s*\(\s*json_valid\s*\(\s*[`"]?personalized_art_candidate_keys_json[`"]?\s*\)\s*\)/i,
       );
       assert.doesNotMatch(
         sql ?? "",

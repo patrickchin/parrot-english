@@ -429,6 +429,259 @@ test("keeps lessons, conversations, art, and dubbing isolated by selected learne
   });
 });
 
+test("keeps automatic lesson recordings isolated by selected learner", async ({
+  page,
+}) => {
+  const recordingSnapshot = () =>
+    page.evaluate(() => {
+      const media = (
+        window as Window & {
+          __parrotE2eLessonMedia?: {
+            snapshot(): {
+              getUserMediaCalls: number;
+              uploads: Array<{
+                lessonId: string;
+                sceneIndex: number;
+                stepIndex: number;
+              }>;
+            };
+          };
+        }
+      ).__parrotE2eLessonMedia;
+      if (!media) throw new Error("Lesson media controller is missing.");
+      return media.snapshot();
+    });
+  const lessonPath =
+    "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=recording";
+
+  await page.goto(learnerScenarioUrl("/guardian/profile", "multiple"));
+  const consentSection = page.getByRole("region", {
+    name: "Lesson voice recordings",
+  });
+  await consentSection
+    .getByRole("button", { name: "Allow lesson voice recordings" })
+    .click();
+  await expect(consentSection.getByRole("status")).toHaveText(
+    "Lesson recording is currently allowed.",
+  );
+
+  await page.goto(learnerScenarioUrl(lessonPath, "multiple", "learner"));
+  await page.getByRole("button", { exact: true, name: "Let's go" }).click();
+  await expect(
+    page
+      .getByRole("region", { name: "Join in" })
+      .filter({ hasText: "It is up high!" }),
+  ).toBeVisible();
+  await expect.poll(async () => (await recordingSnapshot()).uploads.length).toBe(1);
+  await expect(
+    page.getByText(/tap to talk|start recording|stop recording/i),
+  ).toHaveCount(0);
+  expect((await recordingSnapshot()).uploads[0]).toMatchObject({
+    lessonId: "01-peppas-high-ball",
+    sceneIndex: 0,
+    stepIndex: 2,
+  });
+
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+  await learnerCard(page, "Noah")
+    .getByRole("button", { name: "Use Noah" })
+    .click();
+  await page.goto(learnerScenarioUrl("/guardian/profile", "multiple"));
+  await expect(
+    page
+      .getByRole("region", { name: "Lesson voice recordings" })
+      .getByRole("status"),
+  ).toHaveText("Lesson recording is currently off.");
+
+  await page.goto(learnerScenarioUrl(lessonPath, "multiple", "learner"));
+  await page.getByRole("button", { exact: true, name: "Let's go" }).click();
+  await expect(
+    page
+      .getByRole("region", { name: "Join in" })
+      .filter({ hasText: "It is up high!" }),
+  ).toBeVisible();
+  await expect.poll(async () => (await recordingSnapshot()).uploads).toEqual([]);
+  expect((await recordingSnapshot()).getUserMediaCalls).toBe(0);
+
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+  await learnerCard(page, "Mia")
+    .getByRole("button", { name: "Use Mia" })
+    .click();
+  await page.goto(learnerScenarioUrl("/guardian/profile", "multiple"));
+  await expect(
+    page
+      .getByRole("region", { name: "Lesson voice recordings" })
+      .getByRole("status"),
+  ).toHaveText("Lesson recording is currently allowed.");
+  expect((await recordingSnapshot()).uploads).toHaveLength(1);
+});
+
+test("rejects Mia's queued lesson recording after the Guardian switches to Noah", async ({
+  page,
+}) => {
+  const oneLineLesson = createLessonScript();
+  oneLineLesson.scenes = oneLineLesson.scenes.slice(0, 1);
+  const recordingFor = (profileId: string) =>
+    page.evaluate((learnerProfileId) => {
+      const learners = (
+        window as Window & {
+          __parrotE2eLearners?: {
+            snapshot(profileId?: string): {
+              lessonRecording: {
+                pendingUploads: number;
+                uploads: Array<{
+                  expectedLearnerProfileId: string | null;
+                  outcome: string;
+                  size: number;
+                  type: string;
+                }>;
+              } | null;
+            };
+          };
+        }
+      ).__parrotE2eLearners;
+      if (!learners) throw new Error("Learner controller is missing.");
+      return learners.snapshot(learnerProfileId).lessonRecording;
+    }, profileId);
+  const mediaSnapshot = () =>
+    page.evaluate(() => {
+      const media = (
+        window as Window & {
+          __parrotE2eLessonMedia?: {
+            snapshot(): {
+              recorderStops: Array<{ id: number }>;
+            };
+          };
+        }
+      ).__parrotE2eLessonMedia;
+      if (!media) throw new Error("Lesson media controller is missing.");
+      return media.snapshot();
+    });
+  const allowRecordings = async () => {
+    const consent = page.getByRole("region", {
+      name: "Lesson voice recordings",
+    });
+    await consent
+      .getByRole("button", { name: "Allow lesson voice recordings" })
+      .click();
+    await expect(consent.getByRole("status")).toHaveText(
+      "Lesson recording is currently allowed.",
+    );
+  };
+
+  await page.goto(learnerScenarioUrl("/guardian/profile", "multiple"));
+  await allowRecordings();
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+  await learnerCard(page, "Noah")
+    .getByRole("button", { name: "Use Noah" })
+    .click();
+  await page.goto(learnerScenarioUrl("/guardian/profile", "multiple"));
+  await allowRecordings();
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+  await learnerCard(page, "Mia")
+    .getByRole("button", { name: "Use Mia" })
+    .click();
+
+  const lessonId = await page.evaluate(async (lesson) => {
+    const response = await fetch("/api/lessons/my", {
+      body: JSON.stringify({ lesson, source: "uploaded" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("The Mia lesson could not be saved.");
+    const payload = (await response.json()) as { lesson: { id: string } };
+    return payload.lesson.id;
+  }, oneLineLesson);
+  const lessonPath = `/lessons/my/${encodeURIComponent(lessonId)}/scenes/1?parrotE2eLesson=upload-held`;
+
+  await page.goto(learnerScenarioUrl(lessonPath, "multiple", "learner"));
+  await page.getByRole("button", { exact: true, name: "Let's go" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Lesson complete!" }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await recordingFor("learner-mia"))?.pendingUploads)
+    .toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot()).recorderStops.length)
+    .toBe(1);
+
+  await page.getByRole("button", { name: "Replay lesson" }).click();
+  await expect
+    .poll(async () => (await mediaSnapshot()).recorderStops.length)
+    .toBe(2);
+  await expect(
+    page.getByRole("heading", { name: "Lesson complete!" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Saving your voices…", { exact: true }),
+  ).toBeVisible();
+  const queuedForMia = await recordingFor("learner-mia");
+  expect(
+    queuedForMia?.uploads,
+    "only the first of two completed recordings should have started its PUT",
+  ).toEqual([
+    expect.objectContaining({
+      expectedLearnerProfileId: "learner-mia",
+      outcome: "held",
+    }),
+  ]);
+  expect(queuedForMia?.pendingUploads).toBe(1);
+
+  await page
+    .getByRole("button", { name: /Profile for Mia, learner mode/ })
+    .click();
+  await page
+    .getByRole("menu", { name: "Account menu" })
+    .getByRole("menuitem", { name: /Grown-up access/ })
+    .click();
+  const unlock = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  await unlock.getByLabel("Password").fill(GUARDIAN_PASSWORD);
+  await unlock.getByRole("button", { name: "Unlock guardian mode" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Manage learner profiles" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Learner profiles" }),
+  ).toBeVisible();
+  await learnerCard(page, "Noah")
+    .getByRole("button", { name: "Use Noah" })
+    .click();
+  const released = await page.evaluate(() =>
+    (
+      window as Window & {
+        __parrotE2eLessonMedia?: { resolveNextUpload(): boolean };
+      }
+    ).__parrotE2eLessonMedia?.resolveNextUpload(),
+  );
+  expect(released).toBe(true);
+
+  await expect
+    .poll(async () => (await recordingFor("learner-mia"))?.pendingUploads)
+    .toBe(0);
+  await expect
+    .poll(async () => (await recordingFor("learner-noah"))?.uploads.length)
+    .toBe(1);
+  const mia = await recordingFor("learner-mia");
+  const noah = await recordingFor("learner-noah");
+  expect(mia?.uploads).toEqual([
+    expect.objectContaining({
+      expectedLearnerProfileId: "learner-mia",
+      outcome: "saved",
+    }),
+  ]);
+  expect(noah?.uploads).toEqual([
+    expect.objectContaining({
+      expectedLearnerProfileId: "learner-mia",
+      outcome: "learner_selection_changed",
+      size: 0,
+      type: "",
+    }),
+  ]);
+  expect(noah?.pendingUploads).toBe(0);
+});
+
 test("requires the account password before revealing a selection-required roster", async ({
   page,
 }) => {

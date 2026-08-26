@@ -35,6 +35,10 @@ import {
   type MyLessonsEnv,
 } from "./my-lessons.ts";
 import {
+  handleLessonRecordingRequest,
+  type LessonRecordingEnv,
+} from "./lesson-recordings.ts";
+import {
   handlePersonalizedStoryArtRequest,
   type PersonalizedStoryArtEnv,
 } from "./personalized-story-art.ts";
@@ -57,6 +61,7 @@ interface Env
     ConversationEnv,
     LearnerProfilesEnv,
     MyLessonsEnv,
+    LessonRecordingEnv,
     PersonalizedStoryArtEnv,
     DubEnv {
   ASSETS: AssetFetcher;
@@ -78,6 +83,7 @@ interface WorkerDependencies {
   handleLearnerProfilesRequest: typeof handleLearnerProfilesRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleMyLessonRequest: typeof handleMyLessonRequest;
+  handleLessonRecordingRequest: typeof handleLessonRecordingRequest;
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
   handleDubRequest: typeof handleDubRequest;
 }
@@ -87,7 +93,8 @@ function isLearnerProfilePath(pathname: string) {
     pathname === "/api/learner-profile" ||
     pathname.startsWith("/api/learner-profile/") ||
     pathname === "/api/profile" ||
-    pathname === "/api/profile/preferences"
+    pathname === "/api/profile/preferences" ||
+    pathname === "/api/profile/lesson-recording-consent"
   );
 }
 
@@ -108,6 +115,13 @@ function isAgentConversationPath(pathname: string) {
 
 function isMyLessonPath(pathname: string) {
   return pathname === "/api/lessons/my" || pathname.startsWith("/api/lessons/my/");
+}
+
+function isLessonRecordingPath(pathname: string) {
+  return (
+    pathname === "/api/lesson-recordings" ||
+    pathname.startsWith("/api/lesson-recordings/")
+  );
 }
 
 function isPersonalizedStoryArtPath(pathname: string) {
@@ -155,6 +169,8 @@ export function createWorker(
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const myLessonRequest =
     dependencies.handleMyLessonRequest ?? handleMyLessonRequest;
+  const lessonRecordingRequest =
+    dependencies.handleLessonRecordingRequest ?? handleLessonRecordingRequest;
   const personalizedStoryArtRequest =
     dependencies.handlePersonalizedStoryArtRequest ??
     handlePersonalizedStoryArtRequest;
@@ -212,6 +228,37 @@ export function createWorker(
           database,
           env,
           identity: accountIdentity,
+          request,
+        });
+      }
+
+      if (isLessonRecordingPath(url.pathname)) {
+        const session = await authFactory(env).api.getSession({
+          headers: request.headers,
+        });
+        if (!session) {
+          return Response.json(
+            { error: "unauthorized" },
+            {
+              headers: { "Cache-Control": "private, no-store" },
+              status: 401,
+            },
+          );
+        }
+        const accountIdentity: AccountIdentity = {
+          sessionId: session.session.id,
+          userId: session.user.id,
+          userName: session.user.name?.trim() || null,
+        };
+        const database = createDatabase(env.DB);
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        if (learner.status === "selection_required") {
+          return learnerSelectionRequired();
+        }
+        return lessonRecordingRequest({
+          database,
+          env,
+          identity: learner.identity,
           request,
         });
       }

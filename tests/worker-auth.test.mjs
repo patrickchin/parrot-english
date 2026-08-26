@@ -281,6 +281,114 @@ describe("Worker authentication", () => {
     assert.equal(getAssetCalls(), 0);
   });
 
+  it("rejects every anonymous lesson-recording route before its handler", async () => {
+    const authStub = createAuthStub();
+    const { env, getAssetCalls } = createEnvironment();
+    let handlerCalls = 0;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      async handleLessonRecordingRequest() {
+        handlerCalls += 1;
+        return Response.json({ saved: true });
+      },
+    });
+
+    for (const [method, path] of [
+      ["GET", "/api/lesson-recordings/consent"],
+      [
+        "PUT",
+        "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
+      ],
+      ["DELETE", "/api/lesson-recordings/anything"],
+    ]) {
+      const response = await worker.fetch(
+        new Request(`https://example.test${path}`, { method }),
+        env,
+      );
+      assert.equal(response.status, 401, `${method} ${path}`);
+      assert.deepEqual(await response.json(), { error: "unauthorized" });
+    }
+
+    assert.equal(authStub.getSessionCalls(), 3);
+    assert.equal(handlerCalls, 0);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("dispatches authenticated recording routes with the exact session-selected learner", async () => {
+    const authStub = createAuthStub({
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", name: " Parent One " },
+      },
+    });
+    const state = createTestD1Database();
+    const { env, getAssetCalls } = createEnvironment();
+    const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
+    state.sqlite
+      .prepare(
+        "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)",
+      )
+      .run("user-1", "Parent One", "parent@example.test", timestamp, timestamp);
+    state.sqlite
+      .prepare(
+        "INSERT INTO session (id, expires_at, token, created_at, updated_at, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        "session-1",
+        timestamp + 86_400_000,
+        "token-1",
+        timestamp,
+        timestamp,
+        "user-1",
+      );
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+         VALUES ('learner-b', 'user-1', 0, 'Leo', 'completed', ?, ?)`,
+      )
+      .run(timestamp, timestamp);
+    state.sqlite
+      .prepare(
+        `INSERT INTO session_learner_selection
+          (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+         VALUES ('session-1', 'user-1', 'learner-b', ?, ?)`,
+      )
+      .run(timestamp, timestamp);
+    env.DB = state.d1;
+    let received;
+    const worker = createTestWorker({
+      createAuth: () => authStub.auth,
+      async handleLessonRecordingRequest(input) {
+        received = input;
+        return Response.json({ routed: true }, { status: 201 });
+      },
+    });
+    const request = new Request(
+      "https://example.test/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
+      { method: "PUT" },
+    );
+
+    try {
+      const response = await worker.fetch(request, env);
+
+      assert.equal(response.status, 201);
+      assert.deepEqual(await response.json(), { routed: true });
+      assert.deepEqual(received.identity, {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent One",
+        learnerProfileId: "learner-b",
+        learnerName: "Leo",
+        legacyStorageOwner: false,
+      });
+      assert.strictEqual(received.request, request);
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
+  });
+
   it("rejects anonymous speech evaluation before protected dependencies run", async () => {
     const authStub = createAuthStub();
     const { env } = createEnvironment();

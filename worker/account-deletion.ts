@@ -3,7 +3,9 @@ import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   accountDeletionTombstone,
   learnerProfile,
+  learnerStoryArtGenerationLease,
   personalizedStoryArt,
+  personalizedStoryArtGenerationLease,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import {
@@ -16,6 +18,7 @@ import {
   MAX_R2_WRITE_ATTEMPTS,
   retryDelay,
 } from "./dub-storage.ts";
+import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 
 type Clock = () => Date;
@@ -85,6 +88,26 @@ function parseLearnerStorageClosure(serialized: string) {
         .legacyStorageOwner as boolean,
     };
   });
+}
+
+function parsePersonalizedArtCandidateClosure(serialized: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch {
+    throw new Error(
+      "Account deletion personalized-art candidate closure is invalid.",
+    );
+  }
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((key) => typeof key !== "string" || key === "")
+  ) {
+    throw new Error(
+      "Account deletion personalized-art candidate closure is invalid.",
+    );
+  }
+  return parsed as string[];
 }
 
 function mergeLearnerStorageClosure(
@@ -166,6 +189,81 @@ async function persistLearnerStorageClosure(
   }
   throw new Error(
     "Account deletion learner storage closure contention exceeded.",
+  );
+}
+
+async function listPersonalizedArtCandidateKeys(
+  database: Database,
+  userId: string,
+) {
+  const legacy = await database
+    .select({
+      key: personalizedStoryArtGenerationLease.candidateR2ObjectKey,
+    })
+    .from(personalizedStoryArtGenerationLease)
+    .where(eq(personalizedStoryArtGenerationLease.authUserId, userId));
+  const learner = await database
+    .select({ key: learnerStoryArtGenerationLease.candidateR2ObjectKey })
+    .from(learnerStoryArtGenerationLease)
+    .where(eq(learnerStoryArtGenerationLease.authUserId, userId));
+  return [...legacy, ...learner].flatMap(({ key }) => (key ? [key] : []));
+}
+
+async function persistPersonalizedArtCandidateClosure(
+  database: Database,
+  userIdHash: string,
+  r2Prefix: string,
+  keys: string[],
+) {
+  for (let conflict = 0; conflict < MAX_TOMBSTONE_CONFLICTS; conflict += 1) {
+    const [tombstone] = await database
+      .select({
+        personalizedArtCandidateKeysJson:
+          accountDeletionTombstone.personalizedArtCandidateKeysJson,
+      })
+      .from(accountDeletionTombstone)
+      .where(eq(accountDeletionTombstone.userIdHash, userIdHash))
+      .limit(1);
+    if (!tombstone) {
+      throw new Error("Account deletion tombstone could not be persisted.");
+    }
+    const merged = [
+      ...new Set([
+        ...parsePersonalizedArtCandidateClosure(
+          tombstone.personalizedArtCandidateKeysJson,
+        ),
+        ...keys,
+      ]),
+    ].sort();
+    if (
+      merged.some((key) => !key.startsWith(r2Prefix) || key === r2Prefix)
+    ) {
+      throw new Error(
+        "Account deletion personalized-art candidate closure is invalid.",
+      );
+    }
+    const serialized = JSON.stringify(merged);
+    if (serialized === tombstone.personalizedArtCandidateKeysJson) {
+      return merged;
+    }
+
+    const updated = await database
+      .update(accountDeletionTombstone)
+      .set({ personalizedArtCandidateKeysJson: serialized })
+      .where(
+        and(
+          eq(accountDeletionTombstone.userIdHash, userIdHash),
+          eq(
+            accountDeletionTombstone.personalizedArtCandidateKeysJson,
+            tombstone.personalizedArtCandidateKeysJson,
+          ),
+        ),
+      )
+      .returning({ userIdHash: accountDeletionTombstone.userIdHash });
+    if (updated.length === 1) return merged;
+  }
+  throw new Error(
+    "Account deletion personalized-art candidate closure contention exceeded.",
   );
 }
 
@@ -288,7 +386,7 @@ async function persistFence(
       await wait(retryDelay(rateFailures - 1));
     }
   }
-  throw new Error("Dub account-deletion fence contention exceeded.");
+  throw new Error("Account-deletion fence contention exceeded.");
 }
 
 function storageClosureKeys(storage: DubStorageKeys) {
@@ -352,27 +450,37 @@ export async function prepareAccountDeletion({
     userId,
     liveIdentities,
   );
+  const personalizedArtCandidateKeys =
+    await persistPersonalizedArtCandidateClosure(
+      database,
+      tombstone.userIdHash,
+      tombstone.r2Prefix,
+      await listPersonalizedArtCandidateKeys(database, userId),
+    );
   const legacyIdentity = identities.find(
     ({ legacyStorageOwner }) => legacyStorageOwner,
   );
-  const storages = [
-    createDubStorageKeys(
-      legacyIdentity ?? {
-        learnerProfileId: "",
-        legacyStorageOwner: true,
-        userId,
-      },
-    ),
+  const storageIdentities = [
+    legacyIdentity ?? {
+      learnerProfileId: "",
+      legacyStorageOwner: true,
+      userId,
+    },
     ...identities
-      .filter(({ legacyStorageOwner }) => !legacyStorageOwner)
-      .map(createDubStorageKeys),
+      .filter(({ legacyStorageOwner }) => !legacyStorageOwner),
   ];
+  const storages = storageIdentities.map(createDubStorageKeys);
   const { r2Prefix } = tombstone;
   const generation = accountDeletionGeneration(
     tombstone.userIdHash,
     tombstone.requestedAt,
   );
-  const closureKeys = new Set(storages.flatMap(storageClosureKeys));
+  const closureKeys = new Set([
+    ...storages.flatMap(storageClosureKeys),
+    ...personalizedArtCandidateKeys,
+  ]);
+  const lessonRecordingKeys = new Set<string>();
+  const recordingPrefixes = storageIdentities.map(lessonRecordingOwnerPrefix);
   let cursor: string | undefined;
   let hasMore = true;
   const seenCursors = new Set<string>();
@@ -388,7 +496,14 @@ export async function prepareAccountDeletion({
         "R2 returned an object outside the account deletion prefix.",
       );
     }
-    const keys = listedKeys.filter((key) => !closureKeys.has(key));
+    for (const key of listedKeys) {
+      if (recordingPrefixes.some((prefix) => key.startsWith(prefix))) {
+        lessonRecordingKeys.add(key);
+      }
+    }
+    const keys = listedKeys.filter(
+      (key) => !closureKeys.has(key) && !lessonRecordingKeys.has(key),
+    );
     if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
 
     hasMore = page.truncated;
@@ -424,5 +539,11 @@ export async function prepareAccountDeletion({
         return key ? [fenceTask(key, "slot")] : [];
       }),
     ]),
+  );
+  await runBoundedFenceWrites(
+    [...lessonRecordingKeys].map((key) => fenceTask(key, "slot")),
+  );
+  await runBoundedFenceWrites(
+    personalizedArtCandidateKeys.map((key) => fenceTask(key, "slot")),
   );
 }

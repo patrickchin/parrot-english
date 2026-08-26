@@ -504,6 +504,33 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
+  it("renders a durable pending-deletion state with an explicit retry action", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        drafts: { name: "Mia", age: "8" },
+        fieldErrors: {},
+        isSaving: false,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: true,
+        lessonRecordingConsent: false,
+        onCancel() {},
+        onClose() {},
+        onLessonRecordingConsentChange() {},
+        onRedoLearnerProfile() {},
+        onSave() {},
+        onValueChange() {},
+        pageError: "",
+      }),
+    );
+
+    assert.match(
+      html,
+      /Lesson recording is off\. Saved clips are still being deleted\./,
+    );
+    assert.match(html, />Finish deleting lesson recordings<\/button>/);
+    assert.doesNotMatch(html, />Allow lesson voice recordings<\/button>/);
+  });
+
   it("renders learner details separately from the profile-setup action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
@@ -516,8 +543,11 @@ describe("profile summary editor", () => {
         fieldErrors: {},
         isSaving: false,
         learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -571,8 +601,11 @@ describe("profile summary editor", () => {
         fieldErrors: {},
         isSaving: false,
         learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -602,8 +635,11 @@ describe("profile summary editor", () => {
         fieldErrors: {},
         isSaving: true,
         learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -1131,6 +1167,7 @@ describe("onboarding and profile gate", () => {
   it("keeps profile loading and retry errors on the profile route", () => {
     const loading = renderGate({
       data: fullState({ canBypass: true }),
+      guardianRoute: true,
       isLearnerProfileRoute: false,
       isProfileLoading: true,
       isProfileRoute: true,
@@ -1141,6 +1178,7 @@ describe("onboarding and profile gate", () => {
 
     const failed = renderGate({
       data: fullState({ canBypass: true }),
+      guardianRoute: true,
       isLearnerProfileRoute: false,
       isProfileRoute: true,
       profileLoadError: "Profile service is unavailable.",
@@ -1300,9 +1338,10 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(bypass, /Edit learner profile/);
   });
 
-  it("renders the basic profile editor without bypass controls", () => {
+  it("renders Guardian-owned profile and consent management without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
+      guardianRoute: true,
       isLearnerProfileRoute: false,
       isProfileRoute: true,
       profileEditor: {
@@ -1310,8 +1349,11 @@ describe("onboarding and profile gate", () => {
         fieldErrors: {},
         isSaving: false,
         learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -1322,9 +1364,45 @@ describe("onboarding and profile gate", () => {
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /Redo setup questions/);
+    assert.match(html, /Lesson voice recordings/);
+    assert.match(html, /apply only to this learner profile/);
+    assert.match(html, /Guardian manages each learner independently/);
+    assert.match(html, />Allow lesson voice recordings</);
     assert.doesNotMatch(html, /Chat with Peppa again/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
+  });
+
+  it("rejects consent management outside Guardian-owned profile routes", () => {
+    const html = renderGate({
+      data: fullState({
+        canBypass: true,
+        profile: {
+          ...fullState().profile,
+          profileStatus: "completed",
+        },
+      }),
+      isLearnerProfileRoute: false,
+      isProfileRoute: true,
+      profileEditor: {
+        drafts: { name: "Mia", age: "8", description: "" },
+        fieldErrors: {},
+        isSaving: false,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+        onCancel() {},
+        onClose() {},
+        onLessonRecordingConsentChange() {},
+        onRedoLearnerProfile() {},
+        onSave() {},
+        onValueChange() {},
+        pageError: "",
+      },
+    });
+
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /Lesson voice recordings/);
   });
 
   it("derives editable prose from snapshots with canonical prefills", () => {

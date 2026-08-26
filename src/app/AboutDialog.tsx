@@ -266,15 +266,30 @@ export function AboutDialog({
               ends early may still have saved text.
             </li>
             <li>
-              Talk to Peppa does not change learner profiles. Learner setup and
-              Guardian profile editing can.
+              Talk to Peppa does not change learner profiles. This applies to
+              every learner profile; learner setup and Guardian profile editing
+              can change the selected learner.
             </li>
             <li>
-              Voice services process audio during Talk to Peppa and speech
-              checks. Raw audio is not added to the Parrot account. If a
-              Guardian turns on Five Little Ducks voice dubbing, that
-              learner&apos;s private voice clips are saved separately until the
-              Guardian deletes them or deletes the account.
+              Voice services process audio during Talk to Peppa, learner setup,
+              and speech checks, but Parrot does not save that activity audio
+              to the account.
+            </li>
+            <li>
+              With Guardian permission, Five Little Ducks saves that
+              learner&apos;s private voice clips to the account. A new take
+              replaces the saved clip for that line, and the Guardian can
+              delete every saved clip.
+            </li>
+            <li>
+              With guardian permission, lessons save one private voice clip for
+              each join-in moment. A new take replaces the previous take for
+              that moment. Parrot does not score or transcribe these clips yet.
+              Stopping lesson recording or deleting the account deletes them.
+            </li>
+            <li>
+              Lesson recording permission and saved clips are managed
+              independently for each selected learner profile.
             </li>
             <li>
               If a grown-up chooses story art, a cropped photo is sent to
@@ -294,15 +309,16 @@ export function AboutDialog({
           title="What you can do"
         >
           <p className="m-0">
-            A learner can finish a conversation at any time. Use Learner
-            profiles in Guardian mode to choose whose saved details to manage.
-            Delete optional art on its story page.
+            A learner can finish a conversation at any time. In Guardian mode,
+            choose a learner to manage their saved details, lesson voice
+            recordings, Five Little Ducks clips, and optional story art.
           </p>
           <p className="m-0">
             Delete account removes the account, all learner profiles and their
             saved data, including custom lessons, saved conversation text,
-            private voice clips, and private story art. A small deletion marker
-            stays so old private art cannot return.
+            private voice clips from Five Little Ducks, lesson voice recordings,
+            and private story art. A small deletion marker stays so old private
+            art cannot return.
           </p>
         </AboutSection>
 

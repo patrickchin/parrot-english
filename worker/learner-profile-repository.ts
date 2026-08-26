@@ -1,10 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
   learnerProfile,
   learnerSessionBypass,
   profileSessionBypass,
 } from "../src/db/schema.ts";
 import type { LearnerStoryLevelId } from "../lib/story-level.ts";
+import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import type { Database } from "./database.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 
@@ -200,6 +201,88 @@ export function createLearnerProfileRepository(
     return loadProfile(identity);
   }
 
+  async function readLessonRecordingConsent(identity: LearnerIdentity) {
+    return (await readLessonRecordingConsentState(identity)).enabled;
+  }
+
+  async function readLessonRecordingConsentState(identity: LearnerIdentity) {
+    const profile = await findProfile(identity);
+    return {
+      cleanupBeforeGeneration:
+        profile?.lessonRecordingCleanupBeforeGeneration ?? null,
+      enabled:
+        profile?.lessonRecordingConsentVersion ===
+        LESSON_RECORDING_CONSENT_VERSION,
+      generation: profile?.lessonRecordingGeneration ?? 0,
+    };
+  }
+
+  async function saveLessonRecordingConsent(
+    identity: LearnerIdentity,
+    enabled: boolean,
+  ) {
+    const timestamp = now();
+    const [saved] = await database
+      .update(learnerProfile)
+      .set({
+        lessonRecordingCleanupBeforeGeneration: enabled
+          ? learnerProfile.lessonRecordingCleanupBeforeGeneration
+          : sql`case
+              when ${learnerProfile.lessonRecordingConsentVersion} = ${LESSON_RECORDING_CONSENT_VERSION}
+                then ${learnerProfile.lessonRecordingGeneration} + 1
+              else ${learnerProfile.lessonRecordingCleanupBeforeGeneration}
+            end`,
+        lessonRecordingConsentVersion: enabled
+          ? LESSON_RECORDING_CONSENT_VERSION
+          : null,
+        lessonRecordingConsentAt: enabled ? timestamp : null,
+        lessonRecordingGeneration: enabled
+          ? sql`case
+              when ${learnerProfile.lessonRecordingConsentVersion} = ${LESSON_RECORDING_CONSENT_VERSION}
+                then ${learnerProfile.lessonRecordingGeneration}
+              else ${learnerProfile.lessonRecordingGeneration} + 1
+            end`
+          : sql`case
+              when ${learnerProfile.lessonRecordingConsentVersion} = ${LESSON_RECORDING_CONSENT_VERSION}
+                then ${learnerProfile.lessonRecordingGeneration} + 1
+              else ${learnerProfile.lessonRecordingGeneration}
+            end`,
+        updatedAt: timestamp,
+      })
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      )
+      .returning({ id: learnerProfile.id });
+    if (!saved) {
+      throw new Error("Learner recording consent could not be updated.");
+    }
+    return readLessonRecordingConsentState(identity);
+  }
+
+  async function clearLessonRecordingCleanup(
+    identity: LearnerIdentity,
+    cleanupBeforeGeneration: number,
+  ) {
+    const cleared = await database
+      .update(learnerProfile)
+      .set({ lessonRecordingCleanupBeforeGeneration: null, updatedAt: now() })
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+          eq(
+            learnerProfile.lessonRecordingCleanupBeforeGeneration,
+            cleanupBeforeGeneration,
+          ),
+        ),
+      )
+      .returning({ id: learnerProfile.id });
+    return cleared.length > 0;
+  }
+
   async function saveTransition(
     identity: LearnerIdentity,
     values: {
@@ -274,7 +357,11 @@ export function createLearnerProfileRepository(
     findProfile,
     hasSessionBypass,
     loadProfile,
+    clearLessonRecordingCleanup,
+    readLessonRecordingConsent,
+    readLessonRecordingConsentState,
     saveAnswer,
+    saveLessonRecordingConsent,
     saveStoryLevel,
     saveTransition,
     skip,

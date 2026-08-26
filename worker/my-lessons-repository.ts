@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { learnerLesson } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
@@ -7,6 +7,16 @@ type RepositoryOptions = {
   createId?: () => string;
   now?: () => Date;
 };
+
+export async function lessonJsonRevision(lessonJson: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(lessonJson),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
 
 export function createMyLessonRepository(
   database: Database,
@@ -68,6 +78,9 @@ export function createMyLessonRepository(
       .update(learnerLesson)
       .set({
         lessonJson: JSON.stringify(lesson),
+        recordingCleanupBeforeGeneration:
+          sql`${learnerLesson.recordingGeneration} + 1`,
+        recordingGeneration: sql`${learnerLesson.recordingGeneration} + 1`,
         updatedAt: now(),
       })
       .where(
@@ -79,6 +92,29 @@ export function createMyLessonRepository(
       )
       .returning();
     return row ?? null;
+  }
+
+  async function clearRecordingCleanup(
+    id: string,
+    identity: LearnerIdentity,
+    cleanupBeforeGeneration: number,
+  ) {
+    const cleared = await database
+      .update(learnerLesson)
+      .set({ recordingCleanupBeforeGeneration: null, updatedAt: now() })
+      .where(
+        and(
+          eq(learnerLesson.id, id),
+          eq(learnerLesson.authUserId, identity.userId),
+          eq(learnerLesson.learnerProfileId, identity.learnerProfileId),
+          eq(
+            learnerLesson.recordingCleanupBeforeGeneration,
+            cleanupBeforeGeneration,
+          ),
+        ),
+      )
+      .returning({ id: learnerLesson.id });
+    return cleared.length > 0;
   }
 
   async function listOwned(identity: LearnerIdentity) {
@@ -94,5 +130,11 @@ export function createMyLessonRepository(
       .orderBy(desc(learnerLesson.updatedAt));
   }
 
-  return { create, findOwned, listOwned, updateOwned };
+  return {
+    clearRecordingCleanup,
+    create,
+    findOwned,
+    listOwned,
+    updateOwned,
+  };
 }

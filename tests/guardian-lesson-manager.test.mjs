@@ -37,6 +37,7 @@ const { createGuardianAccessProvider } = await vite.ssrLoadModule(
 const savedLesson = {
   id: "lesson/id",
   lesson: createLessonScript({ title: "Made for Mia" }),
+  revision: "a".repeat(64),
   source: "uploaded",
 };
 

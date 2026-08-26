@@ -60,6 +60,9 @@ duplicate learner activity catalog.
 | Record, retake, and replay saved dub lines | Yes, after guardian consent for that learner | Switch to learner | Current learner's durable consent grant |
 | Allow voice-clip storage | No | Yes | Guardian unlock plus learner-scoped v2 consent |
 | Turn off dubbing and delete saved clips | No | Yes | Guardian unlock plus learner-scoped fenced cleanup |
+| Join in with lesson phrases | Yes | Switch to learner | Authenticated selected learner |
+| Save the latest lesson join-in clip | Yes, after guardian consent for that learner | Switch to learner | Current learner's durable recording consent |
+| Allow, stop, or delete lesson voice recordings | No | Yes | Guardian unlock plus learner-scoped fenced cleanup |
 | View saved custom lessons for playback | Yes | Switch to learner | Selected-learner read |
 | Edit learner profile or redo setup | No | Yes | Guardian unlock |
 | Choose stored story level | No | Yes | Guardian unlock |
@@ -143,18 +146,22 @@ learner refreshes the catalog before that learner's pages render. Ready-made
 lessons use one consistent 16:9 scene illustration per step as their default
 presentation; learners do not choose between rendering experiments.
 
-A lesson plays as a short interactive episode:
+A lesson plays as a short, continuous cartoon episode:
 
 1. The learner starts the lesson.
 2. Character and narrator lines play automatically.
-3. A learner line pauses the story and shows the exact phrase.
-4. The learner taps the microphone, speaks, then taps again to finish.
-5. The app checks the recording and plays brief feedback.
-6. Success continues automatically; bounded retry behavior handles a miss.
+3. A join-in beat shows the exact phrase and plays a quiet group cue.
+4. The learner may say the phrase with the group, but the story never waits,
+   scores, corrects, or treats silence as failure.
+5. When a Guardian has enabled lesson voice recordings for this learner, the
+   microphone captures that short beat automatically and privately saves only
+   the latest clip for the same moment.
+6. Missing consent, microphone access, cue audio, or storage never blocks the
+   cartoon; the phrase remains available and the story continues.
 
 Previous and Next restart the adjacent scene at its first step. Browser
 Back/Forward and direct refresh restore the routed scene while transient audio,
-recording, evaluation, and step state reset safely.
+recording, and step state reset safely.
 
 ## Story Time
 
