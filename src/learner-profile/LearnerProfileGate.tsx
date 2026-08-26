@@ -9,9 +9,11 @@ import {
   useState,
   type ComponentProps,
   type ReactNode,
+  type SyntheticEvent,
 } from "react";
 import {
   useClearProfileAccountAction,
+  useAccountSessionIdentity,
   useProfileAccountAction,
 } from "../auth/account-actions";
 import { selectConversationPurpose } from "../../lib/conversation-purpose";
@@ -68,6 +70,130 @@ import {
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
+const LEARNER_SELECTION_CHANNEL_PREFIX = "parrot-learner-selection";
+const LEARNER_SELECTION_CHANGED_MESSAGE = "changed";
+const LEARNER_SELECTION_STORAGE_SUFFIX = ":state";
+const LEARNER_SELECTION_PENDING_SEPARATOR = ":pending:";
+
+async function sha256Hex(value: string) {
+  if (!globalThis.crypto?.subtle || typeof TextEncoder === "undefined") {
+    return null;
+  }
+  try {
+    const digest = await globalThis.crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(value),
+    );
+    return Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("");
+  } catch {
+    return null;
+  }
+}
+
+async function learnerSelectionChannelName(identity: string) {
+  const scope = await sha256Hex(identity);
+  return scope === null ? null : `${LEARNER_SELECTION_CHANNEL_PREFIX}-${scope}`;
+}
+
+function learnerSelectionMarker() {
+  try {
+    if (typeof globalThis.crypto?.randomUUID === "function") {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch {
+    // A unique fallback is sufficient for cross-tab change coalescing.
+  }
+  return `${Date.now()}-${Math.random()}`;
+}
+
+function learnerSelectionPendingStorageKey(scope: string, token: string) {
+  return `${scope}${LEARNER_SELECTION_PENDING_SEPARATOR}${token}`;
+}
+
+function learnerSelectionPendingToken(scope: string, storageKey: string) {
+  const prefix = `${scope}${LEARNER_SELECTION_PENDING_SEPARATOR}`;
+  return storageKey.startsWith(prefix) ? storageKey.slice(prefix.length) : null;
+}
+
+function storedLearnerSelectionMarker(storageKey: string) {
+  try {
+    return window.localStorage.getItem(storageKey);
+  } catch {
+    return null;
+  }
+}
+
+function storeLearnerSelectionMarker(storageKey: string, marker: string) {
+  try {
+    window.localStorage.setItem(storageKey, marker);
+    return true;
+  } catch {
+    // Focus and visibility revalidation remain the authoritative fallback.
+    return false;
+  }
+}
+
+function removeLearnerSelectionMarker(storageKey: string) {
+  try {
+    window.localStorage.removeItem(storageKey);
+    return window.localStorage.getItem(storageKey) === null;
+  } catch {
+    // The peer remains fail-closed when durable cleanup is unavailable.
+    return false;
+  }
+}
+
+function storedLearnerSelectionPending(
+  scope: string,
+): Map<string, "pending" | "uncertain"> | null {
+  const pending = new Map<string, "pending" | "uncertain">();
+  try {
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const storageKey = window.localStorage.key(index);
+      if (storageKey === null) continue;
+      const token = learnerSelectionPendingToken(scope, storageKey);
+      if (!token) continue;
+      const status = window.localStorage.getItem(storageKey);
+      if (status === "pending" || status === "uncertain") {
+        pending.set(token, status);
+      }
+    }
+    return pending;
+  } catch {
+    return null;
+  }
+}
+
+function learnerMutationOutcome(
+  error: unknown,
+  requestStarted: boolean,
+  responseReceived: boolean,
+): "committed" | "rejected" | "uncertain" | "not-started" {
+  if (!requestStarted) return "not-started";
+  if (responseReceived) return "committed";
+  if (error instanceof LearnerProfileApiError) {
+    if (error.status >= 200 && error.status < 300) return "committed";
+    if (error.status >= 400 && error.status < 500) return "rejected";
+  }
+  return "uncertain";
+}
+
+function hasSameActiveLearner(
+  current: LearnerProfileState | null,
+  next: LearnerProfileState,
+) {
+  if (current === null) return false;
+  if (current.mode === "full" || next.mode === "full") {
+    return (
+      current.mode === "full" &&
+      next.mode === "full" &&
+      current.profile.id === next.profile.id
+    );
+  }
+  return current.mode === next.mode;
+}
 
 const LazyConversationSurface = import.meta.env.SSR
   ? (await import("../conversation/ConversationSurface")).ConversationSurface
@@ -96,6 +222,21 @@ type QuestionPresentation = {
   pendingAction: QuestionPendingAction;
   status: QuestionStatus;
 };
+
+type LearnerIdentityCheck = "checking" | "confirmed" | "failed";
+
+type LearnerSelectionPendingMutation = {
+  scope: string;
+  storageKey: string;
+  token: string;
+};
+
+type LearnerSelectionReadSnapshot = {
+  marker: string | null;
+  scope: string | null;
+};
+
+class LearnerSelectionReadChangedError extends Error {}
 
 const IDLE_QUESTION_PRESENTATION: QuestionPresentation = {
   pendingAction: null,
@@ -401,7 +542,7 @@ export function LearnerProfileGateView({
             </p>
             <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
               <TextButton onClick={onCloseProfileRoute} type="button">
-                {isProfileFormRedo ? "Back" : "Back to home"}
+                Back
               </TextButton>
               <ActionButton onClick={onRetryProfile} type="button">
                 Retry
@@ -738,9 +879,23 @@ export function LearnerProfileGate({
   redoLearnerProfile,
 }: LearnerProfileGateProps) {
   const clearProfileAccountAction = useClearProfileAccountAction();
+  const sessionIdentity = useAccountSessionIdentity();
+  const learnerSelectionSignal = useMemo(
+    () => ({
+      scope:
+        sessionIdentity === null
+          ? Promise.resolve<string | null>(null)
+          : learnerSelectionChannelName(sessionIdentity),
+    }),
+    [sessionIdentity],
+  );
   const [data, setData] = useState<LearnerProfileState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [learnerIdentityCheck, setLearnerIdentityCheck] =
+    useState<LearnerIdentityCheck>(
+      sessionIdentity === null ? "confirmed" : "checking",
+    );
   const [started, setStarted] = useState(false);
   const [useFormFallback, setUseFormFallback] = useState(false);
   const [redoQuestionIndex, setRedoQuestionIndex] = useState(0);
@@ -764,7 +919,28 @@ export function LearnerProfileGate({
   const [pendingAcknowledgment, setPendingAcknowledgment] =
     useState<PendingAcknowledgment | null>(null);
   const operationRef = useRef(0);
+  const dataRef = useRef<LearnerProfileState | null>(data);
+  const learnerIdentityCheckRef =
+    useRef<LearnerIdentityCheck>(learnerIdentityCheck);
+  const profileMutationPendingRef = useRef(false);
   const learnerLoadControllerRef = useRef<AbortController | null>(null);
+  const expectedLearnerReloadControllerRef = useRef<AbortController | null>(
+    null,
+  );
+  const learnerRevalidationControllerRef = useRef<AbortController | null>(null);
+  const learnerRevalidationQueuedRef = useRef(false);
+  const learnerRevalidationRef = useRef<Promise<void> | null>(null);
+  const learnerSelectionChannelRef = useRef<{
+    channel: BroadcastChannel;
+    scope: string;
+  } | null>(null);
+  const learnerSelectionScopeRef = useRef<string | null>(null);
+  const learnerSelectionScopeReadyRef = useRef(sessionIdentity === null);
+  const initialLearnerLoadSettledRef = useRef(false);
+  const learnerSelectionMarkerRef = useRef<string | null>(null);
+  const learnerSelectionPendingRef = useRef<
+    Map<string, "pending" | "uncertain">
+  >(new Map());
   const learnerMutationControllerRef = useRef<AbortController | null>(null);
   const learnerMutationTailRef = useRef<Promise<void>>(Promise.resolve());
   const gateMountedRef = useRef(false);
@@ -781,6 +957,92 @@ export function LearnerProfileGate({
   const profileRouteLifecycleRef = useRef<ReturnType<
     typeof createProfileRouteLifecycle
   > | null>(null);
+  dataRef.current = data;
+  learnerIdentityCheckRef.current = learnerIdentityCheck;
+
+  const updateLearnerIdentityCheck = useCallback(
+    (next: LearnerIdentityCheck) => {
+      learnerIdentityCheckRef.current = next;
+      setLearnerIdentityCheck(next);
+    },
+    [],
+  );
+
+  const captureLearnerSelectionRead =
+    useCallback((): LearnerSelectionReadSnapshot => {
+      const scope = learnerSelectionScopeRef.current;
+      return {
+        marker:
+          scope === null
+            ? null
+            : storedLearnerSelectionMarker(
+                `${scope}${LEARNER_SELECTION_STORAGE_SUFFIX}`,
+              ),
+        scope,
+      };
+    }, []);
+
+  const learnerSelectionReadStatus = useCallback(
+    (
+      snapshot: LearnerSelectionReadSnapshot,
+    ): "changed" | "current" | "pending" => {
+      const scope = learnerSelectionScopeRef.current;
+      if (scope !== snapshot.scope) return "changed";
+      if (scope === null) return "current";
+      const pending = storedLearnerSelectionPending(scope);
+      if (pending === null) return "changed";
+      for (const [token] of pending) {
+        if (learnerSelectionPendingRef.current.get(token) === "uncertain") {
+          pending.set(token, "uncertain");
+        }
+      }
+      learnerSelectionPendingRef.current = pending;
+      if (pending.size > 0) return "pending";
+      return storedLearnerSelectionMarker(
+        `${scope}${LEARNER_SELECTION_STORAGE_SUFFIX}`,
+      ) === snapshot.marker
+        ? "current"
+        : "changed";
+    },
+    [],
+  );
+
+  const loadStableLearnerProfile = useCallback(
+    async (signal: AbortSignal) => {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const snapshot = captureLearnerSelectionRead();
+        const next = await loadLearnerProfile({ signal });
+        if (signal.aborted) {
+          throw new DOMException(
+            "The learner change was cancelled.",
+            "AbortError",
+          );
+        }
+        const status = learnerSelectionReadStatus(snapshot);
+        if (status === "current") return { next, snapshot };
+        if (status === "pending" || attempt === 1) {
+          throw new LearnerSelectionReadChangedError(
+            "The current learner changed while it was loading. Try again.",
+          );
+        }
+      }
+      throw new LearnerSelectionReadChangedError(
+        "The current learner changed while it was loading. Try again.",
+      );
+    },
+    [captureLearnerSelectionRead, learnerSelectionReadStatus],
+  );
+
+  const assertLearnerSelectionReadCurrent = useCallback(
+    (snapshot: LearnerSelectionReadSnapshot) => {
+      if (learnerSelectionReadStatus(snapshot) !== "current") {
+        throw new LearnerSelectionReadChangedError(
+          "The current learner changed while it was loading. Try again.",
+        );
+      }
+    },
+    [learnerSelectionReadStatus],
+  );
 
   const fullData: FullLearnerProfileState | null =
     data?.mode === "full" ? data : null;
@@ -814,8 +1076,7 @@ export function LearnerProfileGate({
               ...profile,
               lessonRecordingCleanupPending:
                 current.profile.lessonRecordingCleanupPending,
-              lessonRecordingConsent:
-                current.profile.lessonRecordingConsent,
+              lessonRecordingConsent: current.profile.lessonRecordingConsent,
             },
           }
         : current,
@@ -847,6 +1108,7 @@ export function LearnerProfileGate({
 
   const clearProfileEditor = useCallback(() => {
     teardownProfileResources();
+    profileMutationPendingRef.current = false;
     const playback = questionPlaybackRef.current;
     questionPlaybackRef.current = null;
     playback?.controller.abort();
@@ -904,6 +1166,7 @@ export function LearnerProfileGate({
       owner: Exclude<QuestionPendingAction, null>,
       status: Exclude<QuestionStatus, "idle" | "ready">,
     ) => {
+      if (learnerIdentityCheckRef.current !== "confirmed") return null;
       if (questionOperationRef.current) return null;
       abortQuestionPlayback();
       const active: ActiveQuestionOperation = {
@@ -921,6 +1184,7 @@ export function LearnerProfileGate({
   );
 
   const beginQuestionPlayback = useCallback(() => {
+    if (learnerIdentityCheckRef.current !== "confirmed") return null;
     if (questionOperationRef.current || questionPlaybackRef.current) {
       return null;
     }
@@ -1011,6 +1275,12 @@ export function LearnerProfileGate({
       gateMountEpochRef.current += 1;
       learnerMutationControllerRef.current?.abort();
       learnerMutationControllerRef.current = null;
+      learnerRevalidationControllerRef.current?.abort();
+      learnerRevalidationControllerRef.current = null;
+      learnerRevalidationRef.current = null;
+      learnerRevalidationQueuedRef.current = false;
+      learnerSelectionPendingRef.current.clear();
+      expectedLearnerReloadControllerRef.current = null;
       ownership?.unmount();
       abortQuestionPlayback(false);
       abortQuestionOperation(false);
@@ -1037,15 +1307,19 @@ export function LearnerProfileGate({
       setLoadError("");
       const promise = (async () => {
         try {
-          const next = await loadLearnerProfile({ signal: controller.signal });
+          const { next, snapshot } = await loadStableLearnerProfile(
+            controller.signal,
+          );
           if (controller.signal.aborted || !isCurrentOperation(operation)) {
             return null;
           }
+          assertLearnerSelectionReadCurrent(snapshot);
           if (next.mode === "selection-required") {
             setIsLoading(false);
             if (requiresExpectedProfile) {
               throw new Error("The selected learner could not be loaded.");
             }
+            dataRef.current = next;
             setData(next);
             return null;
           }
@@ -1056,6 +1330,7 @@ export function LearnerProfileGate({
             throw new Error("The selected learner could not be loaded.");
           }
           setIsLoading(false);
+          dataRef.current = next;
           setData(next);
           return next.mode === "full" ? next.profile : null;
         } catch (error) {
@@ -1074,7 +1349,12 @@ export function LearnerProfileGate({
       })();
       return { controller, promise };
     },
-    [isCurrentOperation, nextOperation],
+    [
+      assertLearnerSelectionReadCurrent,
+      isCurrentOperation,
+      loadStableLearnerProfile,
+      nextOperation,
+    ],
   );
 
   const refresh = useCallback(async () => {
@@ -1086,13 +1366,33 @@ export function LearnerProfileGate({
   }, [startActiveLearnerLoad]);
 
   useEffect(() => {
+    initialLearnerLoadSettledRef.current = false;
     const request = startActiveLearnerLoad();
-    void request.promise.catch(() => {});
+    let identityReadWasStable = true;
+    void request.promise
+      .catch((error) => {
+        if (error instanceof LearnerSelectionReadChangedError) {
+          identityReadWasStable = false;
+          updateLearnerIdentityCheck("failed");
+        }
+      })
+      .finally(() => {
+        initialLearnerLoadSettledRef.current = true;
+        if (
+          identityReadWasStable &&
+          gateMountedRef.current &&
+          learnerSelectionScopeReadyRef.current &&
+          learnerSelectionPendingRef.current.size === 0 &&
+          learnerRevalidationRef.current === null
+        ) {
+          updateLearnerIdentityCheck("confirmed");
+        }
+      });
     return () => {
       learnerLoadControllerRef.current?.abort();
       learnerLoadControllerRef.current = null;
     };
-  }, [startActiveLearnerLoad]);
+  }, [startActiveLearnerLoad, updateLearnerIdentityCheck]);
 
   const handleConversationBack = useCallback(() => {
     if (isConversationRoute) {
@@ -1151,14 +1451,19 @@ export function LearnerProfileGate({
   });
 
   const resetLearnerSelection = useCallback(() => {
+    updateLearnerIdentityCheck("confirmed");
     nextOperation();
     clearProfileAccountAction();
     conversationProps.resetConversation();
     learnerLoadControllerRef.current?.abort();
     learnerLoadControllerRef.current = null;
+    learnerRevalidationControllerRef.current?.abort();
+    learnerRevalidationControllerRef.current = null;
+    learnerRevalidationRef.current = null;
     abortQuestionPlayback();
     abortQuestionOperation();
     clearProfileEditor();
+    dataRef.current = null;
     setData(null);
     setIsLoading(false);
     setLoadError("");
@@ -1175,23 +1480,570 @@ export function LearnerProfileGate({
     abortQuestionPlayback,
     clearProfileEditor,
     clearProfileAccountAction,
-    conversationProps,
+    conversationProps.resetConversation,
     nextOperation,
+    updateLearnerIdentityCheck,
+  ]);
+
+  const beginLearnerIdentityCheck = useCallback(() => {
+    updateLearnerIdentityCheck("checking");
+    clearProfileAccountAction();
+    abortQuestionPlayback(false);
+    abortQuestionOperation(false);
+    setQuestionPresentation(IDLE_QUESTION_PRESENTATION);
+    setQuestionPlaybackPending(false);
+    if (profileMutationPendingRef.current) {
+      profileMutationPendingRef.current = false;
+      teardownProfileResources();
+      setIsProfileSaving(false);
+    }
+  }, [
+    abortQuestionOperation,
+    abortQuestionPlayback,
+    clearProfileAccountAction,
+    teardownProfileResources,
+    updateLearnerIdentityCheck,
+  ]);
+
+  const postLearnerSelectionSignal = useCallback(
+    (scope: string, message: object) => {
+      const activeChannel = learnerSelectionChannelRef.current;
+      if (activeChannel?.scope !== scope) return;
+      try {
+        activeChannel.channel.postMessage(message);
+      } catch {
+        // Durable storage and lifecycle checks remain available.
+      }
+    },
+    [],
+  );
+
+  const learnerSelectionPendingStatus =
+    useCallback((): LearnerIdentityCheck => {
+      for (const status of learnerSelectionPendingRef.current.values()) {
+        if (status === "uncertain") return "failed";
+      }
+      return "checking";
+    }, []);
+
+  const refreshStoredLearnerSelectionPending = useCallback(() => {
+    const scope = learnerSelectionScopeRef.current;
+    if (scope === null) return learnerSelectionPendingRef.current;
+    const stored = storedLearnerSelectionPending(scope);
+    if (stored !== null) {
+      for (const [token, status] of stored) {
+        if (learnerSelectionPendingRef.current.get(token) === "uncertain") {
+          stored.set(token, "uncertain");
+        } else {
+          stored.set(token, status);
+        }
+      }
+      learnerSelectionPendingRef.current = stored;
+    }
+    return learnerSelectionPendingRef.current;
+  }, []);
+
+  const blockForPendingLearnerSelection = useCallback(
+    (abortLearnerMutation: boolean) => {
+      if (abortLearnerMutation) {
+        learnerMutationControllerRef.current?.abort();
+      }
+      learnerLoadControllerRef.current?.abort();
+      learnerLoadControllerRef.current = null;
+      learnerRevalidationControllerRef.current?.abort();
+      beginLearnerIdentityCheck();
+      updateLearnerIdentityCheck(learnerSelectionPendingStatus());
+    },
+    [
+      beginLearnerIdentityCheck,
+      learnerSelectionPendingStatus,
+      updateLearnerIdentityCheck,
+    ],
+  );
+
+  const beginLearnerSelectionMutation = useCallback(
+    async (signal: AbortSignal) => {
+      const scope = await learnerSelectionSignal.scope;
+      throwIfLearnerMutationAborted(signal);
+      if (scope === null) {
+        if (sessionIdentity !== null) {
+          throw new Error("The learner change could not be started safely.");
+        }
+        return null;
+      }
+      const token = learnerSelectionMarker();
+      const storageKey = learnerSelectionPendingStorageKey(scope, token);
+      if (!storeLearnerSelectionMarker(storageKey, "pending")) {
+        throw new Error("The learner change could not be started safely.");
+      }
+      if (learnerSelectionScopeRef.current === scope) {
+        learnerSelectionPendingRef.current.set(token, "pending");
+        beginLearnerIdentityCheck();
+      }
+      postLearnerSelectionSignal(scope, {
+        status: "pending",
+        token,
+        type: "pending",
+      });
+      return { scope, storageKey, token };
+    },
+    [
+      beginLearnerIdentityCheck,
+      learnerSelectionSignal,
+      postLearnerSelectionSignal,
+      sessionIdentity,
+    ],
+  );
+
+  const markLearnerSelectionMutationUncertain = useCallback(
+    (pending: LearnerSelectionPendingMutation | null) => {
+      if (pending === null) return;
+      storeLearnerSelectionMarker(pending.storageKey, "uncertain");
+      if (learnerSelectionScopeRef.current === pending.scope) {
+        learnerSelectionPendingRef.current.set(pending.token, "uncertain");
+        blockForPendingLearnerSelection(false);
+      }
+      postLearnerSelectionSignal(pending.scope, {
+        status: "uncertain",
+        token: pending.token,
+        type: "pending",
+      });
+    },
+    [blockForPendingLearnerSelection, postLearnerSelectionSignal],
+  );
+
+  const settleLearnerSelectionMutation = useCallback(
+    (pending: LearnerSelectionPendingMutation | null, changed: boolean) => {
+      if (pending === null) return true;
+      if (changed) {
+        const marker = learnerSelectionMarker();
+        if (
+          !storeLearnerSelectionMarker(
+            `${pending.scope}${LEARNER_SELECTION_STORAGE_SUFFIX}`,
+            marker,
+          )
+        ) {
+          markLearnerSelectionMutationUncertain(pending);
+          return false;
+        }
+        postLearnerSelectionSignal(pending.scope, {
+          marker,
+          type: LEARNER_SELECTION_CHANGED_MESSAGE,
+        });
+      }
+      if (!removeLearnerSelectionMarker(pending.storageKey)) {
+        markLearnerSelectionMutationUncertain(pending);
+        return false;
+      }
+      if (learnerSelectionScopeRef.current === pending.scope) {
+        learnerSelectionPendingRef.current.delete(pending.token);
+        refreshStoredLearnerSelectionPending();
+        if (learnerSelectionPendingRef.current.size === 0) {
+          if (learnerMutationControllerRef.current?.signal.aborted) {
+            learnerRevalidationQueuedRef.current = true;
+          }
+        } else {
+          blockForPendingLearnerSelection(false);
+        }
+      }
+      postLearnerSelectionSignal(pending.scope, {
+        token: pending.token,
+        type: "settled",
+      });
+      return true;
+    },
+    [
+      blockForPendingLearnerSelection,
+      markLearnerSelectionMutationUncertain,
+      postLearnerSelectionSignal,
+      refreshStoredLearnerSelectionPending,
+    ],
+  );
+
+  const revalidateActiveLearner = useCallback(
+    (restartPending = false) => {
+      if (!gateMountedRef.current) return;
+      if (refreshStoredLearnerSelectionPending().size > 0) {
+        blockForPendingLearnerSelection(true);
+        return;
+      }
+      if (learnerMutationControllerRef.current !== null) {
+        learnerRevalidationQueuedRef.current = true;
+        return;
+      }
+      if (learnerRevalidationRef.current !== null) {
+        if (!restartPending) return;
+        learnerRevalidationControllerRef.current?.abort();
+      }
+      learnerRevalidationQueuedRef.current = false;
+
+      let controller: AbortController;
+      let requestPromise: Promise<void>;
+      if (dataRef.current === null) {
+        beginLearnerIdentityCheck();
+        const request = startActiveLearnerLoad();
+        controller = request.controller;
+        requestPromise = request.promise
+          .then(() => {
+            if (
+              !controller.signal.aborted &&
+              gateMountedRef.current &&
+              learnerRevalidationControllerRef.current === controller &&
+              refreshStoredLearnerSelectionPending().size === 0
+            ) {
+              updateLearnerIdentityCheck("confirmed");
+            } else if (learnerSelectionPendingRef.current.size > 0) {
+              blockForPendingLearnerSelection(false);
+            }
+          })
+          .catch((error) => {
+            if (!controller.signal.aborted && !isAbortError(error)) {
+              updateLearnerIdentityCheck("failed");
+            }
+          });
+      } else {
+        beginLearnerIdentityCheck();
+        controller = new AbortController();
+        requestPromise = (async () => {
+          try {
+            const { next, snapshot } = await loadStableLearnerProfile(
+              controller.signal,
+            );
+            if (
+              controller.signal.aborted ||
+              !gateMountedRef.current ||
+              learnerRevalidationControllerRef.current !== controller
+            ) {
+              return;
+            }
+            assertLearnerSelectionReadCurrent(snapshot);
+            if (refreshStoredLearnerSelectionPending().size > 0) {
+              blockForPendingLearnerSelection(false);
+              return;
+            }
+            if (hasSameActiveLearner(dataRef.current, next)) {
+              updateLearnerIdentityCheck("confirmed");
+              return;
+            }
+            resetLearnerSelection();
+            if (!gateMountedRef.current) return;
+            dataRef.current = next;
+            setData(next);
+            setIsLoading(false);
+            setLoadError("");
+          } catch (error) {
+            if (!controller.signal.aborted && !isAbortError(error)) {
+              updateLearnerIdentityCheck("failed");
+            }
+          }
+        })();
+      }
+      learnerRevalidationControllerRef.current = controller;
+      const pending = requestPromise
+        .then(
+          () => undefined,
+          () => undefined,
+        )
+        .finally(() => {
+          if (learnerRevalidationControllerRef.current === controller) {
+            learnerRevalidationControllerRef.current = null;
+          }
+          if (learnerRevalidationRef.current === pending) {
+            learnerRevalidationRef.current = null;
+          }
+        });
+      learnerRevalidationRef.current = pending;
+    },
+    [
+      assertLearnerSelectionReadCurrent,
+      beginLearnerIdentityCheck,
+      blockForPendingLearnerSelection,
+      refreshStoredLearnerSelectionPending,
+      resetLearnerSelection,
+      loadStableLearnerProfile,
+      startActiveLearnerLoad,
+      updateLearnerIdentityCheck,
+    ],
+  );
+
+  useEffect(() => {
+    const revalidateWhenVisible = () => {
+      if (document.visibilityState === "visible")
+        revalidateActiveLearner(false);
+    };
+    const revalidateOnFocus = () => revalidateActiveLearner(false);
+    window.addEventListener("focus", revalidateOnFocus);
+    document.addEventListener("visibilitychange", revalidateWhenVisible);
+    return () => {
+      window.removeEventListener("focus", revalidateOnFocus);
+      document.removeEventListener("visibilitychange", revalidateWhenVisible);
+    };
+  }, [revalidateActiveLearner]);
+
+  useEffect(() => {
+    learnerSelectionScopeReadyRef.current = sessionIdentity === null;
+    learnerSelectionScopeRef.current = null;
+    learnerSelectionPendingRef.current.clear();
+    learnerSelectionMarkerRef.current = null;
+    if (sessionIdentity === null) {
+      if (initialLearnerLoadSettledRef.current) {
+        updateLearnerIdentityCheck("confirmed");
+      }
+      return;
+    }
+    beginLearnerIdentityCheck();
+    let channel: BroadcastChannel | null = null;
+    let receiveStorage: ((event: StorageEvent) => void) | null = null;
+    let activeScope: string | null = null;
+    let disposed = false;
+    void learnerSelectionSignal.scope.then((name) => {
+      if (disposed) return;
+      learnerSelectionScopeReadyRef.current = true;
+      if (name === null) {
+        if (initialLearnerLoadSettledRef.current) {
+          updateLearnerIdentityCheck("confirmed");
+        }
+        return;
+      }
+      activeScope = name;
+      learnerSelectionScopeRef.current = name;
+      const storageKey = `${name}${LEARNER_SELECTION_STORAGE_SUFFIX}`;
+      const acceptMarker = (marker: string | null) => {
+        if (
+          disposed ||
+          marker === null ||
+          learnerSelectionMarkerRef.current === marker
+        ) {
+          return;
+        }
+        learnerSelectionMarkerRef.current = marker;
+        if (refreshStoredLearnerSelectionPending().size === 0) {
+          revalidateActiveLearner(true);
+        } else {
+          blockForPendingLearnerSelection(true);
+        }
+      };
+      const acceptPendingChange = (
+        token: string,
+        status: "pending" | "uncertain" | null,
+      ) => {
+        const previouslyPending = learnerSelectionPendingRef.current.size > 0;
+        const stored = storedLearnerSelectionPending(name);
+        if (stored !== null) {
+          for (const token of stored.keys()) {
+            if (learnerSelectionPendingRef.current.get(token) === "uncertain") {
+              stored.set(token, "uncertain");
+            }
+          }
+          learnerSelectionPendingRef.current = stored;
+        } else if (status === null) {
+          learnerSelectionPendingRef.current.delete(token);
+        } else {
+          learnerSelectionPendingRef.current.set(token, status);
+        }
+        if (learnerSelectionPendingRef.current.size > 0) {
+          blockForPendingLearnerSelection(true);
+        } else if (previouslyPending) {
+          revalidateActiveLearner(true);
+        }
+      };
+      receiveStorage = (event) => {
+        if (
+          event.key === storageKey &&
+          event.newValue !== null &&
+          storedLearnerSelectionMarker(storageKey) === event.newValue
+        ) {
+          acceptMarker(event.newValue);
+          return;
+        }
+        if (event.key !== null) {
+          const token = learnerSelectionPendingToken(name, event.key);
+          if (token !== null) {
+            const status =
+              event.newValue === "pending" || event.newValue === "uncertain"
+                ? event.newValue
+                : null;
+            acceptPendingChange(token, status);
+          }
+        }
+      };
+      window.addEventListener("storage", receiveStorage);
+      if (typeof globalThis.BroadcastChannel !== "undefined") {
+        try {
+          channel = new globalThis.BroadcastChannel(name);
+          channel.onmessage = (event) => {
+            if (event.data === LEARNER_SELECTION_CHANGED_MESSAGE) {
+              if (refreshStoredLearnerSelectionPending().size === 0) {
+                revalidateActiveLearner(true);
+              } else {
+                blockForPendingLearnerSelection(true);
+              }
+              return;
+            }
+            if (
+              event.data?.type === LEARNER_SELECTION_CHANGED_MESSAGE &&
+              typeof event.data.marker === "string"
+            ) {
+              acceptMarker(event.data.marker);
+              return;
+            }
+            if (
+              event.data?.type === "pending" &&
+              typeof event.data.token === "string" &&
+              (event.data.status === "pending" ||
+                event.data.status === "uncertain")
+            ) {
+              acceptPendingChange(event.data.token, event.data.status);
+              return;
+            }
+            if (
+              event.data?.type === "settled" &&
+              typeof event.data.token === "string"
+            ) {
+              acceptPendingChange(event.data.token, null);
+            }
+          };
+          learnerSelectionChannelRef.current = { channel, scope: name };
+        } catch {
+          // The durable storage signal remains available.
+        }
+      }
+      const pending = storedLearnerSelectionPending(name);
+      if (pending !== null) {
+        learnerSelectionPendingRef.current = new Map(
+          [...pending.keys()].map((token) => [token, "uncertain"]),
+        );
+      }
+      if (learnerSelectionPendingRef.current.size > 0) {
+        blockForPendingLearnerSelection(true);
+        return;
+      }
+      const storedMarker = storedLearnerSelectionMarker(storageKey);
+      if (storedMarker !== null) {
+        acceptMarker(storedMarker);
+      } else if (initialLearnerLoadSettledRef.current) {
+        updateLearnerIdentityCheck("confirmed");
+      }
+    });
+    return () => {
+      disposed = true;
+      learnerSelectionMarkerRef.current = null;
+      learnerSelectionScopeReadyRef.current = false;
+      if (learnerSelectionScopeRef.current === activeScope) {
+        learnerSelectionScopeRef.current = null;
+      }
+      learnerSelectionPendingRef.current.clear();
+      if (receiveStorage !== null) {
+        window.removeEventListener("storage", receiveStorage);
+      }
+      if (learnerSelectionChannelRef.current?.channel === channel) {
+        learnerSelectionChannelRef.current = null;
+      }
+      channel?.close();
+    };
+  }, [
+    beginLearnerIdentityCheck,
+    blockForPendingLearnerSelection,
+    learnerSelectionSignal,
+    refreshStoredLearnerSelectionPending,
+    revalidateActiveLearner,
+    sessionIdentity,
+    updateLearnerIdentityCheck,
   ]);
 
   const reloadSelectedLearner = useCallback(
-    async (expectedProfileId: string) => {
+    async (expectedProfileId: string, allowPendingOwner = false) => {
       if (!expectedProfileId.trim()) {
         throw new Error("The selected learner could not be loaded.");
       }
-      resetLearnerSelection();
-      const profile = await startActiveLearnerLoad(expectedProfileId).promise;
-      if (!profile) {
-        throw new Error("The selected learner could not be loaded.");
+      if (
+        (learnerIdentityCheckRef.current !== "confirmed" &&
+          expectedLearnerReloadControllerRef.current === null &&
+          !allowPendingOwner) ||
+        refreshStoredLearnerSelectionPending().size > 0
+      ) {
+        throw new DOMException(
+          "The learner change was cancelled.",
+          "AbortError",
+        );
       }
-      return profile;
+      beginLearnerIdentityCheck();
+      const operation = nextOperation();
+      learnerLoadControllerRef.current?.abort();
+      const controller = new AbortController();
+      learnerLoadControllerRef.current = controller;
+      expectedLearnerReloadControllerRef.current = controller;
+      setLoadError("");
+      try {
+        const { next, snapshot } = await loadStableLearnerProfile(
+          controller.signal,
+        );
+        if (
+          controller.signal.aborted ||
+          !gateMountedRef.current ||
+          !isCurrentOperation(operation)
+        ) {
+          throw new DOMException(
+            "The learner change was cancelled.",
+            "AbortError",
+          );
+        }
+        assertLearnerSelectionReadCurrent(snapshot);
+        const matchesExpected =
+          next.mode === "full" && next.profile.id === expectedProfileId;
+        const hasSameLearner = hasSameActiveLearner(dataRef.current, next);
+        if (!matchesExpected && hasSameLearner) {
+          updateLearnerIdentityCheck("confirmed");
+          throw new Error("The selected learner could not be loaded.");
+        }
+        if (!hasSameLearner) {
+          if (learnerLoadControllerRef.current === controller) {
+            learnerLoadControllerRef.current = null;
+          }
+          resetLearnerSelection();
+          if (!gateMountedRef.current) {
+            throw new DOMException(
+              "The learner change was cancelled.",
+              "AbortError",
+            );
+          }
+          dataRef.current = next;
+          setData(next);
+          setIsLoading(false);
+          setLoadError("");
+        } else {
+          updateLearnerIdentityCheck("confirmed");
+        }
+        if (!matchesExpected) {
+          throw new Error("The selected learner could not be loaded.");
+        }
+        return next.profile;
+      } catch (error) {
+        if (!controller.signal.aborted && !isAbortError(error)) {
+          if (learnerIdentityCheckRef.current === "checking") {
+            updateLearnerIdentityCheck("failed");
+          }
+        }
+        throw error;
+      } finally {
+        if (learnerLoadControllerRef.current === controller) {
+          learnerLoadControllerRef.current = null;
+        }
+        if (expectedLearnerReloadControllerRef.current === controller) {
+          expectedLearnerReloadControllerRef.current = null;
+        }
+      }
     },
-    [resetLearnerSelection, startActiveLearnerLoad],
+    [
+      assertLearnerSelectionReadCurrent,
+      beginLearnerIdentityCheck,
+      isCurrentOperation,
+      loadStableLearnerProfile,
+      nextOperation,
+      refreshStoredLearnerSelectionPending,
+      resetLearnerSelection,
+      updateLearnerIdentityCheck,
+    ],
   );
 
   const reconcileLearnerAfterMutation = useCallback(
@@ -1212,6 +2064,12 @@ export function LearnerProfileGate({
     <Result,>(operation: (signal: AbortSignal) => Promise<Result>) => {
       const requestedEpoch = gateMountEpochRef.current;
       const queued = learnerMutationTailRef.current.then(async () => {
+        if (learnerIdentityCheckRef.current !== "confirmed") {
+          throw new DOMException(
+            "The learner change was cancelled.",
+            "AbortError",
+          );
+        }
         if (
           !gateMountedRef.current ||
           gateMountEpochRef.current !== requestedEpoch
@@ -1239,6 +2097,10 @@ export function LearnerProfileGate({
         } finally {
           if (learnerMutationControllerRef.current === controller) {
             learnerMutationControllerRef.current = null;
+            if (learnerRevalidationQueuedRef.current) {
+              learnerRevalidationQueuedRef.current = false;
+              revalidateActiveLearner(true);
+            }
           }
         }
       });
@@ -1248,42 +2110,95 @@ export function LearnerProfileGate({
       );
       return queued;
     },
-    [],
+    [revalidateActiveLearner],
   );
 
   const selectLearner = useCallback(
     (profileId: string) =>
       runLearnerMutation(async (signal) => {
+        if (!profileId.trim()) {
+          throw new Error("The selected learner could not be loaded.");
+        }
+        let pending: LearnerSelectionPendingMutation | null = null;
+        let requestStarted = false;
+        let responseReceived = false;
+        let pendingSettled = false;
+        let reconcileWithoutScope = false;
+        let revalidateAfterSettlement = false;
         try {
-          if (!profileId.trim()) {
-            throw new Error("The selected learner could not be loaded.");
-          }
-          const roster = await selectLearnerProfileRequest(profileId, {
-            signal,
-          });
+          pending = await beginLearnerSelectionMutation(signal);
           throwIfLearnerMutationAborted(signal);
+          requestStarted = true;
+          const roster = await selectLearnerProfileRequest(profileId);
+          responseReceived = true;
           const selectedProfile = requireRosterActiveProfile(roster, profileId);
-          await reloadSelectedLearner(selectedProfile.id);
+          pendingSettled = settleLearnerSelectionMutation(pending, true);
+          throwIfLearnerMutationAborted(signal);
+          if (!pendingSettled) {
+            throw new Error("The learner change could not be verified safely.");
+          }
+          await reloadSelectedLearner(selectedProfile.id, true);
           return roster;
         } catch (error) {
-          if (!signal.aborted) {
+          if (!pendingSettled) {
+            const outcome = learnerMutationOutcome(
+              error,
+              requestStarted,
+              responseReceived,
+            );
+            if (outcome === "committed") {
+              pendingSettled = settleLearnerSelectionMutation(pending, true);
+              revalidateAfterSettlement = true;
+            } else if (outcome === "rejected") {
+              pendingSettled = settleLearnerSelectionMutation(pending, false);
+              revalidateAfterSettlement = true;
+            } else if (outcome === "uncertain") {
+              markLearnerSelectionMutationUncertain(pending);
+              reconcileWithoutScope = pending === null;
+            } else if (pending !== null) {
+              settleLearnerSelectionMutation(pending, false);
+            }
+          }
+          if (
+            !signal.aborted &&
+            pendingSettled &&
+            revalidateAfterSettlement &&
+            refreshStoredLearnerSelectionPending().size === 0
+          ) {
+            learnerRevalidationQueuedRef.current = true;
+          } else if (!signal.aborted && reconcileWithoutScope) {
             await reconcileLearnerAfterMutation(signal);
           }
           throw error;
         }
       }),
-    [reconcileLearnerAfterMutation, reloadSelectedLearner, runLearnerMutation],
+    [
+      beginLearnerSelectionMutation,
+      markLearnerSelectionMutationUncertain,
+      reconcileLearnerAfterMutation,
+      refreshStoredLearnerSelectionPending,
+      reloadSelectedLearner,
+      runLearnerMutation,
+      settleLearnerSelectionMutation,
+    ],
   );
 
   const createAndSelectLearner = useCallback(
     (name: string, existingProfileIds: readonly string[]) =>
       runLearnerMutation(async (signal) => {
+        const normalizedName = name.normalize("NFKC").trim();
+        let pending: LearnerSelectionPendingMutation | null = null;
+        let requestStarted = false;
+        let responseReceived = false;
+        let pendingSettled = false;
+        let reconcileWithoutScope = false;
+        let revalidateAfterSettlement = false;
         try {
-          const normalizedName = name.normalize("NFKC").trim();
-          const roster = await createLearnerProfileRequest(normalizedName, {
-            signal,
-          });
+          pending = await beginLearnerSelectionMutation(signal);
           throwIfLearnerMutationAborted(signal);
+          requestStarted = true;
+          const roster = await createLearnerProfileRequest(normalizedName);
+          responseReceived = true;
           const createdProfile = requireRosterActiveProfile(roster);
           if (
             existingProfileIds.includes(createdProfile.id) ||
@@ -1291,16 +2206,55 @@ export function LearnerProfileGate({
           ) {
             throw new Error("The newly added learner could not be loaded.");
           }
-          await reloadSelectedLearner(createdProfile.id);
+          pendingSettled = settleLearnerSelectionMutation(pending, true);
+          throwIfLearnerMutationAborted(signal);
+          if (!pendingSettled) {
+            throw new Error("The learner change could not be verified safely.");
+          }
+          await reloadSelectedLearner(createdProfile.id, true);
           return roster;
         } catch (error) {
-          if (!signal.aborted) {
+          if (!pendingSettled) {
+            const outcome = learnerMutationOutcome(
+              error,
+              requestStarted,
+              responseReceived,
+            );
+            if (outcome === "committed") {
+              pendingSettled = settleLearnerSelectionMutation(pending, true);
+              revalidateAfterSettlement = true;
+            } else if (outcome === "rejected") {
+              pendingSettled = settleLearnerSelectionMutation(pending, false);
+              revalidateAfterSettlement = true;
+            } else if (outcome === "uncertain") {
+              markLearnerSelectionMutationUncertain(pending);
+              reconcileWithoutScope = pending === null;
+            } else if (pending !== null) {
+              settleLearnerSelectionMutation(pending, false);
+            }
+          }
+          if (
+            !signal.aborted &&
+            pendingSettled &&
+            revalidateAfterSettlement &&
+            refreshStoredLearnerSelectionPending().size === 0
+          ) {
+            learnerRevalidationQueuedRef.current = true;
+          } else if (!signal.aborted && reconcileWithoutScope) {
             await reconcileLearnerAfterMutation(signal);
           }
           throw error;
         }
       }),
-    [reconcileLearnerAfterMutation, reloadSelectedLearner, runLearnerMutation],
+    [
+      beginLearnerSelectionMutation,
+      markLearnerSelectionMutationUncertain,
+      reconcileLearnerAfterMutation,
+      refreshStoredLearnerSelectionPending,
+      reloadSelectedLearner,
+      runLearnerMutation,
+      settleLearnerSelectionMutation,
+    ],
   );
   const activeQuestion = fullData?.question ?? null;
   const activeProfile = fullData?.profile ?? null;
@@ -1556,6 +2510,7 @@ export function LearnerProfileGate({
   }
 
   async function handleSkip() {
+    if (learnerIdentityCheckRef.current !== "confirmed") return;
     if (questionOperationRef.current) return;
     const active =
       started && activeQuestion && isLearnerProfileRoute
@@ -1709,6 +2664,7 @@ export function LearnerProfileGate({
   }
 
   function handleProfileValueChange(answerKey: string, value: string) {
+    if (learnerIdentityCheckRef.current !== "confirmed") return;
     setProfileDrafts((current) =>
       updateProfileDraft(current, answerKey, value),
     );
@@ -1716,6 +2672,7 @@ export function LearnerProfileGate({
   }
 
   async function handleProfileSave() {
+    if (learnerIdentityCheckRef.current !== "confirmed") return;
     const expectedProfileId = fullData?.profile.id;
     if (!profileState || !expectedProfileId || !isActiveProfileRoute()) return;
     const boundary = profileOperationBoundaryRef.current;
@@ -1723,6 +2680,7 @@ export function LearnerProfileGate({
     const profileOperation = boundary.begin();
     const { controller, operation } = profileOperation;
     let acknowledgmentOwnsOperation = false;
+    profileMutationPendingRef.current = true;
     setIsProfileSaving(true);
     setProfileFieldErrors({});
     setProfilePageError("");
@@ -1767,16 +2725,21 @@ export function LearnerProfileGate({
     } finally {
       const isCurrent = isCurrentProfileOperation(profileOperation);
       if (!acknowledgmentOwnsOperation) boundary.finish(controller);
-      if (isCurrent) setIsProfileSaving(false);
+      if (isCurrent) {
+        profileMutationPendingRef.current = false;
+        setIsProfileSaving(false);
+      }
     }
   }
 
   async function handleLessonRecordingConsentChange(enabled: boolean) {
+    if (learnerIdentityCheckRef.current !== "confirmed") return;
     if (!profileState || !isActiveProfileRoute()) return;
     const boundary = profileOperationBoundaryRef.current;
     if (!boundary) return;
     const profileOperation = boundary.begin();
     const { controller } = profileOperation;
+    profileMutationPendingRef.current = true;
     setIsProfileSaving(true);
     setProfilePageError("");
     try {
@@ -1803,7 +2766,10 @@ export function LearnerProfileGate({
     } finally {
       const isCurrent = isCurrentProfileOperation(profileOperation);
       boundary.finish(controller);
-      if (isCurrent) setIsProfileSaving(false);
+      if (isCurrent) {
+        profileMutationPendingRef.current = false;
+        setIsProfileSaving(false);
+      }
     }
   }
 
@@ -1872,6 +2838,7 @@ export function LearnerProfileGate({
   ]);
 
   const profileAction = useMemo(() => {
+    if (learnerIdentityCheck !== "confirmed") return null;
     if (data?.mode === "selection-required") {
       return {
         error: "",
@@ -1897,6 +2864,7 @@ export function LearnerProfileGate({
     guardianUnlockDestination,
     hasActiveLearner,
     isProfileRoute,
+    learnerIdentityCheck,
     openProfileFromAccount,
   ]);
   useProfileAccountAction(profileAction);
@@ -1913,6 +2881,7 @@ export function LearnerProfileGate({
         onSubmit: () => void handleSubmit(),
         onTranscribe: () => void handleTranscribe(),
         onValueChange: (value) => {
+          if (learnerIdentityCheckRef.current !== "confirmed") return;
           setDraft(value);
           if (fieldErrorIsAnswer) {
             setFieldError("");
@@ -1943,6 +2912,7 @@ export function LearnerProfileGate({
         onSubmit: () => void handleRedoQuestionSubmit(),
         onTranscribe: () => void handleRedoTranscribe(),
         onValueChange: (value) => {
+          if (learnerIdentityCheckRef.current !== "confirmed") return;
           setDraft(value);
           if (fieldErrorIsAnswer) {
             setFieldError("");
@@ -1995,6 +2965,13 @@ export function LearnerProfileGate({
       children
     );
 
+  const learnerIdentityBlocked = learnerIdentityCheck !== "confirmed";
+  const blockLearnerInteraction = (event: SyntheticEvent) => {
+    if (learnerIdentityCheckRef.current === "confirmed") return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
   return (
     <LearnerSelectionProvider
       activeProfileId={data?.mode === "full" ? data.profile.id : null}
@@ -2002,69 +2979,112 @@ export function LearnerProfileGate({
       reloadSelectedLearner={reloadSelectedLearner}
       selectLearner={selectLearner}
     >
-      <LearnerProfileGateView
-        acknowledgment={acknowledgment}
-        completedLearnerProfileFallback={completedLearnerProfileFallback}
-        conversationProps={
-          selectedExperience === "realtime" ? conversationProps : null
-        }
-        data={data}
-        guardianDashboardRoute={guardianDashboardRoute}
-        guardianRoute={guardianRoute}
-        guardianSelectionFallback={guardianSelectionFallback}
-        isConversationRoute={isConversationRoute}
-        isLearnerProfileRoute={isLearnerProfileRoute}
-        learnerManagerRoute={learnerManagerRoute}
-        isProfileFormRedo={isFormRedoRoute}
-        isProfileLoading={isProfileLoading}
-        isProfileRoute={isProfileRoute}
-        isLoading={isLoading}
-        loadError={loadError}
-        onAcknowledgmentNext={handleAcknowledgmentNext}
-        onCloseConversationRoute={onConversationCompleted}
-        onCloseGuardianRoute={onCloseGuardianRoute}
-        onCloseProfileRoute={
-          redoLearnerProfile ? closeRedoProfileQuestions : closeProfileEditor
-        }
-        onRetry={() => void refresh()}
-        onRetryProfile={() => void handleOpenProfile()}
-        onSkip={() => void handleSkip()}
-        onStart={() => void handleStart()}
-        learnerProfileFallback={learnerProfileFallback}
-        profileEditor={
-          isProfileRoute && profileState
-            ? {
-                drafts: profileDrafts,
-                fieldErrors: profileFieldErrors,
-                isSaving: isProfileSaving,
-                learnerName: fullData?.profile.name ?? "Learner",
-                lessonRecordingCleanupPending:
-                  profileState.profile.lessonRecordingCleanupPending,
-                lessonRecordingConsent:
-                  profileState.profile.lessonRecordingConsent,
-                onCancel: closeProfileEditor,
-                onClose: closeProfileEditor,
-                onLessonRecordingConsentChange: (enabled) =>
-                  void handleLessonRecordingConsentChange(enabled),
-                onRedoLearnerProfile: handleRedoLearnerProfile,
-                onSave: () => void handleProfileSave(),
-                onValueChange: handleProfileValueChange,
-                pageError: profilePageError,
-              }
-            : null
-        }
-        profileLoadError={profileLoadError}
-        profileQuestionProps={profileQuestionProps}
-        questionProps={
-          (isProfileRoute || isFormRedoRoute) && profileState
-            ? null
-            : questionProps
-        }
-        redoLearnerProfile={redoLearnerProfile}
-        started={started}
+      {learnerIdentityBlocked ? (
+        <LearnerProfileScreen>
+          <LearnerProfileStatusCard
+            aria-busy={learnerIdentityCheck === "checking" || undefined}
+            role={learnerIdentityCheck === "failed" ? "alert" : "status"}
+          >
+            <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
+              {learnerIdentityCheck === "checking"
+                ? "Checking the current learner"
+                : "We couldn't verify the current learner"}
+            </h1>
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              {learnerIdentityCheck === "checking"
+                ? "Please wait before making changes."
+                : "Try again before continuing so changes are saved for the right learner."}
+            </p>
+            {learnerIdentityCheck === "failed" ? (
+              <div className="mt-2 flex justify-end">
+                <ActionButton
+                  onClick={() => revalidateActiveLearner(true)}
+                  type="button"
+                >
+                  Try again
+                </ActionButton>
+              </div>
+            ) : null}
+          </LearnerProfileStatusCard>
+        </LearnerProfileScreen>
+      ) : null}
+      <div
+        aria-hidden={learnerIdentityBlocked || undefined}
+        className="contents"
+        hidden={learnerIdentityBlocked}
+        inert={learnerIdentityBlocked || undefined}
+        onBeforeInputCapture={blockLearnerInteraction}
+        onChangeCapture={blockLearnerInteraction}
+        onClickCapture={blockLearnerInteraction}
+        onInputCapture={blockLearnerInteraction}
+        onKeyDownCapture={blockLearnerInteraction}
+        onPointerDownCapture={blockLearnerInteraction}
+        onSubmitCapture={blockLearnerInteraction}
       >
-        {protectedChildren}
-      </LearnerProfileGateView>
+        <LearnerProfileGateView
+          acknowledgment={acknowledgment}
+          completedLearnerProfileFallback={completedLearnerProfileFallback}
+          conversationProps={
+            selectedExperience === "realtime" ? conversationProps : null
+          }
+          data={data}
+          guardianDashboardRoute={guardianDashboardRoute}
+          guardianRoute={guardianRoute}
+          guardianSelectionFallback={guardianSelectionFallback}
+          isConversationRoute={isConversationRoute}
+          isLearnerProfileRoute={isLearnerProfileRoute}
+          learnerManagerRoute={learnerManagerRoute}
+          isProfileFormRedo={isFormRedoRoute}
+          isProfileLoading={isProfileLoading}
+          isProfileRoute={isProfileRoute}
+          isLoading={isLoading}
+          loadError={loadError}
+          onAcknowledgmentNext={handleAcknowledgmentNext}
+          onCloseConversationRoute={onConversationCompleted}
+          onCloseGuardianRoute={onCloseGuardianRoute}
+          onCloseProfileRoute={
+            redoLearnerProfile ? closeRedoProfileQuestions : closeProfileEditor
+          }
+          onRetry={() => void refresh()}
+          onRetryProfile={() => void handleOpenProfile()}
+          onSkip={() => void handleSkip()}
+          onStart={() => void handleStart()}
+          learnerProfileFallback={learnerProfileFallback}
+          profileEditor={
+            isProfileRoute && profileState
+              ? {
+                  drafts: profileDrafts,
+                  fieldErrors: profileFieldErrors,
+                  isSaving: isProfileSaving,
+                  learnerName: fullData?.profile.name ?? "Learner",
+                  lessonRecordingCleanupPending:
+                    profileState.profile.lessonRecordingCleanupPending,
+                  lessonRecordingConsent:
+                    profileState.profile.lessonRecordingConsent,
+                  onCancel: closeProfileEditor,
+                  onClose: closeProfileEditor,
+                  onLessonRecordingConsentChange: (enabled) =>
+                    void handleLessonRecordingConsentChange(enabled),
+                  onRedoLearnerProfile: handleRedoLearnerProfile,
+                  onSave: () => void handleProfileSave(),
+                  onValueChange: handleProfileValueChange,
+                  pageError: profilePageError,
+                }
+              : null
+          }
+          profileLoadError={profileLoadError}
+          profileQuestionProps={profileQuestionProps}
+          questionProps={
+            (isProfileRoute || isFormRedoRoute) && profileState
+              ? null
+              : questionProps
+          }
+          redoLearnerProfile={redoLearnerProfile}
+          started={started}
+        >
+          {protectedChildren}
+        </LearnerProfileGateView>
+      </div>
     </LearnerSelectionProvider>
   );
 }

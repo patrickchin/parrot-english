@@ -395,22 +395,15 @@ test("microphone feedback owns one focused node through opening, listening, writ
   });
 
   const account = page.getByRole("button", { name: /^Profile for / });
-  for (let step = 0; step < 2; step += 1) {
-    if (
-      await account.evaluate((element) => document.activeElement === element)
-    ) {
-      break;
-    }
-    await page.keyboard.press("Tab");
-  }
+  await account.focus();
   await expect(account).toBeFocused();
-  for (let step = 0; step < 2; step += 1) {
+  for (let step = 0; step < 3; step += 1) {
     if (
       await microphone.evaluate((element) => document.activeElement === element)
     ) {
       break;
     }
-    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
   }
   await expect(microphone).toBeFocused();
 

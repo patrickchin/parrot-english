@@ -362,7 +362,7 @@ describe("dub Worker routing", () => {
     }
   });
 
-  it("does not claim lookalike non-dub paths", async () => {
+  it("leaves lookalike non-dub paths to the unmatched API response", async () => {
     const sessionCalls = [];
     const worker = createWorker({
       createAuth: () => authStub(null, sessionCalls),
@@ -371,9 +371,10 @@ describe("dub Worker routing", () => {
 
     const response = await worker.fetch(request("GET", "/api/dubs-and-more"), env);
 
-    assert.equal(response.status, 200);
-    assert.equal(await response.text(), "asset");
+    assert.equal(response.status, 404);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.deepEqual(await response.json(), { error: "not_found" });
     assert.equal(sessionCalls.length, 0);
-    assert.equal(getAssetCalls(), 1);
+    assert.equal(getAssetCalls(), 0);
   });
 });

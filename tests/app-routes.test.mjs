@@ -233,6 +233,49 @@ describe("app route helpers", () => {
     }
   });
 
+  it("resumes only a validated Guardian destination after a header unlock", () => {
+    assert.equal(
+      routes.getSafeGuardianUnlockDestination(
+        "/guardian/stories",
+        "?section=art",
+        "#cover",
+      ),
+      "/guardian/stories?section=art#cover",
+    );
+    assert.equal(
+      routes.getSafeGuardianUnlockDestination(
+        "/lessons/my/lesson-1/edit",
+        "?tab=script",
+        "#scene-2",
+      ),
+      "/lessons/my/lesson-1/edit?tab=script#scene-2",
+    );
+    assert.equal(
+      routes.getSafeGuardianUnlockDestination(
+        "/profile/setup",
+        "?redo=1&returnTo=%2Fguardian",
+        "#questions",
+      ),
+      "/profile/setup?redo=1&returnTo=%2Fguardian#questions",
+    );
+
+    for (const pathname of [
+      "/login",
+      "/lessons",
+      "/guardian/unknown",
+      "/guardianish",
+    ]) {
+      assert.equal(
+        routes.getSafeGuardianUnlockDestination(
+          pathname,
+          "?returnTo=%2Fguardian%2Fstories",
+          "#loop",
+        ),
+        "/guardian",
+      );
+    }
+  });
+
   it("classifies gate routes case-insensitively with router-equivalent trailing slashes", () => {
     for (const [pathname, kind] of [
       ["/login", "login"],

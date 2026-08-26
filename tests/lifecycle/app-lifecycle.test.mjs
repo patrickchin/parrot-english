@@ -108,6 +108,7 @@ before(async () => {
 afterEach(async () => {
   await cleanupMountedRoots();
   document.body.replaceChildren();
+  window.localStorage.clear();
   globalThis.fetch = originalFetch;
   globalThis.Audio = originalAudio;
   globalThis.MediaRecorder = originalMediaRecorder;
@@ -493,6 +494,15 @@ function LoadedProfileHarness() {
   );
 }
 
+function LoadedProfileIdentityHarness() {
+  const { profile } = useLearnerProfile();
+  return createElement(
+    "output",
+    { "aria-label": "Loaded profile identity" },
+    `${profile.id}:${profile.name}`,
+  );
+}
+
 function SelectionContextHarness() {
   assert.equal(
     typeof useLearnerSelection,
@@ -537,6 +547,182 @@ function SelectionReloadHarness() {
       "Reload learners A then B",
     ),
   );
+}
+
+function SelectionActionHarness({
+  action = "select",
+  label,
+  newLearnerName = "Ava",
+  profileId = "learner-noah",
+  showDraft = false,
+}) {
+  const [localDraft, setLocalDraft] = useState("");
+  const { activeProfileId, createAndSelectLearner, selectLearner } =
+    useLearnerSelection();
+  const mutateLearner =
+    action === "create"
+      ? () => createAndSelectLearner(newLearnerName, ["learner-mia"])
+      : () => selectLearner(profileId);
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "output",
+      { "aria-label": `${label} active learner` },
+      activeProfileId ?? "none",
+    ),
+    createElement(
+      "button",
+      {
+        onClick: () => void mutateLearner().catch(() => {}),
+        type: "button",
+      },
+      label,
+    ),
+    showDraft
+      ? createElement("input", {
+          "aria-label": `${label} draft`,
+          onChange: (event) => setLocalDraft(event.currentTarget.value),
+          value: localDraft,
+        })
+      : null,
+  );
+}
+
+function LearnerSelectionSessionHarness({
+  action = "select",
+  label,
+  newLearnerName = "Ava",
+  profileId = "learner-noah",
+  sessionIdentity,
+  showDraft = false,
+}) {
+  return createElement(
+    AccountActionProvider,
+    {
+      profileAction: null,
+      sessionIdentity,
+      setProfileAction() {},
+    },
+    createElement(
+      LearnerProfileGate,
+      {
+        completedLearnerProfileFallback: createElement("p", null, "HOME"),
+        guardianRoute: true,
+        isConversationRoute: false,
+        isLearnerProfileRoute: false,
+        isProfileRoute: false,
+        learnerManagerRoute: true,
+        learnerProfileFallback: createElement("p", null, "SETUP"),
+        onCloseProfileRoute() {},
+        onConversationCompleted() {},
+        onOpenLessons() {},
+        onOpenProfileRoute() {},
+        onRedoCompleted() {},
+        onRedoLearnerProfileRoute() {},
+        redoLearnerProfile: false,
+      },
+      createElement(SelectionActionHarness, {
+        action,
+        label,
+        newLearnerName,
+        profileId,
+        showDraft,
+      }),
+    ),
+  );
+}
+
+function UnmountingLearnerSelectionSessionsHarness({
+  action,
+  sourceLabel,
+  targetName,
+  targetProfileId,
+}) {
+  const [sourceMounted, setSourceMounted] = useState(true);
+  return createElement(
+    Fragment,
+    null,
+    sourceMounted
+      ? createElement(LearnerSelectionSessionHarness, {
+          action,
+          key: "source",
+          label: sourceLabel,
+          newLearnerName: targetName,
+          profileId: targetProfileId,
+          sessionIdentity: "user-1|session-a",
+        })
+      : null,
+    createElement(LearnerSelectionSessionHarness, {
+      key: "sibling",
+      label: `${sourceLabel} sibling`,
+      sessionIdentity: "user-1|session-a",
+    }),
+    createElement(LearnerSelectionSessionHarness, {
+      key: "different-session",
+      label: `${sourceLabel} different session`,
+      sessionIdentity: "user-1|session-b",
+    }),
+    createElement(
+      "button",
+      {
+        onClick: () => setSourceMounted(false),
+        type: "button",
+      },
+      `Unmount ${sourceLabel}`,
+    ),
+  );
+}
+
+function installSharedBroadcastChannels() {
+  const channels = new Map();
+  let messagesPosted = 0;
+  class SharedBroadcastChannel {
+    static names() {
+      return [...channels.keys()];
+    }
+
+    static peerCount() {
+      return [...channels.values()].reduce(
+        (total, peers) => total + peers.size,
+        0,
+      );
+    }
+
+    static messagesPosted() {
+      return messagesPosted;
+    }
+
+    static deliverToPeer(index, data) {
+      const peer = [...channels.values()].flatMap((peers) => [...peers])[index];
+      if (!peer) return false;
+      peer.onmessage?.({ data });
+      return true;
+    }
+
+    constructor(name) {
+      this.name = name;
+      this.onmessage = null;
+      const peers = channels.get(name) ?? new Set();
+      peers.add(this);
+      channels.set(name, peers);
+    }
+
+    close() {
+      const peers = channels.get(this.name);
+      peers?.delete(this);
+      if (peers?.size === 0) channels.delete(this.name);
+    }
+
+    postMessage(data) {
+      messagesPosted += 1;
+      for (const peer of channels.get(this.name) ?? []) {
+        if (peer === this) continue;
+        void Promise.resolve().then(() => peer.onmessage?.({ data }));
+      }
+    }
+  }
+  return SharedBroadcastChannel;
 }
 
 function HeldSelectionReloadHarness() {
@@ -1016,7 +1202,10 @@ async function advanceToJoinInBeat(ControlledAudio) {
       document.querySelector('[aria-label="Speaking controls"]'),
       null,
     );
-    assert.equal(document.querySelector('[aria-label="Speaking feedback"]'), null);
+    assert.equal(
+      document.querySelector('[aria-label="Speaking feedback"]'),
+      null,
+    );
   });
 }
 
@@ -1105,6 +1294,54 @@ function createSessionClient(initialState) {
 }
 
 describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
+  it("redirects an authenticated login alias before learner-profile loading", async () => {
+    const learnerProfile = deferred();
+    const learnerProfileRequestRoutes = [];
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        learnerProfileRequestRoutes.push(currentRoute().path);
+        return learnerProfile.promise.then(() =>
+          json(completedLearnerProfileState()),
+        );
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry:
+          "/login?returnTo=%2Fguardian%2Fstories%3Fsection%3Dart%23cover",
+      }),
+    );
+
+    await waitFor(() =>
+      assert.equal(currentRoute().path, "/guardian/stories?section=art#cover"),
+    );
+    await waitFor(() => assert.ok(learnerProfileRequestRoutes.length > 0));
+    assert.equal(
+      learnerProfileRequestRoutes.some((route) => route.startsWith("/login")),
+      false,
+      "The login alias must redirect before learner-profile requests begin.",
+    );
+    learnerProfile.resolve();
+    await waitFor(() => text(/Story settings/));
+  });
+
   it("returns unknown Guardian URLs to the Guardian dashboard", async () => {
     const api = {
       async loadGuardianAccess() {
@@ -1238,6 +1475,49 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       await cleanupMountedRoots();
       document.body.replaceChildren();
     }
+  });
+
+  it("labels a Guardian profile-load recovery as Back and preserves its safe return", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json({ message: "Profile service is unavailable." }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api,
+        initialEntry:
+          "/guardian/profile?returnTo=%2Fguardian%2Fstories%3Fsection%3Dart%23cover",
+      }),
+    );
+
+    await waitFor(() => text(/Profile is taking a break/));
+    button("Back");
+    noText(/Back to home/);
+    await click(button("Back"));
+    await waitFor(() =>
+      assert.equal(currentRoute().path, "/guardian/stories?section=art#cover"),
+    );
+    await waitFor(() => text(/Story settings/));
   });
 
   it("runs Guardian form-mode redo through profile questions and returns safely on completion", async () => {
@@ -2151,6 +2431,1939 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
+  it("revalidates the authoritative learner once when a mounted tab regains focus", async () => {
+    const revalidation = deferred();
+    let selectedProfileId = "learner-mia";
+    let profileRequests = 0;
+    const stateForSelection = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      profileRequests += 1;
+      return selectedProfileId === "learner-noah"
+        ? revalidation.promise
+        : json(stateForSelection());
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(LoadedProfileIdentityHarness),
+      ),
+    );
+
+    await waitFor(() =>
+      assert.equal(
+        output("Loaded profile identity").textContent,
+        "learner-mia:Mia",
+      ),
+    );
+    const originalProfileNode = output("Loaded profile identity");
+    const initialProfileRequests = profileRequests;
+    selectedProfileId = "learner-noah";
+    await act(async () => {
+      window.dispatchEvent(new window.Event("focus"));
+      window.dispatchEvent(new window.Event("focus"));
+    });
+
+    await waitFor(() =>
+      assert.equal(profileRequests, initialProfileRequests + 1),
+    );
+    assert.strictEqual(
+      output("Loaded profile identity"),
+      originalProfileNode,
+      "The routed learner stays mounted until the server identifies a change.",
+    );
+
+    revalidation.resolve(json(stateForSelection()));
+    await waitFor(() =>
+      assert.equal(
+        output("Loaded profile identity").textContent,
+        "learner-noah:Noah",
+      ),
+    );
+    assert.notStrictEqual(
+      output("Loaded profile identity"),
+      originalProfileNode,
+      "A changed learner identity remounts the learner-scoped subtree.",
+    );
+  });
+
+  it("rejects a held learner snapshot after a silent pending generation completes", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const staleRead = deferred();
+    const authoritativeRead = deferred();
+    let holdRevalidation = false;
+    let heldRequests = 0;
+    let profileRequests = 0;
+    const learnerState = (id, name) => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id,
+        name,
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path !== "/api/learner-profile" || init.method !== "GET") {
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      }
+      profileRequests += 1;
+      if (!holdRevalidation) return json(learnerState("learner-mia", "Mia"));
+      heldRequests += 1;
+      return heldRequests === 1 ? staleRead.promise : authoritativeRead.promise;
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Silent generation receiver",
+          sessionIdentity: "user-1|shared-session",
+        }),
+      );
+      await waitFor(() => {
+        button("Silent generation receiver");
+        assert.equal(profileRequests, 2);
+        assert.equal(SharedBroadcastChannel.peerCount(), 1);
+      });
+      const initialProfileRequests = profileRequests;
+      const scope = SharedBroadcastChannel.names()[0];
+      assert.ok(scope);
+      holdRevalidation = true;
+
+      await act(async () => window.dispatchEvent(new window.Event("focus")));
+      await waitFor(() => assert.equal(heldRequests, 1));
+
+      const peerPendingKey = `${scope}:pending:silent-peer-operation`;
+      window.localStorage.setItem(peerPendingKey, "pending");
+      window.localStorage.setItem(`${scope}:state`, "silent-cara-change");
+      window.localStorage.removeItem(peerPendingKey);
+      staleRead.resolve(json(learnerState("learner-mia", "Mia")));
+      await flush();
+
+      assert.ok(
+        output("Silent generation receiver active learner").closest("[hidden]"),
+        "The stale Mia snapshot must remain fenced after a silent ABA cycle.",
+      );
+      await waitFor(() => assert.equal(heldRequests, 2));
+      authoritativeRead.resolve(json(learnerState("learner-cara", "Cara")));
+      await waitFor(() =>
+        assert.equal(
+          output("Silent generation receiver active learner").textContent,
+          "learner-cara",
+        ),
+      );
+      assert.equal(profileRequests, initialProfileRequests + 2);
+      assert.equal(
+        output("Silent generation receiver active learner").closest("[hidden]"),
+        null,
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("preserves routed learner drafts across same-learner focus and visibility checks", async () => {
+    const revalidation = deferred();
+    let holdRevalidation = false;
+    let profileRequests = 0;
+    let routeMounts = 0;
+    const learnerState = {
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: "learner-mia",
+        name: "Mia",
+      },
+    };
+    function RoutedLearnerDraft() {
+      const { profile } = useLearnerProfile();
+      const [draftValue, setDraftValue] = useState("");
+      const [mount] = useState(() => {
+        routeMounts += 1;
+        return routeMounts;
+      });
+      return createElement(
+        "section",
+        null,
+        createElement("textarea", {
+          "aria-label": "Lesson topic draft",
+          "data-learner-id": profile.id,
+          "data-mount": String(mount),
+          onChange: (event) => setDraftValue(event.currentTarget.value),
+          value: draftValue,
+        }),
+      );
+    }
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      profileRequests += 1;
+      return holdRevalidation ? revalidation.promise : json(learnerState);
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(RoutedLearnerDraft),
+      ),
+    );
+    const topic = await waitFor(() => {
+      const candidate = document.querySelector(
+        'textarea[aria-label="Lesson topic draft"]',
+      );
+      assert.ok(candidate);
+      return candidate;
+    });
+    await input(topic, "Unsaved garden lesson");
+    const originalMount = topic.dataset.mount;
+    const initialProfileRequests = profileRequests;
+    holdRevalidation = true;
+
+    await act(async () => {
+      window.dispatchEvent(new window.Event("focus"));
+      document.dispatchEvent(new window.Event("visibilitychange"));
+    });
+    await waitFor(() =>
+      assert.equal(profileRequests, initialProfileRequests + 1),
+    );
+    text(/Checking the current learner/);
+    assert.equal(
+      document.querySelector('textarea[aria-label="Lesson topic draft"]')
+        ?.value,
+      "Unsaved garden lesson",
+    );
+
+    revalidation.resolve(json(learnerState));
+    await waitFor(() => {
+      const current = document.querySelector(
+        'textarea[aria-label="Lesson topic draft"]',
+      );
+      assert.equal(current?.value, "Unsaved garden lesson");
+      assert.equal(current?.dataset.mount, originalMount);
+    });
+    assert.equal(profileRequests, initialProfileRequests + 1);
+  });
+
+  it("preserves unsaved Guardian profile fields when visibility confirms the same learner", async () => {
+    const revalidation = deferred();
+    let holdRevalidation = false;
+    let learnerProfileRequests = 0;
+    let profileEditorRequests = 0;
+    const learnerState = {
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: "learner-mia",
+        name: "Mia",
+      },
+    };
+    const profileState = {
+      profile: {
+        ...learnerState.profile,
+        age: 8,
+        description: "Mia likes dinosaurs.",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+      },
+      questions: [question()],
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        learnerProfileRequests += 1;
+        return holdRevalidation ? revalidation.promise : json(learnerState);
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        profileEditorRequests += 1;
+        return json(profileState);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        ProfileRouteHarness,
+        { initialRoute: "/guardian/profile" },
+        createElement("p", null, "PROFILE LESSONS"),
+      ),
+    );
+    await waitFor(() => text(/Managing Mia/));
+    await input(document.querySelector("#profile-name"), "Unsaved Mia name");
+    const initialLearnerProfileRequests = learnerProfileRequests;
+    const initialProfileEditorRequests = profileEditorRequests;
+    holdRevalidation = true;
+
+    await act(async () => {
+      document.dispatchEvent(new window.Event("visibilitychange"));
+    });
+    await waitFor(() =>
+      assert.equal(learnerProfileRequests, initialLearnerProfileRequests + 1),
+    );
+    assert.equal(
+      document.querySelector("#profile-name")?.value,
+      "Unsaved Mia name",
+    );
+
+    revalidation.resolve(json(learnerState));
+    await flush();
+    assert.equal(
+      document.querySelector("#profile-name")?.value,
+      "Unsaved Mia name",
+    );
+    assert.equal(profileEditorRequests, initialProfileEditorRequests);
+  });
+
+  it("blocks stale Guardian profile writes after learner revalidation fails and switches safely on retry", async () => {
+    const failedRevalidation = deferred();
+    let selectedProfileId = "learner-mia";
+    let failNextLearnerProfileLoad = false;
+    let profileWrites = 0;
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: selectedProfileId === "learner-noah" ? 10 : 8,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    const profileState = () => ({
+      profile: {
+        ...learnerState().profile,
+        description:
+          selectedProfileId === "learner-noah"
+            ? "Noah likes space."
+            : "Mia likes dinosaurs.",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+      },
+      questions: [question()],
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        if (failNextLearnerProfileLoad) {
+          failNextLearnerProfileLoad = false;
+          return failedRevalidation.promise;
+        }
+        return json(learnerState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(profileState());
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        profileWrites += 1;
+        return json(profileState());
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        ProfileRouteHarness,
+        { initialRoute: "/guardian/profile" },
+        createElement("p", null, "PROFILE LESSONS"),
+      ),
+    );
+    await waitFor(() => text(/Managing Mia/));
+    await input(document.querySelector("#profile-name"), "Stale Mia name");
+
+    selectedProfileId = "learner-noah";
+    failNextLearnerProfileLoad = true;
+    await act(async () => window.dispatchEvent(new window.Event("focus")));
+    await waitFor(() => text(/Checking the current learner/i));
+
+    await click(button("Save changes"));
+    assert.equal(
+      profileWrites,
+      0,
+      "A programmatic submit must be fenced while identity is uncertain.",
+    );
+
+    failedRevalidation.resolve(
+      json({ message: "The learner could not be checked." }, 503),
+    );
+    await waitFor(() => text(/couldn't verify the current learner/i));
+
+    await click(button("Save changes"));
+    assert.equal(
+      profileWrites,
+      0,
+      "A programmatic stale submit must be fenced before it reaches the server.",
+    );
+
+    await click(button("Try again"));
+    await waitFor(() => text(/Managing Noah/));
+    assert.equal(document.querySelector("#profile-name")?.value, "Noah");
+    assert.equal(profileWrites, 0);
+  });
+
+  it("aborts an in-flight learner mutation before a focus revalidation replaces its learner", async () => {
+    const heldAnswer = deferred();
+    let answerSignal = null;
+    let selectedProfileId = "learner-mia";
+    const stateForSelection = () => ({
+      ...fullLearnerProfileState(),
+      profile: {
+        ...fullLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(stateForSelection());
+      }
+      if (path === "/api/learner-profile/answer" && init.method === "PUT") {
+        answerSignal = init.signal;
+        return heldAnswer.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        learnerProfileRouteProps(createElement("p", null, "HOME")),
+        createElement("p", null, "HOME"),
+      ),
+    );
+    await waitFor(() => button("Start questions"));
+    await click(button("Start questions"));
+    await input(document.querySelector("#learner-profile-answer-name"), "Mia");
+    await click(button("Next"));
+    await waitFor(() => assert.ok(answerSignal));
+    assert.equal(answerSignal.aborted, false);
+
+    selectedProfileId = "learner-noah";
+    await act(async () => {
+      window.dispatchEvent(new window.Event("focus"));
+    });
+
+    await waitFor(() => assert.equal(answerSignal.aborted, true));
+    await waitFor(() => button("Start questions"));
+    await click(button("Start questions"));
+    assert.equal(
+      document.querySelector("#learner-profile-answer-name").value,
+      "Noah",
+    );
+  });
+
+  it("aborts and clears a Guardian profile save before reloading another learner", async () => {
+    const heldSave = deferred();
+    let saveSignal = null;
+    let selectedProfileId = "learner-mia";
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    const profileState = () => ({
+      profile: {
+        ...learnerState().profile,
+        age: selectedProfileId === "learner-noah" ? 10 : 8,
+        description:
+          selectedProfileId === "learner-noah"
+            ? "Noah likes rockets."
+            : "Mia likes dinosaurs.",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+      },
+      questions: [question()],
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(learnerState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(profileState());
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        saveSignal = init.signal;
+        return heldSave.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        ProfileRouteHarness,
+        { initialRoute: "/guardian/profile" },
+        createElement("p", null, "PROFILE LESSONS"),
+      ),
+    );
+    await waitFor(() => text(/Managing Mia/));
+    await input(document.querySelector("#profile-description"), "Unsaved Mia");
+    await click(button("Save changes"));
+    await waitFor(() => assert.ok(saveSignal));
+    assert.equal(saveSignal.aborted, false);
+
+    selectedProfileId = "learner-noah";
+    await act(async () => {
+      window.dispatchEvent(new window.Event("focus"));
+    });
+
+    await waitFor(() => assert.equal(saveSignal.aborted, true));
+    await waitFor(() => text(/Managing Noah/));
+    assert.equal(document.querySelector("#profile-name").value, "Noah");
+    assert.equal(
+      document.querySelector("#profile-description").value,
+      "Noah likes rockets.",
+    );
+    noText(/Unsaved Mia/);
+  });
+
+  it("delivers a committed learner switch after its exact-session digest finishes", async () => {
+    const originalCrypto = globalThis.crypto;
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const sourceDigest = deferred();
+    const siblingDigest = deferred();
+    let activeDigest = sourceDigest;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        randomUUID: () => "queued-learner-change",
+        subtle: { digest: () => activeDigest.promise },
+      },
+      writable: true,
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let mutationRequests = 0;
+    let selectedProfileId = "learner-mia";
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(learnerState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        mutationRequests += 1;
+        selectedProfileId = "learner-noah";
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-01T08:00:00.000Z",
+              id: "learner-mia",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+            {
+              age: 10,
+              createdAt: "2026-08-02T08:00:00.000Z",
+              id: "learner-noah",
+              name: "Noah",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Select before learner scope",
+          sessionIdentity: "user-1|shared-session",
+        }),
+      );
+      activeDigest = siblingDigest;
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Digest-delayed sibling",
+          sessionIdentity: "user-1|shared-session",
+        }),
+      );
+      await waitFor(() => button("Select before learner scope"));
+      assert.equal(SharedBroadcastChannel.peerCount(), 0);
+
+      sourceDigest.resolve(new Uint8Array(32).buffer);
+      await waitFor(() => assert.equal(SharedBroadcastChannel.peerCount(), 1));
+      await click(button("Select before learner scope"));
+      await waitFor(() =>
+        assert.equal(
+          output("Select before learner scope active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      assert.equal(
+        output("Digest-delayed sibling active learner").textContent,
+        "learner-mia",
+      );
+      assert.equal(mutationRequests, 1);
+      await waitFor(() => assert.equal(window.localStorage.length, 1));
+      assert.equal(
+        output("Digest-delayed sibling active learner").textContent,
+        "learner-mia",
+        "BroadcastChannel does not buffer the source's already-posted protocol events.",
+      );
+
+      siblingDigest.resolve(new Uint8Array(32).buffer);
+      await waitFor(() =>
+        assert.equal(
+          output("Digest-delayed sibling active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      assert.equal(SharedBroadcastChannel.messagesPosted(), 3);
+      assert.equal(SharedBroadcastChannel.peerCount(), 2);
+    } finally {
+      Object.defineProperty(globalThis, "crypto", {
+        configurable: true,
+        value: originalCrypto,
+        writable: true,
+      });
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("uses an opaque storage signal when BroadcastChannel construction fails", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    class ThrowingBroadcastChannel {
+      constructor() {
+        throw new Error("BroadcastChannel is unavailable.");
+      }
+    }
+    globalThis.BroadcastChannel = ThrowingBroadcastChannel;
+    window.BroadcastChannel = ThrowingBroadcastChannel;
+    let selectedProfileId = "learner-mia";
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(learnerState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-noah";
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-01T08:00:00.000Z",
+              id: "learner-mia",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+            {
+              age: 10,
+              createdAt: "2026-08-02T08:00:00.000Z",
+              id: "learner-noah",
+              name: "Noah",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Storage source tab",
+            sessionIdentity: "user-1|session-a",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Storage sibling tab",
+            sessionIdentity: "user-1|session-a",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Storage different session",
+            sessionIdentity: "user-1|session-b",
+          }),
+        ),
+      );
+      await waitFor(() => button("Storage source tab"));
+
+      await click(button("Storage source tab"));
+      await waitFor(() => assert.equal(window.localStorage.length, 1));
+      const storageKey = window.localStorage.key(0);
+      assert.ok(storageKey);
+      assert.equal(/user-1|session-a|session-b/.test(storageKey), false);
+      const marker = window.localStorage.getItem(storageKey);
+      assert.ok(marker);
+      const storageEvent = new window.Event("storage");
+      Object.defineProperties(storageEvent, {
+        key: { value: storageKey },
+        newValue: { value: marker },
+      });
+      await act(async () => window.dispatchEvent(storageEvent));
+
+      await waitFor(() =>
+        assert.equal(
+          output("Storage sibling tab active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      assert.equal(
+        output("Storage different session active learner").textContent,
+        "learner-mia",
+      );
+    } finally {
+      if (originalGlobalBroadcastChannel === undefined) {
+        Reflect.deleteProperty(globalThis, "BroadcastChannel");
+      } else {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      }
+      if (originalWindowBroadcastChannel === undefined) {
+        Reflect.deleteProperty(window, "BroadcastChannel");
+      } else {
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    }
+  });
+
+  for (const mutation of [
+    {
+      action: "select",
+      label: "Select before source unmount",
+      method: "PUT",
+      path: "/api/learner-profiles/learner-noah/active",
+      targetName: "Noah",
+      targetProfileId: "learner-noah",
+    },
+    {
+      action: "create",
+      label: "Create before source unmount",
+      method: "POST",
+      path: "/api/learner-profiles",
+      targetName: "Ava",
+      targetProfileId: "learner-ava",
+    },
+  ]) {
+    it(`keeps ${mutation.action} transport alive after source unmount and settles its exact session`, async () => {
+      const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+      const originalWindowBroadcastChannel = window.BroadcastChannel;
+      const SharedBroadcastChannel = installSharedBroadcastChannels();
+      globalThis.BroadcastChannel = SharedBroadcastChannel;
+      window.BroadcastChannel = SharedBroadcastChannel;
+      const heldMutation = deferred();
+      let mutationInit = null;
+      let pendingAtDispatch = null;
+      let selectedProfileId = "learner-mia";
+      const learnerState = () => ({
+        ...completedLearnerProfileState(),
+        profile: {
+          ...completedLearnerProfileState().profile,
+          id: selectedProfileId,
+          name:
+            selectedProfileId === mutation.targetProfileId
+              ? mutation.targetName
+              : "Mia",
+        },
+      });
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/learner-profile" && init.method === "GET") {
+          return json(learnerState());
+        }
+        if (path === mutation.path && init.method === mutation.method) {
+          pendingAtDispatch = [...Array(window.localStorage.length).keys()]
+            .map((index) => window.localStorage.key(index))
+            .find((key) => key?.includes(":pending:"));
+          mutationInit = init;
+          return heldMutation.promise;
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      try {
+        await mountStrict(
+          createElement(UnmountingLearnerSelectionSessionsHarness, {
+            action: mutation.action,
+            sourceLabel: mutation.label,
+            targetName: mutation.targetName,
+            targetProfileId: mutation.targetProfileId,
+          }),
+        );
+        await waitFor(() => button(mutation.label));
+
+        await click(button(mutation.label));
+        await waitFor(() => {
+          assert.ok(mutationInit);
+          assert.equal(mutationInit.signal, undefined);
+          assert.ok(pendingAtDispatch);
+          assert.equal(
+            /user-1|session-a|session-b/.test(pendingAtDispatch),
+            false,
+          );
+          assert.equal(selectedProfileId, "learner-mia");
+        });
+        const pendingKey = [...Array(window.localStorage.length).keys()]
+          .map((index) => window.localStorage.key(index))
+          .find((key) => key?.includes(":pending:"));
+        assert.ok(pendingKey);
+        await waitFor(() =>
+          assert.ok(
+            output(`${mutation.label} sibling active learner`).closest(
+              "[hidden]",
+            ),
+          ),
+        );
+        await click(button(`Unmount ${mutation.label}`));
+        assert.equal(mutationInit.signal, undefined);
+
+        selectedProfileId = mutation.targetProfileId;
+        heldMutation.resolve(
+          json({
+            activeProfileId: mutation.targetProfileId,
+            profiles: [
+              {
+                age: 8,
+                createdAt: "2026-08-01T08:00:00.000Z",
+                id: "learner-mia",
+                name: "Mia",
+                profileStatus: "completed",
+              },
+              {
+                age: mutation.action === "select" ? 10 : null,
+                createdAt: "2026-08-02T08:00:00.000Z",
+                id: mutation.targetProfileId,
+                name: mutation.targetName,
+                profileStatus: "completed",
+              },
+            ],
+          }),
+        );
+        await waitFor(() =>
+          assert.equal(window.localStorage.getItem(pendingKey), null),
+        );
+        const stateKey = [...Array(window.localStorage.length).keys()]
+          .map((index) => window.localStorage.key(index))
+          .find((key) => key?.endsWith(":state"));
+        assert.ok(stateKey);
+        const changedEvent = new window.Event("storage");
+        Object.defineProperties(changedEvent, {
+          key: { value: stateKey },
+          newValue: { value: window.localStorage.getItem(stateKey) },
+        });
+        const settledEvent = new window.Event("storage");
+        Object.defineProperties(settledEvent, {
+          key: { value: pendingKey },
+          newValue: { value: null },
+        });
+        await act(async () => {
+          window.dispatchEvent(changedEvent);
+          window.dispatchEvent(settledEvent);
+        });
+
+        await waitFor(() =>
+          assert.equal(
+            output(`${mutation.label} sibling active learner`).textContent,
+            mutation.targetProfileId,
+          ),
+        );
+        assert.equal(
+          output(`${mutation.label} different session active learner`)
+            .textContent,
+          "learner-mia",
+        );
+      } finally {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    });
+  }
+
+  it("keeps an initial sibling fail-closed until a persisted pending switch settles", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    class ThrowingBroadcastChannel {
+      constructor() {
+        throw new Error("BroadcastChannel is unavailable.");
+      }
+    }
+    globalThis.BroadcastChannel = ThrowingBroadcastChannel;
+    window.BroadcastChannel = ThrowingBroadcastChannel;
+    const heldMutation = deferred();
+    let mutationInit = null;
+    let selectedProfileId = "learner-mia";
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(learnerState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        mutationInit = init;
+        return heldMutation.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    function InitialLoadOverlapHarness() {
+      const [siblingMounted, setSiblingMounted] = useState(false);
+      return createElement(
+        Fragment,
+        null,
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Select before initial sibling",
+          sessionIdentity: "user-1|shared-session",
+        }),
+        siblingMounted
+          ? createElement(LearnerSelectionSessionHarness, {
+              label: "Initially loading sibling",
+              sessionIdentity: "user-1|shared-session",
+            })
+          : null,
+        createElement(
+          "button",
+          { onClick: () => setSiblingMounted(true), type: "button" },
+          "Mount initial sibling",
+        ),
+      );
+    }
+
+    try {
+      await mountStrict(createElement(InitialLoadOverlapHarness));
+      await waitFor(() => button("Select before initial sibling"));
+      await click(button("Select before initial sibling"));
+      await waitFor(() => {
+        assert.ok(mutationInit);
+        assert.equal(mutationInit.signal, undefined);
+      });
+      const pendingKey = [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .find((key) => key?.includes(":pending:"));
+      assert.ok(pendingKey);
+
+      await click(button("Mount initial sibling"));
+      await waitFor(() => {
+        assert.ok(
+          output("Initially loading sibling active learner").closest(
+            "[hidden]",
+          ),
+        );
+        text(/couldn't verify the current learner/i);
+      });
+      selectedProfileId = "learner-noah";
+      heldMutation.resolve(
+        json({
+          activeProfileId: "learner-noah",
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-01T08:00:00.000Z",
+              id: "learner-mia",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+            {
+              age: 10,
+              createdAt: "2026-08-02T08:00:00.000Z",
+              id: "learner-noah",
+              name: "Noah",
+              profileStatus: "completed",
+            },
+          ],
+        }),
+      );
+      await waitFor(() =>
+        assert.equal(window.localStorage.getItem(pendingKey), null),
+      );
+      const stateKey = [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .find((key) => key?.endsWith(":state"));
+      assert.ok(stateKey);
+      const changedEvent = new window.Event("storage");
+      Object.defineProperties(changedEvent, {
+        key: { value: stateKey },
+        newValue: { value: window.localStorage.getItem(stateKey) },
+      });
+      const settledEvent = new window.Event("storage");
+      Object.defineProperties(settledEvent, {
+        key: { value: pendingKey },
+        newValue: { value: null },
+      });
+      await act(async () => {
+        window.dispatchEvent(changedEvent);
+        window.dispatchEvent(settledEvent);
+      });
+      await waitFor(() =>
+        assert.equal(
+          output("Initially loading sibling active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      noText(/couldn't verify the current learner/i);
+      assert.equal(
+        output("Initially loading sibling active learner").closest("[hidden]"),
+        null,
+      );
+    } finally {
+      if (originalGlobalBroadcastChannel === undefined) {
+        Reflect.deleteProperty(globalThis, "BroadcastChannel");
+      } else {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      }
+      if (originalWindowBroadcastChannel === undefined) {
+        Reflect.deleteProperty(window, "BroadcastChannel");
+      } else {
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    }
+  });
+
+  it("keeps concurrent pending operations blocked until each exact token settles", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    let channelName = null;
+    class CapturingThrowingBroadcastChannel {
+      constructor(name) {
+        channelName = name;
+        throw new Error("BroadcastChannel is unavailable.");
+      }
+    }
+    globalThis.BroadcastChannel = CapturingThrowingBroadcastChannel;
+    window.BroadcastChannel = CapturingThrowingBroadcastChannel;
+    let profileRequests = 0;
+    let selectedProfileId = "learner-mia";
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json(learnerState());
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Concurrent marker receiver",
+          sessionIdentity: "user-1|shared-session",
+        }),
+      );
+      await waitFor(() => {
+        button("Concurrent marker receiver");
+        assert.ok(channelName);
+      });
+      const initialProfileRequests = profileRequests;
+      const dispatchPending = async (storageKey, newValue) => {
+        const event = new window.Event("storage");
+        Object.defineProperties(event, {
+          key: { value: storageKey },
+          newValue: { value: newValue },
+        });
+        await act(async () => window.dispatchEvent(event));
+      };
+      const settlePair = async ({ first, second, targetProfileId }) => {
+        const firstKey = `${channelName}:pending:${first}`;
+        const secondKey = `${channelName}:pending:${second}`;
+        window.localStorage.setItem(firstKey, "pending");
+        window.localStorage.setItem(secondKey, "pending");
+        await dispatchPending(firstKey, "pending");
+        await dispatchPending(secondKey, "pending");
+        assert.ok(
+          output("Concurrent marker receiver active learner").closest(
+            "[hidden]",
+          ),
+        );
+
+        window.localStorage.removeItem(firstKey);
+        await dispatchPending(firstKey, null);
+        await flush();
+        assert.equal(window.localStorage.getItem(secondKey), "pending");
+        assert.equal(profileRequests, initialProfileRequests);
+        assert.ok(
+          output("Concurrent marker receiver active learner").closest(
+            "[hidden]",
+          ),
+        );
+
+        selectedProfileId = targetProfileId;
+        window.localStorage.removeItem(secondKey);
+        await dispatchPending(secondKey, null);
+        await waitFor(() =>
+          assert.equal(
+            output("Concurrent marker receiver active learner").textContent,
+            targetProfileId,
+          ),
+        );
+      };
+
+      await settlePair({
+        first: "operation-a",
+        second: "operation-b",
+        targetProfileId: "learner-noah",
+      });
+      assert.equal(profileRequests, initialProfileRequests + 1);
+
+      const reverseStart = profileRequests;
+      const firstKey = `${channelName}:pending:operation-c`;
+      const secondKey = `${channelName}:pending:operation-d`;
+      window.localStorage.setItem(firstKey, "pending");
+      window.localStorage.setItem(secondKey, "pending");
+      await dispatchPending(firstKey, "pending");
+      await dispatchPending(secondKey, "pending");
+      window.localStorage.removeItem(secondKey);
+      await dispatchPending(secondKey, null);
+      assert.equal(profileRequests, reverseStart);
+      assert.equal(window.localStorage.getItem(firstKey), "pending");
+      selectedProfileId = "learner-mia";
+      window.localStorage.removeItem(firstKey);
+      await dispatchPending(firstKey, null);
+      await waitFor(() =>
+        assert.equal(
+          output("Concurrent marker receiver active learner").textContent,
+          "learner-mia",
+        ),
+      );
+      assert.equal(profileRequests, reverseStart + 1);
+
+      const ambiguousStart = profileRequests;
+      const ambiguousKey = `${channelName}:pending:ambiguous-operation`;
+      const successfulKey = `${channelName}:pending:successful-operation`;
+      window.localStorage.setItem(ambiguousKey, "uncertain");
+      window.localStorage.setItem(successfulKey, "pending");
+      await dispatchPending(ambiguousKey, "uncertain");
+      await dispatchPending(successfulKey, "pending");
+      const stateKey = `${channelName}:state`;
+      window.localStorage.setItem(stateKey, "successful-change");
+      await dispatchPending(stateKey, "successful-change");
+      window.localStorage.removeItem(successfulKey);
+      await dispatchPending(successfulKey, null);
+      await flush();
+      text(/couldn't verify the current learner/i);
+      assert.equal(profileRequests, ambiguousStart);
+      assert.equal(window.localStorage.getItem(ambiguousKey), "uncertain");
+      assert.ok(
+        output("Concurrent marker receiver active learner").closest("[hidden]"),
+      );
+      await click(button("Try again"));
+      await flush();
+      assert.equal(profileRequests, ambiguousStart);
+    } finally {
+      if (originalGlobalBroadcastChannel === undefined) {
+        Reflect.deleteProperty(globalThis, "BroadcastChannel");
+      } else {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      }
+      if (originalWindowBroadcastChannel === undefined) {
+        Reflect.deleteProperty(window, "BroadcastChannel");
+      } else {
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    }
+  });
+
+  it("signals a learner switch only to mounted tabs with the same authenticated session", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let profileRequests = 0;
+    let selectedProfileId = "learner-mia";
+    const rosterProfiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: selectedProfileId,
+            name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-noah";
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: rosterProfiles,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Select from source tab",
+            sessionIdentity: "user-1|session-a",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Same-session sibling tab",
+            sessionIdentity: "user-1|session-a",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Different-session tab",
+            sessionIdentity: "user-1|session-b",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Select from source tab");
+        button("Same-session sibling tab");
+        button("Different-session tab");
+        assert.equal(profileRequests, 6);
+        assert.equal(SharedBroadcastChannel.names().length, 2);
+      });
+      assert.equal(
+        SharedBroadcastChannel.names().some((name) =>
+          /user-1|session-a|session-b/.test(name),
+        ),
+        false,
+        "Browser channel names must not expose account or session identifiers.",
+      );
+      const initialProfileRequests = profileRequests;
+
+      await click(button("Select from source tab"));
+      await waitFor(() =>
+        assert.equal(profileRequests, initialProfileRequests + 2),
+      );
+      await flush();
+      assert.equal(
+        profileRequests,
+        initialProfileRequests + 2,
+        "The source and same-session sibling reload; the other session does not.",
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("invalidates same-session tabs when a committed learner switch response is malformed", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let profileRequests = 0;
+    let selectedProfileId = "learner-mia";
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: selectedProfileId,
+            name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-noah";
+        return json({ activeProfileId: selectedProfileId, profiles: null });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Switch with a malformed response",
+            sessionIdentity: "user-1|shared-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Switch response sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Switch with a malformed response");
+        assert.equal(profileRequests, 4);
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+      const initialProfileRequests = profileRequests;
+
+      await click(button("Switch with a malformed response"));
+      await waitFor(() =>
+        assert.equal(
+          output("Switch with a malformed response active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      await waitFor(() =>
+        assert.equal(
+          output("Switch response sibling active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      assert.equal(profileRequests, initialProfileRequests + 2);
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("keeps same-session tabs fail-closed when a learner response is lost", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let profileRequests = 0;
+    let selectedProfileId = "learner-mia";
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: selectedProfileId,
+            name: selectedProfileId === "learner-ava" ? "Ava" : "Mia",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "POST") {
+        selectedProfileId = "learner-ava";
+        throw new TypeError("The response was lost.");
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            action: "create",
+            label: "Create with a lost response",
+            sessionIdentity: "user-1|shared-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Create response sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Create with a lost response");
+        assert.equal(profileRequests, 4);
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+      const initialProfileRequests = profileRequests;
+
+      await click(button("Create with a lost response"));
+      await waitFor(() => text(/couldn't verify the current learner/i));
+      assert.ok(
+        output("Create with a lost response active learner").closest(
+          "[hidden]",
+        ),
+      );
+      assert.ok(
+        output("Create response sibling active learner").closest("[hidden]"),
+      );
+      assert.equal(profileRequests, initialProfileRequests);
+      const pendingKey = [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .find((key) => key?.includes(":pending:"));
+      assert.ok(pendingKey);
+      assert.equal(window.localStorage.getItem(pendingKey), "uncertain");
+      await click(button("Try again"));
+      await flush();
+      assert.equal(profileRequests, initialProfileRequests);
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("emits one pending/change/settled protocol for a committed switch", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let failNextProfileRequest = false;
+    let selectedProfileId = "learner-mia";
+    const rosterProfiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        if (failNextProfileRequest) {
+          failNextProfileRequest = false;
+          return json({ error: "Temporary profile failure." }, 503);
+        }
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: selectedProfileId,
+            name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-noah";
+        failNextProfileRequest = true;
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: rosterProfiles,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Switch before a failed reload",
+            sessionIdentity: "user-1|shared-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Failed reload sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Switch before a failed reload");
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+
+      await click(button("Switch before a failed reload"));
+      await waitFor(() =>
+        assert.equal(
+          output("Failed reload sibling active learner").textContent,
+          "learner-noah",
+        ),
+      );
+      assert.equal(
+        SharedBroadcastChannel.messagesPosted(),
+        3,
+        "A committed mutation emits one pending, changed, and settled event.",
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("does not invalidate peers for a learner switch rejected before its request", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let profileRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json(completedLearnerProfileState());
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Reject an empty learner",
+            profileId: " ",
+            sessionIdentity: "user-1|shared-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Local rejection sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Reject an empty learner");
+        assert.equal(profileRequests, 4);
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+      const initialProfileRequests = profileRequests;
+
+      await click(button("Reject an empty learner"));
+      await flush();
+      assert.equal(SharedBroadcastChannel.messagesPosted(), 0);
+      assert.equal(profileRequests, initialProfileRequests);
+      assert.equal(window.localStorage.length, 0);
+      assert.equal(
+        output("Local rejection sibling active learner").textContent,
+        "learner-1",
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("does not invalidate peers for a learner creation rejected with a 4xx response", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let profileRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/learner-profiles" && init.method === "POST") {
+        return json(
+          {
+            error: "invalid_learner_name",
+            fieldError: "Please use a different learner name.",
+          },
+          422,
+        );
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            action: "create",
+            label: "Reject a learner name",
+            newLearnerName: "Private name",
+            sessionIdentity: "user-1|shared-session",
+            showDraft: true,
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Server rejection sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Reject a learner name");
+        assert.equal(profileRequests, 4);
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+      const initialProfileRequests = profileRequests;
+      const sourceDraft = document.querySelector(
+        'input[aria-label="Reject a learner name draft"]',
+      );
+      await input(sourceDraft, "Keep this draft");
+
+      await click(button("Reject a learner name"));
+      await waitFor(() =>
+        assert.equal(profileRequests, initialProfileRequests + 2),
+      );
+      assert.equal(SharedBroadcastChannel.messagesPosted(), 2);
+      assert.equal(
+        output("Reject a learner name active learner").closest("[hidden]"),
+        null,
+      );
+      assert.equal(sourceDraft.value, "Keep this draft");
+      assert.equal(
+        output("Server rejection sibling active learner").textContent,
+        "learner-1",
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("revalidates after a rejected selection settles behind a silent peer commit", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const rejectedCreate = deferred();
+    const authoritativeRead = deferred();
+    let holdAuthoritativeRead = false;
+    let authoritativeReads = 0;
+    let profileRequests = 0;
+    const learnerState = (id, name) => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id,
+        name,
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        if (!holdAuthoritativeRead) {
+          return json(learnerState("learner-mia", "Mia"));
+        }
+        authoritativeReads += 1;
+        return authoritativeRead.promise;
+      }
+      if (path === "/api/learner-profiles" && init.method === "POST") {
+        return rejectedCreate.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          action: "create",
+          label: "Reject after silent peer commit",
+          sessionIdentity: "user-1|shared-session",
+        }),
+      );
+      await waitFor(() => {
+        button("Reject after silent peer commit");
+        assert.equal(profileRequests, 2);
+        assert.equal(SharedBroadcastChannel.peerCount(), 1);
+      });
+
+      await click(button("Reject after silent peer commit"));
+      const sourcePendingKey = await waitFor(() => {
+        const key = [...Array(window.localStorage.length).keys()]
+          .map((index) => window.localStorage.key(index))
+          .find((candidate) => candidate?.includes(":pending:"));
+        assert.ok(key);
+        return key;
+      });
+      const scope = sourcePendingKey.slice(
+        0,
+        sourcePendingKey.indexOf(":pending:"),
+      );
+      const silentPeerKey = `${scope}:pending:silent-cara-selection`;
+      window.localStorage.setItem(silentPeerKey, "pending");
+      window.localStorage.setItem(`${scope}:state`, "silent-cara-change");
+      window.localStorage.removeItem(silentPeerKey);
+      holdAuthoritativeRead = true;
+
+      rejectedCreate.resolve(
+        json(
+          {
+            error: "invalid_learner_name",
+            fieldError: "Please use a different learner name.",
+          },
+          422,
+        ),
+      );
+      await waitFor(() => assert.equal(authoritativeReads, 1));
+      assert.ok(
+        output("Reject after silent peer commit active learner").closest(
+          "[hidden]",
+        ),
+      );
+
+      authoritativeRead.resolve(json(learnerState("learner-cara", "Cara")));
+      await waitFor(() =>
+        assert.equal(
+          output("Reject after silent peer commit active learner").textContent,
+          "learner-cara",
+        ),
+      );
+      assert.equal(
+        output("Reject after silent peer commit active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("does not lose a focus revalidation while a learner switch is in flight", async () => {
+    const heldSelection = deferred();
+    let profileRequests = 0;
+    let selectedProfileId = "learner-mia";
+    let selectionRequested = false;
+    const rosterProfiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: selectedProfileId,
+            name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        selectionRequested = true;
+        return heldSelection.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Select a held learner",
+        sessionIdentity: null,
+      }),
+    );
+    await waitFor(() => button("Select a held learner"));
+    const initialProfileRequests = profileRequests;
+    await click(button("Select a held learner"));
+    await waitFor(() => assert.equal(selectionRequested, true));
+
+    await act(async () => {
+      window.dispatchEvent(new window.Event("focus"));
+    });
+    selectedProfileId = "learner-noah";
+    heldSelection.resolve(
+      json({ activeProfileId: selectedProfileId, profiles: rosterProfiles }),
+    );
+
+    await waitFor(() =>
+      assert.equal(profileRequests, initialProfileRequests + 2),
+    );
+  });
+
+  it("restarts an older learner reload when a same-session selection signal arrives", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const heldLoads = [];
+    let holdLoads = false;
+    let profileRequests = 0;
+    let selectedProfileId = "learner-mia";
+    const rosterProfiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        if (holdLoads) {
+          return new Promise((resolve) => {
+            heldLoads.push({ resolve, signal: init.signal });
+          });
+        }
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: selectedProfileId,
+            name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-noah";
+        holdLoads = false;
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: rosterProfiles,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Select while sibling reloads",
+            sessionIdentity: "user-1|shared-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Reloading sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Select while sibling reloads");
+        assert.equal(SharedBroadcastChannel.names().length, 1);
+        assert.equal(profileRequests, 4);
+      });
+      const initialProfileRequests = profileRequests;
+      holdLoads = true;
+      await act(async () => {
+        assert.equal(SharedBroadcastChannel.deliverToPeer(1, "changed"), true);
+      });
+      await waitFor(() => assert.equal(heldLoads.length, 1));
+
+      await click(button("Select while sibling reloads"));
+      await waitFor(() =>
+        assert.equal(profileRequests, initialProfileRequests + 3),
+      );
+      assert.deepEqual(
+        heldLoads.map(({ signal }) => signal.aborted),
+        [true],
+        "The sibling's stale snapshot is aborted before it can repaint Mia.",
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
   it("maps learner-selection-required to an always-available empty selection context", async () => {
     globalThis.fetch = async (path, init = {}) => {
       assert.equal(path, "/api/learner-profile");
@@ -2304,7 +4517,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(heldReloadSignal.aborted, true);
   });
 
-  it("fails closed when an expected learner reload returns another or no selection", async () => {
+  it("adopts the authoritative learner when an expected reload returns another selection", async () => {
     const stateFor = (id, name) => ({
       ...completedLearnerProfileState(),
       profile: {
@@ -2314,17 +4527,23 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     });
     const unexpectedResponses = [
-      json(stateFor("learner-c", "Cara")),
-      json({ error: "learner_selection_required" }, 409),
+      {
+        activeProfileId: "learner-c",
+        response: json(stateFor("learner-c", "Cara")),
+      },
+      {
+        activeProfileId: "none",
+        response: json({ error: "learner_selection_required" }, 409),
+      },
     ];
 
-    for (const unexpectedResponse of unexpectedResponses) {
+    for (const { activeProfileId, response } of unexpectedResponses) {
       let reloadRequested = false;
       globalThis.fetch = async (path, init = {}) => {
         assert.equal(path, "/api/learner-profile");
         assert.equal(init.method, "GET");
         return reloadRequested
-          ? unexpectedResponse.clone()
+          ? response.clone()
           : json(stateFor("learner-a", "Ari"));
       };
 
@@ -2346,13 +4565,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
       assert.equal(
         output("Expected reload active learner").textContent,
-        "none",
+        activeProfileId,
       );
-      noText(/Cara/);
-      if (unexpectedResponse.status === 409) {
+      if (response.status === 409) {
         await click(button("Leave learner manager"));
-        await waitFor(() => text(/The selected learner could not be loaded/i));
-        noText(/SELECTION REQUIRED FALLBACK/);
+        await waitFor(() => text(/SELECTION REQUIRED FALLBACK/));
       }
 
       await cleanupMountedRoots();
@@ -2667,7 +4884,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(currentRoute().path, "/guardian/learners");
   });
 
-  it("reconciles a newly created learner when the success response is lost", async () => {
+  it("reconciles a newly created learner when no cross-tab session scope exists", async () => {
     let selectedId = "learner-mia";
     let rosterProfiles = [
       {
@@ -7058,7 +9275,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     assert.equal(currentRoute().path, lessonScenePath(2));
     noText(new RegExp(firstLesson.scenes[1].title));
-    noText(/Tap to talk|Checking your words|Great job!|Speech check failed|Audio unavailable/);
+    noText(
+      /Tap to talk|Checking your words|Great job!|Speech check failed|Audio unavailable/,
+    );
     assert.equal(document.activeElement, button("Let's go"));
   });
 });

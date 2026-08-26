@@ -234,7 +234,15 @@ test("scopes learner selections to authenticated browser sessions", async ({
       firstSession.goto(
         learnerScenarioUrl(
           "/guardian/learners",
-          "selection-required",
+          "multiple",
+          "guardian",
+          "e2e-session-a",
+        ),
+      ),
+      sameSessionTab.goto(
+        learnerScenarioUrl(
+          "/guardian/learners",
+          "multiple",
           "guardian",
           "e2e-session-a",
         ),
@@ -242,7 +250,7 @@ test("scopes learner selections to authenticated browser sessions", async ({
       secondSession.goto(
         learnerScenarioUrl(
           "/guardian/learners",
-          "selection-required",
+          "multiple",
           "guardian",
           "e2e-session-b",
         ),
@@ -286,39 +294,287 @@ test("scopes learner selections to authenticated browser sessions", async ({
       },
     ]);
 
-    await learnerCard(firstSession, "Mia")
-      .getByRole("button", { name: "Use Mia" })
-      .click();
-    await learnerCard(secondSession, "Noah")
-      .getByRole("button", { name: "Use Noah" })
-      .click();
-    await sameSessionTab.goto(
-      learnerScenarioUrl(
-        "/guardian/learners",
-        "selection-required",
-        "guardian",
-        "e2e-session-a",
-      ),
-    );
-    await Promise.all([firstSession.reload(), secondSession.reload()]);
-
-    await expect(learnerCard(firstSession, "Mia")).toContainText(
-      "Current learner",
-    );
-    await expect(learnerCard(firstSession, "Noah")).not.toContainText(
-      "Current learner",
-    );
     await expect(learnerCard(sameSessionTab, "Mia")).toContainText(
       "Current learner",
     );
-    await expect(learnerCard(secondSession, "Noah")).toContainText(
+    await firstSession.bringToFront();
+    await learnerCard(firstSession, "Noah")
+      .getByRole("button", { name: "Use Noah" })
+      .click();
+
+    await expect(learnerCard(firstSession, "Noah")).toContainText(
       "Current learner",
     );
-    await expect(learnerCard(secondSession, "Mia")).not.toContainText(
+    await expect(learnerCard(firstSession, "Mia")).not.toContainText(
+      "Current learner",
+    );
+    await expect(learnerCard(sameSessionTab, "Noah")).toContainText(
+      "Current learner",
+    );
+    await expect(learnerCard(secondSession, "Mia")).toContainText(
+      "Current learner",
+    );
+    await expect(learnerCard(secondSession, "Noah")).not.toContainText(
       "Current learner",
     );
   } finally {
     await Promise.all([firstContext.close(), secondContext.close()]);
+  }
+});
+
+test("synchronizes same-session learner selection through storage without BroadcastChannel", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-storage-selection",
+  );
+  await context.addInitScript(() => {
+    Object.defineProperty(window, "BroadcastChannel", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+  try {
+    const sourcePage = await context.newPage();
+    const siblingPage = await context.newPage();
+    await Promise.all([
+      sourcePage.goto(
+        learnerScenarioUrl(
+          "/guardian/learners",
+          "multiple",
+          "guardian",
+          "e2e-session-storage-selection",
+        ),
+      ),
+      siblingPage.goto(
+        learnerScenarioUrl(
+          "/guardian/learners",
+          "multiple",
+          "guardian",
+          "e2e-session-storage-selection",
+        ),
+      ),
+    ]);
+    await expect(learnerCard(siblingPage, "Mia")).toContainText(
+      "Current learner",
+    );
+
+    await learnerCard(sourcePage, "Noah")
+      .getByRole("button", { name: "Use Noah" })
+      .click();
+
+    await expect(learnerCard(sourcePage, "Noah")).toContainText(
+      "Current learner",
+    );
+    await expect(learnerCard(siblingPage, "Noah")).toContainText(
+      "Current learner",
+    );
+    await expect(learnerCard(siblingPage, "Mia")).not.toContainText(
+      "Current learner",
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("preserves same-learner drafts on tab return and clears them after a learner switch", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-draft-revalidation",
+  );
+  try {
+    const draftPage = await context.newPage();
+    const managerPage = await context.newPage();
+    await Promise.all([
+      draftPage.goto(
+        learnerScenarioUrl(
+          "/lessons/my/create",
+          "multiple",
+          "guardian",
+          "e2e-session-draft-revalidation",
+        ),
+      ),
+      managerPage.goto(
+        learnerScenarioUrl(
+          "/guardian/learners",
+          "multiple",
+          "guardian",
+          "e2e-session-draft-revalidation",
+        ),
+      ),
+    ]);
+
+    const lessonTopic = draftPage.getByLabel(
+      "What should this lesson be about?",
+    );
+    await lessonTopic.fill("Unsaved garden helpers lesson");
+    await managerPage.bringToFront();
+    await draftPage.bringToFront();
+    await draftPage.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect(lessonTopic).toHaveValue("Unsaved garden helpers lesson");
+
+    await draftPage.goto(
+      learnerScenarioUrl(
+        "/guardian/profile",
+        "multiple",
+        "guardian",
+        "e2e-session-draft-revalidation",
+      ),
+    );
+    const profileName = draftPage.getByLabel("Name", { exact: true });
+    await profileName.fill("Unsaved Mia name");
+    await managerPage.bringToFront();
+    await draftPage.bringToFront();
+    await draftPage.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect(profileName).toHaveValue("Unsaved Mia name");
+
+    await managerPage.bringToFront();
+    await learnerCard(managerPage, "Noah")
+      .getByRole("button", { name: "Use Noah" })
+      .click();
+    await expect(learnerCard(managerPage, "Noah")).toContainText(
+      "Current learner",
+    );
+
+    await draftPage.bringToFront();
+    await expect(
+      draftPage.getByText("Managing Noah", { exact: true }),
+    ).toBeVisible();
+    await expect(draftPage.getByLabel("Name", { exact: true })).toHaveValue(
+      "Noah",
+    );
+  } finally {
+    await context.close();
+  }
+});
+
+test("blocks a stale profile write when sibling learner revalidation fails, then switches on retry", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-failed-peer-revalidation",
+  );
+  try {
+    const profilePage = await context.newPage();
+    const managerPage = await context.newPage();
+    await Promise.all([
+      profilePage.goto(
+        learnerScenarioUrl(
+          "/guardian/profile",
+          "multiple",
+          "guardian",
+          "e2e-session-failed-peer-revalidation",
+        ),
+      ),
+      managerPage.goto(
+        learnerScenarioUrl(
+          "/guardian/learners",
+          "multiple",
+          "guardian",
+          "e2e-session-failed-peer-revalidation",
+        ),
+      ),
+    ]);
+
+    await profilePage
+      .getByLabel("Name", { exact: true })
+      .fill("Stale Mia name");
+    await profilePage.evaluate(() => {
+      const learners = (
+        window as Window & {
+          __parrotE2eLearners?: {
+            failNextLearnerProfileLoad(): void;
+          };
+        }
+      ).__parrotE2eLearners;
+      if (!learners) throw new Error("Learner mock controller is unavailable.");
+      learners.failNextLearnerProfileLoad();
+    });
+
+    await managerPage.bringToFront();
+    await learnerCard(managerPage, "Noah")
+      .getByRole("button", { name: "Use Noah" })
+      .click();
+    await expect(learnerCard(managerPage, "Noah")).toContainText(
+      "Current learner",
+    );
+    await expect
+      .poll(() =>
+        profilePage.evaluate(
+          () =>
+            (
+              window as Window & {
+                __parrotE2eLearners?: {
+                  snapshot(): { learnerProfileLoadFailures: number };
+                };
+              }
+            ).__parrotE2eLearners?.snapshot().learnerProfileLoadFailures ?? 0,
+        ),
+      )
+      .toBe(1);
+    await expect(
+      profilePage.getByRole("heading", {
+        name: /couldn't verify the current learner/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      profilePage.getByRole("button", {
+        includeHidden: true,
+        name: "Save changes",
+      }),
+    ).toBeHidden();
+
+    await profilePage.evaluate(() => {
+      const save = [...document.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent?.trim() === "Save changes",
+      );
+      if (!(save instanceof HTMLButtonElement)) {
+        throw new Error("The mounted stale Save changes control is missing.");
+      }
+      save.click();
+    });
+    const noahBeforeRetry = await profilePage.evaluate(() => {
+      const snapshot = (
+        window as Window & {
+          __parrotE2eLearners?: {
+            snapshot(): {
+              profiles: Array<{ age: number | null; id: string; name: string }>;
+            };
+          };
+        }
+      ).__parrotE2eLearners?.snapshot();
+      return snapshot?.profiles.find(({ id }) => id === "learner-noah");
+    });
+    expect(noahBeforeRetry).toMatchObject({ age: 10, name: "Noah" });
+
+    await profilePage.getByRole("button", { name: "Try again" }).click();
+    await expect(
+      profilePage.getByText("Managing Noah", { exact: true }),
+    ).toBeVisible();
+    await expect(profilePage.getByLabel("Name", { exact: true })).toHaveValue(
+      "Noah",
+    );
+  } finally {
+    await context.close();
   }
 });
 
@@ -472,7 +728,9 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
       .getByRole("region", { name: "Join in" })
       .filter({ hasText: "It is up high!" }),
   ).toBeVisible();
-  await expect.poll(async () => (await recordingSnapshot()).uploads.length).toBe(1);
+  await expect
+    .poll(async () => (await recordingSnapshot()).uploads.length)
+    .toBe(1);
   await expect(
     page.getByText(/tap to talk|start recording|stop recording/i),
   ).toHaveCount(0);
@@ -500,7 +758,9 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
       .getByRole("region", { name: "Join in" })
       .filter({ hasText: "It is up high!" }),
   ).toBeVisible();
-  await expect.poll(async () => (await recordingSnapshot()).uploads).toEqual([]);
+  await expect
+    .poll(async () => (await recordingSnapshot()).uploads)
+    .toEqual([]);
   expect((await recordingSnapshot()).getUserMediaCalls).toBe(0);
 
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
@@ -755,7 +1015,7 @@ test("shows a learner-safe no-selection state and sends an incomplete learner to
   ).toBeVisible();
 });
 
-test("keeps the previous learner and restores focus after selection fails", async ({
+test("fails closed when learner selection has an ambiguous server failure", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "select-error"));
@@ -765,29 +1025,87 @@ test("keeps the previous learner and restores focus after selection fails", asyn
 
   await selectNoah.click();
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "Could not select this learner.",
-  );
-  await expect(selectNoah).toBeFocused();
-  await expect(learnerCard(page, "Mia")).toContainText("Current learner");
-  await expect(learnerCard(page, "Noah")).not.toContainText("Current learner");
+  await expect(
+    page.getByRole("heading", {
+      name: /couldn't verify the current learner/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { includeHidden: true, name: "Use Noah" }),
+  ).toBeHidden();
+  const pending = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find((candidate) =>
+      candidate.includes(":pending:"),
+    );
+    return key ? { key, value: localStorage.getItem(key) } : null;
+  });
+  expect(pending).toMatchObject({ value: "uncertain" });
+  expect(pending?.key).not.toContain("e2e-session");
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __parrotE2eLearners?: {
+              snapshot(): { activeProfileId: string | null };
+            };
+          }
+        ).__parrotE2eLearners?.snapshot().activeProfileId,
+    ),
+  ).toBe("learner-mia");
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: /couldn't verify the current learner/i,
+    }),
+  ).toBeVisible();
 });
 
-test("keeps the roster and submit focus after learner creation fails", async ({
+test("fails closed when learner creation has an ambiguous server failure", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "create-error"));
   await page.getByLabel("Preferred name").fill("Ava");
-  const add = page.getByRole("button", { name: "Add learner" });
+  await page.getByRole("button", { name: "Add learner" }).click();
 
-  await add.click();
-
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    "The learner could not be added.",
-  );
-  await expect(add).toBeFocused();
-  await expect(learnerCard(page, "Mia")).toContainText("Current learner");
-  await expect(page.getByText("Ava", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", {
+      name: /couldn't verify the current learner/i,
+    }),
+  ).toBeVisible();
+  const pending = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find((candidate) =>
+      candidate.includes(":pending:"),
+    );
+    return key ? { key, value: localStorage.getItem(key) } : null;
+  });
+  expect(pending).toMatchObject({ value: "uncertain" });
+  expect(
+    await page.evaluate(() =>
+      (
+        window as Window & {
+          __parrotE2eLearners?: {
+            snapshot(): {
+              activeProfileId: string | null;
+              profiles: Array<{ name: string }>;
+            };
+          };
+        }
+      ).__parrotE2eLearners?.snapshot(),
+    ),
+  ).toMatchObject({
+    activeProfileId: "learner-mia",
+    profiles: [{ name: "Mia" }, { name: "Noah" }],
+  });
+  await expect(
+    page.getByRole("button", { includeHidden: true, name: "Add learner" }),
+  ).toBeHidden();
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: /couldn't verify the current learner/i,
+    }),
+  ).toBeVisible();
 });
 
 test("suppresses a held selection response after a newer selection wins", async ({
@@ -845,6 +1163,61 @@ test("suppresses a held selection response after a newer selection wins", async 
   await expect(page.getByText("Now managing Noah")).toHaveCount(0);
 });
 
+test("removes stale account actions while the source learner switch is pending", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
+  await learnerCard(page, "Noah")
+    .getByRole("button", { name: "Use Noah" })
+    .click({ noWaitAfter: true });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __parrotE2eLearners?: {
+                snapshot(): { staleSelectionPending: boolean };
+              };
+            }
+          ).__parrotE2eLearners?.snapshot().staleSelectionPending ?? false,
+      ),
+    )
+    .toBe(true);
+
+  await expect(
+    page.getByRole("heading", { name: "Checking the current learner" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /guardian mode/ }).click();
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(
+    menu.getByRole("menuitem", { name: "Switch to Mia" }),
+  ).toHaveCount(0);
+  await expect(
+    menu.getByRole("menuitem", { name: "Manage Mia's details" }),
+  ).toHaveCount(0);
+  await expect(page).toHaveURL(/\/guardian\/learners/);
+  await page.keyboard.press("Escape");
+
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __parrotE2eLearners?: { releaseStaleSelection(): boolean };
+          }
+        ).__parrotE2eLearners?.releaseStaleSelection() ?? false,
+    ),
+  ).toBe(true);
+  await expect(learnerCard(page, "Noah")).toContainText("Current learner");
+  await page.getByRole("button", { name: /guardian mode/ }).click();
+  await expect(
+    page
+      .getByRole("menu", { name: "Account menu" })
+      .getByRole("menuitem", { name: "Switch to Noah" }),
+  ).toBeVisible();
+});
+
 const learnerRoutes = [
   "/",
   "/talk-to-peppa",
@@ -897,13 +1270,9 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
 
     if (path === "/dubs/five-little-ducks") {
       await expect(
-        page
-          .getByRole("main")
-          .getByRole("paragraph")
-          .filter({
-            hasText:
-              "Ask a grown-up to turn on voice dubbing in Guardian mode.",
-          }),
+        page.getByRole("main").getByRole("paragraph").filter({
+          hasText: "Ask a grown-up to turn on voice dubbing in Guardian mode.",
+        }),
       ).toBeVisible();
       await expect(
         page.getByRole("checkbox", { name: /grown-up|guardian|consent/i }),

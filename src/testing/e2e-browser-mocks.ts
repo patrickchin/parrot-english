@@ -622,8 +622,8 @@ function createE2eLearnerAccount(
 ) {
   const storageKey = `${E2E_LEARNER_ACCOUNT_KEY_PREFIX}:${scenario}:${sessionId}`;
   let state = initialMockAccountState(scenario);
-  const saved = localStorage.getItem(storageKey);
-  if (saved) {
+  function restoreStoredState(saved: string | null) {
+    if (!saved) return;
     try {
       const parsed: unknown = JSON.parse(saved);
       if (isStoredMockAccountState(parsed))
@@ -632,11 +632,17 @@ function createE2eLearnerAccount(
       // Use the deterministic initial account when stored test state is corrupt.
     }
   }
+  restoreStoredState(localStorage.getItem(storageKey));
+  window.addEventListener("storage", (event) => {
+    if (event.key === storageKey) restoreStoredState(event.newValue);
+  });
 
   let heldSelection: {
     resolve: (response: Response) => void;
     response: Response;
   } | null = null;
+  let failNextLearnerProfileLoad = false;
+  let learnerProfileLoadFailures = 0;
   const pendingLessonUploadsByLearner = new Map<
     string,
     PendingLessonUpload[]
@@ -1070,6 +1076,17 @@ function createE2eLearnerAccount(
     if (!learner) return null;
 
     if (url.pathname === "/api/learner-profile" && method === "GET") {
+      if (failNextLearnerProfileLoad) {
+        failNextLearnerProfileLoad = false;
+        learnerProfileLoadFailures += 1;
+        return e2eJson(
+          {
+            error: "profile_unavailable",
+            message: "The learner could not be checked.",
+          },
+          503,
+        );
+      }
       return e2eJson(fullProfileState(learner));
     }
     if (
@@ -1262,6 +1279,9 @@ function createE2eLearnerAccount(
   persist();
   return {
     handle,
+    failNextLearnerProfileLoad() {
+      failNextLearnerProfileLoad = true;
+    },
     releaseStaleSelection() {
       if (!heldSelection) return false;
       const pending = heldSelection;
@@ -1290,6 +1310,7 @@ function createE2eLearnerAccount(
             }
           : null,
         profiles: roster().profiles,
+        learnerProfileLoadFailures,
         sessionId,
         staleSelectionPending: heldSelection !== null,
       };
@@ -2364,6 +2385,8 @@ function installE2eProfileFetchMock() {
     Object.defineProperty(window, "__parrotE2eLearners", {
       configurable: true,
       value: {
+        failNextLearnerProfileLoad: () =>
+          learnerAccount.failNextLearnerProfileLoad(),
         releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
         snapshot: (profileId?: string) => learnerAccount.snapshot(profileId),
       },

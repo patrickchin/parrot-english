@@ -1425,6 +1425,9 @@ export function AuthenticatedApplication({
       }
     />
   );
+
+  if (onLoginRoute) return applicationRoutes;
+
   const routeContent = (
     <LearnerProfileGate
       completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
@@ -1463,7 +1466,7 @@ export function AuthenticatedApplication({
     return applicationRoutes;
   }
 
-  if (onLoginRoute || (isLearnerProfileRoute && !guardianRoute)) {
+  if (isLearnerProfileRoute && !guardianRoute) {
     return routeContent;
   }
 

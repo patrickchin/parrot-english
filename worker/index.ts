@@ -139,6 +139,61 @@ function learnerSelectionRequired() {
   );
 }
 
+const APP_SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+} as const;
+
+const IMMUTABLE_VITE_ASSET =
+  /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
+
+function isStaticPathname(pathname: string) {
+  return (
+    pathname === "/assets" ||
+    pathname.startsWith("/assets/") ||
+    pathname.startsWith("/.well-known/") ||
+    (pathname !== "/index.html" && /^\/[^/]+\.[^/]+$/.test(pathname))
+  );
+}
+
+function isHtmlResponse(response: Response) {
+  return (
+    response.status === 200 &&
+    response.headers.get("Content-Type")?.split(";", 1)[0].trim().toLowerCase() ===
+      "text/html"
+  );
+}
+
+function withAppHeaders(response: Response, pathname: string) {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(APP_SECURITY_HEADERS)) {
+    headers.set(name, value);
+  }
+  if (response.ok && IMMUTABLE_VITE_ASSET.test(pathname)) {
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  }
+  return new Response(response.body, {
+    headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
+}
+
+function missingStaticAsset(request: Request, pathname: string) {
+  return withAppHeaders(
+    new Response(request.method === "HEAD" ? null : "Not found", {
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "text/plain; charset=UTF-8",
+      },
+      status: 404,
+    }),
+    pathname,
+  );
+}
+
 export function createWorker(
   dependencies: Partial<WorkerDependencies> = {}
 ) {
@@ -544,7 +599,18 @@ export function createWorker(
         return evaluateSpeech(request, env);
       }
 
-      return env.ASSETS.fetch(request);
+      if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+        return Response.json(
+          { error: "not_found" },
+          { status: 404, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+
+      const assetResponse = await env.ASSETS.fetch(request);
+      if (isStaticPathname(url.pathname) && isHtmlResponse(assetResponse)) {
+        return missingStaticAsset(request, url.pathname);
+      }
+      return withAppHeaders(assetResponse, url.pathname);
     },
   };
 }
