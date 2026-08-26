@@ -188,7 +188,7 @@ export function ProfileEditorView({
               </p>
               <p
                 aria-live="polite"
-                className="m-0 text-sm font-black text-brand-ink"
+                className="m-0 min-h-15 text-sm font-black text-brand-ink min-[360px]:min-h-10 sm:min-h-5"
                 role="status"
               >
                 {lessonRecordingCleanupPending

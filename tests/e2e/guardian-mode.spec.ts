@@ -291,6 +291,7 @@ for (const viewport of lessonPrivacyViewports) {
     await expect(recordingState).toHaveText(
       "Lesson recording is currently off.",
     );
+    const initialRecordingStateBox = await visibleBox(recordingState);
     await expectInsideViewport(consentSection, viewport);
     await expectInsideViewport(grant, viewport);
     await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
@@ -329,6 +330,12 @@ for (const viewport of lessonPrivacyViewports) {
     await expect(recordingState).toHaveText(
       "Lesson recording is off. Saved clips are still being deleted.",
     );
+    const pendingRecordingStateBox = await visibleBox(recordingState);
+    expect(
+      Math.abs(
+        pendingRecordingStateBox.height - initialRecordingStateBox.height,
+      ),
+    ).toBeLessThanOrEqual(1);
     await expectInsideViewport(finishDeletion, viewport);
     expect(await horizontalOverflow(page)).toBe(false);
     expect(mutations).toEqual([true, false]);
