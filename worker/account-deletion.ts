@@ -32,6 +32,10 @@ function r2PrefixForUser(userId: string) {
   return `personalized-story-art/${encodeURIComponent(userId)}/`;
 }
 
+function lessonRecordingPrefix(userId: string) {
+  return `${r2PrefixForUser(userId)}lesson-recordings/`;
+}
+
 export async function accountDeletionTombstoneKey(userId: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -156,7 +160,7 @@ async function persistFence(
       await wait(retryDelay(rateFailures - 1));
     }
   }
-  throw new Error("Dub account-deletion fence contention exceeded.");
+  throw new Error("Account-deletion fence contention exceeded.");
 }
 
 export async function prepareAccountDeletion({
@@ -176,6 +180,8 @@ export async function prepareAccountDeletion({
     markerKey(userId),
     ...DUB_LINES.map(({ id }) => objectKey(userId, id)),
   ]);
+  const lessonRecordingKeys = new Set<string>();
+  const recordingPrefix = lessonRecordingPrefix(userId);
   let cursor: string | undefined;
   let hasMore = true;
   const seenCursors = new Set<string>();
@@ -189,7 +195,12 @@ export async function prepareAccountDeletion({
     if (listedKeys.some((key) => !key.startsWith(r2Prefix))) {
       throw new Error("R2 returned an object outside the account deletion prefix.");
     }
-    const keys = listedKeys.filter((key) => !closureKeys.has(key));
+    for (const key of listedKeys) {
+      if (key.startsWith(recordingPrefix)) lessonRecordingKeys.add(key);
+    }
+    const keys = listedKeys.filter(
+      (key) => !closureKeys.has(key) && !lessonRecordingKeys.has(key),
+    );
     if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
 
     hasMore = page.truncated;
@@ -214,6 +225,16 @@ export async function prepareAccountDeletion({
     await persistFence(
       bucket,
       objectKey(userId, id),
+      "slot",
+      generation,
+      "account-deleting",
+      wait,
+    );
+  }
+  for (const key of lessonRecordingKeys) {
+    await persistFence(
+      bucket,
+      key,
       "slot",
       generation,
       "account-deleting",

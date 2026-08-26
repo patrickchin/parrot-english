@@ -2,8 +2,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import { TextDecoder, TextEncoder } from "node:util";
-import { markAccountDeletionPending } from "../worker/account-deletion.ts";
+import {
+  markAccountDeletionPending,
+  prepareAccountDeletion,
+} from "../worker/account-deletion.ts";
 import { createDatabase } from "../worker/database.ts";
+import { markerKey } from "../worker/dub-storage.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
 import { handleMyLessonRequest } from "../worker/my-lessons.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
@@ -107,6 +111,12 @@ function createBucket() {
   return bucket;
 }
 
+function audioWrites(bucket) {
+  return bucket.calls.put.filter(
+    ({ options, stored }) => options.customMetadata?.state === "audio" && stored,
+  );
+}
+
 function seedDatabase({ consent = true } = {}) {
   const state = createTestD1Database();
   const timestamp = Date.parse(RECORDED_AT);
@@ -182,15 +192,28 @@ function setMyLessonTarget(state, targetText) {
   ).run(JSON.stringify(lesson), "lesson-1", USER_ID);
 }
 
+function myLessonRevision(state, lessonId = "lesson-1") {
+  const { lesson_json: lessonJson } = state.sqlite
+    .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
+    .get(lessonId);
+  return createHash("sha256").update(lessonJson).digest("hex");
+}
+
 function request(path, {
   body = WEBM,
   contentType = "audio/webm",
+  lessonRevision,
   method = "PUT",
 } = {}) {
+  const headers = {};
+  if (contentType !== null) headers["Content-Type"] = contentType;
+  if (lessonRevision !== undefined) {
+    headers["X-Parrot-Lesson-Revision"] = lessonRevision;
+  }
   return new Request(`https://example.test${path}`, {
     method,
     ...(body === null ? {} : { body }),
-    headers: contentType === null ? {} : { "Content-Type": contentType },
+    headers,
   });
 }
 
@@ -209,6 +232,7 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
     {
       createUploadNonce: options.createUploadNonce ?? (() => "upload-1"),
       now: () => new Date(RECORDED_AT),
+      wait: options.wait,
     },
   );
 }
@@ -274,7 +298,8 @@ describe("lesson recording Worker handler", () => {
       assert.equal(response.status, 201);
       assert.deepEqual(await response.json(), { recordedAt: RECORDED_AT });
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
-      assert.equal(bucket.calls.put[0].key,
+      const audioWrite = audioWrites(bucket)[0];
+      assert.equal(audioWrite.key,
         "personalized-story-art/user-1/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio");
       const envelope = JSON.stringify([
         AUDIO_ENVELOPE_FORMAT,
@@ -282,15 +307,15 @@ describe("lesson recording Worker handler", () => {
       ]);
       const payloadOffset = new TextEncoder().encode(envelope).byteLength;
       assert.equal(
-        new TextDecoder().decode(bucket.calls.put[0].bytes.slice(0, payloadOffset)),
+        new TextDecoder().decode(audioWrite.bytes.slice(0, payloadOffset)),
         envelope,
       );
-      assert.deepEqual(bucket.calls.put[0].bytes.slice(payloadOffset), WEBM);
-      assert.deepEqual(bucket.calls.put[0].options.httpMetadata, {
+      assert.deepEqual(audioWrite.bytes.slice(payloadOffset), WEBM);
+      assert.deepEqual(audioWrite.options.httpMetadata, {
         cacheControl: "private, no-store",
         contentType: "audio/webm",
       });
-      assert.deepEqual(bucket.calls.put[0].options.customMetadata, {
+      assert.deepEqual(audioWrite.options.customMetadata, {
         consentVersion: CONSENT_VERSION,
         lessonId: "01-peppas-high-ball",
         payloadOffset: String(payloadOffset),
@@ -315,11 +340,16 @@ describe("lesson recording Worker handler", () => {
         state,
         bucket,
         "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1?targetText=forged",
+        { lessonRevision: myLessonRevision(state) },
       );
       assert.equal(owned.status, 201);
       assert.equal(
-        bucket.calls.put[0].options.customMetadata.targetText,
+        audioWrites(bucket)[0].options.customMetadata.targetText,
         "Can you help me?",
+      );
+      assert.equal(
+        audioWrites(bucket)[0].options.customMetadata.lessonRevision,
+        myLessonRevision(state),
       );
 
       for (const path of [
@@ -332,6 +362,26 @@ describe("lesson recording Worker handler", () => {
         assert.equal(response.status, 404, path);
         assert.deepEqual(await response.json(), { error: "not_found" }, path);
         assert.equal(isolatedBucket.calls.put.length, 0, path);
+      }
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects missing or mismatched My Lesson revisions before storage", async () => {
+    const state = seedDatabase();
+    try {
+      for (const lessonRevision of [undefined, "b".repeat(64)]) {
+        const bucket = createBucket();
+        const response = await call(
+          state,
+          bucket,
+          "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
+          { lessonRevision },
+        );
+        assert.equal(response.status, 409);
+        assert.deepEqual(await response.json(), { error: "lesson_changed" });
+        assert.equal(bucket.calls.put.length, 0);
       }
     } finally {
       state.close();
@@ -355,7 +405,10 @@ describe("lesson recording Worker handler", () => {
         state,
         bucket,
         "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-        { createUploadNonce: () => "stale-my-upload" },
+        {
+          createUploadNonce: () => "stale-my-upload",
+          lessonRevision: myLessonRevision(state),
+        },
       );
       await uploadReachedStorage.promise;
 
@@ -371,9 +424,13 @@ describe("lesson recording Worker handler", () => {
       assert.equal(response.status, 409);
       assert.deepEqual(await response.json(), { error: "lesson_changed" });
       const current = [...bucket.stored.values()][0];
-      assert.equal(current.options.customMetadata.state, "lesson-changed");
-      assert.equal(current.options.customMetadata.invalidatedUploadNonce,
-        "stale-my-upload");
+      assert.equal(current.options.customMetadata.state, "purged");
+      assert.equal(
+        [...bucket.stored.values()].some(
+          ({ options }) => options.customMetadata?.state === "audio",
+        ),
+        false,
+      );
     } finally {
       releaseUpload.resolve();
       state.close();
@@ -395,10 +452,11 @@ describe("lesson recording Worker handler", () => {
         state,
         acceptedBucket,
         "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
+        { lessonRevision: myLessonRevision(state) },
       );
       assert.equal(accepted.status, 201);
       assert.equal(
-        acceptedBucket.calls.put[0].options.customMetadata.targetText,
+        audioWrites(acceptedBucket)[0].options.customMetadata.targetText,
         acceptedTarget,
       );
 
@@ -408,6 +466,7 @@ describe("lesson recording Worker handler", () => {
         state,
         rejectedBucket,
         "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
+        { lessonRevision: myLessonRevision(state) },
       );
       assert.equal(rejected.status, 422);
       assert.deepEqual(await rejected.json(), { error: "target_too_large" });
@@ -535,8 +594,49 @@ describe("lesson recording Worker handler", () => {
         latest.bytes.slice(Number(latest.options.customMetadata.payloadOffset)),
         WEBM,
       );
-      assert.equal(bucket.calls.put[0].key, bucket.calls.put[1].key);
+      const writes = audioWrites(bucket);
+      assert.equal(writes[0].key, writes[1].key);
     } finally {
+      state.close();
+    }
+  });
+
+  it("keeps concurrent valid latest-take writes as one complete audio object", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const firstAudioReached = deferred();
+    const releaseFirstAudio = deferred();
+    let held = false;
+    bucket.onBeforeAudioPut = async ({ options }) => {
+      if (!held && options.customMetadata.uploadNonce === "upload-a") {
+        held = true;
+        firstAudioReached.resolve();
+        await releaseFirstAudio.promise;
+      }
+    };
+
+    try {
+      const first = call(state, bucket, BUILT_IN_PATH, {
+        createUploadNonce: () => "upload-a",
+      });
+      await firstAudioReached.promise;
+      const second = await call(state, bucket, BUILT_IN_PATH, {
+        createUploadNonce: () => "upload-b",
+      });
+      releaseFirstAudio.resolve();
+
+      assert.equal(second.status, 201);
+      assert.equal((await first).status, 201);
+      assert.equal(bucket.stored.size, 1);
+      const current = [...bucket.stored.values()][0];
+      assert.equal(current.options.customMetadata.state, "audio");
+      assert.equal(current.options.customMetadata.uploadNonce, "upload-a");
+      assert.deepEqual(
+        current.bytes.slice(Number(current.options.customMetadata.payloadOffset)),
+        WEBM,
+      );
+    } finally {
+      releaseFirstAudio.resolve();
       state.close();
     }
   });
@@ -554,10 +654,14 @@ describe("lesson recording Worker handler", () => {
       assert.deepEqual(await response.json(), {
         error: "guardian_consent_required",
       });
-      assert.equal(bucket.calls.put.length, 2);
-      assert.deepEqual(bucket.calls.put[1].options.onlyIf, {
-        etagMatches: bucket.calls.put[0].bytes.length
-          ? createHash("md5").update(bucket.calls.put[0].bytes).digest("hex")
+      assert.equal(bucket.calls.put.length, 3);
+      const audioWrite = audioWrites(bucket)[0];
+      const fenceWrite = bucket.calls.put.find(
+        ({ options }) => options.customMetadata?.state === "consent-revoked",
+      );
+      assert.deepEqual(fenceWrite.options.onlyIf, {
+        etagMatches: audioWrite.bytes.length
+          ? createHash("md5").update(audioWrite.bytes).digest("hex")
           : "",
       });
       assert.equal(
@@ -579,13 +683,15 @@ describe("lesson recording Worker handler", () => {
     const staleCleanupStarted = deferred();
     const releaseStaleCleanup = deferred();
     let held = false;
+    let staleAudioStored = false;
     bucket.onAudioPut = async ({ options }) => {
       if (options.customMetadata.uploadNonce === "upload-a") {
+        staleAudioStored = true;
         setConsent(state, false);
       }
     };
     bucket.onHead = async () => {
-      if (!held) {
+      if (!held && staleAudioStored) {
         held = true;
         staleCleanupStarted.resolve();
         await releaseStaleCleanup.promise;
@@ -643,8 +749,6 @@ describe("lesson recording Worker handler", () => {
         createUploadNonce: () => "upload-a",
       });
       await conditionalFenceReached.promise;
-      assert.equal(bucket.calls.head.length, 1);
-
       setConsent(state, true);
       const newer = await call(state, bucket, BUILT_IN_PATH, {
         body: WEBM,
@@ -666,10 +770,11 @@ describe("lesson recording Worker handler", () => {
           options.customMetadata?.state === "consent-revoked" && !stored,
       );
       assert.ok(failedFence);
+      const staleAudio = audioWrites(bucket).find(
+        ({ options }) => options.customMetadata.uploadNonce === "upload-a",
+      );
       assert.deepEqual(failedFence?.options.onlyIf, {
-        etagMatches: createHash("md5")
-          .update(bucket.calls.put[0].bytes)
-          .digest("hex"),
+        etagMatches: createHash("md5").update(staleAudio.bytes).digest("hex"),
       });
       assert.notEqual(failedFence.options.onlyIf.etagMatches, current.object.etag);
     } finally {
@@ -693,10 +798,112 @@ describe("lesson recording Worker handler", () => {
       assert.deepEqual(await response.json(), {
         error: "account_deletion_pending",
       });
-      assert.equal(bucket.calls.put.length, 2);
+      assert.equal(bucket.calls.put.length, 3);
       assert.equal(
         [...bucket.stored.values()][0].options.customMetadata.state,
         "account-deleting",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("cannot write audio after a completed account sweep even when cleanup fails", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const audioStored = deferred();
+    const releaseStoredAudio = deferred();
+    const key =
+      "personalized-story-art/user-1/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio";
+    bucket.onAudioPut = async () => {
+      audioStored.resolve();
+      await releaseStoredAudio.promise;
+    };
+
+    try {
+      const staleUpload = call(state, bucket, BUILT_IN_PATH, {
+        createUploadNonce: () => "held-before-deletion",
+      });
+      await audioStored.promise;
+
+      await prepareAccountDeletion({
+        bucket,
+        database: state.database,
+        now: () => new Date(RECORDED_AT),
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      const deletionMarker = bucket.stored.get(markerKey(USER_ID))?.object;
+      assert.equal(deletionMarker?.customMetadata.state, "account-deleting");
+      const deletionFence = bucket.stored.get(key)?.object;
+      assert.equal(deletionFence?.customMetadata.state, "account-deleting");
+      assert.equal(
+        deletionFence?.customMetadata.generation,
+        deletionMarker?.customMetadata.generation,
+      );
+
+      bucket.onHead = async (headKey) => {
+        if (headKey === key) throw new Error("upload cleanup head failed");
+      };
+      releaseStoredAudio.resolve();
+
+      const response = await staleUpload;
+      assert.equal(response.status, 500);
+      assert.deepEqual(await response.json(), { error: "internal_error" });
+      assert.equal(
+        [...bucket.stored.values()].some(
+          ({ options }) => options.customMetadata?.state === "audio",
+        ),
+        false,
+      );
+      assert.deepEqual(
+        bucket.stored.get(key)?.object,
+        deletionFence,
+        "Failed upload cleanup must not replace the durable lesson fence",
+      );
+      assert.deepEqual(
+        bucket.stored.get(markerKey(USER_ID))?.object,
+        deletionMarker,
+        "The stale upload must not replace the durable deletion marker",
+      );
+    } finally {
+      releaseStoredAudio.resolve();
+      state.close();
+    }
+  });
+
+  it("retries a transient exact-take fence failure with bounded pacing", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const put = bucket.put.bind(bucket);
+    const waits = [];
+    let fenceAttempts = 0;
+    bucket.onAudioPut = async () => setConsent(state, false);
+    bucket.put = async (key, value, options) => {
+      if (options.customMetadata?.state === "consent-revoked") {
+        fenceAttempts += 1;
+        if (fenceAttempts === 1) {
+          throw new Error("fence: TooManyRequests (10058)");
+        }
+      }
+      return put(key, value, options);
+    };
+
+    try {
+      const response = await call(state, bucket, BUILT_IN_PATH, {
+        createUploadNonce: () => "retry-fence",
+        wait: async (delay) => { waits.push(delay); },
+      });
+
+      assert.equal(response.status, 403);
+      assert.equal(fenceAttempts, 2);
+      assert.equal(waits.length, 1);
+      assert.equal(waits[0] >= 1_000, true);
+      assert.equal(
+        [...bucket.stored.values()].some(
+          ({ options }) => options.customMetadata?.state === "audio",
+        ),
+        false,
       );
     } finally {
       state.close();

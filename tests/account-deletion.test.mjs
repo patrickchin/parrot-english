@@ -231,7 +231,7 @@ function seedDatabase() {
 }
 
 describe("account deletion personalized-art lifecycle", () => {
-  it("tombstones the account, purges art and lesson recordings, and retains only dub deletion fences", async () => {
+  it("tombstones the account, purges art, and retains non-audio recording fences", async () => {
     const state = seedDatabase();
     const events = [];
     try {
@@ -297,16 +297,24 @@ describe("account deletion personalized-art lifecycle", () => {
           userCount: 1,
         },
         {
-          keys: [
-            `${USER_PREFIX}future-story/versions/two.webp`,
-            LESSON_RECORDING_KEY,
-          ],
+          keys: [`${USER_PREFIX}future-story/versions/two.webp`],
           statuses: ["deleting", "deleting"],
           tombstoneCount: 1,
           userCount: 1,
         },
       ]);
       assertDeletionFences(bucket, DELETION_GENERATION);
+      assert.deepEqual(
+        bucket.stored.get(LESSON_RECORDING_KEY)?.bytes,
+        fenceBytes("slot", DELETION_GENERATION, "account-deleting"),
+      );
+      assert.deepEqual(
+        bucket.stored.get(LESSON_RECORDING_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
       assert.equal(
         [...bucket.stored.values()].every(
           (item) => item.options.customMetadata.state !== "audio",
@@ -556,13 +564,21 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
       ]);
 
-      assertDeletionFences(bucket, DELETION_GENERATION);
+      const { requested_at: requestedAt } = state.sqlite
+        .prepare(
+          "SELECT requested_at FROM account_deletion_tombstone LIMIT 1",
+        )
+        .get();
+      const persistedGeneration = `account-deletion-v1:${createHash("sha256")
+        .update(USER_ID)
+        .digest("hex")}:${requestedAt}`;
+      assertDeletionFences(bucket, persistedGeneration);
       assertNoClosureDeletes(bucket);
       assert.deepEqual(
         new Set(CLOSURE_KEYS.map(
           (key) => bucket.stored.get(key).options.customMetadata.generation,
         )),
-        new Set([DELETION_GENERATION]),
+        new Set([persistedGeneration]),
       );
     } finally {
       state.close();
@@ -786,11 +802,12 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
-  it("retries 10058 marker and slot fence writes with injected pacing", async () => {
+  it("retries 10058 marker, dub, and lesson fence writes with injected pacing", async () => {
     const state = seedDatabase();
-    const bucket = createBucket();
+    const bucket = createBucket([{ key: LESSON_RECORDING_KEY }]);
     const put = bucket.put.bind(bucket);
     const waits = [];
+    let lessonAttempts = 0;
     let markerAttempts = 0;
     let lineThreeAttempts = 0;
     bucket.put = async (key, bytes, options) => {
@@ -806,6 +823,12 @@ describe("account deletion personalized-art lifecycle", () => {
           throw new Error("put slot: TooManyRequests (10058)");
         }
       }
+      if (key === LESSON_RECORDING_KEY) {
+        lessonAttempts += 1;
+        if (lessonAttempts < 3) {
+          throw new Error("put lesson: TooManyRequests (10058)");
+        }
+      }
       return put(key, bytes, options);
     };
 
@@ -818,9 +841,17 @@ describe("account deletion personalized-art lifecycle", () => {
       });
       assert.equal(markerAttempts, 3);
       assert.equal(lineThreeAttempts, 2);
-      assert.equal(waits.length, 3);
+      assert.equal(lessonAttempts, 3);
+      assert.equal(waits.length, 5);
       assert.equal(waits.every((delay) => delay >= 1_000), true);
       assertDeletionFences(bucket, DELETION_GENERATION);
+      assert.deepEqual(
+        bucket.stored.get(LESSON_RECORDING_KEY)?.options.customMetadata,
+        {
+          generation: DELETION_GENERATION,
+          state: "account-deleting",
+        },
+      );
     } finally {
       state.close();
     }

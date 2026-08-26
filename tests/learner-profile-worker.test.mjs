@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { TextDecoder } from "node:util";
 import { createDatabase } from "../worker/database.ts";
 import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
@@ -264,12 +265,23 @@ describe("onboarding persistence and API", () => {
           assert.equal(row.lesson_recording_consent_version, null);
           assert.equal(row.lesson_recording_consent_at, null);
           return {
-            objects: [{ key: "personalized-story-art/user-1/lesson-recordings/clip-1.webm" }],
+            objects: [
+              {
+                etag: "clip-etag",
+                key: "personalized-story-art/user-1/lesson-recordings/clip-1.webm",
+                version: "clip-version",
+              },
+            ],
             truncated: false,
           };
         },
-        async delete(keys) {
-          calls.push(["delete", keys]);
+        async put(key, body, options) {
+          calls.push([
+            "put",
+            key,
+            JSON.parse(new TextDecoder().decode(body)),
+            options,
+          ]);
         },
       };
 
@@ -292,7 +304,18 @@ describe("onboarding persistence and API", () => {
       assert.deepEqual(await disabled.json(), { enabled: false });
       assert.deepEqual(calls, [
         ["list", { prefix: "personalized-story-art/user-1/lesson-recordings/" }],
-        ["delete", ["personalized-story-art/user-1/lesson-recordings/clip-1.webm"]],
+        [
+          "put",
+          "personalized-story-art/user-1/lesson-recordings/clip-1.webm",
+          ["parrot-lesson-recording-purge-v1", "clip-version"],
+          {
+            customMetadata: {
+              invalidatedVersion: "clip-version",
+              state: "purged",
+            },
+            onlyIf: { etagMatches: "clip-etag" },
+          },
+        ],
       ]);
     } finally {
       state.close();

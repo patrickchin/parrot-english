@@ -7,6 +7,16 @@ type RepositoryOptions = {
   now?: () => Date;
 };
 
+export async function lessonJsonRevision(lessonJson: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(lessonJson),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+}
+
 export function createMyLessonRepository(
   database: Database,
   {

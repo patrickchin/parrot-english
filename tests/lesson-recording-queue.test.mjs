@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { setImmediate } from "node:timers";
+import { saveLessonRecording } from "../src/lessons/lesson-recording-api.ts";
 import { createLessonRecordingQueue } from "../src/lessons/lesson-recording-queue.ts";
 
 const PARROT_SLOT = {
@@ -10,6 +11,7 @@ const PARROT_SLOT = {
   stepIndex: 1,
 };
 const MY_SLOT = { ...PARROT_SLOT, source: "my" };
+const MY_REVISION_SLOT = { ...MY_SLOT, lessonRevision: "a".repeat(64) };
 
 function deferred() {
   let resolve;
@@ -180,6 +182,29 @@ describe("lesson recording save queue", () => {
 
     await queue.settle();
     assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
+  });
+
+  it("does not retain or retry a lesson-changed response", async () => {
+    let requests = 0;
+    const queue = createLessonRecordingQueue({
+      save: (blob, slot) => saveLessonRecording(blob, slot, {
+        fetch: async () => {
+          requests += 1;
+          return Response.json({ error: "lesson_changed" }, { status: 409 });
+        },
+      }),
+    });
+    queue.enqueue(
+      MY_REVISION_SLOT,
+      new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+        type: "audio/webm",
+      }),
+    );
+
+    await queue.settle();
+    assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
+    await queue.retryFailed();
+    assert.equal(requests, 1);
   });
 
   it("notifies subscribers only when counts change and keeps snapshots stable", async () => {

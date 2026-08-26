@@ -12,6 +12,7 @@ const SLOT = {
   sceneIndex: 0,
   stepIndex: 2,
 };
+const MY_LESSON_REVISION = "a".repeat(64);
 
 function responseFetch(payload, status = 200) {
   const calls = [];
@@ -79,7 +80,12 @@ describe("lesson recording browser API", () => {
 
     await saveLessonRecording(
       blob,
-      { ...SLOT, source: "my", lessonId: "lesson/one" },
+      {
+        ...SLOT,
+        source: "my",
+        lessonId: "lesson/one",
+        lessonRevision: MY_LESSON_REVISION,
+      },
       { fetch: request.fetch },
     );
 
@@ -87,7 +93,10 @@ describe("lesson recording browser API", () => {
       request.calls[0][0],
       "/api/lesson-recordings/my/lesson%2Fone/scenes/0/steps/2",
     );
-    assert.deepEqual(Object.keys(request.calls[0][1].headers), ["Content-Type"]);
+    assert.deepEqual(request.calls[0][1].headers, {
+      "Content-Type": "audio/ogg",
+      "X-Parrot-Lesson-Revision": MY_LESSON_REVISION,
+    });
   });
 
   it("turns revoked consent into a resolved disabled-recording result", async () => {
@@ -123,6 +132,26 @@ describe("lesson recording browser API", () => {
         { fetch: request.fetch },
       ),
       { reason: "recording_disabled", saved: false },
+    );
+  });
+
+  it("turns a changed My Lesson into a terminal stale-lesson result", async () => {
+    const request = responseFetch({ error: "lesson_changed" }, 409);
+
+    assert.deepEqual(
+      await saveLessonRecording(
+        new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+          type: "audio/webm",
+        }),
+        {
+          ...SLOT,
+          lessonId: "lesson-1",
+          lessonRevision: MY_LESSON_REVISION,
+          source: "my",
+        },
+        { fetch: request.fetch },
+      ),
+      { reason: "lesson_changed", saved: false },
     );
   });
 

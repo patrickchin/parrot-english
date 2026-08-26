@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
 import { handleMyLessonRequest } from "../worker/my-lessons.ts";
@@ -81,6 +82,10 @@ describe("My Lessons persistence and API", () => {
         .get("lesson-1");
       assert.equal(stored.auth_user_id, "user-1");
       assert.equal(JSON.parse(stored.lesson_json).title, "Garden Help");
+      assert.equal(
+        payload.lesson.revision,
+        createHash("sha256").update(stored.lesson_json).digest("hex"),
+      );
     } finally {
       state.close();
     }
@@ -149,7 +154,15 @@ describe("My Lessons persistence and API", () => {
 
       const owned = await call(state, "/api/lessons/my/lesson-1");
       assert.equal(owned.status, 200);
-      assert.equal((await owned.json()).lesson.lesson.childName, "Mia");
+      const ownedLesson = (await owned.json()).lesson;
+      assert.equal(ownedLesson.lesson.childName, "Mia");
+      const storedJson = state.sqlite
+        .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
+        .get("lesson-1").lesson_json;
+      assert.equal(
+        ownedLesson.revision,
+        createHash("sha256").update(storedJson).digest("hex"),
+      );
 
       const otherOwner = await call(state, "/api/lessons/my/lesson-2");
       assert.equal(otherOwner.status, 404);
@@ -186,6 +199,13 @@ describe("My Lessons persistence and API", () => {
       assert.equal(payload.lesson.lesson.title, "Edited Garden Help");
       assert.equal(payload.lesson.lesson.scenes[0].background, "episode-garden");
       assert.equal(payload.lesson.lesson.scenes[0].steps[0].speaker, "narrator");
+      const storedJson = state.sqlite
+        .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
+        .get("lesson-1").lesson_json;
+      assert.equal(
+        payload.lesson.revision,
+        createHash("sha256").update(storedJson).digest("hex"),
+      );
       assert.ok(payload.warnings.some((warning) => /background/i.test(warning)));
       assert.equal(
         JSON.parse(
@@ -245,19 +265,28 @@ describe("My Lessons persistence and API", () => {
         "personalized-story-art/user-1/lesson-recordings/my/lesson%2Fone/";
       const lists = [];
       const deletions = [];
+      const writes = [];
       const pages = new Map([
         [
           "",
           {
             cursor: "page-2",
-            objects: [{ key: `${prefix}scene-0/step-1.audio` }],
+            objects: [{
+              etag: "etag-1",
+              key: `${prefix}scene-0/step-1.audio`,
+              version: "version-1",
+            }],
             truncated: true,
           },
         ],
         [
           "page-2",
           {
-            objects: [{ key: `${prefix}scene-4/step-1.audio` }],
+            objects: [{
+              etag: "etag-2",
+              key: `${prefix}scene-4/step-1.audio`,
+              version: "version-2",
+            }],
             truncated: false,
           },
         ],
@@ -267,6 +296,10 @@ describe("My Lessons persistence and API", () => {
         async list(options) {
           lists.push(options);
           return pages.get(options.cursor ?? "");
+        },
+        async put(key, _value, options) {
+          writes.push({ key, options });
+          return { etag: `fence-${writes.length}`, key };
         },
       };
 
@@ -283,9 +316,19 @@ describe("My Lessons persistence and API", () => {
         { prefix },
         { prefix, cursor: "page-2" },
       ]);
-      assert.deepEqual(deletions, [
-        [`${prefix}scene-0/step-1.audio`],
-        [`${prefix}scene-4/step-1.audio`],
+      assert.deepEqual(deletions, []);
+      assert.deepEqual(writes.map(({ key, options }) => ({
+        key,
+        onlyIf: options.onlyIf,
+      })), [
+        {
+          key: `${prefix}scene-0/step-1.audio`,
+          onlyIf: { etagMatches: "etag-1" },
+        },
+        {
+          key: `${prefix}scene-4/step-1.audio`,
+          onlyIf: { etagMatches: "etag-2" },
+        },
       ]);
     } finally {
       state.close();

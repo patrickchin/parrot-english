@@ -1,8 +1,17 @@
-type LessonRecordingBucket = Pick<R2Bucket, "delete" | "list">;
+import {
+  isR2WriteRateError,
+  MAX_R2_WRITE_ATTEMPTS,
+  retryDelay,
+} from "./dub-storage.ts";
+
+type LessonRecordingBucket = Pick<R2Bucket, "list" | "put">;
 type LessonRecordingWriteBucket = Pick<R2Bucket, "head" | "put">;
+type Wait = (delay: number) => Promise<void>;
 
 const AUDIO_FORMAT = "parrot-lesson-recording-audio-v1";
 const FENCE_FORMAT = "parrot-lesson-recording-fence-v1";
+const PURGE_FORMAT = "parrot-lesson-recording-purge-v1";
+const MAX_WRITE_CONFLICTS = 16;
 
 export type LessonRecordingSlot = {
   lessonId: string;
@@ -35,6 +44,80 @@ export function lessonRecordingAudioBody(
   return { body, payloadOffset: prefix.byteLength };
 }
 
+function conditionalWrite(object: R2Object | null) {
+  return object
+    ? { etagMatches: object.etag }
+    : { etagDoesNotMatch: "*" };
+}
+
+function sameObject(left: R2Object | null, right: R2Object | null) {
+  return left === null || right === null
+    ? left === right
+    : left.etag === right.etag && left.version === right.version;
+}
+
+export async function reserveLessonRecordingUpload(
+  bucket: LessonRecordingWriteBucket,
+  key: string,
+  uploadNonce: string,
+  wait: Wait,
+) {
+  for (let conflict = 0; conflict < MAX_WRITE_CONFLICTS; conflict += 1) {
+    const current = await bucket.head(key);
+    if (current) return current;
+    for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+      try {
+        const reserved = await bucket.put(
+          key,
+          new TextEncoder().encode(
+            JSON.stringify([FENCE_FORMAT, uploadNonce, "uploading"]),
+          ),
+          {
+            customMetadata: { state: "uploading", uploadNonce },
+            onlyIf: conditionalWrite(null),
+          },
+        );
+        if (reserved) return reserved;
+        break;
+      } catch (error) {
+        if (
+          !isR2WriteRateError(error) ||
+          attempt === MAX_R2_WRITE_ATTEMPTS - 1
+        ) {
+          throw error;
+        }
+        await wait(retryDelay(attempt));
+      }
+    }
+  }
+  throw new Error("Lesson recording reservation contention exceeded.");
+}
+
+export async function putLessonRecordingAudio(
+  bucket: LessonRecordingWriteBucket,
+  key: string,
+  body: Uint8Array,
+  options: R2PutOptions,
+  observed: R2Object,
+  wait: Wait,
+) {
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      return await bucket.put(key, body, {
+        ...options,
+        onlyIf: conditionalWrite(observed),
+      });
+    } catch (error) {
+      if (!isR2WriteRateError(error)) throw error;
+      const current = await bucket.head(key);
+      if (!sameObject(current, observed)) return null;
+      if (attempt === MAX_R2_WRITE_ATTEMPTS - 1) throw error;
+      await wait(retryDelay(attempt));
+    }
+  }
+  throw new Error("Lesson recording write retry limit exceeded.");
+}
+
 export async function fenceLessonRecordingUpload(
   bucket: LessonRecordingWriteBucket,
   key: string,
@@ -45,30 +128,44 @@ export async function fenceLessonRecordingUpload(
     | "consent-revoked"
     | "lesson-changed"
     | "state-unknown",
+  wait: Wait,
 ) {
-  const current = await bucket.head(key);
-  if (
-    !current ||
-    current.etag !== stored.etag ||
-    current.version !== stored.version ||
-    current.customMetadata?.state !== "audio" ||
-    current.customMetadata.uploadNonce !== uploadNonce
-  ) {
-    return;
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    const current = await bucket.head(key);
+    if (
+      !current ||
+      current.etag !== stored.etag ||
+      current.version !== stored.version ||
+      current.customMetadata?.state !== "audio" ||
+      current.customMetadata.uploadNonce !== uploadNonce
+    ) {
+      return;
+    }
+    try {
+      await bucket.put(
+        key,
+        new TextEncoder().encode(
+          JSON.stringify([FENCE_FORMAT, uploadNonce, state]),
+        ),
+        {
+          customMetadata: { invalidatedUploadNonce: uploadNonce, state },
+          onlyIf: { etagMatches: stored.etag },
+        },
+      );
+      return;
+    } catch (error) {
+      if (
+        !isR2WriteRateError(error) ||
+        attempt === MAX_R2_WRITE_ATTEMPTS - 1
+      ) {
+        throw error;
+      }
+      await wait(retryDelay(attempt));
+    }
   }
-  await bucket.put(
-    key,
-    new TextEncoder().encode(
-      JSON.stringify([FENCE_FORMAT, uploadNonce, state]),
-    ),
-    {
-      customMetadata: { invalidatedUploadNonce: uploadNonce, state },
-      onlyIf: { etagMatches: stored.etag },
-    },
-  );
 }
 
-async function deletePrefix(bucket: LessonRecordingBucket, prefix: string) {
+async function purgePrefix(bucket: LessonRecordingBucket, prefix: string) {
   let cursor: string | undefined;
   const seenCursors = new Set<string>();
 
@@ -87,7 +184,21 @@ async function deletePrefix(bucket: LessonRecordingBucket, prefix: string) {
       }
       seenCursors.add(page.cursor);
     }
-    if (keys.length > 0) await bucket.delete(keys);
+    for (const object of page.objects) {
+      await bucket.put(
+        object.key,
+        new TextEncoder().encode(
+          JSON.stringify([PURGE_FORMAT, object.version]),
+        ),
+        {
+          customMetadata: {
+            invalidatedVersion: object.version,
+            state: "purged",
+          },
+          onlyIf: { etagMatches: object.etag },
+        },
+      );
+    }
     if (!page.truncated) return;
     cursor = page.cursor;
   }
@@ -97,7 +208,7 @@ export function deleteAllLessonRecordings(
   bucket: LessonRecordingBucket,
   userId: string,
 ) {
-  return deletePrefix(bucket, ownerPrefix(userId));
+  return purgePrefix(bucket, ownerPrefix(userId));
 }
 
 export function deleteLessonRecordingsForLesson(
@@ -105,7 +216,7 @@ export function deleteLessonRecordingsForLesson(
   userId: string,
   lessonId: string,
 ) {
-  return deletePrefix(
+  return purgePrefix(
     bucket,
     `${ownerPrefix(userId)}my/${encodeURIComponent(lessonId)}/`,
   );

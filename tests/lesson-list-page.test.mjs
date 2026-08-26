@@ -208,6 +208,7 @@ test("saved lessons stay playable without custom-lesson management actions", () 
         {
           id: "lesson/id",
           lesson: createLessonScript({ title: "Editable Garden" }),
+          revision: "a".repeat(64),
           source: "uploaded",
         },
       ],

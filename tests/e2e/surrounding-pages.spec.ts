@@ -482,6 +482,7 @@ test("My Lessons keeps recovery stable across a failed retry and populated succe
   const savedLesson = {
     id: "recovered-garden",
     lesson: createLessonScript({ title: "Recovered Garden" }),
+    revision: "a".repeat(64),
     source: "uploaded",
   };
   let attempts = 0;

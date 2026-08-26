@@ -223,6 +223,7 @@ type LessonPlayerProps = {
   fullSceneArtwork?: FullSceneImage[];
   lesson: Lesson;
   lessonId: string;
+  lessonRevision?: string;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
   routedLocationKey: string;
@@ -241,6 +242,7 @@ export function LessonPlayer({
   fullSceneArtwork,
   lesson: currentLesson,
   lessonId,
+  lessonRevision,
   onBack,
   onNavigateScene,
   routedLocationKey,
@@ -625,6 +627,7 @@ export function LessonPlayer({
     let session: SpeechRecordingSession | null = null;
     const slot = {
       lessonId,
+      ...(lessonRevision ? { lessonRevision } : {}),
       sceneIndex: state.sceneIndex,
       source,
       stepIndex: state.stepIndex,
@@ -756,6 +759,7 @@ export function LessonPlayer({
     dispatchLessonEvent,
     fullSceneArtwork,
     lessonId,
+    lessonRevision,
     recordingQueue,
     showMicrophoneNotice,
     source,
@@ -1049,9 +1053,11 @@ export function LessonPlayer({
 }
 function LessonRouteDecisionView({
   decision,
+  lessonRevision,
   source,
 }: {
   decision: LessonRouteDecision;
+  lessonRevision?: string;
   source: LessonSource;
 }) {
   const location = useLocation();
@@ -1079,6 +1085,7 @@ function LessonRouteDecisionView({
       key={`${source}:${decision.entry.id}`}
       lesson={decision.entry.lesson}
       lessonId={decision.entry.id}
+      lessonRevision={lessonRevision}
       onBack={() => navigate("/lessons")}
       onNavigateScene={(sceneIndex) =>
         navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
@@ -1114,7 +1121,9 @@ function ParrotLessonSceneRoute() {
 
 function MyLessonRoute() {
   const { lessonId, sceneNumber } = useParams();
-  const [entry, setEntry] = useState<LessonCatalogEntry | null>(null);
+  const [entry, setEntry] = useState<
+    (LessonCatalogEntry & { revision: string }) | null
+  >(null);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadSequence, setLoadSequence] = useState(0);
@@ -1130,7 +1139,11 @@ function MyLessonRoute() {
     setLoadError("");
     void loadMyLesson(lessonId, { signal: controller.signal })
       .then((descriptor) => {
-        setEntry({ id: descriptor.id, lesson: descriptor.lesson });
+        setEntry({
+          id: descriptor.id,
+          lesson: descriptor.lesson,
+          revision: descriptor.revision,
+        });
       })
       .catch((caughtError: unknown) => {
         if (controller.signal.aborted) return;
@@ -1176,6 +1189,7 @@ function MyLessonRoute() {
   return (
     <LessonRouteDecisionView
       decision={decision}
+      lessonRevision={entry.revision}
       source="my"
     />
   );

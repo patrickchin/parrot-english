@@ -238,6 +238,7 @@ async function mockSpeakingTurnLesson(page: Page) {
         lesson: {
           id: "personalized-speaking-turn",
           lesson,
+          revision: "a".repeat(64),
           source: "generated",
         },
       }),

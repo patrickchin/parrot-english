@@ -176,8 +176,17 @@ export function ProfileEditorView({
                 Lesson voice recordings
               </h2>
               <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Let this learner save their own voice clips while joining in
-                with lessons. You can stop and delete them at any time.
+                Recording starts automatically during each join-in moment.
+                Clips are private to this account, and one latest clip is saved
+                per join-in moment. You can stop and delete them at any time.
+              </p>
+              <p
+                aria-live="polite"
+                className="m-0 text-sm font-black text-brand-ink"
+                role="status"
+              >
+                Lesson recording is currently{" "}
+                {lessonRecordingConsent ? "allowed" : "off"}.
               </p>
             </div>
             <ActionButton

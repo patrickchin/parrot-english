@@ -8,6 +8,7 @@ const tinySceneWebp = Buffer.from(
 );
 const longDialogue =
   "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
+const myLessonRevision = "a".repeat(64);
 
 type LessonMediaSnapshot = {
   consentRequests: number;
@@ -29,7 +30,13 @@ type LessonMediaSnapshot = {
   uploads: Array<{
     attempt: number;
     lessonId: string;
-    outcome: "failed" | "held" | "recording_disabled" | "saved";
+    outcome:
+      | "failed"
+      | "held"
+      | "lesson_changed"
+      | "recording_disabled"
+      | "saved";
+    revision: string | null;
     sceneIndex: number;
     size: number;
     source: "my" | "parrot";
@@ -141,6 +148,7 @@ async function openMyLesson(
         lesson: {
           id,
           lesson,
+          revision: myLessonRevision,
           source: "generated",
         },
       }),
@@ -426,6 +434,7 @@ test("narration remains distinct from character speech", async ({ page }) => {
         lesson: {
           id: "narration-guide",
           lesson: narrationLesson,
+          revision: myLessonRevision,
           source: "generated",
         },
       }),
@@ -892,6 +901,49 @@ test("pending account deletion settles saving and disables later captures", asyn
   ]);
   await expect(page.getByRole("button", { name: "Try saving again" })).toHaveCount(0);
   await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
+});
+
+test("a stale open My Lesson sends its loaded revision once and stops future capture", async ({
+  page,
+}) => {
+  const twoBeatLesson = structuredClone(myLesson);
+  twoBeatLesson.scenes[0].steps.push(
+    {
+      dialogue: "The kite turns.",
+      emotes: { peppa: "listening" },
+      speaker: "narrator",
+    },
+    {
+      dialogue: "Green kite!",
+      emotes: { peppa: "listening" },
+      speaker: "user",
+    },
+  );
+  await openMyLesson(page, "lesson-changed", {
+    id: "stale-guide",
+    lesson: twoBeatLesson,
+  });
+  await startLesson(page);
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  const afterConflict = await mediaSnapshot(page);
+  expect(afterConflict.uploads).toMatchObject([
+    {
+      lessonId: "stale-guide",
+      outcome: "lesson_changed",
+      revision: myLessonRevision,
+      sceneIndex: 0,
+      source: "my",
+      stepIndex: 0,
+    },
+  ]);
+
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  const completed = await mediaSnapshot(page);
+  expect(completed.recorderStarts).toHaveLength(1);
+  expect(completed.getUserMediaCalls).toBe(2);
+  expect(completed.uploads).toHaveLength(1);
+  await expect(page.getByRole("button", { name: "Try saving again" })).toHaveCount(0);
 });
 
 test("a recording stop failure discards only that clip and continues", async ({

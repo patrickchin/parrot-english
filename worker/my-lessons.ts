@@ -8,7 +8,10 @@ import {
 } from "./lesson-generator.ts";
 import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
 import { deleteLessonRecordingsForLesson } from "./lesson-recording-storage.ts";
-import { createMyLessonRepository } from "./my-lessons-repository.ts";
+import {
+  createMyLessonRepository,
+  lessonJsonRevision,
+} from "./my-lessons-repository.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedText,
@@ -76,7 +79,7 @@ async function readJson(request: Request) {
   }
 }
 
-function clientLesson(row: {
+async function clientLesson(row: {
   createdAt: Date;
   id: string;
   lessonJson: string;
@@ -87,6 +90,7 @@ function clientLesson(row: {
     createdAt: row.createdAt.toISOString(),
     id: row.id,
     lesson: JSON.parse(row.lessonJson) as Lesson,
+    revision: await lessonJsonRevision(row.lessonJson),
     source: row.source,
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -124,7 +128,7 @@ export async function handleMyLessonRequest(
   try {
     if (url.pathname === "/api/lessons/my" && input.request.method === "GET") {
       const rows = await repository.listOwned(input.identity.userId);
-      return json({ lessons: rows.map(clientLesson) });
+      return json({ lessons: await Promise.all(rows.map(clientLesson)) });
     }
 
     if (url.pathname === "/api/lessons/my" && input.request.method === "POST") {
@@ -140,7 +144,7 @@ export async function handleMyLessonRequest(
       );
       if (!row) throw new Error("Lesson could not be loaded after saving.");
       return json(
-        { lesson: clientLesson(row), warnings: draft.warnings },
+        { lesson: await clientLesson(row), warnings: draft.warnings },
         { status: 201 },
       );
     }
@@ -198,7 +202,7 @@ export async function handleMyLessonRequest(
         input.identity.userId,
         row.id,
       );
-      return json({ lesson: clientLesson(row), warnings: draft.warnings });
+      return json({ lesson: await clientLesson(row), warnings: draft.warnings });
     }
 
     if (detailMatch && input.request.method === "GET") {
@@ -207,7 +211,7 @@ export async function handleMyLessonRequest(
         input.identity.userId,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
-      return json({ lesson: clientLesson(row) });
+      return json({ lesson: await clientLesson(row) });
     }
 
     throw new MyLessonApiError(404, "not_found");

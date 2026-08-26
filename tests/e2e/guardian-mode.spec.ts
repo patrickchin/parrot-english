@@ -271,7 +271,20 @@ for (const viewport of lessonPrivacyViewports) {
     const grant = consentSection.getByRole("button", {
       name: "Allow lesson voice recordings",
     });
+    const recordingState = consentSection.getByRole("status");
     await consentSection.scrollIntoViewIfNeeded();
+    await expect(consentSection).toContainText(
+      "Recording starts automatically during each join-in moment.",
+    );
+    await expect(consentSection).toContainText(
+      "Clips are private to this account",
+    );
+    await expect(consentSection).toContainText(
+      "one latest clip is saved per join-in moment",
+    );
+    await expect(recordingState).toHaveText(
+      "Lesson recording is currently off.",
+    );
     await expectInsideViewport(consentSection, viewport);
     await expectInsideViewport(grant, viewport);
     await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
@@ -286,6 +299,9 @@ for (const viewport of lessonPrivacyViewports) {
     await expect(revoke).toHaveAccessibleName(
       "Stop and delete lesson recordings",
     );
+    await expect(recordingState).toHaveText(
+      "Lesson recording is currently allowed.",
+    );
     await expectInsideViewport(revoke, viewport);
     await expectNoOverlap(revoke, account);
     await expectNoOverlap(revoke, back);
@@ -299,6 +315,9 @@ for (const viewport of lessonPrivacyViewports) {
     await revoke.click();
 
     await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
+    await expect(recordingState).toHaveText(
+      "Lesson recording is currently off.",
+    );
     await expectInsideViewport(grant, viewport);
     expect(await horizontalOverflow(page)).toBe(false);
     expect(mutations).toEqual([true, false]);

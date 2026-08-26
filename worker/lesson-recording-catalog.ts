@@ -7,7 +7,10 @@ import lesson06 from "../content/lessons/06-picnic-time.json" with { type: "json
 import lesson07 from "../content/lessons/07-bedtime-story.json" with { type: "json" };
 import type { Database } from "./database.ts";
 import type { LessonRecordingSlot } from "./lesson-recording-storage.ts";
-import { createMyLessonRepository } from "./my-lessons-repository.ts";
+import {
+  createMyLessonRepository,
+  lessonJsonRevision,
+} from "./my-lessons-repository.ts";
 
 const BUILT_IN_LESSONS = new Map<string, unknown>([
   ["01-peppas-high-ball", lesson01],
@@ -55,5 +58,7 @@ export async function resolveLessonRecordingTarget(
   );
   if (!row) return null;
   const targetText = userTarget(JSON.parse(row.lessonJson), slot);
-  return targetText ? { revision: row.lessonJson, targetText } : null;
+  return targetText
+    ? { revision: await lessonJsonRevision(row.lessonJson), targetText }
+    : null;
 }

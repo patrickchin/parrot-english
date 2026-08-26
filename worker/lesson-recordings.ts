@@ -9,6 +9,8 @@ import {
   fenceLessonRecordingUpload,
   lessonRecordingAudioBody,
   lessonRecordingObjectKey,
+  putLessonRecordingAudio,
+  reserveLessonRecordingUpload,
   type LessonRecordingSlot,
 } from "./lesson-recording-storage.ts";
 import {
@@ -47,7 +49,10 @@ type HandlerOverrides = {
   createUploadNonce?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
   now?: () => Date;
+  wait?: (delay: number) => Promise<void>;
 };
+
+const MAX_WRITE_CONFLICTS = 16;
 
 class LessonRecordingApiError extends Error {
   readonly code: string;
@@ -119,6 +124,7 @@ export async function handleLessonRecordingRequest(
   const isDeletionPending =
     overrides.isDeletionPending ?? isAccountDeletionPending;
   const now = overrides.now ?? (() => new Date());
+  const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
   const route = parseRoute(new URL(input.request.url).pathname);
 
   try {
@@ -163,6 +169,12 @@ export async function handleLessonRecordingRequest(
     );
     if (!target) throw new LessonRecordingApiError(404, "not_found");
     if (
+      route.source === "my" &&
+      input.request.headers.get("X-Parrot-Lesson-Revision") !== target.revision
+    ) {
+      throw new LessonRecordingApiError(409, "lesson_changed");
+    }
+    if (
       new TextEncoder().encode(target.targetText).byteLength >
       MAX_TARGET_TEXT_BYTES
     ) {
@@ -194,10 +206,13 @@ export async function handleLessonRecordingRequest(
     const key = lessonRecordingObjectKey(input.identity.userId, route);
     const encoded = lessonRecordingAudioBody(bytes, uploadNonce);
     const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
-    const stored = await bucket.put(key, encoded.body, {
+    const putOptions: R2PutOptions = {
       customMetadata: {
         consentVersion: LESSON_RECORDING_CONSENT_VERSION,
         lessonId: route.lessonId,
+        ...(target.revision === null
+          ? {}
+          : { lessonRevision: target.revision }),
         payloadOffset: String(encoded.payloadOffset),
         recordedAt,
         sceneIndex: String(route.sceneIndex),
@@ -211,7 +226,47 @@ export async function handleLessonRecordingRequest(
         cacheControl: "private, no-store",
         contentType: normalizedContentType,
       },
-    });
+    };
+    let stored: R2Object | null = null;
+    for (let conflict = 0; conflict < MAX_WRITE_CONFLICTS; conflict += 1) {
+      const observed = await reserveLessonRecordingUpload(
+        bucket,
+        key,
+        uploadNonce,
+        wait,
+      );
+      requireAccess(await accessState());
+      if (route.source === "my") {
+        const currentTarget = await resolveLessonRecordingTarget(
+          input.database,
+          input.identity.userId,
+          route,
+        );
+        if (!currentTarget || currentTarget.revision !== target.revision) {
+          throw new LessonRecordingApiError(409, "lesson_changed");
+        }
+      }
+      stored = await putLessonRecordingAudio(
+        bucket,
+        key,
+        encoded.body,
+        putOptions,
+        observed,
+        wait,
+      );
+      if (stored) break;
+      requireAccess(await accessState());
+      if (route.source === "my") {
+        const currentTarget = await resolveLessonRecordingTarget(
+          input.database,
+          input.identity.userId,
+          route,
+        );
+        if (!currentTarget || currentTarget.revision !== target.revision) {
+          throw new LessonRecordingApiError(409, "lesson_changed");
+        }
+      }
+    }
     if (!stored) throw new Error("Lesson recording could not be stored.");
 
     let after: Awaited<ReturnType<typeof accessState>>;
@@ -224,6 +279,7 @@ export async function handleLessonRecordingRequest(
         stored,
         uploadNonce,
         "state-unknown",
+        wait,
       );
       throw error;
     }
@@ -234,6 +290,7 @@ export async function handleLessonRecordingRequest(
         stored,
         uploadNonce,
         after.deletion ? "account-deleting" : "consent-revoked",
+        wait,
       );
       requireAccess(after);
     }
@@ -252,6 +309,7 @@ export async function handleLessonRecordingRequest(
           stored,
           uploadNonce,
           "state-unknown",
+          wait,
         );
         throw error;
       }
@@ -262,6 +320,7 @@ export async function handleLessonRecordingRequest(
           stored,
           uploadNonce,
           "lesson-changed",
+          wait,
         );
         throw new LessonRecordingApiError(409, "lesson_changed");
       }

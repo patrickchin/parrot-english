@@ -5,6 +5,7 @@ import * as storage from "../worker/lesson-recording-storage.ts";
 function pagedBucket(pages) {
   const lists = [];
   const deletions = [];
+  const writes = [];
   return {
     bucket: {
       async list(options) {
@@ -14,14 +15,66 @@ function pagedBucket(pages) {
       async delete(keys) {
         deletions.push(keys);
       },
+      async put(key, _value, options) {
+        writes.push({ key, options });
+        return { etag: `fence-${writes.length}`, key };
+      },
     },
     deletions,
     lists,
+    writes,
   };
 }
 
 describe("lesson recording storage", () => {
-  it("deletes every page only below the encoded owner prefix", async () => {
+  it("does not purge a newer take that replaced the listed object", async () => {
+    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const key = `${prefix}my/lesson-1/scene-0/step-1.audio`;
+    const stale = { etag: "etag-a", key, version: "version-a" };
+    const newer = {
+      customMetadata: { state: "audio", uploadNonce: "upload-b" },
+      etag: "etag-b",
+      key,
+      version: "version-b",
+    };
+    let current = stale;
+    const conditionalWrites = [];
+    const deletions = [];
+    const bucket = {
+      async delete(keys) {
+        deletions.push(keys);
+        current = null;
+      },
+      async list(options) {
+        assert.deepEqual(options, { prefix });
+        const page = { objects: [stale], truncated: false };
+        current = newer;
+        return page;
+      },
+      async put(putKey, _value, options) {
+        conditionalWrites.push({ key: putKey, options });
+        if (options.onlyIf?.etagMatches !== current?.etag) return null;
+        current = {
+          customMetadata: options.customMetadata,
+          etag: "purge-fence",
+          key: putKey,
+          version: "purge-version",
+        };
+        return current;
+      },
+    };
+
+    await storage.deleteAllLessonRecordings(bucket, "user-1");
+
+    assert.strictEqual(current, newer);
+    assert.deepEqual(deletions, []);
+    assert.equal(conditionalWrites.length, 1);
+    assert.deepEqual(conditionalWrites[0].options.onlyIf, {
+      etagMatches: stale.etag,
+    });
+  });
+
+  it("fences every listed object only below the encoded owner prefix", async () => {
     assert.equal(typeof storage.deleteAllLessonRecordings, "function");
     const prefix = "personalized-story-art/user%2Fone/lesson-recordings/";
     const state = pagedBucket(
@@ -29,7 +82,7 @@ describe("lesson recording storage", () => {
         [
           "",
           {
-            objects: [{ key: `${prefix}my/lesson-1/clip-1.webm` }],
+            objects: [{ etag: "etag-1", key: `${prefix}my/lesson-1/clip-1.webm` }],
             truncated: true,
             cursor: "page-2",
           },
@@ -37,7 +90,7 @@ describe("lesson recording storage", () => {
         [
           "page-2",
           {
-            objects: [{ key: `${prefix}my/lesson-2/clip-2.webm` }],
+            objects: [{ etag: "etag-2", key: `${prefix}my/lesson-2/clip-2.webm` }],
             truncated: false,
           },
         ],
@@ -50,13 +103,23 @@ describe("lesson recording storage", () => {
       { prefix },
       { prefix, cursor: "page-2" },
     ]);
-    assert.deepEqual(state.deletions, [
-      [`${prefix}my/lesson-1/clip-1.webm`],
-      [`${prefix}my/lesson-2/clip-2.webm`],
+    assert.deepEqual(state.deletions, []);
+    assert.deepEqual(state.writes.map(({ key, options }) => ({
+      key,
+      onlyIf: options.onlyIf,
+    })), [
+      {
+        key: `${prefix}my/lesson-1/clip-1.webm`,
+        onlyIf: { etagMatches: "etag-1" },
+      },
+      {
+        key: `${prefix}my/lesson-2/clip-2.webm`,
+        onlyIf: { etagMatches: "etag-2" },
+      },
     ]);
   });
 
-  it("deletes only the exact encoded My Lesson subprefix", async () => {
+  it("fences only the exact encoded My Lesson subprefix", async () => {
     assert.equal(typeof storage.deleteLessonRecordingsForLesson, "function");
     const prefix =
       "personalized-story-art/user-1/lesson-recordings/my/lesson%2Fone/";
@@ -65,7 +128,7 @@ describe("lesson recording storage", () => {
         [
           "",
           {
-            objects: [{ key: `${prefix}clip-1.webm` }],
+            objects: [{ etag: "etag-1", key: `${prefix}clip-1.webm` }],
             truncated: false,
           },
         ],
@@ -79,10 +142,17 @@ describe("lesson recording storage", () => {
     );
 
     assert.deepEqual(state.lists, [{ prefix }]);
-    assert.deepEqual(state.deletions, [[`${prefix}clip-1.webm`]]);
+    assert.deepEqual(state.deletions, []);
+    assert.deepEqual(state.writes.map(({ key, options }) => ({
+      key,
+      onlyIf: options.onlyIf,
+    })), [{
+      key: `${prefix}clip-1.webm`,
+      onlyIf: { etagMatches: "etag-1" },
+    }]);
   });
 
-  it("rejects any key returned outside the requested prefix before deleting", async () => {
+  it("rejects any key returned outside the requested prefix before fencing", async () => {
     const state = pagedBucket(
       new Map([
         [
@@ -100,6 +170,7 @@ describe("lesson recording storage", () => {
       /outside the lesson recording prefix/i,
     );
     assert.deepEqual(state.deletions, []);
+    assert.deepEqual(state.writes, []);
   });
 
   it("rejects truncated pages whose cursor does not advance", async () => {
@@ -122,6 +193,7 @@ describe("lesson recording storage", () => {
         /did not advance its cursor/i,
       );
       assert.deepEqual(state.deletions, []);
+      assert.deepEqual(state.writes, []);
     }
 
     const repeated = pagedBucket(
@@ -141,5 +213,6 @@ describe("lesson recording storage", () => {
       /did not advance its cursor/i,
     );
     assert.deepEqual(repeated.deletions, []);
+    assert.deepEqual(repeated.writes, []);
   });
 });

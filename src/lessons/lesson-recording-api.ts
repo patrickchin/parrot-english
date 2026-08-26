@@ -2,6 +2,7 @@ export { loadLessonRecordingConsent } from "../learner-profile/learner-profile-a
 
 export type LessonRecordingSlot = {
   lessonId: string;
+  lessonRevision?: string;
   sceneIndex: number;
   source: "my" | "parrot";
   stepIndex: number;
@@ -14,7 +15,10 @@ export type LessonRecordingRequestOptions = {
 
 export type LessonRecordingSaveResult =
   | { recordedAt: string; saved: true }
-  | { reason: "recording_disabled"; saved: false };
+  | {
+      reason: "lesson_changed" | "recording_disabled";
+      saved: false;
+    };
 
 export class LessonRecordingApiError extends Error {
   readonly code: string;
@@ -36,11 +40,15 @@ export async function saveLessonRecording(
     signal,
   }: LessonRecordingRequestOptions = {},
 ): Promise<LessonRecordingSaveResult> {
+  const headers: Record<string, string> = { "Content-Type": blob.type };
+  if (slot.source === "my" && slot.lessonRevision) {
+    headers["X-Parrot-Lesson-Revision"] = slot.lessonRevision;
+  }
   const response = await request(
     `/api/lesson-recordings/${slot.source}/${encodeURIComponent(slot.lessonId)}/scenes/${slot.sceneIndex}/steps/${slot.stepIndex}`,
     {
       body: blob,
-      headers: { "Content-Type": blob.type },
+      headers,
       method: "PUT",
       signal,
     },
@@ -61,6 +69,9 @@ export async function saveLessonRecording(
     (response.status === 409 && code === "account_deletion_pending")
   ) {
     return { reason: "recording_disabled", saved: false };
+  }
+  if (response.status === 409 && code === "lesson_changed") {
+    return { reason: "lesson_changed", saved: false };
   }
   if (!response.ok) {
     throw new LessonRecordingApiError(

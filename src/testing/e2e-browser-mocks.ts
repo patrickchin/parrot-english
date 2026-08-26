@@ -45,7 +45,13 @@ type E2ELessonCue = {
 type E2ELessonUpload = {
   attempt: number;
   lessonId: string;
-  outcome: "failed" | "held" | "recording_disabled" | "saved";
+  outcome:
+    | "failed"
+    | "held"
+    | "lesson_changed"
+    | "recording_disabled"
+    | "saved";
+  revision: string | null;
   sceneIndex: number;
   size: number;
   source: "my" | "parrot";
@@ -1003,6 +1009,9 @@ async function lessonRecordingResponse(
     ...slot,
     attempt,
     outcome: "saved",
+    revision: new Headers(init?.headers ?? request?.headers).get(
+      "X-Parrot-Lesson-Revision",
+    ),
     size: blob.size,
     type: blob.type,
   };
@@ -1016,6 +1025,10 @@ async function lessonRecordingResponse(
   if (scenario === "account-deletion-pending") {
     record.outcome = "recording_disabled";
     return e2eJson({ error: "account_deletion_pending" }, 409);
+  }
+  if (scenario === "lesson-changed") {
+    record.outcome = "lesson_changed";
+    return e2eJson({ error: "lesson_changed" }, 409);
   }
   if (
     (scenario === "upload-failed" || scenario === "upload-retry-held") &&
@@ -1692,6 +1705,8 @@ const mockLessonSpeechSynthesis = {
       lessonScenario === "held-cue" ||
       lessonScenario === "held-cue-no-consent" ||
       (lessonScenario === "account-deletion-pending" &&
+        utterance.text === "The kite turns.") ||
+      (lessonScenario === "lesson-changed" &&
         utterance.text === "The kite turns.")
     ) {
       pendingLessonPlayback.push(currentDevicePlayback);
