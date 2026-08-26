@@ -35,6 +35,19 @@ test("pull requests run one complete verification job including lifecycle tests"
   assert.equal((workflow.match(/^ {2}verify:/gm) ?? []).length, 1);
 });
 
+test("pull requests install FFmpeg before media integrity tests run", () => {
+  const workflow = readFileSync(verificationUrl, "utf8");
+  const installIndex = workflow.indexOf("name: Install FFmpeg");
+  const testIndex = workflow.indexOf("run: npm test");
+
+  assert.notEqual(installIndex, -1, "Expected FFmpeg installation in CI.");
+  assert.match(
+    workflow.slice(installIndex, testIndex),
+    /sudo apt-get install --yes ffmpeg/,
+  );
+  assert.ok(installIndex < testIndex, "Expected FFmpeg before npm test.");
+});
+
 test("main deployment does not repeat the pull-request verification sequence", () => {
   const workflow = readFileSync(deploymentUrl, "utf8");
 
