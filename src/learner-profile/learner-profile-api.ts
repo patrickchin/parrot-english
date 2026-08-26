@@ -74,7 +74,10 @@ export type LearnerProfileState =
   | BypassOnlyLearnerProfileState;
 
 export type ProfileState = {
-  profile: LearnerProfileSummary;
+  profile: LearnerProfileSummary & {
+    lessonRecordingCleanupPending: boolean;
+    lessonRecordingConsent: boolean;
+  };
   questions: LearnerProfileQuestion[];
   acknowledgment?: LearnerProfileAcknowledgment;
   acknowledgments?: LearnerProfileAcknowledgment[];
@@ -280,6 +283,31 @@ export function saveStoryLevel(
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ storyLevel }),
+    },
+    options,
+  );
+}
+
+export function loadLessonRecordingConsent(
+  options?: LearnerProfileRequestOptions,
+) {
+  return requestJson<{ cleanupPending: boolean; enabled: boolean }>(
+    "/api/lesson-recordings/consent",
+    { method: "GET" },
+    options,
+  );
+}
+
+export function saveLessonRecordingConsent(
+  enabled: boolean,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requestJson<{ cleanupPending: boolean; enabled: boolean }>(
+    "/api/profile/lesson-recording-consent",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
     },
     options,
   );

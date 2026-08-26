@@ -31,6 +31,29 @@ describe("audio playback", () => {
     assert.deepEqual(playedUrls, ["/assets/audio/turn-hello.mp3"]);
   });
 
+  it("sets an explicitly requested saved-audio volume", async () => {
+    let createdAudio;
+
+    await playAudioLine({
+      audioSrc: "/cue.mp3",
+      text: "Hello",
+      volume: 0.28,
+      env: {
+        createAudio() {
+          createdAudio = {
+            play() {
+              globalThis.queueMicrotask(() => this.onended?.());
+              return Promise.resolve();
+            },
+          };
+          return createdAudio;
+        },
+      },
+    });
+
+    assert.equal(createdAudio.volume, 0.28);
+  });
+
   it("pauses and resumes the same saved-audio instance", async () => {
     const events = [];
     let controls;

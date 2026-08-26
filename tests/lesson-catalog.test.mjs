@@ -88,21 +88,34 @@ describe("lesson catalog", () => {
       entries.map(({ id }) => id),
       expectedLessons.map(([id]) => id)
     );
+    const joinInTargets = entries.flatMap(({ lesson }) =>
+      lesson.scenes
+        .flatMap((scene) => scene.steps)
+        .filter((step) => step.speaker === "user")
+        .map((step) => step.dialogue),
+    );
+    assert.equal(joinInTargets.length, 18);
+    assert.equal(new Set(joinInTargets).size, 17);
     entries.forEach(({ lesson }, index) => {
       const [, title, goalPhrases] = expectedLessons[index];
       assert.equal(lesson.title, title);
       assert.equal(lesson.childName, "Bella");
       assert.deepEqual(lesson.goalPhrases, goalPhrases);
-      assert.equal(lesson.scenes.at(-1).steps.at(-1).dialogue, "Great job!");
-
-      const dialogue = lesson.scenes.flatMap((scene) =>
-        scene.steps.flatMap((step) => [
-          step.dialogue,
-          ...Object.entries(step.check ?? {})
-            .filter(([key]) => key !== "maxAttempts")
-            .map(([, response]) => response.dialogue),
-        ]),
+      const steps = lesson.scenes.flatMap((scene) => scene.steps);
+      assert.equal(steps.some((step) => step.check), false);
+      assert.equal(
+        steps.some((step) => /^Let's (copy|ask|thank)/.test(step.dialogue)),
+        false,
       );
+      assert.notEqual(steps.at(-1)?.dialogue, "Great job!");
+
+      for (const [stepIndex, step] of steps.entries()) {
+        if (step.speaker !== "user") continue;
+        assert.equal(steps[stepIndex - 1]?.dialogue, step.dialogue);
+        assert.notEqual(steps[stepIndex - 1]?.speaker, "narrator");
+      }
+
+      const dialogue = steps.map((step) => step.dialogue);
       for (const line of dialogue) {
         assert.equal(
           line.includes(lesson.childName),

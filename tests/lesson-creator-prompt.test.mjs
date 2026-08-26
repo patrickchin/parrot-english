@@ -57,7 +57,8 @@ describe("lesson creator system prompt", () => {
     assert.match(prompt, /one or more scene/i);
     assert.match(prompt, /user speaking steps are optional/i);
     assert.match(prompt, /final step may use any supported speaker/i);
-    assert.match(prompt, /omit check.*without evaluating/i);
+    assert.match(prompt, /omit check for every user step/i);
+    assert.match(prompt, /do not use instructional narrator prompts or attempt feedback/i);
     assert.match(prompt, /omit emotes.*keep/i);
     assert.doesNotMatch(prompt, /lesson may use any language/i);
     assert.doesNotMatch(prompt, /exactly two goal phrases/i);
@@ -73,7 +74,10 @@ describe("lesson creator system prompt", () => {
     assert.equal(lessons[0].scenes.length, 1);
     assert.doesNotMatch(JSON.stringify(lessons[0]), /[\u3400-\u9fff]/u);
     assert.match(lessons[0].scenes[0].steps[0].dialogue, /color/i);
-    assert.equal(lessons[0].scenes[0].steps.at(-1).speaker, "user");
-    assert.ok(lessons[0].scenes[0].steps.at(-1).check);
+    const steps = lessons[0].scenes[0].steps;
+    assert.equal(steps.at(-1).speaker, "user");
+    assert.equal(steps.at(-1).check, undefined);
+    assert.equal(steps.at(-2).speaker, "dolly");
+    assert.equal(steps.at(-2).dialogue, steps.at(-1).dialogue);
   });
 });

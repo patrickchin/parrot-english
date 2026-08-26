@@ -32,7 +32,12 @@ const playerUiModule = await vite
   .catch(() => ({}));
 
 const { FULL_SCENE_LESSONS } = artworkModule;
-const { BoxedFullSceneStage } = playerUiModule;
+const {
+  BoxedFullSceneStage,
+  LessonCompletion,
+  LessonIntroduction,
+  LessonJoinInPrompt,
+} = playerUiModule;
 
 after(async () => vite.close());
 
@@ -96,6 +101,11 @@ function renderStage(scene) {
       image: scene.image,
     }),
   );
+}
+
+function renderPlayerUi(Component, props) {
+  assert.ok(Component, "Expected lesson player UI export");
+  return renderToStaticMarkup(createElement(Component, props));
 }
 
 test("every ready-made lesson has one five-scene artwork set", async () => {
@@ -226,4 +236,58 @@ test("boxed lesson artwork renders as one labelled image without experiment chro
   assert.doesNotMatch(html, /Landscape|Portrait|Wide|Natural size/);
   assert.equal((html.match(/<img\b/g) ?? []).length, 1);
   assert.doesNotMatch(html, /data-character=|lesson-character-slot/);
+});
+
+test("the introduction invites children to watch and join in", () => {
+  const html = renderPlayerUi(LessonIntroduction, {
+    lessonTitle: "Peppa's High Ball",
+    onStart() {},
+    sceneCount: 5,
+  });
+
+  assert.match(html, /<h1[^>]*>Watch and join in<\/h1>/);
+  assert.match(html, /Watch the story/);
+  assert.match(html, /<button[^>]*>[^<]*Let&#x27;s go[^<]*<\/button>/);
+  assert.doesNotMatch(html, /Start lesson|1\. Listen|2\. Talk/);
+});
+
+test("the automatic join-in prompt announces cue-only and microphone modes", () => {
+  const cueOnly = renderPlayerUi(LessonJoinInPrompt, {
+    dialogue: "It is up high!",
+    recording: false,
+  });
+  const recording = renderPlayerUi(LessonJoinInPrompt, {
+    dialogue: "It is up high!",
+    recording: true,
+    reserved: true,
+  });
+
+  for (const html of [cueOnly, recording]) {
+    assert.match(html, /<h2[^>]*>[\s\S]*Join in<\/h2>/);
+    assert.match(html, />It is up high!</);
+    assert.doesNotMatch(html, /Checking|Try again|Great job|Tap to talk|Skip/);
+  }
+  assert.match(cueOnly, /Voices are joining in/);
+  assert.match(recording, /Your microphone is joining in too/);
+});
+
+test("completion reports background saving without scoring the child", () => {
+  const pending = renderPlayerUi(LessonCompletion, {
+    lessonTitle: "Peppa's High Ball",
+    onBack() {},
+    onReplay() {},
+    onRetrySaving() {},
+    saveState: "pending",
+  });
+  const failed = renderPlayerUi(LessonCompletion, {
+    lessonTitle: "Peppa's High Ball",
+    onBack() {},
+    onReplay() {},
+    onRetrySaving() {},
+    saveState: "failed",
+  });
+
+  assert.match(pending, /Saving your voices…/);
+  assert.match(failed, /Try saving again/);
+  assert.doesNotMatch(`${pending}${failed}`, /score|checking|great job/i);
 });

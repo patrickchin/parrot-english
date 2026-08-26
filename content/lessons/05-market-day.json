@@ -16,7 +16,10 @@
       "title": "The Fruit Stand",
       "settingDescription": "Dolly stands behind the fruit counter while Peppa looks at baskets of red apples.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -40,7 +43,10 @@
       "title": "Asking the Price",
       "settingDescription": "Peppa points to the apple basket and price sign as Dolly waits behind the counter.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -51,45 +57,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's ask with Dolly!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "How much is it?",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "How much is it?",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]
@@ -98,7 +70,10 @@
       "title": "Two Coins",
       "settingDescription": "Dolly points to the two-coin sign while Peppa holds two coins beside her.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -122,7 +97,10 @@
       "title": "Choosing Apples",
       "settingDescription": "Peppa looks at two apples on the counter while Dolly listens to her choice.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -133,45 +111,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's copy Dolly!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "I'd like two apples, please.",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "I'd like two apples, please.",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]
@@ -180,7 +124,10 @@
       "title": "The Apples Are Ready",
       "settingDescription": "Dolly gives Peppa two red apples across the counter while they smile.",
       "background": "episode-garden",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -195,14 +142,6 @@
           "dialogue": "Thank you, Dolly!",
           "emotes": {
             "peppa": "talking",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "narrator",
-          "dialogue": "Great job!",
-          "emotes": {
-            "peppa": "happy",
             "dolly": "happy"
           }
         }

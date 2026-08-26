@@ -15,6 +15,7 @@ const GUARDED_REQUESTS = [
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
   ["PUT", "/api/profile/preferences"],
+  ["PUT", "/api/profile/lesson-recording-consent"],
   ["POST", "/api/lessons/my"],
   ["POST", "/api/lessons/my/generate"],
   ["PUT", "/api/lessons/my/lesson-1"],
@@ -24,6 +25,7 @@ const GUARDED_REQUESTS = [
 
 const LEARNER_SAFE_REQUESTS = [
   ["GET", "/api/learner-profile"],
+  ["GET", "/api/lesson-recordings/consent"],
   ["GET", "/api/lessons/my"],
   ["GET", "/api/lessons/my/lesson-1"],
   ["GET", "/api/stories/the-red-ball/personalized-art"],

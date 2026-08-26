@@ -18,6 +18,7 @@ import {
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
+import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import { isLearnerStoryLevelId } from "../lib/story-level.ts";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
@@ -33,6 +34,7 @@ import {
   type LearnerProfileEnrichmentResult,
 } from "./learner-profile-enrichment.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
+import { deleteAllLessonRecordings } from "./lesson-recording-storage.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
@@ -54,6 +56,7 @@ export interface LearnerProfileRequestInput {
 type HandlerDependencies = {
   enrichAnswer: typeof enrichLearnerProfileAnswer;
   now: () => Date;
+  wait: (delay: number) => Promise<void>;
 };
 
 type Repository = ReturnType<typeof createLearnerProfileRepository>;
@@ -224,7 +227,14 @@ function learnerProfileExperienceMode(env: LearnerProfileRequestInput["env"]) {
 
 function profilePayload(profile: Profile) {
   return {
-    profile: clientProfile(profile),
+    profile: {
+      ...clientProfile(profile),
+      lessonRecordingConsent:
+        profile.lessonRecordingConsentVersion ===
+        LESSON_RECORDING_CONSENT_VERSION,
+      lessonRecordingCleanupPending:
+        profile.lessonRecordingCleanupBeforeGeneration !== null,
+    },
     questions: LEARNER_PROFILE_QUESTIONNAIRE.questions.map(serializeQuestion),
   };
 }
@@ -665,10 +675,35 @@ export async function handleLearnerProfileRequest(
   const dependencies: HandlerDependencies = {
     enrichAnswer: enrichLearnerProfileAnswer,
     now: () => new Date(),
+    wait: (delay) => scheduler.wait(delay),
     ...dependencyOverrides,
   };
-  const repository = createLearnerProfileRepository(input.database);
+  const repository = createLearnerProfileRepository(input.database, {
+    now: dependencies.now,
+  });
   const url = new URL(input.request.url);
+
+  async function reconcileLessonRecordingCleanup() {
+    const state = await repository.readLessonRecordingConsentState(
+      input.identity.userId,
+    );
+    if (state.cleanupBeforeGeneration === null) return state;
+    try {
+      await deleteAllLessonRecordings(
+        input.env.PERSONALIZED_STORY_ART_BUCKET,
+        input.identity.userId,
+        state.cleanupBeforeGeneration,
+        dependencies.wait,
+      );
+      await repository.clearLessonRecordingCleanup(
+        input.identity.userId,
+        state.cleanupBeforeGeneration,
+      );
+    } catch {
+      // Durable D1 state keeps cleanup retryable while R2 is unavailable.
+    }
+    return repository.readLessonRecordingConsentState(input.identity.userId);
+  }
 
   try {
     if (url.pathname === "/api/learner-profile/transcribe") {
@@ -818,8 +853,47 @@ export async function handleLearnerProfileRequest(
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "GET") {
+      await repository.loadProfile(input.identity);
+      await reconcileLessonRecordingCleanup();
       const profile = await repository.loadProfile(input.identity);
       return jsonResponse(profilePayload(profile));
+    }
+
+    if (
+      url.pathname === "/api/lesson-recordings/consent" &&
+      input.request.method === "GET"
+    ) {
+      const consent = await repository.readLessonRecordingConsentState(
+        input.identity.userId,
+      );
+      return jsonResponse({
+        cleanupPending: consent.cleanupBeforeGeneration !== null,
+        enabled: consent.enabled,
+      });
+    }
+
+    if (
+      url.pathname === "/api/profile/lesson-recording-consent" &&
+      input.request.method === "PUT"
+    ) {
+      const record = await readJsonRecord(input.request);
+      if (
+        Object.keys(record).length !== 1 ||
+        typeof record.enabled !== "boolean"
+      ) {
+        throw new ApiError(400, "invalid_lesson_recording_consent");
+      }
+      const saved = await repository.saveLessonRecordingConsent(
+        input.identity.userId,
+        record.enabled,
+      );
+      const reconciled = saved.cleanupBeforeGeneration === null
+        ? saved
+        : await reconcileLessonRecordingCleanup();
+      return jsonResponse({
+        cleanupPending: reconciled.cleanupBeforeGeneration !== null,
+        enabled: reconciled.enabled,
+      });
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "PUT") {
@@ -890,7 +964,9 @@ export async function handleLearnerProfileRequest(
       url.pathname === "/api/learner-profile/skip" ||
       url.pathname === "/api/learner-profile/complete" ||
       url.pathname === "/api/profile" ||
-      url.pathname === "/api/profile/preferences";
+      url.pathname === "/api/profile/preferences" ||
+      url.pathname === "/api/lesson-recordings/consent" ||
+      url.pathname === "/api/profile/lesson-recording-consent";
     return jsonResponse(
       { error: recognized ? "method_not_allowed" : "not_found" },
       { status: recognized ? 405 : 404 }

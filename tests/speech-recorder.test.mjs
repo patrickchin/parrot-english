@@ -8,6 +8,9 @@ const startSpeechRecording =
 const recordSpeechClip =
   speechRecorder.recordSpeechClip ??
   (() => Promise.reject(new Error("recordSpeechClip is missing")));
+const requestMicrophoneAccess =
+  speechRecorder.requestMicrophoneAccess ??
+  (() => Promise.reject(new Error("requestMicrophoneAccess is missing")));
 
 describe("recording MIME negotiation", () => {
   it("selects the first supported portable recording type", () => {
@@ -168,6 +171,50 @@ function createRecorderClass({ onStart, startError } = {}) {
 
   return { FakeMediaRecorder, instances };
 }
+
+describe("microphone preflight", () => {
+  it("normalizes a late microphone rejection after cancellation", async () => {
+    const controller = new AbortController();
+    let rejectMicrophone;
+    const pending = requestMicrophoneAccess({
+      MediaRecorder: class FakeMediaRecorder {},
+      getUserMedia: () =>
+        new Promise((_, reject) => {
+          rejectMicrophone = reject;
+        }),
+      signal: controller.signal,
+    });
+
+    await Promise.resolve();
+    controller.abort();
+    const denied = new Error("Permission denied");
+    denied.name = "NotAllowedError";
+    rejectMicrophone(denied);
+
+    await assert.rejects(pending, { name: "AbortError" });
+  });
+
+  it("releases a late microphone stream after cancellation", async () => {
+    const controller = new AbortController();
+    const { stream, track } = createStream();
+    let resolveMicrophone;
+    const pending = requestMicrophoneAccess({
+      MediaRecorder: class FakeMediaRecorder {},
+      getUserMedia: () =>
+        new Promise((resolve) => {
+          resolveMicrophone = resolve;
+        }),
+      signal: controller.signal,
+    });
+
+    await Promise.resolve();
+    controller.abort();
+    resolveMicrophone(stream);
+
+    await assert.rejects(pending, { name: "AbortError" });
+    assert.equal(track.stopped, true);
+  });
+});
 
 describe("hold-to-talk speech recorder", () => {
   it("does not request microphone access when recording is unsupported", async () => {

@@ -20,10 +20,6 @@ import { LessonScenePreview } from "./LessonScenePreview";
 
 type LessonScene = Lesson["scenes"][number];
 type LessonStep = LessonScene["steps"][number];
-type LessonCheck = NonNullable<LessonStep["check"]>;
-type LessonResponse = LessonCheck["correct"];
-type ResponseKey =
-  "correct" | "incorrect" | "incorrectFinal" | "noInput" | "noInputFinal";
 
 const BACKGROUNDS = [...VISUAL_CATALOG.backgrounds.values()];
 const CHARACTERS = [...VISUAL_CATALOG.characters.values()];
@@ -33,7 +29,6 @@ const SPEAKERS = [
   ...CHARACTERS.map(({ id, name }) => ({ id, label: name })),
   { id: "user", label: "Learner" },
 ] as const;
-const RESPONSE_SPEAKERS = SPEAKERS.filter(({ id }) => id !== "user");
 
 function replaceAt<Value>(values: Value[], index: number, value: Value) {
   return values.map((current, currentIndex) =>
@@ -55,7 +50,7 @@ function withoutAt<Value>(values: Value[], index: number) {
 
 function createStep(): LessonStep {
   return {
-    speaker: "narrator",
+    speaker: "peppa",
     dialogue: "",
     emotes: {},
   };
@@ -71,26 +66,6 @@ function createScene(index: number): LessonScene {
   };
 }
 
-function createResponse(
-  dialogue: string,
-  after: LessonResponse["after"],
-): LessonResponse {
-  return {
-    speaker: "narrator",
-    dialogue,
-    after,
-  };
-}
-
-function createCheck(): LessonCheck {
-  return {
-    maxAttempts: 2,
-    correct: createResponse("Great job!", "continue"),
-    incorrect: createResponse("Almost! Try again.", "retry"),
-    incorrectFinal: createResponse("Good try! Let's keep going.", "continue"),
-  };
-}
-
 function withoutCharacterEmote(
   emotes: Record<string, string> | undefined,
   characterId: string,
@@ -99,39 +74,6 @@ function withoutCharacterEmote(
   const next = { ...emotes };
   delete next[characterId];
   return next;
-}
-
-function withoutCharacterResponseEmote(
-  response: LessonResponse | undefined,
-  characterId: string,
-) {
-  return response
-    ? {
-        ...response,
-        emotes: withoutCharacterEmote(response.emotes, characterId),
-      }
-    : response;
-}
-
-function withoutCharacterCheckEmotes(
-  check: LessonCheck | undefined,
-  characterId: string,
-) {
-  if (!check) return check;
-  return {
-    ...check,
-    correct: withoutCharacterResponseEmote(check.correct, characterId)!,
-    incorrect: withoutCharacterResponseEmote(check.incorrect, characterId)!,
-    incorrectFinal: withoutCharacterResponseEmote(
-      check.incorrectFinal,
-      characterId,
-    )!,
-    noInput: withoutCharacterResponseEmote(check.noInput, characterId),
-    noInputFinal: withoutCharacterResponseEmote(
-      check.noInputFinal,
-      characterId,
-    ),
-  };
 }
 
 function MoodFields({
@@ -229,229 +171,6 @@ function MoodFields({
         );
       })}
     </div>
-  );
-}
-
-function ResponseEditor({
-  allowRetry = false,
-  characters,
-  disabled,
-  idPrefix,
-  onChange,
-  response,
-  title,
-}: {
-  allowRetry?: boolean;
-  characters: string[];
-  disabled: boolean;
-  idPrefix: string;
-  onChange: (response: LessonResponse) => void;
-  response: LessonResponse;
-  title: string;
-}) {
-  return (
-    <fieldset className="grid min-w-0 gap-3 rounded-2xl border-3 border-sky-100 bg-white p-4">
-      <legend className="px-2 text-lg font-black text-brand-navy">
-        {title}
-      </legend>
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)]">
-        <label className="grid gap-1 font-bold text-slate-700">
-          <span>Speaker</span>
-          <select
-            className={fieldClassName()}
-            disabled={disabled}
-            id={`${idPrefix}-speaker`}
-            onChange={(event) =>
-              onChange({
-                ...response,
-                speaker: event.currentTarget.value as LessonResponse["speaker"],
-              })
-            }
-            value={response.speaker}
-          >
-            {RESPONSE_SPEAKERS.map(({ id, label }) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 font-bold text-slate-700">
-          <span>Response</span>
-          <input
-            className={fieldClassName()}
-            disabled={disabled}
-            id={`${idPrefix}-dialogue`}
-            onChange={(event) =>
-              onChange({ ...response, dialogue: event.currentTarget.value })
-            }
-            required
-            type="text"
-            value={response.dialogue}
-          />
-        </label>
-      </div>
-      {allowRetry ? (
-        <label className="grid gap-1 font-bold text-slate-700 sm:max-w-xs">
-          <span>Then</span>
-          <select
-            className={fieldClassName()}
-            disabled={disabled}
-            id={`${idPrefix}-after`}
-            onChange={(event) =>
-              onChange({
-                ...response,
-                after: event.currentTarget.value as LessonResponse["after"],
-              })
-            }
-            value={response.after}
-          >
-            <option value="retry">Try the line again</option>
-            <option value="continue">Continue the lesson</option>
-          </select>
-        </label>
-      ) : null}
-      <MoodFields
-        characters={characters}
-        disabled={disabled}
-        emotes={response.emotes}
-        idPrefix={idPrefix}
-        onChange={(emotes) => onChange({ ...response, emotes })}
-      />
-    </fieldset>
-  );
-}
-
-function CheckEditor({
-  characters,
-  check,
-  disabled,
-  idPrefix,
-  onChange,
-}: {
-  characters: string[];
-  check: LessonCheck;
-  disabled: boolean;
-  idPrefix: string;
-  onChange: (check: LessonCheck) => void;
-}) {
-  const hasNoInputResponses = Boolean(check.noInput || check.noInputFinal);
-
-  function updateResponse(key: ResponseKey, response: LessonResponse) {
-    onChange({ ...check, [key]: response });
-  }
-
-  return (
-    <details className="rounded-2xl border-3 border-violet-200 bg-violet-50 p-4">
-      <summary className="cursor-pointer font-black text-violet-950 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink">
-        Speaking feedback
-      </summary>
-      <div className="mt-4 grid gap-4">
-        <label className="grid gap-1 font-bold text-slate-700 sm:max-w-xs">
-          <span>Attempts before moving on</span>
-          <select
-            className={fieldClassName()}
-            disabled={disabled}
-            id={`${idPrefix}-attempts`}
-            onChange={(event) =>
-              onChange({
-                ...check,
-                maxAttempts: Number(event.currentTarget.value),
-              })
-            }
-            value={check.maxAttempts}
-          >
-            {[1, 2, 3, 4, 5].map((attempts) => (
-              <option key={attempts} value={attempts}>
-                {attempts}
-              </option>
-            ))}
-          </select>
-        </label>
-        <ResponseEditor
-          characters={characters}
-          disabled={disabled}
-          idPrefix={`${idPrefix}-correct`}
-          onChange={(response) => updateResponse("correct", response)}
-          response={check.correct}
-          title="When correct"
-        />
-        <ResponseEditor
-          allowRetry
-          characters={characters}
-          disabled={disabled}
-          idPrefix={`${idPrefix}-incorrect`}
-          onChange={(response) => updateResponse("incorrect", response)}
-          response={check.incorrect}
-          title="When they should try again"
-        />
-        <ResponseEditor
-          characters={characters}
-          disabled={disabled}
-          idPrefix={`${idPrefix}-incorrect-final`}
-          onChange={(response) => updateResponse("incorrectFinal", response)}
-          response={check.incorrectFinal}
-          title="After the final try"
-        />
-        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl bg-white px-4 py-2 font-black text-slate-700">
-          <input
-            checked={hasNoInputResponses}
-            className="size-5 accent-brand-navy"
-            disabled={disabled}
-            onChange={(event) => {
-              if (event.currentTarget.checked) {
-                onChange({
-                  ...check,
-                  noInput:
-                    check.noInput ??
-                    createResponse("I couldn't hear you. Try again.", "retry"),
-                  noInputFinal:
-                    check.noInputFinal ??
-                    createResponse(
-                      "That's okay. Let's keep going.",
-                      "continue",
-                    ),
-                });
-              } else {
-                const next = { ...check };
-                delete next.noInput;
-                delete next.noInputFinal;
-                onChange(next);
-              }
-            }}
-            type="checkbox"
-          />
-          Use separate feedback when no speech is heard
-        </label>
-        {hasNoInputResponses ? (
-          <>
-            <ResponseEditor
-              allowRetry
-              characters={characters}
-              disabled={disabled}
-              idPrefix={`${idPrefix}-no-input`}
-              onChange={(response) => updateResponse("noInput", response)}
-              response={
-                check.noInput ??
-                createResponse("I couldn't hear you. Try again.", "retry")
-              }
-              title="When no speech is heard"
-            />
-            <ResponseEditor
-              characters={characters}
-              disabled={disabled}
-              idPrefix={`${idPrefix}-no-input-final`}
-              onChange={(response) => updateResponse("noInputFinal", response)}
-              response={
-                check.noInputFinal ??
-                createResponse("That's okay. Let's keep going.", "continue")
-              }
-              title="After the final silent try"
-            />
-          </>
-        ) : null}
-      </div>
-    </details>
   );
 }
 
@@ -614,42 +333,6 @@ function DialogueEditor({
         onChange={(emotes) => onChange({ ...step, emotes })}
       />
 
-      {step.speaker === "user" ? (
-        <div className="grid gap-3">
-          <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl bg-white px-4 py-2 font-black text-slate-700">
-            <input
-              checked={Boolean(step.check)}
-              className="size-5 accent-brand-navy"
-              disabled={disabled}
-              onChange={(event) => {
-                if (event.currentTarget.checked) {
-                  onChange({ ...step, check: step.check ?? createCheck() });
-                } else {
-                  const next = { ...step };
-                  delete next.check;
-                  onChange(next);
-                }
-              }}
-              type="checkbox"
-            />
-            Check the learner's pronunciation
-          </label>
-          {step.check ? (
-            <CheckEditor
-              characters={scene.characters}
-              check={step.check}
-              disabled={disabled}
-              idPrefix={`${idPrefix}-check`}
-              onChange={(check) => onChange({ ...step, check })}
-            />
-          ) : (
-            <p className="m-0 rounded-2xl bg-white px-4 py-3 font-bold leading-relaxed text-slate-600">
-              The learner records this line, then the lesson continues without
-              scoring it.
-            </p>
-          )}
-        </div>
-      ) : null}
     </fieldset>
   );
 }
@@ -699,7 +382,6 @@ function SceneEditor({
       steps: scene.steps.map((step) => ({
         ...step,
         emotes: withoutCharacterEmote(step.emotes, characterId),
-        check: withoutCharacterCheckEmotes(step.check, characterId),
       })),
     });
   }

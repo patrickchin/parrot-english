@@ -16,7 +16,10 @@
       "title": "The Story Ends",
       "settingDescription": "Dolly closes the storybook while Peppa rests on the soft blanket.",
       "background": "meadow-evening",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -40,7 +43,10 @@
       "title": "A Quiet Evening",
       "settingDescription": "The moon shines over the blanket as Peppa and Dolly sit near the warm lantern.",
       "background": "meadow-evening",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -64,7 +70,10 @@
       "title": "Peppa Feels Sleepy",
       "settingDescription": "Peppa rests her head near the pillow while Dolly listens beside her.",
       "background": "meadow-evening",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -75,45 +84,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's copy Dolly!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "I'm sleepy.",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "I'm sleepy.",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]
@@ -122,7 +97,10 @@
       "title": "The Blanket Is Ready",
       "settingDescription": "Peppa lies beneath the soft blanket while Dolly sits quietly beside the storybook.",
       "background": "meadow-evening",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -146,7 +124,10 @@
       "title": "Good Night",
       "settingDescription": "Peppa closes her eyes under the blanket while Dolly sits beside her in the lantern light.",
       "background": "meadow-evening",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -157,53 +138,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's copy Dolly!",
-          "emotes": {
-            "peppa": "happy",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "Good night!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "Good night!",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
-          }
-        },
-        {
-          "speaker": "narrator",
-          "dialogue": "Great job!",
-          "emotes": {
-            "peppa": "happy",
-            "dolly": "happy"
           }
         }
       ]

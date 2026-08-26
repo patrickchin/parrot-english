@@ -269,8 +269,20 @@ export function AboutDialog({
               and profile editing can.
             </li>
             <li>
-              Voice services process audio during an activity. Raw audio is not
-              added to the Parrot account.
+              Conversation and learner-profile voice services process audio
+              during those activities, but Parrot does not save that activity
+              audio to the account.
+            </li>
+            <li>
+              With a grown-up&apos;s permission, Five Little Ducks saves private
+              voice clips to the account. A new take replaces the saved clip for
+              that line, and the grown-up can delete every saved clip.
+            </li>
+            <li>
+              With guardian permission, lessons save one private voice clip for
+              each join-in moment. A new take replaces the previous take for
+              that moment. Parrot does not score or transcribe these clips yet.
+              Stopping lesson recording or deleting the account deletes them.
             </li>
             <li>
               If a grown-up chooses story art, a cropped photo is sent to
@@ -290,12 +302,15 @@ export function AboutDialog({
         >
           <p className="m-0">
             A child can finish a conversation at any time. Use Learner profile
-            to change saved details. Delete optional art on its story page.
+            to change saved details or stop and delete lesson voice recordings.
+            Delete optional art on its story page and saved Five Little Ducks
+            clips inside that activity.
           </p>
           <p className="m-0">
             Delete account removes the account, learner profile, custom lessons,
-            saved conversation text, and private story art from Parrot. A small
-            deletion marker stays so old private art cannot return.
+            saved conversation text, Five Little Ducks voice clips, lesson voice
+            recordings, and private story art from Parrot. A small deletion
+            marker stays so old private art cannot return.
           </p>
         </AboutSection>
 

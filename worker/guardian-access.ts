@@ -183,6 +183,9 @@ export function requiresGuardianAccess(pathname: string, method: string) {
   if (pathname === "/api/profile/preferences") {
     return method === "PUT";
   }
+  if (pathname === "/api/profile/lesson-recording-consent") {
+    return method === "PUT";
+  }
   if (pathname === "/api/lessons/my") {
     return method === "POST";
   }

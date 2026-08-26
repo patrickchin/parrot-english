@@ -3,6 +3,7 @@ type AudioLike = {
   onerror?: ((event: Event) => void) | null;
   pause?: () => void;
   play: () => Promise<void>;
+  volume?: number;
 };
 
 export type AudioPlaybackEnvironment = {
@@ -21,6 +22,7 @@ export type AssetAudioLine = {
   pauseAfterMs?: number;
   style?: "character";
   text: string;
+  volume?: number;
 };
 
 export type PlayAudioLineOptions = AssetAudioLine & {
@@ -93,8 +95,10 @@ async function playAudioUrl(
   audioUrl: string,
   signal?: AbortSignal,
   onPlaybackControl?: (control: PlaybackControl | null) => void,
+  volume = 1,
 ) {
   const audio = env.createAudio(audioUrl);
+  audio.volume = volume;
 
   await new Promise<void>((resolve, reject) => {
     if (signal?.aborted) {
@@ -160,12 +164,13 @@ export async function playAudioLine({
   env = getBrowserEnvironment(),
   onPlaybackControl,
   signal,
+  volume,
 }: PlayAudioLineOptions): Promise<void> {
   if (!audioSrc) {
     throw new Error("Static audio source is missing.");
   }
 
-  await playAudioUrl(env, audioSrc, signal, onPlaybackControl);
+  await playAudioUrl(env, audioSrc, signal, onPlaybackControl, volume);
 }
 
 export async function playAudioSequence({

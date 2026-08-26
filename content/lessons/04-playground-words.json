@@ -16,7 +16,10 @@
       "title": "Dolly on the Swing",
       "settingDescription": "Dolly sits on the swing while Peppa waits on the grass nearby.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -40,7 +43,10 @@
       "title": "Peppa Waits",
       "settingDescription": "Peppa watches from beside the slide while Dolly swings.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -64,7 +70,10 @@
       "title": "Asking for a Turn",
       "settingDescription": "Peppa faces Dolly beside the swing on the soft grass.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -75,45 +84,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's ask with Dolly!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "Can I have a turn?",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "Can I have a turn?",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
           }
         }
       ]
@@ -122,7 +97,10 @@
       "title": "Peppa's Turn",
       "settingDescription": "Dolly steps away from the swing as Peppa moves toward it.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "dolly",
@@ -146,7 +124,10 @@
       "title": "Playing Together",
       "settingDescription": "Peppa stands by the swing and invites Dolly to continue playing around the playground.",
       "background": "meadow-day",
-      "characters": ["peppa", "dolly"],
+      "characters": [
+        "peppa",
+        "dolly"
+      ],
       "steps": [
         {
           "speaker": "peppa",
@@ -157,53 +138,11 @@
           }
         },
         {
-          "speaker": "narrator",
-          "dialogue": "Let's copy Dolly!",
-          "emotes": {
-            "peppa": "happy",
-            "dolly": "happy"
-          }
-        },
-        {
-          "speaker": "dolly",
-          "dialogue": "Let's play together!",
-          "emotes": {
-            "peppa": "listening",
-            "dolly": "talking"
-          }
-        },
-        {
           "speaker": "user",
           "dialogue": "Let's play together!",
           "emotes": {
             "peppa": "listening",
             "dolly": "listening"
-          },
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "narrator",
-              "dialogue": "Great job!",
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Almost! Let's keep going.",
-              "after": "continue"
-            }
-          }
-        },
-        {
-          "speaker": "narrator",
-          "dialogue": "Great job!",
-          "emotes": {
-            "peppa": "happy",
-            "dolly": "happy"
           }
         }
       ]

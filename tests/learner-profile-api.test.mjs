@@ -138,6 +138,38 @@ describe("learnerProfile browser API", () => {
     });
   });
 
+  it("reads learner-safe recording consent and saves the guardian choice", async () => {
+    assert.equal(typeof learnerProfileApi.loadLessonRecordingConsent, "function");
+    assert.equal(typeof learnerProfileApi.saveLessonRecordingConsent, "function");
+
+    const loaded = jsonFetch({ cleanupPending: true, enabled: false });
+    assert.deepEqual(
+      await learnerProfileApi.loadLessonRecordingConsent({ fetch: loaded.fetch }),
+      { cleanupPending: true, enabled: false },
+    );
+    assert.deepEqual(loaded.calls[0], [
+      "/api/lesson-recordings/consent",
+      { method: "GET", signal: undefined },
+    ]);
+
+    const saved = jsonFetch({ cleanupPending: false, enabled: true });
+    assert.deepEqual(
+      await learnerProfileApi.saveLessonRecordingConsent(true, {
+        fetch: saved.fetch,
+      }),
+      { cleanupPending: false, enabled: true },
+    );
+    assert.deepEqual(saved.calls[0], [
+      "/api/profile/lesson-recording-consent",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: '{"enabled":true}',
+        signal: undefined,
+      },
+    ]);
+  });
+
   it("posts skip and completion transitions", async () => {
     const skipped = jsonFetch({ canBypass: true });
     await skipLearnerProfile({ fetch: skipped.fetch });
