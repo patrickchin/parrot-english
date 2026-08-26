@@ -25,6 +25,7 @@ export type PersonalizedStoryArtMetadata = {
 
 export type PersonalizedStoryArtRequestOptions = {
   fetch?: typeof globalThis.fetch;
+  learnerProfileId?: string;
   normalization?: PersonalizedStoryArtNormalizationDependencies;
   signal?: AbortSignal;
 };
@@ -85,6 +86,7 @@ function emptyMetadata(): PersonalizedStoryArtMetadata {
 function normalizeArtwork(
   value: unknown,
   storyId: string,
+  learnerProfileId?: string,
 ): PersonalizedStoryArtwork | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as { alt?: unknown; src?: unknown };
@@ -99,7 +101,31 @@ function normalizeArtwork(
   const src = candidate.src.trim();
   const expectedPath = `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset`;
   const suffix = src.slice(expectedPath.length);
-  if (!src.startsWith(expectedPath) || (suffix !== "" && !/^\?v=\d+$/.test(suffix))) {
+  if (!src.startsWith(expectedPath)) {
+    return null;
+  }
+  if (suffix === "") {
+    return learnerProfileId === undefined
+      ? { alt: candidate.alt.trim(), src }
+      : null;
+  }
+  if (!suffix.startsWith("?")) return null;
+  const searchParams = new URLSearchParams(suffix.slice(1));
+  if (`?${searchParams}` !== suffix) return null;
+  const entries = [...searchParams.entries()];
+  const hasVersion = entries[0]?.[0] === "v" && /^\d+$/.test(entries[0][1]);
+  if (!hasVersion) return null;
+  if (entries.length === 1) {
+    return learnerProfileId === undefined
+      ? { alt: candidate.alt.trim(), src }
+      : null;
+  }
+  if (
+    entries.length !== 2 ||
+    entries[1][0] !== "learnerProfileId" ||
+    !entries[1][1].trim() ||
+    (learnerProfileId !== undefined && entries[1][1] !== learnerProfileId)
+  ) {
     return null;
   }
   return { alt: candidate.alt.trim(), src };
@@ -107,6 +133,7 @@ function normalizeArtwork(
 
 export function parsePersonalizedStoryArtMetadata(
   payload: unknown,
+  learnerProfileId?: string,
 ): PersonalizedStoryArtMetadata {
   if (!payload || typeof payload !== "object") {
     return emptyMetadata();
@@ -128,7 +155,7 @@ export function parsePersonalizedStoryArtMetadata(
 
       const pages: Record<string, PersonalizedStoryArtwork> = {};
       for (const [pageId, pageValue] of Object.entries(pageContainer)) {
-        const artwork = normalizeArtwork(pageValue, storyId);
+        const artwork = normalizeArtwork(pageValue, storyId, learnerProfileId);
         if (artwork) pages[pageId] = artwork;
       }
 
@@ -166,15 +193,27 @@ function getStoryArtPath(storyId: string) {
   return `/api/stories/${encodeURIComponent(storyId)}/personalized-art`;
 }
 
+function appendLearnerProfileTarget(
+  path: string,
+  learnerProfileId: string | undefined,
+) {
+  if (learnerProfileId === undefined) return path;
+  return `${path}?${new URLSearchParams({ learnerProfileId })}`;
+}
+
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
   {
     fetch: request = globalThis.fetch,
+    learnerProfileId,
     signal,
   }: PersonalizedStoryArtRequestOptions = {},
 ) {
-  const response = await request(path, { ...init, signal });
+  const response = await request(
+    appendLearnerProfileTarget(path, learnerProfileId),
+    { ...init, signal },
+  );
   let payload: unknown;
   try {
     payload = await response.json();
@@ -211,7 +250,10 @@ export async function loadPersonalizedStoryArt(
     { method: "GET" },
     options,
   );
-  return parsePersonalizedStoryArtMetadata(payload);
+  return parsePersonalizedStoryArtMetadata(
+    payload,
+    options?.learnerProfileId,
+  );
 }
 
 function defaultCreateCanvas(width: number, height: number): CanvasLike | null {
@@ -374,7 +416,10 @@ export async function generatePersonalizedStoryArt(
     },
     options,
   );
-  return parsePersonalizedStoryArtMetadata(payload);
+  return parsePersonalizedStoryArtMetadata(
+    payload,
+    options?.learnerProfileId,
+  );
 }
 
 export async function removePersonalizedStoryArt(

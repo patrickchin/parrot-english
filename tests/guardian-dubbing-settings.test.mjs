@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { act, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter, useLocation } from "react-router";
+import { MemoryRouter } from "react-router";
 import test, { after } from "node:test";
 import { createServer } from "vite";
 import {
@@ -28,6 +28,42 @@ const { GuardianDubbingSettings, GuardianDubbingSettingsView } = await vite
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
   "/src/auth/GuardianAccess.tsx",
 );
+
+function learnerRoster() {
+  return {
+    activeProfileId: "learner-mia",
+    profiles: [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ],
+  };
+}
+
+function readyTarget(learnerProfileId = "learner-mia", learnerName = "Mia") {
+  const roster = learnerRoster();
+  return {
+    activeProfileId: roster.activeProfileId,
+    error: "",
+    learnerName,
+    learnerProfileId,
+    phase: "ready",
+    profiles: roster.profiles,
+    retry() {},
+    select() {},
+  };
+}
 
 test.afterEach(async () => {
   await cleanupMountedRoots();
@@ -58,14 +94,13 @@ function renderView(overrides = {}) {
         error: "",
         hasAccepted: false,
         isLoading: false,
-        learnerName: "Mia",
         mutation: null,
         onAcceptedChange() {},
         onDelete() {},
         onGrant() {},
         onRetry() {},
-        onSwitchToLearner() {},
         savedCount: 0,
+        target: readyTarget(),
         ...overrides,
       }),
     ),
@@ -83,7 +118,8 @@ function textFromMarkup(markup) {
 test("guardian settings owns voice consent and deletion", () => {
   const disabled = renderView({ consentState: "not_granted" });
   const disabledText = textFromMarkup(disabled);
-  assert.match(disabledText, /Managing Mia/);
+  assert.match(disabledText, /Editing settings for Mia/);
+  assert.match(disabledText, /Noah/);
   assert.match(disabled, /Allow voice dubbing/);
   assert.match(disabledText, /I am Mia's guardian/);
   assert.match(disabledText, /Mia's private voice clips/);
@@ -93,7 +129,8 @@ test("guardian settings owns voice consent and deletion", () => {
   const enabled = renderView({ consentState: "granted", savedCount: 4 });
   const enabledText = textFromMarkup(enabled);
   assert.match(enabled, /4 of 24 lines saved/);
-  assert.match(enabledText, /Switch to Mia and start dubbing/);
+  assert.match(enabledText, /Manage learners/);
+  assert.doesNotMatch(enabledText, /Switch to Mia and start dubbing/);
   assert.match(
     enabledText,
     /Turn off Mia's voice dubbing and delete saved clips/,
@@ -127,9 +164,6 @@ test("guardian settings exposes progress and recovery states accessibly", () => 
 
   const deleting = renderView({ consentState: "granted", mutation: "delete" });
   assert.match(deleting, /Removing voice clips…/);
-
-  const switching = renderView({ consentState: "granted", mutation: "switch" });
-  assert.match(textFromMarkup(switching), /Switching to Mia…/);
 });
 
 function dubStatus(consentState, savedCount = 0) {
@@ -144,6 +178,22 @@ function dubStatus(consentState, savedCount = 0) {
       saved: index < savedCount,
     })),
     recordingEnabled: consentState === "granted",
+  };
+}
+
+function installDubbingFetch(handler) {
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (
+      typeof path === "string" &&
+      path.startsWith("/api/dubs/five-little-ducks-v2") &&
+      path.endsWith("?learnerProfileId=learner-mia")
+    ) {
+      return handler(path, init);
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
 }
 
@@ -163,15 +213,6 @@ function GuardianProvider({ children, lockGuardianAccess }) {
   return createElement(Provider, { sessionIdentity: "user-1" }, children);
 }
 
-function LocationProbe() {
-  const location = useLocation();
-  return createElement(
-    "output",
-    { "aria-label": "Current route" },
-    location.pathname,
-  );
-}
-
 function button(container, label) {
   const match = [...container.querySelectorAll("button")].find(
     (candidate) => candidate.textContent === label,
@@ -184,7 +225,7 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
   const pendingGrant = deferred();
   let consentState = "not_granted";
   let grantCalls = 0;
-  globalThis.fetch = async (_input, init = {}) => {
+  installDubbingFetch(async (_input, init = {}) => {
     if (init.method === "PUT") {
       grantCalls += 1;
       consentState = "granted";
@@ -192,7 +233,7 @@ test("grant requires attestation, coalesces clicks, and reloads granted status",
       return new Response(null, { status: 204 });
     }
     return Response.json(dubStatus(consentState));
-  };
+  });
 
   const container = await mountStrict(
     createElement(
@@ -237,7 +278,7 @@ test("a committed grant with a lost response reloads authoritative granted statu
   let loadFails = true;
   let consentState = "not_granted";
   let getCalls = 0;
-  globalThis.fetch = async (_input, init = {}) => {
+  installDubbingFetch(async (_input, init = {}) => {
     if (init.method === "PUT") {
       consentState = "granted";
       throw new Error("Response lost.");
@@ -246,7 +287,7 @@ test("a committed grant with a lost response reloads authoritative granted statu
     return loadFails
       ? new Response(null, { status: 500 })
       : Response.json(dubStatus(consentState));
-  };
+  });
 
   const container = await mountStrict(
     createElement(
@@ -287,14 +328,14 @@ test("a committed grant with a lost response reloads authoritative granted statu
 test("failed cleanup reloads revoking status and offers a retry", async () => {
   let consentState = "granted";
   let deleteCalls = 0;
-  globalThis.fetch = async (_input, init = {}) => {
+  installDubbingFetch(async (_input, init = {}) => {
     if (init.method === "DELETE") {
       deleteCalls += 1;
       consentState = "revoking";
       return new Response(null, { status: 500 });
     }
     return Response.json(dubStatus(consentState, 4));
-  };
+  });
 
   const container = await mountStrict(
     createElement(
@@ -338,7 +379,7 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
 test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
   let cleanupRequired = true;
   let deleteCalls = 0;
-  globalThis.fetch = async (_input, init = {}) => {
+  installDubbingFetch(async (_input, init = {}) => {
     if (init.method === "DELETE") {
       deleteCalls += 1;
       if (deleteCalls === 1) return new Response(null, { status: 503 });
@@ -348,7 +389,7 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
     return cleanupRequired
       ? Response.json({ error: "dub_reset_in_progress" }, { status: 409 })
       : Response.json(dubStatus("not_granted"));
-  };
+  });
 
   const container = await mountStrict(
     createElement(
@@ -394,79 +435,12 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
   assert.doesNotMatch(container.textContent, /Finish removing voice clips/);
 });
 
-test("switch coalesces overlapping activations and stays recoverable after lock failure", async () => {
-  const pendingLock = deferred();
-  let lockCalls = 0;
-  globalThis.fetch = async () => Response.json(dubStatus("granted", 4));
-
-  const container = await mountStrict(
-    createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/dubbing"] },
-      createElement(
-        GuardianProvider,
-        {
-          async lockGuardianAccess() {
-            lockCalls += 1;
-            if (lockCalls === 1) {
-              await pendingLock.promise;
-              throw new Error("Lock failed.");
-            }
-            return { mode: "learner" };
-          },
-        },
-        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
-        createElement(LocationProbe),
-      ),
-    ),
-  );
-  await waitFor(() =>
-    assert.ok(button(container, "Switch to Mia and start dubbing")),
-  );
-
-  const switchButton = button(container, "Switch to Mia and start dubbing");
-  await act(() => {
-    switchButton.click();
-    switchButton.disabled = false;
-    switchButton.click();
-    pendingLock.resolve();
-  });
-  assert.equal(lockCalls, 1);
-  await waitFor(() =>
-    assert.match(
-      container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Could not lock guardian mode/,
-    ),
-  );
-  assert.equal(
-    container.querySelector('output[aria-label="Current route"]')?.textContent,
-    "/guardian/dubbing",
-  );
-  assert.equal(
-    Boolean(
-      [...container.querySelectorAll("button")].find(
-        (candidate) => candidate.textContent === "Try again",
-      ),
-    ),
-    false,
-  );
-
-  await click(button(container, "Switch to Mia and start dubbing"));
-  await waitFor(() =>
-    assert.equal(
-      container.querySelector('output[aria-label="Current route"]')
-        ?.textContent,
-      "/dubs/five-little-ducks",
-    ),
-  );
-});
-
 test("unmount aborts an unfinished authoritative status load", async () => {
   const signals = [];
-  globalThis.fetch = async (_input, init = {}) => {
+  installDubbingFetch(async (_input, init = {}) => {
     signals.push(init.signal);
     return new Promise(() => {});
-  };
+  });
 
   await mountStrict(
     createElement(
@@ -484,4 +458,92 @@ test("unmount aborts an unfinished authoritative status load", async () => {
   await waitFor(() => assert.ok(signals.length > 0));
   await cleanupMountedRoots();
   assert.ok(signals.every((signal) => signal.aborted));
+});
+
+test("loads and grants Noah's dubbing through explicit target requests only", async () => {
+  const requests = [];
+  let miaConsent = "not_granted";
+  let noahConsent = "not_granted";
+  globalThis.fetch = async (path, init = {}) => {
+    const method = init.method ?? "GET";
+    requests.push({ method, path });
+    if (path === "/api/learner-profiles") {
+      return Response.json({
+        activeProfileId: "learner-mia",
+        profiles: [
+          {
+            age: 8,
+            createdAt: "2026-08-01T08:00:00.000Z",
+            id: "learner-mia",
+            name: "Mia",
+            profileStatus: "completed",
+          },
+          {
+            age: 10,
+            createdAt: "2026-08-02T08:00:00.000Z",
+            id: "learner-noah",
+            name: "Noah",
+            profileStatus: "completed",
+          },
+        ],
+      });
+    }
+    const targeted =
+      path ===
+      "/api/dubs/five-little-ducks-v2/consent?learnerProfileId=learner-noah";
+    if (
+      (targeted || path === "/api/dubs/five-little-ducks-v2/consent") &&
+      method === "PUT"
+    ) {
+      if (targeted) noahConsent = "granted";
+      else miaConsent = "granted";
+      return new Response(null, { status: 204 });
+    }
+    if (
+      path === "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-noah"
+    ) {
+      return Response.json(dubStatus(noahConsent));
+    }
+    if (path === "/api/dubs/five-little-ducks-v2") {
+      return Response.json(dubStatus(miaConsent));
+    }
+    throw new Error(`Unexpected request: ${method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      {
+        initialEntries: ["/guardian/dubbing?learnerProfileId=learner-noah"],
+      },
+      createElement(
+        GuardianProvider,
+        { lockGuardianAccess: async () => ({ mode: "learner" }) },
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
+      ),
+    ),
+  );
+
+  await waitFor(() =>
+    assert.match(container.textContent, /Editing settings for Noah/),
+  );
+  await click(container.querySelector('input[type="checkbox"]'));
+  await click(button(container, "Allow voice dubbing"));
+  await waitFor(() =>
+    assert.match(container.textContent, /Voice dubbing is on/),
+  );
+  assert.match(container.textContent, /Manage learners/);
+  assert.doesNotMatch(container.textContent, /Switch to .*start dubbing/);
+
+  const dubRequests = requests.filter(({ path }) =>
+    path.startsWith("/api/dubs/five-little-ducks-v2"),
+  );
+  assert.ok(dubRequests.length > 0);
+  assert.ok(
+    dubRequests.every(({ path }) =>
+      path.endsWith("?learnerProfileId=learner-noah"),
+    ),
+  );
+  assert.equal(miaConsent, "not_granted");
+  assert.equal(noahConsent, "granted");
 });

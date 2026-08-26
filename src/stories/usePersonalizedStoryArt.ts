@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { isAbortError } from "../media/audio-playback";
 import {
   generatePersonalizedStoryArt,
@@ -30,7 +36,12 @@ type StoryArtOperation = {
   epoch: number;
 };
 
-export function usePersonalizedStoryArt({ enabled = true } = {}) {
+export function usePersonalizedStoryArt(
+  {
+    enabled = true,
+    learnerProfileId,
+  }: { enabled?: boolean; learnerProfileId?: string } = {},
+) {
   const [consentChecked, setConsentChecked] = useState(false);
   const [featureEnabled, setFeatureEnabled] = useState(enabled);
   const [error, setError] = useState("");
@@ -81,6 +92,7 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
     }
     try {
       const result = await loadPersonalizedStoryArt(PERSONALIZED_STORY_ID, {
+        learnerProfileId,
         signal: operation.controller.signal,
       });
       if (!isCurrentOperation(operation)) return;
@@ -103,10 +115,26 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
     } finally {
       finishOperation(operation);
     }
-  }, [beginOperation, enabled, finishOperation, isCurrentOperation]);
+  }, [
+    beginOperation,
+    enabled,
+    finishOperation,
+    isCurrentOperation,
+    learnerProfileId,
+  ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     mountedRef.current = true;
+    operationEpochRef.current += 1;
+    operationRef.current?.controller.abort();
+    operationRef.current = null;
+    setConsentChecked(false);
+    setFeatureEnabled(enabled);
+    setError("");
+    setIsGenerating(false);
+    setMetadata(emptyMetadata());
+    setSelectedFile(null);
+    setStatusMessage("");
     void refresh();
     return () => {
       mountedRef.current = false;
@@ -114,7 +142,7 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
       operationRef.current?.controller.abort();
       operationRef.current = null;
     };
-  }, [refresh]);
+  }, [enabled, refresh]);
 
   const personalizedArtwork = useMemo(
     () =>
@@ -138,7 +166,7 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
           photo: selectedFile,
           storyId: PERSONALIZED_STORY_ID,
         },
-        { signal: operation.controller.signal },
+        { learnerProfileId, signal: operation.controller.signal },
       );
       if (!isCurrentOperation(operation)) return;
       setMetadata(nextMetadata);
@@ -157,6 +185,7 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
     consentChecked,
     finishOperation,
     isCurrentOperation,
+    learnerProfileId,
     metadata.guardianConsentVersion,
     selectedFile,
   ]);
@@ -167,7 +196,7 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
     try {
       await removePersonalizedStoryArt(
         { storyId: PERSONALIZED_STORY_ID },
-        { signal: operation.controller.signal },
+        { learnerProfileId, signal: operation.controller.signal },
       );
       if (!isCurrentOperation(operation)) return;
       setMetadata((current) => {
@@ -198,7 +227,12 @@ export function usePersonalizedStoryArt({ enabled = true } = {}) {
       if (isCurrentOperation(operation)) setIsGenerating(false);
       finishOperation(operation);
     }
-  }, [beginOperation, finishOperation, isCurrentOperation]);
+  }, [
+    beginOperation,
+    finishOperation,
+    isCurrentOperation,
+    learnerProfileId,
+  ]);
 
   const chooseFile = useCallback((file: File | null) => {
     setSelectedFile(file);

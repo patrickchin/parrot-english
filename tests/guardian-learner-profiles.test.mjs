@@ -1,14 +1,13 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement, useState } from "react";
+import { createElement, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter, useLocation } from "react-router";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import test from "node:test";
 import { createServer } from "vite";
 import {
   cleanupMountedRoots,
   click,
-  deferred,
   input,
   installDom,
   mountStrict,
@@ -29,6 +28,10 @@ const managerModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerProfiles.tsx")
   .catch(() => ({}));
 const { GuardianLearnerProfiles, GuardianLearnerProfilesView } = managerModule;
+const detailsModule = await vite
+  .ssrLoadModule("/src/learner-profile/GuardianLearnerDetails.tsx")
+  .catch(() => ({}));
+const { GuardianLearnerDetails } = detailsModule;
 const { LearnerSelectionProvider } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileContext.tsx",
 );
@@ -85,6 +88,76 @@ function fullProfile(profile) {
     profileStatus: profile.profileStatus,
     questionnaireVersion: 2,
     storyLevel: "first-words",
+  };
+}
+
+function profileEditorState(profile) {
+  return {
+    profile: {
+      ...fullProfile(profile),
+      description: `${profile.name} likes space and dinosaurs.`,
+      lessonRecordingCleanupPending: false,
+      lessonRecordingConsent: false,
+      answers: {
+        ...fullProfile(profile).answers,
+        responses: {
+          favoriteAnimals: {
+            acknowledgment: "Thank you!",
+            answeredAt: "2026-08-26T08:00:00.000Z",
+            enrichmentStatus: "generated",
+            question: "What animals do you like?",
+            rawAnswer: "Dinosaurs",
+            summary: "Likes dinosaurs.",
+          },
+          favoriteCartoons: {
+            acknowledgment: "Thank you!",
+            answeredAt: "2026-08-26T08:00:00.000Z",
+            enrichmentStatus: "generated",
+            question: "What cartoons do you like?",
+            rawAnswer: "Bluey",
+            summary: "Likes Bluey.",
+          },
+        },
+      },
+    },
+    questions: [
+      {
+        answerKey: "name",
+        audio: null,
+        maxLength: 120,
+        position: 1,
+        promptEn: "What name do you use?",
+        promptZh: null,
+        required: true,
+      },
+      {
+        answerKey: "age",
+        audio: null,
+        maxLength: 120,
+        position: 2,
+        promptEn: "How old are you?",
+        promptZh: null,
+        required: true,
+      },
+      {
+        answerKey: "favoriteAnimals",
+        audio: null,
+        maxLength: 300,
+        position: 3,
+        promptEn: "What animals do you like?",
+        promptZh: "你喜欢什么动物？",
+        required: false,
+      },
+      {
+        answerKey: "favoriteCartoons",
+        audio: null,
+        maxLength: 300,
+        position: 4,
+        promptEn: "What cartoons do you like?",
+        promptZh: "你喜欢什么动画片？",
+        required: false,
+      },
+    ],
   };
 }
 
@@ -176,6 +249,48 @@ function managerHarness({ activeProfileId = mia.id, reloadSelectedLearner }) {
   );
 }
 
+function detailsHarness({
+  activeProfileId = mia.id,
+  learnerId = noah.id,
+  reloadSelectedLearner = async () => fullProfile(mia),
+} = {}) {
+  assert.equal(
+    typeof GuardianLearnerDetails,
+    "function",
+    "Expected an explicit Guardian learner details container",
+  );
+  return createElement(
+    LearnerSelectionProvider,
+    {
+      activeProfileId,
+      async createAndSelectLearner() {
+        throw new Error("Explicit learner details must not create a learner.");
+      },
+      reloadSelectedLearner,
+      async selectLearner() {
+        throw new Error("Explicit learner details must not select a learner.");
+      },
+    },
+    createElement(
+      MemoryRouter,
+      { initialEntries: [`/guardian/learners/${learnerId}`] },
+      createElement(
+        Routes,
+        null,
+        createElement(Route, {
+          element: createElement(GuardianLearnerDetails),
+          path: "/guardian/learners/:learnerId",
+        }),
+        createElement(Route, {
+          element: createElement("p", null, "MANAGE LEARNERS"),
+          path: "/guardian/learners",
+        }),
+      ),
+      createElement(LocationProbe),
+    ),
+  );
+}
+
 function changingContextManagerHarness({ onActivate, reloadSelectedLearner }) {
   function Harness() {
     const [activeProfileId, setActiveProfileId] = useState(mia.id);
@@ -224,21 +339,21 @@ function changingContextManagerHarness({ onActivate, reloadSelectedLearner }) {
   return createElement(Harness);
 }
 
-test("learner manager renders the roster, setup state, and add form accessibly", () => {
+test("learner manager distinguishes Guardian management from learner mode", () => {
   const html = renderView();
 
-  assert.match(html, /<h1[^>]*>Learner profiles<\/h1>/);
+  assert.match(html, /<h1[^>]*>Manage learners<\/h1>/);
   assert.match(html, /<ul/);
   assert.equal((html.match(/<li/g) ?? []).length, 2);
   assert.match(html, /<h3[^>]*><bdi[^>]*>Mia<\/bdi><\/h3>/);
   assert.match(html, /<h3[^>]*><bdi[^>]*>Noah<\/bdi><\/h3>/);
-  assert.match(html, /Current learner/);
+  assert.match(html, /Learner mode/);
   assert.match(html, /Age 6/);
   assert.match(html, /Setup complete/);
   assert.match(html, /Setup not started/);
-  assert.match(html, /aria-label="Use Noah"/);
-  assert.match(html, /aria-label="Manage Mia&#x27;s details"/);
-  assert.match(html, /aria-label="Manage Noah&#x27;s details"/);
+  assert.match(html, /aria-label="Use Noah in learner mode"/);
+  assert.match(html, /aria-label="Edit Mia&#x27;s profile"/);
+  assert.match(html, /aria-label="Edit Noah&#x27;s profile"/);
   assert.match(
     html,
     /<label[^>]*for="preferred-name"[^>]*>Preferred name<\/label>/,
@@ -274,7 +389,7 @@ test("turns a malformed roster success into a retryable manager error", async ()
   });
   validResponse = true;
   await click(button(container, "Try again"));
-  await waitFor(() => button(container, "Use Noah"));
+  await waitFor(() => button(container, "Use Noah in learner mode"));
 });
 
 test("keeps a missing-active roster refresh failure retryable", async () => {
@@ -311,7 +426,7 @@ test("keeps a missing-active roster refresh failure retryable", async () => {
     }),
   );
 
-  await waitFor(() => button(container, "Use Noah"));
+  await waitFor(() => button(container, "Use Noah in learner mode"));
   await click(button(container, "Activate Ava in background"));
   await waitFor(() => {
     assert.match(
@@ -359,13 +474,13 @@ test("plain selection reloads the authoritative learner before announcing and fo
     }),
   );
 
-  await waitFor(() => button(container, "Use Noah"));
-  await click(button(container, "Use Noah"));
+  await waitFor(() => button(container, "Use Noah in learner mode"));
+  await click(button(container, "Use Noah in learner mode"));
 
   await waitFor(() => {
     assert.deepEqual(operations, ["select", "reload:learner-noah"]);
     assert.match(container.textContent, /Now managing Noah/);
-    assert.match(container.textContent, /Current learner/);
+    assert.match(container.textContent, /Learner mode/);
     const context = [...container.querySelectorAll("h2")].find(
       (heading) => heading.textContent === "Managing Noah",
     );
@@ -398,8 +513,8 @@ test("failed selection preserves the current learner and restores initiating foc
       },
     }),
   );
-  await waitFor(() => button(container, "Use Noah"));
-  const useNoah = button(container, "Use Noah");
+  await waitFor(() => button(container, "Use Noah in learner mode"));
+  const useNoah = button(container, "Use Noah in learner mode");
   useNoah.focus();
   await click(useNoah);
 
@@ -410,7 +525,10 @@ test("failed selection preserves the current learner and restores initiating foc
       /Could not select Noah/,
     );
     assert.match(container.textContent, /Managing Mia/);
-    assert.equal(document.activeElement, button(container, "Use Noah"));
+    assert.equal(
+      document.activeElement,
+      button(container, "Use Noah in learner mode"),
+    );
   });
 });
 
@@ -435,8 +553,8 @@ test("rejects a successful selection response that names a different active lear
       },
     }),
   );
-  await waitFor(() => button(container, "Use Noah"));
-  const useNoah = button(container, "Use Noah");
+  await waitFor(() => button(container, "Use Noah in learner mode"));
+  const useNoah = button(container, "Use Noah in learner mode");
   useNoah.focus();
   await click(useNoah);
 
@@ -447,44 +565,44 @@ test("rejects a successful selection response that names a different active lear
       /selected learner could not be loaded/i,
     );
     assert.match(container.textContent, /Managing Mia/);
-    assert.equal(document.activeElement, button(container, "Use Noah"));
+    assert.equal(
+      document.activeElement,
+      button(container, "Use Noah in learner mode"),
+    );
   });
 });
 
-test("managing an inactive learner waits for authoritative reload before navigation", async () => {
-  const reloaded = deferred();
+test("editing an inactive learner navigates by ID without selecting or reloading", async () => {
+  let reloadCalls = 0;
   globalThis.fetch = async (input, init = {}) => {
     const path = String(input);
     if (path === "/api/learner-profiles" && init.method === "GET") {
       return Response.json(roster());
-    }
-    if (path.endsWith("/learner-noah/active") && init.method === "PUT") {
-      return Response.json(roster(noah.id));
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
 
   const container = await mountStrict(
     managerHarness({
-      reloadSelectedLearner() {
-        return reloaded.promise;
+      async reloadSelectedLearner() {
+        reloadCalls += 1;
+        return fullProfile(noah);
       },
     }),
   );
-  await waitFor(() => button(container, "Manage Noah's details"));
-  await click(button(container, "Manage Noah's details"));
-  assert.equal(currentRoute(container), "/guardian/learners");
+  await waitFor(() => button(container, "Edit Noah's profile"));
+  await click(button(container, "Edit Noah's profile"));
 
-  await act(async () => reloaded.resolve(fullProfile(noah)));
-  await waitFor(() =>
+  await waitFor(() => {
+    assert.equal(reloadCalls, 0);
     assert.equal(
       currentRoute(container),
-      "/guardian/profile?returnTo=%2Fguardian%2Flearners",
-    ),
-  );
+      "/guardian/learners/learner-noah",
+    );
+  });
 });
 
-test("adding a learner selects and reloads it before opening Guardian details", async () => {
+test("adding a managed learner preserves learner mode and opens the new ID route", async () => {
   const ava = {
     age: null,
     createdAt: "2026-08-27T08:00:00.000Z",
@@ -492,23 +610,26 @@ test("adding a learner selects and reloads it before opening Guardian details", 
     name: "Ava",
     profileStatus: "not_started",
   };
-  const operations = [];
+  let reloadCalls = 0;
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (path === "/api/learner-profiles" && init.method === "GET") {
       return Response.json(roster());
     }
     if (path === "/api/learner-profiles" && init.method === "POST") {
-      operations.push(`create:${JSON.parse(init.body).name}`);
-      return Response.json(roster(ava.id, [mia, noah, ava]));
+      assert.deepEqual(JSON.parse(init.body), {
+        activate: false,
+        name: "Ava",
+      });
+      return Response.json(roster(mia.id, [mia, noah, ava]));
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
 
   const container = await mountStrict(
     managerHarness({
-      async reloadSelectedLearner(id) {
-        operations.push(`reload:${id}`);
+      async reloadSelectedLearner() {
+        reloadCalls += 1;
         return fullProfile(ava);
       },
     }),
@@ -518,10 +639,170 @@ test("adding a learner selects and reloads it before opening Guardian details", 
   await click(button(container, "Add learner"));
 
   await waitFor(() => {
-    assert.deepEqual(operations, ["create:Ava", "reload:learner-ava"]);
+    assert.equal(reloadCalls, 0);
     assert.equal(
       currentRoute(container),
-      "/guardian/profile?returnTo=%2Fguardian%2Flearners",
+      "/guardian/learners/learner-ava",
     );
   });
+});
+
+test("loads and saves inactive learner details by ID without changing learner mode", async () => {
+  const requests = [];
+  let reloadCalls = 0;
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    requests.push({ body: init.body, method: init.method, path });
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      init.method === "GET"
+    ) {
+      return Response.json(profileEditorState(noah));
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      init.method === "PUT"
+    ) {
+      return Response.json(profileEditorState(noah));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    detailsHarness({
+      async reloadSelectedLearner() {
+        reloadCalls += 1;
+        return fullProfile(noah);
+      },
+    }),
+  );
+
+  await waitFor(() => {
+    assert.equal(container.querySelector("#profile-name")?.value, "Noah");
+    assert.equal(container.querySelector("#profile-age")?.value, "");
+    assert.equal(
+      container.querySelector("#profile-favoriteAnimals")?.value,
+      "Dinosaurs",
+    );
+    assert.equal(
+      container.querySelector("#profile-favoriteCartoons")?.value,
+      "Bluey",
+    );
+  });
+  assert.match(container.textContent, /What animals do you like\?/);
+  assert.match(container.textContent, /你喜欢什么动物？/);
+  assert.doesNotMatch(container.textContent, /Redo learner setup/);
+
+  await input(
+    container.querySelector("#profile-favoriteAnimals"),
+    "Dinosaurs and parrots",
+  );
+  await click(button(container, "Save changes"));
+
+  await waitFor(() =>
+    assert.equal(currentRoute(container), "/guardian/learners"),
+  );
+  assert.equal(reloadCalls, 0);
+  const saveRequest = requests.find(({ method }) => method === "PUT");
+  assert.ok(saveRequest);
+  assert.deepEqual(JSON.parse(saveRequest.body), {
+    answers: {
+      age: "",
+      description: "Noah likes space and dinosaurs.",
+      favoriteAnimals: "Dinosaurs and parrots",
+      favoriteCartoons: "Bluey",
+      name: "Noah",
+    },
+  });
+  assert.equal(
+    requests.some(({ path }) => path.includes("/active")),
+    false,
+  );
+});
+
+test("targets recording consent at an explicit learner without selecting them", async () => {
+  let reloadCalls = 0;
+  const consentBodies = [];
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      init.method === "GET"
+    ) {
+      return Response.json(profileEditorState(noah));
+    }
+    if (
+      path ===
+        "/api/profile/lesson-recording-consent?learnerProfileId=learner-noah" &&
+      init.method === "PUT"
+    ) {
+      consentBodies.push(JSON.parse(init.body));
+      return Response.json({ cleanupPending: false, enabled: true });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    detailsHarness({
+      async reloadSelectedLearner() {
+        reloadCalls += 1;
+        return fullProfile(noah);
+      },
+    }),
+  );
+  await waitFor(() => button(container, "Allow lesson voice recordings"));
+  await click(button(container, "Allow lesson voice recordings"));
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="status"]')?.textContent ?? "",
+      /currently allowed/,
+    ),
+  );
+
+  assert.deepEqual(consentBodies, [{ enabled: true }]);
+  assert.equal(reloadCalls, 0);
+  assert.equal(currentRoute(container), "/guardian/learners/learner-noah");
+});
+
+test("refreshes active learner context after targeted recording consent changes", async () => {
+  const reloads = [];
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    if (
+      path === "/api/profile?learnerProfileId=learner-mia" &&
+      init.method === "GET"
+    ) {
+      return Response.json(profileEditorState(mia));
+    }
+    if (
+      path ===
+        "/api/profile/lesson-recording-consent?learnerProfileId=learner-mia" &&
+      init.method === "PUT"
+    ) {
+      return Response.json({ cleanupPending: false, enabled: true });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    detailsHarness({
+      activeProfileId: mia.id,
+      learnerId: mia.id,
+      async reloadSelectedLearner(id) {
+        reloads.push(id);
+        return fullProfile(mia);
+      },
+    }),
+  );
+  await waitFor(() => button(container, "Allow lesson voice recordings"));
+  await click(button(container, "Allow lesson voice recordings"));
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="status"]')?.textContent ?? "",
+      /currently allowed/,
+    ),
+  );
+
+  assert.deepEqual(reloads, ["learner-mia"]);
+  assert.equal(currentRoute(container), "/guardian/learners/learner-mia");
 });

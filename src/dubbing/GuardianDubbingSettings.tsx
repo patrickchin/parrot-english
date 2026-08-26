@@ -7,16 +7,14 @@ import {
   type FormEvent,
   type Ref,
 } from "react";
-import { useNavigate } from "react-router";
+import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
+import { getGuardianLearnersPath, getGuardianPath } from "../app/app-routes";
 import {
-  BidiLearnerName,
-  GuardianLearnerContextLabel,
-  HeaderLink,
-  RouteHeader,
-} from "../app/AppHeader";
-import { getDuckDubPath, getGuardianPath } from "../app/app-routes";
-import { useGuardianAccess } from "../auth/GuardianAccess";
-import { ActionButton, Card } from "../shared/ui";
+  GuardianLearnerTarget,
+  useGuardianLearnerTarget,
+  type GuardianLearnerTargetState,
+} from "../learner-profile/GuardianLearnerTarget";
+import { ActionButton, ActionLink, Card } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
@@ -26,7 +24,7 @@ import {
 } from "./dub-api";
 import { DUB_LINES } from "./dub-script";
 
-type Mutation = "delete" | "grant" | "switch";
+type Mutation = "delete" | "grant";
 
 export function GuardianDubbingSettingsView({
   cleanupRequired,
@@ -35,15 +33,14 @@ export function GuardianDubbingSettingsView({
   error,
   hasAccepted,
   isLoading,
-  learnerName,
   mutation,
   onAcceptedChange,
   onDelete,
   onGrant,
   onRetry,
-  onSwitchToLearner,
   savedCount,
   stateHeadingRef,
+  target,
 }: {
   cleanupRequired: boolean;
   consentState: DubStatus["consentState"] | null;
@@ -51,17 +48,16 @@ export function GuardianDubbingSettingsView({
   error: string;
   hasAccepted: boolean;
   isLoading: boolean;
-  learnerName: string;
   mutation: Mutation | null;
   onAcceptedChange: (accepted: boolean) => void;
   onDelete: () => void;
   onGrant: () => void;
   onRetry: () => void;
-  onSwitchToLearner: () => void;
   savedCount: number;
   stateHeadingRef?: Ref<HTMLHeadingElement>;
+  target: GuardianLearnerTargetState;
 }) {
-  const managedLearnerName = learnerName.trim() || "Learner";
+  const managedLearnerName = target.learnerName?.trim() || "Learner";
   const busy = isLoading || mutation !== null;
 
   function submitGrant(event: FormEvent<HTMLFormElement>) {
@@ -82,18 +78,32 @@ export function GuardianDubbingSettingsView({
       </RouteHeader>
 
       <section className="mx-auto grid w-full max-w-3xl gap-6">
-        <header className="grid gap-2 text-center">
-          <GuardianLearnerContextLabel learnerName={managedLearnerName} />
+        <header className="grid gap-4 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Voice dubbing
           </h1>
-          <p
-            className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-            dir="ltr"
-          >
-            Manage <BidiLearnerName learnerName={managedLearnerName} />
-            &apos;s private voice clips for Five Little Ducks.
-          </p>
+          <GuardianLearnerTarget state={target} />
+          {target.phase === "ready" && target.learnerName !== null ? (
+            <>
+              <p
+                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+                dir="ltr"
+              >
+                Manage <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s private voice clips for Five Little Ducks.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-slate-600">
+                <span>Change who uses learner mode in Manage learners.</span>
+                <ActionLink
+                  size="compact"
+                  to={getGuardianLearnersPath()}
+                  variant="surface"
+                >
+                  Manage learners
+                </ActionLink>
+              </div>
+            </>
+          ) : null}
         </header>
 
         {isLoading ? (
@@ -201,21 +211,6 @@ export function GuardianDubbingSettingsView({
               <ActionButton
                 disabled={busy}
                 fullWidth
-                onClick={onSwitchToLearner}
-                type="button"
-              >
-                <span
-                  className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
-                  dir="ltr"
-                >
-                  {mutation === "switch" ? "Switching to " : "Switch to "}
-                  <BidiLearnerName learnerName={managedLearnerName} />
-                  {mutation === "switch" ? "…" : " and start dubbing"}
-                </span>
-              </ActionButton>
-              <ActionButton
-                disabled={busy}
-                fullWidth
                 onClick={onDelete}
                 type="button"
                 variant="dangerSurface"
@@ -280,15 +275,13 @@ function messageFor(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function GuardianDubbingSettings({
-  learnerName,
-  onBeforeNavigate,
+function TargetedGuardianDubbingSettings({
+  learnerProfileId,
+  target,
 }: {
-  learnerName: string;
-  onBeforeNavigate?: () => void;
+  learnerProfileId: string;
+  target: GuardianLearnerTargetState;
 }) {
-  const { error: guardianError, lock } = useGuardianAccess();
-  const navigate = useNavigate();
   const [cleanupRequired, setCleanupRequired] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
   const [status, setStatus] = useState<DubStatus | null>(null);
@@ -323,7 +316,10 @@ export function GuardianDubbingSettings({
       if (!preserveOperationError) setOperationError("");
 
       try {
-        const nextStatus = await loadDubStatus({ signal: controller.signal });
+        const nextStatus = await loadDubStatus({
+          learnerProfileId,
+          signal: controller.signal,
+        });
         if (
           !mountedRef.current ||
           controller.signal.aborted ||
@@ -365,7 +361,7 @@ export function GuardianDubbingSettings({
         }
       }
     },
-    [],
+    [learnerProfileId],
   );
 
   useEffect(() => {
@@ -386,7 +382,7 @@ export function GuardianDubbingSettings({
   }, [cleanupRequired, focusRequest, status?.consentState]);
 
   async function mutate(
-    kind: Exclude<Mutation, "switch">,
+    kind: Mutation,
     operation: (options: { signal: AbortSignal }) => Promise<void>,
   ) {
     if (mutationRef.current !== null || isLoading) return;
@@ -431,7 +427,9 @@ export function GuardianDubbingSettings({
 
   function grant() {
     if (!hasAccepted || status?.consentState !== "not_granted") return;
-    void mutate("grant", grantDubConsent);
+    void mutate("grant", (options) =>
+      grantDubConsent({ ...options, learnerProfileId }),
+    );
   }
 
   function remove() {
@@ -442,32 +440,9 @@ export function GuardianDubbingSettings({
     ) {
       return;
     }
-    void mutate("delete", deleteDub);
-  }
-
-  async function switchToLearner() {
-    if (
-      mutationRef.current !== null ||
-      isLoading ||
-      status?.consentState !== "granted"
-    ) {
-      return;
-    }
-    mutationRef.current = "switch";
-    setMutation("switch");
-    setOperationError("");
-    try {
-      const lockError = await lock();
-      if (lockError) {
-        if (mountedRef.current) setOperationError(lockError);
-        return;
-      }
-      onBeforeNavigate?.();
-      navigate(getDuckDubPath());
-    } finally {
-      if (mutationRef.current === "switch") mutationRef.current = null;
-      if (mountedRef.current) setMutation(null);
-    }
+    void mutate("delete", (options) =>
+      deleteDub({ ...options, learnerProfileId }),
+    );
   }
 
   return (
@@ -475,18 +450,46 @@ export function GuardianDubbingSettings({
       canRetryStatus={Boolean(statusError)}
       cleanupRequired={cleanupRequired}
       consentState={status?.consentState ?? null}
-      error={statusError || operationError || guardianError}
+      error={statusError || operationError}
       hasAccepted={hasAccepted}
       isLoading={isLoading}
-      learnerName={learnerName}
       mutation={mutation}
       onAcceptedChange={setHasAccepted}
       onDelete={remove}
       onGrant={grant}
       onRetry={() => void refresh({ preserveOperationError: true })}
-      onSwitchToLearner={() => void switchToLearner()}
       savedCount={status?.lines.filter(({ saved }) => saved).length ?? 0}
       stateHeadingRef={stateHeadingRef}
+      target={target}
+    />
+  );
+}
+
+export function GuardianDubbingSettings() {
+  const target = useGuardianLearnerTarget();
+  return target.phase === "ready" &&
+    target.learnerProfileId !== null &&
+    target.learnerName !== null ? (
+    <TargetedGuardianDubbingSettings
+      key={target.learnerProfileId}
+      learnerProfileId={target.learnerProfileId}
+      target={target}
+    />
+  ) : (
+    <GuardianDubbingSettingsView
+      canRetryStatus={false}
+      cleanupRequired={false}
+      consentState={null}
+      error=""
+      hasAccepted={false}
+      isLoading={false}
+      mutation={null}
+      onAcceptedChange={() => {}}
+      onDelete={() => {}}
+      onGrant={() => {}}
+      onRetry={() => {}}
+      savedCount={0}
+      target={target}
     />
   );
 }

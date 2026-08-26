@@ -316,6 +316,25 @@ async function preparePage(
   await page.setViewportSize(viewport);
 }
 
+test("shared menu items do not move when hovered", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto(guardianPath("/lessons"));
+  await page
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .click();
+  const manageLearners = page.getByRole("menuitem", {
+    name: "Manage learners",
+  });
+  const before = await manageLearners.boundingBox();
+
+  await manageLearners.hover();
+  await manageLearners.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  );
+
+  expect(await manageLearners.boundingBox()).toEqual(before);
+});
+
 for (const viewport of viewports) {
   test(`account menu actions keep rendered contrast on a ${viewport.name}`, async ({
     page,
@@ -323,7 +342,7 @@ for (const viewport of viewports) {
     await preparePage(page, viewport);
     await page.goto(guardianPath("/lessons"));
     await page
-      .getByRole("button", { name: "Profile for Mia, guardian mode" })
+      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
       .click();
 
     await expectPointerStateContrast({
@@ -333,9 +352,9 @@ for (const viewport of viewports) {
       page,
     });
     await expectPointerStateContrast({
-      interaction: page.getByRole("menuitem", { name: "Delete account" }),
+      interaction: page.getByRole("menuitem", { name: "Account & privacy" }),
       minimum: 4.5,
-      name: "Muted Delete account",
+      name: "Account & privacy",
       page,
     });
   });
@@ -365,9 +384,13 @@ for (const viewport of viewports) {
     await page.goto(guardianPath("/lessons"));
 
     await page
-      .getByRole("button", { name: "Profile for Mia, guardian mode" })
+      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
       .click();
-    await page.getByRole("menuitem", { name: "Delete account" }).click();
+    await page.getByRole("menuitem", { name: "Account & privacy" }).click();
+    await page
+      .getByRole("region", { name: "Danger zone" })
+      .getByRole("button", { name: "Delete account" })
+      .click();
     const dialog = page.getByRole("dialog", { name: "Delete account" });
     const password = dialog.getByRole("textbox", { name: "Password" });
     const deleteAccount = dialog.getByRole("button", {

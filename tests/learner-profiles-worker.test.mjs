@@ -271,6 +271,40 @@ describe("learner roster Worker routing", () => {
     assert.deepEqual(await locked.json(), { error: "guardian_required" });
   });
 
+  it("creates a managed learner without changing learner mode selection", async () => {
+    insertLearner(state, "learner-mia", { name: "Mia" });
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+    const worker = createWorker({ createAuth: () => authStub() });
+    await worker.fetch(request("GET", "/api/learner-profiles"), env);
+
+    const response = await worker.fetch(
+      request("POST", "/api/learner-profiles", {
+        name: "Noah",
+        activate: false,
+      }),
+      env,
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.activeProfileId, "learner-mia");
+    assert.deepEqual(
+      payload.profiles.map(({ name }) => name),
+      ["Mia", "Noah"],
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT learner_profile_id
+           FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .get().learner_profile_id,
+      "learner-mia",
+    );
+  });
+
   it("persists additional learners in creation order when the database clock does not advance", async (t) => {
     state.sqlite.function(
       "unixepoch",
@@ -433,6 +467,10 @@ describe("learner roster Worker routing", () => {
         message: "Please send exactly one preferred name.",
       }],
       [request("POST", "/api/learner-profiles", { name: "Mia", age: 8 }), 400, {
+        error: "invalid_request",
+        message: "Please send exactly one preferred name.",
+      }],
+      [request("POST", "/api/learner-profiles", { name: "Mia", activate: "false" }), 400, {
         error: "invalid_request",
         message: "Please send exactly one preferred name.",
       }],

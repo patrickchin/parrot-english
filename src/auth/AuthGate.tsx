@@ -14,9 +14,9 @@ import {
 import { useLocation, useNavigate } from "react-router";
 import { AccountHeader } from "../app/AppHeader";
 import {
+  getGuardianAccountPath,
   getGuardianLearnersPath,
   getGuardianPath,
-  getProfilePath,
   getSafeGuardianUnlockDestination,
 } from "../app/app-routes";
 import {
@@ -204,11 +204,9 @@ interface AuthGateViewProps {
   hasActiveLearner: boolean;
   learnerName: string | null;
   mode: AuthMode;
-  onDeleteAccount: (password: string) => Promise<string | null>;
   onFieldChange: (field: keyof AuthFields, value: string) => void;
   onModeChange: (mode: AuthMode) => void;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
-  onOpenProfile: (() => void) | null;
   onRetry: () => void;
   onSignOut: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
@@ -236,9 +234,7 @@ function AccountExperienceHeader({
   hasActiveLearner,
   isSigningOut,
   learnerName,
-  onDeleteAccount,
   onNavigate,
-  onOpenProfile,
   onSignOut,
   signOutError,
   userEmail,
@@ -249,15 +245,12 @@ function AccountExperienceHeader({
   hasActiveLearner: boolean;
   isSigningOut: boolean;
   learnerName: string | null;
-  onDeleteAccount: (password: string) => Promise<string | null>;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
-  onOpenProfile: (() => void) | null;
   onSignOut: () => void;
   signOutError: string;
   userEmail: string;
 }) {
   const access = useGuardianAccess();
-  const [isModePending, setIsModePending] = useState(false);
   const [isUnlockOpen, setIsUnlockOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const unlockButtonRef = useRef<HTMLButtonElement>(null);
@@ -274,19 +267,6 @@ function AccountExperienceHeader({
     }
   }, [access.mode]);
 
-  async function selectLearner() {
-    if (access.mode !== "guardian" || isModePending) return;
-    setIsModePending(true);
-    try {
-      const lockError = await access.lock();
-      if (!lockError) {
-        onNavigate("/");
-      }
-    } finally {
-      setIsModePending(false);
-    }
-  }
-
   return (
     <>
       <AccountHeader
@@ -295,15 +275,11 @@ function AccountExperienceHeader({
         guardianLabel={guardianLabel}
         hasActiveLearner={hasActiveLearner}
         isDialogOpen={isUnlockOpen}
-        isModePending={isModePending}
         isSigningOut={activeMode === "guardian" && isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
-        onDeleteAccount={onDeleteAccount}
+        onOpenAccountPrivacy={() => onNavigate(getGuardianAccountPath())}
         onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
         onOpenLearnerProfiles={() => onNavigate(getGuardianLearnersPath())}
-        onOpenProfile={
-          onOpenProfile ?? (() => onNavigate(getProfilePath(getGuardianPath())))
-        }
         onRetryError={access.error ? access.retry : undefined}
         onSelectGuardian={(button) => {
           if (access.mode !== "guardian") {
@@ -311,7 +287,6 @@ function AccountExperienceHeader({
             setIsUnlockOpen(true);
           }
         }}
-        onSelectLearner={() => void selectLearner()}
         onSignOut={onSignOut}
         signOutError={activeMode === "guardian" ? signOutError : ""}
         userEmail={userEmail}
@@ -352,11 +327,9 @@ export function AuthGateView({
   isSubmitting,
   learnerName,
   mode,
-  onDeleteAccount,
   onFieldChange,
   onModeChange,
   onNavigate,
-  onOpenProfile,
   onRetry,
   onSignOut,
   onSubmit,
@@ -588,9 +561,7 @@ export function AuthGateView({
         hasActiveLearner={hasActiveLearner}
         isSigningOut={isSigningOut}
         learnerName={learnerName}
-        onDeleteAccount={onDeleteAccount}
         onNavigate={onNavigate}
-        onOpenProfile={onOpenProfile}
         onSignOut={onSignOut}
         signOutError={signOutError}
         userEmail={session.user.email}
@@ -804,6 +775,7 @@ export function createAuthGate({
 
     return (
       <AccountActionProvider
+        deleteAccount={handleDeleteAccount}
         profileAction={profileAction}
         sessionIdentity={sessionIdentity}
         setProfileAction={setProfileAction}
@@ -827,13 +799,9 @@ export function createAuthGate({
               null
             }
             mode={mode}
-            onDeleteAccount={handleDeleteAccount}
             onFieldChange={updateField}
             onModeChange={selectMode}
             onNavigate={navigate}
-            onOpenProfile={
-              profileAction ? (profileAction.onOpenProfile ?? (() => {})) : null
-            }
             onRetry={() => void handleRetry()}
             onSignOut={handleSignOut}
             onSubmit={handleSubmit}

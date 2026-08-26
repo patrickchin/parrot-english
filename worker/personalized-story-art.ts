@@ -127,6 +127,7 @@ function metadataPayload(
       }
     | null
     | undefined,
+  learnerProfileId?: string,
 ) {
   if (!row) {
     return {
@@ -148,6 +149,13 @@ function metadataPayload(
     };
   }
 
+  const assetSearchParams = new URLSearchParams({
+    v: String(row.updatedAt.getTime()),
+  });
+  if (learnerProfileId !== undefined) {
+    assetSearchParams.append("learnerProfileId", learnerProfileId);
+  }
+
   return {
     enabled,
     guardianConsentVersion: CURRENT_GUARDIAN_CONSENT_VERSION,
@@ -159,7 +167,7 @@ function metadataPayload(
               pages: {
                 [config.pageId]: {
                   alt: config.alt,
-                  src: `/api/stories/${encodeURIComponent(row.storyId)}/personalized-art/asset?v=${row.updatedAt.getTime()}`,
+                  src: `/api/stories/${encodeURIComponent(row.storyId)}/personalized-art/asset?${assetSearchParams}`,
                 },
               },
             },
@@ -361,6 +369,9 @@ export async function handlePersonalizedStoryArtRequest(
 ) {
   const url = new URL(input.request.url);
   const route = parseStoryRoute(url.pathname);
+  const learnerProfileId = url.searchParams.has("learnerProfileId")
+    ? input.identity.learnerProfileId
+    : undefined;
   const now = overrides.now ?? (() => new Date());
   const repository = createPersonalizedStoryArtRepository(input.database, {
     now,
@@ -543,6 +554,7 @@ export async function handlePersonalizedStoryArtRequest(
               input.identity,
               route.storyId,
             ),
+            learnerProfileId,
           ),
         );
       }
@@ -558,6 +570,7 @@ export async function handlePersonalizedStoryArtRequest(
           metadataPayload(
             false,
             await repository.findOwnedStory(input.identity, route.storyId),
+            learnerProfileId,
           ),
         );
       }
@@ -572,6 +585,7 @@ export async function handlePersonalizedStoryArtRequest(
         metadataPayload(
           true,
           await repository.findOwnedStory(input.identity, route.storyId),
+          learnerProfileId,
         ),
       );
     }
@@ -844,7 +858,9 @@ export async function handlePersonalizedStoryArtRequest(
         );
       }
       await releaseLease(route.storyId, token);
-      return json(metadataPayload(true, row), { status: 201 });
+      return json(metadataPayload(true, row, learnerProfileId), {
+        status: 201,
+      });
     }
 
     if (input.request.method === "DELETE" && !route.asset) {

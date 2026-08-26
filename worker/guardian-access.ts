@@ -178,7 +178,12 @@ export async function requireGuardianAccess(input: {
   return json({ error: "guardian_required" }, { status: 403 });
 }
 
-export function requiresGuardianAccess(pathname: string, method: string) {
+export function requiresGuardianAccess(
+  pathname: string,
+  method: string,
+  hasLearnerTarget = false,
+) {
+  if (hasLearnerTarget) return true;
   if (pathname === "/api/learner-profiles") {
     return method === "GET" || method === "POST";
   }

@@ -65,14 +65,14 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
     "Can you please point to the little red flower beside Peppa?";
   let savedLesson = generatedLesson;
 
-  await page.route("**/api/lessons/my/generate", async (route) => {
+  await page.route(/\/api\/lessons\/my\/generate(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({ lesson: generatedLesson, warnings: [] }),
       contentType: "application/json",
       status: 200,
     });
   });
-  await page.route("**/api/lessons/my", async (route) => {
+  await page.route(/\/api\/lessons\/my(?:\?.*)?$/, async (route) => {
     if (route.request().method() !== "POST") {
       await route.fallback();
       return;
@@ -96,7 +96,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
       status: 201,
     });
   });
-  await page.route("**/api/lessons/my/ai-gui-lesson", async (route) => {
+  await page.route(/\/api\/lessons\/my\/ai-gui-lesson(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         lesson: {
@@ -165,13 +165,15 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
 
   expect(payload.source).toBe("generated");
   expect(payload.lesson.title).toBe("My Visual Garden Lesson");
-  await expect(page).toHaveURL("/guardian/lessons");
+  await expect(page).toHaveURL(
+    "/guardian/lessons?learnerProfileId=e2e-learner",
+  );
 });
 
 test("lesson editor leads with a visual storyboard and progressively reveals fields", async ({
   page,
 }) => {
-  await page.route("**/api/lessons/my/visual-first-test", async (route) => {
+  await page.route(/\/api\/lessons\/my\/visual-first-test(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         lesson: {
@@ -323,7 +325,7 @@ test("lesson creator tabs expose selection and support arrow keys", async ({
 test("lesson editor scrolls to its GUI save control on a short phone", async ({
   page,
 }) => {
-  await page.route("**/api/lessons/my/scroll-test", async (route) => {
+  await page.route(/\/api\/lessons\/my\/scroll-test(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       body: JSON.stringify({
         lesson: {
@@ -378,7 +380,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
   const originalLesson = createLessonScript();
   let savedLesson = originalLesson;
 
-  await page.route("**/api/lessons/my/gui-edit-test", async (route) => {
+  await page.route(/\/api\/lessons\/my\/gui-edit-test(?:\?.*)?$/, async (route) => {
     if (route.request().method() === "PUT") {
       const body = route.request().postDataJSON() as {
         lesson: typeof originalLesson;
@@ -461,5 +463,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
     dialogue: "The flowers have all the water they need.",
     speaker: "peppa",
   });
-  await expect(page).toHaveURL("/guardian/lessons");
+  await expect(page).toHaveURL(
+    "/guardian/lessons?learnerProfileId=e2e-learner",
+  );
 });

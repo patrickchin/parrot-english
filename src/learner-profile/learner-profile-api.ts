@@ -104,7 +104,12 @@ export type ProfileState = {
 
 export type LearnerProfileRequestOptions = {
   fetch?: typeof globalThis.fetch;
+  learnerProfileId?: string;
   signal?: AbortSignal;
+};
+
+export type CreateLearnerProfileOptions = LearnerProfileRequestOptions & {
+  activate?: boolean;
 };
 
 export class LearnerProfileApiError extends Error {
@@ -145,10 +150,14 @@ async function requestJson<Result>(
   init: RequestInit,
   {
     fetch: request = globalThis.fetch,
+    learnerProfileId,
     signal,
   }: LearnerProfileRequestOptions = {},
 ): Promise<Result> {
-  const response = await request(path, { ...init, signal });
+  const response = await request(
+    appendLearnerProfileTarget(path, learnerProfileId),
+    { ...init, signal },
+  );
   let payload: unknown;
   try {
     payload = await response.json();
@@ -189,6 +198,14 @@ async function requestJson<Result>(
   }
 
   return payload as Result;
+}
+
+function appendLearnerProfileTarget(
+  path: string,
+  learnerProfileId: string | undefined,
+) {
+  if (learnerProfileId === undefined) return path;
+  return `${path}?${new URLSearchParams({ learnerProfileId })}`;
 }
 
 function jsonRequest<Result>(
@@ -383,14 +400,16 @@ export function loadLearnerProfiles(options?: LearnerProfileRequestOptions) {
 
 export function createLearnerProfile(
   name: string,
-  options?: LearnerProfileRequestOptions,
+  { activate, ...options }: CreateLearnerProfileOptions = {},
 ) {
   return learnerProfilesRequest(
     "/api/learner-profiles",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(
+        activate === undefined ? { name } : { name, activate },
+      ),
     },
     options,
   );

@@ -3,10 +3,6 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 test("the account AI and saved data panel is wired to deployed component metadata", () => {
-  const header = readFileSync(
-    new URL("../src/app/AppHeader.tsx", import.meta.url),
-    "utf8",
-  );
   const about = readFileSync(
     new URL("../src/app/AboutDialog.tsx", import.meta.url),
     "utf8",
@@ -51,7 +47,6 @@ test("the account AI and saved data panel is wired to deployed component metadat
     "utf8",
   );
 
-  assert.match(header, />\s*AI and saved data\s*</s);
   assert.match(about, /AI and saved data/);
   assert.match(about, /How Parrot uses AI/);
   assert.match(about, /all learner profiles and their saved data/);
@@ -62,8 +57,14 @@ test("the account AI and saved data panel is wired to deployed component metadat
     /Lesson recording permission and saved clips are managed\s+independently for each selected learner profile/,
   );
   assert.match(about, /Five Little Ducks/);
-  assert.match(about, /Talk to Peppa does not change learner profiles/);
-  assert.match(about, /This applies to\s+every learner profile/);
+  assert.match(
+    about,
+    /Guardian profile editing do not change which\s+learner uses learner mode/,
+  );
+  assert.match(
+    about,
+    /Only the explicit Use in learner mode\s+action changes which learner uses learner mode/,
+  );
   assert.doesNotMatch(
     about,
     /Raw audio is not\s+added to the Parrot account/,

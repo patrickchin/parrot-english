@@ -1,5 +1,8 @@
-import { asc, eq } from "drizzle-orm";
-import { learnerProfile } from "../src/db/schema.ts";
+import { and, asc, eq } from "drizzle-orm";
+import {
+  learnerProfile,
+  sessionLearnerSelection,
+} from "../src/db/schema.ts";
 import {
   containsLikelyFullLearnerName,
   containsPrivateLearnerProfileDetails,
@@ -50,8 +53,15 @@ function json(payload: unknown, init?: ResponseInit) {
   });
 }
 
-async function roster(database: Database, identity: AccountIdentity) {
-  const resolution = await resolveLearnerIdentity(database, identity);
+async function roster(
+  database: Database,
+  identity: AccountIdentity,
+  activeProfileId?: string | null,
+) {
+  const resolution =
+    activeProfileId === undefined
+      ? await resolveLearnerIdentity(database, identity)
+      : null;
   const profiles = await database
     .select({
       id: learnerProfile.id,
@@ -66,7 +76,9 @@ async function roster(database: Database, identity: AccountIdentity) {
 
   return {
     activeProfileId:
-      resolution.status === "selected"
+      activeProfileId !== undefined
+        ? activeProfileId
+        : resolution?.status === "selected"
         ? resolution.identity.learnerProfileId
         : null,
     profiles: profiles.map(({ id, name, age, profileStatus, createdAt }) => ({
@@ -79,7 +91,31 @@ async function roster(database: Database, identity: AccountIdentity) {
   };
 }
 
-async function readPreferredName(request: Request) {
+async function currentProfileId(
+  database: Database,
+  identity: AccountIdentity,
+) {
+  const [selected] = await database
+    .select({ id: learnerProfile.id })
+    .from(sessionLearnerSelection)
+    .innerJoin(
+      learnerProfile,
+      and(
+        eq(sessionLearnerSelection.learnerProfileId, learnerProfile.id),
+        eq(sessionLearnerSelection.authUserId, learnerProfile.authUserId),
+      ),
+    )
+    .where(
+      and(
+        eq(sessionLearnerSelection.sessionId, identity.sessionId),
+        eq(sessionLearnerSelection.authUserId, identity.userId),
+      ),
+    )
+    .limit(1);
+  return selected?.id ?? null;
+}
+
+async function readLearnerCreation(request: Request) {
   let text: string;
   try {
     text = await readBoundedText(request, MAX_ROSTER_BODY_BYTES);
@@ -108,7 +144,17 @@ async function readPreferredName(request: Request) {
     );
   }
   const body = value as Record<string, unknown>;
-  if (Object.keys(body).length !== 1 || typeof body.name !== "string") {
+  const keys = Object.keys(body);
+  if (
+    typeof body.name !== "string" ||
+    !(
+      (keys.length === 1 && keys[0] === "name") ||
+      (keys.length === 2 &&
+        keys.includes("name") &&
+        keys.includes("activate") &&
+        typeof body.activate === "boolean")
+    )
+  ) {
     throw new LearnerProfilesApiError(
       400,
       "invalid_request",
@@ -145,7 +191,7 @@ async function readPreferredName(request: Request) {
       PREFERRED_NAME_FIELD_ERROR,
     );
   }
-  return name;
+  return { activate: body.activate !== false, name };
 }
 
 function selectedProfileId(pathname: string) {
@@ -182,33 +228,46 @@ export async function handleLearnerProfilesRequest(input: {
       url.pathname === "/api/learner-profiles" &&
       input.request.method === "POST"
     ) {
-      const name = await readPreferredName(input.request);
-      await resolveLearnerIdentity(input.database, input.identity);
+      const { activate, name } = await readLearnerCreation(input.request);
+      const previousProfileId = activate
+        ? null
+        : await currentProfileId(input.database, input.identity);
+      if (activate) {
+        await resolveLearnerIdentity(input.database, input.identity);
+      }
       const profileId = crypto.randomUUID();
+      const createProfile = input.database.$client
+        .prepare(
+          `INSERT INTO learner_profile (
+             id, auth_user_id, legacy_storage_owner, name,
+             created_at, updated_at
+           )
+           SELECT ?, ?, 0, ?, next_created_at, next_created_at
+           FROM (
+             SELECT max(
+               cast(unixepoch('subsecond') * 1000 as integer),
+               coalesce(max(created_at), 0) + 1
+             ) AS next_created_at
+             FROM learner_profile
+             WHERE auth_user_id = ?
+           )`,
+        )
+        .bind(
+          profileId,
+          input.identity.userId,
+          name,
+          input.identity.userId,
+        );
+      if (!activate) {
+        await createProfile.run();
+        return json(
+          await roster(input.database, input.identity, previousProfileId),
+        );
+      }
+
       const now = Date.now();
       await input.database.$client.batch([
-        input.database.$client
-          .prepare(
-            `INSERT INTO learner_profile (
-               id, auth_user_id, legacy_storage_owner, name,
-               created_at, updated_at
-             )
-             SELECT ?, ?, 0, ?, next_created_at, next_created_at
-             FROM (
-               SELECT max(
-                 cast(unixepoch('subsecond') * 1000 as integer),
-                 coalesce(max(created_at), 0) + 1
-               ) AS next_created_at
-               FROM learner_profile
-               WHERE auth_user_id = ?
-             )`,
-          )
-          .bind(
-            profileId,
-            input.identity.userId,
-            name,
-            input.identity.userId,
-          ),
+        createProfile,
         input.database.$client
           .prepare(
             `INSERT INTO session_learner_selection (

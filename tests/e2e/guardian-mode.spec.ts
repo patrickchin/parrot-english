@@ -176,10 +176,12 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveText("Guardian mode unlocked for 15 minutes");
 
   for (const heading of [
-    "Learner details",
+    "Manage learners",
+    "Learning & content",
     "My Lessons",
     "Story settings",
-    "Account and privacy",
+    "Voice dubbing",
+    "Account & privacy",
   ]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
@@ -187,16 +189,13 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu).toHaveCount(0);
   await page
-    .getByRole("button", { name: /Profile for Mia, guardian mode/ })
+    .getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ })
     .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
-    "Learner profiles",
-    "Manage Mia's details",
-    "Switch to Mia",
-    "AI and saved data",
+    "Manage learners",
+    "Account & privacy",
     "Sign out",
-    "Delete account",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
@@ -254,7 +253,7 @@ for (const viewport of lessonPrivacyViewports) {
       completedAt: "2026-08-26T08:00:00.000Z",
       currentQuestionKey: null,
       description: null,
-      id: "learner-mia",
+      id: "e2e-learner",
       name: "Mia",
       profileStatus: "completed",
       questionnaireVersion: 2,
@@ -278,7 +277,7 @@ for (const viewport of lessonPrivacyViewports) {
         },
       }),
     );
-    await page.route("**/api/profile", (route) =>
+    await page.route((url) => url.pathname === "/api/profile", (route) =>
       route.fulfill({
         json: {
           profile: {
@@ -290,18 +289,24 @@ for (const viewport of lessonPrivacyViewports) {
         },
       }),
     );
-    await page.route("**/api/profile/lesson-recording-consent", async (route) => {
-      const body = route.request().postDataJSON() as { enabled: boolean };
-      consent = body.enabled;
-      mutations.push(consent);
-      cleanupPending = !consent && mutations.filter((value) => !value).length === 1;
-      await route.fulfill({ json: { cleanupPending, enabled: consent } });
-    });
+    await page.route(
+      (url) => url.pathname === "/api/profile/lesson-recording-consent",
+      async (route) => {
+        const body = route.request().postDataJSON() as { enabled: boolean };
+        consent = body.enabled;
+        mutations.push(consent);
+        cleanupPending =
+          !consent && mutations.filter((value) => !value).length === 1;
+        await route.fulfill({ json: { cleanupPending, enabled: consent } });
+      },
+    );
 
-    await page.goto(guardianUrl("/guardian/profile", "guardian"));
+    await page.goto(
+      guardianUrl("/guardian/learners/e2e-learner", "guardian"),
+    );
 
     const account = page.getByRole("button", {
-      name: "Profile for Mia, guardian mode",
+      name: "Profile for Alex Guardian, guardian mode",
     });
     const back = page.getByRole("button", { exact: true, name: "Back" });
     const consentSection = page.getByRole("region", {
@@ -430,8 +435,9 @@ test("a locked guardian deep link never flashes protected content", async ({
 
 for (const { path, protectedName, seedEditLesson, unlockedPath } of [
   { path: "/guardian", protectedName: "Guardian dashboard" },
+  { path: "/guardian/account", protectedName: "Account & privacy" },
   {
-    path: "/guardian/profile?returnTo=%2Fguardian",
+    path: "/guardian/learners/e2e-learner",
     protectedName: "Learner details",
   },
   {
@@ -440,16 +446,12 @@ for (const { path, protectedName, seedEditLesson, unlockedPath } of [
     unlockedPath: "/guardian",
   },
   {
-    path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+    path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Flearners%2Fe2e-learner",
     protectedName: "Update my profile",
   },
   { path: "/guardian/lessons", protectedName: "My Lessons" },
   { path: "/guardian/stories", protectedName: "Story settings" },
   { path: "/guardian/dubbing", protectedName: "Voice dubbing" },
-  {
-    path: "/profile?returnTo=%2Fguardian",
-    protectedName: "Learner details",
-  },
   {
     path: "/profile/setup?redo=1&returnTo=%2Fguardian",
     protectedName: "Update my profile",
@@ -556,7 +558,7 @@ test("a valid guardian unlock resumes after refresh", async ({ page }) => {
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
+    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
   ).toBeVisible();
 });
 
@@ -565,7 +567,7 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
 }) => {
   await page.goto(guardianUrl("/", "guardian"));
   await expect(
-    page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
+    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
   ).toBeVisible();
   const expiresAtBeforeRefresh = await page.evaluate(async () => {
     const response = await fetch("/api/guardian-access");
@@ -575,7 +577,7 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
 
   await page.reload();
   await expect(
-    page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
+    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
   ).toBeVisible();
 
   const expiresAtAfterRefresh = await page.evaluate(async () => {
@@ -606,7 +608,9 @@ test("an expired guardian session returns the same deep link to the password gat
   await expect(
     page.getByRole("heading", { name: "Unlock guardian mode" }),
   ).toBeVisible();
-  await expect(page).toHaveURL("/guardian/stories");
+  await expect(page).toHaveURL(
+    "/guardian/stories?learnerProfileId=e2e-learner",
+  );
   await expect(
     page.getByRole("heading", { name: "Story settings" }),
   ).toHaveCount(0);
@@ -720,35 +724,29 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
 
   await page.goto(guardianUrl("/guardian", "guardian"));
   const guardianTrigger = page.getByRole("button", {
-    name: /Profile for Mia, guardian mode/,
+    name: /Profile for Alex Guardian, guardian mode/,
   });
   await guardianTrigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   const dashboard = menu.getByRole("menuitem", {
     name: "Guardian dashboard",
   });
-  const learnerProfiles = menu.getByRole("menuitem", {
-    name: "Learner profiles",
+  const manageLearners = menu.getByRole("menuitem", {
+    name: "Manage learners",
   });
-  const switchToLearner = menu.getByRole("menuitem", {
-    name: "Switch to Mia",
+  const accountPrivacy = menu.getByRole("menuitem", {
+    name: "Account & privacy",
   });
-  const profile = menu.getByRole("menuitem", {
-    name: "Manage Mia's details",
-  });
-  const data = menu.getByRole("menuitem", { name: "AI and saved data" });
-  const deletion = menu.getByRole("menuitem", { name: "Delete account" });
+  const signOut = menu.getByRole("menuitem", { name: "Sign out" });
   await expect(dashboard).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(learnerProfiles).toBeFocused();
+  await expect(manageLearners).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(profile).toBeFocused();
+  await expect(accountPrivacy).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(switchToLearner).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await expect(data).toBeFocused();
+  await expect(signOut).toBeFocused();
   await page.keyboard.press("End");
-  await expect(deletion).toBeFocused();
+  await expect(signOut).toBeFocused();
   await page.keyboard.press("Home");
   await expect(dashboard).toBeFocused();
   await page.keyboard.press("Escape");
@@ -787,11 +785,6 @@ test("learner routes omit adult management actions", async ({ page }) => {
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),
-    ).toHaveCount(0);
-    await expect(
-      menu.getByRole("menuitem", {
-        name: /AI and saved data|Sign out|Delete account/,
-      }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: /Create custom lesson|Edit lesson/ }),

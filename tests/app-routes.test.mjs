@@ -71,6 +71,14 @@ describe("app route helpers", () => {
       routes.getMyLessonEditPath("lesson/id"),
       "/lessons/my/lesson%2Fid/edit",
     );
+    assert.equal(
+      routes.getMyLessonCreatePath("learner /Noah"),
+      "/lessons/my/create?learnerProfileId=learner+%2FNoah",
+    );
+    assert.equal(
+      routes.getMyLessonEditPath("lesson/id", "learner /Noah"),
+      "/lessons/my/lesson%2Fid/edit?learnerProfileId=learner+%2FNoah",
+    );
   });
 
   it("rejects empty, dot-segment, and unencodable lesson IDs", () => {
@@ -164,11 +172,33 @@ describe("app route helpers", () => {
   });
 
   it("builds and classifies only canonical guardian routes", () => {
+    assert.equal(
+      typeof routes.getGuardianAccountPath,
+      "function",
+      "Expected a canonical Account & privacy path helper",
+    );
+    assert.equal(routes.getGuardianAccountPath(), "/guardian/account");
     assert.equal(routes.getGuardianPath(), "/guardian");
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
+    assert.equal(
+      routes.getGuardianDubbingPath("learner /Noah"),
+      "/guardian/dubbing?learnerProfileId=learner+%2FNoah",
+    );
+    assert.equal(
+      routes.getGuardianLessonsPath("learner /Noah"),
+      "/guardian/lessons?learnerProfileId=learner+%2FNoah",
+    );
     assert.equal(routes.getGuardianLearnersPath(), "/guardian/learners");
+    assert.equal(
+      routes.getGuardianLearnerPath("learner/noah"),
+      "/guardian/learners/learner%2Fnoah",
+    );
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
+    assert.equal(
+      routes.getGuardianStoriesPath("learner /Noah"),
+      "/guardian/stories?learnerProfileId=learner+%2FNoah",
+    );
     assert.equal(
       routes.getProfilePath("/guardian"),
       "/guardian/profile?returnTo=%2Fguardian",
@@ -180,8 +210,11 @@ describe("app route helpers", () => {
 
     for (const [pathname, search = ""] of [
       ["/guardian"],
+      ["/guardian/account"],
       ["/guardian/dubbing"],
       ["/guardian/lessons"],
+      ["/guardian/learners/learner-noah"],
+      ["/guardian/learners/learner%2Fnoah"],
       ["/guardian/profile"],
       ["/guardian/profile/setup"],
       ["/guardian/profile/setup", "?redo=1"],
@@ -202,6 +235,8 @@ describe("app route helpers", () => {
       ["/guardianish"],
       ["/guardian/lessons/extra"],
       ["/guardian/dubbing/extra"],
+      ["/guardian/learners/%E0%A4%A"],
+      ["/guardian/learners/learner-noah/extra"],
       ["/lessons/my/lesson-1/edit/extra"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
@@ -212,11 +247,72 @@ describe("app route helpers", () => {
     assert.equal(routes.isGuardianRoute("/profile/setup", "?redo=1"), true);
   });
 
+  it("rejects unsafe Guardian learner route IDs and classifies only valid manager children", () => {
+    for (const learnerId of ["", "   ", ".", "..", "\ud800"]) {
+      assert.throws(
+        () => routes.getGuardianLearnerPath(learnerId),
+        /Learner ID must be non-empty, encodable, and cannot be a dot segment/,
+      );
+    }
+
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute("/guardian/learners"),
+      true,
+    );
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute(
+        "/guardian/learners/learner%2Fnoah",
+      ),
+      true,
+    );
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute("/guardian/learners/%E0%A4%A"),
+      false,
+    );
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute(
+        "/guardian/learners/learner-noah/extra",
+      ),
+      false,
+    );
+  });
+
+  it("recognizes structurally matched learner children without accepting unsafe IDs", () => {
+    for (const pathname of [
+      "/guardian/learners/learner-noah",
+      "/guardian/learners/%20",
+      "/guardian/learners/%E0%A4%A",
+    ]) {
+      assert.equal(routes.isGuardianLearnerChildRoute(pathname), true);
+    }
+    for (const pathname of [
+      "/guardian/learners",
+      "/guardian/learners/learner-noah/extra",
+    ]) {
+      assert.equal(routes.isGuardianLearnerChildRoute(pathname), false);
+    }
+
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute("/guardian/learners/%20"),
+      false,
+    );
+    assert.equal(
+      routes.getSafeReturnTo(
+        returnToSearch("/guardian/learners/%E0%A4%A"),
+      ),
+      null,
+    );
+  });
+
   it("returns guardian gates only to non-gate guardian destinations", () => {
     assert.equal(routes.getSafeGuardianReturnTo(""), "/guardian");
     assert.equal(
       routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Fstories"),
       "/guardian/stories",
+    );
+    assert.equal(
+      routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Faccount"),
+      "/guardian/account",
     );
     for (const value of [
       "/",
@@ -234,6 +330,14 @@ describe("app route helpers", () => {
   });
 
   it("resumes only a validated Guardian destination after a header unlock", () => {
+    assert.equal(
+      routes.getSafeGuardianUnlockDestination(
+        "/guardian/account",
+        "",
+        "#danger-zone",
+      ),
+      "/guardian/account#danger-zone",
+    );
     assert.equal(
       routes.getSafeGuardianUnlockDestination(
         "/guardian/stories",
@@ -768,6 +872,8 @@ describe("app route helpers", () => {
       "//lessons",
       "/guardianish",
       "/guardian/lessons/extra",
+      "/guardian/learners/%20",
+      "/guardian/learners/%E0%A4%A",
       "/guardian%2Fstories",
     ]) {
       assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);

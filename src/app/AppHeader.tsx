@@ -17,8 +17,6 @@ import {
 } from "react";
 import type { LinkProps } from "react-router";
 import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
-import { AboutDialog } from "./AboutDialog";
-import { AccountDeleteDialog } from "./AccountDeleteDialog";
 
 function HeaderLabel({ children }: { children: ReactNode }) {
   return <span className="hidden wide:inline">{children}</span>;
@@ -141,16 +139,13 @@ export function AccountHeader({
   guardianLabel,
   hasActiveLearner = true,
   isDialogOpen = false,
-  isModePending,
   isSigningOut,
   learnerLabel,
-  onDeleteAccount,
+  onOpenAccountPrivacy,
   onOpenGuardianDashboard,
   onOpenLearnerProfiles,
-  onOpenProfile,
   onRetryError,
   onSelectGuardian,
-  onSelectLearner,
   onSignOut,
   signOutError,
   userEmail,
@@ -160,23 +155,18 @@ export function AccountHeader({
   guardianLabel: string;
   hasActiveLearner?: boolean;
   isDialogOpen?: boolean;
-  isModePending: boolean;
   isSigningOut: boolean;
   learnerLabel: string;
-  onDeleteAccount: (password: string) => Promise<string | null>;
+  onOpenAccountPrivacy: () => void;
   onOpenGuardianDashboard: () => void;
   onOpenLearnerProfiles: () => void;
-  onOpenProfile: () => void;
   onRetryError?: () => void;
   onSelectGuardian: (button: HTMLButtonElement) => void;
-  onSelectLearner: () => void;
   onSignOut: () => void;
   signOutError: string;
   userEmail: string;
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const menuFocusRef = useRef<"first" | "last">("first");
@@ -195,9 +185,6 @@ export function AccountHeader({
     if (previousModeRef.current === activeMode) return;
     previousModeRef.current = activeMode;
     setIsMenuOpen(false);
-    if (activeMode === "guardian") return;
-    setIsAboutOpen(false);
-    setIsDeleteOpen(false);
   }, [activeMode]);
 
   useEffect(() => {
@@ -243,14 +230,6 @@ export function AccountHeader({
     setIsMenuOpen(false);
     accountButtonRef.current?.focus();
     onSignOut();
-  }
-
-  function closeAbout() {
-    setIsAboutOpen(false);
-  }
-
-  function closeDelete() {
-    setIsDeleteOpen(false);
   }
 
   function openMenu(focus: "first" | "last" = "first") {
@@ -452,7 +431,6 @@ export function AccountHeader({
           >
             {activeMode === "learner" ? (
               <MenuButton
-                disabled={isModePending}
                 onClick={(event) => onSelectGuardian(event.currentTarget)}
                 role="menuitem"
                 type="button"
@@ -480,46 +458,14 @@ export function AccountHeader({
                   role="menuitem"
                   type="button"
                 >
-                  Learner profiles
+                  Manage learners
                 </MenuButton>
-                {hasActiveLearner ? (
-                  <>
-                    <MenuButton
-                      onClick={() => selectAction(onOpenProfile)}
-                      role="menuitem"
-                      type="button"
-                    >
-                      <span
-                        className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
-                        dir="ltr"
-                      >
-                        Manage{" "}
-                        <BidiLearnerName learnerName={managedLearnerLabel} />
-                        &apos;s details
-                      </span>
-                    </MenuButton>
-                    <MenuButton
-                      disabled={isModePending}
-                      onClick={onSelectLearner}
-                      role="menuitem"
-                      type="button"
-                    >
-                      <span
-                        className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
-                        dir="ltr"
-                      >
-                        Switch to{" "}
-                        <BidiLearnerName learnerName={managedLearnerLabel} />
-                      </span>
-                    </MenuButton>
-                  </>
-                ) : null}
                 <MenuButton
-                  onClick={() => selectAction(() => setIsAboutOpen(true))}
+                  onClick={() => selectAction(onOpenAccountPrivacy)}
                   role="menuitem"
                   type="button"
                 >
-                  AI and saved data
+                  Account &amp; privacy
                 </MenuButton>
                 <MenuButton
                   disabled={isSigningOut}
@@ -529,30 +475,10 @@ export function AccountHeader({
                 >
                   {isSigningOut ? "Signing out…" : "Sign out"}
                 </MenuButton>
-                <MenuButton
-                  className="mt-2"
-                  disabled={isSigningOut}
-                  onClick={() => selectAction(() => setIsDeleteOpen(true))}
-                  role="menuitem"
-                  type="button"
-                  variant="dangerSurface"
-                >
-                  Delete account
-                </MenuButton>
               </>
             ) : null}
           </div>
         </div>
-      ) : null}
-      {activeMode === "guardian" && isAboutOpen ? (
-        <AboutDialog onClose={closeAbout} returnFocusRef={accountButtonRef} />
-      ) : null}
-      {activeMode === "guardian" && isDeleteOpen ? (
-        <AccountDeleteDialog
-          onClose={closeDelete}
-          onDelete={onDeleteAccount}
-          returnFocusRef={accountButtonRef}
-        />
       ) : null}
       {error && !isMenuOpen ? (
         <AccountError

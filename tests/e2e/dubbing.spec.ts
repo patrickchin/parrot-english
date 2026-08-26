@@ -178,9 +178,15 @@ test("guardian consent unlocks the storyboard without exposing adult controls", 
   await expect(
     page.getByRole("heading", { name: "Voice dubbing is on" }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Switch to Mia and start dubbing" })
-    .click();
+  await expect(
+    page.getByRole("button", { name: /Switch to .*start dubbing/i }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Manage learners" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
+  await page.getByRole("button", { name: "Switch to learner" }).click();
+  await page.getByRole("link", { name: "Dub a rhyme" }).click();
 
   await expect(page).toHaveURL("/dubs/five-little-ducks");
   await page.reload();
@@ -269,7 +275,7 @@ for (const viewport of [
         name: "Back to guardian dashboard",
       });
       const account = page.getByRole("button", {
-        name: /Profile for Mia, guardian mode/,
+        name: /Profile for Alex Guardian, guardian mode/,
       });
       const pageHeading = page.getByRole("heading", {
         exact: true,
@@ -941,8 +947,11 @@ test("a held Guardian delete is exclusive until removal succeeds", async ({ page
     page.getByRole("button", { name: "Removing voice clips…" }),
   ).toBeDisabled();
   await expect(
-    page.getByRole("button", { name: "Switch to Mia and start dubbing" }),
-  ).toBeDisabled();
+    page.getByRole("button", { name: /Switch to .*start dubbing/i }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Manage learners" }),
+  ).toBeVisible();
 
   await releaseDubOperation(page, "delete");
   await expect(

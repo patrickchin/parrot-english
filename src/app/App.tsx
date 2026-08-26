@@ -57,6 +57,7 @@ import {
 } from "../media/audio-playback";
 import {
   getGateRouteKind,
+  getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
   getGuardianPath,
@@ -70,8 +71,10 @@ import {
   getSafeReturnTo,
   getStoryPagePath,
   getStoryShelfPath,
-  isRedoLearnerProfileRequest,
+  isGuardianLearnerChildRoute,
+  isGuardianLearnerManagerRoute,
   isGuardianRoute,
+  isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
@@ -84,6 +87,7 @@ import { AuthGate } from "../auth/AuthGate";
 import { useAccountExperience } from "../auth/account-actions";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { HeaderButton, RouteHeader } from "./AppHeader";
+import { AccountPrivacyPage } from "./AccountPrivacyPage";
 import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
@@ -129,6 +133,7 @@ import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
+import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
 import {
   GuardianModeBoundary,
   LearnerModeBoundary,
@@ -145,8 +150,10 @@ const LessonCreator = import.meta.env.SSR
 const APPLICATION_ROUTE_PATTERNS = [
   "/",
   "/guardian",
+  "/guardian/account",
   "/guardian/dubbing",
   "/guardian/learners",
+  "/guardian/learners/:learnerId",
   "/guardian/lessons",
   "/guardian/profile",
   "/guardian/profile/setup",
@@ -1284,24 +1291,21 @@ export function ApplicationRoutes({
           path={getGuardianPath()}
         />
         <Route
+          element={<AccountPrivacyPage />}
+          path={getGuardianAccountPath()}
+        />
+        <Route
           element={<GuardianLearnerProfiles />}
           path={getGuardianLearnersPath()}
         />
         <Route
-          element={<GuardianLessonManager learnerName={learnerName} />}
-          path="/guardian/lessons"
+          element={<GuardianLearnerDetails />}
+          path="/guardian/learners/:learnerId"
         />
+        <Route element={<GuardianLessonManager />} path="/guardian/lessons" />
+        <Route element={<GuardianStorySettings />} path="/guardian/stories" />
         <Route
-          element={<GuardianStorySettings learnerName={learnerName} />}
-          path="/guardian/stories"
-        />
-        <Route
-          element={
-            <GuardianDubbingSettings
-              learnerName={learnerName}
-              onBeforeNavigate={onBeforeModeNavigate}
-            />
-          }
+          element={<GuardianDubbingSettings />}
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
@@ -1319,14 +1323,8 @@ export function ApplicationRoutes({
           path="/talk-to-peppa"
         />
         <Route element={<LessonList />} path="/lessons" />
-        <Route
-          element={<LessonCreator learnerName={learnerName} />}
-          path="/lessons/my/create"
-        />
-        <Route
-          element={<LessonEditor learnerName={learnerName} />}
-          path="/lessons/my/:lessonId/edit"
-        />
+        <Route element={<LessonCreator />} path="/lessons/my/create" />
+        <Route element={<LessonEditor />} path="/lessons/my/:lessonId/edit" />
         <Route
           element={<ParrotLessonRedirect />}
           path="/lessons/parrot/:lessonId"
@@ -1350,7 +1348,10 @@ export function ApplicationRoutes({
         />
         <Route element={<Navigate replace to={loginTarget} />} path="/login" />
         <Route element={null} path="/guardian/profile/setup" />
-        <Route element={null} path="/guardian/profile" />
+        <Route
+          element={<Navigate replace to={getGuardianLearnersPath()} />}
+          path="/guardian/profile"
+        />
         <Route element={null} path="/profile/setup" />
         <Route element={null} path="/profile" />
         <Route
@@ -1386,13 +1387,23 @@ export function AuthenticatedApplication({
   const isLearnerProfileRoute = gateRoute === "learner-profile";
   const isProfileRoute = gateRoute === "profile";
   const isConversationRoute = isTalkToPeppaRoute(location.pathname);
+  const guardianLearnerChildRoute = isGuardianLearnerChildRoute(
+    location.pathname,
+  );
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const guardianBoundaryRoute = guardianRoute || guardianLearnerChildRoute;
   const guardianDashboardRoute =
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
     null;
   const learnerManagerRoute =
     matchPath(
-      { end: true, path: getGuardianLearnersPath() },
+      { end: true, path: getGuardianAccountPath() },
+      location.pathname,
+    ) !== null ||
+    guardianLearnerChildRoute ||
+    isGuardianLearnerManagerRoute(location.pathname) ||
+    matchPath(
+      { end: true, path: "/guardian/profile" },
       location.pathname,
     ) !== null;
   const redoLearnerProfile =
@@ -1432,7 +1443,7 @@ export function AuthenticatedApplication({
     <LearnerProfileGate
       completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
       guardianDashboardRoute={guardianDashboardRoute}
-      guardianRoute={guardianRoute}
+      guardianRoute={guardianBoundaryRoute}
       guardianSelectionFallback={
         <Navigate replace to={getGuardianLearnersPath()} />
       }
@@ -1470,7 +1481,7 @@ export function AuthenticatedApplication({
     return routeContent;
   }
 
-  if (guardianRoute) {
+  if (guardianBoundaryRoute) {
     return (
       <GuardianModeBoundary onBeforeNavigate={onExitLessonRoute}>
         {routeContent}

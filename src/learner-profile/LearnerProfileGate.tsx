@@ -655,6 +655,17 @@ export function profileDraftsFromState(profileState: ProfileState) {
     name: profileState.profile.name ?? "",
     age: profileState.profile.age?.toString() ?? "",
     description: profileState.profile.description ?? "",
+    ...Object.fromEntries(
+      profileState.questions
+        .filter(
+          ({ answerKey }) =>
+            !["name", "age", "description"].includes(answerKey),
+        )
+        .map(({ answerKey }) => [
+          answerKey,
+          profileState.profile.answers.responses[answerKey]?.rawAnswer ?? "",
+        ]),
+    ),
   };
 }
 
@@ -2012,6 +2023,10 @@ export function LearnerProfileGate({
           setIsLoading(false);
           setLoadError("");
         } else {
+          dataRef.current = next;
+          setData(next);
+          setIsLoading(false);
+          setLoadError("");
           updateLearnerIdentityCheck("confirmed");
         }
         if (!matchesExpected) {
@@ -2685,12 +2700,7 @@ export function LearnerProfileGate({
     setProfileFieldErrors({});
     setProfilePageError("");
     try {
-      const answers = {
-        name: profileDrafts.name ?? "",
-        age: profileDrafts.age ?? "",
-        description: profileDrafts.description ?? "",
-      };
-      const saved = await saveProfileAnswers(answers, {
+      const saved = await saveProfileAnswers(profileDrafts, {
         signal: controller.signal,
       });
       if (!isCurrentProfileOperation(profileOperation)) return;
@@ -3069,6 +3079,7 @@ export function LearnerProfileGate({
                   onSave: () => void handleProfileSave(),
                   onValueChange: handleProfileValueChange,
                   pageError: profilePageError,
+                  questions: profileState.questions,
                 }
               : null
           }

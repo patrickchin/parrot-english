@@ -20,7 +20,9 @@ function guardianPath(path: string) {
 
 type PhotoState = "cleanup-only" | "deleted" | "empty" | "ready";
 
-function readyPhotoPayload() {
+function readyPhotoPayload(learnerProfileId?: string | null) {
+  const assetSearch = new URLSearchParams({ v: "1786276800000" });
+  if (learnerProfileId) assetSearch.set("learnerProfileId", learnerProfileId);
   return {
     enabled: true,
     guardianConsentVersion: "guardian-photo-cloudflare-v1",
@@ -30,7 +32,7 @@ function readyPhotoPayload() {
         pages: {
           "my-red-ball": {
             alt: personalizedStoryAlt,
-            src: "/api/stories/the-red-ball/personalized-art/asset?v=1786276800000",
+            src: `/api/stories/the-red-ball/personalized-art/asset?${assetSearch}`,
           },
         },
       },
@@ -105,6 +107,9 @@ async function mockPersonalizedStoryArtApis(
     /\/api\/stories\/the-red-ball\/personalized-art(?:\/asset)?(?:\?.*)?$/,
     async (route) => {
       const pathname = new URL(route.request().url()).pathname;
+      const learnerProfileId = new URL(route.request().url()).searchParams.get(
+        "learnerProfileId",
+      );
       const method = route.request().method();
 
       if (
@@ -114,7 +119,7 @@ async function mockPersonalizedStoryArtApis(
         await route.fulfill({
           body: JSON.stringify(
             state === "ready"
-              ? readyPhotoPayload()
+              ? readyPhotoPayload(learnerProfileId)
               : state === "cleanup-only"
                 ? {
                     enabled: false,
@@ -152,7 +157,7 @@ async function mockPersonalizedStoryArtApis(
         ).toBeGreaterThan(0);
         state = "ready";
         await route.fulfill({
-          body: JSON.stringify(readyPhotoPayload()),
+          body: JSON.stringify(readyPhotoPayload(learnerProfileId)),
           contentType: "application/json",
           status: 201,
         });

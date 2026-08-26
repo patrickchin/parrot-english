@@ -16,6 +16,7 @@ export type MyLessonDescriptor = {
 
 export type MyLessonsRequestOptions = {
   fetch?: typeof globalThis.fetch;
+  learnerProfileId?: string;
   signal?: AbortSignal;
 };
 
@@ -47,10 +48,14 @@ async function requestJson<Result>(
   init: RequestInit,
   {
     fetch: request = globalThis.fetch,
+    learnerProfileId,
     signal,
   }: MyLessonsRequestOptions = {},
 ): Promise<JsonResponse<Result>> {
-  const response = await request(path, { ...init, signal });
+  const response = await request(
+    appendLearnerProfileTarget(path, learnerProfileId),
+    { ...init, signal },
+  );
   let payload: unknown;
   let parseError: unknown = null;
   try {
@@ -87,6 +92,14 @@ async function requestJson<Result>(
     payload: payload as Result,
     status: response.status,
   };
+}
+
+function appendLearnerProfileTarget(
+  path: string,
+  learnerProfileId: string | undefined,
+) {
+  if (learnerProfileId === undefined) return path;
+  return `${path}?${new URLSearchParams({ learnerProfileId })}`;
 }
 
 async function jsonPost<Result>(

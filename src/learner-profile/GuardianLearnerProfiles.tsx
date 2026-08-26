@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -10,13 +11,13 @@ import {
 import { useNavigate } from "react-router";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
-  getGuardianLearnersPath,
+  getGuardianLearnerPath,
   getGuardianPath,
-  getProfilePath,
 } from "../app/app-routes";
 import { ActionButton, Card, fieldClassName } from "../shared/ui";
 import { useLearnerSelection } from "./LearnerProfileContext";
 import {
+  createLearnerProfile,
   loadLearnerProfiles,
   type GuardianLearnerProfileSummary,
   type LearnerProfileRoster,
@@ -66,6 +67,23 @@ function requireActiveRosterProfile(
     throw new Error("The selected learner could not be loaded.");
   }
   return profile;
+}
+
+function requireCreatedRosterProfile(
+  roster: LearnerProfileRoster,
+  existingProfileIds: readonly string[],
+  expectedName: string,
+  expectedActiveProfileId: string | null,
+) {
+  if (roster.activeProfileId !== expectedActiveProfileId) {
+    throw new Error("The newly added learner changed learner mode.");
+  }
+  const existing = new Set(existingProfileIds);
+  const created = roster.profiles.filter(({ id }) => !existing.has(id));
+  if (created.length !== 1 || created[0].name !== expectedName) {
+    throw new Error("The newly added learner could not be loaded.");
+  }
+  return created[0];
 }
 
 export function GuardianLearnerProfilesView({
@@ -123,7 +141,7 @@ export function GuardianLearnerProfilesView({
       <section className="mx-auto grid w-full min-w-0 max-w-5xl gap-6">
         <header className="grid min-w-0 gap-2 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            Learner profiles
+            Manage learners
           </h1>
           <h2
             className="m-0 min-w-0 text-base font-black text-brand-blue [overflow-wrap:anywhere] sm:text-lg"
@@ -186,7 +204,7 @@ export function GuardianLearnerProfilesView({
                         </h3>
                         {isActive ? (
                           <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-900">
-                            Current learner
+                            Learner mode
                           </span>
                         ) : null}
                       </div>
@@ -200,7 +218,7 @@ export function GuardianLearnerProfilesView({
                       {!isActive ? (
                         <ActionButton
                           aria-disabled={controlsUnavailable ? true : undefined}
-                          aria-label={`Use ${profile.name}`}
+                          aria-label={`Use ${profile.name} in learner mode`}
                           onClick={(event) => {
                             if (controlsUnavailable) return;
                             event.currentTarget.focus();
@@ -210,14 +228,14 @@ export function GuardianLearnerProfilesView({
                           type="button"
                           variant="success"
                         >
-                          {isPending ? "Selecting…" : "Use this learner"}
+                          {isPending ? "Selecting…" : "Use in learner mode"}
                         </ActionButton>
                       ) : (
                         <span aria-hidden="true" />
                       )}
                       <ActionButton
                         aria-disabled={controlsUnavailable ? true : undefined}
-                        aria-label={`Manage ${profile.name}'s details`}
+                        aria-label={`Edit ${profile.name}'s profile`}
                         onClick={(event) => {
                           if (controlsUnavailable) return;
                           event.currentTarget.focus();
@@ -227,7 +245,7 @@ export function GuardianLearnerProfilesView({
                         type="button"
                         variant="surface"
                       >
-                        Manage details
+                        Edit profile
                       </ActionButton>
                     </div>
                   </Card>
@@ -291,11 +309,8 @@ export function GuardianLearnerProfilesView({
 
 export function GuardianLearnerProfiles() {
   const navigate = useNavigate();
-  const {
-    activeProfileId: contextActiveProfileId,
-    createAndSelectLearner,
-    selectLearner,
-  } = useLearnerSelection();
+  const { activeProfileId: contextActiveProfileId, selectLearner } =
+    useLearnerSelection();
   const [activeProfileId, setActiveProfileId] = useState<string | null>(
     contextActiveProfileId,
   );
@@ -306,6 +321,7 @@ export function GuardianLearnerProfiles() {
   const [statusMessage, setStatusMessage] = useState("");
   const activeHeadingRef = useRef<HTMLHeadingElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const focusActiveHeadingRef = useRef(false);
   const mountedRef = useRef(false);
   const operationRef = useRef(0);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -374,6 +390,12 @@ export function GuardianLearnerProfiles() {
     }
   }, [contextActiveProfileId]);
 
+  useLayoutEffect(() => {
+    if (!focusActiveHeadingRef.current) return;
+    focusActiveHeadingRef.current = false;
+    activeHeadingRef.current?.focus();
+  }, [activeProfileId, statusMessage]);
+
   useEffect(() => {
     if (
       !contextActiveProfileId ||
@@ -414,14 +436,8 @@ export function GuardianLearnerProfiles() {
     }
   }
 
-  async function selectProfile(
-    profile: GuardianLearnerProfileSummary,
-    navigateToDetails: boolean,
-  ) {
+  async function selectProfile(profile: GuardianLearnerProfileSummary) {
     if (profile.id === activeProfileId) {
-      if (navigateToDetails) {
-        navigate(getProfilePath(getGuardianLearnersPath()));
-      }
       return;
     }
 
@@ -437,13 +453,9 @@ export function GuardianLearnerProfiles() {
       const result = await selectLearner(profile.id);
       if (!operation.isCurrent()) return;
       const selectedProfile = requireActiveRosterProfile(result, profile.id);
+      focusActiveHeadingRef.current = true;
       applyRoster(result);
       setStatusMessage(`Now managing ${selectedProfile.name}`);
-      if (navigateToDetails) {
-        navigate(getProfilePath(getGuardianLearnersPath()));
-      } else {
-        requestAnimationFrame(() => activeHeadingRef.current?.focus());
-      }
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
       const message = errorMessage(
@@ -468,18 +480,25 @@ export function GuardianLearnerProfiles() {
 
   async function addProfile(name: string) {
     const operation = beginOperation();
+    const existingProfileIds = profiles.map(({ id }) => id);
+    const previousActiveProfileId = activeProfileId;
     setError("");
     setStatusMessage("");
     setPendingProfileId(ADD_PENDING_PROFILE_ID);
     try {
-      const result = await createAndSelectLearner(
-        name,
-        profiles.map(({ id }) => id),
-      );
+      const result = await createLearnerProfile(name, {
+        activate: false,
+        signal: operation.controller.signal,
+      });
       if (!operation.isCurrent()) return;
-      requireActiveRosterProfile(result);
+      const created = requireCreatedRosterProfile(
+        result,
+        existingProfileIds,
+        name,
+        previousActiveProfileId,
+      );
       applyRoster(result);
-      navigate(getProfilePath(getGuardianLearnersPath()));
+      navigate(getGuardianLearnerPath(created.id));
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
       const message = errorMessage(
@@ -504,9 +523,9 @@ export function GuardianLearnerProfiles() {
       error={error}
       isLoading={isLoading}
       onAdd={(name) => void addProfile(name)}
-      onManage={(profile) => void selectProfile(profile, true)}
+      onManage={(profile) => navigate(getGuardianLearnerPath(profile.id))}
       onRetry={() => void loadRoster()}
-      onSelect={(profile) => void selectProfile(profile, false)}
+      onSelect={(profile) => void selectProfile(profile)}
       pendingProfileId={pendingProfileId}
       profiles={profiles}
       statusMessage={statusMessage}

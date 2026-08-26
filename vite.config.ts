@@ -178,8 +178,8 @@ function parrotE2eMockApi(): Plugin {
             },
             user: {
               id: "e2e-user",
-              name: "Mia",
-              email: "mia@example.test",
+              name: "Alex Guardian",
+              email: "alex@example.test",
               emailVerified: true,
               createdAt: E2E_TIMESTAMP,
               updatedAt: E2E_TIMESTAMP,

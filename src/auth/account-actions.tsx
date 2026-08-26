@@ -17,12 +17,17 @@ export type AccountExperience = {
   onOpenProfile: (() => void) | null;
 };
 
+export type DeleteAccountAction = (
+  password: string,
+) => Promise<string | null>;
+
 type AccountExperienceSetter = Dispatch<
   SetStateAction<AccountExperience | null>
 >;
 
 type AccountActionContextValue = {
   action: AccountExperience | null;
+  deleteAccount: DeleteAccountAction;
   sessionIdentity: string | null;
   setAction: AccountExperienceSetter;
 };
@@ -33,11 +38,13 @@ const AccountActionContext = createContext<AccountActionContextValue | null>(
 
 export function AccountActionProvider({
   children,
+  deleteAccount,
   profileAction = null,
   sessionIdentity = null,
   setProfileAction,
 }: {
   children: ReactNode;
+  deleteAccount: DeleteAccountAction;
   profileAction?: AccountExperience | null;
   sessionIdentity?: string | null;
   setProfileAction: AccountExperienceSetter;
@@ -45,10 +52,11 @@ export function AccountActionProvider({
   const value = useMemo(
     () => ({
       action: profileAction,
+      deleteAccount,
       sessionIdentity,
       setAction: setProfileAction,
     }),
-    [profileAction, sessionIdentity, setProfileAction],
+    [deleteAccount, profileAction, sessionIdentity, setProfileAction],
   );
   return (
     <AccountActionContext.Provider value={value}>
@@ -79,4 +87,12 @@ export function useAccountExperience() {
 
 export function useAccountSessionIdentity() {
   return useContext(AccountActionContext)?.sessionIdentity ?? null;
+}
+
+export function useDeleteAccountAction() {
+  const deleteAccount = useContext(AccountActionContext)?.deleteAccount;
+  if (!deleteAccount) {
+    throw new Error("Account actions are unavailable.");
+  }
+  return deleteAccount;
 }

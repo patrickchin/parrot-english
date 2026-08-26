@@ -22,6 +22,55 @@ export type LearnerIdentityResolution =
   | { status: "selected"; identity: LearnerIdentity }
   | { status: "selection_required" };
 
+export const LEARNER_PROFILE_TARGET_QUERY_KEY = "learnerProfileId";
+
+const MAX_LEARNER_PROFILE_ID_BYTES = 128;
+
+export function parseLearnerProfileTarget(
+  searchParams: URLSearchParams,
+): string | null {
+  const values = searchParams.getAll(LEARNER_PROFILE_TARGET_QUERY_KEY);
+  if (values.length !== 1) return null;
+  const [value] = values;
+  if (
+    value.trim() === "" ||
+    new TextEncoder().encode(value).byteLength > MAX_LEARNER_PROFILE_ID_BYTES
+  ) {
+    return null;
+  }
+  return value;
+}
+
+export async function resolveOwnedLearnerIdentity(
+  database: Database,
+  account: AccountIdentity,
+  learnerProfileId: string,
+): Promise<LearnerIdentity | null> {
+  const [owned] = await database
+    .select({
+      learnerProfileId: learnerProfile.id,
+      learnerName: learnerProfile.name,
+      legacyStorageOwner: learnerProfile.legacyStorageOwner,
+    })
+    .from(learnerProfile)
+    .where(
+      and(
+        eq(learnerProfile.id, learnerProfileId),
+        eq(learnerProfile.authUserId, account.userId),
+      ),
+    )
+    .limit(1);
+
+  return owned
+    ? {
+        ...account,
+        learnerProfileId: owned.learnerProfileId,
+        learnerName: owned.learnerName?.trim() || null,
+        legacyStorageOwner: owned.legacyStorageOwner,
+      }
+    : null;
+}
+
 export async function resolveLearnerIdentity(
   database: Database,
   account: AccountIdentity,

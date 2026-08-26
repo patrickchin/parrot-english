@@ -31,7 +31,7 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-let AboutDialog;
+let AccountPrivacyPage;
 let AccountDeleteDialog;
 let AccountHeader;
 let createAuthGate;
@@ -46,7 +46,9 @@ let notifyGuardianAccessRequired;
 let useGuardianAccess;
 
 before(async () => {
-  ({ AboutDialog } = await vite.ssrLoadModule("/src/app/AboutDialog.tsx"));
+  ({ AccountPrivacyPage } = await vite
+    .ssrLoadModule("/src/app/AccountPrivacyPage.tsx")
+    .catch(() => ({})));
   ({ AccountDeleteDialog } = await vite.ssrLoadModule(
     "/src/app/AccountDeleteDialog.tsx",
   ));
@@ -111,18 +113,14 @@ async function press(target, key, options = {}) {
 
 function DialogHarness({ kind }) {
   const [isOpen, setIsOpen] = useState(false);
-  const label = kind === "about" ? "Open AI and saved data" : "Open delete";
   return createElement(
     "main",
     null,
     createElement(
       "button",
       { onClick: () => setIsOpen(true), type: "button" },
-      label,
+      "Open delete",
     ),
-    isOpen && kind === "about"
-      ? createElement(AboutDialog, { onClose: () => setIsOpen(false) })
-      : null,
     isOpen && kind === "delete"
       ? createElement(AccountDeleteDialog, {
           onClose: () => setIsOpen(false),
@@ -203,6 +201,7 @@ function accountHeaderProps(overrides = {}) {
     isSigningOut: false,
     learnerLabel: "Mia",
     onDeleteAccount: async () => null,
+    onOpenAccountPrivacy() {},
     onOpenGuardianDashboard() {},
     onOpenLearnerProfiles() {},
     onOpenProfile() {},
@@ -480,44 +479,6 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.activeElement, pending);
   });
 
-  it("traps AI and saved data focus in both directions and restores its opener on Escape", async () => {
-    globalThis.fetch = async () =>
-      Response.json({
-        backend: {
-          commitSha: "local",
-          deployedAt: null,
-          deploymentId: "local",
-          details: { models: { lessonScript: "test-model" } },
-          version: "test",
-        },
-        components: [],
-      });
-    await mountStrict(createElement(DialogHarness, { kind: "about" }));
-
-    const opener = button("Open AI and saved data");
-    opener.focus();
-    await click(opener);
-    const close = button("Close AI and saved data");
-    const done = button("Done");
-    await waitFor(() => assert.equal(document.activeElement, close));
-    assert.match(
-      document.querySelector('[role="dialog"]')?.textContent ?? "",
-      /all learner profiles.*saved data/i,
-    );
-
-    const backwardTab = await press(close, "Tab", { shiftKey: true });
-    assert.equal(backwardTab.defaultPrevented, true);
-    assert.equal(document.activeElement, done);
-
-    const forwardTab = await press(done, "Tab");
-    assert.equal(forwardTab.defaultPrevented, true);
-    assert.equal(document.activeElement, close);
-
-    await press(close, "Escape");
-    assert.equal(document.querySelector('[role="dialog"]'), null);
-    assert.equal(document.activeElement, opener);
-  });
-
   it("traps delete-confirmation focus and restores its opener on Escape", async () => {
     await mountStrict(createElement(DialogHarness, { kind: "delete" }));
 
@@ -595,13 +556,14 @@ describe("keyboard accessibility lifecycles", () => {
       })),
       [
         { role: "menuitem", text: "Guardian dashboard" },
-        { role: "menuitem", text: "Learner profiles" },
-        { role: "menuitem", text: "Manage Mia's details" },
-        { role: "menuitem", text: "Switch to Mia" },
-        { role: "menuitem", text: "AI and saved data" },
+        { role: "menuitem", text: "Manage learners" },
+        { role: "menuitem", text: "Account & privacy" },
         { role: "menuitem", text: "Sign out" },
-        { role: "menuitem", text: "Delete account" },
       ],
+    );
+    assert.doesNotMatch(
+      menu.textContent,
+      /Manage Mia's details|Switch to Mia|AI and saved data|Delete account/,
     );
     assert.match(
       document.querySelector('[aria-label="Active profile"]')?.textContent ??
@@ -610,9 +572,107 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("tears down every open guardian account surface for every learner transition", async () => {
+  it("keeps account privacy content, dashboard navigation, and deletion on the protected page", async () => {
+    assert.equal(
+      typeof AccountPrivacyPage,
+      "function",
+      "Expected an executable AccountPrivacyPage",
+    );
+    const passwords = [];
+    let refetchCalls = 0;
+    const client = authClientForHeader();
+    client.deleteUser = async ({ password }) => {
+      passwords.push(password);
+      return { error: null };
+    };
+    client.useSession = () => ({
+      ...authClientForHeader().useSession(),
+      refetch: async () => {
+        refetchCalls += 1;
+      },
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      GuardianAccessBoundary: ({ children }) => children,
+      View: ({ children }) => children,
+    });
+    globalThis.fetch = async () =>
+      Response.json({
+        backend: {
+          commitSha: "api-commit",
+          deployedAt: null,
+          deploymentId: "deployment-1",
+          details: { models: { lessonScript: "lesson-model" } },
+          version: "1.2.3",
+        },
+        components: [],
+      });
+
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/account"] },
+        createElement(
+          TestAuthGate,
+          null,
+          createElement(
+            Routes,
+            null,
+            createElement(Route, {
+              element: createElement(AccountPrivacyPage),
+              path: "/guardian/account",
+            }),
+            createElement(Route, {
+              element: createElement("output", null, "DASHBOARD DESTINATION"),
+              path: "/guardian",
+            }),
+          ),
+        ),
+      ),
+    );
+
+    assert.equal(document.querySelector("h1")?.textContent, "Account & privacy");
+    assert.match(document.body.textContent, /How Parrot uses AI/);
+    assert.match(document.body.textContent, /What this account keeps/);
+    assert.match(
+      document.body.textContent,
+      /Only the explicit Use in learner mode action changes which learner uses learner mode/,
+    );
+    assert.doesNotMatch(
+      document.body.textContent,
+      /Guardian profile editing can change the selected learner/,
+    );
+    assert.match(document.body.textContent, /Technical build details/);
+    const deleteAccount = button("Delete account");
+    assert.match(deleteAccount.closest("section")?.textContent ?? "", /Danger zone/);
+    assert.equal(
+      [...document.querySelectorAll("button")].filter(
+        (candidate) => candidate.textContent.trim() === "Delete account",
+      ).length,
+      1,
+    );
+
+    await click(deleteAccount);
+    await input(
+      document.querySelector("#delete-account-password"),
+      "parent-password",
+    );
+    await click(button("Delete account now"));
+    await waitFor(() => assert.deepEqual(passwords, ["parent-password"]));
+    assert.equal(refetchCalls, 1);
+
+    await click(button("Cancel"));
+    const back = [...document.querySelectorAll("a")].find(
+      (candidate) =>
+        candidate.textContent.trim() === "Back to Guardian dashboard",
+    );
+    assert.ok(back, "Expected a Back to Guardian dashboard link");
+    await click(back);
+    assert.match(document.body.textContent, /DASHBOARD DESTINATION/);
+  });
+
+  it("tears down an open Guardian menu for every learner transition", async () => {
     for (const transition of ["expiry", "explicit lock", "guardian_required"]) {
-      for (const surface of ["menu", "about", "delete"]) {
         let access;
         let expire = () =>
           assert.fail("Expected guardian expiry to be scheduled.");
@@ -645,13 +705,7 @@ describe("keyboard accessibility lifecycles", () => {
         await click(
           await waitFor(() => button("Profile for Patrick, guardian mode")),
         );
-        if (surface === "about") await click(button("AI and saved data"));
-        if (surface === "delete") await click(button("Delete account"));
-        if (surface === "menu") {
-          assert.ok(document.querySelector('[role="menu"]'));
-        } else {
-          assert.ok(document.querySelector('[role="dialog"]'));
-        }
+        assert.ok(document.querySelector('[role="menu"]'));
 
         if (transition === "expiry") {
           await act(async () => expire());
@@ -664,22 +718,21 @@ describe("keyboard accessibility lifecycles", () => {
         await waitFor(() => button("Profile for Learner, learner mode"));
         assert.ok(
           !document.querySelector('[role="dialog"]'),
-          `${surface} dialog remained exposed after ${transition}`,
+          `Dialog remained exposed after ${transition}`,
         );
         assert.ok(
           !document.querySelector('[role="menu"]'),
-          `${surface} menu remained exposed after ${transition}`,
+          `Menu remained exposed after ${transition}`,
         );
         assert.doesNotMatch(
           document.body.textContent,
           /AI and saved data|Delete account now|Sign out again/,
-          `${surface} remained exposed after ${transition}`,
+          `Guardian action remained exposed after ${transition}`,
         );
 
         await cleanupMountedRoots();
         document.body.replaceChildren();
         window.localStorage.clear();
-      }
     }
   });
 
@@ -783,15 +836,14 @@ describe("keyboard accessibility lifecycles", () => {
       ),
       [
         "Guardian dashboard",
-        "Learner profiles",
-        "AI and saved data",
+        "Manage learners",
+        "Account & privacy",
         "Sign out",
-        "Delete account",
       ],
     );
   });
 
-  it("keeps the details action stable when the profile route is already open", async () => {
+  it("keeps account navigation stable when a profile route is already open", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
         async loadGuardianAccess() {
@@ -831,20 +883,21 @@ describe("keyboard accessibility lifecycles", () => {
       ),
       [
         "Guardian dashboard",
-        "Learner profiles",
-        "Manage Mia's details",
-        "Switch to Mia",
-        "AI and saved data",
+        "Manage learners",
+        "Account & privacy",
         "Sign out",
-        "Delete account",
       ],
     );
     await click(button("Guardian dashboard"));
     await click(button("Profile for Patrick, guardian mode"));
-    await click(button("Learner profiles"));
+    await click(button("Manage learners"));
     await click(button("Profile for Patrick, guardian mode"));
-    await click(button("Manage Mia's details"));
-    assert.deepEqual(navigations, ["/guardian", "/guardian/learners"]);
+    await click(button("Account & privacy"));
+    assert.deepEqual(navigations, [
+      "/guardian",
+      "/guardian/learners",
+      "/guardian/account",
+    ]);
   });
 
   it("sends the grown-up gateway to the learner manager after unlock", async () => {
@@ -891,10 +944,9 @@ describe("keyboard accessibility lifecycles", () => {
       ),
       [
         "Guardian dashboard",
-        "Learner profiles",
-        "AI and saved data",
+        "Manage learners",
+        "Account & privacy",
         "Sign out",
-        "Delete account",
       ],
     );
     assert.equal(
@@ -1204,59 +1256,6 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.activeElement, opener);
   });
 
-  it("keeps guardian selected and shows the safety error when lock fails", async () => {
-    const Provider = createGuardianAccessProvider({
-      api: guardianApi({
-        async loadGuardianAccess() {
-          return {
-            expiresAt: "2099-01-01T00:00:00.000Z",
-            mode: "guardian",
-          };
-        },
-        async lockGuardianAccess() {
-          throw new Error("offline");
-        },
-      }),
-      schedule: () => () => {},
-    });
-    const TestAuthGate = createAuthGate({
-      client: authClientForHeader(),
-      GuardianAccessBoundary: Provider,
-    });
-    await mountStrict(
-      createElement(
-        TestAuthGate,
-        null,
-        createElement(AccountExperienceRegistration, {
-          experience: {
-            error: "",
-            hasActiveLearner: true,
-            learnerName: "Mia",
-            onOpenProfile() {},
-          },
-        }),
-        "LEARNER APP",
-      ),
-    );
-    const trigger = await waitFor(() =>
-      button("Profile for Patrick, guardian mode"),
-    );
-    await click(trigger);
-    await click(button("Switch to Mia"));
-    await waitFor(() =>
-      assert.ok(
-        [...document.querySelectorAll('[role="alert"]')].some((alert) =>
-          /Could not lock guardian mode\. Try again before handing over the device\./.test(
-            alert.textContent,
-          ),
-        ),
-      ),
-    );
-
-    assert.ok(button("Profile for Patrick, guardian mode"));
-    assert.ok(button("Switch to Mia"));
-  });
-
   it("navigates a successful profile-dropdown unlock to guardian home", async () => {
     window.history.replaceState(null, "", "/");
     const Provider = createGuardianAccessProvider({
@@ -1335,10 +1334,16 @@ describe("keyboard accessibility lifecycles", () => {
       client: authClientForHeader(),
       GuardianAccessBoundary: Provider,
     });
+    let access;
     await mountStrict(
       createElement(
         TestAuthGate,
         null,
+        createElement(AccessCapture, {
+          onAccess: (nextAccess) => {
+            access = nextAccess;
+          },
+        }),
         createElement(AccountExperienceRegistration, {
           experience: {
             error: "",
@@ -1390,10 +1395,7 @@ describe("keyboard accessibility lifecycles", () => {
     }
 
     await unlock();
-    await click(
-      await waitFor(() => button("Profile for Patrick, guardian mode")),
-    );
-    await click(button("Switch to Mia"));
+    await act(async () => access.lock());
     await waitFor(() => button("Profile for Mia, learner mode"));
     await unlock();
     await waitFor(() => assert.equal(announcements.length, 3));
@@ -1454,12 +1456,9 @@ describe("keyboard accessibility lifecycles", () => {
       items.map((item) => item.textContent.trim()),
       [
         "Guardian dashboard",
-        "Learner profiles",
-        "Manage Mia's details",
-        "Switch to Mia",
-        "AI and saved data",
+        "Manage learners",
+        "Account & privacy",
         "Sign out",
-        "Delete account",
       ],
     );
     await waitFor(() => assert.equal(document.activeElement, items[0]));
@@ -1467,16 +1466,16 @@ describe("keyboard accessibility lifecycles", () => {
     await press(items[0], "ArrowDown");
     assert.equal(document.activeElement, items[1]);
     await press(items[1], "End");
-    assert.equal(document.activeElement, items[6]);
-    await press(items[6], "ArrowUp");
-    assert.equal(document.activeElement, items[5]);
-    await press(items[5], "ArrowDown");
-    assert.equal(document.activeElement, items[6]);
-    await press(items[6], "ArrowDown");
+    assert.equal(document.activeElement, items[3]);
+    await press(items[3], "ArrowUp");
+    assert.equal(document.activeElement, items[2]);
+    await press(items[2], "ArrowDown");
+    assert.equal(document.activeElement, items[3]);
+    await press(items[3], "ArrowDown");
     assert.equal(document.activeElement, items[0]);
     await press(items[0], "ArrowUp");
-    assert.equal(document.activeElement, items[6]);
-    await press(items[6], "Home");
+    assert.equal(document.activeElement, items[3]);
+    await press(items[3], "Home");
     assert.equal(document.activeElement, items[0]);
 
     await press(items[0], "Escape");
@@ -1489,37 +1488,6 @@ describe("keyboard accessibility lifecycles", () => {
       assert.equal(
         document.activeElement,
         reopenedItems[reopenedItems.length - 1],
-      ),
-    );
-
-    globalThis.fetch = async () =>
-      Response.json({
-        backend: {
-          commitSha: "local",
-          deployedAt: null,
-          deploymentId: "local",
-          details: { models: { lessonScript: "test-model" } },
-          version: "test",
-        },
-        components: [],
-      });
-    await click(reopenedItems[4]);
-    await waitFor(() =>
-      assert.equal(document.activeElement, button("Close AI and saved data")),
-    );
-    await press(document.activeElement, "Escape");
-    assert.equal(document.activeElement, trigger);
-
-    await press(trigger, "ArrowDown");
-    const deleteItem = [...document.querySelectorAll('[role="menuitem"]')].find(
-      (item) => item.textContent.trim() === "Delete account",
-    );
-    assert.ok(deleteItem);
-    await click(deleteItem);
-    await waitFor(() =>
-      assert.equal(
-        document.activeElement,
-        document.querySelector("#delete-account-password"),
       ),
     );
     await press(document.activeElement, "Escape");

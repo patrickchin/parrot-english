@@ -203,10 +203,9 @@ test("authenticated application routes include the core learner activities", () 
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
-  assert.match(createLesson, /Make with AI/);
-  assert.match(createLesson, /Import JSON/);
+  assert.match(createLesson, /Loading learner settings/);
   assert.doesNotMatch(createLesson, /LEARN YOUR WAY/);
-  assert.match(createLesson, /<form|<textarea/);
+  assert.doesNotMatch(createLesson, /<form|<textarea/);
 
   const retiredProgress = renderApplicationRoute("/progress");
   assert.doesNotMatch(retiredProgress, /Progress|coming soon/i);
@@ -221,33 +220,31 @@ test("authenticated application routes include the core learner activities", () 
 });
 
 test("authenticated application routes include guardian voice-dubbing settings", () => {
-  assert.match(
-    app,
-    /<GuardianDubbingSettings[\s\S]*?learnerName=\{learnerName\}[\s\S]*?onBeforeNavigate=\{onBeforeModeNavigate\}[\s\S]*?\/>/,
-  );
+  assert.match(app, /<GuardianDubbingSettings\s*\/>/);
 });
 
-test("guardian routes receive the active learner name without reading profile context", () => {
+test("guardian settings routes resolve their explicit target without active learner props", () => {
+  assert.match(app, /<GuardianDashboard[\s\S]*?learnerName=\{learnerName\}/);
   for (const component of [
-    "GuardianDashboard",
     "GuardianLessonManager",
     "GuardianStorySettings",
     "GuardianDubbingSettings",
     "LessonCreator",
     "LessonEditor",
   ]) {
-    assert.match(
+    assert.doesNotMatch(
       app,
       new RegExp(`<${component}[^>]*\\blearnerName=\\{learnerName\\}`),
-      `Expected ${component} to receive the active learner name`,
+      `Expected ${component} to resolve its learner from the URL target`,
     );
   }
+  assert.doesNotMatch(app, /<GuardianDubbingSettings[^>]*\bonBeforeNavigate=/);
 });
 
 test("guardian learner route renders the concrete roster manager", () => {
   const html = renderApplicationRoute("/guardian/learners");
 
-  assert.match(html, /<h1[^>]*>Learner profiles<\/h1>/);
+  assert.match(html, /<h1[^>]*>Manage learners<\/h1>/);
   assert.doesNotMatch(html, /Learning activities/);
 });
 
@@ -421,7 +418,6 @@ test("global Profile navigation exits the active lesson before routing", () => {
 test("Create Lesson stays statically ranked ahead of dynamic My lesson routes", () => {
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
-  assert.match(createLesson, /Make with AI/);
-  assert.match(createLesson, /Import JSON/);
+  assert.match(createLesson, /Loading learner settings/);
   assert.doesNotMatch(createLesson, /Parrot English speaking lesson/);
 });

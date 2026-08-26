@@ -102,6 +102,33 @@ describe("learnerProfile browser API", () => {
     });
   });
 
+  it("requests managed learner creation without changing the existing default activation contract", async () => {
+    const payload = {
+      activeProfileId: "learner-mia",
+      profiles: [
+        {
+          age: 8,
+          createdAt: "2026-08-26T08:00:00.000Z",
+          id: "learner-mia",
+          name: "Mia",
+          profileStatus: "completed",
+        },
+      ],
+    };
+    const request = jsonFetch(payload);
+
+    await learnerProfileApi.createLearnerProfile("Noah", {
+      activate: false,
+      fetch: request.fetch,
+    });
+    await learnerProfileApi.createLearnerProfile("Ava", {
+      fetch: request.fetch,
+    });
+
+    assert.equal(request.calls[0][1].body, '{"name":"Noah","activate":false}');
+    assert.equal(request.calls[1][1].body, '{"name":"Ava"}');
+  });
+
   it("rejects malformed Guardian rosters from every roster endpoint", async () => {
     const validProfile = {
       age: 6,
@@ -370,6 +397,59 @@ describe("learnerProfile browser API", () => {
         signal: undefined,
       },
     ]);
+  });
+
+  it("targets Guardian profile, preference, and recording requests with one exact learner query", async () => {
+    const learnerProfileId = "learner /Noah";
+    const profilePayload = {
+      profile: { id: learnerProfileId, storyLevel: "tiny-stories" },
+      questions: [],
+    };
+    const request = jsonFetch(profilePayload);
+
+    await learnerProfileApi.loadProfile({
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveProfileAnswer("name", "Noah", {
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveProfileAnswers({ name: "Noah" }, {
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveStoryLevel("tiny-stories", {
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+
+    const consent = jsonFetch({ cleanupPending: false, enabled: true });
+    await learnerProfileApi.loadLessonRecordingConsent({
+      fetch: consent.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveLessonRecordingConsent(true, {
+      fetch: consent.fetch,
+      learnerProfileId,
+    });
+
+    assert.deepEqual(
+      request.calls.map(([url]) => url),
+      [
+        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/profile/preferences?learnerProfileId=learner+%2FNoah",
+      ],
+    );
+    assert.deepEqual(
+      consent.calls.map(([url]) => url),
+      [
+        "/api/lesson-recordings/consent?learnerProfileId=learner+%2FNoah",
+        "/api/profile/lesson-recording-consent?learnerProfileId=learner+%2FNoah",
+      ],
+    );
   });
 
   it("posts skip and completion transitions", async () => {

@@ -23,10 +23,14 @@ export type StoryRouteDecision =
 const GATE_ROUTE_PATH =
   /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
+const GUARDIAN_LEARNERS_ROUTE_PATH = /^\/guardian\/learners\/*$/i;
+const GUARDIAN_LEARNER_ROUTE_PATH =
+  /^\/guardian\/learners\/([^/]+)\/*$/i;
 const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/*$/i,
+  /^\/guardian\/account\/*$/i,
   /^\/guardian\/dubbing\/*$/i,
-  /^\/guardian\/learners\/*$/i,
+  GUARDIAN_LEARNERS_ROUTE_PATH,
   /^\/guardian\/lessons\/*$/i,
   /^\/guardian\/profile\/*$/i,
   /^\/guardian\/profile\/setup\/*$/i,
@@ -66,20 +70,61 @@ export function getGuardianPath() {
   return "/guardian";
 }
 
-export function getGuardianDubbingPath() {
-  return "/guardian/dubbing" as const;
+export function getGuardianAccountPath() {
+  return "/guardian/account" as const;
 }
 
-export function getGuardianLessonsPath() {
-  return "/guardian/lessons";
+function withLearnerProfileTarget(path: string, learnerProfileId?: string) {
+  return learnerProfileId === undefined
+    ? path
+    : `${path}?${new URLSearchParams({ learnerProfileId })}`;
+}
+
+export function getGuardianDubbingPath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/guardian/dubbing", learnerProfileId);
+}
+
+export function getGuardianLessonsPath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/guardian/lessons", learnerProfileId);
 }
 
 export function getGuardianLearnersPath() {
   return "/guardian/learners" as const;
 }
 
-export function getGuardianStoriesPath() {
-  return "/guardian/stories";
+export function getGuardianLearnerPath(learnerId: string) {
+  if (!isSafeRouteId(learnerId)) {
+    throw new TypeError(
+      "Learner ID must be non-empty, encodable, and cannot be a dot segment.",
+    );
+  }
+  return `${getGuardianLearnersPath()}/${encodeURIComponent(learnerId)}`;
+}
+
+export function getGuardianLearnerRouteId(pathname: string) {
+  const match = GUARDIAN_LEARNER_ROUTE_PATH.exec(pathname);
+  if (!match) return null;
+  try {
+    const learnerId = decodeURIComponent(match[1]);
+    return isSafeRouteId(learnerId) ? learnerId : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isGuardianLearnerChildRoute(pathname: string) {
+  return GUARDIAN_LEARNER_ROUTE_PATH.test(pathname);
+}
+
+export function isGuardianLearnerManagerRoute(pathname: string) {
+  return (
+    GUARDIAN_LEARNERS_ROUTE_PATH.test(pathname) ||
+    getGuardianLearnerRouteId(pathname) !== null
+  );
+}
+
+export function getGuardianStoriesPath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/guardian/stories", learnerProfileId);
 }
 
 function parseSceneNumber(value: string | undefined) {
@@ -140,8 +185,18 @@ export function getLessonScenePath(
   return `${getLessonPath(source, lessonId)}/scenes/${sceneIndex + 1}`;
 }
 
-export function getMyLessonEditPath(lessonId: string) {
-  return `${getLessonPath("my", lessonId)}/edit`;
+export function getMyLessonCreatePath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/lessons/my/create", learnerProfileId);
+}
+
+export function getMyLessonEditPath(
+  lessonId: string,
+  learnerProfileId?: string,
+) {
+  return withLearnerProfileTarget(
+    `${getLessonPath("my", lessonId)}/edit`,
+    learnerProfileId,
+  );
 }
 
 export function getLoginPath(returnTo: string) {
@@ -168,7 +223,10 @@ export function isGuardianRoute(pathname: string, search = "") {
   if (/^\/profile\/setup\/*$/i.test(pathname)) {
     return isRedoLearnerProfileRequest(search);
   }
-  return GUARDIAN_MANAGEMENT_ROUTE_PATHS.some((path) => path.test(pathname));
+  return (
+    isGuardianLearnerManagerRoute(pathname) ||
+    GUARDIAN_MANAGEMENT_ROUTE_PATHS.some((path) => path.test(pathname))
+  );
 }
 
 export function getGateRouteKind(pathname: string): GateRouteKind | null {
@@ -200,7 +258,8 @@ export function getSafeReturnTo(search: string) {
 
   if (
     destination.origin !== RETURN_TO_ORIGIN ||
-    !SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname))
+    (!SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname)) &&
+      getGuardianLearnerRouteId(destination.pathname) === null)
   ) {
     return null;
   }

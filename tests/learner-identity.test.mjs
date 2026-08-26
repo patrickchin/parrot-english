@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
 import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
-import { resolveLearnerIdentity } from "../worker/request-identity.ts";
+import {
+  resolveLearnerIdentity,
+  resolveOwnedLearnerIdentity,
+} from "../worker/request-identity.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
@@ -111,6 +114,75 @@ describe("request learner identity", () => {
       status: "selected",
       identity: expectedLearner("session-a"),
     });
+  });
+
+  it("resolves an owned target without changing the session learner selection", async () => {
+    insertLearner(state, "learner-a", "user-a");
+    insertLearner(state, "learner-b", "user-a", {
+      legacyStorageOwner: false,
+      name: " Leo ",
+    });
+    insertSelection(state, "session-a", "user-a", "learner-a");
+
+    assert.deepEqual(
+      await resolveOwnedLearnerIdentity(
+        database,
+        account("session-a"),
+        "learner-b",
+      ),
+      {
+        sessionId: "session-a",
+        userId: "user-a",
+        userName: "Guardian",
+        learnerProfileId: "learner-b",
+        learnerName: "Leo",
+        legacyStorageOwner: false,
+      },
+    );
+    assert.deepEqual(
+      state.sqlite
+        .prepare(
+          `SELECT session_id, auth_user_id, learner_profile_id
+           FROM session_learner_selection`,
+        )
+        .all()
+        .map((row) => ({ ...row })),
+      [
+        {
+          session_id: "session-a",
+          auth_user_id: "user-a",
+          learner_profile_id: "learner-a",
+        },
+      ],
+    );
+  });
+
+  it("does not resolve unknown or foreign learner targets", async () => {
+    insertUser(state, "user-b", "Other Guardian");
+    insertLearner(state, "learner-b", "user-b", { name: "Noah" });
+
+    assert.equal(
+      await resolveOwnedLearnerIdentity(
+        database,
+        account("session-a"),
+        "learner-b",
+      ),
+      null,
+    );
+    assert.equal(
+      await resolveOwnedLearnerIdentity(
+        database,
+        account("session-a"),
+        "missing",
+      ),
+      null,
+    );
+    assert.equal(
+      state.sqlite
+        .prepare("SELECT count(*) AS count FROM session_learner_selection")
+        .get().count,
+      0,
+    );
   });
 
   it("creates and selects one unnamed legacy learner for a zero-profile account", async () => {
