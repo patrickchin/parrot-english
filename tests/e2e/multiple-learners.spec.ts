@@ -187,6 +187,46 @@ test("selects a sibling and keeps that session selection after refresh", async (
   ).toBeVisible();
 });
 
+test("edits Noah by ID while Mia remains in learner mode after Back and refresh", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+
+  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await learnerCard(page, "Noah")
+    .getByRole("button", { name: "Edit Noah's profile" })
+    .click();
+
+  await expect(page).toHaveURL("/guardian/learners/learner-noah");
+  await expect(
+    page.getByRole("heading", { name: "Learner details" }),
+  ).toBeVisible();
+  await expect(page.getByText("Managing Noah", { exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __parrotE2eLearners?: {
+                snapshot(): { activeProfileId: string | null };
+              };
+            }
+          ).__parrotE2eLearners?.snapshot().activeProfileId,
+      ),
+    )
+    .toBe("learner-mia");
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page).toHaveURL("/guardian/learners");
+  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await page.reload();
+  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect(
+    page.getByRole("button", { name: /Profile for Mia, guardian mode/ }),
+  ).toBeVisible();
+});
+
 test("adds a learner, opens their details, and keeps the new roster after refresh", async ({
   page,
 }) => {

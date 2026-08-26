@@ -23,10 +23,13 @@ export type StoryRouteDecision =
 const GATE_ROUTE_PATH =
   /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
+const GUARDIAN_LEARNERS_ROUTE_PATH = /^\/guardian\/learners\/*$/i;
+const GUARDIAN_LEARNER_ROUTE_PATH =
+  /^\/guardian\/learners\/([^/]+)\/*$/i;
 const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/*$/i,
   /^\/guardian\/dubbing\/*$/i,
-  /^\/guardian\/learners\/*$/i,
+  GUARDIAN_LEARNERS_ROUTE_PATH,
   /^\/guardian\/lessons\/*$/i,
   /^\/guardian\/profile\/*$/i,
   /^\/guardian\/profile\/setup\/*$/i,
@@ -76,6 +79,33 @@ export function getGuardianLessonsPath() {
 
 export function getGuardianLearnersPath() {
   return "/guardian/learners" as const;
+}
+
+export function getGuardianLearnerPath(learnerId: string) {
+  if (!isSafeRouteId(learnerId)) {
+    throw new TypeError(
+      "Learner ID must be non-empty, encodable, and cannot be a dot segment.",
+    );
+  }
+  return `${getGuardianLearnersPath()}/${encodeURIComponent(learnerId)}`;
+}
+
+export function getGuardianLearnerRouteId(pathname: string) {
+  const match = GUARDIAN_LEARNER_ROUTE_PATH.exec(pathname);
+  if (!match) return null;
+  try {
+    const learnerId = decodeURIComponent(match[1]);
+    return isSafeRouteId(learnerId) ? learnerId : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isGuardianLearnerManagerRoute(pathname: string) {
+  return (
+    GUARDIAN_LEARNERS_ROUTE_PATH.test(pathname) ||
+    getGuardianLearnerRouteId(pathname) !== null
+  );
 }
 
 export function getGuardianStoriesPath() {
@@ -168,7 +198,10 @@ export function isGuardianRoute(pathname: string, search = "") {
   if (/^\/profile\/setup\/*$/i.test(pathname)) {
     return isRedoLearnerProfileRequest(search);
   }
-  return GUARDIAN_MANAGEMENT_ROUTE_PATHS.some((path) => path.test(pathname));
+  return (
+    isGuardianLearnerManagerRoute(pathname) ||
+    GUARDIAN_MANAGEMENT_ROUTE_PATHS.some((path) => path.test(pathname))
+  );
 }
 
 export function getGateRouteKind(pathname: string): GateRouteKind | null {
@@ -200,7 +233,8 @@ export function getSafeReturnTo(search: string) {
 
   if (
     destination.origin !== RETURN_TO_ORIGIN ||
-    !SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname))
+    (!SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname)) &&
+      getGuardianLearnerRouteId(destination.pathname) === null)
   ) {
     return null;
   }

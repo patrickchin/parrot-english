@@ -930,7 +930,10 @@ function createE2eLearnerAccount(
       url.pathname === "/api/profile/lesson-recording-consent";
     if (!isLessonRecordingPath && !isProfileConsentPath) return null;
 
-    const learner = selectedLearner();
+    const targetedProfileId = url.searchParams.get("learnerProfileId");
+    const learner = targetedProfileId
+      ? (state.learners.get(targetedProfileId) ?? null)
+      : selectedLearner();
     if (!learner) return selectionRequired();
     if (isProfileConsentPath) {
       if (method !== "PUT") {
@@ -1028,7 +1031,7 @@ function createE2eLearnerAccount(
           false,
         );
         state.learners.set(id, learner);
-        state.activeProfileId = id;
+        if (body.activate !== false) state.activeProfileId = id;
         persist();
         return e2eJson(roster());
       }
@@ -1065,7 +1068,10 @@ function createE2eLearnerAccount(
       return response;
     }
 
-    const learner = selectedLearner();
+    const targetedProfileId = url.searchParams.get("learnerProfileId");
+    const learner = targetedProfileId
+      ? (state.learners.get(targetedProfileId) ?? null)
+      : selectedLearner();
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
       url.pathname === "/api/profile" ||

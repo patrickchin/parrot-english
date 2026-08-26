@@ -1425,7 +1425,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
   });
 
-  it("returns Guardian profile Back, Cancel, and Save to the dashboard without returnTo", async () => {
+  it("returns explicit learner details Back, Cancel, and Save to Manage learners", async () => {
     const profile = {
       profile: {
         ...completedLearnerProfileState().profile,
@@ -1454,10 +1454,16 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         if (path === "/api/learner-profile" && init.method === "GET") {
           return json(completedLearnerProfileState());
         }
-        if (path === "/api/profile" && init.method === "GET") {
+        if (
+          path === "/api/profile?learnerProfileId=learner-1" &&
+          init.method === "GET"
+        ) {
           return json(profile);
         }
-        if (path === "/api/profile" && init.method === "PUT") {
+        if (
+          path === "/api/profile?learnerProfileId=learner-1" &&
+          init.method === "PUT"
+        ) {
           return json(profile);
         }
         throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -1466,18 +1472,20 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       await mountStrict(
         authenticatedApplicationInMemory({
           api,
-          initialEntry: "/guardian/profile",
+          initialEntry: "/guardian/learners/learner-1",
         }),
       );
       await waitFor(() => button(action));
       await click(button(action));
-      await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
+      await waitFor(() =>
+        assert.equal(currentRoute().path, "/guardian/learners"),
+      );
       await cleanupMountedRoots();
       document.body.replaceChildren();
     }
   });
 
-  it("labels a Guardian profile-load recovery as Back and preserves its safe return", async () => {
+  it("returns an explicit learner-details load failure to Manage learners", async () => {
     const api = {
       async loadGuardianAccess() {
         return {
@@ -1496,8 +1504,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       if (path === "/api/learner-profile" && init.method === "GET") {
         return json(completedLearnerProfileState());
       }
-      if (path === "/api/profile" && init.method === "GET") {
+      if (
+        path === "/api/profile?learnerProfileId=learner-1" &&
+        init.method === "GET"
+      ) {
         return json({ message: "Profile service is unavailable." }, 503);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId: "learner-1", profiles: [] });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
@@ -1505,19 +1519,16 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       authenticatedApplicationInMemory({
         api,
-        initialEntry:
-          "/guardian/profile?returnTo=%2Fguardian%2Fstories%3Fsection%3Dart%23cover",
+        initialEntry: "/guardian/learners/learner-1",
       }),
     );
 
-    await waitFor(() => text(/Profile is taking a break/));
-    button("Back");
-    noText(/Back to home/);
-    await click(button("Back"));
+    await waitFor(() => text(/Learner details are taking a break/));
+    await click(link("Back to Manage learners"));
     await waitFor(() =>
-      assert.equal(currentRoute().path, "/guardian/stories?section=art#cover"),
+      assert.equal(currentRoute().path, "/guardian/learners"),
     );
-    await waitFor(() => text(/Story settings/));
+    await waitFor(() => text(/Manage learners/));
   });
 
   it("runs Guardian form-mode redo through profile questions and returns safely on completion", async () => {
@@ -2099,7 +2110,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => {
       assert.equal(currentRoute().path, "/guardian/learners");
-      text(/Learner profiles/);
+      text(/Manage learners/);
     });
     noText(/Story settings/);
   });
@@ -4696,11 +4707,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const preferredName = await waitFor(() => {
       const match = document.querySelector("#preferred-name");
       assert.ok(match);
-      button("Use Noah");
+      button("Use Noah in learner mode");
       return match;
     });
     await input(preferredName, "Ava");
-    await click(button("Use Noah"));
+    await click(button("Use Noah in learner mode"));
 
     await waitFor(() => {
       text(/Now managing Noah/);
@@ -4712,6 +4723,117 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(document.activeElement, context);
     });
     assert.equal(currentRoute().path, "/guardian/learners");
+  });
+
+  it("opens an explicit Guardian learner details route without an active learner selection", async () => {
+    const requests = [];
+    globalThis.fetch = async (path, init = {}) => {
+      requests.push(`${init.method} ${path}`);
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({ mode: "selection-required" });
+      }
+      if (
+        path === "/api/profile?learnerProfileId=learner-noah" &&
+        init.method === "GET"
+      ) {
+        return json({
+          profile: {
+            ...completedLearnerProfileState().profile,
+            age: 10,
+            id: "learner-noah",
+            name: "Noah",
+            description: "Noah likes rockets.",
+            lessonRecordingCleanupPending: false,
+            lessonRecordingConsent: false,
+          },
+          questions: [
+            question({ answerKey: "name" }),
+            question({ answerKey: "age", promptEn: "How old are you?" }),
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "guardian" };
+          },
+        },
+        initialEntry: "/guardian/learners/learner-noah",
+      }),
+    );
+
+    await waitFor(() => text(/Learner details/));
+    assert.equal(document.querySelector("#profile-name")?.value, "Noah");
+    assert.equal(currentRoute().path, "/guardian/learners/learner-noah");
+    assert.equal(requests.some((request) => request.includes("/active")), false);
+  });
+
+  it("redirects the legacy Guardian profile route to Manage learners without opening the gate editor", async () => {
+    let profileEditorLoads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({
+          activeProfileId: "learner-1",
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-26T08:00:00.000Z",
+              id: "learner-1",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        profileEditorLoads += 1;
+        return json({
+          profile: completedLearnerProfileState().profile,
+          questions: [],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "guardian" };
+          },
+        },
+        initialEntry: "/guardian/profile",
+      }),
+    );
+
+    await waitFor(() => text(/Manage learners/));
+    assert.equal(currentRoute().path, "/guardian/learners");
+    assert.equal(profileEditorLoads, 0);
   });
 
   it("finishes the authoritative learner reload after leaving the Guardian manager", async () => {
@@ -4781,8 +4903,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => button("Use Noah"));
-    await click(button("Use Noah"));
+    await waitFor(() => button("Use Noah in learner mode"));
+    await click(button("Use Noah in learner mode"));
     await waitFor(() => assert.equal(selectionRequested, true));
     await click(link("Back to guardian dashboard"));
     await waitFor(() => {
@@ -4793,7 +4915,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => {
       assert.equal(currentRoute().path, "/guardian/learners");
       text(/Managing Mia/);
-      button("Use Noah");
+      button("Use Noah in learner mode");
     });
 
     selectedId = "learner-noah";
@@ -4804,7 +4926,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/Managing Noah/));
     assert.equal(
       [...document.querySelectorAll("button")].some(
-        (candidate) => candidate.getAttribute("aria-label") === "Use Noah",
+        (candidate) =>
+          candidate.getAttribute("aria-label") ===
+          "Use Noah in learner mode",
       ),
       false,
     );
@@ -4874,8 +4998,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => button("Use Noah"));
-    await click(button("Use Noah"));
+    await waitFor(() => button("Use Noah in learner mode"));
+    await click(button("Use Noah in learner mode"));
     await waitFor(() => text(/Learner profiles could not be loaded/i));
     await waitFor(() => {
       assert.equal(loadedProfileIds.at(-1), "learner-noah");
@@ -4884,7 +5008,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(currentRoute().path, "/guardian/learners");
   });
 
-  it("reconciles a newly created learner when no cross-tab session scope exists", async () => {
+  it("reconciles a lost managed-creation response without changing learner mode", async () => {
     let selectedId = "learner-mia";
     let rosterProfiles = [
       {
@@ -4912,7 +5036,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         return json({ activeProfileId: selectedId, profiles: rosterProfiles });
       }
       if (path === "/api/learner-profiles" && init.method === "POST") {
-        selectedId = "learner-ava";
+        assert.deepEqual(JSON.parse(init.body), {
+          activate: false,
+          name: "Ava",
+        });
         rosterProfiles = [
           ...rosterProfiles,
           {
@@ -4949,13 +5076,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => button("Add learner"));
+    const initialProfileLoads = loadedProfileIds.length;
     await input(document.querySelector("#preferred-name"), "Ava");
     await click(button("Add learner"));
     await waitFor(() => text(/The response was lost/i));
-    await waitFor(() => {
-      assert.equal(loadedProfileIds.at(-1), "learner-ava");
-      text(/Managing Ava/);
-    });
+    await waitFor(() => text(/Ava/));
+    assert.equal(loadedProfileIds.length, initialProfileLoads);
+    assert.equal(selectedId, "learner-mia");
+    text(/Managing Mia/);
     assert.equal(currentRoute().path, "/guardian/learners");
   });
 
@@ -5015,7 +5143,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await input(document.querySelector("#preferred-name"), "Ava");
     await click(button("Add learner"));
     await waitFor(() => text(/The newly added learner could not be loaded/i));
-    assert.ok(profileLoads > initialProfileLoads);
+    assert.equal(profileLoads, initialProfileLoads);
     assert.equal(currentRoute().path, "/guardian/learners");
     text(/Managing Mia/);
     noText(/Managing Ava/);

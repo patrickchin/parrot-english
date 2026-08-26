@@ -108,6 +108,10 @@ export type LearnerProfileRequestOptions = {
   signal?: AbortSignal;
 };
 
+export type CreateLearnerProfileOptions = LearnerProfileRequestOptions & {
+  activate?: boolean;
+};
+
 export class LearnerProfileApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -396,14 +400,16 @@ export function loadLearnerProfiles(options?: LearnerProfileRequestOptions) {
 
 export function createLearnerProfile(
   name: string,
-  options?: LearnerProfileRequestOptions,
+  { activate, ...options }: CreateLearnerProfileOptions = {},
 ) {
   return learnerProfilesRequest(
     "/api/learner-profiles",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(
+        activate === undefined ? { name } : { name, activate },
+      ),
     },
     options,
   );

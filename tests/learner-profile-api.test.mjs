@@ -102,6 +102,33 @@ describe("learnerProfile browser API", () => {
     });
   });
 
+  it("requests managed learner creation without changing the existing default activation contract", async () => {
+    const payload = {
+      activeProfileId: "learner-mia",
+      profiles: [
+        {
+          age: 8,
+          createdAt: "2026-08-26T08:00:00.000Z",
+          id: "learner-mia",
+          name: "Mia",
+          profileStatus: "completed",
+        },
+      ],
+    };
+    const request = jsonFetch(payload);
+
+    await learnerProfileApi.createLearnerProfile("Noah", {
+      activate: false,
+      fetch: request.fetch,
+    });
+    await learnerProfileApi.createLearnerProfile("Ava", {
+      fetch: request.fetch,
+    });
+
+    assert.equal(request.calls[0][1].body, '{"name":"Noah","activate":false}');
+    assert.equal(request.calls[1][1].body, '{"name":"Ava"}');
+  });
+
   it("rejects malformed Guardian rosters from every roster endpoint", async () => {
     const validProfile = {
       age: 6,

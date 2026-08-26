@@ -168,6 +168,10 @@ describe("app route helpers", () => {
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
     assert.equal(routes.getGuardianLearnersPath(), "/guardian/learners");
+    assert.equal(
+      routes.getGuardianLearnerPath("learner/noah"),
+      "/guardian/learners/learner%2Fnoah",
+    );
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
     assert.equal(
       routes.getProfilePath("/guardian"),
@@ -182,6 +186,8 @@ describe("app route helpers", () => {
       ["/guardian"],
       ["/guardian/dubbing"],
       ["/guardian/lessons"],
+      ["/guardian/learners/learner-noah"],
+      ["/guardian/learners/learner%2Fnoah"],
       ["/guardian/profile"],
       ["/guardian/profile/setup"],
       ["/guardian/profile/setup", "?redo=1"],
@@ -202,6 +208,8 @@ describe("app route helpers", () => {
       ["/guardianish"],
       ["/guardian/lessons/extra"],
       ["/guardian/dubbing/extra"],
+      ["/guardian/learners/%E0%A4%A"],
+      ["/guardian/learners/learner-noah/extra"],
       ["/lessons/my/lesson-1/edit/extra"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
@@ -210,6 +218,36 @@ describe("app route helpers", () => {
 
     assert.equal(routes.isGuardianRoute("/profile/setup"), false);
     assert.equal(routes.isGuardianRoute("/profile/setup", "?redo=1"), true);
+  });
+
+  it("rejects unsafe Guardian learner route IDs and classifies only valid manager children", () => {
+    for (const learnerId of ["", "   ", ".", "..", "\ud800"]) {
+      assert.throws(
+        () => routes.getGuardianLearnerPath(learnerId),
+        /Learner ID must be non-empty, encodable, and cannot be a dot segment/,
+      );
+    }
+
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute("/guardian/learners"),
+      true,
+    );
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute(
+        "/guardian/learners/learner%2Fnoah",
+      ),
+      true,
+    );
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute("/guardian/learners/%E0%A4%A"),
+      false,
+    );
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute(
+        "/guardian/learners/learner-noah/extra",
+      ),
+      false,
+    );
   });
 
   it("returns guardian gates only to non-gate guardian destinations", () => {

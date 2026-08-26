@@ -247,7 +247,7 @@ test("guardian routes receive the active learner name without reading profile co
 test("guardian learner route renders the concrete roster manager", () => {
   const html = renderApplicationRoute("/guardian/learners");
 
-  assert.match(html, /<h1[^>]*>Learner profiles<\/h1>/);
+  assert.match(html, /<h1[^>]*>Manage learners<\/h1>/);
   assert.doesNotMatch(html, /Learning activities/);
 });
 

@@ -552,6 +552,16 @@ describe("profile summary editor", () => {
         onSave() {},
         onValueChange() {},
         pageError: "",
+        questions: [
+          question({ answerKey: "name" }),
+          question(),
+          question({
+            answerKey: "favoriteAnimals",
+            maxLength: 300,
+            promptEn: "What animals do you like?",
+            promptZh: "你喜欢什么动物？",
+          }),
+        ],
       }),
     );
 
@@ -560,7 +570,7 @@ describe("profile summary editor", () => {
     assert.doesNotMatch(html, /<h1[^>]*>Learner profile<\/h1>/);
     assert.match(html, /personalize.*chats and lessons/i);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
-    assert.equal((html.match(/<textarea/g) ?? []).length, 1);
+    assert.equal((html.match(/<textarea/g) ?? []).length, 2);
     assert.match(html, /<label[^>]*for="profile-name"[^>]*>.*Name/s);
     assert.match(html, /<input[^>]*id="profile-age"[^>]*type="text"/);
     assert.doesNotMatch(
@@ -573,6 +583,12 @@ describe("profile summary editor", () => {
     assert.match(
       html,
       /<textarea[^>]*id="profile-description"[^>]*maxlength="2000"[^>]*>Mia is thirty and loves pandas and fast red cars\.<\/textarea>/i,
+    );
+    assert.match(textFromMarkup(html), /What animals do you like\?/);
+    assert.match(html, /<span[^>]*lang="zh-CN"[^>]*>你喜欢什么动物？<\/span>/);
+    assert.match(
+      html,
+      /<textarea[^>]*id="profile-favoriteAnimals"[^>]*maxlength="300"[^>]*>pandas<\/textarea>/i,
     );
     assert.ok(
       html.indexOf("Mia is thirty and loves pandas") >
@@ -588,10 +604,7 @@ describe("profile summary editor", () => {
     assert.doesNotMatch(html, />Chat with Peppa again</);
     assert.doesNotMatch(html, /pig pal/i);
     assert.match(html, />Save changes</);
-    assert.doesNotMatch(
-      html,
-      /What animals do you like|你喜欢什么动物|Replay|Speak answer/,
-    );
+    assert.doesNotMatch(html, /Replay|Speak answer/);
   });
 
   it("keeps the basic form and navigation actions available while idle", () => {
@@ -667,7 +680,7 @@ describe("profile summary editor", () => {
     );
   });
 
-  it("derives the three editable profile drafts and updates them immutably", () => {
+  it("derives core and returned-question profile drafts and updates them immutably", () => {
     const state = {
       profile: {
         name: "Mia",
@@ -694,6 +707,7 @@ describe("profile summary editor", () => {
       name: "Mia",
       age: "8",
       description: "Mia is eight and likes dinosaurs.",
+      favoriteAnimals: "I like dinosaurs",
     });
     const original = { name: "Mia" };
     assert.deepEqual(updateProfileDraft(original, "name", "Maya"), {

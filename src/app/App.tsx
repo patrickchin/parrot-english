@@ -71,6 +71,7 @@ import {
   getStoryPagePath,
   getStoryShelfPath,
   isRedoLearnerProfileRequest,
+  isGuardianLearnerManagerRoute,
   isGuardianRoute,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
@@ -129,6 +130,7 @@ import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
 import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
+import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
 import {
   GuardianModeBoundary,
   LearnerModeBoundary,
@@ -147,6 +149,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian",
   "/guardian/dubbing",
   "/guardian/learners",
+  "/guardian/learners/:learnerId",
   "/guardian/lessons",
   "/guardian/profile",
   "/guardian/profile/setup",
@@ -1288,6 +1291,10 @@ export function ApplicationRoutes({
           path={getGuardianLearnersPath()}
         />
         <Route
+          element={<GuardianLearnerDetails />}
+          path="/guardian/learners/:learnerId"
+        />
+        <Route
           element={<GuardianLessonManager learnerName={learnerName} />}
           path="/guardian/lessons"
         />
@@ -1350,7 +1357,10 @@ export function ApplicationRoutes({
         />
         <Route element={<Navigate replace to={loginTarget} />} path="/login" />
         <Route element={null} path="/guardian/profile/setup" />
-        <Route element={null} path="/guardian/profile" />
+        <Route
+          element={<Navigate replace to={getGuardianLearnersPath()} />}
+          path="/guardian/profile"
+        />
         <Route element={null} path="/profile/setup" />
         <Route element={null} path="/profile" />
         <Route
@@ -1391,8 +1401,9 @@ export function AuthenticatedApplication({
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
     null;
   const learnerManagerRoute =
+    isGuardianLearnerManagerRoute(location.pathname) ||
     matchPath(
-      { end: true, path: getGuardianLearnersPath() },
+      { end: true, path: "/guardian/profile" },
       location.pathname,
     ) !== null;
   const redoLearnerProfile =
