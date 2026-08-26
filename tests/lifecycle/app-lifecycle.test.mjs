@@ -4982,7 +4982,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(currentRoute().path, "/guardian");
       text(/Managing Mia/);
     });
-    await click(link("Manage learner profiles"));
+    await click(link("Manage learners"));
     await waitFor(() => {
       assert.equal(currentRoute().path, "/guardian/learners");
       text(/Managing Mia/);

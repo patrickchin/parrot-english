@@ -147,5 +147,44 @@ Final result: exit 1; 407/447 passed in 2.8 minutes. Exactly the 40 Task 9 legac
 
 ## Concerns
 
-- The full unit and browser commands are not completely green because Task 9 owns the explicitly deferred stale navigation assertions: one Node lifecycle assertion and 40 Playwright assertions. They were intentionally not migrated in this task.
+- At the initial handoff, the full commands retained one Node lifecycle failure and 40 explicitly deferred Task 9 Playwright assertions. Fix round 1 below corrects the Node locator ownership; the 40 browser assertions remain deferred.
 - Vite continues to report the pre-existing bundle-size advisory; this task adds no dependency and does not materially change the bundle architecture.
+
+## Fix round 1: lifecycle locator correction
+
+The first review found that the lifecycle flow which leaves and re-enters the Guardian learner manager still clicked the retired **Manage learner profiles** accessible name. This assertion is owned by the Task 8 dashboard rename, not Task 9. Production already rendered the correct **Manage learners** contract, so only the stale rendered locator in `tests/lifecycle/app-lifecycle.test.mjs` changed.
+
+### RED evidence
+
+Command:
+
+```sh
+node --test --test-name-pattern="finishes the authoritative learner reload after leaving the Guardian manager" tests/lifecycle/app-lifecycle.test.mjs
+```
+
+Result before the locator correction: exit 1; 0/1 passed. The exact failure was `Expected a link named Manage learner profiles` at line 4985.
+
+### GREEN evidence
+
+Command:
+
+```sh
+node --test --test-name-pattern="finishes the authoritative learner reload after leaving the Guardian manager" tests/lifecycle/app-lifecycle.test.mjs
+```
+
+Result after the locator correction: exit 0; 1/1 passed.
+
+Command:
+
+```sh
+npm test
+```
+
+Result: exit 0; 1322/1322 passed across 115 suites. This supersedes the earlier unit-suite concern; only the separately documented 40 deferred Task 9 Playwright assertions remain outside this fix round.
+
+### Fix self-review
+
+- Changed exactly one accessible locator string from **Manage learner profiles** to the rendered **Manage learners** contract.
+- Confirmed the test still exercises the real dashboard link, returns to `/guardian/learners`, completes the held selection, and verifies the authoritative learner reload.
+- Made no production change and did not weaken or remove any assertion.
+- Left the deferred Minor about per-card description/action association unchanged, as instructed.
