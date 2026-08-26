@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -31,8 +32,16 @@ export const GuardianUnlockForm = forwardRef<
   const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState("");
   const pendingRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const titleId = useId();
   const errorId = `${titleId}-password-error`;
+
+  useEffect(() => {
+    if (!error || isPending) return;
+    formRef.current
+      ?.querySelector<HTMLInputElement>('input[name="password"]')
+      ?.focus();
+  }, [error, isPending]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -63,6 +72,7 @@ export const GuardianUnlockForm = forwardRef<
       aria-labelledby={titleId}
       className="grid gap-5"
       onSubmit={handleSubmit}
+      ref={formRef}
     >
       <header className="grid gap-2">
         <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-blue">

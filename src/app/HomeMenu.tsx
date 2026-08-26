@@ -102,7 +102,9 @@ export function HomeMenu() {
                   )}
                 >
                   {originalDuckScene ? (
-                    <DuckScene compact />
+                    <span className="mx-auto block aspect-video h-full max-w-full">
+                      <DuckScene compact />
+                    </span>
                   ) : (
                     <img
                       alt=""

@@ -25,18 +25,20 @@ async function openProfileQuestion(page: Page) {
 }
 
 const focusScenarios: Array<{
+  keepSurfaceFocus?: boolean;
   name: string;
   prepare: (page: Page) => Promise<Locator>;
   viewport: { height: number; width: number };
 }> = [
   {
+    keepSurfaceFocus: true,
     name: "dark navy account menu",
     prepare: async (page) => {
-      await page.goto(guardianPath("/"));
+      await page.goto(guardianPath("/guardian"));
       await page
         .getByRole("button", { name: "Profile for Mia, guardian mode" })
         .click();
-      return page.getByRole("menuitem", { name: "Learner profile" });
+      return page.getByRole("menuitem", { name: "Manage Mia's details" });
     },
     viewport: { height: 844, width: 390 },
   },
@@ -419,10 +421,14 @@ async function focusGeometry(page: Page, target: Locator) {
   };
 }
 
-async function renderedFocusDelta(page: Page, target: Locator) {
+async function renderedFocusDelta(
+  page: Page,
+  target: Locator,
+  keepSurfaceFocus = false,
+) {
   await expect(target).toBeVisible();
   await target.scrollIntoViewIfNeeded();
-  await blurActiveElement(page);
+  if (!keepSurfaceFocus) await blurActiveElement(page);
   const geometry = await focusGeometry(page, target);
   const unfocused = await decodedScreenshot(page);
   await focusWithKeyboard(page, target);
@@ -548,7 +554,11 @@ for (const scenario of focusScenarios) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize(scenario.viewport);
     const target = await scenario.prepare(page);
-    const focus = await renderedFocusDelta(page, target);
+    const focus = await renderedFocusDelta(
+      page,
+      target,
+      scenario.keepSurfaceFocus,
+    );
 
     expectRenderedFocusTarget(focus, scenario.name);
   });
@@ -921,7 +931,14 @@ async function expectLessonShelfOpenReadingCue(
     { markerEndTolerance: 2 },
   );
 
-  expect(await lessonShelfHeadingGeometry(page, heading)).toEqual(focused);
+  const blurred = await lessonShelfHeadingGeometry(page, heading);
+  // Linux Chromium can requantize this downstream block offset by a fraction
+  // of a CSS pixel while taking the focused and unfocused screenshots.
+  expect(
+    Math.abs(blurred.firstLesson.y - focused.firstLesson.y),
+  ).toBeLessThanOrEqual(0.25);
+  blurred.firstLesson.y = focused.firstLesson.y;
+  expect(blurred).toEqual(focused);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -1428,9 +1445,21 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  const profile = page.getByRole("menuitem", { name: "Learner profile" });
+  await expect(
+    page.getByRole("menuitem", { name: "Guardian dashboard" }),
+  ).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(
+    page.getByRole("menuitem", { name: "Learner profiles" }),
+  ).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  const profile = page.getByRole("menuitem", { name: "Manage Mia's details" });
   await expect(profile).toBeFocused();
-  await blurActiveElement(page);
+  await page.keyboard.press("ArrowDown");
+  const switchToLearner = page.getByRole("menuitem", {
+    name: "Switch to Mia",
+  });
+  await expect(switchToLearner).toBeFocused();
   const unfocusedShadow = await profile.evaluate(
     (element) => getComputedStyle(element).boxShadow,
   );
@@ -1448,7 +1477,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
     );
   });
 
-  await focusWithKeyboard(page, profile);
+  await page.keyboard.press("ArrowUp");
   await expect(profile).toBeFocused();
   const initialShadow = await profile.evaluate(
     (element) =>
@@ -1476,9 +1505,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
     );
   });
   await profile.press("ArrowDown");
-  await expect(
-    page.getByRole("menuitem", { name: "AI and saved data" }),
-  ).toBeFocused();
+  await expect(switchToLearner).toBeFocused();
   const initialBlurShadow = await profile.evaluate(
     (element) =>
       (element as HTMLElement & { parrotInitialBlurShadow?: string })

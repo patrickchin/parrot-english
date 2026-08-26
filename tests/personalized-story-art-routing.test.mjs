@@ -60,6 +60,21 @@ function authenticatedEnvironment() {
       timestamp,
       "user-1",
     );
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_profile (
+        id, auth_user_id, legacy_storage_owner, name, onboarding_status,
+        created_at, updated_at
+      ) VALUES (?, ?, 1, ?, 'completed', ?, ?)`,
+    )
+    .run("learner-a", "user-1", "Mia", timestamp, timestamp);
+  state.sqlite
+    .prepare(
+      `INSERT INTO session_learner_selection (
+        session_id, auth_user_id, learner_profile_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run("session-1", "user-1", "learner-a", timestamp, timestamp);
   const base = environment();
   return {
     state,
@@ -92,6 +107,41 @@ describe("personalized story art Worker routing", () => {
     }
 
     assert.equal(getAssetCalls(), 0);
+  });
+
+  it("passes the server-resolved learner identity into personalized art handling", async () => {
+    const { state, env } = authenticatedEnvironment();
+    let observedIdentity = null;
+    try {
+      const worker = createWorker({
+        createAuth: () =>
+          authStub({
+            session: { id: "session-1" },
+            user: { id: "user-1", name: "Parent" },
+          }),
+        async handlePersonalizedStoryArtRequest({ identity }) {
+          observedIdentity = identity;
+          return new Response(null, { status: 204 });
+        },
+      });
+
+      const response = await worker.fetch(
+        new Request(`https://example.test${METADATA_PATH}`),
+        env,
+      );
+
+      assert.equal(response.status, 204);
+      assert.deepEqual(observedIdentity, {
+        learnerName: "Mia",
+        learnerProfileId: "learner-a",
+        legacyStorageOwner: true,
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent",
+      });
+    } finally {
+      state.close();
+    }
   });
 
   it("rate limits authenticated uploads before any personalized-art handler work", async () => {
@@ -144,22 +194,26 @@ describe("personalized story art Worker routing", () => {
   });
 
   it("treats malformed encoded story ids as not found instead of crashing", async () => {
-    const worker = createWorker({
-      createAuth: () =>
-        authStub({
-          session: { id: "session-1" },
-          user: { id: "user-1", name: "Parent" },
-        }),
-    });
-    const { env, getAssetCalls } = environment();
+    const { state, env, getAssetCalls } = authenticatedEnvironment();
+    try {
+      const worker = createWorker({
+        createAuth: () =>
+          authStub({
+            session: { id: "session-1" },
+            user: { id: "user-1", name: "Parent" },
+          }),
+      });
 
-    const response = await worker.fetch(
-      new Request("https://example.test/api/stories/%E0%A4%A/personalized-art"),
-      env,
-    );
+      const response = await worker.fetch(
+        new Request("https://example.test/api/stories/%E0%A4%A/personalized-art"),
+        env,
+      );
 
-    assert.equal(response.status, 404);
-    assert.deepEqual(await response.json(), { error: "not_found" });
-    assert.equal(getAssetCalls(), 0);
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
   });
 });

@@ -19,10 +19,11 @@ const homeModule = await vite
 const placeholderModule = await vite
   .ssrLoadModule("/src/app/FeaturePlaceholder.tsx")
   .catch(() => ({}));
-const appModule = await vite.ssrLoadModule("/src/app/App.tsx").catch(() => ({}));
-const { LearnerProfileProvider } = await vite.ssrLoadModule(
-  "/src/learner-profile/LearnerProfileContext.tsx",
-);
+const appModule = await vite
+  .ssrLoadModule("/src/app/App.tsx")
+  .catch(() => ({}));
+const { LearnerProfileProvider, LearnerSelectionProvider } =
+  await vite.ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx");
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
 const { ApplicationRoutes } = appModule;
@@ -49,27 +50,38 @@ function renderApplicationRoute(initialEntry) {
   );
   return renderInRouter(
     createElement(
-      LearnerProfileProvider,
+      LearnerSelectionProvider,
       {
-        profile: {
-          age: 6,
-          answers: {
-            legacyAnswers: null,
-            questionnaireVersion: 2,
-            responses: {},
-            schemaVersion: 2,
-          },
-          completedAt: "2026-08-25T08:00:00.000Z",
-          currentQuestionKey: null,
-          description: "Likes animals",
-          name: "Mia",
-          profileStatus: "completed",
-          questionnaireVersion: 2,
-          storyLevel: "first-words",
-        },
-        replaceProfile() {},
+        activeProfileId: "learner-mia",
+        async reloadSelectedLearner() {},
       },
-      createElement(ApplicationRoutes, { loginTarget: "/" }),
+      createElement(
+        LearnerProfileProvider,
+        {
+          profile: {
+            id: "learner-mia",
+            age: 6,
+            answers: {
+              legacyAnswers: null,
+              questionnaireVersion: 2,
+              responses: {},
+              schemaVersion: 2,
+            },
+            completedAt: "2026-08-25T08:00:00.000Z",
+            currentQuestionKey: null,
+            description: "Likes animals",
+            name: "Mia",
+            profileStatus: "completed",
+            questionnaireVersion: 2,
+            storyLevel: "first-words",
+          },
+          replaceProfile() {},
+        },
+        createElement(ApplicationRoutes, {
+          learnerName: "Mia",
+          loginTarget: "/",
+        }),
+      ),
     ),
     initialEntry,
   );
@@ -109,7 +121,10 @@ test("home menu prioritizes the four learner activities", () => {
     /friendly English conversation|practice speaking out loud|at your level/i,
   );
   assert.match(html, /href="\/stories"/);
-  assert.doesNotMatch(html, /World Explorer|Pixel Lesson Lab|Progress|Coming soon/);
+  assert.doesNotMatch(
+    html,
+    /World Explorer|Pixel Lesson Lab|Progress|Coming soon/,
+  );
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -205,6 +220,37 @@ test("authenticated application routes include the core learner activities", () 
   );
 });
 
+test("authenticated application routes include guardian voice-dubbing settings", () => {
+  assert.match(
+    app,
+    /<GuardianDubbingSettings[\s\S]*?learnerName=\{learnerName\}[\s\S]*?onBeforeNavigate=\{onBeforeModeNavigate\}[\s\S]*?\/>/,
+  );
+});
+
+test("guardian routes receive the active learner name without reading profile context", () => {
+  for (const component of [
+    "GuardianDashboard",
+    "GuardianLessonManager",
+    "GuardianStorySettings",
+    "GuardianDubbingSettings",
+    "LessonCreator",
+    "LessonEditor",
+  ]) {
+    assert.match(
+      app,
+      new RegExp(`<${component}[^>]*\\blearnerName=\\{learnerName\\}`),
+      `Expected ${component} to receive the active learner name`,
+    );
+  }
+});
+
+test("guardian learner route renders the concrete roster manager", () => {
+  const html = renderApplicationRoute("/guardian/learners");
+
+  assert.match(html, /<h1[^>]*>Learner profiles<\/h1>/);
+  assert.doesNotMatch(html, /Learning activities/);
+});
+
 test("canonical Parrot scene routes start without premature scene content", () => {
   const html = renderApplicationRoute(
     "/lessons/parrot/01-peppas-high-ball/scenes/2",
@@ -250,9 +296,18 @@ test("the application shell derives protected targets from the current URL", () 
     app,
     /const\s+gateRoute\s*=\s*getGateRouteKind\(location\.pathname\)/,
   );
-  assert.match(app, /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/);
-  assert.match(app, /const\s+isLearnerProfileRoute\s*=\s*gateRoute\s*===\s*["']learner-profile["']/);
-  assert.match(app, /const\s+isProfileRoute\s*=\s*gateRoute\s*===\s*["']profile["']/);
+  assert.match(
+    app,
+    /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/,
+  );
+  assert.match(
+    app,
+    /const\s+isLearnerProfileRoute\s*=\s*gateRoute\s*===\s*["']learner-profile["']/,
+  );
+  assert.match(
+    app,
+    /const\s+isProfileRoute\s*=\s*gateRoute\s*===\s*["']profile["']/,
+  );
   assert.doesNotMatch(
     app,
     /location\.pathname\s*===\s*["']\/(?:login|profile(?:\/setup)?)["']/,
@@ -304,7 +359,10 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     app,
     /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
   );
-  assert.match(app, /const\s+safeReturnTo\s*=\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']/);
+  assert.match(
+    app,
+    /const\s+safeReturnTo\s*=\s*guardianRoute\s*\?\s*getSafeGuardianReturnTo\(location\.search\)\s*:\s*\(?\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']\s*\)?/s,
+  );
   assert.match(app, /const\s+requestedProtectedTarget\s*=/);
   assert.match(app, /getLearnerProfilePath\(requestedProtectedTarget\)/);
 });
@@ -326,7 +384,10 @@ test("lesson route adapters render the executable route decisions", () => {
   );
   assert.match(app, /function\s+MyLessonRoute/);
   assert.match(app, /loadMyLesson\(lessonId/);
-  assert.match(app, /resolveMyLessonRouteDecision\(entry,\s*lessonId,\s*sceneNumber\)/);
+  assert.match(
+    app,
+    /resolveMyLessonRouteDecision\(entry,\s*lessonId,\s*sceneNumber\)/,
+  );
   assert.match(app, /key=\{`\$\{source\}:\$\{decision\.entry\.id\}`\}/);
   assert.match(app, /routedSceneIndex=\{decision\.sceneIndex\}/);
   assert.match(

@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement, useEffect, useRef, useState } from "react";
 import {
-  Link,
-  MemoryRouter,
-  Route,
-  Routes,
-} from "react-router";
+  act,
+  createElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { Link, MemoryRouter, Route, Routes } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
 import {
@@ -143,7 +145,11 @@ function guardianApi(overrides = {}) {
 
 function AccessMode() {
   const { mode } = useGuardianAccess();
-  return createElement("output", { "aria-label": "Guardian access mode" }, mode);
+  return createElement(
+    "output",
+    { "aria-label": "Guardian access mode" },
+    mode,
+  );
 }
 
 function AccessCapture({ onAccess }) {
@@ -162,21 +168,23 @@ function UnlockHarness({ api, dialog = false, onUnlocked = () => {} }) {
     Provider,
     { sessionIdentity: "id:guardian" },
     createElement(AccessMode),
-    dialog && createElement(
-      "button",
-      { onClick: () => setIsOpen(true), ref: openerRef, type: "button" },
-      "Open guardian mode",
-    ),
-    isOpen && (dialog
-      ? createElement(GuardianUnlockDialog, {
-          onClose: () => setIsOpen(false),
-          onUnlocked,
-          returnFocusRef: openerRef,
-        })
-      : createElement(GuardianUnlockForm, {
-          onCancel: () => setIsOpen(false),
-          onUnlocked,
-        })),
+    dialog &&
+      createElement(
+        "button",
+        { onClick: () => setIsOpen(true), ref: openerRef, type: "button" },
+        "Open guardian mode",
+      ),
+    isOpen &&
+      (dialog
+        ? createElement(GuardianUnlockDialog, {
+            onClose: () => setIsOpen(false),
+            onUnlocked,
+            returnFocusRef: openerRef,
+          })
+        : createElement(GuardianUnlockForm, {
+            onCancel: () => setIsOpen(false),
+            onUnlocked,
+          })),
   );
 }
 
@@ -194,6 +202,8 @@ function accountHeaderProps(overrides = {}) {
     isSigningOut: false,
     learnerLabel: "Mia",
     onDeleteAccount: async () => null,
+    onOpenGuardianDashboard() {},
+    onOpenLearnerProfiles() {},
     onOpenProfile() {},
     onSelectGuardian() {},
     onSelectLearner() {},
@@ -253,14 +263,12 @@ function conversationProps(overrides = {}) {
     onBack() {},
     onChooseLesson() {},
     onFinish() {},
-    onPromptStyleChange() {},
     onRepeatAudio() {},
     onRetryVoice() {},
     onStart() {},
     onStartAudio() {},
     onToggleMicrophone() {},
     purpose: "small-chat",
-    promptStyle: "tiny-turns",
     recoveryPhase: null,
     responseLatencyMs: null,
     status: "listening",
@@ -329,13 +337,42 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await waitFor(() => assert.equal(document.activeElement.textContent, "Home"));
+    await waitFor(() =>
+      assert.equal(document.activeElement.textContent, "Home"),
+    );
     await click(document.querySelector('a[href="/stories"]'));
     await waitFor(() =>
       assert.equal(document.activeElement.textContent, "Pick a story"),
     );
     assert.equal(document.activeElement.tagName, "H1");
     assert.equal(document.activeElement.tabIndex, -1);
+  });
+
+  it("does not steal focus when route focus starts after an account interaction", async () => {
+    function FocusedAccountHarness() {
+      const accountRef = useRef(null);
+      useLayoutEffect(() => accountRef.current?.focus(), []);
+      return createElement(
+        MemoryRouter,
+        { initialEntries: ["/"] },
+        createElement(RouteFocusManager),
+        createElement(
+          "button",
+          { ref: accountRef, type: "button" },
+          "Account",
+        ),
+        createElement("main", null, createElement("h1", null, "Home")),
+      );
+    }
+
+    await mountStrict(createElement(FocusedAccountHarness));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    assert.equal(
+      document.activeElement === button("Account"),
+      true,
+      "Route focus replaced an interaction that already owned focus.",
+    );
   });
 
   it("leaves Space to focused captions and links, then removes its shortcut on unmount", async () => {
@@ -462,6 +499,10 @@ describe("keyboard accessibility lifecycles", () => {
     const close = button("Close AI and saved data");
     const done = button("Done");
     await waitFor(() => assert.equal(document.activeElement, close));
+    assert.match(
+      document.querySelector('[role="dialog"]')?.textContent ?? "",
+      /all learner profiles.*saved data/i,
+    );
 
     const backwardTab = await press(close, "Tab", { shiftKey: true });
     assert.equal(backwardTab.defaultPrevented, true);
@@ -486,6 +527,10 @@ describe("keyboard accessibility lifecycles", () => {
     assert.ok(password);
     const cancel = button("Cancel");
     await waitFor(() => assert.equal(document.activeElement, password));
+    assert.match(
+      document.querySelector('[role="dialog"]')?.textContent ?? "",
+      /all learner profiles.*private voice clips.*story art/i,
+    );
 
     await press(password, "Tab", { shiftKey: true });
     assert.equal(document.activeElement, cancel);
@@ -504,53 +549,63 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.activeElement, opener);
   });
 
-  it("learner mode exposes only the profile switch beneath the active identity", async () => {
+  it("learner mode exposes only the locked grown-up gateway beneath the active identity", async () => {
     await mountStrict(createElement(AccountHeader, accountHeaderProps()));
 
     await click(button("Profile for Mia, learner mode"));
-    const switcher = document.querySelector(
-      '[role="group"][aria-label="Choose profile mode"]',
-    );
-    assert.ok(switcher);
+    const menu = document.querySelector('[role="menu"]');
+    assert.ok(menu);
     assert.deepEqual(
-      [...switcher.querySelectorAll("button")].map((item) => item.textContent.trim()),
-      ["Learner", "Guardian"],
+      [...menu.querySelectorAll('[role="menuitem"]')].map((item) =>
+        item.textContent.trim(),
+      ),
+      ["Grown-up accessAccount password required"],
     );
-    assert.equal(button("Learner").getAttribute("aria-pressed"), "true");
-    assert.equal(button("Guardian").getAttribute("aria-pressed"), "false");
     assert.match(document.body.textContent, /Mia/);
-    assert.equal(document.querySelector('[role="menu"]').children.length, 0);
+    assert.equal(
+      document.querySelector('[aria-label="Choose profile mode"]'),
+      null,
+    );
     assert.doesNotMatch(
       document.body.textContent,
-      /AI and saved data|Sign out|Delete account|Learner profile/,
+      /Guardian dashboard|Learner profiles|AI and saved data|Sign out|Delete account|Manage .* details|Switch to Mia|Patrick|Noah/,
     );
   });
 
-  it("guardian mode keeps all management actions after the profile switch", async () => {
+  it("guardian mode exposes the approved learner-aware management order", async () => {
     await mountStrict(
-      createElement(AccountHeader, accountHeaderProps({ activeMode: "guardian" })),
+      createElement(
+        AccountHeader,
+        accountHeaderProps({ activeMode: "guardian" }),
+      ),
     );
 
     await click(button("Profile for Patrick, guardian mode"));
-    const switcher = document.querySelector(
-      '[role="group"][aria-label="Choose profile mode"]',
-    );
     const menu = document.querySelector('[role="menu"]');
-    assert.ok(switcher);
     assert.ok(menu);
-    assert.equal(button("Learner").getAttribute("aria-pressed"), "false");
-    assert.equal(button("Guardian").getAttribute("aria-pressed"), "true");
+    assert.equal(
+      document.querySelector('[aria-label="Choose profile mode"]'),
+      null,
+    );
     assert.deepEqual(
       [...menu.children].map((item) => ({
         role: item.getAttribute("role"),
         text: item.textContent.trim(),
       })),
       [
-        { role: "menuitem", text: "Learner profile" },
+        { role: "menuitem", text: "Guardian dashboard" },
+        { role: "menuitem", text: "Learner profiles" },
+        { role: "menuitem", text: "Manage Mia's details" },
+        { role: "menuitem", text: "Switch to Mia" },
         { role: "menuitem", text: "AI and saved data" },
         { role: "menuitem", text: "Sign out" },
         { role: "menuitem", text: "Delete account" },
       ],
+    );
+    assert.match(
+      document.querySelector('[aria-label="Active profile"]')?.textContent ??
+        "",
+      /Managing Mia/,
     );
   });
 
@@ -558,7 +613,8 @@ describe("keyboard accessibility lifecycles", () => {
     for (const transition of ["expiry", "explicit lock", "guardian_required"]) {
       for (const surface of ["menu", "about", "delete"]) {
         let access;
-        let expire = () => assert.fail("Expected guardian expiry to be scheduled.");
+        let expire = () =>
+          assert.fail("Expected guardian expiry to be scheduled.");
         let serverMode = "guardian";
         const expiresAt = "2099-01-01T00:00:00.000Z";
         const api = guardianApi({
@@ -591,7 +647,7 @@ describe("keyboard accessibility lifecycles", () => {
         if (surface === "about") await click(button("AI and saved data"));
         if (surface === "delete") await click(button("Delete account"));
         if (surface === "menu") {
-          assert.ok(document.querySelector('[aria-label="Choose profile mode"]'));
+          assert.ok(document.querySelector('[role="menu"]'));
         } else {
           assert.ok(document.querySelector('[role="dialog"]'));
         }
@@ -610,7 +666,7 @@ describe("keyboard accessibility lifecycles", () => {
           `${surface} dialog remained exposed after ${transition}`,
         );
         assert.ok(
-          !document.querySelector('[aria-label="Choose profile mode"]'),
+          !document.querySelector('[role="menu"]'),
           `${surface} menu remained exposed after ${transition}`,
         );
         assert.doesNotMatch(
@@ -673,9 +729,9 @@ describe("keyboard accessibility lifecycles", () => {
 
     await waitFor(() =>
       assert.equal(
-        [...document.querySelectorAll('[role="alert"]')].find(
-          (alert) => alert.textContent.trim() !== "",
-        )?.textContent.trim(),
+        [...document.querySelectorAll('[role="alert"]')]
+          .find((alert) => alert.textContent.trim() !== "")
+          ?.textContent.trim(),
         "Guardian status is unavailable.",
       ),
     );
@@ -698,7 +754,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.ok(!document.querySelector('input[name="password"]'));
   });
 
-  it("keeps all guardian actions before the learner experience registers", async () => {
+  it("hides active-learner actions before the learner experience registers", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
         async loadGuardianAccess() {
@@ -716,16 +772,24 @@ describe("keyboard accessibility lifecycles", () => {
     });
     await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
 
-    await click(await waitFor(() => button("Profile for Patrick, guardian mode")));
+    await click(
+      await waitFor(() => button("Profile for Patrick, guardian mode")),
+    );
     assert.deepEqual(
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
       ),
-      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+      [
+        "Guardian dashboard",
+        "Learner profiles",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
     );
   });
 
-  it("keeps all guardian actions when the profile route registers no opener", async () => {
+  it("keeps the details action stable when the profile route is already open", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
         async loadGuardianAccess() {
@@ -743,6 +807,7 @@ describe("keyboard accessibility lifecycles", () => {
     });
     const profileRouteExperience = {
       error: "",
+      hasActiveLearner: true,
       learnerName: "Mia",
       onOpenProfile: null,
     };
@@ -762,10 +827,80 @@ describe("keyboard accessibility lifecycles", () => {
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
       ),
-      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+      [
+        "Guardian dashboard",
+        "Learner profiles",
+        "Manage Mia's details",
+        "Switch to Mia",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
     );
-    await click(button("Learner profile"));
-    assert.deepEqual(navigations, ["/profile"]);
+    await click(button("Guardian dashboard"));
+    await click(button("Profile for Patrick, guardian mode"));
+    await click(button("Learner profiles"));
+    await click(button("Profile for Patrick, guardian mode"));
+    await click(button("Manage Mia's details"));
+    assert.deepEqual(navigations, ["/guardian", "/guardian/learners"]);
+  });
+
+  it("sends the grown-up gateway to the learner manager after unlock", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi(),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    const navigations = [];
+
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        { navigate: (path) => navigations.push(path) },
+        createElement(AccountExperienceRegistration, {
+          experience: {
+            error: "",
+            guardianUnlockDestination: "/guardian/learners",
+            hasActiveLearner: false,
+            learnerName: null,
+            onOpenProfile: null,
+          },
+        }),
+      ),
+    );
+
+    await click(
+      await waitFor(() => button("Profile for Learner, learner mode")),
+    );
+    await click(button("Grown-up accessAccount password required"));
+    await input(
+      document.querySelector('input[name="password"]'),
+      "correct-password",
+    );
+    await click(button("Unlock guardian mode"));
+    await waitFor(() => assert.deepEqual(navigations, ["/guardian/learners"]));
+    await click(button("Profile for Patrick, guardian mode"));
+    assert.deepEqual(
+      [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
+        item.textContent.trim(),
+      ),
+      [
+        "Guardian dashboard",
+        "Learner profiles",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
+    );
+    assert.equal(
+      [...document.querySelectorAll('[role="menuitem"]')].some((item) =>
+        /Manage .*details|Switch to /.test(item.textContent),
+      ),
+      false,
+    );
   });
 
   it("clears only the exact account experience registered by a profile", async () => {
@@ -789,7 +924,9 @@ describe("keyboard accessibility lifecycles", () => {
         {
           setProfileAction(next) {
             const current = registrations.at(-1) ?? null;
-            registrations.push(typeof next === "function" ? next(current) : next);
+            registrations.push(
+              typeof next === "function" ? next(current) : next,
+            );
           },
         },
         ...experiences.map((experience) =>
@@ -822,7 +959,9 @@ describe("keyboard accessibility lifecycles", () => {
     );
     const password = document.querySelector('input[name="password"]');
     await input(password, "wrong-password");
-    await click(button("Unlock guardian mode"));
+    const unlock = button("Unlock guardian mode");
+    unlock.focus();
+    await click(unlock);
     await waitFor(() =>
       assert.equal(
         document.querySelector('[role="alert"]').textContent.trim(),
@@ -837,7 +976,12 @@ describe("keyboard accessibility lifecycles", () => {
       password.getAttribute("aria-describedby"),
       document.querySelector('[role="alert"]').id,
     );
-    assert.equal(document.querySelector('output[aria-label="Guardian access mode"]').textContent, "learner");
+    assert.equal(document.activeElement, password);
+    assert.equal(
+      document.querySelector('output[aria-label="Guardian access mode"]')
+        .textContent,
+      "learner",
+    );
   });
 
   it("renders one field-associated invalid-password alert in the account unlock dialog", async () => {
@@ -857,10 +1001,12 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Guardian"));
+    await click(button("Grown-up accessAccount password required"));
     const password = document.querySelector('input[name="password"]');
     await input(password, "wrong-password");
-    await click(button("Unlock guardian mode"));
+    const unlock = button("Unlock guardian mode");
+    unlock.focus();
+    await click(unlock);
     await waitFor(() =>
       assert.equal(
         [...document.querySelectorAll('[role="alert"]')].filter(
@@ -873,9 +1019,65 @@ describe("keyboard accessibility lifecycles", () => {
     const alert = [...document.querySelectorAll('[role="alert"]')].find(
       (candidate) => candidate.textContent.trim() !== "",
     );
-    assert.equal(alert.textContent.trim(), "The password did not match this account.");
+    assert.equal(
+      alert.textContent.trim(),
+      "The password did not match this account.",
+    );
     assert.equal(password.getAttribute("aria-invalid"), "true");
     assert.equal(password.getAttribute("aria-describedby"), alert.id);
+    assert.equal(document.activeElement, password);
+  });
+
+  it("keeps learner and expired unlock responses in the password form", async () => {
+    for (const { dialog, response } of [
+      { dialog: false, response: { mode: "learner" } },
+      {
+        dialog: true,
+        response: {
+          expiresAt: "2000-01-01T00:00:00.000Z",
+          mode: "guardian",
+        },
+      },
+    ]) {
+      let unlocked = 0;
+      await mountStrict(
+        createElement(UnlockHarness, {
+          api: guardianApi({
+            async unlockGuardianAccess() {
+              return response;
+            },
+          }),
+          dialog,
+          onUnlocked: () => {
+            unlocked += 1;
+          },
+        }),
+      );
+      if (dialog) await click(button("Open guardian mode"));
+      const password = document.querySelector('input[name="password"]');
+      await input(password, "correct-password");
+      const unlock = button("Unlock guardian mode");
+      unlock.focus();
+      await click(unlock);
+      await waitFor(() =>
+        assert.equal(
+          document.querySelector('[role="alert"]')?.textContent.trim(),
+          "Guardian access could not be checked. Please try again.",
+        ),
+      );
+
+      assert.equal(unlocked, 0);
+      assert.equal(document.activeElement, password);
+      assert.equal(
+        document.querySelector('output[aria-label="Guardian access mode"]')
+          .textContent,
+        "learner",
+      );
+      if (dialog) assert.ok(document.querySelector('[role="dialog"]'));
+
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
   });
 
   it("disables unlock controls while pending and submits the password with Enter", async () => {
@@ -961,7 +1163,9 @@ describe("keyboard accessibility lifecycles", () => {
       createElement(UnlockHarness, {
         api: guardianApi({
           async unlockGuardianAccess() {
-            throw new Error("Guardian access could not be checked. Please try again.");
+            throw new Error(
+              "Guardian access could not be checked. Please try again.",
+            );
           },
         }),
       }),
@@ -972,7 +1176,11 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.ok(document.querySelector('[role="alert"]')));
 
     assert.equal(password.value, "");
-    assert.equal(document.querySelector('output[aria-label="Guardian access mode"]').textContent, "learner");
+    assert.equal(
+      document.querySelector('output[aria-label="Guardian access mode"]')
+        .textContent,
+      "learner",
+    );
   });
 
   it("focuses the unlock password and restores the mode opener on cancel", async () => {
@@ -1013,12 +1221,26 @@ describe("keyboard accessibility lifecycles", () => {
       client: authClientForHeader(),
       GuardianAccessBoundary: Provider,
     });
-    await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement(AccountExperienceRegistration, {
+          experience: {
+            error: "",
+            hasActiveLearner: true,
+            learnerName: "Mia",
+            onOpenProfile() {},
+          },
+        }),
+        "LEARNER APP",
+      ),
+    );
     const trigger = await waitFor(() =>
       button("Profile for Patrick, guardian mode"),
     );
     await click(trigger);
-    await click(button("Learner"));
+    await click(button("Switch to Mia"));
     await waitFor(() =>
       assert.ok(
         [...document.querySelectorAll('[role="alert"]')].some((alert) =>
@@ -1029,8 +1251,8 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.equal(button("Guardian").getAttribute("aria-pressed"), "true");
-    assert.equal(button("Learner").getAttribute("aria-pressed"), "false");
+    assert.ok(button("Profile for Patrick, guardian mode"));
+    assert.ok(button("Switch to Mia"));
   });
 
   it("navigates a successful profile-dropdown unlock to guardian home", async () => {
@@ -1048,7 +1270,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Guardian");
+    const guardian = button("Grown-up accessAccount password required");
     await click(guardian);
     const password = document.querySelector('input[name="password"]');
     await input(password, "correct-password");
@@ -1056,6 +1278,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(window.location.pathname, "/guardian"));
 
     assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(document.querySelector('[role="menu"]'), null);
     assert.match(
       document.body.textContent,
       /Guardian mode unlocked for 15 minutes/,
@@ -1071,7 +1294,21 @@ describe("keyboard accessibility lifecycles", () => {
       client: authClientForHeader(),
       GuardianAccessBoundary: Provider,
     });
-    await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        null,
+        createElement(AccountExperienceRegistration, {
+          experience: {
+            error: "",
+            hasActiveLearner: true,
+            learnerName: "Mia",
+            onOpenProfile() {},
+          },
+        }),
+        "LEARNER APP",
+      ),
+    );
     const liveStatuses = document.querySelectorAll(
       'span[role="status"][aria-live="polite"]',
     );
@@ -1089,13 +1326,15 @@ describe("keyboard accessibility lifecycles", () => {
 
     async function unlock() {
       let guardian = [...document.querySelectorAll("button")].find(
-        (candidate) => candidate.textContent.trim() === "Guardian",
+        (candidate) =>
+          candidate.textContent.trim() ===
+          "Grown-up accessAccount password required",
       );
       if (!guardian) {
         await click(
-          await waitFor(() => button("Profile for Learner, learner mode")),
+          await waitFor(() => button("Profile for Mia, learner mode")),
         );
-        guardian = button("Guardian");
+        guardian = button("Grown-up accessAccount password required");
       }
       await click(guardian);
       const password = document.querySelector('input[name="password"]');
@@ -1110,8 +1349,11 @@ describe("keyboard accessibility lifecycles", () => {
     }
 
     await unlock();
-    await click(await waitFor(() => button("Learner")));
-    await waitFor(() => button("Profile for Learner, learner mode"));
+    await click(
+      await waitFor(() => button("Profile for Patrick, guardian mode")),
+    );
+    await click(button("Switch to Mia"));
+    await waitFor(() => button("Profile for Mia, learner mode"));
     await unlock();
     await waitFor(() => assert.equal(announcements.length, 3));
     observer.disconnect();
@@ -1137,7 +1379,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Guardian");
+    const guardian = button("Grown-up accessAccount password required");
     await click(guardian);
     const password = document.querySelector('input[name="password"]');
     await act(async () =>
@@ -1149,7 +1391,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.ok(document.querySelector('[aria-label="Choose profile mode"]'));
+    assert.ok(document.querySelector('[role="menu"]'));
     await press(password, "Escape");
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.activeElement, guardian);
@@ -1157,7 +1399,10 @@ describe("keyboard accessibility lifecycles", () => {
 
   it("supports menu arrow, Home, End, and Escape keyboard navigation", async () => {
     await mountStrict(
-      createElement(AccountHeader, accountHeaderProps({ activeMode: "guardian" })),
+      createElement(
+        AccountHeader,
+        accountHeaderProps({ activeMode: "guardian" }),
+      ),
     );
 
     const trigger = button("Profile for Patrick, guardian mode");
@@ -1166,23 +1411,31 @@ describe("keyboard accessibility lifecycles", () => {
     const items = [...document.querySelectorAll('[role="menuitem"]')];
     assert.deepEqual(
       items.map((item) => item.textContent.trim()),
-      ["Learner profile", "AI and saved data", "Sign out", "Delete account"],
+      [
+        "Guardian dashboard",
+        "Learner profiles",
+        "Manage Mia's details",
+        "Switch to Mia",
+        "AI and saved data",
+        "Sign out",
+        "Delete account",
+      ],
     );
     await waitFor(() => assert.equal(document.activeElement, items[0]));
 
     await press(items[0], "ArrowDown");
     assert.equal(document.activeElement, items[1]);
     await press(items[1], "End");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "ArrowUp");
-    assert.equal(document.activeElement, items[2]);
-    await press(items[2], "ArrowDown");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "ArrowDown");
+    assert.equal(document.activeElement, items[6]);
+    await press(items[6], "ArrowUp");
+    assert.equal(document.activeElement, items[5]);
+    await press(items[5], "ArrowDown");
+    assert.equal(document.activeElement, items[6]);
+    await press(items[6], "ArrowDown");
     assert.equal(document.activeElement, items[0]);
     await press(items[0], "ArrowUp");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "Home");
+    assert.equal(document.activeElement, items[6]);
+    await press(items[6], "Home");
     assert.equal(document.activeElement, items[0]);
 
     await press(items[0], "Escape");
@@ -1209,7 +1462,7 @@ describe("keyboard accessibility lifecycles", () => {
         },
         components: [],
       });
-    await click(reopenedItems[1]);
+    await click(reopenedItems[4]);
     await waitFor(() =>
       assert.equal(document.activeElement, button("Close AI and saved data")),
     );
@@ -1230,5 +1483,33 @@ describe("keyboard accessibility lifecycles", () => {
     );
     await press(document.activeElement, "Escape");
     assert.equal(document.activeElement, trigger);
+  });
+
+  it("closes the account menu when focus leaves it", async () => {
+    await mountStrict(
+      createElement(
+        "div",
+        null,
+        createElement(AccountHeader, accountHeaderProps()),
+        createElement("button", { type: "button" }, "Play a lesson"),
+      ),
+    );
+
+    await click(button("Profile for Mia, learner mode"));
+    const menu = document.querySelector('[role="menu"]');
+    assert.ok(menu);
+    await waitFor(() =>
+      assert.equal(
+        document.activeElement,
+        menu.querySelector('[role="menuitem"]'),
+      ),
+    );
+
+    const destination = button("Play a lesson");
+    await act(async () => destination.focus());
+    await waitFor(() =>
+      assert.equal(document.querySelector('[role="menu"]'), null),
+    );
+    assert.equal(document.activeElement, destination);
   });
 });

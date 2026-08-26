@@ -12,11 +12,15 @@ class TestD1PreparedStatement {
     return new TestD1PreparedStatement(this.database, this.sql, parameters);
   }
 
-  async all() {
+  executeAll() {
     const results = this.database
       .prepare(this.sql)
       .all(...this.parameters);
     return { success: true, results, meta: {} };
+  }
+
+  async all() {
+    return this.executeAll();
   }
 
   async first(column) {
@@ -62,9 +66,15 @@ export function createTestD1Database() {
 
   const d1 = {
     async batch(statements) {
-      const results = [];
-      for (const statement of statements) results.push(await statement.all());
-      return results;
+      sqlite.exec("BEGIN");
+      try {
+        const results = statements.map((statement) => statement.executeAll());
+        sqlite.exec("COMMIT");
+        return results;
+      } catch (error) {
+        sqlite.exec("ROLLBACK");
+        throw error;
+      }
     },
     async exec(sql) {
       sqlite.exec(sql);

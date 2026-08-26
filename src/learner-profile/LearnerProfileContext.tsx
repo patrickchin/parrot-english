@@ -1,13 +1,32 @@
-import { createContext, useContext, type ReactNode } from "react";
-import type { LearnerProfileSummary } from "./learner-profile-api";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
+import type {
+  LearnerProfileRoster,
+  LearnerProfileSummary,
+} from "./learner-profile-api";
 
 type LearnerProfileContextValue = {
   profile: LearnerProfileSummary;
   replaceProfile: (profile: LearnerProfileSummary) => void;
 };
 
-const LearnerProfileContext =
-  createContext<LearnerProfileContextValue | null>(null);
+const LearnerProfileContext = createContext<LearnerProfileContextValue | null>(
+  null,
+);
+
+export type LearnerSelectionContextValue = {
+  activeProfileId: string | null;
+  createAndSelectLearner: (
+    name: string,
+    existingProfileIds: readonly string[],
+  ) => Promise<LearnerProfileRoster>;
+  reloadSelectedLearner: (
+    expectedProfileId: string,
+  ) => Promise<LearnerProfileSummary>;
+  selectLearner: (profileId: string) => Promise<LearnerProfileRoster>;
+};
+
+const LearnerSelectionContext =
+  createContext<LearnerSelectionContextValue | null>(null);
 
 export function LearnerProfileProvider({
   children,
@@ -24,5 +43,39 @@ export function LearnerProfileProvider({
 export function useLearnerProfile() {
   const value = useContext(LearnerProfileContext);
   if (!value) throw new Error("Learner profile is unavailable.");
+  return value;
+}
+
+export function LearnerSelectionProvider({
+  activeProfileId,
+  children,
+  createAndSelectLearner,
+  reloadSelectedLearner,
+  selectLearner,
+}: LearnerSelectionContextValue & { children: ReactNode }) {
+  const value = useMemo(
+    () => ({
+      activeProfileId,
+      createAndSelectLearner,
+      reloadSelectedLearner,
+      selectLearner,
+    }),
+    [
+      activeProfileId,
+      createAndSelectLearner,
+      reloadSelectedLearner,
+      selectLearner,
+    ],
+  );
+  return (
+    <LearnerSelectionContext.Provider value={value}>
+      {children}
+    </LearnerSelectionContext.Provider>
+  );
+}
+
+export function useLearnerSelection() {
+  const value = useContext(LearnerSelectionContext);
+  if (!value) throw new Error("Learner selection is unavailable.");
   return value;
 }

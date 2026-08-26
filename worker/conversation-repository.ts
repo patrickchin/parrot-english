@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import {
   conversationSession,
   conversationTurn,
@@ -19,10 +19,10 @@ import {
   readV2Answers,
 } from "../lib/learner-profile-responses.js";
 import type { Database } from "./database.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import { LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS } from "./livekit-token.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 const MAX_CONTROLLER_STATE_BYTES = 16 * 1024;
 
@@ -113,7 +113,7 @@ export function createConversationRepository(
   }
 
   async function createConversation(
-    identity: LearnerProfileIdentity,
+    identity: LearnerIdentity,
     scenario: { key: string; version: number },
     configuration: { promptStyle?: TalkToPeppaPromptStyle } = {},
   ) {
@@ -125,6 +125,7 @@ export function createConversationRepository(
       .where(
         and(
           eq(conversationSession.authUserId, identity.userId),
+          eq(conversationSession.learnerProfileId, identity.learnerProfileId),
           eq(conversationSession.scenarioKey, scenario.key),
           inArray(conversationSession.status, ["starting", "active"]),
         ),
@@ -168,7 +169,12 @@ export function createConversationRepository(
     const [storedProfile] = await database
       .select()
       .from(learnerProfile)
-      .where(eq(learnerProfile.authUserId, identity.userId))
+      .where(
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
+      )
       .limit(1);
     let controllerState = createLearnerProfileConversationState();
     if (storedProfile) {
@@ -195,6 +201,7 @@ export function createConversationRepository(
     await database.insert(conversationSession).values({
       id,
       authUserId: identity.userId,
+      learnerProfileId: identity.learnerProfileId,
       scenarioKey: scenario.key,
       scenarioVersion: scenario.version,
       promptStyle,
@@ -208,14 +215,35 @@ export function createConversationRepository(
     return (await findConversation(id))!;
   }
 
-  async function loadOwnedConversation(conversationId: string, userId: string) {
+  async function loadConversationWithTurns(conversationId: string) {
+    const conversation = await findConversation(conversationId);
+    if (!conversation) return null;
+    const turns = await database
+      .select()
+      .from(conversationTurn)
+      .where(eq(conversationTurn.conversationId, conversationId))
+      .orderBy(asc(conversationTurn.sequence));
+    return { conversation, turns };
+  }
+
+  async function loadBrowserConversation(
+    conversationId: string,
+    identity: LearnerIdentity,
+  ) {
+    const learnerOwnership = eq(
+      conversationSession.learnerProfileId,
+      identity.learnerProfileId,
+    );
     const [conversation] = await database
       .select()
       .from(conversationSession)
       .where(
         and(
           eq(conversationSession.id, conversationId),
-          eq(conversationSession.authUserId, userId),
+          eq(conversationSession.authUserId, identity.userId),
+          identity.legacyStorageOwner
+            ? or(learnerOwnership, isNull(conversationSession.learnerProfileId))
+            : learnerOwnership,
         ),
       )
       .limit(1);
@@ -362,9 +390,9 @@ export function createConversationRepository(
 
   async function finalizeConversation(
     conversationId: string,
-    identity: LearnerProfileIdentity,
+    identity: LearnerIdentity,
   ) {
-    const owned = await loadOwnedConversation(conversationId, identity.userId);
+    const owned = await loadBrowserConversation(conversationId, identity);
     if (!owned) throw new ConversationRepositoryError(404, "not_found");
     if (!isConversationPurpose(owned.conversation.scenarioKey)) {
       throw new ConversationRepositoryError(500, "invalid_stored_data");
@@ -415,7 +443,12 @@ export function createConversationRepository(
       throw new ConversationRepositoryError(400, "invalid_review");
     }
     const profileRepository = createLearnerProfileRepository(database, { createId, now });
-    const existingProfile = await profileRepository.findProfile(identity.userId);
+    const storedIdentity = {
+      ...identity,
+      learnerProfileId:
+        owned.conversation.learnerProfileId ?? identity.learnerProfileId,
+    };
+    const existingProfile = await profileRepository.findProfile(storedIdentity);
     const privacyError = profilePrivacyError(profileName, profileSummary);
     if (privacyError) {
       if (
@@ -437,7 +470,7 @@ export function createConversationRepository(
           })
           .where(eq(conversationSession.id, conversationId));
         if (existingProfile.profileStatus !== "completed") {
-          await profileRepository.skipSession(identity);
+          await profileRepository.skipSession(storedIdentity);
         }
         return {
           conversationId,
@@ -454,7 +487,8 @@ export function createConversationRepository(
         profileName &&
         Number.isSafeInteger(profileAge),
     );
-    const profile = existingProfile ?? await profileRepository.ensureProfile(identity);
+    const profile =
+      existingProfile ?? (await profileRepository.ensureProfile(storedIdentity));
     const readableProfile = ensureV2Profile(
       profile,
       LEARNER_PROFILE_QUESTIONNAIRE,
@@ -508,7 +542,7 @@ export function createConversationRepository(
         })
         .where(eq(learnerProfile.id, profile.id));
       await database.batch([profileUpdate, sessionUpdate] as const);
-      await profileRepository.skipSession(identity);
+      await profileRepository.skipSession(storedIdentity);
     }
     return {
       conversationId,
@@ -523,7 +557,8 @@ export function createConversationRepository(
     endConversation,
     findConversation,
     finalizeConversation,
-    loadOwnedConversation,
+    loadBrowserConversation,
+    loadConversationWithTurns,
     updateControllerState,
   };
 }

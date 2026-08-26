@@ -35,6 +35,7 @@ describe("personalized story art persistence contract", () => {
     assert.deepEqual(Object.keys(getTableColumns(schema.personalizedStoryArt)), [
       "id",
       "authUserId",
+      "learnerProfileId",
       "storyId",
       "status",
       "r2ObjectKey",
@@ -49,7 +50,7 @@ describe("personalized story art persistence contract", () => {
     assert.ok(schema.personalizedStoryArtRelations);
   });
 
-  it("adds a migration for owner-scoped private generated-image rows", () => {
+  it("keeps final story art unique per learner with an account lookup index", () => {
     const migrations = readMigrations();
     const artMigration = migrations.find(({ sql }) =>
       /CREATE TABLE [`"]?personalized_story_art[`"]?/i.test(sql),
@@ -82,17 +83,32 @@ describe("personalized story art persistence contract", () => {
         .prepare("PRAGMA index_list('personalized_story_art')")
         .all();
       assert.ok(
-        indexes.some(({ name, unique }) =>
-          unique === 1 && /user.*story|story.*user/i.test(name),
+        indexes.some(
+          ({ name, unique }) =>
+            name === "personalized_story_art_profile_story_unique" &&
+            unique === 1,
         ),
-        "Expected one unique row per user and story",
+        "Expected one unique row per learner and story",
+      );
+      assert.ok(
+        indexes.some(
+          ({ name, unique }) =>
+            name === "personalized_story_art_user_story_idx" && unique === 0,
+        ),
+        "Expected a nonunique compatibility lookup by account and story",
+      );
+      assert.ok(
+        !indexes.some(
+          ({ name }) => name === "personalized_story_art_user_story_unique",
+        ),
+        "Account-wide story uniqueness must be removed",
       );
     } finally {
       database.close();
     }
   });
 
-  it("adds an owner-and-story generation lease with tracked recovery keys", () => {
+  it("retains the account-and-story generation lease as a compatibility table", () => {
     assert.ok(
       schema.personalizedStoryArtGenerationLease,
       "Expected schema.personalizedStoryArtGenerationLease",
@@ -138,6 +154,55 @@ describe("personalized story art persistence contract", () => {
     }
   });
 
+  it("adds a learner-and-story generation lease with independent CAS ownership", () => {
+    assert.ok(
+      schema.learnerStoryArtGenerationLease,
+      "Expected schema.learnerStoryArtGenerationLease",
+    );
+    assert.equal(
+      getTableName(schema.learnerStoryArtGenerationLease),
+      "learner_story_art_generation_lease",
+    );
+    assert.deepEqual(
+      Object.keys(getTableColumns(schema.learnerStoryArtGenerationLease)),
+      [
+        "learnerProfileId",
+        "authUserId",
+        "storyId",
+        "generationToken",
+        "candidateR2ObjectKey",
+        "previousR2ObjectKey",
+        "leaseExpiresAt",
+        "createdAt",
+        "updatedAt",
+      ],
+    );
+
+    const database = createMigratedDatabase();
+    try {
+      const sql = tableSql(database, "learner_story_art_generation_lease");
+      assert.match(
+        sql ?? "",
+        /PRIMARY KEY\s*\(\s*[`"]?learner_profile_id[`"]?\s*,\s*[`"]?story_id[`"]?\s*\)/i,
+      );
+      assert.match(
+        sql ?? "",
+        /REFERENCES [`"]?learner_profile[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(
+        sql ?? "",
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(sql ?? "", /[`"]?auth_user_id[`"]?\s+text\s+NOT NULL/i);
+      assert.match(sql ?? "", /[`"]?generation_token[`"]?\s+text\s+NOT NULL/i);
+      assert.match(sql ?? "", /[`"]?candidate_r2_object_key[`"]?\s+text/i);
+      assert.match(sql ?? "", /[`"]?previous_r2_object_key[`"]?\s+text/i);
+      assert.match(sql ?? "", /[`"]?lease_expires_at[`"]?\s+integer\s+NOT NULL/i);
+    } finally {
+      database.close();
+    }
+  });
+
   it("persists an opaque account-deletion tombstone outside the user cascade", () => {
     assert.ok(
       schema.accountDeletionTombstone,
@@ -149,7 +214,13 @@ describe("personalized story art persistence contract", () => {
     );
     assert.deepEqual(
       Object.keys(getTableColumns(schema.accountDeletionTombstone)),
-      ["userIdHash", "r2Prefix", "requestedAt"],
+      [
+        "userIdHash",
+        "r2Prefix",
+        "requestedAt",
+        "learnerStorageIdentitiesJson",
+        "personalizedArtCandidateKeysJson",
+      ],
     );
 
     const database = createMigratedDatabase();
@@ -157,6 +228,22 @@ describe("personalized story art persistence contract", () => {
       const sql = tableSql(database, "account_deletion_tombstone");
       assert.match(sql ?? "", /[`"]?user_id_hash[`"]?\s+text\s+PRIMARY KEY/i);
       assert.match(sql ?? "", /[`"]?r2_prefix[`"]?\s+text\s+NOT NULL/i);
+      assert.match(
+        sql ?? "",
+        /[`"]?learner_storage_identities_json[`"]?\s+text\s+NOT NULL\s+DEFAULT\s+'\[\]'/i,
+      );
+      assert.match(
+        sql ?? "",
+        /CHECK\s*\(\s*json_valid\s*\(\s*[`"]?learner_storage_identities_json[`"]?\s*\)\s*\)/i,
+      );
+      assert.match(
+        sql ?? "",
+        /[`"]?personalized_art_candidate_keys_json[`"]?\s+text\s+NOT NULL\s+DEFAULT\s+'\[\]'/i,
+      );
+      assert.match(
+        sql ?? "",
+        /CHECK\s*\(\s*json_valid\s*\(\s*[`"]?personalized_art_candidate_keys_json[`"]?\s*\)\s*\)/i,
+      );
       assert.doesNotMatch(
         sql ?? "",
         /REFERENCES [`"]?user[`"]?/i,

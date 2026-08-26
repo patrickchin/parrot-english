@@ -10,18 +10,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
-import {
-  isTalkToPeppaPromptStyle,
-  TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS,
-  talkToPeppaPromptStyleOption,
-  type TalkToPeppaPromptStyle,
-} from "../../lib/talk-to-peppa-prompt-style";
 import { HeaderButton, RouteHeader } from "../app/AppHeader";
 import { LESSON_LEARNING_PATH } from "../app/learning-paths";
 import {
   ActionButton,
   cx,
-  fieldClassName,
   IconButton,
   TextButton,
 } from "../shared/ui";
@@ -62,14 +55,12 @@ type ConversationSurfaceProps = {
   onBack: () => void;
   onChooseLesson: () => void;
   onFinish: () => void;
-  onPromptStyleChange: (style: TalkToPeppaPromptStyle) => void;
   onRepeatAudio: () => void;
   onRetryVoice: () => void;
   onStart: () => void;
   onStartAudio: () => void;
   onToggleMicrophone: () => void;
   purpose: ConversationPurpose;
-  promptStyle: TalkToPeppaPromptStyle;
   recoveryPhase: ConversationRecoveryPhase;
   responseLatencyMs: number | null;
   status: ConversationSurfaceStatus;
@@ -586,14 +577,12 @@ export function ConversationSurface({
   onBack,
   onChooseLesson,
   onFinish,
-  onPromptStyleChange,
   onRepeatAudio,
   onRetryVoice,
   onStart,
   onStartAudio,
   onToggleMicrophone,
   purpose,
-  promptStyle,
   recoveryPhase,
   responseLatencyMs,
   status,
@@ -670,8 +659,7 @@ export function ConversationSurface({
   const expandLandscapeCaption = caption.text.length > 100;
   const { finishLabel, title } = PURPOSE_COPY[purpose];
   const finishRetryLabel = finishLabel ? `${finishLabel} again` : "Finish again";
-  const showPromptStyleSetup = purpose === "small-chat" && status === "ready";
-  const promptStyleOption = talkToPeppaPromptStyleOption(promptStyle);
+  const showStartAction = purpose === "small-chat" && status === "ready";
   const recoveryAction = recoveryFeedback?.action;
   const peppaStatus = recoveryAction ? "error" : status;
   const peppaIsStatic =
@@ -682,7 +670,7 @@ export function ConversationSurface({
     !recoveryAction &&
     !["ready", "connecting", "error", "saving"].includes(status);
   const hasConversationControls = Boolean(
-    showPromptStyleSetup ||
+    showStartAction ||
       recoveryAction ||
       status === "error" ||
       showAudioRecovery ||
@@ -801,69 +789,17 @@ export function ConversationSurface({
           )}
           role={hasConversationControls ? "group" : undefined}
         >
-          {showPromptStyleSetup ? (
-            <div className="grid w-full gap-1.5">
-              <ActionButton
-                aria-label="Start chat"
-                className="min-h-14 short:min-h-12 short:rounded-xl"
-                fullWidth
-                onClick={onStart}
-                size="large"
-                type="button"
-              >
-                Talk to Peppa
-              </ActionButton>
-              <details className="group relative">
-                <summary
-                  aria-label={`Grown-up chat style: ${promptStyleOption.label}`}
-                  className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-white/70 px-3 text-xs font-black text-brand-blue shadow-control-surface [&::-webkit-details-marker]:hidden"
-                >
-                  Grown-up: {promptStyleOption.label}
-                  <span aria-hidden="true" className="group-open:rotate-180">
-                    ▾
-                  </span>
-                </summary>
-                <div
-                  className="absolute bottom-full left-0 z-50 mb-2 grid w-full min-w-0 gap-1 rounded-2xl border-3 border-white bg-white/95 p-2 text-left shadow-card"
-                >
-                  <label
-                    className="text-xs font-black text-brand-blue"
-                    htmlFor="peppa-prompt-style"
-                  >
-                    Chat style
-                  </label>
-                  <select
-                    aria-describedby="peppa-prompt-style-description"
-                    className={fieldClassName({
-                      className:
-                        "min-h-12 truncate rounded-xl px-3 py-1 text-sm",
-                    })}
-                    id="peppa-prompt-style"
-                    onChange={(event) => {
-                      if (isTalkToPeppaPromptStyle(event.target.value)) {
-                        onPromptStyleChange(event.target.value);
-                        const details = event.currentTarget.closest("details");
-                        details?.removeAttribute("open");
-                        details?.querySelector("summary")?.focus();
-                      }
-                    }}
-                    value={promptStyle}
-                  >
-                    {TALK_TO_PEPPA_PROMPT_STYLE_OPTIONS.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <span
-                    className="text-xs font-bold leading-snug text-brand-blue"
-                    id="peppa-prompt-style-description"
-                  >
-                    {promptStyleOption.description}
-                  </span>
-                </div>
-              </details>
-            </div>
+          {showStartAction ? (
+            <ActionButton
+              aria-label="Start chat"
+              className="min-h-14 short:min-h-12 short:rounded-xl"
+              fullWidth
+              onClick={onStart}
+              size="large"
+              type="button"
+            >
+              Talk to Peppa
+            </ActionButton>
           ) : recoveryAction === "lesson" ? (
             <ActionButton
               fullWidth

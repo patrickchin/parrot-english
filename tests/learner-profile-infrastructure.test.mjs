@@ -13,6 +13,7 @@ const EXPECTED_MODELS = {
     properties: [
       "id",
       "authUserId",
+      "legacyStorageOwner",
       "name",
       "age",
       "storyLevel",
@@ -64,6 +65,46 @@ const EXPECTED_MODELS = {
   profileSessionBypass: {
     table: "onboarding_session_bypass",
     properties: ["sessionId", "authUserId", "skippedAt"],
+  },
+  sessionLearnerSelection: {
+    table: "session_learner_selection",
+    properties: [
+      "sessionId",
+      "authUserId",
+      "learnerProfileId",
+      "createdAt",
+      "updatedAt",
+    ],
+  },
+  learnerSessionBypass: {
+    table: "onboarding_learner_session_bypass",
+    properties: ["sessionId", "learnerProfileId", "skippedAt"],
+  },
+  learnerDubConsent: {
+    table: "learner_dub_consent",
+    properties: [
+      "learnerProfileId",
+      "authUserId",
+      "consentVersion",
+      "grantGeneration",
+      "state",
+      "grantedAt",
+      "updatedAt",
+    ],
+  },
+  learnerStoryArtGenerationLease: {
+    table: "learner_story_art_generation_lease",
+    properties: [
+      "learnerProfileId",
+      "authUserId",
+      "storyId",
+      "generationToken",
+      "candidateR2ObjectKey",
+      "previousR2ObjectKey",
+      "leaseExpiresAt",
+      "createdAt",
+      "updatedAt",
+    ],
   },
 };
 
@@ -220,6 +261,10 @@ describe("learner-profile infrastructure", () => {
     }
 
     assert.ok(schema.learnerProfileRelations);
+    assert.ok(schema.sessionLearnerSelection);
+    assert.ok(schema.learnerSessionBypass);
+    assert.ok(schema.learnerDubConsent);
+    assert.ok(schema.learnerStoryArtGenerationLease);
     assert.ok(schema.profileSessionBypassRelations);
     assert.ok(schema.questionnaireRelations);
     assert.ok(schema.questionnaireQuestionRelations);
@@ -251,6 +296,16 @@ describe("learner-profile infrastructure", () => {
       const questionnaireSql = tableSql(database, "questionnaire");
       const questionSql = tableSql(database, "questionnaire_question");
       const bypassSql = tableSql(database, "onboarding_session_bypass");
+      const selectionSql = tableSql(database, "session_learner_selection");
+      const learnerBypassSql = tableSql(
+        database,
+        "onboarding_learner_session_bypass",
+      );
+      const learnerConsentSql = tableSql(database, "learner_dub_consent");
+      const learnerLeaseSql = tableSql(
+        database,
+        "learner_story_art_generation_lease",
+      );
 
       assert.match(profileSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
       assert.match(profileSql, /CHECK\s*\(json_valid\([^)]*answers_json[^)]*\)\)/i);
@@ -277,11 +332,23 @@ describe("learner-profile infrastructure", () => {
         bypassSql,
         /REFERENCES [`"]?session[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
       );
+      for (const sql of [selectionSql, learnerBypassSql, learnerConsentSql, learnerLeaseSql]) {
+        assert.match(
+          sql,
+          /REFERENCES [`"]?learner_profile[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+        );
+      }
 
       const profileIndexes = indexDetails(database, "learner_profile");
       assert.ok(
         profileIndexes.some(
           (index) => index.unique === 1 && index.columns.join() === "auth_user_id",
+        ),
+      );
+      assert.ok(
+        profileIndexes.some(
+          (index) =>
+            index.unique === 1 && index.columns.join() === "id,auth_user_id",
         ),
       );
       assert.ok(

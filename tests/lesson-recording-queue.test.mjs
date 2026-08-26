@@ -184,27 +184,30 @@ describe("lesson recording save queue", () => {
     assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
   });
 
-  it("does not retain or retry a lesson-changed response", async () => {
-    let requests = 0;
-    const queue = createLessonRecordingQueue({
-      save: (blob, slot) => saveLessonRecording(blob, slot, {
-        fetch: async () => {
-          requests += 1;
-          return Response.json({ error: "lesson_changed" }, { status: 409 });
-        },
-      }),
-    });
-    queue.enqueue(
-      MY_REVISION_SLOT,
-      new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
-        type: "audio/webm",
-      }),
-    );
+  it("does not retain or retry a changed lesson or learner response", async () => {
+    for (const error of ["lesson_changed", "learner_selection_changed"]) {
+      let requests = 0;
+      const queue = createLessonRecordingQueue({
+        save: (blob, slot) => saveLessonRecording(blob, slot, {
+          expectedLearnerProfileId: "profile-1",
+          fetch: async () => {
+            requests += 1;
+            return Response.json({ error }, { status: 409 });
+          },
+        }),
+      });
+      queue.enqueue(
+        MY_REVISION_SLOT,
+        new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+          type: "audio/webm",
+        }),
+      );
 
-    await queue.settle();
-    assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
-    await queue.retryFailed();
-    assert.equal(requests, 1);
+      await queue.settle();
+      assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 }, error);
+      await queue.retryFailed();
+      assert.equal(requests, 1, error);
+    }
   });
 
   it("notifies subscribers only when counts change and keeps snapshots stable", async () => {

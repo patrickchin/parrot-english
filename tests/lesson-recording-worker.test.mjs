@@ -130,14 +130,15 @@ function seedDatabase({ consent = true } = {}) {
   insertUser.run("user-2", "Parent Two", "two@example.test", timestamp, timestamp);
   const insertProfile = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, name, onboarding_status,
+      (id, auth_user_id, legacy_storage_owner, name, onboarding_status,
        lesson_recording_consent_version, lesson_recording_consent_at,
        created_at, updated_at)
-     VALUES (?, ?, ?, 'completed', ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, 'completed', ?, ?, ?, ?)`,
   );
   insertProfile.run(
     "profile-1",
     USER_ID,
+    1,
     "Mia",
     consent ? CONSENT_VERSION : null,
     consent ? timestamp : null,
@@ -145,8 +146,19 @@ function seedDatabase({ consent = true } = {}) {
     timestamp,
   );
   insertProfile.run(
+    "profile-sibling",
+    USER_ID,
+    0,
+    "Leo",
+    null,
+    null,
+    timestamp,
+    timestamp,
+  );
+  insertProfile.run(
     "profile-2",
     "user-2",
+    1,
     "Noah",
     CONSENT_VERSION,
     timestamp,
@@ -155,19 +167,29 @@ function seedDatabase({ consent = true } = {}) {
   );
   const insertLesson = state.sqlite.prepare(
     `INSERT INTO learner_lesson
-      (id, auth_user_id, source, lesson_json, created_at, updated_at)
-     VALUES (?, ?, 'uploaded', ?, ?, ?)`,
+      (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
+     VALUES (?, ?, ?, 'uploaded', ?, ?, ?)`,
   );
   insertLesson.run(
     "lesson-1",
     USER_ID,
+    "profile-1",
     JSON.stringify(createLessonScript()),
+    timestamp,
+    timestamp,
+  );
+  insertLesson.run(
+    "sibling-lesson",
+    USER_ID,
+    "profile-sibling",
+    JSON.stringify(createLessonScript({ childName: "Leo" })),
     timestamp,
     timestamp,
   );
   insertLesson.run(
     "other-lesson",
     "user-2",
+    "profile-2",
     JSON.stringify(createLessonScript({ childName: "Noah" })),
     timestamp,
     timestamp,
@@ -175,15 +197,15 @@ function seedDatabase({ consent = true } = {}) {
   return { ...state, database: createDatabase(state.d1) };
 }
 
-function setConsent(state, enabled) {
+function setConsent(state, enabled, learnerProfileId = "profile-1") {
   const current = state.sqlite
     .prepare(
       `SELECT lesson_recording_consent_version AS version,
               lesson_recording_generation AS generation,
               lesson_recording_cleanup_before_generation AS pending
-       FROM learner_profile WHERE auth_user_id = ?`,
+       FROM learner_profile WHERE id = ? AND auth_user_id = ?`,
     )
-    .get(USER_ID);
+    .get(learnerProfileId, USER_ID);
   const wasEnabled = current.version === CONSENT_VERSION;
   const generation = current.generation + (wasEnabled === enabled ? 0 : 1);
   state.sqlite.prepare(
@@ -191,12 +213,13 @@ function setConsent(state, enabled) {
      SET lesson_recording_consent_version = ?, lesson_recording_consent_at = ?,
          lesson_recording_generation = ?,
          lesson_recording_cleanup_before_generation = ?
-     WHERE auth_user_id = ?`,
+     WHERE id = ? AND auth_user_id = ?`,
   ).run(
     enabled ? CONSENT_VERSION : null,
     enabled ? Date.parse(RECORDED_AT) : null,
     generation,
     !enabled && wasEnabled ? generation : current.pending,
+    learnerProfileId,
     USER_ID,
   );
 }
@@ -222,11 +245,15 @@ function myLessonRevision(state, lessonId = "lesson-1") {
 function request(path, {
   body = WEBM,
   contentType = "audio/webm",
+  expectedLearnerProfileId = null,
   lessonRevision,
   method = "PUT",
 } = {}) {
   const headers = {};
   if (contentType !== null) headers["Content-Type"] = contentType;
+  if (expectedLearnerProfileId !== null) {
+    headers["X-Parrot-Expected-Learner-Profile"] = expectedLearnerProfileId;
+  }
   if (lessonRevision !== undefined) {
     headers["X-Parrot-Lesson-Revision"] = lessonRevision;
   }
@@ -238,6 +265,14 @@ function request(path, {
 }
 
 function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
+  const expectedLearnerProfileId = Object.hasOwn(
+    options,
+    "expectedLearnerProfileId",
+  )
+    ? options.expectedLearnerProfileId
+    : (options.method ?? "PUT") === "PUT"
+      ? (options.learnerProfileId ?? "profile-1")
+      : null;
   return handleLessonRecordingRequest(
     {
       database: state.database,
@@ -246,8 +281,11 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
         sessionId: "session-1",
         userId: options.userId ?? USER_ID,
         userName: "Parent",
+        learnerProfileId: options.learnerProfileId ?? "profile-1",
+        learnerName: options.learnerName ?? "Mia",
+        legacyStorageOwner: options.legacyStorageOwner ?? true,
       },
-      request: request(path, options),
+      request: request(path, { ...options, expectedLearnerProfileId }),
     },
     {
       createUploadNonce: options.createUploadNonce ?? (() => "upload-1"),
@@ -269,6 +307,9 @@ function editMyLesson(state, bucket, lesson) {
       sessionId: "session-1",
       userId: USER_ID,
       userName: "Parent",
+      learnerProfileId: "profile-1",
+      learnerName: "Mia",
+      legacyStorageOwner: true,
     },
     request: new Request("https://example.test/api/lessons/my/lesson-1", {
       body: JSON.stringify({ lesson }),
@@ -278,7 +319,7 @@ function editMyLesson(state, bucket, lesson) {
   });
 }
 
-function saveRecordingConsent(state, bucket, enabled) {
+function saveRecordingConsent(state, bucket, enabled, identity = {}) {
   return handleLearnerProfileRequest(
     {
       database: state.database,
@@ -287,6 +328,10 @@ function saveRecordingConsent(state, bucket, enabled) {
         sessionId: "session-1",
         userId: USER_ID,
         userName: "Parent",
+        learnerProfileId: "profile-1",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+        ...identity,
       },
       request: new Request(
         "https://example.test/api/profile/lesson-recording-consent",
@@ -327,6 +372,110 @@ describe("lesson recording Worker handler", () => {
       );
       assert.equal(denied.status, 405);
       assert.equal(denied.headers.get("Allow"), "GET");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects a missing, malformed, or changed learner precondition before reading audio", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const cases = [
+      { expected: null, learnerProfileId: "profile-1" },
+      { expected: " profile-1 ", learnerProfileId: "profile-1" },
+      { expected: "profile-sibling", learnerProfileId: "profile-1" },
+      { expected: "p".repeat(129), learnerProfileId: "p".repeat(129) },
+    ];
+    try {
+      for (const { expected, learnerProfileId } of cases) {
+        let bodyReads = 0;
+        const headers = {
+          get(name) {
+            if (name.toLowerCase() === "content-type") return "audio/webm";
+            if (
+              name.toLowerCase() ===
+              "x-parrot-expected-learner-profile"
+            ) {
+              return expected;
+            }
+            return null;
+          },
+        };
+        const requestWithoutReadableBody = {
+          get body() {
+            bodyReads += 1;
+            throw new Error("The rejected upload body must not be read.");
+          },
+          headers,
+          method: "PUT",
+          url: `https://example.test${BUILT_IN_PATH}`,
+        };
+
+        const response = await handleLessonRecordingRequest(
+          {
+            database: state.database,
+            env: {
+              DB: state.d1,
+              PERSONALIZED_STORY_ART_BUCKET: bucket,
+            },
+            identity: {
+              sessionId: "session-1",
+              userId: USER_ID,
+              userName: "Parent",
+              learnerProfileId,
+              learnerName: "Mia",
+              legacyStorageOwner: learnerProfileId === "profile-1",
+            },
+            request: requestWithoutReadableBody,
+          },
+          { wait: async () => {} },
+        );
+
+        assert.equal(response.status, 409, String(expected));
+        assert.deepEqual(await response.json(), {
+          error: "learner_selection_changed",
+        });
+        assert.equal(bodyReads, 0, String(expected));
+      }
+      assert.equal(bucket.calls.put.length, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("uses only the selected sibling's consent and recording subtree", async () => {
+    const state = seedDatabase({ consent: false });
+    const bucket = createBucket();
+    const sibling = {
+      learnerProfileId: "profile-sibling",
+      learnerName: "Leo",
+      legacyStorageOwner: false,
+    };
+    try {
+      const denied = await call(state, bucket, BUILT_IN_PATH, sibling);
+      assert.equal(denied.status, 403);
+      assert.deepEqual(await denied.json(), {
+        error: "guardian_consent_required",
+      });
+      assert.equal(bucket.calls.put.length, 0);
+
+      const consent = await saveRecordingConsent(state, bucket, true, sibling);
+      assert.equal(consent.status, 200);
+      const saved = await call(state, bucket, BUILT_IN_PATH, sibling);
+      assert.equal(saved.status, 201);
+      assert.equal(
+        audioWrites(bucket)[0].key,
+        "personalized-story-art/user-1/learners/profile-sibling/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio",
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            `SELECT lesson_recording_consent_version
+             FROM learner_profile WHERE id = 'profile-1'`,
+          )
+          .get().lesson_recording_consent_version,
+        null,
+      );
     } finally {
       state.close();
     }
@@ -405,6 +554,7 @@ describe("lesson recording Worker handler", () => {
 
       for (const path of [
         "/api/lesson-recordings/my/other-lesson/scenes/0/steps/1",
+        "/api/lesson-recordings/my/sibling-lesson/scenes/0/steps/1",
         "/api/lesson-recordings/my/lesson-1/scenes/0/steps/0",
         "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/0",
       ]) {

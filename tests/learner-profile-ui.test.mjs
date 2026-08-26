@@ -59,6 +59,14 @@ const gateSource = readFileSync(
   "utf8",
 );
 
+function textFromMarkup(markup) {
+  return markup
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&amp;", "&");
+}
+
 after(async () => {
   await vite.close();
 });
@@ -221,6 +229,29 @@ describe("one-question prose onboarding view", () => {
       }),
       /Skip for now|Skip question/,
     );
+  });
+
+  it("associates answer validation errors with the answer field without mislabelling media errors", () => {
+    const validation = renderQuestion({
+      fieldError: "Please tell me your age using a whole number.",
+      fieldErrorIsAnswer: true,
+      mode: "profile",
+    });
+    assert.match(
+      validation,
+      /<textarea[^>]*aria-describedby="learner-profile-answer-age-error"[^>]*aria-invalid="true"/,
+    );
+    assert.match(
+      validation,
+      /<p[^>]*id="learner-profile-answer-age-error"[^>]*role="alert"/,
+    );
+
+    const media = renderQuestion({
+      fieldError: "Sound did not play.",
+      fieldErrorIsAnswer: false,
+      mode: "profile",
+    });
+    assert.doesNotMatch(media, /aria-invalid|aria-describedby/);
   });
 
   it("contains no scalar-array branching helpers", () => {
@@ -479,6 +510,7 @@ describe("profile summary editor", () => {
         drafts: { name: "Mia", age: "8" },
         fieldErrors: {},
         isSaving: false,
+        learnerName: "Mia",
         lessonRecordingCleanupPending: true,
         lessonRecordingConsent: false,
         onCancel() {},
@@ -510,8 +542,12 @@ describe("profile summary editor", () => {
         },
         fieldErrors: {},
         isSaving: false,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -519,7 +555,9 @@ describe("profile summary editor", () => {
       }),
     );
 
-    assert.match(html, /<h1[^>]*>Learner profile<\/h1>/);
+    assert.match(textFromMarkup(html), /Managing Mia/);
+    assert.match(html, /<h1[^>]*>Learner details<\/h1>/);
+    assert.doesNotMatch(html, /<h1[^>]*>Learner profile<\/h1>/);
     assert.match(html, /personalize.*chats and lessons/i);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
@@ -531,10 +569,7 @@ describe("profile summary editor", () => {
     );
     assert.match(html, /value="Mia"/);
     assert.match(html, /value="30"/);
-    assert.match(
-      html,
-      /<label[^>]*for="profile-description"[^>]*>.*About Mia/s,
-    );
+    assert.match(textFromMarkup(html), /About Mia/);
     assert.match(
       html,
       /<textarea[^>]*id="profile-description"[^>]*maxlength="2000"[^>]*>Mia is thirty and loves pandas and fast red cars\.<\/textarea>/i,
@@ -565,8 +600,12 @@ describe("profile summary editor", () => {
         drafts: { name: "Mia", age: "8" },
         fieldErrors: {},
         isSaving: false,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -595,8 +634,12 @@ describe("profile summary editor", () => {
         drafts: { age: "I am eight" },
         fieldErrors: {},
         isSaving: true,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
@@ -951,6 +994,7 @@ function fullState(overrides = {}) {
   return {
     mode: "full",
     profile: {
+      id: "learner-1",
       name: "Mia",
       age: null,
       answers: emptyAnswers(),
@@ -1018,6 +1062,57 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
+  it("keys the full learner subtree by the active profile ID", () => {
+    assert.match(
+      gateSource,
+      /<LearnerProfileProvider\s+key=\{data\.profile\.id\}[\s\S]*?>[\s\S]*?\{children\}/,
+    );
+  });
+
+  it("keeps selection-required learner mode free of profile and sibling content", () => {
+    const html = renderGate({
+      data: { mode: "selection-required" },
+      isLearnerProfileRoute: false,
+    });
+
+    assert.match(html, /Ask a grown-up to choose a learner/);
+    assert.doesNotMatch(html, /LESSON CONTENT|Mia/);
+  });
+
+  it("keeps incomplete profiles available to Guardian routes and redirects other Guardian pages to the manager when selection is required", () => {
+    const incompleteGuardian = renderGate({
+      data: fullState(),
+      guardianRoute: true,
+      isLearnerProfileRoute: false,
+    });
+    assert.match(incompleteGuardian, /LESSON CONTENT/);
+
+    const selectionRedirect = renderGate({
+      data: { mode: "selection-required" },
+      guardianRoute: true,
+      guardianSelectionFallback: createElement(
+        "div",
+        null,
+        "GUARDIAN MANAGER REDIRECT",
+      ),
+      isLearnerProfileRoute: false,
+    });
+    assert.match(selectionRedirect, /GUARDIAN MANAGER REDIRECT/);
+
+    const bypassRedirect = renderGate({
+      data: { mode: "bypass-only", canBypass: true },
+      guardianRoute: true,
+      guardianSelectionFallback: createElement(
+        "div",
+        null,
+        "GUARDIAN MANAGER REDIRECT",
+      ),
+      isLearnerProfileRoute: false,
+    });
+    assert.match(bypassRedirect, /GUARDIAN MANAGER REDIRECT/);
+    assert.doesNotMatch(bypassRedirect, /LESSON CONTENT/);
+  });
+
   it("does not sync question state before the initial onboarding load finishes", () => {
     assert.equal(typeof shouldSyncActiveQuestion, "function");
     assert.equal(shouldSyncActiveQuestion(null, null), false);
@@ -1072,6 +1167,7 @@ describe("onboarding and profile gate", () => {
   it("keeps profile loading and retry errors on the profile route", () => {
     const loading = renderGate({
       data: fullState({ canBypass: true }),
+      guardianRoute: true,
       isLearnerProfileRoute: false,
       isProfileLoading: true,
       isProfileRoute: true,
@@ -1082,6 +1178,7 @@ describe("onboarding and profile gate", () => {
 
     const failed = renderGate({
       data: fullState({ canBypass: true }),
+      guardianRoute: true,
       isLearnerProfileRoute: false,
       isProfileRoute: true,
       profileLoadError: "Profile service is unavailable.",
@@ -1115,6 +1212,64 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(start, /PARROT ENGLISH/);
     assert.doesNotMatch(start, /What&#x27;s your name\?/);
     assert.doesNotMatch(start, /LESSON CONTENT/);
+  });
+
+  it("never offers learner onboarding bypass from a Guardian load error", () => {
+    const html = renderGate({
+      guardianRoute: true,
+      isLearnerProfileRoute: false,
+      loadError: "Learner questions are unavailable.",
+    });
+
+    assert.match(html, /Learner questions are unavailable\./);
+    assert.match(html, />Back</);
+    assert.match(html, />Retry</);
+    assert.doesNotMatch(html, /Skip for now|Skip question/);
+  });
+
+  it("keeps the Guardian dashboard and learner manager available when active-profile loading fails", () => {
+    const dashboard = renderGate({
+      guardianDashboardRoute: true,
+      guardianRoute: true,
+      isLearnerProfileRoute: false,
+      loadError: "Learner questions are unavailable.",
+    });
+    assert.match(dashboard, /LESSON CONTENT/);
+    assert.doesNotMatch(dashboard, /Skip for now|Questions are taking a break/);
+
+    const manager = renderGate({
+      guardianRoute: true,
+      isLearnerProfileRoute: false,
+      isLoading: true,
+      learnerManagerRoute: true,
+      loadError: "Learner questions are unavailable.",
+    });
+    assert.match(manager, /LESSON CONTENT/);
+    assert.doesNotMatch(manager, /Skip for now|Loading your questions/);
+  });
+
+  it("redirects a non-redo Guardian setup bookmark before learner-profile loading", () => {
+    const html = renderGate({
+      guardianRoute: true,
+      isLearnerProfileRoute: true,
+      isLoading: true,
+      loadError: "Learner questions are unavailable.",
+    });
+
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /Skip for now|Loading your questions/);
+  });
+
+  it("returns a bypass-only Guardian redo to its safe fallback instead of a blank route", () => {
+    const html = renderGate({
+      data: { canBypass: true, mode: "bypass-only" },
+      guardianRoute: true,
+      isLearnerProfileRoute: true,
+      redoLearnerProfile: true,
+    });
+
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
   });
 
   it("uses the loaded question count with singular grammar", () => {
@@ -1183,30 +1338,71 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(bypass, /Edit learner profile/);
   });
 
-  it("renders the basic profile editor without bypass controls", () => {
+  it("renders Guardian-owned profile and consent management without bypass controls", () => {
     const html = renderGate({
       data: fullState({ canBypass: true }),
+      guardianRoute: true,
       isLearnerProfileRoute: false,
       isProfileRoute: true,
       profileEditor: {
         drafts: { name: "Mia", age: "I am eight", description: "" },
         fieldErrors: {},
         isSaving: false,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
+        onLessonRecordingConsentChange() {},
         onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
       },
     });
-    assert.match(html, /Learner profile/);
+    assert.match(html, /Learner details/);
     assert.equal((html.match(/<input/g) ?? []).length, 2);
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /Redo setup questions/);
+    assert.match(html, /Lesson voice recordings/);
+    assert.match(html, /apply only to this learner profile/);
+    assert.match(html, /Guardian manages each learner independently/);
+    assert.match(html, />Allow lesson voice recordings</);
     assert.doesNotMatch(html, /Chat with Peppa again/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);
+  });
+
+  it("rejects consent management outside Guardian-owned profile routes", () => {
+    const html = renderGate({
+      data: fullState({
+        canBypass: true,
+        profile: {
+          ...fullState().profile,
+          profileStatus: "completed",
+        },
+      }),
+      isLearnerProfileRoute: false,
+      isProfileRoute: true,
+      profileEditor: {
+        drafts: { name: "Mia", age: "8", description: "" },
+        fieldErrors: {},
+        isSaving: false,
+        learnerName: "Mia",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+        onCancel() {},
+        onClose() {},
+        onLessonRecordingConsentChange() {},
+        onRedoLearnerProfile() {},
+        onSave() {},
+        onValueChange() {},
+        pageError: "",
+      },
+    });
+
+    assert.match(html, /COMPLETED REDIRECT/);
+    assert.doesNotMatch(html, /Lesson voice recordings/);
   });
 
   it("derives editable prose from snapshots with canonical prefills", () => {
@@ -1273,8 +1469,10 @@ describe("onboarding and profile gate", () => {
     assert.match(appSource, /completedLearnerProfileFallback=/);
     assert.match(appSource, /learnerProfileFallback=/);
     assert.match(appSource, /isProfileRoute=/);
-    assert.match(gateSource, /learnerName:\s*fullData\.profile\.name/);
-    assert.match(gateSource, /onOpenProfile:[\s\S]*?onOpenProfileRoute/);
+    assert.match(gateSource, /learnerName:\s*activeLearnerName/);
+    assert.match(gateSource, /hasActiveLearner:\s*true/);
+    assert.match(gateSource, /onOpenProfile:[\s\S]*?openProfileFromAccount/);
+    assert.match(gateSource, /onOpenProfileRouteRef\.current/);
     assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);
   });
 });

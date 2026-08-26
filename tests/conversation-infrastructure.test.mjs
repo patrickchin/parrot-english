@@ -11,6 +11,7 @@ const MODELS = {
     properties: [
       "id",
       "authUserId",
+      "learnerProfileId",
       "scenarioKey",
       "scenarioVersion",
       "promptStyle",
@@ -197,6 +198,10 @@ describe("conversation persistence infrastructure", () => {
       const factSql = tableSql(database, "conversation_fact");
 
       assert.match(sessionSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
+      assert.match(
+        sessionSql,
+        /learner_profile_id[\s\S]*REFERENCES [`"]?learner_profile[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
       assert.match(sessionSql, /json_valid\([^)]*controller_state/i);
       assert.match(sessionSql, /prompt_style/i);
       assert.match(sessionSql, /starting.*active.*completed.*stopped.*disconnected.*failed.*abandoned/i);

@@ -355,10 +355,12 @@ export async function generatePersonalizedStoryArt(
   },
   options?: PersonalizedStoryArtRequestOptions,
 ) {
+  options?.signal?.throwIfAborted();
   const image = await normalizePersonalizedStoryArtUpload(
     photo,
     options?.normalization,
   );
+  options?.signal?.throwIfAborted();
   const body = new FormData();
   body.set("guardianConsentVersion", guardianConsentVersion);
   body.set("guardianConsentAccepted", "yes");

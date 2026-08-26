@@ -40,6 +40,7 @@ export type LearnerProfileAcknowledgment = {
 };
 
 export type LearnerProfileSummary = {
+  id: string;
   name: string | null;
   age: number | null;
   storyLevel: LearnerStoryLevelId;
@@ -69,9 +70,27 @@ export type BypassOnlyLearnerProfileState = {
   canBypass: true;
 };
 
+export type SelectionRequiredLearnerProfileState = {
+  mode: "selection-required";
+};
+
 export type LearnerProfileState =
   | FullLearnerProfileState
-  | BypassOnlyLearnerProfileState;
+  | BypassOnlyLearnerProfileState
+  | SelectionRequiredLearnerProfileState;
+
+export type GuardianLearnerProfileSummary = {
+  id: string;
+  name: string;
+  age: number | null;
+  profileStatus: LearnerProfileSummary["profileStatus"];
+  createdAt: string;
+};
+
+export type LearnerProfileRoster = {
+  activeProfileId: string | null;
+  profiles: GuardianLearnerProfileSummary[];
+};
 
 export type ProfileState = {
   profile: LearnerProfileSummary & {
@@ -92,18 +111,21 @@ export class LearnerProfileApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly fieldErrors: Record<string, string>;
+  readonly isFieldError: boolean;
 
   constructor(
     status: number,
     code: string,
     message: string,
     fieldErrors: Record<string, string> = {},
+    isFieldError = false,
   ) {
     super(message);
     this.name = "LearnerProfileApiError";
     this.status = status;
     this.code = code;
     this.fieldErrors = fieldErrors;
+    this.isFieldError = isFieldError;
   }
 }
 
@@ -121,7 +143,10 @@ function stringRecord(value: unknown) {
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
-  { fetch: request = globalThis.fetch, signal }: LearnerProfileRequestOptions = {}
+  {
+    fetch: request = globalThis.fetch,
+    signal,
+  }: LearnerProfileRequestOptions = {},
 ): Promise<Result> {
   const response = await request(path, { ...init, signal });
   let payload: unknown;
@@ -159,6 +184,7 @@ async function requestJson<Result>(
       code,
       message,
       stringRecord(errorPayload.fieldErrors),
+      typeof errorPayload.fieldError === "string",
     );
   }
 
@@ -170,7 +196,7 @@ function jsonRequest<Result>(
   method: "PUT",
   questionKey: string,
   rawAnswer: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   return requestJson<Result>(
     path,
@@ -179,82 +205,225 @@ function jsonRequest<Result>(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionKey, rawAnswer }),
     },
-    options
+    options,
   );
 }
 
-export function loadLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileState>(
-    "/api/learner-profile",
-    { method: "GET" },
-    options
+function requireValidLearnerProfileState(
+  state: LearnerProfileState,
+): LearnerProfileState {
+  if (
+    state.mode === "full" &&
+    (typeof state.profile?.id !== "string" || !state.profile.id.trim())
+  ) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_profile",
+      "The learner profile could not be loaded.",
+    );
+  }
+  return state;
+}
+
+function requireValidProfileState(state: ProfileState): ProfileState {
+  if (typeof state.profile?.id !== "string" || !state.profile.id.trim()) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_profile",
+      "The learner profile could not be loaded.",
+    );
+  }
+  return state;
+}
+
+function requireValidLearnerProfileRoster(
+  roster: LearnerProfileRoster,
+): LearnerProfileRoster {
+  const profiles = roster?.profiles;
+  const activeProfileId = roster?.activeProfileId;
+  const ids = new Set<string>();
+  const validProfiles =
+    Array.isArray(profiles) &&
+    profiles.every((profile) => {
+      if (
+        profile === null ||
+        typeof profile !== "object" ||
+        typeof profile.id !== "string" ||
+        !profile.id.trim() ||
+        ids.has(profile.id) ||
+        typeof profile.name !== "string" ||
+        !profile.name.trim()
+      ) {
+        return false;
+      }
+      ids.add(profile.id);
+      return true;
+    });
+  const validActiveProfile =
+    activeProfileId === null ||
+    (typeof activeProfileId === "string" &&
+      Boolean(activeProfileId.trim()) &&
+      ids.has(activeProfileId));
+
+  if (!validProfiles || !validActiveProfile) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_roster",
+      "Learner profiles could not be loaded.",
+    );
+  }
+  return roster;
+}
+
+async function learnerProfileRequest(
+  path: string,
+  init: RequestInit,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requireValidLearnerProfileState(
+    await requestJson<LearnerProfileState>(path, init, options),
   );
+}
+
+async function profileRequest(
+  path: string,
+  init: RequestInit,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requireValidProfileState(
+    await requestJson<ProfileState>(path, init, options),
+  );
+}
+
+export async function loadLearnerProfile(
+  options?: LearnerProfileRequestOptions,
+) {
+  try {
+    return await learnerProfileRequest(
+      "/api/learner-profile",
+      { method: "GET" },
+      options,
+    );
+  } catch (error) {
+    if (
+      error instanceof LearnerProfileApiError &&
+      error.status === 409 &&
+      error.code === "learner_selection_required"
+    ) {
+      return { mode: "selection-required" } as const;
+    }
+    throw error;
+  }
 }
 
 export function saveLearnerProfileAnswer(
   questionKey: string,
   rawAnswer: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
-  return jsonRequest<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/answer",
-    "PUT",
-    questionKey,
-    rawAnswer,
-    options
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionKey, rawAnswer }),
+    },
+    options,
   );
 }
 
 export function skipLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/skip",
     { method: "POST" },
-    options
+    options,
   );
 }
 
 export function skipLearnerProfileQuestion(
   questionKey: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/question/skip",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ questionKey }),
     },
-    options
+    options,
   );
 }
 
 export function completeLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<LearnerProfileState>(
+  return learnerProfileRequest(
     "/api/learner-profile/complete",
     { method: "POST" },
-    options
+    options,
+  );
+}
+
+async function learnerProfilesRequest(
+  path: string,
+  init: RequestInit,
+  options?: LearnerProfileRequestOptions,
+) {
+  return requireValidLearnerProfileRoster(
+    await requestJson<LearnerProfileRoster>(path, init, options),
+  );
+}
+
+export function loadLearnerProfiles(options?: LearnerProfileRequestOptions) {
+  return learnerProfilesRequest(
+    "/api/learner-profiles",
+    { method: "GET" },
+    options,
+  );
+}
+
+export function createLearnerProfile(
+  name: string,
+  options?: LearnerProfileRequestOptions,
+) {
+  return learnerProfilesRequest(
+    "/api/learner-profiles",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    },
+    options,
+  );
+}
+
+export function selectLearnerProfile(
+  profileId: string,
+  options?: LearnerProfileRequestOptions,
+) {
+  return learnerProfilesRequest(
+    `/api/learner-profiles/${encodeURIComponent(profileId)}/active`,
+    { method: "PUT" },
+    options,
   );
 }
 
 export function loadProfile(options?: LearnerProfileRequestOptions) {
-  return requestJson<ProfileState>(
-    "/api/profile",
-    { method: "GET" },
-    options
-  );
+  return profileRequest("/api/profile", { method: "GET" }, options);
 }
 
-export function saveProfileAnswer(
+export async function saveProfileAnswer(
   questionKey: string,
   rawAnswer: string,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
-  return jsonRequest<ProfileState>(
-    "/api/profile",
-    "PUT",
-    questionKey,
-    rawAnswer,
-    options
+  return requireValidProfileState(
+    await jsonRequest<ProfileState>(
+      "/api/profile",
+      "PUT",
+      questionKey,
+      rawAnswer,
+      options,
+    ),
   );
 }
 
@@ -262,7 +431,7 @@ export function saveProfileAnswers(
   answers: Record<string, string>,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<ProfileState>(
+  return profileRequest(
     "/api/profile",
     {
       method: "PUT",
@@ -277,7 +446,7 @@ export function saveStoryLevel(
   storyLevel: LearnerStoryLevelId,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requestJson<ProfileState>(
+  return profileRequest(
     "/api/profile/preferences",
     {
       method: "PUT",
@@ -315,13 +484,13 @@ export function saveLessonRecordingConsent(
 
 export function transcribeLearnerProfileAudio(
   audio: Blob,
-  options?: LearnerProfileRequestOptions
+  options?: LearnerProfileRequestOptions,
 ) {
   const formData = new FormData();
   formData.set("audio", audio, "learner-profile-answer.webm");
   return requestJson<{ transcript: string }>(
     "/api/learner-profile/transcribe",
     { method: "POST", body: formData },
-    options
+    options,
   );
 }

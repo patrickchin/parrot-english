@@ -81,6 +81,14 @@ describe("onboarding Worker routing", () => {
   });
 
   it("passes only server session identity and the shared D1 database to the handler", async () => {
+    const state = createSeededDatabase({ seedProfile: false });
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, created_at, updated_at)
+         VALUES ('learner-a', 'user-1', 'Mia', 'not_started', 1000, 1000)`,
+      )
+      .run();
     const session = {
       session: { id: "session-1" },
       user: { id: "user-1", name: "Mia", email: "mia@example.test" },
@@ -95,24 +103,73 @@ describe("onboarding Worker routing", () => {
       },
     });
     const { env, getAssetCalls } = createEnvironment();
+    env.DB = state.d1;
     const request = new Request("https://example.test/api/learner-profile", {
       headers: { Cookie: "better-auth.session_token=secret-token" },
     });
 
-    const response = await worker.fetch(request, env);
+    try {
+      const response = await worker.fetch(request, env);
 
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { routed: true });
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].request, request);
-    assert.equal(calls[0].env, env);
-    assert.deepEqual(calls[0].identity, {
-      sessionId: "session-1",
-      userId: "user-1",
-      userName: "Mia",
-    });
-    assert.equal(calls[0].database.$client, env.DB);
-    assert.equal(getAssetCalls(), 0);
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), { routed: true });
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].request, request);
+      assert.equal(calls[0].env, env);
+      assert.deepEqual(calls[0].identity, {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Mia",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+      });
+      assert.equal(calls[0].database.$client, env.DB);
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns a no-store selection-required response before learner profile work", async () => {
+    const state = createSeededDatabase({ seedProfile: false });
+    try {
+      const insert = state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+         VALUES (?, 'user-1', ?, ?, 'not_started', 1000, 1000)`,
+      );
+      insert.run("learner-a", 1, "Mia");
+      insert.run("learner-b", 0, "Leo");
+      let handlerCalls = 0;
+      const worker = createWorker({
+        createAuth: () =>
+          createAuthStub({
+            session: { id: "session-1" },
+            user: { id: "user-1", name: "Mia" },
+          }).auth,
+        async handleLearnerProfileRequest() {
+          handlerCalls += 1;
+          return Response.json({ routed: true });
+        },
+      });
+      const { env } = createEnvironment();
+      env.DB = state.d1;
+
+      const response = await worker.fetch(
+        new Request("https://example.test/api/learner-profile"),
+        env,
+      );
+
+      assert.equal(response.status, 409);
+      assert.equal(response.headers.get("Cache-Control"), "no-store");
+      assert.deepEqual(await response.json(), {
+        error: "learner_selection_required",
+      });
+      assert.equal(handlerCalls, 0);
+    } finally {
+      state.close();
+    }
   });
 });
 
@@ -124,7 +181,7 @@ function request(path, method = "GET", body) {
   });
 }
 
-function createSeededDatabase() {
+function createSeededDatabase({ seedProfile = true } = {}) {
   const testDatabase = createTestD1Database();
   testDatabase.sqlite
     .prepare(
@@ -136,10 +193,29 @@ function createSeededDatabase() {
   );
   insertSession.run("session-1", 9_999_999_999_999, "token-1", "user-1");
   insertSession.run("session-2", 9_999_999_999_999, "token-2", "user-1");
+  if (seedProfile) {
+    testDatabase.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+         VALUES ('learner-a', 'user-1', 1, 'Mia', 'not_started', 1000, 1000)`,
+      )
+      .run();
+  }
   return {
     ...testDatabase,
     database: createDatabase(testDatabase.d1),
   };
+}
+
+function seedSiblingProfile(state) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_profile
+        (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+       VALUES ('learner-b', 'user-1', 0, 'Leo', 'not_started', 1000, 1000)`,
+    )
+    .run();
 }
 
 const GENERATED = {
@@ -200,6 +276,9 @@ async function callLearnerProfile(
         sessionId: "session-1",
         userId: "user-1",
         userName: "Mia",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
         ...identity,
       },
       request: request(path, method, body),
@@ -209,6 +288,95 @@ async function callLearnerProfile(
 }
 
 describe("onboarding persistence and API", () => {
+  it("loads the exact selected profile for same-account siblings", async () => {
+    const state = createSeededDatabase();
+    try {
+      seedSiblingProfile(state);
+
+      const profileA = await callLearnerProfile(state.database, "/api/profile");
+      const profileB = await callLearnerProfile(
+        state.database,
+        "/api/profile",
+        "GET",
+        undefined,
+        {
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        },
+      );
+
+      assert.equal((await profileA.json()).profile.id, "learner-a");
+      assert.equal((await profileB.json()).profile.id, "learner-b");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not let a skipped session bypass a same-account sibling", async () => {
+    const state = createSeededDatabase();
+    try {
+      seedSiblingProfile(state);
+
+      const skipped = await callLearnerProfile(
+        state.database,
+        "/api/learner-profile/skip",
+        "POST",
+      );
+      assert.equal(skipped.status, 200);
+
+      const sibling = await callLearnerProfile(
+        state.database,
+        "/api/learner-profile",
+        "GET",
+        undefined,
+        {
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        },
+      );
+      assert.equal((await sibling.json()).canBypass, false);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("updates only the selected sibling's story level", async () => {
+    const state = createSeededDatabase();
+    try {
+      seedSiblingProfile(state);
+
+      const response = await callLearnerProfile(
+        state.database,
+        "/api/profile/preferences",
+        "PUT",
+        { storyLevel: "tiny-stories" },
+        {
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        },
+      );
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(
+        state.sqlite
+          .prepare(
+            "SELECT id, story_level FROM learner_profile WHERE auth_user_id = ? ORDER BY id",
+          )
+          .all("user-1")
+          .map(({ id, story_level }) => ({ id, story_level })),
+        [
+          { id: "learner-a", story_level: "first-words" },
+          { id: "learner-b", story_level: "tiny-stories" },
+        ],
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("persists versioned recording consent across auth sessions", async () => {
     const state = createSeededDatabase();
     try {
@@ -251,6 +419,51 @@ describe("onboarding persistence and API", () => {
 
       const profile = await callLearnerProfile(state.database, "/api/profile");
       assert.equal((await profile.json()).profile.lessonRecordingConsent, true);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps recording consent isolated between same-account siblings", async () => {
+    const state = createSeededDatabase();
+    try {
+      seedSiblingProfile(state);
+      const enabled = await callLearnerProfile(
+        state.database,
+        "/api/profile/lesson-recording-consent",
+        "PUT",
+        { enabled: true },
+      );
+      assert.equal(enabled.status, 200);
+
+      const sibling = await callLearnerProfile(
+        state.database,
+        "/api/lesson-recordings/consent",
+        "GET",
+        undefined,
+        {
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        },
+      );
+      assert.deepEqual(await sibling.json(), {
+        cleanupPending: false,
+        enabled: false,
+      });
+      assert.deepEqual(
+        state.sqlite
+          .prepare(
+            `SELECT id, lesson_recording_consent_version AS version
+             FROM learner_profile WHERE auth_user_id = ? ORDER BY id`,
+          )
+          .all("user-1")
+          .map(({ id, version }) => ({ id, version })),
+        [
+          { id: "learner-a", version: "lesson-join-in-recording-v1" },
+          { id: "learner-b", version: null },
+        ],
+      );
     } finally {
       state.close();
     }
@@ -310,6 +523,9 @@ describe("onboarding persistence and API", () => {
           sessionId: "session-1",
           userId: "user-1",
           userName: "Mia",
+          learnerProfileId: "learner-a",
+          learnerName: "Mia",
+          legacyStorageOwner: true,
         },
         request: request(
           "/api/profile/lesson-recording-consent",
@@ -387,6 +603,9 @@ describe("onboarding persistence and API", () => {
             sessionId: "session-1",
             userId: "user-1",
             userName: "Mia",
+            learnerProfileId: "learner-a",
+            learnerName: "Mia",
+            legacyStorageOwner: true,
           },
           request: request(
             "/api/profile/lesson-recording-consent",
@@ -444,6 +663,9 @@ describe("onboarding persistence and API", () => {
             sessionId: "session-1",
             userId: "user-1",
             userName: "Mia",
+            learnerProfileId: "learner-a",
+            learnerName: "Mia",
+            legacyStorageOwner: true,
           },
           request: request(
             "/api/profile/lesson-recording-consent",
@@ -480,24 +702,32 @@ describe("onboarding persistence and API", () => {
     try {
       await callLearnerProfile(state.database, "/api/profile");
       const repository = createLearnerProfileRepository(state.database);
-      assert.equal((await repository.saveLessonRecordingConsent("user-1", true)).generation, 1);
-      const firstRevoke = await repository.saveLessonRecordingConsent("user-1", false);
+      const identity = {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Mia",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+      };
+      assert.equal((await repository.saveLessonRecordingConsent(identity, true)).generation, 1);
+      const firstRevoke = await repository.saveLessonRecordingConsent(identity, false);
       assert.equal(firstRevoke.cleanupBeforeGeneration, 2);
-      assert.equal((await repository.saveLessonRecordingConsent("user-1", true)).generation, 3);
-      const laterRevoke = await repository.saveLessonRecordingConsent("user-1", false);
+      assert.equal((await repository.saveLessonRecordingConsent(identity, true)).generation, 3);
+      const laterRevoke = await repository.saveLessonRecordingConsent(identity, false);
       assert.equal(laterRevoke.cleanupBeforeGeneration, 4);
 
       assert.equal(
-        await repository.clearLessonRecordingCleanup("user-1", 2),
+        await repository.clearLessonRecordingCleanup(identity, 2),
         false,
       );
-      assert.deepEqual(await repository.readLessonRecordingConsentState("user-1"), {
+      assert.deepEqual(await repository.readLessonRecordingConsentState(identity), {
         cleanupBeforeGeneration: 4,
         enabled: false,
         generation: 4,
       });
       assert.deepEqual(
-        await repository.saveLessonRecordingConsent("user-1", false),
+        await repository.saveLessonRecordingConsent(identity, false),
         {
           cleanupBeforeGeneration: 4,
           enabled: false,
@@ -586,7 +816,7 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("creates v2 profiles without normalized questionnaire rows", async () => {
+  it("does not create a learner profile after identity resolution", async () => {
     const state = createTestD1Database();
     try {
       state.sqlite
@@ -595,21 +825,22 @@ describe("onboarding persistence and API", () => {
         )
         .run("user-1", "Mia", "mia@example.test", 1_000, 1_000);
       const repository = createLearnerProfileRepository(createDatabase(state.d1), {
-        createId: () => "profile-v2",
         now: () => new Date("2026-07-06T00:00:00.000Z"),
       });
 
-      const profile = await repository.ensureProfile({
-        sessionId: "session-1",
-        userId: "user-1",
-        userName: "Mia",
-      });
-
-      assert.equal(profile.id, "profile-v2");
-      assert.equal(profile.questionnaireVersion, null);
-      assert.equal(profile.name, "Mia");
+      await assert.rejects(
+        repository.loadProfile({
+          sessionId: "session-1",
+          userId: "user-1",
+          userName: "Parent",
+          learnerProfileId: "missing-profile",
+          learnerName: "Mia",
+          legacyStorageOwner: true,
+        }),
+        /could not be loaded/i,
+      );
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM questionnaire").get()
+        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
           .count,
         0,
       );
@@ -619,7 +850,7 @@ describe("onboarding persistence and API", () => {
   });
 
   it("transcribes authenticated audio without persisting a learner profile", async () => {
-    const state = createSeededDatabase();
+    const state = createSeededDatabase({ seedProfile: false });
     const originalFetch = globalThis.fetch;
     try {
       globalThis.fetch = async () => Response.json({ text: "  Bluey  " });
@@ -635,6 +866,9 @@ describe("onboarding persistence and API", () => {
           sessionId: "session-1",
           userId: "user-1",
           userName: "Mia",
+          learnerProfileId: "learner-a",
+          learnerName: "Mia",
+          legacyStorageOwner: true,
         },
         request: new Request(
           "https://example.test/api/learner-profile/transcribe",
@@ -704,6 +938,9 @@ describe("onboarding persistence and API", () => {
             sessionId: "session-1",
             userId: "user-1",
             userName: "Mia",
+            learnerProfileId: "learner-a",
+            learnerName: "Mia",
+            legacyStorageOwner: true,
           },
           request: request("/api/learner-profile"),
         },
@@ -762,6 +999,9 @@ describe("onboarding persistence and API", () => {
             sessionId: "session-1",
             userId: "user-1",
             userName: "Mia",
+            learnerProfileId: "learner-a",
+            learnerName: "Mia",
+            legacyStorageOwner: true,
           },
           request: request("/api/learner-profile/answer", "PUT", {
             questionKey: "name",
@@ -1225,7 +1465,7 @@ describe("onboarding persistence and API", () => {
   });
 
   it("restarts incomplete v1 profiles but preserves completed v1 users", async () => {
-    const state = createSeededDatabase();
+    const state = createSeededDatabase({ seedProfile: false });
     try {
       state.sqlite.exec(
         "INSERT INTO questionnaire (id, version, status, created_at) VALUES ('legacy-v1', 1, 'inactive', 1000)",
@@ -1235,7 +1475,7 @@ describe("onboarding persistence and API", () => {
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, questionnaire_version, current_question_key, onboarding_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .run(
-          "profile-1",
+          "learner-a",
           "user-1",
           "Mia",
           6,
@@ -1273,7 +1513,7 @@ describe("onboarding persistence and API", () => {
   });
 
   it("converts legacy JSON on the first enriched profile edit", async () => {
-    const state = createSeededDatabase();
+    const state = createSeededDatabase({ seedProfile: false });
     try {
       state.sqlite.exec(
         "INSERT INTO questionnaire (id, version, status, created_at) VALUES ('legacy-v1', 1, 'inactive', 1000)",
@@ -1283,7 +1523,7 @@ describe("onboarding persistence and API", () => {
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, questionnaire_version, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .run(
-          "profile-1",
+          "learner-a",
           "user-1",
           "Mia",
           8,
@@ -1339,7 +1579,7 @@ describe("onboarding persistence and API", () => {
   });
 
   it("saves one changed legacy profile field without requiring blank v2 answers", async () => {
-    const state = createSeededDatabase();
+    const state = createSeededDatabase({ seedProfile: false });
     try {
       state.sqlite.exec(
         "INSERT INTO questionnaire (id, version, status, created_at) VALUES ('legacy-v1', 1, 'inactive', 1000)",
@@ -1349,7 +1589,7 @@ describe("onboarding persistence and API", () => {
           "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, questionnaire_version, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .run(
-          "profile-1",
+          "learner-a",
           "user-1",
           "Mia",
           8,

@@ -80,7 +80,7 @@ describe("five little ducks dub domain", () => {
       type: "LOADED",
       savedLineIds: DUB_LINES.slice(0, 5).map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     assert.equal(state.view, "project");
     state = reduceDubState(state, { type: "CONTINUE" });
     assert.deepEqual(
@@ -122,7 +122,7 @@ describe("five little ducks dub domain", () => {
       type: "LOADED",
       savedLineIds: DUB_LINES.slice(0, 20).map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
     state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-20" });
     state = reduceDubState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-20" });
@@ -146,7 +146,7 @@ describe("five little ducks dub domain", () => {
       type: "LOADED",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "CONTINUE" });
     state = reduceDubState(state, {
       type: "SAVE_FAILED",
@@ -171,7 +171,7 @@ describe("five little ducks dub domain", () => {
       type: "LOADED",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "CONTINUE" });
     state = reduceDubState(state, {
       type: "SAVE_FAILED",
@@ -201,7 +201,7 @@ describe("five little ducks dub domain", () => {
       type: "LOADED",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "CONTINUE" });
     state = reduceDubState(state, {
       type: "OPERATION_STARTED",
@@ -215,26 +215,23 @@ describe("five little ducks dub domain", () => {
     assert.equal(state.playbackScope, null);
   });
 
-  it("blocks navigation during destructive and recording operations", () => {
+  it("blocks navigation during recording operations", () => {
     let state = reduceDubState(createInitialDubState(), { type: "LOADED", savedLineIds: [] });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "CONTINUE" });
     state = reduceDubState(state, { type: "OPERATION_STARTED", operation: "recording" });
     assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
     assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
-    state = reduceDubState(state, { type: "OPERATION_FINISHED" });
-    state = reduceDubState(state, { type: "OPERATION_STARTED", operation: "deleting" });
-    assert.equal(reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 4 }), state);
   });
 
-  it("resets the editor back to consent", () => {
+  it("clears storyboard data when Guardian consent is lost", () => {
     let state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
       savedLineIds: DUB_LINES.map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "CONFIRMED" });
+    state = reduceDubState(state, { type: "STARTED" });
     state = reduceDubState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-1" });
-    state = reduceDubState(state, { type: "RESET_SUCCEEDED" });
+    state = reduceDubState(state, { type: "LOADED", savedLineIds: [] });
     assert.deepEqual(state, { ...createInitialDubState(), view: "intro" });
   });
 });

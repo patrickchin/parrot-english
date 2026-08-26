@@ -95,7 +95,7 @@ describe("conversation Worker routing", () => {
   });
 });
 
-function createSeededDatabase() {
+function createSeededDatabase({ seedProfile = true } = {}) {
   const state = createTestD1Database();
   const insertUser = state.sqlite.prepare(
     "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)",
@@ -107,6 +107,15 @@ function createSeededDatabase() {
   );
   insertSession.run("session-1", 9_999_999_999_999, "token-1", "user-1");
   insertSession.run("session-2", 9_999_999_999_999, "token-2", "user-2");
+  if (seedProfile) {
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+         VALUES ('profile-1', 'user-1', 1, NULL, 'not_started', 1000, 1000)`,
+      )
+      .run();
+  }
   return { ...state, database: createDatabase(state.d1) };
 }
 
@@ -125,6 +134,9 @@ const identity = {
   sessionId: "session-1",
   userId: "user-1",
   userName: "Parent One",
+  learnerProfileId: "profile-1",
+  learnerName: null,
+  legacyStorageOwner: true,
 };
 
 async function callConversation(
@@ -174,11 +186,9 @@ function insertLearnerProfile(
 ) {
   state.sqlite
     .prepare(
-      "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, last_skipped_at, last_skipped_session_id, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "UPDATE learner_profile SET name = ?, age = ?, answers_json = ?, onboarding_status = ?, last_skipped_at = ?, last_skipped_session_id = ?, completed_at = ?, updated_at = ? WHERE id = ? AND auth_user_id = ?",
     )
     .run(
-      "profile-1",
-      "user-1",
       name,
       age,
       JSON.stringify({
@@ -192,9 +202,90 @@ function insertLearnerProfile(
       lastSkippedAt,
       lastSkippedSessionId,
       profileStatus === "completed" ? 2_000 : null,
-      1_000,
       2_000,
+      "profile-1",
+      "user-1",
     );
+}
+
+function createMultiLearnerDatabase() {
+  const state = createSeededDatabase({ seedProfile: false });
+  const insertProfile = state.sqlite.prepare(
+    `INSERT INTO learner_profile
+      (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+     VALUES (?, 'user-1', ?, ?, 'not_started', 1000, 1000)`,
+  );
+  insertProfile.run("learner-a", 1, "Mia");
+  insertProfile.run("learner-b", 0, "Leo");
+  const insertSession = state.sqlite.prepare(
+    "INSERT INTO session (id, expires_at, token, user_id) VALUES (?, ?, ?, 'user-1')",
+  );
+  insertSession.run("session-a", 9_999_999_999_999, "token-a");
+  insertSession.run("session-b", 9_999_999_999_999, "token-b");
+  const selectLearner = state.sqlite.prepare(
+    `INSERT INTO session_learner_selection
+      (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+     VALUES (?, 'user-1', ?, 1000, 1000)`,
+  );
+  selectLearner.run("session-a", "learner-a");
+  selectLearner.run("session-b", "learner-b");
+  return state;
+}
+
+function createRoutedConversationWorker() {
+  return createWorker({
+    createAuth: () => ({
+      api: {
+        async getSession({ headers }) {
+          const sessionId = headers.get("X-Test-Session");
+          if (sessionId !== "session-a" && sessionId !== "session-b") return null;
+          return {
+            session: { id: sessionId },
+            user: { id: "user-1", name: "Parent One" },
+          };
+        },
+      },
+      async handler() {
+        return new Response("auth");
+      },
+    }),
+  });
+}
+
+function routedEnvironment(state) {
+  return createEnvironment({ DB: state.d1 });
+}
+
+function browserConversation(worker, state, sessionId, path, method = "GET", body) {
+  return worker.fetch(
+    request(path, method, body, { "X-Test-Session": sessionId }),
+    routedEnvironment(state),
+  );
+}
+
+function agentConversation(worker, state, path, body) {
+  return worker.fetch(
+    request(path, "POST", body, { Authorization: "Bearer agent-secret" }),
+    routedEnvironment(state),
+  );
+}
+
+function selectLearner(state, sessionId, learnerProfileId) {
+  state.sqlite
+    .prepare(
+      `UPDATE session_learner_selection
+       SET learner_profile_id = ?, updated_at = updated_at + 1
+       WHERE session_id = ?`,
+    )
+    .run(learnerProfileId, sessionId);
+}
+
+function storedProfile(state, learnerProfileId) {
+  return state.sqlite
+    .prepare(
+      "SELECT id, name, age, onboarding_status AS profileStatus, answers_json FROM learner_profile WHERE id = ?",
+    )
+    .get(learnerProfileId);
 }
 
 async function stageConversationProfile(database, conversationId, values = {}) {
@@ -591,6 +682,7 @@ describe("conversation persistence and API", () => {
         .prepare("SELECT * FROM conversation_session WHERE id = ?")
         .get("conversation-1");
       assert.equal(stored.auth_user_id, "user-1");
+      assert.equal(stored.learner_profile_id, "profile-1");
       assert.equal(JSON.parse(stored.controller_state).activeObjective, "name");
     } finally {
       state.close();
@@ -746,11 +838,7 @@ describe("conversation persistence and API", () => {
         profileCompleted: false,
         bypassed: false,
       });
-      assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-          .count,
-        0,
-      );
+      assert.equal(storedProfile(state, "profile-1").profileStatus, "not_started");
     } finally {
       state.close();
     }
@@ -885,6 +973,292 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("reuses active conversations only within the starting learner", async () => {
+    const state = createMultiLearnerDatabase();
+    const worker = createRoutedConversationWorker();
+    try {
+      const firstA = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const retryA = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const firstB = await browserConversation(
+        worker,
+        state,
+        "session-b",
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const firstAPayload = await firstA.json();
+      const retryAPayload = await retryA.json();
+      const firstBPayload = await firstB.json();
+
+      assert.equal(retryAPayload.conversation.id, firstAPayload.conversation.id);
+      assert.notEqual(firstBPayload.conversation.id, firstAPayload.conversation.id);
+      assert.deepEqual(
+        state.sqlite
+          .prepare(
+            "SELECT learner_profile_id FROM conversation_session ORDER BY learner_profile_id",
+          )
+          .all()
+          .map(({ learner_profile_id }) => learner_profile_id),
+        ["learner-a", "learner-b"],
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not reveal a same-account sibling conversation to browser GET", async () => {
+    const state = createMultiLearnerDatabase();
+    const worker = createRoutedConversationWorker();
+    try {
+      const started = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const { conversation } = await started.json();
+
+      const sibling = await browserConversation(
+        worker,
+        state,
+        "session-b",
+        `/api/conversations/${conversation.id}`,
+      );
+      const owner = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        `/api/conversations/${conversation.id}`,
+      );
+
+      assert.equal(sibling.status, 404);
+      assert.equal(owner.status, 200);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not let a same-account sibling finish a browser conversation", async () => {
+    const state = createMultiLearnerDatabase();
+    const worker = createRoutedConversationWorker();
+    try {
+      const started = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const { conversation } = await started.json();
+
+      const sibling = await browserConversation(
+        worker,
+        state,
+        "session-b",
+        `/api/conversations/${conversation.id}/finish`,
+        "POST",
+        {},
+      );
+
+      assert.equal(sibling.status, 404);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT status FROM conversation_session WHERE id = ?")
+          .get(conversation.id).status,
+        "starting",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps trusted callbacks bound to the stored conversation learner", async () => {
+    const state = createMultiLearnerDatabase();
+    const worker = createRoutedConversationWorker();
+    try {
+      const started = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations",
+        "POST",
+        { purpose: "small-chat" },
+      );
+      const { conversation } = await started.json();
+      selectLearner(state, "session-a", "learner-b");
+
+      const turn = await agentConversation(
+        worker,
+        state,
+        `/api/conversations/${conversation.id}/turns`,
+        {
+          providerItemId: "trusted-turn",
+          sequence: 0,
+          role: "user",
+          text: "Hello!",
+          inputMode: "voice",
+        },
+      );
+      const facts = await agentConversation(
+        worker,
+        state,
+        `/api/conversations/${conversation.id}/facts`,
+        { controllerState: { checkpoint: "stored-owner" }, candidates: [] },
+      );
+      const ended = await agentConversation(
+        worker,
+        state,
+        `/api/conversations/${conversation.id}/end`,
+        { finishReason: "conversation_complete", status: "completed" },
+      );
+
+      assert.equal(turn.status, 201);
+      assert.equal(facts.status, 200);
+      assert.equal(ended.status, 200);
+      const stored = state.sqlite
+        .prepare(
+          "SELECT learner_profile_id, status, controller_state FROM conversation_session WHERE id = ?",
+        )
+        .get(conversation.id);
+      assert.equal(stored.learner_profile_id, "learner-a");
+      assert.equal(stored.status, "completed");
+      assert.deepEqual(JSON.parse(stored.controller_state), {
+        checkpoint: "stored-owner",
+      });
+      assert.equal(storedProfile(state, "learner-a").profileStatus, "not_started");
+      assert.equal(storedProfile(state, "learner-b").profileStatus, "not_started");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects switched-learner review and finalizes the starting learner after re-selection", async () => {
+    const state = createMultiLearnerDatabase();
+    const worker = createRoutedConversationWorker();
+    try {
+      const started = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding" },
+      );
+      const { conversation } = await started.json();
+      assert.equal(
+        (
+          await agentConversation(
+            worker,
+            state,
+            `/api/conversations/${conversation.id}/facts`,
+            {
+              controllerState: {
+                ...conversation.controllerState,
+                profileSummary: "Mia is eight and likes pandas.",
+                profileName: "Mia",
+                profileAge: 8,
+                learnedName: true,
+                learnedAge: true,
+              },
+              candidates: [],
+            },
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await agentConversation(
+            worker,
+            state,
+            `/api/conversations/${conversation.id}/end`,
+            { finishReason: "conversation_complete", status: "completed" },
+          )
+        ).status,
+        200,
+      );
+      assert.equal(storedProfile(state, "learner-a").profileStatus, "not_started");
+
+      selectLearner(state, "session-a", "learner-b");
+      const switchedReview = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(switchedReview.status, 404);
+      assert.equal(storedProfile(state, "learner-a").profileStatus, "not_started");
+      assert.equal(storedProfile(state, "learner-b").profileStatus, "not_started");
+
+      selectLearner(state, "session-a", "learner-a");
+      const ownerReview = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        `/api/conversations/${conversation.id}/review`,
+        "PUT",
+        {},
+      );
+      assert.equal(ownerReview.status, 200);
+      assert.equal(storedProfile(state, "learner-a").profileStatus, "completed");
+      assert.equal(storedProfile(state, "learner-b").profileStatus, "not_started");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("shows a null-profile legacy conversation only to the legacy learner", async () => {
+    const state = createMultiLearnerDatabase();
+    const worker = createRoutedConversationWorker();
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO conversation_session
+            (id, auth_user_id, learner_profile_id, scenario_key, scenario_version, room_name, status, controller_state, started_at, created_at, updated_at)
+           VALUES ('legacy-conversation', 'user-1', NULL, 'small-chat', 2, 'legacy-room', 'active', '{}', 1000, 1000, 1000)`,
+        )
+        .run();
+
+      const legacyOwner = await browserConversation(
+        worker,
+        state,
+        "session-a",
+        "/api/conversations/legacy-conversation",
+      );
+      const sibling = await browserConversation(
+        worker,
+        state,
+        "session-b",
+        "/api/conversations/legacy-conversation",
+      );
+
+      assert.equal(legacyOwner.status, 200);
+      assert.equal(sibling.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
   it("reuses the same style but retires an active room when its style changes", async () => {
     const state = createSeededDatabase();
     const ids = ["conversation-tiny", "conversation-guide"];
@@ -937,27 +1311,11 @@ describe("conversation persistence and API", () => {
     const state = createSeededDatabase();
     const tokenCalls = [];
     try {
-      state.sqlite
-        .prepare(
-          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .run(
-          "profile-1",
-          "user-1",
-          "Mia",
-          30,
-          JSON.stringify({
-            schemaVersion: 2,
-            questionnaireVersion: 2,
-            responses: {},
-            legacyAnswers: null,
-            description: "Mia is thirty and loves fast red cars.",
-          }),
-          "completed",
-          2_000,
-          1_000,
-          2_000,
-        );
+      insertLearnerProfile(state, {
+        age: 30,
+        description: "Mia is thirty and loves fast red cars.",
+        profileStatus: "completed",
+      });
       await createGuardianAccessRepository(state.database).unlock("session-1");
 
       const response = await callConversation(
@@ -1006,6 +1364,9 @@ describe("conversation persistence and API", () => {
             sessionId: "session-2",
             userId: "user-2",
             userName: "Parent Two",
+            learnerProfileId: "profile-2",
+            learnerName: null,
+            legacyStorageOwner: true,
           },
         },
       );
@@ -1136,27 +1497,7 @@ describe("conversation persistence and API", () => {
   it("defers an agent-ended profile edit to authenticated review", async () => {
     const state = createSeededDatabase();
     try {
-      state.sqlite
-        .prepare(
-          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .run(
-          "profile-1",
-          "user-1",
-          "Mia",
-          8,
-          JSON.stringify({
-            schemaVersion: 2,
-            questionnaireVersion: 2,
-            responses: {},
-            legacyAnswers: null,
-            description: "Mia is eight years old and loves pandas.",
-          }),
-          "completed",
-          2_000,
-          1_000,
-          2_000,
-        );
+      insertLearnerProfile(state);
       await createGuardianAccessRepository(state.database).unlock("session-1");
       const started = await callConversation(
         state.database,
@@ -1232,27 +1573,7 @@ describe("conversation persistence and API", () => {
     const state = createSeededDatabase();
     try {
       await createGuardianAccessRepository(state.database).unlock("session-1");
-      state.sqlite
-        .prepare(
-          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .run(
-          "profile-1",
-          "user-1",
-          "Mia",
-          8,
-          JSON.stringify({
-            schemaVersion: 2,
-            questionnaireVersion: 2,
-            responses: {},
-            legacyAnswers: null,
-            description: "Mia is eight years old and loves pandas.",
-          }),
-          "completed",
-          2_000,
-          1_000,
-          2_000,
-        );
+      insertLearnerProfile(state);
       const started = await callConversation(
         state.database,
         "/api/conversations",
@@ -1386,27 +1707,10 @@ describe("conversation persistence and API", () => {
     const state = createSeededDatabase();
     try {
       await createGuardianAccessRepository(state.database).unlock("session-1");
-      state.sqlite
-        .prepare(
-          "INSERT INTO learner_profile (id, auth_user_id, name, age, answers_json, onboarding_status, completed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .run(
-          "profile-1",
-          "user-1",
-          "Mia Smith",
-          8,
-          JSON.stringify({
-            schemaVersion: 2,
-            questionnaireVersion: 2,
-            responses: {},
-            legacyAnswers: null,
-            description: "Mia attends Rainbow School.",
-          }),
-          "completed",
-          2_000,
-          1_000,
-          2_000,
-        );
+      insertLearnerProfile(state, {
+        description: "Mia attends Rainbow School.",
+        name: "Mia Smith",
+      });
       const profileStatement = state.sqlite.prepare(
         "SELECT name, age, answers_json, onboarding_status, completed_at, updated_at FROM learner_profile WHERE auth_user_id = ?",
       );
@@ -1457,7 +1761,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("creates a completed learner profile only during browser review", async () => {
+  it("completes the learner profile only during browser review", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -1502,11 +1806,7 @@ describe("conversation persistence and API", () => {
       );
 
       assert.equal(ended.status, 200);
-      assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-          .count,
-        0,
-      );
+      assert.equal(storedProfile(state, "profile-1").profileStatus, "not_started");
 
       const reviewed = await callConversation(
         state.database,

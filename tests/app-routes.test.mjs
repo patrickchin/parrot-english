@@ -150,11 +150,11 @@ describe("app route helpers", () => {
     );
     assert.equal(
       routes.getProfilePath("/lessons?source=home#ready-made"),
-      "/profile?returnTo=%2Flessons%3Fsource%3Dhome%23ready-made",
+      "/guardian/profile?returnTo=%2Flessons%3Fsource%3Dhome%23ready-made",
     );
     assert.equal(
       routes.getRedoLearnerProfilePath("/profile"),
-      "/profile/setup?redo=1&returnTo=%2Fprofile",
+      "/guardian/profile/setup?redo=1&returnTo=%2Fprofile",
     );
     assert.equal(
       routes.isRedoLearnerProfileRequest("?redo=1&returnTo=%2Fprofile"),
@@ -165,12 +165,26 @@ describe("app route helpers", () => {
 
   it("builds and classifies only canonical guardian routes", () => {
     assert.equal(routes.getGuardianPath(), "/guardian");
+    assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
+    assert.equal(routes.getGuardianLearnersPath(), "/guardian/learners");
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
+    assert.equal(
+      routes.getProfilePath("/guardian"),
+      "/guardian/profile?returnTo=%2Fguardian",
+    );
+    assert.equal(
+      routes.getRedoLearnerProfilePath("/guardian/profile"),
+      "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+    );
 
     for (const [pathname, search = ""] of [
       ["/guardian"],
+      ["/guardian/dubbing"],
       ["/guardian/lessons"],
+      ["/guardian/profile"],
+      ["/guardian/profile/setup"],
+      ["/guardian/profile/setup", "?redo=1"],
       ["/guardian/stories"],
       ["/profile"],
       ["/profile/setup", "?redo=1"],
@@ -187,10 +201,35 @@ describe("app route helpers", () => {
       ["/profile/setup", "?redo=01"],
       ["/guardianish"],
       ["/guardian/lessons/extra"],
+      ["/guardian/dubbing/extra"],
       ["/lessons/my/lesson-1/edit/extra"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
       assert.equal(routes.isGuardianRoute(pathname, search), false);
+    }
+
+    assert.equal(routes.isGuardianRoute("/profile/setup"), false);
+    assert.equal(routes.isGuardianRoute("/profile/setup", "?redo=1"), true);
+  });
+
+  it("returns guardian gates only to non-gate guardian destinations", () => {
+    assert.equal(routes.getSafeGuardianReturnTo(""), "/guardian");
+    assert.equal(
+      routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Fstories"),
+      "/guardian/stories",
+    );
+    for (const value of [
+      "/",
+      "/lessons",
+      "/guardian/profile",
+      "https://evil.test/",
+    ]) {
+      assert.equal(
+        routes.getSafeGuardianReturnTo(
+          `?returnTo=${encodeURIComponent(value)}`,
+        ),
+        "/guardian",
+      );
     }
   });
 
@@ -202,6 +241,8 @@ describe("app route helpers", () => {
       ["/Profile/Setup//", "learner-profile"],
       ["/profile", "profile"],
       ["/Profile//", "profile"],
+      ["/guardian/profile", "profile"],
+      ["/guardian/profile/setup", "learner-profile"],
     ]) {
       assert.equal(routes.getGateRouteKind(pathname), kind);
     }
@@ -259,15 +300,43 @@ describe("app route helpers", () => {
     }
   });
 
-  it("preserves a learner-profile return target when reauthentication is required", () => {
-    for (const pathname of ["/profile/setup", "/Profile/Setup//", "/PROFILE/SETUP///"]) {
+  it("preserves an initial legacy learner-profile return target when reauthentication is required", () => {
+    for (const [pathname, search] of [
+      ["/profile/setup", "?returnTo=%2Fprogress"],
+      ["/Profile/Setup//", "?returnTo=%2Fprogress"],
+      ["/PROFILE/SETUP///", "?redo=01&returnTo=%2Fprogress"],
+    ]) {
       assert.equal(
-        routes.getRequestedProtectedTarget(
-          pathname,
-          "?returnTo=%2Fprogress",
-          "",
-        ),
+        routes.getRequestedProtectedTarget(pathname, search, ""),
         "/progress",
+      );
+    }
+  });
+
+  it("preserves canonical and legacy redo management URLs through reauthentication", () => {
+    for (const [pathname, search, hash, expected] of [
+      [
+        "/guardian/profile/setup",
+        "?returnTo=%2Fguardian",
+        "#questions",
+        "/guardian/profile/setup?returnTo=%2Fguardian#questions",
+      ],
+      [
+        "/guardian/profile/setup",
+        "?redo=1&returnTo=%2Fguardian%2Fprofile",
+        "",
+        "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
+      ],
+      [
+        "/profile/setup",
+        "?redo=1&returnTo=%2Fguardian",
+        "#review",
+        "/profile/setup?redo=1&returnTo=%2Fguardian#review",
+      ],
+    ]) {
+      assert.equal(
+        routes.getRequestedProtectedTarget(pathname, search, hash),
+        expected,
       );
     }
   });
@@ -319,6 +388,21 @@ describe("app route helpers", () => {
     }
     assert.equal(
       routes.getSafeReturnTo(returnToSearch("/dubs/five-little-ducks/extra")),
+      null,
+    );
+  });
+
+  it("builds and safely returns to guardian voice-dubbing settings", () => {
+    assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
+    for (const pathname of [
+      "/guardian/dubbing",
+      "/Guardian/Dubbing//",
+    ]) {
+      assert.equal(routes.isGuardianRoute(pathname), true);
+      assert.equal(routes.getSafeReturnTo(returnToSearch(pathname)), pathname);
+    }
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/guardian/dubbing/extra")),
       null,
     );
   });

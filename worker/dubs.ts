@@ -2,28 +2,31 @@ import { DUB_ID, DUB_LINES } from "../src/dubbing/dub-script.ts";
 import { isAccountDeletionPending } from "./account-deletion.ts";
 import type { Database } from "./database.ts";
 import {
+  createDubConsentRepository,
+  CURRENT_DUB_CONSENT_VERSION,
+} from "./dub-consent.ts";
+import {
+  createDubStorageKeys,
+  type DubStorageKeys,
   fenceBody,
   hasState,
   isR2WriteRateError,
   LEGACY_DUB_LINE_IDS,
-  legacyMarkerKey,
-  legacyObjectKey,
-  legacyObjectPrefix,
-  markerKey,
   MAX_R2_WRITE_ATTEMPTS,
-  objectKey,
-  objectPrefix,
   R2_WRITE_INTERVAL_MS,
   retryDelay,
 } from "./dub-storage.ts";
+import { parseDubRoute } from "./dub-route.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedBytes,
+  readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
 
-const CONSENT_VERSION = "guardian-voice-r2-v1";
 const MAX_CLIP_BYTES = 512 * 1024;
+const MAX_CONSENT_BODY_BYTES = 8 * 1024;
+const LEGACY_CONSENT_VERSION = "guardian-voice-r2-v1";
 const LEGACY_GENERATION = "legacy";
 const AUDIO_FORMAT = "parrot-dub-audio-v1";
 const AUDIO_FORMAT_V2 = "parrot-dub-audio-v2";
@@ -53,6 +56,7 @@ export interface DubRequestInput {
 }
 
 type DubHandlerOverrides = {
+  consentRepository?: ReturnType<typeof createDubConsentRepository>;
   createGeneration?: () => string;
   createUploadNonce?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
@@ -119,28 +123,11 @@ function json(payload: unknown, init: ResponseInit = {}) {
   });
 }
 
-function parseDubRoute(pathname: string) {
-  const match = /^\/api\/dubs\/([^/]+)(?:\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
-    pathname,
-  );
-  if (!match) return null;
-  try {
-    const dubId = decodeURIComponent(match[1]);
-    const lineId = match[2] ? decodeURIComponent(match[2]) : null;
-    if (
-      dubId !== DUB_ID ||
-      (lineId && !DUB_LINES.some((line) => line.id === lineId))
-    ) {
-      return null;
-    }
-    return { audio: match[3] === "audio", dubId, lineId };
-  } catch {
-    return null;
-  }
-}
-
-async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> {
-  const marker = await bucket.head(markerKey(userId));
+async function readMarker(
+  bucket: R2Bucket,
+  storage: DubStorageKeys,
+): Promise<DubMarker> {
+  const marker = await bucket.head(storage.markerKey);
   if (!marker) return { kind: "absent" };
   const generation = marker.customMetadata?.generation;
   const state = marker.customMetadata?.state;
@@ -163,8 +150,8 @@ async function readMarker(bucket: R2Bucket, userId: string): Promise<DubMarker> 
   };
 }
 
-async function readyGeneration(bucket: R2Bucket, userId: string) {
-  const marker = await readMarker(bucket, userId);
+async function readyGeneration(bucket: R2Bucket, storage: DubStorageKeys) {
+  const marker = await readMarker(bucket, storage);
   if (marker.kind === "absent") return null;
   if (marker.kind === "valid" && marker.state === "account-deleting") {
     throw new DubApiError(409, "account_deletion_pending");
@@ -177,17 +164,17 @@ async function readyGeneration(bucket: R2Bucket, userId: string) {
 
 async function beginReset(
   bucket: R2Bucket,
-  userId: string,
+  storage: DubStorageKeys,
   generation: string,
   wait: Wait,
 ) {
-  const current = await readMarker(bucket, userId);
+  const current = await readMarker(bucket, storage);
   if (current.kind === "valid" && current.state === "account-deleting") {
     throw new DubApiError(409, "account_deletion_pending");
   }
   const marker = await conditionalPut(
     bucket,
-    markerKey(userId),
+    storage.markerKey,
     fenceBody("marker", generation, "deleting"),
     {
       customMetadata: { generation, state: "deleting" },
@@ -260,8 +247,19 @@ async function conditionalPut(
 function audioStorage(
   object: R2Object,
   ready: string | null,
+  consentGeneration: string,
 ): AudioStorage | null {
   const metadata = object.customMetadata;
+  const consentVersion = metadata?.guardianConsentVersion;
+  if (
+    (consentVersion === CURRENT_DUB_CONSENT_VERSION &&
+      metadata?.guardianConsentGeneration !== consentGeneration) ||
+    (consentVersion !== undefined &&
+      consentVersion !== LEGACY_CONSENT_VERSION &&
+      consentVersion !== CURRENT_DUB_CONSENT_VERSION)
+  ) {
+    return null;
+  }
   if (
     ready === null &&
     metadata?.generation === undefined &&
@@ -380,9 +378,10 @@ async function getAudioPayload(
   key: string,
   object: R2Object,
   ready: string | null,
+  consentGeneration: string,
   rangeHeader: string | null,
 ): Promise<AudioPayload | null> {
-  const storage = audioStorage(object, ready);
+  const storage = audioStorage(object, ready, consentGeneration);
   if (!storage) return null;
   if (storage.kind === "legacy") {
     const range = parseAudioRange(rangeHeader, object.size);
@@ -392,7 +391,8 @@ async function getAudioPayload(
         ? { range: { length: range.length, offset: range.start } }
         : {}),
     });
-    return hasBody(legacy) && audioStorage(legacy, ready)?.kind === "legacy"
+    return hasBody(legacy) &&
+        audioStorage(legacy, ready, consentGeneration)?.kind === "legacy"
       ? { object: legacy, range, totalLength: object.size }
       : null;
   }
@@ -422,11 +422,11 @@ async function getAudioPayload(
 
 async function assertResetOwner(
   bucket: R2Bucket,
-  userId: string,
+  storage: DubStorageKeys,
   generation: string,
   etag: string,
 ) {
-  const marker = await readMarker(bucket, userId);
+  const marker = await readMarker(bucket, storage);
   if (
     marker.kind !== "valid" ||
     marker.state !== "deleting" ||
@@ -439,7 +439,7 @@ async function assertResetOwner(
 
 async function fenceResetOwnedKey(
   bucket: R2Bucket,
-  userId: string,
+  storage: DubStorageKeys,
   key: string,
   kind: "marker" | "slot",
   generation: string,
@@ -448,9 +448,9 @@ async function fenceResetOwnedKey(
   wait: Wait,
 ) {
   for (let attempt = 0; attempt < MAX_CAS_CONFLICTS; attempt += 1) {
-    await assertResetOwner(bucket, userId, generation, markerEtag);
+    await assertResetOwner(bucket, storage, generation, markerEtag);
     const current = await bucket.head(key);
-    await assertResetOwner(bucket, userId, generation, markerEtag);
+    await assertResetOwner(bucket, storage, generation, markerEtag);
     const fence = await conditionalPut(
       bucket,
       key,
@@ -469,7 +469,7 @@ async function fenceResetOwnedKey(
 
 function tombstoneSlot(
   bucket: R2Bucket,
-  userId: string,
+  storage: DubStorageKeys,
   lineId: string,
   generation: string,
   markerEtag: string,
@@ -477,8 +477,8 @@ function tombstoneSlot(
 ) {
   return fenceResetOwnedKey(
     bucket,
-    userId,
-    objectKey(userId, lineId),
+    storage,
+    storage.objectKey(lineId),
     "slot",
     generation,
     "tombstone",
@@ -503,22 +503,22 @@ async function deleteWithRetry(bucket: R2Bucket, keys: string[], wait: Wait) {
 
 async function retireLegacyDub(
   bucket: R2Bucket,
-  userId: string,
+  storage: DubStorageKeys,
   generation: string,
   markerEtag: string,
   wait: Wait,
 ) {
-  const prefix = legacyObjectPrefix(userId);
-  if (prefix === objectPrefix(userId)) return;
-  const marker = legacyMarkerKey(userId);
+  const marker = storage.retiredLegacyMarkerKey;
+  if (!marker) return;
+  const prefix = marker.slice(0, -".dub-generation".length);
   const slots = LEGACY_DUB_LINE_IDS.map((lineId) =>
-    legacyObjectKey(userId, lineId)
-  );
+    storage.retiredLegacyObjectKey(lineId)
+  ).filter((key): key is string => key !== null);
   const retirementKeys = new Set([marker, ...slots]);
 
   await fenceResetOwnedKey(
     bucket,
-    userId,
+    storage,
     marker,
     "marker",
     generation,
@@ -529,7 +529,7 @@ async function retireLegacyDub(
   for (const key of slots) {
     await fenceResetOwnedKey(
       bucket,
-      userId,
+      storage,
       key,
       "slot",
       generation,
@@ -544,7 +544,7 @@ async function retireLegacyDub(
   const seenCursors = new Set<string>();
 
   while (hasMore) {
-    await assertResetOwner(bucket, userId, generation, markerEtag);
+    await assertResetOwner(bucket, storage, generation, markerEtag);
     const page = await bucket.list({
       ...(cursor === undefined ? {} : { cursor }),
       prefix,
@@ -554,7 +554,7 @@ async function retireLegacyDub(
       throw new Error("R2 returned an object outside the legacy dub prefix.");
     }
     const keys = listedKeys.filter((key) => !retirementKeys.has(key));
-    await assertResetOwner(bucket, userId, generation, markerEtag);
+    await assertResetOwner(bucket, storage, generation, markerEtag);
     if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
 
     hasMore = page.truncated;
@@ -666,6 +666,82 @@ function safeRecordedAt(object: R2Object) {
   return Number.isNaN(object.uploaded.getTime()) ? null : object.uploaded.toISOString();
 }
 
+function emptyStatus(consentState: "not_granted" | "revoking") {
+  return {
+    complete: false,
+    consentState,
+    dubId: DUB_ID,
+    guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
+    lines: DUB_LINES.map(({ id }) => ({ id, recordedAt: null, saved: false })),
+    recordingEnabled: false,
+  };
+}
+
+function isCurrentGrant(
+  status: Awaited<ReturnType<ReturnType<typeof createDubConsentRepository>["status"]>>,
+): status is Extract<typeof status, { state: "granted" }> {
+  return status.state === "granted" &&
+    status.consentVersion === CURRENT_DUB_CONSENT_VERSION;
+}
+
+function consentError(status: { state: string }): never {
+  throw status.state === "revoking"
+    ? new DubApiError(409, "dub_consent_revoking")
+    : new DubApiError(403, "dubbing_not_enabled");
+}
+
+async function readConsentBody(request: Request) {
+  let value: unknown;
+  try {
+    value = JSON.parse(await readBoundedText(request, MAX_CONSENT_BODY_BYTES));
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      throw new DubApiError(413, "payload_too_large");
+    }
+    throw new DubApiError(400, "invalid_request");
+  }
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Array.isArray(value)
+  ) {
+    throw new DubApiError(400, "invalid_request");
+  }
+  const body = value as Record<string, unknown>;
+  if (
+    Object.keys(body).length !== 2 ||
+    body.accepted !== true ||
+    body.consentVersion !== CURRENT_DUB_CONSENT_VERSION
+  ) {
+    throw new DubApiError(400, "invalid_request");
+  }
+}
+
+async function fenceRevokedConsentSlot(
+  bucket: R2Bucket,
+  key: string,
+  stored: R2Object,
+  consentGeneration: string,
+  wait: Wait,
+) {
+  await conditionalPut(
+    bucket,
+    key,
+    fenceBody("slot", consentGeneration, "consent-revoked"),
+    {
+      customMetadata: {
+        guardianConsentGeneration: consentGeneration,
+        state: "consent-revoked",
+      },
+    },
+    stored,
+    wait,
+    (object) =>
+      object.customMetadata?.guardianConsentGeneration === consentGeneration &&
+      object.customMetadata?.state === "consent-revoked",
+  );
+}
+
 export async function handleDubRequest(
   input: DubRequestInput,
   overrides: DubHandlerOverrides = {},
@@ -678,33 +754,72 @@ export async function handleDubRequest(
     overrides.isDeletionPending ?? isAccountDeletionPending;
   const now = overrides.now ?? (() => new Date());
   const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
+  const consentRepository = overrides.consentRepository ??
+    createDubConsentRepository(input.database);
   const route = parseDubRoute(new URL(input.request.url).pathname);
 
   try {
     if (!route) throw new DubApiError(404, "not_found");
     const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
     const userId = input.identity.userId;
+    const storage = createDubStorageKeys(input.identity);
+    const assertAccountDeletionNotPending = async () => {
+      if (await isDeletionPending(input.database, userId)) {
+        throw new DubApiError(409, "account_deletion_pending");
+      }
+    };
+
+    if (route.consent) {
+      if (input.request.method !== "PUT") {
+        throw new DubApiError(405, "method_not_allowed", undefined, {
+          Allow: "PUT",
+        });
+      }
+      await readConsentBody(input.request);
+      await assertAccountDeletionNotPending();
+      try {
+        await consentRepository.grant(input.identity);
+      } catch (error) {
+        if (error instanceof Error && error.message === "dub_consent_revoking") {
+          throw new DubApiError(409, "dub_consent_revoking");
+        }
+        throw error;
+      }
+      await assertAccountDeletionNotPending();
+      return new Response(null, {
+        headers: { "Cache-Control": "private, no-store" },
+        status: 204,
+      });
+    }
 
     if (!route.lineId && !route.audio) {
       if (input.request.method === "GET") {
-        const generation = await readyGeneration(bucket, userId);
-        const prefix = objectPrefix(userId);
+        await assertAccountDeletionNotPending();
+        const consent = await consentRepository.status(input.identity);
+        if (!isCurrentGrant(consent)) {
+          await assertAccountDeletionNotPending();
+          return json(emptyStatus(
+            consent.state === "revoking" ? "revoking" : "not_granted",
+          ));
+        }
+        const generation = await readyGeneration(bucket, storage);
         const page = await bucket.list({
           include: ["customMetadata"],
-          prefix,
+          prefix: storage.objectPrefix,
         });
         const objects = new Map(
           page.objects.map((object) => [object.key, object]),
         );
         const lines = await Promise.all(DUB_LINES.map(async ({ id }) => {
-          const object = objects.get(objectKey(userId, id));
-          const storage = object && audioStorage(object, generation);
-          const current = object && storage
+          const object = objects.get(storage.objectKey(id));
+          const audio = object &&
+            audioStorage(object, generation, consent.grantGeneration);
+          const current = object && audio
             ? await validateAudioPrefix(
                 bucket,
-                objectKey(userId, id),
+                storage.objectKey(id),
                 object,
-                storage,
+                audio,
               )
             : null;
           const saved = current !== null;
@@ -714,26 +829,40 @@ export async function handleDubRequest(
             saved,
           };
         }));
-        if (await readyGeneration(bucket, userId) !== generation) {
+        if (await readyGeneration(bucket, storage) !== generation) {
           throw new DubApiError(409, "dub_reset_in_progress");
         }
+        if (!await consentRepository.requireCurrentGrant(
+          input.identity,
+          consent.grantGeneration,
+        )) {
+          const current = await consentRepository.status(input.identity);
+          await assertAccountDeletionNotPending();
+          return json(emptyStatus(
+            current.state === "revoking" ? "revoking" : "not_granted",
+          ));
+        }
+        await assertAccountDeletionNotPending();
         return json({
           complete: lines.every(({ saved }) => saved),
+          consentState: "granted",
           dubId: DUB_ID,
-          guardianConsentVersion: CONSENT_VERSION,
+          guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
           lines,
+          recordingEnabled: true,
         });
       }
 
       if (input.request.method === "DELETE") {
-        if (await isDeletionPending(input.database, userId)) {
-          throw new DubApiError(409, "account_deletion_pending");
-        }
+        await assertAccountDeletionNotPending();
+        const revocation = await consentRepository.beginRevocation(input.identity);
+        if (revocation.state === "not_granted") consentError(revocation);
+        const consentGeneration = revocation.grantGeneration;
         const generation = createGeneration();
         if (!generation) throw new Error("Dub reset generation is required.");
         const deletingMarker = await beginReset(
           bucket,
-          userId,
+          storage,
           generation,
           wait,
         );
@@ -743,7 +872,7 @@ export async function handleDubRequest(
         for (const { id } of DUB_LINES) {
           await tombstoneSlot(
             bucket,
-            userId,
+            storage,
             id,
             generation,
             deletingMarker.etag,
@@ -755,7 +884,7 @@ export async function handleDubRequest(
         }
         await retireLegacyDub(
           bucket,
-          userId,
+          storage,
           generation,
           deletingMarker.etag,
           wait,
@@ -766,7 +895,7 @@ export async function handleDubRequest(
         await wait(R2_WRITE_INTERVAL_MS);
         const readyMarker = await conditionalPut(
           bucket,
-          markerKey(userId),
+          storage.markerKey,
           fenceBody("marker", generation, "ready"),
           {
             customMetadata: { generation, state: "ready" },
@@ -781,6 +910,10 @@ export async function handleDubRequest(
         if (await isDeletionPending(input.database, userId)) {
           throw new DubApiError(409, "account_deletion_pending");
         }
+        await consentRepository.finishRevocation(
+          input.identity,
+          consentGeneration,
+        );
         return new Response(null, {
           headers: { "Cache-Control": "private, no-store" },
           status: 204,
@@ -804,8 +937,11 @@ export async function handleDubRequest(
           { Allow: "GET" },
         );
       }
-      const generation = await readyGeneration(bucket, userId);
-      const key = objectKey(userId, route.lineId!);
+      await assertAccountDeletionNotPending();
+      const consent = await consentRepository.status(input.identity);
+      if (!isCurrentGrant(consent)) consentError(consent);
+      const generation = await readyGeneration(bucket, storage);
+      const key = storage.objectKey(route.lineId!);
       const head = await bucket.head(key);
       const payload = head
         ? await getAudioPayload(
@@ -813,13 +949,21 @@ export async function handleDubRequest(
             key,
             head,
             generation,
+            consent.grantGeneration,
             input.request.headers.get("Range"),
           )
         : null;
       if (!payload) throw new DubApiError(404, "not_found");
-      if (await readyGeneration(bucket, userId) !== generation) {
+      if (await readyGeneration(bucket, storage) !== generation) {
         throw new DubApiError(404, "not_found");
       }
+      if (!await consentRepository.requireCurrentGrant(
+        input.identity,
+        consent.grantGeneration,
+      )) {
+        throw new DubApiError(403, "dubbing_not_enabled");
+      }
+      await assertAccountDeletionNotPending();
       const headers = new Headers();
       payload.object.writeHttpMetadata(headers);
       headers.set("Accept-Ranges", "bytes");
@@ -852,14 +996,10 @@ export async function handleDubRequest(
     if (await isDeletionPending(input.database, userId)) {
       throw new DubApiError(409, "account_deletion_pending");
     }
-    const ready = await readyGeneration(bucket, userId);
+    const consent = await consentRepository.status(input.identity);
+    if (!isCurrentGrant(consent)) consentError(consent);
+    const ready = await readyGeneration(bucket, storage);
     const generation = ready ?? LEGACY_GENERATION;
-    if (
-      input.request.headers.get("X-Parrot-Guardian-Consent-Version") !==
-      CONSENT_VERSION
-    ) {
-      throw new DubApiError(400, "guardian_consent_required");
-    }
     const contentType = normalizeContentType(input.request);
     let bytes: Uint8Array;
     try {
@@ -875,10 +1015,16 @@ export async function handleDubRequest(
       throw new DubApiError(415, "unsupported_audio");
     }
 
-    const key = objectKey(userId, route.lineId!);
+    const key = storage.objectKey(route.lineId!);
     const previous = await bucket.head(key);
-    if (await readyGeneration(bucket, userId) !== ready) {
+    if (await readyGeneration(bucket, storage) !== ready) {
       throw new DubApiError(409, "dub_reset_in_progress");
+    }
+    if (!await consentRepository.requireCurrentGrant(
+      input.identity,
+      consent.grantGeneration,
+    )) {
+      throw new DubApiError(403, "dubbing_not_enabled");
     }
     const recordedAt = now();
     const uploadNonce = createUploadNonce();
@@ -892,7 +1038,8 @@ export async function handleDubRequest(
         httpMetadata: { contentType },
         customMetadata: {
           generation,
-          guardianConsentVersion: CONSENT_VERSION,
+          guardianConsentGeneration: consent.grantGeneration,
+          guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
           lineId: route.lineId!,
           payloadOffset: String(encodedAudio.payloadOffset),
           recordedAt: recordedAt.toISOString(),
@@ -926,9 +1073,28 @@ export async function handleDubRequest(
       throw new DubApiError(409, "account_deletion_pending");
     };
     await throwIfAccountDeletionPending();
+    let consentChanged = false;
+    try {
+      consentChanged = !await consentRepository.requireCurrentGrant(
+        input.identity,
+        consent.grantGeneration,
+      );
+    } catch {
+      consentChanged = true;
+    }
+    if (consentChanged) {
+      await fenceRevokedConsentSlot(
+        bucket,
+        key,
+        stored,
+        consent.grantGeneration,
+        wait,
+      );
+      throw new DubApiError(403, "dubbing_not_enabled");
+    }
     let markerConflict: unknown;
     try {
-      if (await readyGeneration(bucket, userId) !== ready) {
+      if (await readyGeneration(bucket, storage) !== ready) {
         markerConflict = new DubApiError(409, "dub_reset_in_progress");
       }
     } catch (error) {

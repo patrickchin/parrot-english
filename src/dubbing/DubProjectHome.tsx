@@ -1,6 +1,6 @@
 import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
-import { ActionButton, TextButton } from "../shared/ui";
+import { ActionButton } from "../shared/ui";
 import { DuckScene } from "./DuckScene";
 import {
   DUB_LINES,
@@ -12,12 +12,10 @@ import { getDubSceneStatus, type DubSceneStatus } from "./dub-state";
 
 export type DubProjectHomeProps = {
   activeLine: DubLine;
-  deleting: boolean;
   error?: string;
   locked: boolean;
   needsRetake: ReadonlySet<string>;
   onContinue(): void;
-  onDelete(): void;
   onOpenScene(sceneIndex: number): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
@@ -35,12 +33,10 @@ function sceneStatusLabel(status: DubSceneStatus) {
 
 export function DubProjectHome({
   activeLine,
-  deleting,
   error = "",
   locked,
   needsRetake,
   onContinue,
-  onDelete,
   onOpenScene,
   onTogglePlayback,
   playback,
@@ -66,7 +62,7 @@ export function DubProjectHome({
       : "Play full video";
 
   return (
-    <main aria-busy={deleting} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
+    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
       <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,3fr)_minmax(17rem,1fr)] short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:gap-2 tall-wide:h-full tall-wide:min-h-0 tall-wide:grid-cols-[minmax(0,3fr)_minmax(18rem,1fr)] tall-wide:grid-rows-[auto_minmax(0,1fr)]">
         <header className="flex min-w-0 items-center justify-between gap-3 short-wide:col-span-2 tall-wide:col-span-2">
           <h1 className="m-0 truncate text-xl text-brand-ink short-wide:text-lg md:text-4xl">Five Little Ducks</h1>
@@ -104,7 +100,7 @@ export function DubProjectHome({
           </ActionButton>
         </div>
 
-        <div className="grid min-w-0 gap-3 short-wide:col-start-2 short-wide:row-start-2 short-wide:min-h-0 short-wide:grid-rows-[auto_minmax(0,1fr)_auto] short-wide:gap-2 tall-wide:col-start-2 tall-wide:row-start-2 tall-wide:min-h-0 tall-wide:grid-rows-[auto_minmax(0,1fr)_auto]">
+        <div className="grid min-w-0 gap-3 short-wide:col-start-2 short-wide:row-start-2 short-wide:min-h-0 short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:gap-2 tall-wide:col-start-2 tall-wide:row-start-2 tall-wide:min-h-0 tall-wide:grid-rows-[auto_minmax(0,1fr)]">
           <div className="flex justify-end">
             {!allSaved ? (
               <ActionButton aria-label={`Continue Scene ${continueSceneIndex + 1}`} className="w-full short-wide:h-12 short-wide:min-h-12 short-wide:px-3 short-wide:text-base" disabled={locked} onClick={onContinue} size="large">
@@ -137,7 +133,7 @@ export function DubProjectHome({
                   size="none"
                   variant={selected ? "navy" : "surface"}
                 >
-                  <span aria-label={`Scene ${sceneIndex + 1} thumbnail`} className="block h-10 w-full overflow-hidden rounded-xl short-wide:h-8" role="img">
+                  <span aria-label={`Scene ${sceneIndex + 1} thumbnail`} className="block aspect-video w-full overflow-hidden rounded-xl" role="img">
                     <DuckScene line={lines[0]} thumbnail />
                   </span>
                   <span aria-hidden="true" className="leading-none">{sceneIndex + 1}</span>
@@ -161,18 +157,6 @@ export function DubProjectHome({
             })}
           </nav>
 
-          <details className="group justify-self-start rounded-xl bg-white/70 px-2">
-            <summary
-              aria-label="More grown-up options"
-              className="flex min-h-12 cursor-pointer list-none items-center gap-1 px-1 font-ui text-sm font-black text-brand-blue focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
-            >
-              More
-              <span aria-hidden="true" className="group-open:rotate-180">▾</span>
-            </summary>
-            <TextButton className="mb-2 min-h-12 text-red-800" disabled={locked} onClick={onDelete}>
-              {deleting ? "Deleting my dub…" : "Delete my dub"}
-            </TextButton>
-          </details>
         </div>
 
         {error ? (

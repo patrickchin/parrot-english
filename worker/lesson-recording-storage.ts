@@ -3,6 +3,7 @@ import {
   MAX_R2_WRITE_ATTEMPTS,
   retryDelay,
 } from "./dub-storage.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 type LessonRecordingBucket = Pick<R2Bucket, "head" | "list" | "put">;
 type LessonRecordingWriteBucket = Pick<R2Bucket, "head" | "put">;
@@ -37,15 +38,23 @@ export type LessonRecordingSlot = {
   stepIndex: number;
 };
 
-function ownerPrefix(userId: string) {
-  return `personalized-story-art/${encodeURIComponent(userId)}/lesson-recordings/`;
+export type LessonRecordingOwner = Pick<
+  LearnerIdentity,
+  "learnerProfileId" | "legacyStorageOwner" | "userId"
+>;
+
+export function lessonRecordingOwnerPrefix(identity: LessonRecordingOwner) {
+  const accountPrefix = `personalized-story-art/${encodeURIComponent(identity.userId)}/`;
+  return identity.legacyStorageOwner
+    ? `${accountPrefix}lesson-recordings/`
+    : `${accountPrefix}learners/${encodeURIComponent(identity.learnerProfileId)}/lesson-recordings/`;
 }
 
 export function lessonRecordingObjectKey(
-  userId: string,
+  identity: LessonRecordingOwner,
   slot: LessonRecordingSlot,
 ) {
-  return `${ownerPrefix(userId)}${slot.source}/${encodeURIComponent(slot.lessonId)}/scene-${slot.sceneIndex}/step-${slot.stepIndex}.audio`;
+  return `${lessonRecordingOwnerPrefix(identity)}${slot.source}/${encodeURIComponent(slot.lessonId)}/scene-${slot.sceneIndex}/step-${slot.stepIndex}.audio`;
 }
 
 export function lessonRecordingAudioBody(
@@ -275,13 +284,13 @@ async function purgePrefix(
 
 export function deleteAllLessonRecordings(
   bucket: LessonRecordingBucket,
-  userId: string,
+  identity: LessonRecordingOwner,
   consentGenerationBoundary: number,
   wait: Wait,
 ) {
   return purgePrefix(
     bucket,
-    ownerPrefix(userId),
+    lessonRecordingOwnerPrefix(identity),
     "consentGeneration",
     consentGenerationBoundary,
     wait,
@@ -290,14 +299,14 @@ export function deleteAllLessonRecordings(
 
 export function deleteLessonRecordingsForLesson(
   bucket: LessonRecordingBucket,
-  userId: string,
+  identity: LessonRecordingOwner,
   lessonId: string,
   lessonGenerationBoundary: number,
   wait: Wait,
 ) {
   return purgePrefix(
     bucket,
-    `${ownerPrefix(userId)}my/${encodeURIComponent(lessonId)}/`,
+    `${lessonRecordingOwnerPrefix(identity)}my/${encodeURIComponent(lessonId)}/`,
     "lessonGeneration",
     lessonGenerationBoundary,
     wait,

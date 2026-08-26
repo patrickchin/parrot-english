@@ -1,8 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router";
-import { getLessonScenePath } from "../app/app-routes";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import { getGuardianLessonsPath } from "../app/app-routes";
+import {
+  GuardianLearnerContextLabel,
+  HeaderLink,
+  RouteHeader,
+} from "../app/AppHeader";
 import { ActionButton, Card } from "../shared/ui";
 import type { Lesson } from "./lesson-catalog";
 import { prepareLessonDraft } from "./lesson-creator-script";
@@ -10,7 +14,7 @@ import { LessonWarnings } from "./LessonCreator";
 import { LessonGuiEditor } from "./LessonGuiEditor";
 import { loadMyLesson, updateMyLesson } from "./my-lessons-api";
 
-export function LessonEditor() {
+export function LessonEditor({ learnerName }: { learnerName: string }) {
   const navigate = useNavigate();
   const { lessonId } = useParams();
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -69,8 +73,8 @@ export function LessonEditor() {
       const prepared = prepareLessonDraft(lesson, "edited lesson");
       setLesson(prepared.lesson);
       setWarnings(prepared.warnings);
-      const updated = await updateMyLesson(lessonId, prepared.lesson);
-      navigate(getLessonScenePath("my", updated.lesson.id, 0));
+      await updateMyLesson(lessonId, prepared.lesson);
+      navigate(getGuardianLessonsPath());
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -87,25 +91,29 @@ export function LessonEditor() {
         <HeaderLink
           aria-label="Back to lessons"
           icon={<ArrowLeft />}
-          to="/lessons"
+          to={getGuardianLessonsPath()}
         >
           Back to lessons
         </HeaderLink>
       </RouteHeader>
 
       <Card className="mx-auto grid w-full max-w-6xl gap-6 p-5 md:p-9">
-        <header className="text-center">
+        <header className="grid gap-2 text-center">
+          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1 className="m-0 text-4xl leading-none text-brand-navy sm:text-5xl md:text-6xl">
             Edit Lesson
           </h1>
-          <p className="mb-0 mt-3 text-lg font-bold text-slate-600">
-            Shape the story, scenes, dialogue, and speaking practice with
-            simple visual controls.
+          <p className="m-0 mt-1 text-lg font-bold text-slate-600">
+            Shape the story, scenes, dialogue, and speaking practice with simple
+            visual controls.
           </p>
         </header>
 
         {isLoading ? (
-          <p className="m-0 text-center font-black text-brand-blue" role="status">
+          <p
+            className="m-0 text-center font-black text-brand-blue"
+            role="status"
+          >
             Loading lesson...
           </p>
         ) : null}
@@ -145,7 +153,7 @@ export function LessonEditor() {
               type="submit"
               variant="success"
             >
-              {isSaving ? "Saving changes..." : "Save changes and play"}
+              {isSaving ? "Saving changes..." : "Save changes"}
             </ActionButton>
           </form>
         ) : null}

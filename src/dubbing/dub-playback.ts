@@ -3,7 +3,10 @@ import {
   DUB_LINES,
   type DubLine,
 } from "./dub-script.ts";
-import { getDubLineAudioUrl } from "./dub-api.ts";
+import {
+  dubConsentLossError,
+  getDubLineAudioUrl,
+} from "./dub-api.ts";
 
 type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
@@ -242,6 +245,10 @@ export async function startDubPlayback({
       }
       if (!response.ok) {
         if (signal?.aborted) throw createAbortError();
+        if (response.status === 403 || response.status === 409) {
+          const consentLoss = await dubConsentLossError(response);
+          if (consentLoss) throw consentLoss;
+        }
         throw new DubLinePlaybackError(lineId, "fetch");
       }
       let bytes: ArrayBuffer;
@@ -275,6 +282,7 @@ export async function startDubPlayback({
         return [line, await loadAndDecode(preferredUrl, line.id)] as const;
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") throw error;
+        if (!(error instanceof DubLinePlaybackError)) throw error;
         if (!fallbackUrl) {
           onLineUnavailable?.(line.id);
           return null;
@@ -287,6 +295,7 @@ export async function startDubPlayback({
           if (fallbackError instanceof Error && fallbackError.name === "AbortError") {
             throw fallbackError;
           }
+          if (!(fallbackError instanceof DubLinePlaybackError)) throw fallbackError;
           onLineUnavailable?.(line.id);
           return null;
         }

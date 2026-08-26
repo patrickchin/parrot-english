@@ -71,6 +71,24 @@ describe("conversation browser API", () => {
     );
     assert.equal(fake.calls[0][1].signal, controller.signal);
 
+    const successful = createJsonFetch();
+    await startConversation(
+      { promptStyle: "gentle-guide", purpose: "small-chat" },
+      { fetch: successful.fetch, signal: controller.signal },
+    );
+    await finishConversation("conversation-1", "finished_by_learner", {
+      fetch: successful.fetch,
+      signal: controller.signal,
+    });
+    await finalizeConversation("conversation-1", {
+      fetch: successful.fetch,
+      signal: controller.signal,
+    });
+    assert.deepEqual(
+      successful.calls.map(([, init]) => init.signal),
+      [controller.signal, controller.signal, controller.signal],
+    );
+
     const invalid = {
       async fetch() {
         return new Response("not json", { status: 503 });

@@ -78,6 +78,13 @@ function productionSchedule(callback: () => void, delay: number) {
   return () => clearTimeout(timer);
 }
 
+function isLiveGuardianState(
+  state: GuardianAccessState,
+  timestamp: number,
+): state is Extract<GuardianAccessState, { mode: "guardian" }> {
+  return state.mode === "guardian" && Date.parse(state.expiresAt) > timestamp;
+}
+
 export function createGuardianAccessProvider({
   api = {
     loadGuardianAccess,
@@ -164,13 +171,10 @@ export function createGuardianAccessProvider({
         identity: string,
         generation: number,
       ) => {
-        if (!isCurrent(identity, generation)) return;
-        if (
-          state.mode === "learner" ||
-          Date.parse(state.expiresAt) <= now()
-        ) {
+        if (!isCurrent(identity, generation)) return false;
+        if (!isLiveGuardianState(state, now())) {
           setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
-          return;
+          return false;
         }
         setSnapshot({
           error: "",
@@ -178,8 +182,9 @@ export function createGuardianAccessProvider({
           identity,
           mode: "guardian",
         });
+        return true;
       },
-      [isCurrent],
+      [isCurrent, now],
     );
 
     const load = useCallback(async () => {
@@ -364,8 +369,9 @@ export function createGuardianAccessProvider({
               return STALE_OPERATION_ERROR;
             }
             settledIntentRef.current = version;
-            applyState(state, identity, generation);
-            return null;
+            return applyState(state, identity, generation)
+              ? null
+              : FALLBACK_ERROR;
           } catch (error) {
             if (
               !isCurrent(identity, generation) ||

@@ -3,6 +3,10 @@ import {
   accountDeletionTombstoneKey,
   isAccountDeletionPending,
 } from "./account-deletion.ts";
+import {
+  createLearnerStoryArtGenerationLeaseRepository,
+  LEARNER_STORY_ART_LEASE_DURATION_MS,
+} from "./learner-story-art-generation-lease.ts";
 import { createPersonalizedStoryArtGenerationLeaseRepository } from "./personalized-story-art-generation-lease.ts";
 import {
   createPersonalizedStoryArtImage,
@@ -16,6 +20,7 @@ import {
   readBoundedFormData,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 const CURRENT_GUARDIAN_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
@@ -58,11 +63,7 @@ export type PersonalizedStoryArtEnv = {
 export type PersonalizedStoryArtRequestInput = {
   database: Database;
   env: PersonalizedStoryArtEnv;
-  identity: {
-    sessionId: string;
-    userId: string;
-    userName: string | null;
-  };
+  identity: LearnerIdentity;
   request: Request;
 };
 
@@ -169,12 +170,12 @@ function metadataPayload(
 }
 
 function objectKey(
-  userId: string,
+  identity: LearnerIdentity,
   storyId: string,
   objectId: string,
   extension: string,
 ) {
-  return `personalized-story-art/${encodeURIComponent(userId)}/${encodeURIComponent(storyId)}/versions/${encodeURIComponent(objectId)}.${extension}`;
+  return `personalized-story-art/${encodeURIComponent(identity.userId)}/learners/${encodeURIComponent(identity.learnerProfileId)}/${encodeURIComponent(storyId)}/versions/${encodeURIComponent(objectId)}.${extension}`;
 }
 
 function parseStoryRoute(pathname: string) {
@@ -360,12 +361,14 @@ export async function handlePersonalizedStoryArtRequest(
 ) {
   const url = new URL(input.request.url);
   const route = parseStoryRoute(url.pathname);
-  const repository = createPersonalizedStoryArtRepository(input.database, {
-    now: overrides.now,
-  });
-  const leaseRepository =
-    createPersonalizedStoryArtGenerationLeaseRepository(input.env.DB);
   const now = overrides.now ?? (() => new Date());
+  const repository = createPersonalizedStoryArtRepository(input.database, {
+    now,
+  });
+  const legacyLeaseRepository =
+    createPersonalizedStoryArtGenerationLeaseRepository(input.env.DB);
+  const learnerLeaseRepository =
+    createLearnerStoryArtGenerationLeaseRepository(input.env.DB, { now });
   const createId = overrides.createId ?? (() => crypto.randomUUID());
   const createObjectId =
     overrides.createObjectId ?? (() => crypto.randomUUID());
@@ -389,17 +392,28 @@ export async function handlePersonalizedStoryArtRequest(
         sourceImage,
       }));
 
-  async function recoverExpiredLease(storyId: string) {
-    const recoveryToken = crypto.randomUUID();
-    const claimed = await leaseRepository.claimExpired(
-      input.identity.userId,
-      storyId,
-      recoveryToken,
-      now().getTime(),
-    );
-    if (!claimed) return;
+  async function legacyLeaseExists(storyId: string) {
+    if (!input.identity.legacyStorageOwner) return false;
+    const row = await input.env.DB
+      .prepare(
+        `SELECT generation_token
+        FROM personalized_story_art_generation_lease
+        WHERE auth_user_id = ? AND story_id = ?`,
+      )
+      .bind(input.identity.userId, storyId)
+      .first<{ generation_token: string }>();
+    return Boolean(row);
+  }
 
-    const row = await repository.findOwnedStory(input.identity.userId, storyId);
+  async function cleanupRecoveredLease(
+    storyId: string,
+    claimed: {
+      candidateR2ObjectKey: string | null;
+      previousR2ObjectKey: string | null;
+    },
+    release: () => Promise<unknown>,
+  ) {
+    const row = await repository.findOwnedStory(input.identity, storyId);
     const cleanupKey =
       claimed.candidateR2ObjectKey &&
       row?.r2ObjectKey === claimed.candidateR2ObjectKey
@@ -411,28 +425,65 @@ export async function handlePersonalizedStoryArtRequest(
         cleanupKey,
       );
     }
-    await leaseRepository.release(
+    await release();
+  }
+
+  async function recoverLegacyLease(storyId: string) {
+    if (!(await legacyLeaseExists(storyId))) return;
+    const recoveryToken = crypto.randomUUID();
+    const claimed = await legacyLeaseRepository.claimExpired(
       input.identity.userId,
       storyId,
       recoveryToken,
+      now().getTime(),
+    );
+    if (!claimed) {
+      if (await legacyLeaseExists(storyId)) throw generationInProgressError();
+      return;
+    }
+
+    await cleanupRecoveredLease(storyId, claimed, () =>
+      legacyLeaseRepository.release(
+        input.identity.userId,
+        storyId,
+        recoveryToken,
+      ),
+    );
+  }
+
+  async function recoverLearnerLease(storyId: string) {
+    const claimed = await learnerLeaseRepository.recoverExpired(
+      input.identity,
+      storyId,
+      now().getTime(),
+    );
+    if (!claimed) return;
+    await cleanupRecoveredLease(storyId, claimed, () =>
+      learnerLeaseRepository.release(
+        input.identity,
+        storyId,
+        claimed.generationToken,
+      ),
     );
   }
 
   async function acquireLease(storyId: string) {
-    await recoverExpiredLease(storyId);
+    await repository.attachLegacyStory(input.identity, storyId);
+    await recoverLegacyLease(storyId);
+    await recoverLearnerLease(storyId);
     const token = crypto.randomUUID();
-    const acquired = await leaseRepository.acquire(
-      input.identity.userId,
+    const acquired = await learnerLeaseRepository.acquire(
+      input.identity,
       storyId,
       token,
-      now().getTime(),
+      now().getTime() + LEARNER_STORY_ART_LEASE_DURATION_MS,
     );
     if (!acquired) throw generationInProgressError();
     return token;
   }
 
   async function releaseLease(storyId: string, token: string) {
-    await leaseRepository.release(input.identity.userId, storyId, token);
+    await learnerLeaseRepository.release(input.identity, storyId, token);
   }
 
   async function cleanupCandidateAndRelease(
@@ -450,10 +501,7 @@ export async function handlePersonalizedStoryArtRequest(
   async function deleteOwnedArt(storyId: string) {
     const token = await acquireLease(storyId);
     try {
-      const row = await repository.markDeleting(
-        input.identity.userId,
-        storyId,
-      );
+      const row = await repository.markDeleting(input.identity, storyId);
       if (!row) {
         return new Response(null, {
           headers: { "Cache-Control": "no-store" },
@@ -464,7 +512,7 @@ export async function handlePersonalizedStoryArtRequest(
         input.env.PERSONALIZED_STORY_ART_BUCKET,
         row.r2ObjectKey,
       );
-      await repository.deleteByIdIfDeleting(row.id);
+      await repository.deleteByIdIfDeleting(input.identity, storyId, row.id);
       overrides.onAfterDeleteRow?.();
       return new Response(null, {
         headers: { "Cache-Control": "no-store" },
@@ -492,7 +540,7 @@ export async function handlePersonalizedStoryArtRequest(
           metadataPayload(
             false,
             await repository.findOwnedStory(
-              input.identity.userId,
+              input.identity,
               route.storyId,
             ),
           ),
@@ -509,7 +557,7 @@ export async function handlePersonalizedStoryArtRequest(
         return json(
           metadataPayload(
             false,
-            await repository.findOwnedStory(input.identity.userId, route.storyId),
+            await repository.findOwnedStory(input.identity, route.storyId),
           ),
         );
       }
@@ -523,14 +571,14 @@ export async function handlePersonalizedStoryArtRequest(
       return json(
         metadataPayload(
           true,
-          await repository.findOwnedStory(input.identity.userId, route.storyId),
+          await repository.findOwnedStory(input.identity, route.storyId),
         ),
       );
     }
 
     if (input.request.method === "GET" && route.asset) {
       const row = currentReadyRow(
-        await repository.findOwnedStory(input.identity.userId, route.storyId),
+        await repository.findOwnedStory(input.identity, route.storyId),
       );
       if (!row) throw new PersonalizedStoryArtApiError(404, "not_found");
       const object = await input.env.PERSONALIZED_STORY_ART_BUCKET.get(row.r2ObjectKey);
@@ -567,7 +615,7 @@ export async function handlePersonalizedStoryArtRequest(
           input.identity.userId,
         );
         existingRow = await repository.findOwnedStory(
-          input.identity.userId,
+          input.identity,
           route.storyId,
         );
         if (existingRow?.status === "deleting") {
@@ -600,7 +648,7 @@ export async function handlePersonalizedStoryArtRequest(
           input.identity.userId,
         );
         key = objectKey(
-          input.identity.userId,
+          input.identity,
           route.storyId,
           createObjectId(),
           generated.extension,
@@ -619,12 +667,12 @@ export async function handlePersonalizedStoryArtRequest(
 
       let tracked;
       try {
-        tracked = await leaseRepository.trackCandidate(
-          input.identity.userId,
+        tracked = await learnerLeaseRepository.trackCandidate(
+          input.identity,
           route.storyId,
           token,
           key,
-          now().getTime(),
+          tombstoneKey,
         );
       } catch (error) {
         await releaseLease(route.storyId, token);
@@ -632,21 +680,51 @@ export async function handlePersonalizedStoryArtRequest(
       }
       if (!tracked) {
         await releaseLease(route.storyId, token);
+        if (
+          await isAccountDeletionPending(
+            input.database,
+            input.identity.userId,
+          )
+        ) {
+          throw accountDeletionPendingError();
+        }
         throw generationInProgressError();
       }
 
+      let stored;
       try {
-        await input.env.PERSONALIZED_STORY_ART_BUCKET.put(key, generated.bytes, {
-          customMetadata: {
-            guardianConsentVersion: CURRENT_GUARDIAN_CONSENT_VERSION,
+        stored = await input.env.PERSONALIZED_STORY_ART_BUCKET.put(
+          key,
+          generated.bytes,
+          {
+            customMetadata: {
+              guardianConsentVersion: CURRENT_GUARDIAN_CONSENT_VERSION,
+            },
+            httpMetadata: {
+              contentType: generated.contentType,
+            },
+            onlyIf: { etagDoesNotMatch: "*" },
           },
-          httpMetadata: {
-            contentType: generated.contentType,
-          },
-        });
+        );
       } catch (error) {
         await cleanupCandidateAndRelease(route.storyId, token, key);
         throw error;
+      }
+      if (stored === null) {
+        await releaseLease(route.storyId, token);
+        if (
+          await isAccountDeletionPending(
+            input.database,
+            input.identity.userId,
+          )
+        ) {
+          throw accountDeletionPendingError();
+        }
+        throw new PersonalizedStoryArtApiError(
+          500,
+          "object_key_collision",
+          "A unique storage key could not be created.",
+        );
       }
 
       try {
@@ -662,16 +740,16 @@ export async function handlePersonalizedStoryArtRequest(
       const finalizedAt = now().getTime();
       let finalized;
       try {
-        finalized = await leaseRepository.finalizeReady(
-          input.identity.userId,
+        finalized = await learnerLeaseRepository.finalize(
+          input.identity,
           route.storyId,
           token,
-          existingRow
-            ? { id: existingRow.id, r2ObjectKey: existingRow.r2ObjectKey }
-            : null,
           {
             accountDeletionTombstoneKey: tombstoneKey,
             contentType: generated.contentType,
+            existing: existingRow
+              ? { id: existingRow.id, r2ObjectKey: existingRow.r2ObjectKey }
+              : null,
             guardianConsentAt: finalizedAt,
             guardianConsentVersion: CURRENT_GUARDIAN_CONSENT_VERSION,
             id: createId(),
@@ -704,7 +782,7 @@ export async function handlePersonalizedStoryArtRequest(
       }
 
       const row = await repository.findOwnedStory(
-        input.identity.userId,
+        input.identity,
         route.storyId,
       );
       if (!row || row.r2ObjectKey !== key || row.status !== "ready") {
@@ -719,10 +797,7 @@ export async function handlePersonalizedStoryArtRequest(
         );
       } catch (error) {
         try {
-          await repository.markDeleting(
-            input.identity.userId,
-            route.storyId,
-          );
+          await repository.markDeleting(input.identity, route.storyId);
         } catch {
           // Reads still fail closed while the account-deletion check errors.
         }
@@ -737,7 +812,7 @@ export async function handlePersonalizedStoryArtRequest(
         let deletingRow;
         try {
           deletingRow = await repository.markDeleting(
-            input.identity.userId,
+            input.identity,
             route.storyId,
           );
         } catch (error) {
@@ -752,7 +827,11 @@ export async function handlePersonalizedStoryArtRequest(
           key,
         );
         if (deletingRow?.r2ObjectKey === key) {
-          await repository.deleteByIdIfDeleting(deletingRow.id);
+          await repository.deleteByIdIfDeleting(
+            input.identity,
+            route.storyId,
+            deletingRow.id,
+          );
         }
         await releaseLease(route.storyId, token);
         throw accountDeletionPendingError();

@@ -104,7 +104,7 @@ describe("story script catalog", () => {
     assert.doesNotMatch(container.textContent, /Big adventures/);
     assert.doesNotMatch(
       container.textContent,
-      /Grown-up options|Pick a story level|Guardian consent|Upload learner photo|Generate story art/,
+      /Grown-up options|Pick a story level|Guardian consent|Upload .* photo|Generate story art/,
     );
   });
 
@@ -214,7 +214,10 @@ describe("story script catalog", () => {
     );
 
     assert.equal(new Set(STORIES.map(({ id }) => id)).size, STORIES.length);
-    assert.equal(new Set(STORIES.map(({ title }) => title)).size, STORIES.length);
+    assert.equal(
+      new Set(STORIES.map(({ title }) => title)).size,
+      STORIES.length,
+    );
     assert.equal(
       new Set(
         learnerStories.map(({ promptExperiment }) => promptExperiment.focus),
@@ -239,8 +242,14 @@ describe("story script catalog", () => {
       ]);
       assert.ok(story.summary.trim(), `${story.title} summary`);
       assert.ok(story.completionText.trim(), `${story.title} completion`);
-      assert.ok(story.promptExperiment.instruction.trim(), `${story.title} prompt`);
-      assert.ok(story.promptExperiment.hypothesis.trim(), `${story.title} hypothesis`);
+      assert.ok(
+        story.promptExperiment.instruction.trim(),
+        `${story.title} prompt`,
+      );
+      assert.ok(
+        story.promptExperiment.hypothesis.trim(),
+        `${story.title} hypothesis`,
+      );
       assert.ok(
         story.pages.length >= 5 &&
           (story.level === "long-stories" || story.pages.length <= 7),
@@ -260,7 +269,9 @@ describe("story script catalog", () => {
       const narrativeWords = countStoryWords(
         story.pages.map(({ text }) => text).join(" "),
       );
-      const pageWordCounts = story.pages.map(({ text }) => countStoryWords(text));
+      const pageWordCounts = story.pages.map(({ text }) =>
+        countStoryWords(text),
+      );
 
       assert.ok(
         narrativeWords <= level.maxNarrativeWordsTotal,
@@ -308,15 +319,15 @@ describe("story script catalog", () => {
         );
       }
       const scriptTokens = completeScript.match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
-      const targetTokens = story.targetWords
-        .join(" ")
-        .toLowerCase()
-        .match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
+      const targetTokens =
+        story.targetWords
+          .join(" ")
+          .toLowerCase()
+          .match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
       if (story.promptExperiment.exactRefrain) {
         assert.ok(
           story.pages.filter(
-            ({ joinIn }) =>
-              joinIn === story.promptExperiment.exactRefrain,
+            ({ joinIn }) => joinIn === story.promptExperiment.exactRefrain,
           ).length >= 3,
           `${story.title} repeats its exact refrain on at least three pages`,
         );
@@ -389,9 +400,15 @@ describe("story script catalog", () => {
         const priorJoinInId = joinInAudioByText.get(page.joinIn);
         if (priorJoinInId) assert.equal(page.joinInAudioId, priorJoinInId);
         else joinInAudioByText.set(page.joinIn, page.joinInAudioId);
-        assert.ok(page.artwork.alt.trim(), `${story.title}/${page.id} image alt`);
+        assert.ok(
+          page.artwork.alt.trim(),
+          `${story.title}/${page.id} image alt`,
+        );
         assert.doesNotMatch(page.artwork.alt, /placeholder/i);
-        assert.ok(page.artwork.prompt.trim(), `${story.title}/${page.id} image prompt`);
+        assert.ok(
+          page.artwork.prompt.trim(),
+          `${story.title}/${page.id} image prompt`,
+        );
       }
     }
 
@@ -424,11 +441,10 @@ describe("story script catalog", () => {
       ),
     };
 
-    assert.deepEqual(auditStoryVocabulary(storyWithUnknownWords).unlistedWords, [
-      "bed",
-      "thing",
-      "xylophone",
-    ]);
+    assert.deepEqual(
+      auditStoryVocabulary(storyWithUnknownWords).unlistedWords,
+      ["bed", "thing", "xylophone"],
+    );
   });
 
   it("replaces the dense Lantern Trail wording without changing its stable ID", () => {

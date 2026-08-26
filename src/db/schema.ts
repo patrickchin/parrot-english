@@ -68,6 +68,26 @@ export const guardianSessionUnlock = sqliteTable(
   (table) => [index("guardian_session_unlock_expires_at_idx").on(table.expiresAt)],
 );
 
+export const guardianDubConsent = sqliteTable(
+  "guardian_dub_consent",
+  {
+    authUserId: text("auth_user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    consentVersion: text("consent_version").notNull(),
+    grantGeneration: text("grant_generation").notNull(),
+    state: text("state").notNull(),
+    grantedAt: integer("granted_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    check(
+      "guardian_dub_consent_state_check",
+      sql`${table.state} in ('granted', 'revoking')`,
+    ),
+  ],
+);
+
 export const account = sqliteTable(
   "account",
   {
@@ -191,6 +211,9 @@ export const learnerProfile = sqliteTable(
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    legacyStorageOwner: integer("legacy_storage_owner", { mode: "boolean" })
+      .default(true)
+      .notNull(),
     name: text("name"),
     age: integer("age"),
     storyLevel: text("story_level").default("first-words").notNull(),
@@ -222,7 +245,14 @@ export const learnerProfile = sqliteTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    uniqueIndex("learner_profile_auth_user_id_unique").on(table.authUserId),
+    index("learner_profile_auth_user_id_idx").on(table.authUserId),
+    uniqueIndex("learner_profile_id_user_unique").on(
+      table.id,
+      table.authUserId,
+    ),
+    uniqueIndex("learner_profile_legacy_storage_owner_unique")
+      .on(table.authUserId)
+      .where(sql`${table.legacyStorageOwner} = 1`),
     index("learner_profile_questionnaire_status_idx").on(
       table.questionnaireVersion,
       table.profileStatus
@@ -243,7 +273,58 @@ export const learnerProfile = sqliteTable(
       "learner_profile_story_level_check",
       sql`${table.storyLevel} in ('first-words', 'repeating-patterns', 'tiny-stories', 'early-a1')`,
     ),
+    check(
+      "learner_profile_legacy_storage_owner_check",
+      sql`${table.legacyStorageOwner} in (0, 1)`,
+    ),
   ]
+);
+
+export const sessionLearnerSelection = sqliteTable(
+  "session_learner_selection",
+  {
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => session.id, { onDelete: "cascade" }),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    learnerProfileId: text("learner_profile_id")
+      .notNull()
+      .references(() => learnerProfile.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("session_learner_selection_auth_profile_idx").on(
+      table.authUserId,
+      table.learnerProfileId,
+    ),
+  ],
+);
+
+export const learnerDubConsent = sqliteTable(
+  "learner_dub_consent",
+  {
+    learnerProfileId: text("learner_profile_id")
+      .notNull()
+      .references(() => learnerProfile.id, { onDelete: "cascade" }),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    consentVersion: text("consent_version").notNull(),
+    grantGeneration: text("grant_generation").notNull(),
+    state: text("state").notNull(),
+    grantedAt: integer("granted_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.learnerProfileId, table.authUserId] }),
+    check(
+      "learner_dub_consent_state_check",
+      sql`${table.state} in ('granted', 'revoking')`,
+    ),
+  ],
 );
 
 export const profileSessionBypass = sqliteTable(
@@ -262,6 +343,22 @@ export const profileSessionBypass = sqliteTable(
   ]
 );
 
+export const learnerSessionBypass = sqliteTable(
+  "onboarding_learner_session_bypass",
+  {
+    sessionId: text("session_id")
+      .notNull()
+      .references(() => session.id, { onDelete: "cascade" }),
+    learnerProfileId: text("learner_profile_id")
+      .notNull()
+      .references(() => learnerProfile.id, { onDelete: "cascade" }),
+    skippedAt: integer("skipped_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.sessionId, table.learnerProfileId] }),
+  ],
+);
+
 export const learnerLesson = sqliteTable(
   "learner_lesson",
   {
@@ -269,6 +366,10 @@ export const learnerLesson = sqliteTable(
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    learnerProfileId: text("learner_profile_id").references(
+      () => learnerProfile.id,
+      { onDelete: "cascade" },
+    ),
     source: text("source").notNull(),
     lessonJson: text("lesson_json").notNull(),
     recordingGeneration: integer("recording_generation").default(0).notNull(),
@@ -281,6 +382,10 @@ export const learnerLesson = sqliteTable(
   (table) => [
     index("learner_lesson_user_updated_idx").on(
       table.authUserId,
+      table.updatedAt,
+    ),
+    index("learner_lesson_profile_updated_idx").on(
+      table.learnerProfileId,
       table.updatedAt,
     ),
     check(
@@ -301,6 +406,10 @@ export const conversationSession = sqliteTable(
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    learnerProfileId: text("learner_profile_id").references(
+      () => learnerProfile.id,
+      { onDelete: "cascade" },
+    ),
     scenarioKey: text("scenario_key").notNull(),
     scenarioVersion: integer("scenario_version").notNull(),
     promptStyle: text("prompt_style"),
@@ -320,6 +429,10 @@ export const conversationSession = sqliteTable(
     index("conversation_session_user_status_idx").on(
       table.authUserId,
       table.status
+    ),
+    index("conversation_session_profile_status_idx").on(
+      table.learnerProfileId,
+      table.status,
     ),
     check(
       "conversation_session_status_check",
@@ -413,6 +526,10 @@ export const personalizedStoryArt = sqliteTable(
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    learnerProfileId: text("learner_profile_id").references(
+      () => learnerProfile.id,
+      { onDelete: "cascade" },
+    ),
     storyId: text("story_id").notNull(),
     status: text("status").notNull(),
     r2ObjectKey: text("r2_object_key").notNull(),
@@ -427,7 +544,12 @@ export const personalizedStoryArt = sqliteTable(
     updatedAt: updatedAt(),
   },
   (table) => [
-    uniqueIndex("personalized_story_art_user_story_unique").on(
+    index("personalized_story_art_user_story_idx").on(
+      table.authUserId,
+      table.storyId,
+    ),
+    uniqueIndex("personalized_story_art_profile_story_unique").on(
+      table.learnerProfileId,
       table.authUserId,
       table.storyId,
     ),
@@ -461,19 +583,60 @@ export const personalizedStoryArtGenerationLease = sqliteTable(
   (table) => [primaryKey({ columns: [table.authUserId, table.storyId] })],
 );
 
+export const learnerStoryArtGenerationLease = sqliteTable(
+  "learner_story_art_generation_lease",
+  {
+    learnerProfileId: text("learner_profile_id")
+      .notNull()
+      .references(() => learnerProfile.id, { onDelete: "cascade" }),
+    authUserId: text("auth_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    storyId: text("story_id").notNull(),
+    generationToken: text("generation_token").notNull(),
+    candidateR2ObjectKey: text("candidate_r2_object_key"),
+    previousR2ObjectKey: text("previous_r2_object_key"),
+    leaseExpiresAt: integer("lease_expires_at", {
+      mode: "timestamp_ms",
+    }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [primaryKey({ columns: [table.learnerProfileId, table.storyId] })],
+);
+
 export const accountDeletionTombstone = sqliteTable(
   "account_deletion_tombstone",
   {
     userIdHash: text("user_id_hash").primaryKey(),
     r2Prefix: text("r2_prefix").notNull(),
     requestedAt: integer("requested_at", { mode: "timestamp_ms" }).notNull(),
+    learnerStorageIdentitiesJson: text("learner_storage_identities_json")
+      .default("[]")
+      .notNull(),
+    personalizedArtCandidateKeysJson: text(
+      "personalized_art_candidate_keys_json",
+    )
+      .default("[]")
+      .notNull(),
   },
+  (table) => [
+    check(
+      "account_deletion_tombstone_learner_storage_identities_json_check",
+      sql`json_valid(${table.learnerStorageIdentitiesJson})`,
+    ),
+    check(
+      "account_deletion_tombstone_personalized_art_candidate_keys_json_check",
+      sql`json_valid(${table.personalizedArtCandidateKeysJson})`,
+    ),
+  ],
 );
 
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   conversationSessions: many(conversationSession),
-  learnerProfile: one(learnerProfile),
+  guardianDubConsent: one(guardianDubConsent),
+  learnerProfiles: many(learnerProfile),
   learnerLessons: many(learnerLesson),
   personalizedStoryArt: many(personalizedStoryArt),
   personalizedStoryArtGenerationLeases: many(
@@ -482,6 +645,16 @@ export const userRelations = relations(user, ({ many, one }) => ({
   profileSessionBypasses: many(profileSessionBypass),
   sessions: many(session),
 }));
+
+export const guardianDubConsentRelations = relations(
+  guardianDubConsent,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [guardianDubConsent.authUserId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const learnerLessonRelations = relations(
   learnerLesson,

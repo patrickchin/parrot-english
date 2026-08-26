@@ -1,9 +1,25 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { after, describe, it } from "node:test";
+import { after, afterEach, describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import { createServer } from "vite";
+import {
+  cleanupMountedRoots,
+  click,
+  installDom,
+  mountStrict,
+  waitFor,
+} from "./helpers/react-lifecycle.mjs";
+
+const restoreDom = installDom();
+const originalFetch = globalThis.fetch;
+const originalAudioContext = globalThis.AudioContext;
+const originalMediaRecorder = globalThis.MediaRecorder;
+const originalMediaDevices = navigator.mediaDevices;
+const originalCreateObjectUrl = URL.createObjectURL;
+const originalRevokeObjectUrl = URL.revokeObjectURL;
 
 const vite = await createServer({
   appType: "custom",
@@ -15,22 +31,92 @@ const { DuckScene } = await vite.ssrLoadModule("/src/dubbing/DuckScene.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const {
+  DuckDub,
   DubEntry,
   DubLoading,
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const { DUB_LINES } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
 
-after(async () => vite.close());
+afterEach(async () => {
+  await cleanupMountedRoots();
+  document.body.replaceChildren();
+  globalThis.fetch = originalFetch;
+  globalThis.AudioContext = originalAudioContext;
+  globalThis.MediaRecorder = originalMediaRecorder;
+  URL.createObjectURL = originalCreateObjectUrl;
+  URL.revokeObjectURL = originalRevokeObjectUrl;
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: originalMediaDevices,
+  });
+});
+
+after(async () => {
+  await vite.close();
+  restoreDom();
+});
+
+function buttonWithText(container, label) {
+  return [...container.querySelectorAll("button")].find((candidate) =>
+    candidate.textContent.includes(label)
+  );
+}
+
+function enabledDubStatus(saved = false) {
+  return {
+    complete: saved,
+    consentState: "granted",
+    dubId: "five-little-ducks-v2",
+    guardianConsentVersion: "guardian-voice-r2-v2",
+    lines: DUB_LINES.map(({ id }) => ({
+      id,
+      recordedAt: saved ? "2026-08-25T10:00:00.000Z" : null,
+      saved,
+    })),
+    recordingEnabled: true,
+  };
+}
+
+function mountDuckDub() {
+  return mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/dubs/five-little-ducks"] },
+      createElement(DuckDub),
+    ),
+  );
+}
+
+function installRecordingHarness() {
+  const track = { stopped: false, stop() { this.stopped = true; } };
+  class Recorder {
+    static isTypeSupported() { return false; }
+
+    constructor() { this.state = "inactive"; }
+
+    start() { this.state = "recording"; }
+
+    stop() {
+      this.state = "inactive";
+      this.ondataavailable?.({ data: new Blob(["take"], { type: "audio/webm" }) });
+      this.onstop?.();
+    }
+  }
+  globalThis.MediaRecorder = Recorder;
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: { async getUserMedia() { return { getTracks: () => [track] }; } },
+  });
+  return track;
+}
 
 function renderProjectHome(viewProps = {}) {
   return renderToStaticMarkup(createElement(DubProjectHome, {
     activeLine: DUB_LINES[0],
-    deleting: false,
     locked: false,
     needsRetake: new Set(),
     onContinue() {},
-    onDelete() {},
     onOpenScene() {},
     onTogglePlayback() {},
     playback: "idle",
@@ -219,6 +305,7 @@ describe("duck dubbing storyboard presentation", () => {
     }
     assert.doesNotMatch(html, />Draft<|>Your dub<|>Not started<|voice clips recorded/);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
+    assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
   });
 
   it("keeps full figure markup out of the six scene buttons", () => {
@@ -286,11 +373,130 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /role="alert"/);
   });
 
-  it("keeps deletion inside closed grown-up options", () => {
-    const html = renderProjectHome();
-    assert.match(html, /<details(?![^>]*\bopen\b)[^>]*>/);
-    assert.match(html, /<summary[^>]*aria-label="More grown-up options"/);
-    assert.match(html, />Delete my dub<\/button>/);
+  it("keeps consent and destructive choices in Guardian mode", () => {
+    const disabled = renderToStaticMarkup(createElement(DubEntry, {
+      error: "",
+      onEnter() {},
+      onRetryLoad() {},
+      recordingEnabled: false,
+      savedCount: 24,
+    }));
+    assert.match(disabled, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
+    assert.doesNotMatch(
+      disabled,
+      /checkbox|I’m the grown-up|Grown-up options|Delete|Start dubbing|Continue dubbing/,
+    );
+
+    const enabled = renderToStaticMarkup(createElement(DubEntry, {
+      error: "",
+      onEnter() {},
+      onRetryLoad() {},
+      recordingEnabled: true,
+      savedCount: 0,
+    }));
+    assert.match(enabled, />Start dubbing<\/button>/);
+    assert.match(enabled, /Your voice clips stay private in this account/);
+    assert.doesNotMatch(enabled, /checkbox|I’m the grown-up|Grown-up options|Delete/);
+  });
+
+  it("clears a revoking save into disabled learner guidance", async () => {
+    const revokedUrls = [];
+    URL.createObjectURL = () => "blob:revoking-take";
+    URL.revokeObjectURL = (url) => revokedUrls.push(url);
+    const track = installRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        return Response.json({ error: "dub_consent_revoking" }, { status: 409 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(buttonWithText(container, "Start dubbing")));
+    await click(buttonWithText(container, "Start dubbing"));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Continue Scene 1"]')));
+    await click(container.querySelector('[aria-label="Continue Scene 1"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await click(container.querySelector('[aria-label="Stop recording"]'));
+
+    await waitFor(() => assert.match(
+      container.textContent,
+      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+    ));
+    assert.equal(track.stopped, true);
+    assert.deepEqual(revokedUrls, ["blob:revoking-take"]);
+    assert.doesNotMatch(container.textContent, /Save again|Start dubbing|Continue Scene|Record line/);
+  });
+
+  it("revokes the current take preview when dubbing unmounts", async () => {
+    const revokedUrls = [];
+    URL.createObjectURL = () => "blob:saved-take";
+    URL.revokeObjectURL = (url) => revokedUrls.push(url);
+    installRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        return Response.json({ recordedAt: "2026-08-25T10:00:00.000Z" }, { status: 201 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(buttonWithText(container, "Start dubbing")));
+    await click(buttonWithText(container, "Start dubbing"));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Continue Scene 1"]')));
+    await click(container.querySelector('[aria-label="Continue Scene 1"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await click(container.querySelector('[aria-label="Stop recording"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Your recording waveform"]')));
+
+    assert.deepEqual(revokedUrls, []);
+    await cleanupMountedRoots();
+    assert.deepEqual(revokedUrls, ["blob:saved-take"]);
+  });
+
+  it("clears saved storyboard data when full playback reports consent loss", async () => {
+    class AudioContext {
+      close() { return Promise.resolve(); }
+    }
+    globalThis.AudioContext = AudioContext;
+
+    for (const [status, error] of [
+      [403, "dubbing_not_enabled"],
+      [409, "dub_consent_revoking"],
+    ]) {
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+          return Response.json(enabledDubStatus(true));
+        }
+        if (String(path).endsWith("/audio")) {
+          return Response.json({ error }, { status });
+        }
+        throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+      };
+
+      const container = await mountDuckDub();
+      await waitFor(() => assert.ok(buttonWithText(container, "Continue dubbing")));
+      await click(buttonWithText(container, "Continue dubbing"));
+      await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+      await click(container.querySelector('[aria-label="Play full video"]'));
+      await waitFor(() => assert.match(
+        container.textContent,
+        /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      ));
+      assert.doesNotMatch(container.textContent, /Play full video|Continue dubbing|Record line/);
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
   });
 
   it("uses visible shapes as well as color for scene and line status", () => {
@@ -381,7 +587,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /<button[^>]*disabled[^>]*>Save again<\/button>/);
   });
 
-  it("exposes accurate loading names and exclusive deletion locks", () => {
+  it("exposes accurate loading names", () => {
     const projectLoading = renderProjectHome({ playback: "loading" });
     assert.match(projectLoading, /aria-label="Loading full video…"[^>]*disabled/);
     assert.doesNotMatch(projectLoading, /aria-label="Play full video"/);
@@ -389,62 +595,31 @@ describe("duck dubbing storyboard presentation", () => {
     const sceneLoading = renderSceneEditor({ operation: "playback-loading" });
     assert.match(sceneLoading, /aria-label="Loading scene…"[^>]*disabled/);
     assert.doesNotMatch(sceneLoading, /aria-label="Play this scene"/);
-
-    const deletingProject = renderProjectHome({ deleting: true, locked: true });
-    assert.match(deletingProject, /<main[^>]*aria-busy="true"/);
-    assert.match(deletingProject, /aria-label="Play full video"[^>]*disabled/);
-    assert.match(deletingProject, /aria-label="Scene 1, Not started"[^>]*disabled/);
-    assert.match(deletingProject, /<button[^>]*disabled[^>]*>Deleting my dub…<\/button>/);
-
-    const deletingScene = renderSceneEditor({ locked: true, operation: "deleting" });
-    assert.match(deletingScene, /<main[^>]*aria-busy="true"/);
-    assert.match(deletingScene, /aria-label="Play this scene"[^>]*disabled/);
-    assert.match(deletingScene, /aria-label="Record line"[^>]*disabled/);
-    assert.match(deletingScene, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
   });
 
-  it("marks intro and reset-loading route shells busy during deletion", () => {
-    assert.equal(typeof DubEntry, "function", "DubEntry must be renderable for route-shell checks");
+  it("keeps load recovery learner-safe", () => {
     assert.equal(typeof DubLoading, "function", "DubLoading must be renderable for route-shell checks");
-    const entry = renderToStaticMarkup(createElement(DubEntry, {
-      confirmed: false,
-      deleting: true,
-      error: "",
-      onConfirm() {},
-      onDelete() {},
-      onEnter() {},
-      onRetryLoad() {},
-      resetInterrupted: false,
-      savedCount: 0,
-    }));
     const loading = renderToStaticMarkup(createElement(DubLoading, {
-      deleting: true,
-      error: "",
-      onDelete() {},
+      error: "Your saved dub could not be loaded.",
       onRetryLoad() {},
-      resetInterrupted: true,
     }));
-    assert.match(entry, /<main[^>]*aria-busy="true"/);
-    assert.match(loading, /<main[^>]*aria-busy="true"/);
+    assert.match(loading, /role="alert"/);
+    assert.match(loading, />Try loading again<\/button>/);
+    assert.doesNotMatch(loading, /Finish deleting|Delete my dub|Grown-up options/);
   });
 
-  it("keeps the consent screen concise and hides deletion behind More", () => {
+  it("keeps the learner entry concise and leaves grown-up controls in Guardian mode", () => {
     const html = renderToStaticMarkup(createElement(DubEntry, {
-      confirmed: false,
-      deleting: false,
       error: "",
-      onConfirm() {},
-      onDelete() {},
       onEnter() {},
       onRetryLoad() {},
-      resetInterrupted: false,
+      recordingEnabled: true,
       savedCount: 0,
     }));
 
-    assert.match(html, /Private voice clips are saved to your grown-up account and deleted with it\./);
-    assert.match(html, /I’m the grown-up and agree to save these voice clips\./);
-    assert.match(html, /<summary[^>]*aria-label="More grown-up options"[^>]*>More/);
-    assert.doesNotMatch(html, /You can replay or replace them here|Grown-up options <span/);
+    assert.match(html, /Your voice clips stay private in this account\./);
+    assert.match(html, />Start dubbing<\/button>/);
+    assert.doesNotMatch(html, /checkbox|I’m the grown-up|More grown-up options|Delete/);
   });
 
   it("discards rejected-take preview and exposes one Record again action", () => {

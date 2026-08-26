@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { createElement, useState } from "react";
+import { act, createElement, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test from "node:test";
@@ -43,8 +43,12 @@ test.after(async () => {
   restoreDom();
 });
 
-function learnerProfile(storyLevel = "first-words") {
+function learnerProfile(
+  storyLevel = "first-words",
+  { id = "learner-mia", name = "Mia" } = {},
+) {
   return {
+    id,
     age: 6,
     answers: {
       legacyAnswers: null,
@@ -55,11 +59,51 @@ function learnerProfile(storyLevel = "first-words") {
     completedAt: "2026-08-25T08:00:00.000Z",
     currentQuestionKey: null,
     description: "Likes animals",
-    name: "Mia",
+    name,
     profileStatus: "completed",
     questionnaireVersion: 2,
     storyLevel,
   };
+}
+
+function textFromMarkup(markup) {
+  return markup
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&amp;", "&");
+}
+
+function SwitchingSettingsProfileProvider({ children, onReplaceProfile }) {
+  const [profile, setProfile] = useState(() => learnerProfile());
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "button",
+      {
+        onClick: () =>
+          setProfile(
+            learnerProfile("early-a1", { id: "learner-noah", name: "Noah" }),
+          ),
+        type: "button",
+      },
+      "Use Noah",
+    ),
+    createElement("output", { "aria-label": "Active learner" }, profile.id),
+    createElement(
+      LearnerProfileProvider,
+      {
+        key: profile.id,
+        profile,
+        replaceProfile(nextProfile) {
+          onReplaceProfile(nextProfile);
+          setProfile(nextProfile);
+        },
+      },
+      children,
+    ),
+  );
 }
 
 function artState(overrides = {}) {
@@ -97,6 +141,7 @@ function renderView(overrides = {}) {
         art: artState(),
         error: "",
         isSaving: false,
+        learnerName: "Mia",
         onSelectLevel() {},
         selectedLevel: "first-words",
         statusMessage: "",
@@ -141,7 +186,7 @@ function settingsHarness(storyLevel = "first-words") {
     createElement(
       MemoryRouter,
       { initialEntries: ["/guardian/stories"] },
-      createElement(GuardianStorySettings),
+      createElement(GuardianStorySettings, { learnerName: "Mia" }),
       createElement(ProfileProbe),
     ),
   );
@@ -178,10 +223,12 @@ function installArtFetch(preferenceResponse) {
 
 test("guardian story settings owns level and art management", () => {
   const html = renderView();
+  const renderedText = textFromMarkup(html);
   const container = document.createElement("div");
   container.innerHTML = html;
   const levelTabs = [...container.querySelectorAll('[role="tab"]')];
 
+  assert.match(renderedText, /Managing Mia/);
   assert.match(html, /<h1[^>]*>Story settings<\/h1>/);
   assert.match(html, /Choose story level/);
   assert.equal(levelTabs.length, 4);
@@ -191,7 +238,9 @@ test("guardian story settings owns level and art management", () => {
   );
   assert.match(html, /Personalized story art/);
   assert.match(html, /Guardian consent/);
-  assert.match(html, /Upload learner photo/);
+  assert.match(renderedText, /Upload Mia's photo/);
+  assert.match(renderedText, /look like Mia/);
+  assert.match(renderedText, /I am Mia's guardian/);
   assert.match(html, /Generate story art/);
 });
 
@@ -204,7 +253,11 @@ test("guardian story settings preserves private-art cleanup states", () => {
   });
 
   assert.match(html, /Delete stored story art/);
-  assert.doesNotMatch(html, /Upload learner photo|Generate story art/);
+  assert.match(textFromMarkup(html), /Mia's private story art/);
+  assert.doesNotMatch(
+    textFromMarkup(html),
+    /Upload .* photo|Generate story art/,
+  );
 });
 
 test("saves a level before replacing the loaded profile and announces success without moving focus", async () => {
@@ -232,7 +285,9 @@ test("saves a level before replacing the loaded profile and announces success wi
       questions: [],
     }),
   );
-  await waitFor(() => assert.equal(tinyStories.getAttribute("aria-selected"), "true"));
+  await waitFor(() =>
+    assert.equal(tinyStories.getAttribute("aria-selected"), "true"),
+  );
   assert.equal(tinyStories.getAttribute("aria-disabled"), null);
   assert.equal(tinyStories.disabled, false);
   assert.equal(
@@ -245,6 +300,101 @@ test("saves a level before replacing the loaded profile and announces success wi
     /Story level saved.*Little stories/i,
   );
   assert.equal(document.activeElement, tinyStories);
+});
+
+test("rejects a story-level response for a different learner without announcing success", async () => {
+  installArtFetch(() =>
+    Response.json({
+      profile: learnerProfile("tiny-stories", {
+        id: "learner-noah",
+        name: "Noah",
+      }),
+      questions: [],
+    }),
+  );
+  const container = await mountStrict(settingsHarness());
+  await click(levelButton(container, "Little stories"));
+
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="alert"]')?.textContent ?? "",
+      /selected learner profile could not be saved/i,
+    ),
+  );
+  assert.equal(
+    container.querySelector('output[aria-label="Saved story level"]')
+      ?.textContent,
+    "first-words",
+  );
+  assert.doesNotMatch(
+    container.querySelector('[role="status"]')?.textContent ?? "",
+    /Story level saved/i,
+  );
+});
+
+test("aborts and ignores an old learner's level save after a keyed learner change", async () => {
+  const preference = deferred();
+  const saveSignals = [];
+  const replacedProfiles = [];
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/stories/the-red-ball/personalized-art") {
+      return Response.json({ enabled: true, stories: {} });
+    }
+    if (path === "/api/profile/preferences" && init.method === "PUT") {
+      saveSignals.push(init.signal);
+      return preference.promise;
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/stories"] },
+      createElement(
+        SwitchingSettingsProfileProvider,
+        { onReplaceProfile: (profile) => replacedProfiles.push(profile) },
+        createElement(GuardianStorySettings, { learnerName: "Mia" }),
+        createElement(ProfileProbe),
+      ),
+    ),
+  );
+  await click(levelButton(container, "Little stories"));
+  await waitFor(() => assert.equal(saveSignals.length, 1));
+  await click(
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent === "Use Noah",
+    ),
+  );
+
+  assert.ok(saveSignals[0] instanceof AbortSignal);
+  assert.equal(saveSignals[0].aborted, true);
+  await act(async () => {
+    preference.resolve(
+      Response.json({
+        profile: learnerProfile("tiny-stories"),
+        questions: [],
+      }),
+    );
+    await preference.promise;
+    await Promise.resolve();
+  });
+
+  assert.deepEqual(replacedProfiles, []);
+  assert.equal(
+    container.querySelector('output[aria-label="Active learner"]')?.textContent,
+    "learner-noah",
+  );
+  assert.equal(
+    container.querySelector('output[aria-label="Saved story level"]')
+      ?.textContent,
+    "early-a1",
+  );
+  assert.equal(container.querySelector('[role="alert"]'), null);
+  assert.doesNotMatch(
+    container.querySelector('[role="status"]')?.textContent ?? "",
+    /Story level saved|Saving story level/i,
+  );
 });
 
 for (const [status, message] of [
@@ -264,10 +414,7 @@ for (const [status, message] of [
     await click(earlyA1);
     assert.deepEqual(preferenceBodies, [{ storyLevel: "early-a1" }]);
     preference.resolve(
-      Response.json(
-        { error: "save_failed", message },
-        { status },
-      ),
+      Response.json({ error: "save_failed", message }, { status }),
     );
     await waitFor(() =>
       assert.match(

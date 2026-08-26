@@ -314,15 +314,48 @@ describe("Worker authentication", () => {
     assert.equal(getAssetCalls(), 0);
   });
 
-  it("dispatches authenticated recording routes with session-owned identity", async () => {
+  it("dispatches authenticated recording routes with the exact session-selected learner", async () => {
     const authStub = createAuthStub({
       session: {
         session: { id: "session-1" },
         user: { id: "user-1", name: " Parent One " },
       },
     });
+    const state = createTestD1Database();
     const { env, getAssetCalls } = createEnvironment();
-    env.DB = {};
+    const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
+    state.sqlite
+      .prepare(
+        "INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)",
+      )
+      .run("user-1", "Parent One", "parent@example.test", timestamp, timestamp);
+    state.sqlite
+      .prepare(
+        "INSERT INTO session (id, expires_at, token, created_at, updated_at, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .run(
+        "session-1",
+        timestamp + 86_400_000,
+        "token-1",
+        timestamp,
+        timestamp,
+        "user-1",
+      );
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+         VALUES ('learner-b', 'user-1', 0, 'Leo', 'completed', ?, ?)`,
+      )
+      .run(timestamp, timestamp);
+    state.sqlite
+      .prepare(
+        `INSERT INTO session_learner_selection
+          (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+         VALUES ('session-1', 'user-1', 'learner-b', ?, ?)`,
+      )
+      .run(timestamp, timestamp);
+    env.DB = state.d1;
     let received;
     const worker = createTestWorker({
       createAuth: () => authStub.auth,
@@ -336,17 +369,24 @@ describe("Worker authentication", () => {
       { method: "PUT" },
     );
 
-    const response = await worker.fetch(request, env);
+    try {
+      const response = await worker.fetch(request, env);
 
-    assert.equal(response.status, 201);
-    assert.deepEqual(await response.json(), { routed: true });
-    assert.deepEqual(received.identity, {
-      sessionId: "session-1",
-      userId: "user-1",
-      userName: "Parent One",
-    });
-    assert.strictEqual(received.request, request);
-    assert.equal(getAssetCalls(), 0);
+      assert.equal(response.status, 201);
+      assert.deepEqual(await response.json(), { routed: true });
+      assert.deepEqual(received.identity, {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent One",
+        learnerProfileId: "learner-b",
+        learnerName: "Leo",
+        legacyStorageOwner: false,
+      });
+      assert.strictEqual(received.request, request);
+      assert.equal(getAssetCalls(), 0);
+    } finally {
+      state.close();
+    }
   });
 
   it("rejects anonymous speech evaluation before protected dependencies run", async () => {
@@ -601,6 +641,7 @@ describe("Worker authentication", () => {
     assert.deepEqual(receivedIdentity, {
       sessionId: "session-1",
       userId: "user-1",
+      userName: null,
     });
     assert.equal(authStub.getSessionCalls(), 1);
     assert.equal(authStub.getPasswordCalls().length, 1);

@@ -21,6 +21,8 @@ const GUARDED_REQUESTS = [
   ["PUT", "/api/lessons/my/lesson-1"],
   ["POST", "/api/stories/the-red-ball/personalized-art"],
   ["DELETE", "/api/stories/the-red-ball/personalized-art"],
+  ["PUT", "/api/dubs/five-little-ducks-v2/consent"],
+  ["DELETE", "/api/dubs/five-little-ducks-v2"],
 ];
 
 const LEARNER_SAFE_REQUESTS = [
@@ -30,6 +32,11 @@ const LEARNER_SAFE_REQUESTS = [
   ["GET", "/api/lessons/my/lesson-1"],
   ["GET", "/api/stories/the-red-ball/personalized-art"],
   ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
+  ["GET", "/api/dubs/five-little-ducks-v2"],
+  ["PUT", "/api/dubs/five-little-ducks-v2/lines/line-1"],
+  ["GET", "/api/dubs/five-little-ducks-v2/lines/line-1/audio"],
+  ["PUT", "/api/dubs/five-little-ducks-v1/consent"],
+  ["DELETE", "/api/dubs/five-little-ducks-v1"],
 ];
 
 function insertIdentity(sqlite, sessionId, userId = `user-for-${sessionId}`) {
@@ -190,6 +197,7 @@ describe("guardian management authorization", () => {
         handleLearnerProfileRequest: routed,
         handleMyLessonRequest: routed,
         handlePersonalizedStoryArtRequest: routed,
+        handleDubRequest: routed,
       });
       const env = {
         ASSETS: { async fetch() { return new Response("asset"); } },

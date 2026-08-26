@@ -2,10 +2,18 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import test, { after, describe, it } from "node:test";
 import { createServer } from "vite";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
+import {
+  cleanupMountedRoots,
+  click,
+  input,
+  installDom,
+  mountStrict,
+  waitFor,
+} from "./helpers/react-lifecycle.mjs";
 
 const vite = await createServer({
   appType: "custom",
@@ -21,8 +29,24 @@ const scriptModule = await vite
   .catch(() => ({}));
 const { LessonCreator, LessonWarnings } = creatorModule;
 const { formatLessonScript, parseLessonScript } = scriptModule;
+const restoreDom = installDom();
+const originalFetch = globalThis.fetch;
 
-after(async () => vite.close());
+after(async () => {
+  await cleanupMountedRoots();
+  globalThis.fetch = originalFetch;
+  await vite.close();
+  restoreDom();
+});
+
+function CurrentRoute() {
+  const location = useLocation();
+  return createElement(
+    "output",
+    { "aria-label": "Current route" },
+    location.pathname,
+  );
+}
 
 function renderCreator(initialEntry) {
   assert.equal(typeof LessonCreator, "function", "Expected LessonCreator");
@@ -30,7 +54,7 @@ function renderCreator(initialEntry) {
     createElement(
       MemoryRouter,
       { initialEntries: [initialEntry] },
-      createElement(LessonCreator),
+      createElement(LessonCreator, { learnerName: "Mia" }),
     ),
   );
 }
@@ -43,6 +67,7 @@ test("custom lesson creation defaults to a simple AI path", () => {
   )?.[0];
 
   assert.match(html, /<h1[^>]*>Create a custom lesson<\/h1>/);
+  assert.match(html, /Managing <bdi[^>]*>Mia<\/bdi>/);
   assert.match(html, /grown-up/i);
   assert.ok(tabList);
   assert.match(tabList, /role="tablist"/);
@@ -59,6 +84,10 @@ test("custom lesson creation defaults to a simple AI path", () => {
   );
   assert.doesNotMatch(html, /id="lesson-script-editor"|Review script/i);
   assert.doesNotMatch(html, /type="file"/);
+  assert.match(
+    html,
+    /<a[^>]*aria-label="Back to lessons"[^>]*href="\/guardian\/lessons"/,
+  );
 });
 
 test("the import query reveals the advanced clipboard-paste panel", () => {
@@ -85,6 +114,55 @@ test("the import query reveals the advanced clipboard-paste panel", () => {
   assert.match(html, /Review script/i);
   assert.doesNotMatch(html, /type="file"/);
   assert.doesNotMatch(html, /id="lesson-topic"/);
+});
+
+test("saving a custom lesson returns to Guardian lessons", async () => {
+  const lesson = createLessonScript();
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/lessons/my/generate" && init.method === "POST") {
+      return Response.json({ lesson, warnings: [] });
+    }
+    if (path === "/api/lessons/my" && init.method === "POST") {
+      return Response.json({
+        lesson: { id: "garden-help", lesson, source: "generated" },
+      });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/lessons/my/create"] },
+      createElement(LessonCreator, { learnerName: "Mia" }),
+      createElement(CurrentRoute),
+    ),
+  );
+
+  await input(document.querySelector("#lesson-topic"), "Garden help");
+  await click(
+    [...document.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Make lesson",
+    ),
+  );
+  await waitFor(() =>
+    assert.ok(
+      [...document.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent.trim() === "Save lesson",
+      ),
+    ),
+  );
+  await click(
+    [...document.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Save lesson",
+    ),
+  );
+  await waitFor(() =>
+    assert.equal(
+      document.querySelector('output[aria-label="Current route"]').textContent,
+      "/guardian/lessons",
+    ),
+  );
 });
 
 describe("uploaded lesson parsing", () => {

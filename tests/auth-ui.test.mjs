@@ -11,6 +11,14 @@ function readSource(path) {
   return existsSync(url) ? readFileSync(url, "utf8") : "";
 }
 
+function textFromMarkup(markup) {
+  return markup
+    .replace(/<[^>]+>/g, "")
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&apos;", "'")
+    .replaceAll("&amp;", "&");
+}
+
 const authClient = readSource("../src/auth/auth-client.ts");
 const app = readSource("../src/app/App.tsx");
 
@@ -28,7 +36,9 @@ const {
   signOutSession,
   submitAuthForm,
 } = authGateModule;
-const { AccountHeader } = await vite.ssrLoadModule("/src/app/AppHeader.tsx");
+const { AccountHeader, GuardianLearnerContextLabel } = await vite.ssrLoadModule(
+  "/src/app/AppHeader.tsx",
+);
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
   "/src/auth/GuardianAccess.tsx",
 );
@@ -59,7 +69,11 @@ function createAuthClientStub(overrides = {}) {
 }
 
 function renderAuthGate(overrides = {}) {
-  assert.equal(typeof AuthGateView, "function", "Expected an executable AuthGateView");
+  assert.equal(
+    typeof AuthGateView,
+    "function",
+    "Expected an executable AuthGateView",
+  );
 
   const props = {
     fields: { name: "", email: "", password: "" },
@@ -111,6 +125,8 @@ function renderAccountHeader(overrides = {}) {
       isSigningOut: false,
       learnerLabel: "Mia",
       onDeleteAccount: async () => null,
+      onOpenGuardianDashboard() {},
+      onOpenLearnerProfiles() {},
       onOpenProfile() {},
       onSelectGuardian() {},
       onSelectLearner() {},
@@ -154,7 +170,11 @@ function createStateHookHarness() {
 }
 
 test("auth gate container bridges its session hook, state, and actions", async () => {
-  assert.equal(typeof createAuthGate, "function", "Expected an injectable AuthGate factory");
+  assert.equal(
+    typeof createAuthGate,
+    "function",
+    "Expected an injectable AuthGate factory",
+  );
 
   const session = {
     session: { id: "session-1" },
@@ -358,7 +378,10 @@ test("auth gate mounts one guardian boundary with the current session identity",
 
 test("auth client uses Better Auth's same-origin defaults", () => {
   assert.match(authClient, /from ["']better-auth\/react["']/);
-  assert.match(authClient, /export const authClient\s*=\s*createAuthClient\(\s*\)/);
+  assert.match(
+    authClient,
+    /export const authClient\s*=\s*createAuthClient\(\s*\)/,
+  );
   assert.doesNotMatch(authClient, /baseURL|http:\/\/|https:\/\//);
 });
 
@@ -486,7 +509,8 @@ test("signed-out views switch between sign-in and sign-up fields", () => {
   assert.match(signUp, /name="email"/);
   assert.match(signUp, /name="password"/);
   assert.match(signUp, /<h1[^>]*>Create your account<\/h1>/);
-  assert.match(signUp, /set up the learner profile next/i);
+  assert.match(signUp, /grown-up’s name for this Guardian account/i);
+  assert.match(signUp, /add learner profiles next/i);
   assert.match(signUp, /<label[^>]*for="auth-name"[^>]*>.*Account name/is);
   assert.doesNotMatch(signUp, /LESSON CONTENT/);
   assert.doesNotMatch(signUp, /PARROT ENGLISH|注册后就可以开始英语口语练习/);
@@ -522,10 +546,7 @@ test("guardian account controls expose signing-out progress persistently", () =>
     /aria-label="Signing out… Profile for Patrick, guardian mode"/,
   );
   assert.match(html, /aria-disabled="true"/);
-  assert.match(
-    html,
-    /aria-atomic="true" aria-live="polite"[^>]*role="status"/,
-  );
+  assert.match(html, /aria-atomic="true" aria-live="polite"[^>]*role="status"/);
   assert.match(html, /role="status"[\s\S]*Signing out…/);
   assert.match(html, />Signing out…</);
   assert.match(html, /aria-expanded="false"/);
@@ -600,8 +621,36 @@ test("guardian mode names the account holder in the compact profile trigger", ()
   assert.doesNotMatch(html, /aria-label="Profile for Mia, learner mode"/);
 });
 
+test("guardian learner context names the managed learner without clipping long names", () => {
+  assert.equal(
+    typeof GuardianLearnerContextLabel,
+    "function",
+    "Expected a shared Guardian learner context label",
+  );
+  const longName = "A".repeat(120);
+  const html = renderToStaticMarkup(
+    createElement(GuardianLearnerContextLabel, {
+      learnerName: ` ${longName} `,
+    }),
+  );
+
+  assert.match(textFromMarkup(html), new RegExp(`Managing ${longName}`));
+  assert.match(html, /<bdi[^>]*dir="auto"/);
+  assert.doesNotMatch(html, /\.\.\.|…/);
+  assert.match(
+    renderToStaticMarkup(
+      createElement(GuardianLearnerContextLabel, { learnerName: "   " }),
+    ),
+    /Managing <bdi[^>]*>Learner<\/bdi>/,
+  );
+});
+
 test("auth submission validates before calling the client", async () => {
-  assert.equal(typeof submitAuthForm, "function", "Expected executable auth actions");
+  assert.equal(
+    typeof submitAuthForm,
+    "function",
+    "Expected executable auth actions",
+  );
   let clientCalls = 0;
   let refetchCalls = 0;
   const client = createAuthClientStub({
@@ -628,7 +677,11 @@ test("auth submission validates before calling the client", async () => {
 });
 
 test("sign-up submits trimmed fields and refetches a successful session", async () => {
-  assert.equal(typeof submitAuthForm, "function", "Expected executable auth actions");
+  assert.equal(
+    typeof submitAuthForm,
+    "function",
+    "Expected executable auth actions",
+  );
   const payloads = [];
   let refetchCalls = 0;
   const client = createAuthClientStub({
@@ -661,7 +714,11 @@ test("sign-up submits trimmed fields and refetches a successful session", async 
 });
 
 test("sign-in maps result errors, omits the name, and does not refetch", async () => {
-  assert.equal(typeof submitAuthForm, "function", "Expected executable auth actions");
+  assert.equal(
+    typeof submitAuthForm,
+    "function",
+    "Expected executable auth actions",
+  );
   const payloads = [];
   let refetchCalls = 0;
   const client = createAuthClientStub({
@@ -694,7 +751,11 @@ test("sign-in maps result errors, omits the name, and does not refetch", async (
 });
 
 test("sign-out maps failures and lets the reactive session own successful refresh", async () => {
-  assert.equal(typeof signOutSession, "function", "Expected executable sign-out actions");
+  assert.equal(
+    typeof signOutSession,
+    "function",
+    "Expected executable sign-out actions",
+  );
   let refetchCalls = 0;
   const refetch = async () => {
     refetchCalls += 1;
@@ -775,7 +836,10 @@ test("account deletion sends the password, fails closed, and refetches only afte
 });
 
 test("App composes AuthGate, route-aware onboarding, and authenticated routes", () => {
-  assert.match(app, /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\.\/auth\/AuthGate["']/);
+  assert.match(
+    app,
+    /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\.\/auth\/AuthGate["']/,
+  );
   assert.match(
     app,
     /import\s+\{\s*LearnerProfileGate\s*\}\s+from\s+["']\.\.\/learner-profile\/LearnerProfileGate["']/,
