@@ -2734,6 +2734,18 @@ class MockAudioNode {
   connect() {
     return this;
   }
+  disconnect() {}
+}
+
+class MockAnalyserNode extends MockAudioNode {
+  fftSize = 256;
+  smoothingTimeConstant = 0;
+
+  getFloatTimeDomainData(samples: Float32Array) {
+    samples.forEach((_, index) => {
+      samples[index] = Math.sin(index / 8) * 0.6;
+    });
+  }
 }
 
 class MockScheduledAudioNode extends MockAudioNode {
@@ -2770,8 +2782,14 @@ class MockAudioContext {
   createBufferSource() {
     return new MockScheduledAudioNode();
   }
+  createAnalyser() {
+    return new MockAnalyserNode();
+  }
   createGain() {
     return new MockGainNode();
+  }
+  createMediaStreamSource() {
+    return new MockAudioNode();
   }
   createOscillator() {
     return new MockScheduledAudioNode();
@@ -2783,6 +2801,7 @@ class MockAudioContext {
     return {
       duration: 4,
       getChannelData: () => Float32Array.from([0, 0.25, -0.8, 0.45, -1, 0.15]),
+      sampleRate: 16_000,
     } as unknown as AudioBuffer;
   }
   async resume() {

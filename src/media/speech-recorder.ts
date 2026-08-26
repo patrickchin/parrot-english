@@ -65,6 +65,7 @@ export function selectRecordingMimeType(
 
 export type SpeechRecordingSession = {
   cancel: () => void;
+  stream: MediaStream;
   stop: () => Promise<Blob>;
 };
 
@@ -226,6 +227,7 @@ export async function startSpeechRecording({
 
   return {
     cancel: cancelRecording,
+    stream,
     stop() {
       if (!settled && !stopRequested) {
         stopRequested = true;

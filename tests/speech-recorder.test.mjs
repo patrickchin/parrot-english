@@ -248,6 +248,7 @@ describe("hold-to-talk speech recorder", () => {
 
     assert.equal(instances[0].state, "recording");
     assert.equal(track.stopped, false);
+    assert.equal(session.stream, stream);
     assert.deepEqual(constraints, [speechRecorder.MICROPHONE_CONSTRAINTS]);
 
     const blob = await session.stop();
