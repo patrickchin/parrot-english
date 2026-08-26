@@ -48,7 +48,7 @@ const targetedRequestCases: TargetedRequestCase[] = [
     path: "/api/learner-profile/answer",
   },
   {
-    body: JSON.stringify({ questionKey: "description" }),
+    body: JSON.stringify({ questionKey: "favoriteAnimals" }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
     name: "learner-profile question skip",
@@ -108,11 +108,11 @@ const targetedRequestCases: TargetedRequestCase[] = [
     bodyBytes: TARGETED_WEBM_BYTES,
     headers: {
       "Content-Type": "audio/webm",
-      "X-Parrot-Expected-Learner-Profile": "learner-noah",
+      "X-Parrot-Expected-Learner-Profile": "learner-mia",
     },
     method: "PUT",
     name: "lesson recording slot",
-    path: "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/0",
+    path: "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
   },
   { method: "GET", name: "My Lessons list", path: "/api/lessons/my" },
   {
@@ -285,6 +285,17 @@ async function seedTargetedAuthorizationState(page: Page) {
           noahLesson,
           "?learnerProfileId=learner-noah",
         ),
+        recordingConsent: await fetch(
+          "/api/profile/lesson-recording-consent",
+          {
+            body: JSON.stringify({ enabled: true }),
+            headers: { "Content-Type": "application/json" },
+            method: "PUT",
+          },
+        ).then(async (response) => ({
+          body: await response.json(),
+          status: response.status,
+        })),
       };
     },
     {
@@ -302,6 +313,10 @@ async function seedTargetedAuthorizationState(page: Page) {
   expect(result).toEqual({
     mia: { id: TARGETED_MIA_LESSON_ID, status: 201 },
     noah: { id: TARGETED_NOAH_LESSON_ID, status: 201 },
+    recordingConsent: {
+      body: { cleanupPending: false, enabled: true },
+      status: 200,
+    },
   });
 }
 

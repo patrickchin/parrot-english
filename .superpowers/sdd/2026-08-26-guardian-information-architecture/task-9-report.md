@@ -372,3 +372,79 @@ test. The parser invariant now has strictly broader coverage in one test.
 ### Review-round concerns
 
 None. All requested focused and full verification commands are green.
+
+---
+
+## Review fix round 3/5 — endpoint-valid mutation descriptors
+
+### Finding addressed
+
+Two rows in the exhaustive target-authorization table could reach their route
+families without reaching a production-valid mutation descriptor:
+
+- learner-profile question skip used the nonexistent questionnaire key
+  `description`; it now submits the real `favoriteAnimals` key and no fields
+  beyond the endpoint's accepted `questionKey` payload;
+- the built-in lesson-recording upload used Peppa's scene 0/step 0 instead of a
+  learner line; it now uses the canonical user slot scene 0/step 2 with the
+  valid WebM signature body and an expected-profile header matching active
+  Mia.
+
+The shared authorization fixture now explicitly enables Mia's recording
+consent before taking the state baseline. That makes the corrected slot a
+complete successful family mutation if malformed-target fencing is discarded,
+rather than merely a syntactically valid request stopped by consent.
+
+### Mutation-sensitive RED evidence
+
+| Injected temporary fault | Result | What it proved |
+| --- | --- | --- |
+| Dispatched malformed targeted `POST /api/learner-profile/question/skip` into active Mia before returning the shared 404. | RED: focused unlocked test failed 0/1. Mia's `currentQuestionKey` changed from `null` to `favoriteActivities`; the full-profile question/progress and profile-editor state changed with it. | `favoriteAnimals` is recognized by the real mock family and its exact payload produces an observable mutation if target fencing is bypassed. |
+| Dispatched malformed targeted `PUT /api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2` into active Mia before returning the shared 404. | RED: focused unlocked test failed 0/1. Mia gained four successful upload descriptors, each with scene 0, step 2, `learner-mia`, `audio/webm`, and six body bytes. | The corrected built-in user slot, matching learner header, enabled consent, and WebM-signature body reach the successful recording mutation path; the former Peppa slot could have hidden fallback behind its own 404. |
+
+The four recording descriptors correspond to the four syntactically invalid
+queries whose central parse resolves to null; unknown/foreign values proceed
+to the later ownership guard. Both temporary dispatch faults were immediately
+reversed and the production mock is unchanged in the final diff.
+
+### Changed files in this review round
+
+- `tests/e2e/multiple-learners.spec.ts` — real questionnaire key, canonical
+  learner recording slot, matching expected-learner header, and explicit
+  recording-consent fixture readiness.
+- `.superpowers/sdd/2026-08-26-guardian-information-architecture/task-9-report.md`
+  — this round's failure inventory, evidence, and self-review.
+
+### GREEN verification
+
+| Evidence | Result |
+| --- | --- |
+| `npx playwright test tests/e2e/multiple-learners.spec.ts --grep "locked targeted reads\|unlocked malformed targeted" --reporter=line` after restoring both mutations | GREEN: 2/2 (1.2s). |
+| `npx playwright test tests/e2e/multiple-learners.spec.ts --reporter=line` | GREEN: 31/31 (8.8s). |
+| `npm test` | GREEN: 1,323/1,323 tests, 115 suites, 0 failed (4.208s). |
+| `npm run test:browser` | GREEN: 456/456 tests, 0 failed (1.8m). |
+| `npm run lint` | GREEN: exit 0, 0 errors. The same two generated `worker-configuration.d.ts` unused-disable warnings remain. |
+| `npm run build` | GREEN: TypeScript and Vite build succeeded; 1,914 modules transformed. The existing chunk-size advisory remains. |
+| `git diff --check` | GREEN: exit 0, no whitespace errors. |
+
+### Self-review
+
+- Verified `favoriteAnimals` directly against
+  `content/learner-profile/questionnaire-v2.json`; the request includes only
+  the key accepted by `readQuestionKeyBody`.
+- Verified `content/lessons/01-peppas-high-ball.json` declares scene 0/step 2
+  as the user line `It is up high!`; Worker recording tests use the same
+  canonical slot and explicitly reject scene 0/step 0.
+- Verified the request uses a matching `learner-mia` expected-profile header,
+  enabled Mia consent, `audio/webm`, and the accepted WebM signature bytes.
+- Verified the existing two-learner full-state oracle detects both the profile
+  transition and persisted recording descriptors while every injected request
+  still returns the outward generic 404 contract.
+- Confirmed the final production mock is byte-for-byte unchanged and the final
+  diff is limited to the authorization test plus this report.
+- No dependency, arbitrary sleep, weakened assertion, cross-origin change,
+  destructive action, or unrelated user-file edit was introduced.
+
+### Review-round concerns
+
+None. All requested focused and full verification commands are green.
