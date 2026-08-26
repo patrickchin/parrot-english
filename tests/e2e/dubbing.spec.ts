@@ -320,7 +320,7 @@ test("scene playback advances only the visual before recording the selected cano
   await page.getByRole("button", { name: "Play this scene" }).click();
   await expect(page.getByRole("button", { name: "Stop this scene" })).toBeVisible();
   await expect(page.getByRole("figure")).toHaveAccessibleName(
-    "The flock swims toward a green hill.",
+    "The flock travels over a green hill.",
   );
 
   await expect(page.getByRole("button", { name: "Line 1, selected, generated" })).toBeVisible();
@@ -654,20 +654,13 @@ test("full playback animates the story actors when motion is allowed", async ({ 
   await confirmDub(page, "Start dubbing");
   await page.getByRole("button", { name: "Play full video" }).click();
 
-  const sceneSvg = page.getByRole("region", { name: "Full video player" }).locator('svg[viewBox="0 0 960 540"]');
-  const swimMotion = sceneSvg.locator('[data-motion="swim"]').first();
-  await expect(swimMotion).toHaveCount(1);
-  const movingDuck = sceneSvg.locator('[data-duck-actor="duckling-1"] > g').first();
-  await expect.poll(async () => {
-    return movingDuck.evaluate((element) => {
-      const duck = element as SVGGraphicsElement;
-      const actor = duck.parentElement as SVGGraphicsElement | null;
-      const duckMatrix = duck.getCTM();
-      const actorMatrix = actor?.getCTM();
-      if (!duckMatrix || !actorMatrix) return 0;
-      return Math.abs(actorMatrix.inverse().multiply(duckMatrix).f);
-    });
-  }).toBeGreaterThan(0.5);
+  const stage = page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]");
+  await expect(stage).toHaveAttribute("data-animated", "true");
+  const movingDuck = stage.locator('[data-duck-actor="duckling-1"] img');
+  await expect(movingDuck).toHaveAttribute("data-motion", "swim");
+  await expect.poll(() => movingDuck.evaluate((element) =>
+    element.getAnimations().filter(({ playState }) => playState === "running").length
+  )).toBeGreaterThan(0);
 
   await page.getByRole("button", { name: "Stop full video" }).click();
 });
@@ -679,19 +672,15 @@ test("stopping playback stops visible actor motion immediately", async ({ page }
   await page.waitForTimeout(350);
   await page.getByRole("button", { name: "Stop full video" }).click();
 
-  const actor = page
+  const actorImage = page
     .getByRole("region", { name: "Full video player" })
-    .locator('[data-duck-actor="duckling-1"]');
-  const settled = await actor.evaluate((element) => {
-    const matrix = (element as SVGGraphicsElement).getCTM();
-    return { x: matrix?.e ?? 0, y: matrix?.f ?? 0 };
-  });
-  await page.waitForTimeout(250);
-  const later = await actor.evaluate((element) => {
-    const matrix = (element as SVGGraphicsElement).getCTM();
-    return { x: matrix?.e ?? 0, y: matrix?.f ?? 0 };
-  });
-  expect(Math.hypot(later.x - settled.x, later.y - settled.y)).toBeLessThan(0.1);
+    .locator('[data-duck-actor="duckling-1"] img');
+  await expect.poll(() => actorImage.evaluate((element) =>
+    element.getAnimations().filter(({ playState }) => playState === "running").length
+  )).toBe(0);
+  await expect(
+    page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]"),
+  ).not.toHaveAttribute("data-animated", "true");
 });
 
 test("reduced motion disables playing duck animation and playback cleanup stays idempotent", async ({ page }) => {
@@ -700,9 +689,11 @@ test("reduced motion disables playing duck animation and playback cleanup stays 
   await confirmDub(page, "Continue dubbing");
   await page.getByRole("button", { name: "Play full video" }).click();
   await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
-  const sceneSvg = page.getByRole("region", { name: "Full video player" }).locator('svg[viewBox="0 0 960 540"]');
-  await expect(sceneSvg).toHaveAttribute("aria-hidden", "true");
-  await expect(sceneSvg.locator("[data-motion]")).toHaveCount(0);
+  const stage = page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]");
+  await expect(stage).toHaveAttribute("aria-hidden", "true");
+  await expect.poll(() => stage.evaluate((element) =>
+    element.getAnimations({ subtree: true }).filter(({ playState }) => playState === "running").length
+  )).toBe(0);
   await page.getByRole("button", { name: "Stop full video" }).click();
   await openScene(page, 1);
   await revealSceneListening(page);

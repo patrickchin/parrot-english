@@ -47,11 +47,11 @@ async function expectHomeOwnsVerticalScrolling(page: Page) {
 
 async function expectActivityPicturesLoaded(activities: Locator) {
   const pictures = activities.locator("img");
-  await expect(pictures).toHaveCount(3);
+  await expect(pictures).toHaveCount(10);
   await expect(
     activities
       .getByRole("link", { name: "Dub a rhyme" })
-      .locator('figure svg[aria-hidden="true"]'),
+      .locator('[data-story-stage="five-little-ducks"]'),
   ).toHaveCount(1);
   await expect(activities.getByRole("img")).toHaveCount(0);
   await expect

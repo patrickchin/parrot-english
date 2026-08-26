@@ -63,14 +63,19 @@ function renderSceneEditor(viewProps = {}) {
 }
 
 describe("duck dubbing storyboard presentation", () => {
-  it("uses one hidden original SVG with an adjacent scene description", () => {
+  it("uses painted raster artwork with an adjacent scene description", () => {
     const html = renderToStaticMarkup(
       createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
     );
-    assert.match(html, /<svg[^>]*aria-hidden="true"[^>]*viewBox="0 0 960 540"/);
+    const sources = [...html.matchAll(/<img[^>]*src="([^"]+)"/g)].map((match) => match[1]);
+
     assert.match(html, /Mother duck calls/);
-    assert.equal((html.match(/<svg/g) ?? []).length, 1);
-    assert.doesNotMatch(html, /<img|https?:\/\//);
+    assert.equal(sources.length, 7);
+    assert.ok(sources.every((source) =>
+      /^https:\/\/media\.parrotbook\.com\/assets\/v\d+\/dubbing\/five-little-ducks\/[a-z0-9-]+\.webp$/.test(source)
+    ));
+    assert.match(html, /data-story-layer="painted-environment"/);
+    assert.doesNotMatch(html, /<svg|<path|<ellipse|<circle/);
   });
 
   it("keeps every duck actor mounted and gives sad mother a distinct story pose", () => {
@@ -93,18 +98,21 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(call, /data-duck-actor="mother"[^>]*data-pose="sad-call"/);
   });
 
-  it("animates swimming, calling, and pond contact as distinct story actions", () => {
+  it("uses distinct complete-character artwork for swimming, walking, and calling", () => {
     const swimming = renderToStaticMarkup(
       createElement(DuckScene, { line: DUB_LINES[0], playing: true }),
+    );
+    const walking = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[1], playing: true }),
     );
     const calling = renderToStaticMarkup(
       createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
     );
 
-    assert.match(swimming, /data-motion="swim"/);
-    assert.match(swimming, /data-motion="ripple"/);
-    assert.match(calling, /data-motion="call"/);
-    assert.match(calling, /data-motion="call"[^>]*keySplines="(?:\.4 0 \.2 1;){2}\.4 0 \.2 1"[^>]*values="0 0; -5 -3; 3 0; 0 0"/);
+    assert.match(swimming, /duckling-swim\.webp/);
+    assert.match(walking, /duckling-walk\.webp/);
+    assert.match(calling, /mother-call\.webp/);
+    assert.doesNotMatch(calling, /data-duck-actor="duckling-\d"[^>]*src="[^"]*mother-call/);
   });
 
   it("lets only mother call while hidden ducklings stay on the hill", () => {
@@ -112,18 +120,18 @@ describe("duck dubbing storyboard presentation", () => {
       createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
     );
     const ducklings = [...calling.matchAll(
-      /data-duck-actor="duckling-\d"[^>]*data-pose="([^"]+)"[^>]*opacity="0"[^>]*transform="translate\((\d+) (\d+)\)/g,
+      /data-duck-actor="duckling-\d"[^>]*data-pose="([^"]+)"[^>]*data-visible="false"[^>]*data-x="(\d+)"[^>]*data-y="(\d+)"/g,
     )];
 
     assert.equal((calling.match(/data-effect="call-rings"/g) ?? []).length, 1);
     assert.deepEqual(
       ducklings.map(([, pose, x, y]) => [pose, Number(x), Number(y)]),
       [
-        ["wait", 330, 305],
-        ["wait", 445, 270],
-        ["wait", 560, 305],
-        ["wait", 675, 275],
-        ["wait", 795, 315],
+        ["wait", 345, 250],
+        ["wait", 420, 235],
+        ["wait", 500, 220],
+        ["wait", 580, 235],
+        ["wait", 655, 250],
       ],
     );
   });
@@ -132,12 +140,12 @@ describe("duck dubbing storyboard presentation", () => {
     for (const line of DUB_LINES) {
       const html = renderToStaticMarkup(createElement(DuckScene, { line }));
       const actors = [...html.matchAll(
-        /data-duck-actor="([^"]+)"[^>]*opacity="1"[^>]*transform="translate\((\d+) (\d+)\)/g,
+        /data-duck-actor="([^"]+)"[^>]*data-visible="true"[^>]*data-x="(\d+)"[^>]*data-y="(\d+)"/g,
       )];
       assert.ok(actors.length > 0 || line.duckCount === 0);
       for (const [, actor, x, y] of actors) {
         assert.ok(Number(x) >= 95 && Number(x) <= 840, `${line.id} ${actor} x=${x}`);
-        assert.ok(Number(y) >= 210 && Number(y) <= 410, `${line.id} ${actor} y=${y}`);
+        assert.ok(Number(y) >= 210 && Number(y) <= 470, `${line.id} ${actor} y=${y}`);
       }
     }
   });
@@ -149,36 +157,27 @@ describe("duck dubbing storyboard presentation", () => {
 
     assert.match(call, /data-effect="call-rings"/);
     assert.match(sadCall, /data-expression="sad"/);
-    assert.match(sadCall, /data-effect="tear"/);
     assert.match(reunion, /data-effect="celebration"/);
     for (const html of [call, sadCall, reunion]) {
-      assert.match(html, /data-story-layer="sky"/);
-      assert.match(html, /data-story-layer="pond"/);
-      assert.match(html, /data-story-layer="foreground"/);
+      assert.match(html, /data-story-layer="painted-environment"/);
     }
   });
 
-  it("falls celebration pieces downward independently of their rotation", () => {
+  it("keeps thumbnail artwork static and defers its decorative images", () => {
     const reunion = renderToStaticMarkup(
-      createElement(DuckScene, { line: DUB_LINES[23], playing: true }),
+      createElement(DuckScene, { line: DUB_LINES[23], playing: true, thumbnail: true }),
     );
 
-    assert.match(
-      reunion,
-      /<g transform="translate\(285 105\)"><animateTransform[^>]*data-motion="celebrate"[^>]*type="translate"[^>]*><\/animateTransform><path[^>]*transform="rotate\(0\)"/,
-    );
-    assert.doesNotMatch(
-      reunion,
-      /<path[^>]*transform="translate\([^)]*\) rotate\([^)]*\)"[^>]*><animateTransform[^>]*data-motion="celebrate"/,
-    );
+    assert.doesNotMatch(reunion, /data-animated="true"/);
+    assert.equal((reunion.match(/loading="lazy"/g) ?? []).length, 7);
   });
 
   it("keeps mother duck waiting when the ducklings return or stay away", () => {
     const returning = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[3] }));
     const noneReturn = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[19] }));
 
-    assert.match(returning, /data-duck-actor="mother"[^>]*data-expression="bright"[^>]*opacity="1"/);
-    assert.match(noneReturn, /data-duck-actor="mother"[^>]*data-expression="sad"[^>]*opacity="1"/);
+    assert.match(returning, /data-duck-actor="mother"[^>]*data-expression="bright"[^>]*data-visible="true"/);
+    assert.match(noneReturn, /data-duck-actor="mother"[^>]*data-expression="sad"[^>]*data-visible="true"/);
   });
 
   it("renders a selectable six-scene project workspace without line controls", () => {
@@ -204,14 +203,15 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(sceneButtons.join(""), /<figure\b/);
   });
 
-  it("gives every rendered duck SVG a document-unique ID", () => {
+  it("reuses immutable painted artwork without SVG ID collisions", () => {
     const html = renderProjectHome();
-    const svgIds = [...html.matchAll(/<svg\b[\s\S]*?<\/svg>/g)].flatMap(
-      ([svg]) => [...svg.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]),
-    );
+    const sceneSources = [...html.matchAll(
+      /<img[^>]*src="(https:\/\/media\.parrotbook\.com\/assets\/v\d+\/dubbing\/five-little-ducks\/[a-z0-9-]+\.webp)"/g,
+    )].map(([, source]) => source);
 
-    assert.ok(svgIds.length >= 28);
-    assert.equal(new Set(svgIds).size, svgIds.length);
+    assert.equal(sceneSources.length, 49);
+    assert.equal(new Set(sceneSources).size, 4);
+    assert.doesNotMatch(html, /viewBox="0 0 960 540"|\bid=".*-sky"/);
   });
 
   it("keeps every scene selectable after all clips are recorded", () => {
