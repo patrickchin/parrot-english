@@ -167,6 +167,9 @@ export function GuardianLearnerDetails() {
             }
           : current,
       );
+      if (activeProfileId === validLearnerId) {
+        await reloadSelectedLearner(validLearnerId);
+      }
     } catch (error) {
       if (!controller.signal.aborted && !isAbortError(error)) {
         setPageError(

@@ -386,9 +386,80 @@ function isTargetableLearnerPath(pathname: string) {
 
 function hasExplicitLearnerTarget(url: URL) {
   return (
+    url.origin === window.location.origin &&
     isTargetableLearnerPath(url.pathname) &&
     url.searchParams.has(LEARNER_PROFILE_TARGET_QUERY_KEY)
   );
+}
+
+function singletonUnsupportedTargetMethodResponse(
+  url: URL,
+  method: string,
+) {
+  const pathname = url.pathname;
+  let allowedMethods: readonly string[] | null = null;
+  let notFoundForUnsupportedMethod = false;
+
+  if (pathname === "/api/learner-profile") allowedMethods = ["GET"];
+  else if (pathname === "/api/learner-profile/answer") {
+    allowedMethods = ["PUT"];
+  } else if (
+    pathname === "/api/learner-profile/complete" ||
+    pathname === "/api/learner-profile/question/skip" ||
+    pathname === "/api/learner-profile/skip" ||
+    pathname === "/api/learner-profile/transcribe"
+  ) {
+    allowedMethods = ["POST"];
+  } else if (pathname === "/api/profile") {
+    allowedMethods = ["GET", "PUT"];
+  } else if (
+    pathname === "/api/profile/lesson-recording-consent" ||
+    pathname === "/api/profile/preferences"
+  ) {
+    allowedMethods = ["PUT"];
+  } else if (pathname === "/api/lesson-recordings/consent") {
+    allowedMethods = ["GET"];
+  } else if (lessonRecordingSlot(url) !== null) {
+    allowedMethods = ["PUT"];
+  } else if (pathname === E2E_DUB_API) {
+    allowedMethods = ["GET", "DELETE"];
+  } else if (pathname === `${E2E_DUB_API}/consent`) {
+    allowedMethods = ["PUT"];
+  } else if (
+    /^\/api\/dubs\/five-little-ducks-v2\/lines\/line-(?:[1-9]|1[0-9]|2[0-4])\/audio$/.test(
+      pathname,
+    )
+  ) {
+    allowedMethods = ["GET"];
+  } else if (
+    /^\/api\/dubs\/five-little-ducks-v2\/lines\/line-(?:[1-9]|1[0-9]|2[0-4])$/.test(
+      pathname,
+    )
+  ) {
+    allowedMethods = ["PUT"];
+  } else if (pathname === "/api/lessons/my") {
+    allowedMethods = ["GET", "POST"];
+    notFoundForUnsupportedMethod = true;
+  } else if (pathname === "/api/lessons/my/generate") {
+    allowedMethods = ["POST"];
+    notFoundForUnsupportedMethod = true;
+  } else if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
+    allowedMethods = ["GET", "PUT"];
+    notFoundForUnsupportedMethod = true;
+  } else if (/^\/api\/stories\/[^/]+\/personalized-art\/asset$/.test(pathname)) {
+    allowedMethods = ["GET"];
+    notFoundForUnsupportedMethod = true;
+  } else if (/^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname)) {
+    allowedMethods = ["GET", "POST", "DELETE"];
+    notFoundForUnsupportedMethod = true;
+  }
+
+  if (allowedMethods === null || allowedMethods.includes(method)) return null;
+  const status = notFoundForUnsupportedMethod ? 404 : 405;
+  const error = notFoundForUnsupportedMethod ? "not_found" : "method_not_allowed";
+  return pathname.startsWith("/api/dubs/")
+    ? e2eDubJson({ error }, status)
+    : e2eJson({ error }, status);
 }
 
 function parseExplicitLearnerTarget(url: URL) {
@@ -1217,7 +1288,12 @@ function createE2eLearnerAccount(
       url.pathname === "/api/learner-profile/question/skip" &&
       method === "POST"
     ) {
-      const body = await jsonBody(request);
+      let body: Record<string, unknown>;
+      try {
+        body = (await request.clone().json()) as Record<string, unknown>;
+      } catch {
+        return e2eJson({ error: "invalid_json" }, 400);
+      }
       const index = questionnaire.questions.findIndex(
         (question) => question.answerKey === body.questionKey,
       );
@@ -2654,6 +2730,17 @@ function installE2eProfileFetchMock() {
         .json()) as { storyLevel?: typeof fallbackStoryLevel };
       if (body.storyLevel) fallbackStoryLevel = body.storyLevel;
       return e2eJson(fallbackProfileState());
+    }
+    if (
+      !learnerAccount &&
+      fallbackTarget === E2E_VIEWPORT_EDITOR_STATE.profile.id &&
+      url.origin === window.location.origin
+    ) {
+      const methodResponse = singletonUnsupportedTargetMethodResponse(
+        url,
+        method,
+      );
+      if (methodResponse) return methodResponse;
     }
     const profileOperation = profileOperationForRequest(url, method);
 

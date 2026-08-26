@@ -1082,9 +1082,10 @@ test("Account & privacy explains caregiver facts before optional technical detai
     }),
   ).toHaveCount(0);
   await expect(
-    accountPage.getByText("Talk to Peppa does not change learner profiles.", {
-      exact: false,
-    }),
+    accountPage.getByText(
+      "Talk to Peppa and Guardian profile editing do not change which learner uses learner mode. Only the explicit Use in learner mode action changes which learner uses learner mode.",
+      { exact: true },
+    ),
   ).toBeVisible();
   await expect(
     accountPage.getByRole("heading", { name: "Web app" }),

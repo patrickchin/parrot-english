@@ -170,6 +170,7 @@ export async function loadDubStatus(options: DubRequestOptions = {}) {
     },
     LOAD_FAILURE,
   );
+  await notifyGuardianAccessRequiredForResponse(response);
   if (response.status === 409) {
     const body: unknown = await response.clone().json().catch(() => null);
     if (
@@ -209,6 +210,7 @@ export async function saveDubLine(
     },
     SAVE_FAILURE,
   );
+  await notifyGuardianAccessRequiredForResponse(response);
   if (!response.ok) {
     const consentLoss = await dubConsentLossError(response);
     if (consentLoss) throw consentLoss;

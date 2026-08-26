@@ -6,6 +6,7 @@ import {
   useGuardianLearnerTarget,
   type GuardianLearnerTargetState,
 } from "../learner-profile/GuardianLearnerTarget";
+import { useLearnerSelection } from "../learner-profile/LearnerProfileContext";
 import {
   loadProfile,
   saveStoryLevel,
@@ -196,6 +197,7 @@ function TargetedGuardianStorySettings({
   target: GuardianLearnerTargetState;
 }) {
   const art = usePersonalizedStoryArt({ learnerProfileId });
+  const { activeProfileId, reloadSelectedLearner } = useLearnerSelection();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -278,6 +280,10 @@ function TargetedGuardianStorySettings({
         throw new Error("The selected learner profile could not be saved.");
       }
       setProfileState(result);
+      if (activeProfileId === learnerProfileId) {
+        await reloadSelectedLearner(learnerProfileId);
+        if (controller.signal.aborted || !mountedRef.current) return;
+      }
       setStatusMessage(`Story level saved: ${getStoryLevel(level).label}.`);
     } catch (caughtError) {
       if (

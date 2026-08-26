@@ -167,6 +167,19 @@ describe("duck dub browser API", () => {
       const guardianRequired = () =>
         Response.json({ error: "guardian_required" }, { status: 403 });
       await expectRejection(
+        () => loadDubStatus({ fetch: async () => guardianRequired() }),
+        "Your saved dub could not be loaded.",
+        ["notification", "rejection"],
+      );
+      await expectRejection(
+        () =>
+          saveDubLine("line-1", new Blob(["take"]), {
+            fetch: async () => guardianRequired(),
+          }),
+        "Your take was not saved. Try again.",
+        ["notification", "rejection"],
+      );
+      await expectRejection(
         () => grantDubConsent({ fetch: async () => guardianRequired() }),
         "Voice dubbing could not be turned on.",
         ["notification", "rejection"],

@@ -634,6 +634,14 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.querySelector("h1")?.textContent, "Account & privacy");
     assert.match(document.body.textContent, /How Parrot uses AI/);
     assert.match(document.body.textContent, /What this account keeps/);
+    assert.match(
+      document.body.textContent,
+      /Only the explicit Use in learner mode action changes which learner uses learner mode/,
+    );
+    assert.doesNotMatch(
+      document.body.textContent,
+      /Guardian profile editing can change the selected learner/,
+    );
     assert.match(document.body.textContent, /Technical build details/);
     const deleteAccount = button("Delete account");
     assert.match(deleteAccount.closest("section")?.textContent ?? "", /Danger zone/);

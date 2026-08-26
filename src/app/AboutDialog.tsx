@@ -224,9 +224,9 @@ export function AccountPrivacySections() {
               ends early may still have saved text.
             </li>
             <li>
-              Talk to Peppa does not change learner profiles. This applies to
-              every learner profile; learner setup and Guardian profile editing
-              can change the selected learner.
+              Talk to Peppa and Guardian profile editing do not change which
+              learner uses learner mode. Only the explicit Use in learner mode
+              action changes which learner uses learner mode.
             </li>
             <li>
               Voice services process audio during Talk to Peppa, learner setup,

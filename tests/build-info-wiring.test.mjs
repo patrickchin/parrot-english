@@ -57,8 +57,14 @@ test("the account AI and saved data panel is wired to deployed component metadat
     /Lesson recording permission and saved clips are managed\s+independently for each selected learner profile/,
   );
   assert.match(about, /Five Little Ducks/);
-  assert.match(about, /Talk to Peppa does not change learner profiles/);
-  assert.match(about, /This applies to\s+every learner profile/);
+  assert.match(
+    about,
+    /Guardian profile editing do not change which\s+learner uses learner mode/,
+  );
+  assert.match(
+    about,
+    /Only the explicit Use in learner mode\s+action changes which learner uses learner mode/,
+  );
   assert.doesNotMatch(
     about,
     /Raw audio is not\s+added to the Parrot account/,

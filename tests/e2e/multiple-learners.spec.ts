@@ -692,6 +692,70 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
   ).toBeVisible();
 });
 
+test("active learner detail and story saves reach learner-mode consumers in the same SPA", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+  await learnerCard(page, "Mia")
+    .getByRole("button", { name: "Edit Mia's profile" })
+    .click();
+
+  await page.getByRole("textbox", { exact: true, name: "Name" }).fill(
+    "Mia Updated",
+  );
+  await page
+    .getByRole("button", { name: "Allow lesson voice recordings" })
+    .click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "currently allowed" }),
+  ).toBeVisible();
+  await page.getByRole("button", { exact: true, name: "Save changes" }).click();
+  await expect(page).toHaveURL("/guardian/learners");
+
+  await page
+    .getByRole("link", { name: /Back to Guardian dashboard/i })
+    .click();
+  await page.getByRole("link", { name: "Open story settings" }).click();
+  await expect(
+    page.getByText("Editing settings for Mia Updated", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: /Little stories/ }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Story level saved" }),
+  ).toContainText("Little stories");
+
+  await page
+    .getByRole("link", { name: /Back to guardian dashboard/i })
+    .click();
+  await page.getByRole("button", { name: "Switch to learner" }).click();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("button", {
+      name: /Profile for Mia Updated, learner mode/,
+    }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Story time" }).click();
+  await expect(page).toHaveURL("/stories?level=tiny-stories");
+  await expect(
+    page.getByRole("region", { name: "Little stories stories" }),
+  ).toBeVisible();
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              __parrotE2eLearners?: {
+                snapshot(): { activeProfileId: string | null };
+              };
+            }
+          ).__parrotE2eLearners?.snapshot().activeProfileId,
+      ),
+    )
+    .toBe("learner-mia");
+});
+
 test("adds a learner without changing learner mode and keeps the new roster after refresh", async ({
   page,
 }) => {
@@ -2518,6 +2582,97 @@ test("question skip rejects a non-current question without changing either learn
     },
     status: 409,
   });
+  expect(await readTargetedAccountState(page)).toEqual(before);
+});
+
+test("cross-origin learner-target paths stay with native fetch", async ({
+  page,
+}) => {
+  await page.route("https://fixture.example/**", async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({ source: "native-fetch" }),
+      contentType: "application/json",
+      headers: { "Access-Control-Allow-Origin": "*" },
+      status: 207,
+    });
+  });
+  await page.goto(
+    "/guardian/learners/e2e-learner?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Learner details" }),
+  ).toBeVisible();
+
+  const response = await page.evaluate(async () => {
+    const result = await fetch(
+      "https://fixture.example/api/profile?learnerProfileId=unknown-learner",
+    );
+    return {
+      body: await result.json(),
+      mockApi: result.headers.get("X-Parrot-Mock-Api"),
+      status: result.status,
+    };
+  });
+
+  expect(response).toEqual({
+    body: { source: "native-fetch" },
+    mockApi: null,
+    status: 207,
+  });
+});
+
+test("singleton targeted fixtures return the Worker method contract without native fetch", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/learners/e2e-learner?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Learner details" }),
+  ).toBeVisible();
+
+  const response = await page.evaluate(async () => {
+    const result = await fetch(
+      "/api/profile?learnerProfileId=e2e-learner",
+      { method: "DELETE" },
+    );
+    const text = await result.text();
+    return {
+      body: text ? JSON.parse(text) : null,
+      mockApi: result.headers.get("X-Parrot-Mock-Api"),
+      status: result.status,
+    };
+  });
+
+  expect(response).toEqual({
+    body: { error: "method_not_allowed" },
+    mockApi: "browser",
+    status: 405,
+  });
+});
+
+test("malformed targeted question-skip JSON matches the Worker invalid-json response", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian", "multiple"));
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
+  const before = await readTargetedAccountState(page);
+
+  const response = await page.evaluate(async () => {
+    const result = await fetch(
+      "/api/learner-profile/question/skip?learnerProfileId=learner-mia",
+      {
+        body: "{",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+    return { body: await result.json(), status: result.status };
+  });
+
+  expect(response).toEqual({ body: { error: "invalid_json" }, status: 400 });
   expect(await readTargetedAccountState(page)).toEqual(before);
 });
 

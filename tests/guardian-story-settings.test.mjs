@@ -30,7 +30,11 @@ const contextModule = await vite
   .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
   .catch(() => ({}));
 const { GuardianStorySettings, GuardianStorySettingsView } = guardianModule;
-const { LearnerProfileProvider, useLearnerProfile } = contextModule;
+const {
+  LearnerProfileProvider,
+  LearnerSelectionProvider,
+  useLearnerProfile,
+} = contextModule;
 
 test.afterEach(async () => {
   await cleanupMountedRoots();
@@ -164,16 +168,46 @@ function ProfileProbe() {
   );
 }
 
-function SettingsProfileProvider({ children, storyLevel }) {
-  const [profile, setProfile] = useState(() => learnerProfile(storyLevel));
+function SelectionProvider({
+  activeProfileId = "learner-mia",
+  children,
+  reloadSelectedLearner = async () => learnerProfile(),
+}) {
   return createElement(
-    LearnerProfileProvider,
-    { profile, replaceProfile: setProfile },
+    LearnerSelectionProvider,
+    {
+      activeProfileId,
+      async createAndSelectLearner() {
+        throw new Error("Story settings must not create a learner.");
+      },
+      reloadSelectedLearner,
+      async selectLearner() {
+        throw new Error("Story settings must not select a learner.");
+      },
+    },
     children,
   );
 }
 
-function settingsHarness(storyLevel = "first-words") {
+function SettingsProfileProvider({
+  activeProfileId,
+  children,
+  reloadSelectedLearner,
+  storyLevel,
+}) {
+  const [profile, setProfile] = useState(() => learnerProfile(storyLevel));
+  return createElement(
+    SelectionProvider,
+    { activeProfileId, reloadSelectedLearner },
+    createElement(
+      LearnerProfileProvider,
+      { profile, replaceProfile: setProfile },
+      children,
+    ),
+  );
+}
+
+function settingsHarness(storyLevel = "first-words", selection = {}) {
   assert.equal(
     typeof GuardianStorySettings,
     "function",
@@ -186,7 +220,7 @@ function settingsHarness(storyLevel = "first-words") {
   );
   return createElement(
     SettingsProfileProvider,
-    { storyLevel },
+    { storyLevel, ...selection },
     createElement(
       MemoryRouter,
       {
@@ -333,6 +367,35 @@ test("saves a level before replacing the loaded profile and announces success wi
   assert.equal(document.activeElement, tinyStories);
 });
 
+test("refreshes active learner context after a targeted story-level save", async () => {
+  const reloads = [];
+  installArtFetch(() =>
+    Response.json({
+      profile: learnerProfile("tiny-stories"),
+      questions: [],
+    }),
+  );
+  const container = await mountStrict(
+    settingsHarness("first-words", {
+      async reloadSelectedLearner(id) {
+        reloads.push(id);
+        return learnerProfile("tiny-stories");
+      },
+    }),
+  );
+
+  await waitFor(() => assert.ok(levelButton(container, "Little stories")));
+  await click(levelButton(container, "Little stories"));
+  await waitFor(() =>
+    assert.match(
+      statusMatching(container, /Story level saved/i)?.textContent ?? "",
+      /Story level saved.*Little stories/i,
+    ),
+  );
+
+  assert.deepEqual(reloads, ["learner-mia"]);
+});
+
 test("rejects a story-level response for a different learner without announcing success", async () => {
   installArtFetch(() =>
     Response.json({
@@ -411,11 +474,15 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
 
   const container = await mountStrict(
     createElement(
-      MemoryRouter,
-      {
-        initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
-      },
-      createElement(GuardianStorySettings, { learnerName: "Mia" }),
+      SelectionProvider,
+      null,
+      createElement(
+        MemoryRouter,
+        {
+          initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
+        },
+        createElement(GuardianStorySettings, { learnerName: "Mia" }),
+      ),
     ),
   );
   await waitFor(() => assert.ok(levelButton(container, "Little stories")));
@@ -526,7 +593,12 @@ test("loads and saves Noah's story settings and art through explicit target requ
   const container = await mountStrict(
     createElement(
       SettingsProfileProvider,
-      { storyLevel: "first-words" },
+      {
+        activeProfileId: "learner-mia",
+        reloadSelectedLearner: async () =>
+          assert.fail("Inactive story edits must not refresh active context."),
+        storyLevel: "first-words",
+      },
       createElement(
         MemoryRouter,
         {

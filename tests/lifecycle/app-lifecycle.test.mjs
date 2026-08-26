@@ -525,6 +525,32 @@ function LoadedProfileIdentityHarness() {
   );
 }
 
+function SameLearnerRefreshHarness() {
+  const { profile } = useLearnerProfile();
+  const { reloadSelectedLearner } = useLearnerSelection();
+  const [instance] = useState(() => globalThis.crypto.randomUUID());
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "output",
+      {
+        "aria-label": "Same learner refreshed profile",
+        "data-instance": instance,
+      },
+      `${profile.id}:${profile.name}:${profile.storyLevel}`,
+    ),
+    createElement(
+      "button",
+      {
+        onClick: () => void reloadSelectedLearner(profile.id),
+        type: "button",
+      },
+      "Refresh the same learner",
+    ),
+  );
+}
+
 function SelectionContextHarness() {
   assert.equal(
     typeof useLearnerSelection,
@@ -4803,6 +4829,101 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(requests.some((request) => request.includes("/active")), false);
   });
 
+  it("turns an authoritative targeted dubbing 403 into a same-URL unlock boundary", async () => {
+    let guardianMode = "guardian";
+    let targetedLoads = 0;
+    const deepLink =
+      "/guardian/dubbing?learnerProfileId=learner-noah&from=deep-link";
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({
+          activeProfileId: "learner-1",
+          profiles: [
+            {
+              age: 6,
+              createdAt: "2026-08-25T08:00:00.000Z",
+              id: "learner-1",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+            {
+              age: 10,
+              createdAt: "2026-08-26T08:00:00.000Z",
+              id: "learner-noah",
+              name: "Noah",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      if (
+        path ===
+          "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-noah" &&
+        (init.method ?? "GET") === "GET"
+      ) {
+        targetedLoads += 1;
+        if (targetedLoads === 1) {
+          guardianMode = "learner";
+          return json({ error: "guardian_required" }, 403);
+        }
+        return json({
+          complete: false,
+          consentState: "not_granted",
+          dubId: "five-little-ducks-v2",
+          guardianConsentVersion: "guardian-voice-r2-v2",
+          lines: [],
+          recordingEnabled: false,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return guardianMode === "guardian"
+              ? {
+                  expiresAt: "2099-01-01T00:00:00.000Z",
+                  mode: "guardian",
+                }
+              : { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            guardianMode = "learner";
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess(password) {
+            assert.equal(password, "correct-password");
+            guardianMode = "guardian";
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: deepLink,
+      }),
+    );
+
+    await waitFor(() => text(/Unlock guardian mode/));
+    assert.equal(currentRoute().path, deepLink);
+    noText(/Your saved dub could not be loaded/);
+    const loadsBeforeUnlock = targetedLoads;
+
+    await input(
+      document.querySelector('input[name="password"]'),
+      "correct-password",
+    );
+    await click(button("Unlock guardian mode"));
+    await waitFor(() => text(/Editing settings for Noah/));
+    assert.equal(currentRoute().path, deepLink);
+    assert.ok(targetedLoads > loadsBeforeUnlock);
+  });
+
   it("returns structurally matched invalid learner details to Manage learners before the learner-mode boundary", async () => {
     const api = {
       async loadGuardianAccess() {
@@ -5218,6 +5339,62 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(currentRoute().path, "/guardian/learners");
     text(/Managing Mia/);
     noText(/Managing Ava/);
+  });
+
+  it("replaces fresh same-learner data without remounting learner-mode consumers", async () => {
+    let currentProfile = {
+      ...completedLearnerProfileState().profile,
+      id: "learner-mia",
+      name: "Mia",
+      storyLevel: "first-words",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      assert.equal(path, "/api/learner-profile");
+      assert.equal(init.method, "GET");
+      return json({
+        ...completedLearnerProfileState(),
+        profile: currentProfile,
+      });
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerProfileGate,
+        {
+          completedLearnerProfileFallback: createElement("p", null, "HOME"),
+          isConversationRoute: false,
+          isLearnerProfileRoute: false,
+          isProfileRoute: false,
+          learnerProfileFallback: createElement("p", null, "SETUP"),
+          onCloseProfileRoute() {},
+          onConversationCompleted() {},
+          onOpenLessons() {},
+          onOpenProfileRoute() {},
+          onRedoCompleted() {},
+          onRedoLearnerProfileRoute() {},
+          redoLearnerProfile: false,
+        },
+        createElement(SameLearnerRefreshHarness),
+      ),
+    );
+
+    const initial = await waitFor(() => {
+      const profile = output("Same learner refreshed profile");
+      assert.equal(profile.textContent, "learner-mia:Mia:first-words");
+      return profile.dataset.instance;
+    });
+    currentProfile = {
+      ...currentProfile,
+      name: "Mia Updated",
+      storyLevel: "tiny-stories",
+    };
+    await click(button("Refresh the same learner"));
+
+    await waitFor(() => {
+      const profile = output("Same learner refreshed profile");
+      assert.equal(profile.textContent, "learner-mia:Mia Updated:tiny-stories");
+      assert.equal(profile.dataset.instance, initial);
+    });
   });
 
   it("remounts the full learner subtree when the active profile ID changes", async () => {

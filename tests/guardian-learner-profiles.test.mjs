@@ -763,3 +763,46 @@ test("targets recording consent at an explicit learner without selecting them", 
   assert.equal(reloadCalls, 0);
   assert.equal(currentRoute(container), "/guardian/learners/learner-noah");
 });
+
+test("refreshes active learner context after targeted recording consent changes", async () => {
+  const reloads = [];
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    if (
+      path === "/api/profile?learnerProfileId=learner-mia" &&
+      init.method === "GET"
+    ) {
+      return Response.json(profileEditorState(mia));
+    }
+    if (
+      path ===
+        "/api/profile/lesson-recording-consent?learnerProfileId=learner-mia" &&
+      init.method === "PUT"
+    ) {
+      return Response.json({ cleanupPending: false, enabled: true });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    detailsHarness({
+      activeProfileId: mia.id,
+      learnerId: mia.id,
+      async reloadSelectedLearner(id) {
+        reloads.push(id);
+        return fullProfile(mia);
+      },
+    }),
+  );
+  await waitFor(() => button(container, "Allow lesson voice recordings"));
+  await click(button(container, "Allow lesson voice recordings"));
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="status"]')?.textContent ?? "",
+      /currently allowed/,
+    ),
+  );
+
+  assert.deepEqual(reloads, ["learner-mia"]);
+  assert.equal(currentRoute(container), "/guardian/learners/learner-mia");
+});

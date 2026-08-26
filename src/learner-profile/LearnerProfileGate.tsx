@@ -2023,6 +2023,10 @@ export function LearnerProfileGate({
           setIsLoading(false);
           setLoadError("");
         } else {
+          dataRef.current = next;
+          setData(next);
+          setIsLoading(false);
+          setLoadError("");
           updateLearnerIdentityCheck("confirmed");
         }
         if (!matchesExpected) {
