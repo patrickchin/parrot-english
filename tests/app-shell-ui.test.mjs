@@ -109,8 +109,9 @@ test("home menu prioritizes the four learner activities", () => {
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
   assert.match(html, />Dub a rhyme</);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 3);
-  assert.equal((html.match(/<svg[^>]*viewBox="0 0 960 540"/g) ?? []).length, 1);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 10);
+  assert.equal((html.match(/data-story-layer="painted-environment"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /<svg[^>]*viewBox="0 0 960 540"/);
   assert.doesNotMatch(
     html,
     /Listen and speak\.|Say hello and chat\.|Listen to a story\.|Tap one\./,

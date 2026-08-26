@@ -106,7 +106,7 @@ export function DubEntry({
   return (
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-2xl gap-4 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-card">
-        <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
+        <h1 className="m-0 text-3xl text-brand-ink md:text-4xl">Five Little Ducks</h1>
         {error ? (
           <>
             <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">

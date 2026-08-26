@@ -53,8 +53,9 @@ test("home gives children four clear, working learning choices", () => {
     "/dubs/five-little-ducks",
   ]);
   assert.match(html, /Tap a picture\./i);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 3);
-  assert.equal((html.match(/<svg[^>]*viewBox="0 0 960 540"/g) ?? []).length, 1);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 10);
+  assert.equal((html.match(/data-story-layer="painted-environment"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /<svg[^>]*viewBox="0 0 960 540"/);
   assert.match(html, /Dub a rhyme/);
   assert.doesNotMatch(
     html,

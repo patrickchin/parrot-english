@@ -1,9 +1,24 @@
-import { useId } from "react";
+import { useState, type CSSProperties } from "react";
 import { DUB_LINES, type DubLine } from "./dub-script.ts";
+
+const MEDIA_BASE = "https://media.parrotbook.com/assets/v4/dubbing/five-little-ducks";
+
+const artwork = {
+  ducklingSwim: `${MEDIA_BASE}/duckling-swim.webp`,
+  ducklingWalk: `${MEDIA_BASE}/duckling-walk.webp`,
+  motherCall: `${MEDIA_BASE}/mother-call.webp`,
+  motherSadCall: `${MEDIA_BASE}/mother-sad-call.webp`,
+  motherSadSwim: `${MEDIA_BASE}/mother-sad-swim.webp`,
+  motherSadWalk: `${MEDIA_BASE}/mother-sad-walk.webp`,
+  motherSwim: `${MEDIA_BASE}/mother-swim.webp`,
+  pond: `${MEDIA_BASE}/pond-scene.webp`,
+} as const;
+
+const artworkPreloads = Object.values(artwork);
 
 const sceneDescriptions = {
   depart: "The ducklings set out together.",
-  hill: "The flock swims toward a green hill.",
+  hill: "The flock travels over a green hill.",
   "mother-calls": "Mother duck calls for the ducklings.",
   return: "The ducklings come back to the pond.",
   "none-return": "No ducklings come back to the pond.",
@@ -13,34 +28,199 @@ const sceneDescriptions = {
   "five-return": "All five ducklings come back to mother duck.",
 } as const;
 
-function Duck({
+const departPositions = [
+  [300, 390],
+  [420, 355],
+  [540, 385],
+  [660, 345],
+  [790, 380],
+] as const;
+
+const hillPositions = [
+  [345, 250],
+  [420, 235],
+  [500, 220],
+  [580, 235],
+  [655, 250],
+] as const;
+
+const returnPositions = [
+  [260, 370],
+  [380, 405],
+  [500, 360],
+  [620, 405],
+  [740, 365],
+] as const;
+
+type Position = readonly [number, number];
+type StoryMotion = "call" | "swim" | "walk";
+
+function positionStyle([x, y]: Position, width: string): CSSProperties {
+  return {
+    left: `${x / 9.6}%`,
+    opacity: "var(--actor-opacity)",
+    top: `${y / 5.4}%`,
+    transform: "translate(-50%, -100%)",
+    width,
+  } as CSSProperties;
+}
+
+function DuckActor({
+  actor,
+  animated,
   delay,
-  mama = false,
-  playing,
-  x,
-  y,
+  expression = "bright",
+  fallbackImage,
+  image,
+  motion,
+  pose,
+  position,
+  thumbnail,
+  visible,
 }: {
+  actor: "mother" | `duckling-${number}`;
+  animated: boolean;
   delay: number;
-  mama?: boolean;
-  playing: boolean;
-  x: number;
-  y: number;
+  expression?: "bright" | "sad";
+  fallbackImage: string;
+  image: string;
+  motion: StoryMotion;
+  pose: string;
+  position: Position;
+  thumbnail: boolean;
+  visible: boolean;
 }) {
-  const scale = mama ? 1.35 : 1;
+  const [x, y] = position;
+  const mother = actor === "mother";
+  const [loadResult, setLoadResult] = useState<{
+    image: string;
+    status: "failed" | "ready";
+  } | null>(null);
+  const imageState = loadResult?.image === image ? loadResult.status : "loading";
+  const hasFallback = fallbackImage !== image;
+  const fallbackVisible = hasFallback && imageState !== "ready";
+  const imageVisible = hasFallback ? imageState === "ready" : imageState !== "failed";
+  const moving = animated && visible;
+  const motionClass = motion === "call"
+    ? "animate-duck-call"
+    : motion === "walk"
+      ? "animate-duck-walk"
+      : "animate-duck-swim";
+
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <g
-        className={playing ? "animate-bounce motion-reduce:animate-none" : undefined}
-        style={playing ? { animationDelay: `${delay}ms` } : undefined}
-      >
-        <ellipse cx="0" cy="15" fill={mama ? "#f4b942" : "#ffd84d"} rx="48" ry="30" />
-        <circle cx="38" cy="-12" fill={mama ? "#f4b942" : "#ffd84d"} r="25" />
-        <path d="M58 -14 82 -5 58 3Z" fill="#f47b20" />
-        <circle cx="46" cy="-18" fill="#172554" r="4" />
-        <path d="M-38 13 Q-66 -5 -60 28 Q-43 23 -28 29Z" fill="#f7c948" />
-        <path d="M-15 10 Q8 -3 23 15 Q4 26 -17 20Z" fill="#f2b632" />
-      </g>
-    </g>
+    <div
+      className={`absolute z-20 aspect-square origin-bottom ${
+        moving
+          ? "transition-[left,top,opacity,width] duration-700 ease-out motion-reduce:transition-none"
+          : ""
+      }`}
+      data-duck-actor={actor}
+      data-expression={expression}
+      data-image-state={imageState}
+      data-moving={moving ? "true" : undefined}
+      data-pose={pose}
+      data-visible={visible ? "true" : "false"}
+      data-x={x}
+      data-y={y}
+      style={{
+        ...positionStyle(
+          position,
+          mother ? motion === "walk" ? "18%" : "23%" : motion === "walk" ? "11.75%" : y <= 320 ? "13.5%" : "15.25%",
+        ),
+        "--actor-opacity": visible ? 1 : 0,
+        backgroundImage: fallbackVisible ? `url("${fallbackImage}")` : undefined,
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "contain",
+        pointerEvents: "none",
+      } as CSSProperties}
+    >
+      <img
+        alt=""
+        aria-hidden="true"
+        className={`relative block size-full select-none object-contain drop-shadow-[0_0.35rem_0.3rem_rgb(40_72_54_/_0.18)] motion-reduce:animate-none ${
+          moving ? motionClass : ""
+        }`}
+        data-motion={motion}
+        draggable="false"
+        key={image}
+        loading={thumbnail ? "lazy" : "eager"}
+        onError={() => setLoadResult({ image, status: "failed" })}
+        onLoad={() => setLoadResult({ image, status: "ready" })}
+        src={image}
+        style={{ animationDelay: `${delay}ms`, opacity: imageVisible ? 1 : 0 }}
+      />
+    </div>
+  );
+}
+
+function CallRings({ animated, position, sad }: {
+  animated: boolean;
+  position: Position;
+  sad: boolean;
+}) {
+  const [x, y] = position;
+  return (
+    <div
+      aria-hidden="true"
+      className="absolute z-30 h-[13%] w-[10%] -translate-y-1/2"
+      data-effect="call-rings"
+      style={{ left: `${(x + 100) / 9.6}%`, top: `${(y - 155) / 5.4}%` }}
+    >
+      {[0, 1].map((ring) => (
+        <span
+          className={`absolute left-0 top-1/2 aspect-square -translate-y-1/2 rounded-full border-r-[0.3rem] ${
+            sad ? "border-sky-100/90" : "border-white/95"
+          } motion-reduce:animate-none ${animated ? "animate-duck-call-ring" : ""}`}
+          key={ring}
+          style={{
+            animationDelay: `${ring * 180}ms`,
+            height: `${55 + ring * 38}%`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SoftRain({ animated }: { animated: boolean }) {
+  return (
+    <div aria-hidden="true" className="absolute inset-0 z-10 overflow-hidden" data-effect="soft-rain">
+      <span className="absolute inset-0 bg-[linear-gradient(180deg,rgb(43_78_110_/_0.16),rgb(65_89_102_/_0.08))]" />
+      {[8, 20, 35, 52, 68, 82, 93].map((left, index) => (
+        <span
+          className={`absolute top-[-12%] h-[18%] w-px rotate-[18deg] bg-white/45 motion-reduce:animate-none ${
+            animated ? "animate-duck-rain" : ""
+          }`}
+          key={left}
+          style={{ animationDelay: `${index * 150}ms`, left: `${left}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Celebration({ animated }: { animated: boolean }) {
+  const pieces = [
+    [18, 15, "bg-pink-500", "rotate-12"],
+    [29, 9, "bg-amber-300", "-rotate-12"],
+    [41, 17, "bg-violet-500", "rotate-45"],
+    [54, 8, "bg-orange-400", "rotate-12"],
+    [67, 16, "bg-pink-500", "-rotate-12"],
+    [79, 10, "bg-amber-300", "rotate-45"],
+  ] as const;
+  return (
+    <div aria-hidden="true" className="absolute inset-0 z-30 overflow-hidden" data-effect="celebration">
+      {pieces.map(([left, top, color, rotation], index) => (
+        <span
+          className={`absolute h-[2.6%] w-[1.2%] rounded-sm ${color} ${rotation} motion-reduce:animate-none ${
+            animated ? "animate-duck-confetti" : ""
+          }`}
+          key={`${left}-${top}`}
+          style={{ animationDelay: `${index * 100}ms`, left: `${left}%`, top: `${top}%` }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -55,55 +235,98 @@ export function DuckScene({
   playing?: boolean;
   thumbnail?: boolean;
 }) {
-  const skyGradientId = useId();
-  const showMama = line.visualBeat === "mother-calls"
-    || line.visualBeat.startsWith("sad-mother")
-    || line.visualBeat === "five-return";
-  const returnPositions = [
-    [265, 345],
-    [390, 390],
-    [520, 342],
-    [650, 392],
-    [765, 335],
-  ] as const;
-  const duckPositions = line.visualBeat.includes("hill")
-    ? [[390, 295], [500, 265], [610, 300], [710, 280], [805, 315]] as const
+  const sad = line.visualBeat.startsWith("sad-mother") || line.visualBeat === "none-return";
+  const motherCalling = line.visualBeat.endsWith("mother-calls");
+  const showMother = motherCalling || sad || line.visualBeat.endsWith("return");
+  const duckPositions = line.visualBeat.includes("hill") || motherCalling
+    ? hillPositions
     : line.visualBeat.includes("depart")
-      ? [[625, 360], [705, 330], [785, 350], [835, 310], [890, 340]] as const
+      ? departPositions
       : returnPositions;
+  const ducklingPose = motherCalling ? "wait" : line.visualBeat;
+  const ducklingWalks = line.visualBeat === "hill";
+  const motherPose = line.visualBeat === "sad-mother-depart"
+    ? "sad-swim"
+    : line.visualBeat === "sad-mother-hill"
+      ? "sad-walk"
+      : line.visualBeat === "sad-mother-calls"
+        ? "sad-call"
+        : line.visualBeat === "none-return"
+          ? "sad-wait"
+          : line.visualBeat === "mother-calls"
+            ? "call"
+            : "swim";
+  const motherPosition = line.visualBeat === "sad-mother-depart"
+    ? [310, 390] as const
+    : line.visualBeat === "sad-mother-hill"
+      ? [500, 260] as const
+      : motherCalling
+        ? [175, 450] as const
+        : [165, 370] as const;
+  const motherImage = motherPose === "sad-call"
+    ? artwork.motherSadCall
+    : motherPose === "sad-walk"
+      ? artwork.motherSadWalk
+      : motherPose.startsWith("sad")
+        ? artwork.motherSadSwim
+        : motherPose === "call"
+          ? artwork.motherCall
+          : artwork.motherSwim;
+  const animated = playing && !thumbnail;
 
   const art = (
-    <svg
+    <div
       aria-hidden="true"
-      className="block h-full min-h-0 w-full"
-      viewBox="0 0 960 540"
+      className="relative isolate block size-full min-h-0 overflow-hidden bg-sky-100"
+      data-animated={animated ? "true" : undefined}
+      data-story-stage="five-little-ducks"
     >
-      <defs>
-        <linearGradient id={skyGradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#8dd8ff" />
-          <stop offset="1" stopColor="#ffe6a7" />
-        </linearGradient>
-      </defs>
-      <rect fill={`url(#${skyGradientId})`} height="540" width="960" />
-      <circle cx="815" cy="92" fill="#fff3a6" r="54" />
-      <path d="M0 275 Q145 115 335 270 Q520 88 760 275 Q865 185 960 250 V390 H0Z" fill="#70bd65" />
-      <path d="M0 322 Q235 262 475 320 Q720 245 960 315 V540 H0Z" fill="#328c58" />
-      <ellipse cx="500" cy="420" fill="#41b7d8" rx="430" ry="125" />
-      <ellipse cx="500" cy="426" fill="none" opacity=".55" rx="340" ry="78" stroke="#d9f8ff" strokeWidth="8" />
-      <g fill="#49a942">
-        <ellipse cx="175" cy="435" rx="52" ry="18" />
-        <ellipse cx="700" cy="455" rx="59" ry="19" />
-        <ellipse cx="825" cy="402" rx="42" ry="14" />
-      </g>
-      <g fill="none" stroke="#4d913e" strokeLinecap="round" strokeWidth="10">
-        <path d="M95 390 78 300M115 393 122 292M136 402 157 314" />
-        <path d="M835 390 822 290M858 394 869 280M887 405 906 315" />
-      </g>
-      {duckPositions.slice(0, line.duckCount).map(([x, y], index) => (
-        <Duck delay={index * 90} key={`${x}-${y}`} playing={playing} x={x} y={y} />
+      {!thumbnail
+        ? artworkPreloads.map((source) => (
+            <link as="image" href={source} key={source} rel="preload" />
+          ))
+        : null}
+      <img
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 size-full select-none object-cover"
+        data-story-layer="painted-environment"
+        draggable="false"
+        loading={thumbnail ? "lazy" : "eager"}
+        src={artwork.pond}
+      />
+      {sad ? <SoftRain animated={animated} /> : null}
+      {line.visualBeat === "five-return" ? <Celebration animated={animated} /> : null}
+      {duckPositions.map((position, index) => (
+        <DuckActor
+          actor={`duckling-${index + 1}`}
+          animated={animated}
+          delay={index * 120}
+          fallbackImage={artwork.ducklingSwim}
+          image={ducklingWalks ? artwork.ducklingWalk : artwork.ducklingSwim}
+          key={`duckling-${index + 1}`}
+          motion={ducklingWalks ? "walk" : "swim"}
+          pose={ducklingPose}
+          position={position}
+          thumbnail={thumbnail}
+          visible={index < line.duckCount}
+        />
       ))}
-      {showMama ? <Duck delay={0} mama playing={playing} x={135} y={330} /> : null}
-    </svg>
+      <DuckActor
+        actor="mother"
+        animated={animated}
+        delay={0}
+        expression={sad ? "sad" : "bright"}
+        fallbackImage={sad ? artwork.motherSadSwim : artwork.motherSwim}
+        image={motherImage}
+        motion={motherCalling ? "call" : motherPose === "sad-walk" ? "walk" : "swim"}
+        pose={motherPose}
+        position={motherPosition}
+        thumbnail={thumbnail}
+        visible={showMother}
+      />
+      {motherCalling ? <CallRings animated={animated} position={motherPosition} sad={sad} /> : null}
+    </div>
   );
 
   if (thumbnail) return art;
