@@ -100,9 +100,13 @@ export function HomeMenu() {
                     "relative h-20 w-full overflow-hidden rounded-2xl bg-sky-100 short:h-16 short-wide:!h-20 md:aspect-[3/2] md:h-auto",
                     tone === "navy" && "bg-pink-100",
                   )}
+                  style={originalDuckScene ? { containerType: "size" } : undefined}
                 >
                   {originalDuckScene ? (
-                    <span className="mx-auto block aspect-video h-full max-w-full">
+                    <span
+                      className="absolute left-1/2 top-1/2 block aspect-video -translate-x-1/2 -translate-y-1/2"
+                      style={{ width: "min(100cqw, calc(100cqh * 16 / 9))" }}
+                    >
                       <DuckScene compact />
                     </span>
                   ) : (

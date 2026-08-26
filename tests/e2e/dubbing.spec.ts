@@ -1145,6 +1145,18 @@ test("the narrow project keeps its full title and transport outside the story ar
   expect(boxesOverlap(playerBox, playBox)).toBe(false);
 });
 
+test("the short-landscape project preserves the painted stage at 16:9", async ({ page }) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+
+  const stage = page
+    .getByRole("region", { name: "Full video player" })
+    .locator('[data-story-stage="five-little-ducks"]');
+  const box = await boundingBoxOrThrow(stage);
+  expect(Math.abs(box.width / box.height - 16 / 9)).toBeLessThan(0.01);
+});
+
 test("the desktop scene editor keeps the stage left of its selected-line controls", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");

@@ -192,6 +192,26 @@ test("home uses pictures instead of helper sentences", async ({ page }) => {
   await expectActivityPicturesLoaded(activities);
 });
 
+for (const viewport of [
+  { height: 568, width: 280 },
+  { height: 360, width: 640 },
+  { height: 720, width: 1280 },
+]) {
+  test(`home preserves the duck illustration at 16:9 on ${viewport.width}x${viewport.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+
+    const stage = page
+      .getByRole("link", { name: "Dub a rhyme" })
+      .locator('[data-story-stage="five-little-ducks"]');
+    const box = await stage.boundingBox();
+    expect(box).not.toBeNull();
+    expect(Math.abs(box!.width / box!.height - 16 / 9)).toBeLessThan(0.01);
+  });
+}
+
 test("home uses responsive art for its lesson preview", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/");
